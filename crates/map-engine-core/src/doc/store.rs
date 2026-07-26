@@ -171,11 +171,15 @@ impl MissionDocCore {
     ///
     /// When hydrate parked unknown top-level payload keys (T-219), they appear here as
     /// `payloadExtras` — a compile side-channel, never a wire key itself.
+    ///
+    /// **T-220 — `entityOrder`:** hydrate records authored array id-order here (yrs maps do not),
+    /// so `compile_payload` can emit `editor.slots` / factions / … in the original sequence.
     #[must_use]
     pub fn small_maps_json(&self) -> String {
         // Grab the root handles before opening the read txn (`get_or_insert_map` takes `&self`).
         let meta = self.doc.get_or_insert_map("meta");
         let payload_extras = self.doc.get_or_insert_map("payloadExtras");
+        let entity_order = self.doc.get_or_insert_map("entityOrder");
         let named: [(&str, MapRef); 9] = [
             ("factionsById", self.doc.get_or_insert_map("factions")),
             ("squadsById", self.doc.get_or_insert_map("squads")),
@@ -207,6 +211,9 @@ impl MissionDocCore {
         // Omit when empty so a clean doc's snapshot shape stays unchanged.
         if payload_extras.len(&txn) > 0 {
             root.insert("payloadExtras".to_string(), payload_extras.to_json(&txn));
+        }
+        if entity_order.len(&txn) > 0 {
+            root.insert("entityOrder".to_string(), entity_order.to_json(&txn));
         }
 
         let mut buf = String::new();
@@ -762,10 +769,16 @@ impl MissionDocCore {
     }
 
     /// Overwrite a slot's `position` (mirrors `slot.set('position', {...})`).
+    /// T-220 — merges into any existing position map so unknown sub-keys survive the edit.
     pub fn set_slot_position(&self, id: &str, x: f64, y: f64, z: f64, rotation: f64) {
         let mut txn = self.begin();
         if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
-            slot.insert(&mut txn, "position", position_any(x, y, z, rotation));
+            let existing = read_position_map(&txn, &slot);
+            slot.insert(
+                &mut txn,
+                "position",
+                position_any_merged(existing, x, y, z, rotation),
+            );
         }
     }
 
@@ -935,7 +948,12 @@ impl MissionDocCore {
             } else if x.is_some() || y.is_some() {
                 pz = 0.0; // terrain-follow; DEM z is sampled on the JS side
             }
-            slot.insert(&mut txn, "position", position_any(px, py, pz, prot));
+            let existing = read_position_map(&txn, &slot);
+            slot.insert(
+                &mut txn,
+                "position",
+                position_any_merged(existing, px, py, pz, prot),
+            );
         }
     }
 
@@ -948,10 +966,11 @@ impl MissionDocCore {
             if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
                 let (px, py, _pz, prot) = read_position(&txn, &slot);
                 let z = zs.get(i).copied().unwrap_or(0.0);
+                let existing = read_position_map(&txn, &slot);
                 slot.insert(
                     &mut txn,
                     "position",
-                    position_any(px + dx, py + dy, z, prot),
+                    position_any_merged(existing, px + dx, py + dy, z, prot),
                 );
             }
         }
@@ -982,6 +1001,10 @@ impl MissionDocCore {
     /// carries from the source. `index` accumulates per squad (seeded from the squad's current
     /// `slotIds`). `""` tag/asset → key omitted. Appends are batched (each squad's `slotIds` / each
     /// layer's `entityIds` written once) — the T-059 O(k) shape.
+    ///
+    /// **T-220 — `extras_json`:** per-slot JSON objects of fields the parallel arrays do not carry
+    /// (unknown keys, and unknown `position` sub-keys). Known paste keys in an extra object are
+    /// ignored so the parallel arrays stay authoritative for role/tag/position/loadout/….
     #[allow(clippy::too_many_arguments)]
     pub fn paste_slots(
         &self,
@@ -997,6 +1020,7 @@ impl MissionDocCore {
         asset_ids: Vec<String>,
         stances: Vec<String>,
         loadouts: Vec<String>,
+        extras_json: Vec<String>,
         anchor_x: Option<f64>,
         anchor_y: Option<f64>,
         width: f64,
@@ -1043,13 +1067,39 @@ impl MissionDocCore {
                 slot.insert(&mut txn, "assetId", asset_ids[i].as_str());
             }
             let z = zs.get(i).copied().unwrap_or(0.0);
-            slot.insert(&mut txn, "position", position_any(px, py, z, src_rot[i]));
+            // Seed position from the parallel arrays; extras may merge unknown sub-keys below.
+            let mut pos = HashMap::new();
+            pos.insert("x".to_string(), Any::Number(px));
+            pos.insert("y".to_string(), Any::Number(py));
+            pos.insert("z".to_string(), Any::Number(z));
+            pos.insert("rotation".to_string(), Any::Number(src_rot[i]));
             slot.insert(&mut txn, "stance", stances[i].as_str());
             slot.insert(&mut txn, "loadoutId", Any::Null);
             // `""` = source slot had no loadout (same omit convention as tag/assetId above).
             if let Some(lj) = loadouts.get(i).filter(|s| !s.is_empty()) {
                 slot.insert(&mut txn, "loadout", json_str_to_any(lj));
             }
+            // T-220 — merge unknown fields (and unknown position sub-keys) from the clipboard row.
+            if let Some(extra) = extras_json.get(i).filter(|s| !s.is_empty())
+                && let Any::Map(fields) = json_str_to_any(extra)
+            {
+                for (k, v) in fields.iter() {
+                    if PASTE_KNOWN_SLOT_KEYS.contains(&k.as_str()) {
+                        if k == "position"
+                            && let Any::Map(sub) = v
+                        {
+                            for (pk, pv) in sub.iter() {
+                                if !matches!(pk.as_str(), "x" | "y" | "z" | "rotation") {
+                                    pos.insert(pk.clone(), pv.clone());
+                                }
+                            }
+                        }
+                        continue;
+                    }
+                    slot.insert(&mut txn, k.as_str(), v.clone());
+                }
+            }
+            slot.insert(&mut txn, "position", Any::Map(Arc::new(pos)));
             if let Some(arr) = squad_slot_ids.get_mut(squad_id) {
                 arr.push(Any::String(id.into()));
             }
@@ -1230,6 +1280,11 @@ impl MissionDocCore {
     /// `markers` / `editor` / `orbat`) are parked in the `payloadExtras` root map and re-emitted on
     /// the next Save. Without that, a server-first or migration field appears to persist, then
     /// vanishes on the next hydrate→compile cycle.
+    ///
+    /// **T-220 — known top-level fields that used to be drop-on-sight:**
+    /// - `schemaVersion` is stored on `meta` (compile re-emits it; schema allows any integer).
+    /// - the whole `map` object is stored on `meta.map` so non-`terrain` keys (and authored
+    ///   `bounds`) survive; `meta.terrain` still tracks the live terrain id for the editor.
     pub fn hydrate(&self, payload_json: &str, default_layer_id: &str) {
         let Any::Map(payload) = json_str_to_any(payload_json) else {
             return;
@@ -1242,6 +1297,7 @@ impl MissionDocCore {
         let entities = self.doc.get_or_insert_map("entities");
         let markers = self.doc.get_or_insert_map("markers");
         let payload_extras = self.doc.get_or_insert_map("payloadExtras");
+        let entity_order = self.doc.get_or_insert_map("entityOrder");
 
         let mut txn = self.begin();
         for m in [
@@ -1256,23 +1312,58 @@ impl MissionDocCore {
             &entities,
             &markers,
             &payload_extras,
+            &entity_order,
         ] {
             m.clear(&mut txn);
         }
+        // Drop prior authored map / schemaVersion so a second hydrate cannot leave sticky ghosts.
+        self.meta.remove(&mut txn, "map");
+        self.meta.remove(&mut txn, "schemaVersion");
 
         if let Some(env) = payload.get("environment") {
             self.meta.insert(&mut txn, "environment", env.clone());
         }
-        if let Some(Any::Map(map)) = payload.get("map")
-            && let Some(Any::String(terrain)) = map.get("terrain")
-        {
-            self.meta.insert(&mut txn, "terrain", terrain.as_ref());
+        if let Some(sv) = payload.get("schemaVersion") {
+            self.meta.insert(&mut txn, "schemaVersion", sv.clone());
+        }
+        if let Some(map_val) = payload.get("map") {
+            // Whole object — compile merges terrain + preserves other keys / authored bounds.
+            self.meta.insert(&mut txn, "map", map_val.clone());
+            if let Any::Map(map) = map_val
+                && let Some(Any::String(terrain)) = map.get("terrain")
+            {
+                self.meta.insert(&mut txn, "terrain", terrain.as_ref());
+            }
         }
 
-        load_rows(&mut txn, &objectives, payload.get("objectives"));
-        load_rows(&mut txn, &vehicles, payload.get("vehicles"));
-        load_rows(&mut txn, &entities, payload.get("entities"));
-        load_rows(&mut txn, &markers, payload.get("markers"));
+        load_rows_ordered(
+            &mut txn,
+            &objectives,
+            payload.get("objectives"),
+            &entity_order,
+            "objectives",
+        );
+        load_rows_ordered(
+            &mut txn,
+            &vehicles,
+            payload.get("vehicles"),
+            &entity_order,
+            "vehicles",
+        );
+        load_rows_ordered(
+            &mut txn,
+            &entities,
+            payload.get("entities"),
+            &entity_order,
+            "entities",
+        );
+        load_rows_ordered(
+            &mut txn,
+            &markers,
+            payload.get("markers"),
+            &entity_order,
+            "markers",
+        );
         if let Some(Any::Map(lo)) = payload.get("loadouts") {
             for v in lo.values() {
                 load_row(&mut txn, &loadouts, v);
@@ -1280,10 +1371,34 @@ impl MissionDocCore {
         }
 
         if let Some(Any::Map(editor)) = payload.get("editor") {
-            load_rows(&mut txn, &self.factions, editor.get("factions"));
-            load_rows(&mut txn, &self.squads, editor.get("squads"));
-            load_rows(&mut txn, &self.slots, editor.get("slots"));
-            load_rows(&mut txn, &self.editor_layers, editor.get("editorLayers"));
+            load_rows_ordered(
+                &mut txn,
+                &self.factions,
+                editor.get("factions"),
+                &entity_order,
+                "factions",
+            );
+            load_rows_ordered(
+                &mut txn,
+                &self.squads,
+                editor.get("squads"),
+                &entity_order,
+                "squads",
+            );
+            load_rows_ordered(
+                &mut txn,
+                &self.slots,
+                editor.get("slots"),
+                &entity_order,
+                "slots",
+            );
+            load_rows_ordered(
+                &mut txn,
+                &self.editor_layers,
+                editor.get("editorLayers"),
+                &entity_order,
+                "editorLayers",
+            );
         }
 
         // T-219 — park every top-level key this loader does not understand. Nested values stay
@@ -1665,13 +1780,40 @@ impl Default for MissionDocCore {
 
 /// A `{x,y,z,rotation}` plain object as a `yrs` `Any::Map` (how Yjs stores `Slot.position`).
 fn position_any(x: f64, y: f64, z: f64, rotation: f64) -> Any {
-    let mut m: HashMap<String, Any> = HashMap::new();
-    m.insert("x".to_string(), Any::Number(x));
-    m.insert("y".to_string(), Any::Number(y));
-    m.insert("z".to_string(), Any::Number(z));
-    m.insert("rotation".to_string(), Any::Number(rotation));
-    Any::Map(Arc::new(m))
+    position_any_merged(HashMap::new(), x, y, z, rotation)
 }
+
+/// T-220 — write position coords while keeping any unknown sub-keys already on the map
+/// (`heading`, `source`, …). Replacing the whole map with only the four known keys was the
+/// "position sub-keys die on first edit" loss.
+fn position_any_merged(
+    mut existing: HashMap<String, Any>,
+    x: f64,
+    y: f64,
+    z: f64,
+    rotation: f64,
+) -> Any {
+    existing.insert("x".to_string(), Any::Number(x));
+    existing.insert("y".to_string(), Any::Number(y));
+    existing.insert("z".to_string(), Any::Number(z));
+    existing.insert("rotation".to_string(), Any::Number(rotation));
+    Any::Map(Arc::new(existing))
+}
+
+/// Slot keys the paste parallel arrays already author — extras must not override these
+/// (except unknown `position` sub-keys, merged separately).
+const PASTE_KNOWN_SLOT_KEYS: &[&str] = &[
+    "id",
+    "squadId",
+    "index",
+    "role",
+    "tag",
+    "assetId",
+    "position",
+    "stance",
+    "loadoutId",
+    "loadout",
+];
 
 /// Keep every element of `arr` except `Any::String`s present in `remove` (removed slot ids). Used by
 /// the `remove_slots` cross-ref cascade to filter a `slotIds`/`entityIds` array.
@@ -1913,12 +2055,29 @@ fn value_to_any(v: &serde_json::Value) -> Any {
     }
 }
 
-/// Load an array of entity rows (`Some(Any::Array)`) into `map`. `hydrate`'s `setEach`.
-fn load_rows(txn: &mut TransactionMut, map: &MapRef, rows: Option<&Any>) {
+/// T-220 — load an array of entity rows into `map` and record the authored id sequence on
+/// `entity_order[order_key]` so compile can rebuild arrays in hydrate order (yrs maps do not
+/// preserve insertion order).
+fn load_rows_ordered(
+    txn: &mut TransactionMut,
+    map: &MapRef,
+    rows: Option<&Any>,
+    entity_order: &MapRef,
+    order_key: &str,
+) {
+    let mut ids: Vec<Any> = Vec::new();
     if let Some(Any::Array(arr)) = rows {
         for row in arr.iter() {
+            if let Any::Map(fields) = row
+                && let Some(Any::String(id)) = fields.get("id")
+            {
+                ids.push(Any::String(id.clone()));
+            }
             load_row(txn, map, row);
         }
+    }
+    if !ids.is_empty() {
+        entity_order.insert(txn, order_key, Any::Array(ids.into()));
     }
 }
 
@@ -2007,6 +2166,14 @@ fn read_position<T: ReadTxn>(txn: &T, slot: &MapRef) -> (f64, f64, f64, f64) {
         (g("x"), g("y"), g("z"), g("rotation"))
     } else {
         (0.0, 0.0, 0.0, 0.0)
+    }
+}
+
+/// Owned clone of the slot's `position` map (empty when absent) — for T-220 merge-on-edit.
+fn read_position_map<T: ReadTxn>(txn: &T, slot: &MapRef) -> HashMap<String, Any> {
+    match slot.get(txn, "position") {
+        Some(Out::Any(Any::Map(m))) => (*m).clone(),
+        _ => HashMap::new(),
     }
 }
 
@@ -2433,6 +2600,7 @@ mod tests {
                 r#"{"primary":"{AAA}Rifle_M16A2.et","optic":null}"#.into(),
                 String::new(),
             ],
+            vec![String::new(), String::new()],
             Some(100.0),
             Some(100.0),
             12800.0,
@@ -2820,6 +2988,203 @@ mod tests {
             false,
         );
         assert!(compiled.get("serverMigrationToken").is_none());
+    }
+
+    // ── T-220 — five silent hydrate→compile / edit / paste losses ───────────────────────────────
+
+    /// Fixture payload that exercises every T-220 loss class at once.
+    fn t220_lossy_payload() -> serde_json::Value {
+        serde_json::json!({
+            "schemaVersion": 2,
+            "map": {
+                "terrain": "everon",
+                "bounds": [100, 200, 300, 400],
+                "center": [6400.5, 6400.25],
+                "label": "ops-sector"
+            },
+            "environment": {},
+            "editor": {
+                "factions": [],
+                "squads": [],
+                // Non-alphabetical id order — without preserve_order, compile re-sorts to z-a, z-b, z-c.
+                "slots": [
+                    {
+                        "id": "z-b", "squadId": "sq", "index": 0, "role": "Rifleman",
+                        "stance": "stand",
+                        "position": {
+                            "x": 10.5, "y": 20.5, "z": 1.25, "rotation": 45.0,
+                            "heading": 90.5, "source": "authored"
+                        },
+                        "customFlag": "keep-me",
+                        "doctrineTag": "assault"
+                    },
+                    {
+                        "id": "z-a", "squadId": "sq", "index": 1, "role": "Medic",
+                        "stance": "stand",
+                        "position": { "x": 1.0, "y": 2.0, "z": 0.0, "rotation": 0.0 }
+                    },
+                    {
+                        "id": "z-c", "squadId": "sq", "index": 2, "role": "SL",
+                        "stance": "stand",
+                        "position": { "x": 3.0, "y": 4.0, "z": 0.0, "rotation": 180.0 }
+                    }
+                ],
+                "editorLayers": []
+            }
+        })
+    }
+
+    /// **T-220 Class R — hydrate→compile must not silently rewrite authored payload fields.**
+    ///
+    /// Covers loss classes 1–3 (schemaVersion, map.* / bounds, array order). Perturb by forcing
+    /// `schemaVersion: 1`, dropping map extras, or sorting slot ids — each must fail this test.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn t220_hydrate_compile_preserves_schema_map_and_slot_order() {
+        let incoming = t220_lossy_payload();
+        let doc = MissionDocCore::new();
+        doc.hydrate(&incoming.to_string(), "lyr");
+
+        let compiled = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+
+        assert_eq!(
+            compiled["schemaVersion"],
+            serde_json::json!(2),
+            "authored schemaVersion must not downgrade to literal 1"
+        );
+        assert_eq!(
+            compiled["map"]["bounds"],
+            serde_json::json!([100, 200, 300, 400]),
+            "authored map.bounds must not be recomputed"
+        );
+        assert_eq!(
+            compiled["map"]["center"],
+            serde_json::json!([6400.5, 6400.25]),
+            "other map.* keys must survive"
+        );
+        assert_eq!(compiled["map"]["label"], serde_json::json!("ops-sector"));
+        assert_eq!(compiled["map"]["terrain"], serde_json::json!("everon"));
+
+        let ids: Vec<&str> = compiled["editor"]["slots"]
+            .as_array()
+            .expect("slots")
+            .iter()
+            .map(|s| s["id"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            ids,
+            vec!["z-b", "z-a", "z-c"],
+            "editor.slots array order must follow hydrate insertion, not id-sort"
+        );
+
+        // Full Save→reload→Save still holds.
+        let reloaded = save_and_reload(&doc);
+        let again = crate::mission::compile::compile_payload(
+            &reloaded.small_maps_json(),
+            &reloaded.slots_json(),
+            false,
+        );
+        assert_eq!(again["schemaVersion"], serde_json::json!(2));
+        assert_eq!(
+            again["map"]["bounds"],
+            serde_json::json!([100, 200, 300, 400])
+        );
+        assert_eq!(again["map"]["center"], serde_json::json!([6400.5, 6400.25]));
+    }
+
+    /// **T-220 Class R — position sub-keys survive the first edit.**
+    ///
+    /// Perturb by restoring `position_any` to a four-key-only write — this fails.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn t220_position_subkeys_survive_first_edit() {
+        let doc = MissionDocCore::new();
+        doc.hydrate(&t220_lossy_payload().to_string(), "lyr");
+
+        let before: serde_json::Value =
+            serde_json::from_str(&doc.slots_json()).expect("slots json");
+        assert_eq!(
+            before["z-b"]["position"]["heading"],
+            serde_json::json!(90.5)
+        );
+        assert_eq!(
+            before["z-b"]["position"]["source"],
+            serde_json::json!("authored")
+        );
+
+        doc.set_slot_position("z-b", 11.0, 21.0, 1.25, 45.0);
+        let after: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots json");
+        assert_eq!(after["z-b"]["position"]["x"].as_f64(), Some(11.0));
+        assert_eq!(after["z-b"]["position"]["y"].as_f64(), Some(21.0));
+        assert_eq!(
+            after["z-b"]["position"]["heading"].as_f64(),
+            Some(90.5),
+            "unknown position sub-keys must survive set_slot_position"
+        );
+        assert_eq!(
+            after["z-b"]["position"]["source"],
+            serde_json::json!("authored")
+        );
+
+        doc.update_slot_position("z-b", Some(12.0), None, None, None, 12800.0, 12800.0);
+        let after2: serde_json::Value =
+            serde_json::from_str(&doc.slots_json()).expect("slots json");
+        assert_eq!(after2["z-b"]["position"]["x"].as_f64(), Some(12.0));
+        assert_eq!(
+            after2["z-b"]["position"]["heading"].as_f64(),
+            Some(90.5),
+            "unknown position sub-keys must survive update_slot_position"
+        );
+    }
+
+    /// **T-220 Class R — paste must carry unknown slot fields (and position sub-keys).**
+    ///
+    /// Perturb by dropping `extras_json` merge — this fails.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn t220_paste_preserves_unknown_slot_fields() {
+        let doc = MissionDocCore::new();
+        doc.add_editor_layer("lyr", "Default", None);
+        let extras = serde_json::json!({
+            "customFlag": "keep-me",
+            "doctrineTag": "assault",
+            "position": { "heading": 90.5, "source": "authored" }
+        })
+        .to_string();
+        doc.paste_slots(
+            vec!["p-new".into()],
+            vec!["sq1".into()],
+            vec!["lyr".into()],
+            vec![10.0],
+            vec![20.0],
+            vec![45.0],
+            vec![1.25],
+            vec!["Rifleman".into()],
+            vec![String::new()],
+            vec![String::new()],
+            vec!["stand".into()],
+            vec![String::new()],
+            vec![extras],
+            Some(100.0),
+            Some(200.0),
+            12800.0,
+            12800.0,
+        );
+        let v: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots json");
+        assert_eq!(v["p-new"]["customFlag"], serde_json::json!("keep-me"));
+        assert_eq!(v["p-new"]["doctrineTag"], serde_json::json!("assault"));
+        // Known coords still come from the parallel arrays (anchor translate).
+        assert_eq!(v["p-new"]["position"]["x"].as_f64(), Some(100.0));
+        assert_eq!(v["p-new"]["position"]["y"].as_f64(), Some(200.0));
+        assert_eq!(v["p-new"]["position"]["heading"].as_f64(), Some(90.5));
+        assert_eq!(
+            v["p-new"]["position"]["source"],
+            serde_json::json!("authored")
+        );
     }
 
     /// **T-215 — the round trip map placement is worthless without.**

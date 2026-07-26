@@ -431,6 +431,7 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
         let (mut squad_ids, mut layer_ids) = (Vec::new(), Vec::new());
         let (mut roles, mut tags, mut asset_ids, mut stances, mut loadouts) =
             (Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new());
+        let mut extras = Vec::with_capacity(n);
         let g = |v: &serde_json::Value, k: &str| {
             v.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string()
         };
@@ -440,6 +441,19 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
                 .and_then(serde_json::Value::as_f64)
                 .unwrap_or(0.0)
         };
+        // T-220 — fields the parallel paste arrays do not carry (unknown keys + unknown
+        // position sub-keys). Known keys are filtered again inside `paste_slots`.
+        const PASTE_KNOWN: &[&str] = &[
+            "id",
+            "squadId",
+            "index",
+            "role",
+            "tag",
+            "assetId",
+            "stance",
+            "loadoutId",
+            "loadout",
+        ];
         for slot in &clip {
             ids.push(mint_id(ctx, core));
             sx.push(gp(slot, "x"));
@@ -464,6 +478,37 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
                     .map(std::string::ToString::to_string)
                     .unwrap_or_default(),
             );
+            let mut extra = serde_json::Map::new();
+            if let Some(obj) = slot.as_object() {
+                for (k, v) in obj {
+                    if PASTE_KNOWN.contains(&k.as_str()) {
+                        continue;
+                    }
+                    if k == "position" {
+                        if let Some(pos) = v.as_object() {
+                            let mut pos_extra = serde_json::Map::new();
+                            for (pk, pv) in pos {
+                                if !matches!(pk.as_str(), "x" | "y" | "z" | "rotation") {
+                                    pos_extra.insert(pk.clone(), pv.clone());
+                                }
+                            }
+                            if !pos_extra.is_empty() {
+                                extra.insert(
+                                    "position".into(),
+                                    serde_json::Value::Object(pos_extra),
+                                );
+                            }
+                        }
+                        continue;
+                    }
+                    extra.insert(k.clone(), v.clone());
+                }
+            }
+            extras.push(if extra.is_empty() {
+                String::new()
+            } else {
+                serde_json::Value::Object(extra).to_string()
+            });
         }
         core.paste_slots(
             ids.clone(),
@@ -478,6 +523,7 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
             asset_ids,
             stances,
             loadouts,
+            extras,
             cx,
             cy,
             b[2],

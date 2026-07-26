@@ -1009,6 +1009,7 @@ impl MissionDoc {
 
     // Bulk paste (batch 3b): JS mints the k ids + resolves each slot's target squad/layer; the
     // parallel arrays are index-aligned per slot. `""` tag/asset = omit.
+    // `extras_json[i]` = JSON object of unknown slot fields (T-220); `""` = none.
     #[allow(clippy::too_many_arguments)]
     pub fn paste_slots(
         &self,
@@ -1024,14 +1025,30 @@ impl MissionDoc {
         asset_ids: Vec<String>,
         stances: Vec<String>,
         loadouts: Vec<String>,
+        extras_json: Vec<String>,
         anchor_x: Option<f64>,
         anchor_y: Option<f64>,
         width: f64,
         height: f64,
     ) {
         self.inner.paste_slots(
-            ids, squad_ids, layer_ids, src_x, src_y, src_rot, zs, roles, tags, asset_ids, stances,
-            loadouts, anchor_x, anchor_y, width, height,
+            ids,
+            squad_ids,
+            layer_ids,
+            src_x,
+            src_y,
+            src_rot,
+            zs,
+            roles,
+            tags,
+            asset_ids,
+            stances,
+            loadouts,
+            extras_json,
+            anchor_x,
+            anchor_y,
+            width,
+            height,
         );
     }
 
