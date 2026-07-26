@@ -45,6 +45,18 @@
 #   UP. It says nothing about whether any of it WORKS. That needs T-181.16/.25 (dedicated
 #   server + real clients).
 #
+# ── EXIT CODES (identical contract to compile.sh — the two gates run back to back) ─────────
+#   0  the world booted and every assertion above held
+#   1  CODE: an assertion failed, or the API refused to produce a compiled document
+#      (`api_doc_fail`). Something under test is broken.
+#   2  usage — a bad argument, or --compiled together with --mission
+#   3  ENVIRONMENT: this machine is not set up to run the gate (`env_fail` / `api_env_fail`).
+#      The world was never booted, so a 3 says NOTHING about the mod. Do not read it as a code
+#      failure. T-186 established this split for the --compiled API lane only; T-209 extended it
+#      to the preconditions below, which were exiting 1 — i.e. reporting "no game installed" in
+#      the same breath as "your component did not instantiate".
+#   130/143  died on SIGINT/SIGTERM (128+signo), distinct from this script's own 1/2/3
+#
 # Usage:
 #   bash scripts/mod/world-boot.sh                    # the gate
 #   bash scripts/mod/world-boot.sh --selftest         # prove the verdict logic can FAIL
@@ -339,9 +351,27 @@ EOF
 fi
 
 # ── the real boot ──────────────────────────────────────────────────────────────────────────
-require_host
-[ -x "$SERVER_BIN" ] || { echo "ERROR: server binary not found at $SERVER_BIN" >&2; exit 1; }
-[ -f "$DEV_CONFIG" ] || { echo "ERROR: dev config not found at $DEV_CONFIG" >&2; exit 1; }
+# The general-purpose sibling of `api_env_fail` (which is defined further down, on the --compiled
+# lane, and so cannot be reached from here). Same exit 3, same reason: an environment failure
+# dressed as a code failure sends the next agent auditing a mod that is fine.
+env_fail() {
+  echo
+  echo "WORLD BOOT: ENV FAIL — $1"
+  echo "  This is the HARNESS's environment. The world was never booted, so this says NOTHING"
+  echo "  about the mod — do not read it as a code failure."
+  if [ -n "${2:-}" ]; then echo "  $2"; fi
+  exit 3
+}
+
+# `require_host` was called BARE here until T-209. This script runs under `set -uo pipefail` with
+# no `-e`, so its 127 was discarded: with no host bridge it printed a diagnosis and then carried
+# on to fail on the next line with a different, wrong one.
+require_host || env_fail "no host bridge (distrobox-host-exec/host-spawn) — cannot reach the real machine" \
+  "See scripts/lib/hostrun.sh: the container has no C toolchain and an older glibc, so the game binary cannot run in here at all."
+[ -x "$SERVER_BIN" ] || env_fail "server binary not found at $SERVER_BIN" \
+  "Install it from Steam (appid 1890870):  steam steam://install/1890870"
+[ -f "$DEV_CONFIG" ] || env_fail "dev config not found at $DEV_CONFIG" \
+  "The checkout does not look like this repo — verify the working tree before blaming the mod."
 
 ADDON_GUID="$(grep -oE '^\s*GUID\s+"[0-9A-Fa-f]+"' "$MOD_SRC/addon.gproj" | grep -oE '[0-9A-Fa-f]{8,}')"
 [ -n "$ADDON_GUID" ] || { echo "ERROR: could not read GUID from $MOD_SRC/addon.gproj" >&2; exit 1; }
@@ -781,8 +811,11 @@ for _ in $(seq 1 10); do kill -0 "$SRV_WAIT" 2>/dev/null || break; sleep 0.2; do
 kill "$SRV_WAIT" 2>/dev/null || true
 
 if [ ! -f "$LOG" ]; then
-  echo "ERROR: no console.log produced under $RUN_DIR/profile/logs" >&2
-  exit 1
+  # ENV, not code. The engine writes console.log before it loads a single script, so "no log at
+  # all" cannot be caused by anything in the mod — the binary never got far enough to read it.
+  # An unwritable profile dir, a wiped Steam depot or a killed process all land here.
+  env_fail "no console.log produced under $RUN_DIR/profile/logs — the engine never started writing" \
+    "Check that $SERVER_BIN runs at all and that ${TMPDIR:-/tmp} is writable."
 fi
 
 # A fatal is worth surfacing verbatim — this is where the -config/-addons landmine shows up.

@@ -151,3 +151,39 @@ jobs:
         run: go install github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker@latest
       - name: editorconfig-checker (repo root)
         run: editorconfig-checker
+
+  # --- mod gates, HOSTED PORTION (T-209) ---
+  # `scripts/mod/compile.sh` and `scripts/mod/world-boot.sh` are the mod's only regression
+  # instruments, and until T-209 neither ran in CI at all — 33k lines of Enfusion with nothing
+  # checking them on push. Both need the Arma Reforger DEDICATED SERVER present on the machine,
+  # which a GitHub-hosted runner does not have and cannot practicably install (a ~10 GB Steam
+  # depot behind a login), so the gates that need the engine run in **mod-gates.yml** on a
+  # self-hosted runner. Everything that genuinely runs WITHOUT the engine runs here instead, in
+  # the required unfiltered per-push gate, because that is where it belongs:
+  #
+  #   * `world-boot.sh --selftest` — replays the fail-closed triage against 10 committed log
+  #     fixtures (2 must pass, 8 must fail). Pure bash over text; 0.12 s measured, no engine, no
+  #     network. This is the part that actually regresses: every one of those 8 fixtures is an
+  #     escape the wave-4 verifier got PAST an earlier revision of the triage, including one that
+  #     differed only in the case of `Scripts/Game/`. Whoever next widens a grep in that function
+  #     now has a machine telling them what they broke.
+  #   * `bash -n` on both scripts — 1100 lines of load-bearing bash whose syntax nothing checked.
+  #     Weak on purpose (it is not shellcheck, which is not installed anywhere in this program and
+  #     would be red on arrival unverified), but it is the difference between finding a typo here
+  #     and finding it when the nightly mod gate cannot start.
+  #
+  # DELIBERATELY NOT HERE: `compile.sh --selftest`. It launches the engine. There is no honest way
+  # to run it hosted, and a stubbed version would be a green check for doing nothing — the single
+  # most expensive thing a CI job can be. It runs in mod-gates.yml, where a real server exists.
+  mod-gates-hosted:
+    name: mod gates (hosted portion — no game binary)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: bash syntax — compile.sh + world-boot.sh
+        run: |
+          bash -n scripts/mod/compile.sh
+          bash -n scripts/mod/world-boot.sh
+      - name: world-boot verdict logic (make mod-world-boot-selftest)
+        run: make mod-world-boot-selftest

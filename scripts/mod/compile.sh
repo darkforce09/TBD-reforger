@@ -15,7 +15,20 @@
 #   bash scripts/mod/compile.sh --probe=/tmp/p  # ALSO compile a throwaway addon of .c files —
 #                                               # the API-existence oracle, kept OUT of the mod tree
 #
-# Exit 0 = compiled clean.  Exit 1 = compile errors (printed as file:line).  Exit 2 = harness error.
+# ── EXIT CODES (identical contract to world-boot.sh — the two gates run back to back) ────
+#   0  compiled clean
+#   1  CODE: Enfusion compile errors, printed as file:line. The mod is broken. Fix the mod.
+#   2  the harness could not reach a verdict at all (bad argument, or a timeout with no marker).
+#      Neither proven-broken code nor a diagnosed environment fault.
+#   3  ENVIRONMENT: this machine is not set up to run the gate. Nothing was compiled, so a 3
+#      says NOTHING about tbd-framework. Do not read it as a code failure and do not open a mod
+#      ticket for it. (T-209: the stale-rdb load-count guard below used to exit 1 — a fix agent
+#      handed that verdict spends its budget auditing sources that compile perfectly.)
+#
+# CALLER LANDMINE: `make mod-compile-selftest` inverts this script's status and treats ANY
+# non-zero as "the gate correctly rejected broken source" — so on a machine with no dedicated
+# server it prints SELFTEST OK for a run that never happened. `.github/workflows/mod-gates.yml`
+# therefore does its own three-way check instead of calling that target. Filed separately.
 #
 # ── MEASURED FACTS THIS DEPENDS ON (probed 2026-07-25, do not re-derive) ─────────────────
 #   * Diagnostics land in  <profile>/logs/logs_<ts>/error.log  as:
@@ -40,6 +53,27 @@ SERVER_DIR="$HOME/.local/share/Steam/steamapps/common/Arma Reforger Server"
 SERVER_BIN="$SERVER_DIR/ArmaReforgerServer"
 MAX_WAIT="${TBD_COMPILE_TIMEOUT:-180}"
 
+# ── FAILURE CLASSIFICATION ────────────────────────────────────────────────────────────────
+# The mirror of world-boot.sh's `api_env_fail` (exit 3) / `api_doc_fail` (exit 1) split, applied
+# to this gate. Both scripts run back to back — in `scripts/mod/wave.sh` and now in
+# `.github/workflows/mod-gates.yml` — so a caller has to be able to ask "was that my machine or
+# my code?" with ONE exit code, not one convention per script.
+#
+# The wording is deliberately blunt about what a 3 does NOT mean. An unattended fix agent handed
+# a red gate will act on the first plausible reading, and "the mod's scripts did not compile"
+# (what the load-count guard used to print, at exit 1) reads as a code defect even when the true
+# cause is a stale build artefact on the host.
+env_fail() {
+  echo
+  echo "COMPILE GATE: ENV FAIL — $1"
+  echo "  This is the HARNESS's environment. The mod was never compiled, so this says NOTHING"
+  echo "  about tbd-framework — do not read it as a code failure."
+  # An `[ -n ... ] && echo` here would return 1 when there is no hint, and under `set -e` that
+  # kills the shell with status 1 — the exact code this function exists to avoid emitting.
+  if [ -n "${2:-}" ]; then echo "  $2"; fi
+  exit 3
+}
+
 SELFTEST=0
 KEEP_LOGS=0
 PROBE_DIR=""
@@ -48,20 +82,20 @@ for a in "$@"; do
     --selftest)  SELFTEST=1 ;;
     --keep-logs) KEEP_LOGS=1 ;;
     --probe=*)   PROBE_DIR="${a#*=}" ;;
-    -h|--help)   sed -n '2,30p' "$0"; exit 0 ;;
+    # Range covers the whole header block, up to `set -euo pipefail`. Re-check it when the
+    # header grows — a stale range silently truncates --help mid-sentence.
+    -h|--help)   sed -n '2,44p' "$0"; exit 0 ;;
     *) echo "compile.sh: unknown arg '$a'" >&2; exit 2 ;;
   esac
 done
 
-require_host || exit 2
+require_host || env_fail "no host bridge (distrobox-host-exec/host-spawn) — cannot reach the real machine" \
+  "See scripts/lib/hostrun.sh: the container has no C toolchain and an older glibc, so the game binary cannot run in here at all."
 
-[ -x "$SERVER_BIN" ] || {
-  echo "compile.sh: dedicated server not found at:" >&2
-  echo "  $SERVER_BIN" >&2
-  echo "Install it from Steam (appid 1890870):  steam steam://install/1890870" >&2
-  exit 2
-}
-[ -f "$MOD_SRC/addon.gproj" ] || { echo "compile.sh: no addon.gproj at $MOD_SRC" >&2; exit 2; }
+[ -x "$SERVER_BIN" ] || env_fail "dedicated server not found at $SERVER_BIN" \
+  "Install it from Steam (appid 1890870):  steam steam://install/1890870"
+[ -f "$MOD_SRC/addon.gproj" ] || env_fail "no addon.gproj at $MOD_SRC" \
+  "The checkout does not look like this repo — verify the working tree before blaming the mod."
 
 RUN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/tbd-compile.XXXXXX")"
 
@@ -78,6 +112,10 @@ RUN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/tbd-compile.XXXXXX")"
 # the recorded PID reaped `timeout` but left ./ArmaReforgerServer alive as an orphan, which
 # leaked one idle server per gate run.
 PIDFILE="$RUN_DIR/server.pid"
+# Set while the one-time vanilla calibration run below is live. That run spawns a SECOND server
+# with its OWN pidfile, which kill_run() knows nothing about — declared up here so cleanup() can
+# see it whether or not calibration ever started.
+CAL_DIR=""
 kill_run() {
   [ -f "$PIDFILE" ] || return 0
   local pgid; pgid="$(cat "$PIDFILE" 2>/dev/null || true)"
@@ -90,8 +128,19 @@ kill_run() {
   hostrun kill -9 -- "-$pgid" >/dev/null 2>&1 || true
 }
 
+# Idempotent: the signal traps below call this and then `exit`, which re-enters it through the
+# EXIT trap. Without the guard a Ctrl-C would run the whole teardown twice.
+CLEANED=0
 cleanup() {
+  [ "$CLEANED" -eq 0 ] || return 0
+  CLEANED=1
   kill_run
+  # The calibration run is not covered by kill_run() — different pidfile. Without this, a Ctrl-C
+  # or a cancelled CI job during the one-time calibration leaves an idle dedicated server on the
+  # operator's box with nothing left pointing at it.
+  if [ -n "$CAL_DIR" ] && [ -f "$CAL_DIR/server.pid" ]; then
+    hostrun kill -9 -- "-$(cat "$CAL_DIR/server.pid")" >/dev/null 2>&1 || true
+  fi
   if [ "$KEEP_LOGS" -eq 1 ]; then
     echo "  (logs kept: $RUN_DIR)"
   else
@@ -99,6 +148,13 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
+# EXIT alone does NOT cover a fatal signal: an untrapped SIGTERM kills a non-interactive bash
+# outright and the EXIT trap never runs, orphaning the server this run started. That is not
+# hypothetical any more — a cancelled `mod-gates.yml` job SIGTERMs the step, and world-boot.sh
+# already carries these two traps for exactly this reason (T-186). 128+signo is the shell's own
+# convention for "died on this signal", so 130/143 stay distinguishable from this script's 1/2/3.
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
 
 mkdir -p "$RUN_DIR/addons" "$RUN_DIR/profile"
 # Stage by symlink — the mod tree is the source of truth and is never copied or mutated.
@@ -272,6 +328,7 @@ loaded=$(grep -o "Module: Game; loaded [0-9]*x files" "$console" | tail -1 | gre
 if [ ! -s "$VANILLA_BASELINE_FILE" ]; then
   echo "    (calibrating vanilla-only baseline, one time)"
   cal_dir="$(mktemp -d "${TMPDIR:-/tmp}/tbd-cal.XXXXXX")"
+  CAL_DIR="$cal_dir"   # hand it to cleanup(); this server is invisible to kill_run()
   mkdir -p "$cal_dir/addons" "$cal_dir/profile"
   hostrun env -C "$SERVER_DIR" setsid sh -c '
     echo $$ > "$1/server.pid"
@@ -290,16 +347,22 @@ if [ ! -s "$VANILLA_BASELINE_FILE" ]; then
   [ -f "$cal_dir/server.pid" ] && hostrun kill -9 -- "-$(cat "$cal_dir/server.pid")" >/dev/null 2>&1 || true
   kill "$cal_pid" 2>/dev/null || true
   rm -rf "$cal_dir"
+  CAL_DIR=""
 fi
 vanilla=$(cat "$VANILLA_BASELINE_FILE" 2>/dev/null || echo 0)
 if [ "${vanilla:-0}" -gt 0 ] && [ "${loaded:-0}" -le "${vanilla:-0}" ]; then
-  echo
-  echo "FAIL: the mod's scripts did not compile."
-  echo "  Game module loaded $loaded files; vanilla-only is $vanilla."
-  echo "  Loading no more than vanilla means tbd-framework was NOT compiled, even though the"
-  echo "  run itself was clean. Most likely cause: resourceDatabase.rdb missing or stale."
-  echo "  Fix: open apps/mod/tbd-framework in Workbench once so it regenerates the rdb."
-  exit 1
+  # EXIT 3 (environment), NOT 1 (code) — and the distinction is the whole point of the guard.
+  #
+  # This branch means the engine ran, reported a clean compile, and silently compiled NONE of our
+  # scripts. There is by construction no TBD source that could be at fault: the load count sitting
+  # exactly on vanilla is the engine refusing to read the addon at all. Reporting that as exit 1
+  # (which this did until T-209) tells the next agent — human or otherwise — that tbd-framework is
+  # broken, and the message it printed, "the mod's scripts did not compile", reads the same way.
+  # The recovery is a Workbench pass on the operator's machine; no amount of reading .c files
+  # produces it.
+  env_fail \
+    "the Game module loaded $loaded files and vanilla-only is $vanilla, so tbd-framework's scripts were NOT compiled — the engine skipped the loose addon entirely" \
+    "Almost always a stale or unreadable apps/mod/tbd-framework/resourceDatabase.rdb (it IS committed, but the engine rejects it once it drifts from the script tree). Fix: open apps/mod/tbd-framework in Workbench once so it regenerates the rdb, then re-run."
 fi
 
 files=$(grep -o "Module: Game; loaded [0-9]*x files; [0-9]*x classes" "$console" | tail -1 || true)
