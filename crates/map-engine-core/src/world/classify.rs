@@ -16,6 +16,14 @@ pub const OVERSIZED_HALF_EXTENT_M: f64 = 64.0;
 
 /// `renderClassForPrefab(kind, cls)` (`:48`) → render-class name, or `None` (→ 255).
 /// `water` draws as a building footprint only for pier/dock (T-090.5.2.2).
+///
+/// T-244: `vehicle` draws on the **existing `prop` render class**, deliberately. Static wrecks
+/// classified as `prop` before the vehicle kind existed, so routing them to `prop` keeps the map
+/// pixel-identical across the reclassification. A new `RENDER_CLASS_CODES` entry would NOT be
+/// equivalent — that array's index is the `VisibleSet.classes` wire byte.
+///
+/// Any kind that falls through to `_ => None` becomes `NO_CLASS` and is **never drawn or picked**.
+/// That is silent: no gate fails, the objects just vanish. Add an arm when adding a kind.
 #[must_use]
 pub fn render_class_for_prefab(kind: &str, cls: &str) -> Option<&'static str> {
     match kind {
@@ -24,7 +32,7 @@ pub fn render_class_for_prefab(kind: &str, cls: &str) -> Option<&'static str> {
         "tree" => Some("tree"),
         "vegetation" => Some("vegetation"),
         "rock" => Some("rockLarge"),
-        "prop" | "utility" => Some("prop"),
+        "prop" | "utility" | "vehicle" => Some("prop"),
         _ => None,
     }
 }
@@ -90,6 +98,30 @@ mod tests {
         assert_eq!(render_class_for_prefab("prop", "barrel"), Some("prop"));
         assert_eq!(render_class_for_prefab("utility", "pole"), Some("prop"));
         assert_eq!(render_class_for_prefab("mystery", "x"), None);
+    }
+
+    /// T-244 — every `vehicleClass` draws, and draws as `prop`.
+    ///
+    /// Without the `vehicle` arm these all return `None` → `NO_CLASS` → never drawn or picked,
+    /// and nothing else in the workspace goes red. This test is the only thing standing between
+    /// a future edit to that match and 13 silently invisible wrecks on Everon.
+    #[test]
+    fn vehicle_kind_draws_as_prop() {
+        for cls in ["car", "truck", "armor", "boat", "unknown"] {
+            assert_eq!(
+                render_class_for_prefab("vehicle", cls),
+                Some("prop"),
+                "vehicle/{cls} must render; None means NO_CLASS = invisible + unpickable"
+            );
+            assert_ne!(
+                class_code(render_class_for_prefab("vehicle", cls).unwrap()),
+                NO_CLASS,
+                "vehicle/{cls} resolved to the unclassified sentinel"
+            );
+        }
+        // The wire format is 5 codes; the vehicle lane must NOT have grown a 6th.
+        assert_eq!(RENDER_CLASS_CODES.len(), 5);
+        assert_eq!(class_code("prop"), 3);
     }
 
     #[test]

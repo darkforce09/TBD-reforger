@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "description": "Shared prefab classification rules \u2014 apply to ALL terrains on export. Rules MUST emit structured gameplay, spatial, and render.iconKey for Eden AI + glyphs. See t090_eden_ai_world_object_schema.md and t090_world_object_glyphs.md.",
+  "description": "Shared prefab classification rules \u2014 apply to ALL terrains on export. Rules MUST emit structured gameplay, spatial, and render.iconKey for Eden AI + glyphs. See t090_eden_ai_world_object_schema.md and t090_world_object_glyphs.md. EDITING THIS FILE CHANGES NOTHING UNTIL THE CATALOGUE IS REBUILT \u2014 packages/map-assets/<terrain>/objects/prefabs.json.gz is a committed artifact carrying the kind/class from the LAST run of `tbd-tools world build-objects`. A rule edit is latent until then, so the gates you run now are validating the rules, NOT the shipped catalogue; re-verify after a rebuild. Rules are evaluated in FILE ORDER and the FIRST rule with a matching match.resourceNameContains substring wins (case-sensitive), so APPEND new rules \u2014 an appended rule can only claim prefabs that currently fall through to `fallback`, which is what makes it safe. T-244 added the vehicle lane (Props/Wrecks/*) this way; note its `_turret` and CannonWreck rules must stay AHEAD of the vehicle rules, whose hull paths they would otherwise match.",
   "rules": [
     {
       "match": {
