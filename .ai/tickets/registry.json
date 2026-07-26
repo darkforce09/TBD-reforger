@@ -7031,7 +7031,7 @@
       "impact": [
         "contract"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2190,
       "stream": "mission-creator",
       "targets": [
@@ -7974,7 +7974,7 @@
       "impact": [
         "e2e"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2670,
       "stream": "mod-framework",
       "targets": [
@@ -7993,7 +7993,7 @@
       "impact": [
         "e2e"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2680,
       "stream": "mod-framework",
       "targets": [
