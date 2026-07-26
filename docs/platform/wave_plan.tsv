@@ -46,6 +46,7 @@
 0	T-326	Matches played before an identity link never backfill, so deployments undercount	apps/website/api/src/handlers/me.rs
 0	T-324	Claiming a second ORBAT seat does not release the first	apps/website/api/src/handlers/events.rs
 0	T-228	ORBAT unique index omits faction — cross-faction squad names 500 on attach	apps/website/api/migrations
+1	T-352	tbd-editor-adopted marker is unscoped per-account editor state	apps/website/frontend/src/editor_session.rs
 1	T-346	set_armory binds the faction join key untrimmed and defaulted	apps/website/api/src/handlers/missions.rs
 1	T-347	A whitespace source_match_id becomes a live dedupe key and destroys match history	apps/website/api/src/handlers/telemetry.rs
 1	T-348	Five PATCH handlers let a whitespace value overwrite real content	apps/website/api/src/handlers/events.rs; apps/website/api/src/handlers/cms.rs

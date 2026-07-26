@@ -9708,7 +9708,7 @@
     {
       "id": "T-338",
       "title": "Sign-out does not purge local documents, so account A's mission is restorable by B",
-      "summary": "FOUND by T-320 and REPRODUCED, not inferred. This is the T-221 bug surviving in the in-memory half — T-221 scoped the IndexedDB records; it did not scope the RAM cache in front of them.\n\nTwo linked defects:\n  1. `mission_hydrate.rs:571` `recall()` is NOT account-scoped. `has_snapshot` (~:590) checks the in-memory LOCAL_BACKUPS map BEFORE the scoped IDB read, and LOCAL_BACKUPS is never cleared on sign-out. Measured: `same_realm_has_after_switch=true` — within one page load, changing account does NOT hide A's snapshot, so a client-side sign-out then sign-in leaves A's document restorable by B.\n  2. `yrs_persist.rs:44` DOCUMENTS a sign-out purge that does not exist. `purge_owner` (yrs_persist.rs:319) has exactly one caller repo-wide — `evict_foreign_records` at :361. `auth::clear_session` (auth.rs:235) does not call it. T-221 wrote purge_owner as `pub` and ready and said the call site needed the discord_id captured BEFORE clear_session; nobody wired it.\n\nFix shape: clear (or owner-key) LOCAL_BACKUPS on sign-out, AND wire purge_owner into clear_session, capturing the owner first. Both halves are needed — either alone leaves a path.\n\nThe browser gate is HEALTHY as of T-320, so this is now directly testable: `gate render-check --seed-auth --assert-js` took T-221's 30-assertion probe. Extend it rather than reasoning about it. One thing T-320 could NOT exercise and you should: the boot-time `evict_foreign_records` backstop — its second-account realm was a same-origin iframe that boots as A, so it needs a real reload with a different seed.",
+      "summary": "FOUND by T-320 and REPRODUCED, not inferred. This is the T-221 bug surviving in the in-memory half — T-221 scoped the IndexedDB records; it did not scope the RAM cache in front of them.\n\nTwo linked defects:\n  1. `mission_hydrate.rs:571` `recall()` is NOT account-scoped. `has_snapshot` (~:590) checks the in-memory LOCAL_BACKUPS map BEFORE the scoped IDB read, and LOCAL_BACKUPS is never cleared on sign-out. Measured: `same_realm_has_after_switch=true` — within one page load, changing account does NOT hide A's snapshot, so a client-side sign-out then sign-in leaves A's document restorable by B.\n  2. `yrs_persist.rs:44` DOCUMENTS a sign-out purge that does not exist. `purge_owner` (yrs_persist.rs:319) has exactly one caller repo-wide — `evict_foreign_records` at :361. `auth::clear_session` (auth.rs:235) does not call it. T-221 wrote purge_owner as `pub` and ready and said the call site needed the discord_id captured BEFORE clear_session; nobody wired it.\n\nFix shape: clear (or owner-key) LOCAL_BACKUPS on sign-out, AND wire purge_owner into clear_session, capturing the owner first. Both halves are needed — either alone leaves a path.\n\nThe browser gate is HEALTHY as of T-320, so this is now directly testable: `gate render-check --seed-auth --assert-js` took T-221's 30-assertion probe. Extend it rather than reasoning about it. One thing T-320 could NOT exercise and you should: the boot-time `evict_foreign_records` backstop — its second-account realm was a same-origin iframe that boots as A, so it needs a real reload with a different seed.\n\nSHIPPED 2026-07-26, fully browser-verified — the most rigorously proven slice of the run.\n\nIT SCOPED RATHER THAN CLEARED, deliberately, and the reasoning is the durable part: a session that EXPIRES re-namespaces the IDB records (load_state resolves the owner token per call) while running no handler at all, so a clear-only fix still hands A's document to whoever holds the page next. Scoped, both tiers of has_snapshot always agree — and a has() that says yes about bytes restore() may not read is worse than either answer alone.\n\nTHE OWNER CAPTURE READS OFF THE SIGNAL, NOT localStorage, and this is subtle enough to be worth recording: layout.rs re-persists the cleared blob immediately after clear_session, so a token resolved afterwards is `anon` — the purge would then delete a signed-out visitor's drafts while leaving A's exactly where they were. It is the first statement in clear_session, before the five set(None) calls, and a blank/absent discord_id purges nothing.\n\nBROWSER-MEASURED, three `gate render-check --assert-js` probes, each re-run returning a bare boolean so the gate's own exit code asserts it — all exit 0:\n  same_realm_has_after_switch: FALSE (was true) · restore and undoRestore both refuse · L1b_doc_untouched: true (digest + slot_count identical after both refusals) · L1c_has_back_as_owner: true — hidden from B, NOT destroyed for A.\n  THE DISCRIMINATING RUN: with EVERY IDB record deleted so only RAM can answer — ram_only_has_as_owner true, ram_only_has_as_other FALSE, ram_only_restore_back_as_owner true. So the false is a statement about LOCAL_BACKUPS, not about the IDB read T-221 already scoped. That is the difference between testing the fix and testing around it.\n  evict_foreign_records EXERCISED — the leg T-320 explicitly could not reach. A genuinely fresh document and fresh wasm instance booting as B with A's three records on disk: L3_evicted_A true, L3_A_keys_left [], L3_has_as_B false. It defeated the harness's seed re-injection by dropping --seed-auth and owning tbd-auth itself.\n  Sign-out purge on a real click: 3 A-owned keys -> purged_idb true, keys_after_signout [] and the RAM copies DESTROYED not hidden.\n  Legacy adoption intact and still refusing to destroy: survived both the boot eviction and the sign-out purge, not returned, orphans() lists both, adopt_orphans() {adopted:1, skipped:1} with adopted bytes byte-equal, the skipped one still on disk and still reported.\n\nOnly the internal ordering rationale was reasoned rather than measured. Every externally observable claim was browser-measured.",
       "program": "platform",
       "surfaces": [
         "FRONTEND"
@@ -9716,19 +9716,20 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3154,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 1
+      "priority": 1,
+      "shipped_at": "94c66915"
     },
     {
       "id": "T-339",
       "title": "Two gate-harness gaps T-320 could not reach from its own files",
-      "summary": "Both found and diagnosed by T-320, both left because the files were outside its ownership. Neither is red today; both are one small change.\n\n1. **`vsuite.rs:366` launches its own chromium** and therefore does NOT get T-320's `ensure_gate_font_cache()`. It is green only because it renders ordinary routes, which survive a zero-font environment — the mission editor is the one route that reaches a per-character fallback and aborts. Moving `ensure_gate_font_cache()` into `cdp::launch` closes it for EVERY caller in one line. `cdp.rs` was not T-320's file. Do this one first; it is the durable form of the fix.\n\n2. **`smokes.rs render_check` builds its Harness with `api_proxy: None`**, so render-check cannot reach an API at all (T-226 hit this independently and had to drive Chrome by hand). T-320 confirmed it is NOT a wedge — the editor boots, installs all three bridges and answers --assert-js with no backend — but any assertion needing live data is impossible. The flag has to be threaded through `bin/gate.rs` -> `RenderCheckArgs`, and `bin/gate.rs` was outside T-320's list.\n\nLeave `gate smoke hydrate` returning exit 2 on 'backend not reachable' alone: T-320 judged it correct, and it is — a data-safety gate that could not run must not report green.",
+      "summary": "Both found and diagnosed by T-320, both left because the files were outside its ownership. Neither is red today; both are one small change.\n\n1. **`vsuite.rs:366` launches its own chromium** and therefore does NOT get T-320's `ensure_gate_font_cache()`. It is green only because it renders ordinary routes, which survive a zero-font environment — the mission editor is the one route that reaches a per-character fallback and aborts. Moving `ensure_gate_font_cache()` into `cdp::launch` closes it for EVERY caller in one line. `cdp.rs` was not T-320's file. Do this one first; it is the durable form of the fix.\n\n2. **`smokes.rs render_check` builds its Harness with `api_proxy: None`**, so render-check cannot reach an API at all (T-226 hit this independently and had to drive Chrome by hand). T-320 confirmed it is NOT a wedge — the editor boots, installs all three bridges and answers --assert-js with no backend — but any assertion needing live data is impossible. The flag has to be threaded through `bin/gate.rs` -> `RenderCheckArgs`, and `bin/gate.rs` was outside T-320's list.\n\nLeave `gate smoke hydrate` returning exit 2 on 'backend not reachable' alone: T-320 judged it correct, and it is — a data-safety gate that could not run must not report green.\n\nT-339 BITES HARDER THAN 'no API' — sharpened by T-338, which hit it and worked around it.\n\nWith api_proxy: None, `--seed-auth` leaves the session HALF-hydrated: bootstrap sets `user` from localStorage but /me fails, so `access_token` stays None, `is_authenticated()` is false, and THE WHOLE USER MENU — including Sign Out — never renders. So it is not merely 'no live data'; any probe of an authenticated surface silently tests a signed-out page.\n\nT-338's workaround, using the app's own path, worth keeping until this is fixed: boot at `--path '/auth/callback#access_token=x&refresh_token=y&expires_at=2036-01-01T00:00:00Z' --seed-auth`, or history.pushState plus a synthetic PopStateEvent to it. set_tokens writes only the three token signals, so `user` is untouched.\n\nTwo more harness facts from the same slice:\n  - leptos_router DROPS THE FRAGMENT on anchor-click navigation (location.hash empty, parse_callback_hash fails). pushState + PopStateEvent carries it.\n  - Navigating the TOP-LEVEL document into the editor and then doing IndexedDB + wasm-bridge work in that same document WEDGED the renderer on four separate attempts, including with per-step timeout races. Hosting the editor in an iframe and driving IDB from the top level is stable and boots in ~2 polls. Root cause not chased — it is not that ticket's, but it will bite the next frontend probe, and it is a DIFFERENT wedge from the fontconfig abort T-320 fixed.",
       "program": "platform",
       "surfaces": [
         "CI"
@@ -9988,6 +9989,26 @@
       ],
       "executor": "claude-code",
       "priority": 1
+    },
+    {
+      "id": "T-352",
+      "title": "tbd-editor-adopted marker is the last unscoped per-account editor state",
+      "summary": "FOUND by T-338 while scoping the RAM cache; the last piece of per-account editor state still keyed globally. The `tbd-editor-adopted:<id>` localStorage marker in editor_session.rs is not account-scoped.\n\nNOT a data-loss path any more — T-223 stopped reading it — which is why T-338 left it rather than widening a security fix. But it is the same shape as the bug T-221 and T-338 spent two slices closing: per-account state under a global key. It should either be scoped with the same `u{len}:{owner}|{logical}` scheme, or deleted if nothing reads it at all.\n\nCheck the second option first. If T-223 removed the only reader, this is dead state being written for no one, and deleting it is better than scoping it.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3168,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
     }
   ]
 }
