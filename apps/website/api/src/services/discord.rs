@@ -62,10 +62,43 @@ pub struct TokenResponse {
 }
 
 /// The subset of `/users/@me` we use.
+///
+/// **`username` is deliberately required — do not add `#[serde(default)]` to it (T-319).**
+/// This is the T-185 door one field over, in a service rather than a handler, and the
+/// difference matters: a malformed *upstream* response is not a client error, so there is no
+/// 400 to return and no request to reject. The only lever here is whether the body decodes.
+///
+/// Discord's user object always carries `username` — it is required and non-nullable, and
+/// there is no such thing as a Discord account without one. So a 200 body that lacks it is
+/// not "this user has no username", it is **not a user object**: a gateway or CDN answering
+/// 200 with something else, or an API shape change. Defaulted, that decoded cleanly into
+/// `DiscordUser { username: "" }`, and because [`Self::display_name`] falls back to
+/// `username` and [`Self::handle`] is built from it, [`crate::handlers::oauth`] bound two
+/// empty strings into `users.username` and `users.discord_handle`.
+///
+/// **The right answer is to fail the login, not to patch the value.** Keeping the stored
+/// name would need a `COALESCE` in the oauth upsert, which is the wrong place to encode
+/// "the profile was junk" — and it would still let the junk profile mint a session. Failing
+/// the decode routes the whole callback down its existing `Err` path
+/// (`fetch_user` → `err("discord_unreachable")`), which writes nothing at all: no user row,
+/// no session, no audit entry. The user retries; a transient blip costs one login.
+///
+/// **"It self-heals on the next login" is only half true, and the wrong half is the one that
+/// lasts.** Verified against the live schema: `users.username`/`discord_handle` do heal, via
+/// `ON CONFLICT (discord_id) DO UPDATE SET username = EXCLUDED.username`. But the same
+/// callback then writes an `auth.login` row with `actor_name = ''` and the message
+/// `" signed in via Discord"`, and `audit_logs` is append-only — this crate contains zero
+/// `UPDATE audit_logs`. The user row recovers; the audit trail keeps an anonymous login
+/// forever, and every action taken during the blank window is logged under an empty actor.
+///
+/// Like `GuildMember::roles` this does **not** get `null_default` either — `"username": null`
+/// is malformed for a user object, so failing closed is right. (It already failed pre-fix,
+/// since `#[serde(default)]` covers a missing field but not an explicit `null`; the hole was
+/// only ever the *absent* case.) An explicit `""` still decodes: that is a stated answer, not
+/// silence, and the same line `GuildMember` draws between an absent `roles` and `[]`.
 #[derive(Debug, Deserialize)]
 pub struct DiscordUser {
     pub id: String,
-    #[serde(default)]
     pub username: String,
     #[serde(default, deserialize_with = "null_default")]
     pub global_name: String,
@@ -389,6 +422,49 @@ mod tests {
             chain.contains("missing field `roles`"),
             "the decode error should name the missing field, got: {chain}"
         );
+    }
+
+    #[tokio::test]
+    async fn a_200_profile_without_a_username_fails_to_decode() {
+        // T-319, and the T-185 shape one struct over. `#[serde(default)]` on `username` meant a
+        // 200 carrying anything that merely lacks the field decoded into `username: ""`, and the
+        // oauth callback binds `display_name()`/`handle()` — both empty in that state — into
+        // `users.username`/`users.discord_handle`. Measured pre-fix on `{"id":"7","avatar":"a1"}`:
+        // decode Ok, display_name() "", handle() "". Failing the decode is what routes it to the
+        // Err → `discord_unreachable` → write-nothing path.
+        let err = decode_2xx::<DiscordUser>(ok_response(r#"{"id":"7","avatar":"a1"}"#))
+            .await
+            .expect_err("a 200 profile with no `username` must not decode");
+        // `{:#}` walks anyhow's cause chain — reqwest's Display is only "error decoding response
+        // body"; the serde reason we care about sits underneath.
+        let chain = format!("{err:#}");
+        assert!(
+            chain.contains("missing field `username`"),
+            "the decode error should name the missing field, got: {chain}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_200_profile_with_a_null_username_fails_to_decode() {
+        // Pins the half that was never broken, so a later "let's be tolerant like the other
+        // fields" pass cannot quietly reopen it by reaching for `null_default`. `null` is
+        // malformed for a user object; it must stay an error, exactly as on `GuildMember::roles`.
+        decode_2xx::<DiscordUser>(ok_response(r#"{"id":"7","username":null}"#))
+            .await
+            .expect_err("an explicit null username must not decode");
+    }
+
+    #[tokio::test]
+    async fn a_200_profile_with_an_empty_username_decodes() {
+        // Absent must fail; explicitly empty must not. Same line `GuildMember` draws between a
+        // missing `roles` and `[]` — silence is the bug, a stated value is an answer.
+        let u = decode_2xx::<DiscordUser>(ok_response(
+            r#"{"id":"7","username":"","global_name":"Dave"}"#,
+        ))
+        .await
+        .expect("an explicit empty username is a stated value");
+        assert_eq!(u.username, "");
+        assert_eq!(u.display_name(), "Dave");
     }
 
     #[tokio::test]

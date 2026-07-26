@@ -139,13 +139,30 @@ pub async fn unlink(
 }
 
 /// Body posted by the in-game mod (service-token authenticated).
+///
+/// **`arma_character` is deliberately required — do not add `#[serde(default)]` to it
+/// (T-319).** Its two siblings default *and are guarded* by the emptiness check in
+/// [`ingest_link_confirm`]; this one defaulted with nothing behind it, and the handler binds
+/// it into `UPDATE users SET … arma_character = $2` unconditionally. Same shape as T-185 and
+/// T-218: the default is not "no data", it is an affirmative empty string that overwrites.
+///
+/// Measured pre-fix on the dev fixture: a confirm carrying `code` + `arma_id` but no
+/// `arma_character` returned 200 `{"linked":true}` and took `[TBD] Dev Operator` to `''`.
+/// The account stays linked, so nothing ever re-runs this write — the name is simply gone
+/// until someone unlinks and relinks. That silence is the whole problem, and a 400 is the
+/// cheap end of it: the confirm fails loudly, the code is still live, the mod retries.
+///
+/// The live caller already sends the field unconditionally
+/// (`apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c` `BuildPayload`
+/// appends all three), so requiring it costs the mod nothing and only closes the door on a
+/// payload that has *lost* the field. An explicit `""` still writes `""` — that is a stated
+/// intent and matches `unlink`, which parks the column at `''` on purpose.
 #[derive(Debug, Deserialize)]
 pub struct LinkConfirmRequest {
     #[serde(default)]
     pub code: String,
     #[serde(default)]
     pub arma_id: String,
-    #[serde(default)]
     pub arma_character: String,
 }
 
@@ -157,7 +174,10 @@ pub async fn ingest_link_confirm(
     _svc: ServiceAuth,
     body: Result<Json<LinkConfirmRequest>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
-    let Json(req) = body.map_err(|_| ApiError::bad_request("code and arma_id required"))?;
+    // Names `arma_character` too: after T-319 it must be *present*, so an omitted one arrives
+    // here as a decode error and a 400 listing only the other two misdirects the caller.
+    let Json(req) =
+        body.map_err(|_| ApiError::bad_request("code, arma_id and arma_character are required"))?;
     if req.code.is_empty() || req.arma_id.is_empty() {
         return Err(ApiError::bad_request("code and arma_id required"));
     }
