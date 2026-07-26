@@ -15,6 +15,8 @@ use serde_json::{Value, json};
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
 
+use map_engine_core::mission::flatten::scan_editor_payload_types;
+
 use crate::contract::{validate_mission_document, validate_mission_editor_payload};
 use crate::error::ApiError;
 use crate::handlers::{is_unique_violation, load_mission};
@@ -53,6 +55,61 @@ fn valid_weather(s: &str) -> Option<WeatherType> {
         "dense_fog" => Some(WeatherType::DenseFog),
         _ => None,
     }
+}
+
+/// `HH:MM` or `HH:MM:SS` → the same string, bound verbatim to the `missions.time_of_day` `time`
+/// column; `None` when it is not a clock this platform can round-trip.
+///
+/// ── Why this exists (T-367, from T-366's driven 500s) ────────────────────────────────────────
+/// `time_of_day` reached `$N::time` with no validator of its own, so Postgres did the validating and
+/// its rejection surfaced as **HTTP 500 `{"error":"internal error"}`**. Driven on the live path:
+/// POST `"   "` / `"not-a-time"` / `"\t"` / `"25:00"` → 500 (POST's `is_empty()` guard is untrimmed,
+/// so whitespace walks straight through it); PATCH had no guard at all, so `""` 500'd there too.
+/// A caller cannot tell any of those from a genuine server fault.
+///
+/// ── Why it is NARROWER than the column, deliberately ────────────────────────────────────────
+/// Measured against Postgres 18 directly: `time` also accepts `24:00`, `0600`, `4:05 PM`, `allballs`,
+/// `06:00:00.5` and `06:00:60` (a leap second, silently normalised to `06:01:00`). Every one of those
+/// would store fine and then be unreadable to the editor: the SPA's clock parser
+/// (`eden_chrome::hhmm_to_minutes`) takes `HH:MM`/`HH:MM:SS` with `h <= 23`, `m <= 59`, `sec <= 59`,
+/// and T-192 exists because a value that parser cannot read parks the time-of-day scrubber at the
+/// 06:00 default **in silence** — an author who set 21:45 sees 06:00 after a reload. So "what the
+/// column accepts" is the wrong bar; the right one is "what the platform can round-trip", and this
+/// mirrors `hhmm_to_minutes` exactly so the two boundaries agree (T-346's lesson: the bug is
+/// DISAGREEMENT between two sites). It is stricter in one place only — every component must be ASCII
+/// digits, because Rust's `u32::from_str` accepts a leading `+` (`"+6:00"` would parse here and then
+/// be rejected by Postgres, which is the 500 all over again).
+///
+/// Blast radius measured before tightening: all **87** live `missions` rows are plain `HH:MM:SS` with
+/// zero sub-second components, and every producer that goes through this API emits `HH:MM` (the
+/// create dialog, `RowMirror::set_time` via `normalize_clock`) or `HH:MM:SS` (the row hydrate
+/// round-trip). The committed seeds `INSERT` directly and never touch this path. Nothing live is
+/// rejected.
+///
+/// Returns the input UNCHANGED rather than a canonical form: this layer stores the author's bytes
+/// verbatim, and normalising one side of a column two sites write is how T-346 happened. This
+/// REJECTS; it does not repair.
+fn valid_time_of_day(s: &str) -> Option<&str> {
+    let mut parts = s.split(':');
+    let h: u32 = digits(parts.next()?)?;
+    let m: u32 = digits(parts.next()?)?;
+    if let Some(sec) = parts.next()
+        && digits(sec)? > 59
+    {
+        return None;
+    }
+    if parts.next().is_some() || h > 23 || m > 59 {
+        return None;
+    }
+    Some(s)
+}
+
+/// One `HH`/`MM`/`SS` component: non-empty ASCII digits only. See [`valid_time_of_day`] on `+`.
+fn digits(part: &str) -> Option<u32> {
+    if part.is_empty() || !part.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    part.parse().ok()
 }
 
 fn can_edit(u: &AuthUser, m: &Mission) -> bool {
@@ -312,12 +369,21 @@ pub async fn create_mission(
             "title, terrain, game_mode and max_players are required",
         ));
     }
+    // An ABSENT/empty `time_of_day` keeps its documented default; a value that was SUPPLIED and is
+    // not a clock is the author's mistake and is refused. Those are different facts and the split is
+    // deliberate: treating `"   "` as "unspecified" would be the silent downgrade T-348 argued
+    // against for an unrecognised cms status, and trimming it here would put a whitespace rule in a
+    // second place (T-356 owns that, in Rust, at one site).
     let time_of_day = if input.time_of_day.is_empty() {
-        "14:00"
+        "14:00".to_string()
     } else {
-        &input.time_of_day
-    }
-    .to_string();
+        let Some(t) = valid_time_of_day(&input.time_of_day) else {
+            return Err(ApiError::bad_request(
+                "invalid time_of_day (expected HH:MM or HH:MM:SS)",
+            ));
+        };
+        t.to_string()
+    };
     let payload_str = input.payload.as_ref().map_or("{}", |p| p.get()).to_string();
 
     validate_payload(&payload_str)?;
@@ -414,9 +480,17 @@ pub async fn update_mission(
         };
         qb.push(", weather = ").push_bind(weather);
     }
+    // Unlike POST there is no default to fall back to — a PATCH naming the key is asking to SET it,
+    // and `""` is not a clock. Every value this rejects answered 500 before T-367 (`""`, `"   "`,
+    // `"not-a-time"` all did), so nothing that worked stops working.
     if let Some(t) = &input.time_of_day {
+        let Some(t) = valid_time_of_day(t) else {
+            return Err(ApiError::bad_request(
+                "invalid time_of_day (expected HH:MM or HH:MM:SS)",
+            ));
+        };
         qb.push(", time_of_day = ")
-            .push_bind(t.clone())
+            .push_bind(t.to_string())
             .push("::time");
     }
     if let Some(mp) = input.max_players {
@@ -1070,10 +1144,52 @@ pub async fn get_compiled_mission(
     let doc = match flatten_to_mod_document(&m, v.json_payload.0.get().as_bytes()) {
         Ok(doc) => doc,
         Err(CompileError::NoSlots) => return Err(ApiError::conflict("no placed slots")),
-        Err(CompileError::Parse(_)) => return Err(ApiError::internal("could not compile mission")),
+        Err(CompileError::Parse(detail)) => {
+            return Err(unreadable_stored_payload(&id, &detail));
+        }
     };
     let body = validated_compiled_body(&id, &doc)?;
     Ok(([(header::CONTENT_TYPE, "application/json")], body).into_response())
+}
+
+/// A stored payload the mission compiler cannot deserialise (`CompileError::Parse`).
+///
+/// **Still 500, deliberately** — the same argument [`validated_compiled_body`] makes: the caller is
+/// a game server that supplied nothing but an id. What T-367 changed are the two things that were
+/// actually wrong here:
+///
+/// 1. **The diagnosis was destroyed.** The arm read `Err(CompileError::Parse(_))` and dropped the
+///    detail on the floor, so the only trace of a permanently-uncompilable mission was the access
+///    log's bare `status=500`. The `serde` message names the offending key; it now reaches both the
+///    log and the response body. Without it, "unrecoverable without hand-editing the stored JSON"
+///    was literally true — nobody could see WHICH key was wrong.
+/// 2. **The state was reachable.** Every byte in `mission_versions.json_payload` arrives through
+///    [`validate_payload`], which since T-367 runs the compiler's own deserialiser, so a payload
+///    that cannot parse is a 400 at save. This branch is no longer reachable through the API at all,
+///    and reaching it now means one of exactly two things — the row was written around the API
+///    (direct SQL, a restore, a seed), or the save-time precheck and this parse DISAGREE, which is a
+///    defect in the precheck. Both deserve a 500. Answering 4xx would let that second case hide as
+///    "your mission is misconfigured", the trap [`validated_compiled_body`] documents.
+///
+/// Recovery needs no hand-editing of stored JSON either way: saving a new version moves
+/// `missions.current_version_id`, and the save boundary now guarantees the replacement compiles.
+fn unreadable_stored_payload(mission_id: &str, detail: &str) -> ApiError {
+    // The mod's error path (TBD_MissionLoader.OnBackendFetchError) discards the response body and
+    // fails over to its cached copy, so this log line — not the JSON below — is what an operator
+    // actually reads.
+    tracing::error!(
+        mission = %mission_id,
+        detail = %detail,
+        "stored mission payload does not deserialise into the editor graph the compiler reads",
+    );
+    ApiError::with_details(
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "could not compile mission",
+        json!({
+            "reason": "stored payload does not match the editor graph the compiler reads",
+            "detail": detail,
+        }),
+    )
 }
 
 // --- shared ---
@@ -1171,16 +1287,34 @@ async fn load(pool: &PgPool, id: &str) -> Result<Mission, ApiError> {
 }
 
 /// Validate a payload string against the editor schema (400 + details / 500).
+///
+/// This is the COMPLETE write boundary for `mission_versions.json_payload`: the two `INSERT`s in
+/// this file (`create_mission`, `create_version`) are the only ones in the crate, and both go
+/// through here. Two independent passes feed one `details` array, so the wire shape is unchanged:
+///
+/// * **`validate_mission_editor_payload`** — `mission-editor-payload.schema.json`, plus the
+///   T-181.44 `wire_safety` walk it already carries.
+/// * **`scan_editor_payload_types`** (T-367) — the mission compiler's OWN deserialiser, run here so
+///   a shape it cannot read is a **400 at save**, in front of the author, instead of a **500 at
+///   `GET /missions/:id/compiled`** in front of a game server that supplied nothing but an id. That
+///   pass is not expressible in the payload schema without restating the compiler's structs in a
+///   second language, which is precisely the drift that produced the bug — see
+///   [`scan_editor_payload_types`] for the measurements and the argument.
+///
+/// The type pass reports nothing when the bytes are not JSON at all; the schema pass owns that
+/// message ("payload is not valid JSON") and a second copy of it would be noise.
 fn validate_payload(payload: &str) -> Result<(), ApiError> {
-    match validate_mission_editor_payload(payload.as_bytes()) {
-        Ok(details) if details.is_empty() => Ok(()),
-        Ok(details) => Err(ApiError::with_details(
-            StatusCode::BAD_REQUEST,
-            "invalid mission payload",
-            json!(details),
-        )),
-        Err(_) => Err(ApiError::internal("payload validation unavailable")),
+    let mut details = validate_mission_editor_payload(payload.as_bytes())
+        .map_err(|_| ApiError::internal("payload validation unavailable"))?;
+    details.extend(scan_editor_payload_types(payload.as_bytes()));
+    if details.is_empty() {
+        return Ok(());
     }
+    Err(ApiError::with_details(
+        StatusCode::BAD_REQUEST,
+        "invalid mission payload",
+        json!(details),
+    ))
 }
 
 // tiny wire-string helpers on the model enums used above.
@@ -1198,5 +1332,68 @@ impl MissionStatus {
             MissionStatus::Rejected => "rejected",
             MissionStatus::Archived => "archived",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The `time_of_day` accept set, pinned against behaviour MEASURED on Postgres 18 rather than
+    /// assumed — see [`valid_time_of_day`] for why the two columns of this table differ.
+    ///
+    /// The `false` rows split into two kinds, and both matter:
+    ///
+    /// * Postgres would REJECT them (`"   "`, `"not-a-time"`, `"25:00"`, `"06:60"`, `"+6:00"`, `""`).
+    ///   Each was a live **500** before T-367; each is now a 400. `"+6:00"` is the one Rust's
+    ///   `u32::from_str` would have let through on its own — it takes a leading `+`.
+    /// * Postgres would ACCEPT them (`"24:00"`, `"0600"`, `"4:05 PM"`, `"allballs"`,
+    ///   `"06:00:00.5"`, `"06:00:60"`). Those are refused on purpose: they store fine and are then
+    ///   unreadable to `eden_chrome::hhmm_to_minutes`, which parks the author's scrubber back at the
+    ///   06:00 default without saying anything. That is the T-192 bug, and letting one in through
+    ///   this door would recreate it.
+    #[test]
+    fn time_of_day_accepts_the_clocks_the_platform_can_round_trip() {
+        for (input, accepted) in [
+            // What every producer on this path actually emits.
+            ("06:00", true),
+            ("06:00:00", true),
+            ("6:00", true),
+            ("23:59:59", true),
+            ("00:00", true),
+            ("21:45:00", true),
+            // Postgres rejects these — each was a 500.
+            ("", false),
+            ("   ", false),
+            ("\t", false),
+            ("not-a-time", false),
+            ("25:00", false),
+            ("06:60", false),
+            ("+6:00", false),
+            (" 6:00", false),
+            ("06:00:", false),
+            ("06:00:00:00", false),
+            // Postgres ACCEPTS these; the editor cannot read them back.
+            ("24:00", false),
+            ("0600", false),
+            ("4:05 PM", false),
+            ("allballs", false),
+            ("06:00:00.5", false),
+            ("06:00:60", false),
+        ] {
+            assert_eq!(
+                valid_time_of_day(input).is_some(),
+                accepted,
+                "time_of_day {input:?}"
+            );
+        }
+    }
+
+    /// The value is stored as the author wrote it. This layer REJECTS; it does not repair — a
+    /// one-sided normalisation of a column two sites write is how T-346 happened.
+    #[test]
+    fn an_accepted_time_of_day_is_returned_verbatim() {
+        assert_eq!(valid_time_of_day("6:00"), Some("6:00"));
+        assert_eq!(valid_time_of_day("06:00:00"), Some("06:00:00"));
     }
 }

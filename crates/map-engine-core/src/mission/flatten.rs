@@ -685,6 +685,222 @@ struct MarkerIn {
     label: String,
 }
 
+// ---- T-367: the save-time precheck that keeps a type error out of the compile path ----
+
+/// Does this payload deserialise into the editor graph [`flatten_to_mod_document`] compiles?
+/// Empty result = it does, and `/compiled` cannot answer [`CompileError::Parse`] for these bytes.
+///
+/// ## Why this exists — the regression T-202 introduced (T-367)
+///
+/// `mission-editor-payload.schema.json` is deliberately lenient about SHAPE: `editor.slots`,
+/// `squads` and `editorLayers` carry no per-item subschema at all so validation stays O(1) on
+/// missions with hundreds of thousands of slots, and `$defs/editorFaction` constrains `key` and
+/// nothing else (its `additionalProperties` is left OPEN on purpose, so the row can carry authored
+/// briefing prose and `MissionDocCore::hydrate` can round-trip it). A payload can therefore satisfy
+/// that schema completely and still be a hard `serde` type error in this module — and until this
+/// function, the only place that surfaced was `GET /missions/:id/compiled`, as
+/// [`CompileError::Parse`] mapped to **HTTP 500 "could not compile mission"**, in front of a game
+/// server that supplied nothing but an id and can do nothing about it.
+///
+/// Measured on the real HTTP path before this landed: a faction row carrying
+/// `"briefing": "Take the bridge before dawn."` saved **201** and then 500'd on every `/compiled`,
+/// permanently, because a version's payload is immutable once stored. `"briefing": 3`,
+/// `"briefing": true`, `briefing.situation: 5`, `briefing.markers: "OBJ"` and `marker.x: "5"` all
+/// did the same.
+///
+/// That is not a hypothetical typo. It is the `briefing`-vs-`briefings` confusion
+/// [`crate::mission::compile_export`] documents as one keystroke away: **`briefing`** is the mission
+/// ROW's library-blurb STRING (the `missions.briefing` column, authored by `POST`/`PATCH
+/// /missions/:id`), while **`briefings`** is the per-faction OBJECT, and the per-faction one is
+/// authored HERE, at `editor.factions[].briefing`. A client that writes the blurb onto a faction row
+/// gets a mission that saves clean and never compiles again.
+///
+/// ## Why the verdict is the real deserialiser and not a second description of the shape
+///
+/// The accept/reject decision below is `serde_json::from_slice::<EditorPayload>` — the exact call
+/// [`flatten_to_mod_document`] makes, on the same bytes. So "the save boundary accepted it" and "the
+/// compiler can parse it" are one sentence by construction rather than two that have to be kept in
+/// step. Two consequences, both load-bearing:
+///
+/// * **It cannot reject a payload that compiles today.** The accept set *is* the compile set. All
+///   128 live payloads (39 faction rows) pass, as does every committed fixture — verified, not
+///   assumed. That matters because T-357 measured that a naive tightening of the payload SCHEMA
+///   would have rejected six live missions; this cannot, because it is not a new rule, only an
+///   earlier reading of the existing one.
+/// * **It cannot drift.** A hand-written probe struct here, or a per-field subschema in
+///   `mission-editor-payload.schema.json`, would be a SECOND declaration of this shape — and the
+///   next slice to add a typed field to [`SlotIn`] or [`BriefingIn`] would reopen exactly the gap
+///   T-202 opened, because nothing would force the two to agree. `orbat_slots.faction` (T-346) is
+///   the standing lesson: the bug was DISAGREEMENT between two sites, not either site's rule.
+///
+/// ## Why this does not restore the pre-T-202 silent ignore
+///
+/// Before T-202 [`FactionIn`] had no `briefing` field and there is no `deny_unknown_fields` here, so
+/// a mistyped one was dropped without a word and the author shipped a mission whose briefing screen
+/// was silently blank. Restoring that would hide the author's mistake — the failure mode T-348
+/// argued against for an unrecognised CMS status and T-349 for a substituted mortar weapon. Silence
+/// is what let both survive. This reports instead, at the save boundary, to the author, while the
+/// editor is still open and the payload is still editable.
+///
+/// The findings are advisory one-liners in the shape
+/// [`crate::mission::wire_safety::scan_editor_payload`] already uses (T-181.44 solved the same
+/// problem for control characters), so `validate_payload` folds them into the same
+/// `400 invalid mission payload` `details` array with no change to the wire.
+#[must_use]
+pub fn scan_editor_payload_types(payload: &[u8]) -> Vec<String> {
+    let Err(err) = serde_json::from_slice::<EditorPayload>(payload) else {
+        return Vec::new();
+    };
+    // Syntax and EOF mean the bytes are not JSON at all, which the JSON-Schema pass already reports
+    // as "payload is not valid JSON". Only a DATA error — syntactically fine, wrong type — is this
+    // function's business, and reporting the other twice in one `details` array is just noise.
+    if !err.is_data() {
+        return Vec::new();
+    }
+
+    // `err` above is the verdict and it is already final. The walk below only sharpens the WORDING:
+    // serde reports `invalid type: string, expected struct BriefingIn at line 1 column 152`, and on
+    // a one-line 142 MB save payload (T-060 measured exactly that size) a byte column is not a
+    // place an author can go. A JSON pointer is. Because the walk can only ever *rename* a rejection
+    // the deserialiser already made, an incomplete or wrong guess here cannot change what is
+    // accepted — it falls back to serde's own message below.
+    let located = serde_json::from_slice::<serde_json::Value>(payload)
+        .ok()
+        .map(|v| locate_briefing_type_errors(&v))
+        .unwrap_or_default();
+    if !located.is_empty() {
+        return located;
+    }
+    vec![format!(
+        "/editor: this payload does not match the shape the mission compiler reads, so it cannot be \
+         compiled — {err}"
+    )]
+}
+
+/// Name a JSON node the way an author reading an error can match it to what they typed.
+fn json_type_of(v: &serde_json::Value) -> &'static str {
+    match v {
+        serde_json::Value::Null => "null",
+        serde_json::Value::Bool(_) => "a boolean",
+        serde_json::Value::Number(_) => "a number",
+        serde_json::Value::String(_) => "a string",
+        serde_json::Value::Array(_) => "an array",
+        serde_json::Value::Object(_) => "an object",
+    }
+}
+
+/// Best-effort JSON pointers for the faction-row `briefing` type errors — the surface T-202 added
+/// and the one every measured 500 in T-367 came through.
+///
+/// Deliberately NOT a general validator, and never the verdict: [`scan_editor_payload_types`] runs
+/// this only after `serde` has already rejected the payload, and ignores an empty result. The rules
+/// mirror the derived deserialisers exactly for the object form every real client writes —
+/// `Option<String>` takes a string or `null`, `Vec<MarkerIn>` takes an array, `f64`/`String` take a
+/// number/string. The array-as-struct form `serde` also accepts (`"briefing": []` deserialises to an
+/// all-default [`BriefingIn`], which is why that case compiles today and must keep compiling) is
+/// left to serde's own message rather than restated here.
+fn locate_briefing_type_errors(payload: &serde_json::Value) -> Vec<String> {
+    let Some(factions) = payload
+        .pointer("/editor/factions")
+        .and_then(serde_json::Value::as_array)
+    else {
+        return Vec::new();
+    };
+    let mut out: Vec<String> = Vec::new();
+
+    for (i, f) in factions.iter().enumerate() {
+        let Some(briefing) = f.get("briefing") else {
+            continue; // the common case: this side authored no orders.
+        };
+        match briefing {
+            // `Option<BriefingIn>` — an explicit null is "no briefing", the same as no key.
+            serde_json::Value::Null => {}
+            serde_json::Value::Object(_) => {
+                locate_one_briefing(&mut out, i, briefing);
+            }
+            // The tuple form serde also accepts; leave the wording to serde.
+            serde_json::Value::Array(_) => {}
+            other => out.push(format!(
+                "/editor/factions/{i}/briefing: expected an object of this faction's orders, got {}. \
+                 On a faction row `briefing` is the per-faction briefing OBJECT \
+                 (`situation`/`mission`/`execution`/`markers`); the mission's one-line library blurb \
+                 is a string on the MISSION, set by POST/PATCH /missions/:id — not this key",
+                json_type_of(other)
+            )),
+        }
+        if out.len() >= crate::mission::wire_safety::MAX_REPORTED {
+            out.truncate(crate::mission::wire_safety::MAX_REPORTED);
+            out.push(format!(
+                "/editor/factions: stopped after {} findings — fix these and save again to see the \
+                 rest",
+                crate::mission::wire_safety::MAX_REPORTED
+            ));
+            break;
+        }
+    }
+    out
+}
+
+/// The three prose fields and the marker rows of one object-form `briefing`.
+fn locate_one_briefing(out: &mut Vec<String>, i: usize, briefing: &serde_json::Value) {
+    for field in ["situation", "mission", "execution"] {
+        if let Some(v) = briefing.get(field)
+            && !v.is_string()
+            && !v.is_null()
+        {
+            out.push(format!(
+                "/editor/factions/{i}/briefing/{field}: expected a string of briefing prose or null, \
+                 got {}",
+                json_type_of(v)
+            ));
+        }
+    }
+
+    let Some(markers) = briefing.get("markers") else {
+        return;
+    };
+    let Some(rows) = markers.as_array() else {
+        out.push(format!(
+            "/editor/factions/{i}/briefing/markers: expected an array of map markers, got {}",
+            json_type_of(markers)
+        ));
+        return;
+    };
+    for (j, m) in rows.iter().enumerate() {
+        if !m.is_object() {
+            if !m.is_array() {
+                out.push(format!(
+                    "/editor/factions/{i}/briefing/markers/{j}: expected a marker object with \
+                     `x`/`z`/`icon`/`label`, got {}",
+                    json_type_of(m)
+                ));
+            }
+            continue;
+        }
+        for field in ["x", "z"] {
+            if let Some(v) = m.get(field)
+                && !v.is_number()
+            {
+                out.push(format!(
+                    "/editor/factions/{i}/briefing/markers/{j}/{field}: expected a number of metres, \
+                     got {}",
+                    json_type_of(v)
+                ));
+            }
+        }
+        for field in ["icon", "label"] {
+            if let Some(v) = m.get(field)
+                && !v.is_string()
+            {
+                out.push(format!(
+                    "/editor/factions/{i}/briefing/markers/{j}/{field}: expected a string, got {}",
+                    json_type_of(v)
+                ));
+            }
+        }
+    }
+}
+
 /// Mission-level metadata the flatten needs. The backend builds this from its `Mission` sqlx
 /// model; the wasm client passes it as JSON (camelCase). Decouples the core compiler from any
 /// backend type (T-145 Phase 2b). `terrain`/`weather_preset` are already the `as_str()` values.
@@ -2810,5 +3026,236 @@ mod tests {
         // (the author named the side) but empty as a VALUE.
         assert!(out.get("opfor").is_some());
         assert_eq!(out["opfor"].as_object().expect("object").len(), 0);
+    }
+
+    // ---- T-367: the save-time precheck ----
+
+    /// The minimal graph the T-367 repro used against the live API, with an arbitrary value hung on
+    /// `editor.factions[0].briefing`. One placed slot, so a compile gets past
+    /// [`CompileError::NoSlots`] and reaches the parse this ticket is about.
+    ///
+    /// `briefing` is omitted entirely when `value` is `None`, which is a DIFFERENT payload from one
+    /// carrying `"briefing": null` — both are legal and both must stay legal.
+    fn graph_with_faction_briefing(value: Option<serde_json::Value>) -> Vec<u8> {
+        let mut faction = serde_json::json!({
+            "id": "f_blu", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"],
+        });
+        if let Some(v) = value {
+            faction
+                .as_object_mut()
+                .expect("object")
+                .insert("briefing".to_string(), v);
+        }
+        serde_json::to_vec(&serde_json::json!({
+            "schemaVersion": 1,
+            "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
+            "editor": {
+                "factions": [faction],
+                "squads": [{"id": "sq1", "factionId": "f_blu", "callsign": "Ranger",
+                            "name": "Ranger 1-1", "slotIds": ["n0"]}],
+                "slots": [{"id": "n0", "squadId": "sq1", "index": 0, "role": "SL",
+                           "position": {"x": 4837.6, "y": 7710.8, "z": 0, "rotation": 45}}],
+                "editorLayers": [],
+            },
+        }))
+        .expect("serialises")
+    }
+
+    /// THE regression, in the exact shape that was measured on the live HTTP path: a faction row
+    /// carrying the mission's library blurb — a STRING — where the per-faction briefing OBJECT goes.
+    ///
+    /// Before T-367 this saved **201** and then answered **500** on every `GET /missions/:id/compiled`
+    /// for the life of the version, because a stored payload is immutable. It is now a save-time
+    /// finding, and the finding has to carry the two things an author can act on: WHERE (a JSON
+    /// pointer, not serde's byte column — a save payload is one line and T-060 measured one at
+    /// 142 MB) and WHICH of the two one-keystroke-apart keys they wanted.
+    #[test]
+    fn a_library_blurb_on_a_faction_row_is_a_save_time_finding_not_a_compile_500() {
+        let payload =
+            graph_with_faction_briefing(Some(serde_json::json!("Take the bridge before dawn.")));
+
+        // The compiler cannot read it — this is the 500 the ticket is about, at its source.
+        assert!(matches!(
+            flatten_to_mod_document(&meta(), &payload),
+            Err(CompileError::Parse(_))
+        ));
+
+        // And the save boundary now says so first, in the author's terms.
+        let found = scan_editor_payload_types(&payload);
+        assert_eq!(found.len(), 1, "{found:?}");
+        assert!(
+            found[0].starts_with("/editor/factions/0/briefing:"),
+            "the finding must name the offending node, not a byte column: {found:?}"
+        );
+        assert!(found[0].contains("got a string"), "{found:?}");
+        assert!(
+            found[0].contains("library blurb"),
+            "the finding must name the briefing-vs-briefings distinction that caused it: {found:?}"
+        );
+    }
+
+    /// The load-bearing property, and the one that keeps this fix from becoming the next T-202:
+    /// **the save boundary's accept set IS the compiler's parse set.**
+    ///
+    /// [`scan_editor_payload_types`] takes its verdict from `serde_json::from_slice::<EditorPayload>`
+    /// — the same call [`flatten_to_mod_document`] makes — so the two cannot disagree by
+    /// construction. This asserts it over every shape the T-367 audit measured, in both directions,
+    /// so that a future field added to [`BriefingIn`] / [`MarkerIn`] / [`SlotIn`] cannot reopen the
+    /// gap: either both sides move together or this test fails.
+    ///
+    /// The right-hand column is the *measured* pre-fix behaviour of `/compiled`. Note the three
+    /// `true` rows near the bottom: `"briefing": []` (serde reads a struct from a seq, giving an
+    /// all-default briefing), `situation: null` (`Option<String>`) and an unknown subkey (no
+    /// `deny_unknown_fields`) all COMPILE today and produced `briefings={"blufor":{}}`. A fix that
+    /// rejected them would be a new rule breaking working payloads — T-357's finding, on the other
+    /// side of the same file.
+    #[test]
+    fn the_precheck_accepts_exactly_what_the_compiler_can_parse() {
+        let cases: [(&str, Option<serde_json::Value>, bool); 11] = [
+            ("no briefing key", None, true),
+            ("explicit null", Some(serde_json::Value::Null), true),
+            (
+                "the library blurb",
+                Some(serde_json::json!("some string")),
+                false,
+            ),
+            ("a number", Some(serde_json::json!(3)), false),
+            ("a boolean", Some(serde_json::json!(true)), false),
+            (
+                "situation as a number",
+                Some(serde_json::json!({"situation": 5})),
+                false,
+            ),
+            (
+                "markers as a string",
+                Some(serde_json::json!({"markers": "OBJ"})),
+                false,
+            ),
+            (
+                "marker.x as a string",
+                Some(
+                    serde_json::json!({"markers": [{"x": "5", "z": 10, "icon": "o", "label": "L"}]}),
+                ),
+                false,
+            ),
+            ("an array", Some(serde_json::json!([])), true),
+            (
+                "situation null",
+                Some(serde_json::json!({"situation": null})),
+                true,
+            ),
+            (
+                "an unknown subkey",
+                Some(serde_json::json!({"nope": 1})),
+                true,
+            ),
+        ];
+
+        for (name, value, compiles) in cases {
+            let payload = graph_with_faction_briefing(value);
+            let found = scan_editor_payload_types(&payload);
+            let compiled = flatten_to_mod_document(&meta(), &payload);
+
+            assert_eq!(
+                compiled.is_ok(),
+                compiles,
+                "{name}: compile outcome moved away from the measured baseline"
+            );
+            assert_eq!(
+                found.is_empty(),
+                compiles,
+                "{name}: the save boundary and the compiler disagree — {found:?}"
+            );
+        }
+    }
+
+    /// The defect is not about briefings; briefings are only where it was found. EVERY typed field in
+    /// the editor graph is a 500 waiting to happen, because `mission-editor-payload.schema.json`
+    /// leaves `editor.slots` with no per-item subschema at all (deliberately — an O(slots) schema pass
+    /// costs 615.6 ms at 367k slots, per `wire_safety`'s header). Running the compiler's own
+    /// deserialiser closes all of them at once, including the ones no briefing subschema would.
+    ///
+    /// `position.x` is the sharpest example: it is a bare `f64`, and there is no sane way to *degrade*
+    /// a mistyped spawn coordinate — you cannot invent where the author meant to put the seat. The
+    /// only correct answer is to refuse it at the door, which is what this now does.
+    #[test]
+    fn a_type_error_anywhere_in_the_graph_is_caught_not_just_in_a_briefing() {
+        let payload = serde_json::to_vec(&serde_json::json!({
+            "schemaVersion": 1,
+            "editor": {
+                "factions": [{"key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"]}],
+                "squads": [{"id": "sq1", "callsign": "Ranger", "slotIds": ["n0"]}],
+                "slots": [{"id": "n0", "index": 0, "role": "SL",
+                           "position": {"x": "4837.6", "y": 7710.8, "z": 0, "rotation": 45}}],
+            },
+        }))
+        .expect("serialises");
+
+        assert!(matches!(
+            flatten_to_mod_document(&meta(), &payload),
+            Err(CompileError::Parse(_))
+        ));
+        let found = scan_editor_payload_types(&payload);
+        assert_eq!(found.len(), 1, "{found:?}");
+        // No briefing is involved, so the pointer walk has nothing to say and serde's own message
+        // carries the finding. The VERDICT is what matters; the wording is best-effort by design.
+        assert!(found[0].starts_with("/editor:"), "{found:?}");
+        assert!(found[0].contains("cannot be compiled"), "{found:?}");
+    }
+
+    /// Bytes that are not JSON are the JSON-Schema pass's message ("payload is not valid JSON"), and
+    /// `validate_payload` concatenates both passes into one `details` array — so reporting it here
+    /// too would put the same fact in front of the author twice.
+    #[test]
+    fn not_json_is_left_to_the_schema_pass() {
+        assert!(scan_editor_payload_types(b"not json at all").is_empty());
+        assert!(scan_editor_payload_types(b"{\"editor\":").is_empty());
+    }
+
+    /// Every field of a marker gets its own pointer, so an author fixing a bad marker row is not told
+    /// only that "something in markers is wrong".
+    #[test]
+    fn marker_field_findings_name_the_row_and_the_field() {
+        let payload = graph_with_faction_briefing(Some(serde_json::json!({
+            "markers": [
+                {"x": 1.0, "z": 2.0, "icon": "objective", "label": "OBJ A"},
+                {"x": "5", "z": 10, "icon": 7, "label": "OBJ B"},
+            ],
+        })));
+
+        let found = scan_editor_payload_types(&payload);
+        assert_eq!(found.len(), 2, "{found:?}");
+        assert!(
+            found[0].starts_with("/editor/factions/0/briefing/markers/1/x:"),
+            "{found:?}"
+        );
+        assert!(
+            found[1].starts_with("/editor/factions/0/briefing/markers/1/icon:"),
+            "{found:?}"
+        );
+        // The healthy row 0 is not mentioned.
+        assert!(
+            !found.iter().any(|f| f.contains("/markers/0/")),
+            "{found:?}"
+        );
+    }
+
+    /// The whole reason the precheck can be trusted at the write boundary: it must not reject
+    /// anything real. The two committed fixtures this module already compiles are the closest thing
+    /// to live payloads in the tree, and both must pass clean.
+    #[test]
+    fn the_precheck_is_silent_on_every_payload_this_module_already_compiles() {
+        for (name, bytes) in [
+            ("FIXTURE", FIXTURE.as_bytes()),
+            (
+                "COMPILER_SHAPED_PAYLOAD",
+                COMPILER_SHAPED_PAYLOAD.as_bytes(),
+            ),
+        ] {
+            assert!(
+                scan_editor_payload_types(bytes).is_empty(),
+                "{name} compiles but the save boundary would have rejected it"
+            );
+        }
     }
 }
