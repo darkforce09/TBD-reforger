@@ -19,6 +19,14 @@ use crate::state::AppState;
 
 const LOW_FPS_THRESHOLD: f64 = 20.0;
 
+/// How many unresolved `arma_id`s the T-229 audit row names before it summarises the rest.
+///
+/// The **complete** list always reaches the caller in the response; this bounds only the audit
+/// row's prose, which is read by a human. Today every player in a production match is
+/// unresolved (see `ingest_match_results`), so an uncapped list would be a 64-id paragraph with
+/// the count — the actionable number — buried in the middle of it.
+const AUDIT_UNLINKED_ID_SAMPLE: usize = 20;
+
 fn valid_terrain(s: &str) -> Option<TerrainType> {
     match s {
         "everon" => Some(TerrainType::Everon),
@@ -415,6 +423,61 @@ pub struct MatchResultsInput {
 /// `POST /api/v1/ingest/match-results` — idempotent match + per-player stats,
 /// attendance marking, user-stat recompute, leaderboard refresh (service-token).
 ///
+/// **A player whose `arma_id` resolves to no account keeps their row, and the 200 now says so
+/// out loud (T-229).** The row was never the problem; the *silence* was. `discord_id` on
+/// `match_player_stats` is a cached answer to "who owns this `arma_id`" (see
+/// `handlers::me::BACKFILL_MATCH_STATS`), `leaderboard_totals` filters
+/// `WHERE discord_id IS NOT NULL` (`0001_initial_schema.sql:289`) and `recompute_user_stats`
+/// counts only non-NULL rows — so an unresolved row is invisible to every aggregate on the
+/// platform while the endpoint reported `{"players": n}`, the *submitted* count, and nothing
+/// else. Measured on a throwaway database: one POST carrying `kills=17 deaths=3
+/// longest_kill_m=842 vehicles_destroyed=4` for an unlinked `arma_id` returned
+/// `{"match_id":"…","players":1}`, wrote the row with `discord_id` NULL, and left
+/// `leaderboard_totals` with **zero** rows for that player and `users.total_deployments` at
+/// **0**. Nothing anywhere recorded that a scoreline had gone missing.
+///
+/// **Three fixes were on the table and only one of them is honest:**
+/// - **400 the POST** — rejected, for three reasons of increasing force. (1) The row is *real
+///   telemetry*: the `arma_id` is real, the match happened, the counters were measured, and the
+///   row is *recoverable* — `ingest_link_confirm` claims exactly the `discord_id IS NULL` rows
+///   at link time (T-326), so parking it loses a player from the aggregates while rejecting it
+///   loses the data. (2) There is no per-player 400 to be had: the roster is validated before
+///   the transaction and the transaction is atomic, so one unresolved player would reject the
+///   **whole op** — the match row and every other player's line with it. (3) Decisively, it is
+///   not a sender error at all. `users.arma_id` is written by exactly two things, the dev seed
+///   and `POST /ingest/link-confirm`, and the shipping mod **does not implement the link flow**
+///   — `TBD_ResultsReporter.c:23-35` says so in its own header ("in production no player has an
+///   `arma_id` … There is no `#tbd link` command", filed as T-181.35). An unresolved `arma_id`
+///   is not the edge case today; it is *every player in every production match*. A 400 would
+///   reject 100% of live ingest to report a condition the platform is currently always in.
+/// - **Drop the row instead of storing it NULL** — rejected outright, and named only because it
+///   is the reading of "stop losing rows" that would make the loss permanent. It would also
+///   break T-326: with no row to claim, linking would backfill nothing.
+/// - **Keep the row, keep the 200, and end the silence** — taken. Nothing stored changes. The
+///   response stops implying the roster landed (`linked` / `unlinked` / `unlinked_arma_ids`
+///   beside the unchanged `players`), and one audit row per affected ingest names the count and
+///   the ids, so the drop is discoverable by an operator and not only by whoever is reading the
+///   game server's console.
+///
+/// **The audit row is `Info`, not `Warn`, and that is the whole judgement rather than a
+/// default.** An unresolved `arma_id` is a normal, expected, self-healing state — the player
+/// simply has not linked yet, and T-326 makes the link retroactive. A `Warn` would fire on
+/// every single production ingest, and a warning that is always on is a warning nobody reads:
+/// that is precisely the false `server.low_fps` WARN T-316 was filed to delete. `Info` records
+/// the fact at the severity the fact actually has.
+///
+/// Two consequences a reader will ask about, both intended. A **retry** appends a second audit
+/// row: the log records requests, T-316 ruled that retries must stay legal, and "we were told
+/// this twice" is true. And `linked + unlinked == players` **always**, because those two count
+/// player *lines* — `unlinked_arma_ids` is the distinct set, since the same `arma_id` may
+/// legitimately appear twice under different `source_event_id`s and an operator chasing links
+/// wants each person once.
+///
+/// What this does **not** do is widen `leaderboard_totals` or `recompute_user_stats` to include
+/// unowned rows. Both are per-account aggregates and an unowned row has no account to aggregate
+/// onto; the fix for its absence is the link, not a leaderboard entry with no one on the other
+/// end of it.
+///
 /// @route POST /api/v1/ingest/match-results
 pub async fn ingest_match_results(
     State(state): State<AppState>,
@@ -457,22 +520,47 @@ pub async fn ingest_match_results(
     let (match_id, event_id) = upsert_match(&mut tx, &m, outcome, source_match_id).await?;
 
     let mut resolved: Vec<String> = Vec::new();
+    // T-229. `unlinked_rows` counts player *lines* with no owner so it sums with the linked
+    // count to `players.len()`; `unlinked_ids` is the distinct set, in first-seen order, because
+    // one `arma_id` may appear on two lines under different `source_event_id`s and the list
+    // exists to name people, not rows.
+    let mut unlinked_rows: usize = 0;
+    let mut unlinked_ids: Vec<&str> = Vec::new();
     for p in &input.players {
         // Bind the trimmed forms (T-218 house pattern): they are two thirds of the dedupe
         // key, so `"abc"` and `" abc"` must not become two rows for the same player.
         let arma_id = p.arma_id.trim();
         let source_event_id = p.source_event_id.trim();
+        // The one resolver, and the only one there is — nothing else in the crate maps an
+        // `arma_id` to an account. `identity_link_codes.arma_id` is written only as a code is
+        // consumed, by which point `users.arma_id` is already set, so it holds no answer this
+        // query does not. A miss here is therefore final for this request, which is exactly why
+        // it has to be reported rather than absorbed (T-229).
         let discord_id: Option<String> = sqlx::query_scalar(
             "SELECT discord_id FROM users WHERE arma_id = $1 AND deleted_at IS NULL",
         )
         .bind(arma_id)
         .fetch_optional(&mut *tx)
         .await?;
-        if let Some(did) = &discord_id
-            && !resolved.contains(did)
-        {
-            resolved.push(did.clone());
+        match &discord_id {
+            Some(did) => {
+                if !resolved.contains(did) {
+                    resolved.push(did.clone());
+                }
+            }
+            None => {
+                unlinked_rows += 1;
+                if !unlinked_ids.contains(&arma_id) {
+                    unlinked_ids.push(arma_id);
+                }
+            }
         }
+        // `discord_id = EXCLUDED.discord_id` re-asks the resolver on every re-ingest, so a retry
+        // of an old match after a link claims the row and a retry after an *unlink* releases it
+        // — the identity column tracks `users.arma_id` rather than freezing the first answer.
+        // Worth stating because T-229 was filed on the premise that "the upsert key includes
+        // arma_id, [so] linking later does not backfill": the key is exactly what makes both this
+        // statement and T-326's backfill able to find the row again.
         sqlx::query(
             "INSERT INTO match_player_stats \
              (match_id, arma_id, discord_id, role_played, kills, deaths, team_kills, \
@@ -516,6 +604,35 @@ pub async fn ingest_match_results(
     }
     tx.commit().await?;
 
+    // T-229 — the drop is now on the record. Deliberately the FIRST thing after the commit:
+    // `recompute_user_stats` below propagates with `?`, so an audit written after it would be
+    // skipped by exactly the failure that most needs a trace. Post-commit rather than inside the
+    // transaction because it must describe what actually landed, and best-effort (`write_audit`
+    // returns `()`) because a missing audit row must not fail an ingest that succeeded.
+    if !unlinked_ids.is_empty() {
+        let shown = unlinked_ids.len().min(AUDIT_UNLINKED_ID_SAMPLE);
+        let mut ids = unlinked_ids[..shown].join(", ");
+        if unlinked_ids.len() > shown {
+            ids.push_str(&format!(", +{} more", unlinked_ids.len() - shown));
+        }
+        write_audit(
+            &state.pool,
+            AuditSeverity::Info,
+            None,
+            "system",
+            "match.unlinked_players",
+            &format!(
+                "{unlinked_rows} of {} player line(s) had no linked account, so their stats are \
+                 stored but excluded from the leaderboard and deployment counts until the \
+                 identity is linked. Unlinked arma_id(s): {ids}",
+                input.players.len()
+            ),
+            "match",
+            &match_id.to_string(),
+        )
+        .await;
+    }
+
     // Recompute denormalized user stats + refresh the leaderboard view.
     for did in &resolved {
         recompute_user_stats(&state.pool, did).await?;
@@ -534,9 +651,18 @@ pub async fn ingest_match_results(
         .await;
     }
 
-    Ok(Json(
-        json!({ "match_id": match_id, "players": input.players.len() }),
-    ))
+    // T-229 — `players` is unchanged and still the submitted count, because it is the only field
+    // a caller may already read (the committed test asserts it, and `models::Match` carries
+    // nothing from here). What was missing is that the count alone reads as "all of these
+    // landed". The three additions are the split, so a sender's own 200 tells it which of its
+    // players are invisible to every aggregate: `linked + unlinked == players`, always.
+    Ok(Json(json!({
+        "match_id": match_id,
+        "players": input.players.len(),
+        "linked": input.players.len() - unlinked_rows,
+        "unlinked": unlinked_rows,
+        "unlinked_arma_ids": unlinked_ids,
+    })))
 }
 
 /// Find a match by source_match_id (updating mutable fields) or create one. Returns

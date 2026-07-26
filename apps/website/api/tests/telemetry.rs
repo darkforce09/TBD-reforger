@@ -649,10 +649,29 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
         }
     };
 
-    let matches_before: i64 = sqlx::query_scalar("SELECT count(*) FROM matches")
+    // Counts *blank-or-absent* source ids rather than `count(*) FROM matches` (T-229). A bare
+    // global count is a cross-test assertion in a suite whose tests run in parallel: any other
+    // test in this binary creating a legitimate match between the two reads fails this one, which
+    // is what happened the moment T-229's test was added — 1 vs 2, reported as "no match row
+    // minted", naming neither the cause nor the test that caused it.
+    //
+    // The predicate is the invariant itself rather than a narrower scope, so nothing is given up:
+    // it is exactly "a blank id reached the table", which is what the three rejected POSTs below
+    // would have done (`''`, `'   '`, and a real tab/newline — JSON decodes the `\t\n` escapes, so
+    // matching them as literals would need `E'…'` and quietly match nothing). `IS NULL` covers the
+    // normalize-blank-to-`None` variant that was considered and rejected. It is stable because
+    // `telemetry.rs` is the only test binary that POSTs match-results and the only other direct
+    // `INSERT INTO matches` in the suite (`null_tolerance.rs:558`) uses `'src-1'`.
+    let blank_id_rows = |pool: PgPool| async move {
+        sqlx::query_scalar::<_, i64>(
+            "SELECT count(*) FROM matches \
+             WHERE source_match_id IS NULL OR btrim(source_match_id) = ''",
+        )
         .fetch_one(&pool)
         .await
-        .unwrap();
+        .unwrap()
+    };
+    let matches_before = blank_id_rows(pool.clone()).await;
 
     // (1) Whitespace — the value that used to become a live dedupe key on a 200.
     let (st, r) = post(body("   ")).await;
@@ -684,11 +703,11 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
     assert_eq!(st, StatusCode::BAD_REQUEST, "tab/newline id: {r}");
 
     // Nothing above wrote anything at all — not a match, not a stat row, not a counter.
-    let matches_after: i64 = sqlx::query_scalar("SELECT count(*) FROM matches")
-        .fetch_one(&pool)
-        .await
-        .unwrap();
-    assert_eq!(matches_before, matches_after, "no match row minted");
+    let matches_after = blank_id_rows(pool.clone()).await;
+    assert_eq!(
+        matches_before, matches_after,
+        "no match row minted for a blank id"
+    );
     let stats: i64 =
         sqlx::query_scalar("SELECT count(*) FROM match_player_stats WHERE arma_id = $1")
             .bind(ARMA)
@@ -928,5 +947,298 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
     );
     assert_eq!(read_state(pool.clone()).await, "attended", "still attended");
 
+    clean(pool.clone()).await;
+}
+
+/// T-229 — a player whose `arma_id` resolves to no account must keep their row, and the 200 must
+/// stop implying the whole roster landed.
+///
+/// The invisibility, measured on a throwaway database before the fix: one POST carrying
+/// `kills=17 deaths=3 longest_kill_m=842 vehicles_destroyed=4` for an unlinked `arma_id` returned
+/// `{"match_id":"4dc322a3-…","players":1}`, wrote the row with `discord_id` NULL, and left
+/// `leaderboard_totals` with **zero** rows for that player (it filters
+/// `WHERE discord_id IS NOT NULL`) and `users.total_deployments` at **0**. Nothing anywhere
+/// recorded that a scoreline had gone missing — the count in the response was the *submitted*
+/// count and said nothing about how much of it was countable.
+///
+/// The row is kept rather than rejected, and that is the decision this test pins. It is real
+/// telemetry — the `arma_id` is real and the match happened — and it is *recoverable*, because
+/// `ingest_link_confirm` claims exactly the `discord_id IS NULL` rows at link time (T-326). A 400
+/// would also have no per-player shape: the transaction is atomic, so one unresolved player would
+/// reject the whole op. And the shipping mod implements no link flow at all
+/// (`TBD_ResultsReporter.c:23-35`, T-181.35), so an unresolved `arma_id` is currently *every*
+/// player in *every* production match — which is why the last leg below, a roster with nobody
+/// linked, has to be a 200.
+///
+/// **The backfill half of T-229 as filed is already closed by T-326**, and the link leg asserts it
+/// from this side on purpose: the ticket's premise was that "the upsert key includes `arma_id`, [so]
+/// linking later does not backfill", and the key is in fact exactly what lets the backfill find the
+/// row again. Pinning it here means a regression in `handlers::me` fails the suite that owns the
+/// ingest contract depending on it.
+///
+/// Two ingest calls only — the strict limiter is keyed on the peer IP, which is `0.0.0.0` for every
+/// test in this binary, so the whole file shares one 1/s + burst-10 bucket. The roster is built to
+/// prove everything in one POST, including that `unlinked_arma_ids` is *distinct* while `linked` and
+/// `unlinked` count player *lines*.
+#[tokio::test]
+async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    // Three identities: one linked account, one account that has not linked yet (the ticket's
+    // player), and an `arma_id` with no account behind it at all.
+    const LINKED_ARMA: &str = "t229-arma-linked";
+    const LINKED_DISCORD: &str = "000000000000229001";
+    const UNLINKED_ARMA: &str = "t229-arma-unlinked";
+    const UNLINKED_DISCORD: &str = "000000000000229002";
+    const ORPHAN_ARMA: &str = "t229-arma-no-account";
+    const SRC: &str = "m-t229-unlinked";
+    const CODE: &str = "922900";
+
+    // Same reasoning as the T-316 / T-347 / T-369 tests: `matches` does not cascade to
+    // `match_player_stats` and `leaderboard_totals` sums every row for a discord_id, so a second
+    // run would double-count. Clear the stats first and keep this test's ids to itself.
+    //
+    // The `UPDATE … SET arma_id = NULL` is not tidiness. `users.arma_id` carries a UNIQUE index
+    // (`idx_users_arma_id`), so if any *other* account is holding one of these three ids the
+    // fixture insert dies on `23505` and the link-confirm leg would 409 on `ingest_link_confirm`'s
+    // clash guard. Hit for real while writing this: a manual probe on the same database had
+    // parked `t229-arma-linked` on a third account. Releasing first makes the test own its ids
+    // outright instead of hoping they are free.
+    let clean = |pool: PgPool| async move {
+        sqlx::query("UPDATE users SET arma_id = NULL WHERE arma_id = ANY($1)")
+            .bind(vec![
+                LINKED_ARMA.to_string(),
+                UNLINKED_ARMA.to_string(),
+                ORPHAN_ARMA.to_string(),
+            ])
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = ANY($1)")
+            .bind(vec![
+                LINKED_ARMA.to_string(),
+                UNLINKED_ARMA.to_string(),
+                ORPHAN_ARMA.to_string(),
+            ])
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+            .bind(SRC)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM identity_link_codes WHERE discord_id = $1")
+            .bind(UNLINKED_DISCORD)
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T229 Linked', 't229linked', '', $2, '[TBD] Linked', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(LINKED_DISCORD)
+    .bind(LINKED_ARMA)
+    .execute(&pool)
+    .await
+    .unwrap();
+    // The ticket's player: a real account with no `arma_id` yet. `arma_id = NULL` is the whole
+    // premise, so it is reset on conflict rather than left at whatever a previous run linked.
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T229 Unlinked', 't229unlinked', '', NULL, '', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = NULL, total_deployments = 0",
+    )
+    .bind(UNLINKED_DISCORD)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO identity_link_codes (code, discord_id, expires_at, created_at) \
+         VALUES ($1, $2, now() + interval '1 hour', now()) \
+         ON CONFLICT (code) DO UPDATE SET discord_id = EXCLUDED.discord_id, \
+          expires_at = EXCLUDED.expires_at, consumed_at = NULL",
+    )
+    .bind(CODE)
+    .bind(UNLINKED_DISCORD)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let post = |uri: &'static str, b: String| {
+        let app = app.clone();
+        async move { call(&app, "POST", uri, None, Some(SVC), Some(&b)).await }
+    };
+    let line = |arma: &str, ev: &str, kills: i64, deaths: i64, longest: i64, veh: i64| {
+        format!(
+            r#"{{"arma_id":"{arma}","role_played":"SL","kills":{kills},"deaths":{deaths},"team_kills":0,"longest_kill_m":{longest},"vehicles_destroyed":{veh},"is_command":false,"source_event_id":"{ev}"}}"#
+        )
+    };
+    // `leaderboard_totals` is a materialized view refreshed in-request by every ingest, including
+    // the ones concurrent tests in this binary are running. Refresh explicitly before reading it
+    // so an absence assertion cannot pass (or fail) on somebody else's timing — same reason the
+    // T-316 test does.
+    let mv_row = |pool: PgPool, discord: &'static str| async move {
+        sqlx::query("REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_totals")
+            .execute(&pool)
+            .await
+            .ok();
+        sqlx::query_as::<_, (i64, i64, i64, i64, i64)>(
+            "SELECT kills::int8, deaths::int8, longest_kill_m::int8, vehicles_destroyed::int8, \
+             missions_played::int8 FROM leaderboard_totals WHERE discord_id = $1",
+        )
+        .bind(discord)
+        .fetch_optional(&pool)
+        .await
+        .unwrap()
+    };
+    let deployments = |pool: PgPool, discord: &'static str| async move {
+        sqlx::query_scalar::<_, i64>("SELECT total_deployments FROM users WHERE discord_id = $1")
+            .bind(discord)
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+    };
+
+    // (1) One match, four player lines: the linked player, the unlinked player TWICE under two
+    // different `source_event_id`s (two legitimate rows for one person — the dedupe key is
+    // `(match_id, arma_id, source_event_id)`), and an `arma_id` nobody owns.
+    let (st, r) = post(
+        "/api/v1/ingest/match-results",
+        format!(
+            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{},{},{},{}]}}"#,
+            line(LINKED_ARMA, "e-t229-a", 9, 1, 300, 0),
+            line(UNLINKED_ARMA, "e-t229-a", 17, 3, 842, 4),
+            line(UNLINKED_ARMA, "e-t229-b", 5, 1, 300, 1),
+            line(ORPHAN_ARMA, "e-t229-a", 4, 2, 120, 0),
+        ),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "ingest with unresolved players: {r}");
+    let match_id = r["match_id"].as_str().unwrap().to_string();
+
+    // THE TICKET: the response no longer reports only the submitted count.
+    assert_eq!(r["players"], 4, "still the submitted count, unchanged");
+    assert_eq!(r["linked"], 1);
+    assert_eq!(r["unlinked"], 3, "player LINES with no owner");
+    assert_eq!(
+        r["linked"].as_i64().unwrap() + r["unlinked"].as_i64().unwrap(),
+        r["players"].as_i64().unwrap(),
+        "linked + unlinked == players, always"
+    );
+    // Distinct ids, not lines — the unlinked player appears on two lines and once in this list.
+    assert_eq!(
+        r["unlinked_arma_ids"],
+        serde_json::json!([UNLINKED_ARMA, ORPHAN_ARMA]),
+        "distinct arma_ids in first-seen order"
+    );
+
+    // (2) Nothing was rejected and nothing was dropped: all four rows are stored with their real
+    // counters, three of them simply unowned.
+    let rows: Vec<(String, Option<String>, i64, i64)> = sqlx::query_as(
+        "SELECT arma_id, discord_id, kills, deaths FROM match_player_stats \
+         WHERE match_id = $1 ORDER BY arma_id, source_event_id",
+    )
+    .bind(Uuid::parse_str(&match_id).unwrap())
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        rows,
+        vec![
+            (LINKED_ARMA.into(), Some(LINKED_DISCORD.into()), 9, 1),
+            (ORPHAN_ARMA.into(), None, 4, 2),
+            (UNLINKED_ARMA.into(), None, 17, 3),
+            (UNLINKED_ARMA.into(), None, 5, 1),
+        ],
+        "every line stored; the unresolved ones kept, with a NULL owner"
+    );
+
+    // (3) The invisibility itself, which is what the ticket is about: those rows reach no
+    // aggregate. Not a bug in the aggregates — a leaderboard ranks accounts, and an unowned row
+    // has no account — but it is why a 200 that says nothing is a silent loss.
+    assert_eq!(
+        mv_row(pool.clone(), UNLINKED_DISCORD).await,
+        None,
+        "22 real kills are invisible to leaderboard_totals while unowned"
+    );
+    assert_eq!(
+        deployments(pool.clone(), UNLINKED_DISCORD).await,
+        0,
+        "and to the deployment count"
+    );
+    assert!(
+        mv_row(pool.clone(), LINKED_DISCORD).await.is_some(),
+        "the linked player on the same roster is counted normally"
+    );
+
+    // (4) The loss is now discoverable by an operator, not only by whoever reads the game
+    // server's console. Info rather than Warn on purpose: with no link flow in the shipping mod
+    // this fires on every production ingest, and an always-on warning is the false
+    // `server.low_fps` WARN that T-316 was filed to delete.
+    let audit: (String, String, Option<String>) = sqlx::query_as(
+        "SELECT severity::text, message, actor_id FROM audit_logs \
+         WHERE action = 'match.unlinked_players' AND target_type = 'match' AND target_id = $1",
+    )
+    .bind(&match_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(audit.0, "info", "a normal, self-healing state, not a fault");
+    assert_eq!(audit.2, None, "system-originated, no human actor");
+    assert!(
+        audit.1.contains("3 of 4 player line(s)")
+            && audit.1.contains(UNLINKED_ARMA)
+            && audit.1.contains(ORPHAN_ARMA),
+        "the audit row names the count AND the ids, or it is unactionable: {}",
+        audit.1
+    );
+
+    // (5) The backfill half of the ticket, already built by T-326: linking claims the historical
+    // rows, and both aggregates catch up. Note the sums — 17+5 kills and 3+1 deaths across the
+    // two lines, one distinct match — so this proves the rows were claimed, not re-ingested.
+    let (st, r) = post(
+        "/api/v1/ingest/link-confirm",
+        format!(
+            r#"{{"code":"{CODE}","arma_id":"{UNLINKED_ARMA}","arma_character":"[TBD] Unlinked"}}"#
+        ),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "link confirm: {r}");
+    assert_eq!(r["linked"], true);
+    assert_eq!(
+        mv_row(pool.clone(), UNLINKED_DISCORD).await,
+        Some((22, 4, 842, 5, 1)),
+        "T-326 backfill: the parked rows reach the leaderboard on link"
+    );
+    assert_eq!(
+        deployments(pool.clone(), UNLINKED_DISCORD).await,
+        1,
+        "and the deployment count"
+    );
+    // The other unresolved line is untouched — the backfill claims one `arma_id`, not the roster.
+    let still_orphan: Option<String> = sqlx::query_scalar(
+        "SELECT discord_id FROM match_player_stats WHERE arma_id = $1 AND match_id = $2",
+    )
+    .bind(ORPHAN_ARMA)
+    .bind(Uuid::parse_str(&match_id).unwrap())
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(still_orphan, None, "a different arma_id stays unowned");
+
+    sqlx::query(
+        "DELETE FROM audit_logs WHERE action = 'match.unlinked_players' AND target_id = $1",
+    )
+    .bind(&match_id)
+    .execute(&pool)
+    .await
+    .unwrap();
     clean(pool.clone()).await;
 }
