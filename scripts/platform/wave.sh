@@ -360,9 +360,25 @@ clippy_changed() {
 }
 
 # `cargo test -p website-api`, but a run where the DB tests skipped is a FAILURE, not a pass.
+# CARGO_TARGET_DIR IS PRIVATE HERE — read before removing it.
+#
+# `cargo test` BUILDS AND THEN RUNS a binary. With the shared dir, the binary this step runs can be one
+# ANOTHER WORKTREE built: same package name and version across worktrees means the same artifact hash,
+# so they clobber. T-235 measured it three ways — its test binary ran another worktree's 4-test build
+# TWICE under a stable hash with changing contents, target/debug/api changed size with its own source
+# unchanged, and a compile failed against a stale rlib then succeeded on retry with no edit.
+#
+# Consequence, which is why this is a BLOCKER: THE GATE CAN PASS ON CODE IT NEVER COMPILED. T-233
+# reported 126 passed / 0 failed and its test fails on a clean database — a stale or foreign binary
+# that never contained the test produces exactly that, and it was reverted.
+#
+# The frontend test step below has had a private dir since T-193 and T-195 each proved this
+# independently. The header of that step spells it out. This step never got the same treatment, and
+# `cargo check`/`clippy` do not need one because they emit no binary to run.
 gate_test_api() {
   local out rc skips
-  out="$(hostrun cargo test -p website-api --quiet -- --nocapture 2>&1)"; rc=$?
+  out="$(hostrun env "CARGO_TARGET_DIR=$MAIN_ROOT/target-gate-api" "CARGO_INCREMENTAL=0" \
+           cargo test -p website-api --quiet -- --nocapture 2>&1)"; rc=$?
   skips="$(printf '%s\n' "$out" | grep -c '^skip:' || true)"
   printf '%s\n' "$out"
   if [ "$rc" -ne 0 ]; then return "$rc"; fi
@@ -448,7 +464,10 @@ cmd_gate() {
   # in last wave. Measured 2026-07-26: bare 116, --features mission 142.
   # AND `doc` compiles out too — T-217 measured mission-only skipping all 155 doc tests
   # (apply_faction, store, undo). doc,mission gives 183. Both features are required.
-  run "test map-engine"  hostrun cargo test -p map-engine-core --features doc,mission -p map-engine-render --quiet
+  # Private target dir for the same reason as `test api` and `test frontend`: this step RUNS test
+  # binaries, and a shared dir lets another worktree's build be the one that runs.
+  run "test map-engine"  hostrun env "CARGO_TARGET_DIR=$MAIN_ROOT/target-gate-mapengine" "CARGO_INCREMENTAL=0" \
+                                 cargo test -p map-engine-core --features doc,mission -p map-engine-render --quiet
   # Frontend tests get a PRIVATE target dir. Two agents (T-193, T-195) independently proved that
   # with the shared CARGO_TARGET_DIR, `cargo test -p website-frontend` runs a stale
   # website_frontend-<hash> test binary built from ANOTHER worktree: T-193 saw 113 passing from a
@@ -573,6 +592,33 @@ cmd_wave_close() {
   echo "WAVE $w CLOSED. Wave $((w+1)) may be dispatched."
 }
 
+# Reclaim orphan build caches. THIS IS NOT OPTIONAL HOUSEKEEPING — it is the failure that stopped this
+# program dead once.
+#
+# OBSERVED 2026-07-26: the disk hit **252 MB free of 952 GB** mid-wave. Two gate steps failed with
+# "No space left on device", which reads exactly like a build error. `/var/tmp` held ~116 GB of agent
+# target dirs from slices that had already SHIPPED — every agent is told to remove its own and many
+# either forgot or were killed by a session limit before they could.
+#
+# Skips any dir belonging to a slice whose worktree still exists, so a live agent's cache survives.
+cmd_reclaim() {
+  local live="" w t freed=0 sz
+  for w in $(git worktree list | tail -n +2 | awk '{print $1}'); do
+    live="$live $(basename "$w" | tr 'A-Z' 'a-z' | tr -d '-')"
+  done
+  echo "live slices (spared):${live:- none}"
+  for d in /var/tmp/*target* /var/tmp/v2-* /var/tmp/t[0-9]*-probe /var/tmp/t[0-9]*-dist; do
+    [ -e "$d" ] || continue
+    local key; key="$(basename "$d" | tr 'A-Z' 'a-z' | tr -d '-')"
+    local skip=0 l
+    for l in $live; do case "$key" in "$l"*) skip=1 ;; esac; done
+    [ "$skip" -eq 1 ] && { printf '  spared  %s\n' "$d"; continue; }
+    sz="$(du -sm "$d" 2>/dev/null | cut -f1)"
+    rm -rf "$d" 2>/dev/null && freed=$((freed + ${sz:-0})) && printf '  removed %-44s %s MB\n' "$d" "${sz:-?}"
+  done
+  echo "reclaimed ${freed} MB — $(df -h "$ROOT" | tail -1 | awk '{print $4}') free"
+}
+
 cmd_verified() {
   local sha="${1:-}"
   [ -z "$sha" ] && { echo "usage: wave.sh verified <sha>"; return 1; }
@@ -684,6 +730,7 @@ case "${1:-status}" in
   gate)   if [ "${2:-}" = "--slice" ]; then gate_slice "${3:-}"; else cmd_gate "${2:-}"; fi ;;
   wave)   if [ "${2:-}" = "--close" ]; then cmd_wave_close; else cmd_wave; fi ;;
   verified) cmd_verified "${2:-}" ;;
+  reclaim) cmd_reclaim ;;
   land)   cmd_land "${2:-}" ;;
   revert) cmd_revert "${2:-}" ;;
   push)   cmd_push ;;

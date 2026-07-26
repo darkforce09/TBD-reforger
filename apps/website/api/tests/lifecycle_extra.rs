@@ -139,8 +139,18 @@ async fn mission_archive_blocked_by_upcoming_event() {
     )
     .await;
     let eid = e["id"].as_str().unwrap();
-    let attach = format!(r#"{{"mission_id":"{id}","start_time":"2030-01-01T00:00:00Z"}}"#);
-    call(
+    // The ORBAT is explicit, and the attach is now ASSERTED (T-227). `mk_mission` publishes a
+    // version with no ORBAT, and this setup used to attach it with an empty body and discard the
+    // status — silently materializing a **zero-slot** event mission. That attach is now a 409
+    // ("this mission's ORBAT describes no slots"), because such an operation seated nobody and
+    // yet refused nobody: capacity is `count(orbat_slots) = 0` and the registration guard read
+    // `capacity > 0 && registered >= capacity`, which at 0 is simply off. This test is about
+    // ARCHIVE BLOCKING and wants a real attached operation; discarding the status is what let
+    // its setup depend on that bug.
+    let attach = format!(
+        r#"{{"mission_id":"{id}","start_time":"2030-01-01T00:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"LX Alpha","slots":[{{"role":"SL"}}]}}]}}"#
+    );
+    let (st, b) = call(
         &app,
         "POST",
         &format!("/api/v1/events/{eid}/missions"),
@@ -148,6 +158,7 @@ async fn mission_archive_blocked_by_upcoming_event() {
         Some(&attach),
     )
     .await;
+    assert_eq!(st, StatusCode::CREATED, "attach the operation: {b}");
     let (st, _) = call(
         &app,
         "PATCH",

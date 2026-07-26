@@ -307,6 +307,14 @@ pub fn MissionEditorPage() -> impl IntoView {
             // here (after the selection exists, engine still `None` — the rebind reads it lazily).
             // `refresh_hud` seeds the HUD from the freshly-seeded doc: OBJ = 8, SEL = 0, and
             // can_undo = false (the seed runs under INIT origin, so it is not an undo step).
+            //
+            // T-380 — `restore_settled` is created HERE, above `set_ctx`, rather than beside its
+            // T-175 B1 partner `engine_mounted` below: `mission_history` needs it as the boot gate on
+            // the debounced persist writer, and `set_ctx` runs synchronously at mount, long before the
+            // restore task exists. One flag, two readers — the engine rebind handshake and the persist
+            // gate ask the same question ("has the document settled?"), so a second flag would only be
+            // a second thing to keep in sync.
+            let restore_settled = Rc::new(Cell::new(false));
             crate::mission_history::set_ctx(
                 doc.clone(),
                 engine.clone(),
@@ -318,6 +326,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 obj_count,
                 sel_count,
                 dirty,
+                restore_settled.clone(),
             );
             // T-159.22 — dock commands (outliner select / active layer / palette place). Registered
             // BEFORE `refresh_hud()` below, because that call funnels into
@@ -413,7 +422,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             // GPU regardless of which async task (IDB restore / server hydrate vs engine create)
             // finishes first. Whichever sets its flag second runs the single authoritative
             // `rebind_engine_from_doc` from the settled doc — no seed→restore flash, no double bind.
-            let restore_settled = Rc::new(Cell::new(false));
+            // (`restore_settled` itself is declared above `set_ctx` — see the T-380 note there.)
             let engine_mounted = Rc::new(Cell::new(false));
             // T-175 B5 — the two boot-readiness flags the loading overlay clears on: doc settled
             // (restore + hydrate) and world/map-asset residency settled. `boot` → Ready when both.
@@ -484,6 +493,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // 1.75 T-175 B1 — the doc is now settled (IDB restore + server hydrate). Mark it
                     //      and, if the engine already mounted + first-bound the seed, rebind it from
                     //      the settled doc so restored slot positions render (not the seed).
+                    //
+                    //      T-380 — this same flip OPENS THE PERSIST GATE (`mission_history`'s
+                    //      `after_doc_change`). It is deliberately here and not at `ready.set(true)`
+                    //      below: this is the first instant at which an edit-driven write can no
+                    //      longer clobber a better record, and everything between here and `ready` is
+                    //      await-free, so waiting would buy nothing and would delay a real edit's
+                    //      persist. Both awaits above are unconditional, so the gate cannot be opened
+                    //      by a path that skipped the restore — and if either await never returns the
+                    //      gate stays shut, which is the correct side: the doc is still the fixture,
+                    //      the overlay is still up, and a write would be the corruption itself.
                     restore_settled.set(true);
                     if engine_mounted.get() {
                         crate::mission_history::rebind_engine_from_doc();

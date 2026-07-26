@@ -59,6 +59,15 @@ struct HistoryCtx {
     /// hydrate/conflict adopt (`set_dirty(false)`). Drives the TopCommandStrip unsaved indicator and
     /// — since T-189 — the `beforeunload` guard in [`register_unload_guard`].
     dirty: RwSignal<bool>,
+    /// T-380 — the boot gate on the debounced persist writer. The SAME `Rc<Cell<bool>>`
+    /// `mission_editor::on_load` flips once the IDB restore **and** the server hydrate have both
+    /// awaited, so `false` means "the live doc may still be the 8-slot fixture seed". Read by
+    /// [`after_doc_change`]; see there for why the edit's data is not lost with its persist.
+    ///
+    /// Per-mount by construction: the handle is created fresh in `on_load` and reaches both this ctx
+    /// and the boot task, so a boot task left in flight by a route-leave arms its OWN dead `Cell`,
+    /// never the next mount's.
+    restore_settled: Rc<Cell<bool>>,
 }
 
 /// T-189 — the parked `beforeunload` closure's type. A named alias only so the `thread_local`
@@ -96,6 +105,7 @@ pub fn set_ctx(
     obj_count: RwSignal<usize>,
     sel_count: RwSignal<usize>,
     dirty: RwSignal<bool>,
+    restore_settled: Rc<Cell<bool>>,
 ) {
     HISTORY_CTX.with(|c| {
         *c.borrow_mut() = Some(HistoryCtx {
@@ -109,6 +119,7 @@ pub fn set_ctx(
             obj_count,
             sel_count,
             dirty,
+            restore_settled,
         });
     });
 }
@@ -338,7 +349,8 @@ pub fn refresh_selection() {
 }
 
 /// The one post-document-change sequence: materialize → prune the selection → rebind the engine
-/// glyphs + tint → bump `doc_ver` → schedule the persist → refresh the HUD.
+/// glyphs + tint → bump `doc_ver` → schedule the persist (**T-380: only once the boot restore has
+/// settled**) → refresh the HUD.
 ///
 /// Both the drag commit and undo/redo run it, so a slot set that changed under the app can never
 /// leave a stale glyph cache or a selection pointing at dead ids — undoing an *add* deletes slots,
@@ -371,7 +383,31 @@ fn after_doc_change(ctx: &HistoryCtx) {
     }
     ctx.doc_ver.set(ctx.doc_ver.get().saturating_add(1));
     ctx.dirty.set(true); // T-159.26 — a committed edit is unsaved work
-    crate::yrs_persist::schedule_edit_persist(ctx.doc.clone(), &ctx.mission_id);
+
+    // T-380 — do NOT arm the debounced writer while the boot restore is still in flight.
+    //
+    // The mutator path is live long before the document is: `mission_editor` seeds an 8-slot FIXTURE
+    // synchronously, registers the window keydown handler synchronously, and the boot overlay is
+    // deliberately `pointer-events-none`, so a Delete/Ctrl+V during boot reaches this function while
+    // `doc` still holds the fixture. `schedule_edit_persist` would arm a 5 s timer whose `get_bytes`
+    // encodes whatever `doc` holds *at write time* — and if the restore of a several-hundred-MB
+    // record has not swapped the real core in by then, the timer files the 8-slot seed over the good
+    // one. It passes every writer guard: non-empty, owner matches, not cancelled. A content-level
+    // check cannot catch it either (T-374) — the seed is not empty, it has 8 real slots.
+    //
+    // The gate is on the WRITER, not the UI: the overlay stays click-through (the editor smokes and
+    // the operator's own fast path depend on it), and the edit still lands in the document.
+    //
+    // Dropping the arm does not drop the operator's work:
+    //   * cold boot (nothing to restore) — the edit stays in the doc, and the boot persist
+    //     `mission_editor` arms right after the two awaits encodes the live doc, edit included.
+    //   * restore path — the restore swaps the document wholesale, which discards the edit anyway;
+    //     the gate's job is only to make sure it was never written over the real record first.
+    // The same reasoning covers the hydrate/adopt tail (`mission_hydrate::adopt_payload` reaches
+    // here via `after_local_edit` during boot): its content is persisted by that same boot persist.
+    if ctx.restore_settled.get() {
+        crate::yrs_persist::schedule_edit_persist(ctx.doc.clone(), &ctx.mission_id);
+    }
     refresh_signals(ctx, soa.ids.len());
 }
 

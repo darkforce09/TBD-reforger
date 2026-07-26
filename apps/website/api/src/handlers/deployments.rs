@@ -1,40 +1,4 @@
 //! My Deployments + Leave of Absence — Rust port of `handlers/deployments.go`.
-//!
-//! **T-233 — what this route can honestly report, and what it cannot.** The Deployments page
-//! rendered a K/D of `2.45` and a win rate of `68%` from two client-side constants
-//! (`frontend/src/deployments.rs:83-84`), so every player saw the same fabricated scoreline with
-//! no way to tell it from telemetry. Three of those four readouts resolve differently once the
-//! schema is actually consulted:
-//!
-//! - **K/D is real.** `match_player_stats` carries per-player `kills` / `deaths`
-//!   (`0001_initial_schema.sql:251-266`) and `leaderboard_totals` already aggregates them into
-//!   `kd_ratio`. Served below, from the view.
-//! - **A general win rate is not derivable, and the near-miss is the dangerous part.**
-//!   `leaderboard_totals.command_win_rate` looks like the field you want and is not: its
-//!   denominator is `count(*) FILTER (WHERE is_command)`, so it is a **command** win rate over
-//!   matches where the player held a command slot, and `command_win` is a documented tri-state
-//!   where `NULL` means "not a command slot / not adjudicated" (`telemetry.rs:389-390`). It is
-//!   served under its real name for that reason — labelling it `win_rate` would rebuild the same
-//!   lie out of real numbers. A *general* win rate would need to know which side the player
-//!   fought for, and `match_player_stats` has no faction column; `matches.winning_faction` exists
-//!   with nothing per-player to compare it against. Not synthesised.
-//! - **Favourite weapon and favourite asset are not recorded anywhere.** Measured against
-//!   `information_schema` on a migrated DB, the only weapon-ish columns in the whole schema are
-//!   `fire_missions.weapon_system` (mortar-calculator input), `mission_armories.item_name` (what a
-//!   mission *offers*), `orbat_slots.loadout` (authored slot intent) and
-//!   `match_player_stats.vehicles_destroyed` (a count of vehicles the player *killed*, not one
-//!   they used). Nothing observes what a player actually carried or drove. The ingest contract
-//!   agrees — `PlayerStatInput` (`telemetry.rs:391-403`) has no weapon field. This is a
-//!   data-collection gap in the mod, not a number to invent; `tests/deployments_combat.rs` is the
-//!   tripwire for the day a column arrives.
-//!
-//! **A figure nobody measured serialises as `null`, never as `0`.** `0.00` is a measurement claim
-//! — "we watched, and you scored nothing" — which is the same defect as `2.45` wearing a
-//! different mask, and the same one T-359 removed rather than defaulted. `0.0` is still sent when
-//! it was genuinely observed (a player with rows, no kills and no deaths), so the two cases stay
-//! distinguishable on the wire. Note this route deliberately diverges from
-//! `leaderboards.rs::get_user_stats`, which `unwrap_or`s an all-zero row for a player with no
-//! matches (`leaderboards.rs:127-141`) and so cannot tell them apart.
 
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, Query, State};
@@ -81,39 +45,6 @@ struct ServiceRecord {
     outcome: String,
     #[serde(skip_serializing_if = "String::is_empty")]
     aar_replay_url: String,
-}
-
-/// The caller's aggregate combat figures, read from the `leaderboard_totals` materialized view
-/// rather than recomputed here.
-///
-/// Reading the view is deliberate. It is the crate's only definition of K/D and of the command win
-/// rate (`0001_initial_schema.sql:270-291`), it is what `/leaderboards` and `/users/:id/stats`
-/// already serve, and it is refreshed on every path that can change the rows underneath it: match
-/// ingest (`telemetry.rs:523`), identity link (`me.rs:459`) and unlink (`me.rs:259`). Recomputing
-/// the same two ratios with a second query here is precisely how the Deployments page and the
-/// Leaderboard come to disagree about one player — the two-definitions-drift failure that
-/// `recompute_user_stats` was kept `pub(super)` to prevent (`telemetry.rs:675-678`). The refreshes
-/// are best-effort, so the view can lag a failed refresh; it lags identically for both readers,
-/// which is the property that matters.
-///
-/// The view also owns the divide-by-zero: `kd_ratio` is
-/// `CASE WHEN sum(deaths) = 0 THEN sum(kills) ELSE round(sum(kills) / sum(deaths), 2) END`, so a
-/// flawless player reads as their kill count and Postgres is never asked to divide by zero. Both
-/// ratios are `numeric` in the view and cast `::float8` on the way out, exactly as
-/// `leaderboards.rs::LB_SELECT` does.
-#[derive(Debug, sqlx::FromRow)]
-struct CombatTotals {
-    kills: i64,
-    deaths: i64,
-    kd_ratio: f64,
-    /// `NULL` when the player has never held a command slot: the view wraps the count in
-    /// `NULLIF(count(*) FILTER (WHERE is_command), 0)`. That `NULL` is the **only** way to tell
-    /// "never commanded" apart from "commanded and lost every time" — the view's own
-    /// `command_win_rate` flattens both to `0`, so this column, not that one, decides whether a
-    /// rate gets sent at all.
-    command_games: Option<i64>,
-    command_wins: i64,
-    command_win_rate: f64,
 }
 
 /// Fetch a mission's (title, terrain) for enrichment (avoids the full-row time cast).
@@ -231,42 +162,9 @@ pub async fn get_my_deployments(
         });
     }
 
-    // Derived combat figures. `fetch_optional` *is* the zero case: `leaderboard_totals` groups
-    // `match_player_stats` by `discord_id`, so a player who has never appeared in an ingested match
-    // has no row in the view at all, and there is genuinely nothing to report about them.
-    let combat: Option<CombatTotals> = sqlx::query_as(
-        "SELECT kills::int8 AS kills, deaths::int8 AS deaths, kd_ratio::float8 AS kd_ratio, \
-         command_games::int8 AS command_games, command_wins::int8 AS command_wins, \
-         command_win_rate::float8 AS command_win_rate \
-         FROM leaderboard_totals WHERE discord_id = $1",
-    )
-    .bind(me)
-    .fetch_optional(&state.pool)
-    .await?;
-
-    // `kd_ratio` is null for a player with no ingested matches, and is the flag the SPA gates the
-    // whole combat block on. `command_win_rate` is null on top of that whenever the player has
-    // never held a command slot, which is the common case for most of the roster.
-    let kd_ratio = combat.as_ref().map(|c| c.kd_ratio);
-    let command_win_rate = combat
-        .as_ref()
-        .filter(|c| c.command_games.is_some())
-        .map(|c| c.command_win_rate);
-    // Counts, unlike ratios, are honest at zero: "no kill records exist" is a true statement about
-    // a player with no matches, and it is the same shape `total_operations` already reports.
-    let (kills, deaths) = combat.as_ref().map_or((0, 0), |c| (c.kills, c.deaths));
-    let command_games = combat.as_ref().and_then(|c| c.command_games).unwrap_or(0);
-    let command_wins = combat.as_ref().map_or(0, |c| c.command_wins);
-
     Ok(Json(json!({
         "total_operations": u.total_deployments,
         "attendance_rate": u.attendance_rate,
-        "kills": kills,
-        "deaths": deaths,
-        "kd_ratio": kd_ratio,
-        "command_games": command_games,
-        "command_wins": command_wins,
-        "command_win_rate": command_win_rate,
         "upcoming": upcoming,
         "service_history": history,
     })))

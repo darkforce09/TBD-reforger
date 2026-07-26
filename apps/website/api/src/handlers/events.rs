@@ -451,29 +451,122 @@ async fn materialize_slots(
 }
 
 /// Resolve a mission's ORBAT template from its current published version payload.
-async fn orbat_template_for_mission(pool: &PgPool, mission_id: Uuid) -> Vec<OrbatSquadTemplate> {
+///
+/// ══ FOUR OUTCOMES, FOUR ANSWERS — THIS RETURNED `Vec::new()` FOR ALL OF THEM (T-227) ═══
+/// Every failure here used to be spelled the same way: an empty vec. [`add_event_mission`]
+/// then materialized zero slots, committed, and returned 201, so the caller could not tell
+/// "this mission has no ORBAT yet" from "the database is down". Measured before this change,
+/// against one mission with one valid 3-slot version: healthy database → 201 with 3 slots;
+/// `mission_versions` renamed away → **201 with 0 slots**. Identical request, identical
+/// payload, opposite truth, indistinguishable response.
+///
+/// The two `.await.ok().flatten()`s were the sharpest part and are now plain `?`. That is not
+/// a style change: [`ApiError`]'s `From<sqlx::Error>` already logs at `error!` and maps to
+/// 500, so `?` is simultaneously the fix and the house pattern. This is the same class as
+/// `deployments.rs:55` and `mortar.rs`'s silent weapon substitution — a success path
+/// absorbing a failure — and the reason it is worth four distinct returns is that only one of
+/// the four is the caller's to fix:
+///
+///   * **mission row gone** → 404. A delete racing the attach; the caller already checked.
+///   * **no published version** → 409. The request is well-formed and the mission is real; it
+///     is the mission's *state* that cannot satisfy it. Recoverable by publishing a version.
+///   * **`current_version_id` dangling** → 500, logged. `missions.current_version_id` carries
+///     **no foreign key** (`0001_initial_schema.sql:370` is a bare `uuid`), so a mission can
+///     name a version row that does not exist. Nobody outside can fix that and it must not be
+///     quiet; it is our data that is wrong, not the request.
+///   * **unreadable `orbat`** → 400 naming the payload, in [`template_from_payload`].
+///
+/// A zero-slot *success* is deliberately NOT decided here — see the refusal in
+/// [`add_event_mission`], the one place both doors into [`materialize_slots`] meet.
+async fn orbat_template_for_mission(
+    pool: &PgPool,
+    mission_id: Uuid,
+) -> Result<Vec<OrbatSquadTemplate>, ApiError> {
     let cur: Option<Option<Uuid>> = sqlx::query_scalar(
         "SELECT current_version_id FROM missions WHERE id = $1 AND deleted_at IS NULL",
     )
     .bind(mission_id)
     .fetch_optional(pool)
-    .await
-    .ok()
-    .flatten();
-    let Some(Some(vid)) = cur else {
-        return Vec::new();
+    .await?;
+    let Some(current_version_id) = cur else {
+        return Err(ApiError::not_found("mission not found"));
+    };
+    let Some(vid) = current_version_id else {
+        return Err(ApiError::conflict(
+            "this mission has no published version, so it has no ORBAT to seat — publish a version, or attach with an explicit `orbat`",
+        ));
     };
     let payload: Option<crate::models::RawJson> =
         sqlx::query_scalar("SELECT json_payload FROM mission_versions WHERE id = $1")
             .bind(vid)
             .fetch_optional(pool)
-            .await
-            .ok()
-            .flatten();
-    match payload {
-        Some(p) => parse_orbat_template(p.0.get().as_bytes()),
-        None => Vec::new(),
+            .await?;
+    let Some(payload) = payload else {
+        tracing::error!(
+            %mission_id,
+            version_id = %vid,
+            "missions.current_version_id names a mission_versions row that does not exist"
+        );
+        return Err(ApiError::internal(
+            "this mission's published version is missing from the database",
+        ));
+    };
+    template_from_payload(payload.0.get().as_bytes())
+}
+
+/// [`parse_orbat_template`] with its one silent failure made loud.
+///
+/// ══ WHY THIS WRAPS RATHER THAN REPLACES (T-227) ════════════════════════════════════════
+/// `parse_orbat_template` lives in the shared `map-engine-core` crate and returns a bare
+/// `Vec`, so it has nowhere to put an error and does this:
+///
+/// ```ignore
+/// let top: Top = serde_json::from_slice(payload).unwrap_or_default();
+/// if !top.orbat.is_empty() { return top.orbat; }
+/// derive_orbat_from_editor(payload)
+/// ```
+///
+/// An explicit top-level `orbat[]` that fails to deserialize therefore does not merely
+/// vanish — it is **replaced** by the editor-derived ORBAT, a *different and possibly
+/// non-empty* seating plan. The author's stated intent is discarded and something else is
+/// materialized under a 201. That is the failure this function names.
+///
+/// The precedence is mirrored EXACTLY, and the mirroring is the load-bearing part (T-343's
+/// lesson: two sites that disagree about a fallback are worse than one site that is wrong).
+///   * `orbat` absent, `null`, or the payload not an object → fall through verbatim. All
+///     three already mean "derive from the editor graph", and still do.
+///   * `orbat` present, deserializable, but **empty** → fall through, because
+///     `!top.orbat.is_empty()` does too. An empty array is not an error, it is a miss.
+///   * `orbat` present, deserializable, non-empty → return it, exactly as `top.orbat` does.
+///   * `orbat` present and NOT deserializable → 400, carrying serde's own message in
+///     `details`. This is the only behavioural difference, and it only ever turns a wrong
+///     answer into an error: no payload that works today starts failing.
+///
+/// The zero-slot case is not decided here either. A payload can parse perfectly and still
+/// seat nobody (T-368 — a faction whose squads resolve to zero slots); that is a *valid*
+/// document and a different sentence. One refusal, in [`add_event_mission`].
+fn template_from_payload(payload: &[u8]) -> Result<Vec<OrbatSquadTemplate>, ApiError> {
+    #[derive(Deserialize, Default)]
+    #[serde(default)]
+    struct Probe {
+        orbat: Option<Value>,
     }
+    if let Ok(Probe { orbat: Some(orbat) }) = serde_json::from_slice::<Probe>(payload)
+        && !orbat.is_null()
+    {
+        match serde_json::from_value::<Vec<OrbatSquadTemplate>>(orbat) {
+            Ok(squads) if !squads.is_empty() => return Ok(squads),
+            Ok(_) => {}
+            Err(e) => {
+                return Err(ApiError::with_details(
+                    StatusCode::BAD_REQUEST,
+                    "this mission's published version has an `orbat` this API cannot read",
+                    json!({ "orbat": e.to_string() }),
+                ));
+            }
+        }
+    }
+    Ok(parse_orbat_template(payload))
 }
 
 // --- Event container CRUD ---
@@ -580,11 +673,60 @@ pub async fn add_event_mission(
         return Err(ApiError::not_found("mission not found"));
     }
 
-    let template = if input.orbat.is_empty() {
-        orbat_template_for_mission(&state.pool, mission_id).await
-    } else {
+    // Which door the ORBAT came through, read before `input.orbat` is moved. It decides only
+    // the *wording* of the refusal below, never whether to refuse.
+    let orbat_from_request = !input.orbat.is_empty();
+    let template = if orbat_from_request {
         input.orbat
+    } else {
+        orbat_template_for_mission(&state.pool, mission_id).await?
     };
+
+    // ══ THE ZERO-SLOT REFUSAL — UNLIMITED SEATLESS REGISTRATION STARTS HERE (T-227) ════════
+    // `materialize_slots` is the ONLY producer of `orbat_slots` through this API (T-368), and
+    // a template with no slots makes it write nothing while the transaction still commits and
+    // still answers 201 with the admin UI toasting success. Capacity in
+    // [`register_for_event_mission`] is `count(orbat_slots)`, so it lands on 0 — and its guard
+    // was `capacity > 0 && registered >= capacity`, which at 0 is simply off.
+    //
+    // Measured on the unfixed handler, in a scratch database: attach a mission with no
+    // published version, then register **40 distinct users** with `{"slot_id": ""}` — all 40
+    // came back `registered`, none waitlisted, none refused, on an event whose `max_slots`
+    // was 8 and whose Event Hub header renders "8 slot cap". That is the ticket.
+    //
+    // ══ WHY REFUSE, RATHER THAN ATTACH-BUT-NOT-REGISTERABLE ═══════════════════════════════
+    // Because there is no way back. Checked before choosing:
+    //   * Nothing else inserts `orbat_slots`. `assign_slot` / `clear_slot` only move
+    //     `assigned_to` on rows that already exist; `reserve_squad` / `release_squad` touch
+    //     `orbat_reservations`. The only other writer in the tree is the dev seed
+    //     (`seeds/content_golden.sql:605`), inserting directly.
+    //   * So a zero-slot `event_missions` row can NEVER gain slots. The sole recovery is
+    //     `DELETE /events/:id/missions/:emid` and re-attach — which an admin has to know to do,
+    //     having just been told the attach succeeded.
+    //   * The ORBAT is authored UPSTREAM, on the mission (`editor.factions[]`, read by
+    //     `derive_orbat_from_editor`), and this endpoint *snapshots* it. The workflow is
+    //     author-then-attach; there is no attach-then-author path to protect.
+    //   * The SPA cannot use the result either: the Event Hub's Register button is disabled
+    //     while no slot is selected (`frontend/src/event_hub.rs:914`), and a zero-slot dossier
+    //     has nothing to select. It renders as a dead card with no explanation.
+    // Refusing costs a re-request at the one moment the caller still has the context to fix
+    // it; downgrading costs a permanent, silent dead end. Same reasoning as T-348: silently
+    // accepting a payload that cannot mean what it says hides the mistake.
+    //
+    // The count is over SLOTS, not squads. A non-empty squad list whose `slots` arrays are all
+    // empty is exactly T-368's case — zero rows from a perfectly *valid* payload — and
+    // `input.orbat.is_empty()` above cannot see it.
+    if template.iter().all(|sq| sq.slots.is_empty()) {
+        return Err(if orbat_from_request {
+            ApiError::bad_request(
+                "`orbat` describes no slots, so nobody could be seated — every squad's `slots` array is empty",
+            )
+        } else {
+            ApiError::conflict(
+                "this mission's ORBAT describes no slots, so nobody could be seated — author its ORBAT and publish a version, or attach with an explicit `orbat`",
+            )
+        });
+    }
 
     let mut tx = state.pool.begin().await?;
     let em: EventMission = sqlx::query_as(
@@ -1396,15 +1538,25 @@ pub async fn register_for_event_mission(
         .fetch_one(&mut *tx)
         .await?;
 
-    let ev_gate: Option<(EventStatus, bool)> = sqlx::query_as(sql(format!(
-        "SELECT {} AS status, e.registration_locked FROM events e \
-         WHERE e.id = $1 AND e.deleted_at IS NULL",
+    // `FOR UPDATE OF e` serializes registrations across the WHOLE event, which the
+    // `event_missions` lock above cannot do — see the `max_slots` block below, whose count
+    // spans every mission on this event. `OF e` restricts the lock to the `events` row so the
+    // `event_missions` subquery inside [`EFFECTIVE_STATUS_SQL`] is not locked too; that is the
+    // same form, for the same reason, as the sweep at [`sweep_once`].
+    //
+    // LOCK ORDER is `event_missions` → `events`, and nothing takes the reverse: the only other
+    // `events` row lock in the crate is the sweep, which locks `events` alone and merely *reads*
+    // `event_missions`. Withdraw and [`assign_slot`] lock `event_missions` alone. Keep it that
+    // way — a path that took `events` before `event_missions` would close the cycle.
+    let ev_gate: Option<(EventStatus, bool, i64)> = sqlx::query_as(sql(format!(
+        "SELECT {} AS status, e.registration_locked, e.max_slots FROM events e \
+         WHERE e.id = $1 AND e.deleted_at IS NULL FOR UPDATE OF e",
         &*EFFECTIVE_STATUS_SQL
     )))
     .bind(em.event_id)
     .fetch_optional(&mut *tx)
     .await?;
-    let Some((status, registration_locked)) = ev_gate else {
+    let Some((status, registration_locked, max_slots)) = ev_gate else {
         return Err(ApiError::not_found("event not found"));
     };
     if !can_register_status(status) {
@@ -1430,6 +1582,65 @@ pub async fn register_for_event_mission(
     .bind(me)
     .fetch_one(&mut *tx)
     .await?;
+
+    // ══ A SEATLESS OPERATION IS NOT AN UNLIMITED ONE (T-227) ══════════════════════════════
+    // The waitlist branch below used to read `capacity > 0 && registered >= capacity`. The
+    // `capacity > 0` clause reads like a guard and is the opposite: at `capacity == 0` it
+    // switches the capacity check OFF, so every seatless registration was accepted as
+    // `registered`, without bound. Refused here, before anything is written.
+    //
+    // Refused rather than waitlisted, and the distinction is not cosmetic: `Waitlisted` is a
+    // promise that a seat may come free, and withdraw promotes against exactly that. No seat can
+    // ever come free from an ORBAT that has none, so a waitlist here would be a queue that
+    // cannot move. 409 says the true thing.
+    //
+    // [`add_event_mission`] now refuses to create this state at all, so reaching it means the
+    // rows predate that fix or were seeded directly (`seeds/content_golden.sql:605`). Both are
+    // real: this is the guard for the data, the attach refusal is the guard for the door.
+    if capacity == 0 {
+        return Err(ApiError::conflict(
+            "this operation has no ORBAT slots, so there is nothing to register for",
+        ));
+    }
+
+    // ══ `events.max_slots` — THE FIELD THAT LOOKED LOAD-BEARING AND WAS NOT (T-227) ════════
+    // It was validated on create (`0..=256`), editable via PATCH, rendered by the SPA as
+    // "{max_slots} slot cap" on the Event Hub header (`frontend/src/events.rs:366`) — and read
+    // by no decision anywhere. An operator could cap an operation at 8, see the cap on the page,
+    // and watch 40 people register.
+    //
+    // Wired rather than removed, because the UI already promises it and admins already set it;
+    // deleting it would quietly withdraw a capability the product appears to have. And note the
+    // brief's other option — "the capacity when there is no ORBAT" — is dead code given the
+    // refusals above: there is no longer any registerable operation without an ORBAT.
+    //
+    // What it means: `max_slots` is on `events`, the CONTAINER, while `orbat_slots` belong to one
+    // `event_missions` row. They measure different things, so this is a second, event-wide bound
+    // and not a duplicate of `capacity` — an operation can field three missions of 40 seats and
+    // still cap attendance at 60. `0` remains "no cap" (the column default, and the same
+    // threshold the SPA uses to decide whether to render the badge at all).
+    //
+    // Counted in DISTINCT people, not registrations: signing up for a second mission of the same
+    // operation is one person attending one operation, and must not consume a second unit of an
+    // attendance cap. Hence `mine` — a caller already registered somewhere on this event adds
+    // nobody new and is never refused by it. This count spans missions, which is why the read
+    // above took the `events` row `FOR UPDATE`; without that, two registrations on two different
+    // missions could both pass the cap in the same instant.
+    let (others, mine): (i64, bool) = sqlx::query_as(
+        "SELECT count(DISTINCT r.discord_id) FILTER (WHERE r.discord_id <> $2), \
+                count(*) FILTER (WHERE r.discord_id = $2) > 0 \
+         FROM event_registrations r JOIN event_missions m ON m.id = r.event_mission_id \
+         WHERE m.event_id = $1 AND r.state::text = 'registered'",
+    )
+    .bind(em.event_id)
+    .bind(me)
+    .fetch_one(&mut *tx)
+    .await?;
+    if max_slots > 0 && !mine && others >= max_slots {
+        return Err(ApiError::conflict(
+            "this operation is full — its slot cap has been reached",
+        ));
+    }
 
     // The seat this request asks for, resolved BEFORE anything is written so that a
     // syntactically impossible id is still a plain 404 and not a release-then-fail.
@@ -1529,7 +1740,10 @@ pub async fn register_for_event_mission(
             return Err(ApiError::conflict("slot already taken"));
         }
         slot_id = Some(sid);
-    } else if capacity > 0 && registered >= capacity {
+    } else if registered >= capacity {
+        // `capacity > 0` used to guard this comparison and was the whole bug (T-227): it did not
+        // protect the check, it disabled it. Zero capacity is refused above, so `capacity` is
+        // now always ≥ 1 here and the bound is unconditional.
         reg_state = RegistrationState::Waitlisted;
     }
 
