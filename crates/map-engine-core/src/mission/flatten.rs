@@ -3071,9 +3071,8 @@ mod tests {
     /// 142 MB) and WHICH of the two one-keystroke-apart keys they wanted.
     #[test]
     fn a_library_blurb_on_a_faction_row_is_a_save_time_finding_not_a_compile_500() {
-        let payload = graph_with_faction_briefing(Some(serde_json::json!(
-            "Take the bridge before dawn."
-        )));
+        let payload =
+            graph_with_faction_briefing(Some(serde_json::json!("Take the bridge before dawn.")));
 
         // The compiler cannot read it — this is the 500 the ticket is about, at its source.
         assert!(matches!(
@@ -3115,19 +3114,41 @@ mod tests {
         let cases: [(&str, Option<serde_json::Value>, bool); 11] = [
             ("no briefing key", None, true),
             ("explicit null", Some(serde_json::Value::Null), true),
-            ("the library blurb", Some(serde_json::json!("some string")), false),
+            (
+                "the library blurb",
+                Some(serde_json::json!("some string")),
+                false,
+            ),
             ("a number", Some(serde_json::json!(3)), false),
             ("a boolean", Some(serde_json::json!(true)), false),
-            ("situation as a number", Some(serde_json::json!({"situation": 5})), false),
-            ("markers as a string", Some(serde_json::json!({"markers": "OBJ"})), false),
+            (
+                "situation as a number",
+                Some(serde_json::json!({"situation": 5})),
+                false,
+            ),
+            (
+                "markers as a string",
+                Some(serde_json::json!({"markers": "OBJ"})),
+                false,
+            ),
             (
                 "marker.x as a string",
-                Some(serde_json::json!({"markers": [{"x": "5", "z": 10, "icon": "o", "label": "L"}]})),
+                Some(
+                    serde_json::json!({"markers": [{"x": "5", "z": 10, "icon": "o", "label": "L"}]}),
+                ),
                 false,
             ),
             ("an array", Some(serde_json::json!([])), true),
-            ("situation null", Some(serde_json::json!({"situation": null})), true),
-            ("an unknown subkey", Some(serde_json::json!({"nope": 1})), true),
+            (
+                "situation null",
+                Some(serde_json::json!({"situation": null})),
+                true,
+            ),
+            (
+                "an unknown subkey",
+                Some(serde_json::json!({"nope": 1})),
+                true,
+            ),
         ];
 
         for (name, value, compiles) in cases {
@@ -3213,7 +3234,10 @@ mod tests {
             "{found:?}"
         );
         // The healthy row 0 is not mentioned.
-        assert!(!found.iter().any(|f| f.contains("/markers/0/")), "{found:?}");
+        assert!(
+            !found.iter().any(|f| f.contains("/markers/0/")),
+            "{found:?}"
+        );
     }
 
     /// The whole reason the precheck can be trusted at the write boundary: it must not reject
@@ -3223,7 +3247,10 @@ mod tests {
     fn the_precheck_is_silent_on_every_payload_this_module_already_compiles() {
         for (name, bytes) in [
             ("FIXTURE", FIXTURE.as_bytes()),
-            ("COMPILER_SHAPED_PAYLOAD", COMPILER_SHAPED_PAYLOAD.as_bytes()),
+            (
+                "COMPILER_SHAPED_PAYLOAD",
+                COMPILER_SHAPED_PAYLOAD.as_bytes(),
+            ),
         ] {
             assert!(
                 scan_editor_payload_types(bytes).is_empty(),

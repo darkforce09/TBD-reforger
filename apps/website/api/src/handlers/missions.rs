@@ -57,6 +57,61 @@ fn valid_weather(s: &str) -> Option<WeatherType> {
     }
 }
 
+/// `HH:MM` or `HH:MM:SS` → the same string, bound verbatim to the `missions.time_of_day` `time`
+/// column; `None` when it is not a clock this platform can round-trip.
+///
+/// ── Why this exists (T-367, from T-366's driven 500s) ────────────────────────────────────────
+/// `time_of_day` reached `$N::time` with no validator of its own, so Postgres did the validating and
+/// its rejection surfaced as **HTTP 500 `{"error":"internal error"}`**. Driven on the live path:
+/// POST `"   "` / `"not-a-time"` / `"\t"` / `"25:00"` → 500 (POST's `is_empty()` guard is untrimmed,
+/// so whitespace walks straight through it); PATCH had no guard at all, so `""` 500'd there too.
+/// A caller cannot tell any of those from a genuine server fault.
+///
+/// ── Why it is NARROWER than the column, deliberately ────────────────────────────────────────
+/// Measured against Postgres 18 directly: `time` also accepts `24:00`, `0600`, `4:05 PM`, `allballs`,
+/// `06:00:00.5` and `06:00:60` (a leap second, silently normalised to `06:01:00`). Every one of those
+/// would store fine and then be unreadable to the editor: the SPA's clock parser
+/// (`eden_chrome::hhmm_to_minutes`) takes `HH:MM`/`HH:MM:SS` with `h <= 23`, `m <= 59`, `sec <= 59`,
+/// and T-192 exists because a value that parser cannot read parks the time-of-day scrubber at the
+/// 06:00 default **in silence** — an author who set 21:45 sees 06:00 after a reload. So "what the
+/// column accepts" is the wrong bar; the right one is "what the platform can round-trip", and this
+/// mirrors `hhmm_to_minutes` exactly so the two boundaries agree (T-346's lesson: the bug is
+/// DISAGREEMENT between two sites). It is stricter in one place only — every component must be ASCII
+/// digits, because Rust's `u32::from_str` accepts a leading `+` (`"+6:00"` would parse here and then
+/// be rejected by Postgres, which is the 500 all over again).
+///
+/// Blast radius measured before tightening: all **87** live `missions` rows are plain `HH:MM:SS` with
+/// zero sub-second components, and every producer that goes through this API emits `HH:MM` (the
+/// create dialog, `RowMirror::set_time` via `normalize_clock`) or `HH:MM:SS` (the row hydrate
+/// round-trip). The committed seeds `INSERT` directly and never touch this path. Nothing live is
+/// rejected.
+///
+/// Returns the input UNCHANGED rather than a canonical form: this layer stores the author's bytes
+/// verbatim, and normalising one side of a column two sites write is how T-346 happened. This
+/// REJECTS; it does not repair.
+fn valid_time_of_day(s: &str) -> Option<&str> {
+    let mut parts = s.split(':');
+    let h: u32 = digits(parts.next()?)?;
+    let m: u32 = digits(parts.next()?)?;
+    if let Some(sec) = parts.next()
+        && digits(sec)? > 59
+    {
+        return None;
+    }
+    if parts.next().is_some() || h > 23 || m > 59 {
+        return None;
+    }
+    Some(s)
+}
+
+/// One `HH`/`MM`/`SS` component: non-empty ASCII digits only. See [`valid_time_of_day`] on `+`.
+fn digits(part: &str) -> Option<u32> {
+    if part.is_empty() || !part.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    part.parse().ok()
+}
+
 fn can_edit(u: &AuthUser, m: &Mission) -> bool {
     m.author_id == u.discord_id || u.role == "admin"
 }
@@ -314,12 +369,21 @@ pub async fn create_mission(
             "title, terrain, game_mode and max_players are required",
         ));
     }
+    // An ABSENT/empty `time_of_day` keeps its documented default; a value that was SUPPLIED and is
+    // not a clock is the author's mistake and is refused. Those are different facts and the split is
+    // deliberate: treating `"   "` as "unspecified" would be the silent downgrade T-348 argued
+    // against for an unrecognised cms status, and trimming it here would put a whitespace rule in a
+    // second place (T-356 owns that, in Rust, at one site).
     let time_of_day = if input.time_of_day.is_empty() {
-        "14:00"
+        "14:00".to_string()
     } else {
-        &input.time_of_day
-    }
-    .to_string();
+        let Some(t) = valid_time_of_day(&input.time_of_day) else {
+            return Err(ApiError::bad_request(
+                "invalid time_of_day (expected HH:MM or HH:MM:SS)",
+            ));
+        };
+        t.to_string()
+    };
     let payload_str = input.payload.as_ref().map_or("{}", |p| p.get()).to_string();
 
     validate_payload(&payload_str)?;
@@ -416,9 +480,17 @@ pub async fn update_mission(
         };
         qb.push(", weather = ").push_bind(weather);
     }
+    // Unlike POST there is no default to fall back to — a PATCH naming the key is asking to SET it,
+    // and `""` is not a clock. Every value this rejects answered 500 before T-367 (`""`, `"   "`,
+    // `"not-a-time"` all did), so nothing that worked stops working.
     if let Some(t) = &input.time_of_day {
+        let Some(t) = valid_time_of_day(t) else {
+            return Err(ApiError::bad_request(
+                "invalid time_of_day (expected HH:MM or HH:MM:SS)",
+            ));
+        };
         qb.push(", time_of_day = ")
-            .push_bind(t.clone())
+            .push_bind(t.to_string())
             .push("::time");
     }
     if let Some(mp) = input.max_players {
@@ -1260,5 +1332,68 @@ impl MissionStatus {
             MissionStatus::Rejected => "rejected",
             MissionStatus::Archived => "archived",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The `time_of_day` accept set, pinned against behaviour MEASURED on Postgres 18 rather than
+    /// assumed — see [`valid_time_of_day`] for why the two columns of this table differ.
+    ///
+    /// The `false` rows split into two kinds, and both matter:
+    ///
+    /// * Postgres would REJECT them (`"   "`, `"not-a-time"`, `"25:00"`, `"06:60"`, `"+6:00"`, `""`).
+    ///   Each was a live **500** before T-367; each is now a 400. `"+6:00"` is the one Rust's
+    ///   `u32::from_str` would have let through on its own — it takes a leading `+`.
+    /// * Postgres would ACCEPT them (`"24:00"`, `"0600"`, `"4:05 PM"`, `"allballs"`,
+    ///   `"06:00:00.5"`, `"06:00:60"`). Those are refused on purpose: they store fine and are then
+    ///   unreadable to `eden_chrome::hhmm_to_minutes`, which parks the author's scrubber back at the
+    ///   06:00 default without saying anything. That is the T-192 bug, and letting one in through
+    ///   this door would recreate it.
+    #[test]
+    fn time_of_day_accepts_the_clocks_the_platform_can_round_trip() {
+        for (input, accepted) in [
+            // What every producer on this path actually emits.
+            ("06:00", true),
+            ("06:00:00", true),
+            ("6:00", true),
+            ("23:59:59", true),
+            ("00:00", true),
+            ("21:45:00", true),
+            // Postgres rejects these — each was a 500.
+            ("", false),
+            ("   ", false),
+            ("\t", false),
+            ("not-a-time", false),
+            ("25:00", false),
+            ("06:60", false),
+            ("+6:00", false),
+            (" 6:00", false),
+            ("06:00:", false),
+            ("06:00:00:00", false),
+            // Postgres ACCEPTS these; the editor cannot read them back.
+            ("24:00", false),
+            ("0600", false),
+            ("4:05 PM", false),
+            ("allballs", false),
+            ("06:00:00.5", false),
+            ("06:00:60", false),
+        ] {
+            assert_eq!(
+                valid_time_of_day(input).is_some(),
+                accepted,
+                "time_of_day {input:?}"
+            );
+        }
+    }
+
+    /// The value is stored as the author wrote it. This layer REJECTS; it does not repair — a
+    /// one-sided normalisation of a column two sites write is how T-346 happened.
+    #[test]
+    fn an_accepted_time_of_day_is_returned_verbatim() {
+        assert_eq!(valid_time_of_day("6:00"), Some("6:00"));
+        assert_eq!(valid_time_of_day("06:00:00"), Some("06:00:00"));
     }
 }
