@@ -492,10 +492,10 @@ $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) wit
 | T-248 | 2660 | shipped | platform | oauth_state cookie survives the two early-return error paths | The clear-cookie string is built after the missing_code and invalid_state early returns, so both leave the ten-minute CSRF cookie live. DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL also have no startup guard, so a misconfigured secret is reported to the user as discord_unreachable — a misconfig disguised as an outage. |
 | T-249 | 2670 | shipped | eden | Add a slot.y fixture | No golden authors slots[].y, so the entire schema-1.2 path — Y_ABSENT sentinel (TBD_MissionSlotStruct.c:47,57), HasJsonY(), TBD_SpawnManager.c:957-973 — is untested end to end despite T-092.1 shipping it. |
 | T-250 | 2680 | shipped | eden | Warn on unconsumed mission-document keys | TBD_MissionValidator has no unconsumed-key warning, so nothing tells an author that environment, settings, entities, layers, tickets or roles[].radio were silently discarded on load. |
-| T-251 | 2690 | ready | infra | Production deployment story | No Dockerfile, no docker-compose.staging.yml (referenced by deploy.env.example and HOME_SERVER.md but absent), no deploy-website.sh, no deploy job in any of the four CI workflows, no TLS or reverse-proxy config in-repo, no pg_dump backup script, and no metrics, Sentry or OTel dependency. |
+| T-251 | 2690 | shipped | infra | Production deployment story | No Dockerfile, no docker-compose.staging.yml (referenced by deploy.env.example and HOME_SERVER.md but absent), no deploy-website.sh, no deploy job in any of the four CI workflows, no TLS or reverse-proxy config in-repo, no pg_dump backup script, and no metrics, Sentry or OTel dependency. |
 | T-252 | 2700 | cancelled | infra | Stale docs that would break a real deploy | CANCELLED — merged into T-187. Both edit scripts/mod/setup-server-profile.sh: :38 copies a golden that does not exist, :31 reads GAME_SERVER_TOKENS while the code reads SERVICE_TOKEN. One file, one agent. |
-| T-253 | 2710 | ready | infra | Reclaim 65GB and stop double-compiling | target/ is 52GB, target-ci/ another 12GB, and .git/lfs holds 1.6GB of objects from tile pyramids untracked back on 2026-07-03. Disk is at 87%. Also no CARGO_TARGET_DIR is set, so the moment Rust work is sliced across worktrees each one starts a cold build. |
-| T-254 | 2720 | ready | eden | Entity and object placement — the whole entities[] block | The Objects chip is a stub (eden_chrome.rs:1466-1470), place_at no-ops in objects mode (editor_ops.rs:1598-1602), the palette filters to kind==character (asset_catalog.rs:63), and the doc has no entities map. The mod has no reader either. Also blocks objective_destroy, which resolves rules.targetAlias against entities[]. |
+| T-253 | 2710 | shipped | infra | Reclaim 65GB and stop double-compiling | target/ is 52GB, target-ci/ another 12GB, and .git/lfs holds 1.6GB of objects from tile pyramids untracked back on 2026-07-03. Disk is at 87%. Also no CARGO_TARGET_DIR is set, so the moment Rust work is sliced across worktrees each one starts a cold build. |
+| T-254 | 2720 | shipped | eden | Entity and object placement — the whole entities[] block | The Objects chip is a stub (eden_chrome.rs:1466-1470), place_at no-ops in objects mode (editor_ops.rs:1598-1602), the palette filters to kind==character (asset_catalog.rs:63), and the doc has no entities map. The mod has no reader either. Also blocks objective_destroy, which resolves rules.targetAlias against entities[]. |
 | T-255 | 2730 | idea | eden | Asset palette is not side-aware | build_catalog_tree (asset_catalog.rs:60) takes no side and filters kind==character, so a BLUFOR chip plus a USSR character is accepted silently — even though the registry categories already encode the side. T-153 specified the Faction Library should replace the raw registry dump here; the Leptos port reverted it and documents the revert in its own header. |
 | T-256 | 2740 | idea | eden | Faction library is empty on every fresh install | faction-library.sample.json is one faction, two roles, one vehicle, and both roles point at the same prefab. It is a schema fixture. There is no seed and no import path, so Load Predefined ORBAT has zero entries until someone hand-builds one. |
 | T-257 | 2750 | idea | eden | Markers and objectives will be non-undoable the day they land | hydrate clears loadouts, items, objectives and markers (store.rs:1102-1120) but those four roots are not in the UndoManager expand_scope (store.rs:101-106). Harmless today because nothing mutates them — a silent trap for the marker and objective work. |
@@ -2314,11 +2314,28 @@ Cure: align CI with make schema-validate (or document intentional narrowing with
 Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.
 
 Cure: unit test with terrain=arland expecting 4096² ring. |
-| T-436 | 3275 | ready | platform | Harden deploy-website.sh: require /home/sam/tbd/ prefix + case-insensitive prairielearn refuse | In-wave hotfix from wave 9 adversarial verify (M2/M3). deploy-website.sh refused only substring prairielearn (case-sensitive) and did not enforce the documented /home/sam/tbd/ prefix, so a filled deploy.env could dry-run/rsync --delete to arbitrary paths (e.g. /tmp/not-tbd-at-all). PrairieLearn mixed-case paths also slipped through.
+| T-436 | 3275 | shipped | platform | Harden deploy-website.sh: require /home/sam/tbd/ prefix + case-insensitive prairielearn refuse | In-wave hotfix from wave 9 adversarial verify (M2/M3). deploy-website.sh refused only substring prairielearn (case-sensitive) and did not enforce the documented /home/sam/tbd/ prefix, so a filled deploy.env could dry-run/rsync --delete to arbitrary paths (e.g. /tmp/not-tbd-at-all). PrairieLearn mixed-case paths also slipped through.
 
 Repro before fix: DEPLOY_ENV with TBD_REMOTE_DIR=/tmp/not-tbd-at-all → --dry-run rc=0.
 
 Cure: fail-closed prefix check under /home/sam/tbd/ + case-insensitive prairielearn refuse. |
+| T-437 | 3276 | deferred | platform | Destroy-target inert diagnostics still claim entities[] never spawn | Residual from T-254 / wave 9 adversarial MAJOR M1. After T-254, TBD_MissionDocumentStruct models entities[] and SpawnMissionEntities runs on parse, but operator-facing inert strings still blame a build that does not spawn/model entities.
+
+Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c:647 (also banners/comments at :609-620, TBD_ObjectivesComponent.c:694-697, TBD_ObjectiveRules.c:115-117, packages/tbd-schema/schema/mission.schema.json:465).
+
+Repro: author a destroy objective whose alias fails for zone/timing/registry reasons; inertReason still says the build does not spawn entities[] — misdiagnoses live failures.
+
+Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs out-of-zone; update schema prose. |
+| T-438 | 3277 | deferred | platform | deploy-staging.sh still looks for docker-compose.staging.yml under apps/website/api | Residual from T-251 / wave 9 N1. T-251 placed apps/website/docker-compose.staging.yml, but scripts/mod/deploy-staging.sh:184 still cds to apps/website/api and runs docker compose -f docker-compose.staging.yml there.
+
+Repro: after T-251 land, follow game staging path that uses deploy-staging.sh compose step — file not found / wrong cwd.
+
+Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-compose.staging.yml; align STAGING-SERVER.md. |
+| T-439 | 3278 | deferred | platform | Objects palette aliases need prop:/comp: rows in mod Data/registry.json | Residual from T-254 / wave 9 N5. Editor synthesises prop:*/comp:* aliases for crate\|other (~333 workbench kinds); mod Data/registry.json has 1 comp: (comp:checkpoint_small) and 0 prop: entries. SpawnMissionEntities warn+skips unknown aliases.
+
+Repro: place a non-checkpoint Objects leaf → compile entities[] → world-boot → spawn warns and skips; only checkpoint_small resolves.
+
+Cure: export/register prop: and comp: rows for Objects-eligible kinds (or narrow palette to known aliases until registry catches up). |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
