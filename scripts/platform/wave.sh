@@ -279,7 +279,11 @@ cmd_gate() {
   # is red before any slice merges is a gate nothing can ever pass. ci.yml:68 tests website-api,
   # :115 tests website-frontend; map-engine is covered by its own job.
   run "test api"         hostrun cargo test -p website-api --quiet
-  run "test map-engine"  hostrun cargo test -p map-engine-core -p map-engine-render --quiet
+  # --features mission is REQUIRED. The mission module is feature-gated, so a bare
+  # `cargo test -p map-engine-core` runs 116 tests and silently skips 26 — every test in flatten.rs,
+  # which is the most contended file in the backlog and the one T-182 inverted a pinning assertion
+  # in last wave. Measured 2026-07-26: bare 116, --features mission 142. Found by T-183's agent.
+  run "test map-engine"  hostrun cargo test -p map-engine-core --features mission -p map-engine-render --quiet
   run "test frontend"    hostrun cargo test -p website-frontend --quiet
   # The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
   # when the wave actually touched the frontend — measured across the WHOLE wave, not the last merge.
