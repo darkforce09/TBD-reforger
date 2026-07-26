@@ -9196,7 +9196,7 @@
     {
       "id": "T-313",
       "title": "The author can never read why their mission was rejected",
-      "summary": "Found by T-218 after making the reason reach the database. GET /missions/:id DOES serve rejection_reason — confirmed by curl — but the SPA drops it: dto.rs MissionDetail declares no rejection_reason field and has no #[serde(flatten)] catch-all (unlike MissionCard in the same file), so serde discards it at parse time, and mission_overview.rs:171 renders only detail(\"Status\", m.status). The author sees the word 'rejected' and nothing else. So the whole review loop is: reviewer types a reason, it now persists correctly, and the one person who needs it cannot see it. Add the DTO field and render it. Both files were outside T-218's slice.\n\n== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==\nRecording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.\nThis is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+      "summary": "Found by T-218 after making the reason reach the database. GET /missions/:id DOES serve rejection_reason — confirmed by curl — but the SPA drops it: dto.rs MissionDetail declares no rejection_reason field and has no #[serde(flatten)] catch-all (unlike MissionCard in the same file), so serde discards it at parse time, and mission_overview.rs:171 renders only detail(\"Status\", m.status). The author sees the word 'rejected' and nothing else. So the whole review loop is: reviewer types a reason, it now persists correctly, and the one person who needs it cannot see it. Add the DTO field and render it. Both files were outside T-218's slice.\n\n== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==\nRecording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.\nThis is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.\n\nCANCELLED — DELIVERED BY T-389, which shipped the RETURNED badge, the reason text on the author's own card and dossier, and a working resubmit that clears the stamp. Verified in a browser end to end. Nothing left in this ticket's ask.",
       "program": "platform",
       "surfaces": [
         "SHELL"
@@ -9204,7 +9204,7 @@
       "impact": [
         "mc-collab"
       ],
-      "status": "deferred",
+      "status": "cancelled",
       "order": 2313,
       "stream": "web-platform",
       "targets": [
@@ -10768,7 +10768,7 @@
     {
       "id": "T-389",
       "title": "Wire the Submit for Approval button, and let the author read the verdict",
-      "summary": "MAKES T-234's WORK REACHABLE. T-234 proved POST /missions/{id}/submit is the sole door into the approvals queue and that the SPA never calls it, so /admin/approvals is permanently empty in production. It hardened the endpoint (SQL-enforced status guard, cleared stale review stamps, added a mission.submit audit) and specified the caller precisely.\n\nTHE BUTTON: apps/website/frontend/src/missions.rs:833 — the `<div class=\"flex flex-wrap gap-2\">` row in the can_edit Manage section (Archive :834-845, Delete :846-853). Gate on `m.status == \"draft\" || m.status == \"rejected\"`; handler mirrors toggle_archive (:676-715) but calls `api_post_ok(store, &format!(\"/missions/{id}/submit\"), json!({}))` then `changed.run(())`. approvals.rs:302 already uses that exact shape.\n\nTWO SUPPORTING GAPS — wiring the button without these gives the author a button and NO FEEDBACK LOOP, which is worse than no button:\n  missions.rs:46-55 `visibility_badge` has no \"rejected\" arm, so it falls through to `other => (other.to_string(), \"neutral\")` and renders the raw string `rejected`.\n  dto.rs has NO rejection_reason / reviewed_by / reviewed_at on MissionCard (:312) or MissionDetail (:657). The API writes rejection_reason (approvals.rs:217) and **it is the only thing an author is ever told about why their mission came back.** That is T-313's subject (deferred); this is the cheapest useful slice of it, so do that much here.\n\nAlso: missions.rs:615 gates on `is_maker && (is_owner || is_admin)`, stricter than the API's `author || admin` — so a non-maker author is shown no Manage section for their own mission.\n\nNOTE the DTO mirror is R-api golden-tested, so a shape change needs the golden recaptured in the SAME commit, never ahead of the route. T-306 removed a #[serde(flatten)] catch-all precisely so a DTO asserting a field the backend lacks fails a gate rather than rendering a placeholder.\n\nAnd one thing T-234 measured that shapes the UX: GET /approvals is admin-tier, so **the author cannot see the queue they fed.** Decide whether the author needs a view of their own pending submission, or whether the status badge plus the rejection reason on their own mission card is sufficient. The second is probably right and is what this ticket describes.",
+      "summary": "MAKES T-234's WORK REACHABLE. T-234 proved POST /missions/{id}/submit is the sole door into the approvals queue and that the SPA never calls it, so /admin/approvals is permanently empty in production. It hardened the endpoint (SQL-enforced status guard, cleared stale review stamps, added a mission.submit audit) and specified the caller precisely.\n\nTHE BUTTON: apps/website/frontend/src/missions.rs:833 — the `<div class=\"flex flex-wrap gap-2\">` row in the can_edit Manage section (Archive :834-845, Delete :846-853). Gate on `m.status == \"draft\" || m.status == \"rejected\"`; handler mirrors toggle_archive (:676-715) but calls `api_post_ok(store, &format!(\"/missions/{id}/submit\"), json!({}))` then `changed.run(())`. approvals.rs:302 already uses that exact shape.\n\nTWO SUPPORTING GAPS — wiring the button without these gives the author a button and NO FEEDBACK LOOP, which is worse than no button:\n  missions.rs:46-55 `visibility_badge` has no \"rejected\" arm, so it falls through to `other => (other.to_string(), \"neutral\")` and renders the raw string `rejected`.\n  dto.rs has NO rejection_reason / reviewed_by / reviewed_at on MissionCard (:312) or MissionDetail (:657). The API writes rejection_reason (approvals.rs:217) and **it is the only thing an author is ever told about why their mission came back.** That is T-313's subject (deferred); this is the cheapest useful slice of it, so do that much here.\n\nAlso: missions.rs:615 gates on `is_maker && (is_owner || is_admin)`, stricter than the API's `author || admin` — so a non-maker author is shown no Manage section for their own mission.\n\nNOTE the DTO mirror is R-api golden-tested, so a shape change needs the golden recaptured in the SAME commit, never ahead of the route. T-306 removed a #[serde(flatten)] catch-all precisely so a DTO asserting a field the backend lacks fails a gate rather than rendering a placeholder.\n\nAnd one thing T-234 measured that shapes the UX: GET /approvals is admin-tier, so **the author cannot see the queue they fed.** Decide whether the author needs a view of their own pending submission, or whether the status badge plus the rejection reason on their own mission card is sufficient. The second is probably right and is what this ticket describes.\n\nSHIPPED (a4f78a49, merged 7a0003f2). BROWSER-VERIFIED round trip with a real mouse click, run twice: author submits draft -> pending_approval -> admin sees it in GET /approvals while the AUTHOR gets 403 -> reviewer rejects with a reason -> author's card shows RETURNED plus the reason text and the dossier shows the RETURNED BY REVIEW callout with reviewed_at -> Resubmit clears rejection_reason/reviewed_by/reviewed_at and re-queues. T-234's `mission.submit` audit row was written by that click.\nUX decision: status badge + reason on the author's OWN card and dossier, NOT an author-facing queue view — GET /approvals is RequireMinRole(admin) and 403s for the author (confirmed both before and after), so a queue view means a new endpoint or a tier change, a bigger ticket than 'tell the author what happened'.\nSPLIT THE is_maker GATE, deliberately: can_edit = is_maker && (is_owner || is_admin) still gates the Mission Creator CTA and collaboration, and a NEW can_manage = is_owner || is_admin gates lifecycle (submit/archive/delete) and the rejection feedback. That mirrors the API exactly — submit_mission, update_mission and delete_mission all take a plain AuthUser and test author||admin; only create_mission requires MissionMakerUser. Without the split, a DEMOTED maker who still owns missions would see neither the Manage row nor the rejection reason — the one person who needs it.\nTwo new goldens captured off the real submit->reject path; the two pre-existing mission goldens left untouched because they back the missions.dom.json/missionview.dom.json oracle freeze. Frontend suite 168/168, R-api 31/31, SLICE GATE PASS.\nIts golden-flatten finding is now T-394; the mission_overview raw-status render is T-395 (it reported filing that and did not). Superseded T-313.\nNOT browser-verified, by its own account: the 409/403 strings surfacing through a toast (driven over HTTP but not through the UI), and the success-toast text (expired before first poll). Known rough edge left deliberately: after a successful submit the OPEN SHEET still offers 'Submit for review' until reopened — changed.run(()) refetches the grid but not the dossier's own resource. Mirrors pre-existing toggle_archive behaviour; a second click gets a real 409 message, not silence.",
       "program": "platform",
       "surfaces": [
         "FRONTEND"
@@ -10869,6 +10869,46 @@
       ],
       "executor": "claude-code",
       "priority": 0
+    },
+    {
+      "id": "T-394",
+      "title": "assert_golden cannot detect a dropped field on any struct with #[serde(flatten)]",
+      "summary": "GATE DEFECT, verified structurally on main. `MissionCard` (handlers/missions.rs:132-134) carries `#[serde(flatten)] pub mission: Mission` alongside named sibling fields. When a named field duplicates a key the flattened struct also emits, DELETING THE NAMED FIELD LEAVES THE JSON BYTE-IDENTICAL — the flattened struct re-emits the same key. So `assert_golden` stays GREEN while the field is gone from the type.\n\nPROVEN by T-389 as a negative control: with `#[serde(skip)]` on `rejection_reason`, the byte-equality golden test passed and only its explicit 'is this a named field with a value' assertion failed. That is the T-306 lesson in a new shape, and the same family as this run's signature defect — a gate reporting success on something it structurally cannot see.\n\nSCOPE THIS BEFORE FIXING: the exposure is every golden-backed struct using flatten, not just MissionCard. Enumerate `#[serde(flatten)]` across the API and check which are golden-asserted.\n\nCheapest durable fix is not more assertions (T-389 hand-wrote per-field ones, which does not generalise): assert on the DESERIALIZED type, or deny_unknown_fields on a mirror struct, so the check is structural rather than textual. Note T-359's related hazard — a golden captured from a DRAFT mission has these fields absent, so it proves nothing about them either way; goldens must be captured from a row that actually populates the field under test.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3210,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-395",
+      "title": "mission_overview stat grid renders STATUS as raw lowercase `rejected`",
+      "summary": "MINOR/cosmetic — filed deferred per Rule 12, not worth this week's budget.\n\n`frontend/src/mission_overview.rs` renders the `STATUS` stat-grid cell as the raw DB enum (`rejected`, lowercase) a few hundred pixels below the correct 'RETURNED BY REVIEW' callout that T-389 added. Same defect class T-389 fixed, different file, so it was out of that slice's owns. Two labels for one state, disagreeing on the same screen. Needs the same label mapper the badge uses. Found by T-389, which reported filing it but did not.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "mission-authoring"
+      ],
+      "status": "deferred",
+      "order": 3211,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
     }
   ]
 }
