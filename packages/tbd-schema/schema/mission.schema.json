@@ -68,6 +68,7 @@
     },
     "entities": {
       "type": "array",
+      "description": "World objects the MISSION places itself — vehicles, compositions, props — each named by a registry alias.\n\nNOTHING READS THIS ON ANY BUILD SHIPPED TODAY, and a green validator is not evidence otherwise. `TBD_MissionDocumentStruct` (TBD_MissionLoader.c) declares no `entities` field, so the loader parses a mission and drops this array on the floor; no code path in the mod spawns a mission entity; `TBD_ObjectiveRegistry.ArmDestroyTargets` states this in its own header and reports a destroy objective that finds no target as a first-class DIAGNOSTIC rather than faking one (TBD_ObjectivesComponent.AdvanceDestroy repeats the warning); and the editor's vehicle row is `{id, resourceName, position, squadId}` (map-engine-core doc/store.rs `add_vehicle`) with nowhere to author contents. This array is a CONTRACT AHEAD OF ITS CONSUMER — legitimate, because the schema is the shared definition the mod, the API and the editor each build against, and defining it here is what lets those three land in any order — but it is a definition, not a capability. Do not cite it as a feature.",
       "items": { "$ref": "#/$defs/entity" }
     },
     "layers": {
@@ -394,6 +395,7 @@
     },
     "entity": {
       "type": "object",
+      "description": "One mission-placed world object. Read the top-level `entities` description before building on this — nothing on any shipped build spawns one.",
       "required": ["alias", "x", "z"],
       "additionalProperties": false,
       "properties": {
@@ -401,7 +403,29 @@
         "x": { "type": "number" },
         "z": { "type": "number" },
         "headingDeg": { "type": "number", "minimum": 0, "maximum": 360 },
-        "faction": { "$ref": "#/$defs/factionKey" }
+        "faction": { "$ref": "#/$defs/factionKey" },
+        "inventory": { "$ref": "#/$defs/entityInventory" }
+      }
+    },
+    "entityInventory": {
+      "type": "array",
+      "description": "What an author puts INTO this entity's own storage — the vehicle/crate answer to the question `slot.loadout.cargo` answers for a worn garment (T-198).\n\nWHY THIS IS NOT A cargoContainer ROW. `#/$defs/cargoContainer` is [vest, pants, jacket, backpack] and is closed by the ENGINE's worn-garment areas, not by content: TBD_LoadoutEquipHelper.GarmentForContainer resolves each key to a LoadoutArea on a CHARACTER, and the negative golden cargo-container-typo.json exists to keep it closed. Widening it to admit `vehicle`/`crate` was proposed and DECLINED — a vehicle is not a garment, and an enum that means \"worn area\" cannot be made to also mean \"any object with storage\" without losing the property that made it safe to close. Here the CONTAINER IS THE ENTITY, which is why these rows carry no `container` key at all: there is exactly one storage to address and `alias` already names it. Nor is a sub-compartment vocabulary invented — naming vehicle bays would be exactly the extensible-content enum T-181.34 correctly refused to close.\n\nNO CAPACITY FIELDS, deliberately. The limits already exist per prefab in registry-items.schema.json — `max_weight_kg` / `max_volume_cm3` / `cargo_grid_w` / `cargo_grid_h` (T-068.15.1) — across 218 `vehicle` and 311 `crate` rows, and the join is live today: entity.alias -> registry.json entry.guid -> the registry-items row keyed by that same ResourceName. `veh:m151_mg` resolves to {F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et = 360 kg / 25000 cm3 / a 4x125 grid. Restating any of that here would be a SECOND source of truth for a number the mission does not own, and the copy would go stale the first time the prefab is rebalanced. The mission says WHAT goes in; the registry says HOW MUCH fits.\n\nADDITIVE, never a wipe. A row is INSERTED into whatever the prefab already spawns carrying — the same layering `slot.loadout` does over the kit alias. Absent and `[]` therefore mean the SAME thing: leave the prefab's own contents alone. An \"empty it first\" semantic would need its own key and must never be spelled as the ABSENCE of this one, because that would silently redefine every mission authored before this key existed.\n\nNO CONSUMER YET — see the top-level `entities` description. This defines the contract; it does not deliver the capability.",
+      "items": {
+        "type": "object",
+        "required": ["item", "qty"],
+        "additionalProperties": false,
+        "properties": {
+          "item": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Enfusion ResourceName of the prefab to insert. Same vocabulary as `slot.loadout.cargo[].item` on purpose — ONE item spelling per document, so a given rifle is not a registry alias when it sits in a crate and a ResourceName when it sits in a vest."
+          },
+          "qty": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "UNIT COUNT, not a stack size. The character-side reader this mirrors (TBD_LoadoutEquipHelper.InsertCargo) spawns the prefab once per unit and inserts each one separately; an entity-side reader has the same engine primitive available against the entity's storage (SCR_InventoryStorageManagerComponent.TryInsertItemInStorage)."
+          }
+        }
       }
     },
     "flow": {
