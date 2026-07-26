@@ -1,0 +1,189 @@
+name: mod-gates
+
+# T-209 — the Enfusion compile gate + the headless world boot, in CI.
+#
+# ── WHY THIS IS A SEPARATE WORKFLOW ON A SELF-HOSTED RUNNER ────────────────────────────────
+# `scripts/mod/compile.sh` and `scripts/mod/world-boot.sh` are the best regression instruments
+# in this repo and neither ran in CI. They cannot run on a GitHub-hosted runner, and not for a
+# reason a clever workflow can engineer around: both drive the real **Arma Reforger dedicated
+# server** binary (`ArmaReforgerServer`) from the Steam depot for appid 1890870. That is a ~10 GB
+# download behind a Steam login, it is not redistributable, and the mod also needs the committed
+# `resourceDatabase.rdb` to match the script tree. So the honest options were a self-hosted runner
+# or nothing, and this is the self-hosted runner.
+#
+# The cheap half — `world-boot.sh --selftest`, which needs no engine — is NOT here. It runs in
+# **ci.yml** (`mod-gates-hosted`) on every push, where it belongs. Read the two together.
+#
+# ── THE ONE THING THIS FILE MUST NEVER DO ──────────────────────────────────────────────────
+# It must never go green for doing nothing. A job that quietly skips when the server binary is
+# absent is worse than no job: it is a gate reporting success for a check it never ran, which is
+# the most expensive failure class in this program. So:
+#
+#   * there is an explicit PREFLIGHT step that hard-fails when the depot is missing. It is a
+#     separate, loudly-named step so the Actions UI says "runner is not provisioned" at a glance
+#     rather than burying it in a compile log.
+#   * every gate step propagates the script's real exit status (see the make note below).
+#   * `if:` conditions are used NOWHERE. Nothing in this file can be conditioned out of existence.
+#
+# ── UNTIL A RUNNER EXISTS, THESE RUNS QUEUE — THAT IS DELIBERATE ───────────────────────────
+# `runs-on` requires the `arma-reforger-server` label. With no runner carrying it, a dispatched or
+# scheduled run sits QUEUED and is eventually cancelled by GitHub. It never reports success. That
+# is the correct behaviour for a gate whose hardware is not present, and it is why this workflow
+# does NOT have a `pull_request:` trigger yet — a permanently-pending check on every mod PR would
+# be noise at best and a merge block at worst.
+#
+# ── OPERATOR SETUP (the part an agent cannot do) ───────────────────────────────────────────
+#   1. On the machine that already has the depot (the dev box), register a repo runner:
+#        Settings -> Actions -> Runners -> New self-hosted runner (Linux x64)
+#      and give it the labels: `self-hosted`, `linux`, `arma-reforger-server`.
+#   2. The runner's service account must be able to see the depot at
+#        $HOME/.local/share/Steam/steamapps/common/Arma Reforger Server/ArmaReforgerServer
+#      i.e. run the runner as the user that installed it, or point HOME at that user's home.
+#      Nothing else is required — the scripts need no cargo, no database and no network.
+#   3. Trigger it once by hand (Actions -> mod-gates -> Run workflow) and read the preflight.
+#   4. Once it is green, turn it on for mod PRs by adding this trigger:
+#
+#        pull_request:
+#          branches: [main]
+#          paths:
+#            - "apps/mod/**"
+#            - "scripts/mod/**"
+#            - "packages/tbd-schema/golden-missions/**"
+#            - ".github/workflows/mod-gates.yml"
+#
+# ── WHAT IS STILL NOT WIRED, AND WHY ───────────────────────────────────────────────────────
+#   * `make mod-world-boot-compiled` (world-boot.sh --compiled) — the only gate that feeds real
+#     compiler output to the real Enfusion parser, and the one that would have caught T-181.46 on
+#     day one. It additionally needs Postgres up, `make api` serving, and the API's SERVICE_TOKEN,
+#     none of which exist on a bare runner. Wiring it means standing a full stack up inside this
+#     job; it is a ticket of its own, not a line in this one.
+#   * `--mission=<golden>` sweeps across every golden. Same runner, but ~25 s each; belongs on a
+#     nightly of its own once this one has proven stable.
+on:
+  schedule:
+    - cron: "0 5 * * *" # nightly ~05:00 UTC, an hour before editor-gates so they do not overlap
+  workflow_dispatch: {}
+
+# NOT `cancel-in-progress: true` (which editor-gates.yml uses). These steps own a real
+# `ArmaReforgerServer` process on the operator's own machine. Cancelling a step SIGTERMs it, and
+# while both scripts now trap TERM and reap their process group, letting a ~5 minute run finish is
+# strictly safer than racing that teardown against a second run of the same job.
+concurrency:
+  group: mod-gates
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  mod-gates:
+    name: mod gates (compile + world boot, real dedicated server)
+    runs-on: [self-hosted, linux, arma-reforger-server]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # The anti-silent-skip guard. Everything below needs these three things; asserting them
+      # here means a missing depot reads as "provision the runner" instead of surfacing as a
+      # confusing mid-compile failure. `resourceDatabase.rdb` IS committed (9 KB, not LFS), so a
+      # clean checkout has it — but it is checked anyway because the engine silently compiles
+      # ZERO of our scripts when it is stale, and compile.sh's load-count guard is the only thing
+      # standing between that and a green "compiled clean".
+      - name: preflight — runner must be provisioned for the mod gates
+        run: |
+          set -uo pipefail
+          bin="$HOME/.local/share/Steam/steamapps/common/Arma Reforger Server/ArmaReforgerServer"
+          fail=0
+          if [ ! -x "$bin" ]; then
+            echo "::error title=mod-gates runner not provisioned::No Arma Reforger dedicated server at '$bin'. Install appid 1890870 for the runner's user, or run the runner as the user that already has it. This job cannot be made to pass without it and will not pretend otherwise."
+            fail=1
+          else
+            echo "dedicated server: $bin"
+          fi
+          if ! command -v python3 >/dev/null 2>&1; then
+            echo "::error title=mod-gates runner not provisioned::python3 not on PATH — world-boot.sh needs it to generate the server config."
+            fail=1
+          fi
+          if [ ! -s apps/mod/tbd-framework/resourceDatabase.rdb ]; then
+            echo "::error title=mod-gates checkout incomplete::apps/mod/tbd-framework/resourceDatabase.rdb missing or empty. Without it the engine skips the loose addon and compiles none of the mod."
+            fail=1
+          fi
+          exit "$fail"
+
+      # THE INSTRUMENT BEFORE THE VERDICT. A gate that has never been seen to fail is not a gate,
+      # so prove compile.sh still rejects deliberately broken source before trusting it to bless
+      # the real tree. `--selftest` stages an extra addon calling an undefined symbol and must
+      # come back with exit 1.
+      #
+      # This does NOT call `make mod-compile-selftest`. That target treats ANY non-zero as "the
+      # gate correctly rejected broken source", so on a machine with no server it prints
+      # SELFTEST OK for a run that never happened — a false green in the one check whose entire
+      # job is to prove the absence of false greens. Three-way, explicitly, instead.
+      #
+      # LANDMINE: this and every `run:` block below capture status as `|| rc=$?`, never `cmd; rc=$?`.
+      # Actions runs these under `bash -e`, and a bare `cmd; rc=$?` aborts the step on the failing
+      # command BEFORE the assignment — so the classification these blocks exist for would never
+      # print. `|| rc=$?` is a condition context, which `set -e` is defined to leave alone.
+      - name: compile gate SELFTEST — prove the gate still catches a broken .c
+        run: |
+          set -uo pipefail
+          rc=0
+          bash scripts/mod/compile.sh --selftest || rc=$?
+          case "$rc" in
+            1)
+              echo "SELFTEST OK: the gate rejected deliberately broken source"
+              ;;
+            0)
+              echo "::error title=compile gate is blind::compile.sh --selftest returned 0 on source that does not compile. The gate is no longer detecting errors; every green mod-compile since is suspect."
+              exit 1
+              ;;
+            3)
+              echo "::error title=compile gate ENVIRONMENT failure::compile.sh exited 3 — this runner's environment, not the mod. The gate never ran, so this is NOT a pass. See the log above."
+              exit 1
+              ;;
+            *)
+              echo "::error title=compile gate inconclusive::compile.sh --selftest exited $rc (2 = no verdict reached). Treating as failure."
+              exit 1
+              ;;
+          esac
+
+      # The real thing. Called directly rather than through `make mod-compile` for one reason:
+      # GNU make reports its OWN status 2 for any failed recipe, which would flatten the script's
+      # 1-vs-3 (code vs environment) distinction into a single uninformative code — the precise
+      # confusion the exit-code contract in compile.sh exists to prevent. The make target is
+      # `bash scripts/mod/compile.sh`, so nothing is duplicated by calling it here.
+      #
+      # First run on a fresh runner also calibrates `.compile-vanilla-baseline` (a vanilla-only
+      # boot, ~4 s). actions/checkout cleans ignored files, so that recalibration happens every
+      # run. It is cheap and it keeps the baseline honest per-runner.
+      - name: "compile gate — scripts/mod/compile.sh (local equivalent: make mod-compile)"
+        run: |
+          set -uo pipefail
+          rc=0
+          bash scripts/mod/compile.sh || rc=$?
+          if [ "$rc" -eq 3 ]; then
+            echo "::error title=mod-compile ENVIRONMENT failure::exit 3 — this runner's machine state, NOT the mod. Nothing was compiled. Do not open a mod ticket for this; read the fix printed above."
+          elif [ "$rc" -eq 1 ]; then
+            echo "::error title=mod-compile CODE failure::exit 1 — real Enfusion compile errors, listed above as file:line."
+          elif [ "$rc" -ne 0 ]; then
+            echo "::error title=mod-compile inconclusive::exit $rc — the harness reached no verdict (timeout or bad invocation)."
+          fi
+          exit "$rc"
+
+      # Compiling is not wiring. A component listed on TBD_GameMode.et whose class fails to
+      # resolve is dropped SILENTLY, compiles clean, and shows up only as a feature that never
+      # runs — which is exactly how three components shipped unverified. This boots the real
+      # scenario headlessly and asserts the world loaded, no class failed to resolve, the
+      # roll-call printed with nothing MISSING, and no TBD or unrecognised script error fired.
+      # ~23 s measured. Direct invocation for the same exit-code reason as above.
+      - name: "world boot — scripts/mod/world-boot.sh (local equivalent: make mod-world-boot)"
+        run: |
+          set -uo pipefail
+          rc=0
+          bash scripts/mod/world-boot.sh || rc=$?
+          if [ "$rc" -eq 3 ]; then
+            echo "::error title=mod-world-boot ENVIRONMENT failure::exit 3 — this runner's machine state, NOT the mod. The world was never booted."
+          elif [ "$rc" -ne 0 ]; then
+            echo "::error title=mod-world-boot CODE failure::exit $rc — an assertion about the real booted world failed. See the ok/FAIL lines above."
+          fi
+          exit "$rc"
