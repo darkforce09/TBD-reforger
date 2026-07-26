@@ -57,10 +57,24 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
             "/vehicle-database",
             get(handlers::wiki::list_vehicles).post(handlers::wiki::create_vehicle),
         )
-        .route("/modpacks", get(handlers::modpacks::list_modpacks))
+        // T-271: admin writes (create / replace / delete / set-current). Auth tier is
+        // per-handler via AdminUser — same pattern as /wiki/{slug} PUT and /vehicle-database POST.
+        .route(
+            "/modpacks",
+            get(handlers::modpacks::list_modpacks).post(handlers::modpacks::create_modpack),
+        )
         .route(
             "/modpacks/current",
             get(handlers::modpacks::get_current_modpack),
+        )
+        .route(
+            "/modpacks/{id}",
+            axum::routing::put(handlers::modpacks::replace_modpack)
+                .delete(handlers::modpacks::delete_modpack),
+        )
+        .route(
+            "/modpacks/{id}/set-current",
+            post(handlers::modpacks::set_current_modpack),
         )
         .route("/servers", get(handlers::servers::list_servers))
         .route(
