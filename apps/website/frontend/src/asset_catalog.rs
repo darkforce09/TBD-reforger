@@ -16,6 +16,12 @@
 //!    stable, and only depth-0 folders open by default.
 //! 4. **A leaf's id is the full Enfusion `resource_name`** "so a drop carries the real classname".
 //!
+//! **T-255 — Eden side filter.** The live Workbench registry encodes side as a path segment in
+//! `category` (and the matching `resource_name`): `…/Factions/BLUFOR/…`, `…/OPFOR/…`, `…/INDFOR/…`.
+//! The committed 21-row golden still uses the older `NATO/…` category root with side only in
+//! `resource_name`; both conventions are accepted. CIV / tutorial / untagged rows never match a
+//! chip side, so a BLUFOR chip cannot surface a USSR character.
+//!
 //! Rows are consumed in array order — the API pre-sorts by `sort_order`, so faction/role order stays
 //! stable without a sort here (the oracle's comment, and true of the golden).
 //!
@@ -23,6 +29,47 @@
 #![allow(dead_code)]
 
 use crate::dto::RegistryItem;
+
+/// Eden chip sides the Factions palette may filter on (T-180.5 — no CIV chip).
+const EDEN_SIDES: &[&str] = &["BLUFOR", "OPFOR", "INDFOR"];
+
+/// True when a slash-delimited path contains an exact segment equal to `side`.
+#[must_use]
+fn path_has_side_segment(path: &str, side: &str) -> bool {
+    path.split('/').any(|seg| seg == side)
+}
+
+/// Legacy category-root aliases used by the committed golden / early registry seeds (T-068.2),
+/// which file US Army under `NATO/…` instead of embedding `BLUFOR` in the category path.
+#[must_use]
+fn legacy_category_root_side(category: &str) -> Option<&'static str> {
+    match category.split('/').next().unwrap_or("") {
+        "NATO" => Some("BLUFOR"),
+        "USSR" => Some("OPFOR"),
+        "FIA" => Some("INDFOR"),
+        _ => None,
+    }
+}
+
+/// Whether a registry character belongs under the active Eden side chip (T-255).
+///
+/// Measured conventions (Workbench `registry-items.workbench.json` + golden fixture):
+/// 1. `category` path segment equals the side (`…/BLUFOR/…`) — live export.
+/// 2. `resource_name` path segment equals the side (`…/Factions/BLUFOR/…`) — golden + export.
+/// 3. Legacy top-level category root `NATO` / `USSR` / `FIA` → BLUFOR / OPFOR / INDFOR.
+#[must_use]
+pub fn character_matches_eden_side(item: &RegistryItem, side: &str) -> bool {
+    if !EDEN_SIDES.contains(&side) {
+        return false;
+    }
+    if path_has_side_segment(&item.category, side) {
+        return true;
+    }
+    if path_has_side_segment(&item.resource_name, side) {
+        return true;
+    }
+    legacy_category_root_side(&item.category) == Some(side)
+}
 
 /// What a palette leaf hands the map when it is dropped: the doc fields a placed slot needs.
 /// `asset_id` is the full `resource_name` (T-068.3: "DnD `assetId` = full `resource_name`").
@@ -55,12 +102,18 @@ pub enum CatalogState {
     Ready(Vec<CatalogNode>),
 }
 
-/// Build the palette tree from the flat registry rows. See the module docs for the ported rules.
+/// Build the palette tree from the flat registry rows for one Eden side. See the module docs.
+///
+/// `side` is the active chip (`"BLUFOR"` / `"OPFOR"` / `"INDFOR"`). Rows that do not match are
+/// dropped before folders are built, so a BLUFOR tree never contains a USSR leaf.
 #[must_use]
-pub fn build_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
+pub fn build_catalog_tree(items: &[RegistryItem], side: &str) -> Vec<CatalogNode> {
     let mut roots: Vec<CatalogNode> = Vec::new();
 
-    for item in items.iter().filter(|i| i.kind == "character") {
+    for item in items
+        .iter()
+        .filter(|i| i.kind == "character" && character_matches_eden_side(i, side))
+    {
         let segs: Vec<&str> = item.category.split('/').filter(|s| !s.is_empty()).collect();
         // Drop the role segment — `display_name` is the leaf (rule 2). `saturating_sub` keeps a
         // single-segment (or empty) category from panicking; it simply files the leaf at the root.
@@ -333,7 +386,7 @@ mod tests {
     /// `sort_order` order. Pins every ported rule at once.
     #[test]
     fn golden_yields_nato_us_army_and_eight_leaves() {
-        let tree = build_catalog_tree(&golden_items());
+        let tree = build_catalog_tree(&golden_items(), "BLUFOR");
 
         assert_eq!(tree.len(), 1, "one root faction folder");
         let nato = &tree[0];
@@ -372,7 +425,7 @@ mod tests {
     /// ResourceName, and its `role` is the display name.
     #[test]
     fn leaf_id_and_payload_carry_the_resource_name() {
-        let tree = build_catalog_tree(&golden_items());
+        let tree = build_catalog_tree(&golden_items(), "BLUFOR");
         let rifleman = &tree[0].children[0].children[0];
         let expected =
             "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et";
@@ -396,7 +449,7 @@ mod tests {
         let characters = items.iter().filter(|i| i.kind == "character").count();
         assert_eq!(characters, 8);
 
-        let tree = build_catalog_tree(&items);
+        let tree = build_catalog_tree(&items, "BLUFOR");
         let leaves = tree[0].children[0].children.len();
         assert_eq!(leaves, 8, "only character rows are placed");
         // The gear categories (NATO/Uniform, NATO/Vest, …) would have added sibling folders.
@@ -407,7 +460,7 @@ mod tests {
     /// whole subtree, empty query is identity, no match → empty.
     #[test]
     fn filter_catalog_rules() {
-        let tree = build_catalog_tree(&golden_items());
+        let tree = build_catalog_tree(&golden_items(), "BLUFOR");
         assert_eq!(filter_catalog(&tree, "  "), tree, "empty query = identity");
 
         let rifle = filter_catalog(&tree, "rifleman");
@@ -422,6 +475,103 @@ mod tests {
         assert_eq!(nato, tree, "folder self-match keeps the full subtree");
 
         assert!(filter_catalog(&tree, "zzz-none").is_empty());
+    }
+
+    fn character_row(resource: &str, name: &str, category: &str) -> RegistryItem {
+        serde_json::from_value(serde_json::json!({
+            "id": resource,
+            "modpack_id": "mp",
+            "resource_name": resource,
+            "display_name": name,
+            "category": category,
+            "kind": "character",
+            "sort_order": 0,
+            "created_at": "2026-07-26T00:00:00Z",
+            "updated_at": "2026-07-26T00:00:00Z",
+        }))
+        .expect("character row deserializes")
+    }
+
+    fn leaf_labels(nodes: &[CatalogNode]) -> Vec<String> {
+        let mut out = Vec::new();
+        fn walk(nodes: &[CatalogNode], out: &mut Vec<String>) {
+            for n in nodes {
+                if n.payload.is_some() {
+                    out.push(n.label.clone());
+                }
+                walk(&n.children, out);
+            }
+        }
+        walk(nodes, &mut out);
+        out
+    }
+
+    /// T-255 Class-R — mixed BLUFOR+OPFOR rows: each chip sees only its side. Perturbation RED:
+    /// dropping the side filter (kind-only) would put USSR under BLUFOR and NATO under OPFOR.
+    #[test]
+    fn side_filter_excludes_cross_side_characters() {
+        let mut items = golden_items();
+        items.push(character_row(
+            "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+            "USSR Rifleman",
+            "ArmaReforger/Characters/Factions/OPFOR/USSR_Army/Rifleman",
+        ));
+        items.push(character_row(
+            "{84B40583F4D1B7A3}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et",
+            "FIA Rifleman",
+            "ArmaReforger/Characters/Factions/INDFOR/FIA/Rifleman",
+        ));
+
+        let blufor = leaf_labels(&build_catalog_tree(&items, "BLUFOR"));
+        assert!(
+            blufor.iter().any(|l| l == "US Rifleman"),
+            "BLUFOR must keep US Army leaves"
+        );
+        assert!(
+            !blufor
+                .iter()
+                .any(|l| l.contains("USSR") || l.contains("FIA")),
+            "BLUFOR chip must not accept USSR/FIA — got {blufor:?}"
+        );
+
+        let opfor = leaf_labels(&build_catalog_tree(&items, "OPFOR"));
+        assert_eq!(opfor, vec!["USSR Rifleman".to_string()]);
+        assert!(
+            !opfor.iter().any(|l| l.starts_with("US ")),
+            "OPFOR chip must not accept NATO leaves — got {opfor:?}"
+        );
+
+        let indfor = leaf_labels(&build_catalog_tree(&items, "INDFOR"));
+        assert_eq!(indfor, vec!["FIA Rifleman".to_string()]);
+
+        // Empty / unknown side → empty tree (never dump the whole registry).
+        assert!(build_catalog_tree(&items, "").is_empty());
+        assert!(build_catalog_tree(&items, "CIV").is_empty());
+    }
+
+    /// T-255 — legacy golden root `NATO/…` matches BLUFOR even when the category omits the side
+    /// segment (resource_name still carries `/Factions/BLUFOR/`).
+    #[test]
+    fn legacy_nato_root_matches_blufor_chip() {
+        let items = golden_items();
+        assert!(
+            !build_catalog_tree(&items, "BLUFOR").is_empty(),
+            "golden NATO characters must match BLUFOR"
+        );
+        assert!(
+            build_catalog_tree(&items, "OPFOR").is_empty(),
+            "golden has no OPFOR characters"
+        );
+        let ussr = character_row(
+            "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+            "USSR Rifleman",
+            "USSR/USSR_Army/Rifleman",
+        );
+        assert!(
+            character_matches_eden_side(&ussr, "OPFOR"),
+            "legacy USSR/ root must map to OPFOR"
+        );
+        assert!(!character_matches_eden_side(&ussr, "BLUFOR"));
     }
 
     // ── T-215 — the Vehicles palette ────────────────────────────────────────────────────────────

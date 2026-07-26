@@ -2365,19 +2365,16 @@ pub fn DockRight(
     active_side: RwSignal<String>,
     objects_mode: RwSignal<bool>,
 ) -> impl IntoView {
-    // Palette collapse state (T-172 B6), seeded ONCE from `default_expanded` when the catalog
-    // turns Ready (only depth-0 faction folders open — screen-05 parity); user toggles stick.
+    // Palette collapse state (T-172 B6), seeded from `default_expanded` whenever the catalog
+    // turns Ready or the Eden side chip rebuilds the tree (T-255). User toggles stick until the
+    // next side-driven rebuild (NATO folders are meaningless under OPFOR).
     let palette_collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
-    let seeded = StoredValue::new(false);
     Effect::new(move |_| {
-        if seeded.get_value() {
-            return;
-        }
+        let _ = active_side.get(); // T-255 — re-seed when chips flip the filtered tree
         if let CatalogState::Ready(nodes) = catalog.get() {
             let mut set = std::collections::HashSet::new();
             collapsed_seed(&nodes, &mut set);
             palette_collapsed.set(set);
-            seeded.set_value(true);
         }
     });
     // T-172 B9 — screen-05 palette chrome: FACTIONS / VEHICLES / MARKERS tabs + Asset Browser
@@ -2489,6 +2486,8 @@ pub fn DockRight(
                                             }
                                         }
                                         on:click=move |_| {
+                                            // T-255 — writes `active_side`; mission_editor's
+                                            // Effect rebuilds `catalog` via build_catalog_tree(_, side).
                                             apply_eden_chip(chip, active_side, objects_mode)
                                         }
                                     />
@@ -3856,5 +3855,60 @@ mod tests {
             &active_side.get_untracked(),
             objects_mode.get_untracked()
         ));
+    }
+
+    /// T-255 — chip write + `build_catalog_tree(_, side)` is the dock rebuild contract: OPFOR
+    /// after a BLUFOR default must drop NATO leaves and keep only the USSR perturbation row.
+    #[test]
+    fn eden_chip_side_rebuilds_filtered_catalog() {
+        use crate::asset_catalog::build_catalog_tree;
+        use crate::dto::RegistryResponse;
+
+        let golden: RegistryResponse =
+            serde_json::from_str(include_str!("../tests/fixtures/api/GET__registry.json"))
+                .expect("golden");
+        let mut items = golden.data;
+        items.push(
+            serde_json::from_value(serde_json::json!({
+                "id": "ussr",
+                "modpack_id": "mp",
+                "resource_name": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+                "display_name": "USSR Rifleman",
+                "category": "ArmaReforger/Characters/Factions/OPFOR/USSR_Army/Rifleman",
+                "kind": "character",
+                "sort_order": 99,
+                "created_at": "2026-07-26T00:00:00Z",
+                "updated_at": "2026-07-26T00:00:00Z",
+            }))
+            .expect("ussr row"),
+        );
+
+        let active_side = RwSignal::new(String::from("BLUFOR"));
+        let objects_mode = RwSignal::new(false);
+        let blufor_tree = build_catalog_tree(&items, &active_side.get_untracked());
+        assert!(
+            blufor_tree.iter().any(|n| n.id == "NATO"),
+            "default BLUFOR chip keeps NATO"
+        );
+
+        apply_eden_chip(EdenChip::Opfor, active_side, objects_mode);
+        let opfor_tree = build_catalog_tree(&items, &active_side.get_untracked());
+        assert_eq!(active_side.get_untracked(), "OPFOR");
+        assert_eq!(opfor_tree.len(), 1);
+        assert!(
+            !opfor_tree.iter().any(|n| n.id == "NATO"),
+            "OPFOR chip must rebuild without NATO — got {:?}",
+            opfor_tree.iter().map(|n| n.id.as_str()).collect::<Vec<_>>()
+        );
+        fn has_leaf(nodes: &[crate::asset_catalog::CatalogNode], label: &str) -> bool {
+            nodes
+                .iter()
+                .any(|n| (n.payload.is_some() && n.label == label) || has_leaf(&n.children, label))
+        }
+        assert!(
+            has_leaf(&opfor_tree, "USSR Rifleman"),
+            "OPFOR rebuild must keep USSR Rifleman"
+        );
+        assert!(!has_leaf(&opfor_tree, "US Rifleman"));
     }
 }
