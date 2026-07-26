@@ -15,6 +15,8 @@ use serde_json::{Value, json};
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
 
+use map_engine_core::mission::flatten::scan_editor_payload_types;
+
 use crate::contract::{validate_mission_document, validate_mission_editor_payload};
 use crate::error::ApiError;
 use crate::handlers::{is_unique_violation, load_mission};
@@ -1070,10 +1072,52 @@ pub async fn get_compiled_mission(
     let doc = match flatten_to_mod_document(&m, v.json_payload.0.get().as_bytes()) {
         Ok(doc) => doc,
         Err(CompileError::NoSlots) => return Err(ApiError::conflict("no placed slots")),
-        Err(CompileError::Parse(_)) => return Err(ApiError::internal("could not compile mission")),
+        Err(CompileError::Parse(detail)) => {
+            return Err(unreadable_stored_payload(&id, &detail));
+        }
     };
     let body = validated_compiled_body(&id, &doc)?;
     Ok(([(header::CONTENT_TYPE, "application/json")], body).into_response())
+}
+
+/// A stored payload the mission compiler cannot deserialise (`CompileError::Parse`).
+///
+/// **Still 500, deliberately** — the same argument [`validated_compiled_body`] makes: the caller is
+/// a game server that supplied nothing but an id. What T-367 changed are the two things that were
+/// actually wrong here:
+///
+/// 1. **The diagnosis was destroyed.** The arm read `Err(CompileError::Parse(_))` and dropped the
+///    detail on the floor, so the only trace of a permanently-uncompilable mission was the access
+///    log's bare `status=500`. The `serde` message names the offending key; it now reaches both the
+///    log and the response body. Without it, "unrecoverable without hand-editing the stored JSON"
+///    was literally true — nobody could see WHICH key was wrong.
+/// 2. **The state was reachable.** Every byte in `mission_versions.json_payload` arrives through
+///    [`validate_payload`], which since T-367 runs the compiler's own deserialiser, so a payload
+///    that cannot parse is a 400 at save. This branch is no longer reachable through the API at all,
+///    and reaching it now means one of exactly two things — the row was written around the API
+///    (direct SQL, a restore, a seed), or the save-time precheck and this parse DISAGREE, which is a
+///    defect in the precheck. Both deserve a 500. Answering 4xx would let that second case hide as
+///    "your mission is misconfigured", the trap [`validated_compiled_body`] documents.
+///
+/// Recovery needs no hand-editing of stored JSON either way: saving a new version moves
+/// `missions.current_version_id`, and the save boundary now guarantees the replacement compiles.
+fn unreadable_stored_payload(mission_id: &str, detail: &str) -> ApiError {
+    // The mod's error path (TBD_MissionLoader.OnBackendFetchError) discards the response body and
+    // fails over to its cached copy, so this log line — not the JSON below — is what an operator
+    // actually reads.
+    tracing::error!(
+        mission = %mission_id,
+        detail = %detail,
+        "stored mission payload does not deserialise into the editor graph the compiler reads",
+    );
+    ApiError::with_details(
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "could not compile mission",
+        json!({
+            "reason": "stored payload does not match the editor graph the compiler reads",
+            "detail": detail,
+        }),
+    )
 }
 
 // --- shared ---
@@ -1171,16 +1215,34 @@ async fn load(pool: &PgPool, id: &str) -> Result<Mission, ApiError> {
 }
 
 /// Validate a payload string against the editor schema (400 + details / 500).
+///
+/// This is the COMPLETE write boundary for `mission_versions.json_payload`: the two `INSERT`s in
+/// this file (`create_mission`, `create_version`) are the only ones in the crate, and both go
+/// through here. Two independent passes feed one `details` array, so the wire shape is unchanged:
+///
+/// * **`validate_mission_editor_payload`** — `mission-editor-payload.schema.json`, plus the
+///   T-181.44 `wire_safety` walk it already carries.
+/// * **`scan_editor_payload_types`** (T-367) — the mission compiler's OWN deserialiser, run here so
+///   a shape it cannot read is a **400 at save**, in front of the author, instead of a **500 at
+///   `GET /missions/:id/compiled`** in front of a game server that supplied nothing but an id. That
+///   pass is not expressible in the payload schema without restating the compiler's structs in a
+///   second language, which is precisely the drift that produced the bug — see
+///   [`scan_editor_payload_types`] for the measurements and the argument.
+///
+/// The type pass reports nothing when the bytes are not JSON at all; the schema pass owns that
+/// message ("payload is not valid JSON") and a second copy of it would be noise.
 fn validate_payload(payload: &str) -> Result<(), ApiError> {
-    match validate_mission_editor_payload(payload.as_bytes()) {
-        Ok(details) if details.is_empty() => Ok(()),
-        Ok(details) => Err(ApiError::with_details(
-            StatusCode::BAD_REQUEST,
-            "invalid mission payload",
-            json!(details),
-        )),
-        Err(_) => Err(ApiError::internal("payload validation unavailable")),
+    let mut details = validate_mission_editor_payload(payload.as_bytes())
+        .map_err(|_| ApiError::internal("payload validation unavailable"))?;
+    details.extend(scan_editor_payload_types(payload.as_bytes()));
+    if details.is_empty() {
+        return Ok(());
     }
+    Err(ApiError::with_details(
+        StatusCode::BAD_REQUEST,
+        "invalid mission payload",
+        json!(details),
+    ))
 }
 
 // tiny wire-string helpers on the model enums used above.
