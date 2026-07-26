@@ -496,6 +496,53 @@ pub struct Deployments {
     pub upcoming: Vec<Value>,
 }
 
+/// One leave-of-absence row — mirrors backend `models::event::LeaveRequest`
+/// (`POST/GET /me/leave-requests`, `GET /admin/leave-requests`).
+///
+/// **Dates on the wire are Go `time.Time` midnight UTC** (`2026-08-01T00:00:00Z`), not bare
+/// `YYYY-MM-DD`. The create body (`CreateLeaveInput`) is the opposite: the handler parses
+/// `starts_on`/`ends_on` as `%Y-%m-%d` only. Keep those shapes separate — feeding an RFC3339
+/// string into POST is a 400.
+///
+/// `reason` / `reviewed_by` omit when empty/absent (backend `skip_serializing_if`), matching the
+/// live Axum capture used by the unit round-trip below. No committed R-api golden yet: the
+/// fixture corpus has no `/me/leave-requests` capture, and writing one is outside this slice's
+/// `owns` (same known-gap shape as `/members` / `POST /fire-missions/solve`).
+#[allow(dead_code)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LeaveRequest {
+    pub id: String,
+    pub discord_id: String,
+    pub starts_on: String,
+    pub ends_on: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub reason: String,
+    /// `pending` | `approved` | `denied` — string, not an enum: the three-value Postgres
+    /// `leave_status` is stable today, but a hard enum would 400 the SPA the day a fourth lands.
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reviewed_by: Option<String>,
+    pub created_at: String,
+}
+
+/// Body for `POST /me/leave-requests`. Dates are **bare** `YYYY-MM-DD` (handler
+/// `CreateLeaveInput`), not the RFC3339 midnight form the response uses.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct CreateLeaveInput {
+    pub starts_on: String,
+    pub ends_on: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub reason: String,
+}
+
+/// Body for `PATCH /admin/leave-requests/:id` — `status` must be `approved` or `denied`.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct ReviewLeaveInput {
+    pub status: String,
+}
+
 /// `GET /leaderboards` — `{category, data}` (NOT the paginated envelope).
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -925,6 +972,48 @@ mod tests {
         assert!(me.arma_linked && me.user.role == Role::Enlisted);
         let back: MeResponse = serde_json::from_str(&serde_json::to_string(&me).unwrap()).unwrap();
         assert!(back == me, "MeResponse re-serialize → reparse is stable");
+    }
+
+    /// Live Axum shape from `POST /me/leave-requests` (T-265 probe, 2026-07-26): midnight-UTC
+    /// dates, `reason` present, `reviewed_by` absent while pending. Re-serialize must keep
+    /// `reviewed_by` omitted (skip_serializing_if), not emit `"reviewed_by":null`.
+    #[test]
+    fn leave_request_pending_round_trips_without_reviewed_by() {
+        let json = r#"{"id":"44fa4c17-5bd5-4c6b-b02d-4ccd52af6910","discord_id":"000000000000000001","starts_on":"2026-09-01T00:00:00Z","ends_on":"2026-09-03T00:00:00Z","reason":"t265-probe","status":"pending","created_at":"2026-07-26T23:27:01.118063Z"}"#;
+        let loa: LeaveRequest = serde_json::from_str(json).unwrap();
+        assert_eq!(loa.status, "pending");
+        assert!(loa.reviewed_by.is_none());
+        assert_eq!(loa.starts_on, "2026-09-01T00:00:00Z");
+        let back = serde_json::to_string(&loa).unwrap();
+        assert!(
+            !back.contains("reviewed_by"),
+            "pending LOA must omit reviewed_by, got {back}"
+        );
+        let again: LeaveRequest = serde_json::from_str(&back).unwrap();
+        assert_eq!(again, loa);
+    }
+
+    /// `{data:[LeaveRequest]}` — `GET /me/leave-requests` envelope the deployments page reads.
+    #[test]
+    fn leave_request_my_list_envelope() {
+        let json = r#"{"data":[{"id":"44fa4c17-5bd5-4c6b-b02d-4ccd52af6910","discord_id":"000000000000000001","starts_on":"2026-09-01T00:00:00Z","ends_on":"2026-09-03T00:00:00Z","reason":"t265-probe","status":"pending","created_at":"2026-07-26T23:27:01.118063Z"}]}"#;
+        let env: DataEnvelope<LeaveRequest> = serde_json::from_str(json).unwrap();
+        assert_eq!(env.data.len(), 1);
+        assert_eq!(env.data[0].reason, "t265-probe");
+    }
+
+    /// Create body is bare dates — the opposite of the response wire form.
+    #[test]
+    fn create_leave_input_serializes_bare_ymd() {
+        let body = CreateLeaveInput {
+            starts_on: "2026-08-01".into(),
+            ends_on: "2026-08-05".into(),
+            reason: "holiday".into(),
+        };
+        assert_eq!(
+            serde_json::to_string(&body).unwrap(),
+            r#"{"starts_on":"2026-08-01","ends_on":"2026-08-05","reason":"holiday"}"#
+        );
     }
 }
 
