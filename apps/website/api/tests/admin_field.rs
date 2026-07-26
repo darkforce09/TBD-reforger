@@ -70,6 +70,176 @@ async fn call(
     )
 }
 
+/// Like [`call`], but the caller owns the `Content-Type` entirely — including sending a
+/// wrong one, or none at all, alongside a body. [`call`] always pairs a body with
+/// `application/json`, which is exactly the case that never broke.
+async fn call_ct(
+    app: &Router,
+    method: &str,
+    uri: &str,
+    tok: &str,
+    content_type: Option<&str>,
+    body: Option<&str>,
+) -> (StatusCode, Value) {
+    let mut b = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header(header::AUTHORIZATION, format!("Bearer {tok}"));
+    if let Some(ct) = content_type {
+        b = b.header(header::CONTENT_TYPE, ct);
+    }
+    let req = b
+        .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))
+        .unwrap();
+    let resp = app.clone().oneshot(req).await.unwrap();
+    let status = resp.status();
+    let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+    (
+        status,
+        serde_json::from_slice(&bytes).unwrap_or(Value::Null),
+    )
+}
+
+/// T-317 — a ban must never erase the reason a previous admin recorded.
+///
+/// The regression this pins is specifically a **re-ban**: the target starts already banned
+/// with a real reason, and every malformed request has to leave that reason standing. A test
+/// that bans a clean user would pass against the broken handler, because `''` over `''` looks
+/// like success — so the sentinel is the whole point, and it is asserted by value, not by
+/// "is not empty".
+///
+/// `banned_at` is checked too. The broken `UPDATE` wrote `ban_reason`, `banned_by` and
+/// `banned_at` in one statement, so a collapsed body destroyed *when* the original ban
+/// happened as well as why.
+#[tokio::test]
+async fn ban_reason_survives_a_malformed_reban() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let t = admin_token(&app).await;
+    const BAN_TARGET: &str = "000000000000000317";
+    const SENTINEL: &str = "ORIGINAL: griefing 2026-07-01 [T-317 sentinel]";
+    const ORIG_AT: &str = "2026-07-01 12:00:00+00";
+
+    // Re-arm the fixture: already banned, with a reason and a ban date worth losing.
+    let arm = |pool: PgPool| async move {
+        sqlx::query(
+            "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, \
+             arma_character, role, is_banned, ban_reason, banned_by, banned_at, created_at, updated_at) \
+             VALUES ($1, 'T317 Sentinel', 't317sentinel', '', NULL, '', 'enlisted', true, $2, \
+             '000000000000000001', $3::timestamptz, now(), now()) \
+             ON CONFLICT (discord_id) DO UPDATE SET is_banned = true, ban_reason = EXCLUDED.ban_reason, \
+             banned_by = EXCLUDED.banned_by, banned_at = EXCLUDED.banned_at",
+        )
+        .bind(BAN_TARGET)
+        .bind(SENTINEL)
+        .bind(ORIG_AT)
+        .execute(&pool)
+        .await
+        .unwrap();
+    };
+    let read = |pool: PgPool| async move {
+        sqlx::query_as::<_, (bool, String, String)>(
+            "SELECT is_banned, ban_reason, banned_at::text FROM users WHERE discord_id = $1",
+        )
+        .bind(BAN_TARGET)
+        .fetch_one(&pool)
+        .await
+        .unwrap()
+    };
+
+    // (label, content-type, body) — every way the extractor can fail, plus a blank reason
+    // that decodes cleanly and so gets past the extractor entirely.
+    let rejected: [(&str, Option<&str>, Option<&str>); 6] = [
+        ("well-formed {}", Some("application/json"), Some("{}")),
+        ("no body", Some("application/json"), None),
+        ("no body, no content-type", None, None),
+        // A real reason thrown away by the wrong header — the case that reads as success.
+        (
+            "wrong content-type",
+            Some("text/plain"),
+            Some(r#"{"reason":"real"}"#),
+        ),
+        (
+            "malformed json",
+            Some("application/json"),
+            Some(r#"{"reason":"#),
+        ),
+        (
+            "whitespace-only reason",
+            Some("application/json"),
+            Some(r#"{"reason":"   "}"#),
+        ),
+    ];
+
+    for (label, ct, body) in rejected {
+        arm(pool.clone()).await;
+        let (st, r) = call_ct(
+            &app,
+            "POST",
+            &format!("/api/v1/admin/users/{BAN_TARGET}/ban"),
+            &t,
+            ct,
+            body,
+        )
+        .await;
+        assert_eq!(
+            st,
+            StatusCode::BAD_REQUEST,
+            "{label}: expected 400, got {r}"
+        );
+        assert_eq!(r["error"], "reason is required", "{label}: message");
+        let (is_banned, reason, banned_at) = read(pool.clone()).await;
+        assert_eq!(reason, SENTINEL, "{label}: prior ban reason was clobbered");
+        assert!(is_banned, "{label}: prior ban was lifted");
+        assert!(
+            banned_at.starts_with("2026-07-01"),
+            "{label}: original ban date overwritten -> {banned_at}"
+        );
+    }
+
+    // A real reason still bans, and is stored trimmed — the column and the audit line agree.
+    arm(pool.clone()).await;
+    let (st, r) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/admin/users/{BAN_TARGET}/ban"),
+        &t,
+        Some(r#"{"reason":"  repeated griefing  "}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "valid ban: {r}");
+    assert_eq!(r["banned"], true);
+    let (is_banned, reason, _) = read(pool.clone()).await;
+    assert!(is_banned);
+    assert_eq!(reason, "repeated griefing", "stored untrimmed");
+    let msg: String = sqlx::query_scalar(
+        "SELECT message FROM audit_logs WHERE target_id = $1 AND action = 'user.ban' \
+         ORDER BY id DESC LIMIT 1",
+    )
+    .bind(BAN_TARGET)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert!(
+        msg.contains("Reason: 'repeated griefing'"),
+        "audit line must carry the trimmed reason, got: {msg}"
+    );
+
+    // Leave nothing behind: this row and its audit trail are ours alone.
+    sqlx::query("DELETE FROM audit_logs WHERE target_id = $1")
+        .bind(BAN_TARGET)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("DELETE FROM users WHERE discord_id = $1")
+        .bind(BAN_TARGET)
+        .execute(&pool)
+        .await
+        .unwrap();
+}
+
 #[tokio::test]
 async fn admin_approvals_cms_field() {
     let Some((app, pool)) = boot().await else {

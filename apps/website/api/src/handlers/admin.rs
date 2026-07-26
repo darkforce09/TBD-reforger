@@ -150,9 +150,21 @@ pub async fn update_user(
     Ok(Json(json!({ "discord_id": discord_id, "role": role })))
 }
 
-#[derive(Debug, Deserialize, Default)]
+/// The ban body.
+///
+/// **`reason` is deliberately required — do not add `#[serde(default)]` to it (T-317).**
+/// This is the same shape T-218 fixed on `reject_mission`: a defaulted field is not "no
+/// data", it decodes as an affirmative empty string and gets bound straight into an
+/// `UPDATE`. Here the write is `ban_reason = $1` on a user who may already be banned, so
+/// the default does not create a blank record — it *erases* the reason a previous admin
+/// wrote. Measured pre-fix on a row holding a real reason: `POST {}` returned **200** and
+/// left `ban_reason` as `''`.
+///
+/// `Default` is deliberately not derived either. The only thing that ever constructed a
+/// default `BanInput` was the `unwrap_or_default()` this ticket deleted; leaving the derive
+/// in place would leave the clobber one keystroke away from returning.
+#[derive(Debug, Deserialize)]
 pub struct BanInput {
-    #[serde(default)]
     reason: String,
 }
 
@@ -165,13 +177,29 @@ pub async fn ban_user(
     Path(discord_id): Path<String>,
     body: Result<Json<BanInput>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
-    let reason = body.ok().map(|Json(b)| b.reason).unwrap_or_default();
+    // `.ok()` here collapsed *every* extractor failure — a missing body, a wrong
+    // `Content-Type`, malformed JSON — into `""` and wrote it. That is worse than it looks
+    // on a re-ban: the row already held the previous admin's reason, so the collapse was a
+    // silent delete, and `banned_by`/`banned_at` were overwritten in the same statement, so
+    // nothing survived to say what the ban had originally been for. `map_err` is what the
+    // other ~25 handlers in this crate do; this one was the outlier (T-317).
+    //
+    // The `Content-Type` case is the one that actually bites: an admin who types a real
+    // reason but whose client sends `text/plain` got a 200 and a blank ban. They are told
+    // the ban succeeded and never learn the reason was dropped.
+    let Json(input) = body.map_err(|_| ApiError::bad_request("reason is required"))?;
+    // A reason of spaces is the same lie as no reason. Trim once and use the trimmed value
+    // for both the column and the audit message, so the two can never disagree.
+    let reason = input.reason.trim();
+    if reason.is_empty() {
+        return Err(ApiError::bad_request("reason is required"));
+    }
     let actor = &admin.0.discord_id;
     let now = Utc::now();
     let res = sqlx::query(
         "UPDATE users SET is_banned = true, ban_reason = $1, banned_by = $2, banned_at = $3 WHERE discord_id = $4",
     )
-    .bind(&reason)
+    .bind(reason)
     .bind(actor)
     .bind(now)
     .bind(&discord_id)
