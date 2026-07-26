@@ -648,6 +648,197 @@ gate_trunk_build() {
     return 1; }
 }
 
+# ── SCHEMA (T-420) ───────────────────────────────────────────────────────────────────────────────
+#
+# Until this existed the gate validated NO schema at all. MEASURED on main at 33a7aa85:
+# `grep -c 'xtask schema' scripts/platform/wave.sh` -> 0, and `grep -n schema` -> zero hits in 1249
+# lines. The eleven steps were cargo check / wasm32 / fmt / clippy x3 / test x3 / trunk / ticket
+# registry; not one read anything under packages/tbd-schema.
+#
+# Realised twice in one weekend:
+#   * wave 4 printed `GATE: PASS  11/11` on a wave whose HEADLINE deliverable was T-241's
+#     mission.schema.json change. The only evidence that schema was valid is that T-241's own agent
+#     ran the validator and said so. Agent reports are evidence, not testimony.
+#   * T-244 (wave 5) added a `vehicle` kind and would have merged with `make schema-validate` RED.
+#     Its slice gate passed for the worst possible reason: its diff is 0 `.rs` files, so fmt and
+#     clippy are change-scoped and examined nothing whatsoever.
+#
+# WHY THIS IS NOT ONE LINE OF `cargo xtask schema validate`, WHICH IS THE OBVIOUS FIX AND IS VACUOUS.
+# MEASURED 2026-07-26 against T-244's schema commit 25d551b6, from a detached probe worktree:
+#     schema validate          rc=0   <- the obvious one-liner. GREEN.
+#     schema map-object-enums  rc=1   <- "prefab-classify rule[68]: kind 'vehicle' has no
+#                                        class-enum mapping" (x5)
+# A `run "schema" hostrun cargo xtask schema validate` step would therefore have printed PASS over
+# the exact change that motivated this function: `validate` is the golden-mission/registry suite and
+# never opens prefab-classify.json. That is this program's signature defect — a tool reporting
+# success over an input it never examined — reproduced BY the fix for it. The step must run the SET.
+#
+# The set is `make schema-validate` (Makefile:137) plus `make verify-citations` (Makefile:151),
+# i.e. `make ci-local-schema`. NOT ci.yml: its `schema` job (ci.yml:133,135) is `validate` +
+# `citations` only, so CI has the same hole and would not have caught T-244 either. Reported, not
+# fixed — wave.sh is T-420's only file.
+#
+# DELIBERATELY NOT CHANGE-SCOPED. "Only run if a .json under packages/tbd-schema changed" is how fmt
+# and clippy came to examine nothing on T-244's diff, and it would be wrong on the facts anyway:
+# these gates read xtask/src/schema_gates.rs, packages/tbd-schema/rules/, apps/mod/tbd-framework/
+# and docs/specs/**. Nine sub-gates cost ~1.4 s warm (measured, 0.12 s per hostrun call including
+# cargo's up-to-date check), which is less than the cost of reasoning about whether to skip them.
+#
+# THE CENSUS — every `xtask schema` sub-gate, run against main at 33a7aa85 before this list was
+# written, with the verdict that put it in or kept it out:
+#   IN   validate           rc=0  golden missions + negative goldens + registries + kit aliases
+#   IN   map-object-golden  rc=0  S2-S9 + S11-S14 semantic golden gates
+#   IN   map-glyphs         rc=0  glyph coverage GL-G1..G6 (29 glyphs)
+#   IN   map-object-enums   rc=0  enum single-source (GAP-M5) — THE ONE T-244 BROKE
+#   IN   type-inventory     rc=0  type-inventory invariants I1-I7
+#   IN   t090-specs         rc=0  T-090 spec consistency 1-12 (36 spec files)
+#   IN   n6                 rc=0  N6 building-geometry sentence single-source
+#   IN   n10                rc=0  N10 tile-budget single-source
+#   IN   citations          rc=0  @contract citation integrity (35 citations)
+#   OUT  height-labels      rc=1  RED ON MAIN, and not because of any slice. G2-G6 all PASS and it
+#                                 then dies in the ASL oracle with "dem decode: PNG decode: Invalid
+#                                 PNG signature": packages/map-assets/everon/dem/everon-dem-16bit.png
+#                                 is a 133-byte git-lfs POINTER (declared size 71,911,548) and
+#                                 git-lfs is absent from the container's PATH *and* the host's.
+#                                 Adding it would red every future wave — T-409's failure mode, and
+#                                 worse than the hole being closed here, because a gate everyone
+#                                 routes around teaches agents that gate failures are noise.
+#                                 TO INCLUDE IT: put git-lfs on PATH, `make lfs-dem`, confirm
+#                                 `cargo run -p xtask -- schema height-labels` is rc=0 on a clean
+#                                 main, then move it from GATE_SCHEMA_EXCLUDED to GATE_SCHEMA_GATES.
+#                                 Nothing else has to change.
+# Also enumerated and NOT wired, because they are not in the schema-validate contract — they belong
+# to `make verify-terrain` and the label lane, and widening the gate past its stated authority is a
+# separate decision from closing this hole:
+#   n/a  terrain-manifest   rc=0  manifest schema + terrains cross-check   (make verify-terrain)
+#   n/a  locations          rc=0  locations G2-G7
+#   n/a  town-labels        rc=0  town-label gates
+#   n/a  road-names         rc=0  road-name gates
+#   n/a  terrain-alignment  rc=1  RED, same LFS DEM pointer as height-labels ("png read_info:
+#                                 Invalid PNG signature") — anchors validate, then the decode dies.
+#   n/a  codegen / validate-file / flatten-orbat-slots — generators and tools, not gates.
+GATE_SCHEMA_GATES="validate map-object-golden map-glyphs map-object-enums type-inventory t090-specs n6 n10 citations"
+GATE_SCHEMA_EXCLUDED="height-labels"
+# A PRIVATE TARGET DIR, for the same reason as `test api` / `test map-engine` / `test frontend`, and
+# it is not theoretical here — it was MEASURED while this step was being written, on this machine,
+# with three sibling slices live:
+#
+#   21:01:54  target/debug/xtask rebuilt by ANOTHER worktree (T-244, which owns xtask/schema_gates.rs
+#             this wave). `grep -ac vehicleClass target/debug/xtask` -> 2.
+#   21:0x     from THIS worktree, whose xtask sources contain zero `vehicleClass`:
+#               $ cargo build -p xtask        ->  Finished `dev` profile ... in 0.09s
+#               $ cargo run -q -p xtask -- schema map-object-golden
+#                 FAIL  S3 — prefabs-sample: no prefab example for kind 'vehicle'
+#             S3 reads a HARDCODED class_enum_for_kind (golden_gate.rs:87) that has no `vehicle` in
+#             this tree. The verdict came from a binary this tree cannot produce.
+#
+# MECHANISM, so nobody has to rediscover it: cargo's freshness test is "is any source NEWER than the
+# artifact?". T-244's schema_gates.rs is mtime 21:02:39; this tree's copy is 20:57:04, older than the
+# 21:01:54 artifact — so cargo calls it fresh, never rebuilds, never re-uplifts, and `cargo run`
+# executes the sibling's binary. The clobber is one-directional and therefore easy to miss: whichever
+# tree has the older mtimes silently inherits the other's tool.
+#
+# A schema gate that runs a STRANGER'S validator is this program's signature defect wearing the
+# costume of the fix for it, so the step gets its own dir. ONE dir, not one per tree (a per-ticket
+# dir grows without bound at ~1.7 GB each), plus a CONTENT stamp: when this tree's xtask sources
+# hash differently from whatever last built here, the dir is thrown away and rebuilt. Measured:
+# 14 s from cold, ~0.1 s warm, 1.7 GB resident. Content, not mtime — mtime is the thing that lied.
+GATE_SCHEMA_TARGET="${TBD_GATE_SCHEMA_TARGET:-$MAIN_ROOT/target-gate-schema}"
+
+gate_schema() {
+  # DRIFT TRIPWIRE. A hardcoded list is readable and greppable but it rots silently, and the way it
+  # rots is precisely this ticket: `make schema-validate` grows a tenth sub-gate, nobody adds it
+  # here, and the wave gate goes on printing PASS over whatever that gate checks. So diff the list
+  # against the Makefile recipe every run and refuse when they disagree.
+  local mk_gates
+  mk_gates="$(awk '/^schema-validate:/{i=1;next} i&&/^\t/{print;next} i{exit}' Makefile \
+              | sed -n 's/.*-p xtask -- schema \([a-z0-9-]*\).*/\1/p')"
+  # The tripwire has to be non-vacuous too, or it is one more tool reporting on an input it never
+  # read: a reformatted recipe that parses to the empty set would "agree" with any list at all.
+  if [ -z "$mk_gates" ]; then
+    echo "schema: read 0 sub-gates out of the schema-validate recipe in Makefile."
+    echo "        The drift check is the only thing keeping this step's list honest, so a step that"
+    echo "        could not run it must not go on to report PASS. Fix the parse, or the recipe."
+    return 1
+  fi
+  local m unknown=""
+  for m in $mk_gates; do
+    case " $GATE_SCHEMA_GATES $GATE_SCHEMA_EXCLUDED " in
+      *" $m "*) ;;
+      *) unknown="$unknown $m" ;;
+    esac
+  done
+  if [ -n "$unknown" ]; then
+    echo "schema: 'make schema-validate' runs sub-gate(s) this step does not:$unknown"
+    echo "        The gate would keep printing PASS over everything they check. Add each one to"
+    echo "        GATE_SCHEMA_GATES above — or to GATE_SCHEMA_EXCLUDED, with the verdict that"
+    echo "        justifies it and what would have to be true to include it later."
+    return 1
+  fi
+
+  # ---- make sure the xtask we are about to trust is THIS tree's (see GATE_SCHEMA_TARGET) ----
+  local nsrc; nsrc=$(find xtask/src -name '*.rs' -type f 2>/dev/null | wc -l)
+  if [ "$nsrc" -eq 0 ]; then
+    echo "schema: found no xtask/src/*.rs to stamp — cannot tell whose binary would run."
+    return 1
+  fi
+  local stamp
+  stamp="$( { find xtask/src -name '*.rs' -type f | LC_ALL=C sort | xargs cat
+              cat xtask/Cargo.toml Cargo.lock; } 2>/dev/null | cksum | tr -d ' ')"
+  local stampfile="$GATE_SCHEMA_TARGET/.tbd-xtask-src"
+  if [ "$(cat "$stampfile" 2>/dev/null)" != "$stamp" ]; then
+    rm -rf "$GATE_SCHEMA_TARGET"
+    mkdir -p "$GATE_SCHEMA_TARGET" || { echo "schema: cannot create $GATE_SCHEMA_TARGET"; return 1; }
+  fi
+  # Build once and separately, so a compile error reads as a compile error rather than as nine
+  # identical schema failures. `run()` shows the tail, and a broken xtask fails all nine otherwise.
+  local build_out
+  build_out="$(hostrun env "CARGO_TARGET_DIR=$GATE_SCHEMA_TARGET" cargo build -q -p xtask 2>&1)"
+  local build_rc=$?
+  if [ "$build_rc" -ne 0 ]; then
+    printf '%s\n' "$build_out" | tail -12
+    echo "schema: xtask failed to BUILD (rc $build_rc) — no sub-gate was run."
+    [ "$build_rc" -eq 124 ] && return 124
+    return 1
+  fi
+  printf '%s\n' "$stamp" > "$stampfile"
+
+  local want=0 g
+  for g in $GATE_SCHEMA_GATES; do want=$((want+1)); done
+
+  local rc ran=0 timedout=0 failed="" detail="" out
+  for g in $GATE_SCHEMA_GATES; do
+    out="$(hostrun env "CARGO_TARGET_DIR=$GATE_SCHEMA_TARGET" \
+             cargo run -q -p xtask -- schema "$g" 2>&1)"; rc=$?
+    ran=$((ran+1))
+    [ "$rc" -eq 0 ] && continue
+    # 124 is hostrun's timeout, not a broken schema. Propagated below so run() can say so.
+    [ "$rc" -eq 124 ] && timedout=1
+    failed="$failed $g"
+    detail="$detail
+── schema $g (rc $rc) ──
+$(printf '%s\n' "$out" | tail -6)"
+  done
+
+  # NON-VACUITY. An empty GATE_SCHEMA_GATES, or a loop that exits early, reaches the verdict below
+  # having validated nothing — and would print PASS. That is the defect this function was added to
+  # fix, one layer in. Count what actually executed and refuse to interpret a set that did not run.
+  if [ "$ran" -eq 0 ] || [ "$ran" -ne "$want" ]; then
+    echo "schema: executed $ran of $want sub-gate(s) — refusing to report on a set it did not run."
+    return 1
+  fi
+
+  # Summary LAST, on purpose: both run() implementations print `tail -15` of a failed step, so a
+  # verdict printed first is the line that gets cut when several sub-gates fail at once.
+  if [ -n "$failed" ]; then
+    printf '%s\n' "$detail"
+    echo "schema: FAILED$failed  ($ran sub-gates run; excluded: $GATE_SCHEMA_EXCLUDED — see gate_schema)"
+    [ "$timedout" -eq 1 ] && return 124
+    return 1
+  fi
+  echo "schema: $ran sub-gates OK ($GATE_SCHEMA_GATES)"
+}
+
 # Refuse a gate whose change set is EMPTY.
 #
 # Resolvability is not non-vacuity, and the first version of this guard only checked the former.
@@ -862,6 +1053,10 @@ gate_slice() {
   run "wasm32 (frontend)" wasm_changed
   run "fmt (changed)" fmt_changed
   run "clippy (changed crates)" clippy_changed
+  # T-420. NOT change-scoped, and it is in the CHEAP gate on purpose: this is the step that would
+  # have stopped T-244, whose diff is 0 .rs files — so every other step above it is change-scoped
+  # down to nothing and its slice gate was green over a red `make schema-validate`. ~1.4 s warm.
+  run "schema"       gate_schema
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "SLICE GATE"; return 1; }
   gate_verdict PASS "SLICE GATE"
@@ -983,6 +1178,12 @@ cmd_gate() {
   else
     printf "  %-24s SKIP (frontend untouched this wave)\n" "trunk build"
   fi
+  # T-420. Placed next to `ticket registry` rather than up with the compile steps because the two
+  # are the gate's repo-artifact validators — neither depends on the Rust build, and keeping the
+  # code half and the data half legible matters more than ordering by cost here (the gate is not
+  # fail-fast; every step runs and `fail` accumulates). Unconditional, never behind the frontend
+  # `if`: wave 4's schema change was backend-only and would have skipped a conditional step.
+  run "schema"           gate_schema
   run "ticket registry"  hostrun ./scripts/ticket check
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "GATE"; return 1; }
