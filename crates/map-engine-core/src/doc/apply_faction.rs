@@ -4,15 +4,66 @@
 //! keeps shifting" bug): overlapping roles now mutate the existing slots in place,
 //! so slot ids — and the compiled `uid` identity thread — survive re-applies.
 //!
+//! T-217 closed two silent-data-loss holes in that design: Apply used to delete every squad on the
+//! side past the first (a `FactionLibraryInput` is flat, so it cannot put them back — see
+//! [`ApplyFactionError::WouldCollapseSquads`]), and it pinned every placement to the Everon centre
+//! regardless of the doc's actual terrain.
+//!
 //! Pure helper over [`MissionDocCore`] so H1–H4 / H9 run as native `cargo test --features doc`.
 
 use serde_json::Value;
 
 use super::MissionDocCore;
 
-/// Everon map center — matches Leptos `INITIAL_TARGET` (placement pin for Apply).
+/// Everon map centre (`12800² / 2`) — matches Leptos `INITIAL_TARGET`, and the Apply anchor for
+/// every terrain whose bounds are Everon's (`everon`, `custom`, anything unknown).
+///
+/// **T-217: this is the default, not "the" anchor.** It read as correct only because Everon is the
+/// default terrain. Arland is `4096²`, so on an Arland mission `(6400, 6400)` is off the map
+/// entirely and an Apply dumped the whole faction outside the world. Resolve the real pin with
+/// [`apply_anchor_xy`], which falls back to this constant. Still `pub` because `editor_ops` uses it
+/// as the fallback for a squad with no live slot to anchor against.
 pub const APPLY_ANCHOR_X: f64 = 6400.0;
 pub const APPLY_ANCHOR_Y: f64 = 6400.0;
+
+/// Arland map centre (`4096² / 2`).
+const ARLAND_ANCHOR_X: f64 = 2048.0;
+const ARLAND_ANCHOR_Y: f64 = 2048.0;
+
+/// Metres between adjacent slots in an applied squad's row. Same constant as `editor_ops`'
+/// `ORBAT_SLOT_SPACING_X` (T-188 `next_slot_xy`), which is why a hand-built squad and an applied
+/// one line up; only the origin the row starts from is terrain-dependent.
+const SLOT_SPACING_X: f64 = 15.0;
+
+/// Where Apply pins a faction on `terrain`: the centre of that terrain's world bounds.
+///
+/// Mirrors the centre of `mission::compile::terrain_bounds` — deliberately re-stated rather than
+/// called, because `mission` and `doc` are independent cargo features and `--features doc` alone
+/// must still compile. `apply_anchor_matches_terrain_bounds` (built only when both features are on)
+/// pins the two together so this copy cannot drift.
+fn apply_anchor_for_terrain(terrain: &str) -> (f64, f64) {
+    match terrain {
+        "arland" => (ARLAND_ANCHOR_X, ARLAND_ANCHOR_Y),
+        // everon + custom + anything unknown → 12800², the same fallback `terrain_bounds` takes.
+        _ => (APPLY_ANCHOR_X, APPLY_ANCHOR_Y),
+    }
+}
+
+/// This doc's Apply anchor, read from `meta.terrain`. Absent / unreadable → `everon`, which is what
+/// `seed_meta` writes and what `compile_payload` assumes, so a doc that predates any terrain choice
+/// keeps the historical `(6400, 6400)` exactly.
+fn apply_anchor_xy(doc: &MissionDocCore) -> (f64, f64) {
+    let terrain = serde_json::from_str::<Value>(&doc.small_maps_json())
+        .ok()
+        .and_then(|root| {
+            root.get("meta")
+                .and_then(|m| m.get("terrain"))
+                .and_then(Value::as_str)
+                .map(str::to_string)
+        })
+        .unwrap_or_else(|| "everon".to_string());
+    apply_anchor_for_terrain(&terrain)
+}
 
 const VALID_SIDES: &[&str] = &["BLUFOR", "OPFOR", "INDFOR"];
 
@@ -55,12 +106,46 @@ pub struct ApplyFactionResult {
 pub enum ApplyFactionError {
     /// `side` was not BLUFOR / OPFOR / INDFOR.
     InvalidSide(String),
+    /// T-217 — the side holds more than one squad, and [`FactionLibraryInput`] has no squad level
+    /// to hold them. Apply is refused **before it writes anything**.
+    ///
+    /// A faction library doc is `roles[] + vehicles[]`. Squad boundaries, `leaderSlotId`, callsign,
+    /// rank and map positions are not in it, so Save-as-template never captured them and Apply
+    /// could not restore them: the old code kept `squadIds[0]`, `remove_squad`'d the rest — which
+    /// takes each squad's slots with it — and reported success. That is unrecoverable loss of
+    /// operator work, so a multi-squad side is now refused instead. Expressing it properly needs a
+    /// squad level in `faction-library.schema.json` + `FactionDoc`, which is a schema change and
+    /// out of this fix's reach.
+    WouldCollapseSquads {
+        /// The side that was targeted.
+        side: String,
+        /// Every live squad on the side, in `faction.squadIds` order. `[0]` is the one Apply would
+        /// have kept; `[1..]` are the ones it would have deleted.
+        squad_ids: Vec<String>,
+        /// Slots inside `squad_ids[1..]` — the bodies that would have gone with them.
+        slots_destroyed: usize,
+    },
 }
 
 impl std::fmt::Display for ApplyFactionError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InvalidSide(s) => write!(f, "invalid side {s:?}; expected BLUFOR|OPFOR|INDFOR"),
+            Self::WouldCollapseSquads {
+                side,
+                squad_ids,
+                slots_destroyed,
+            } => write!(
+                f,
+                "refusing to apply a template onto {side}: it has {} squads, and a faction \
+                 template is a flat role list with no squad level — applying would keep {} and \
+                 permanently delete the other {}, along with {slots_destroyed} slot(s) and their \
+                 leaders, callsigns, ranks and map positions. Nothing was changed. Merge the side \
+                 down to one squad first, or apply onto a side that has none.",
+                squad_ids.len(),
+                squad_ids.first().map_or("no squad", String::as_str),
+                squad_ids.len().saturating_sub(1),
+            ),
         }
     }
 }
@@ -76,7 +161,14 @@ impl std::error::Error for ApplyFactionError {}
 /// `uid` every spawn point / roster reference keys on. Vehicles stay
 /// replace-semantics (no downstream identity hangs off them).
 ///
-/// Placement for NEW slots: `(6400 + 15*i, 6400)`; vehicles `(6400 + 30 + 20*j, 6400 - 30)`.
+/// **Squads are never destroyed (T-217).** A side holding more than one squad is refused with
+/// [`ApplyFactionError::WouldCollapseSquads`] before the first write, because `lib` is flat and
+/// cannot carry them back. Apply targets a side with zero squads (mint one) or exactly one
+/// (mutate it) — one squad in, one squad out.
+///
+/// Placement for NEW slots: `(anchor.x + 15*i, anchor.y)`; vehicles
+/// `(anchor.x + 30 + 20*j, anchor.y - 30)`, where `anchor` is [`apply_anchor_xy`] — the centre of
+/// the doc's own terrain, not a hard-coded Everon centre.
 pub fn apply_faction_library(
     doc: &MissionDocCore,
     side: &str,
@@ -88,7 +180,26 @@ pub fn apply_faction_library(
     }
 
     let faction_id = format!("faction-{side}");
+
+    // T-217 — refuse BEFORE the first write. Everything below this point mutates the doc,
+    // `ensure_side_faction` included, so the guard sits above all of it: a refused Apply leaves
+    // the document exactly as it found it, with nothing half-applied to undo.
+    let existing_squads = faction_squad_ids(doc, &faction_id);
+    if existing_squads.len() > 1 {
+        let slots_destroyed: usize = existing_squads
+            .iter()
+            .skip(1)
+            .map(|sid| squad_slot_ids(doc, sid).len())
+            .sum();
+        return Err(ApplyFactionError::WouldCollapseSquads {
+            side: side.to_string(),
+            squad_ids: existing_squads,
+            slots_destroyed,
+        });
+    }
+
     ensure_side_faction(doc, side, &faction_id, &lib.name);
+    let (anchor_x, anchor_y) = apply_anchor_xy(doc);
 
     let squad_name = if lib.name.trim().is_empty() {
         "Squad 1".to_string()
@@ -96,15 +207,11 @@ pub fn apply_faction_library(
         lib.name.clone()
     };
 
-    // Reuse the side's FIRST squad (rename to the library); extra squads are surplus
-    // structure and are removed (their slots with them).
-    let existing_squads = faction_squad_ids(doc, &faction_id);
+    // Reuse the side's one squad (renamed to the library), or mint one if it has none. The guard
+    // above already proved there is no second squad to lose.
     let squad_id = match existing_squads.first() {
         Some(first) => {
             doc.rename_squad(first, &squad_name);
-            for sid in existing_squads.iter().skip(1) {
-                doc.remove_squad(sid);
-            }
             first.clone()
         }
         None => {
@@ -134,8 +241,8 @@ pub fn apply_faction_library(
 
         // Surplus role: mint a fresh slot (deterministic name when free).
         let slot_id = mint_slot_id(doc, side, i);
-        let x = APPLY_ANCHOR_X + 15.0 * i as f64;
-        let y = APPLY_ANCHOR_Y;
+        let x = anchor_x + SLOT_SPACING_X * i as f64;
+        let y = anchor_y;
         doc.add_slot(
             &slot_id,
             &squad_id,
@@ -180,8 +287,8 @@ pub fn apply_faction_library(
             continue;
         }
         let vid = mint_vehicle_id(doc, side, j);
-        let x = APPLY_ANCHOR_X + 30.0 + 20.0 * j as f64;
-        let y = APPLY_ANCHOR_Y - 30.0;
+        let x = anchor_x + 30.0 + 20.0 * j as f64;
+        let y = anchor_y - 30.0;
         let _ = v.label; // label is UI-only; resourceName is the graph pin
         doc.add_vehicle(&vid, &v.vehicle, Some(x), Some(y), Some(0.0), Some(0.0));
         doc.attach_vehicle(&squad_id, &vid);
@@ -219,17 +326,24 @@ fn faction_exists(doc: &MissionDocCore, faction_id: &str) -> bool {
         .is_some_and(|m| m.contains_key(faction_id))
 }
 
+/// Squad ids of a faction in `faction.squadIds` order, **filtered to squads that still exist in
+/// `squadsById`**. A stale id (squad removed, faction row not yet cleaned) is not a squad: it must
+/// not count toward the T-217 multi-squad refusal, and it must not be picked as the mutate target
+/// either — `rename_squad`/`add_slot` against a ghost id silently do nothing.
 fn faction_squad_ids(doc: &MissionDocCore, faction_id: &str) -> Vec<String> {
     let Ok(root) = serde_json::from_str::<Value>(&doc.small_maps_json()) else {
         return Vec::new();
     };
+    let live = root.get("squadsById").and_then(Value::as_object);
     root.get("factionsById")
         .and_then(|v| v.get(faction_id))
         .and_then(|f| f.get("squadIds"))
         .and_then(|a| a.as_array())
         .map(|a| {
             a.iter()
-                .filter_map(|v| v.as_str().map(str::to_string))
+                .filter_map(Value::as_str)
+                .filter(|id| live.is_some_and(|m| m.contains_key(*id)))
+                .map(str::to_string)
                 .collect()
         })
         .unwrap_or_default()
@@ -619,5 +733,219 @@ mod tests {
         layer(&doc);
         let err = apply_faction_library(&doc, "CIV", "lyr", &two_role_lib()).expect_err("civ");
         assert!(matches!(err, ApplyFactionError::InvalidSide(_)));
+    }
+
+    // ── T-217 — squad collapse + terrain anchor ─────────────────────────────────────────────────
+
+    /// Hand-build `n` squads under `side`, each with `slots_per` slots, a leader, and per-slot
+    /// callsign/rank — i.e. exactly the structure a `FactionLibraryInput` cannot express.
+    fn seed_squads(doc: &MissionDocCore, side: &str, n: usize, slots_per: usize) -> Vec<String> {
+        let faction_id = format!("faction-{side}");
+        doc.add_faction(&faction_id, side, side);
+        let mut ids = Vec::with_capacity(n);
+        for s in 0..n {
+            let sq = format!("squad-{side}-{s}");
+            doc.add_squad(&sq, &faction_id, &format!("Squad {s}"), None);
+            for k in 0..slots_per {
+                let slot = format!("slot-{side}-{s}-{k}");
+                doc.add_slot(
+                    &slot,
+                    &sq,
+                    "lyr",
+                    k as u32,
+                    "Rifleman",
+                    None,
+                    Some("{FFFF}Body.et".to_string()),
+                    1000.0 + 100.0 * s as f64,
+                    2000.0 + 15.0 * k as f64,
+                    0.0,
+                    0.0,
+                );
+                doc.update_slot_identity(
+                    &slot,
+                    Some(format!("A{s}-{k}")),
+                    Some("Corporal".to_string()),
+                );
+                if k == 0 {
+                    doc.set_leader(&sq, &slot);
+                }
+            }
+            ids.push(sq);
+        }
+        ids
+    }
+
+    /// T-217 headline — **N squads in, N squads out.** Apply onto a multi-squad side is refused,
+    /// and the refusal is total: not one byte of the doc moves, so every squad, slot, leader,
+    /// callsign, rank and position is exactly where the operator left it.
+    ///
+    /// The old code kept `squadIds[0]` and `remove_squad`'d the rest — which deletes their slots
+    /// too — then returned `Ok`, so the UI said "Template applied." while two squads' worth of
+    /// authoring vanished with no way back (the flat template never held them either).
+    #[test]
+    fn apply_refuses_to_collapse_squads_and_writes_nothing() {
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        let seeded = seed_squads(&doc, "OPFOR", 3, 2);
+        let small_before = small(&doc);
+        let slots_before = slots(&doc);
+        assert_eq!(side_slot_count(&doc, "OPFOR"), 6);
+
+        let err = apply_faction_library(&doc, "OPFOR", "lyr", &two_role_lib()).expect_err("refuse");
+        match &err {
+            ApplyFactionError::WouldCollapseSquads {
+                side,
+                squad_ids,
+                slots_destroyed,
+            } => {
+                assert_eq!(side, "OPFOR");
+                assert_eq!(squad_ids, &seeded);
+                // squads 1 and 2, two slots each — the bodies the old path took with them.
+                assert_eq!(*slots_destroyed, 4);
+            }
+            other => panic!("expected WouldCollapseSquads, got {other:?}"),
+        }
+
+        // "…and say so": the message names the side, the count and the fact nothing changed.
+        let msg = err.to_string();
+        assert!(msg.contains("OPFOR"), "{msg}");
+        assert!(msg.contains("3 squads"), "{msg}");
+        assert!(msg.contains("Nothing was changed"), "{msg}");
+
+        // N in, N out — the whole document is untouched.
+        assert_eq!(small(&doc), small_before);
+        assert_eq!(slots(&doc), slots_before);
+        assert_eq!(faction_squad_ids(&doc, "faction-OPFOR").len(), 3);
+        assert_eq!(side_slot_count(&doc, "OPFOR"), 6);
+
+        // Spelled out for the things the template could never have restored.
+        let s = slots(&doc);
+        let root = small(&doc);
+        assert_eq!(root["squadsById"]["squad-OPFOR-2"]["name"], "Squad 2");
+        assert_eq!(
+            root["squadsById"]["squad-OPFOR-2"]["leaderSlotId"],
+            "slot-OPFOR-2-0"
+        );
+        assert_eq!(s["slot-OPFOR-2-1"]["callsign"], "A2-1");
+        assert_eq!(s["slot-OPFOR-2-1"]["rank"], "Corporal");
+        assert_eq!(s["slot-OPFOR-2-1"]["position"]["x"], 1200.0);
+    }
+
+    /// One squad is still the happy path — the refusal must not turn a normal Apply into an error.
+    #[test]
+    fn apply_onto_a_single_squad_side_still_applies() {
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        let seeded = seed_squads(&doc, "BLUFOR", 1, 3);
+        let r = apply_faction_library(&doc, "BLUFOR", "lyr", &two_role_lib()).expect("apply");
+        assert_eq!(r.squad_id, seeded[0]);
+        assert_eq!(r.roles_applied, 2);
+        assert_eq!(side_slot_count(&doc, "BLUFOR"), 2);
+        assert_eq!(faction_squad_ids(&doc, "faction-BLUFOR").len(), 1);
+    }
+
+    /// A stale id in `faction.squadIds` is not a squad. It is reachable — `hydrate` loads faction
+    /// and squad rows verbatim with no cross-reference check — and it must neither trip the T-217
+    /// refusal nor be chosen as the mutate target: writes against a ghost id are silent no-ops, so
+    /// an Apply that "targeted" one would apply nothing and still report success.
+    #[test]
+    fn stale_squad_id_neither_refuses_nor_captures_the_apply() {
+        let doc = MissionDocCore::new();
+        doc.hydrate(
+            &json!({
+                "editor": {
+                    "factions": [{
+                        "id": "faction-INDFOR",
+                        "key": "INDFOR",
+                        "name": "INDFOR",
+                        // `squad-ghost` has no row in `squads` below.
+                        "squadIds": ["squad-ghost", "squad-real"],
+                    }],
+                    "squads": [{
+                        "id": "squad-real",
+                        "factionId": "faction-INDFOR",
+                        "name": "Real",
+                        "slotIds": [],
+                        "vehicleIds": [],
+                    }],
+                    "editorLayers": [{
+                        "id": "lyr",
+                        "name": "Layer 1",
+                        "parentId": null,
+                        "entityIds": [],
+                    }],
+                }
+            })
+            .to_string(),
+            "lyr",
+        );
+        assert_eq!(
+            faction_squad_ids(&doc, "faction-INDFOR"),
+            vec!["squad-real"]
+        );
+
+        let r = apply_faction_library(&doc, "INDFOR", "lyr", &two_role_lib()).expect("apply");
+        assert_eq!(r.squad_id, "squad-real");
+        assert_eq!(side_slot_count(&doc, "INDFOR"), 2);
+    }
+
+    /// T-217 — the Apply anchor follows `meta.terrain`. Arland is `4096²`, so the Everon constant
+    /// put every applied slot and vehicle thousands of metres off the map.
+    #[test]
+    fn apply_anchors_on_the_docs_own_terrain() {
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        doc.apply_row_meta("", "arland", None, None);
+        apply_faction_library(&doc, "OPFOR", "lyr", &two_role_lib()).expect("apply");
+
+        let s = slots(&doc);
+        assert_eq!(s["slot-OPFOR-apply-0"]["position"]["x"], 2048.0);
+        assert_eq!(s["slot-OPFOR-apply-0"]["position"]["y"], 2048.0);
+        // Same 15 m lane as `next_slot_xy` / a hand-built squad — only the origin changed.
+        assert_eq!(s["slot-OPFOR-apply-1"]["position"]["x"], 2063.0);
+
+        let root = small(&doc);
+        let v = &root["vehiclesById"]["veh-OPFOR-apply-0"]["position"];
+        assert_eq!(v["x"], 2078.0);
+        assert_eq!(v["y"], 2018.0);
+    }
+
+    /// Regression pin for the terrain that was already right: everon / custom / no-meta must still
+    /// land on the historical `(6400, 6400)`, byte-for-byte as before T-217.
+    #[test]
+    fn everon_and_unknown_terrain_keep_the_historical_anchor() {
+        for terrain in ["", "everon", "custom"] {
+            let doc = MissionDocCore::new();
+            layer(&doc);
+            if !terrain.is_empty() {
+                doc.apply_row_meta("", terrain, None, None);
+            }
+            apply_faction_library(&doc, "BLUFOR", "lyr", &two_role_lib()).expect("apply");
+            let s = slots(&doc);
+            assert_eq!(
+                s["slot-BLUFOR-apply-0"]["position"]["x"], 6400.0,
+                "terrain {terrain:?}"
+            );
+            assert_eq!(
+                s["slot-BLUFOR-apply-1"]["position"]["x"], 6415.0,
+                "terrain {terrain:?}"
+            );
+            assert_eq!(
+                s["slot-BLUFOR-apply-0"]["position"]["y"], 6400.0,
+                "terrain {terrain:?}"
+            );
+        }
+    }
+
+    /// The local terrain table must stay the centre of `mission::compile::terrain_bounds`. Only
+    /// built with `--features doc,mission`; `doc` alone has no `mission` module to compare against.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn apply_anchor_matches_terrain_bounds() {
+        for t in ["everon", "arland", "custom", "not-a-terrain"] {
+            let [min_x, min_y, max_x, max_y] = crate::mission::compile::terrain_bounds(t);
+            let want = ((min_x + max_x) / 2.0, (min_y + max_y) / 2.0);
+            assert_eq!(apply_anchor_for_terrain(t), want, "terrain {t:?}");
+        }
     }
 }
