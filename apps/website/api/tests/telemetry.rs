@@ -177,8 +177,13 @@ async fn telemetry_ingest_closes_the_loop() {
     // That default was a mechanical carry-over of Go's zero-value JSON decoding from the
     // T-145 port, not a designed contract, and it is exactly what let a re-ingest wipe a
     // real scoreline — so the stat block is now spelled out in full.
+    //
+    // T-393: and it is spelled out inside `counters`, which is where the whole block lives now.
+    // Present = authoritative, so this is still the "full replace" path T-316 designed; what
+    // changed is that a sender with no scoreline to state may omit the block instead of being
+    // rejected (`the_shipping_mod_payload_is_accepted_verbatim`).
     let match_body = format!(
-        r#"{{"match":{{"source_match_id":"m-tele-1","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{PLAYER_ARMA}","role_played":"SL","kills":5,"deaths":1,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false,"source_event_id":"e1"}}]}}"#
+        r#"{{"match":{{"source_match_id":"m-tele-1","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{PLAYER_ARMA}","role_played":"SL","source_event_id":"e1","counters":{{"kills":5,"deaths":1,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false}}}}]}}"#
     );
     let (st, mr) = call(
         &app,
@@ -288,7 +293,7 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
 
     // The honest ingest: a completed, won match with a real scoreline and an AAR link.
     let full = format!(
-        r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA","aar_replay_url":"https://aar.tbd/{SRC}.json","ended_at":"2026-07-26T20:14:00Z"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true,"source_event_id":"e-t316"}}]}}"#
+        r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA","aar_replay_url":"https://aar.tbd/{SRC}.json","ended_at":"2026-07-26T20:14:00Z"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"e-t316","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}]}}"#
     );
     let (st, r) = call(
         &app,
@@ -352,7 +357,17 @@ async fn partial_match_reingest_cannot_revert_or_zero() {
     assert_eq!(st, StatusCode::BAD_REQUEST, "partial match body: {r}");
     assert_eq!(read_match(pool.clone()).await, before, "match untouched");
 
-    // (2) A player row with the counters omitted — this zeroed a 17/3 scoreline.
+    // (2) A player row missing a required *identity* field — this body has neither
+    // `role_played` nor a scoreline, and it used to zero a 17/3 line.
+    //
+    // **T-393 re-read this case, because the reason it is a 400 changed.** It is now rejected
+    // for the missing `role_played`, not for the missing counters: counters live in an optional
+    // nested block, and omitting the block is a legal statement meaning "I make no claim about
+    // the scoreline". What T-316 actually established — that an omission must never be a write
+    // — is unchanged and is asserted directly by
+    // `absent_counters_are_not_a_write_on_reingest`, which sends a *well-formed* counters-less
+    // row and proves the stored 17/3 survives it. The two tests together say: silence never
+    // writes, and an incomplete identity is still a 400.
     let (st, r) = call(
         &app,
         "POST",
@@ -631,7 +646,7 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
     // A body that is honest in every respect except the id.
     let body = |src: &str| {
         format!(
-            r#"{{"match":{{"source_match_id":"{src}","terrain":"everon","outcome":"success","winning_faction":"USA","ended_at":"2026-07-26T20:14:00Z","aar_replay_url":"https://aar.tbd/{SRC}.json"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true,"source_event_id":"{EV}"}}]}}"#
+            r#"{{"match":{{"source_match_id":"{src}","terrain":"everon","outcome":"success","winning_faction":"USA","ended_at":"2026-07-26T20:14:00Z","aar_replay_url":"https://aar.tbd/{SRC}.json"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}]}}"#
         )
     };
     let post = |b: String| {
@@ -843,7 +858,7 @@ async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
         }
     };
     let players = format!(
-        r#""players":[{{"arma_id":"{ARMA}","role_played":"SL","kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true,"source_event_id":"{EV}"}}]"#
+        r#""players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}]"#
     );
     // The four fields the UPDATE used to drop, read back as they are actually stored.
     type Provenance = (Option<Uuid>, Option<Uuid>, Option<String>, String);
@@ -1077,7 +1092,7 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
     };
     let line = |arma: &str, ev: &str, kills: i64, deaths: i64, longest: i64, veh: i64| {
         format!(
-            r#"{{"arma_id":"{arma}","role_played":"SL","kills":{kills},"deaths":{deaths},"team_kills":0,"longest_kill_m":{longest},"vehicles_destroyed":{veh},"is_command":false,"source_event_id":"{ev}"}}"#
+            r#"{{"arma_id":"{arma}","role_played":"SL","source_event_id":"{ev}","counters":{{"kills":{kills},"deaths":{deaths},"team_kills":0,"longest_kill_m":{longest},"vehicles_destroyed":{veh},"is_command":false}}}}"#
         )
     };
     // `leaderboard_totals` is a materialized view refreshed in-request by every ingest, including
@@ -1240,5 +1255,400 @@ async fn an_unresolvable_arma_id_keeps_its_row_and_the_response_says_so() {
     .execute(&pool)
     .await
     .unwrap();
+    clean(pool.clone()).await;
+}
+
+/// **The payload the shipping mod actually sends, reproduced byte-for-byte, asserted to be
+/// accepted (T-393).**
+///
+/// This fixture is the whole point of the ticket. T-316 made nine player fields required
+/// without checking the only client, and every test in this file built its own complete body,
+/// so nothing in the suite ever looked at what the game server puts on the wire. The result
+/// was arithmetic, not bad luck: the mod sends four keys, serde rejected on the first of the
+/// five it did not send, and **every match report from every production server 400'd** —
+/// match rows, per-player stats, attendance, user-stat recompute and leaderboard refresh, all
+/// dead on arrival, for as long as T-316 was deployed.
+///
+/// # Source of truth for these bytes
+///
+/// `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c` — the envelope from
+/// `BuildPayload` (key order and all), each row from `BuildPlayerRow`. Both hand-build JSON by
+/// string concatenation, so there is no serializer that could quietly fill a field in: what
+/// those two functions write is exactly what the backend receives. Reproduced here in that
+/// same order so a reader can diff the two by eye.
+///
+/// **If you change the wire contract, this test is the tripwire.** It fails here, in CI, on a
+/// laptop, instead of on a dedicated server at 20:00 on an op night with the only symptom
+/// being a `400` in a console nobody is reading. Re-derive the literal from those two
+/// functions rather than editing it to match the new struct — editing it to pass is exactly
+/// the check that was missing.
+///
+/// The field values are shaped like production: `source_match_id` is `BuildSourceMatchId`'s
+/// `missionId@startedAt#tick`, `started_at`/`ended_at` are `UtcNowIso8601`'s fixed-width
+/// RFC 3339, and `source_event_id` is the *same* string as the match's `event_id` because
+/// `CollectPlayers` and `BuildPayload` both read `TBD_BackendConfig.GetEventId()`.
+#[tokio::test]
+async fn the_shipping_mod_payload_is_accepted_verbatim() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    // Both arma_ids stay unlinked on purpose: `TBD_ResultsReporter.c:23-35` says no player has
+    // an `arma_id` in production until T-181.35 ships the link flow, so this is the real
+    // population, and the T-229 unlinked-reporting path is on the same code path as the fix.
+    const A1: &str = "t393-arma-mod-a";
+    const A2: &str = "t393-arma-mod-b";
+    const EV: &str = "9f0f4c6e-1d3a-4e2b-8c77-2a5b6d4e9011";
+    const MISSION: &str = "3c1d5b7a-8e42-4f19-9a6d-71b0c2e8f455";
+    const SRC: &str = "3c1d5b7a-8e42-4f19-9a6d-71b0c2e8f455@2026-07-26T20:03:11Z#183472";
+
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = ANY($1)")
+            .bind(vec![A1.to_string(), A2.to_string()])
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+            .bind(SRC)
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    // ---- BEGIN golden payload — TBD_ResultsReporter.c BuildPayload + BuildPlayerRow ----
+    let golden = format!(
+        r#"{{"match":{{"source_match_id":"{SRC}","event_id":"{EV}","mission_id":"{MISSION}","terrain":"everon","started_at":"2026-07-26T20:03:11Z","ended_at":"2026-07-26T21:14:02Z","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{A1}","role_played":"Squad Leader","deaths":1,"source_event_id":"{EV}"}},{{"arma_id":"{A2}","role_played":"Rifleman","deaths":0,"source_event_id":"{EV}"}}]}}"#
+    );
+    // ---- END golden payload ----
+
+    let (st, r) = call(
+        &app,
+        "POST",
+        "/api/v1/ingest/match-results",
+        None,
+        Some(SVC),
+        Some(&golden),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "the shipping mod payload must be accepted: {r}"
+    );
+    assert_eq!(r["players"], 2);
+    assert_eq!(r["unlinked"], 2, "nobody is linked in production yet");
+    let match_id = Uuid::parse_str(r["match_id"].as_str().unwrap()).unwrap();
+
+    // The match half landed in full — this is the half that was never in doubt, and the point
+    // of asserting it is that it was ALSO lost, because the 400 rejected the whole request.
+    let m: (String, Option<String>, Option<String>, Option<Uuid>) = sqlx::query_as(
+        "SELECT outcome::text, winning_faction, terrain::text, event_id FROM matches WHERE id = $1",
+    )
+    .bind(match_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        m,
+        (
+            "success".into(),
+            Some("USA".into()),
+            Some("everon".into()),
+            Some(Uuid::parse_str(EV).unwrap())
+        )
+    );
+
+    // Both player rows exist with their identity core intact, and — the T-393 contract — with
+    // no counters written, because the payload states none. The zeros below are the table's
+    // DDL defaults on a fresh insert (`0001_initial_schema.sql:251-265`), NOT a decoded
+    // `#[serde(default)]`: on a *re*-ingest these columns are not named at all, which is what
+    // `absent_counters_are_not_a_write_on_reingest` proves.
+    type Row = (String, String, i64, i64, i64, i64, i64, bool, Option<bool>);
+    let rows: Vec<Row> = sqlx::query_as(
+        "SELECT arma_id, role_played, kills, deaths, team_kills, longest_kill_m, \
+         vehicles_destroyed, is_command, command_win FROM match_player_stats \
+         WHERE match_id = $1 ORDER BY arma_id",
+    )
+    .bind(match_id)
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        rows,
+        vec![
+            (A1.into(), "Squad Leader".into(), 0, 0, 0, 0, 0, false, None),
+            (A2.into(), "Rifleman".into(), 0, 0, 0, 0, 0, false, None),
+        ],
+        "identity + role stored; no counter claimed, so no counter written"
+    );
+
+    // **Named out loud because it is a real cost, not an oversight:** the mod's top-level
+    // `"deaths":1` is an unknown field under the split contract and is ignored, so A1's stored
+    // `deaths` is 0 above rather than 1. `deaths` sits inside the counters block because
+    // `leaderboard_totals.kd_ratio` is `sum(kills)/sum(deaths)` — a `deaths` writable without
+    // `kills` is a `kd_ratio` corruptible by a low-fidelity re-ingest. Recovering that one
+    // number is a mod-side change (emit a complete `counters` object); it is not a reason to
+    // let one counter travel alone. The alternative — rejecting a top-level `deaths` — would
+    // 400 this very payload, which is the defect this test exists to prevent.
+    assert_eq!(rows[0].3, 0, "top-level deaths is ignored, deliberately");
+
+    sqlx::query("DELETE FROM audit_logs WHERE target_id = $1")
+        .bind(match_id.to_string())
+        .execute(&pool)
+        .await
+        .unwrap();
+    clean(pool.clone()).await;
+}
+
+/// **A counters block is all-or-nothing: a partial one is a 400 (T-393).**
+///
+/// The split makes the *block* optional; it does not make the fields inside it optional. That
+/// distinction is the entire anti-corruption property. "No counters" is a legal statement
+/// meaning "I make no claim" and writes nothing; "some counters" is a sender that has half a
+/// scoreline and does not know it, and five silent zeros beside two real numbers is precisely
+/// the corrupt row T-316 was filed to kill. There is no `#[serde(default)]` inside
+/// `PlayerCountersInput`, so a missing key is a decode error, exactly as before.
+#[tokio::test]
+async fn a_partial_counters_object_is_still_a_400() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA: &str = "t393-arma-partial";
+    const SRC: &str = "m-t393-partial";
+    const EV: &str = "e-t393-partial";
+
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+            .bind(SRC)
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    let body = |players: String| {
+        format!(
+            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{players}]}}"#
+        )
+    };
+    let post = |app: Router, b: String| async move {
+        call(
+            &app,
+            "POST",
+            "/api/v1/ingest/match-results",
+            None,
+            Some(SVC),
+            Some(&b),
+        )
+        .await
+    };
+
+    // Seed a real scoreline so every rejection below has something it could have destroyed.
+    let (st, r) = post(
+        app.clone(),
+        body(format!(
+            r#"{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "seed: {r}");
+
+    let read = |pool: PgPool| async move {
+        sqlx::query_as::<_, (i64, i64, i64, i64, i64, bool)>(
+            "SELECT kills, deaths, team_kills, longest_kill_m, vehicles_destroyed, is_command \
+             FROM match_player_stats WHERE arma_id = $1",
+        )
+        .bind(ARMA)
+        .fetch_one(&pool)
+        .await
+        .unwrap()
+    };
+    const SEEDED: (i64, i64, i64, i64, i64, bool) = (17, 3, 1, 842, 4, true);
+    assert_eq!(read(pool.clone()).await, SEEDED);
+
+    // (1) One key present, the rest missing — the shape a half-built sender produces.
+    let (st, r) = post(
+        app.clone(),
+        body(format!(
+            r#"{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":9}}}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "one-key counters: {r}");
+    assert_eq!(read(pool.clone()).await, SEEDED, "nothing written");
+
+    // (2) All but one — the shape a sender produces after adding a field to the DB and
+    // forgetting the wire. `is_command` is not a "counter" in the arithmetic sense, which is
+    // exactly why `GREATEST` was rejected in T-316 and why the block is all-or-nothing rather
+    // than field-by-field.
+    let (st, r) = post(
+        app.clone(),
+        body(format!(
+            r#"{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":9,"deaths":2,"team_kills":0,"longest_kill_m":100,"vehicles_destroyed":1}}}}"#
+        )),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::BAD_REQUEST,
+        "counters missing is_command: {r}"
+    );
+    assert_eq!(read(pool.clone()).await, SEEDED, "nothing written");
+
+    // (3) The pre-T-393 flat body. Unknown fields are ignored by serde (and must be — denying
+    // them would 400 the mod's extra `deaths` and re-open the defect), so without a tripwire
+    // this would have been a cheerful 200 that stored nothing: the sender's counters dropped
+    // on the floor, its 200 implying they landed. That is the T-316 failure mode in new
+    // clothes — a silent loss where the sender believes it stated something — so the flat
+    // shape is rejected by name instead.
+    let (st, r) = post(
+        app.clone(),
+        body(format!(
+            r#"{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","kills":9,"deaths":2,"team_kills":0,"longest_kill_m":100,"vehicles_destroyed":1,"is_command":false}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "legacy flat body: {r}");
+    assert!(
+        r["error"].as_str().unwrap_or_default().contains("counters"),
+        "the error must name the shape to move to, since a game server's only channel back is \
+         this string: {r}"
+    );
+    assert_eq!(read(pool.clone()).await, SEEDED, "nothing written");
+
+    clean(pool.clone()).await;
+}
+
+/// **Absent counters are not a write — the T-316 property, restated (T-393).**
+///
+/// This is the assertion that matters most in the file. The contract split would be worthless
+/// (and dangerous) if omitting the block merely meant "send zeros politely": the whole reason
+/// counters were made required was that an omission used to overwrite a real scoreline with
+/// `kills=0 … command_win=NULL`, which `refresh_leaderboard` then summed in the same request.
+/// After the split an omission writes *nothing at all* — the counters-absent SQL statement does
+/// not name those columns, so they are not read, not re-bound, and not rewritten.
+///
+/// The second POST deliberately changes `role_played`, and the test asserts that change landed.
+/// Without it the whole thing would be vacuous: a request that silently failed, or a handler
+/// that skipped the row entirely, would also leave the counters untouched and this test would
+/// pass while proving nothing. The role change is the receipt that the upsert really ran and
+/// really wrote this row, and touched every column it was entitled to touch and no others.
+#[tokio::test]
+async fn absent_counters_are_not_a_write_on_reingest() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA: &str = "t393-arma-noclaim";
+    const DISCORD: &str = "000000000000393001";
+    const SRC: &str = "m-t393-noclaim";
+    const EV: &str = "e-t393-noclaim";
+
+    // Link the player so the leaderboard half of the property is observable too — an unowned
+    // row never reaches `leaderboard_totals` (T-229), so an unlinked player could not show that
+    // a zeroing would have propagated.
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T393', 't393', '', $2, '[TBD] T393', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(DISCORD)
+    .bind(ARMA)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+            .bind(SRC)
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    let read = |pool: PgPool| async move {
+        sqlx::query_as::<_, (String, i64, i64, i64, i64, i64, bool, Option<bool>)>(
+            "SELECT role_played, kills, deaths, team_kills, longest_kill_m, vehicles_destroyed, \
+             is_command, command_win FROM match_player_stats WHERE arma_id = $1",
+        )
+        .bind(ARMA)
+        .fetch_one(&pool)
+        .await
+        .unwrap()
+    };
+
+    // (1) A full report: the scoreline is stated, so it is authoritative and lands whole.
+    let (st, r) = call(
+        &app,
+        "POST",
+        "/api/v1/ingest/match-results",
+        None,
+        Some(SVC),
+        Some(&format!(
+            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}]}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "full report: {r}");
+    assert_eq!(
+        read(pool.clone()).await,
+        ("SL".into(), 17, 3, 1, 842, 4, true, Some(true))
+    );
+
+    // (2) The same row re-ingested with NO counters — the shipping mod's shape — and with a
+    // corrected role, so the write is provable. Under T-316 this body was a 400; before T-316
+    // it was a silent zeroing. It is now neither: it states a role and says nothing about the
+    // scoreline.
+    let (st, r) = call(
+        &app,
+        "POST",
+        "/api/v1/ingest/match-results",
+        None,
+        Some(SVC),
+        Some(&format!(
+            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"PL","source_event_id":"{EV}"}}]}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "counters-less re-ingest: {r}");
+    assert_eq!(
+        read(pool.clone()).await,
+        ("PL".into(), 17, 3, 1, 842, 4, true, Some(true)),
+        "the role was replaced (so the upsert DID run on this row) and every counter survived \
+         untouched — including `command_win`, whose NULL would have been the tri-state's own \
+         silent loss"
+    );
+
+    // (3) And the propagation the ticket is actually about: `leaderboard_totals` sums
+    // `match_player_stats`, so a zeroed row really would have reached the leaderboard inside
+    // the same request via `refresh_leaderboard`.
+    sqlx::query("REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_totals")
+        .execute(&pool)
+        .await
+        .ok();
+    let lb_kills: Option<i64> =
+        sqlx::query_scalar("SELECT kills::int8 FROM leaderboard_totals WHERE discord_id = $1")
+            .bind(DISCORD)
+            .fetch_optional(&pool)
+            .await
+            .unwrap();
+    assert_eq!(
+        lb_kills,
+        Some(17),
+        "the leaderboard still shows the real kills after a counters-less re-ingest"
+    );
+
     clean(pool.clone()).await;
 }
