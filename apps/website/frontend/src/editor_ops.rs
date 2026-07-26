@@ -1166,7 +1166,19 @@ pub fn orbat_add_squad(side: String) -> Option<String> {
     id
 }
 
+/// T-188 — along-front spacing between the slots of one squad, matching
+/// `apply_faction_library`'s `APPLY_ANCHOR_X + 15.0 * i` formation so a hand-built squad and an
+/// applied kit lay out identically.
+const ORBAT_SLOT_SPACING_X: f64 = 15.0;
+
 /// G6 — add a role (slot) into an existing squad; default role Rifleman. Not `place_character_under_side`.
+///
+/// **T-188 — placement.** This used to hand `add_slot` `0.0, 0.0, 0.0, 0.0`, so every role added
+/// from the ORBAT dock materialised at world origin — the terrain's south-west corner, nowhere near
+/// its squad, and stacked on every other Add Role. It now anchors the way the sibling
+/// [`orbat_add_vehicle`] already does: [`squad_anchor_xy`] (leader, else first slot) with the
+/// shared apply anchor as the empty-squad fallback, offset along +x by the slot's index so members
+/// line up instead of overlapping.
 pub fn orbat_add_slot(squad_id: String, role: String) -> Option<String> {
     let id = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -1186,9 +1198,29 @@ pub fn orbat_add_slot(squad_id: String, role: String) -> Option<String> {
         } else {
             role
         };
+        // Fall back to Everon centre only for a squad with nothing to anchor against — the same
+        // origin `apply_faction_library` mints a fresh squad at.
+        let (ax, ay) = squad_anchor_xy(core, &sq).unwrap_or((APPLY_ANCHOR_X, APPLY_ANCHOR_Y));
+        let x = ax + ORBAT_SLOT_SPACING_X * f64::from(index);
+        let asset_id = asset_id_for_role(core, &sq, &role);
         core.add_slot(
-            &slot_id, &squad_id, &layer_id, index, &role, None, None, 0.0, 0.0, 0.0, 0.0,
+            &slot_id,
+            &squad_id,
+            &layer_id,
+            index,
+            &role,
+            None,
+            asset_id.clone(),
+            x,
+            ay,
+            0.0,
+            0.0,
         );
+        // T-068.15.2 — a slot that carries a character carries its default cargo too; same borrow
+        // scope ⇒ one undo step with the add, exactly like the place / apply-kit hooks.
+        if let Some(a) = &asset_id {
+            seed_cargo_in_core(core, &slot_id, a, None);
+        }
         if sq.leader_slot_id.is_empty() {
             core.set_leader(&squad_id, &slot_id);
         }
@@ -1198,6 +1230,57 @@ pub fn orbat_add_slot(squad_id: String, role: String) -> Option<String> {
         crate::mission_history::after_local_edit();
     }
     id
+}
+
+/// T-188 — best-effort `assetId` for a role added from the ORBAT dock.
+///
+/// Add Role has no character picker (the palette drag is the only place a character is chosen), so
+/// the slot was minted with `assetId` absent — a body-less slot the place path never produces and
+/// that compiles to no spawn. Derive one from the doc instead: the resource name an existing slot
+/// with the **same role** already carries, nearest first — the squad itself, then sibling squads
+/// under the same faction, then anywhere in the mission. Returns `None` when the mission holds no
+/// slot for that role yet, which `add_slot` then omits exactly as before.
+///
+/// Deliberately role-keyed, not "any squad-mate": borrowing the squad leader's prefab for a
+/// Rifleman would swap the character out for the wrong one, which is worse than leaving it unset.
+fn asset_id_for_role(
+    core: &MissionDocCore,
+    sq: &crate::outliner::SquadRow,
+    role: &str,
+) -> Option<String> {
+    let root = serde_json::from_str::<serde_json::Value>(&core.slots_json()).ok()?;
+    let obj = root.as_object()?;
+
+    // Search order, widest last. Sibling squads walk `faction.squadIds` / `squad.slotIds`, and the
+    // whole-mission sweep sorts its ids, so the pick is deterministic — the doc's maps are not
+    // ordered, and an arbitrary order would hand two identical missions different characters.
+    let squads = squad_rows(core);
+    let siblings = faction_rows(core)
+        .into_iter()
+        .find(|f| f.id == sq.faction_id)
+        .map(|f| f.squad_ids)
+        .unwrap_or_default();
+    let mut every_id: Vec<&String> = obj.keys().collect();
+    every_id.sort();
+
+    let mut candidates: Vec<&String> = sq.slot_ids.iter().collect();
+    for sid in &siblings {
+        if let Some(s) = squads.iter().find(|s| s.id == *sid) {
+            candidates.extend(s.slot_ids.iter());
+        }
+    }
+    candidates.extend(every_id);
+
+    candidates.into_iter().find_map(|id| {
+        let slot = obj.get(id)?;
+        if slot.get("role").and_then(serde_json::Value::as_str) != Some(role) {
+            return None;
+        }
+        slot.get("assetId")
+            .and_then(serde_json::Value::as_str)
+            .filter(|a| !a.is_empty())
+            .map(ToString::to_string)
+    })
 }
 
 /// G2 — Make SL via core `set_leader` (does not overwrite MED/ENG tag).
