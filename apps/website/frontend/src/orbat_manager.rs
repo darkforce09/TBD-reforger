@@ -3,6 +3,15 @@
 //! Visual structure from `.ai/artifacts/t180_stitch_orbat_modal/`; data from `MissionDocCore` only
 //! (G7). Operator L8 kit-complement UI omitted (G4). Templates Apply/Save + Add Vehicle (T-180.8);
 //! Arsenal tab-3 → T-180.9.
+//!
+//! **T-373 — the library write is a whole-document replace with no concurrency control.**
+//! `PUT /factions/:id` (`apps/website/api/src/handlers/factions.rs::update_faction`) takes a
+//! complete `faction-library.schema.json` document, validates it, and overwrites the row. It carries
+//! no `If-Match`, no ETag and no version column, so two clients editing one faction cannot detect
+//! each other and the loser's authoring is gone with nothing to recover it from. What this module
+//! does to build a faithful body ([`merge_faction_doc_from_side`]) narrows that window; it cannot
+//! close it. The durable fix is for the endpoint to accept a **partial** document, so a client never
+//! has to restate a field it does not own — that lives in `handlers/factions.rs`, not here.
 #![allow(dead_code, unused_variables)]
 
 use std::collections::{HashMap, HashSet};
@@ -29,6 +38,158 @@ const OVERSCAN: usize = 8;
 #[must_use]
 pub fn apply_confirm_allows(confirmed: bool) -> bool {
     confirmed
+}
+
+/// T-373 — why [`merge_faction_doc_from_side`] refused to build a body at all.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SaveFromSideRefusal {
+    /// The side yields neither a role nor a vehicle, so the write carries no content.
+    NoContent {
+        /// Roles the stored library faction holds and would lose.
+        stored_roles: usize,
+        /// Vehicles the stored library faction holds and would lose.
+        stored_vehicles: usize,
+    },
+}
+
+impl SaveFromSideRefusal {
+    /// The sentence the operator gets. T-308's rule: show the refusal and what to do about it,
+    /// don't paraphrase it into "Save failed."
+    #[must_use]
+    pub fn message(&self, side: &str, name: &str) -> String {
+        match *self {
+            Self::NoContent {
+                stored_roles,
+                stored_vehicles,
+            } => {
+                let holds = if stored_roles == 0 && stored_vehicles == 0 {
+                    "and it is empty too".to_string()
+                } else {
+                    format!(
+                        "and it still holds {stored_roles} role(s) and {stored_vehicles} \
+                         vehicle(s) that saving would delete"
+                    )
+                };
+                format!(
+                    "{side} has no roles and no vehicles, so there is nothing to update \
+                     \"{name}\" from — {holds}. Place slots under {side} first, or edit the \
+                     template directly in the Faction Manager."
+                )
+            }
+        }
+    }
+}
+
+/// T-373 — the body the **Save** button ("Update selected library faction from this side") must
+/// PUT, built from the stored document plus the side's own derivation.
+///
+/// `PUT /factions/:id` replaces the whole `doc` jsonb
+/// (`apps/website/api/src/handlers/factions.rs::update_faction`), and [`FactionDoc`]'s
+/// `skip_serializing_if = "Option::is_none"` omits an absent key instead of nulling it. So a field
+/// this function does not carry over from `stored` is **deleted from the library**. Before this
+/// existed the button PUT [`crate::editor_ops::faction_doc_from_side`]'s output raw, taking only
+/// `name` from the stored row — which destroyed the emblem and every vehicle label on every press.
+///
+/// The line is drawn in one place: **derive every field the ORBAT can express; preserve the ones it
+/// cannot.**
+///
+/// | field | source | why |
+/// |---|---|---|
+/// | `side` | derived | the operator's side tab is the choice being expressed |
+/// | `name` | **stored** | this button updates a template, it does not rename one — renaming is `Save as` |
+/// | `emblem` | **stored** | inexpressible: no emblem exists anywhere in `MissionDocCore`, so it can only be preserved, never derived |
+/// | `roles` | derived | `role`/`tag`/`character`/`loadout` all live on the slot and round-trip through Apply, so an absent loadout is a real edit (the Arsenal cleared it), not a gap |
+/// | `vehicles[].vehicle` | derived | the resourceName is the graph pin |
+/// | `vehicles[].label` | **stored** | inexpressible: Apply discards it (`crates/map-engine-core/src/doc/apply_faction.rs:358`) and `add_vehicle` has nowhere to keep it |
+///
+/// Labels re-pair by resourceName **in stored order**, so a template listing the same vehicle twice
+/// keeps its two distinct labels; a vehicle the side added that the template never had has no label
+/// to inherit and stays unlabelled.
+///
+/// This is the shape `faction_manager.rs:84-121` already gets for free by editing the `FactionDoc`
+/// it loaded and PUTting that same value back. The ORBAT button cannot do that — it must project a
+/// graph onto a document — so the round-trip has to be written out.
+///
+/// # Errors
+/// [`SaveFromSideRefusal::NoContent`] when the side yields neither a role nor a vehicle. Such a
+/// write carries nothing: it cannot be an "update from this side" because there is nothing to
+/// update from, and it would empty the stored faction — `roles`/`vehicles` carry no
+/// `skip_serializing_if`, and `faction-library.schema.json` sets no `minItems`, so
+/// `{"roles":[],"vehicles":[]}` is a **schema-valid** document the API stores without complaint.
+/// Refusing follows T-348 (a no-content write is a mistake to report, not an intent to honour) and
+/// mirrors `ApplyFactionError::WouldCollapseSquads`, which has guarded the opposite direction
+/// before its first write since T-217/T-308
+/// (`crates/map-engine-core/src/doc/apply_faction.rs:211-240`).
+pub fn merge_faction_doc_from_side(
+    stored: &FactionDoc,
+    derived: FactionDoc,
+) -> Result<FactionDoc, SaveFromSideRefusal> {
+    if derived.roles.is_empty() && derived.vehicles.is_empty() {
+        return Err(SaveFromSideRefusal::NoContent {
+            stored_roles: stored.roles.len(),
+            stored_vehicles: stored.vehicles.len(),
+        });
+    }
+
+    // Stored labels queued per resourceName, earliest first (`pop` takes from the end, so the
+    // queues are reversed once up front).
+    let mut labels: HashMap<&str, Vec<Option<String>>> = HashMap::new();
+    for v in &stored.vehicles {
+        labels
+            .entry(v.vehicle.as_str())
+            .or_default()
+            .push(v.label.clone());
+    }
+    for queue in labels.values_mut() {
+        queue.reverse();
+    }
+
+    let vehicles = derived
+        .vehicles
+        .into_iter()
+        .map(|mut v| {
+            if v.label.is_none() {
+                v.label = labels
+                    .get_mut(v.vehicle.as_str())
+                    .and_then(Vec::pop)
+                    .flatten();
+            }
+            v
+        })
+        .collect();
+
+    Ok(FactionDoc {
+        side: derived.side,
+        name: stored.name.clone(),
+        emblem: stored.emblem.clone(),
+        roles: derived.roles,
+        vehicles,
+    })
+}
+
+/// T-373 — the confirm sentence when the merged body **removes** authored rows from the library, or
+/// `None` when it only adds to / matches what is stored.
+///
+/// Shrinking is legitimate — "make the library match this side" is the button's whole job, and a
+/// side the operator trimmed is a side they meant to trim — so this asks rather than refuses. But
+/// it must ask: APPLY TEMPLATE has confirmed before replacing a side's ORBAT since T-180.8, while
+/// this direction replaced a whole library document and never said a word.
+#[must_use]
+pub fn save_from_side_shrink_warning(
+    stored: &FactionDoc,
+    next: &FactionDoc,
+    side: &str,
+) -> Option<String> {
+    let lost_roles = stored.roles.len().saturating_sub(next.roles.len());
+    let lost_vehicles = stored.vehicles.len().saturating_sub(next.vehicles.len());
+    if lost_roles == 0 && lost_vehicles == 0 {
+        return None;
+    }
+    Some(format!(
+        "Update \"{}\" from {side}?\n\nThis drops {lost_roles} role(s) and {lost_vehicles} \
+         vehicle(s) the template holds but {side} does not.",
+        next.name
+    ))
 }
 
 /// H7 / H-L8 — template dropdown options for the active ORBAT side (excludes CIV + other sides).
@@ -306,20 +467,57 @@ pub fn OrbatManagerDialog(
                             }
                             #[cfg(target_arch = "wasm32")]
                             {
-                                let Some(mut doc) = crate::editor_ops::faction_doc_from_side(&side)
+                                let Some(derived) = crate::editor_ops::faction_doc_from_side(&side)
                                 else {
-                                    status.set("No mission doc.".into());
+                                    status.set("Could not read this side's ORBAT.".into());
                                     return;
                                 };
-                                if let Some(uf) = library
-                                    .get_untracked()
-                                    .into_iter()
-                                    .find(|f| f.id == tid)
-                                {
-                                    doc.name = uf.name;
-                                }
-                                let body = serde_json::to_value(&doc).unwrap_or_default();
                                 leptos::task::spawn_local(async move {
+                                    // T-373 — merge over the CURRENTLY stored doc, re-read here
+                                    // rather than taken from the `library` list signal. The list is
+                                    // a snapshot from page load / the last save, and this PUT
+                                    // replaces the whole document, so merging against a stale copy
+                                    // would resurrect a stale emblem over a newer one. There is
+                                    // still no If-Match on the endpoint (see the module note), so
+                                    // this narrows the race, it does not close it.
+                                    let Ok(stored) = crate::client::api_get::<UserFaction>(
+                                        auth,
+                                        &format!("/factions/{tid}"),
+                                    )
+                                    .await
+                                    else {
+                                        status.set(
+                                            "Could not re-read the stored faction — nothing saved."
+                                                .into(),
+                                        );
+                                        return;
+                                    };
+                                    let doc = match merge_faction_doc_from_side(
+                                        &stored.doc,
+                                        derived,
+                                    ) {
+                                        Ok(doc) => doc,
+                                        Err(refusal) => {
+                                            let msg = refusal.message(&side, &stored.doc.name);
+                                            leptos::logging::warn!("Save refused: {msg}");
+                                            status.set(msg);
+                                            return;
+                                        }
+                                    };
+                                    if let Some(warning) = save_from_side_shrink_warning(
+                                        &stored.doc,
+                                        &doc,
+                                        &side,
+                                    ) {
+                                        let confirmed = web_sys::window()
+                                            .and_then(|w| w.confirm_with_message(&warning).ok())
+                                            .unwrap_or(false);
+                                        if !apply_confirm_allows(confirmed) {
+                                            status.set("Save cancelled.".into());
+                                            return;
+                                        }
+                                    }
+                                    let body = serde_json::to_value(&doc).unwrap_or_default();
                                     match crate::client::api_put::<UserFaction>(
                                         auth,
                                         &format!("/factions/{tid}"),
@@ -353,9 +551,14 @@ pub fn OrbatManagerDialog(
                             let side = side_tab.get_untracked();
                             #[cfg(target_arch = "wasm32")]
                             {
+                                // T-373 — `Save as` may use the derivation raw: a brand-new faction
+                                // has no emblem and no vehicle labels to lose, so `None` on those
+                                // two is correct here rather than destructive. The `None` arm now
+                                // also covers a doc whose own JSON will not parse, which used to
+                                // create an empty faction and report success.
                                 let Some(mut doc) = crate::editor_ops::faction_doc_from_side(&side)
                                 else {
-                                    status.set("No mission doc.".into());
+                                    status.set("Could not read this side's ORBAT.".into());
                                     return;
                                 };
                                 let default_name = doc.name.clone();
@@ -1390,6 +1593,253 @@ mod tests {
         assert!(
             attrs.contains(r#"["Transform", "Identity", "States", "Arsenal"]"#),
             "TABS[3] must be Arsenal"
+        );
+    }
+
+    // ---- T-373: Save-from-side must not destroy what the ORBAT cannot express ----
+
+    /// The authoring the mission graph has nowhere to store, marked so a loss is visible in a
+    /// stored document rather than inferred from an absence.
+    const SENTINEL_EMBLEM: &str = "SENTINEL emblem [T-373]";
+    const SENTINEL_LABEL_A: &str = "SENTINEL Alpha 1-1 [T-373]";
+    const SENTINEL_LABEL_B: &str = "SENTINEL Alpha 1-2 [T-373]";
+    const M151: &str = "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et";
+    const UAZ: &str = "{AAAAAAAAAAAAAAAA}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et";
+    const CHAR: &str = "{BBBBBBBBBBBBBBBB}Prefabs/Characters/Factions/US/US_Rifleman.et";
+
+    fn role(name: &str, loadout: Option<serde_json::Value>) -> FactionRole {
+        FactionRole {
+            role: name.into(),
+            tag: None,
+            character: CHAR.into(),
+            loadout,
+        }
+    }
+
+    fn veh(resource: &str, label: Option<&str>) -> FactionVehicle {
+        FactionVehicle {
+            vehicle: resource.into(),
+            label: label.map(str::to_string),
+        }
+    }
+
+    fn loadout() -> serde_json::Value {
+        serde_json::json!({
+            "version": 2,
+            "wear": { "jacket": "{CCCCCCCCCCCCCCCC}Prefabs/Clothing/Jacket.et" },
+            "weapons": [],
+            "summary": "SENTINEL loadout [T-373]"
+        })
+    }
+
+    /// The library entry as the operator authored it: an emblem plus two labelled M151s.
+    fn stored_template() -> FactionDoc {
+        FactionDoc {
+            side: "BLUFOR".into(),
+            name: "US Army 1980s".into(),
+            emblem: Some(SENTINEL_EMBLEM.into()),
+            roles: vec![
+                role("Squad Leader", Some(loadout())),
+                role("Rifleman", None),
+            ],
+            vehicles: vec![
+                veh(M151, Some(SENTINEL_LABEL_A)),
+                veh(M151, Some(SENTINEL_LABEL_B)),
+            ],
+        }
+    }
+
+    /// What `editor_ops::faction_doc_from_side` can see: no emblem, no labels — ever.
+    fn derived_from_side() -> FactionDoc {
+        FactionDoc {
+            side: "BLUFOR".into(),
+            name: "BLUFOR".into(),
+            emblem: None,
+            roles: vec![
+                role("Squad Leader", Some(loadout())),
+                role("Rifleman", None),
+            ],
+            vehicles: vec![veh(M151, None), veh(M151, None)],
+        }
+    }
+
+    /// The defect itself, pinned: PUTting the derivation raw omits both keys, and a whole-document
+    /// replace reads an omitted key as a deletion. If this ever starts carrying them, the merge
+    /// below has become redundant — which is a fine thing to be told, loudly.
+    #[test]
+    fn t373_derived_body_alone_omits_emblem_and_labels() {
+        let raw = serde_json::to_string(&derived_from_side()).expect("serialize");
+        assert!(
+            !raw.contains("emblem"),
+            "skip_serializing_if drops the key entirely: {raw}"
+        );
+        assert!(
+            !raw.contains("label"),
+            "and every vehicle label with it: {raw}"
+        );
+    }
+
+    #[test]
+    fn t373_merge_preserves_the_emblem_the_orbat_cannot_express() {
+        let stored = stored_template();
+        let merged = merge_faction_doc_from_side(&stored, derived_from_side())
+            .expect("content-bearing side");
+        assert_eq!(merged.emblem.as_deref(), Some(SENTINEL_EMBLEM));
+        let raw = serde_json::to_string(&merged).expect("serialize");
+        assert!(
+            raw.contains(SENTINEL_EMBLEM),
+            "the emblem must reach the wire, not just the struct: {raw}"
+        );
+    }
+
+    #[test]
+    fn t373_merge_repairs_vehicle_labels_by_resource_in_order() {
+        let stored = stored_template();
+        let merged = merge_faction_doc_from_side(&stored, derived_from_side()).expect("ok");
+        assert_eq!(merged.vehicles.len(), 2);
+        assert_eq!(merged.vehicles[0].label.as_deref(), Some(SENTINEL_LABEL_A));
+        assert_eq!(
+            merged.vehicles[1].label.as_deref(),
+            Some(SENTINEL_LABEL_B),
+            "two of the same resource keep their two distinct labels"
+        );
+    }
+
+    /// A vehicle the side added that the template never carried has no label to inherit — and must
+    /// not steal one from a different resource.
+    #[test]
+    fn t373_merge_leaves_a_new_vehicle_unlabelled() {
+        let stored = stored_template();
+        let mut derived = derived_from_side();
+        derived.vehicles = vec![veh(UAZ, None), veh(M151, None)];
+        let merged = merge_faction_doc_from_side(&stored, derived).expect("ok");
+        assert_eq!(merged.vehicles[0].label, None, "UAZ is new to the template");
+        assert_eq!(merged.vehicles[1].label.as_deref(), Some(SENTINEL_LABEL_A));
+    }
+
+    /// The legitimate half of the button: roles really do follow the side, including a role the
+    /// side added, a role the side dropped, and a loadout the Arsenal cleared. These are all
+    /// expressible on a slot, so they are derived, not preserved.
+    #[test]
+    fn t373_roles_follow_the_side() {
+        let stored = stored_template();
+        let mut derived = derived_from_side();
+        derived.roles = vec![role("Squad Leader", None), role("Medic", Some(loadout()))];
+        let merged = merge_faction_doc_from_side(&stored, derived).expect("ok");
+        let names: Vec<&str> = merged.roles.iter().map(|r| r.role.as_str()).collect();
+        assert_eq!(
+            names,
+            vec!["Squad Leader", "Medic"],
+            "the side is the truth"
+        );
+        assert!(
+            merged.roles[0].loadout.is_none(),
+            "a cleared loadout is a real edit, not a gap to backfill"
+        );
+        assert!(merged.roles[1].loadout.is_some(), "and a new one lands");
+    }
+
+    /// The button updates a template; it does not rename one. `Save as` is the rename.
+    #[test]
+    fn t373_name_comes_from_the_stored_doc() {
+        let stored = stored_template();
+        let merged = merge_faction_doc_from_side(&stored, derived_from_side()).expect("ok");
+        assert_eq!(merged.name, "US Army 1980s");
+        assert_eq!(merged.side, "BLUFOR", "side still comes from the side tab");
+    }
+
+    /// A side with no squads yields no roles and no vehicles. That body is schema-valid (no
+    /// `minItems`) and would empty the library faction, so it is refused before any write.
+    #[test]
+    fn t373_empty_side_is_refused_outright() {
+        let stored = stored_template();
+        let empty = FactionDoc {
+            side: "BLUFOR".into(),
+            name: "BLUFOR".into(),
+            ..Default::default()
+        };
+        // `FactionDoc` has no `Debug` (dto.rs), so unwrap the Result by hand rather than
+        // `expect_err`.
+        let Err(err) = merge_faction_doc_from_side(&stored, empty) else {
+            panic!("an empty side must be refused, never written");
+        };
+        assert_eq!(
+            err,
+            SaveFromSideRefusal::NoContent {
+                stored_roles: 2,
+                stored_vehicles: 2
+            }
+        );
+        let msg = err.message("BLUFOR", &stored.name);
+        assert!(
+            msg.contains("BLUFOR") && msg.contains("US Army 1980s"),
+            "{msg}"
+        );
+        assert!(msg.contains('2'), "names what would be lost: {msg}");
+    }
+
+    /// Refusal is scoped to a **no-content** write (T-348's precedent), not to any list shrinking to
+    /// zero: a vehicle-only side is a legitimate motor-pool template.
+    #[test]
+    fn t373_vehicle_only_side_is_allowed_but_warns() {
+        let stored = stored_template();
+        let mut derived = derived_from_side();
+        derived.roles = Vec::new();
+        let merged = merge_faction_doc_from_side(&stored, derived).expect("content-bearing");
+        assert!(merged.roles.is_empty());
+        assert_eq!(merged.emblem.as_deref(), Some(SENTINEL_EMBLEM));
+        let warning =
+            save_from_side_shrink_warning(&stored, &merged, "BLUFOR").expect("drops 2 roles");
+        assert!(warning.contains("2 role(s)"), "{warning}");
+    }
+
+    #[test]
+    fn t373_shrink_warning_only_fires_when_content_is_removed() {
+        let stored = stored_template();
+        let same = merge_faction_doc_from_side(&stored, derived_from_side()).expect("ok");
+        assert!(
+            save_from_side_shrink_warning(&stored, &same, "BLUFOR").is_none(),
+            "an equal-size update is one click"
+        );
+
+        let mut grown = derived_from_side();
+        grown.roles.push(role("Medic", None));
+        grown.vehicles.push(veh(UAZ, None));
+        let grown = merge_faction_doc_from_side(&stored, grown).expect("ok");
+        assert!(
+            save_from_side_shrink_warning(&stored, &grown, "BLUFOR").is_none(),
+            "adding rows is not destructive"
+        );
+
+        let mut shrunk = derived_from_side();
+        shrunk.roles.truncate(1);
+        let shrunk = merge_faction_doc_from_side(&stored, shrunk).expect("ok");
+        let warning =
+            save_from_side_shrink_warning(&stored, &shrunk, "BLUFOR").expect("drops 1 role");
+        assert!(
+            warning.contains("1 role(s)") && warning.contains("0 vehicle(s)"),
+            "{warning}"
+        );
+    }
+
+    /// `editor_ops` must keep pointing at the merge, and the button must keep calling it — the
+    /// wiring is what makes the rest of this file true.
+    #[test]
+    fn t373_save_button_merges_and_editor_ops_says_so() {
+        let src = include_str!("orbat_manager.rs");
+        assert!(
+            src.contains("merge_faction_doc_from_side(\n                                        &stored.doc,")
+                || src.contains("merge_faction_doc_from_side(&stored.doc"),
+            "the Save button must PUT a merged body, never the raw derivation"
+        );
+        let ops = include_str!("editor_ops.rs");
+        assert!(
+            ops.contains("merge_faction_doc_from_side"),
+            "faction_doc_from_side must name the merge callers have to use"
+        );
+        assert!(
+            ops.contains("#![cfg(target_arch = \"wasm32\")]"),
+            "editor_ops stays wasm-only, which is why the merge lives here where it is testable"
         );
     }
 }
