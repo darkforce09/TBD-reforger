@@ -604,8 +604,17 @@ mod tests {
 
     #[test]
     fn admin_roles_sync_path_matches_live_api_route() {
-        // T-247: Personnel is the only SPA caller. If this drifts off app.rs's
-        // `.route("/admin/roles/sync", …)` the button posts into a 404 while curl still works.
+        // T-247: Personnel is the only SPA caller. Open the live Axum router source so a
+        // drift off `.route("/admin/roles/sync", …)` fails this test — not a const echo of
+        // itself (which stayed green while never examining app.rs).
+        const APP_RS: &str =
+            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../api/src/app.rs"));
+        let live_registration = format!(r#".route("{ADMIN_ROLES_SYNC_PATH}""#);
+        assert!(
+            APP_RS.contains(&live_registration),
+            "apps/website/api/src/app.rs must register {live_registration}, …); \
+             Personnel posts ADMIN_ROLES_SYNC_PATH"
+        );
         assert_eq!(ADMIN_ROLES_SYNC_PATH, "/admin/roles/sync");
     }
 
