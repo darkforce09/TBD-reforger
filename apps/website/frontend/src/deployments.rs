@@ -230,9 +230,7 @@ fn dossier(d: Deployments) -> impl IntoView {
         .map(|u| u.username.clone())
         .unwrap_or_default();
     let role = user.as_ref().map(|u| u.role.as_str()).unwrap_or_default();
-    let is_admin = user
-        .as_ref()
-        .is_some_and(|u| matches!(u.role, Role::Admin));
+    let is_admin = user.as_ref().is_some_and(|u| matches!(u.role, Role::Admin));
     let has_active = !d.upcoming.is_empty();
     let has_history = !d.service_history.is_empty();
     let upcoming = d.upcoming.clone();
@@ -1101,11 +1099,7 @@ mod tests {
 
     #[test]
     fn create_leave_body_is_bare_ymd_json() {
-        let v = create_leave_body(
-            "2026-08-01".into(),
-            "2026-08-05".into(),
-            "holiday".into(),
-        );
+        let v = create_leave_body("2026-08-01".into(), "2026-08-05".into(), "holiday".into());
         assert_eq!(
             v,
             serde_json::json!({
