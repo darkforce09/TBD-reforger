@@ -19,6 +19,23 @@ use crate::mission::wire_safety::is_wire_unsafe;
 
 // ---- output document types (camelCase — the game-server contract) ----
 
+/// One `entities[]` entry (`mission.schema.json#/$defs/entity`) — T-254.
+///
+/// Editor rows carry `id` / `resourceName` / nested `position`; this struct is the SCHEMA shape
+/// only (`alias`/`x`/`z` required). Extra editor keys are dropped here so
+/// `additionalProperties: false` on `$defs/entity` cannot 500 `/compiled`.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModEntity {
+    pub alias: String,
+    pub x: f64,
+    pub z: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub heading_deg: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub faction: Option<String>,
+}
+
 /// One flattened `slots[]` entry.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -551,6 +568,10 @@ pub struct ModMissionDocument {
     /// `BTreeMap` → sorted keys, matching Go's map marshalling.
     pub orbat: BTreeMap<String, ModOrbatFaction>,
     pub slots: Vec<ModSlot>,
+    /// T-254 — mission-placed world objects (`mission.schema.json` `entities[]`). Empty omits
+    /// the key (legal — `entities` is not in the schema's top-level `required`).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub entities: Vec<ModEntity>,
     /// T-203 — derived, never authored (nothing in the editor authors nets yet). `None`
     /// omits the key entirely; see [`derive_radio_plan`].
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -602,6 +623,8 @@ struct EditorPayload {
     /// root). T-211 will wire a doc mutator + draw tool; until then tests and hydrated golden
     /// missions inject rows here and flatten carries them into the compiled document.
     zones: Vec<ZoneIn>,
+    /// T-254 — top-level `entities` array from `compile_payload` (`entitiesById` values).
+    entities: Vec<EntityIn>,
     editor: EditorGraph,
     /// T-204 — the saved payload's TOP-LEVEL `environment` bag, sibling of `editor`, which is where
     /// `compile_payload` puts the editor's `meta.environment` verbatim. Carries the four authored
@@ -672,6 +695,19 @@ struct PositionIn {
     y: f64,
     z: f64,
     rotation: f64,
+}
+
+/// One authored payload `entities[]` row (T-254) — the editor `entitiesById` value shape
+/// (`id`/`alias`/`resourceName`/`position`/`faction`), before schema projection.
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(default)]
+struct EntityIn {
+    id: String,
+    alias: String,
+    #[serde(rename = "resourceName")]
+    resource_name: String,
+    position: Option<PositionIn>,
+    faction: String,
 }
 
 /// One authored `editor.factions[].briefing` (T-202). Mirrors `#/$defs/briefing`.
@@ -1567,6 +1603,38 @@ fn normalize_heading(rotation: f64) -> f64 {
     (rotation % 360.0 + 360.0) % 360.0
 }
 
+/// T-254 — project editor `entities[]` rows onto schema `$defs/entity`.
+///
+/// Drops rows with an empty `alias` (schema-required) or missing `position` (no honest x/z).
+/// `position.x → x`, `position.y → z`, `position.rotation → headingDeg` — the same locked mapping
+/// slots use. `faction` is emitted only when non-empty.
+fn derive_entities(rows: &[EntityIn]) -> Vec<ModEntity> {
+    let mut out = Vec::new();
+    for e in rows {
+        let alias = e.alias.trim();
+        if alias.is_empty() {
+            continue;
+        }
+        let Some(pos) = e.position.as_ref() else {
+            continue;
+        };
+        let faction = e.faction.trim();
+        let heading = normalize_heading(pos.rotation);
+        out.push(ModEntity {
+            alias: alias.to_string(),
+            x: pos.x,
+            z: pos.y,
+            heading_deg: Some(heading),
+            faction: if faction.is_empty() {
+                None
+            } else {
+                Some(faction.to_string())
+            },
+        });
+    }
+    out
+}
+
 /// One-decimal metre rounding — matches spawn-zone synthesis and the historical TS flatten.
 fn round_coord(v: f64) -> f64 {
     (v * 10.0).round() / 10.0
@@ -1948,6 +2016,7 @@ pub fn flatten_to_mod_document(
         factions,
         orbat,
         slots: doc_slots,
+        entities: derive_entities(&parsed.entities),
         radio_plan: derive_radio_plan(&radio_sources),
         zones,
         flow: derive_flow(&parsed.environment),
@@ -2611,6 +2680,49 @@ mod tests {
             schema["$defs"]["alias"]["pattern"],
             "^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$"
         );
+    }
+
+    /// T-254 — authored `entities[]` project to schema `$defs/entity` on the compiled wire
+    /// (`alias`/`x`/`z`/`headingDeg`/`faction`), dropping editor-only `id`/`resourceName`/`position`.
+    #[test]
+    fn entities_reach_the_compiled_wire_as_schema_entity_rows() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["entities"] = serde_json::json!([
+            {
+                "id": "e1",
+                "alias": "prop:ammo_crate",
+                "resourceName": "{FA}Prefabs/Props/Military/AmmoBox.et",
+                "faction": "blufor",
+                "position": { "x": 2475.0, "y": 3290.0, "z": 0.0, "rotation": 90.0 }
+            },
+            {
+                "id": "e-skip",
+                "alias": "",
+                "resourceName": "{FB}Prefabs/Props/X.et",
+                "position": { "x": 1.0, "y": 2.0, "z": 0.0, "rotation": 0.0 }
+            }
+        ]);
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        assert_eq!(doc.entities.len(), 1, "empty alias rows are dropped");
+        let e = &doc.entities[0];
+        assert_eq!(e.alias, "prop:ammo_crate");
+        assert!((e.x - 2475.0).abs() < 1e-9);
+        assert!((e.z - 3290.0).abs() < 1e-9, "editor y → mod z");
+        assert_eq!(e.heading_deg, Some(90.0));
+        assert_eq!(e.faction.as_deref(), Some("blufor"));
+        let wire = serde_json::to_value(&doc).expect("wire");
+        let row = &wire["entities"][0];
+        assert!(row.get("id").is_none(), "editor id must not reach schema wire");
+        assert!(
+            row.get("resourceName").is_none(),
+            "editor resourceName must not reach schema wire"
+        );
+        assert!(row.get("position").is_none());
+        assert_eq!(row["alias"], "prop:ammo_crate");
+        assert_eq!(row["x"], 2475.0);
+        assert_eq!(row["z"], 3290.0);
+        assert_eq!(row["headingDeg"], 90.0);
+        assert_eq!(row["faction"], "blufor");
     }
 
     /// The vehicle row this module reads, pinned field by field — **the contract floor**.

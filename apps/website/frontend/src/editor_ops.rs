@@ -50,7 +50,8 @@ struct OpsCtx {
     active_layer: RwSignal<Option<String>>,
     /// T-180.1 — active Eden side for place (`BLUFOR`/`OPFOR`/`INDFOR`). Chips write this in T-180.5.
     active_side: RwSignal<String>,
-    /// T-180.5 — Objects chip stub: when true, [`begin_place`] / [`place_at`] no-op.
+    /// T-180.5 / T-254 — Objects chip: when true, the right dock shows the Objects palette and
+    /// [`begin_place_object`] / [`place_at`] mint `entitiesById` rows.
     objects_mode: RwSignal<bool>,
     /// Dock mirrors — `MissionDocCore` has no change subscription, so these are pushed from
     /// [`refresh_docks`] at every mutation site, like the OBJ/SEL readouts.
@@ -83,6 +84,8 @@ struct OpsCtx {
 enum Pending {
     Character(PlacePayload),
     Vehicle(PlacePayload),
+    /// T-254 — Objects chip → `entitiesById` row.
+    Object(PlacePayload),
 }
 
 /// One slot's editable attributes, read from the materialized SoA for the Attributes modal.
@@ -967,12 +970,22 @@ pub fn begin_place_vehicle(payload: PlacePayload) {
     arm(Pending::Vehicle(payload));
 }
 
-/// Arm a place, honouring the T-180.5 Objects stub (which must clear rather than keep the previous
-/// arm — an armed place surviving a chip switch would commit on the next canvas release).
+/// T-254 — Objects-palette leaf → arm an **entity** place (`entitiesById` / schema `entities[]`).
+pub fn begin_place_object(payload: PlacePayload) {
+    arm(Pending::Object(payload));
+}
+
+/// Arm a place. Objects mode only accepts [`Pending::Object`]; side modes reject Object so a
+/// leftover Objects arm cannot commit after the chip switches away.
 fn arm(pending: Pending) {
     OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
-            if ctx.objects_mode.get_untracked() {
+            let objects = ctx.objects_mode.get_untracked();
+            let ok = match &pending {
+                Pending::Object(_) => objects,
+                Pending::Character(_) | Pending::Vehicle(_) => !objects,
+            };
+            if !ok {
                 *ctx.pending.borrow_mut() = None;
                 return;
             }
@@ -1584,6 +1597,42 @@ fn place_vehicle_in_core(
     true
 }
 
+/// T-254 — Objects half of [`place_at`]: an `entitiesById` row at the map point.
+///
+/// `alias` is derived from the ResourceName + display label (`derive_object_alias`); `faction`
+/// is the schema factionKey slug (`blufor`/`opfor`/`indfor`) from the active Eden side.
+fn place_object_in_core(
+    core: &MissionDocCore,
+    side: &str,
+    entity_id: &str,
+    payload: &PlacePayload,
+    x: f64,
+    y: f64,
+) -> bool {
+    if !matches!(side, "BLUFOR" | "OPFOR" | "INDFOR") || payload.asset_id.trim().is_empty() {
+        return false;
+    }
+    let alias = crate::asset_catalog::derive_object_alias(&payload.asset_id, &payload.role);
+    if alias.is_empty() {
+        return false;
+    }
+    // Ensure the side's faction row exists (same as vehicles) so the mission graph stays coherent,
+    // but write the schema factionKey on the entity itself — not `faction-{SIDE}`.
+    let _ = ensure_side_faction(core, side);
+    let faction = side.to_lowercase();
+    core.add_entity(
+        entity_id,
+        &alias,
+        &payload.asset_id,
+        x,
+        y,
+        0.0,
+        0.0,
+    );
+    core.set_entity_faction(entity_id, &faction);
+    true
+}
+
 /// T-215 — one authored cargo row on a vehicle: `{item, qty}`, `mission.schema.json`
 /// `$defs/entityInventory`. No `container` key — for an entity the container *is* the entity.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -1980,18 +2029,15 @@ pub fn place_at(x: f64, y: f64) -> bool {
         let Some(ctx) = guard.as_ref() else {
             return false;
         };
-        // T-180.5 — Objects stub: drop any armed place and do not mint.
-        if ctx.objects_mode.get_untracked() {
-            *ctx.pending.borrow_mut() = None;
-            return false;
-        }
+        // T-180.5 / T-254 — Objects mode only commits Object arms (handled below); do not
+        // blanket-reject here (that was the stub that blocked entities[] placement).
         let Some(pending) = ctx.pending.borrow_mut().take() else {
             return false;
         };
         // Scoped: the mutators open write txns, which must be gone before `after_local_edit`'s
         // read txn. `select` is the id to leave selected, or `None` — the selection is the SLOT
         // selection (`select_tool::pick` runs over the slot SoA, and SEL counts it), so putting a
-        // vehicle id in it would show `SEL 1` with nothing highlighted anywhere.
+        // vehicle/entity id in it would show `SEL 1` with nothing highlighted anywhere.
         let select = {
             let d = ctx.doc.borrow();
             let Some(core) = d.as_ref() else {
@@ -2002,6 +2048,12 @@ pub fn place_at(x: f64, y: f64) -> bool {
             match pending {
                 Pending::Vehicle(payload) => {
                     if !place_vehicle_in_core(core, &side, &id, &payload.asset_id, x, y) {
+                        return false;
+                    }
+                    None
+                }
+                Pending::Object(payload) => {
+                    if !place_object_in_core(core, &side, &id, &payload, x, y) {
                         return false;
                     }
                     None

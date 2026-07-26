@@ -183,6 +183,113 @@ pub fn build_vehicle_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
     roots
 }
 
+/// Registry kinds that place into schema `entities[]` (not characters, not T-215 vehicles).
+fn is_object_kind(kind: &str) -> bool {
+    matches!(kind, "crate" | "other")
+}
+
+/// How deep the Objects tree opens on first paint — same rationale as [`VEHICLE_OPEN_DEPTH`]:
+/// addon-rooted categories need two levels before the author reaches a discriminating folder.
+const OBJECT_OPEN_DEPTH: usize = 2;
+
+/// T-254 — Objects palette: non-character, non-vehicle registry rows that belong on
+/// `entities[]` (`crate` / placeable `other`). Whole category path kept as folders (like
+/// vehicles). `abstract` rows excluded.
+#[must_use]
+pub fn build_object_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
+    let mut roots: Vec<CatalogNode> = Vec::new();
+
+    for item in items
+        .iter()
+        .filter(|i| is_object_kind(&i.kind) && i.r#abstract != Some(true))
+    {
+        let segs: Vec<&str> = item.category.split('/').filter(|s| !s.is_empty()).collect();
+
+        let mut cur = &mut roots;
+        let mut prefix = String::new();
+        for (depth, seg) in segs.iter().enumerate() {
+            if prefix.is_empty() {
+                prefix.push_str(seg);
+            } else {
+                prefix.push('/');
+                prefix.push_str(seg);
+            }
+            let idx = match cur.iter().position(|n| n.id == prefix) {
+                Some(i) => i,
+                None => {
+                    cur.push(CatalogNode {
+                        id: prefix.clone(),
+                        label: (*seg).to_string(),
+                        default_expanded: depth < OBJECT_OPEN_DEPTH,
+                        children: Vec::new(),
+                        payload: None,
+                    });
+                    cur.len() - 1
+                }
+            };
+            cur = &mut cur[idx].children;
+        }
+
+        cur.push(CatalogNode {
+            id: item.resource_name.clone(),
+            label: item.display_name.clone(),
+            default_expanded: false,
+            children: Vec::new(),
+            payload: Some(PlacePayload {
+                asset_id: item.resource_name.clone(),
+                role: item.display_name.clone(),
+            }),
+        });
+    }
+
+    roots
+}
+
+/// Derive a schema `#/$defs/alias` for a placed object from its ResourceName + display name.
+///
+/// Prefer a known mod-registry reverse hit (`comp:checkpoint_small`); otherwise synthesise
+/// `prop:<slug>` / `comp:<slug>` from the display name (Composition path → `comp:`).
+#[must_use]
+pub fn derive_object_alias(resource_name: &str, display_name: &str) -> String {
+    const KNOWN: &[(&str, &str)] = &[(
+        "{E1D01D77D7F47EF3}PrefabsEditable/Auto/Compositions/Misc/SubCompositions/E_Sandbag_Barricade_US_04.et",
+        "comp:checkpoint_small",
+    )];
+    for (guid, alias) in KNOWN {
+        if resource_name == *guid {
+            return (*alias).to_string();
+        }
+    }
+    let prefix =
+        if resource_name.contains("Composition") || resource_name.contains("Compositions") {
+            "comp"
+        } else {
+            "prop"
+        };
+    let slug = object_alias_slug(display_name);
+    format!("{prefix}:{slug}")
+}
+
+fn object_alias_slug(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    let mut prev_repl = false;
+    for c in raw.to_lowercase().chars() {
+        if c.is_ascii_lowercase() || c.is_ascii_digit() {
+            out.push(c);
+            prev_repl = false;
+        } else if !prev_repl {
+            out.push('_');
+            prev_repl = true;
+        }
+    }
+    let trimmed = out.trim_matches('_');
+    if trimmed.is_empty() {
+        "object".to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
 /// Asset-search filter (T-172 B9 — the T-055 React behavior): case-insensitive label substring.
 /// A folder survives on a self-match (keeping its whole subtree) or on any descendant match
 /// (keeping only the matching children). Empty/whitespace query returns the tree unchanged.
@@ -433,6 +540,101 @@ mod tests {
         assert!(
             !tree.iter().any(|n| n.label == "NATO"),
             "the Factions tree must not leak into the Vehicles tab"
+        );
+    }
+
+    fn object_row(
+        resource: &str,
+        name: &str,
+        category: &str,
+        kind: &str,
+        is_abstract: bool,
+    ) -> RegistryItem {
+        serde_json::from_value(serde_json::json!({
+            "id": resource,
+            "modpack_id": "mp",
+            "resource_name": resource,
+            "display_name": name,
+            "category": category,
+            "kind": kind,
+            "abstract": is_abstract,
+            "sort_order": 0,
+            "created_at": "2026-07-26T00:00:00Z",
+            "updated_at": "2026-07-26T00:00:00Z",
+        }))
+        .expect("object row deserializes")
+    }
+
+    fn object_items() -> Vec<RegistryItem> {
+        let mut v = golden_items();
+        v.push(object_row(
+            "{FA}Prefabs/Props/Military/AmmoBox.et",
+            "Ammo Crate 5.56",
+            "ArmaReforger/Props/Military",
+            "crate",
+            false,
+        ));
+        v.push(object_row(
+            "{FB}Prefabs/Props/Military/AmmoBox_base.et",
+            "Ammo Crate base",
+            "ArmaReforger/Props/Military",
+            "crate",
+            true,
+        ));
+        v.push(object_row(
+            "{FC}Prefabs/Items/Demining/MineFlag.et",
+            "Mine Flag",
+            "ArmaReforger/Items/Demining",
+            "other",
+            false,
+        ));
+        v
+    }
+
+    #[test]
+    fn object_tree_keeps_crates_and_excludes_abstract_and_characters() {
+        let tree = build_object_catalog_tree(&object_items());
+        fn leaves(nodes: &[CatalogNode], out: &mut Vec<String>) {
+            for n in nodes {
+                if n.payload.is_some() {
+                    out.push(n.label.clone());
+                }
+                leaves(&n.children, out);
+            }
+        }
+        let mut found = Vec::new();
+        leaves(&tree, &mut found);
+        found.sort();
+        assert_eq!(
+            found,
+            vec!["Ammo Crate 5.56".to_string(), "Mine Flag".to_string()],
+            "abstract crates and character/gear rows must not reach Objects leaves"
+        );
+        assert!(
+            !tree.iter().any(|n| n.label == "NATO"),
+            "Factions tree must not leak into Objects"
+        );
+    }
+
+    #[test]
+    fn derive_object_alias_slugs_display_name_and_hits_known_comp() {
+        assert_eq!(
+            derive_object_alias("{FA}Prefabs/Props/X.et", "Ammo Crate 5.56"),
+            "prop:ammo_crate_5_56"
+        );
+        assert_eq!(
+            derive_object_alias(
+                "{E1D01D77D7F47EF3}PrefabsEditable/Auto/Compositions/Misc/SubCompositions/E_Sandbag_Barricade_US_04.et",
+                "Sandbag Barricade"
+            ),
+            "comp:checkpoint_small"
+        );
+        assert_eq!(
+            derive_object_alias(
+                "{X}PrefabsEditable/Auto/Compositions/Misc/Foo.et",
+                "Checkpoint Small"
+            ),
+            "comp:checkpoint_small"
         );
     }
 }

@@ -1833,6 +1833,8 @@ const VEHICLE_CARGO_KINDS: &[&str] = &[
 pub enum PaletteKind {
     Character,
     Vehicle,
+    /// T-254 — Objects chip → `entitiesById`.
+    Object,
 }
 
 impl PaletteKind {
@@ -1840,6 +1842,7 @@ impl PaletteKind {
         match self {
             Self::Character => "person",
             Self::Vehicle => "directions_car",
+            Self::Object => "inventory_2",
         }
     }
 
@@ -1847,6 +1850,7 @@ impl PaletteKind {
         match self {
             Self::Character => "Drag onto the map to place",
             Self::Vehicle => "Drag onto the map to place this vehicle",
+            Self::Object => "Drag onto the map to place this object",
         }
     }
 }
@@ -1942,6 +1946,9 @@ fn palette_rows(
                                 }
                                 PaletteKind::Vehicle => {
                                     crate::editor_ops::begin_place_vehicle(payload.clone())
+                                }
+                                PaletteKind::Object => {
+                                    crate::editor_ops::begin_place_object(payload.clone())
                                 }
                             }
                             // `editor_ops` is wasm-only, so the native view shell would see an
@@ -2258,10 +2265,7 @@ pub use crate::orbat_manager::OrbatManagerDialog;
 /// Ordered chip labels the DockRight row iterates. Gate E1/E5 pin this exact list.
 pub const EDEN_SIDE_CHIPS: &[&str] = &["BLUFOR", "OPFOR", "INDFOR", "Objects"];
 
-/// Empty-state copy when the Objects chip is active (E3 / E-L3).
-pub const OBJECTS_COMING_SOON: &str = "Objects coming soon…";
-
-/// Which Eden chip is selected (side place vs Objects stub).
+/// Which Eden chip is selected (side place vs Objects world-entity place).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EdenChip {
     Blufor,
@@ -2401,6 +2405,9 @@ pub fn DockRight(
         }
     });
     let vehicle_search = RwSignal::new(String::new());
+    // T-254 — Objects chip palette (entities[]): own collapse + search, built from registry_items.
+    let object_collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
+    let object_search = RwSignal::new(String::new());
     // T-215 — which placed vehicles have their cargo editor open.
     let vehicle_expanded = RwSignal::new(std::collections::HashSet::<String>::new());
     let tab_btn = move |i: usize, label: &'static str| {
@@ -2491,18 +2498,73 @@ pub fn DockRight(
                     </div>
                     <input
                         type="search"
-                        aria-label="Search assets"
-                        placeholder="Search assets…"
+                        aria-label=move || {
+                            if objects_mode.get() {
+                                "Search objects"
+                            } else {
+                                "Search assets"
+                            }
+                        }
+                        placeholder=move || {
+                            if objects_mode.get() {
+                                "Search objects…"
+                            } else {
+                                "Search assets…"
+                            }
+                        }
                         class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
-                        on:input=move |ev| search.set(event_target_value(&ev))
+                        on:input=move |ev| {
+                            let v = event_target_value(&ev);
+                            if objects_mode.get_untracked() {
+                                object_search.set(v);
+                            } else {
+                                search.set(v);
+                            }
+                        }
                     />
                     <div class="mt-2">
                         {move || {
                             if objects_mode.get() {
-                                return view! {
-                                    <p class="text-label-sm text-outline">{OBJECTS_COMING_SOON}</p>
-                                }
+                                let items = registry_items.get().unwrap_or_default();
+                                let nodes =
+                                    crate::asset_catalog::build_object_catalog_tree(&items);
+                                if nodes.is_empty() {
+                                    return view! {
+                                        <p class="text-label-sm text-outline">
+                                            "No placeable objects in the registry."
+                                        </p>
+                                    }
                                     .into_any();
+                                }
+                                let q = object_search.get();
+                                if q.trim().is_empty() {
+                                    object_collapsed.track();
+                                    return palette_rows(
+                                        &nodes,
+                                        0,
+                                        &[],
+                                        &[],
+                                        object_collapsed,
+                                        PaletteKind::Object,
+                                    );
+                                }
+                                let filtered = crate::asset_catalog::filter_catalog(&nodes, &q);
+                                if filtered.is_empty() {
+                                    return view! {
+                                        <p class="text-label-sm text-outline">
+                                            "No objects match."
+                                        </p>
+                                    }
+                                    .into_any();
+                                }
+                                return palette_rows(
+                                    &filtered,
+                                    0,
+                                    &[],
+                                    &[],
+                                    no_collapse,
+                                    PaletteKind::Object,
+                                );
                             }
                             match catalog.get() {
                                 CatalogState::Loading => {
@@ -2586,7 +2648,9 @@ pub fn DockRight(
                         {move || {
                             if objects_mode.get() {
                                 return view! {
-                                    <p class="text-label-sm text-outline">{OBJECTS_COMING_SOON}</p>
+                                    <p class="text-label-sm text-outline">
+                                        "Objects place from the Factions tab while the Objects chip is selected."
+                                    </p>
                                 }
                                     .into_any();
                             }
@@ -3188,7 +3252,7 @@ mod tests {
         normalize_clock, parse_flow_seconds, EdenChip, MirrorState, AUTHORED_FLOW_KEYS,
         CARRIED_ENV_KEYS, EDEN_SIDE_CHIPS, ENV_UNCARRIED_NOTE, FLOW_DEFAULT_BRIEFING_S,
         FLOW_DEFAULT_JIP, FLOW_DEFAULT_SAFESTART_S, FLOW_DEFAULT_TIMELIMIT_S, JIP_OPTIONS,
-        MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER, OBJECTS_COMING_SOON, SETTINGS_UNREAD_NOTE,
+        MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER, SETTINGS_UNREAD_NOTE,
         VEHICLE_CARGO_KINDS,
     };
     use leptos::prelude::*;
@@ -3759,10 +3823,21 @@ mod tests {
         ));
     }
 
-    /// E3 — Objects empty-state copy is pinned; chip flips objects_mode without clobbering side.
+    /// E3 — Objects chip flips objects_mode without clobbering side; coming-soon stub is gone.
     #[test]
-    fn objects_chip_empty_copy_and_mode() {
-        assert_eq!(OBJECTS_COMING_SOON, "Objects coming soon…");
+    fn objects_chip_enables_mode_without_clobbering_side() {
+        // T-254 — stub constant name must not remain (split so this assert's own source cannot
+        // false-fail the contains check).
+        let src = include_str!("eden_chrome.rs");
+        let stub_const = ["OBJECTS_", "COMING_", "SOON"].concat();
+        assert!(
+            !src.contains(&stub_const),
+            "Objects stub constant must be removed"
+        );
+        assert!(
+            src.contains("begin_place_object") || src.contains("PaletteKind::Object"),
+            "Objects palette must arm object places"
+        );
         let active_side = RwSignal::new(String::from("OPFOR"));
         let objects_mode = RwSignal::new(false);
         apply_eden_chip(EdenChip::Objects, active_side, objects_mode);

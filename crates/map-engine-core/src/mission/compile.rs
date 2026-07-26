@@ -40,6 +40,7 @@ pub const KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS: &[&str] = &[
     "loadouts",
     "objectives",
     "vehicles",
+    "entities",
     "markers",
     "editor",
     "orbat",
@@ -136,6 +137,7 @@ pub fn compile_payload(small_maps_json: &str, slots_json: &str, include_orbat: b
         "loadouts": object_of(&small, "loadoutsById"),
         "objectives": values_of(&small, "objectivesById"),
         "vehicles": values_of(&small, "vehiclesById"),
+        "entities": values_of(&small, "entitiesById"),
         "markers": values_of(&small, "markersById"),
         "editor": {
             // Verbatim faction rows — this is also the wire for authored per-faction briefing
@@ -299,6 +301,7 @@ mod tests {
             "itemsById": {},
             "objectivesById": {},
             "vehiclesById": {},
+            "entitiesById": {},
             "markersById": {},
             "editorLayersById": {}
         })
@@ -329,7 +332,42 @@ mod tests {
         assert!(p["environment"].is_object());
         assert_eq!(p["objectives"], json!([]));
         assert_eq!(p["vehicles"], json!([]));
+        assert_eq!(p["entities"], json!([]));
         assert_eq!(p["markers"], json!([]));
+    }
+
+    /// T-254 — `entitiesById` values land on the payload's top-level `entities` array verbatim
+    /// (editor shape with `id`/`alias`/`position`), so flatten can emit schema `entities[]`.
+    #[test]
+    fn compile_copies_entities_by_id_to_entities_array() {
+        let small = json!({
+            "meta": Value::Null,
+            "factionsById": {},
+            "squadsById": {},
+            "loadoutsById": {},
+            "itemsById": {},
+            "objectivesById": {},
+            "vehiclesById": {},
+            "entitiesById": {
+                "e1": {
+                    "id": "e1",
+                    "alias": "prop:ammo_crate",
+                    "resourceName": "{FA}Prefabs/Props/AmmoBox.et",
+                    "faction": "blufor",
+                    "position": { "x": 10.0, "y": 20.0, "z": 0.0, "rotation": 45.0 }
+                }
+            },
+            "markersById": {},
+            "editorLayersById": {}
+        })
+        .to_string();
+        let p = compile_payload(&small, "{}", false);
+        let ents = p["entities"].as_array().expect("entities array");
+        assert_eq!(ents.len(), 1);
+        assert_eq!(ents[0]["alias"], "prop:ammo_crate");
+        assert_eq!(ents[0]["id"], "e1");
+        assert_eq!(ents[0]["position"]["x"], 10.0);
+        assert_eq!(ents[0]["faction"], "blufor");
     }
 
     #[test]
@@ -380,6 +418,7 @@ mod tests {
             "itemsById": {},
             "objectivesById": {},
             "vehiclesById": {},
+            "entitiesById": {},
             "markersById": {},
             "editorLayersById": {}
         })
@@ -492,6 +531,7 @@ mod tests {
             "itemsById": {},
             "objectivesById": {},
             "vehiclesById": {},
+            "entitiesById": {},
             "markersById": {},
             "editorLayersById": {}
         })
@@ -620,6 +660,7 @@ mod tests {
             "itemsById": {},
             "objectivesById": {},
             "vehiclesById": {},
+            "entitiesById": {},
             "markersById": {},
             "editorLayersById": {},
             "payloadExtras": {
@@ -663,6 +704,7 @@ mod tests {
             "itemsById": {},
             "objectivesById": {},
             "vehiclesById": {},
+            "entitiesById": {},
             "markersById": {},
             "editorLayersById": {}
         })
