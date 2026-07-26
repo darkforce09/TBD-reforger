@@ -6,7 +6,7 @@
   "$defs": {
     "kind": {
       "type": "string",
-      "description": "Top-level object/region kind. road/building/tree/vegetation/rock/prop/utility/water are instances; forest/field/waterBody are regions (N5).",
+      "description": "Top-level object/region kind. road/building/tree/vegetation/rock/prop/utility/water/vehicle are instances; forest/field/waterBody are regions (N5).",
       "enum": [
         "road",
         "building",
@@ -16,6 +16,7 @@
         "prop",
         "utility",
         "water",
+        "vehicle",
         "forest",
         "field",
         "waterBody"
@@ -135,6 +136,17 @@
         "pier",
         "dock",
         "buoy",
+        "unknown"
+      ]
+    },
+    "vehicleClass": {
+      "type": "string",
+      "description": "T-244. Static map-object vehicles — hulls placed as world geometry, not spawnable/drivable entities. Everon ships these only as Prefabs/Props/Wrecks/* derelicts; a detached turret or a towed gun is prop/debris, not a vehicle.",
+      "enum": [
+        "car",
+        "truck",
+        "armor",
+        "boat",
         "unknown"
       ]
     },

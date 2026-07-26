@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "description": "Shared prefab classification rules \u2014 apply to ALL terrains on export. Rules MUST emit structured gameplay, spatial, and render.iconKey for Eden AI + glyphs. See t090_eden_ai_world_object_schema.md and t090_world_object_glyphs.md.",
+  "description": "Shared prefab classification rules \u2014 apply to ALL terrains on export. Rules MUST emit structured gameplay, spatial, and render.iconKey for Eden AI + glyphs. See t090_eden_ai_world_object_schema.md and t090_world_object_glyphs.md. EDITING THIS FILE CHANGES NOTHING UNTIL THE CATALOGUE IS REBUILT \u2014 packages/map-assets/<terrain>/objects/prefabs.json.gz is a committed artifact carrying the kind/class from the LAST run of `tbd-tools world build-objects`. A rule edit is latent until then, so the gates you run now are validating the rules, NOT the shipped catalogue; re-verify after a rebuild. Rules are evaluated in FILE ORDER and the FIRST rule with a matching match.resourceNameContains substring wins (case-sensitive), so APPEND new rules \u2014 an appended rule can only claim prefabs that currently fall through to `fallback`, which is what makes it safe. T-244 added the vehicle lane (Props/Wrecks/*) this way; note its `_turret` and CannonWreck rules must stay AHEAD of the vehicle rules, whose hull paths they would otherwise match.",
   "rules": [
     {
       "match": {
@@ -3300,6 +3300,329 @@
           0.5,
           0.5
         ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "_turret"
+        ]
+      },
+      "kind": "prop",
+      "class": "debris",
+      "ai": {
+        "summary": "Blown-off vehicle turret lying separate from its hull; wreckage debris, NOT a vehicle (T-244) — must precede the Props/Wrecks/ vehicle rules, whose hull paths it would otherwise match.",
+        "taxonomyPath": "misc/prop/debris",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.3,
+          "y": 1.3,
+          "z": 0.5
+        },
+        "heightM": 1.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 0.9
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Props/Wrecks/CannonWreck"
+        ]
+      },
+      "kind": "prop",
+      "class": "debris",
+      "ai": {
+        "summary": "Wrecked towed field gun; a weapon carriage, not a self-propelled vehicle (T-244) — stays prop/debris.",
+        "taxonomyPath": "misc/prop/debris",
+        "confidence": 0.8
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.1,
+          "y": 2.2,
+          "z": 0.8
+        },
+        "heightM": 1.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Props/Wrecks/BoatWreck"
+        ]
+      },
+      "kind": "vehicle",
+      "class": "boat",
+      "ai": {
+        "summary": "Derelict boat hull beached or grounded; hard cover behind the gunwale, no engine — static map geometry, never a spawnable craft.",
+        "taxonomyPath": "vehicle/boat",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.1,
+          "y": 3.0,
+          "z": 0.9
+        },
+        "heightM": 1.8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.2
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Props/Wrecks/BMP1_wreck",
+          "Props/Wrecks/M113_wreck",
+          "Props/Wrecks/T62_wreck",
+          "Props/Wrecks/BTR70_Wreck"
+        ]
+      },
+      "kind": "vehicle",
+      "class": "armor",
+      "ai": {
+        "summary": "Destroyed armoured hull (BMP-1 / M113 / T-62 / BTR-70); full hard cover and a hard vehicle obstacle — the strongest non-structure cover on open ground.",
+        "taxonomyPath": "vehicle/armor",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.6,
+          "y": 3.3,
+          "z": 1.2
+        },
+        "heightM": 2.4
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.0
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Props/Wrecks/M923A1_wreck",
+          "Props/Wrecks/Ural4320_wreck"
+        ]
+      },
+      "kind": "vehicle",
+      "class": "truck",
+      "ai": {
+        "summary": "Burnt-out military cargo truck (M923 / Ural-4320); tall hard cover along the flank, blocks the lane it sits in.",
+        "taxonomyPath": "vehicle/truck",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.25,
+          "y": 3.7,
+          "z": 1.45
+        },
+        "heightM": 2.9
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.2
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Props/Wrecks/S105_wreck",
+          "Props/Wrecks/UAZ469_wreck",
+          "Props/Wrecks/M151A2_wreck",
+          "Props/Wrecks/M998_wreck"
+        ]
+      },
+      "kind": "vehicle",
+      "class": "car",
+      "ai": {
+        "summary": "Wrecked light wheeled vehicle (Skoda S105 / UAZ-469 / M151 / M998); crouch-height hard cover, blocks a road lane but not a standing man's silhouette.",
+        "taxonomyPath": "vehicle/car",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.95,
+          "y": 2.1,
+          "z": 0.9
+        },
+        "heightM": 1.8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.3
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Props/Wrecks/"
+        ]
+      },
+      "kind": "vehicle",
+      "class": "unknown",
+      "ai": {
+        "summary": "Static vehicle wreck with no specific hull rule; generic vehicle-sized hard obstacle. Catch-all so a new terrain's wreck lands in the vehicle lane rather than the prop fallback.",
+        "taxonomyPath": "vehicle/unknown",
+        "confidence": 0.5,
+        "needsReview": true
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.1,
+          "y": 2.5,
+          "z": 1.0
+        },
+        "heightM": 2.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.4
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
       }
     }
   ],

@@ -93,6 +93,9 @@ pub fn map_object_golden() -> Result<u8> {
         ("prop", "propClass"),
         ("utility", "utilityClass"),
         ("water", "waterClass"),
+        // T-244. Arms S3 (≥1 golden example for the kind) and, via the entry below, S9 (one
+        // golden example per vehicleClass). Both are backed by real Everon wreck prefabs.
+        ("vehicle", "vehicleClass"),
     ]);
     let expected_classes_for_kind: BTreeMap<&str, Vec<String>> = BTreeMap::from([
         (
@@ -113,6 +116,7 @@ pub fn map_object_golden() -> Result<u8> {
         ("prop", enum_vec("propClass")),
         ("utility", enum_vec("utilityClass")),
         ("water", enum_vec("waterClass")),
+        ("vehicle", enum_vec("vehicleClass")),
     ]);
 
     let prefabs_sample = read_json(&mo(&["map-object-prefabs-sample.json"]))?;
