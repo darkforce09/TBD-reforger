@@ -965,6 +965,11 @@ Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scrip
 Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.
 
 Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB).
+- **T-442** (deferred) — Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id [FE] — Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.
+
+Repro: create event with modpack_id set; Hub UI still shows global current pack.
+
+Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall back to /modpacks/current only when null.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

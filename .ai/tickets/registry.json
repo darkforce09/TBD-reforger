@@ -8150,7 +8150,7 @@
       "impact": [
         "mc-collab"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2760,
       "stream": "mission-creator",
       "targets": [
@@ -8169,7 +8169,7 @@
       "impact": [
         "mc-settings"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2770,
       "stream": "mission-creator",
       "targets": [
@@ -8188,7 +8188,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2780,
       "stream": "web-platform",
       "targets": [
@@ -11849,7 +11849,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3280,
       "stream": "web-platform",
       "targets": [
@@ -11857,6 +11857,26 @@
       ],
       "executor": "claude-code",
       "priority": 1
+    },
+    {
+      "id": "T-442",
+      "title": "Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id",
+      "summary": "Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.\n\nRepro: create event with modpack_id set; Hub UI still shows global current pack.\n\nCure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall back to /modpacks/current only when null.",
+      "program": "platform",
+      "surfaces": [
+        "FE"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3281,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }
