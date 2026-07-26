@@ -229,22 +229,46 @@ pub async fn unlink(
     .await?;
     tx.commit().await?;
 
-    // Post-commit, best-effort. `leaderboard_totals` aggregates `match_player_stats.discord_id`
-    // (migration `0001_initial_schema.sql:270-291`), so the released rows keep counting for
-    // this player on the leaderboard until the view is refreshed.
+    // Post-commit, best-effort — the release half of the tail of [`ingest_link_confirm`], and
+    // out here for the same two reasons (committed reads; a failure must not fail the request).
     if let Some(a) = &arma_id {
-        if released > 0 && refresh_leaderboard(&state.pool).await.is_err() {
-            services::write_audit(
-                &state.pool,
-                AuditSeverity::Warn,
-                None,
-                "system",
-                "leaderboard.refresh_failed",
-                "Leaderboard refresh failed after identity unlink",
-                "user",
-                &user.discord_id,
-            )
-            .await;
+        if released > 0 {
+            // Symmetry matters here: the claim raised `total_deployments`, so the release has to
+            // lower it, or an unlinked account keeps advertising deployments whose rows no longer
+            // carry its id. `attendance_rate` is recomputed too but does not move — unlink
+            // deliberately leaves `event_registrations` alone (see above).
+            if crate::handlers::telemetry::recompute_user_stats(&state.pool, &user.discord_id)
+                .await
+                .is_err()
+            {
+                services::write_audit(
+                    &state.pool,
+                    AuditSeverity::Warn,
+                    None,
+                    "system",
+                    "user.stats_recompute_failed",
+                    "User stat recompute failed after identity unlink",
+                    "user",
+                    &user.discord_id,
+                )
+                .await;
+            }
+            // `leaderboard_totals` aggregates `match_player_stats.discord_id` (migration
+            // `0001_initial_schema.sql:270-291`), so the released rows keep counting for this
+            // player on the leaderboard until the view is refreshed.
+            if refresh_leaderboard(&state.pool).await.is_err() {
+                services::write_audit(
+                    &state.pool,
+                    AuditSeverity::Warn,
+                    None,
+                    "system",
+                    "leaderboard.refresh_failed",
+                    "Leaderboard refresh failed after identity unlink",
+                    "user",
+                    &user.discord_id,
+                )
+                .await;
+            }
         }
         // Releasing a service record must not be silent — without this, a player's deployment
         // count dropping to zero has no explanation anywhere in the audit log.
@@ -397,32 +421,54 @@ pub async fn ingest_link_confirm(
 
     // Post-commit, best-effort — mirrors the tail of `ingest_match_results`.
     //
-    // `leaderboard_totals` reads `match_player_stats.discord_id` directly
-    // (`0001_initial_schema.sql:270-291`), so the refresh is all the leaderboard needs; it has
-    // no `arma_id` of its own to backfill. It cannot go inside the transaction — `REFRESH
-    // MATERIALIZED VIEW CONCURRENTLY` cannot run in one — and it must not fail the request:
-    // the rows are already correct, and the next match ingest refreshes again.
+    // Both of these belong out here, for the same reason: they read committed state.
+    // `recompute_user_stats` takes a `&PgPool`, so inside the transaction it would count on a
+    // different connection and miss the rows just claimed; `REFRESH MATERIALIZED VIEW
+    // CONCURRENTLY` cannot run in a transaction at all.
     //
-    // KNOWN GAP (T-326, needs a file this slice does not own): `users.total_deployments` and
-    // `users.attendance_rate` are denormalized counters, and the function that recomputes them
-    // — `recompute_user_stats`, `telemetry.rs:530` — is private to that module, so this handler
-    // cannot call it. Until `async fn recompute_user_stats` there is widened to
-    // `pub(super) async fn`, the claimed rows are correct but those two columns lag until the
-    // player's next match ingest recomputes them — which, for a player who links *after* their
-    // last op, never happens. Do not re-derive the counts here: they would drift from the
-    // definition telemetry uses and produce a second, silently different answer.
-    if (claimed > 0 || attended > 0) && refresh_leaderboard(&state.pool).await.is_err() {
-        services::write_audit(
-            &state.pool,
-            AuditSeverity::Warn,
-            None,
-            "system",
-            "leaderboard.refresh_failed",
-            "Leaderboard refresh failed after identity link backfill",
-            "user",
-            &discord_id,
-        )
-        .await;
+    // Neither may fail the request, which is where this deliberately diverges from
+    // `ingest_match_results` — that one propagates a recompute error with `?`
+    // (`telemetry.rs:432`), which is fine for an idempotent endpoint whose sender just re-POSTs.
+    // Here the link code is already spent, so a 500 after the commit would send the mod back to a
+    // 404 on retry and show the player a failed link that actually succeeded. The rows are correct
+    // either way; these two only refresh derived numbers, and the next match ingest redoes both.
+    if claimed > 0 || attended > 0 {
+        // `users.total_deployments` / `attendance_rate` are denormalized, and this is the crate's
+        // only definition of them (see the visibility note on `recompute_user_stats`). Without
+        // this call a player who links after their *last* op reads zero deployments forever,
+        // because nothing else would ever recount.
+        if crate::handlers::telemetry::recompute_user_stats(&state.pool, &discord_id)
+            .await
+            .is_err()
+        {
+            services::write_audit(
+                &state.pool,
+                AuditSeverity::Warn,
+                None,
+                "system",
+                "user.stats_recompute_failed",
+                "User stat recompute failed after identity link backfill",
+                "user",
+                &discord_id,
+            )
+            .await;
+        }
+        // `leaderboard_totals` reads `match_player_stats.discord_id` directly
+        // (`0001_initial_schema.sql:270-291`), so a refresh is all the leaderboard needs; it has
+        // no `arma_id` of its own to backfill.
+        if refresh_leaderboard(&state.pool).await.is_err() {
+            services::write_audit(
+                &state.pool,
+                AuditSeverity::Warn,
+                None,
+                "system",
+                "leaderboard.refresh_failed",
+                "Leaderboard refresh failed after identity link backfill",
+                "user",
+                &discord_id,
+            )
+            .await;
+        }
     }
 
     // Best-effort audit (username reload; failure must not fail the request). The counts are

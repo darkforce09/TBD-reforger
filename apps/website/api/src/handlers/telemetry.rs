@@ -527,7 +527,20 @@ async fn upsert_match(
 }
 
 /// Refresh a user's denormalized deployment + attendance metrics.
-async fn recompute_user_stats(pool: &PgPool, discord_id: &str) -> Result<(), ApiError> {
+///
+/// **`pub(super)` for `handlers::me` (T-326), not a general-purpose export.** The identity-link
+/// confirm backfills `match_player_stats.discord_id` for matches played before the link existed,
+/// and unlink releases them again — both change exactly the two counts this function derives, so
+/// both have to call it or `users.total_deployments` reports a number the rows contradict.
+/// Measured before it was reachable: a player with three claimed pre-link matches still read
+/// `total_deployments = 0`, and for anyone who links *after* their last op nothing else ever
+/// recomputes it.
+///
+/// Kept private to the `handlers` subtree, and deliberately **not** duplicated in `me.rs` — two
+/// definitions of "a deployment" drifting apart is the same silent-wrong-number failure the
+/// backfill was filed to fix. Takes `&PgPool` rather than a transaction on purpose: it reads
+/// committed state, so callers must run it *after* their commit, never inside it.
+pub(super) async fn recompute_user_stats(pool: &PgPool, discord_id: &str) -> Result<(), ApiError> {
     let deployments: i64 = sqlx::query_scalar(
         "SELECT count(DISTINCT match_id) FROM match_player_stats WHERE discord_id = $1",
     )
