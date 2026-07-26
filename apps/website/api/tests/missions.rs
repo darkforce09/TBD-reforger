@@ -74,6 +74,37 @@ fn json(bytes: &[u8]) -> Value {
     serde_json::from_slice(bytes).unwrap_or(Value::Null)
 }
 
+/// `call` with the `Content-Type` under the caller's control, and a body that can be sent
+/// without one at all (`ct: None`). `call` always pairs a body with `application/json`, which
+/// is exactly the header a fat-fingered client gets wrong, so the T-315 cases below cannot be
+/// expressed through it.
+async fn call_ct(
+    app: &Router,
+    method: &str,
+    uri: &str,
+    bearer: &str,
+    ct: Option<&str>,
+    body: Option<&str>,
+) -> (StatusCode, Vec<u8>) {
+    let mut b = Request::builder()
+        .method(method)
+        .uri(uri)
+        .header(header::AUTHORIZATION, format!("Bearer {bearer}"));
+    if let Some(ct) = ct {
+        b = b.header(header::CONTENT_TYPE, ct);
+    }
+    let req = b
+        .body(body.map_or(Body::empty(), |s| Body::from(s.to_string())))
+        .unwrap();
+    let resp = app.clone().oneshot(req).await.unwrap();
+    let status = resp.status();
+    let bytes = to_bytes(resp.into_body(), usize::MAX)
+        .await
+        .unwrap()
+        .to_vec();
+    (status, bytes)
+}
+
 #[tokio::test]
 async fn mission_lifecycle_and_compiled() {
     let Some((app, tok)) = app_and_token("mission_maker").await else {
@@ -473,6 +504,175 @@ async fn control_character_in_a_callsign_is_refused_at_save_not_at_fetch() {
         String::from_utf8_lossy(&b)
     );
     assert_eq!(json(&b)["slots"][0]["groupCallsign"], "ALPHA");
+}
+
+/// The four-item armory every T-315 case starts from.
+const ARMORY_SEED: &str = r#"{"items":[
+    {"faction":"USA","category":"rifle","item_name":"M4A1","quantity":24,"icon":"m4.png","sort_order":0},
+    {"faction":"USA","category":"launcher","item_name":"AT4","quantity":6,"icon":"at4.png","sort_order":1},
+    {"faction":"USSR","category":"rifle","item_name":"AK-74","quantity":30,"icon":"ak74.png","sort_order":2},
+    {"faction":"USSR","category":"mg","item_name":"PKM","quantity":4,"icon":"pkm.png","sort_order":3}]}"#;
+
+/// Create a mission with the seeded armory and return `(id, armory_url)`.
+async fn mission_with_armory(app: &Router, t: &str) -> (String, String) {
+    let create =
+        r#"{"title":"Armory Op","terrain":"everon","game_mode":"pve_coop","max_players":16}"#;
+    let (st, b) = call(app, "POST", "/api/v1/missions", Some(t), None, Some(create)).await;
+    assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
+    let id = json(&b)["id"].as_str().unwrap().to_string();
+    let url = format!("/api/v1/missions/{id}/armory");
+    let (st, b) = call(app, "PUT", &url, Some(t), None, Some(ARMORY_SEED)).await;
+    assert_eq!(st, StatusCode::OK, "seed: {}", String::from_utf8_lossy(&b));
+    (id, url)
+}
+
+/// How many armory rows the mission actually has, read back through the real GET.
+async fn armory_len(app: &Router, url: &str, t: &str) -> usize {
+    let (st, b) = call(app, "GET", url, Some(t), None, None).await;
+    assert_eq!(st, StatusCode::OK);
+    json(&b)["data"].as_array().expect("data array").len()
+}
+
+/// T-315 — `PUT /missions/:id/armory` is destroy-then-rewrite: the transaction opens with an
+/// unconditional `DELETE FROM mission_armories WHERE mission_id = $1`. So every way the body can
+/// be wrong is a way to lose the whole armory, and the armory is not versioned with the mission —
+/// there is nothing to roll back to.
+///
+/// `#[serde(default)]` on `items` made `{}` decode as `items: []`, which is not "the caller said
+/// nothing", it is "the caller said the new armory is empty". Four real rows were deleted, nothing
+/// was inserted, and the answer was **200**. On base this test fails at the first `{}` assertion
+/// with `200 {"data":[]}` and a row count of 0.
+///
+/// The three sibling vectors (no body, wrong `Content-Type`, malformed JSON) were already safe —
+/// this handler kept its `map_err` — and they are asserted here so a future `.ok().unwrap_or_default()`
+/// cannot quietly reopen them.
+#[tokio::test]
+async fn armory_survives_a_body_that_never_mentions_it() {
+    let Some((app, tok)) = app_and_token("mission_maker").await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let t = tok.as_str();
+    let (_, url) = mission_with_armory(&app, t).await;
+    assert_eq!(armory_len(&app, &url, t).await, 4, "seeded");
+
+    // The ticket: a body that simply never mentions the armory.
+    let (st, b) = call_ct(&app, "PUT", &url, t, Some("application/json"), Some("{}")).await;
+    assert_eq!(
+        st,
+        StatusCode::BAD_REQUEST,
+        "`{{}}` must not be a wholesale delete: {}",
+        String::from_utf8_lossy(&b)
+    );
+    assert_eq!(
+        json(&b)["error"],
+        "items is required, and every item needs an item_name"
+    );
+    assert_eq!(armory_len(&app, &url, t).await, 4, "`{{}}` kept the rows");
+
+    // No body at all.
+    let (st, _) = call_ct(&app, "PUT", &url, t, None, None).await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "missing body");
+    assert_eq!(
+        armory_len(&app, &url, t).await,
+        4,
+        "missing body kept the rows"
+    );
+
+    // A well-formed body the extractor refuses because the header is wrong.
+    let (st, _) = call_ct(
+        &app,
+        "PUT",
+        &url,
+        t,
+        Some("text/plain"),
+        Some(r#"{"items":[]}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "wrong Content-Type");
+    assert_eq!(
+        armory_len(&app, &url, t).await,
+        4,
+        "wrong Content-Type kept the rows"
+    );
+
+    // Truncated JSON — the shape a dropped connection or a hand-built request produces.
+    let (st, _) = call_ct(
+        &app,
+        "PUT",
+        &url,
+        t,
+        Some("application/json"),
+        Some(r#"{"items":["#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "malformed JSON");
+    assert_eq!(
+        armory_len(&app, &url, t).await,
+        4,
+        "malformed kept the rows"
+    );
+
+    // The other half: clearing the armory is a legitimate thing to ask for, it just has to be
+    // said out loud. Requiring the field must not cost the author the ability to empty it.
+    let (st, b) = call(&app, "PUT", &url, Some(t), None, Some(r#"{"items":[]}"#)).await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "an explicit empty armory is legitimate: {}",
+        String::from_utf8_lossy(&b)
+    );
+    assert_eq!(armory_len(&app, &url, t).await, 0, "explicit clear applied");
+}
+
+/// T-315 — the same mistake one level down. `item_name` was defaulted too, so `{"items":[{}]}`
+/// deleted four real rows and inserted a nameless, factionless one: a blank line in the faction
+/// dossier that cannot be identified or removed except by replacing the whole armory again.
+/// Measured **200** on the pre-fix binary.
+///
+/// The guard runs before the transaction opens, so a rejected item never reaches the DELETE at
+/// all rather than relying on the rollback, and it trims — otherwise `" "` is refused while
+/// `" M4A1 "` is stored with its padding and never matches anything.
+#[tokio::test]
+async fn armory_item_without_a_name_is_refused_before_the_delete() {
+    let Some((app, tok)) = app_and_token("mission_maker").await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let t = tok.as_str();
+    let (_, url) = mission_with_armory(&app, t).await;
+
+    // An item with no fields at all now fails to decode — `item_name` is required at the type
+    // level — so this one is caught by the extractor, not the positional guard below.
+    let (st, b) = call(&app, "PUT", &url, Some(t), None, Some(r#"{"items":[{}]}"#)).await;
+    assert_eq!(
+        st,
+        StatusCode::BAD_REQUEST,
+        "a nameless item must not replace the armory: {}",
+        String::from_utf8_lossy(&b)
+    );
+    assert_eq!(
+        json(&b)["error"],
+        "items is required, and every item needs an item_name"
+    );
+    assert_eq!(armory_len(&app, &url, t).await, 4, "rows untouched");
+
+    // A whitespace-only name decodes fine and is the same lie, so the runtime guard catches it —
+    // and names which item is at fault, because a 30-item armory rejected as one opaque 400 is a
+    // bug report, not a diagnostic.
+    let padded =
+        r#"{"items":[{"faction":"USA","item_name":"M4A1"},{"faction":"USA","item_name":"   "}]}"#;
+    let (st, b) = call(&app, "PUT", &url, Some(t), None, Some(padded)).await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "blank name");
+    assert_eq!(json(&b)["error"], "items[1].item_name is required");
+    assert_eq!(armory_len(&app, &url, t).await, 4, "rows untouched");
+
+    // A real name that arrived with padding is accepted and stored trimmed, so the stored value
+    // agrees with the value the guard tested.
+    let ok = r#"{"items":[{"faction":"USA","category":"rifle","item_name":"  M4A1  ","quantity":2,"sort_order":0}]}"#;
+    let (st, b) = call(&app, "PUT", &url, Some(t), None, Some(ok)).await;
+    assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
+    assert_eq!(json(&b)["data"][0]["item_name"], "M4A1");
 }
 
 #[tokio::test]
