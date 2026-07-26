@@ -7727,7 +7727,7 @@
       "impact": [
         "platform-server"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2540,
       "stream": "web-platform",
       "targets": [
@@ -10819,7 +10819,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 3207,
       "stream": "web-platform",
       "targets": [
@@ -10922,7 +10922,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 3212,
       "stream": "web-platform",
       "targets": [
@@ -10965,7 +10965,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3214,
       "stream": "web-platform",
       "targets": [
