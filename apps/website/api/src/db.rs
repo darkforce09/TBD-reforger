@@ -84,7 +84,9 @@ pub async fn refresh_leaderboard(pool: &PgPool) -> Result<(), sqlx::Error> {
 /// [`DEFAULT_LEADERBOARD_REFRESH_SECS`]. Invalid / zero / negative values use the default.
 pub fn leaderboard_refresh_interval() -> Duration {
     leaderboard_refresh_interval_from(
-        std::env::var(LEADERBOARD_REFRESH_INTERVAL_ENV).ok().as_deref(),
+        std::env::var(LEADERBOARD_REFRESH_INTERVAL_ENV)
+            .ok()
+            .as_deref(),
     )
 }
 
@@ -104,7 +106,11 @@ fn leaderboard_refresh_interval_from(raw: Option<&str>) -> Duration {
 ///
 /// Ingest callers of [`refresh_leaderboard`] are unchanged — this is a safety net.
 pub fn start_leaderboard_refresh(pool: PgPool, interval: Duration) -> JoinHandle<()> {
-    start_leaderboard_refresh_with(pool, interval, |p| async move { refresh_leaderboard(&p).await })
+    start_leaderboard_refresh_with(
+        pool,
+        interval,
+        |p| async move { refresh_leaderboard(&p).await },
+    )
 }
 
 /// Testable core of [`start_leaderboard_refresh`]: runs `refresh` immediately, then on
@@ -144,8 +150,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
     fn refresh_interval_default_when_unset() {
@@ -189,27 +195,28 @@ mod tests {
         // Lazy pool — never connects; the stub never touches SQL.
         let pool = connect_lazy("postgres://t261-scheduler-test/unused").expect("lazy pool");
 
-        let handle = start_leaderboard_refresh_with(
-            pool,
-            Duration::from_millis(40),
-            move |_p| {
-                let calls = calls_c.clone();
-                async move {
-                    calls.fetch_add(1, Ordering::SeqCst);
-                    Ok(())
-                }
-            },
-        );
+        let handle = start_leaderboard_refresh_with(pool, Duration::from_millis(40), move |_p| {
+            let calls = calls_c.clone();
+            async move {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Ok(())
+            }
+        });
 
         // Boot refresh runs before the first ticker wait.
-        wait_until(|| calls.load(Ordering::SeqCst) >= 1, Duration::from_millis(500)).await;
-        assert!(
-            calls.load(Ordering::SeqCst) >= 1,
-            "immediate boot refresh"
-        );
+        wait_until(
+            || calls.load(Ordering::SeqCst) >= 1,
+            Duration::from_millis(500),
+        )
+        .await;
+        assert!(calls.load(Ordering::SeqCst) >= 1, "immediate boot refresh");
 
         // At least one interval tick after boot.
-        wait_until(|| calls.load(Ordering::SeqCst) >= 2, Duration::from_millis(500)).await;
+        wait_until(
+            || calls.load(Ordering::SeqCst) >= 2,
+            Duration::from_millis(500),
+        )
+        .await;
         assert!(
             calls.load(Ordering::SeqCst) >= 2,
             "interval tick refresh, got {}",
