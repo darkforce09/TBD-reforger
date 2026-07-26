@@ -2118,7 +2118,11 @@ mod tests {
             .expect_err("over-capacity cargo must not reach a file");
         assert_eq!(reasons.len(), 1);
         assert_eq!(reasons[0].key, "vest");
-        assert!(reasons[0].message.contains("240 / 200 cm³"), "{}", reasons[0].message);
+        assert!(
+            reasons[0].message.contains("240 / 200 cm³"),
+            "{}",
+            reasons[0].message
+        );
         assert!(
             reasons[0].message.ends_with(rules::CARGO_CAPACITY_CAVEAT),
             "the refusal must carry its own estimate caveat: {}",
@@ -2148,9 +2152,15 @@ mod tests {
         let heavy = vec![row("vest", "res://mag_stanag", 40)];
 
         for (label, p) in [
-            ("garment with no catalogued capacity", picks(&[("vest", "res://unknown_rig")])),
+            (
+                "garment with no catalogued capacity",
+                picks(&[("vest", "res://unknown_rig")]),
+            ),
             ("no garment worn", picks(&[])),
-            ("garment the catalog does not know", picks(&[("vest", "res://ghost")])),
+            (
+                "garment the catalog does not know",
+                picks(&[("vest", "res://ghost")]),
+            ),
         ] {
             assert!(
                 try_export(&p, &heavy, &items, "mp").is_ok(),
@@ -2169,10 +2179,17 @@ mod tests {
         // A ready feed with no edges → the packed attachment on the primary is stranded.
         let feed = attachment_feed(&[]);
         let mut p = picks(&[("vest", "res://chest_rig"), ("primary", "res://rifle_m16")]);
-        p.insert(attachments_key("primary"), pack_attachments(&["res://supp".into()]));
+        p.insert(
+            attachments_key("primary"),
+            pack_attachments(&["res://supp".into()]),
+        );
 
         let faults = loadout_faults(&p, &[row("vest", "res://mag_stanag", 4)], &feed, &idx);
-        assert_eq!(faults.len(), 2, "one stranded attachment + one over-capacity vest");
+        assert_eq!(
+            faults.len(),
+            2,
+            "one stranded attachment + one over-capacity vest"
+        );
         let keys: Vec<&str> = faults.iter().map(|e| e.key).collect();
         assert!(keys.contains(&"primary"), "{keys:?}");
         assert!(keys.contains(&"vest"), "{keys:?}");
