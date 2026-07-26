@@ -189,6 +189,95 @@ pub fn normalize_clock(s: &str) -> Option<String> {
     hhmm_to_minutes(s).map(minutes_to_hhmm)
 }
 
+// ── meta.environment — the keys the editor is allowed to author (T-193) ──────────────────────────
+
+/// Every `meta.environment` key the editor writes, paired with the surface that reads it back.
+///
+/// **Why a table with a gate on it, and not a comment.** Mission Settings shipped a View Distance
+/// field and a Thermals toggle that wrote `meta.environment.{viewDistance,thermals}`. Both controls
+/// *worked*: the value entered the document, took an undo step, survived a reload and came back when
+/// the dialog reopened. Neither value ever left the editor.
+///
+/// The ticket filed this as a schema violation — `mission.schema.json` pins `environment` to
+/// `dateTime` / `weatherPreset` / `windDirDeg` under `additionalProperties: false`. It is not one,
+/// and that matters for the fix: `ModEnvironment` (`map-engine-core/src/mission/flatten.rs`) is a
+/// fixed two-field struct built key by key, so the compiled document never carried the extra keys to
+/// the schema in the first place. Nothing was ever rejected. The keys were dropped, in silence, on
+/// the way out of the editor — which is the harder bug, because a rejection at least tells someone.
+///
+/// **Why they were removed rather than carried through.** There is no destination. The `missions`
+/// row has no `view_distance` / `thermals` column, so the T-192 mirror cannot take them; the mod
+/// document struct and the schema would both have to grow a field; and neither word appears anywhere
+/// in `apps/mod` or `packages/tbd-schema` — the framework has no view-distance or thermals concept
+/// to receive them, so even a widened schema would land the values in a document nothing reads. That
+/// is a mod feature (`executor: workbench`), not an editor fix. Meanwhile the design corpus
+/// (`engineering_plan.md`, `mission_creator_design.md`) has always described both as *auto-derived*
+/// from the mission, never author-set. Two live controls for a setting nobody had planned to honour
+/// is worse than no controls: the author sets a view distance, saves, and the mission runs at the
+/// default with nothing said.
+///
+/// Every environment write in this file goes through [`author_env`], which refuses a key that is not
+/// listed here. That is the part that makes this stay fixed — the next control cannot be wired to a
+/// key with no reader without someone first adding the reader to this table.
+const CARRIED_ENV_KEYS: &[(&str, &str)] = &[
+    // Compiled AND mirrored: `mission_compile` prefers the saved payload's environment over the
+    // row, and T-192 PATCHes the row so the library dossier cannot disagree with the editor.
+    (
+        "time",
+        "compiled `environment.dateTime` + the `missions.time_of_day` column",
+    ),
+    (
+        "weather",
+        "compiled `environment.weatherPreset` + the `missions.weather` column",
+    ),
+    // Editor-local: per-mission render prefs applied live to the map host. These never compile, and
+    // that is correct — they describe how the AUTHOR looks at the map, not how the mission runs.
+    (
+        "showHillshade",
+        "the editor's map host (`world_assets::apply_hillshade`)",
+    ),
+    (
+        "hillshadeOpacity",
+        "the editor's map host (`world_assets::apply_hillshade`)",
+    ),
+    (
+        "showGrid",
+        "the editor's map host (`world_assets::apply_grid`)",
+    ),
+];
+
+/// Does any surface read `key` back? See [`CARRIED_ENV_KEYS`].
+fn env_key_is_carried(key: &str) -> bool {
+    CARRIED_ENV_KEYS.iter().any(|(k, _)| *k == key)
+}
+
+/// Write one `meta.environment` key into the document — one undo step, exactly as the controls did
+/// before — or refuse it and say so.
+///
+/// The refusal is the whole point. A control wired straight at `editor_ops::update_environment`
+/// cannot tell whether its value will ever be read again, which is precisely how View Distance and
+/// Thermals shipped looking functional. The check belongs on the one path every control takes.
+#[cfg(target_arch = "wasm32")]
+fn author_env(key: &str, value: serde_json::Value) {
+    if !env_key_is_carried(key) {
+        leptos::logging::error!(
+            "refusing to author meta.environment.{key}: no surface reads it back (see CARRIED_ENV_KEYS)"
+        );
+        return;
+    }
+    let mut patch = serde_json::Map::new();
+    patch.insert(key.to_string(), value);
+    crate::editor_ops::update_environment(serde_json::Value::Object(patch).to_string());
+}
+
+/// What Mission Settings says where the View Distance field and the Thermals toggle used to be.
+///
+/// Pinned copy, because the blank is the problem: two controls vanishing from a dialog reads as a
+/// regression unless the dialog says otherwise, and the one thing an author needs to know is that
+/// the setting was never reaching the game — not that the UI got tidier.
+pub const ENV_UNCARRIED_NOTE: &str =
+    "View distance and thermals are not part of a compiled mission — it carries time and weather only.";
+
 /// Is the route `:id` a real mission row? T-192.
 ///
 /// The editor also mounts on synthetic ids — `mission_editor` falls back to `draft`, and the gate
@@ -800,9 +889,7 @@ pub fn TopCommandStrip(
                         {
                             let v: u32 = event_target_value(&ev).parse().unwrap_or(0);
                             let hhmm = minutes_to_hhmm(v);
-                            crate::editor_ops::update_environment(
-                                serde_json::json!({ "time": hhmm }).to_string(),
-                            );
+                            author_env("time", hhmm.as_str().into());
                             row_mirror.set_time(&hhmm);
                         }
                         #[cfg(not(target_arch = "wasm32"))]
@@ -820,9 +907,7 @@ pub fn TopCommandStrip(
                         #[cfg(target_arch = "wasm32")]
                         {
                             let w = event_target_value(&ev);
-                            crate::editor_ops::update_environment(
-                                serde_json::json!({ "weather": w }).to_string(),
-                            );
+                            author_env("weather", w.as_str().into());
                             row_mirror.set_weather(&w);
                         }
                         #[cfg(not(target_arch = "wasm32"))]
@@ -2053,14 +2138,17 @@ pub fn BottomToolbelt(
 }
 
 /// Mission Settings dialog (MissionSettingsDialog.tsx — environment half). Terrain (readonly) +
-/// time / weather / view distance / thermals flow through `editor_ops::update_environment` (one
-/// undo step each). The render-pref controls (map style, grid, hillshade, world-layer toggles) land
-/// with the map-asset host (T-159.28) — noted in the dialog rather than shown as inert toggles.
-/// Renders no DOM while closed. T-159.26.
+/// time / weather flow through [`author_env`] (one undo step each); the render-pref controls (map
+/// style, grid, hillshade, world-layer toggles) are live below them since T-173 P6. Renders no DOM
+/// while closed. T-159.26.
 ///
 /// **T-192:** time and weather additionally mirror to the `missions` row through [`RowMirror`] on
-/// commit. `viewDistance` / `thermals` deliberately do **not** — they have no column, and where
-/// they should land instead is **T-193**.
+/// commit.
+///
+/// **T-193:** the View Distance field and the Thermals toggle are gone, and [`ENV_UNCARRIED_NOTE`]
+/// stands where they were. They were fully working controls authoring keys that no compiled
+/// document, no row column and no mod script has ever read — [`CARRIED_ENV_KEYS`] carries the whole
+/// argument for deleting them rather than trying to carry them through.
 #[component]
 pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> impl IntoView {
     // Esc closes (the suite Dialog behavior).
@@ -2131,9 +2219,7 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                                         #[cfg(target_arch = "wasm32")]
                                         {
                                             let t = event_target_value(&ev);
-                                            crate::editor_ops::update_environment(
-                                                serde_json::json!({ "time": t }).to_string(),
-                                            );
+                                            author_env("time", t.as_str().into());
                                             // T-192 — same handler as the doc write on purpose; a
                                             // `change` listener would not survive this dialog's
                                             // rebuild-per-doc-tick. Partial values arrive as "" and
@@ -2146,73 +2232,35 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                                     class=ctrl
                                 />
                             </label>
+                            // T-193 — Weather moved up beside Time. They are the two settings a
+                            // compiled mission actually carries, and they were only ever apart
+                            // because View Distance held this cell.
                             <label class="flex flex-col gap-1">
                                 <span class="text-label-sm uppercase tracking-wider text-outline">
-                                    "View Distance (m)"
+                                    "Weather"
                                 </span>
-                                <input
-                                    type="number"
-                                    value=env.view_distance.to_string()
-                                    on:input=move |ev| {
+                                <select
+                                    prop:value=env.weather.clone()
+                                    on:change=move |ev| {
                                         #[cfg(target_arch = "wasm32")]
                                         {
-                                            let v: i64 = event_target_value(&ev).parse().unwrap_or(0);
-                                            crate::editor_ops::update_environment(
-                                                serde_json::json!({ "viewDistance": v }).to_string(),
-                                            );
+                                            let w = event_target_value(&ev);
+                                            author_env("weather", w.as_str().into());
+                                            row_mirror.set_weather(&w);
                                         }
                                         #[cfg(not(target_arch = "wasm32"))]
                                         let _ = &ev;
                                     }
                                     class=ctrl
-                                />
+                                >
+                                    <option value="clear">"Clear"</option>
+                                    <option value="overcast">"Overcast"</option>
+                                    <option value="heavy_rain">"Heavy Rain"</option>
+                                    <option value="dense_fog">"Dense Fog"</option>
+                                </select>
                             </label>
                         </div>
-                        <label class="flex flex-col gap-1">
-                            <span class="text-label-sm uppercase tracking-wider text-outline">
-                                "Weather"
-                            </span>
-                            <select
-                                prop:value=env.weather.clone()
-                                on:change=move |ev| {
-                                    #[cfg(target_arch = "wasm32")]
-                                    {
-                                        let w = event_target_value(&ev);
-                                        crate::editor_ops::update_environment(
-                                            serde_json::json!({ "weather": w }).to_string(),
-                                        );
-                                        row_mirror.set_weather(&w);
-                                    }
-                                    #[cfg(not(target_arch = "wasm32"))]
-                                    let _ = &ev;
-                                }
-                                class=ctrl
-                            >
-                                <option value="clear">"Clear"</option>
-                                <option value="overcast">"Overcast"</option>
-                                <option value="heavy_rain">"Heavy Rain"</option>
-                                <option value="dense_fog">"Dense Fog"</option>
-                            </select>
-                        </label>
-                        <div class="flex items-center justify-between py-0.5">
-                            <span class="text-label-md text-on-surface-variant">"Thermals enabled"</span>
-                            <input
-                                type="checkbox"
-                                prop:checked=env.thermals
-                                on:change=move |ev| {
-                                    #[cfg(target_arch = "wasm32")]
-                                    {
-                                        let on = event_target_checked(&ev);
-                                        crate::editor_ops::update_environment(
-                                            serde_json::json!({ "thermals": on }).to_string(),
-                                        );
-                                    }
-                                    #[cfg(not(target_arch = "wasm32"))]
-                                    let _ = &ev;
-                                }
-                                class="accent-primary"
-                            />
-                        </div>
+                        <p class="text-label-sm normal-case text-outline">{ENV_UNCARRIED_NOTE}</p>
                         {render_prefs_section(&env)}
                     </div>
                 </div>
@@ -2303,9 +2351,7 @@ fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
                         prop:checked=hillshade_on
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
-                            crate::editor_ops::update_environment(
-                                serde_json::json!({ "showHillshade": on }).to_string(),
-                            );
+                            author_env("showHillshade", on.into());
                             let op = crate::editor_ops::read_env().hillshade_opacity;
                             crate::world_assets::apply_hillshade(on, op);
                         }
@@ -2324,9 +2370,7 @@ fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
                         on:input=move |ev| {
                             let pct: f64 = event_target_value(&ev).parse().unwrap_or(40.0);
                             let op = (pct / 100.0).clamp(0.0, 1.0);
-                            crate::editor_ops::update_environment(
-                                serde_json::json!({ "hillshadeOpacity": op }).to_string(),
-                            );
+                            author_env("hillshadeOpacity", op.into());
                             crate::world_assets::apply_hillshade(true, op);
                         }
                         class="accent-primary"
@@ -2340,9 +2384,7 @@ fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
                         prop:checked=grid_on
                         on:change=move |ev| {
                             let on = event_target_checked(&ev);
-                            crate::editor_ops::update_environment(
-                                serde_json::json!({ "showGrid": on }).to_string(),
-                            );
+                            author_env("showGrid", on.into());
                             crate::world_assets::apply_grid(on);
                         }
                         class="accent-primary"
@@ -2360,9 +2402,10 @@ fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
 #[cfg(test)]
 mod tests {
     use super::{
-        apply_eden_chip, eden_chip_selected, hhmm_to_minutes, is_mission_row_id, minutes_to_hhmm,
-        mirror_failure_message, normalize_clock, EdenChip, MirrorState, EDEN_SIDE_CHIPS,
-        MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER, OBJECTS_COMING_SOON,
+        apply_eden_chip, eden_chip_selected, env_key_is_carried, hhmm_to_minutes,
+        is_mission_row_id, minutes_to_hhmm, mirror_failure_message, normalize_clock, EdenChip,
+        MirrorState, CARRIED_ENV_KEYS, EDEN_SIDE_CHIPS, ENV_UNCARRIED_NOTE, MIRROR_DEBOUNCE_MS,
+        MIRROR_TIME, MIRROR_WEATHER, OBJECTS_COMING_SOON,
     };
     use leptos::prelude::*;
 
@@ -2429,7 +2472,8 @@ mod tests {
 
     /// The columns the mirror PATCHes, and the words the failure toast uses for them. Pinned
     /// because the column half is the API contract (`PatchMissionInput`) and the label half is what
-    /// the author reads — `viewDistance` / `thermals` are deliberately absent (T-193).
+    /// the author reads — `viewDistance` / `thermals` are absent because T-193 stopped the editor
+    /// authoring them at all, not because the mirror declined to carry them.
     #[test]
     fn mirrored_fields_are_the_two_row_columns() {
         assert_eq!(MIRROR_TIME.column, "time_of_day");
@@ -2437,6 +2481,77 @@ mod tests {
         assert_eq!(MIRROR_TIME.label, "Time of day");
         assert_eq!(MIRROR_WEATHER.label, "Weather");
         assert_ne!(MIRROR_TIME.column, MIRROR_WEATHER.column, "one queue each");
+    }
+
+    /// **T-193 — the two keys that must never come back.**
+    ///
+    /// `viewDistance` and `thermals` had working controls in Mission Settings for four waves. They
+    /// wrote the document, took an undo step and read back correctly, and the value stopped dead at
+    /// the editor boundary every single time: `ModEnvironment` is `dateTime` + `weatherPreset`, the
+    /// `missions` row has no column for either, and neither word occurs anywhere in `apps/mod`. The
+    /// controls were removed rather than wired through, because there is nothing on the far side to
+    /// wire them to.
+    ///
+    /// `windDirDeg` is here as the other half of the lesson: the schema HAS a slot for it, and the
+    /// editor still must not author it until something reads what it writes. A schema field is not
+    /// a reader.
+    #[test]
+    fn keys_nothing_reads_are_not_authored() {
+        for key in ["viewDistance", "thermals", "windDirDeg", "fog", "wind"] {
+            assert!(
+                !env_key_is_carried(key),
+                "{key} has no reader — a control writing it would be dropped in silence"
+            );
+        }
+    }
+
+    /// The other direction: every key in the table is genuinely reachable, and every entry says who
+    /// reads it. The "who" is the load-bearing half — it is the question nobody asked before adding
+    /// a View Distance field, and an entry that cannot answer it does not belong in the table.
+    #[test]
+    fn every_carried_key_names_its_reader() {
+        for (key, reader) in CARRIED_ENV_KEYS {
+            assert!(
+                env_key_is_carried(key),
+                "{key} must resolve through the gate"
+            );
+            assert!(
+                !reader.is_empty(),
+                "{key} must name the surface that reads it"
+            );
+        }
+        // The compiled pair and the editor-local trio — nothing else authors an environment key.
+        assert_eq!(
+            CARRIED_ENV_KEYS.len(),
+            5,
+            "adding a key means adding its reader first"
+        );
+        for key in [
+            "time",
+            "weather",
+            "showHillshade",
+            "hillshadeOpacity",
+            "showGrid",
+        ] {
+            assert!(env_key_is_carried(key), "{key} is still authored");
+        }
+        // Two entries for the same key would make the table lie about ownership.
+        let mut keys: Vec<&str> = CARRIED_ENV_KEYS.iter().map(|(k, _)| *k).collect();
+        keys.sort_unstable();
+        let n = keys.len();
+        keys.dedup();
+        assert_eq!(keys.len(), n, "one entry per key");
+    }
+
+    /// Two controls disappearing from a dialog is indistinguishable from a regression unless the
+    /// dialog says why, so the replacement copy has to name both of them and say what a compiled
+    /// mission does carry.
+    #[test]
+    fn the_note_names_what_it_replaced() {
+        let note = ENV_UNCARRIED_NOTE.to_lowercase();
+        for word in ["view distance", "thermals", "time", "weather"] {
+            assert!(note.contains(word), "the note must name {word}: {note}");
+        }
     }
 
     /// A failed mirror must SAY so — the shipped version only `warn!`ed, which is how a
