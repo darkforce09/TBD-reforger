@@ -67,6 +67,34 @@ ahead=$(git rev-list --count origin/main..HEAD 2>/dev/null || echo '?')
 wt=$(git worktree list | tail -n +2 | wc -l)
 [ "$wt" -eq 0 ] && ok "worktrees" "none stale" || soft "worktrees" "$wt left over — wave.sh land will reuse or trip on them"
 
+# 7b. An UNDISPATCHED worktree — created, never given an agent. OBSERVED 2026-07-26: five worktrees
+#     (T-331, T-337, T-348, T-349, T-352) sat pristine for up to 90 minutes because the command center
+#     created them in a batch and then dispatched only a subset. The operator noticed, not the tooling.
+#     A live agent writes files within a couple of minutes, so "no commits AND no uncommitted files"
+#     is a reliable signature of a slot that is burning wall-clock for nothing. Cheap to check, and it
+#     is pure lost throughput rather than a correctness fault, which is exactly the kind of thing
+#     nobody goes looking for.
+#     THRESHOLD IS LOAD-BEARING: a just-dispatched agent legitimately has nothing yet, so an
+#     unconditional check warns on every healthy fresh wave — and a gate that cries wolf is one
+#     everybody learns to ignore, which is precisely how `make ci-local` became decorative here.
+#     Only worktrees older than IDLE_MIN minutes with nothing to show are suspicious.
+IDLE_MIN="${TBD_IDLE_WORKTREE_MIN:-10}"
+idle=""
+for w in $(git worktree list | tail -n +2 | awk '{print $1}'); do
+  t="$(basename "$w")"
+  ahead="$(git -C "$w" rev-list --count main..HEAD 2>/dev/null || echo 0)"
+  dirty="$(git -C "$w" status --porcelain 2>/dev/null | wc -l)"
+  # The worktree's .git file is written once at creation and never touched again, so its mtime is
+  # the dispatch time. Anything the agent writes is newer; nothing else in here ages it.
+  young="$(find "$w" -maxdepth 1 -name .git -newermt "-${IDLE_MIN} minutes" 2>/dev/null)"
+  [ "$ahead" = "0" ] && [ "$dirty" -eq 0 ] && [ -z "$young" ] && idle="$idle $t"
+done
+if [ -n "$idle" ]; then
+  soft "idle worktrees" "nothing written in ${IDLE_MIN}m+ —$idle — created and never dispatched?"
+else
+  ok "worktrees busy" "every worktree is working or newer than ${IDLE_MIN}m"
+fi
+
 # 8. The registry must validate, because `ticket check` is INSIDE the wave gate. A registry that
 #    fails here fails every wave, forever, and a fix agent cannot repair it from inside a slice.
 if hostrun ./scripts/ticket check >/dev/null 2>&1; then ok "ticket check" "registry valid"
