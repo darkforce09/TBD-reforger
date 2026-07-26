@@ -1254,6 +1254,124 @@ impl MissionDocCore {
         false
     }
 
+    // ── T-345 per-faction briefing markers (the authoring half of T-202's `briefings` emitter) ───
+
+    /// Place or move one map marker on a faction's briefing — the mutator that was missing between
+    /// T-202's shipped emitter and a working marker.
+    ///
+    /// Writes `factionsById[faction_id].briefing.markers[]`. That is the ONLY placement that reaches
+    /// a game server: `mission.schema.json` `$defs/briefing` declares `markers`, and the compiled
+    /// document has **no top-level `markers` property at all**, so a marker anywhere else is a marker
+    /// no mod subsystem can read. Markers are per-faction because they are side-scoped intelligence —
+    /// `bridgehead-at-levie` gives both sides different orders at the same coordinates.
+    ///
+    /// ## The doc row carries an `id`; the wire row does not
+    ///
+    /// Doc: `{id, x, z, icon, label}`. Wire (`$defs/marker`): `{x, z, icon, label}` with
+    /// `additionalProperties: false`. **The doc shape and the wire shape deliberately differ by
+    /// exactly this one key** — the first place in this document that they do, which is why it is
+    /// recorded here, on the writer, rather than left to be inferred by whoever reads next.
+    ///
+    /// Nothing has to strip the `id`: the serde boundary already does, for free. `flatten.rs`
+    /// `MarkerIn` is a `#[serde(default)]` struct of the four schema fields with no
+    /// `deny_unknown_fields`, so it ignores the extra key, and `derive_briefings` re-emits through
+    /// `ModMarker`, which has only those four. The compiled document therefore satisfies
+    /// `additionalProperties: false` with **no change to T-202's emitter**, and the id exists on the
+    /// authoring side only.
+    ///
+    /// What the id buys is ADDRESSING, and — stated plainly, because the overclaim is tempting — not
+    /// more than that. The editor must move, re-caption and delete a marker it placed, and an array
+    /// index is not a stable handle: removing a sibling renumbers every marker after it, so a queued
+    /// drag would land on the wrong row. Every other entity here is addressed by id, and a marker
+    /// being the one exception would earn the frontend a special case for nothing.
+    ///
+    /// It does **not** buy CRDT merge granularity. `briefing` rides the faction row as an OPAQUE
+    /// `Any::Map` — that is precisely why T-214's prose round-trips with no `store.rs` change, since
+    /// [`load_row`] re-inserts a nested object verbatim without descending into it — so the
+    /// finest-grained key yrs sees is `briefing` itself. Two concurrent marker edits on ONE faction
+    /// are last-write-wins over the whole briefing no matter what ids sit inside it. Splitting markers
+    /// into their own tracked root map to win that granularity would move them off the only
+    /// schema-legal placement, so the trade is settled this way on purpose.
+    ///
+    /// ## §authority — the root `markers` map is NOT this surface
+    ///
+    /// `MissionDocCore` also has a `markers` ROOT map ([`Self::hydrate`] clears and reloads it,
+    /// [`Self::small_maps_json`] emits it as `markersById`). It is authoritative for nothing that
+    /// reaches a game server, and that is checkable rather than a matter of taste:
+    /// `compile_payload` puts it at the EDITOR payload's `markers` root, and
+    /// `flatten_to_mod_document` deserialises `EditorPayload { editor: EditorGraph { factions,
+    /// squads, slots } }` — which declares no root key whatsoever, so that lane is never compiled.
+    /// It is a closed hydrate→emit loop. **Author here, not there.**
+    ///
+    /// The root map is left standing rather than deleted: [`Self::has_content`] counts it for the
+    /// warm-session conflict gate, and removing a root map is a migration, not a marker ticket.
+    ///
+    /// ## Semantics
+    ///
+    /// Upsert by `marker_id`, replacing IN PLACE so a drag cannot reorder the list — the mod renders
+    /// in array order (`derive_briefings` pushes in order into the parallel arrays
+    /// `TBD_MarkerService.Build` sends). No-op on an unknown `faction_id`: a marker cannot exist
+    /// without a side to be told about it.
+    ///
+    /// `label` is stored VERBATIM. The mod caps it (`TBD_MarkerService.CapLabel`, silently) and the
+    /// emitter applies that cap when it compiles, so capping here as well would destroy the authored
+    /// value in the one place the author could still see and fix it.
+    pub fn set_faction_briefing_marker(
+        &self,
+        faction_id: &str,
+        marker_id: &str,
+        x: f64,
+        z: f64,
+        icon: &str,
+        label: &str,
+    ) {
+        let mut txn = self.begin();
+        let Some(Out::YMap(f)) = self.factions.get(&txn, faction_id) else {
+            return;
+        };
+        let mut briefing = read_any_map(&txn, &f, "briefing");
+        let mut markers = briefing_markers(&briefing);
+        let row = marker_any(marker_id, x, z, icon, label);
+        match markers
+            .iter()
+            .position(|m| marker_row_id(m) == Some(marker_id))
+        {
+            Some(i) => markers[i] = row,
+            None => markers.push(row),
+        }
+        briefing.insert("markers".to_string(), Any::Array(markers.into()));
+        f.insert(&mut txn, "briefing", Any::Map(Arc::new(briefing)));
+    }
+
+    /// Delete one marker from a faction's briefing by its doc-internal id, leaving the prose fields
+    /// and the sibling markers untouched.
+    ///
+    /// Removing the last marker writes an empty `markers` array rather than dropping the key; the
+    /// emitter cannot tell the difference (`ModBriefing::markers` is
+    /// `skip_serializing_if = "Vec::is_empty"`, so an emptied list omits the key in the compiled
+    /// document exactly as an absent one does).
+    ///
+    /// No-op when nothing matches — including on a faction with no briefing at all. That guard is
+    /// load-bearing, not defensive tidiness: writing `briefing: {markers: []}` onto an unauthored
+    /// faction would flip `FactionIn::briefing` from `None` to `Some`, and `derive_briefings` would
+    /// start emitting a `briefings` entry for a side that authored nothing — a compiled-output change
+    /// produced by a delete that deleted nothing.
+    pub fn remove_faction_briefing_marker(&self, faction_id: &str, marker_id: &str) {
+        let mut txn = self.begin();
+        let Some(Out::YMap(f)) = self.factions.get(&txn, faction_id) else {
+            return;
+        };
+        let mut briefing = read_any_map(&txn, &f, "briefing");
+        let mut markers = briefing_markers(&briefing);
+        let before = markers.len();
+        markers.retain(|m| marker_row_id(m) != Some(marker_id));
+        if markers.len() == before {
+            return;
+        }
+        briefing.insert("markers".to_string(), Any::Array(markers.into()));
+        f.insert(&mut txn, "briefing", Any::Map(Arc::new(briefing)));
+    }
+
     /// How many undo steps are stacked. The capture side of the T-159.22.1 invariant (one LOCAL txn
     /// = one step) — `can_undo` only says "≥ 1", which is what let the granularity defect hide.
     #[must_use]
@@ -1576,6 +1694,55 @@ fn any_to_f64(a: &Any) -> f64 {
         Any::Bool(false) => 0.0,
         _ => 0.0,
     }
+}
+
+/// Read an opaque nested object off an entity row (`briefing`, `position`, …) as an OWNED map.
+/// Missing or non-map reads as empty, so a caller can insert into the result and write the whole
+/// value back — which is the only way to edit these: [`load_row`] stores nested objects as opaque
+/// `Any::Map`s, not as tracked `YMap`s, so there is no sub-key to insert into (T-345).
+///
+/// A non-map `briefing` (the `"briefing": "some prose"` mistake T-367's precheck exists to reject)
+/// reads as empty and is overwritten by a well-formed one, which is the repair the author wants.
+fn read_any_map<T: ReadTxn>(txn: &T, row: &MapRef, key: &str) -> HashMap<String, Any> {
+    match row.get(txn, key) {
+        Some(Out::Any(Any::Map(m))) => (*m).clone(),
+        _ => HashMap::new(),
+    }
+}
+
+/// `briefing.markers` as an owned vec; missing or non-array reads as empty (T-345).
+fn briefing_markers(briefing: &HashMap<String, Any>) -> Vec<Any> {
+    match briefing.get("markers") {
+        Some(Any::Array(arr)) => arr.iter().cloned().collect(),
+        _ => Vec::new(),
+    }
+}
+
+/// A marker row's doc-internal `id`, when it has a string one (T-345). `None` for a row written by
+/// something that did not stamp one — such a row is still emitted, it just cannot be addressed.
+fn marker_row_id(row: &Any) -> Option<&str> {
+    let Any::Map(fields) = row else { return None };
+    match fields.get("id") {
+        Some(Any::String(s)) => Some(s.as_ref()),
+        _ => None,
+    }
+}
+
+/// One `{id, x, z, icon, label}` marker row (T-345). `x`/`z` go in as `Any::Number` (an f64
+/// coordinate); a hydrate round-trip may bring an integral one back as `Any::BigInt`, because
+/// [`value_to_any`] encodes integer-valued JSON numbers that way. Harmless in both directions — the
+/// two encode to the same JSON number and [`any_to_f64`] accepts either.
+///
+/// The `id` is the doc-only key; see [`MissionDocCore::set_faction_briefing_marker`] for why it is
+/// here and why the emitter needs no change to keep it off the wire.
+fn marker_any(id: &str, x: f64, z: f64, icon: &str, label: &str) -> Any {
+    Any::Map(Arc::new(HashMap::from([
+        ("id".to_string(), Any::String(id.into())),
+        ("x".to_string(), Any::Number(x)),
+        ("z".to_string(), Any::Number(z)),
+        ("icon".to_string(), Any::String(icon.into())),
+        ("label".to_string(), Any::String(label.into())),
+    ])))
 }
 
 /// Read `position` (`Any::Map`) → `(x, y, z, rotation)`; missing map/keys read as 0.
@@ -2253,5 +2420,349 @@ mod tests {
                 assert_eq!(idx, i as i64, "{sq_id}/{sid} index");
             }
         }
+    }
+
+    // ── T-345 per-faction briefing markers ───────────────────────────────────────────────────────
+
+    /// A two-faction doc with one slot, so `flatten_to_mod_document` has something to compile (it
+    /// answers `NoSlots` on an empty graph) and so the tests below can prove a marker lands on ONE
+    /// side and not the other.
+    ///
+    /// Seeded under `INIT` like `seeded_core`, so the undo stack starts EMPTY and the first marker
+    /// edit is the first tracked step — otherwise `can_undo()` is already true from the fixture and
+    /// says nothing about the mutator.
+    fn briefing_fixture() -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "US Army");
+        doc.add_faction("faction-OPFOR", "OPFOR", "Soviet VDV");
+        doc.add_squad("sq-a", "faction-BLUFOR", "1st", Some("Alpha".to_string()));
+        doc.add_editor_layer("lyr", "Default Layer", None);
+        doc.add_slot(
+            "z1", "sq-a", "lyr", 0, "SL", None, None, 4839.2, 6620.8, 0.0, 270.0,
+        );
+        doc.set_origin_init(false);
+        assert!(!doc.can_undo(), "the INIT seed must not be an undo step");
+        doc
+    }
+
+    /// The marker rows on one faction, straight out of `small_maps_json`.
+    fn markers_of(doc: &MissionDocCore, faction_id: &str) -> Vec<serde_json::Value> {
+        small_maps(doc)["factionsById"][faction_id]["briefing"]["markers"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// A marker field as an f64. Not `assert_eq!(row["x"], json!(300.0))` — yrs writes
+    /// `Any::Number(300.0)` as the JSON token `300`, which `serde_json` then reads back as an
+    /// INTEGER `Number`, so `Value`-equality against `300.0` fails on a value that is entirely
+    /// correct. The wire is unaffected (`MarkerIn::x` is an `f64` and parses either token), and the
+    /// mixed encoding is documented on [`marker_any`] — but a test must compare numbers as numbers.
+    fn marker_num(row: &serde_json::Value, key: &str) -> f64 {
+        row[key]
+            .as_f64()
+            .unwrap_or_else(|| panic!("{key} is a number: {row:?}"))
+    }
+
+    /// **T-345 — the round trip that was impossible before this mutator existed.**
+    ///
+    /// Author a marker → `compile_payload` → `hydrate` → recompile, and assert the coordinates come
+    /// back bit-exact. T-214 proved prose round-trips by using `hydrate` as the WRITER; this uses the
+    /// real mutator, which is the half that did not exist and the half a frontend will call.
+    ///
+    /// The coordinates are deliberately non-integral: `value_to_any` encodes integral JSON numbers as
+    /// `Any::BigInt` and the rest as `Any::Number`, so an integral fixture could pass while a real
+    /// 3-decimal map click silently lost its fraction.
+    #[test]
+    fn authored_marker_round_trips_through_compile_and_hydrate() {
+        let doc = briefing_fixture();
+        doc.set_faction_briefing_marker(
+            "faction-BLUFOR",
+            "mk-1",
+            4870.25,
+            7760.5,
+            "objective",
+            "Seize the bridge",
+        );
+
+        let authored = markers_of(&doc, "faction-BLUFOR");
+        assert_eq!(authored.len(), 1, "one authored marker: {authored:?}");
+        assert_eq!(authored[0]["x"], serde_json::json!(4870.25));
+        assert_eq!(authored[0]["z"], serde_json::json!(7760.5));
+        assert_eq!(authored[0]["icon"], serde_json::json!("objective"));
+        assert_eq!(authored[0]["label"], serde_json::json!("Seize the bridge"));
+        assert_eq!(authored[0]["id"], serde_json::json!("mk-1"));
+
+        // The marker is SIDE-SCOPED: the other faction authored nothing and must stay unauthored,
+        // or `derive_briefings` would ship orders to a side that was never given any.
+        assert!(
+            small_maps(&doc)["factionsById"]["faction-OPFOR"]
+                .get("briefing")
+                .is_none(),
+            "the unauthored side must not acquire a briefing"
+        );
+
+        // Save → reload, exactly as the editor does it.
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&payload.to_string(), "lyr");
+
+        let survived = markers_of(&reloaded, "faction-BLUFOR");
+        assert_eq!(survived, authored, "marker rows must survive hydrate whole");
+
+        // And the recompile is stable — author → store → compile → reload → compile agrees.
+        let recompiled = crate::mission::compile::compile_payload(
+            &reloaded.small_maps_json(),
+            &reloaded.slots_json(),
+            false,
+        );
+        assert_eq!(
+            recompiled["editor"]["factions"][0]["briefing"]["markers"],
+            payload["editor"]["factions"][0]["briefing"]["markers"]
+        );
+        // Proof this was a real round trip and not two empty docs agreeing with each other.
+        assert_eq!(
+            recompiled["editor"]["slots"]
+                .as_array()
+                .expect("slots")
+                .len(),
+            1
+        );
+    }
+
+    /// **T-345 — the authored marker reaches the compiled mod document, and its doc `id` does not.**
+    ///
+    /// This is the assertion the whole design rests on: the doc row carries `id`, `$defs/marker` is
+    /// `additionalProperties: false`, and NO emitter change strips it — `MarkerIn` ignores the unknown
+    /// key and `ModMarker` re-emits only the four schema fields. If a future slice ever adds
+    /// `deny_unknown_fields` to `MarkerIn`, or teaches `ModMarker` to pass rows through verbatim, this
+    /// fails here naming the reason instead of shipping a document the game server rejects.
+    ///
+    /// `#[cfg(feature = "mission")]` — the reason the suite must run `--features doc,mission`;
+    /// `--features doc` alone compiles the compiler out and silently skips this.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn authored_marker_reaches_the_mod_document_without_its_doc_id() {
+        let doc = briefing_fixture();
+        doc.set_faction_briefing_marker(
+            "faction-BLUFOR",
+            "mk-1",
+            4870.25,
+            7760.5,
+            "objective",
+            "Seize the bridge",
+        );
+
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let meta = crate::mission::flatten::MissionMeta {
+            id: "4c7e1b08-9a35-4d62-b1f7-e30d5a86c941".into(),
+            title: "Bridgehead at Levie".into(),
+            author: "184472930165846017".into(),
+            terrain: "everon".into(),
+            custom_terrain_name: String::new(),
+            max_players: 12,
+            time_of_day: "06:15".into(),
+            weather_preset: "overcast".into(),
+        };
+        let compiled = crate::mission::flatten::flatten_to_mod_document(
+            &meta,
+            &serde_json::to_vec(&payload).expect("payload serialises"),
+        )
+        .expect("the fixture has a slot, so the compile must succeed");
+        let doc_json = serde_json::to_value(&compiled).expect("mod document serialises");
+
+        // Keyed by `slug_key(faction.key)` — `BLUFOR` → `blufor`, the same slug `orbat` and
+        // `slots[].faction` use, which is what `GetBriefingForFaction(slot.faction)` looks up.
+        let rows = doc_json["briefings"]["blufor"]["markers"]
+            .as_array()
+            .expect("blufor briefing carries markers");
+        assert_eq!(rows.len(), 1, "{rows:?}");
+
+        let m = rows[0].as_object().expect("marker is an object");
+        assert_eq!(m["x"], serde_json::json!(4870.25));
+        assert_eq!(m["z"], serde_json::json!(7760.5));
+        assert_eq!(m["icon"], serde_json::json!("objective"));
+        assert_eq!(m["label"], serde_json::json!("Seize the bridge"));
+
+        // The whole point: `$defs/marker` is `additionalProperties: false`, so the doc-internal id
+        // must NOT be on the wire — and the emitter drops it for free.
+        assert!(
+            m.get("id").is_none(),
+            "the doc-internal marker id must not reach the compiled document: {m:?}"
+        );
+        assert_eq!(
+            m.len(),
+            4,
+            "exactly the four `$defs/marker` fields, no more: {m:?}"
+        );
+
+        // The unauthored side gets no entry at all, not an empty one.
+        assert!(
+            doc_json["briefings"].get("opfor").is_none(),
+            "{:?}",
+            doc_json["briefings"]
+        );
+    }
+
+    /// **T-345 — the doc `id` is what makes the marker addressable**, which is the only thing it is
+    /// there for. Re-setting the same id MOVES that marker in place (a drag) instead of appending a
+    /// duplicate, and does not reorder the list — the mod renders in array order.
+    #[test]
+    fn setting_the_same_marker_id_moves_it_in_place() {
+        let doc = briefing_fixture();
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-1", 100.0, 200.0, "objective", "OBJ");
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-2", 300.0, 400.0, "hazard", "MINES");
+        // The drag: same id, new coordinates and caption.
+        doc.set_faction_briefing_marker(
+            "faction-BLUFOR",
+            "mk-1",
+            111.5,
+            222.5,
+            "rally",
+            "Rally point",
+        );
+
+        let rows = markers_of(&doc, "faction-BLUFOR");
+        assert_eq!(rows.len(), 2, "an upsert must not duplicate: {rows:?}");
+        // Order preserved — `mk-1` is still first, so the drag did not shuffle the list.
+        assert_eq!(rows[0]["id"], serde_json::json!("mk-1"));
+        assert_eq!(marker_num(&rows[0], "x"), 111.5);
+        assert_eq!(marker_num(&rows[0], "z"), 222.5);
+        assert_eq!(rows[0]["icon"], serde_json::json!("rally"));
+        assert_eq!(rows[0]["label"], serde_json::json!("Rally point"));
+        assert_eq!(rows[1]["id"], serde_json::json!("mk-2"));
+        assert_eq!(marker_num(&rows[1], "x"), 300.0);
+    }
+
+    /// **T-345 — remove is by id and touches nothing else.** An index would have been enough for a
+    /// test and wrong in the editor: deleting `mk-1` renumbers `mk-2`, so a queued delete would take
+    /// the survivor.
+    #[test]
+    fn removing_a_marker_by_id_leaves_its_siblings_alone() {
+        let doc = briefing_fixture();
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-1", 100.0, 200.0, "objective", "OBJ");
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-2", 300.0, 400.0, "hazard", "MINES");
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-3", 500.0, 600.0, "rally", "RP");
+
+        doc.remove_faction_briefing_marker("faction-BLUFOR", "mk-2");
+
+        let rows = markers_of(&doc, "faction-BLUFOR");
+        let ids: Vec<&str> = rows
+            .iter()
+            .map(|m| m["id"].as_str().unwrap_or(""))
+            .collect();
+        assert_eq!(ids, vec!["mk-1", "mk-3"], "{rows:?}");
+        assert_eq!(marker_num(&rows[1], "x"), 500.0, "survivor intact");
+
+        // Emptying the list is legal and stays legal: the emitter omits an empty `markers` exactly
+        // as it omits an absent one (`skip_serializing_if = "Vec::is_empty"`).
+        doc.remove_faction_briefing_marker("faction-BLUFOR", "mk-1");
+        doc.remove_faction_briefing_marker("faction-BLUFOR", "mk-3");
+        assert!(markers_of(&doc, "faction-BLUFOR").is_empty());
+        assert!(
+            small_maps(&doc)["factionsById"]["faction-BLUFOR"]["briefing"]["markers"].is_array(),
+            "an emptied list stays an array, not a dropped key"
+        );
+    }
+
+    /// **T-345 — a delete that deletes nothing must not change the compiled document.** Writing
+    /// `briefing: {markers: []}` onto an unauthored faction would flip `FactionIn::briefing` from
+    /// `None` to `Some` and make `derive_briefings` emit a `briefings` entry for a side that authored
+    /// nothing — a compiled-output change produced by a no-op, and a needless undo step.
+    #[test]
+    fn removing_from_an_unauthored_faction_does_not_mint_a_briefing() {
+        let doc = briefing_fixture();
+        let before = small_maps(&doc);
+        doc.remove_faction_briefing_marker("faction-OPFOR", "mk-1");
+        doc.remove_faction_briefing_marker("faction-does-not-exist", "mk-1");
+
+        assert!(
+            small_maps(&doc)["factionsById"]["faction-OPFOR"]
+                .get("briefing")
+                .is_none(),
+            "a no-op delete must not author a briefing"
+        );
+        // Nothing anywhere moved, so the compiled bytes cannot have changed either.
+        assert_eq!(
+            small_maps(&doc),
+            before,
+            "a no-op delete must write nothing"
+        );
+        assert!(
+            !doc.can_undo(),
+            "a no-op delete must not stack an undo step"
+        );
+    }
+
+    /// **T-345 — markers coexist with prose on one `briefing` object**, which is the shape T-344's
+    /// `set_faction_briefing` has to preserve. The prose here is planted through `hydrate` (T-214's
+    /// proven writer) precisely because the prose mutator does not exist yet: this pins that a marker
+    /// edit reads the existing briefing and writes it back WHOLE rather than replacing it, so the
+    /// mutator that lands next cannot silently delete the other half.
+    #[test]
+    fn a_marker_edit_preserves_authored_prose_on_the_same_briefing() {
+        let payload = serde_json::json!({
+            "schemaVersion": 1,
+            "map": { "terrain": "everon" },
+            "editor": {
+                "factions": [{
+                    "id": "faction-BLUFOR", "key": "BLUFOR", "name": "US Army",
+                    "squadIds": ["sq-a"],
+                    "briefing": {
+                        "situation": "Enemy armour holds the east bank.\n\nBridge is intact.",
+                        "mission": "Seize and hold the crossing.",
+                        "execution": "Alpha leads.",
+                    }
+                }],
+                "squads": [{ "id": "sq-a", "factionId": "faction-BLUFOR", "name": "1st",
+                             "slotIds": ["z1"] }],
+                "slots": [{ "id": "z1", "squadId": "sq-a", "index": 0, "role": "SL",
+                            "position": { "x": 1.0, "y": 2.0, "z": 0.0, "rotation": 0.0 } }],
+                "editorLayers": []
+            }
+        })
+        .to_string();
+
+        let doc = MissionDocCore::new();
+        doc.hydrate(&payload, "lyr");
+        doc.set_faction_briefing_marker(
+            "faction-BLUFOR",
+            "mk-1",
+            4870.25,
+            7760.5,
+            "objective",
+            "OBJ",
+        );
+
+        let briefing = &small_maps(&doc)["factionsById"]["faction-BLUFOR"]["briefing"];
+        assert_eq!(
+            briefing["situation"],
+            serde_json::json!("Enemy armour holds the east bank.\n\nBridge is intact."),
+            "the paragraph break must survive a marker edit verbatim"
+        );
+        assert_eq!(
+            briefing["mission"],
+            serde_json::json!("Seize and hold the crossing.")
+        );
+        assert_eq!(briefing["execution"], serde_json::json!("Alpha leads."));
+        assert_eq!(briefing["markers"].as_array().expect("markers").len(), 1);
+
+        // …and the reverse direction: removing the marker must not take the prose with it.
+        doc.remove_faction_briefing_marker("faction-BLUFOR", "mk-1");
+        let after = &small_maps(&doc)["factionsById"]["faction-BLUFOR"]["briefing"];
+        assert_eq!(
+            after["mission"],
+            serde_json::json!("Seize and hold the crossing.")
+        );
+        assert!(after["markers"].as_array().expect("markers").is_empty());
     }
 }
