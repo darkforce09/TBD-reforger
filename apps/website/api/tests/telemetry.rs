@@ -564,3 +564,155 @@ async fn partial_heartbeat_merges_and_does_not_fire_a_false_low_fps_warn() {
         .await
         .unwrap();
 }
+
+/// T-347 — a blank `source_match_id` must never reach the UNIQUE index, and the dedupe lookup
+/// must agree with the bind about what the key is.
+///
+/// The two halves of `upsert_match` used to disagree: the lookup guarded on `!s.is_empty()`
+/// against the raw string, the INSERT bound the raw `Option`. Measured on a throwaway DB before
+/// the fix, both branches destroyed data and neither told anyone:
+///
+/// - `"   "` passed the guard, so it became a live dedupe key. Three genuinely different matches
+///   collapsed onto one row — outcome walked `success → failure → aborted`, `winning_faction`
+///   ended as match #2's `RUS` under match #3's AAR link, `started_at` stayed match #1's, one
+///   player's `17/3` and `2/9` were both replaced by `0/1`, and two other players' lines from two
+///   different matches were reattributed to a roster that never existed. `total_deployments` read
+///   `1` instead of `3` and `leaderboard_totals` read `0 kills / 1 mission` instead of `19 / 3`,
+///   refreshed in the same request. All three POSTs returned **200**.
+/// - `""` failed the guard and was bound anyway: POST #1 inserted `''`, and every later POST
+///   re-inserted it, hit `23505` on `idx_matches_source_match_id`, and got a bare **500** —
+///   permanently, for every body that sender sent afterwards.
+/// - `"m-x"` and `"  m-x  "` were two different matches.
+///
+/// The last case is why the guard could not simply be trimmed on its own: a trimming guard with an
+/// untrimmed bind is the same defect wearing different clothes. Both now read one normalized value
+/// (`source_match_key`), so the padded form resolving to the same match is the *positive* proof
+/// they agree, and it is asserted below alongside the rejections.
+///
+/// Keep the ingest calls under the strict limiter's burst (1/s, burst 10) — this test spends 6.
+#[tokio::test]
+async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA: &str = "t347-arma-blank";
+    const DISCORD: &str = "000000000000347001";
+    const SRC: &str = "m-t347-blank";
+    const EV: &str = "e-t347";
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T347', 't347', '', $2, '[TBD] T347', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(DISCORD)
+    .bind(ARMA)
+    .execute(&pool)
+    .await
+    .unwrap();
+    // Same reasoning as the T-316 test above: `matches` does not cascade to
+    // `match_player_stats`, and `leaderboard_totals` sums every row for a discord_id, so a second
+    // run would double-count. Clear the stats first, and keep this test's ids to itself.
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id IN ($1, '', '   ')")
+            .bind(SRC)
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    // A body that is honest in every respect except the id.
+    let body = |src: &str| {
+        format!(
+            r#"{{"match":{{"source_match_id":"{src}","terrain":"everon","outcome":"success","winning_faction":"USA","ended_at":"2026-07-26T20:14:00Z","aar_replay_url":"https://aar.tbd/{SRC}.json"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true,"source_event_id":"{EV}"}}]}}"#
+        )
+    };
+    let post = |b: String| {
+        let app = app.clone();
+        async move {
+            call(
+                &app,
+                "POST",
+                "/api/v1/ingest/match-results",
+                None,
+                Some(SVC),
+                Some(&b),
+            )
+            .await
+        }
+    };
+
+    let matches_before: i64 = sqlx::query_scalar("SELECT count(*) FROM matches")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+
+    // (1) Whitespace — the value that used to become a live dedupe key on a 200.
+    let (st, r) = post(body("   ")).await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "whitespace id: {r}");
+    assert_eq!(
+        r["error"],
+        "source_match_id must not be blank (omit it for a match with no source id)"
+    );
+
+    // (2) `""` — the value that used to be inserted once and then 500 forever. Twice, because
+    // pre-fix the *first* call was a 200 that poisoned the table for every call after it.
+    for attempt in 1..=2 {
+        let (st, r) = post(body("")).await;
+        assert_eq!(
+            st,
+            StatusCode::BAD_REQUEST,
+            "empty id, attempt {attempt}: {r}"
+        );
+    }
+    let poisoned: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM matches WHERE source_match_id = ''")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(poisoned, 0, "no '' row can reach the unique index");
+
+    // (3) Whitespace is not only spaces.
+    let (st, r) = post(body(r"\t\n ")).await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "tab/newline id: {r}");
+
+    // Nothing above wrote anything at all — not a match, not a stat row, not a counter.
+    let matches_after: i64 = sqlx::query_scalar("SELECT count(*) FROM matches")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(matches_before, matches_after, "no match row minted");
+    let stats: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(stats, 0, "no stat row written");
+
+    // (4) A real id still works, and (5) the padded form of it resolves to the SAME match rather
+    // than a second row — the lookup and the bind agree on one normalized key.
+    let (st, first) = post(body(SRC)).await;
+    assert_eq!(st, StatusCode::OK, "real id: {first}");
+    let (st, padded) = post(body(&format!("  {SRC}  "))).await;
+    assert_eq!(st, StatusCode::OK, "padded id: {padded}");
+    assert_eq!(
+        padded["match_id"], first["match_id"],
+        "a padded source_match_id is the same match, not a new one"
+    );
+    let rows: i64 = sqlx::query_scalar("SELECT count(*) FROM matches WHERE source_match_id = $1")
+        .bind(SRC)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(rows, 1, "one match row, stored trimmed");
+
+    clean(pool.clone()).await;
+}

@@ -28,8 +28,18 @@ fn valid_terrain(s: &str) -> Option<TerrainType> {
     }
 }
 
+/// `""` (and now `"   "`) means "none"; anything else must parse as a uuid.
+///
+/// The `trim` is T-347. `server_id` has always been trimmed before `Uuid::parse_str`
+/// (`ingest_server_status` below), and these three were not, so one uuid path in this file
+/// accepted a padded id and three silently discarded it: `" <uuid> "` failed the parse and fell
+/// out as `None`, which for `event_id` means the match is stored with no event and
+/// `ingest_match_results` marks nobody's attendance — 200, no row, nothing to see. Trimming
+/// makes all four agree and makes `"   "` mean exactly what `""` already means, which is the
+/// convention `current_match_id` documents.
 fn parse_uuid_opt(s: &Option<String>) -> Option<Uuid> {
     s.as_deref()
+        .map(str::trim)
         .filter(|v| !v.is_empty())
         .and_then(|v| Uuid::parse_str(v).ok())
 }
@@ -239,6 +249,63 @@ pub async fn ingest_server_status(
 
 // --- match results ---
 
+/// The one normalized `source_match_id`, resolved once and bound by **both** the dedupe lookup
+/// and the INSERT — that split was the defect (T-347).
+///
+/// `matches.source_match_id` carries a UNIQUE index (`idx_matches_source_match_id`), so it is a
+/// dedupe key, and the two halves of this handler used to disagree about what its value was: the
+/// lookup guarded on `!s.is_empty()` against the raw string while the INSERT bound the raw
+/// `Option`. Both branches of that disagreement were destructive, and both were measured on a
+/// throwaway database:
+///
+/// - **`"   "` passed the guard and became a live dedupe key.** Three genuinely different matches
+///   posted with a whitespace id collapsed onto **one** row: `outcome` walked
+///   `success → failure → aborted`, `winning_faction` ended up `RUS` from match #2 under match
+///   #3's AAR link, `started_at` stayed match #1's (it is only bound on create, so #2's and #3's
+///   start times were dropped), one player's `17/3` and `2/9` were both replaced by `0/1`, and
+///   two other players' lines from two different matches were reattributed to a roster that never
+///   existed. `total_deployments` read `1` instead of `3`, `leaderboard_totals` read `0 kills /
+///   1 mission` instead of `19 / 3` — refreshed in the same request, so it was wrong immediately —
+///   and all three POSTs returned **200**.
+/// - **`Some("")` failed the guard and was bound anyway.** The first POST inserted `''`; every
+///   later POST skipped the lookup, re-inserted `''`, and hit `23505` on
+///   `idx_matches_source_match_id` → a bare 500 (`From<sqlx::Error>` has no special case for it),
+///   forever, for any body that sender ever sends again.
+/// - A **padded** id split one real match in two: `"m-x"` and `"  m-x  "` were two rows.
+///
+/// So the fix is one value, computed here, used everywhere — the halves can no longer disagree
+/// because there is only one of them. `upsert_match` takes it as a parameter and never reads
+/// `MatchInput::source_match_id` again.
+///
+/// **Absent is still legal, and that is T-316's call, not an oversight.** A UNIQUE btree treats
+/// NULLs as distinct, so an omitted id genuinely cannot collide — it creates, it doesn't corrupt —
+/// and requiring it would break a sender that has no id to give. Present-but-blank is a different
+/// statement: it is not "I have no id", it is "my id field is broken", and on a service-token
+/// endpoint with no human in the loop that has to be said out loud. Normalizing blank to `None`
+/// instead would have absorbed a broken sender silently, which is the same objection T-316 raised
+/// when it rejected `GREATEST` for the counters. A 409 was never on the table here: rejecting a
+/// *retry* is what T-316 ruled out, and retry safety is untouched — an identical id still resolves
+/// to the same match.
+///
+/// **The trim is safe here, unlike the two sites T-343 flagged.** `orbat_reservations.squad` had
+/// to stay byte-identical to a value written untrimmed elsewhere; this column has exactly one
+/// writer (the INSERT below) and exactly one lookup-by-value (the SELECT below), both of which are
+/// now this function's return value. Nothing else in the repo compares against it —
+/// `handlers::deployments` and `models::Match` only carry the stored string outward, and the mod's
+/// `TBD_ResultsReporter` only sends it. A trimming *guard* with an untrimmed *bind* is exactly the
+/// bug being fixed, so the two moved together or not at all.
+fn source_match_key(raw: &Option<String>) -> Result<Option<&str>, ApiError> {
+    match raw.as_deref() {
+        None => Ok(None),
+        Some(s) => match s.trim() {
+            "" => Err(ApiError::bad_request(
+                "source_match_id must not be blank (omit it for a match with no source id)",
+            )),
+            key => Ok(Some(key)),
+        },
+    }
+}
+
 /// The match half of a results POST.
 ///
 /// **`outcome` is deliberately required — do not add `#[serde(default)]` to it, and do not
@@ -266,6 +333,8 @@ pub async fn ingest_server_status(
 ///   by the same partial body, so it gets the same treatment.
 #[derive(Debug, Deserialize)]
 pub struct MatchInput {
+    /// Absent = no source id, create a fresh match; a value = the dedupe key. Blank is neither,
+    /// so it is a 400 — read `source_match_key`, which is the only thing allowed to interpret it.
     source_match_id: Option<String>,
     event_id: Option<String>,
     mission_id: Option<String>,
@@ -350,6 +419,11 @@ pub async fn ingest_match_results(
         _ => return Err(ApiError::bad_request("invalid outcome")),
     };
 
+    // Resolve the dedupe key once, out here with the rest of the match-level validation and
+    // before the transaction, so a blank one is a 400 rather than a write (see
+    // `source_match_key`). Everything downstream binds *this* value.
+    let source_match_id = source_match_key(&m.source_match_id)?;
+
     // Validate the whole roster before opening the transaction — an empty `arma_id` or
     // `source_event_id` decodes fine but is junk in a row whose dedupe key is
     // `(match_id, arma_id, source_event_id)`, and a blank key silently collapses distinct
@@ -365,7 +439,7 @@ pub async fn ingest_match_results(
     }
 
     let mut tx = state.pool.begin().await?;
-    let (match_id, event_id) = upsert_match(&mut tx, &m, outcome).await?;
+    let (match_id, event_id) = upsert_match(&mut tx, &m, outcome, source_match_id).await?;
 
     let mut resolved: Vec<String> = Vec::new();
     for p in &input.players {
@@ -452,10 +526,15 @@ pub async fn ingest_match_results(
 
 /// Find a match by source_match_id (updating mutable fields) or create one. Returns
 /// `(id, event_id)`.
+///
+/// `source_match_id` arrives **already normalized** from `source_match_key` and is the only form
+/// this function may use — it deliberately does not read `m.source_match_id`, because the lookup
+/// and the INSERT reading two different forms of the same field is the whole of T-347.
 async fn upsert_match(
     tx: &mut sqlx::PgConnection,
     m: &MatchInput,
     outcome: MissionOutcome,
+    source_match_id: Option<&str>,
 ) -> Result<(Uuid, Option<Uuid>), ApiError> {
     let started = m.started_at.unwrap_or_else(Utc::now);
     let event_id = parse_uuid_opt(&m.event_id);
@@ -473,7 +552,7 @@ async fn upsert_match(
         Some(t) => Some(valid_terrain(t).ok_or_else(|| ApiError::bad_request("invalid terrain"))?),
     };
 
-    if let Some(src) = m.source_match_id.as_deref().filter(|s| !s.is_empty()) {
+    if let Some(src) = source_match_id {
         let existing: Option<(Uuid, Option<Uuid>)> =
             sqlx::query_as("SELECT id, event_id FROM matches WHERE source_match_id = $1")
                 .bind(src)
@@ -512,7 +591,7 @@ async fn upsert_match(
          VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, ''), COALESCE($9, ''), now()) \
          RETURNING id, event_id",
     )
-    .bind(&m.source_match_id)
+    .bind(source_match_id)
     .bind(event_id)
     .bind(mission_id)
     .bind(terrain)
