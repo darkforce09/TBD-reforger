@@ -7657,7 +7657,7 @@
     {
       "id": "T-233",
       "title": "Deployments page shows fabricated K/D and win rate as real telemetry",
-      "summary": "deployments.rs:18-23 defines MOCK_KD 2.45, MOCK_WIN_RATE 68% and fake favourite weapon/asset, rendered at :132-133 as live stats. Only total_operations is real.\n\nSHIPPED, and the NEAR-MISS WAS THE TRAP. The four fabricated readouts split three ways:\n  K/D — REAL. It read leaderboard_totals.kd_ratio rather than recomputing, because that view is the crate's only definition of K/D and is what /leaderboards and /users/:id/stats serve. A second query here is exactly how the Deployments page and the Leaderboard come to disagree about one player. Verified the view refreshes on all three write paths.\n  WIN RATE — `command_win_rate` LOOKS like the field you want and is not: its denominator is `count(*) FILTER (WHERE is_command)`, and command_win is a documented tri-state where NULL means 'not a command slot'. A GENERAL win rate is not derivable at all — match_player_stats has no faction column, so matches.winning_faction has nothing per-player to compare against. It served the figure under its real name, because calling it win_rate would **rebuild the same lie out of real numbers**.\n  FAVOURITE WEAPON / ASSET — nothing records them. The only weapon-ish columns platform-wide are a mortar input, what a mission OFFERS, authored intent, and vehicles KILLED. Removed with an assert-absent tripwire, per T-359's precedent.\n\nTHE ZERO CASE: null, never 0.00 — because **0.00 is a measurement claim, which is 2.45 in a quieter voice.** A player with no matches has no MV row, so fetch_optional IS the zero case; a player who has never commanded gets null keyed off command_games IS NULL, since the view flattens that to 0. A measured 0.0 is still sent, so the two stay distinguishable. This deliberately diverges from leaderboards.rs:127-141, which unwrap_or's an all-zero row and cannot tell them apart.\n\nNumbers checked against arithmetic done separately, then re-captured from a real API boot. Golden diffed: exactly six keys added, none removed, NONE CHANGED.\n\nFound in passing: the seed credits the dev admin with total_deployments = 17 while seeding only 2 matches, so the golden reads total_operations 17 beside a K/D spanning 2 matches — a self-contradicting page.",
+      "summary": "deployments.rs:18-23 defines MOCK_KD 2.45, MOCK_WIN_RATE 68% and fake favourite weapon/asset, rendered at :132-133 as live stats. Only total_operations is real.\n\nSHIPPED, and the NEAR-MISS WAS THE TRAP. The four fabricated readouts split three ways:\n  K/D — REAL. It read leaderboard_totals.kd_ratio rather than recomputing, because that view is the crate's only definition of K/D and is what /leaderboards and /users/:id/stats serve. A second query here is exactly how the Deployments page and the Leaderboard come to disagree about one player. Verified the view refreshes on all three write paths.\n  WIN RATE — `command_win_rate` LOOKS like the field you want and is not: its denominator is `count(*) FILTER (WHERE is_command)`, and command_win is a documented tri-state where NULL means 'not a command slot'. A GENERAL win rate is not derivable at all — match_player_stats has no faction column, so matches.winning_faction has nothing per-player to compare against. It served the figure under its real name, because calling it win_rate would **rebuild the same lie out of real numbers**.\n  FAVOURITE WEAPON / ASSET — nothing records them. The only weapon-ish columns platform-wide are a mortar input, what a mission OFFERS, authored intent, and vehicles KILLED. Removed with an assert-absent tripwire, per T-359's precedent.\n\nTHE ZERO CASE: null, never 0.00 — because **0.00 is a measurement claim, which is 2.45 in a quieter voice.** A player with no matches has no MV row, so fetch_optional IS the zero case; a player who has never commanded gets null keyed off command_games IS NULL, since the view flattens that to 0. A measured 0.0 is still sent, so the two stay distinguishable. This deliberately diverges from leaderboards.rs:127-141, which unwrap_or's an all-zero row and cannot tell them apart.\n\nNumbers checked against arithmetic done separately, then re-captured from a real API boot. Golden diffed: exactly six keys added, none removed, NONE CHANGED.\n\nFound in passing: the seed credits the dev admin with total_deployments = 17 while seeding only 2 matches, so the golden reads total_operations 17 beside a K/D spanning 2 matches — a self-contradicting page.\n\n== REVERTED 2026-07-26 AND HANDED BACK: the test fails on a clean database ==\ndeployments_combat.rs:160 — `kills` must always be present — fails on a FRESH ISOLATED database (t233_iso, that binary alone), so it is not T-334's shared-fixture contention. The test and the implementation disagree, even though handlers/deployments.rs:264-267 builds \"kills\" in a json! unconditionally.\nStrong hypothesis for its reported 126/0, from T-235's measurement: the shared CARGO_TARGET_DIR CLOBBERS ARTIFACTS ACROSS WORKTREES, so that run may have used a stale or foreign binary that never contained this test. Filed as T-390. The agent was told to use a private target dir and verify the binary is its own.\nEverything else about the slice stands and I want it back — the command_win_rate naming call, read-the-view-rather-than-recompute, and null-over-0.00.",
       "program": "platform",
       "surfaces": [
         "SHELL"
@@ -7665,7 +7665,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "shipped",
+      "status": "idea",
       "order": 2510,
       "stream": "web-platform",
       "targets": [
@@ -7697,7 +7697,7 @@
     {
       "id": "T-235",
       "title": "Server registry CRUD plus an admin server form",
-      "summary": "No code path anywhere creates a servers row — INSERT INTO servers exists only in three test files. There is no POST/PUT/DELETE route and no seed, so GET /servers returns an empty list on any production database forever.",
+      "summary": "No code path anywhere creates a servers row — INSERT INTO servers exists only in three test files. There is no POST/PUT/DELETE route and no seed, so GET /servers returns an empty list on any production database forever.\n\nSHIPPED. The `app.rs` handoff is EXECUTABLE CODE rather than prose: the two route lines live in misc_integration.rs::servers_crud_registration, which probes first and does not merge once real registration lands, so the handoff cannot drift from what was verified. Plus a T-359-shaped tripwire that fails once with instructions naming the two deletions.\n\nDELETE = is_active = false, decided on measurement: migration 0001 has ZERO foreign keys (confirmed against pg_constraint), so a hard delete strands server_statuses and server_status_histories silently — and ingest_server_status UPSERTs a status row with no existence check on servers, so a deleted-but-still-running server would resurrect an orphan forever.\n\nVALIDATION found something worse than the ticket guessed: required_modpack_id has no FK, so an unknown id stored SILENTLY and the card just lost its modpack panel with nothing complaining. Now a 400. It also caught that `ip` is Postgres `inet`, so a hostname is SQLSTATE 22P02 -> a logged 500, and host('10.0.0.5/24') = 10.0.0.5 — a mask would be accepted then silently altered. Both rejected, and the value re-rendered from IpAddr so the echo matches what is stored. And it fixed a misleading message in its own code: a bad required_modpack_id answered 'name, ip and port are required' — three fields that were all present.\n\n128 passed, 0 skipped, three consecutive runs. It also worked around the dev-login landmine by minting tokens via state.jwt.issue_access rather than logging in, because DEV_USER_ID shares one users row for every role and rewrites its role — which was making a pre-existing test fail intermittently in the same binary.",
       "program": "platform",
       "surfaces": [
         "SHELL"
@@ -7705,13 +7705,14 @@
       "impact": [
         "platform-server"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2530,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "b2a29e43"
     },
     {
       "id": "T-236",
@@ -10436,7 +10437,7 @@
     {
       "id": "T-373",
       "title": "Updating a library faction from a side destroys its emblem and every vehicle label",
-      "summary": "The sharpest finding of the CRDT/round-trip audit. `PUT /factions/:id` is a WHOLE-DOCUMENT replace, and the body handed to it is derived entirely from the mission document with two fields hardcoded to None.\n\nfrontend/src/editor_ops.rs:1589-1605 — `faction_doc_from_side_core` builds a `FactionDoc` with `emblem: None` and `label: None` on every vehicle. frontend/src/orbat_manager.rs:309-327 — the 'Update selected library faction from this side' button PUTs that derived doc, reading the STORED library doc for exactly one field (`name`).\n\nBecause the PUT replaces the whole document and `skip_serializing_if = \"Option::is_none\"` omits the keys:\n  - **the stored emblem is destroyed on every Save**;\n  - **every authored vehicle label in the template is destroyed**;\n  - a role whose slot carries no loadout/tag loses the template's authored loadout for that role;\n  - if the mission's side has no squads or vehicles, `roles: []` / `vehicles: []` ARE serialized (no skip on Vec) and faction-library.schema.json has no `minItems`, so **the entire library faction is emptied** and still validates.\n\nThe sibling path is safe and shows what right looks like: faction_manager.rs:90-121 round-trips the full FactionDoc it loaded at :84-88. And the reverse direction is defended — `apply_faction_library` refuses with WouldCollapseSquads before its first write (doc/apply_faction.rs:211-240, T-217/T-308). So this direction is the only unguarded one.\n\nFIX: read the stored doc and merge, rather than deriving a replacement — or make the endpoint accept a partial. Do NOT simply stop sending the button's data; the feature is legitimate. Note handlers/factions.rs is T-358's this wave (it is fixing the untrimmed name on the same endpoint) — coordinate, and consider whether the endpoint should take an If-Match/ETag, since there is currently no versioning and a stale client write is unrecoverable.\n\n== KEPT IN THE RUN 2026-07-26 while 41 sibling findings were deferred: destroys an authored emblem and every vehicle label on every save. ==",
+      "summary": "The sharpest finding of the CRDT/round-trip audit. `PUT /factions/:id` is a WHOLE-DOCUMENT replace, and the body handed to it is derived entirely from the mission document with two fields hardcoded to None.\n\nfrontend/src/editor_ops.rs:1589-1605 — `faction_doc_from_side_core` builds a `FactionDoc` with `emblem: None` and `label: None` on every vehicle. frontend/src/orbat_manager.rs:309-327 — the 'Update selected library faction from this side' button PUTs that derived doc, reading the STORED library doc for exactly one field (`name`).\n\nBecause the PUT replaces the whole document and `skip_serializing_if = \"Option::is_none\"` omits the keys:\n  - **the stored emblem is destroyed on every Save**;\n  - **every authored vehicle label in the template is destroyed**;\n  - a role whose slot carries no loadout/tag loses the template's authored loadout for that role;\n  - if the mission's side has no squads or vehicles, `roles: []` / `vehicles: []` ARE serialized (no skip on Vec) and faction-library.schema.json has no `minItems`, so **the entire library faction is emptied** and still validates.\n\nThe sibling path is safe and shows what right looks like: faction_manager.rs:90-121 round-trips the full FactionDoc it loaded at :84-88. And the reverse direction is defended — `apply_faction_library` refuses with WouldCollapseSquads before its first write (doc/apply_faction.rs:211-240, T-217/T-308). So this direction is the only unguarded one.\n\nFIX: read the stored doc and merge, rather than deriving a replacement — or make the endpoint accept a partial. Do NOT simply stop sending the button's data; the feature is legitimate. Note handlers/factions.rs is T-358's this wave (it is fixing the untrimmed name on the same endpoint) — coordinate, and consider whether the endpoint should take an If-Match/ETag, since there is currently no versioning and a stale client write is unrecoverable.\n\n== KEPT IN THE RUN 2026-07-26 while 41 sibling findings were deferred: destroys an authored emblem and every vehicle label on every save. ==\n\nSHIPPED, and it was LIVE data loss rather than a latent contract issue. Two of the operator's three real user_factions rows carry an emblem and all three of their vehicles are labelled — `US Army — Light Infantry` (emblem, 2/2 labelled, 4 roles) and `USSR — Motor Rifle` (emblem, 1/1 labelled, 2 roles). One press on either destroyed all of it, 200 OK. Reproduced with a sentinel emblem and sentinel labels; read the operator's rows with SELECTs only, still 3 and unmutated.\n\nTHE LINE IT DREW: derive every field the ORBAT can express; preserve the ones it cannot. And it DISAGREED WITH MY FRAMING on one of them, correctly — I listed a role losing its authored loadout as part of the bug. It is not: role/tag/character/loadout all live on the slot, Apply writes them there, and the Arsenal edits them, so a role that comes back without a loadout GENUINELY HAS NONE. Back-filling it would have made 'clear this role's loadout' impossible through the only UI that can do it. Its formulation is the one to keep: **preserving what CAN be authored elsewhere is a different act from preserving what can never be authored here.** emblem (nothing in MissionDocCore stores one) and vehicles[].label (apply_faction.rs:358 discards it — 'label is UI-only; resourceName is the graph pin') are preserved; labels re-paired by resourceName in stored order so duplicate vehicles keep distinct ones.\n\nTHE EMPTY SIDE is refused before any request, and scoped deliberately to a NO-CONTENT write rather than to any list shrinking to zero — a vehicle-only motor-pool template is legitimate. A write that merely SHRINKS now confirms, mirroring APPLY TEMPLATE, which has confirmed since T-180.8 while this direction replaced a whole document silently.\n\n20/20 assertions driving the REAL button in headless Chrome, every verdict read back out of the stored document over HTTP, and each assertValue read by hand rather than trusting an exit code (T-386). Two probe traps recorded: `document.querySelector('select')` and `button[aria-label=\"OPFOR\"]` are both AMBIGUOUS in the editor — the Eden top strip carries its own selects and its own faction chips and wins document order, so both silently drove the wrong widget.\n\nWorth knowing: NO UI AUTHORS AN EMBLEM TODAY — it appears nowhere in the frontend except dto.rs:583 and the schema calls it 'UI later'. So it is populated only by seeds and direct writes, yet two live rows carry one, which is exactly why the loss was silent and would have stayed unnoticed.",
       "program": "platform",
       "surfaces": [
         "FRONTEND",
@@ -10445,14 +10446,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3189,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 0
+      "priority": 0,
+      "shipped_at": "b2a29e43"
     },
     {
       "id": "T-374",
@@ -10779,6 +10781,26 @@
       ],
       "executor": "claude-code",
       "priority": 1
+    },
+    {
+      "id": "T-390",
+      "title": "The shared cargo target dir clobbers artifacts across worktrees, so the gate can pass on code it never compiled",
+      "summary": "FIFTH INSTANCE OF THIS RUN'S SIGNATURE DEFECT, found by T-235, and it is in the gate I fixed four hours ago. **`gate_test_api` runs `cargo test -p website-api` to clear a slice, so the gate can pass on code it never compiled.**\n\nT-235 measured it three ways rather than inferring:\n  its test binary ran ANOTHER WORKTREE'S 4-test build, twice — stable hash 992bb2696cb1aebe with changing contents;\n  target/debug/api changed size underneath it with its own source unchanged;\n  a compile FAILED against a stale rlib, then succeeded on retry with no edit.\n\nThis is the same shape as the two failures wave.sh's own header documents (T-193 and T-195 each proved `cargo test -p website-frontend` ran another worktree's binary, which is why the frontend test step already has a private target dir). The API test step never got the same treatment.\n\n**It probably explains T-233's reverted slice**: that agent reported 126 passed / 0 failed, and its test fails on a clean database on main. A stale or foreign binary that never contained the test would produce exactly that.\n\nFIX: give `gate_test_api` its own CARGO_TARGET_DIR, the way the frontend test step and the trunk step already do (`target-gate-frontend`, `target-gate-trunk`). Consider whether every gate step should, since `cargo check --workspace` and the clippy steps share the same dir and the same hazard. Weigh the cost: T-322 measured a cold `--bin api` build at 25s / 322 crates and 2.1 GB, and disk has been tight (/var hit 100% during this run).\n\nALSO WORTH FIXING IN THE SAME PASS, from T-235: slice agents are told to use private target dirs but nothing enforces it, and several were caught by the wasm version of this trap and had to grep the built artifact for their own new strings to notice. A gate step that verifies the binary it is about to run is the one it just built would close the class rather than one instance.",
+      "program": "platform",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3206,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
     }
   ]
 }
