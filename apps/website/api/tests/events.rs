@@ -15,6 +15,9 @@ use website_api::state::AppState;
 use website_api::{app, db};
 
 const OTHER: &str = "000000000000000002";
+/// A third seeded identity — the one that must stay on the waitlist while someone else
+/// moves between seats (T-324).
+const THIRD: &str = "000000000000000003";
 /// The identity `dev-login` mints for every role (`handlers::dev::DEV_USER_ID`).
 const DEV_USER: &str = "000000000000000001";
 
@@ -445,13 +448,30 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
         "explicit empty slot_id is the bench registration"
     );
 
-    // ── Part 2: withdraw frees the seat through `assigned_to`, not `slot_id` ─
-    // That bench registration just reproduced the orphan *shape* — claim held, registration
-    // blank. Pre-T-318 this was terminal; withdraw skipped it and then deleted the row.
+    // T-324: that request also stands the seat down now. It used to be the orphan factory —
+    // registration blanked, `assigned_to` left naming the caller — which is what made it the
+    // convenient way to reproduce the shape below.
     assert!(
         reg_slot(&emid).await.unwrap().is_none(),
         "registration blank"
     );
+    assert_eq!(
+        seat(&slot0).await,
+        None,
+        "a bench registration gives the seat up rather than stranding it"
+    );
+
+    // ── Part 2: withdraw frees the seat through `assigned_to`, not `slot_id` ─
+    // The orphan shape — claim held, registration blank — is no longer reachable through the
+    // API, so seed it. Rows in this state exist from before both fixes and have to stay
+    // recoverable by their occupant; pre-T-318 this was terminal, because withdraw looked the
+    // seat up through the column that was blank and then deleted the row anyway.
+    sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
+        .bind(DEV_USER)
+        .bind(slot0.parse::<uuid::Uuid>().unwrap())
+        .execute(&pool)
+        .await
+        .unwrap();
     assert_eq!(seat(&slot0).await.as_deref(), Some(DEV_USER), "seat held");
     assert_eq!(withdraw(&emid).await, StatusCode::OK);
     assert_eq!(seat(&slot0).await, None, "withdraw must free the orphan");
@@ -504,16 +524,20 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
     // not who is allowed to call it or what it reports when there is nothing to do.
     assert_eq!(withdraw(&emid).await, StatusCode::NOT_FOUND);
 
-    // Seat-switching double-claims on the register side (a known, separate defect: the upsert
-    // never releases the seat it is moving off). Withdraw must clean up *all* of it.
+    // Multi-seat cleanup. When T-318 was written, `register` itself could put the caller in this
+    // state — claim slot0, claim slot1, hold both — and this block asserted `held == 2` as a
+    // known defect. T-324 closed that door (see `register_moves_the_caller_s_seat`), so the only
+    // remaining source is rows minted before the fix. Those still exist in the wild, so the
+    // recovery path stays under test: the state is now seeded directly rather than provoked, and
+    // withdraw must still free *every* seat the caller holds, not just the one their registration
+    // names.
     assert_eq!(register(&emid, Some(&claim)).await, StatusCode::OK);
-    let claim1 = format!(r#"{{"slot_id":"{slot1}"}}"#);
-    sqlx::query("UPDATE orbat_slots SET assigned_to = NULL, assigned_at = NULL WHERE id = $1")
+    sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
+        .bind(DEV_USER)
         .bind(slot1.parse::<uuid::Uuid>().unwrap())
         .execute(&pool)
         .await
         .unwrap();
-    assert_eq!(register(&emid, Some(&claim1)).await, StatusCode::OK);
     let held: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM orbat_slots WHERE event_mission_id = $1 AND assigned_to = $2",
     )
@@ -522,10 +546,7 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(
-        held, 2,
-        "register leaves the previous seat claimed (T-318 follow-up)"
-    );
+    assert_eq!(held, 2, "legacy two-seat state seeded");
     assert_eq!(withdraw(&emid).await, StatusCode::OK);
     let held: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM orbat_slots WHERE event_mission_id = $1 AND assigned_to = $2",
@@ -538,5 +559,401 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
     assert_eq!(
         held, 0,
         "withdraw must free every seat the caller holds here"
+    );
+}
+
+/// T-324 — two factions fielding a squad of the same name must render as two cards.
+///
+/// `get_orbat` grouped on the squad NAME alone, so a same-named squad in a second faction was
+/// folded into the first faction's card: one card, the first faction's label, both factions' slots
+/// in it, and the second faction absent from the response entirely — its seats could not be seen
+/// or picked. Grouping is now keyed on `(faction, squad)`.
+///
+/// The collision is mostly hidden today because `idx_orbat_slot` is unique on
+/// `(event_mission_id, squad, slot_index)`, so attaching two same-named squads that both start at
+/// slot 0 fails on duplicate key first. It is only *mostly* hidden: non-overlapping slot indices
+/// collide on the name without colliding on the index, which is what this test seeds — so the bug
+/// is reachable now, and stays reachable when that index widens to include `faction`.
+#[tokio::test]
+async fn orbat_groups_by_faction_and_squad() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = token(&app, "admin").await;
+    let (_, m) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        &admin,
+        Some(r#"{"title":"T-324 Factions","terrain":"everon","game_mode":"pve_coop","max_players":16}"#),
+    )
+    .await;
+    let mission_id = m["id"].as_str().unwrap().to_string();
+    let (_, e) = call(
+        &app,
+        "POST",
+        "/api/v1/events",
+        &admin,
+        Some(r#"{"start_time":"2027-07-01T00:00:00Z"}"#),
+    )
+    .await;
+    let event_id = e["id"].as_str().unwrap().to_string();
+    let (st, em) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/events/{event_id}/missions"),
+        &admin,
+        Some(&format!(
+            r#"{{"mission_id":"{mission_id}","start_time":"2027-07-01T00:00:00Z","orbat":[{{"faction":"BLUFOR","callsign":"ALPHA","squad":"Alpha 1-1","slots":[{{"role":"SL"}},{{"role":"RTO"}}]}}]}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "attach: {em}");
+    let emid = em["id"].as_str().unwrap().to_string();
+
+    // The same squad NAME under a second faction. Seeded, because `materialize_slots` numbers
+    // each squad from 0 and the current unique index rejects the second one at that number —
+    // indices 2 and 3 collide on the name only, which is the case under test.
+    sqlx::query(
+        "INSERT INTO orbat_slots (event_mission_id, faction, squad, callsign, role, slot_index) \
+         VALUES ($1, 'OPFOR', 'Alpha 1-1', 'GHOST', 'Team Leader', 2), \
+                ($1, 'OPFOR', 'Alpha 1-1', 'GHOST', 'Marksman', 3)",
+    )
+    .bind(emid.parse::<uuid::Uuid>().unwrap())
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let (st, o) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/event-missions/{emid}/orbat"),
+        &admin,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    let cards = o["data"].as_array().unwrap();
+    assert_eq!(
+        cards.len(),
+        2,
+        "one card per (faction, squad) — pre-fix this was 1 and OPFOR was gone: {o}"
+    );
+    assert_eq!(cards[0]["faction"], "BLUFOR");
+    assert_eq!(cards[0]["squad"], "Alpha 1-1");
+    assert_eq!(
+        cards[0]["total"], 2,
+        "and does not absorb the other faction"
+    );
+    assert_eq!(cards[1]["faction"], "OPFOR");
+    assert_eq!(cards[1]["squad"], "Alpha 1-1");
+    assert_eq!(cards[1]["total"], 2);
+    assert_eq!(
+        cards[1]["slots"][0]["role"], "Team Leader",
+        "OPFOR's own slots, not a duplicate of BLUFOR's"
+    );
+}
+
+/// T-324 — a second claim MOVES the caller's seat; it does not mint a second one.
+///
+/// The bug T-318 measured and left standing: claim slot0, claim slot1, both requests entirely
+/// valid and both 200, and the caller ends up holding two `orbat_slots` rows while their single
+/// `event_registrations` row names one. Measured against the pre-fix binary over real HTTP, a
+/// 2-slot ORBAT then reported `filled: 2, registered: 1` — an operation that reads FULL with one
+/// person signed up, and stays that way until someone withdraws.
+///
+/// The invariant under test is one seat per caller per event-mission, and that it is the seat the
+/// registration names. Everything else here is a bound on the release: it must not reach another
+/// user's seat, another operation's seat, or the waitlist.
+#[tokio::test]
+async fn register_moves_the_caller_s_seat() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = token(&app, "admin").await;
+    for id in [OTHER, THIRD] {
+        // `arma_id` carries its own unique index, so seeded users cannot all share the empty
+        // string the way one of them can.
+        sqlx::query(
+            "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+             VALUES ($1, 'Seeded', 'seeded', '', $2, '', 'enlisted', false, '', now(), now()) ON CONFLICT (discord_id) DO NOTHING",
+        )
+        .bind(id)
+        .bind(format!("t324-{id}"))
+        .execute(&pool)
+        .await
+        .unwrap();
+    }
+
+    // The operation under test (3 slots), plus a second one the release must never reach.
+    let mk_em = async |title: &str, squad: &str, slots: &str| -> String {
+        let (_, m) = call(
+            &app,
+            "POST",
+            "/api/v1/missions",
+            &admin,
+            Some(&format!(
+                r#"{{"title":"{title}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+            )),
+        )
+        .await;
+        let mission_id = m["id"].as_str().unwrap().to_string();
+        let (_, e) = call(
+            &app,
+            "POST",
+            "/api/v1/events",
+            &admin,
+            Some(r#"{"start_time":"2027-06-01T00:00:00Z"}"#),
+        )
+        .await;
+        let event_id = e["id"].as_str().unwrap().to_string();
+        let (st, em) = call(
+            &app,
+            "POST",
+            &format!("/api/v1/events/{event_id}/missions"),
+            &admin,
+            Some(&format!(
+                r#"{{"mission_id":"{mission_id}","start_time":"2027-06-01T00:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"{squad}","slots":[{slots}]}}]}}"#
+            )),
+        )
+        .await;
+        assert_eq!(st, StatusCode::CREATED, "attach: {em}");
+        em["id"].as_str().unwrap().to_string()
+    };
+    let ids = async |em: &str| -> Vec<String> {
+        let (_, o) = call(
+            &app,
+            "GET",
+            &format!("/api/v1/event-missions/{em}/orbat"),
+            &admin,
+            None,
+        )
+        .await;
+        o["data"][0]["slots"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|s| s["id"].as_str().unwrap().to_string())
+            .collect()
+    };
+    let emid = mk_em(
+        "T-324 Op",
+        "Alpha",
+        r#"{"role":"SL"},{"role":"RTO"},{"role":"AR"}"#,
+    )
+    .await;
+    let other_emid = mk_em("T-324 Op B", "Bravo", r#"{"role":"SL"}"#).await;
+    let slots = ids(&emid).await;
+    let (slot0, slot1, slot2) = (slots[0].clone(), slots[1].clone(), slots[2].clone());
+    let far_slot = ids(&other_emid).await[0].clone();
+
+    let uid = |s: &str| s.parse::<uuid::Uuid>().unwrap();
+    let seat = async |id: &str| -> Option<String> {
+        sqlx::query_scalar::<_, Option<String>>("SELECT assigned_to FROM orbat_slots WHERE id = $1")
+            .bind(uid(id))
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+    };
+    let seat_ts = async |id: &str| -> bool {
+        sqlx::query_scalar::<_, bool>(
+            "SELECT assigned_at IS NOT NULL FROM orbat_slots WHERE id = $1",
+        )
+        .bind(uid(id))
+        .fetch_one(&pool)
+        .await
+        .unwrap()
+    };
+    let held = async |em: &str, who: &str| -> i64 {
+        sqlx::query_scalar(
+            "SELECT count(*) FROM orbat_slots WHERE event_mission_id = $1 AND assigned_to = $2",
+        )
+        .bind(uid(em))
+        .bind(who)
+        .fetch_one(&pool)
+        .await
+        .unwrap()
+    };
+    let reg = async |em: &str, who: &str| -> Option<(Option<uuid::Uuid>, String)> {
+        sqlx::query_as::<_, (Option<uuid::Uuid>, String)>(
+            "SELECT slot_id, state::text FROM event_registrations WHERE event_mission_id = $1 AND discord_id = $2",
+        )
+        .bind(uid(em))
+        .bind(who)
+        .fetch_optional(&pool)
+        .await
+        .unwrap()
+    };
+    let register = async |em: &str, body: &str| -> StatusCode {
+        call(
+            &app,
+            "POST",
+            &format!("/api/v1/event-missions/{em}/register"),
+            &admin,
+            Some(body),
+        )
+        .await
+        .0
+    };
+    let withdraw = async |em: &str| -> StatusCode {
+        call(
+            &app,
+            "DELETE",
+            &format!("/api/v1/event-missions/{em}/register"),
+            &admin,
+            None,
+        )
+        .await
+        .0
+    };
+
+    // Two bystanders seeded directly (dev-login mints one identity): one holding a seat in the
+    // same squad, one waiting.
+    sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
+        .bind(OTHER)
+        .bind(uid(&slot2))
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, state) VALUES ($1, $2, $3, 'registered')",
+    )
+    .bind(uid(&emid))
+    .bind(OTHER)
+    .bind(uid(&slot2))
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, state) VALUES ($1, $2, NULL, 'waitlisted')",
+    )
+    .bind(uid(&emid))
+    .bind(THIRD)
+    .execute(&pool)
+    .await
+    .unwrap();
+    // And a seat for the caller in a different operation, which is not this request's business.
+    assert_eq!(
+        register(&other_emid, &format!(r#"{{"slot_id":"{far_slot}"}}"#)).await,
+        StatusCode::OK
+    );
+
+    // ── The move ────────────────────────────────────────────────────────────
+    assert_eq!(
+        register(&emid, &format!(r#"{{"slot_id":"{slot0}"}}"#)).await,
+        StatusCode::OK
+    );
+    assert_eq!(seat(&slot0).await.as_deref(), Some(DEV_USER));
+    assert_eq!(
+        register(&emid, &format!(r#"{{"slot_id":"{slot0}"}}"#)).await,
+        StatusCode::OK,
+        "re-claiming the seat you already hold is still idempotent"
+    );
+    assert_eq!(held(&emid, DEV_USER).await, 1, "and does not duplicate it");
+
+    assert_eq!(
+        register(&emid, &format!(r#"{{"slot_id":"{slot1}"}}"#)).await,
+        StatusCode::OK
+    );
+    // This is the whole ticket: pre-fix, `held` was 2 here and slot0 still named the caller.
+    assert_eq!(held(&emid, DEV_USER).await, 1, "one seat, not two");
+    assert_eq!(seat(&slot0).await, None, "the seat moved off must be free");
+    assert!(
+        !seat_ts(&slot0).await,
+        "and its assigned_at cleared with it"
+    );
+    assert_eq!(seat(&slot1).await.as_deref(), Some(DEV_USER));
+    assert_eq!(
+        reg(&emid, DEV_USER).await,
+        Some((Some(uid(&slot1)), "registered".into())),
+        "the registration names the seat that is actually held"
+    );
+
+    // ── Bounds on the release ───────────────────────────────────────────────
+    assert_eq!(
+        seat(&slot2).await.as_deref(),
+        Some(OTHER),
+        "another user's seat in the same operation is untouched"
+    );
+    assert_eq!(
+        seat(&far_slot).await.as_deref(),
+        Some(DEV_USER),
+        "the caller's seat in a different operation is untouched"
+    );
+    assert_eq!(
+        reg(&emid, THIRD).await.unwrap().1,
+        "waitlisted",
+        "moving between seats must not promote — the caller never left"
+    );
+    assert_eq!(
+        reg(&emid, OTHER).await.unwrap().1,
+        "registered",
+        "and must not disturb anyone else's registration"
+    );
+
+    // ── The bench branch gives the seat up rather than orphaning it ─────────
+    // `{"slot_id":""}` nulls the registration's `slot_id` by design, so leaving `assigned_to`
+    // set is exactly the T-318 orphan. It is now the one thing a valid request cannot produce.
+    assert_eq!(register(&emid, r#"{"slot_id":""}"#).await, StatusCode::OK);
+    assert_eq!(held(&emid, DEV_USER).await, 0, "benched holds no seat");
+    assert_eq!(
+        reg(&emid, DEV_USER).await,
+        Some((None, "registered".into())),
+        "still registered, just without a seat"
+    );
+    assert_eq!(
+        reg(&emid, THIRD).await.unwrap().1,
+        "waitlisted",
+        "standing down from a seat is not a departure either"
+    );
+
+    // ── A leader assignment is a seat move too ──────────────────────────────
+    // Same defect, different door: `assign_slot` claimed the new seat and left the old one.
+    sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
+        .bind(THIRD)
+        .bind(uid(&slot0))
+        .execute(&pool)
+        .await
+        .unwrap();
+    let (st, a) = call(
+        &app,
+        "PUT",
+        &format!("/api/v1/event-missions/{emid}/slots/{slot1}/assign"),
+        &admin,
+        Some(&format!(r#"{{"discord_id":"{THIRD}"}}"#)),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "assign: {a}");
+    assert_eq!(held(&emid, THIRD).await, 1, "assigned one seat, not two");
+    assert_eq!(seat(&slot0).await, None);
+    assert_eq!(seat(&slot1).await.as_deref(), Some(THIRD));
+
+    // ── Withdrawal is still the thing that promotes ─────────────────────────
+    // The contrast that makes the "no promotion" decision above meaningful: when the caller
+    // actually leaves, the registered head-count drops and the waitlist moves. `assign_slot`
+    // just registered THIRD, so seed a fresh waitlister to be promoted.
+    sqlx::query("UPDATE event_registrations SET state = 'waitlisted', slot_id = NULL WHERE event_mission_id = $1 AND discord_id = $2")
+        .bind(uid(&emid))
+        .bind(OTHER)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("UPDATE orbat_slots SET assigned_to = NULL, assigned_at = NULL WHERE id = $1")
+        .bind(uid(&slot2))
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(withdraw(&emid).await, StatusCode::OK);
+    assert_eq!(
+        reg(&emid, OTHER).await.unwrap().1,
+        "registered",
+        "a real withdrawal still promotes the oldest waitlisted"
+    );
+    assert_eq!(
+        seat(&far_slot).await.as_deref(),
+        Some(DEV_USER),
+        "and still does not reach another operation"
     );
 }
