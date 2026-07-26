@@ -9064,7 +9064,7 @@
     {
       "id": "T-307",
       "title": "GET /events/:id 500s on a NULL mission briefing and takes the Event Hub down",
-      "summary": "Found by T-194 while seeding the content golden. The dossier lookup in handlers/events.rs get_event is the one mission query in that file that does not COALESCE the nullable briefing/thumbnail_url, so a NULL decodes into String and the whole endpoint fails: 'error occurred while decoding column 3: unexpected null'. That is the entire Event Hub, not one card. The API's own create path always writes '', so only seeded rows or hand-written SQL reach it — which is exactly what a fresh environment or a restored backup looks like. T-194's seed writes '' to match the API and documents the workaround at the point of use; the handler is still wrong.",
+      "summary": "Found by T-194 while seeding the content golden. The dossier lookup in handlers/events.rs get_event is the one mission query in that file that does not COALESCE the nullable briefing/thumbnail_url, so a NULL decodes into String and the whole endpoint fails: 'error occurred while decoding column 3: unexpected null'. That is the entire Event Hub, not one card. The API's own create path always writes '', so only seeded rows or hand-written SQL reach it — which is exactly what a fresh environment or a restored backup looks like. T-194's seed writes '' to match the API and documents the workaround at the point of use; the handler is still wrong.\n\nINDEPENDENTLY REPRODUCED 2026-07-26 by T-325's sweep, which reached it from the other direction (nullable column vs non-Option model). Captured error at handlers/events.rs:832: `decoding column 3` (= briefing). Latent on the operator's DB because `missions` has no NULLs there — BUT `seeds/mock_data.sql:25` omits `thumbnail_url` from its INSERT column list, so ANY freshly-seeded database reproduces it. That is why it looked unreachable and is not.",
       "program": "platform",
       "surfaces": [
         "DATA"
@@ -9431,7 +9431,7 @@
     {
       "id": "T-325",
       "title": "Two telemetry models are non-Option String over nullable columns",
-      "summary": "FOUND by T-316, reported not fixed — `models/` was not in its owns list.\n\n`models::Match.winning_faction` and `MatchPlayerStat.role_played` are declared as plain `String` but their DB columns are NULLABLE. Any writer that puts a real NULL in either column breaks the READ path — the row fails to decode and the endpoint 500s.\n\nNothing hits it today only because T-316 deliberately kept writing `''` on insert to avoid tripping it. That is a landmine held down by one handler's politeness: the next writer, migration backfill, or manual DB fix that leaves a genuine NULL takes out the read path.\n\nThis is the same class as T-306 (server_fps f64-on-wire vs i64-in-DTO blanking the whole Server Intel page) — a type that disagrees with its column, discovered only when something finally produces the value the type cannot hold. Fix: make both `Option<String>` and handle None at the read sites, or make the columns NOT NULL with a default. Check which the data actually wants before choosing — a match with no winner is a real state, so Option is probably right for winning_faction.",
+      "summary": "PREMISE FALSE — the agent refused the stated fix and was right. Kept in full because the wrong version was mine.\n\nI claimed a NULL in matches.winning_faction or match_player_stats.role_played would 500 the read path, held safe only by T-316 politely writing ''. Measured: `GET /api/v1/me/deployments` returns **200**. The only read of either struct — deployments.rs:127 and :134 — already COALESCEs both columns (plus aar_replay_url and created_at). The safety was never on the write side; it is in the query. Stronger: the operator's live DB ALREADY HOLDS a real NULL in matches.winning_faction (rf-match-20260726-01, outcome pending) plus two NULL aar_replay_urls, and has been serving 200 the whole time.\n\nThe mismatch is nonetheless real — dropping the COALESCE in a probe against those same rows gives `unexpected null; try decoding as an Option` for both columns. But Option<String> is the WRONG fix, and this is the durable part: the wire cannot express the distinction it would add. `skip_serializing_if = \"String::is_empty\"` already omits the key for \"\", byte-identically to an omitted None, so None and \"\" would be two encodings of one state. The committed golden GET__me__deployments.json proves it — its first record came from a row whose aar_replay_url IS NULL and the golden simply lacks the key. \"No winner\" is also already carried by `outcome`, and T-316 designated \"\" as the clear-the-winner re-adjudication signal.\n\nCorrect fix is at the schema (NOT NULL DEFAULT '' after a backfill), which is T-228's directory — handed to it. What shipped here is comment-only: the invariant, the measured evidence and the rejected alternative, recorded in models/telemetry.rs where the next person writes a read query. No type, no serde attribute, no wire byte changed.\n\nTHE REAL PAYLOAD was the sweep: three genuine 500s elsewhere in the same class, all captured live — T-329 (dashboard, FIRING IN PRODUCTION for two real users), T-307 (events briefing, reachable from any fresh seed), T-330 (approvals updated_at, latent). And tests/null_tolerance.rs, which exists for exactly this class, misses all three.",
       "program": "platform",
       "surfaces": [
         "API",
@@ -9440,14 +9440,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3141,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 2
+      "priority": 2,
+      "shipped_at": "2bd4d748"
     },
     {
       "id": "T-326",
@@ -9503,6 +9504,46 @@
       ],
       "status": "idea",
       "order": 3144,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-329",
+      "title": "GET /api/v1/dashboard 500s in production for two real users",
+      "summary": "FIRING RIGHT NOW ON LIVE DATA. Found by T-325's sweep and captured, not inferred:\n  `error occurred while decoding column \"callsign\": unexpected null`\n\nhandlers/dashboard.rs:101 does `SELECT orbat_slots.*`. It is the ONLY one of six OrbatSlot read sites that uses a bare `*` instead of the coalescing column list — the other five, e.g. deployments.rs:103, spell the columns out and COALESCE the nullable ones.\n\nIn the operator's `tbd_reforger` today: 9 of 16 orbat_slots rows carry a NULL in callsign/loadout/tag, and TWO of those have `assigned_to` set. So GET /api/v1/dashboard 500s right now for discord_ids ...002 and ...005. The dashboard is the landing page after login.\n\nFix is small: copy the coalescing column list from deployments.rs:103. Do NOT 'fix' it by making the model fields Option — T-325 established why that is wrong (the wire cannot express the distinction; `skip_serializing_if = String::is_empty` already omits the key, so None and \"\" would be two encodings of one state, and the committed goldens depend on the current shape).\n\nALSO IN SCOPE, because it is the reason this survived: tests/null_tolerance.rs is a purpose-built regression suite for exactly this bug class and MISSES all three instances T-325 found. It also never touches `matches` or `match_player_stats` at all. Extend it so this class cannot recur silently — that is worth more than the one-line query fix.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3145,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-330",
+      "title": "GET /api/v1/approvals 500s on a NULL mission updated_at",
+      "summary": "FOUND by T-325's sweep, captured not inferred: `error occurred while decoding column \"updated_at\": unexpected null` from handlers/approvals.rs:55, which selects a bare `m.updated_at` where the sibling read sites COALESCE.\n\nLatent on the operator's data today — `missions` has no NULL updated_at there — but it is the same defect as T-329 (live) and T-307 (reachable from any fresh seed), and 'latent' here means 'nothing has written that value yet', not 'cannot happen'.\n\nSame fix shape as T-329: COALESCE at the query, not Option on the model. See T-325's reasoning recorded in models/telemetry.rs for why the model-level change is wrong.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3146,
       "stream": "web-platform",
       "targets": [
         "website"

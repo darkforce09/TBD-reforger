@@ -32,6 +32,8 @@
 0	T-225	Event state machine and lifecycle automation	apps/website/api/src/handlers/events.rs
 0	T-205	Vehicle data has no seats, crew roles, cargo capacity or turret bindings	apps/website/frontend/src/vehicles.rs
 0	T-206	Item data is 78% empty	packages/tbd-schema/registry/registry-items.workbench.json
+1	T-329	GET /api/v1/dashboard 500s in production for two real users	apps/website/api/src/handlers/dashboard.rs; apps/website/api/tests/null_tolerance.rs
+1	T-330	GET /api/v1/approvals 500s on a NULL mission updated_at	apps/website/api/src/handlers/approvals.rs
 1	T-328	mcpd runs long-lived from the shared target dir	scripts/mod/mcp-daemon.sh
 1	T-326	Matches played before an identity link never backfill, so deployments undercount	apps/website/api/src/handlers/me.rs
 1	T-325	Two telemetry models are non-Option String over nullable columns	apps/website/api/src/models/telemetry.rs
