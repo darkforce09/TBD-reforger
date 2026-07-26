@@ -9,6 +9,9 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-270** (2880) — Wire the Server Control page — ten dead controls [ready] — server_control.rs is 312 lines with zero on: handlers, and selected is bound to MOCK_SERVERS[0] as a compile-time constant. Restart, Stop, Launch, four Quick Actions, the RCON input and send are all inert, and there is no Start control at all. The console renders a fabricated log including a fake RCON listener line.
+- **T-272** (2900) — Server-status producer — close the SSE loop [ready] — The whole SSE chain is built (realtime.rs hub, the stream route, sse.rs client) but the only publisher is inside POST /ingest/server-status, and nothing calls it. The stream connects, flips connected=true and delivers zero frames forever.
+- **T-273** (2910) — schema.json is a month stale and would now reject nearly every ticket [ready] — Last touched 2026-06-26; it predates slice_plan.status, notes and shipped_at, so additionalProperties:false would reject most current tickets. Regenerate it from the registry's actual shape.
 
 ## Next queued (top 10)
 
