@@ -566,7 +566,7 @@ async fn armory_survives_a_body_that_never_mentions_it() {
     );
     assert_eq!(
         json(&b)["error"],
-        "items is required, and every item needs an item_name"
+        "items is required, and every item needs a faction and an item_name"
     );
     assert_eq!(armory_len(&app, &url, t).await, 4, "`{{}}` kept the rows");
 
@@ -642,8 +642,9 @@ async fn armory_item_without_a_name_is_refused_before_the_delete() {
     let t = tok.as_str();
     let (_, url) = mission_with_armory(&app, t).await;
 
-    // An item with no fields at all now fails to decode — `item_name` is required at the type
-    // level — so this one is caught by the extractor, not the positional guard below.
+    // An item with no fields at all now fails to decode — `item_name` and, since T-346, `faction`
+    // are both required at the type level — so this one is caught by the extractor, not the
+    // positional guard below.
     let (st, b) = call(&app, "PUT", &url, Some(t), None, Some(r#"{"items":[{}]}"#)).await;
     assert_eq!(
         st,
@@ -653,7 +654,7 @@ async fn armory_item_without_a_name_is_refused_before_the_delete() {
     );
     assert_eq!(
         json(&b)["error"],
-        "items is required, and every item needs an item_name"
+        "items is required, and every item needs a faction and an item_name"
     );
     assert_eq!(armory_len(&app, &url, t).await, 4, "rows untouched");
 
@@ -691,4 +692,211 @@ async fn enlisted_cannot_create_mission() {
     )
     .await;
     assert_eq!(st, StatusCode::FORBIDDEN);
+}
+
+/// Replay of the Event Hub's own resolution, so the T-346 test below measures **what a player
+/// sees** rather than what the column happens to hold.
+///
+/// `event_hub.rs:294-302` picks the faction list the dossier renders — the mission's `orbat_slots`
+/// factions, falling back to the armory's own keys only when that list is empty — and `:412-418`
+/// then fills each card by `find`ing the armory group whose `faction` is **byte-equal** to it.
+/// Returns `(faction, items_that_card_renders)` per card.
+fn event_hub_cards(dossier: &Value) -> Vec<(String, usize)> {
+    let armory = dossier["armory_by_faction"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    let listed: Vec<String> = dossier["factions"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+        .iter()
+        .map(|f| f.as_str().unwrap_or_default().to_string())
+        .collect();
+    let faction_list: Vec<String> = if listed.is_empty() {
+        armory
+            .iter()
+            .map(|g| g["faction"].as_str().unwrap_or_default().to_string())
+            .collect()
+    } else {
+        listed
+    };
+    faction_list
+        .into_iter()
+        .map(|f| {
+            let rendered = armory
+                .iter()
+                .find(|g| g["faction"].as_str() == Some(f.as_str()))
+                .and_then(|g| g["items"].as_array())
+                .map(|i| i.len())
+                .unwrap_or(0);
+            (f, rendered)
+        })
+        .collect()
+}
+
+/// The seeded mission attached to a fresh event under an ORBAT that declares `faction`. That ORBAT
+/// is what puts `faction` into the dossier's `factions` list (`events.rs:894` reads `orbat_slots`),
+/// which is what makes it the join key. Returns `(armory_url, event_id)`.
+async fn mission_in_event_with_orbat_faction(
+    app: &Router,
+    t: &str,
+    faction: &str,
+) -> (String, String) {
+    let (mid, url) = mission_with_armory(app, t).await;
+    let (_, b) = call(
+        app,
+        "POST",
+        "/api/v1/events",
+        Some(t),
+        None,
+        Some(r#"{"start_time":"2027-07-01T00:00:00Z"}"#),
+    )
+    .await;
+    let eid = b_id(&b);
+    let attach = format!(
+        r#"{{"mission_id":"{mid}","start_time":"2027-07-01T00:00:00Z","orbat":[{{"faction":"{faction}","callsign":"ALPHA","squad":"Alpha 1-1","slots":[{{"role":"SL"}},{{"role":"RTO"}}]}}]}}"#
+    );
+    let (st, b) = call(
+        app,
+        "POST",
+        &format!("/api/v1/events/{eid}/missions"),
+        Some(t),
+        None,
+        Some(&attach),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CREATED,
+        "attach: {}",
+        String::from_utf8_lossy(&b)
+    );
+    (url, eid)
+}
+
+fn b_id(bytes: &[u8]) -> String {
+    json(bytes)["id"].as_str().unwrap().to_string()
+}
+
+/// The single mission dossier of a one-mission event.
+async fn dossier(app: &Router, eid: &str, t: &str) -> Value {
+    let (st, b) = call(
+        app,
+        "GET",
+        &format!("/api/v1/events/{eid}"),
+        Some(t),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "hub: {}", String::from_utf8_lossy(&b));
+    json(&b)["missions"][0].clone()
+}
+
+/// T-346 — `faction` is the Event Hub's **join key**, not a presentation hint, and it was both
+/// `#[serde(default)]` and bound untrimmed two lines above the correctly-trimmed `item_name`.
+///
+/// The harm is not "a column has a space in it". `get_event` groups the armory by `faction`
+/// (`events.rs:796`) and the SPA matches those groups against the mission's `orbat_slots` factions
+/// by exact equality (`event_hub.rs:415`) — a different table. A `faction` that does not match one
+/// byte-for-byte renders a dossier card with **no items**: the author gets 200 and their own value
+/// echoed back, the players get an empty armory.
+///
+/// Measured on the pre-fix binary, ORBAT declaring `USA`, four seeded rows:
+/// - `faction: "  USA  "` → **200**, stored `"  USA  "`, the USA card rendered **0** items.
+/// - `{"items":[{"item_name":"M4A1"}]}` → **200**, stored `""`, the USA card rendered **0** items.
+///
+/// The second needs **no whitespace at all** — it is the `#[serde(default)]`, so a trim-only fix
+/// would have looked like it worked while leaving that half fully broken.
+///
+/// **A padded `faction` is refused, not trimmed**, and that is the whole point. The other side of
+/// the join is written verbatim (`events.rs:391` ← `orbat.rs:23-25`, itself defaulted and
+/// untrimmed), so trimming only here would make the two sites *disagree*: measured on the pre-fix
+/// binary, an ORBAT declaring `"  USA  "` with an armory row `"  USA  "` renders **correctly
+/// today**, and a unilateral trim turns that into 0 items — T-343's trap at `events.rs:1735`
+/// and `:1923`, reproduced. Refusing keeps the stored bytes exactly what the caller sent, which
+/// agrees with the other side whether or not it ever starts trimming.
+#[tokio::test]
+async fn armory_faction_is_the_event_hub_join_key() {
+    let Some((app, tok)) = app_and_token("admin").await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let t = tok.as_str();
+    let (url, eid) = mission_in_event_with_orbat_faction(&app, t, "USA").await;
+
+    // The measurement is only meaningful if the join works when both sides agree.
+    assert_eq!(
+        event_hub_cards(&dossier(&app, &eid, t).await),
+        vec![("USA".to_string(), 2)],
+        "baseline: the USA card renders its two seeded rows"
+    );
+
+    // Half one — the `#[serde(default)]`, reachable with no whitespace anywhere. Pre-fix this
+    // answered 200, stored `""`, and emptied the card.
+    let defaulted = r#"{"items":[{"category":"rifle","item_name":"M4A1","sort_order":0}]}"#;
+    let (st, b) = call(&app, "PUT", &url, Some(t), None, Some(defaulted)).await;
+    assert_eq!(
+        st,
+        StatusCode::BAD_REQUEST,
+        "an item that never names a faction must not replace the armory: {}",
+        String::from_utf8_lossy(&b)
+    );
+    assert_eq!(
+        json(&b)["error"],
+        "items is required, and every item needs a faction and an item_name"
+    );
+    assert_eq!(armory_len(&app, &url, t).await, 4, "rows untouched");
+
+    // Half two — padding. Refused rather than canonicalised, so the stored bytes never diverge
+    // from what `orbat_slots` holds.
+    let padded =
+        r#"{"items":[{"faction":"  USA  ","category":"rifle","item_name":"M4A1","sort_order":0}]}"#;
+    let (st, b) = call(&app, "PUT", &url, Some(t), None, Some(padded)).await;
+    assert_eq!(
+        st,
+        StatusCode::BAD_REQUEST,
+        "a padded faction must not be stored: {}",
+        String::from_utf8_lossy(&b)
+    );
+    assert_eq!(
+        json(&b)["error"],
+        "items[0].faction must not have leading or trailing whitespace"
+    );
+    assert_eq!(armory_len(&app, &url, t).await, 4, "rows untouched");
+
+    // Whitespace-only decodes fine and is the same lie as no faction, so the runtime guard takes
+    // it — and names which item, because a 30-item armory rejected as one opaque 400 is a bug
+    // report, not a diagnostic.
+    let blank =
+        r#"{"items":[{"faction":"USA","item_name":"M4A1"},{"faction":"   ","item_name":"AT4"}]}"#;
+    let (st, b) = call(&app, "PUT", &url, Some(t), None, Some(blank)).await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "blank faction");
+    assert_eq!(json(&b)["error"], "items[1].faction is required");
+    assert_eq!(armory_len(&app, &url, t).await, 4, "rows untouched");
+
+    // The dossier still populates for a body that states the faction the ORBAT actually declares —
+    // requiring the field must not cost the author a working armory.
+    let ok = r#"{"items":[
+        {"faction":"USA","category":"rifle","item_name":"  M4A1  ","quantity":24,"sort_order":0},
+        {"faction":"USA","category":"launcher","item_name":"AT4","quantity":6,"sort_order":1},
+        {"faction":"USSR","category":"rifle","item_name":"AK-74","quantity":30,"sort_order":2}]}"#;
+    let (st, b) = call(&app, "PUT", &url, Some(t), None, Some(ok)).await;
+    assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
+    assert_eq!(json(&b)["data"][0]["faction"], "USA", "stored verbatim");
+    assert_eq!(json(&b)["data"][0]["item_name"], "M4A1", "name trimmed");
+    assert_eq!(
+        event_hub_cards(&dossier(&app, &eid, t).await),
+        vec![("USA".to_string(), 2)],
+        "the USA card renders its two rows again, and does not absorb USSR's"
+    );
+
+    // And the guard is `!= trim()`, not "contains a space": a faction whose name legitimately has
+    // interior whitespace is stored byte-identical. An over-strict fix fails here.
+    let interior =
+        r#"{"items":[{"faction":"US Army","category":"rifle","item_name":"M4A1","sort_order":0}]}"#;
+    let (st, b) = call(&app, "PUT", &url, Some(t), None, Some(interior)).await;
+    assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
+    assert_eq!(json(&b)["data"][0]["faction"], "US Army");
 }
