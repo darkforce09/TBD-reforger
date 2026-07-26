@@ -42,12 +42,21 @@ use crate::state::AppState;
 
 // Queries cast `inet`→text (`ip::text`) and `numeric`→f64 (`server_fps::float8`).
 
-/// The six-column projection every read and write in this file returns, so a created/updated row
-/// is byte-identical in shape to a `GET /servers` row and the SPA can reuse one DTO
+/// The six-column projection every read and write in this file returns, so a created or updated row
+/// is identical in shape to a `GET /servers` row and the SPA can reuse one DTO
 /// (`frontend/src/dto.rs::ServerRowDto`) for all of them. `host(ip)` renders the `inet` as bare
-/// text — the same cast `list_servers` has always used.
-const SERVER_COLS: &str =
-    "id, name, host(ip) AS ip, port, required_modpack_id, is_active";
+/// text — the cast `list_servers` has always used.
+///
+/// A `macro_rules!` and not a `const &str` on purpose: sqlx 0.9's `SqlSafeStr` bound accepts only
+/// `&'static str`, so a `format!`ed query needs `AssertSqlSafe` and a hand-written injection audit
+/// (see `events.rs::sql`). Expanding through `concat!` instead keeps every query a single string
+/// **literal** — one source of truth for the projection, no runtime allocation, and no audit to get
+/// wrong later.
+macro_rules! server_cols {
+    () => {
+        "id, name, host(ip) AS ip, port, required_modpack_id, is_active"
+    };
+}
 
 /// Full Server Intel card: server config + live status + required modpack.
 #[derive(Debug, Serialize)]
@@ -85,7 +94,11 @@ pub async fn list_servers(
     _u: AuthUser,
 ) -> Result<Json<Value>, ApiError> {
     let servers: Vec<Server> =
-        sqlx::query_as(&format!("SELECT {SERVER_COLS} FROM servers ORDER BY name ASC"))
+        sqlx::query_as(concat!(
+            "SELECT ",
+            server_cols!(),
+            " FROM servers ORDER BY name ASC"
+        ))
             .fetch_all(&state.pool)
             .await?;
     let mut out = Vec::with_capacity(servers.len());
@@ -107,7 +120,11 @@ pub async fn get_server_status(
         return Err(ApiError::bad_request("invalid id"));
     };
     let server: Option<Server> =
-        sqlx::query_as(&format!("SELECT {SERVER_COLS} FROM servers WHERE id = $1"))
+        sqlx::query_as(concat!(
+            "SELECT ",
+            server_cols!(),
+            " FROM servers WHERE id = $1"
+        ))
             .bind(id)
             .fetch_optional(&state.pool)
             .await?;
@@ -235,6 +252,22 @@ async fn require_modpack(pool: &PgPool, id: Uuid) -> Result<(), ApiError> {
     Ok(())
 }
 
+/// A malformed body is a 400 that says *what* was malformed.
+///
+/// The plain `bad_request("name, ip and port are required")` this replaces was accurate for an
+/// empty body and a lie for anything else — measured over HTTP, `{"required_modpack_id":
+/// "not-a-uuid"}` answered "name, ip and port are required", naming three fields that were all
+/// present and correct. axum's own text names the offending field, and a deserialization failure
+/// carries nothing sensitive, so it is passed through in `details` (the field `ApiError` already
+/// has for exactly this — schema-validation messages use it in `factions.rs`).
+fn body_error(e: JsonRejection) -> ApiError {
+    ApiError::with_details(
+        StatusCode::BAD_REQUEST,
+        "invalid server payload (expected an object with name, ip and port)",
+        json!({ "reason": e.body_text() }),
+    )
+}
+
 /// `POST /api/v1/servers` — register a game server (admin).
 ///
 /// Returns **201** carrying the same [`ServerIntelDto`] shape `GET /servers` serves, so an admin
@@ -249,7 +282,7 @@ pub async fn create_server(
     admin: AdminUser,
     body: Result<Json<ServerInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<ServerIntelDto>), ApiError> {
-    let Json(input) = body.map_err(|_| ApiError::bad_request("name, ip and port are required"))?;
+    let Json(input) = body.map_err(body_error)?;
     let Some(raw_name) = input.name.as_deref() else {
         return Err(ApiError::bad_request("name is required"));
     };
@@ -272,9 +305,10 @@ pub async fn create_server(
     // parameter's type from, so a bare `::inet` would have it expect an `inet`-encoded parameter
     // and reject the `text` sqlx sends for a Rust `String`. Same shape as `telemetry.rs:170`'s
     // `$5::float8::numeric`.
-    let server: Server = sqlx::query_as(&format!(
-        "INSERT INTO servers (name, ip, port, required_modpack_id, is_active) \
-         VALUES ($1, $2::text::inet, $3, $4, $5) RETURNING {SERVER_COLS}"
+    let server: Server = sqlx::query_as(concat!(
+        "INSERT INTO servers (name, ip, port, required_modpack_id, is_active) ",
+        "VALUES ($1, $2::text::inet, $3, $4, $5) RETURNING ",
+        server_cols!()
     ))
     .bind(&name)
     .bind(&ip)
@@ -321,7 +355,7 @@ pub async fn update_server(
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    let Json(input) = body.map_err(|_| ApiError::bad_request("invalid body"))?;
+    let Json(input) = body.map_err(body_error)?;
 
     let name = input.name.as_deref().map(validated_name).transpose()?;
     let ip = input.ip.as_deref().map(validated_ip).transpose()?;
@@ -347,14 +381,15 @@ pub async fn update_server(
     // matching `telemetry.rs:166-175`. `required_modpack_id` needs the `CASE WHEN <present>`
     // form for the same reason `current_match_id` does there: COALESCE cannot express "set this
     // to NULL", so presence is carried in its own boolean bind.
-    let row: Option<Server> = sqlx::query_as(&format!(
-        "UPDATE servers SET \
-           name = COALESCE($2, name), \
-           ip = COALESCE($3::text::inet, ip), \
-           port = COALESCE($4, port), \
-           required_modpack_id = CASE WHEN $6 THEN $5 ELSE required_modpack_id END, \
-           is_active = COALESCE($7, is_active) \
-         WHERE id = $1 RETURNING {SERVER_COLS}"
+    let row: Option<Server> = sqlx::query_as(concat!(
+        "UPDATE servers SET ",
+        "  name = COALESCE($2, name), ",
+        "  ip = COALESCE($3::text::inet, ip), ",
+        "  port = COALESCE($4, port), ",
+        "  required_modpack_id = CASE WHEN $6 THEN $5 ELSE required_modpack_id END, ",
+        "  is_active = COALESCE($7, is_active) ",
+        "WHERE id = $1 RETURNING ",
+        server_cols!()
     ))
     .bind(id)
     .bind(&name)
