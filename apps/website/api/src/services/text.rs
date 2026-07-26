@@ -212,6 +212,39 @@ mod tests {
         assert!(is_http_url("http://[::1]/"));
     }
 
+    // ── T-405: the anti-drift pin ────────────────────────────────────────────────────────────
+    //
+    // The SPA cannot call this function — `website-frontend` compiles to wasm32 and cannot link a
+    // crate that pulls sqlx/axum/tokio — so T-405 ported the predicate to
+    // `apps/website/frontend/src/url_guard.rs` and guarded the render sink with it. Two copies of
+    // a security predicate are only tolerable if they cannot drift apart quietly.
+    //
+    // This is the mechanism that stops them. The input table is a single file, `include!`d by
+    // BOTH crates, and each runs its own implementation over it. Change either implementation
+    // without the other and the OTHER crate's suite goes red on the same commit. New adversarial
+    // cases go in that file rather than here, so both sides get them at once.
+    include!("../../../shared/is_http_url_cases.rs");
+
+    #[test]
+    fn matches_the_frontend_guard_on_every_shared_case() {
+        let mut wrong = Vec::new();
+        for (input, expected) in IS_HTTP_URL_CASES {
+            let got = is_http_url(input);
+            if got != *expected {
+                wrong.push(format!("  {input:?}: expected {expected}, got {got}"));
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "api is_http_url disagrees with the shared table on {} of {} cases (the frontend \
+             guard runs against the SAME table in website-frontend `url_guard` — if that one is \
+             green and this one is not, the two implementations have DRIFTED):\n{}",
+            wrong.len(),
+            IS_HTTP_URL_CASES.len(),
+            wrong.join("\n")
+        );
+    }
+
     #[test]
     fn snippet_collapses_and_truncates() {
         assert_eq!(snippet("  hello   world\n\tfoo ", 100), "hello world foo");

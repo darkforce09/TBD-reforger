@@ -25,6 +25,9 @@ use crate::handlers::load_user;
 use crate::models::AuditSeverity;
 use crate::services;
 use crate::services::discord::GuildMember;
+// T-405 — `users.avatar_url` is public tier; guarded at this write boundary like every other URL
+// column (T-391's `is_http_url`).
+use crate::services::text::is_http_url;
 use crate::state::AppState;
 
 /// Query params on the OAuth callback.
@@ -103,6 +106,35 @@ pub async fn discord_callback(
         RoleSnapshot::Unavailable
     };
 
+    // **T-405 — the write boundary for `users.avatar_url`, the highest-exposure column of the
+    // group.** It is public tier (anyone who can trigger a login writes it), and it reaches an
+    // `<img src>` on four SPA surfaces — leaderboards, the layout chrome, settings and the event
+    // hub — so it is read by far more of the platform than the admin-tier columns.
+    //
+    // `avatar_url()` now refuses to build a URL out of an `id`/`avatar` that is not a bare path
+    // segment (T-405, `services::discord`), so in practice this second check is belt to that
+    // brace. It is here anyway because the two guard different things and can fail independently:
+    // that one asserts "Discord's strings did not escape the path", this one asserts "whatever
+    // ended up in this variable is an http(s) URL". A future edit that adds a config-driven CDN
+    // base, or swaps in a different identity provider, moves the first guarantee without touching
+    // the second — and this is the column where finding that out late is most expensive.
+    //
+    // Falls back to `""` instead of 400-ing, because this is an OAuth callback: refusing a login
+    // over a cosmetic field would turn a bad avatar into an outage. `""` is the column's existing
+    // "no avatar" value and every reader already handles it.
+    let avatar_url = du.avatar_url();
+    let avatar_url = if is_http_url(&avatar_url) {
+        avatar_url
+    } else {
+        if !avatar_url.is_empty() {
+            tracing::warn!(
+                discord_id = %du.id,
+                "discarded a non-http(s) avatar URL built from Discord's profile response"
+            );
+        }
+        String::new()
+    };
+
     // Upsert the user from the fresh Discord profile (role is set separately below).
     let upsert = sqlx::query(
         "INSERT INTO users \
@@ -116,7 +148,7 @@ pub async fn discord_callback(
     .bind(&du.id)
     .bind(du.display_name())
     .bind(du.handle())
-    .bind(du.avatar_url())
+    .bind(&avatar_url)
     .execute(&state.pool)
     .await;
     if upsert.is_err() {

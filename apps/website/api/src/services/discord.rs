@@ -108,6 +108,17 @@ pub struct DiscordUser {
     pub avatar: String,
 }
 
+/// Is `s` safe to interpolate as **one path segment** of a CDN URL? **T-405.**
+///
+/// Non-empty and `[A-Za-z0-9_]` only. That excludes every character that could end the segment or
+/// the path — `/`, `\`, `.`, `?`, `#`, `%`, `@`, `:` — and every control character and space along
+/// with them, so the value cannot move the URL anywhere its author did not intend. See
+/// [`DiscordUser::avatar_url`] for why the rule is a character class rather than Discord's exact
+/// documented formats.
+fn is_cdn_path_segment(s: &str) -> bool {
+    !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
 impl DiscordUser {
     /// Prefer the new global display name, falling back to username.
     pub fn display_name(&self) -> String {
@@ -127,9 +138,41 @@ impl DiscordUser {
         }
     }
 
-    /// CDN avatar URL, or `""` if the user has no custom avatar.
+    /// CDN avatar URL, or `""` if the user has no custom avatar **or if Discord handed us an `id`
+    /// or `avatar` that is not a bare path segment**.
+    ///
+    /// # T-405 — the trust boundary, now stated and enforced
+    ///
+    /// This `format!`s two strings straight out of an HTTP response into a URL path. The stored
+    /// result is public-tier (`handlers::oauth` writes it to `users.avatar_url` on every login)
+    /// and reaches an `<img src>` on four SPA pages. Before this, nothing checked either string,
+    /// so an `avatar` of `../../evil` walked the URL out of `/avatars/` entirely, and one
+    /// containing `?`, `#` or `@` re-pointed it by query, fragment or authority — while still
+    /// *looking* like a `cdn.discordapp.com` link to anyone reading the database.
+    ///
+    /// The trust boundary here is "we trust Discord's API", and that is very probably fine. It was
+    /// also **undocumented and unenforced**, which are two different problems from "wrong": an
+    /// assumption nobody wrote down cannot be reviewed, and one nothing checks is indistinguishable
+    /// from an assumption that has quietly stopped holding — a compromised or spoofed token
+    /// endpoint, a proxy, a future Discord format change, or a test double. Enforcing it costs one
+    /// character-class check and converts a silent trust into a loud one.
+    ///
+    /// The rule is **`[A-Za-z0-9_]` only**, which is deliberately looser than Discord's documented
+    /// shapes (snowflakes are decimal; avatar hashes are 32 hex characters, optionally `a_`-
+    /// prefixed when animated). Pinning the exact shapes would be a stricter guard and a worse
+    /// one: it buys nothing extra — every character that could escape the path segment is already
+    /// excluded — and it would start silently blanking real avatars the day Discord widens its
+    /// hash format. What is excluded is the part that matters: `/`, `.`, `?`, `#`, `%`, `@`, `:`,
+    /// `\` and whitespace.
+    ///
+    /// Failing to `""` rather than panicking or erroring, because the only caller is an OAuth
+    /// callback: a login must not fail over a cosmetic field. `""` is this column's existing
+    /// "no avatar" value and every reader already handles it.
     pub fn avatar_url(&self) -> String {
-        if self.avatar.is_empty() {
+        if self.avatar.is_empty()
+            || !is_cdn_path_segment(&self.id)
+            || !is_cdn_path_segment(&self.avatar)
+        {
             String::new()
         } else {
             format!(
@@ -475,5 +518,93 @@ mod tests {
             .await
             .expect("an explicit empty roles array is a valid answer");
         assert!(m.roles.is_empty());
+    }
+
+    /// **T-405 — the CDN path-segment trust boundary.**
+    ///
+    /// `avatar_url()` interpolates two strings from Discord's HTTP response into a URL path. Every
+    /// input below is what that response would have to contain for the resulting URL to point
+    /// somewhere other than `cdn.discordapp.com/avatars/<id>/<hash>.png`. Before T-405 each one
+    /// produced exactly that misdirected URL, stored public-tier, rendered in an `<img src>`.
+    #[test]
+    fn a_hostile_avatar_hash_cannot_walk_the_url_off_the_cdn_path() {
+        for (id, avatar, why) in [
+            (
+                "7",
+                "../../evil",
+                "parent-directory traversal out of /avatars/",
+            ),
+            ("7", "..", "bare parent directory"),
+            ("7", "a/b", "an extra path segment"),
+            ("7", "x?y=z", "everything after it becomes a query string"),
+            ("7", "x#frag", "everything after it becomes a fragment"),
+            ("7", "x%2f..%2fevil", "percent-encoded separator"),
+            ("7", "x@evil.com", "re-points the authority once combined"),
+            ("7", "x\\y", "backslash, which WHATWG folds to a slash"),
+            ("7", "x y", "space"),
+            ("7", "x.png", "a dot ends the segment early"),
+            // The `id` half is interpolated too, and nothing checked it either.
+            ("../../evil", "abc", "traversal through the id"),
+            ("7/../..", "abc", "traversal through the id"),
+            ("7?x=y", "abc", "query injection through the id"),
+            ("", "abc", "empty id yields a doubled slash"),
+        ] {
+            let u = DiscordUser {
+                id: id.to_string(),
+                username: "n".into(),
+                global_name: String::new(),
+                discriminator: String::new(),
+                avatar: avatar.to_string(),
+            };
+            assert_eq!(
+                u.avatar_url(),
+                "",
+                "id={id:?} avatar={avatar:?} built a URL despite {why}"
+            );
+        }
+    }
+
+    /// The other half, and the half that keeps the guard alive: a guard that blanks every real
+    /// avatar gets reverted by whoever ships next.
+    #[test]
+    fn real_discord_avatars_still_build_a_cdn_url() {
+        let mk = |id: &str, avatar: &str| DiscordUser {
+            id: id.to_string(),
+            username: "n".into(),
+            global_name: String::new(),
+            discriminator: String::new(),
+            avatar: avatar.to_string(),
+        };
+        // A real snowflake and a real 32-hex avatar hash.
+        assert_eq!(
+            mk("80351110224678912", "8342729096ea3675442027381ff50dfe").avatar_url(),
+            "https://cdn.discordapp.com/avatars/80351110224678912/8342729096ea3675442027381ff50dfe.png"
+        );
+        // Animated avatars carry the `a_` prefix — the underscore is why the class is not
+        // `is_ascii_alphanumeric` alone.
+        assert_eq!(
+            mk("80351110224678912", "a_8342729096ea3675442027381ff50dfe").avatar_url(),
+            "https://cdn.discordapp.com/avatars/80351110224678912/a_8342729096ea3675442027381ff50dfe.png"
+        );
+        // No custom avatar stays the empty string it always was — unchanged by T-405.
+        assert_eq!(mk("80351110224678912", "").avatar_url(), "");
+    }
+
+    /// The guard is deliberately a character class, not Discord's documented formats. Pinned so a
+    /// later "tighten this up" pass has to argue with a test rather than silently start blanking
+    /// real avatars the day Discord widens its hash alphabet.
+    #[test]
+    fn the_rule_is_a_character_class_not_a_format() {
+        assert!(is_cdn_path_segment("abc123"));
+        assert!(is_cdn_path_segment("a_b_C9"));
+        assert!(is_cdn_path_segment("ZZZ"));
+        // Not hex, not a snowflake, not 32 characters — and deliberately still accepted.
+        assert!(is_cdn_path_segment("zzzz"));
+        assert!(!is_cdn_path_segment(""));
+        for bad in [
+            "a.b", "a/b", "a\\b", "a?b", "a#b", "a%b", "a@b", "a:b", "a b", "a\tb",
+        ] {
+            assert!(!is_cdn_path_segment(bad), "accepted {bad:?}");
+        }
     }
 }

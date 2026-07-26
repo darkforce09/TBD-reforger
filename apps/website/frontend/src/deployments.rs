@@ -22,6 +22,8 @@ use crate::auth::AuthStore;
 use crate::datefmt::{countdown_label, format_local_datetime, format_short_date};
 use crate::dto::Deployments;
 use crate::ui::{badge_class, cn, MaterialIcon};
+// T-405 — the AAR `<a href>` at the bottom of Combat History is the sink of the T-391 XSS.
+use crate::url_guard;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -460,24 +462,27 @@ fn service_record(history: Vec<Value>) -> impl IntoView {
                                         )>{outcome_label(&outcome)}</span>
                                     </td>
                                     <td class="px-4 py-3">
-                                        {if replay.is_empty() {
-                                            view! {
-                                                <span class="font-mono text-xs text-outline">"—"</span>
+                                        {match replay_href(&replay) {
+                                            None => {
+                                                view! {
+                                                    <span class="font-mono text-xs text-outline">"—"</span>
+                                                }
+                                                    .into_any()
                                             }
-                                                .into_any()
-                                        } else {
-                                            view! {
-                                                <a
-                                                    href=replay
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    class="inline-flex items-center gap-1 font-mono text-xs tracking-wider text-primary uppercase transition hover:underline"
-                                                >
-                                                    <MaterialIcon name="play_circle" class="text-base" />
-                                                    "View Replay"
-                                                </a>
+                                            Some(href) => {
+                                                view! {
+                                                    <a
+                                                        href=href
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        class="inline-flex items-center gap-1 font-mono text-xs tracking-wider text-primary uppercase transition hover:underline"
+                                                    >
+                                                        <MaterialIcon name="play_circle" class="text-base" />
+                                                        "View Replay"
+                                                    </a>
+                                                }
+                                                    .into_any()
                                             }
-                                                .into_any()
                                         }}
                                     </td>
                                 </tr>
@@ -490,11 +495,89 @@ fn service_record(history: Vec<Value>) -> impl IntoView {
     }
 }
 
+/// The AAR cell's one decision: is this stored string safe to put in an `href`, or does the row
+/// get the inert em-dash? **T-405 — the sink half of the T-391 XSS.**
+///
+/// Before this existed the cell bound `href=replay` after testing only `replay.is_empty()`, so a
+/// `javascript:` URL stored before T-391's write guard shipped executed on click. The
+/// `rel="noreferrer"` already on that anchor was never a mitigation — it governs the `Referer`
+/// header, not what the scheme does. Neither is HTML escaping: a `javascript:` href is not a quote
+/// breakout, it is a well-formed attribute whose *content* runs, so the only safe move at a sink
+/// is to not emit the attribute at all.
+///
+/// **The empty case is unchanged, not merely preserved by accident.** `""` carries no scheme, so
+/// [`url_guard::is_http_url`] answers `false` for it and the cell takes the same em-dash branch it
+/// always did. The new test strictly subsumes the old one.
+///
+/// This duplicates the API's write-boundary check on purpose, and the duplication is not waste:
+/// the write guard governs values that arrived through `upsert_match` *after* it shipped, and
+/// this governs every value that reaches this table whatever door it came in by — a pre-guard
+/// row, an operator's `psql`, a writer somebody adds later. They fail independently, which is the
+/// entire point of guarding an output.
+///
+/// Extracted from the `view!` rather than left inline so it can be tested: the crate is CSR-only
+/// and cannot render to a string natively, so a returned `Option` is the largest testable unit
+/// this cell has.
+fn replay_href(replay: &str) -> Option<&str> {
+    url_guard::is_http_url(replay).then_some(replay)
+}
+
 #[component]
 fn ServiceHead(label: &'static str) -> impl IntoView {
     view! {
         <th class="px-4 py-3 font-mono text-[10px] font-normal tracking-widest text-on-surface-variant uppercase">
             {label}
         </th>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // The same table both `is_http_url` implementations are pinned to — reused here so the CELL is
+    // checked against the adversarial corpus, not just the predicate underneath it. If a future
+    // edit reverts this cell to `!replay.is_empty()`, every `false` row stops returning `None` and
+    // the test below names the exact payload that would have rendered.
+    include!("../../shared/is_http_url_cases.rs");
+
+    #[test]
+    fn aar_cell_emits_an_href_only_for_http_urls() {
+        let mut wrong = Vec::new();
+        for (input, should_link) in IS_HTTP_URL_CASES {
+            match (replay_href(input), should_link) {
+                (Some(_), false) => wrong.push(format!("  RENDERED AN HREF FOR {input:?}")),
+                (None, true) => wrong.push(format!("  refused a legitimate link {input:?}")),
+                _ => {}
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "the AAR replay cell is wrong on {} of {} cases:\n{}",
+            wrong.len(),
+            IS_HTTP_URL_CASES.len(),
+            wrong.join("\n")
+        );
+    }
+
+    /// The specific regression, spelled out rather than left implicit in the table sweep: the
+    /// literal T-391 payload must produce no anchor, and the empty case must keep behaving
+    /// exactly as it did before T-405 touched this cell.
+    #[test]
+    fn the_t391_payload_renders_no_anchor_and_empty_still_means_no_link() {
+        assert_eq!(replay_href("javascript:alert(1)"), None);
+        assert_eq!(replay_href("JaVaScRiPt:alert(1)"), None);
+        assert_eq!(replay_href("java\tscript:alert(1)"), None);
+        assert_eq!(
+            replay_href("data:text/html,<script>alert(1)</script>"),
+            None
+        );
+        // Unchanged from before the guard: no replay uploaded yet renders the em-dash.
+        assert_eq!(replay_href(""), None);
+        // ...and a real replay link still renders, which is the half that keeps the guard alive.
+        assert_eq!(
+            replay_href("https://aar.tbd/replays/abc.json"),
+            Some("https://aar.tbd/replays/abc.json")
+        );
     }
 }
