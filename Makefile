@@ -6,11 +6,65 @@ WEB := apps/website/api
 # ~/go/bin is prepended for the editorconfig-checker binary (`make verify-editorconfig`).
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat
+# T-253 — shared Cargo target across main + linked worktrees (stop silent double-compiles).
+# `git-common-dir` is the primary checkout's `.git`, so stripping `/.git` yields the warm
+# shared tree even when `make` runs from `.ai/artifacts/worktrees/T-XXX`. An existing env
+# pin (wave.sh / operator FACTORY export) wins via `?=`. Intentional private dirs
+# (`target-dev-api`, `target-gate-*`) override per-recipe and stay gitignored by `target-*/`.
+TBD_GIT_COMMON := $(shell git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+TBD_REPO_ROOT := $(patsubst %/.git,%,$(TBD_GIT_COMMON))
+export CARGO_TARGET_DIR ?= $(TBD_REPO_ROOT)/target
+
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat verify-cargo-target print-cargo-target-dir reclaim-target-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
+
+print-cargo-target-dir: ## T-253: echo the effective CARGO_TARGET_DIR (for doctor / probes)
+	@echo $(CARGO_TARGET_DIR)
+
+verify-cargo-target: ## T-253: assert Makefile pins CARGO_TARGET_DIR to the primary-repo shared target/
+	@expected="$(TBD_REPO_ROOT)/target"; \
+	if ! grep -qF 'export CARGO_TARGET_DIR ?= $$(TBD_REPO_ROOT)/target' Makefile; then \
+		echo "FAIL: Makefile missing 'export CARGO_TARGET_DIR ?= \$$(TBD_REPO_ROOT)/target' (T-253 shared pin)"; \
+		exit 1; \
+	fi; \
+	got=$$(env -u CARGO_TARGET_DIR $(MAKE) -s print-cargo-target-dir); \
+	if [ -z "$$got" ]; then \
+		echo "FAIL: with CARGO_TARGET_DIR unset, make resolved an empty target dir"; \
+		exit 1; \
+	fi; \
+	if [ "$$got" != "$$expected" ]; then \
+		echo "FAIL: with CARGO_TARGET_DIR unset, make resolves to '$$got' (expected $$expected — primary-repo shared target, not a worktree-local dir)"; \
+		exit 1; \
+	fi; \
+	recipe=$$(env -u CARGO_TARGET_DIR $(MAKE) -n rust-build 2>/dev/null | tr '\n' ' '); \
+	case "$$recipe" in \
+		*'CARGO_TARGET_DIR='*) \
+			echo "FAIL: rust-build must inherit the shared export, not set a private CARGO_TARGET_DIR (got: $$recipe)"; \
+			exit 1 ;; \
+	esac; \
+	echo "OK: CARGO_TARGET_DIR pin=$$expected (rust-build inherits; api/rust-api keep private target-dev-api)"
+
+reclaim-target-ci: ## T-253: delete obsolete primary-repo target-ci/ (~13G). Never touches the warm shared target/
+	@ci="$(TBD_REPO_ROOT)/target-ci"; \
+	warm="$(TBD_REPO_ROOT)/target"; \
+	if [ "$$ci" = "$$warm" ] || [ "$$ci" = "$$warm/" ]; then \
+		echo "REFUSING: reclaim path collides with shared target/ ($$warm)"; \
+		exit 1; \
+	fi; \
+	case "$$ci" in \
+		*/target-ci|*/target-ci/) ;; \
+		*) echo "REFUSING: path '$$ci' is not …/target-ci"; exit 1 ;; \
+	esac; \
+	if [ ! -e "$$ci" ]; then \
+		echo "target-ci already absent at $$ci"; \
+		exit 0; \
+	fi; \
+	du -sh "$$ci"; \
+	rm -rf "$$ci"; \
+	echo "removed $$ci (shared target/ left intact at $$warm)"
 
 db-up: ## Start local Postgres in the background
 	cd $(WEB) && $(COMPOSE) up -d db
