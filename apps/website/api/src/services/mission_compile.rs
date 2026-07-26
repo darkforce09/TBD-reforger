@@ -287,6 +287,55 @@ mod tests {
         assert!(details.is_empty(), "schema violations: {details:?}");
     }
 
+    /// T-183 — the locked contract above only pins blufor/opfor, which is exactly how INDFOR
+    /// shipped broken: `kit-aliases.json` had no `factionDefaults.indfor`, so
+    /// `KitAliases::faction_default` fell through to `fallbackFaction` (blufor) and every INDFOR
+    /// slot compiled to `kit:us_rifleman` / `preset:us_army_82nd`. Nothing failed — the document
+    /// still validated — and the mod then spawned a `Character_US_Rifleman.et` body while
+    /// `TBD_SpawnManager.EngineFactionKey` forced engine faction FIA. INDFOR is the third
+    /// editor-mintable side (`apply_faction.rs` VALID_SIDES = BLUFOR|OPFOR|INDFOR), so this fired
+    /// on every INDFOR mission. Pinning the compiled values is what stops a silent re-drift.
+    #[test]
+    fn indfor_compiles_to_fia_not_the_blufor_fallback() {
+        let m = fixture_mission();
+        let payload = r#"{
+          "editor": {
+            "factions": [{"id": "f1", "key": "INDFOR", "name": "FIA", "squadIds": ["sq1"]}],
+            "squads": [{"id": "sq1", "factionId": "f1", "callsign": "Kilo", "name": "Kilo 1", "slotIds": ["s1", "s2"]}],
+            "slots": [
+              {"id": "s1", "squadId": "sq1", "index": 0, "role": "RFL", "position": {"x": 5000, "y": 5000, "z": 0, "rotation": 0}},
+              {"id": "s2", "squadId": "sq1", "index": 1, "role": "SL", "assetId": "{677B515F119222C2}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_SL.et", "position": {"x": 5010, "y": 5000, "z": 0, "rotation": 0}}
+            ],
+            "editorLayers": []
+          }
+        }"#;
+        let doc = flatten_to_mod_document(&m, payload.as_bytes()).expect("compiles");
+
+        // No assetId → faction default. This is the assertion the bug would have failed.
+        assert_eq!(doc.slots[0].kit, "kit:fia_rifleman");
+        assert_ne!(
+            doc.slots[0].kit, "kit:us_rifleman",
+            "INDFOR fell back to the blufor default — factionDefaults.indfor is missing"
+        );
+        // Mapped assetId → the FIA kit row, not a degrade to the default.
+        assert_eq!(doc.slots[1].kit, "kit:fia_sl");
+
+        // The faction's presetId is the other half of `faction_default`; a one-sided fix
+        // would leave INDFOR wearing `preset:us_army_82nd`.
+        let indfor = doc
+            .factions
+            .iter()
+            .find(|f| f.key == "indfor")
+            .expect("indfor faction emitted");
+        assert_eq!(indfor.preset_id, "preset:fia");
+
+        // The compiled document must still satisfy mission.schema.json — an empty kit would
+        // fail `^kit:[a-z0-9_]+$` and the mod could not load the mission at all.
+        let bytes = serde_json::to_vec(&doc).unwrap();
+        let details = validate_mission_document(&bytes).expect("schema compiles");
+        assert!(details.is_empty(), "schema violations: {details:?}");
+    }
+
     /// One squad, one slot, with the editor fields under test left to the caller.
     fn payload_with(role: &str, callsign: &str, squad_name: &str, slot_id: &str) -> String {
         format!(

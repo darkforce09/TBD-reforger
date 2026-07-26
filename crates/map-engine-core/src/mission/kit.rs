@@ -110,4 +110,33 @@ mod tests {
             ("kit:us_rifleman", "preset:us_army_82nd")
         );
     }
+
+    /// T-183 — `fallbackFaction` is the guard for a genuinely UNKNOWN faction key (the
+    /// `"mystery"` case above). It must never be load-bearing for a key the mod itself knows.
+    /// `TBD_SpawnManager.EngineFactionKey` maps blufor/opfor/indfor/civ, but `factionDefaults`
+    /// carried only blufor/opfor — so `indfor` silently took the blufor fallback and every
+    /// INDFOR slot compiled to a US Army body that the mod then spawned under engine faction
+    /// FIA. `civ` had the same hole, latent only because `apply_faction.rs` VALID_SIDES cannot
+    /// mint it. Nothing errored: an unmapped faction is indistinguishable from a mapped one
+    /// once it resolves, which is precisely why this needs an explicit test.
+    #[test]
+    fn every_mod_faction_key_has_its_own_default() {
+        let k = load_kit_aliases();
+        assert_eq!(
+            k.faction_default("indfor"),
+            ("kit:fia_rifleman", "preset:fia")
+        );
+        assert_eq!(k.faction_default("civ"), ("kit:civ_generic", "preset:civ"));
+
+        // Resolving is not enough — deleting a row would still return a valid-looking pair
+        // (the blufor fallback). Pin the DIFFERENCE, which is what the bug actually was.
+        let blufor = k.faction_default("blufor");
+        for side in ["opfor", "indfor", "civ"] {
+            assert_ne!(
+                k.faction_default(side),
+                blufor,
+                "{side} resolved to the blufor fallback — its factionDefaults row is missing"
+            );
+        }
+    }
 }
