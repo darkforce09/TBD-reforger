@@ -13,3 +13,27 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-255 — Asset palette is not side-aware
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-255`
+- **Targets:** website
+- **Summary:** build_catalog_tree (asset_catalog.rs:60) takes no side and filters kind==character, so a BLUFOR chip plus a USSR character is accepted silently — even though the registry categories already encode the side. T-153 specified the Faction Library should replace the raw registry dump here; the Leptos port reverted it and documents the revert in its own header.
+
+## T-261 — Leaderboard materialized view has no scheduled refresh
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-261`
+- **Targets:** website
+- **Summary:** refresh_leaderboard has exactly one caller, inside results ingest. If ingest never fires the ladder is frozen at the WITH NO DATA state from migration 0002 forever. No cron, no interval, no admin refresh button.
+
+## T-263 — Wiki and Vehicle Database are fully hardcoded
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-263`
+- **Targets:** website
+- **Summary:** wiki.rs makes zero API calls; content is a const and EDIT mode writes to a session signal with no Save button and no PUT. vehicles.rs likewise makes zero API calls. Meanwhile GET/PUT /wiki, GET /wiki/{slug} and GET /vehicle-database all exist and work. vehicle_databases also has no INSERT path and no seed.
