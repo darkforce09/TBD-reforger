@@ -113,7 +113,7 @@
 0	T-227	Silent zero-slot event attach allows unlimited registration	apps/website/api/src/handlers/events.rs
 0	T-373	Updating a library faction from a side destroys its emblem and every vehicle label	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/orbat_manager.rs
 0	T-235	Server registry CRUD plus an admin server form	apps/website/api/src/handlers/servers.rs
-1	T-233	Deployments page shows fabricated K/D and win rate as real telemetry	apps/website/api/src/handlers/deployments.rs
+1	T-233	Deployments page shows fabricated K/D and win rate as real telemetry	apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/deployments_combat.rs
 1	T-334	events.rs integration tests flake on a cold database	apps/website/api/tests/events.rs
 1	T-389	Wire the Submit for Approval button, and let the author read the verdict	apps/website/frontend/src/missions.rs; apps/website/frontend/src/dto.rs
 1	T-344	One doc mutator to author per-faction briefing prose	crates/map-engine-core/src/doc/store.rs
