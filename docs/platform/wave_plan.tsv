@@ -57,6 +57,7 @@
 0	T-346	set_armory binds the faction join key untrimmed and defaulted	apps/website/api/src/handlers/missions.rs
 0	T-347	A whitespace source_match_id becomes a live dedupe key and destroys match history	apps/website/api/src/handlers/telemetry.rs
 0	T-232	Six pages render literally nothing when real data arrives	apps/website/frontend/src/announcements.rs; apps/website/frontend/src/dashboard.rs; apps/website/frontend/src/audit.rs; apps/website/frontend/src/deployments.rs; apps/website/frontend/src/events.rs; apps/website/frontend/src/modpacks.rs
+1	T-358	factions.rs defeats its own unique index, and both sweeps were structurally blind to it	apps/website/api/src/handlers/factions.rs; apps/website/api/tests/factions.rs
 1	T-356	The other side of the armory join has the identical defect, still open	crates/map-engine-core/src/mission/orbat.rs
 1	T-357	The editor payload schema constrains nothing, and the compiled schema would reject live data	packages/tbd-schema/schema/mission-editor-payload.schema.json
 1	T-306	server_fps type mismatch drops every telemetry SSE frame	apps/website/frontend/src/dto.rs; apps/website/frontend/src/sse.rs; apps/website/frontend/src/server_intel.rs
