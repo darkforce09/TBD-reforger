@@ -108,11 +108,28 @@ impl DiscordUser {
 }
 
 /// The subset of the guild-member object we use (role snowflakes + nick).
+///
+/// **`roles` is deliberately required — do not add `#[serde(default)]` to it (T-185).**
+/// Every other field on these payloads defaults because a missing one is cosmetic. This one
+/// is not: it is the authorization snapshot. A default here is not "no data", it decodes as
+/// *"Discord affirmatively told us this user holds no roles"*, and
+/// [`crate::handlers::oauth`] acts on that by DELETEing every stored `user_discord_roles`
+/// row and dropping the user to enlisted. Because `resync_all_roles` rebuilds from that same
+/// table, the demotion is unrecoverable.
+///
+/// The status code alone does not protect us. A gateway, proxy, or CDN that answers **200**
+/// with a JSON error envelope produces a body that parses fine and simply lacks `roles` —
+/// which is exactly how the T-185 role-wipe came back after `RoleSnapshot` had closed the
+/// transport-failure door. Requiring the field turns that body into a decode error, so it
+/// travels the `Err` → `RoleSnapshot::Unavailable` path and writes nothing.
+///
+/// This deliberately does **not** get `null_default` either: `"roles": null` is malformed for
+/// a member object, so failing closed is right. An empty list still round-trips as `[]`,
+/// which is a genuine answer and must keep demoting.
 #[derive(Debug, Deserialize)]
 pub struct GuildMember {
     #[serde(default, deserialize_with = "null_default")]
     pub nick: String,
-    #[serde(default)]
     pub roles: Vec<String>,
 }
 
@@ -340,5 +357,47 @@ mod tests {
         assert_eq!(u.global_name, "");
         assert_eq!(u.avatar, "");
         assert_eq!(u.display_name(), "sam");
+    }
+
+    /// Wrap a body in a real 200 `reqwest::Response` so the assertions below run through the
+    /// exact `decode_2xx` call production uses, not a stand-in `serde_json::from_str`.
+    fn ok_response(body: &'static str) -> Response {
+        Response::from(
+            axum::http::Response::builder()
+                .status(200)
+                .body(body)
+                .expect("build 200 response"),
+        )
+    }
+
+    #[tokio::test]
+    async fn a_200_without_roles_fails_to_decode() {
+        // THE T-185 RESURRECTION. `#[serde(default)]` on `roles` meant a 200 carrying anything
+        // that simply lacks the field — a proxy's JSON error envelope, a truncated gateway
+        // response — decoded happily into `roles: []`. The caller cannot tell that apart from
+        // Discord saying "no roles", so it demotes the user and DELETEs the stored snapshot
+        // that `resync_all_roles` would have restored from. Failing the decode is what routes
+        // it to the Err → Unavailable → write-nothing path instead.
+        let err =
+            decode_2xx::<GuildMember>(ok_response(r#"{"code":0,"message":"502 Bad Gateway"}"#))
+                .await
+                .expect_err("a 200 body with no `roles` field must not decode");
+        // `{:#}` walks anyhow's cause chain — reqwest's own Display is just "error decoding
+        // response body", and the serde reason we care about sits underneath it.
+        let chain = format!("{err:#}");
+        assert!(
+            chain.contains("missing field `roles`"),
+            "the decode error should name the missing field, got: {chain}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_200_with_an_empty_roles_array_decodes() {
+        // Absent must fail; empty must not. Discord sends `"roles": []` for a real member who
+        // holds no roles, and that has to stay a decodable, authoritative answer.
+        let m = decode_2xx::<GuildMember>(ok_response(r#"{"nick":"B","roles":[]}"#))
+            .await
+            .expect("an explicit empty roles array is a valid answer");
+        assert!(m.roles.is_empty());
     }
 }
