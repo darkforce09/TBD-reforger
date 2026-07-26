@@ -42,21 +42,23 @@
 0	T-319	Unguarded defaulted fields reshuffle the wiki nav and blank a character name	apps/website/api/src/handlers/wiki.rs; apps/website/api/src/handlers/me.rs; apps/website/api/src/services/discord.rs
 0	T-226	Events can never be edited or detached from the UI	apps/website/frontend/src/event_manager.rs
 0	T-231	Identity linking last mile	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c
+0	T-330	GET /api/v1/approvals 500s on a NULL mission updated_at	apps/website/api/src/handlers/approvals.rs
+0	T-326	Matches played before an identity link never backfill, so deployments undercount	apps/website/api/src/handlers/me.rs
+0	T-324	Claiming a second ORBAT seat does not release the first	apps/website/api/src/handlers/events.rs
+0	T-228	ORBAT unique index omits faction — cross-faction squad names 500 on attach	apps/website/api/migrations
+1	T-338	Sign-out does not purge local documents, so account A's mission is restorable by B	apps/website/frontend/src/mission_hydrate.rs; apps/website/frontend/src/yrs_persist.rs; apps/website/frontend/src/auth.rs
+1	T-339	Two gate-harness gaps T-320 could not reach from its own files	tools/tbd-tools/src/cdp.rs; tools/tbd-tools/src/bin/gate.rs; tools/tbd-tools/src/vsuite.rs
 1	T-337	Approving or rejecting a mission never touches updated_at	apps/website/api/src/handlers/approvals.rs
 1	T-335	One-off backfill for players who linked before T-326 shipped	apps/website/api/migrations
 1	T-336	recompute_user_stats belongs in services/, not private to the telemetry handler	apps/website/api/src/services; apps/website/api/src/handlers/telemetry.rs
 1	T-334	events.rs integration tests flake on a cold database	apps/website/api/tests/events.rs
-1	T-331	content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained	apps/website/api/seeds/content_golden.sql; apps/website/api/migrations
 1	T-332	PATCH /events/:id cannot clear a briefing or banner, and a mission cannot be re-attached	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
 1	T-333	Dialog installs a window-level Escape listener per instance, so Esc closes stacked dialogs	apps/website/frontend/src/ui.rs
 1	T-329	GET /api/v1/dashboard 500s in production for two real users	apps/website/api/src/handlers/dashboard.rs; apps/website/api/tests/null_tolerance.rs
-1	T-330	GET /api/v1/approvals 500s on a NULL mission updated_at	apps/website/api/src/handlers/approvals.rs
 1	T-328	mcpd runs long-lived from the shared target dir	scripts/mod/mcp-daemon.sh
-1	T-326	Matches played before an identity link never backfill, so deployments undercount	apps/website/api/src/handlers/me.rs
-1	T-323	Admin ban button sends `{}` and now 400s — the ban UI is broken on main	apps/website/frontend/src/personnel.rs
-2	T-324	Claiming a second ORBAT seat does not release the first	apps/website/api/src/handlers/events.rs
+2	T-331	content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained	apps/website/api/seeds/content_golden.sql; apps/website/api/migrations
+2	T-323	Admin ban button sends `{}` and now 400s — the ban UI is broken on main	apps/website/frontend/src/personnel.rs
 2	T-320	Editor gate harness wedges on /missions/:id/edit — every browser leg is unverifiable	tools/tbd-tools/src/doctor.rs; tools/tbd-tools/src/smokes.rs; docs/website/EDITOR_GATE_RUNBOOK.md
-2	T-228	ORBAT unique index omits faction — cross-faction squad names 500 on attach	apps/website/api/migrations
 2	T-229	Match ingest silently drops unlinked players and never backfills	apps/website/api/src/handlers/telemetry.rs
 2	T-202	Emit briefings[] — unlocks briefing prose and all map markers	crates/map-engine-core/src/mission/flatten.rs; apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c; apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c
 2	T-233	Deployments page shows fabricated K/D and win rate as real telemetry	apps/website/api/src/handlers/deployments.rs

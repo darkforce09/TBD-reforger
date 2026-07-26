@@ -9329,7 +9329,7 @@
     {
       "id": "T-320",
       "title": "Editor gate harness wedges on /missions/:id/edit — every browser leg is unverifiable",
-      "summary": "PROVEN PRE-EXISTING by T-221 via A/B, not inferred. `gate smoke persist`, `gate doctor` and `render-check` against /missions/smoke/edit all fail with Page.loadEventFired / Runtime.evaluate timeouts. T-221 checked out HEAD~1's yrs_persist.rs, rebuilt, and the baseline dist wedges IDENTICALLY — so this is not that slice's doing. Also unchanged by serving map assets, by debug vs release dist, and by chromium-1223 vs 1228. The non-editor route / loads and evaluates fine, so CDP itself works; it is specific to the editor page. `gate doctor` reports FAIL on liveness with zero strays and 20 GB free, so its own diagnosis is not the answer either.\n\nWHY THIS IS PRIORITY 0: it is not one ticket's problem. Every remaining frontend ticket that needs a browser assertion — persistence round-trips, editor smokes, render checks — can only be verified by reasoning while this is wedged. T-221 had a complete probe written (plant a legacy record, assert it is withheld-and-warned, adopt, assert the scoped key appears, assert a second account sees none of it) and could not run a line of it. That probe needs no new files — `gate render-check --assert-js` takes it — so fixing the harness immediately buys back a real verification that is currently owed.\n\nStart from docs/website/EDITOR_GATE_RUNBOOK.md and the gate doctor liveness check (apps/website/frontend doctor.rs:166-172). Bisect what the editor route does at load that / does not: wasm size, the wgpu context, or a hung fetch.",
+      "summary": "PROVEN PRE-EXISTING by T-221 via A/B, not inferred. `gate smoke persist`, `gate doctor` and `render-check` against /missions/smoke/edit all fail with Page.loadEventFired / Runtime.evaluate timeouts. T-221 checked out HEAD~1's yrs_persist.rs, rebuilt, and the baseline dist wedges IDENTICALLY — so this is not that slice's doing. Also unchanged by serving map assets, by debug vs release dist, and by chromium-1223 vs 1228. The non-editor route / loads and evaluates fine, so CDP itself works; it is specific to the editor page. `gate doctor` reports FAIL on liveness with zero strays and 20 GB free, so its own diagnosis is not the answer either.\n\nWHY THIS IS PRIORITY 0: it is not one ticket's problem. Every remaining frontend ticket that needs a browser assertion — persistence round-trips, editor smokes, render checks — can only be verified by reasoning while this is wedged. T-221 had a complete probe written (plant a legacy record, assert it is withheld-and-warned, adopt, assert the scoped key appears, assert a second account sees none of it) and could not run a line of it. That probe needs no new files — `gate render-check --assert-js` takes it — so fixing the harness immediately buys back a real verification that is currently owed.\n\nStart from docs/website/EDITOR_GATE_RUNBOOK.md and the gate doctor liveness check (apps/website/frontend doctor.rs:166-172). Bisect what the editor route does at load that / does not: wasm size, the wgpu context, or a hung fetch.\n\nSOLVED 2026-07-26. ROOT CAUSE WAS NOT A WEDGE — the browser process was DYING. Chromium takes SIGABRT ~300ms after navigating /missions/smoke/edit, at third_party/skia/src/ports/SkFontMgr_FontConfigInterface.cpp:163 \"Not implemented\" — the unconditional SK_ABORT in onMatchFamilyStyleCharacter (per-character font fallback). Captured from chromium's own stderr with the `Received signal 6` stack, plus a gdb attach showing the abort on a ThreadPoolForeg thread of the BROWSER process. A dead browser never answers the websocket, and cdp.rs's reader leaves the pending call in the map, so it surfaced as a Runtime.evaluate timeout.\n\nPRECONDITION: chromium resolved NO FONT AT ALL. `~/.cache/fontconfig` is shared between the Fedora host and the Debian 12 distrobox (same $HOME) and contains only the container's directory-hash entries. Chromium's bundled fontconfig accepts them, writes nothing, and never rescans — so it starts with zero fonts while `fc-list` on the host reports 783.\n\nISOLATION, all arms identical but the variable: shared cache + editor -> FATAL; a COPY of that cache at a new path + editor -> FATAL; an EMPTY cache dir + editor -> no fatal, 10/10 evals; shared cache + `/` -> no fatal. So it is cache CONTENT, not path, not URL length, not the API. Falsified along the way: URL length, --headless=old, --enable-unsafe-webgpu, extensions, and every single-character page tried. Route matrix: /, /dashboard, /missions, /missions/smoke, /vehicles, /mortar all survive the broken font environment — ONLY the mission editor reaches a per-character fallback. That is exactly why it read as editor-specific and app-side, and why it was invariant to map assets, debug-vs-release dist, and chromium 1223 vs 1228.\n\nT-177's earlier 'fix the shell crash by using the full chrome' only MOVED this: onMatchFamilyStyleCharacter is unimplemented in both builds.\n\nFIX: the gate owns its own fontconfig cache ($TMPDIR/tbd-gate-cache) via doctor.rs ensure_gate_font_cache(), called from Harness::new so every smoke, render-check and r-auth inherits it. Plus three new doctor checks — `fonts`, `dist` (a missing --dist used to 500 everything and then fail on LIVENESS, reading as 'the editor wedged'), and liveness now asks /json/version so it prints 'the headless browser process DIED' instead of 'timed out'.\n\nVERIFIED INDEPENDENTLY from the command center: `gate doctor: OK`, with `liveness  editor page booted; evaluate responsive`. It was FAIL.\n\nAND IT PAID THE DEBT: T-221's persistence probe ran for real — `gate render-check --seed-auth --assert-js`, 30 assertions, PASS=true. Legacy record withheld-and-warned, adopt claimed 1, scoped keys present, restore/undoRestore round-tripped, second account saw none of it. Dist provenance checked: wasm md5 identical to the operator's live dist, so no stale cross-worktree artifact.\n\nOPERATOR NOTE: `rm -rf ~/.cache/fontconfig` fixes this outside the gate, but any fontconfig run inside the Debian container re-poisons it. The gate no longer depends on it either way.",
       "program": "platform",
       "surfaces": [
         "FRONTEND",
@@ -9338,14 +9338,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3136,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 0
+      "priority": 0,
+      "shipped_at": "ccbcda8b"
     },
     {
       "id": "T-321",
@@ -9692,6 +9693,46 @@
       ],
       "status": "idea",
       "order": 3153,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-338",
+      "title": "Sign-out does not purge local documents, so account A's mission is restorable by B",
+      "summary": "FOUND by T-320 and REPRODUCED, not inferred. This is the T-221 bug surviving in the in-memory half — T-221 scoped the IndexedDB records; it did not scope the RAM cache in front of them.\n\nTwo linked defects:\n  1. `mission_hydrate.rs:571` `recall()` is NOT account-scoped. `has_snapshot` (~:590) checks the in-memory LOCAL_BACKUPS map BEFORE the scoped IDB read, and LOCAL_BACKUPS is never cleared on sign-out. Measured: `same_realm_has_after_switch=true` — within one page load, changing account does NOT hide A's snapshot, so a client-side sign-out then sign-in leaves A's document restorable by B.\n  2. `yrs_persist.rs:44` DOCUMENTS a sign-out purge that does not exist. `purge_owner` (yrs_persist.rs:319) has exactly one caller repo-wide — `evict_foreign_records` at :361. `auth::clear_session` (auth.rs:235) does not call it. T-221 wrote purge_owner as `pub` and ready and said the call site needed the discord_id captured BEFORE clear_session; nobody wired it.\n\nFix shape: clear (or owner-key) LOCAL_BACKUPS on sign-out, AND wire purge_owner into clear_session, capturing the owner first. Both halves are needed — either alone leaves a path.\n\nThe browser gate is HEALTHY as of T-320, so this is now directly testable: `gate render-check --seed-auth --assert-js` took T-221's 30-assertion probe. Extend it rather than reasoning about it. One thing T-320 could NOT exercise and you should: the boot-time `evict_foreign_records` backstop — its second-account realm was a same-origin iframe that boots as A, so it needs a real reload with a different seed.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3154,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-339",
+      "title": "Two gate-harness gaps T-320 could not reach from its own files",
+      "summary": "Both found and diagnosed by T-320, both left because the files were outside its ownership. Neither is red today; both are one small change.\n\n1. **`vsuite.rs:366` launches its own chromium** and therefore does NOT get T-320's `ensure_gate_font_cache()`. It is green only because it renders ordinary routes, which survive a zero-font environment — the mission editor is the one route that reaches a per-character fallback and aborts. Moving `ensure_gate_font_cache()` into `cdp::launch` closes it for EVERY caller in one line. `cdp.rs` was not T-320's file. Do this one first; it is the durable form of the fix.\n\n2. **`smokes.rs render_check` builds its Harness with `api_proxy: None`**, so render-check cannot reach an API at all (T-226 hit this independently and had to drive Chrome by hand). T-320 confirmed it is NOT a wedge — the editor boots, installs all three bridges and answers --assert-js with no backend — but any assertion needing live data is impossible. The flag has to be threaded through `bin/gate.rs` -> `RenderCheckArgs`, and `bin/gate.rs` was outside T-320's list.\n\nLeave `gate smoke hydrate` returning exit 2 on 'backend not reachable' alone: T-320 judged it correct, and it is — a data-safety gate that could not run must not report green.",
+      "program": "platform",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3155,
       "stream": "web-platform",
       "targets": [
         "website"
