@@ -22,7 +22,7 @@
 #![allow(dead_code)]
 use crate::dto::MissionDetail;
 use crate::nav::Role;
-use crate::ui::{AuthGate, Dialog, MaterialIcon, cn};
+use crate::ui::{cn, AuthGate, Dialog, MaterialIcon};
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 use serde_json::Value;
