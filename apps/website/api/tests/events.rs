@@ -1901,12 +1901,11 @@ async fn event_server_and_modpack_binding() {
     );
 
     // 5. Columns exist and are NULL on a fresh row — migration is safe for existing events.
-    let nulls: (Option<uuid::Uuid>, Option<uuid::Uuid>) = sqlx::query_as(
-        "SELECT server_id, modpack_id FROM events WHERE id = $1::uuid",
-    )
-    .bind(&unbound_id)
-    .fetch_one(&pool)
-    .await
-    .expect("read columns");
+    let nulls: (Option<uuid::Uuid>, Option<uuid::Uuid>) =
+        sqlx::query_as("SELECT server_id, modpack_id FROM events WHERE id = $1::uuid")
+            .bind(&unbound_id)
+            .fetch_one(&pool)
+            .await
+            .expect("read columns");
     assert_eq!(nulls, (None, None), "cleared row must store NULL,NULL");
 }
