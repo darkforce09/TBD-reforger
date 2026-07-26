@@ -2011,6 +2011,16 @@ mod tests {
         assert_eq!(doc.slots[1].kit, "kit:us_rifleman");
         assert_eq!(doc.slots[3].kit, "kit:sov_rifleman");
         // Orbat instance count == slots length (loader parity gate).
+        //
+        // T-216 — THIS ASSERTION IS COUNT-PARITY AND IT IS BLIND BY CONSTRUCTION. It proves the
+        // ORBAT block has the right NUMBER of seats; it says nothing about what is ON one. Every
+        // T-180 per-seat field (`tag`, the per-slot `callsign`, `rank`, `stance`), the squad's
+        // `leaderSlotId` and the whole vehicle roster can vanish between the editor and the game
+        // server with this line still green — and they do. That is not a hypothetical: it is
+        // measured, named and pinned one test down in
+        // [`the_compile_boundary_ledger_is_checked_against_the_contract`], which is the assertion
+        // that examines the seats rather than counting them. Keep both; do not "simplify" the
+        // ledger away because this line covers the ORBAT — it does not.
         let orbat_count: i64 = doc
             .orbat
             .values()
@@ -2090,6 +2100,423 @@ mod tests {
         assert_eq!(s1_gear["launcher"], "res://m72");
         assert_eq!(s1_gear["handgun"], "res://m9");
         assert_eq!(s1_gear["throwable"], "res://m67");
+    }
+
+    // ══ T-216 — the compile boundary, examined value by value ═══════════════════════════════════
+    //
+    // ## What was measured, and where the loss actually is
+    //
+    // T-180 shipped six author-facing things that never reach the game server: a squad's
+    // `leaderSlotId`, a slot's `tag` / `callsign` / `rank` / `stance`, and the entire vehicle
+    // roster. `make verify-t180` was green throughout, because **not one of its twenty-two test
+    // selectors names a test in this file** — it exercises `doc::place_orbat` and `doc::store`
+    // (the editor can AUTHOR it), `slots_gpu` / `map-engine-render` (the map can DRAW it) and
+    // `mission::orbat` / `mission::compile` (the ORBAT derive), and then stops. The compile
+    // boundary is the one edge it never crosses, so "the feature works" was only ever a claim
+    // about the two ends of a pipe with a hole in the middle.
+    //
+    // The ticket locates the drop in `flatten_to_mod_document`. That is where the values are
+    // last seen, but it is NOT where the decision is made, and the difference matters for
+    // whoever fixes it. `mission.schema.json` closes `$defs/slot`, `$defs/group` and the
+    // document root with `additionalProperties: false`; `GET /missions/:id/compiled` holds the
+    // flattened document to that schema (`validated_compiled_body`, `handlers/missions.rs`) and
+    // answers **HTTP 500** on a violation, deliberately, because a violation is a server-side
+    // defect. So emitting any of these six from here today would not deliver the feature — it
+    // would take `/compiled` down for every mission. The contract has to widen first.
+    //
+    // ## Why this test is shaped the way it is
+    //
+    // The assertion this replaces in spirit is the count-parity line above: ORBAT instances ==
+    // slot count. It is true, it is green, and it is blind — it counts seats and never looks at
+    // one. This test looks at each value by name, and it is written so that it cannot pass
+    // vacuously in either direction:
+    //
+    // * Every row first asserts the FIXTURE actually authors the value. A "the wire does not
+    //   carry X" verdict over a payload that never carried X is the signature defect of this
+    //   codebase in miniature — a check reporting success over an input it never examined.
+    // * A `Blocked` row asserts against the SCHEMA, not about it. The moment T-242 declares one
+    //   of these keys, its row goes red with "the contract no longer blocks this — emit it or
+    //   update the ledger". A dead feature therefore cannot stay quietly dead once its blocker
+    //   is lifted; the tripwire is the deliverable.
+    // * Absence is checked by KEY over the whole document tree, not by substring over the
+    //   serialized text. `leaderSlotId`'s value is a slot id, and slot ids legitimately reach
+    //   the wire as `uid` — a substring search would have "found" it and passed.
+    //
+    // ## The exact contract delta each blocked row needs (for T-242, not for this file)
+    //
+    // | value | schema object to widen | key |
+    // |---|---|---|
+    // | squad leader | `$defs/group` (or a `$defs/slot` boolean) | `leaderSlotId` |
+    // | slot tag | `$defs/slot` | `tag` |
+    // | slot callsign | `$defs/slot` | `callsign` |
+    // | slot rank | `$defs/slot` | `rank` |
+    // | slot stance | `$defs/slot` | `stance` |
+    // | vehicles | document root + a new `$def` | `vehicles` |
+    //
+    // Vehicles do NOT fit the already-declared top-level `entities` array, and this test proves
+    // it rather than asserting it: `$defs/entity` is `{alias, x, z, headingDeg, faction,
+    // inventory}` and closed, `$defs/alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$`
+    // — a registry alias, not a ResourceName — and the mod's alias registry
+    // (`apps/mod/tbd-framework/Data/registry.json`) holds exactly ONE `veh:` row, so
+    // resource-name → alias would drop every other authored vehicle. Substituting a different
+    // vehicle for an unaliased one is the T-200 silent-substitution defect with a 10-tonne
+    // vehicle instead of a rifleman.
+    //
+    // And widening the READER is not free either: adding `stance`/`tag`/`callsign`/`rank` to
+    // [`SlotIn`] or `leaderSlotId` to [`SquadIn`] as typed fields narrows
+    // [`scan_editor_payload_types`]'s accept set, which that function's own contract forbids —
+    // "It cannot reject a payload that compiles today." A stored payload carrying
+    // `"stance": 5` is legal and ignored today; typed, it becomes a permanent 400 on save.
+    // Read those fields as `serde_json::Value` or not at all.
+
+    /// The canonical mod contract, embedded so a "the schema blocks this" verdict is CHECKED
+    /// against the schema rather than asserted about it. `include_str!` reaches outside the
+    /// crate — the same mechanism [`crate::mission::kit`] uses for `kit-aliases.json` — so this
+    /// is the one committed file and not a copy that can drift.
+    const MISSION_SCHEMA_RAW: &str =
+        include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
+
+    /// A saved payload that authors all six T-180 values, each with a distinctive value so a
+    /// failure message names the thing that moved.
+    const LEDGER_FIXTURE: &str = r#"{
+      "schemaVersion": 1,
+      "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
+      "vehicles": [
+        {"id": "v1",
+         "resourceName": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
+         "position": {"x": 100.5, "y": 200.5, "z": 3.0, "rotation": 45.0},
+         "squadId": "sq1"},
+        {"id": "v2", "resourceName": "{ABCDEF0123456789}Prefabs/Vehicles/Wheeled/UAZ/UAZ469.et"}
+      ],
+      "editor": {
+        "factions": [{"id": "f1", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"]}],
+        "squads": [{"id": "sq1", "factionId": "f1", "callsign": "Alpha", "name": "Alpha 1-1",
+                    "slotIds": ["s1", "s2"], "leaderSlotId": "s2", "vehicleIds": ["v1"]}],
+        "slots": [
+          {"id": "s1", "squadId": "sq1", "index": 0, "role": "RFL", "tag": "MEDIC-TAG",
+           "stance": "prone", "callsign": "Alpha-One-Actual", "rank": "Lance Corporal",
+           "position": {"x": 1.0, "y": 2.0, "z": 0, "rotation": 0}},
+          {"id": "s2", "squadId": "sq1", "index": 1, "role": "SL",
+           "position": {"x": 3.0, "y": 4.0, "z": 0, "rotation": 0}}
+        ],
+        "editorLayers": []
+      }
+    }"#;
+
+    /// What the compiled document does with one authored editor value.
+    enum Fate {
+        /// It reaches the wire, at this JSON pointer into the compiled document.
+        Reaches(&'static str),
+        /// It cannot: `mission.schema.json` closes every object in `owners` and none of them
+        /// declares `wire_key`.
+        Blocked {
+            /// Pointer into the COMPILED document under which `wire_key` must not appear; `""`
+            /// is the whole document. This is scoped rather than global for a reason the first
+            /// run of this test found by failing: `callsign` DOES occur in the compiled
+            /// document, at `orbat.*.groups[].callsign`, because that is the SQUAD's callsign.
+            /// A whole-document search conflates it with the per-slot `callsign` T-180.1 added,
+            /// which is the exact confusion behind the ticket's "43 occurrences" count.
+            scope: &'static str,
+            /// Every schema object a future emitter would have to open. All are asserted closed;
+            /// ANY one of them opening turns the row red.
+            owners: &'static [&'static str],
+            /// The key the value would arrive under.
+            wire_key: &'static str,
+        },
+    }
+
+    struct LedgerRow {
+        /// Human name — appears in every failure message.
+        what: &'static str,
+        /// Pointer into the SAVED PAYLOAD. Asserted present and equal to `value` first, so no
+        /// row can pass because the fixture quietly stopped authoring it.
+        authored_at: &'static str,
+        value: &'static str,
+        fate: Fate,
+    }
+
+    /// Does any object anywhere in `v` carry `key`?
+    fn any_object_has_key(v: &serde_json::Value, key: &str) -> bool {
+        match v {
+            serde_json::Value::Object(m) => {
+                m.contains_key(key) || m.values().any(|c| any_object_has_key(c, key))
+            }
+            serde_json::Value::Array(a) => a.iter().any(|c| any_object_has_key(c, key)),
+            _ => false,
+        }
+    }
+
+    #[test]
+    fn the_compile_boundary_ledger_is_checked_against_the_contract() {
+        const SLOT: &[&str] = &["/$defs/slot"];
+        const GROUP_OR_SLOT: &[&str] = &["/$defs/group", "/$defs/slot"];
+        const ROOT_OR_ENTITY: &[&str] = &["", "/$defs/entity"];
+
+        let ledger: &[LedgerRow] = &[
+            // The one that DOES reach the wire — and the reason the ticket's occurrence count
+            // was misleading. `callsign` appears 43 times in this file, all of them the SQUAD's,
+            // which becomes `slots[].groupCallsign`. That is a different field from the T-180.1
+            // per-slot `callsign` two rows down, which appears zero times.
+            LedgerRow {
+                what: "squad callsign (the one that survives)",
+                authored_at: "/editor/squads/0/callsign",
+                value: "Alpha",
+                fate: Fate::Reaches("/slots/0/groupCallsign"),
+            },
+            LedgerRow {
+                what: "squad leaderSlotId (T-180.1/.2 — who leads)",
+                authored_at: "/editor/squads/0/leaderSlotId",
+                value: "s2",
+                fate: Fate::Blocked {
+                    scope: "",
+                    owners: GROUP_OR_SLOT,
+                    wire_key: "leaderSlotId",
+                },
+            },
+            LedgerRow {
+                what: "slot tag",
+                authored_at: "/editor/slots/0/tag",
+                value: "MEDIC-TAG",
+                fate: Fate::Blocked {
+                    scope: "/slots",
+                    owners: SLOT,
+                    wire_key: "tag",
+                },
+            },
+            LedgerRow {
+                what: "slot callsign (T-180.1 identity — NOT the squad's)",
+                authored_at: "/editor/slots/0/callsign",
+                value: "Alpha-One-Actual",
+                fate: Fate::Blocked {
+                    scope: "/slots",
+                    owners: SLOT,
+                    wire_key: "callsign",
+                },
+            },
+            LedgerRow {
+                what: "slot rank (T-180.1 identity)",
+                authored_at: "/editor/slots/0/rank",
+                value: "Lance Corporal",
+                fate: Fate::Blocked {
+                    scope: "/slots",
+                    owners: SLOT,
+                    wire_key: "rank",
+                },
+            },
+            LedgerRow {
+                what: "slot stance",
+                authored_at: "/editor/slots/0/stance",
+                value: "prone",
+                fate: Fate::Blocked {
+                    scope: "/slots",
+                    owners: SLOT,
+                    wire_key: "stance",
+                },
+            },
+            LedgerRow {
+                what: "vehicle resourceName (the whole roster)",
+                authored_at: "/vehicles/0/resourceName",
+                value: "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
+                fate: Fate::Blocked {
+                    scope: "",
+                    owners: ROOT_OR_ENTITY,
+                    wire_key: "resourceName",
+                },
+            },
+        ];
+
+        let payload = LEDGER_FIXTURE.as_bytes();
+        let authored: serde_json::Value =
+            serde_json::from_slice(payload).expect("fixture parses as JSON");
+        let doc = flatten_to_mod_document(&meta(), payload).expect("fixture compiles");
+        let wire = serde_json::to_value(&doc).expect("compiled document serialises");
+        let schema: serde_json::Value =
+            serde_json::from_str(MISSION_SCHEMA_RAW).expect("mission.schema.json parses");
+
+        for row in ledger {
+            // (0) THE ANTI-VACUITY CLAUSE. Everything below is a statement about this value;
+            //     if the fixture stopped carrying it, every verdict beneath is worthless and
+            //     would still be green. Check the input before checking the output.
+            let got = authored.pointer(row.authored_at).unwrap_or_else(|| {
+                panic!(
+                    "{}: the fixture authors NOTHING at {} — the rest of this row would pass \
+                     over an input it never examined",
+                    row.what, row.authored_at
+                )
+            });
+            assert_eq!(
+                got.as_str(),
+                Some(row.value),
+                "{}: fixture must author {:?} at {}",
+                row.what,
+                row.value,
+                row.authored_at
+            );
+
+            match row.fate {
+                Fate::Reaches(ptr) => {
+                    let on_wire = wire.pointer(ptr).unwrap_or_else(|| {
+                        panic!(
+                            "{}: nothing at {} in the compiled document — this value used to \
+                             reach the game server and no longer does",
+                            row.what, ptr
+                        )
+                    });
+                    assert_eq!(
+                        on_wire.as_str(),
+                        Some(row.value),
+                        "{}: {} carries {:?}, not the authored {:?}",
+                        row.what,
+                        ptr,
+                        on_wire,
+                        row.value
+                    );
+                }
+                Fate::Blocked {
+                    scope,
+                    owners,
+                    wire_key,
+                } => {
+                    // Half one — the value is genuinely not on the wire, checked by KEY (see the
+                    // header: a substring search finds `leaderSlotId`'s value under `uid` and
+                    // passes for the wrong reason) within `scope`.
+                    let region = wire
+                        .pointer(scope)
+                        .unwrap_or_else(|| panic!("{}: no {scope:?} in the document", row.what));
+                    assert!(
+                        !any_object_has_key(region, wire_key),
+                        "{}: {scope:?} in the compiled document now carries a {:?} key. If \
+                         this slice is wiring the field through, DELETE this row and assert \
+                         `Reaches`; the ledger must never disagree with the wire.",
+                        row.what,
+                        wire_key
+                    );
+                    // Half two — and the reason it is not on the wire is the CONTRACT, which is
+                    // read here rather than described. When T-242 widens one of these objects
+                    // this assertion is what turns the dead feature back into visible work.
+                    for owner in owners {
+                        let obj = schema.pointer(owner).unwrap_or_else(|| {
+                            panic!(
+                                "{}: mission.schema.json has no object at {owner:?}",
+                                row.what
+                            )
+                        });
+                        assert_eq!(
+                            obj.get("additionalProperties"),
+                            Some(&serde_json::Value::Bool(false)),
+                            "{}: mission.schema.json {owner:?} is no longer closed — an \
+                             undeclared {:?} would now validate, so this row's premise is gone",
+                            row.what,
+                            wire_key
+                        );
+                        assert!(
+                            obj.get("properties")
+                                .and_then(|p| p.get(wire_key))
+                                .is_none(),
+                            "{}: mission.schema.json {owner:?} NOW DECLARES {:?}. The contract \
+                             no longer blocks this value — emit it from flatten_to_mod_document \
+                             and move this row to `Reaches`.",
+                            row.what,
+                            wire_key
+                        );
+                    }
+                }
+            }
+        }
+
+        // The `callsign` confusion, stated sharply. Two different fields share one name:
+        //   * the SQUAD's, which reaches the wire twice — `orbat.*.groups[].callsign` and
+        //     `slots[].groupCallsign` — and is every one of this file's 43 `callsign` mentions;
+        //   * the SLOT's (T-180.1 identity), which reaches it zero times.
+        // The `Blocked` row above scopes its key search to `/slots` precisely because the first
+        // one legitimately occupies the name elsewhere; these three lines pin that premise so
+        // the scope cannot quietly become an excuse.
+        assert_eq!(wire["orbat"]["blufor"]["groups"][0]["callsign"], "Alpha");
+        assert_eq!(wire["slots"][0]["groupCallsign"], "Alpha");
+        let wire_text = serde_json::to_string(&wire).expect("compiled document serialises");
+        assert!(
+            !wire_text.contains("Alpha-One-Actual"),
+            "the per-slot callsign reached the wire under some other key"
+        );
+
+        // Vehicles: neither their own block nor the already-declared `entities` array, which is
+        // the obvious-looking landing spot and does not fit. `$defs/entity` is closed and names
+        // a registry ALIAS, not a ResourceName — machine-checked so nobody has to take the
+        // header's word for it.
+        assert!(wire.get("vehicles").is_none() && wire.get("entities").is_none());
+        let entity = &schema["$defs"]["entity"];
+        assert_eq!(
+            entity["additionalProperties"],
+            serde_json::Value::Bool(false)
+        );
+        for absent in ["resourceName", "squadId", "id", "position"] {
+            assert!(
+                entity["properties"].get(absent).is_none(),
+                "$defs/entity now declares {absent:?} — re-examine whether the vehicle roster \
+                 can ride `entities` after all"
+            );
+        }
+        assert_eq!(
+            schema["$defs"]["alias"]["pattern"],
+            "^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$"
+        );
+    }
+
+    /// Every key a compiled slot carries, pinned exactly. An addition or a removal is a change
+    /// to the website↔mod interface and must not be able to happen quietly — which is precisely
+    /// how the six values above went missing without a single test noticing.
+    #[test]
+    fn a_compiled_slot_carries_exactly_these_keys() {
+        let doc = flatten_to_mod_document(&meta(), LEDGER_FIXTURE.as_bytes()).expect("compiles");
+        let wire = serde_json::to_value(&doc).expect("serialises");
+
+        let mut keys: Vec<&str> = wire["slots"][0]
+            .as_object()
+            .expect("a slot is an object")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        keys.sort_unstable();
+        assert_eq!(
+            keys,
+            [
+                "faction",
+                "groupCallsign",
+                "headingDeg",
+                "id",
+                "kit",
+                "role",
+                "uid",
+                "x",
+                "z",
+            ],
+            "the compiled slot shape changed. `y` and `loadout` are conditional and this \
+             fixture authors neither; everything else here is unconditional."
+        );
+
+        let mut top: Vec<&str> = wire
+            .as_object()
+            .expect("the document is an object")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        top.sort_unstable();
+        assert_eq!(
+            top,
+            [
+                "environment",
+                "factions",
+                "flow",
+                "meta",
+                "orbat",
+                "radioPlan",
+                "schemaVersion",
+                "slots",
+                "winConditions",
+                "zones",
+            ],
+            "the compiled document's top-level shape changed"
+        );
     }
 
     #[test]
