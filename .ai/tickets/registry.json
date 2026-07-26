@@ -9291,14 +9291,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3134,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 1
+      "priority": 1,
+      "shipped_at": "538b9ad4"
     },
     {
       "id": "T-319",
@@ -9311,14 +9312,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3135,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 2
+      "priority": 2,
+      "shipped_at": "538b9ad4"
     },
     {
       "id": "T-320",
@@ -9364,7 +9366,7 @@
     {
       "id": "T-322",
       "title": "`make api` builds into the shared target dir, and a slice rebuild kills the running dev API",
-      "summary": "OBSERVED LIVE 2026-07-26 08:28:10, not theorised. The operator's dev API on :8080 died mid-wave. No agent bound or killed it — every one of the eight was on its own high port, verified. What happened is that `make api` runs `cargo run --bin api` into the SHARED CARGO_TARGET_DIR, so the running process's executable is `target/debug/api`; a slice agent then built the same binary into the same path, and overwriting a running ELF in place kills the process. The binary's mtime (08:28:10) matches the death exactly.\n\nThis is a sharper form of T-300. T-300 says the shared target can SERVE unmerged code from `make api`; this says it can also DESTROY the operator's running server, at a moment nobody is watching, in a way that looks like the dev environment randomly falling over.\n\nWorkaround already in place: the dev API now runs from a stable copy at /var/tmp/tbd-api-dev/api, built from clean main into its own target dir, so no agent can touch it. That is a hand-placed band-aid and will be undone the next time anyone runs `make api`.\n\nReal fix: give the dev API its own CARGO_TARGET_DIR in the Makefile target, the same way the wave gate already does for frontend tests (target-gate-frontend) and for trunk (dist-gate-frontend). Confirm the operator's `make api` workflow is unchanged from their side.",
+      "summary": "OBSERVED LIVE 2026-07-26 08:28:10, not theorised. The operator's dev API on :8080 died mid-wave. No agent bound or killed it — every one of the eight was on its own high port, verified. What happened is that `make api` runs `cargo run --bin api` into the SHARED CARGO_TARGET_DIR, so the running process's executable is `target/debug/api`; a slice agent then built the same binary into the same path, and overwriting a running ELF in place kills the process. The binary's mtime (08:28:10) matches the death exactly.\n\nThis is a sharper form of T-300. T-300 says the shared target can SERVE unmerged code from `make api`; this says it can also DESTROY the operator's running server, at a moment nobody is watching, in a way that looks like the dev environment randomly falling over.\n\nWorkaround already in place: the dev API now runs from a stable copy at /var/tmp/tbd-api-dev/api, built from clean main into its own target dir, so no agent can touch it. That is a hand-placed band-aid and will be undone the next time anyone runs `make api`.\n\nReal fix: give the dev API its own CARGO_TARGET_DIR in the Makefile target, the same way the wave gate already does for frontend tests (target-gate-frontend) and for trunk (dist-gate-frontend). Confirm the operator's `make api` workflow is unchanged from their side.\n\nCONFIRMED EMPIRICALLY 2026-07-26 08:54:46: the wave gate's own `cargo test -p website-api` rebuilt target/debug/api, and the dev API — by then moved to the private copy — survived. So the diagnosis and the fix shape are both proven, and the vector is WIDER than `make api`: wave.sh forces CARGO_TARGET_DIR to the main repo target, so the gate itself is a writer, and it runs after every land. Isolating the long-lived CONSUMER is the robust fix; you can enumerate producers today but not tomorrow.",
       "program": "platform",
       "surfaces": [
         "CI"
@@ -9394,6 +9396,27 @@
       ],
       "status": "idea",
       "order": 3139,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-324",
+      "title": "Claiming a second ORBAT seat does not release the first, so one user holds two",
+      "summary": "FOUND by T-318 while fixing the orphan bug, and it is the bigger half. MEASURED, not inferred: claim slot0, then claim slot1, both with entirely VALID requests — the user ends up holding 2 seats while their registration row names 1. Pre-fix, withdraw then left one stranded.\n\nSo T-318's part 1 (rejecting malformed bodies) does not stop all new orphans, only the accidental ones. The valid-request path mints them too. T-318's withdraw fix makes them recoverable — it releases by occupant, and its test asserts BOTH seats are freed — but the seat is wrongly occupied until someone withdraws, and a capacity display reading it will be wrong meanwhile.\n\nFixing it properly means reconciling `assigned_to` inside register's existing `SELECT ... FOR UPDATE` transaction and deciding the waitlist interaction. That is a design change to a concurrency-sensitive handler, not a line edit — which is why T-318 reported it rather than folding it in.\n\nTwo related structural notes from the same agent, both worth resolving with this:\n  - `withdraw` does NOT take the `SELECT ... FOR UPDATE` on `event_missions` that `register` does, though both do check-then-write on capacity.\n  - `event_registrations.slot_id` and `orbat_slots.assigned_to` are a denormalized duplicate of ONE fact with no constraint forcing agreement. A partial unique index on `orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL` would make double-claiming impossible at the DB level. That is a migration, so it wants coordinating with T-228, which owns apps/website/api/migrations.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3140,
       "stream": "web-platform",
       "targets": [
         "website"

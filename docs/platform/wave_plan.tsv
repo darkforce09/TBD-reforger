@@ -32,7 +32,8 @@
 0	T-225	Event state machine and lifecycle automation	apps/website/api/src/handlers/events.rs
 0	T-205	Vehicle data has no seats, crew roles, cargo capacity or turret bindings	apps/website/frontend/src/vehicles.rs
 0	T-206	Item data is 78% empty	packages/tbd-schema/registry/registry-items.workbench.json
-1	T-322	`make api` builds into the shared target dir, and a slice rebuild kills the running dev API	root Makefile
+1	T-324	Claiming a second ORBAT seat does not release the first	apps/website/api/src/handlers/events.rs
+1	T-322	`make api` builds into the shared target dir, and a slice rebuild kills the running dev API	Makefile
 1	T-323	Admin ban button sends `{}` and now 400s — the ban UI is broken on main	apps/website/frontend/src/personnel.rs
 1	T-321	Every map placement mints a fresh ORBAT squad	crates/map-engine-core/src/doc/place_orbat.rs
 1	T-315	PUT /missions/:id/armory with an empty body DELETEs the whole armory	apps/website/api/src/handlers/missions.rs; apps/website/api/tests/missions.rs
