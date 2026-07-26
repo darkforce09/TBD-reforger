@@ -455,8 +455,20 @@ class TBD_IdentityLink
 	//! Assembled in steps, never one long `+` chain: a 9-field chain is a measured
 	//! `Formula too complex`, whose SECOND diagnostic is a misleading `Incompatible parameter`.
 	//!
-	//! Field names are the backend's `LinkConfirmRequest` (`handlers/me.rs`): `code`, `arma_id`,
-	//! `arma_character` — all `#[serde(default)]`, all snake_case.
+	//! Field names are the backend's `LinkConfirmRequest` (`handlers/me.rs`), all snake_case:
+	//! `code`, `arma_id`, `arma_character`.
+	//!
+	//! ── ALL THREE KEYS ARE MANDATORY. NEVER MAKE ONE CONDITIONAL. ───────────────────────────
+	//! T-319 removed `#[serde(default)]` from `arma_character`, so OMITTING that key is now a
+	//! serde DECODE failure: Axum's `Json` extractor rejects the body with a 400 before the handler
+	//! runs, nothing is written, and the player is told this server sent something malformed.
+	//! `code` and `arma_id` do still carry `#[serde(default)]`, but that only turns "absent" into
+	//! "empty" — and the handler's first check rejects an empty one with its own 400. So the
+	//! effective contract is identical for all three: ALWAYS EMIT THE KEY.
+	//!
+	//! An empty VALUE is still legal, and that asymmetry is the whole point of the rule: `""`
+	//! decodes fine, and `users.arma_character` is cosmetic (nothing joins on it), which is why
+	//! `PlayerName` is allowed to return empty. Empty value, present key — never a missing key.
 	protected static string BuildPayload(notnull TBD_IdentityLinkPending pending)
 	{
 		string json = "{";
@@ -564,6 +576,12 @@ class TBD_IdentityLink
 
 		if (code == HttpCode.HTTP_CODE_400)
 		{
+			// The backend answers 400 before it touches `identity_link_codes`, so the code is NOT
+			// consumed and stays live. This does NOT re-send it: `FinishQuiet` drops the entry and
+			// pumps the NEXT queued one, so a malformed request fails exactly once and the human
+			// decides whether to type again. That is deliberate — a 400 means THIS server built a
+			// bad body, and automatically retrying a body that cannot change is an infinite loop
+			// against the website carrying the player's still-live code.
 			player = TAG + "the website rejected this server's request as malformed. That is a bug on our side, not your code — tell an admin. You are NOT linked.";
 			ReplyAsync(player);
 			ReplyAsync(NewCodeAdvice());
