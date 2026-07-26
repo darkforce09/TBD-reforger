@@ -1743,3 +1743,170 @@ async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event(
         "an attendee already counted must not be refused by the cap again: {b}"
     );
 }
+
+/// T-260 — events carry per-event `server_id` + `modpack_id`.
+///
+/// Before: create/get/patch had zero such fields; Hub used global `/modpacks/current`.
+/// After: create binds them, hub GET echoes them, PATCH can set/clear, unknown ids 400,
+/// and a create that omits them leaves the keys absent (NULL in DB — safe for old rows).
+#[tokio::test]
+async fn event_server_and_modpack_binding() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = token(&app, "admin").await;
+    let enl = token(&app, "enlisted").await;
+
+    // Seed a real server + modpack the advisory checks can accept. Private ids so concurrent
+    // suites cannot collide (T-334 pattern).
+    let modpack_id: uuid::Uuid = sqlx::query_scalar(
+        "INSERT INTO modpacks (name, version, total_size_bytes, workshop_url, is_current, created_at) \
+         VALUES ('T260 Pack', '9.9.9', 42, 'https://example.invalid/t260', false, now()) \
+         RETURNING id",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("seed modpack");
+    let server_id: uuid::Uuid = sqlx::query_scalar(
+        "INSERT INTO servers (name, ip, port, required_modpack_id, is_active) \
+         VALUES ('T260 Srv', '127.0.0.1'::inet, 2260, $1, true) RETURNING id",
+    )
+    .bind(modpack_id)
+    .fetch_one(&pool)
+    .await
+    .expect("seed server");
+
+    // 1. Create WITHOUT binding — keys absent on the wire (skip_serializing_if None).
+    let (st, e) = call(
+        &app,
+        "POST",
+        "/api/v1/events",
+        &admin,
+        Some(r#"{"start_time":"2027-06-01T19:00:00Z","name_override":"T260 unbound"}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "unbound create: {e}");
+    assert!(
+        e.get("server_id").is_none(),
+        "unbound create must omit server_id, got {e}"
+    );
+    assert!(
+        e.get("modpack_id").is_none(),
+        "unbound create must omit modpack_id, got {e}"
+    );
+    let unbound_id = e["id"].as_str().unwrap().to_string();
+
+    // 2. Create WITH binding — create + hub GET echo both ids.
+    let body = format!(
+        r#"{{"start_time":"2027-06-02T19:00:00Z","name_override":"T260 bound","server_id":"{server_id}","modpack_id":"{modpack_id}"}}"#
+    );
+    let (st, e) = call(&app, "POST", "/api/v1/events", &admin, Some(&body)).await;
+    assert_eq!(st, StatusCode::CREATED, "bound create: {e}");
+    assert_eq!(
+        e["server_id"].as_str().unwrap(),
+        server_id.to_string(),
+        "create must echo server_id: {e}"
+    );
+    assert_eq!(
+        e["modpack_id"].as_str().unwrap(),
+        modpack_id.to_string(),
+        "create must echo modpack_id: {e}"
+    );
+    let bound_id = e["id"].as_str().unwrap().to_string();
+
+    let (st, hub) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/events/{bound_id}"),
+        &enl,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "hub: {hub}");
+    assert_eq!(
+        hub["server_id"].as_str().unwrap(),
+        server_id.to_string(),
+        "hub must carry per-event server_id (not global current): {hub}"
+    );
+    assert_eq!(
+        hub["modpack_id"].as_str().unwrap(),
+        modpack_id.to_string(),
+        "hub must carry per-event modpack_id: {hub}"
+    );
+
+    // 3. PATCH set on the unbound event, then clear with explicit null.
+    let patch = format!(r#"{{"server_id":"{server_id}","modpack_id":"{modpack_id}"}}"#);
+    let (st, e) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/events/{unbound_id}"),
+        &admin,
+        Some(&patch),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "patch set: {e}");
+    assert_eq!(e["server_id"].as_str().unwrap(), server_id.to_string());
+    assert_eq!(e["modpack_id"].as_str().unwrap(), modpack_id.to_string());
+
+    let (st, e) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/events/{unbound_id}"),
+        &admin,
+        Some(r#"{"server_id":null,"modpack_id":null}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "patch clear: {e}");
+    assert!(
+        e.get("server_id").is_none(),
+        "explicit null must clear server_id: {e}"
+    );
+    assert!(
+        e.get("modpack_id").is_none(),
+        "explicit null must clear modpack_id: {e}"
+    );
+
+    // 4. Unknown ids are 400 — not silent store (no FK to catch them).
+    let ghost = "00000000-0000-4000-a000-000000002260";
+    let (st, b) = call(
+        &app,
+        "POST",
+        "/api/v1/events",
+        &admin,
+        Some(&format!(
+            r#"{{"start_time":"2027-06-03T19:00:00Z","server_id":"{ghost}"}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "unknown server must 400: {b}");
+    assert!(
+        b["error"].as_str().unwrap_or("").contains("server_id"),
+        "error must name server_id: {b}"
+    );
+    let (st, b) = call(
+        &app,
+        "POST",
+        "/api/v1/events",
+        &admin,
+        Some(&format!(
+            r#"{{"start_time":"2027-06-03T19:00:00Z","modpack_id":"{ghost}"}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "unknown modpack must 400: {b}");
+    assert!(
+        b["error"].as_str().unwrap_or("").contains("modpack_id"),
+        "error must name modpack_id: {b}"
+    );
+
+    // 5. Columns exist and are NULL on a fresh row — migration is safe for existing events.
+    let nulls: (Option<uuid::Uuid>, Option<uuid::Uuid>) = sqlx::query_as(
+        "SELECT server_id, modpack_id FROM events WHERE id = $1::uuid",
+    )
+    .bind(&unbound_id)
+    .fetch_one(&pool)
+    .await
+    .expect("read columns");
+    assert_eq!(nulls, (None, None), "cleared row must store NULL,NULL");
+}
