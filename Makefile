@@ -154,12 +154,33 @@ verify-capability: ## T-181.2.1 every CRF capability must carry a TBD verdict (f
 mod-compile: ## T-181.1 Enfusion compile gate — native headless server, ~1.3s, no Workbench/Proton/GPU
 	bash scripts/mod/compile.sh
 
-mod-compile-selftest: ## T-181.1 prove the compile gate still catches a broken .c (expects exit 1)
-	@if bash scripts/mod/compile.sh --selftest; then \
-		echo "SELFTEST FAIL: gate returned 0 on deliberately broken source"; exit 1; \
-	else \
-		echo "SELFTEST OK: gate correctly rejected broken source"; \
-	fi
+# THE INSTRUMENT BEFORE THE VERDICT. This target's entire job is to prove the absence of false
+# greens, so it must not be one. Only exit 1 — a real Enfusion rejection of the deliberately
+# broken addon --selftest stages — counts as a pass. compile.sh's contract (see its header):
+#   0 compiled clean · 1 real compile failure · 2 no verdict reached · 3 environment failure
+#
+# Until T-312 this was `if compile.sh --selftest; then FAIL else OK fi`, which read ANY non-zero
+# as "the gate correctly rejected broken source". On a machine with no dedicated server and no
+# host bridge, compile.sh exits 3 without compiling a single line and this printed SELFTEST OK.
+# `scripts/mod/wave.sh` calls this target, so the mod wave gate reported PASS for a check that
+# never happened. T-209 documented the hazard in .github/workflows/mod-gates.yml and routed CI
+# around the target instead of fixing it, then moved the stale-rdb load-count guard to exit 3 —
+# routing one more failure mode into the same swallow. The `case` below is that CI check, brought
+# back to the target the humans and the wave gate actually run.
+#
+# GNU make reports its OWN status 2 for any failed recipe, flattening 1-vs-3 on the way out — so
+# each branch NAMES which failure it was in the text. Callers get the diagnosis from the message,
+# not from $?. Status capture is `|| rc=$$?`, never `cmd; rc=$$?`: the latter aborts before the
+# assignment under any -e shell, so the classification would never print.
+mod-compile-selftest: ## T-181.1 prove the compile gate still catches a broken .c (passes ONLY on exit 1)
+	@rc=0; bash scripts/mod/compile.sh --selftest || rc=$$?; \
+	case "$$rc" in \
+		1) echo "SELFTEST OK: gate correctly rejected broken source (exit 1)" ;; \
+		0) echo "SELFTEST FAIL: gate returned 0 on deliberately broken source — it is no longer detecting compile errors, so every green mod-compile since is suspect."; exit 1 ;; \
+		3) echo "SELFTEST FAIL: ENVIRONMENT (exit 3) — the gate never ran. Read the ENV FAIL above: it is this machine, and it says NOTHING about tbd-framework. A check that did not happen is not a pass."; exit 1 ;; \
+		2) echo "SELFTEST FAIL: no verdict reached (exit 2 — timeout, or a bad argument to compile.sh). Inconclusive is not a pass."; exit 1 ;; \
+		*) echo "SELFTEST FAIL: compile.sh --selftest exited $$rc, outside its documented 0/1/2/3 contract."; exit 1 ;; \
+	esac
 
 mod-world-boot: ## T-181.17 boot the real scenario headlessly — asserts the TBD_GameMode component roll-call
 	bash scripts/mod/world-boot.sh
