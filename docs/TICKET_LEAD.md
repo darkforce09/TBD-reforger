@@ -9,6 +9,9 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-251** (2690) — Production deployment story [ready] — No Dockerfile, no docker-compose.staging.yml (referenced by deploy.env.example and HOME_SERVER.md but absent), no deploy-website.sh, no deploy job in any of the four CI workflows, no TLS or reverse-proxy config in-repo, no pg_dump backup script, and no metrics, Sentry or OTel dependency.
+- **T-253** (2710) — Reclaim 65GB and stop double-compiling [ready] — target/ is 52GB, target-ci/ another 12GB, and .git/lfs holds 1.6GB of objects from tile pyramids untracked back on 2026-07-03. Disk is at 87%. Also no CARGO_TARGET_DIR is set, so the moment Rust work is sliced across worktrees each one starts a cold build.
+- **T-254** (2720) — Entity and object placement — the whole entities[] block [ready] — The Objects chip is a stub (eden_chrome.rs:1466-1470), place_at no-ops in objects mode (editor_ops.rs:1598-1602), the palette filters to kind==character (asset_catalog.rs:63), and the doc has no entities map. The mod has no reader either. Also blocks objective_destroy, which resolves rules.targetAlias against entities[].
 
 ## Next queued (top 10)
 
