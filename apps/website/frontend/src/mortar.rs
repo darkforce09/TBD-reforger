@@ -80,7 +80,7 @@ pub fn MortarCalculatorPage() -> impl IntoView {
                 "fp_y": fp_y.get_untracked(),
                 "tgt_x": tgt_x.get_untracked(),
                 "tgt_y": tgt_y.get_untracked(),
-                "weapon_system": "m252_81mm",
+                "weapon_system": "M252 81mm",
             });
             leptos::task::spawn_local(async move {
                 match crate::client::api_post::<FireSolution>(store, "/fire-missions/solve", body)
