@@ -1,56 +1,73 @@
 //! Mission Approvals (/admin/approvals) — ported from pages/admin.tsx `MissionApprovalsPage` +
-//! `ReviewInspector`. `<AdminGate>` → `/approvals` Resource → `QueryState` → a `SplitPane`: a
-//! Pending/Approved/Rejected segmented control + the queue master + the review detail pane.
+//! `ReviewInspector`. `<AdminGate>` → `/approvals` Resource → a `SplitPane`: the pending queue
+//! master + the `ReviewInspector` detail pane with the LIVE approve/reject mutations
+//! (POST /approvals/:id/{approve,reject}); the queue refetches on success.
 //!
-//! T-159.25: fully interactive — live tab switching (Approved/Rejected history stays on the React
-//! MOCK rows until list endpoints exist), row selection, and the `ReviewInspector` with the mock
-//! stats/feed shell + the LIVE approve/reject mutations (POST /approvals/:id/{approve,reject}) on
-//! the sticky action bar; queue refetches on success.
+//! T-218 — this surface stopped inventing things:
+//!
+//! - REJECT SENDS ITS REASON. `POST /approvals/:id/reject` takes `RejectInput { reason }` and
+//!   writes it to `missions.rejection_reason`. This page posted `serde_json::json!({})`, so the
+//!   column was overwritten with `""` on every rejection and the author was told their mission was
+//!   returned with no word on why. The action bar now owns the reason field and the button will
+//!   not fire without one — an empty reason is the bug, not a shortcut.
+//!
+//! - THE APPROVED / REJECTED TABS ARE GONE. They were `mock_approved()` / `mock_rejected()`: three
+//!   invented missions by two invented authors, rendered as review history. The same mocks fed the
+//!   tab counters, so an empty database advertised "Approved (2) / Rejected (1)" and a reviewer
+//!   could open "Operation Iron Veil" and act on it. `GET /approvals` selects
+//!   `status = 'pending_approval'` and nothing else, and no endpoint lists the other two states, so
+//!   there is no honest tab to put there — deleted rather than gated, per T-195: a "demo data"
+//!   ribbon is still a queue of missions that do not exist. They return with the endpoint (T-283).
+//!
+//! - THE TWO BUTTONS THAT LIED WENT WITH THEM. "Revoke Approval & Unpublish" and the rejected
+//!   tab's "Approve & Publish" existed only in those mock tabs and only ever raised a toast —
+//!   "Mission unpublished — pulled from the live server" over a mission that was still live.
+//!
+//! - THE BRIEFING AND STAT TILES ARE THE MISSION'S OWN. They were a fixed paragraph about
+//!   contested farmland plus "BLUFOR Slots 32 / OPFOR Type Mechanized / Est. Duration ~90 min",
+//!   printed under whichever real mission was selected. That is the one screen where fabricated
+//!   facts do direct damage: it is the page where someone decides. They now come from
+//!   `GET /missions/:id` (an admin passes `can_edit`, so a pending mission is readable), and a
+//!   mission that supplied no briefing says so.
+//!
+//! STILL NOT REAL, AND LABELLED AS SUCH: the reviewer comment box is a local signal with no
+//! backing table in any migration. That is T-283's ticket, so the box stays — but it now says on
+//! screen that nothing it holds is saved or visible to the author, which is the part that mattered.
 #![allow(dead_code)]
 use crate::datefmt::{format_local_datetime, format_short_date};
-use crate::dto::{ApprovalRow, Paginated};
+use crate::dto::{ApprovalRow, MissionDetail, Paginated};
 use crate::split_pane::{SplitPane, SplitPaneEmpty};
 use crate::ui::{cn, AdminGate, MaterialIcon};
 use leptos::prelude::*;
-
-// Mock approved/rejected history so the audit trail + revoke flow render before list endpoints for
-// those states exist (admin.tsx MOCK_APPROVED / MOCK_REJECTED). Pending stays on live data.
-fn mock_approved() -> Vec<ApprovalRow> {
-    vec![
-        ApprovalRow {
-            mission_id: "apr-1".into(),
-            title: "Operation Iron Veil".into(),
-            terrain: "everon".into(),
-            author_id: "u-mike".into(),
-            author_name: "Mission Maker Mike".into(),
-            submitted_at: "2026-06-12T18:00:00Z".into(),
-        },
-        ApprovalRow {
-            mission_id: "apr-2".into(),
-            title: "Checkpoint Zulu".into(),
-            terrain: "arland".into(),
-            author_id: "u-sarah".into(),
-            author_name: "Sarah Chen".into(),
-            submitted_at: "2026-06-09T12:30:00Z".into(),
-        },
-    ]
-}
-fn mock_rejected() -> Vec<ApprovalRow> {
-    vec![ApprovalRow {
-        mission_id: "rej-1".into(),
-        title: "Night of the Long Knives".into(),
-        terrain: "everon".into(),
-        author_id: "u-mike".into(),
-        author_name: "Mission Maker Mike".into(),
-        submitted_at: "2026-06-05T09:15:00Z".into(),
-    }]
-}
 
 fn terrain_label(t: &str) -> String {
     if t.is_empty() {
         return "—".into();
     }
     let mut c = t.chars();
+    match c.next() {
+        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+        None => String::new(),
+    }
+}
+
+/// `gameModeLabel` (lib/format.ts) — matches mission_overview.rs.
+fn game_mode_label(mode: &str) -> &str {
+    match mode {
+        "pve_coop" => "COOP",
+        "pvp" => "PvP",
+        "zeus" => "Zeus",
+        other => other,
+    }
+}
+
+/// `heavy_rain` → `Heavy rain`. The wire enums are snake_case; nothing else renders them here.
+fn enum_label(v: &str) -> String {
+    if v.is_empty() {
+        return "—".into();
+    }
+    let spaced = v.replace('_', " ");
+    let mut c = spaced.chars();
     match c.next() {
         Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
         None => String::new(),
@@ -82,8 +99,6 @@ fn MissionApprovalsInner() -> impl IntoView {
             None::<Paginated<ApprovalRow>>
         }
     });
-    // 0 = pending, 1 = approved (mock), 2 = rejected (mock).
-    let tab = RwSignal::new(0usize);
     let selected_id = RwSignal::new(None::<String>);
     let refetch = Callback::new(move |()| approvals.refetch());
     view! {
@@ -94,71 +109,40 @@ fn MissionApprovalsInner() -> impl IntoView {
                 approvals
                     .get()
                     .map(|opt| match opt {
-                        Some(page) => board(page.data, tab, selected_id, refetch).into_any(),
+                        Some(page) => {
+                            board(page.data, page.total, selected_id, refetch).into_any()
+                        }
                         None => {
                             view! { <p class="text-error">"Failed to load data."</p> }.into_any()
                         }
                     })
             }}
-        </Suspense>
+    </Suspense>
     }
 }
 
 fn board(
     pending: Vec<ApprovalRow>,
-    tab: RwSignal<usize>,
+    total: i64,
     selected_id: RwSignal<Option<String>>,
     refetch: Callback<()>,
 ) -> impl IntoView {
-    let pending_count = pending.len();
     let rows_sv = StoredValue::new(pending);
-    let rows_for = move |t: usize| -> Vec<ApprovalRow> {
-        match t {
-            0 => rows_sv.get_value(),
-            1 => mock_approved(),
-            _ => mock_rejected(),
-        }
-    };
-    // TABS row — counts render `(n)` only when > 0, active tab tracks the signal.
-    let tab_btn = move |i: usize, label: &'static str, count: usize| {
-        view! {
-            <button
-                type="button"
-                on:click=move |_| {
-                    tab.set(i);
-                    selected_id.set(None);
-                }
-                class=move || {
-                    if tab.get() == i {
-                        "flex-1 rounded-full py-2 text-center font-medium whitespace-nowrap transition-all bg-action text-on-action shadow-md"
-                    } else {
-                        "flex-1 rounded-full py-2 text-center font-medium whitespace-nowrap transition-all text-white/50 hover:text-white"
-                    }
-                }
-            >
-                {label}
-                {(count > 0)
-                    .then(|| {
-                        view! {
-                            <span class="ml-1.5 font-mono text-code-md opacity-70">
-                                "(" {count} ")"
-                            </span>
-                        }
-                    })}
-            </button>
-        }
-    };
+    // The count is the server's `total`, not the length of this page — the queue is paginated and
+    // a 20-row page of a 40-row backlog must not read "20". The old counter was
+    // `mock_approved().len()`, which is why an empty database claimed two approvals.
     let master_header = view! {
-        <div class="flex w-full items-center rounded-full bg-white/5 p-1">
-            {tab_btn(0, "Pending", pending_count)}
-            {tab_btn(1, "Approved", mock_approved().len())}
-            {tab_btn(2, "Rejected", mock_rejected().len())}
+        <div class="flex w-full items-center justify-between gap-2">
+            <h2 class="text-label-md font-semibold tracking-wide text-on-surface uppercase">
+                "Pending Review"
+            </h2>
+            <span class="font-mono text-code-md text-on-surface-variant tabular-nums">{total}</span>
         </div>
     }
     .into_any();
 
     let selected = move || {
-        let rows = rows_for(tab.get());
+        let rows = rows_sv.get_value();
         selected_id
             .get()
             .and_then(|id| rows.iter().find(|r| r.mission_id == id).cloned())
@@ -167,23 +151,22 @@ fn board(
 
     let master = view! {
         {move || {
-            let t = tab.get();
-            let rows = rows_for(t);
+            let rows = rows_sv.get_value();
             if rows.is_empty() {
-                let msg = if t == 0 {
-                    "No pending approvals.".to_string()
-                } else if t == 1 {
-                    "No approved missions.".to_string()
-                } else {
-                    "No rejected missions.".to_string()
-                };
-                view! { <p class="px-1 py-4 text-label-md text-on-surface-variant">{msg}</p> }
+                view! {
+                    <p class="px-1 py-4 text-label-md text-on-surface-variant">
+                        "No pending approvals."
+                    </p>
+                }
                     .into_any()
             } else {
                 let sel = selected();
                 rows.into_iter()
                     .map(|r| {
-                        let active = sel.as_ref().map(|s| s.mission_id == r.mission_id).unwrap_or(false);
+                        let active = sel
+                            .as_ref()
+                            .map(|s| s.mission_id == r.mission_id)
+                            .unwrap_or(false);
                         let rid = r.mission_id.clone();
                         view! {
                             <button
@@ -227,30 +210,19 @@ fn board(
             }
         }}
     }
-    .into_any();
+        .into_any();
 
     let detail = view! {
-        {move || {
-            let t = tab.get();
-            match selected() {
-                Some(row) => review_inspector(row, t, refetch).into_any(),
-                None => {
-                    let msg = if t == 0 {
-                        "Queue clear — no pending approvals."
-                    } else if t == 1 {
-                        "No approved missions to show."
-                    } else {
-                        "No rejected missions to show."
-                    };
-                    view! {
-                        <SplitPaneEmpty
-                            icon=view! { <MaterialIcon name="task_alt" class="text-4xl" /> }
-                                .into_any()
-                            message=msg
-                        />
-                    }
-                        .into_any()
+        {move || match selected() {
+            Some(row) => view! { <ReviewInspector row=row refetch=refetch /> }.into_any(),
+            None => {
+                view! {
+                    <SplitPaneEmpty
+                        icon=view! { <MaterialIcon name="task_alt" class="text-4xl" /> }.into_any()
+                        message="Queue clear — no pending approvals."
+                    />
                 }
+                    .into_any()
             }
         }}
     }
@@ -259,19 +231,53 @@ fn board(
     view! { <SplitPane master_header=master_header master=master detail=detail /> }
 }
 
-/// The GitHub-PR-meets-chat review surface (admin.tsx `ReviewInspector`): cinematic header,
-/// mock briefing/stats/feed shell, comment box (local), sticky approve/reject bar. Only the
-/// pending-tab actions hit the API.
-fn review_inspector(row: ApprovalRow, status_tab: usize, refetch: Callback<()>) -> impl IntoView {
+/// The GitHub-PR-meets-chat review surface (admin.tsx `ReviewInspector`): cinematic header, the
+/// mission's real briefing + stats, the (local, labelled) comment box, and the sticky action bar
+/// carrying the rejection reason. Every row reaching here is `pending_approval`, so both actions
+/// hit the API.
+///
+/// A component rather than a plain `fn` (which is what it was) because it now owns a
+/// `LocalResource`, and the caller invokes it from inside a reactive closure — one per selected
+/// row. A component gets its own owner, so switching rows disposes the previous fetch and its
+/// signals instead of stacking them on the enclosing effect. Same reason `MissionDossierSheet`
+/// (missions.rs) is a component.
+#[component]
+fn ReviewInspector(row: ApprovalRow, refetch: Callback<()>) -> impl IntoView {
     let store = expect_context::<crate::auth::AuthStore>();
     #[cfg(not(target_arch = "wasm32"))]
     let _ = (&store, &refetch);
     let mid = StoredValue::new(row.mission_id.clone());
-    #[cfg(not(target_arch = "wasm32"))]
-    let _ = mid;
     let approve_busy = RwSignal::new(false);
     let reject_busy = RwSignal::new(false);
-    // Local comment feed — mock until a review-comments API lands.
+    // The rejection reason. This is the whole ticket: it is read at POST time and sent as
+    // `RejectInput { reason }`, and "Request Changes" stays disabled while it is blank so a
+    // reviewer cannot repeat the silent-discard by accident.
+    let reason = RwSignal::new(String::new());
+    let reason_blank = move || reason.get().trim().is_empty();
+
+    // The mission's own briefing + settings. Admins pass `can_edit`, so a pending mission is
+    // readable; this replaces the fixed "contested farmland" paragraph that used to print under
+    // every mission in the queue.
+    let detail = LocalResource::new(move || {
+        let id = mid.get_value();
+        async move {
+            #[cfg(target_arch = "wasm32")]
+            {
+                let path = format!("/missions/{id}");
+                crate::client::api_get::<MissionDetail>(store, &path)
+                    .await
+                    .ok()
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                let _ = (store, id);
+                None::<MissionDetail>
+            }
+        }
+    });
+
+    // Local comment feed — no comments table exists in any migration (T-283). Kept so the slice
+    // does not delete a queued feature out from under it, captioned so nobody mistakes it for one.
     let comments = RwSignal::new(Vec::<String>::new());
     let draft = RwSignal::new(String::new());
     let post_comment = move || {
@@ -310,13 +316,20 @@ fn review_inspector(row: ApprovalRow, status_tab: usize, refetch: Callback<()>) 
             if reject_busy.get_untracked() {
                 return;
             }
+            // Trimmed, because a reason of " " reaches the author as no reason at all.
+            let body = reason.get_untracked().trim().to_string();
+            if body.is_empty() {
+                return;
+            }
             reject_busy.set(true);
             let toasts = crate::toast::use_toasts();
             let path = format!("/approvals/{}/reject", mid.get_value());
             leptos::task::spawn_local(async move {
-                match crate::client::api_post_ok(store, &path, serde_json::json!({})).await {
+                let payload = serde_json::json!({ "reason": body });
+                match crate::client::api_post_ok(store, &path, payload).await {
                     Ok(()) => {
-                        toasts.success("Changes requested — returned to author");
+                        toasts.success("Changes requested — the author gets your reason");
+                        reason.set(String::new());
                         refetch.run(());
                     }
                     Err(_) => toasts.error("Request failed"),
@@ -341,22 +354,9 @@ fn review_inspector(row: ApprovalRow, status_tab: usize, refetch: Callback<()>) 
                 <div class="absolute inset-0 bg-gradient-to-t from-surface-glass to-transparent"></div>
                 <div class="absolute inset-x-0 bottom-0 p-8">
                     <div class="mb-3 flex flex-wrap items-center gap-2">
-                        {(status_tab == 1)
-                            .then(|| {
-                                view! {
-                                    <span class="rounded-full border border-success/40 bg-success/20 px-3 py-1 text-label-sm font-medium text-success backdrop-blur-md">
-                                        "Published"
-                                    </span>
-                                }
-                            })}
-                        {(status_tab == 2)
-                            .then(|| {
-                                view! {
-                                    <span class="rounded-full border border-error-alert/40 bg-error-alert/20 px-3 py-1 text-label-sm font-medium text-error-alert backdrop-blur-md">
-                                        "Rejected"
-                                    </span>
-                                }
-                            })}
+                        <span class="rounded-full border border-tactical-yellow/40 bg-tactical-yellow/20 px-3 py-1 text-label-sm font-medium text-tactical-yellow backdrop-blur-md">
+                            "Pending review"
+                        </span>
                         <span class="rounded-full bg-white/10 px-3 py-1 text-label-sm text-on-surface backdrop-blur-md">
                             {terrain_label(&row.terrain)}
                         </span>
@@ -373,15 +373,58 @@ fn review_inspector(row: ApprovalRow, status_tab: usize, refetch: Callback<()>) 
                 </div>
             </div>
 
-            // Briefing + stats (mock shell until the Git versioning backend lands)
+            // Briefing + settings, read off the mission itself.
             <div class="px-8 py-7">
-                <p class="text-body-md text-on-surface-variant">
-                    "Combined-arms assault across contested farmland. BLUFOR pushes from the south to seize the northern town while a mechanized OPFOR garrison holds the objective. Review the latest push before approving for the live mission database."
-                </p>
-                <div class="mt-6 grid grid-cols-3 gap-3">
-                    {stat_tile("BLUFOR Slots", "32")} {stat_tile("OPFOR Type", "Mechanized")}
-                    {stat_tile("Est. Duration", "~90 min")}
-                </div>
+                <Suspense fallback=move || {
+                    view! {
+                        <p class="text-body-md text-on-surface-variant">"Loading briefing…"</p>
+                    }
+                }>
+                    {move || {
+                        detail
+                            .get()
+                            .map(|opt| match opt {
+                                Some(m) => {
+                                    let briefing = m.briefing.clone().unwrap_or_default();
+                                    let body = if briefing.trim().is_empty() {
+                                        view! {
+                                            <p class="text-body-md text-outline italic">
+                                                "The author submitted no briefing."
+                                            </p>
+                                        }
+                                            .into_any()
+                                    } else {
+                                        view! {
+                                            <p class="whitespace-pre-wrap text-body-md leading-relaxed text-on-surface-variant">
+                                                {briefing}
+                                            </p>
+                                        }
+                                            .into_any()
+                                    };
+                                    view! {
+                                        {body}
+                                        <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                            {stat_tile("Max Players", m.max_players.to_string())}
+                                            {stat_tile(
+                                                "Game Mode",
+                                                game_mode_label(&m.game_mode).to_string(),
+                                            )} {stat_tile("Weather", enum_label(&m.weather))}
+                                            {stat_tile("Time of Day", m.time_of_day.clone())}
+                                        </div>
+                                    }
+                                        .into_any()
+                                }
+                                None => {
+                                    view! {
+                                        <p class="text-body-md text-error">
+                                            "Could not load this mission's briefing — review it in the Mission Library before deciding."
+                                        </p>
+                                    }
+                                        .into_any()
+                                }
+                            })
+                    }}
+                </Suspense>
 
                 <button
                     type="button"
@@ -393,9 +436,12 @@ fn review_inspector(row: ApprovalRow, status_tab: usize, refetch: Callback<()>) 
                 </button>
 
                 <div class="mt-8">
-                    <h2 class="mb-4 text-label-md font-semibold tracking-wide text-on-surface uppercase">
-                        "Activity & Version History"
+                    <h2 class="mb-1 text-label-md font-semibold tracking-wide text-on-surface uppercase">
+                        "Scratch Notes"
                     </h2>
+                    <p class="mb-4 text-label-sm text-outline">
+                        "Local to this browser tab. Not saved, not sent to the author, and gone when you navigate away — the review-comments API does not exist yet (T-283). Put anything the author must act on in the rejection reason below."
+                    </p>
                     <div class="flex flex-col gap-3">
                         {move || {
                             comments
@@ -403,11 +449,14 @@ fn review_inspector(row: ApprovalRow, status_tab: usize, refetch: Callback<()>) 
                                 .into_iter()
                                 .map(|body| {
                                     view! {
-                                        <div class="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-label-md text-on-surface-variant">
+                                        <div class="rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-3 text-label-md text-on-surface-variant">
                                             <span class="mr-2 font-semibold text-on-surface">
                                                 "You"
                                             </span>
                                             {body}
+                                            <span class="ml-2 font-mono text-label-sm text-outline">
+                                                "(unsaved)"
+                                            </span>
                                         </div>
                                     }
                                 })
@@ -425,13 +474,13 @@ fn review_inspector(row: ApprovalRow, status_tab: usize, refetch: Callback<()>) 
                                     post_comment();
                                 }
                             }
-                            placeholder="Leave a review comment…"
+                            placeholder="Note to self (not saved)…"
                             class="flex-1 bg-transparent text-label-md text-on-surface placeholder:text-on-surface-variant/60 outline-none"
                         />
                         <button
                             type="button"
                             on:click=move |_| post_comment()
-                            aria-label="Send comment"
+                            aria-label="Add scratch note"
                             class="flex size-9 items-center justify-center rounded-full bg-primary text-on-primary transition hover:bg-primary/80"
                         >
                             <MaterialIcon name="arrow_upward" class="text-[20px]" />
@@ -440,63 +489,62 @@ fn review_inspector(row: ApprovalRow, status_tab: usize, refetch: Callback<()>) 
                 </div>
             </div>
 
-            // Sticky action bar — adapts to mission status
-            <div class="sticky bottom-0 mt-auto flex items-center justify-end gap-3 border-t border-white/5 bg-surface-container/40 p-6 backdrop-blur-xl">
-                {if status_tab == 1 {
-                    view! {
-                        <button
-                            type="button"
-                            on:click=stub_toast("Mission unpublished — pulled from the live server")
-                            class="rounded-full border border-error-alert/50 bg-error-alert/10 px-7 py-3 text-label-md font-bold text-error-alert shadow-[0_0_20px_rgba(239,68,68,0.2)] transition hover:bg-error-alert/20"
-                        >
-                            "Revoke Approval & Unpublish"
-                        </button>
-                    }
-                        .into_any()
-                } else if status_tab == 2 {
-                    view! {
-                        <button
-                            type="button"
-                            on:click=stub_toast("Mission re-approved & published")
-                            class="rounded-full bg-emerald-600 px-7 py-3 text-label-md font-bold text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] transition hover:bg-emerald-500"
-                        >
-                            "Approve & Publish"
-                        </button>
-                    }
-                        .into_any()
-                } else {
-                    view! {
-                        <button
-                            type="button"
-                            prop:disabled=move || reject_busy.get()
-                            on:click=on_reject
-                            class="rounded-full border border-tactical-yellow/40 bg-tactical-yellow/5 px-6 py-3 text-label-md font-medium text-tactical-yellow transition hover:bg-tactical-yellow/10 disabled:opacity-50"
-                        >
-                            "Request Changes"
-                        </button>
-                        <button
-                            type="button"
-                            prop:disabled=move || approve_busy.get()
-                            on:click=on_approve
-                            class="rounded-full bg-emerald-600 px-7 py-3 text-label-md font-bold text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] transition hover:bg-emerald-500 disabled:opacity-50"
-                        >
-                            "Approve & Publish"
-                        </button>
-                    }
-                        .into_any()
-                }}
+            // Sticky action bar. The reason lives here rather than in a modal because it is an
+            // input to one of the two buttons beside it, and the button is inert without it.
+            <div class="sticky bottom-0 mt-auto flex flex-col gap-3 border-t border-white/5 bg-surface-container/40 p-6 backdrop-blur-xl">
+                <label
+                    for="reject-reason"
+                    class="text-label-sm font-medium tracking-wide text-on-surface-variant uppercase"
+                >
+                    "Reason for requesting changes"
+                </label>
+                <textarea
+                    id="reject-reason"
+                    rows="2"
+                    prop:value=move || reason.get()
+                    on:input=move |ev| reason.set(event_target_value(&ev))
+                    placeholder="What does the author need to fix? This is saved on the mission and is the only thing they are told."
+                    class="w-full resize-y rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-label-md text-on-surface outline-none transition placeholder:text-on-surface-variant/60 focus:border-primary/40"
+                />
+                <div class="flex items-center justify-end gap-3">
+                    <span class=move || {
+                        cn(
+                            &[
+                                "mr-auto text-label-sm text-outline",
+                                if reason_blank() { "" } else { "invisible" },
+                            ],
+                        )
+                    }>"A reason is required to return a mission."</span>
+                    <button
+                        type="button"
+                        prop:disabled=move || reject_busy.get() || reason_blank()
+                        on:click=on_reject
+                        title="Returns the mission to its author with the reason above"
+                        class="rounded-full border border-tactical-yellow/40 bg-tactical-yellow/5 px-6 py-3 text-label-md font-medium text-tactical-yellow transition hover:bg-tactical-yellow/10 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        "Request Changes"
+                    </button>
+                    <button
+                        type="button"
+                        prop:disabled=move || approve_busy.get()
+                        on:click=on_approve
+                        class="rounded-full bg-emerald-600 px-7 py-3 text-label-md font-bold text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] transition hover:bg-emerald-500 disabled:opacity-50"
+                    >
+                        "Approve & Publish"
+                    </button>
+                </div>
             </div>
         </div>
     }
 }
 
-fn stat_tile(label: &'static str, value: &'static str) -> impl IntoView {
+fn stat_tile(label: &'static str, value: String) -> impl IntoView {
     view! {
         <div class="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
             <p class="font-mono text-label-sm tracking-widest text-on-surface-variant uppercase">
                 {label}
             </p>
-            <p class="mt-1 text-headline-sm text-on-surface">{value}</p>
+            <p class="mt-1 truncate text-headline-sm text-on-surface">{value}</p>
         </div>
     }
 }
