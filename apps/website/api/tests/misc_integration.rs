@@ -249,13 +249,13 @@ async fn servers_crud_registered(base: &Router) -> bool {
     resp.status() != StatusCode::METHOD_NOT_ALLOWED
 }
 
-/// `(app, pool, admin token, enlisted token)`.
+/// `(app, pool, state)` — mint whatever role tokens a test needs with [`token`].
 ///
 /// Teardown is scoped to `name LIKE 'T235 %'` and is **never** a blanket `DELETE FROM servers`:
 /// `telemetry.rs` and `admin_field.rs` insert their own `servers` rows into this same database and
 /// cargo runs test binaries in parallel, so wiping the table here would fail their tests, not mine.
 /// Every assertion below likewise filters `GET /servers` down to its own rows.
-async fn boot_servers(tag: &str) -> Option<(Router, PgPool, String, String)> {
+async fn boot_servers(tag: &str) -> Option<(Router, PgPool, AppState)> {
     let url = std::env::var("TEST_DATABASE_URL").ok()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
@@ -278,32 +278,26 @@ async fn boot_servers(tag: &str) -> Option<(Router, PgPool, String, String)> {
     let app = if servers_crud_registered(&base).await {
         base
     } else {
-        base.merge(servers_crud_registration(state))
+        base.merge(servers_crud_registration(state.clone()))
     };
-    let admin = dev_login(&app, "admin").await;
-    let enlisted = dev_login(&app, "enlisted").await;
-    Some((app, pool, admin, enlisted))
+    Some((app, pool, state))
 }
 
-async fn dev_login(app: &Router, role: &str) -> String {
-    let resp = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri(format!("/api/v1/auth/dev-login?role={role}"))
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    let loc = resp.headers()[header::LOCATION].to_str().unwrap();
-    loc.split_once('#')
-        .unwrap()
-        .1
-        .split('&')
-        .find_map(|p| p.strip_prefix("access_token="))
-        .unwrap()
-        .to_string()
+/// Mint a bearer token for `role` **without** going through `/auth/dev-login`.
+///
+/// `dev_login` upserts ONE shared row (`dev.rs::DEV_USER_ID` = `000000000000000001`) and rewrites
+/// its `role` to whatever the query asked for. Measured: calling it for `enlisted` here made
+/// `dev_login_unknown_role_defaults_to_admin` (line 88 — it asserts `/me` reports admin) fail
+/// intermittently, because both tests live in this binary and cargo runs them on parallel threads.
+/// Minting directly writes nothing, so these tests cannot perturb anything else in the file — and
+/// it loses no coverage: `AdminUser` gates on the JWT's `role` claim (`middleware/auth.rs:80`),
+/// which is exactly what this signs.
+fn token(state: &AppState, role: &str) -> String {
+    state
+        .jwt
+        .issue_access("000000000000000235", role, true)
+        .expect("mint access token")
+        .0
 }
 
 /// One request → `(status, parsed body)`. `bearer: None` sends no `Authorization` header.
@@ -350,10 +344,11 @@ async fn list_row(app: &Router, bearer: &str, id: &str) -> Option<Value> {
 /// through `GET /servers` because that is the endpoint the Server Intel page actually reads.
 #[tokio::test]
 async fn servers_crud_full_lifecycle() {
-    let Some((app, pool, admin, _)) = boot_servers("Life").await else {
+    let Some((app, pool, state)) = boot_servers("Life").await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+    let admin = token(&state, "admin");
 
     // ── CREATE ───────────────────────────────────────────────────────────────────
     let (st, created) = req(
@@ -559,9 +554,10 @@ async fn servers_crud_full_lifecycle() {
 /// own extractor enforces, so this holds however `app.rs` registers the routes.
 #[tokio::test]
 async fn servers_writes_are_admin_only() {
-    let Some((app, _, admin, enlisted)) = boot_servers("Tier").await else {
+    let Some((app, _, state)) = boot_servers("Tier").await else {
         return;
     };
+    let admin = token(&state, "admin");
     let (_, created) = req(
         &app,
         Method::POST,
@@ -572,11 +568,16 @@ async fn servers_writes_are_admin_only() {
     .await;
     let id = created["id"].as_str().expect("created id").to_string();
 
-    // Reading is unchanged — an enlisted member still sees the Server Intel list.
-    let (st, _) = req(&app, Method::GET, "/api/v1/servers", Some(&enlisted), None).await;
-    assert_eq!(st, StatusCode::OK, "reads stay member-tier");
+    // Reading is unchanged — every member tier still sees the Server Intel list.
+    for role in ["enlisted", "leader", "mission_maker"] {
+        let t = token(&state, role);
+        let (st, _) = req(&app, Method::GET, "/api/v1/servers", Some(&t), None).await;
+        assert_eq!(st, StatusCode::OK, "{role} reads stay member-tier");
+    }
 
-    // Writing is not.
+    // Writing is not — and `leader`/`mission_maker` matter as much as `enlisted`, because they
+    // are the two tiers a "server config is close enough to mission config" registration would
+    // plausibly have been given by mistake.
     for (method, uri, body) in [
         (
             Method::POST,
@@ -590,12 +591,15 @@ async fn servers_writes_are_admin_only() {
         ),
         (Method::DELETE, format!("/api/v1/servers/{id}"), None),
     ] {
-        let (st, b) = req(&app, method.clone(), &uri, Some(&enlisted), body.clone()).await;
-        assert_eq!(
-            st,
-            StatusCode::FORBIDDEN,
-            "enlisted {method} {uri} must be refused: {b}"
-        );
+        for role in ["enlisted", "leader", "mission_maker"] {
+            let t = token(&state, role);
+            let (st, b) = req(&app, method.clone(), &uri, Some(&t), body.clone()).await;
+            assert_eq!(
+                st,
+                StatusCode::FORBIDDEN,
+                "{role} {method} {uri} must be refused: {b}"
+            );
+        }
         let (st, b) = req(&app, method.clone(), &uri, None, body).await;
         assert_eq!(
             st,
@@ -616,9 +620,10 @@ async fn servers_writes_are_admin_only() {
 /// before, which for `required_modpack_id` was worse than a 500: silent acceptance.
 #[tokio::test]
 async fn servers_write_validation_rejects_at_the_boundary() {
-    let Some((app, pool, admin, _)) = boot_servers("Valid").await else {
+    let Some((app, pool, state)) = boot_servers("Valid").await else {
         return;
     };
+    let admin = token(&state, "admin");
 
     let reject = |body: Value, why: &'static str| {
         let app = app.clone();
