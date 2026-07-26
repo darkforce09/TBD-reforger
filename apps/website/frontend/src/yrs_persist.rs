@@ -9,7 +9,8 @@
 //!   1. `save_state`/`load_state`/`clear_state` — the async IDB access (via the `idb` crate).
 //!   2. A **debounced + serialized-per-mission** writer (`save_state_debounced` + `flush_state`) with
 //!      the React guards: `getBytes` read at write time, `isCancelled()` checked before reading,
-//!      empty-blob skip (never clobber a good record), one write at a time per mission.
+//!      a **content** check that never clobbers a good record (T-374 — see below; this was a byte
+//!      check that did not implement the promise), one write at a time per mission.
 //!   3. `register_mission_persist` — the read-only `window.__missionPersist` smoke bridge
 //!      (ready / loaded_from_storage / warm / slots_digest / flush / clear / edit_persist_count).
 //!
@@ -65,6 +66,42 @@
 //! The boot-time eviction stays exactly as it was and is still the load-bearing backstop: no
 //! sign-out handler runs for a session that expires, a token that is revoked, or a browser that is
 //! closed with the tab open.
+//!
+//! # T-374 — the "never clobber a good record" guard now tests content, not bytes
+//!
+//! Item 2 above claimed an "empty-blob skip (never clobber a good record)" since .17, and [`run_save`]
+//! implemented it as `bytes.is_empty()`. That is a **byte** test standing in for a **content** test,
+//! and the substitution does not hold: [`MissionDocCore::encode_state`] is
+//! `encode_state_as_update_v1(&StateVector::default())`, which writes a var-int client count and then
+//! the delete set, so **an empty document encodes to `[0, 0]` — two bytes, non-empty** — and sailed
+//! past the guard onto the record. Measured, not reasoned: see the T-374 verify output. The only
+//! input the byte test ever rejected was `Vec::new()`, which `get_bytes` produces solely when the doc
+//! `Option` is `None`, and `is_cancelled` already catches that. The guard was decorative.
+//!
+//! [`MissionDocCore::has_content`] — the predicate that defines what content *means* here (faction /
+//! slot / objective / vehicle / marker) — existed the whole time with exactly one call site,
+//! `mission_hydrate::classify_local`, and none on any write path. [`blob_has_content`] now consults it
+//! on every write, by replaying the blob into a throwaway core the same way the boot seam replays a
+//! restore. That also closes two losses no length test can see: a **content-empty but byte-fat** blob
+//! (a core with only `meta` seeded is ~124 bytes and content-empty), and a **corrupt or truncated**
+//! blob, which the old guard wrote cheerfully over a good record even though it can never be replayed.
+//!
+//! Two further things this section owes the next reader:
+//!   * **The decode is O(document), so the per-edit writer does not do it.** `schedule_edit_persist`
+//!     holds the live `DocHandle` and passes a [`ContentProbe`] that answers in O(1); the boot seam's
+//!     `save_state_debounced` has only the two closures its caller passes and takes the decode, once
+//!     per boot. Sound because probe and encode are sampled with no `.await` between them.
+//!   * **A content guard does NOT close T-380.** T-380 is the same loss with a different trigger: an
+//!     edit during boot arms the debounce, and if the restore has not yet swapped the core, the timer
+//!     persists the 8-slot fixture seed over the good record. The seed is not empty — it has 8 real
+//!     slots — so `has_content()` is true for it and this guard passes it, exactly as it must. What
+//!     that needs is a *document-identity* guard at the swap, mirroring the T-221 owner check one
+//!     level down; see the T-374 report.
+//!
+//! Same section, second defect: [`get_raw`] collapsed "no record" and "the read failed" into one
+//! `None`, and [`load_state`] reports that to the boot as "no local content" — a false negative that
+//! drives the cold path. Reads are now three-valued ([`RecordRead`]), a failure is reported, and
+//! [`run_save`] refuses to write over a key that is present but was unreadable this page lifetime.
 #![allow(clippy::cast_precision_loss)] // usize slot count → f64 for the JS bridge; tiny.
 
 use std::cell::{Cell, RefCell};
@@ -179,6 +216,22 @@ thread_local! {
     /// Logical keys we have already complained about, so a polled `__missionBackup.has()` cannot
     /// turn one stranded record into a console flood. Warn once, stay warned.
     static WARNED_ORPHANS: RefCell<BTreeSet<String>> = const { RefCell::new(BTreeSet::new()) };
+    /// T-374 — **physical** keys whose read failed this page lifetime (see [`RecordRead::Failed`]).
+    /// Consulted by [`run_save`], which refuses to write over a record that is present but was not
+    /// readable. Physical, not logical: it is the exact key a write would land on.
+    static UNREADABLE: RefCell<BTreeSet<String>> = const { RefCell::new(BTreeSet::new()) };
+    /// T-374 — how many writes the guards refused, by reason. Exposed on the bridge
+    /// (`__missionPersist.blocked_writes()`) so a probe can prove the guard **fired**, rather than
+    /// inferring it from a record that merely happens to be unchanged.
+    static BLOCKED_EMPTY: Cell<u32> = const { Cell::new(0) };
+    static BLOCKED_UNREADABLE: Cell<u32> = const { Cell::new(0) };
+}
+
+/// Remember that a read of `physical_key` failed. See [`RecordRead::Failed`] and [`run_save`].
+fn note_unreadable(physical_key: &str) {
+    UNREADABLE.with(|u| {
+        u.borrow_mut().insert(physical_key.to_string());
+    });
 }
 
 /// Report a pre-scoping record that a read just declined to return.
@@ -234,16 +287,59 @@ async fn put_raw(key: &str, bytes: &[u8]) -> Result<(), idb::Error> {
     Ok(())
 }
 
+/// T-374 — the outcome of reading one physical key, with **`Miss` and `Failed` kept apart**.
+///
+/// [`get_raw`] used to return `Option<Vec<u8>>` and collapse both into `None`, so a failed
+/// `open_db` / transaction / `get` read out as "there is no record here". That is a **false
+/// negative on the one question the boot seam asks**: [`load_state`] reported "no local content",
+/// the editor took the cold path, and the seed then went down the write path at a record that may
+/// well have been someone's only copy. Two different facts deserve two different answers — the
+/// same argument [`load_state`]'s own doc comment already makes for orphans.
+enum RecordRead {
+    /// The record is there and decoded to bytes.
+    Hit(Vec<u8>),
+    /// The store answered, and there is nothing at this key.
+    Miss,
+    /// IndexedDB could not be asked, or answered with something unreadable. **Not** a miss:
+    /// nothing here licenses the claim that the key is empty.
+    Failed,
+}
+
+/// Read one physical key, three-valued (T-374). A stored value that is not a `Uint8Array` counts as
+/// [`RecordRead::Failed`], not `Miss` — a record exists, this code just cannot read it, which is
+/// exactly the state that must not masquerade as "nothing is stored".
+async fn read_raw(key: &str) -> RecordRead {
+    let Ok(db) = open_db().await else {
+        return RecordRead::Failed;
+    };
+    let Ok(tx) = db.transaction(&[STORE], idb::TransactionMode::ReadOnly) else {
+        return RecordRead::Failed;
+    };
+    let Ok(store) = tx.object_store(STORE) else {
+        return RecordRead::Failed;
+    };
+    let Ok(req) = store.get(JsValue::from_str(key)) else {
+        return RecordRead::Failed;
+    };
+    match req.await {
+        Ok(Some(value)) => match value.dyn_into::<js_sys::Uint8Array>() {
+            Ok(arr) => RecordRead::Hit(arr.to_vec()),
+            Err(_) => RecordRead::Failed,
+        },
+        Ok(None) => RecordRead::Miss,
+        Err(_) => RecordRead::Failed,
+    }
+}
+
 /// Read one physical key. Absent / unreadable / not a `Uint8Array` → `None`.
+///
+/// The two-valued view of [`read_raw`], for the callers that genuinely have nothing different to do
+/// on a failure ([`adopt_orphans`] skips either way). [`load_state`] uses [`read_raw`] directly.
 async fn get_raw(key: &str) -> Option<Vec<u8>> {
-    let db = open_db().await.ok()?;
-    let tx = db
-        .transaction(&[STORE], idb::TransactionMode::ReadOnly)
-        .ok()?;
-    let store = tx.object_store(STORE).ok()?;
-    let value: Option<JsValue> = store.get(JsValue::from_str(key)).ok()?.await.ok()?;
-    let arr = value?.dyn_into::<js_sys::Uint8Array>().ok()?;
-    Some(arr.to_vec())
+    match read_raw(key).await {
+        RecordRead::Hit(bytes) => Some(bytes),
+        RecordRead::Miss | RecordRead::Failed => None,
+    }
 }
 
 /// Does a record exist at one physical key? `getKey` returns the key alone, so the orphan probe on
@@ -322,10 +418,34 @@ pub async fn save_state(id: &str, bytes: &[u8]) -> Result<(), idb::Error> {
 /// silent `None` that a genuinely empty store produces. "There is nothing" and "there is something
 /// I will not hand you" are different answers and a caller reaching for a backup deserves the second
 /// one out loud.
+///
+/// # T-374 — a failed read is not an empty store
+///
+/// The same argument applies one level down. A record that could not be *read* used to come back as
+/// the identical `None` as a store with nothing in it, and the boot seam turns that `None` into "no
+/// local content" and keeps the seed. The failure is now reported and remembered
+/// ([`note_unreadable`]) so that [`run_save`] will not let the seed overwrite a record this page
+/// lifetime failed to read — see that function's third guard. The return type is unchanged (`None`
+/// is still the honest answer: there are no bytes to hand back), so no caller has to change; what
+/// changed is that the write path now knows the difference.
 pub async fn load_state(id: &str) -> Option<Vec<u8>> {
     let owner = owner_token();
-    if let Some(bytes) = get_raw(&scoped_key(&owner, id)).await {
-        return Some(bytes);
+    let scoped = scoped_key(&owner, id);
+    match read_raw(&scoped).await {
+        RecordRead::Hit(bytes) => return Some(bytes),
+        RecordRead::Failed => {
+            // Do NOT probe for an orphan here: the probe is a *different* key, and reporting
+            // "a pre-scoping record exists" when the real story is "this account's own record is
+            // unreadable" would point recovery at the wrong drawer.
+            note_unreadable(&scoped);
+            web_sys::console::warn_1(&JsValue::from_str(&format!(
+                "[yrs-persist] T-374: IndexedDB read FAILED for {id} — this is NOT 'no local \
+                 backup'. Treating local content as unknown; writes to this record are blocked \
+                 while a record is present but unreadable."
+            )));
+            return None;
+        }
+        RecordRead::Miss => {}
     }
     if has_raw(id).await {
         note_orphan(id);
@@ -448,10 +568,92 @@ async fn adopt_orphans(owner: &str) -> (usize, usize) {
     (adopted, skipped)
 }
 
+/* ───────────── T-374 — the content test the write path was missing ───────────── */
+
+/// Read the leading unsigned var-int of a Yjs v1 update stream: the **number of client blocks**.
+///
+/// `encode_state_as_update_v1` writes `varint(num_clients)`, then that many per-client struct
+/// blocks, then the delete set. `num_clients == 0` therefore means the stream carries no structs at
+/// all — a document with literally nothing in it, not even `meta`. Returns `None` when the leading
+/// var-int is malformed (an unterminated continuation run), which is itself grounds to refuse.
+///
+/// This exists as an O(1) tier in front of [`blob_has_content`] so that the *reported* T-374 blob —
+/// the two bytes `[0, 0]` — is rejected without decoding anything at all.
+fn update_client_count(bytes: &[u8]) -> Option<u64> {
+    let mut n: u64 = 0;
+    let mut shift = 0u32;
+    for (i, b) in bytes.iter().enumerate() {
+        // A u64 var-int is at most 10 bytes; past that the stream is not a v1 update header.
+        if i >= 10 {
+            return None;
+        }
+        n |= u64::from(b & 0x7f) << shift;
+        if b & 0x80 == 0 {
+            return Some(n);
+        }
+        shift += 7;
+    }
+    None
+}
+
+/// Would this blob restore to a document that holds authored content?
+///
+/// # Why the byte test this replaces was not a test at all
+///
+/// The guard in [`run_save`] was `bytes.is_empty()`, with the comment "never overwrite a good record
+/// with an empty/truncated blob", and the module header above promised an "empty-blob skip". A
+/// **byte** test cannot keep a **content** promise. [`MissionDocCore::encode_state`] is
+/// `encode_state_as_update_v1(&StateVector::default())`, which writes a var-int client count and
+/// then the delete set — so an empty document encodes to `[0, 0]`: **two bytes, non-empty, and the
+/// old guard waved it through onto the record**. `get_bytes` only ever yields `Vec::new()` when the
+/// doc `Option` is `None`, and `is_cancelled` already catches exactly that, so the byte test was
+/// dead for its stated purpose and live only as reassurance.
+///
+/// # Why this decodes rather than inspecting bytes
+///
+/// The question that matters is "would restoring these bytes produce a document with content", and
+/// the sound way to answer it is to *do the restore* — the identical `MissionDocCore::new()` +
+/// `apply_update` the boot seam runs (`mission_editor.rs` step 1) — and then ask
+/// [`MissionDocCore::has_content`], the predicate that already encodes what "content" means
+/// (faction / slot / objective / vehicle / marker) and that until now had exactly one call site
+/// (`mission_hydrate::classify_local`), none of them on a write path.
+///
+/// Two classes of loss this closes that no byte-level test can see:
+///   * **content-empty but byte-fat.** A core with only `meta` seeded encodes to ~124 bytes and
+///     `has_content()` is false. Any threshold on length is a guess; this is not.
+///   * **corrupt / truncated.** A blob that fails `apply_update` is unrestorable, and the old guard
+///     wrote it cheerfully over a good record. A blob that cannot be replayed is not a backup.
+///
+/// The decode is O(document) and runs on the write path, so the hot caller avoids it: see
+/// [`PendingSave::content_probe`], which lets a caller holding the live core answer in O(1).
+fn blob_has_content(bytes: &[u8]) -> bool {
+    if bytes.is_empty() {
+        return false;
+    }
+    match update_client_count(bytes) {
+        // No client blocks ⇒ no structs ⇒ nothing in the document. The reported `[0, 0]` blob.
+        Some(0) | None => return false,
+        Some(_) => {}
+    }
+    let probe = MissionDocCore::new();
+    // INIT, for the reason every other replay in this codebase uses it: a LOCAL apply pushes an undo
+    // step and yrs keeps deleted blocks alive for as long as the stack item lives. This core is
+    // dropped at the end of the function and should cost one document, not two.
+    probe.set_origin_init(true);
+    if probe.apply_update(bytes).is_err() {
+        return false;
+    }
+    probe.set_origin_init(false);
+    probe.has_content()
+}
+
 /* ─────────────────────── debounced + serialized writer ─────────────────────── */
 
 type GetBytes = Box<dyn Fn() -> Vec<u8>>;
 type IsCancelled = Box<dyn Fn() -> bool>;
+/// T-374 — an O(1) "does the doc these bytes came from hold content" answer, for callers that hold
+/// the live [`DocHandle`]. See [`PendingSave::content_probe`].
+type ContentProbe = Box<dyn Fn() -> bool>;
 
 struct PendingSave {
     get_bytes: GetBytes,
@@ -461,6 +663,19 @@ struct PendingSave {
     /// user's document under the next one's name: the ticket's defect, reintroduced through the
     /// back door. Checked in [`run_save`].
     owner: String,
+    /// T-374 — the cheap content test, when the caller can supply one.
+    ///
+    /// `Some` means the caller holds the live [`DocHandle`] the bytes are encoded from, so
+    /// [`run_save`] can call [`MissionDocCore::has_content`] on it directly — O(1) — instead of
+    /// decoding the blob. **This is sound only because it is sampled in the same synchronous window
+    /// as `get_bytes`, with no `.await` between**: wasm is single-threaded, so nothing can mutate
+    /// the document between the encode and the probe, and the two therefore describe one state.
+    ///
+    /// `None` → [`blob_has_content`] decodes the blob. That is the correct fallback and not a
+    /// degraded one: it tests the bytes themselves, so it also catches a corrupt blob, which a live
+    /// probe by construction cannot. It costs one document decode, which is why the per-edit writer
+    /// supplies a probe and the once-per-boot writer does not have to.
+    content_probe: Option<ContentProbe>,
 }
 
 /// A live debounce timer: the `setTimeout` handle + the `Closure` it fires (kept alive here so it is
@@ -506,13 +721,23 @@ fn clear_timer(id: &str) {
 }
 
 /// Serialized write: take the per-mission lock, then apply the guards in order — cancel check
-/// **before** reading bytes, T-221 owner check, empty-blob skip, then persist.
+/// **before** reading bytes, T-221 owner check, T-374 **content** check, T-374 unreadable-record
+/// check, then persist.
 ///
 /// A changed owner **drops** the write; it does not redirect it. The bytes were composed by the
 /// previous session, so writing them anywhere the new account can read is the cross-account leak
 /// this ticket closes, and writing them back to the old account after a sign-out contradicts the
 /// other half of it. Nothing is lost that matters: the document is still in memory, and the next
 /// edit re-arms the writer under whoever is now signed in.
+///
+/// # T-374 — the guard order, and why the content test comes before the IO
+///
+/// The content test is pure CPU; the unreadable-record test costs an IndexedDB key lookup. Refusing
+/// a content-empty blob first means the common rejection never touches the disk. Both are stated as
+/// the same rule the T-221 owner check states: **a write that cannot be shown to be safe does not
+/// happen.** In every refusal the document is still in RAM and the next edit re-arms the writer, so
+/// the cost of a false refusal is bounded by one debounce window; the cost of a false *acceptance*
+/// is an authored mission.
 async fn run_save(id: &str, pending: PendingSave) {
     let lock = lock_for(id);
     let _guard = lock.lock().await;
@@ -523,8 +748,45 @@ async fn run_save(id: &str, pending: PendingSave) {
         return;
     }
     let bytes = (pending.get_bytes)();
-    if bytes.is_empty() {
-        return; // never overwrite a good record with an empty/truncated blob
+    // T-374 — a CONTENT test, not a byte test. An empty document encodes to `[0, 0]`: two bytes,
+    // non-empty, and the old `bytes.is_empty()` guard wrote it straight over a good record. `bytes`
+    // and the probe are read with no `.await` between them, so they describe one document state.
+    let has_content = match &pending.content_probe {
+        Some(probe) => !bytes.is_empty() && probe(),
+        None => blob_has_content(&bytes),
+    };
+    if !has_content {
+        BLOCKED_EMPTY.with(|c| c.set(c.get().saturating_add(1)));
+        web_sys::console::warn_1(&JsValue::from_str(&format!(
+            "[yrs-persist] T-374: refused to persist {id} — {} byte(s) that restore to a document \
+             with no authored content (or that do not replay at all). The record on disk is \
+             untouched; the live document is unaffected.",
+            bytes.len()
+        )));
+        return;
+    }
+    // T-374 — and never write over a record this page lifetime FAILED to read. `load_state`
+    // returning `None` used to mean both "nothing is stored" and "the read broke"; on the second,
+    // the boot keeps the seed, and letting the seed land here is how an unreadable-but-present
+    // record becomes a destroyed one. Re-probe rather than latching: if the key is genuinely absent
+    // there is nothing to protect, so the flag clears and the write proceeds — otherwise a single
+    // transient failure would silently disable persistence for the rest of the session, trading one
+    // silent loss for another.
+    let key = scoped_key(&pending.owner, id);
+    let still_blocked = UNREADABLE.with(|u| u.borrow().contains(&key));
+    if still_blocked {
+        if has_raw(&key).await {
+            BLOCKED_UNREADABLE.with(|c| c.set(c.get().saturating_add(1)));
+            web_sys::console::warn_1(&JsValue::from_str(&format!(
+                "[yrs-persist] T-374: refused to persist {id} — a record exists at this key but \
+                 this session could not read it, so overwriting it could destroy the only copy. \
+                 Reload to retry the read."
+            )));
+            return;
+        }
+        UNREADABLE.with(|u| {
+            u.borrow_mut().remove(&key);
+        });
     }
     if let Err(e) = save_state_as(&pending.owner, id, &bytes).await {
         web_sys::console::warn_1(&JsValue::from_str(&format!(
@@ -543,6 +805,24 @@ pub fn save_state_debounced(
     is_cancelled: IsCancelled,
     delay_ms: i32,
 ) {
+    // No content probe: this entry point takes only the two closures its callers already pass, so
+    // `run_save` falls back to decoding the blob. Correct, and the stronger of the two tests (it
+    // catches a corrupt blob) — just O(document). The boot seam arms this once per boot.
+    arm_debounced(id, get_bytes, is_cancelled, None, delay_ms);
+}
+
+/// The body of [`save_state_debounced`], plus T-374's optional [`ContentProbe`]. Private: the two
+/// callers are [`save_state_debounced`] (no probe) and [`schedule_edit_persist`] (probe), and a
+/// third public arming surface with no caller is the mistake this module's T-338 note already
+/// records once — `purge_owner` shipped `pub` and documented as wired, with nothing calling it, for
+/// two waves.
+fn arm_debounced(
+    id: &str,
+    get_bytes: GetBytes,
+    is_cancelled: IsCancelled,
+    content_probe: Option<ContentProbe>,
+    delay_ms: i32,
+) {
     let id_owned = id.to_string();
     PENDING.with(|p| {
         p.borrow_mut().insert(
@@ -551,6 +831,7 @@ pub fn save_state_debounced(
                 get_bytes,
                 is_cancelled,
                 owner: owner_token(),
+                content_probe,
             },
         );
     });
@@ -696,11 +977,17 @@ fn slots_digest(core: &MissionDocCore) -> String {
 /// (`mission_editor.rs` initial persist): `get_bytes` reads `encode_state()` at write time, the
 /// write is cancelled once the doc `Option` clears (route leave). A burst of edits within
 /// [`debounce_ms`] coalesces into one IDB write. Bumps [`EDIT_PERSIST_COUNT`] for the gate.
+/// T-374 — this path supplies a [`ContentProbe`], so the content guard on the **per-edit** writer is
+/// O(1) (`has_content()` on the live core) instead of an O(document) decode of the blob. It holds the
+/// `DocHandle` the bytes are encoded from, so it can; the boot seam's entry point cannot, and pays
+/// the decode once per boot. Measured on native: the decode is ~19 µs at 8 slots but ~460 ms at 100k,
+/// which is a visible stall to hand a writer that re-arms on every edit.
 pub fn schedule_edit_persist(doc: DocHandle, id: &str) {
     EDIT_PERSIST_COUNT.with(|c| c.set(c.get().saturating_add(1)));
     let get = doc.clone();
+    let probe = doc.clone();
     let cancel = doc;
-    save_state_debounced(
+    arm_debounced(
         id,
         Box::new(move || {
             get.borrow()
@@ -709,6 +996,12 @@ pub fn schedule_edit_persist(doc: DocHandle, id: &str) {
                 .unwrap_or_default()
         }),
         Box::new(move || cancel.borrow().is_none()),
+        Some(Box::new(move || {
+            probe
+                .borrow()
+                .as_ref()
+                .is_some_and(MissionDocCore::has_content)
+        })),
         debounce_ms(),
     );
 }
@@ -784,6 +1077,36 @@ pub fn register_mission_persist(
     let edit_count_fn = Closure::wrap(Box::new(move || -> JsValue {
         JsValue::from_f64(f64::from(edit_persist_count()))
     }) as Box<dyn FnMut() -> JsValue>);
+    // T-374 — the refusal counters, as JSON. A guard that only ever *declines* to act is invisible:
+    // "the record is still good" is equally consistent with the guard firing and with no write
+    // having been attempted at all. These make the refusal itself observable, so a probe can assert
+    // the guard ran rather than asserting the absence of damage.
+    let blocked_fn = Closure::wrap(Box::new(move || -> JsValue {
+        JsValue::from_str(&format!(
+            r#"{{"empty":{},"unreadable":{}}}"#,
+            BLOCKED_EMPTY.with(Cell::get),
+            BLOCKED_UNREADABLE.with(Cell::get)
+        ))
+    }) as Box<dyn FnMut() -> JsValue>);
+    // T-374 — the content predicate, over the record on disk for this mission. Answers "is what is
+    // stored actually restorable to authored content", which is the question the old byte test only
+    // appeared to answer.
+    let stored_has_content_fn = {
+        let id = mission_id.clone();
+        Closure::wrap(Box::new(move || -> JsValue {
+            let id = id.clone();
+            wasm_bindgen_futures::future_to_promise(async move {
+                let stored = load_state(&id).await;
+                Ok(JsValue::from_str(&format!(
+                    r#"{{"present":{},"bytes":{},"hasContent":{}}}"#,
+                    stored.is_some(),
+                    stored.as_ref().map_or(0, Vec::len),
+                    stored.as_deref().is_some_and(blob_has_content)
+                )))
+            })
+            .into()
+        }) as Box<dyn FnMut() -> JsValue>)
+    };
     // T-221 — the recovery surface for records written before per-account scoping. `orphans()`
     // answers "what is stranded on this machine" as a JSON array of logical keys; `adopt_orphans()`
     // claims them for the signed-in account. Both are Promise-returning like `flush`/`clear`.
@@ -830,6 +1153,16 @@ pub fn register_mission_persist(
     );
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("orphans"), orphans_fn.as_ref());
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("adopt_orphans"), adopt_fn.as_ref());
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("blocked_writes"),
+        blocked_fn.as_ref(),
+    );
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("stored_has_content"),
+        stored_has_content_fn.as_ref(),
+    );
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__missionPersist"), &obj);
     }
@@ -843,6 +1176,8 @@ pub fn register_mission_persist(
     edit_count_fn.forget();
     orphans_fn.forget();
     adopt_fn.forget();
+    blocked_fn.forget();
+    stored_has_content_fn.forget();
 
     // T-221 — one eviction sweep per editor boot. Spawned rather than awaited so the bridge stays
     // synchronously installed for the gate, and safe against the boot restore racing it: it only
