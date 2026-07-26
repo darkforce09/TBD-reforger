@@ -418,6 +418,83 @@ cmd_gate() {
   echo "GATE: PASS"
 }
 
+# ── WAVE DISCIPLINE ──────────────────────────────────────────────────────────────────────────────
+#
+# Restored on operator instruction 2026-07-26 after the run drifted into a continuous stream of
+# individual agents. The drift was not merely cosmetic: the wave boundary is the EVENT that fires the
+# adversarial verifier (rule 4), so dissolving waves silently deleted the verifier and 27 tickets
+# landed unreviewed. The operator noticed; the tooling did not.
+#
+# Note this does NOT reintroduce the T-181 land barrier that cost 89% of that program's wall clock.
+# Slices still land the moment they are green (note 2). What a wave gates is DISPATCH: you may not
+# open wave N+1 until wave N is shipped, gated and VERIFIED. Landing stays eager; starting is paced.
+#
+#   wave.sh wave            # what is in the current wave, and what is blocking it
+#   wave.sh wave --close    # verify wave N is complete + verified, then permit N+1
+#   wave.sh verified <sha>  # record that an adversarial verifier examined <sha>
+cmd_wave() {
+  local w; w="$(current_wave)"
+  if [ "$w" = "done" ]; then echo "all waves shipped"; return 0; fi
+  local total=0 shipped=0 open=""
+  while IFS= read -r t; do
+    total=$((total+1))
+    if is_shipped "$t"; then shipped=$((shipped+1)); else open="$open $t"; fi
+  done < <(wave_tickets "$w")
+  echo "═══ wave $w — $shipped/$total shipped ═══"
+  [ -n "$open" ] && { echo "open:"; for t in $open; do printf "  %-8s %s\n" "$t" "$(ticket_title "$t")"; done; }
+  echo
+  local vd; vd="$(verify_debt)"
+  echo "verify debt: $vd"
+  if [ -n "$open" ]; then
+    echo "STATUS: wave $w is OPEN — finish it before dispatching wave $((w+1))."
+  else
+    echo "STATUS: wave $w tickets are all shipped. Run 'wave.sh wave --close' to gate and advance."
+  fi
+}
+
+# Refuse to advance until the wave is genuinely finished: every ticket shipped, the full gate green on
+# merged main, and an adversarial verifier recorded against a sha at or after the last landing. That
+# third condition is the one that was being skipped, so it is checked here rather than trusted.
+cmd_wave_close() {
+  local w; w="$(current_wave)"
+  [ "$w" = "done" ] && { echo "all waves shipped — nothing to close"; return 0; }
+  local bad=0 open=""
+  while IFS= read -r t; do is_shipped "$t" || open="$open $t"; done < <(wave_tickets "$w")
+  if [ -n "$open" ]; then echo "REFUSED: wave $w still open:$open"; return 1; fi
+  echo "wave $w: all tickets shipped ✓"
+
+  local marker="$ROOT/.ai/artifacts/last-verified" vsha=""
+  [ -f "$marker" ] && vsha="$(head -1 "$marker" | tr -d '[:space:]')"
+  if [ -z "$vsha" ]; then
+    echo "REFUSED: no adversarial verifier recorded. Run one against main, then:"
+    echo "         bash scripts/platform/wave.sh verified \$(git rev-parse HEAD)"
+    return 1
+  fi
+  # The verifier must have looked at a tree that CONTAINS this wave's work, not an older one.
+  if ! git merge-base --is-ancestor "$vsha" HEAD 2>/dev/null; then
+    echo "REFUSED: recorded verify sha $vsha is not an ancestor of HEAD — stale or wrong marker."; return 1
+  fi
+  local behind; behind="$(git rev-list --count "$vsha..HEAD" 2>/dev/null || echo '?')"
+  if [ "${behind:-0}" -gt 0 ]; then
+    echo "REFUSED: $behind commit(s) have landed since the last verifier saw $(echo "$vsha" | cut -c1-8)."
+    echo "         Rule 4: the verifier examines MERGED MAIN, so it must run after the last landing."
+    return 1
+  fi
+  echo "wave $w: verifier examined this exact tree ✓"
+  cmd_gate "$vsha" || { echo "REFUSED: wave gate is red on main"; return 1; }
+  echo
+  echo "WAVE $w CLOSED. Wave $((w+1)) may be dispatched."
+}
+
+cmd_verified() {
+  local sha="${1:-}"
+  [ -z "$sha" ] && { echo "usage: wave.sh verified <sha>"; return 1; }
+  git rev-parse --verify "$sha" >/dev/null 2>&1 || { echo "not a sha: $sha"; return 1; }
+  mkdir -p "$ROOT/.ai/artifacts"
+  git rev-parse "$sha" > "$ROOT/.ai/artifacts/last-verified"
+  echo "recorded: adversarial verifier examined $(git rev-parse --short "$sha")"
+}
+
 # Land every slice that is ready. No barrier — see note 2.
 cmd_land() {
   local barrier=0
@@ -518,6 +595,8 @@ case "${1:-status}" in
   status) cmd_status ;;
   prep)   cmd_prep ;;
   gate)   if [ "${2:-}" = "--slice" ]; then gate_slice "${3:-}"; else cmd_gate "${2:-}"; fi ;;
+  wave)   if [ "${2:-}" = "--close" ]; then cmd_wave_close; else cmd_wave; fi ;;
+  verified) cmd_verified "${2:-}" ;;
   land)   cmd_land "${2:-}" ;;
   revert) cmd_revert "${2:-}" ;;
   push)   cmd_push ;;
