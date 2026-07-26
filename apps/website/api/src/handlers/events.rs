@@ -149,6 +149,50 @@ fn valid_event_status(s: &str) -> Option<EventStatus> {
     }
 }
 
+/// Guards `name_override` against a value that is *blank but not empty* — `"   "`, a tab, a
+/// newline. Applied to both writes (`create_event`, `update_event`); every reader already
+/// handles `""` correctly, so this is a write-side problem only.
+///
+/// **Why refuse instead of trim.** `""` is the documented "no override" signal, and six
+/// separate fallbacks key on it: `deployments.rs:97`, `dashboard.rs:79`, `dashboard.rs:142`,
+/// and the SPA's `event_hub.rs:200`, `orbat_selection.rs:71`, `event_manager.rs:831`. A
+/// whitespace string is non-empty, so it defeats all six at once — and because HTML collapses
+/// whitespace, the name does not render as a space, it renders as **nothing**. Measured on the
+/// pre-fix binary, sentinel `"SENTINEL Operation Nightfall"` on an event with the mission
+/// `"SENTINEL Mission Title"` attached:
+///
+///   PATCH {"name_override":"   "} -> 200, stored "   ",  /me/deployments name "   "
+///   PATCH {"name_override":""}    -> 200, stored "",     /me/deployments name "SENTINEL Mission Title"
+///
+/// The second line is what the fallback is *for*, which is why trimming to `""` is not the fix
+/// either: it would still discard the operator's name, just less visibly. Refusing is the only
+/// option that leaves the sentinel standing.
+///
+/// **And padding is deliberately allowed through, stored verbatim.** This is the narrower
+/// decision than T-346's, on purpose. T-346 refused a padded `armory.faction` because that
+/// column is a join key matched byte-for-byte against `orbat_slots.faction`, so canonicalising
+/// one side would *create* a disagreement — T-343's trap at `events.rs:1735`/`:1923`.
+/// `name_override` is matched by nothing: no SQL join, no `WHERE name_override =`, no
+/// comparison against a second column. Measured, `"  SENTINEL Padded Op  "` renders correctly
+/// today, so refusing or trimming it would break a working case — the same over-rejection
+/// direction T-346 pinned with `"US Army"`. Compare T-346's own `item_name`, a label, which it
+/// left trimmed rather than refused.
+///
+/// The one byte-for-byte comparison anywhere is the SPA's dirty-check at
+/// `event_manager.rs:536` (`nm != orig.name_override`), which decides whether a save includes
+/// the field at all. Storing verbatim is what lets a rename settle there; a server-side trim
+/// would leave the form and the row permanently unequal, re-sending `name_override` on every
+/// later save.
+fn check_name_override(n: &str) -> Result<(), ApiError> {
+    if !n.is_empty() && n.trim().is_empty() {
+        return Err(ApiError::bad_request(
+            "name_override must not be blank — send \"\" to clear it and fall back to the \
+             mission's title",
+        ));
+    }
+    Ok(())
+}
+
 /// States in which an operation has not started yet. These are exactly the states an
 /// event may be *created* in, and the only targets a `PATCH` may move an event back to.
 fn is_pre_start(s: EventStatus) -> bool {
@@ -475,6 +519,7 @@ pub async fn create_event(
             "an event may only be created as scheduled, open or locked",
         ));
     }
+    check_name_override(&input.name_override)?;
     let id: Uuid = sqlx::query_scalar(
         "INSERT INTO events (name_override, start_time, briefing, banner_image_url, status, \
          registration_locked, max_slots, created_by, created_at, updated_at) \
@@ -1003,6 +1048,12 @@ pub async fn update_event(
                 )));
             }
         }
+    }
+
+    // Same rule as the transition above: validated before any write, so a rejected rename
+    // leaves the caller's other field edits unapplied rather than half-applied.
+    if let Some(n) = &input.name_override {
+        check_name_override(n)?;
     }
 
     let mut qb: QueryBuilder<Postgres> = QueryBuilder::new("UPDATE events SET updated_at = now()");

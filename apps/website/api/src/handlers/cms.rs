@@ -28,6 +28,29 @@ fn valid_tag(s: &str) -> Option<AnnouncementTag> {
     }
 }
 
+/// The announcement status vocabulary, shared by create and PATCH so the two cannot drift.
+///
+/// They *had* drifted: `create_announcement` derived a bool with `input.status == "published"`,
+/// so every value it did not recognise silently became a **Draft** — `"archived"` and even
+/// `"PUBLISHED"` among them, i.e. an admin asking to publish got a draft and a 201 saying it
+/// worked. Measured on the pre-fix binary, all four of `"bogus"`, `"archived"`, `"PUBLISHED"`
+/// and absent returned `201` with `status = draft`. `update_announcement` meanwhile rejected the
+/// same strings with a 400. Create is the one that was wrong: an unrecognised status is a caller
+/// mistake, and the handler that silently downgrades it is the one hiding the mistake.
+///
+/// `""` is deliberately **not** in here. On create it means "field absent" (the input struct is
+/// `#[serde(default)]`) and the caller maps it to `Draft`; on PATCH absence is `None`, so an
+/// explicit `""` is a caller error and must keep its 400 rather than silently un-publishing a
+/// live announcement. Contrast [`valid_tag`] above, where `""` legitimately means "default tag".
+fn valid_announcement_status(s: &str) -> Option<AnnouncementStatus> {
+    match s {
+        "draft" => Some(AnnouncementStatus::Draft),
+        "published" => Some(AnnouncementStatus::Published),
+        "archived" => Some(AnnouncementStatus::Archived),
+        _ => None,
+    }
+}
+
 fn snippet_from(explicit: &str, body: &str) -> String {
     if !explicit.is_empty() {
         explicit.to_string()
@@ -98,7 +121,15 @@ pub async fn create_announcement(
     body: Result<Json<AnnouncementInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<Announcement>), ApiError> {
     let Json(input) = body.map_err(|_| ApiError::bad_request("title and body are required"))?;
-    if input.title.is_empty() || input.body.is_empty() {
+    // `trim()`, not bare `is_empty()`: a whitespace-only title or body is not content, and this
+    // guard is the only thing standing between it and a **published** announcement pushed to
+    // Discord at the bottom of this function. `sanitize_html("   ")` is `"   "`, so nothing
+    // downstream catches it either. Measured on the pre-fix binary, `{"title":"   ", ...}`
+    // returned 201 and stored a three-space title. Empty was already refused here, so unlike
+    // `events.rs::check_name_override` there is no "" case to preserve — but the stored bytes
+    // stay verbatim below for the same reason: a padded-but-real title renders fine today and
+    // is matched by nothing, so canonicalising it would only break a working case.
+    if input.title.trim().is_empty() || input.body.trim().is_empty() {
         return Err(ApiError::bad_request("title and body are required"));
     }
     let Some(tag) = valid_tag(&input.tag) else {
@@ -108,7 +139,17 @@ pub async fn create_announcement(
     // Sanitize author-supplied HTML before persist (no stored XSS).
     let body_html = sanitize_html(&input.body);
     let snip = snippet_from(&input.snippet, &body_html);
-    let published = input.status == "published";
+    // Absent (`#[serde(default)]` → `""`) is a Draft; anything else must be a status this
+    // resource actually has, or the caller hears about it. See [`valid_announcement_status`].
+    let status = if input.status.is_empty() {
+        AnnouncementStatus::Draft
+    } else {
+        let Some(s) = valid_announcement_status(&input.status) else {
+            return Err(ApiError::bad_request("invalid status"));
+        };
+        s
+    };
+    let published = status == AnnouncementStatus::Published;
 
     let a: Announcement = sqlx::query_as(
         "INSERT INTO announcements \
@@ -123,11 +164,7 @@ pub async fn create_announcement(
     .bind(&input.thumbnail_url)
     .bind(author)
     .bind(input.is_pinned)
-    .bind(if published {
-        AnnouncementStatus::Published
-    } else {
-        AnnouncementStatus::Draft
-    })
+    .bind(status)
     .bind(if published {
         Some(chrono::Utc::now())
     } else {
@@ -185,6 +222,23 @@ pub async fn update_announcement(
     };
     let Json(input) = body.map_err(|_| ApiError::bad_request("invalid body"))?;
 
+    // Validated before the builder runs, so a rejected blank leaves the row entirely untouched
+    // rather than applying the caller's other field edits.
+    //
+    // `create_announcement` requires both fields non-blank, so PATCH must not be the back door
+    // that empties them — and here **`""` is refused too**, not just whitespace. That differs
+    // from `events.rs::check_name_override`, where `""` is a real instruction ("clear the
+    // override"); an announcement has no title-less state to return to. Measured on the pre-fix
+    // binary there was no guard here at all: `{"title":"   "}`, `{"body":"   "}` and
+    // `{"title":""}` each returned 200 and overwrote the stored sentinel.
+    for (field, value) in [("title", &input.title), ("body", &input.body)] {
+        if let Some(v) = value
+            && v.trim().is_empty()
+        {
+            return Err(ApiError::bad_request(format!("{field} must not be blank")));
+        }
+    }
+
     let mut qb: sqlx::QueryBuilder<sqlx::Postgres> =
         sqlx::QueryBuilder::new("UPDATE announcements SET updated_at = now()");
     if let Some(t) = &input.title {
@@ -210,11 +264,8 @@ pub async fn update_announcement(
     }
     let mut now_publishing = false;
     if let Some(s) = &input.status {
-        let status = match s.as_str() {
-            "draft" => AnnouncementStatus::Draft,
-            "published" => AnnouncementStatus::Published,
-            "archived" => AnnouncementStatus::Archived,
-            _ => return Err(ApiError::bad_request("invalid status")),
+        let Some(status) = valid_announcement_status(s) else {
+            return Err(ApiError::bad_request("invalid status"));
         };
         qb.push(", status = ").push_bind(status);
         if status == AnnouncementStatus::Published && existing.published_at.is_none() {

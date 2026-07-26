@@ -957,3 +957,401 @@ async fn register_moves_the_caller_s_seat() {
         "and still does not reach another operation"
     );
 }
+
+/// T-348 — a whitespace-only `name_override` must not overwrite a real operation name.
+///
+/// The write is an `UPDATE`, so this uses T-317's instrument: a seeded sentinel asserted **by
+/// value**, never "is not empty". `""` over `""` would look like success against the broken
+/// handler, and so would a length check against `"   "`.
+///
+/// What makes the bug expensive is the breadth: a whitespace string is non-empty, so it defeats
+/// six separate `is_empty()` fallbacks at once — `deployments.rs:97`, `dashboard.rs:79`,
+/// `dashboard.rs:142`, and the SPA's `event_hub.rs:200`, `orbat_selection.rs:71`,
+/// `event_manager.rs:831`. This measures the first of those through `GET /me/deployments`, which
+/// is keyed to the caller's own registration rather than a global `ORDER BY`, so the assertion is
+/// deterministic. HTML collapses whitespace, so the harm is not "a name with a space in it" — the
+/// heading renders empty, and in the admin sidebar the row the operator would click to undo it is
+/// itself unlabelled.
+///
+/// The last two blocks pin the directions an over-strict fix would break: `""` still clears the
+/// override, and a padded-but-real name is stored byte-identical.
+#[tokio::test]
+async fn blank_name_override_does_not_overwrite_a_real_operation_name() {
+    const SENTINEL: &str = "SENTINEL Operation Nightfall [T-348]";
+    const FALLBACK: &str = "SENTINEL Mission Title [T-348]";
+
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = token(&app, "admin").await;
+
+    let (st, m) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        &admin,
+        Some(&format!(
+            r#"{{"title":"{FALLBACK}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "mission: {m}");
+    let mission_id = m["id"].as_str().unwrap().to_string();
+
+    let (st, e) = call(
+        &app,
+        "POST",
+        "/api/v1/events",
+        &admin,
+        Some(&format!(
+            r#"{{"start_time":"2027-03-03T00:00:00Z","name_override":"{SENTINEL}","max_slots":8}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "event: {e}");
+    let event_id = e["id"].as_str().unwrap().to_string();
+
+    let attach = format!(
+        r#"{{"mission_id":"{mission_id}","start_time":"2027-03-03T00:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"Alpha","slots":[{{"role":"SL"}}]}}]}}"#
+    );
+    let (st, em) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/events/{event_id}/missions"),
+        &admin,
+        Some(&attach),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "attach: {em}");
+    let emid = em["id"].as_str().unwrap().to_string();
+    let (_, orbat) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/event-missions/{emid}/orbat"),
+        &admin,
+        None,
+    )
+    .await;
+    let slot0 = orbat["data"][0]["slots"][0]["id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let (st, r) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/event-missions/{emid}/register"),
+        &admin,
+        Some(&format!(r#"{{"slot_id":"{slot0}"}}"#)),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "register: {r}");
+
+    // The stored bytes, and the name a player is actually shown.
+    let uid = |s: &str| s.parse::<uuid::Uuid>().unwrap();
+    let stored = async || -> String {
+        sqlx::query_scalar("SELECT COALESCE(name_override, '<NULL>') FROM events WHERE id = $1")
+            .bind(uid(&event_id))
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+    };
+    let shown = async || -> String {
+        let (_, d) = call(&app, "GET", "/api/v1/me/deployments", &admin, None).await;
+        d["upcoming"]
+            .as_array()
+            .expect("upcoming")
+            .iter()
+            .find(|u| u["event_id"] == event_id.as_str())
+            .expect("my registration is listed")["name"]
+            .as_str()
+            .unwrap()
+            .to_string()
+    };
+
+    assert_eq!(stored().await, SENTINEL, "baseline: the override is stored");
+    assert_eq!(
+        shown().await,
+        SENTINEL,
+        "baseline: and it is the name the deployments list shows"
+    );
+
+    // ── The bug. Pre-fix this answered 200 and both values became "   ". ──
+    let (st, b) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/events/{event_id}"),
+        &admin,
+        Some(r#"{"name_override":"   "}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "blank name_override: {b}");
+    assert_eq!(
+        b["error"],
+        "name_override must not be blank — send \"\" to clear it and fall back to the mission's \
+         title"
+    );
+    assert_eq!(stored().await, SENTINEL, "the operation name was clobbered");
+    assert_eq!(shown().await, SENTINEL, "the displayed name vanished");
+
+    // A tab and a newline are the same lie as a space.
+    for blank in [r#""\t""#, r#""\n  ""#] {
+        let (st, b) = call(
+            &app,
+            "PATCH",
+            &format!("/api/v1/events/{event_id}"),
+            &admin,
+            Some(&format!(r#"{{"name_override":{blank}}}"#)),
+        )
+        .await;
+        assert_eq!(st, StatusCode::BAD_REQUEST, "blank {blank}: {b}");
+        assert_eq!(stored().await, SENTINEL, "clobbered by {blank}");
+    }
+
+    // ── `""` is a real instruction, not a blank: clear the override, fall back to the
+    // mission's title. This is the behaviour the six guards exist to provide, and the reason
+    // trimming `"   "` down to `""` would not have been a fix — it discards the name too. ──
+    let (st, b) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/events/{event_id}"),
+        &admin,
+        Some(r#"{"name_override":""}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "empty clears the override: {b}");
+    assert_eq!(stored().await, "");
+    assert_eq!(
+        shown().await,
+        FALLBACK,
+        "with no override the mission's title is shown"
+    );
+
+    // ── The over-rejection direction. A padded real name renders correctly today (HTML
+    // collapses the padding), nothing joins on this column, and the SPA dirty-check at
+    // `event_manager.rs:536` compares these bytes — so it is accepted and stored verbatim. ──
+    let padded = format!("  {SENTINEL}  ");
+    let (st, b) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/events/{event_id}"),
+        &admin,
+        Some(&format!(r#"{{"name_override":"{padded}"}}"#)),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "a padded real name is not refused: {b}");
+    assert_eq!(stored().await, padded, "stored byte-identical, not trimmed");
+    assert_eq!(shown().await, padded);
+
+    // ── And the same three cases on the create path. ──
+    for (label, value) in [("space", "  \\t "), ("newline", "\\n")] {
+        let (st, b) = call(
+            &app,
+            "POST",
+            "/api/v1/events",
+            &admin,
+            Some(&format!(
+                r#"{{"start_time":"2027-03-04T00:00:00Z","name_override":"{value}"}}"#
+            )),
+        )
+        .await;
+        assert_eq!(
+            st,
+            StatusCode::BAD_REQUEST,
+            "create must not accept a {label} name: {b}"
+        );
+    }
+    let (st, b) = call(
+        &app,
+        "POST",
+        "/api/v1/events",
+        &admin,
+        Some(r#"{"start_time":"2027-03-04T00:00:00Z","name_override":" Padded Create "}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "create keeps a padded name: {b}");
+    assert_eq!(
+        b["name_override"], " Padded Create ",
+        "and echoes it verbatim"
+    );
+    let (st, b) = call(
+        &app,
+        "POST",
+        "/api/v1/events",
+        &admin,
+        Some(r#"{"start_time":"2027-03-04T00:00:00Z"}"#),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CREATED,
+        "and an absent override is fine: {b}"
+    );
+    // `Event::name_override` is `skip_serializing_if = "String::is_empty"`, so "no override" is
+    // an absent key on the wire and the SPA's `Option<String>` sees `None`. Which is precisely
+    // why a blank one is so expensive: `"   "` is non-empty, so it *is* serialised, arrives as
+    // `Some("   ")`, and walks through every `.filter(|s| !s.is_empty())` on the client.
+    assert!(
+        b["name_override"].is_null(),
+        "an empty override is omitted from the response: {b}"
+    );
+}
+
+/// T-348 — `cms.rs`: a blank announcement title or body must be refused on both writes, and an
+/// unrecognised status must not silently become a draft.
+///
+/// These cases live in `tests/events.rs` because T-348 owns this test file and no cms one; they
+/// are announcement tests, not event tests.
+///
+/// The stakes on the PATCH are higher than the create's: `push_announcement_discord` and the
+/// `push_to_discord` call in `create_announcement` both read the **stored** row, so a body
+/// blanked by a PATCH is what would ship to the channel. Nothing here sets `push_to_discord` —
+/// `Config::for_tests` leaves `discord_webhook_url` empty so `push_announcement` bails before any
+/// request, and the guards under test return before the `INSERT`/`UPDATE` that a push reads.
+#[tokio::test]
+async fn blank_announcement_fields_are_refused_and_an_unknown_status_is_not_a_silent_draft() {
+    const TITLE: &str = "SENTINEL Announcement [T-348]";
+    const BODY: &str = "<p>SENTINEL body [T-348]</p>";
+
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = token(&app, "admin").await;
+
+    let (st, a) = call(
+        &app,
+        "POST",
+        "/api/v1/cms/announcements",
+        &admin,
+        Some(&format!(
+            r#"{{"title":"{TITLE}","body":"{BODY}","tag":"update"}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "sentinel announcement: {a}");
+    let aid = a["id"].as_str().unwrap().to_string();
+
+    let uid = |s: &str| s.parse::<uuid::Uuid>().unwrap();
+    let row = async || -> (String, String, String) {
+        sqlx::query_as("SELECT title, body, status::text FROM announcements WHERE id = $1")
+            .bind(uid(&aid))
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+    };
+    assert_eq!(
+        row().await,
+        (TITLE.into(), BODY.into(), "draft".into()),
+        "baseline"
+    );
+
+    // ── PATCH. Pre-fix there was no guard at all here: each of these returned 200 and
+    // overwrote the sentinel, `""` included. ──
+    for (field, payload) in [
+        ("title", r#"{"title":"   "}"#),
+        ("title", r#"{"title":""}"#),
+        ("title", r#"{"title":"\t\n"}"#),
+        ("body", r#"{"body":"   "}"#),
+        ("body", r#"{"body":""}"#),
+    ] {
+        let (st, b) = call(
+            &app,
+            "PATCH",
+            &format!("/api/v1/cms/announcements/{aid}"),
+            &admin,
+            Some(payload),
+        )
+        .await;
+        assert_eq!(st, StatusCode::BAD_REQUEST, "PATCH {payload}: {b}");
+        assert_eq!(b["error"], format!("{field} must not be blank"));
+        assert_eq!(
+            row().await,
+            (TITLE.into(), BODY.into(), "draft".into()),
+            "PATCH {payload} clobbered the sentinel"
+        );
+    }
+
+    // A real edit still lands, and a padded title is stored verbatim — the over-rejection
+    // direction, same as `name_override`.
+    let (st, b) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/cms/announcements/{aid}"),
+        &admin,
+        Some(r#"{"title":" Padded Title "}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "a padded real title is accepted: {b}");
+    assert_eq!(row().await.0, " Padded Title ", "stored byte-identical");
+
+    // ── Create. Pre-fix each of these returned 201 and created the announcement. ──
+    for payload in [
+        r#"{"title":"   ","body":"<p>real</p>","tag":"update"}"#,
+        r#"{"title":"Real","body":"   ","tag":"update"}"#,
+        r#"{"title":"\t","body":"<p>real</p>","tag":"update"}"#,
+    ] {
+        let (st, b) = call(
+            &app,
+            "POST",
+            "/api/v1/cms/announcements",
+            &admin,
+            Some(payload),
+        )
+        .await;
+        assert_eq!(st, StatusCode::BAD_REQUEST, "create {payload}: {b}");
+        assert_eq!(b["error"], "title and body are required");
+    }
+
+    // ── Status. Pre-fix all three of these returned 201 with `status = draft`; the PATCH
+    // rejected the same strings with a 400. ──
+    for bogus in ["bogus", "PUBLISHED", "Draft"] {
+        let (st, b) = call(
+            &app,
+            "POST",
+            "/api/v1/cms/announcements",
+            &admin,
+            Some(&format!(
+                r#"{{"title":"S","body":"<p>b</p>","tag":"update","status":"{bogus}"}}"#
+            )),
+        )
+        .await;
+        assert_eq!(
+            st,
+            StatusCode::BAD_REQUEST,
+            "create must not silently draft {bogus}: {b}"
+        );
+        assert_eq!(b["error"], "invalid status");
+    }
+
+    // The three real values are honoured, and absent still means draft.
+    for (payload, want) in [
+        (r#""status":"archived","#, "archived"),
+        (r#""status":"published","#, "published"),
+        (r#""status":"draft","#, "draft"),
+        ("", "draft"),
+    ] {
+        let (st, b) = call(
+            &app,
+            "POST",
+            "/api/v1/cms/announcements",
+            &admin,
+            Some(&format!(
+                r#"{{{payload}"title":"S","body":"<p>b</p>","tag":"update"}}"#
+            )),
+        )
+        .await;
+        assert_eq!(st, StatusCode::CREATED, "create {payload}: {b}");
+        assert_eq!(
+            b["status"], want,
+            "create {payload} stored the wrong status"
+        );
+        // Only a published announcement gets a publish timestamp — and so only a published one
+        // is eligible for the Discord push guarded by the same flag.
+        assert_eq!(
+            b["published_at"].is_null(),
+            want != "published",
+            "published_at for {payload}"
+        );
+    }
+}
