@@ -756,6 +756,43 @@ mod tests {
         assert!(p.get("payloadExtras").is_none());
     }
 
+    /// T-259 — `settings` is NOT a first-class hydrate map (that would need `doc/store.rs`, outside
+    /// this slice's owns). Hydrate parks it in `payloadExtras` (T-219); compile must re-emit it
+    /// onto the wire so flatten can pass it through to the mod document. Pinning the three schema
+    /// fields by name so a rename here fails before a golden ever sees it.
+    #[test]
+    fn settings_in_payload_extras_reach_the_wire_payload() {
+        let small = json!({
+            "meta": { "terrain": "everon" },
+            "factionsById": {},
+            "squadsById": {},
+            "loadoutsById": {},
+            "itemsById": {},
+            "objectivesById": {},
+            "vehiclesById": {},
+            "entitiesById": {},
+            "markersById": {},
+            "editorLayersById": {},
+            "payloadExtras": {
+                "settings": {
+                    "respawn": "wave",
+                    "spectatorPolicy": "free",
+                    "nightVision": false
+                }
+            }
+        })
+        .to_string();
+
+        let p = compile_payload(&small, "{}", false);
+        let s = p
+            .get("settings")
+            .expect("settings must leave payloadExtras onto the wire");
+        assert_eq!(s["respawn"], "wave");
+        assert_eq!(s["spectatorPolicy"], "free");
+        assert_eq!(s["nightVision"], false);
+        assert!(p.get("payloadExtras").is_none());
+    }
+
     /// T-220 — authored `schemaVersion` on meta survives compile (not forced back to literal 1).
     #[test]
     fn authored_schema_version_on_meta_is_emitted() {

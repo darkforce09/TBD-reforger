@@ -280,6 +280,23 @@ pub struct ModWinConditions {
     pub end_on: Vec<String>,
 }
 
+/// `mission.schema.json#/$defs/settings` — T-259.
+///
+/// **PASSED THROUGH, never derived.** Respawn / spectator / NVG are authored policy, not something
+/// the ORBAT can invent. Every field is optional (`$defs/settings` declares no `required`); an
+/// authored `"settings": {}` still reaches the wire as `{}` so "present but empty" stays distinct
+/// from "key absent" for the mod reader (`TBD_MissionSettingsStruct`).
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ModSettings {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub respawn: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub spectator_policy: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub night_vision: Option<bool>,
+}
+
 // ---- T-202: per-faction briefings (prose + map markers) ----
 
 /// One `briefing.markers[]` entry (`mission.schema.json#/$defs/marker`).
@@ -596,6 +613,11 @@ pub struct ModMissionDocument {
     /// [`derive_briefings`] for exactly what this reads and where the authoring gap is.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub briefings: BTreeMap<String, ModBriefing>,
+    /// T-259 — mission policy block (`mission.schema.json#/$defs/settings`). `None` omits the key
+    /// (legal — `settings` is not in the schema's top-level `required`). `Some` — including an
+    /// empty object — means the payload authored the key; see [`derive_settings`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub settings: Option<ModSettings>,
     /// T-200 — **not part of the document.** `#[serde(skip)]`, so the served JSON is byte-identical
     /// to what it was before this field existed; the schema's top-level
     /// `additionalProperties: false` would 500 the whole `/compiled` route otherwise. This is what
@@ -625,6 +647,14 @@ struct EditorPayload {
     zones: Vec<ZoneIn>,
     /// T-254 — top-level `entities` array from `compile_payload` (`entitiesById` values).
     entities: Vec<EntityIn>,
+    /// T-259 — top-level `settings` object (`mission.schema.json#/$defs/settings`).
+    ///
+    /// `Option` so "key absent" (`None`) stays distinct from `"settings": {}` (`Some` empty). The
+    /// editor does not yet author this block (T-224 refuses the controls until a mod reader exists);
+    /// goldens and hand-staged payloads do. Typed fields would 500 a stored payload that carried a
+    /// wrong-typed value, so unknown keys inside the object are ignored by serde default and only
+    /// the three schema properties are read — see [`SettingsIn`].
+    settings: Option<SettingsIn>,
     editor: EditorGraph,
     /// T-204 — the saved payload's TOP-LEVEL `environment` bag, sibling of `editor`, which is where
     /// `compile_payload` puts the editor's `meta.environment` verbatim. Carries the four authored
@@ -638,6 +668,15 @@ struct EditorPayload {
     /// which is the invariant `scan_editor_payload_types` (T-367) exists to hold. The accept/reject
     /// decision moves to the read helpers, where it matches the dialog's read-back exactly.
     environment: serde_json::Value,
+}
+
+/// Authored `settings` row — the three schema properties, all optional.
+#[derive(Debug, Default, Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+struct SettingsIn {
+    respawn: Option<String>,
+    spectator_policy: Option<String>,
+    night_vision: Option<bool>,
 }
 
 #[derive(Debug, Default, serde::Deserialize)]
@@ -1635,6 +1674,28 @@ fn derive_entities(rows: &[EntityIn]) -> Vec<ModEntity> {
     out
 }
 
+/// T-259 — project an authored top-level `settings` object onto `$defs/settings`.
+///
+/// `None` in → `None` out (key omitted on the wire). `Some` in → `Some` out even when every field
+/// is empty, so an authored `"settings": {}` survives as `{}` rather than vanishing. Empty strings
+/// on `respawn` / `spectatorPolicy` are treated as absent fields (trimmed), matching how the mod
+/// reader uses empty string for "key not set".
+fn derive_settings(authored: &Option<SettingsIn>) -> Option<ModSettings> {
+    let Some(s) = authored else {
+        return None;
+    };
+    let trim = |v: &Option<String>| {
+        v.as_ref()
+            .map(|t| t.trim().to_string())
+            .filter(|t| !t.is_empty())
+    };
+    Some(ModSettings {
+        respawn: trim(&s.respawn),
+        spectator_policy: trim(&s.spectator_policy),
+        night_vision: s.night_vision,
+    })
+}
+
 /// One-decimal metre rounding — matches spawn-zone synthesis and the historical TS flatten.
 fn round_coord(v: f64) -> f64 {
     (v * 10.0).round() / 10.0
@@ -2033,6 +2094,7 @@ pub fn flatten_to_mod_document(
             end_on,
         },
         briefings: derive_briefings(&ed.factions),
+        settings: derive_settings(&parsed.settings),
         kit_substitutions: substitutions.finish(),
     })
 }
@@ -2726,6 +2788,83 @@ mod tests {
         assert_eq!(row["z"], 3290.0);
         assert_eq!(row["headingDeg"], 90.0);
         assert_eq!(row["faction"], "blufor");
+    }
+
+    /// T-259 — authored top-level `settings` reach the compiled wire as `$defs/settings`.
+    ///
+    /// The three schema properties are pinned by NAME (camelCase on the wire). Absence of the
+    /// key omits it; an authored empty object still emits `"settings": {}` so the mod can tell
+    /// "author wrote the block" from "author never had the key".
+    #[test]
+    fn settings_reach_the_compiled_wire_when_authored() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["settings"] = serde_json::json!({
+            "respawn": "tickets",
+            "spectatorPolicy": "own_side_delayed_60s",
+            "nightVision": true
+        });
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        let settings = doc.settings.as_ref().expect("settings emitted");
+        assert_eq!(settings.respawn.as_deref(), Some("tickets"));
+        assert_eq!(
+            settings.spectator_policy.as_deref(),
+            Some("own_side_delayed_60s")
+        );
+        assert_eq!(settings.night_vision, Some(true));
+
+        let wire = serde_json::to_value(&doc).expect("wire");
+        let s = wire.get("settings").expect("settings key on wire");
+        assert_eq!(s["respawn"], "tickets");
+        assert_eq!(s["spectatorPolicy"], "own_side_delayed_60s");
+        assert_eq!(s["nightVision"], true);
+        // Schema property set — nothing else may appear under settings.
+        let mut keys: Vec<&str> = s.as_object().unwrap().keys().map(String::as_str).collect();
+        keys.sort_unstable();
+        assert_eq!(
+            keys,
+            ["nightVision", "respawn", "spectatorPolicy"],
+            "settings shape is exactly mission.schema.json#/$defs/settings"
+        );
+    }
+
+    /// T-259 — no `settings` on the payload → key omitted (not `{}`, not null).
+    #[test]
+    fn settings_absent_from_payload_omits_the_wire_key() {
+        let doc = flatten_to_mod_document(&meta(), FIXTURE.as_bytes()).expect("compiles");
+        assert!(doc.settings.is_none());
+        let wire = serde_json::to_value(&doc).expect("wire");
+        assert!(
+            wire.get("settings").is_none(),
+            "absent settings must not invent a defaults block"
+        );
+    }
+
+    /// T-259 — authored `"settings": {}` still reaches the wire as `{}`.
+    #[test]
+    fn empty_settings_object_is_emitted_not_dropped() {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["settings"] = serde_json::json!({});
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        assert!(doc.settings.is_some());
+        let wire = serde_json::to_value(&doc).expect("wire");
+        let s = wire.get("settings").expect("empty settings still on wire");
+        assert!(s.as_object().unwrap().is_empty());
+    }
+
+    /// T-259 — golden `last-stand-at-montfort` settings survive flatten field-for-field.
+    #[test]
+    fn golden_settings_reach_the_compiled_document() {
+        const GOLDEN: &str = include_str!(
+            "../../../../packages/tbd-schema/golden-missions/last-stand-at-montfort.json"
+        );
+        let golden: serde_json::Value = serde_json::from_str(GOLDEN).expect("golden parses");
+        // Goldens are already the MOD document shape. Rebuild an editor-shaped payload that
+        // carries the same settings block so flatten is what we exercise, not the golden itself.
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["settings"] = golden["settings"].clone();
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes()).expect("compiles");
+        let wire = serde_json::to_value(&doc).expect("wire");
+        assert_eq!(wire["settings"], golden["settings"]);
     }
 
     /// The vehicle row this module reads, pinned field by field — **the contract floor**.
