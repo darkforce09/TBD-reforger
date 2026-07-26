@@ -9643,7 +9643,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 3150,
       "stream": "web-platform",
       "targets": [
@@ -10860,7 +10860,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 3209,
       "stream": "web-platform",
       "targets": [
@@ -10881,7 +10881,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 3210,
       "stream": "web-platform",
       "targets": [
