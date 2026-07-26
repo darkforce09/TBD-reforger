@@ -118,77 +118,80 @@
 0	T-344	One doc mutator to author per-faction briefing prose	crates/map-engine-core/src/doc/store.rs
 0	T-204	Emit mission flow and winConditions instead of hardcoding them	crates/map-engine-core/src/mission/flatten.rs
 0	T-229	Match ingest silently drops unlinked players and never backfills	apps/website/api/src/handlers/telemetry.rs
-1	T-391	Live javascript: XSS via aar_replay_url, and zero URL validation in the API	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/services/text.rs
+1	T-393	T-316 requires five player fields the mod never sends: all production ingest 400s	apps/website/api/src/handlers/telemetry.rs; apps/website/api/tests/telemetry.rs
+1	T-392	An empty authored briefing renders as PLACEHOLDER_LORE	apps/website/frontend/src/event_hub.rs
+1	T-394	assert_golden cannot detect a dropped field under #[serde(flatten)]	apps/website/frontend/src/dto.rs
 1	T-334	events.rs integration tests flake on a cold database	apps/website/api/tests/events.rs
 1	T-240	Cargo capacity is warn-only and never blocks	apps/website/frontend/src/arsenal_rules.rs
-1	T-236	server_fps type mismatch would silently drop every live frame	apps/website/api/src/models/telemetry.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/sse.rs; apps/website/frontend/src/server_intel.rs
 1	T-241	Declare zones[].rules properties in the schema	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c
 1	T-243	Wire or delete the unused wasm flatten binding	crates/map-engine-wasm/src/lib.rs
 1	T-215	Vehicle placement on the map with position and cargo	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_chrome.rs; crates/map-engine-core/src/doc/store.rs
-1	T-216	flatten drops leaderSlotId, tag, callsign, rank, stance and all vehicles	crates/map-engine-core/src/mission/flatten.rs
-2	T-239	Unticketed XSS hardening item from the Go purge	apps/website/api/src/services/text.rs; apps/website/api/src/handlers/cms.rs
+2	T-391	Live javascript: XSS via aar_replay_url, and zero URL validation in the API	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/services/text.rs
+2	T-236	server_fps type mismatch would silently drop every live frame	apps/website/api/src/models/telemetry.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/sse.rs; apps/website/frontend/src/server_intel.rs
+2	T-216	flatten drops leaderSlotId, tag, callsign, rank, stance and all vehicles	crates/map-engine-core/src/mission/flatten.rs
 2	T-244	No vehicle lane in the map-object catalogue	packages/tbd-schema/rules/prefab-classify.json
-2	T-230	Attendance marks every mission in the event and breaks the roster counters	apps/website/api/src/handlers/telemetry.rs
 2	T-245	Registry fetch is unpaginated — about 7MB on every editor open	apps/website/frontend/src/mission_editor.rs
 2	T-247	POST /admin/roles/sync has no UI and no scheduler	apps/website/frontend/src/personnel.rs
 2	T-248	oauth_state cookie survives the two early-return error paths	apps/website/api/src/handlers/oauth.rs
 2	T-219	The editor silently deletes any top-level key it does not understand	crates/map-engine-core/src/doc/store.rs; crates/map-engine-core/src/mission/compile.rs
-2	T-249	Add a slot.y fixture	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c; apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c
-3	T-246	push-discord skips the published check	apps/website/api/src/handlers/cms.rs
+3	T-239	Unticketed XSS hardening item from the Go purge	apps/website/api/src/services/text.rs; apps/website/api/src/handlers/cms.rs
+3	T-230	Attendance marks every mission in the event and breaks the roster counters	apps/website/api/src/handlers/telemetry.rs
+3	T-249	Add a slot.y fixture	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c; apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c
 3	T-201	Emit zones[] beyond the synthetic spawn circle	crates/map-engine-core/src/mission/flatten.rs; apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
 3	T-250	Warn on unconsumed mission-document keys	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c
 3	T-251	Production deployment story	scripts/deploy/deploy-website.sh
 3	T-253	Reclaim 65GB and stop double-compiling	Makefile; .gitignore
 3	T-254	Entity and object placement — the whole entities[] block	apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/asset_catalog.rs
-3	T-256	Faction library is empty on every fresh install	packages/tbd-schema/registry/faction-library.sample.json; apps/website/api/seeds
-3	T-220	Five more silent round-trip losses	crates/map-engine-core/src/doc/store.rs; crates/map-engine-core/src/mission/compile.rs
+4	T-246	push-discord skips the published check	apps/website/api/src/handlers/cms.rs
+4	T-256	Faction library is empty on every fresh install	packages/tbd-schema/registry/faction-library.sample.json; apps/website/api/seeds
+4	T-220	Five more silent round-trip losses	crates/map-engine-core/src/doc/store.rs; crates/map-engine-core/src/mission/compile.rs
 4	T-258	POST /versions is unaudited and does not bump updated_at	apps/website/api/src/handlers/missions.rs
 4	T-259	The mod has no reader for the settings block	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
 4	T-260	Events carry no server or modpack	apps/website/api/src/handlers/events.rs; apps/website/api/src/models/event.rs
 4	T-261	Leaderboard materialized view has no scheduled refresh	apps/website/api/src/db.rs
 4	T-262	Zero foreign keys in the entire schema	apps/website/api/migrations
-4	T-255	Asset palette is not side-aware	apps/website/frontend/src/asset_catalog.rs
-4	T-263	Wiki and Vehicle Database are fully hardcoded	apps/website/api/src/handlers/wiki.rs; apps/website/frontend/src/vehicles.rs
-4	T-211	Zone and play-area draw tool	crates/map-engine-core/src/doc/store.rs
+5	T-255	Asset palette is not side-aware	apps/website/frontend/src/asset_catalog.rs
+5	T-263	Wiki and Vehicle Database are fully hardcoded	apps/website/api/src/handlers/wiki.rs; apps/website/frontend/src/vehicles.rs
+5	T-211	Zone and play-area draw tool	crates/map-engine-core/src/doc/store.rs
 5	T-264	Bookmarked tab with no bookmark button	apps/website/api/src/handlers/missions.rs
 5	T-265	Leave-of-Absence feature has zero UI	apps/website/frontend/src/deployments.rs
 5	T-266	No pagination anywhere in the SPA	apps/website/api/src/handlers/audit.rs
 5	T-267	CMS announcements can be created but never edited, deleted or re-pushed	apps/website/api/src/models/content.rs
 5	T-268	Personnel — Issue Warning is a mock over a working endpoint, and there is no unban	apps/website/frontend/src/personnel.rs
-5	T-269	Real RCON transport — the current endpoint is a no-op that reports success	apps/website/api/src/handlers/admin.rs
-5	T-270	Wire the Server Control page — ten dead controls	apps/website/frontend/src/server_control.rs
-5	T-222	CLIENT_ID is hardcoded to 1 for every peer	crates/map-engine-core/src/doc/store.rs
+6	T-269	Real RCON transport — the current endpoint is a no-op that reports success	apps/website/api/src/handlers/admin.rs
+6	T-270	Wire the Server Control page — ten dead controls	apps/website/frontend/src/server_control.rs
+6	T-222	CLIENT_ID is hardcoded to 1 for every peer	crates/map-engine-core/src/doc/store.rs
 6	T-271	Modpack CRUD plus workshop-id columns	apps/website/api/src/handlers/modpacks.rs
 6	T-272	Server-status producer — close the SSE loop	apps/website/api/src/realtime.rs; apps/website/frontend/src/sse.rs
 6	T-273	schema.json is a month stale and would now reject nearly every ticket	.ai/tickets/schema.json
 6	T-274	Record the untracked spawn-determinism program	scripts/mod/tbd-spawn-determinism.sh
 6	T-275	Declare mod-enforced limits in the schema	apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c; apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c
-6	T-276	Close the marker.icon vocabulary	apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerIcons.c
-6	T-277	27.4% of the shipped map catalogue is unclassified	packages/tbd-schema/rules/prefab-classify.json
-6	T-190	Two browser tabs on one mission silently clobber each other	apps/website/frontend/src/yrs_persist.rs
+7	T-276	Close the marker.icon vocabulary	apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerIcons.c
+7	T-277	27.4% of the shipped map catalogue is unclassified	packages/tbd-schema/rules/prefab-classify.json
+7	T-190	Two browser tabs on one mission silently clobber each other	apps/website/frontend/src/yrs_persist.rs
 7	T-242	Add vehicle and entity inventory to the entity schema	crates/map-engine-core/src/doc/store.rs
 7	T-278	No paks-to-registry pipeline and no Makefile target to regenerate the catalogue	tools/tbd-tools/src/world
 7	T-279	Discord bot — greenfield	apps/website/api/src/config.rs
 7	T-237	ticket ship verifies nothing and check ignores the schema	xtask/src/cmds.rs; xtask/src/check.rs
 7	T-280	No observability, no backups, no durable rate limiting	apps/website/api/src/app.rs; apps/website/api/Cargo.toml
-7	T-282	Mission version history — differ and timeline	apps/website/frontend/src/missions.rs
-7	T-283	Mission review and commenting workflow	apps/website/api/src/handlers/approvals.rs; apps/website/api/src/handlers/missions.rs
-7	T-284	events.match_id is dead weight and clear_slot is unreachable	apps/website/api/src/handlers/events.rs
+8	T-282	Mission version history — differ and timeline	apps/website/frontend/src/missions.rs
+8	T-283	Mission review and commenting workflow	apps/website/api/src/handlers/approvals.rs; apps/website/api/src/handlers/missions.rs
+8	T-284	events.match_id is dead weight and clear_slot is unreachable	apps/website/api/src/handlers/events.rs
 8	T-257	Markers and objectives will be non-undoable the day they land	crates/map-engine-core/src/doc/store.rs
 8	T-285	Field tools — solutions never persist and inject writes to a dead directory	apps/website/frontend/src/mortar.rs
 8	T-287	SSE reader leaks one connection per SPA navigation	apps/website/frontend/src/sse.rs
 8	T-238	Add ticket check to CI	.github/workflows/ci.yml
 8	T-281	apps/mod README falsely claims the compile route does not exist	apps/mod/tbd-framework/README.md; apps/website/api/src/app.rs; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
-8	T-288	Modpack to server-config renderer and push	scripts/mod/deploy-staging.sh
-8	T-286	Dead scaffolding and a non-reactive role read	apps/website/api/src/handlers/missions.rs; apps/website/frontend/src/nav.rs; apps/website/frontend/src/faction_manager.rs
-8	T-291	Resolve five schema fields implemented on no surface	crates/map-engine-core/src/mission/flatten.rs
+9	T-288	Modpack to server-config renderer and push	scripts/mod/deploy-staging.sh
+9	T-286	Dead scaffolding and a non-reactive role read	apps/website/api/src/handlers/missions.rs; apps/website/frontend/src/nav.rs; apps/website/frontend/src/faction_manager.rs
+9	T-291	Resolve five schema fields implemented on no surface	crates/map-engine-core/src/mission/flatten.rs
 9	T-212	Objectives authoring UI	crates/map-engine-core/src/doc/store.rs; crates/map-engine-core/src/mission/compile.rs
 9	T-292	net.range short is parsed then discarded	apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioService.c
 9	T-294	Only one of two registered terrains has object data	packages/map-assets/arland
 9	T-295	Realtime collaborative editing	apps/website/frontend/src/yrs_persist.rs
 9	T-296	TBD_ResultsReporter banner now contradicts shipped code	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c
-9	T-293	TBD_RadioPlan re-parses raw JSON instead of the parsed field	apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
-9	T-289	Server-host deploy agent for start, stop and status	scripts/mod/deploy-staging.sh
-9	T-297	cargo fmt --all is ungated — 12 files drifted	tools/tbd-tools/src/lib.rs; xtask/src/cmds.rs; Makefile
+10	T-293	TBD_RadioPlan re-parses raw JSON instead of the parsed field	apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
+10	T-289	Server-host deploy agent for start, stop and status	scripts/mod/deploy-staging.sh
+10	T-297	cargo fmt --all is ungated — 12 files drifted	tools/tbd-tools/src/lib.rs; xtask/src/cmds.rs; Makefile
 10	T-213	Marker placement	apps/website/frontend/src/eden_chrome.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-core/src/mission/compile.rs
 11	T-290	Resolve nine dead-output fields flatten emits that the mod never reads	crates/map-engine-core/src/mission/flatten.rs

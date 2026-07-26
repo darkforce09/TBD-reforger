@@ -93,6 +93,46 @@ def dispatchable(tid, reg):
     return t.get('executor', 'claude-code') == 'claude-code'
 
 
+def unplanned(reg):
+    """Open tickets in the REGISTRY that have no row in the plan — and are therefore invisible
+    to every dispatch set this script computes.
+
+    THIS IS THE HOLE THAT MATTERS MOST HERE. `repack()` rebuilds the plan from *existing plan rows*
+    and preserves their `owns`, so a ticket filed straight into the registry never appears at all.
+    It is not dropped with a warning; it is never a candidate. Measured 2026-07-26: 15 of 42 open
+    platform tickets — 36% of the backlog, including a P0 that broke all production telemetry —
+    were absent from every "Max disjoint dispatch set (8, cap 8)" this script confidently printed.
+
+    Same family as every other defect this run: a tool reporting success over an input it never
+    examined. `pack()` cannot be wrong about the set it computes; it can only be wrong about what
+    was allowed into the running.
+
+    Deliberately a LOUD WARNING and not a hard exit: the missing rows need `owns` derived from each
+    ticket's own citations, which is real work and cannot be invented safely (see the wave plan's
+    Phase 3 note on lazy directory-level ownership). Wedging the factory until someone does that
+    would trade a throughput bug for a total stop. But it must never again be silent.
+    """
+    planned = {r['id'] for r in plan_rows()}
+    return [t for t in reg.values()
+            if t.get('program') == 'platform'
+            and t.get('status') in ('idea', 'in_progress', 'ready', 'queued')
+            and t['id'] not in planned]
+
+
+def warn_unplanned(reg):
+    miss = unplanned(reg)
+    if not miss:
+        return
+    print(f"\n\033[33m! {len(miss)} OPEN TICKET(S) ARE NOT IN THE PLAN and cannot be dispatched:\033[0m",
+          file=sys.stderr)
+    for t in sorted(miss, key=lambda x: (x.get('priority', 9), x['id'])):
+        p = t.get('priority')
+        flag = '  \033[31m<-- P0\033[0m' if p == 0 else ''
+        print(f"    {t['id']:8s} p{p if p is not None else '-'} {t['title'][:58]}{flag}", file=sys.stderr)
+    print("  Give each one an `owns` row in the plan (derive it from the ticket's own citations, "
+          "never a bare directory).", file=sys.stderr)
+
+
 def collides(a, b):
     """Two tickets collide if any owned path overlaps — including prefix containment,
     so `apps/website/api/src/` collides with `apps/website/api/src/handlers/admin.rs`."""
@@ -174,6 +214,7 @@ def repack():
         fh.write('\n'.join(out) + '\n')
     print(f"repacked {sum(len(w) for w in waves)} open tickets into {len(waves)} waves "
           f"({len(done)} already shipped, parked at wave 0)")
+    warn_unplanned(reg)
 
 
 def main():
@@ -229,6 +270,8 @@ def main():
         print("\nmost-contended tickets (blocking the most others):")
         for tid, n in blocked.most_common(5):
             print(f"  {tid} blocks {n}")
+
+    warn_unplanned(reg)
 
 
 if __name__ == '__main__':
