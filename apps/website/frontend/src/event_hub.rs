@@ -1,10 +1,10 @@
 //! Event Hub (/events/:id) — ported from pages/events.tsx `EventHubPage` + `EventHubView` +
 //! `MissionDossier` + the shared `OrbatSelector`. `<AuthGate>` → `useEvent(id)` → `GET /events/:id`
 //! → a topo-glass hero (name, T-MINUS countdown, datetime, TS3 + current-modpack link) + per-mission
-//! dossiers (briefing lore, BLUFOR/OPFOR objectives, faction dossiers, inline ORBAT selector).
+//! dossiers (the mission's briefing, faction dossiers, inline ORBAT selector).
 //!
 //! T-159.25: the FULL interactive surface is live — my_state badge, faction dossiers
-//! (uniform/vehicle placeholders + real armory), and the complete ORBAT selector
+//! (uniform placeholder + real armory), and the complete ORBAT selector
 //! (faction tabs → squad list → slot rows) with the five mutations (register / withdraw /
 //! reserve / release / assign via member typeahead), toasts carrying the backend `error` string
 //! (T-127 U5), and `LocalResource` refetches standing in for the React query invalidations
@@ -14,6 +14,12 @@
 //! selection resets to the defaults after a mutation (React's useState survives because the
 //! component instance persists). Register clears the selection in React too, so the visible
 //! delta is squad-tab focus only.
+//!
+//! **T-392 — this page no longer invents mission intel.** The React port carried five demo
+//! constants that rendered in the same type, in the same cards, as the real armory and ORBAT
+//! rows: a maker, a duration, BLUFOR/OPFOR objective lists, a paragraph of briefing lore and a
+//! per-faction vehicle roster. See [`briefing_text`] for the one that was a live defect and
+//! [`meta_badges`] for the shape the rest were removed into.
 #![allow(dead_code)]
 use crate::datefmt::{countdown_label, format_local_datetime};
 use crate::dto::{DataEnvelope, EventHub, EventMissionDossier, Member, ModpackDto, OrbatSquad};
@@ -22,23 +28,15 @@ use crate::ui::{cn, AuthGate, MaterialIcon, DEFAULT_AVATAR};
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 
-// Placeholder mission-intel (events.tsx) — the API doesn't yet serve maker/duration/objectives/lore.
-const PLACEHOLDER_MAKER: &str = "Sam";
-const PLACEHOLDER_DURATION: &str = "90 MIN";
-const PLACEHOLDER_BLUFOR: [&str; 3] = [
-    "Protect the forward operating bases",
-    "Protect and secure the nuke",
-    "Escort the VIP convoy to extraction",
-];
-const PLACEHOLDER_OPFOR: [&str; 3] = [
-    "Capture the forward operating bases",
-    "Find and detonate the nuke",
-    "Intercept the VIP convoy",
-];
-const PLACEHOLDER_LORE: &str = "Hostile mechanized elements have pushed across the northern border under cover of a winter storm. Command has tasked us with holding the line until reinforcements arrive. Expect contested airspace and degraded visibility.";
 // A simple uniform-silhouette SVG so the frame always renders offline (events.tsx).
+//
+// T-392 KEPT THIS ONE, and deliberately. It is the only survivor of the placeholder family
+// because it is *art* standing in for missing art, not a *value* standing in for a missing fact
+// — the same line `docs/platform/frontend_data_provenance.md` already drew when it called
+// `missions.rs` `thumbnail_url ?? PLACEHOLDER_ART` "a legitimate fallback" while listing this
+// page's other five under "Mock values still on a real user's screen". A grey silhouette asserts
+// nothing about a faction; "BLUFOR fields 4 BTR-70s" does. The ticket's own list omits it too.
 const PLACEHOLDER_UNIFORM: &str = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='120'><rect width='80' height='120' fill='%23242a3a'/><circle cx='40' cy='38' r='15' fill='%233a4252'/><rect x='18' y='56' width='44' height='56' rx='9' fill='%233a4252'/></svg>";
-const PLACEHOLDER_VEHICLES: [(&str, u32); 3] = [("BTR-70 APC", 4), ("UAZ-469", 6), ("Mi-8 Hip", 2)];
 
 fn game_mode_label(mode: &str) -> &str {
     match mode {
@@ -285,6 +283,53 @@ fn meta_badge(label: &'static str, value: String) -> impl IntoView {
     }
 }
 
+/// The Event Hub's rendering of a mission dossier's briefing — the authored prose, or the
+/// explicit empty-state affordance when there is none.
+///
+/// **T-392 — this used to fall back to three sentences of invented lore.** That was harmless
+/// while nothing could author a briefing; T-344/T-345 made briefings authorable end to end and
+/// turned it into a live defect, because the fallback cannot tell *"nobody has written one yet"*
+/// from *"the author deliberately cleared it"* and answers both with fiction that reads exactly
+/// like real operational copy. Clearing a briefing was therefore impossible: `PATCH /missions/:id`
+/// binds the field straight from the request (`api/handlers/missions.rs:505`), the read
+/// `COALESCE`s NULL to `''`, and `EventMissionDossier` carries
+/// `skip_serializing_if = "String::is_empty"` — so a cleared briefing arrives here as an *absent
+/// key*, i.e. exactly the state the fallback fired on. Same shape as the T-373 finding.
+///
+/// **Not back-filled**, for T-373's reason: an absent value must stay distinguishable from a
+/// default, and writing one into authored data destroys the author's intent permanently. This
+/// only decides what to *show*; nothing here writes.
+///
+/// The affordance string is `mission_overview.rs:894`'s verbatim — the sibling mission-dossier
+/// renderer, and the precedent the ticket named — rather than a new one invented for this page.
+/// The `trim()` is `approvals.rs:389`'s ("The author submitted no briefing."), which is the
+/// stricter of the two in-repo precedents: a briefing of `"\n\n "` is not authored content, and
+/// rendering it verbatim leaves a "Mission Briefing" heading over blank space.
+fn briefing_text(briefing: Option<&str>) -> String {
+    match briefing {
+        Some(b) if !b.trim().is_empty() => b.to_string(),
+        _ => "No briefing provided.".to_string(),
+    }
+}
+
+/// Every meta badge the dossier header can honestly show, in render order.
+///
+/// **T-392** — this was a `Maker` chip and a `Duration` chip flanking `Terrain`, both hardcoded:
+/// two fabricated literals wearing the same chip as the one real field, so every mission on the
+/// site was attributed to the same person and declared the same length. `EventMissionDossier` has no
+/// maker and no duration on the wire at all (`api/handlers/events.rs:952`; `dto.rs:781`), so
+/// unlike the briefing there is nothing an author could ever do to displace them — which is also
+/// why they are removed outright instead of given an empty-state affordance. An affordance is a
+/// promise that the field is authorable; "Maker: —" on every mission forever would be noise
+/// advertising a path that does not exist.
+///
+/// Returning the list, rather than inlining the one survivor into the `view!`, is what makes
+/// *"every badge on this row came out of the dossier"* something a native test can assert — the
+/// `view!` itself needs a DOM and cannot be exercised by `cargo test`.
+fn meta_badges(m: &EventMissionDossier) -> Vec<(&'static str, String)> {
+    vec![("Terrain", terrain_label(&m.terrain))]
+}
+
 fn mission_dossier(index: usize, m: EventMissionDossier, on_change: Callback<()>) -> impl IntoView {
     // OpsCard(className="bg-surface-container-high"): twMerge drops the default bg-surface-container
     // vs the override bg-surface-container-high (same bg-color group). Inlined resolved (our cn()
@@ -299,12 +344,9 @@ fn mission_dossier(index: usize, m: EventMissionDossier, on_change: Callback<()>
     } else {
         m.factions.clone()
     });
+    let badges = meta_badges(&m);
     let armory = m.armory_by_faction;
-    let briefing = m
-        .briefing
-        .clone()
-        .filter(|b| !b.is_empty())
-        .unwrap_or_else(|| PLACEHOLDER_LORE.into());
+    let briefing = briefing_text(m.briefing.as_deref());
     let terrain = terrain_label(&m.terrain);
     let mode = game_mode_label(&m.game_mode).to_string();
     let when = format_local_datetime(&m.start_time);
@@ -318,12 +360,13 @@ fn mission_dossier(index: usize, m: EventMissionDossier, on_change: Callback<()>
                     </span>
                     <h3 class="mt-1 text-xl font-semibold">{m.title.clone()}</h3>
                     <p class="mt-1 text-sm text-on-surface-variant">
-                        {terrain.clone()} " • " {mode} " • " {when}
+                        {terrain} " • " {mode} " • " {when}
                     </p>
                     <div class="mt-2 flex flex-wrap gap-2">
-                        {meta_badge("Maker", PLACEHOLDER_MAKER.into())}
-                        {meta_badge("Terrain", terrain)}
-                        {meta_badge("Duration", PLACEHOLDER_DURATION.into())}
+                        {badges
+                            .into_iter()
+                            .map(|(label, value)| meta_badge(label, value))
+                            .collect_view()}
                     </div>
                 </div>
                 <div class="flex flex-col items-end gap-2">
@@ -358,46 +401,17 @@ fn mission_dossier(index: usize, m: EventMissionDossier, on_change: Callback<()>
                 <p class="whitespace-pre-line text-sm leading-relaxed text-on-surface-variant">
                     {briefing}
                 </p>
-                <div class="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div class="rounded-lg border border-secondary/20 bg-secondary-container/10 p-4">
-                        <div class="mb-3 flex items-center gap-2">
-                            <div class="h-2.5 w-2.5 rounded-full bg-primary shadow-[0_0_8px_rgba(173,198,255,0.6)]"></div>
-                            <h4 class="font-mono text-sm text-primary">"BLUFOR Objectives"</h4>
-                        </div>
-                        <ul class="space-y-1.5 text-sm text-on-surface-variant">
-                            {PLACEHOLDER_BLUFOR
-                                .iter()
-                                .map(|o| {
-                                    view! {
-                                        <li class="flex gap-2">
-                                            <span class="text-primary">"›"</span>
-                                            {*o}
-                                        </li>
-                                    }
-                                })
-                                .collect_view()}
-                        </ul>
-                    </div>
-                    <div class="rounded-lg border border-error/20 bg-error-container/10 p-4">
-                        <div class="mb-3 flex items-center gap-2">
-                            <div class="h-2.5 w-2.5 rounded-full bg-error shadow-[0_0_8px_rgba(255,180,171,0.6)]"></div>
-                            <h4 class="font-mono text-sm text-error">"OPFOR Objectives"</h4>
-                        </div>
-                        <ul class="space-y-1.5 text-sm text-on-surface-variant">
-                            {PLACEHOLDER_OPFOR
-                                .iter()
-                                .map(|o| {
-                                    view! {
-                                        <li class="flex gap-2">
-                                            <span class="text-error">"›"</span>
-                                            {*o}
-                                        </li>
-                                    }
-                                })
-                                .collect_view()}
-                        </ul>
-                    </div>
-                </div>
+            // T-392 — the two objective panels that sat here are gone. They listed six
+            // hardcoded objectives — a nuke, a VIP convoy, some FOBs — in the same card as the
+            // real fill counts and the live ORBAT, so the people about to fly the operation read
+            // them as its actual tasking. Nothing on the wire could ever have replaced them:
+            // `EventMissionDossier` has no objectives field, and there is no authoring path that
+            // reaches this endpoint — the briefing prose and markers T-344/T-345 made authorable
+            // land in the mission CRDT document and compile to the mod, while the doc's own
+            // `objectivesById` root (`map-engine-core` doc/store.rs:174) is still the closed
+            // hydrate→emit loop with no mutator that T-345 found for the markers root. So this
+            // is a removal, not an empty state: "No objectives provided." on every mission
+            // forever would advertise an authoring path that does not exist.
             </section>
 
             // Faction Dossiers — uniforms/assets placeholders + real armory per faction (T-159.25).
@@ -458,23 +472,13 @@ fn faction_dossier_card(faction: String, items: Vec<crate::dto::ArmoryItem>) -> 
                     .collect_view()}
             </div>
 
-            <span class="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-                "Assets"
-            </span>
-            <ul class="mb-3 overflow-hidden rounded-md bg-surface-container/50 font-mono text-xs">
-                {PLACEHOLDER_VEHICLES
-                    .iter()
-                    .map(|(name, qty)| {
-                        view! {
-                            <li class="flex items-center justify-between border-b border-white/5 px-2 py-1.5 last:border-0">
-                                <span class="text-on-surface-variant">{*name}</span>
-                                <span class="text-tactical-yellow">"x" {*qty}</span>
-                            </li>
-                        }
-                    })
-                    .collect_view()}
-            </ul>
-
+            // T-392 — the "Assets" list that sat here is gone. It printed the same three
+            // vehicles with the same counts under EVERY faction card, so BLUFOR's dossier
+            // advertised a BTR-70 platoon; and it did so in a mono table one section above the
+            // real, API-fed Armory list, which is what made it read as data. There is no
+            // vehicles field on `EventMissionDossier` and no writer for one, so — as with the
+            // objectives — this is a removal rather than an empty state. The Armory below is
+            // the honest per-faction inventory this page actually has.
             {(!items.is_empty())
                 .then(|| {
                     view! {
@@ -1441,5 +1445,134 @@ fn AssignPicker(
                 }}
             </ul>
         </div>
+    }
+}
+
+/// T-392 — the durable half. **The reason the placeholder family shipped is that nothing
+/// asserted the empty case**: a test that only exercises a populated briefing passes just as
+/// happily against a fallback that invents one.
+///
+/// These are native (`main.rs` compiles `event_hub` unconditionally, unlike the `wasm32`-gated
+/// editor modules), so they cannot drive a `view!` — Leptos CSR needs a DOM. That is exactly why
+/// the two decisions this ticket changed were lifted into [`briefing_text`] and [`meta_badges`]
+/// rather than left inline: a pure function is the part of a render decision `cargo test` can
+/// reach. What is left over — sections deleted outright, with no value to return — is guarded by
+/// [`tests::no_fabricated_mission_intel_survives_in_this_module`].
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The event hub as the dev stack actually served it (the same capture `dto.rs`'s
+    /// `event_hub` golden round-trips). **Its one mission carries no `briefing` key at all** —
+    /// the backend omits the field when the column is empty — so the single recorded real
+    /// response is itself a live instance of the defect, not a hypothetical one.
+    const EVENT_HUB_GOLDEN: &str = include_str!(
+        "../tests/fixtures/api/GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json"
+    );
+
+    fn golden_dossier() -> EventMissionDossier {
+        let hub: EventHub = serde_json::from_str(EVENT_HUB_GOLDEN).expect("golden parses");
+        hub.missions
+            .into_iter()
+            .next()
+            .expect("golden has a mission")
+    }
+
+    /// The state that could not be reached before: an author clears the box, `PATCH` stores
+    /// `''`, the wire omits the key, and this arrives as `None`.
+    #[test]
+    fn a_cleared_briefing_renders_the_empty_state_and_never_the_invented_lore() {
+        for cleared in [None, Some(""), Some("   \n\n  ")] {
+            let out = briefing_text(cleared);
+            assert_eq!(
+                out, "No briefing provided.",
+                "an authored-empty briefing must render the affordance, not prose ({cleared:?})"
+            );
+            // The specific claim: not one word of the removed lore, under any name.
+            assert!(
+                !out.contains("Hostile mechanized"),
+                "the placeholder lore came back for {cleared:?}: {out}"
+            );
+            assert!(
+                !out.contains("winter storm") && !out.contains("contested airspace"),
+                "the placeholder lore came back for {cleared:?}: {out}"
+            );
+        }
+    }
+
+    /// The golden is the empty case — proof this is the live wire shape, not a synthetic one.
+    #[test]
+    fn the_recorded_wire_response_hits_the_empty_case() {
+        let m = golden_dossier();
+        assert!(
+            m.briefing.is_none(),
+            "fixture drifted: this test is only meaningful while the golden omits `briefing`"
+        );
+        assert_eq!(
+            briefing_text(m.briefing.as_deref()),
+            "No briefing provided."
+        );
+    }
+
+    /// The other half of the contract: a real briefing is still rendered verbatim, newlines and
+    /// all (the `<p>` is `whitespace-pre-line`, and T-344 kept paragraph breaks intact through
+    /// the document core specifically so they would survive to a reader).
+    #[test]
+    fn an_authored_briefing_is_rendered_verbatim() {
+        let authored = "Hold the ridge.\n\nSecond wave at H+20.";
+        assert_eq!(briefing_text(Some(authored)), authored);
+        // Leading/trailing space is not evidence of emptiness — only all-whitespace is.
+        assert_eq!(briefing_text(Some(" Hold. ")), " Hold. ");
+    }
+
+    /// Every badge on the dossier header must come out of the dossier. This is the assertion the
+    /// fabricated `Maker`/`Duration` chips could not have survived: it pins the whole list, so
+    /// re-adding a hardcoded chip fails here rather than shipping.
+    #[test]
+    fn meta_badges_are_all_dossier_derived() {
+        let m = golden_dossier();
+        assert_eq!(meta_badges(&m), vec![("Terrain", "Everon".to_string())]);
+
+        // Change the dossier, and every badge changes with it — nothing is pinned to a literal.
+        let mut other = golden_dossier();
+        other.terrain = "arland".into();
+        assert_eq!(meta_badges(&other), vec![("Terrain", "Arland".to_string())]);
+    }
+
+    /// The guard for the sections this ticket deleted outright — the objective panels and the
+    /// per-faction vehicle list. They returned no value, so there is no seam to call; the honest
+    /// assertion is over the module source itself: nothing here may name the old constants or
+    /// carry their copy, whatever a future slice decides to call it.
+    ///
+    /// Each needle is assembled with `concat!` so this test does not match itself: only the
+    /// fragments appear in the source, never the joined string. That constraint binds the prose
+    /// too — quoting the deleted copy in a comment anywhere in this module fails this test, which
+    /// is the point. If you are here because it went red on a comment you just wrote, paraphrase.
+    #[test]
+    fn no_fabricated_mission_intel_survives_in_this_module() {
+        const SRC: &str = include_str!("event_hub.rs");
+        let banned = [
+            concat!("PLACEHOLDER_", "MAKER"),
+            concat!("PLACEHOLDER_", "DURATION"),
+            concat!("PLACEHOLDER_", "BLUFOR"),
+            concat!("PLACEHOLDER_", "OPFOR"),
+            concat!("PLACEHOLDER_", "LORE"),
+            concat!("PLACEHOLDER_", "VEHICLES"),
+            // The copy itself, in case it returns under a different name.
+            concat!("Hostile mechanized", " elements"),
+            concat!("Protect and secure", " the nuke"),
+            concat!("Find and detonate", " the nuke"),
+            concat!("Escort the VIP", " convoy"),
+            concat!("BTR-70", " APC"),
+            concat!("Mi-8", " Hip"),
+            concat!("90", " MIN"),
+        ];
+        for needle in banned {
+            assert!(
+                !SRC.contains(needle),
+                "fabricated mission intel is back in event_hub.rs: {needle:?}. \
+                 The Event Hub may only render what the dossier serves — see T-392."
+            );
+        }
     }
 }
