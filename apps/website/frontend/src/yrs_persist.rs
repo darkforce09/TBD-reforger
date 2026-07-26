@@ -626,7 +626,16 @@ fn update_client_count(bytes: &[u8]) -> Option<u64> {
 ///
 /// The decode is O(document) and runs on the write path, so the hot caller avoids it: see
 /// [`PendingSave::content_probe`], which lets a caller holding the live core answer in O(1).
-fn blob_has_content(bytes: &[u8]) -> bool {
+///
+/// `pub` because the same byte test is wrong in three more places that this slice does not own, and
+/// none of them should have to copy this logic or reach in and re-export it: `mission_hydrate`'s
+/// `snapshot_local` (banks a content-empty doc as a "backup"), `has_snapshot` (reports `true` for
+/// one), and `restore_snapshot` (would restore one over the live document). This is not the
+/// uncalled-`pub` the T-338 note above scolds — [`run_save`] and the `__missionPersist` bridge both
+/// call it in this file today. `snapshot_local` holds the live core and should prefer
+/// `has_content()` directly (O(1)); the other two only have bytes, and this is their test.
+#[must_use]
+pub fn blob_has_content(bytes: &[u8]) -> bool {
     if bytes.is_empty() {
         return false;
     }
