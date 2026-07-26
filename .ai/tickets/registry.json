@@ -9168,13 +9168,14 @@
       "impact": [
         "e2e"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2312,
       "stream": "infra",
       "targets": [
         "root"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "223e5604"
     },
     {
       "id": "T-313",
