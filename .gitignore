@@ -44,3 +44,6 @@ target-gate-frontend/
 # CARGO_TARGET_DIR serving stale cross-worktree binaries (T-193/T-195). They belong
 # to nobody and must never be committed.
 target-*/
+
+# wave-gate private trunk output (see scripts/platform/wave.sh trunk step)
+/dist-gate-frontend/

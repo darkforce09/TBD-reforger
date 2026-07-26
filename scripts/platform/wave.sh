@@ -319,7 +319,18 @@ cmd_gate() {
   # The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
   # when the wave actually touched the frontend — measured across the WHOLE wave, not the last merge.
   if git diff --name-only "$base..HEAD" 2>/dev/null | grep -q '^apps/website/frontend/'; then
-    run "trunk build"    hostrun make ci-local-leptos
+    # Trunk gets a PRIVATE --dist, for the same reason the frontend tests get a private target dir.
+    # `make leptos` (trunk serve) holds apps/website/frontend/dist and rewrites it on every change.
+    # OBSERVED 2026-07-26: the wave gate failed with "error writing JS loader file to stage dir /
+    # No such file or directory" while PID 158382 held it, and the identical build passed seconds
+    # later. That is the worst failure shape there is — an ENVIRONMENT race that reads exactly like
+    # a code defect, so an unattended fix agent burns its whole retry budget on working code.
+    # Preflight warns about it, but warning is not enough for a run nobody is watching, and the
+    # operator's dev server is not ours to kill.
+    #
+    # Calling trunk directly instead of `make ci-local-leptos` also drops three steps this gate has
+    # already run above (fmt, clippy wasm32, test) — the build is the only part that was not covered.
+    run "trunk build"    hostrun sh -c "cd '$ROOT/apps/website/frontend' && trunk build --release --dist '$MAIN_ROOT/dist-gate-frontend'"
   else
     printf "  %-24s SKIP (frontend untouched this wave)\n" "trunk build"
   fi
