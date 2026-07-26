@@ -1,14 +1,15 @@
 //! Arsenal tab — the **Smart Forge** (ArsenalTab.tsx + arsenalRules.ts + SoldierSilhouette.tsx
 //! port, T-159.27 → T-167). A doc-backed loadout editor: the 14 loadout rows (incl. the compat
-//! `edge` rows optic/magazine keyed off the picked weapon), a clickable **SVG paper-doll**, an
-//! honest **weight** readout, and per-row **compat validation** — persisted on the slot via
-//! `editor_ops::set_loadout` (one undo step per pick) as the canonical `SlotLoadoutV2` shape (the
-//! same `picksToLoadout` output the mod equip reads), so a pick round-trips through Save/Export.
+//! `edge` rows optic/magazine keyed off the picked weapon), the **attachment set** each weapon
+//! accepts (T-197), a clickable **SVG paper-doll**, an honest **weight** readout, and per-row
+//! **compat validation** — persisted on the slot via `editor_ops::set_loadout` (one undo step per
+//! pick) as the canonical `SlotLoadoutV2` shape (the same `picksToLoadout` output the mod equip
+//! reads), so a pick round-trips through Save/Export.
 //!
 //! The domain decisions (rows, compat graph, option building, validation, doll regions, weight)
 //! live in [`crate::arsenal_rules`] (pure, native-tested). This module is the UI + the persisted
-//! serialization ([`picks_to_loadout`] / [`loadout_to_picks`], unchanged since the dumb Forge:
-//! optic/magazine ride `weapons[0]` as sticky sub-fields).
+//! serialization ([`picks_to_loadout`] / [`loadout_to_picks`]: optic/magazine ride `weapons[0]` as
+//! sticky sub-fields; attachments ride their own weapon's `attachments[]`).
 #![allow(dead_code)]
 use std::collections::HashMap;
 
@@ -109,6 +110,79 @@ const ROWS: &[Row] = &[
     },
 ];
 
+/* ─────────────────────── T-197 — weapon attachments (the pick SET) ─────────────────────── */
+
+/// The compat family that links an attachment to the weapon accepting it. **241 such edges ship in
+/// the vanilla export and nothing read them before this slice.** They have no `LOADOUT_ROWS` entry
+/// because an attachment slot is not one-of-N: a rifle takes a handguard AND a stock AND a muzzle
+/// device at once, so the pick is a **set**, not a value — and `LoadoutRow` models a value.
+const ATTACHMENT_EDGE: &str = "attachment_on_weapon";
+
+/// Separator for the packed attachment set. U+001F (ASCII US) is safe **by contract, not by luck**:
+/// `registry-compat.schema.json#/$defs/resourceName` pins every node to
+/// `^\{[0-9A-F]{16}\}[A-Za-z0-9/_.\- ()']+$` — a pattern that admits no control character — so a
+/// join can never produce a string that splits back into something else.
+const ATTACHMENT_SEP: &str = "\u{1f}";
+
+/// The `picks` key holding `weapon_key`'s attachment set.
+///
+/// The set rides a **synthetic key** rather than widening `picks` to `HashMap<String, Vec<String>>`
+/// because that map is the argument type of three [`crate::arsenal_rules`] entry points
+/// (`row_options`, `validate_loadout`, `loadout_weight`) and this slice does not own that module.
+/// The `@` infix cannot collide with a row key, and each of those consumers iterates `LOADOUT_ROWS`
+/// **by key** — so the synthetic entry is invisible to them by construction, not by convention.
+fn attachments_key(weapon_key: &str) -> String {
+    format!("attachments@{weapon_key}")
+}
+
+/// `weapon_key`'s picked attachments, in pick order.
+fn attachments_of(picks: &HashMap<String, String>, weapon_key: &str) -> Vec<String> {
+    picks
+        .get(&attachments_key(weapon_key))
+        .map(|packed| {
+            packed
+                .split(ATTACHMENT_SEP)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Pack a set back into its `picks` value. An empty set packs to `""`, which the `pick_item` path
+/// treats as "remove the key" — so clearing the last attachment leaves no residue in the map.
+fn pack_attachments(list: &[String]) -> String {
+    list.join(ATTACHMENT_SEP)
+}
+
+/// Attachments stranded by a weapon swap — the same authoring hazard `validate_loadout` already
+/// flags for optic/magazine, checked here because the set rides a key `arsenal_rules` cannot see.
+/// Keyed on the **weapon** row so the message lands on the row the author must actually change,
+/// and worded to mirror the two `validate_loadout` cases (hostless / rejected).
+///
+/// Degrades exactly like `validate_loadout`: a feed we never received must never fail a loadout.
+fn attachment_errors(picks: &HashMap<String, String>, feed: &CompatFeed) -> Vec<rules::RowError> {
+    let Some(g) = feed.ready_graph() else {
+        return Vec::new();
+    };
+    let mut errs = Vec::new();
+    for &(key, _, _) in rules::WEAPON_SLOTS {
+        let host = picks.get(key).filter(|s| !s.is_empty());
+        let label = rules::row(key).map_or(key, |r| r.label);
+        for rn in attachments_of(picks, key) {
+            let message = match host {
+                None => format!("Attachment requires a {label} pick"),
+                Some(h) if !g.accepts(h, &rn, ATTACHMENT_EDGE) => {
+                    format!("Attachment not compatible with the selected {label}")
+                }
+                Some(_) => continue,
+            };
+            errs.push(rules::RowError { key, message });
+        }
+    }
+    errs
+}
+
 /// `loadoutToPicks` — read the slot's `SlotLoadoutV2` JSON into a per-key `resource_name` map. An
 /// absent loadout → all-empty picks. Weapons resolve by `slotIndex`; wear by key.
 pub fn loadout_to_picks(loadout_json: Option<&str>) -> std::collections::HashMap<String, String> {
@@ -147,6 +221,24 @@ pub fn loadout_to_picks(loadout_json: Option<&str>) -> std::collections::HashMap
                             }
                         }
                     }
+                    // T-197 — `attachments[]` is a per-weapon field on the v2 `weapon` def
+                    // (`loadout-export.schema.json`), not a primary-only sub-slot, so it is read
+                    // for EVERY weapon row: a mod that ships `attachment_on_weapon` edges for a
+                    // launcher round-trips without a second code path.
+                    let atts: Vec<String> = wp
+                        .get("attachments")
+                        .and_then(|a| a.as_array())
+                        .map(|a| {
+                            a.iter()
+                                .filter_map(|v| v.as_str())
+                                .filter(|s| !s.is_empty())
+                                .map(str::to_string)
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    if !atts.is_empty() {
+                        picks.insert(attachments_key(row.key), pack_attachments(&atts));
+                    }
                 }
             }
         }
@@ -156,8 +248,10 @@ pub fn loadout_to_picks(loadout_json: Option<&str>) -> std::collections::HashMap
 
 /// `picksToLoadout` — build the canonical `SlotLoadoutV2` from the picks. All-empty (picks AND
 /// cargo) → `None` (clear the doc field). Wear map + weapons array; primary re-emits its sticky
-/// `optic`/`magazine` (String or null) and the always-empty `attachments` (React hardcodes `[]`
-/// until the attachments slice). `cargo`: `Some(rows)` re-emits the key verbatim on every persist
+/// `optic`/`magazine` (String or null) plus its `attachments[]` — the T-197 wire-through that
+/// replaced the hardcoded `[]` this line carried since the dumb Forge. An attachment set only ever
+/// rides a weapon that is actually picked, so a set stranded by a cleared weapon is flagged in the
+/// UI (see [`attachment_errors`]) but never reaches the doc. `cargo`: `Some(rows)` re-emits verbatim
 /// (the commit fires on each pick change; dropping it would wipe seeded rows) — `Some(&[])`
 /// included, since key presence is the T-068.15.2 "user state" marker that stops re-seeding a
 /// cleared list. `None` = the slot never had the key and cargo was untouched: stay key-less so a
@@ -192,10 +286,18 @@ pub fn picks_to_loadout(
             "slotType": slot_type,
             "weapon": w,
         });
+        let attachments = attachments_of(picks, row.key);
         if row.key == "primary" {
             obj["optic"] = sticky("optic");
             obj["magazine"] = sticky("magazine");
-            obj["attachments"] = serde_json::json!([]);
+            // Primary keeps emitting the key even when empty: `attachments: []` is the byte shape
+            // every already-persisted loadout carries, and dropping it would rewrite every mission
+            // on disk on its next save for no gain.
+            obj["attachments"] = serde_json::json!(attachments);
+        } else if !attachments.is_empty() {
+            // The other three weapons never carried the key, so they only grow one when there is
+            // something to say — an empty-set row stays byte-identical to its pre-T-197 self.
+            obj["attachments"] = serde_json::json!(attachments);
         }
         weapons.push(obj);
     }
@@ -367,7 +469,27 @@ pub fn ArsenalTab(
                                 {move || {
                                     let its = items.get_value();
                                     let idx = index_by_name(&its);
-                                    let w = format_loadout_weight(&loadout_weight(&picks.get(), &idx));
+                                    let map = picks.get();
+                                    let mut w = loadout_weight(&map, &idx);
+                                    // T-197 — attachments hang off a weapon, not off a row, so
+                                    // `loadout_weight` (which walks LOADOUT_ROWS) cannot see them.
+                                    // A suppressor is 0.68 kg of real carried mass; omitting it
+                                    // would make an "honest weight" readout quietly dishonest.
+                                    // Scoped to weapons that are actually picked — that is exactly
+                                    // the set `picks_to_loadout` persists attachments for.
+                                    for &(key, _, _) in rules::WEAPON_SLOTS {
+                                        if map.get(key).is_none_or(String::is_empty) {
+                                            continue;
+                                        }
+                                        for rn in attachments_of(&map, key) {
+                                            w.item_count += 1;
+                                            match idx.get(rn.as_str()).and_then(|it| it.weight_kg) {
+                                                Some(kg) => w.known_kg += kg,
+                                                None => w.unknown_count += 1,
+                                            }
+                                        }
+                                    }
+                                    let w = format_loadout_weight(&w);
                                     view! {
                                         <p class="font-mono text-label-sm tabular-nums normal-case text-on-surface-variant">{w}</p>
                                     }
@@ -434,7 +556,11 @@ pub fn ArsenalTab(
                                             _ => groups.push((cat, vec![o])),
                                         }
                                     }
-                                    let err = validate_loadout(&map, feed.ready_graph(), feed.status)
+                                    // T-197 — attachment faults are keyed on the WEAPON row, so
+                                    // they surface on the row whose pick the author must change.
+                                    let mut faults = validate_loadout(&map, feed.ready_graph(), feed.status);
+                                    faults.extend(attachment_errors(&map, &feed));
+                                    let err = faults
                                         .into_iter()
                                         .find(|e| e.key == row.key)
                                         .map(|e| e.message);
@@ -531,7 +657,11 @@ pub fn ArsenalTab(
                         <div class="flex items-center justify-between">
                             {move || {
                                 let feed = compat.get();
-                                let errs = validate_loadout(&picks.get(), feed.ready_graph(), feed.status);
+                                let map = picks.get();
+                                let mut errs = validate_loadout(&map, feed.ready_graph(), feed.status);
+                                // T-197 — a stranded attachment is a real loadout fault; the
+                                // verdict badge counts it alongside the edge-row faults.
+                                errs.extend(attachment_errors(&map, &feed));
                                 if errs.is_empty() {
                                     view! {
                                         <span
@@ -579,7 +709,7 @@ pub fn ArsenalTab(
                             </button>
                         </div>
                         <p class="text-label-sm normal-case text-outline">
-                            "Container cargo (mags, medical, throwables) lives in the Cargo panel above — seeded from the character's engine defaults. Dedicated equipment wear rows (binoculars, radios, glasses) come with the equipment slice."
+                            "Weapon attachments are multi-select in the compat panel — pick a weapon region on the rail to see what it accepts. Container cargo (mags, medical, throwables) lives in the Cargo panel above — seeded from the character's engine defaults. Dedicated equipment wear rows (binoculars, radios, glasses) come with the equipment slice."
                         </p>
                     }.into_any()
                 }
@@ -808,14 +938,127 @@ fn region_icon(key: &str) -> &'static str {
     }
 }
 
-/// The right compat panel: the active pick's display name + each edge slot that depends on the
-/// active region (screen 04: OPTIC "Nothing compatible." / MAGAZINE list). Rows click-pick.
+/// T-197 — the **ATTACHMENTS** block of the compat panel: the `attachment_on_weapon` set the active
+/// weapon accepts, rendered as toggles. This is the Arsenal's one multi-select surface, because it
+/// is the one slot a weapon holds several of at once.
+///
+/// Returns `None` when the active region is not a weapon, when no weapon is picked, or when the
+/// graph offers nothing **and** nothing is picked — so a family with no edges (vanilla
+/// launcher/handgun/throwable all have zero) adds no empty section to the panel.
+fn attachments_panel(
+    active: &str,
+    map: &HashMap<String, String>,
+    feed: &CompatFeed,
+    names: StoredValue<HashMap<String, String>>,
+    items: StoredValue<Vec<RegistryItem>>,
+    pick_item: impl Fn(String, String) + Copy + 'static,
+) -> Option<AnyView> {
+    let &(weapon_key, _, _) = rules::WEAPON_SLOTS.iter().find(|(k, _, _)| *k == active)?;
+    let host = map.get(weapon_key).filter(|s| !s.is_empty())?.clone();
+    let its = items.get_value();
+    let idx = index_by_name(&its);
+    // Synthesised here rather than added as a 15th `LOADOUT_ROWS` entry: the set must stay out of
+    // the single-value row machinery (weight, validation, the doll rail all key off that table),
+    // while still reusing the row RULES verbatim — graph-fed, abstract/variant filtered,
+    // display-name sorted. `depends_on` is the weapon key, so the graph lookup is host-agnostic.
+    let row = rules::LoadoutRow {
+        key: "attachments",
+        label: "Attachments",
+        source: rules::RowSource::Edge {
+            edge: ATTACHMENT_EDGE,
+            depends_on: weapon_key,
+        },
+    };
+    let mut opts = row_options(&row, "", map, &its, &idx, feed.ready_graph());
+    let picked = attachments_of(map, weapon_key);
+    let display =
+        |rn: &str| names.with_value(|n| n.get(rn).cloned().unwrap_or_else(|| rn.to_string()));
+    // A pick the option list dropped stays VISIBLE — deselecting it is the only way to remove it.
+    // It is flagged only when the graph actually REJECTS it: an `abstract`/variant prefab the
+    // filter hid is still a compatible pick, and an outage is not evidence of anything at all.
+    for rn in &picked {
+        if opts.iter().any(|o| &o.value == rn) {
+            continue;
+        }
+        let ok = feed
+            .ready_graph()
+            .is_none_or(|g| g.accepts(&host, rn, ATTACHMENT_EDGE));
+        opts.push(rules::RowOption {
+            value: rn.clone(),
+            label: if ok {
+                display(rn)
+            } else {
+                format!("{} — incompatible", display(rn))
+            },
+            incompatible: !ok,
+        });
+    }
+    if opts.is_empty() {
+        return None;
+    }
+    let rows = opts
+        .into_iter()
+        .map(|o| {
+            let selected = picked.contains(&o.value);
+            let cls = match (selected, o.incompatible) {
+                (true, true) => "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm bg-error/10 text-error",
+                (true, false) => "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm bg-primary/15 text-primary",
+                (false, true) => "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm text-error transition-colors hover:bg-white/10",
+                (false, false) => "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface",
+            };
+            // The toggled set is computed HERE, not in the handler: `pick_item` is the one
+            // persist path (`insert`-or-`remove` + one undo step), so a toggle is just a normal
+            // pick whose value happens to be the packed set.
+            let mut next = picked.clone();
+            match next.iter().position(|p| *p == o.value) {
+                Some(at) => {
+                    next.remove(at);
+                }
+                None => next.push(o.value.clone()),
+            }
+            let packed = pack_attachments(&next);
+            let akey = attachments_key(weapon_key);
+            // `data-value` keeps the panel's uniform click contract (the smoke harness in
+            // `tbd-tools` sweeps `[data-value]`); `data-attachment` additionally marks this as a
+            // TOGGLE, since a second click removes rather than replaces. `resource_name` is unique
+            // per registry row, so the extra nodes cannot shadow a weapon/optic lookup.
+            let data_value = o.value.clone();
+            let data_attachment = o.value.clone();
+            view! {
+                <button
+                    type="button"
+                    data-value=data_value
+                    data-attachment=data_attachment
+                    aria-pressed=selected.to_string()
+                    class=cls
+                    on:click=move |_| pick_item(akey.clone(), packed.clone())
+                >
+                    <span class="truncate normal-case">{o.label}</span>
+                    {selected.then(|| view! { <MaterialCheck /> })}
+                </button>
+            }
+        })
+        .collect_view();
+    Some(
+        view! {
+            <p class="mt-3 font-mono text-[10px] tracking-widest text-outline uppercase">
+                "Attachments"
+            </p>
+            {rows}
+        }
+        .into_any(),
+    )
+}
+
+/// The right compat panel: the active pick's display name, each edge slot that depends on the
+/// active region (screen 04: OPTIC "Nothing compatible." / MAGAZINE list), and — for a weapon
+/// region — the T-197 multi-select attachment set. Rows click-pick.
 fn compat_panel(
     picks: RwSignal<HashMap<String, String>>,
     active_key: RwSignal<String>,
     compat: RwSignal<CompatFeed>,
     names: StoredValue<HashMap<String, String>>,
-    _items: StoredValue<Vec<RegistryItem>>,
+    items: StoredValue<Vec<RegistryItem>>,
     pick_item: impl Fn(String, String) + Copy + 'static,
 ) -> AnyView {
     let key = active_key.get();
@@ -833,11 +1076,18 @@ fn compat_panel(
         )
         .collect();
     let feed = compat.get();
+    let attachments = attachments_panel(&key, &map, &feed, names, items, pick_item);
     let body = if dependents.is_empty() {
-        view! {
-            <p class="mt-2 text-label-sm normal-case text-outline">"No dependent slots."</p>
+        // "No dependent slots." is a claim about the whole panel, so it must not survive an
+        // attachment set — a modded launcher has no edge ROWS but can still have attachments.
+        if attachments.is_none() {
+            view! {
+                <p class="mt-2 text-label-sm normal-case text-outline">"No dependent slots."</p>
+            }
+            .into_any()
+        } else {
+            ().into_any()
         }
-        .into_any()
     } else {
         dependents
             .into_iter()
@@ -913,6 +1163,7 @@ fn compat_panel(
     view! {
         <p class="text-label-md font-semibold normal-case text-on-surface">{head}</p>
         {body}
+        {attachments}
     }
     .into_any()
 }
@@ -1058,6 +1309,29 @@ mod tests {
             .collect()
     }
 
+    /// A ready compat feed carrying only `attachment_on_weapon` edges.
+    fn attachment_feed(edges: &[(&str, &str)]) -> CompatFeed {
+        let rows: Vec<crate::dto::RegistryCompatEdge> = edges
+            .iter()
+            .enumerate()
+            .map(|(i, (from, to))| crate::dto::RegistryCompatEdge {
+                id: i.to_string(),
+                modpack_id: "m".into(),
+                from_node: (*from).into(),
+                to_node: (*to).into(),
+                edge_type: ATTACHMENT_EDGE.into(),
+                evidence: String::new(),
+                qty: 1,
+                created_at: String::new(),
+                updated_at: String::new(),
+            })
+            .collect();
+        CompatFeed {
+            status: rules::CompatStatus::Ready,
+            graph: rules::CompatGraph::from_edges(&rows),
+        }
+    }
+
     #[test]
     fn all_empty_picks_clear_the_field() {
         assert!(picks_to_loadout(&HashMap::new(), &names(), None).is_none());
@@ -1154,6 +1428,105 @@ mod tests {
         for k in ["primary", "launcher", "headCover", "vest"] {
             assert_eq!(back.get(k), p.get(k), "key {k} lost on round-trip");
         }
+    }
+
+    #[test]
+    fn attachments_ride_their_own_weapon_and_round_trip() {
+        // T-197 — `attachments[]` is a per-weapon field, not a primary-only sub-slot: a set on the
+        // handgun must land on the handgun's `weapons[]` entry and come back on the handgun.
+        let mut p = picks(&[("primary", "res://rifle_m16"), ("handgun", "res://m9")]);
+        p.insert(
+            attachments_key("primary"),
+            pack_attachments(&["res://handguard".into(), "res://stock".into()]),
+        );
+        p.insert(
+            attachments_key("handgun"),
+            pack_attachments(&["res://supp".into()]),
+        );
+        let lo = picks_to_loadout(&p, &names(), None).expect("non-empty");
+        let v: serde_json::Value = serde_json::from_str(&lo).unwrap();
+        // `weapons[]` is ROWS order — primary (slotIndex 0), then handgun (slotIndex 2).
+        assert_eq!(v["weapons"][0]["slotIndex"], 0);
+        assert_eq!(
+            v["weapons"][0]["attachments"],
+            serde_json::json!(["res://handguard", "res://stock"])
+        );
+        assert_eq!(v["weapons"][1]["slotIndex"], 2);
+        assert_eq!(
+            v["weapons"][1]["attachments"],
+            serde_json::json!(["res://supp"])
+        );
+        let back = loadout_to_picks(Some(&lo));
+        assert_eq!(
+            attachments_of(&back, "primary"),
+            ["res://handguard", "res://stock"]
+        );
+        assert_eq!(attachments_of(&back, "handgun"), ["res://supp"]);
+        assert!(attachments_of(&back, "launcher").is_empty());
+    }
+
+    #[test]
+    fn an_empty_attachment_set_keeps_the_pre_t197_byte_shape() {
+        // Primary keeps emitting `attachments: []` (what every persisted loadout already carries);
+        // the other three weapon rows still emit no key at all. A mission with no attachments must
+        // serialize byte-identically to its pre-T-197 self, or every save rewrites every slot.
+        let p = picks(&[("primary", "res://rifle_m16"), ("launcher", "res://rpg")]);
+        let lo = picks_to_loadout(&p, &names(), None).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&lo).unwrap();
+        assert_eq!(v["weapons"][0]["attachments"], serde_json::json!([]));
+        assert!(v["weapons"][1].get("attachments").is_none());
+        // A set on a weapon that is NOT picked never reaches the doc (it is flagged in the UI).
+        let mut orphan = picks(&[("primary", "res://rifle_m16")]);
+        orphan.insert(
+            attachments_key("handgun"),
+            pack_attachments(&["res://supp".into()]),
+        );
+        let v: serde_json::Value =
+            serde_json::from_str(&picks_to_loadout(&orphan, &names(), None).unwrap()).unwrap();
+        assert_eq!(v["weapons"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn the_packed_separator_survives_the_resource_name_charset() {
+        // The pack/split round-trip is only safe because `registry-compat.schema.json`'s
+        // `resourceName` pattern admits no control character. Pin that with a node using every
+        // other character the pattern allows.
+        let a = "{0123456789ABCDEF}Prefabs/Weapons/A-b_c.1 (x)'y.et";
+        let b = "{FEDCBA9876543210}Prefabs/B.et";
+        let mut m = HashMap::new();
+        m.insert(
+            attachments_key("primary"),
+            pack_attachments(&[a.to_string(), b.to_string()]),
+        );
+        assert_eq!(attachments_of(&m, "primary"), [a, b]);
+        // An emptied set packs to "", which the pick path reads as "remove the key".
+        assert_eq!(pack_attachments(&[]), "");
+        assert!(attachments_of(&HashMap::new(), "primary").is_empty());
+    }
+
+    #[test]
+    fn stranded_attachments_are_flagged_and_an_outage_never_condemns_one() {
+        let feed = attachment_feed(&[("res://handguard", "res://rifle_m16")]);
+        let mut p = picks(&[("primary", "res://rifle_m16")]);
+        p.insert(attachments_key("primary"), "res://handguard".into());
+        assert!(attachment_errors(&p, &feed).is_empty());
+        // Swap the rifle: the handguard now hangs off a host that does not accept it.
+        p.insert("primary".into(), "res://rifle_vz58".into());
+        let errs = attachment_errors(&p, &feed);
+        assert_eq!(errs.len(), 1);
+        assert_eq!(errs[0].key, "primary"); // keyed on the row the author must change
+        assert!(errs[0].message.contains("not compatible"));
+        // No weapon at all → the wording `validate_loadout` gives a hostless optic.
+        p.remove("primary");
+        assert!(attachment_errors(&p, &feed)[0]
+            .message
+            .contains("requires a Primary"));
+        // An outage must not fail a loadout we never got compat data for.
+        let dead = CompatFeed {
+            status: rules::CompatStatus::Unavailable,
+            ..feed
+        };
+        assert!(attachment_errors(&p, &dead).is_empty());
     }
 
     #[test]
