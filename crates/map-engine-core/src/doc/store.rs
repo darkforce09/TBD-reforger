@@ -1372,6 +1372,88 @@ impl MissionDocCore {
         f.insert(&mut txn, "briefing", Any::Map(Arc::new(briefing)));
     }
 
+    /// Write one faction's briefing PROSE — the last mutator missing between T-202's emitter and a
+    /// briefing an author can actually type (T-344).
+    ///
+    /// Writes `factionsById[faction_id].briefing.{situation,mission,execution}`, the three prose keys
+    /// `mission.schema.json` `$defs/briefing` declares beside `markers`. `additionalProperties: false`
+    /// there makes those four the only legal shape, so this is the whole prose surface. No-op on an
+    /// unknown `faction_id`, exactly as the marker mutators: orders need a side to be given to.
+    ///
+    /// T-214 proved this prose round-trips the document with **no `store.rs` change at all**, using
+    /// `hydrate` as the writer — [`load_row`] re-inserts a nested object verbatim without descending,
+    /// so the storage side was never the gap. What was missing was a writer the editor can call, and
+    /// that is all this is.
+    ///
+    /// ## Prose is NOT sanitised, and that is a schema-level decision
+    ///
+    /// An embedded newline goes in VERBATIM. `$defs/wireSafeString` bans the C0 block for values that
+    /// ride a tab/newline-delimited wire, and its final paragraph EXCLUDES briefing prose by name:
+    /// `TBD_BriefingService` ships prose as parallel `array<string>` RPC parameters and the mod SPLITS
+    /// on newlines to get display paragraphs (`TBD_BriefingData.AppendParagraphs` → `SplitLines`). A
+    /// multi-paragraph situation report is therefore the FEATURE. Folding newlines to spaces here
+    /// would silently collapse an author's paragraphs into one wall of text —
+    /// `authored_prose_round_trips_through_compile_and_hydrate` pins the paragraph break end to end
+    /// so a future "tidy the input" reflex fails loudly instead.
+    ///
+    /// ## Empty means UNAUTHORED, so an empty field is removed rather than blanked
+    ///
+    /// `ModBriefing`'s three prose fields are `Option<String>` precisely so "the author wrote nothing"
+    /// and "the author wrote an empty string" stay distinguishable in the compiled bytes. A
+    /// three-textbox editor cannot express that difference — an empty box is the DEFAULT state, not a
+    /// deliberate blanking — so this mutator resolves it the only way that matches what the caller can
+    /// say: `""` REMOVES the key. Inserting `Some("")` instead would stamp "somebody deliberately
+    /// blanked this" onto every box the author simply never filled. Clearing a box therefore returns
+    /// that field to unauthored, which is what clearing it means. `Some("")` stays reachable through
+    /// `hydrate` for a document that genuinely carries one; this just never mints one.
+    ///
+    /// ## The read-modify-write is WHOLE, and the no-op guard is T-345's in reverse
+    ///
+    /// `briefing` rides the faction row as an opaque `Any::Map`, so there is no sub-key to insert into
+    /// — [`read_any_map`] reads it out entire and the whole value goes back. A naive
+    /// `insert("briefing", <fresh prose>)` would DELETE the markers T-345 just made authorable.
+    /// `markers` is never touched here; `prose_and_markers_do_not_eat_each_other` pins both
+    /// directions.
+    ///
+    /// Returning early when the map is UNCHANGED is the same load-bearing guard as
+    /// [`Self::remove_faction_briefing_marker`]'s, arrived at from the other side. Setting all-empty
+    /// prose on a faction with no briefing would otherwise write `briefing: {}`, flipping
+    /// `FactionIn::briefing` from `None` to `Some` and making `derive_briefings` emit a `briefings`
+    /// entry for a side that authored nothing — a compiled-output change produced by a write that
+    /// wrote nothing, plus an undo step with nothing in it. Comparing the map subsumes that case and
+    /// also swallows a redundant re-set of identical prose. It deliberately does NOT no-op merely
+    /// because the new prose is empty: clearing every box on a briefing that HAS markers is a real
+    /// edit, and correctly leaves a legal `{markers: [...]}` behind.
+    pub fn set_faction_briefing(
+        &self,
+        faction_id: &str,
+        situation: &str,
+        mission: &str,
+        execution: &str,
+    ) {
+        let mut txn = self.begin();
+        let Some(Out::YMap(f)) = self.factions.get(&txn, faction_id) else {
+            return;
+        };
+        let before = read_any_map(&txn, &f, "briefing");
+        let mut briefing = before.clone();
+        for (key, text) in [
+            ("situation", situation),
+            ("mission", mission),
+            ("execution", execution),
+        ] {
+            if text.is_empty() {
+                briefing.remove(key);
+            } else {
+                briefing.insert(key.to_string(), Any::String(text.into()));
+            }
+        }
+        if briefing == before {
+            return;
+        }
+        f.insert(&mut txn, "briefing", Any::Map(Arc::new(briefing)));
+    }
+
     /// How many undo steps are stacked. The capture side of the T-159.22.1 invariant (one LOCAL txn
     /// = one step) — `can_undo` only says "≥ 1", which is what let the granularity defect hide.
     #[must_use]
@@ -2764,5 +2846,322 @@ mod tests {
             serde_json::json!("Seize and hold the crossing.")
         );
         assert!(after["markers"].as_array().expect("markers").is_empty());
+    }
+
+    // ── T-344 per-faction briefing prose ─────────────────────────────────────────────────────────
+
+    /// A multi-paragraph situation report — the value the whole no-sanitising rule exists for.
+    /// Two blank-line paragraph breaks AND a single-newline line break inside one paragraph, because
+    /// the mod treats them differently (`SplitLines` drops blank parts) and a sanitiser that only ate
+    /// doubled newlines would still corrupt the second case.
+    const SITUATION: &str = "Enemy armour holds the east bank of the Levie crossing.\n\n\
+                             Two T-72s were observed at 04:30, dug in north of the treeline.\n\
+                             A third is unaccounted for.\n\n\
+                             Civilians remain in the village. Weapons tight until contact.";
+
+    /// One faction's briefing prose out of `small_maps_json`, or `Value::Null` when unauthored.
+    fn prose_of(doc: &MissionDocCore, faction_id: &str, key: &str) -> serde_json::Value {
+        small_maps(doc)["factionsById"][faction_id]["briefing"][key].clone()
+    }
+
+    /// **T-344 — the round trip that was impossible before this mutator existed.**
+    ///
+    /// Author prose with the REAL mutator → `compile_payload` → `hydrate` → recompile, and assert
+    /// every paragraph break survives byte-for-byte. T-214 proved the document round-trips prose using
+    /// `hydrate` as the writer; this is the other half — the writer a frontend actually calls.
+    ///
+    /// The multi-paragraph value is the point, not decoration. `$defs/wireSafeString` excludes briefing
+    /// prose from the control-character ban because `TBD_BriefingService` ships it as parallel
+    /// `array<string>` RPC parameters, so `\n` is authored content. If anything ever "tidies" newlines
+    /// to spaces, this fails here.
+    #[test]
+    fn authored_prose_round_trips_through_compile_and_hydrate() {
+        let doc = briefing_fixture();
+        doc.set_faction_briefing(
+            "faction-BLUFOR",
+            SITUATION,
+            "Seize and hold the crossing until relieved.",
+            "Alpha leads, Bravo screens the north flank.",
+        );
+
+        assert_eq!(
+            prose_of(&doc, "faction-BLUFOR", "situation"),
+            serde_json::json!(SITUATION),
+            "the authored prose must be stored verbatim"
+        );
+        assert!(
+            prose_of(&doc, "faction-BLUFOR", "situation")
+                .as_str()
+                .expect("situation is a string")
+                .contains("\n\n"),
+            "the fixture must actually carry a paragraph break, or this test proves nothing"
+        );
+
+        // Prose is SIDE-SCOPED: the other faction authored nothing and must stay unauthored.
+        assert!(
+            small_maps(&doc)["factionsById"]["faction-OPFOR"]
+                .get("briefing")
+                .is_none(),
+            "the unauthored side must not acquire a briefing"
+        );
+
+        // Save → reload, exactly as the editor does it.
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&payload.to_string(), "lyr");
+
+        assert_eq!(
+            prose_of(&reloaded, "faction-BLUFOR", "situation"),
+            serde_json::json!(SITUATION),
+            "every newline must survive hydrate verbatim"
+        );
+        assert_eq!(
+            prose_of(&reloaded, "faction-BLUFOR", "mission"),
+            serde_json::json!("Seize and hold the crossing until relieved.")
+        );
+        assert_eq!(
+            prose_of(&reloaded, "faction-BLUFOR", "execution"),
+            serde_json::json!("Alpha leads, Bravo screens the north flank.")
+        );
+
+        // And the recompile is stable — author → store → compile → reload → compile agrees.
+        let recompiled = crate::mission::compile::compile_payload(
+            &reloaded.small_maps_json(),
+            &reloaded.slots_json(),
+            false,
+        );
+        assert_eq!(
+            recompiled["editor"]["factions"][0]["briefing"],
+            payload["editor"]["factions"][0]["briefing"]
+        );
+        // Proof this was a real round trip and not two empty docs agreeing with each other.
+        assert_eq!(
+            recompiled["editor"]["slots"]
+                .as_array()
+                .expect("slots")
+                .len(),
+            1
+        );
+    }
+
+    /// **T-344 — prose and markers must not eat each other, in BOTH directions.**
+    ///
+    /// `briefing` is one opaque `Any::Map`, so either mutator writing a fresh object instead of
+    /// read-modify-writing the existing one silently deletes the other half. T-345 pinned its side
+    /// using `hydrate` to plant the prose, because this mutator did not exist yet; now that it does,
+    /// both halves are pinned with their REAL writers and the loop is closed.
+    #[test]
+    fn prose_and_markers_do_not_eat_each_other() {
+        // Direction 1: markers first, then a prose edit must preserve them.
+        let doc = briefing_fixture();
+        doc.set_faction_briefing_marker(
+            "faction-BLUFOR",
+            "mk-1",
+            4870.25,
+            7760.5,
+            "objective",
+            "OBJ",
+        );
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-2", 300.5, 400.5, "hazard", "MINES");
+
+        doc.set_faction_briefing("faction-BLUFOR", SITUATION, "Hold.", "Alpha leads.");
+
+        let rows = markers_of(&doc, "faction-BLUFOR");
+        let ids: Vec<&str> = rows
+            .iter()
+            .map(|m| m["id"].as_str().unwrap_or(""))
+            .collect();
+        assert_eq!(
+            ids,
+            vec!["mk-1", "mk-2"],
+            "a prose edit must not delete markers: {rows:?}"
+        );
+        assert_eq!(marker_num(&rows[0], "x"), 4870.25, "marker payload intact");
+        assert_eq!(
+            prose_of(&doc, "faction-BLUFOR", "situation"),
+            serde_json::json!(SITUATION)
+        );
+
+        // Direction 2: prose first, then a marker edit must preserve it — including the paragraph
+        // breaks, which is the part a naive re-serialise would quietly flatten.
+        let doc2 = briefing_fixture();
+        doc2.set_faction_briefing("faction-BLUFOR", SITUATION, "Hold.", "Alpha leads.");
+        doc2.set_faction_briefing_marker("faction-BLUFOR", "mk-1", 111.5, 222.5, "rally", "RP");
+        doc2.remove_faction_briefing_marker("faction-BLUFOR", "mk-1");
+
+        assert_eq!(
+            prose_of(&doc2, "faction-BLUFOR", "situation"),
+            serde_json::json!(SITUATION),
+            "a marker add+remove must not touch the prose"
+        );
+        assert_eq!(
+            prose_of(&doc2, "faction-BLUFOR", "mission"),
+            serde_json::json!("Hold.")
+        );
+        assert_eq!(
+            prose_of(&doc2, "faction-BLUFOR", "execution"),
+            serde_json::json!("Alpha leads.")
+        );
+    }
+
+    /// **T-344 — a write that writes nothing must not change the compiled document.** T-345's
+    /// `removing_from_an_unauthored_faction_does_not_mint_a_briefing` from the other side: setting
+    /// all-empty prose on an unauthored faction would write `briefing: {}`, flip `FactionIn::briefing`
+    /// from `None` to `Some`, and make `derive_briefings` emit a `briefings` entry for a side that
+    /// authored nothing — plus stack an empty undo step.
+    #[test]
+    fn setting_all_empty_prose_on_an_unauthored_faction_does_not_mint_a_briefing() {
+        let doc = briefing_fixture();
+        let before = small_maps(&doc);
+
+        doc.set_faction_briefing("faction-OPFOR", "", "", "");
+        doc.set_faction_briefing("faction-does-not-exist", "", "", "");
+        // An unknown faction with REAL prose is still a no-op — orders need a side to be given to.
+        doc.set_faction_briefing("faction-does-not-exist", SITUATION, "Hold.", "Go.");
+
+        assert!(
+            small_maps(&doc)["factionsById"]["faction-OPFOR"]
+                .get("briefing")
+                .is_none(),
+            "an all-empty set must not author a briefing"
+        );
+        // Nothing anywhere moved, so the compiled bytes cannot have changed either.
+        assert_eq!(
+            small_maps(&doc),
+            before,
+            "a no-op prose write must write nothing"
+        );
+        assert!(
+            !doc.can_undo(),
+            "a no-op prose write must not stack an undo step"
+        );
+
+        // Re-setting IDENTICAL prose is also a no-op — no second undo step for a non-edit.
+        doc.set_faction_briefing("faction-BLUFOR", SITUATION, "Hold.", "Go.");
+        assert_eq!(doc.undo_depth(), 1, "the real edit is one step");
+        doc.set_faction_briefing("faction-BLUFOR", SITUATION, "Hold.", "Go.");
+        assert_eq!(
+            doc.undo_depth(),
+            1,
+            "re-setting identical prose must not stack a second step"
+        );
+    }
+
+    /// **T-344 — clearing a box returns that field to UNAUTHORED, and clearing every box on a briefing
+    /// that has markers is still a real edit.**
+    ///
+    /// `""` removes the key rather than writing `Some("")`, because a three-textbox editor cannot
+    /// distinguish "never filled in" from "deliberately blanked" and the emitter's `Option<String>`
+    /// carries that distinction into the compiled bytes. The second half is why the no-op guard
+    /// compares the MAP and not merely "is the new prose empty": the briefing legitimately exists
+    /// here, so the clear must land.
+    #[test]
+    fn clearing_a_prose_field_returns_it_to_unauthored() {
+        let doc = briefing_fixture();
+        doc.set_faction_briefing(
+            "faction-BLUFOR",
+            SITUATION,
+            "Hold the crossing.",
+            "Alpha leads.",
+        );
+
+        // Clear only `execution`; the siblings stay.
+        doc.set_faction_briefing("faction-BLUFOR", SITUATION, "Hold the crossing.", "");
+        let briefing = &small_maps(&doc)["factionsById"]["faction-BLUFOR"]["briefing"];
+        assert!(
+            briefing.get("execution").is_none(),
+            "a cleared field is removed, not blanked to \"\": {briefing:?}"
+        );
+        assert_eq!(briefing["situation"], serde_json::json!(SITUATION));
+        assert_eq!(briefing["mission"], serde_json::json!("Hold the crossing."));
+
+        // Now clear everything on a briefing that also carries a marker: the prose keys go, the
+        // marker stays, and the briefing survives because the marker keeps it legitimate.
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-1", 111.5, 222.5, "rally", "RP");
+        doc.set_faction_briefing("faction-BLUFOR", "", "", "");
+
+        let briefing = &small_maps(&doc)["factionsById"]["faction-BLUFOR"]["briefing"];
+        assert!(
+            briefing.get("situation").is_none() && briefing.get("mission").is_none(),
+            "clearing every box must land when the briefing really exists: {briefing:?}"
+        );
+        assert_eq!(
+            markers_of(&doc, "faction-BLUFOR").len(),
+            1,
+            "clearing the prose must not take the marker with it"
+        );
+    }
+
+    /// **T-344 — authored prose reaches the compiled mod document, keyed by faction slug, newlines
+    /// intact.** This is the end-to-end claim: prose typed through this mutator arrives where
+    /// `TBD_BriefingService.GetBriefingForFaction(slot.faction)` looks for it.
+    ///
+    /// `#[cfg(feature = "mission")]` — the reason the suite must run `--features doc,mission`;
+    /// `--features doc` alone compiles the compiler out and silently skips this.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn authored_prose_reaches_the_mod_document_keyed_by_faction_slug() {
+        let doc = briefing_fixture();
+        doc.set_faction_briefing(
+            "faction-BLUFOR",
+            SITUATION,
+            "Seize and hold the crossing until relieved.",
+            "Alpha leads, Bravo screens the north flank.",
+        );
+
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let meta = crate::mission::flatten::MissionMeta {
+            id: "4c7e1b08-9a35-4d62-b1f7-e30d5a86c941".into(),
+            title: "Bridgehead at Levie".into(),
+            author: "184472930165846017".into(),
+            terrain: "everon".into(),
+            custom_terrain_name: String::new(),
+            max_players: 12,
+            time_of_day: "06:15".into(),
+            weather_preset: "overcast".into(),
+        };
+        let compiled = crate::mission::flatten::flatten_to_mod_document(
+            &meta,
+            &serde_json::to_vec(&payload).expect("payload serialises"),
+        )
+        .expect("the fixture has a slot, so the compile must succeed");
+        let doc_json = serde_json::to_value(&compiled).expect("mod document serialises");
+
+        // Keyed by `slug_key(faction.key)` — `BLUFOR` → `blufor`, the same slug `slots[].faction`
+        // carries, which is what `GetBriefingForFaction(slot.faction)` looks up.
+        let b = doc_json["briefings"]["blufor"]
+            .as_object()
+            .expect("blufor briefing");
+        assert_eq!(
+            b["situation"],
+            serde_json::json!(SITUATION),
+            "the paragraph breaks must reach the compiled document verbatim"
+        );
+        assert_eq!(
+            b["mission"],
+            serde_json::json!("Seize and hold the crossing until relieved.")
+        );
+        assert_eq!(
+            b["execution"],
+            serde_json::json!("Alpha leads, Bravo screens the north flank.")
+        );
+        // No `markers` key: an empty list is omitted exactly as an absent one is, so the three prose
+        // fields are the whole entry.
+        assert_eq!(b.len(), 3, "exactly the three authored fields: {b:?}");
+
+        // The unauthored side gets no entry at all, not an empty one.
+        assert!(
+            doc_json["briefings"].get("opfor").is_none(),
+            "{:?}",
+            doc_json["briefings"]
+        );
     }
 }
