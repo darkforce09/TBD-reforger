@@ -7031,7 +7031,7 @@
       "impact": [
         "contract"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2190,
       "stream": "mission-creator",
       "targets": [
@@ -7974,7 +7974,7 @@
       "impact": [
         "e2e"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2670,
       "stream": "mod-framework",
       "targets": [
@@ -7993,7 +7993,7 @@
       "impact": [
         "e2e"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2680,
       "stream": "mod-framework",
       "targets": [
@@ -11712,6 +11712,26 @@
       ],
       "executor": "claude-code",
       "priority": 2
+    },
+    {
+      "id": "T-435",
+      "title": "Pin arland z_bounds polygon in flatten zone tests",
+      "summary": "MINOR from wave 8 verifier on T-201. Everon z_bounds is pinned ([[0,0],[12800,0],…]); arland uses terrain_bounds(\"arland\")→4096² but no flatten-level test asserts that polygon.\n\nRepro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.\n\nCure: unit test with terrain=arland expecting 4096² ring.",
+      "program": "platform",
+      "surfaces": [
+        "FE"
+      ],
+      "impact": [
+        "mission-creator"
+      ],
+      "status": "deferred",
+      "order": 3274,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
     }
   ]
 }

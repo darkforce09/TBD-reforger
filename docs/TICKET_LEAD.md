@@ -9,9 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-201** (2190) — Emit zones[] beyond the synthetic spawn circle [ready] — flatten hardcodes type=spawn and r=150.0 at the slot centroid (flatten.rs:300,584-600); ModZoneShape has no polygon variant (flatten.rs:142-145). The mod already enforces boundary and base_protection in both circle and polygon (TBD_ZoneRegistry.c). Consequence today: every website mission ships with zero play-area restriction.
-- **T-249** (2670) — Add a slot.y fixture [ready] — No golden authors slots[].y, so the entire schema-1.2 path — Y_ABSENT sentinel (TBD_MissionSlotStruct.c:47,57), HasJsonY(), TBD_SpawnManager.c:957-973 — is untested end to end despite T-092.1 shipping it.
-- **T-250** (2680) — Warn on unconsumed mission-document keys [ready] — TBD_MissionValidator has no unconsumed-key warning, so nothing tells an author that environment, settings, entities, layers, tickets or roles[].radio were silently discarded on load.
 
 ## Next queued (top 10)
 

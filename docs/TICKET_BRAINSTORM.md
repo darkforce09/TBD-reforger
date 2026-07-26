@@ -958,6 +958,11 @@ Cure: delete it or replace with a non-vacuous pin (handler/IT only).
 Repro: compare ci.yml schema job vs Makefile schema-validate recipe / GATE_SCHEMA_VALIDATE_GATES in wave.sh.
 
 Cure: align CI with make schema-validate (or document intentional narrowing with a tripwire).
+- **T-435** (deferred) — Pin arland z_bounds polygon in flatten zone tests [FE] — MINOR from wave 8 verifier on T-201. Everon z_bounds is pinned ([[0,0],[12800,0],…]); arland uses terrain_bounds("arland")→4096² but no flatten-level test asserts that polygon.
+
+Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.
+
+Cure: unit test with terrain=arland expecting 4096² ring.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
