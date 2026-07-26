@@ -2,6 +2,7 @@
 //! The registration path is the concurrency gate **G7b** (lock + conditional slot claim).
 
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::sync::LazyLock;
 
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, Query, State};
@@ -10,7 +11,8 @@ use axum::response::{IntoResponse, Json, Response};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use sqlx::{PgPool, Postgres, QueryBuilder};
+use sqlx::{AssertSqlSafe, PgPool, Postgres, QueryBuilder};
+use tokio::task::JoinHandle;
 use uuid::Uuid;
 
 use crate::error::ApiError;
@@ -18,10 +20,122 @@ use crate::handlers::PageParams;
 use crate::middleware::{AdminUser, AuthUser, LeaderUser, ServiceAuth};
 use crate::models::serde_helpers::go_time;
 use crate::models::{
-    Event, EventMission, EventStatus, MissionArmory, OrbatReservation, OrbatSlot, RegistrationState,
+    AuditSeverity, Event, EventMission, EventStatus, MissionArmory, OrbatReservation, OrbatSlot,
+    RegistrationState,
 };
-use crate::services::{OrbatSquadTemplate, flatten_to_mod_document, parse_orbat_template};
+use crate::services::{
+    OrbatSquadTemplate, flatten_to_mod_document, parse_orbat_template, write_audit,
+};
 use crate::state::AppState;
+
+// ══ EVENT LIFECYCLE STATE MACHINE (T-225) ══════════════════════════════════════════════
+//
+// `event_status` has six values. Before this slice the ONLY writer was `PATCH /events/:id`,
+// which validated the status *string* and never the *transition*, and nothing moved an
+// event on its own — no timer, no start_time trigger, no results hook. So
+// `can_register_status` (scheduled | open) held registration open FOREVER, including for
+// operations that had already been fought and for events whose start time was months past.
+//
+// The machine is two halves, and they are deliberately different mechanisms:
+//
+//   1. DERIVED TRUTH — [`EFFECTIVE_STATUS_SQL`] computes an event's status right now as a
+//      pure function of (stored status, start_time, its missions' start times, `now()`).
+//      Every read and the registration guard go through it, so correctness NEVER depends on
+//      a background task having run. The stored column is a cache, not the authority.
+//
+//   2. CONVERGENCE — [`start_event_lifecycle`] sweeps the table so the stored column agrees
+//      with the derivation. That is what makes the automatic moves *visible* (audit log,
+//      admin console, `psql`) instead of a fiction the handlers recompute per request.
+//
+// Splitting it this way is what makes a third background task safe to add at all: the
+// sweeper can be late, skipped, or run twice and no user-visible decision changes. See the
+// safety notes on [`sweep_once`].
+//
+// AUTOMATIC vs OPERATOR-ONLY
+//   * automatic  — pre-start → `live` at `start_time`; `live` → `completed` at the end
+//                  horizon below. Both are things the clock knows and nobody has to assert.
+//   * operator   — `cancelled` (intent, never inferable), and `open`/`locked` (announcing
+//                  and freezing a roster are editorial acts, not consequences of time).
+//
+// Ending is deliberately NOT hung off results ingest. That path exists but currently
+// resolves nobody (T-229/T-230) and `events.match_id` is written by nothing (T-284), so
+// binding completion to it would ship a transition that never fires.
+
+/// SQL scalar — the instant a still-`live` operation is considered over. Requires the
+/// `events` row to be aliased `e`.
+///
+/// An event is a *container* of sequential missions (T-008), each with its own
+/// `start_time`, so a campaign spread over several nights is not over six hours after the
+/// container's start — it is over six hours after its LAST mission. `GREATEST` also guards
+/// the operator-error case of a mission scheduled before its own event.
+///
+/// Six hours is a FALLBACK ceiling, not a measurement: 2–4 h is a typical op, so this
+/// cannot cut a running operation short, and it is short enough that the calendar stops
+/// advertising a finished operation the same day. When a real end-of-op signal lands it
+/// should complete events early and leave this as the backstop for when it never arrives.
+const EVENT_END_HORIZON_SQL: &str = "(GREATEST(e.start_time, COALESCE(\
+     (SELECT max(em.start_time) FROM event_missions em WHERE em.event_id = e.id), \
+     e.start_time)) + interval '6 hours')";
+
+/// Postgres advisory-lock key for the lifecycle sweep. Arbitrary but fixed: every API
+/// instance must pick the same number or the lock does nothing.
+const LIFECYCLE_LOCK_KEY: i64 = 0x7BD_0225;
+
+/// How often the convergence sweep runs. Tight enough that the calendar is never more than
+/// a minute stale, cheap enough to be free — `events` is a community ops calendar
+/// (hundreds of rows), and a late or skipped sweep changes no decision (see [`sweep_once`]).
+const LIFECYCLE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(60);
+
+/// SQL scalar — an event's **effective** status. Requires the `events` row aliased `e`.
+///
+/// Every time comparison happens inside Postgres against `now()`, never against the API
+/// process clock. That is the whole answer to clock skew: however many API instances run,
+/// there is exactly one clock in this system and it is the database's.
+///
+/// The derivation only ever moves an event FORWARD, and terminal states are returned
+/// verbatim, so it can never undo an operator's `cancelled` or resurrect a `completed`.
+static EFFECTIVE_STATUS_SQL: LazyLock<String> = LazyLock::new(|| {
+    format!(
+        "CASE \
+           WHEN e.status IN ('completed', 'cancelled') THEN e.status \
+           WHEN now() >= {EVENT_END_HORIZON_SQL} THEN 'completed'::event_status \
+           WHEN now() >= e.start_time THEN 'live'::event_status \
+           ELSE e.status \
+         END"
+    )
+});
+
+/// The `Event` column list, with `status` replaced by the derived value. Every `SELECT`
+/// that builds an [`Event`] uses this, so no response can report a status that the
+/// registration guard would disagree with.
+static EVENT_COLUMNS: LazyLock<String> = LazyLock::new(|| {
+    format!(
+        "e.id, COALESCE(e.name_override, '') AS name_override, e.start_time, \
+         COALESCE(e.briefing, '') AS briefing, \
+         COALESCE(e.banner_image_url, '') AS banner_image_url, \
+         {} AS status, e.registration_locked, e.max_slots, e.created_by, e.match_id, \
+         COALESCE(e.created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
+         COALESCE(e.updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at",
+        &*EFFECTIVE_STATUS_SQL
+    )
+});
+
+/// Wrap a query assembled from this module's static SQL fragments.
+///
+/// sqlx 0.9 refuses a non-`'static` query string unless it is explicitly audited, which is
+/// the right default — so here is the audit, once, instead of at six call sites.
+///
+/// **THE AUDIT:** every string passed to `sql()` is `format!`ed from fragments that are
+/// `const` or `static` in THIS file — [`EVENT_COLUMNS`], [`EFFECTIVE_STATUS_SQL`],
+/// [`EVENT_END_HORIZON_SQL`] — interpolated into literal text. Not one byte of any of them
+/// derives from a request: every caller-supplied value in these queries is a bind
+/// parameter (`$1`, `$2`). The `list_events` scope word looks like an exception and is not
+/// — it selects between whole hardcoded query strings and is never itself interpolated.
+///
+/// Do not pass a string built from request data through this function.
+fn sql(q: String) -> AssertSqlSafe<String> {
+    AssertSqlSafe(q)
+}
 
 fn valid_event_status(s: &str) -> Option<EventStatus> {
     match s {
@@ -35,21 +149,223 @@ fn valid_event_status(s: &str) -> Option<EventStatus> {
     }
 }
 
+/// States in which an operation has not started yet. These are exactly the states an
+/// event may be *created* in, and the only targets a `PATCH` may move an event back to.
+fn is_pre_start(s: EventStatus) -> bool {
+    matches!(
+        s,
+        EventStatus::Scheduled | EventStatus::Open | EventStatus::Locked
+    )
+}
+
+/// Legal `from → to` moves.
+///
+/// | from        | to                                        |
+/// |-------------|-------------------------------------------|
+/// | `scheduled` | `open`, `locked`, `live`, `cancelled`     |
+/// | `open`      | `locked`, `live`, `cancelled`             |
+/// | `locked`    | `open`, `live`, `cancelled`               |
+/// | `live`      | `open`†, `locked`†, `completed`, `cancelled` |
+/// | `completed` | — terminal                                |
+/// | `cancelled` | — terminal                                |
+///
+/// `from == to` is allowed: a `PATCH` that resends the current status is a no-op, not a
+/// transition, and must not 409 — otherwise any client editing an unrelated field breaks.
+///
+/// `scheduled` is an ENTRY state; nothing returns to it. It is indistinguishable from
+/// `open` for registration purposes, so a demotion would be a status change with no
+/// meaning, and "has this operation been announced yet" is not a bit you can un-set.
+///
+/// `completed` and `cancelled` are TERMINAL. An operation that was called off or fought is
+/// a matter of record; rerunning it is a new event, not an edit to the old one.
+///
+/// † Backwards out of `live` is legal only for a POSTPONED event — the caller
+/// [`update_event`] additionally requires the post-PATCH `start_time` to be in the future
+/// for any pre-start target. Without that rule the sweep would re-fire within the minute
+/// and "unlock" would be a lie that reverted itself, with audit spam to match.
+///
+/// `scheduled → completed` is deliberately absent: an operation that never went `live`
+/// never happened, and the honest terminal for it is `cancelled`. The automatic sweep
+/// reaches `completed` for a long-past `scheduled` event by stepping through `live`, so
+/// even the machine never takes the edge that does not exist.
+fn can_transition(from: EventStatus, to: EventStatus) -> bool {
+    use EventStatus::{Cancelled, Completed, Live, Locked, Open, Scheduled};
+    if from == to {
+        return true;
+    }
+    match from {
+        Scheduled => matches!(to, Open | Locked | Live | Cancelled),
+        Open => matches!(to, Locked | Live | Cancelled),
+        Locked => matches!(to, Open | Live | Cancelled),
+        Live => matches!(to, Open | Locked | Completed | Cancelled),
+        Completed | Cancelled => false,
+    }
+}
+
+/// Whether registration is open in this status. The argument MUST be the effective status
+/// ([`EFFECTIVE_STATUS_SQL`]), never the raw column — feeding it a stale `open` is the
+/// original bug.
 fn can_register_status(s: EventStatus) -> bool {
     s == EventStatus::Scheduled || s == EventStatus::Open
 }
 
+// --- Lifecycle convergence sweep ---
+
+/// Handle to the lifecycle sweeper (aborted on drop at shutdown), mirroring
+/// [`crate::services::PurgeHandle`].
+pub type LifecycleHandle = JoinHandle<()>;
+
+/// Run one convergence pass: move started operations to `live`, then finished ones to
+/// `completed`, and audit both.
+///
+/// ══ WHY A THIRD BACKGROUND TASK IS SAFE HERE ═══════════════════════════════════════════
+/// The API previously ran two (`token_purge`, the audit SSE poll). Adding a third is only
+/// defensible because this one is not load-bearing:
+///
+///   * A SLOW OR STUCK PASS decides nothing. The registration guard and every read derive
+///     their answer from `now()` at request time, so a sweep that is a minute — or a day —
+///     behind cannot let anyone register for a started operation. The worst outcome is a
+///     stale `status` column in `psql` and a late audit row.
+///   * TWO API INSTANCES both sweep. `pg_try_advisory_xact_lock` means only one does the
+///     work in any given moment and the other returns immediately rather than queueing, so
+///     a long pass cannot pile up runners. Even without the lock the writes are safe: both
+///     statements are conditional on the state they are leaving (`status IN (…)`), and the
+///     rows are taken `FOR UPDATE`, so a double run updates zero rows the second time and
+///     cannot double-audit.
+///   * CLOCK SKEW is not a factor. No comparison uses the API process clock; `now()`,
+///     `start_time` and the end horizon are all evaluated by Postgres.
+///   * The two statements share ONE transaction and are ordered, so a long-past `scheduled`
+///     event that nobody ever ran is stepped `scheduled → live → completed` in a single
+///     pass — both legal edges of [`can_transition`], never the illegal shortcut.
+///
+/// Returns `(started, completed)` for logging/tests.
+pub async fn sweep_once(pool: &PgPool) -> sqlx::Result<(Vec<Uuid>, Vec<Uuid>)> {
+    let mut tx = pool.begin().await?;
+
+    // Held for the transaction, so it is released on commit, rollback OR panic.
+    let acquired: bool = sqlx::query_scalar("SELECT pg_try_advisory_xact_lock($1)")
+        .bind(LIFECYCLE_LOCK_KEY)
+        .fetch_one(&mut *tx)
+        .await?;
+    if !acquired {
+        return Ok((Vec::new(), Vec::new()));
+    }
+
+    // 1. Start: every pre-start operation whose start time has arrived. Selected first so
+    //    the audit row can name the state it actually left.
+    let starting: Vec<(Uuid, EventStatus)> = sqlx::query_as(
+        "SELECT id, status FROM events \
+         WHERE deleted_at IS NULL AND status IN ('scheduled', 'open', 'locked') \
+           AND now() >= start_time \
+         ORDER BY start_time ASC FOR UPDATE",
+    )
+    .fetch_all(&mut *tx)
+    .await?;
+    let started: Vec<Uuid> = starting.iter().map(|(id, _)| *id).collect();
+    if !started.is_empty() {
+        sqlx::query("UPDATE events SET status = 'live', updated_at = now() WHERE id = ANY($1)")
+            .bind(&started)
+            .execute(&mut *tx)
+            .await?;
+    }
+
+    // 2. Complete: every live operation past its end horizon — including the ones just
+    //    flipped above, which this statement sees because it is the same transaction.
+    let completed: Vec<Uuid> = sqlx::query_scalar(sql(format!(
+        "SELECT e.id FROM events e \
+         WHERE e.deleted_at IS NULL AND e.status = 'live' AND now() >= {EVENT_END_HORIZON_SQL} \
+         ORDER BY e.start_time ASC FOR UPDATE OF e"
+    )))
+    .fetch_all(&mut *tx)
+    .await?;
+    if !completed.is_empty() {
+        sqlx::query(
+            "UPDATE events SET status = 'completed', updated_at = now() WHERE id = ANY($1)",
+        )
+        .bind(&completed)
+        .execute(&mut *tx)
+        .await?;
+    }
+
+    tx.commit().await?;
+
+    // Audit AFTER commit: `write_audit` is best-effort and must not hold the sweep's locks.
+    // Registration closes at `live`, so that row is the one an operator needs when someone
+    // asks why they could not sign up.
+    for (id, from) in &starting {
+        write_audit(
+            pool,
+            AuditSeverity::Info,
+            None,
+            "system",
+            "event.auto_live",
+            &format!(
+                "start time reached: {} → live; registration closed",
+                from.as_str()
+            ),
+            "event",
+            &id.to_string(),
+        )
+        .await;
+    }
+    for id in &completed {
+        write_audit(
+            pool,
+            AuditSeverity::Info,
+            None,
+            "system",
+            "event.auto_completed",
+            "end horizon passed: live → completed",
+            "event",
+            &id.to_string(),
+        )
+        .await;
+    }
+
+    Ok((started, completed))
+}
+
+/// Spawn the lifecycle sweeper: an immediate pass, then every [`LIFECYCLE_INTERVAL`].
+///
+/// Mirrors [`crate::services::start_refresh_token_purge`] — same shape, same lifetime, and
+/// like it, a failed pass is logged and the next tick retries rather than killing the task.
+pub fn start_event_lifecycle(pool: PgPool) -> LifecycleHandle {
+    tokio::spawn(async move {
+        let mut ticker = tokio::time::interval(LIFECYCLE_INTERVAL);
+        loop {
+            ticker.tick().await;
+            match sweep_once(&pool).await {
+                Ok((started, completed)) if !started.is_empty() || !completed.is_empty() => {
+                    tracing::info!(
+                        started = started.len(),
+                        completed = completed.len(),
+                        "event lifecycle sweep"
+                    );
+                }
+                Ok(_) => {}
+                Err(e) => tracing::error!(error = %e, "event lifecycle sweep failed"),
+            }
+        }
+    })
+}
+
 // --- helpers ---
 
+/// Load one event. `status` is the **effective** status ([`EVENT_COLUMNS`]), so every
+/// caller — the hub, the roster, and the transition check in [`update_event`] — reasons
+/// about where the event is *now*, not where the last write left the column.
 async fn load_event(pool: &PgPool, id: &str) -> Result<Event, ApiError> {
     let Ok(id) = Uuid::parse_str(id) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    sqlx::query_as("SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE id = $1 AND deleted_at IS NULL")
-        .bind(id)
-        .fetch_optional(pool)
-        .await?
-        .ok_or_else(|| ApiError::not_found("event not found"))
+    sqlx::query_as(sql(format!(
+        "SELECT {} FROM events e WHERE e.id = $1 AND e.deleted_at IS NULL",
+        &*EVENT_COLUMNS
+    )))
+    .bind(id)
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(|| ApiError::not_found("event not found"))
 }
 
 async fn load_em(pool: &PgPool, emid: &str) -> Result<EventMission, ApiError> {
@@ -150,10 +466,19 @@ pub async fn create_event(
     let Some(status) = valid_event_status(&input.status) else {
         return Err(ApiError::bad_request("invalid status"));
     };
-    let ev: Event = sqlx::query_as(
+    // The state machine's entry point. An event may only be created somewhere it could
+    // legally have been PATCHed to from `scheduled`, which rules out being born `live`
+    // (start it by scheduling it), `completed` (it never happened) or `cancelled` (there
+    // was nothing to call off).
+    if !is_pre_start(status) {
+        return Err(ApiError::bad_request(
+            "an event may only be created as scheduled, open or locked",
+        ));
+    }
+    let id: Uuid = sqlx::query_scalar(
         "INSERT INTO events (name_override, start_time, briefing, banner_image_url, status, \
          registration_locked, max_slots, created_by, created_at, updated_at) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), now()) RETURNING id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at",
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), now()) RETURNING id",
     )
     .bind(&input.name_override)
     .bind(start_time)
@@ -165,6 +490,10 @@ pub async fn create_event(
     .bind(&_a.0.discord_id)
     .fetch_one(&state.pool)
     .await?;
+    // Read back rather than `RETURNING` the row: an event backfilled with a past
+    // `start_time` is already `live` (or over), and the create response must say the same
+    // thing the very next `GET` will.
+    let ev = load_event(&state.pool, &id.to_string()).await?;
     Ok((StatusCode::CREATED, Json(ev)))
 }
 
@@ -301,30 +630,47 @@ pub async fn list_events(
     .bounds();
 
     // Static per-scope queries (the scope word is a hardcoded whitelist, never bound text).
-    let (count_sql, select_sql): (&str, &str) = match q.scope.as_deref().unwrap_or("upcoming") {
+    // The `upcoming` filter tests the EFFECTIVE status, so an operation that started while
+    // the sweep was between ticks is still listed as upcoming/live rather than vanishing,
+    // and one whose end horizon has passed drops off even if the column still says `live`.
+    let (count_sql, select_sql): (String, String) = match q.scope.as_deref().unwrap_or("upcoming") {
         "past" => (
-            "SELECT count(*) FROM events WHERE deleted_at IS NULL AND start_time <= now()",
-            "SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE deleted_at IS NULL AND start_time <= now() \
-             ORDER BY start_time DESC LIMIT $1 OFFSET $2",
+            "SELECT count(*) FROM events e WHERE e.deleted_at IS NULL AND e.start_time <= now()"
+                .to_string(),
+            format!(
+                "SELECT {} FROM events e WHERE e.deleted_at IS NULL AND e.start_time <= now() \
+                 ORDER BY e.start_time DESC LIMIT $1 OFFSET $2",
+                &*EVENT_COLUMNS
+            ),
         ),
         "all" => (
-            "SELECT count(*) FROM events WHERE deleted_at IS NULL",
-            "SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE deleted_at IS NULL ORDER BY start_time ASC LIMIT $1 OFFSET $2",
+            "SELECT count(*) FROM events e WHERE e.deleted_at IS NULL".to_string(),
+            format!(
+                "SELECT {} FROM events e WHERE e.deleted_at IS NULL \
+                 ORDER BY e.start_time ASC LIMIT $1 OFFSET $2",
+                &*EVENT_COLUMNS
+            ),
         ),
         _ => (
-            "SELECT count(*) FROM events WHERE deleted_at IS NULL \
-             AND (start_time > now() OR status::text = 'live')",
-            "SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE deleted_at IS NULL \
-             AND (start_time > now() OR status::text = 'live') \
-             ORDER BY start_time ASC LIMIT $1 OFFSET $2",
+            format!(
+                "SELECT count(*) FROM events e WHERE e.deleted_at IS NULL \
+                 AND (e.start_time > now() OR ({})::text = 'live')",
+                &*EFFECTIVE_STATUS_SQL
+            ),
+            format!(
+                "SELECT {} FROM events e WHERE e.deleted_at IS NULL \
+                 AND (e.start_time > now() OR ({})::text = 'live') \
+                 ORDER BY e.start_time ASC LIMIT $1 OFFSET $2",
+                &*EVENT_COLUMNS, &*EFFECTIVE_STATUS_SQL
+            ),
         ),
     };
 
-    let total: i64 = sqlx::query_scalar(count_sql)
+    let total: i64 = sqlx::query_scalar(sql(count_sql))
         .fetch_one(&state.pool)
         .await
         .map_err(ApiError::from)?;
-    let events: Vec<Event> = sqlx::query_as(select_sql)
+    let events: Vec<Event> = sqlx::query_as(sql(select_sql))
         .bind(limit)
         .bind(offset)
         .fetch_all(&state.pool)
@@ -559,6 +905,14 @@ pub struct PatchEventInput {
 
 /// `PATCH /api/v1/events/:id` — edit an event (admin).
 ///
+/// This is the machine's only operator entry point, and until T-225 it validated the
+/// status *string* and not the *transition* — any of the six values could replace any
+/// other, including resurrecting a `completed` operation into `open`. It now enforces
+/// [`can_transition`] against the event's EFFECTIVE status, which matters: an event whose
+/// start time passed a minute ago is `live` even if the sweep has not written that yet, so
+/// `→ completed` is accepted (a legal `live → completed`) instead of being rejected
+/// against a stale `open`.
+///
 /// @route PATCH /api/v1/events/:id
 pub async fn update_event(
     State(state): State<AppState>,
@@ -568,6 +922,41 @@ pub async fn update_event(
 ) -> Result<Json<Event>, ApiError> {
     let ev = load_event(&state.pool, &id).await?;
     let Json(input) = body.map_err(|_| ApiError::bad_request("invalid body"))?;
+
+    // Validated before any write so a rejected transition leaves the whole PATCH untouched
+    // — a 409 must not silently apply the caller's other field edits.
+    let mut requested: Option<EventStatus> = None;
+    if let Some(s) = &input.status {
+        let Some(to) = valid_event_status(s) else {
+            return Err(ApiError::bad_request("invalid status"));
+        };
+        requested = Some(to);
+        if !can_transition(ev.status, to) {
+            return Err(ApiError::conflict(format!(
+                "cannot move an event from {} to {}",
+                ev.status.as_str(),
+                to.as_str()
+            )));
+        }
+        // Moving BACK to a pre-start state only means something for a postponed operation.
+        // Asked in SQL, not against the process clock, for the same reason the derivation
+        // is: `now()` here and `now()` in the sweep have to be the same clock, or an
+        // instance running fast would accept an "unlock" the sweep undoes a minute later.
+        if to != ev.status && is_pre_start(to) {
+            let start = input.start_time.unwrap_or(ev.start_time);
+            let in_future: bool = sqlx::query_scalar("SELECT $1 > now()")
+                .bind(start)
+                .fetch_one(&state.pool)
+                .await?;
+            if !in_future {
+                return Err(ApiError::conflict(format!(
+                    "cannot move an event to {} once its start time has passed — \
+                     reschedule it in the same request to postpone it",
+                    to.as_str()
+                )));
+            }
+        }
+    }
 
     let mut qb: QueryBuilder<Postgres> = QueryBuilder::new("UPDATE events SET updated_at = now()");
     if let Some(t) = input.start_time {
@@ -588,10 +977,7 @@ pub async fn update_event(
     if let Some(l) = input.registration_locked {
         qb.push(", registration_locked = ").push_bind(l);
     }
-    if let Some(s) = &input.status {
-        let Some(status) = valid_event_status(s) else {
-            return Err(ApiError::bad_request("invalid status"));
-        };
+    if let Some(status) = requested {
         qb.push(", status = ").push_bind(status);
     }
     qb.push(" WHERE id = ").push_bind(ev.id);
@@ -600,6 +986,8 @@ pub async fn update_event(
         .await
         .map_err(ApiError::from)?;
 
+    // The response re-derives, so a PATCH that only moves `start_time` into the past comes
+    // back reading `live` — the same thing the sweep is about to write.
     Ok(Json(load_event(&state.pool, &id).await?))
 }
 
@@ -755,6 +1143,19 @@ pub struct RegisterBody {
 /// `POST /api/v1/event-missions/:emid/register` — claim a slot / waitlist.
 /// Concurrency gate **G7b**: `FOR UPDATE` on the mission row + conditional slot claim.
 ///
+/// ══ THE REGISTRATION WINDOW IS DERIVED, NOT READ ═══════════════════════════════════════
+/// The status test here is the one that was broken: it read the stored column, which only
+/// `PATCH /events/:id` ever wrote and which nothing moved on a schedule, so `scheduled` and
+/// `open` — and therefore sign-ups — persisted indefinitely past the operation itself.
+///
+/// It now tests [`EFFECTIVE_STATUS_SQL`], evaluated by Postgres against `now()` INSIDE the
+/// transaction. Two consequences worth stating:
+///   * the window closes on the clock, not on a background task. Registration is refused
+///     the first second after `start_time` whether or not the sweep has run, so the fix
+///     cannot be undone by the sweeper being slow, wedged, or not deployed.
+///   * moving the read into the transaction also closes the old check-then-claim gap where
+///     an admin could cancel an event between the guard and the slot write.
+///
 /// @route POST /api/v1/event-missions/:emid/register
 pub async fn register_for_event_mission(
     State(state): State<AppState>,
@@ -763,26 +1164,8 @@ pub async fn register_for_event_mission(
     body: Result<Json<RegisterBody>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
-    let ev: Option<Event> =
-        sqlx::query_as("SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE id = $1 AND deleted_at IS NULL")
-            .bind(em.event_id)
-            .fetch_optional(&state.pool)
-            .await?;
-    let Some(ev) = ev else {
-        return Err(ApiError::not_found("event not found"));
-    };
     let me = &user.discord_id;
     let is_admin = user.role == "admin";
-    if !can_register_status(ev.status) {
-        return Err(ApiError::conflict(
-            "registration is closed for this operation",
-        ));
-    }
-    if ev.registration_locked && !is_admin {
-        return Err(ApiError::forbidden(
-            "registration is locked; an admin must assign you",
-        ));
-    }
     let body = body.ok().map(|Json(b)| b).unwrap_or_default();
 
     let mut tx = state.pool.begin().await?;
@@ -792,6 +1175,28 @@ pub async fn register_for_event_mission(
         .bind(em.id)
         .fetch_one(&mut *tx)
         .await?;
+
+    let ev_gate: Option<(EventStatus, bool)> = sqlx::query_as(sql(format!(
+        "SELECT {} AS status, e.registration_locked FROM events e \
+         WHERE e.id = $1 AND e.deleted_at IS NULL",
+        &*EFFECTIVE_STATUS_SQL
+    )))
+    .bind(em.event_id)
+    .fetch_optional(&mut *tx)
+    .await?;
+    let Some((status, registration_locked)) = ev_gate else {
+        return Err(ApiError::not_found("event not found"));
+    };
+    if !can_register_status(status) {
+        return Err(ApiError::conflict(
+            "registration is closed for this operation",
+        ));
+    }
+    if registration_locked && !is_admin {
+        return Err(ApiError::forbidden(
+            "registration is locked; an admin must assign you",
+        ));
+    }
 
     let capacity: i64 =
         sqlx::query_scalar("SELECT count(*) FROM orbat_slots WHERE event_mission_id = $1")

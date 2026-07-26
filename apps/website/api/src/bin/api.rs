@@ -10,7 +10,7 @@ use std::net::SocketAddr;
 use tracing_subscriber::EnvFilter;
 use website_api::config::Config;
 use website_api::state::AppState;
-use website_api::{app, db, services};
+use website_api::{app, db, handlers, services};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -31,6 +31,11 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState::new(pool, cfg);
     // Background refresh-token purge (immediate sweep, then every 6h).
     let _purge = services::start_refresh_token_purge(state.pool.clone());
+    // Event lifecycle convergence (T-225): starts operations at their start time and
+    // completes them past their end horizon, so the stored `events.status` agrees with the
+    // status the handlers derive. Safe to be late or absent — the registration window and
+    // every read derive from `now()` at request time, never from this task's output.
+    let _lifecycle = handlers::events::start_event_lifecycle(state.pool.clone());
     let app = app::router(state);
 
     let addr = format!("0.0.0.0:{port}");
