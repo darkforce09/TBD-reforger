@@ -914,9 +914,17 @@ fn locate_one_briefing(out: &mut Vec<String>, i: usize, briefing: &serde_json::V
 }
 
 /// Mission-level metadata the flatten needs. The backend builds this from its `Mission` sqlx
-/// model; the wasm client passes it as JSON (camelCase). Decouples the core compiler from any
+/// model; the browser passes it as JSON (camelCase). Decouples the core compiler from any
 /// backend type (T-145 Phase 2b). `terrain`/`weather_preset` are already the `as_str()` values.
-#[derive(Debug, Default, serde::Deserialize)]
+///
+/// **`Serialize` is not decoration (T-243).** The editor's server-truth Export feeds this type
+/// back into [`flatten_mod_document_json`] as JSON, so the same `rename_all = "camelCase"`
+/// attribute both writes and reads every key. Hand-rolling the camelCase object on the caller's
+/// side would have made a mistyped key — `maxPlayers` → `max_players`, say — deserialize to this
+/// struct's `Default` and silently emit a document with `playerRange: [1, 1]`. With the round trip
+/// through serde there is no key to mistype: the projection is checked by the compiler
+/// (`dto::MissionDetail::compiled_meta`) and the wire format by serde.
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 pub struct MissionMeta {
     pub id: String,

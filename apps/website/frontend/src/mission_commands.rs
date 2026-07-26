@@ -19,6 +19,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use map_engine_core::mission::compile::{compile_export, compile_payload, version_body};
+use map_engine_core::mission::flatten::{flatten_mod_document_json, MissionMeta};
 
 use crate::auth::AuthStore;
 use crate::mission_doc::DocHandle;
@@ -37,6 +38,29 @@ struct EditorCtx {
 
 thread_local! {
     static EDITOR_CTX: RefCell<Option<EditorCtx>> = const { RefCell::new(None) };
+
+    /// **T-243 — the mission ROW, as `GET /missions/:id` last served it.**
+    ///
+    /// Deliberately NOT part of [`EditorCtx`]: `set_ctx` runs synchronously at mount, and this
+    /// arrives later from `mission_hydrate::hydrate_from_server`'s `await`. Folding it in would
+    /// have meant either an `Option` field nobody could keep honest or an ordering assumption
+    /// between a mount and a fetch.
+    ///
+    /// **`None` is load-bearing and must stay refusable.** It means the row never arrived — a
+    /// local-only / non-UUID id (the `smoke` gate route), a 404, an offline boot. There is no
+    /// server document for those, and `MissionMeta::default()` would happily compile one with a
+    /// blank author and `playerRange: [1, 1]`. Emitting that under the name "the document the game
+    /// server will receive" is the confident-wrong-answer failure this whole ticket exists to
+    /// avoid, so [`export_compiled_now`] refuses instead.
+    static ROW_META: RefCell<Option<MissionMeta>> = const { RefCell::new(None) };
+}
+
+/// Record the mission row for the server-truth Export (T-243). Called by
+/// `mission_hydrate::hydrate_from_server` on every successful `GET /missions/:id`, including the
+/// fresh-mission and warm-IDB branches — the row is what the compile needs, and it is equally real
+/// whichever way the payload half was resolved.
+pub fn set_row_meta(detail: &crate::dto::MissionDetail) {
+    ROW_META.with(|r| *r.borrow_mut() = Some(detail.compiled_meta()));
 }
 
 /// Install the editor context (called once from `on_load`, after the doc is seeded/registered).
@@ -85,9 +109,128 @@ fn snapshot() -> Option<Snap> {
     })
 }
 
+/// **T-243 — download the document the game server will actually receive.**
+///
+/// Returns the pretty-printed compiled mod document, or a message fit to show an author.
+///
+/// ## Why this exists at all
+///
+/// `GET /missions/:id/compiled` takes a `ServiceAuth` (`handlers::missions::get_compiled_mission`)
+/// — it answers game servers, not browsers — so an author has no way to fetch it. Until this,
+/// "Export JSON" downloaded [`compile_export`]'s `MissionExport` envelope: the editor SUPERSET,
+/// `{exportFormatVersion, missionId, title, …, payload}`, whose `payload` is the editor graph. That
+/// is the right file for re-importing into the editor and it is **not** the mod document — it has
+/// no `slots[]`, no `orbat`, no `radioPlan`, no `winConditions`, and the mod cannot load it. So
+/// there was no way to see the compiled document before a game server did.
+///
+/// ## Why the answer can be trusted
+///
+/// This runs `flatten_mod_document_json` — the same `map-engine-core` compile `/compiled` runs,
+/// over the same two inputs:
+///
+///   * the **row**, from `GET /missions/:id` ([`ROW_META`]), which is where the server gets
+///     `author`, `maxPlayers` and the fallback time/weather;
+///   * the **save-shaped payload** (`include_orbat = false`) — byte-for-byte what
+///     `POST /missions/:id/versions` stores and therefore what `/compiled` later reads. `orbat` is
+///     omitted for the same reason the save omits it: the flatten derives its own from `editor`,
+///     and including it would put a key in the preview's input that the stored version never has.
+///
+/// Their agreement is not asserted here — it is pinned natively, on both halves, by
+/// `website-api`'s `client_twin_is_byte_identical_to_the_compiled_route` (the compile) and
+/// `dto::r_api::compiled_meta_is_the_row_the_server_compiles_from` (the row).
+///
+/// ## The one honest difference, and it is the point
+///
+/// `/compiled` serves the last **saved** version; this compiles the document **as it is now**,
+/// unsaved edits included. That is what makes it useful — you can see what a save would ship
+/// before shipping it — but it means a dirty document previews something the server does not yet
+/// have. The caller says so in the toast rather than hiding it.
+///
+/// # Errors
+/// Returns a display message when the row never arrived (local-only id, 404, offline — see
+/// [`ROW_META`]), when the editor is not mounted, or when the compile refuses (no placed slots is
+/// the common one, and it is the same `409` a game server would get).
+pub fn compiled_document_json() -> Result<String, String> {
+    let Some(snap) = snapshot() else {
+        return Err("Editor not ready".to_string());
+    };
+    let Some(mut meta) = ROW_META.with(|r| r.borrow().as_ref().map(clone_meta)) else {
+        return Err(
+            "This mission has no saved server row yet — save a version first, then export."
+                .to_string(),
+        );
+    };
+    // Carry the mission id from the route when the row's is blank, matching the envelope export's
+    // `meta.id`-then-route fallback (`compile_export`). `mission_doc_id` in the flatten normalizes
+    // whatever lands here into the schema's id space either way.
+    if meta.id.is_empty() {
+        meta.id = snap.mission_id.clone();
+    }
+    let payload = compile_payload(&snap.small, &snap.slots, false);
+    let payload_bytes = serde_json::to_vec(&payload).map_err(|e| e.to_string())?;
+    let meta_bytes = serde_json::to_vec(&meta).map_err(|e| e.to_string())?;
+
+    let doc = flatten_mod_document_json(&meta_bytes, &payload_bytes)?;
+    // Re-parse to pretty-print. The COMPACT bytes are the contract (they are what `/compiled`
+    // serves); this is a whitespace-only reformat for a human reading the file, and it is done here
+    // rather than in core so the shared compile keeps returning the server's exact bytes.
+    let value: serde_json::Value = serde_json::from_slice(&doc).map_err(|e| e.to_string())?;
+    serde_json::to_string_pretty(&value).map_err(|e| e.to_string())
+}
+
+/// `MissionMeta` is a plain data carrier in core and deliberately not `Clone` (it is an input type
+/// built once per compile); this is the local copy out of the `thread_local` so no borrow is held
+/// across the compile below.
+fn clone_meta(m: &MissionMeta) -> MissionMeta {
+    MissionMeta {
+        id: m.id.clone(),
+        title: m.title.clone(),
+        author: m.author.clone(),
+        terrain: m.terrain.clone(),
+        custom_terrain_name: m.custom_terrain_name.clone(),
+        max_players: m.max_players,
+        time_of_day: m.time_of_day.clone(),
+        weather_preset: m.weather_preset.clone(),
+    }
+}
+
+/// Trigger the server-truth download and report the outcome (T-243). `toasts` is resolved at
+/// component setup by the caller — `use_toasts()` is an `expect_context` and would panic from a
+/// DOM handler, the `RowMirror` precedent.
+pub fn export_compiled_now(toasts: crate::toast::Toasts) {
+    let mission_id = EDITOR_CTX
+        .with(|c| c.borrow().as_ref().map(|ctx| ctx.mission_id.clone()))
+        .unwrap_or_default();
+    match compiled_document_json() {
+        Ok(json) => {
+            let filename = format!("mission-{mission_id}.compiled.json");
+            if let Err(e) = download_json(&filename, &json) {
+                toasts.error(format!("Could not start the download: {e:?}"));
+                return;
+            }
+            // Naming the staleness is the whole reason this is a toast and not a silent download:
+            // the file is the CURRENT document, which is only what a game server would fetch once
+            // this state is saved.
+            if crate::mission_history::is_dirty() {
+                toasts.message(
+                    "Downloaded the compiled mission document — compiled from your unsaved changes, \
+                     so the server still serves the last saved version.",
+                );
+            } else {
+                toasts.success("Downloaded the compiled mission document.");
+            }
+        }
+        Err(e) => toasts.error(e),
+    }
+}
+
 /// Export the current mission as a downloaded `mission-<id>.json` (React `exportJson`): compile with
 /// `orbat` included, wrap in the `MissionExport` envelope, pretty-print, and trigger the browser
 /// download. `version` is the current semver (envelope `version` field).
+///
+/// **This is the editor SUPERSET, not the mod document** — it round-trips back into the editor and
+/// the mod cannot load it. The compiled document an author ships is
+/// [`export_compiled_now`] (T-243); both are kept because they answer different questions.
 pub fn export_now(version: &str) {
     let Some(snap) = snapshot() else {
         return;

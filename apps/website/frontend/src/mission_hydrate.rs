@@ -167,6 +167,14 @@ pub async fn hydrate_from_server(
         }
     };
 
+    // T-243 — hand the row to the server-truth Export before any branch below can return. This is
+    // the ONLY place the editor ever sees `author_id` / `max_players`, and `/compiled` compiles
+    // from them; every path past here (fresh mission, warm IDB, conflict prompt) is a state in
+    // which the author may still hit Export, so recording it once here rather than per-branch is
+    // what makes `mission_commands::ROW_META`'s `None` mean exactly what it claims — the row never
+    // arrived, not "it arrived down a branch nobody wired".
+    crate::mission_commands::set_row_meta(&detail);
+
     let row = RowMeta::from(&detail);
     let version = detail.current_version.as_ref();
     let semver = version.map(|v| v.semver.clone());
