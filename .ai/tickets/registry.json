@@ -7563,13 +7563,14 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2460,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "a9f3c34a"
     },
     {
       "id": "T-229",
@@ -9420,14 +9421,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3140,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 1
+      "priority": 1,
+      "shipped_at": "a9f3c34a"
     },
     {
       "id": "T-325",
@@ -9555,7 +9557,7 @@
     {
       "id": "T-331",
       "title": "content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained",
-      "summary": "FOUND by T-228 while constraining role_played; blocking two thirds of that work and not in its owned directory.\n\n`seeds/content_golden.sql:358-369` inserts literal NULL into `matches.aar_replay_url` (2 rows) and `matches.winning_faction` (1 row), under ON CONFLICT (id) DO UPDATE SET ... = EXCLUDED.... **That seed is where the operator's live NULLs came from.** T-228 measured both branches on a pg_dump copy rather than arguing them:\n  - WITH the NOT NULL constraint: `psql < seeds/content_golden.sql` fails `ERROR: null value in column \"aar_replay_url\" ... violates not-null constraint`, exit 3, failing row rf-match-20260704-01.\n  - WITHOUT it: the backfill clears the NULLs, then re-running the seed puts all three back. A backfill-only migration is self-defeating.\n\nSo three `NULL` -> `''` edits at seeds/content_golden.sql:358-369 must land in the SAME commit as the constraint. The exact DDL is already recorded as a comment block at the foot of migrations/0009_role_played_not_null.sql so it does not need re-deriving.\n\n`''` destroys no meaning here and that was checked, not assumed: the mod omits winning_faction from the payload entirely when there is no winner (TBD_ResultsReporter.c:18,546), `outcome` carries pending/failure/aborted, and telemetry.rs:519 already writes COALESCE($8, '') on create — `''` is the canonical no-winner on the only write path that exists.\n\nNOT urgent: `make seed` (Makefile:25-26) does NOT apply content_golden.sql — it is a manual operator tool, so this is not CI-red today. It would make the golden DB un-rebuildable once the constraint lands. Do NOT touch match_player_stats.command_win, which T-228 checked and left alone: NULL there is a real third state (not a command slot / not adjudicated), distinct from false, and already Option<bool> on both sides.",
+      "summary": "FOUND by T-228 while constraining role_played; blocking two thirds of that work and not in its owned directory.\n\n`seeds/content_golden.sql:358-369` inserts literal NULL into `matches.aar_replay_url` (2 rows) and `matches.winning_faction` (1 row), under ON CONFLICT (id) DO UPDATE SET ... = EXCLUDED.... **That seed is where the operator's live NULLs came from.** T-228 measured both branches on a pg_dump copy rather than arguing them:\n  - WITH the NOT NULL constraint: `psql < seeds/content_golden.sql` fails `ERROR: null value in column \"aar_replay_url\" ... violates not-null constraint`, exit 3, failing row rf-match-20260704-01.\n  - WITHOUT it: the backfill clears the NULLs, then re-running the seed puts all three back. A backfill-only migration is self-defeating.\n\nSo three `NULL` -> `''` edits at seeds/content_golden.sql:358-369 must land in the SAME commit as the constraint. The exact DDL is already recorded as a comment block at the foot of migrations/0009_role_played_not_null.sql so it does not need re-deriving.\n\n`''` destroys no meaning here and that was checked, not assumed: the mod omits winning_faction from the payload entirely when there is no winner (TBD_ResultsReporter.c:18,546), `outcome` carries pending/failure/aborted, and telemetry.rs:519 already writes COALESCE($8, '') on create — `''` is the canonical no-winner on the only write path that exists.\n\nNOT urgent: `make seed` (Makefile:25-26) does NOT apply content_golden.sql — it is a manual operator tool, so this is not CI-red today. It would make the golden DB un-rebuildable once the constraint lands. Do NOT touch match_player_stats.command_win, which T-228 checked and left alone: NULL there is a real third state (not a command slot / not adjudicated), distinct from false, and already Option<bool> on both sides.\n\nSCOPE WIDENED 2026-07-26 by T-324, which found a SECOND fixture bug in the same file and corrected my diagnosis of it.\n\nseeds/content_golden.sql:623 and :650 hand-INSERT user 000000000000000005 onto BLUFOR/Alpha#1 AND OPFOR/Recon#1 (fixture UUIDs 00000000-0000-4000-5000-0000000000{05,15}) — one user, two seats. I had told T-324 this row came from the assign_slot handler. IT CANNOT HAVE: assign_slot upserts the registration (slot_id = EXCLUDED.slot_id), so it would have repointed the row at OPFOR, and the registration names the EARLIER seat. Neither handler can produce this shape. It is hand-written fixture data.\n\nWHY THIS MATTERS BEYOND TIDINESS: it means T-228's partial unique index on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL is NOT blocked by production data — it is blocked by this one seed file. T-324 verified the index against every handler path in a scratch DB (register move, bench, idempotent re-claim, assign, withdraw promotion, race-loser 409, reservation 409) and its fix COMPOSES with it. It also proved the ordering is what makes it compose: release-then-claim commits cleanly, claim-then-release raises 23505.\n\nSo fixing these two seed rows converts the double-seat invariant from handler DISCIPLINE into a STRUCTURAL guarantee. That is the real prize here.\n\nONE BLOCKER when the index lands: tests/events.rs:540 seeds the legacy two-seat state that T-318's recovery regression needs, and a partial unique index cannot be DEFERRABLE. Either drop the index around that seed or retire the assertion — decide deliberately, it is testing a real recovery path.",
       "program": "platform",
       "surfaces": [
         "DATA"
@@ -9612,6 +9614,27 @@
       ],
       "executor": "claude-code",
       "priority": 3
+    },
+    {
+      "id": "T-334",
+      "title": "events.rs integration tests flake on a cold database via dev-login",
+      "summary": "OBSERVED ONCE by T-324 and reported rather than buried: on a COLD database, the two-test parallel run of apps/website/api/tests/events.rs failed with `dev-login` returning no `Location` header. Never reproduced on a warm DB across four subsequent runs.\n\nFiled because of where it will land, not because of its severity: `cargo test -p website-api` is INSIDE the wave gate, and this program runs unattended. A flake here reads as a code failure, and an unattended fix agent can spend its entire retry budget 'fixing' working code — that exact failure shape has already cost this program hours (see the trunk/dist race, T-322's premise, and smokes.rs:2715 returning an env fault as gate-red).\n\nLikely a first-request migration/warmup race rather than a logic bug. Reproduce by dropping and recreating the test database, then running the two tests in parallel. If it is warmup, the fix is probably to make the harness await readiness rather than to retry.",
+      "program": "platform",
+      "surfaces": [
+        "CI",
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3150,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }
