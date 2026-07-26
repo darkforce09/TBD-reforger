@@ -7635,8 +7635,8 @@
     },
     {
       "id": "T-232",
-      "title": "Six pages render literally nothing when real data arrives",
-      "summary": "The content-golden-gated branches are not untested code, they are absent — each is a literal ().into_any(): announcements.rs:67, events.rs:63,72, audit.rs:68,72, deployments.rs:163,189, dashboard.rs:341. Three also have an unconditionally empty detail pane with no selection state.\n\nOWNS COLUMN WAS WRONG, corrected 2026-07-26 before dispatch. The plan pointed at four BACKEND handlers (apps/website/api/src/handlers/{announcements,events,audit,deployments}.rs) while the bug is in six FRONTEND page modules — an agent dispatched on it would have edited entirely the wrong files and found nothing. Caught by T-226, which confirmed the real site while working next door.\n\nThe defect, verified: `apps/website/frontend/src/events.rs:72` is a literal `().into_any()` for the NON-EMPTY branch, with an unconditional SplitPaneEmpty detail at :74-80. Fixtures have been populated since T-194 (GET__events.json = 4 events) and the live API returns 4 — so this is not 'correct but empty', the populated render branch was never written. Same shape confirmed at announcements.rs:68, dashboard.rs:342, audit.rs:72, deployments.rs:164 and :190, modpacks.rs:257 — six modules, matching this ticket's title exactly.",
+      "title": "Five pages render literally nothing when real data arrives",
+      "summary": "The content-golden-gated branches are not untested code, they are absent — each is a literal ().into_any(): announcements.rs:67, events.rs:63,72, audit.rs:68,72, deployments.rs:163,189, dashboard.rs:341. Three also have an unconditionally empty detail pane with no selection state.\n\nOWNS COLUMN WAS WRONG, corrected 2026-07-26 before dispatch. The plan pointed at four BACKEND handlers (apps/website/api/src/handlers/{announcements,events,audit,deployments}.rs) while the bug is in six FRONTEND page modules — an agent dispatched on it would have edited entirely the wrong files and found nothing. Caught by T-226, which confirmed the real site while working next door.\n\nThe defect, verified: `apps/website/frontend/src/events.rs:72` is a literal `().into_any()` for the NON-EMPTY branch, with an unconditional SplitPaneEmpty detail at :74-80. Fixtures have been populated since T-194 (GET__events.json = 4 events) and the live API returns 4 — so this is not 'correct but empty', the populated render branch was never written. Same shape confirmed at announcements.rs:68, dashboard.rs:342, audit.rs:72, deployments.rs:164 and :190, modpacks.rs:257 — six modules, matching this ticket's title exactly.\n\nSHIPPED 2026-07-26 — and it is FIVE pages, not six. Title corrected.\n\nmodpacks.rs:257 IS A FALSE POSITIVE, retired with evidence rather than argument. That ().into_any() is the absent `trailing` badge for a non-current pack — the intentional stand-in for React's undefined, with a comment saying so. The page is MOCK_MODPACKS-driven, has no emptiness gate, and already rendered fully. The original audit grepped for `().into_any()` and caught a legitimate empty slot. The agent left the file untouched and added browser assertions M1-M3 proving it renders.\n\nEvery other claimed line number was EXACT despite 82 intervening commits. The competing audit's `announcements.rs:67` and `events.rs:63` were the comments above the real sites. Two unconditional empty detail panes were found that the ticket did NOT name: announcements.rs:77-83 and audit.rs:80-86.\n\nTHREE MORE LIVE DEFECTS found by reading dashboard.rs's gated block rather than just filling it: the hero printed a raw ISO string `T-MINUS 2026-08-01T19:00:00Z` instead of the countdown_label already sitting next to it; UPTIME returned \"—\" on BOTH match arms; and server_fps is numeric(5,1) so as_i64() returned None and the card rendered a confident `FPS: 0` for a healthy server.\n\nIDIOM DECISIONS, all taken from event_manager.rs (T-226) and split_pane.rs, no new vocabulary: only events.rs has a selection-keyed detail fetch so only it CAN go stale, and it got T-226's three-state enum literally — carrying the event id, rendering loading whenever the held id differs from the selection. The other four need no second fetch, so StoredValue over the one payload designs the hazard out rather than guarding it. Auto-select on events.rs via a derived Memo, not an Effect, to avoid write-during-render; deliberately NOT on announcements/audit, where explicit selection matches the spec and keeps SplitPaneEmpty an honest zero-selection render.\n\nVERIFIED 69/69 IN A BROWSER: 45/45 populated assertions with 0 console errors, then the same stack rebuilt against an empty-payload stub for 24/24 on the empty branches — so 'empty goldens unchanged' is measured, not asserted. Stale-wasm check done: all 11 new strings grepped present in the built artifact.\n\nHonest split: the audit inspector's metadata <pre> is reasoned only — the seeded audit_logs rows carry no metadata key at all (the committed fixture does, the DB does not), so only the Option gate rendering nothing could be asserted. Markdown bodies in announcements render inline **bold** and backticks literally.",
       "program": "platform",
       "surfaces": [
         "SHELL"
@@ -7644,13 +7644,14 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2500,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "5954bd76"
     },
     {
       "id": "T-233",
@@ -9049,7 +9050,7 @@
     {
       "id": "T-306",
       "title": "server_fps type mismatch silently blanks the whole Server Intel page",
-      "summary": "REPRODUCED by T-194 against a populated fixture, not inferred. models/telemetry.rs:102 serializes numeric(5,1) cast to float8; frontend/src/dto.rs:101 deserializes i64. A probe using the DTO verbatim: 'TBD Primary — Everon server_fps: 58.7 -> DROPPED (invalid type: floating point `58.7`, expected i64)'. Both read sites swallow the error — server_intel.rs:150 uses .ok() and sse.rs:80 uses `if let Ok(...)` — so against a COMPLETE, HEALTHY frame the page renders 0/0 players and '—' for uptime, FPS, time and weather, and the SSE stream reports connected while updating nothing. The whole page looks like a dead server. Fix the DTO to f64 (do not round the wire value). NOTE: the R-api golden gate CANNOT catch this — it types /servers as DataEnvelope<Value>, so the round-trip passes while the real DTO fails. Consider typing that fixture properly at the same time.",
+      "summary": "REPRODUCED by T-194 against a populated fixture, not inferred. models/telemetry.rs:102 serializes numeric(5,1) cast to float8; frontend/src/dto.rs:101 deserializes i64. A probe using the DTO verbatim: 'TBD Primary — Everon server_fps: 58.7 -> DROPPED (invalid type: floating point `58.7`, expected i64)'. Both read sites swallow the error — server_intel.rs:150 uses .ok() and sse.rs:80 uses `if let Ok(...)` — so against a COMPLETE, HEALTHY frame the page renders 0/0 players and '—' for uptime, FPS, time and weather, and the SSE stream reports connected while updating nothing. The whole page looks like a dead server. Fix the DTO to f64 (do not round the wire value). NOTE: the R-api golden gate CANNOT catch this — it types /servers as DataEnvelope<Value>, so the round-trip passes while the real DTO fails. Consider typing that fixture properly at the same time.\n\nINDEPENDENTLY CONFIRMED STILL LIVE by T-232 (2026-07-26), which found it from the frontend side and added a dimension the original filing missed:\n\n`sse.rs:80` does `if let Ok(json) = serde_json::from_str::<ServerStatusDto>(...)`, so EVERY LIVE TELEMETRY SSE FRAME SILENTLY FAILS TO DESERIALIZE AND IS DROPPED. Not just the Server Intel page render — the whole realtime stream is inert while reporting connected. T-232 also traced the same root cause to a confident `FPS: 0` on the dashboard card for a healthy server, which it fixed locally; the DTO itself (dto.rs:101 `pub server_fps: i64` against models/telemetry.rs:131 f64 over numeric(5,1)) was outside its ownership and is still wrong.\n\nTwo independent agents have now reached this from opposite directions. Fix the DTO to f64 and do NOT round the wire value.",
       "program": "platform",
       "surfaces": [
         "DATA"
@@ -10009,6 +10010,46 @@
       ],
       "executor": "claude-code",
       "priority": 3
+    },
+    {
+      "id": "T-353",
+      "title": "Four SPA gaps T-232 could not reach from its own files",
+      "summary": "All found by T-232 while writing the populated render branches; each needs a file it did not own.\n\n1. **`event_hub.rs:182` `fn event_hub_view` is private.** The /events surface spec wants the full inline-ORBAT hub in the detail column. T-232 built a self-contained dossier summary plus a deep link instead. Making it `pub(crate)` gets events.rs to spec parity without duplicating anything.\n\n2. **No `/announcements/:id` route exists** (`router.rs`), so the dashboard intel feed row — spec element 20 — links to `/announcements` rather than deep-linking the post. Needs the route plus URL-driven selection in announcements.rs. Note T-232 deliberately left announcements.rs WITHOUT auto-selection, so a deep link is the intended way in.\n\n3. **`server_intel.rs:30` `format_uptime` is private**, so dashboard.rs now carries a duplicate. Wants a shared home in `datefmt.rs` — and `log_stamp` from audit.rs wants to go with it. Two definitions of a displayed timestamp drifting apart is the same class as the two definitions of 'a deployment' T-326 refused to create.\n\n4. **`POST /me/leave-requests` exists (`api/src/app.rs:100`) with NO CALLER in the SPA** — the deployments spec's LOA button, item 8. Identical shape to the dead PATCH/DELETE T-226 found and wired. T-232 correctly left it: that slice was render branches, not mutations.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3169,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-354",
+      "title": "Chrome's stderr pipe must be drained or CDP deadlocks with no error anywhere",
+      "summary": "FOUND by T-232 the hard way — its second harness hung silently until it worked this out. This is a harness-authoring trap that will cost every future agent hours if it is not written down.\n\n**Chrome's stderr pipe must be drained, or it blocks at 64 KB and deadlocks mid-CDP with no error surfaced anywhere.** The symptom is indistinguishable from the page hanging — which is precisely the misdiagnosis that cost this program five sessions on T-320, where the real cause was the browser process aborting on a font lookup.\n\nTwo more from the same slice, both of which produced a misleading 26/44 score on its first run:\n  - Chrome's `innerText` APPLIES CSS `text-transform: uppercase`, so an assertion against 'Attached Missions' fails against a rendered 'ATTACHED MISSIONS'. T-226 hit this independently and 'fixed' a non-bug because of it.\n  - The platform sidebar (`layout.rs:296`) and the mobile drawer (`:97`) are BOTH `<aside>`, so an `<aside>` selector is ambiguous.\n\nWhere this belongs: `docs/website/EDITOR_GATE_RUNBOOK.md` §Known harness gaps, which T-320 created for exactly this purpose, and `tools/tbd-tools/src/cdp.rs` if the drain is missing there too — check whether the committed harness has this bug, because if it does it is a live intermittent gate failure, not just a trap for hand-rolled probes.",
+      "program": "platform",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3170,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
     }
   ]
 }
