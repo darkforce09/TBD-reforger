@@ -1,5 +1,5 @@
 {
-  "next_id": 298,
+  "next_id": 299,
   "tickets": [
     {
       "id": "T-001",
@@ -8855,6 +8855,25 @@
       ],
       "status": "idea",
       "order": 2297,
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-298",
+      "title": "tbd-tools density::corner_partition_identity fails on main",
+      "summary": "`cargo test -p tbd-tools --lib density::` fails on clean main: corner_partition_identity asserts a partition invariant and gets 401 on the right-hand side. It is pre-existing and invisible because CI never tests this crate — ci.yml:68 runs website-api and :115 runs website-frontend, and the mod wave gate only runs `-p tbd-tools --lib enf::`, which excludes density. This is the density-grid code behind the map-object catalogue (625 TBDD grids, 8m cells), so a broken partition invariant is not cosmetic. Fix the test or the code, and add tbd-tools to a gate so it cannot rot again — pairs with T-297 (cargo fmt --all is ungated over the same crate).",
+      "program": "infra",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "registry-hygiene"
+      ],
+      "status": "idea",
+      "order": 2298,
       "stream": "infra",
       "targets": [
         "root"

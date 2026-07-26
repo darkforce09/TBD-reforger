@@ -60,10 +60,14 @@ export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$MAIN_ROOT/target}"
 # build. Eight worktrees would exhaust 129 GB of free disk around the third slice, and every gate
 # after that fails with a No-space error that reads exactly like a compile error.
 # It must be passed explicitly through `env`.
+# The timeout lives HERE, not in run(). Two reasons: `command -v` matches shell functions, so a
+# run()-level wrapper tried to `timeout hostrun` and failed outright; and wrapping on this side
+# kills the actual host process rather than just severing the bridge and orphaning a cargo build.
+GATE_TIMEOUT="${TBD_GATE_TIMEOUT:-1200}"
 if command -v distrobox-host-exec >/dev/null 2>&1; then
-  hostrun() { distrobox-host-exec env "CARGO_TARGET_DIR=$CARGO_TARGET_DIR" "$@"; }
+  hostrun() { distrobox-host-exec timeout "$GATE_TIMEOUT" env "CARGO_TARGET_DIR=$CARGO_TARGET_DIR" "$@"; }
 else
-  hostrun() { "$@"; }
+  hostrun() { timeout "$GATE_TIMEOUT" "$@"; }
 fi
 
 plan_rows() { grep -v '^#' "$PLAN" 2>/dev/null | grep -v '^wave[[:space:]]' | sed '/^\s*$/d'; }
@@ -146,12 +150,43 @@ cmd_prep() {
 # (mostly tools/tbd-tools/src/bin/enf.rs, written during T-181 and never formatted), so a
 # workspace-wide check would be red on day one for every agent — the precise anti-pattern that
 # made verify-no-python worthless. Scope it to the diff and the gate stays honest.
+# The edition is NOT fixed across this workspace: apps/website/api is edition 2024, most other
+# crates are 2021, and the two style editions sort a mixed-case brace import differently. Hardcoding
+# --edition 2021 made every slice touching an edition-2024 file fail a gate it did not cause — main's
+# own `use axum::http::{HeaderMap, HeaderValue, StatusCode, header};` already fails the 2021 form.
+# Resolve each file's edition from the nearest Cargo.toml above it.
+file_edition() {
+  local d; d="$(dirname "$1")"
+  while [ "$d" != "." ] && [ "$d" != "/" ]; do
+    if [ -f "$d/Cargo.toml" ]; then
+      local e; e="$(grep -m1 '^edition' "$d/Cargo.toml" | tr -dc '0-9')"
+      [ -n "$e" ] && { echo "$e"; return; }
+    fi
+    d="$(dirname "$d")"
+  done
+  echo 2021
+}
+
 fmt_changed() {
-  local files
+  local files f ed rc=0
   files="$(git diff --name-only main...HEAD 2>/dev/null | grep '\.rs$' || true)"
   [ -z "$files" ] && { echo "no Rust files changed"; return 0; }
-  # shellcheck disable=SC2086
-  hostrun rustfmt --edition 2021 --check $files
+  for f in $files; do
+    [ -f "$f" ] || continue
+    ed="$(file_edition "$f")"
+    hostrun rustfmt --edition "$ed" --check "$f" || rc=1
+  done
+  return "$rc"
+}
+
+# Native `cargo check --workspace` does NOT compile the frontend: apps/website/frontend/src is
+# `#![cfg(target_arch = "wasm32")]`, so a native check walks straight past it and reports PASS on a
+# file it never looked at. T-188 hit exactly this. Any slice touching the frontend must be checked
+# for wasm32 or the gate is decorative. Warm cost measured: 0.16s.
+wasm_changed() {
+  git diff --name-only main...HEAD 2>/dev/null | grep -q '^apps/website/frontend/' || {
+    echo "frontend untouched"; return 0; }
+  hostrun cargo check -p website-frontend --target wasm32-unknown-unknown --quiet
 }
 
 # Cheap gate — what a slice agent runs before reporting done. Target: ~10 s warm.
@@ -162,6 +197,7 @@ gate_slice() {
   run() { local l="$1"; shift; printf "  %-24s " "$l"
     if out="$("$@" 2>&1)"; then echo PASS; else echo FAIL; printf '%s\n' "$out" | tail -15 | sed 's/^/      /'; fail=1; fi; }
   run "cargo check"  hostrun cargo check --workspace --quiet
+  run "wasm32 (frontend)" wasm_changed
   run "fmt (changed)" fmt_changed
   echo
   [ "$fail" -ne 0 ] && { echo "SLICE GATE: FAIL"; return 1; }
@@ -181,23 +217,40 @@ cmd_gate() {
   local base="${1:-HEAD~1}"
   echo "═══ platform wave gate (base ${base:0:12}) ═══"
   local fail=0
-  # Every gate is wrapped in `timeout`. Without it, `out="$("$@" 2>&1)"` blocks forever: one wedged
-  # cargo test or trunk build consumes the whole run and emits a single log line. `timeout` needs a
-  # real binary, so shell functions run unwrapped — they are all bounded git/rustfmt calls.
-  local T="${TBD_GATE_TIMEOUT:-1200}"
+  # hostrun applies the timeout host-side; run() only has to report 124 distinctly from a real fail.
   run() {
     local l="$1"; shift
     printf "  %-24s " "$l"
-    if command -v "$1" >/dev/null 2>&1; then out="$(timeout "$T" "$@" 2>&1)"; else out="$("$@" 2>&1)"; fi
-    local rc=$?
+    out="$("$@" 2>&1)"; local rc=$?
     if [ "$rc" -eq 0 ]; then echo PASS
-    elif [ "$rc" -eq 124 ]; then echo "FAIL (TIMEOUT after ${T}s)"; fail=1
+    elif [ "$rc" -eq 124 ]; then echo "FAIL (TIMEOUT after ${GATE_TIMEOUT}s)"; fail=1
     else echo FAIL; printf '%s\n' "$out" | tail -15 | sed 's/^/      /'; fail=1; fi
   }
   run "cargo check"      hostrun cargo check --workspace --quiet
+  run "wasm32 (frontend)" wasm_changed
   run "fmt (changed)"    fmt_changed
-  run "cargo clippy"     hostrun cargo clippy --workspace --all-targets --quiet -- -D warnings
-  run "cargo test"       hostrun cargo test --workspace --quiet
+  # Clippy is scoped to the crates CI actually gates, NOT --workspace.
+  #
+  # `cargo clippy --workspace --all-targets -- -D warnings` is red on clean main — ~45 errors, almost
+  # all in tools/tbd-tools and xtask, which have never been clippy-gated (exactly as they were never
+  # fmt-gated; that drift is T-297). A workspace-wide gate would therefore be red before a single
+  # slice merged, and nothing could ever land. ci.yml gates per-crate (:59 website-api, :91
+  # map-engine, :112 website-frontend on wasm32) and this mirrors it.
+  run "clippy api"       hostrun cargo clippy -p website-api --all-targets --quiet -- -D warnings
+  run "clippy map-engine" hostrun cargo clippy -p map-engine-core -p map-engine-render --all-targets --quiet -- -D warnings
+  # NOTE: no `-D warnings` here, deliberately — ci.yml:113 runs frontend clippy WITHOUT it, so
+  # warnings are advisory upstream and there are 25 of them on clean main. Adding -D here would make
+  # the gate stricter than CI and red on arrival. The weakness is real but it is not this run's to
+  # fix; filed separately.
+  run "clippy frontend"  hostrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --quiet
+  # Scoped to CI's crates for the same reason clippy is: `cargo test --workspace` pulls in
+  # tools/tbd-tools, which CI never tests and which has a FAILING test on clean main
+  # (density::tests::corner_partition_identity — pre-existing, filed as its own ticket). A gate that
+  # is red before any slice merges is a gate nothing can ever pass. ci.yml:68 tests website-api,
+  # :115 tests website-frontend; map-engine is covered by its own job.
+  run "test api"         hostrun cargo test -p website-api --quiet
+  run "test map-engine"  hostrun cargo test -p map-engine-core -p map-engine-render --quiet
+  run "test frontend"    hostrun cargo test -p website-frontend --quiet
   # The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
   # when the wave actually touched the frontend — measured across the WHOLE wave, not the last merge.
   if git diff --name-only "$base..HEAD" 2>/dev/null | grep -q '^apps/website/frontend/'; then

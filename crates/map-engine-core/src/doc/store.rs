@@ -580,13 +580,13 @@ impl MissionDocCore {
             },
             _ => return,
         };
-        if let Some(sid) = squad_id {
-            if let Some(Out::YMap(sq)) = self.squads.get(&txn, &sid) {
-                let arr = read_id_array(&txn, &self.squads, &sid, "vehicleIds");
-                let remove: HashSet<&str> = HashSet::from([vehicle_id]);
-                let kept = retain_ids(&arr, &remove);
-                sq.insert(&mut txn, "vehicleIds", Any::Array(kept.into()));
-            }
+        if let Some(sid) = squad_id
+            && let Some(Out::YMap(sq)) = self.squads.get(&txn, &sid)
+        {
+            let arr = read_id_array(&txn, &self.squads, &sid, "vehicleIds");
+            let remove: HashSet<&str> = HashSet::from([vehicle_id]);
+            let kept = retain_ids(&arr, &remove);
+            sq.insert(&mut txn, "vehicleIds", Any::Array(kept.into()));
         }
         self.vehicles.remove(&mut txn, vehicle_id);
     }
