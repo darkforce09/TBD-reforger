@@ -2,8 +2,18 @@
 //! envelope + the endpoint bodies the client/pages need; each is proven byte-exact against a live
 //! backend by the **R-api gate** (the `#[cfg(test)] mod r_api` at the bottom): every committed
 //! golden under `tests/fixtures/api/` — captured from a running Axum stack —
-//! deserializes into its DTO and re-serializes **canonically byte-equal** to the golden. A dropped,
-//! renamed, or wrong-typed field breaks the equality, so drift can't ship silently.
+//! deserializes into its DTO and re-serializes **canonically byte-equal** to the golden.
+//!
+//! **T-394 — byte-equality alone does not prove that.** It compares two strings, and a
+//! `#[serde(flatten)]` sibling can produce the right string on behalf of a named field that no
+//! longer exists: drop `MissionCard::rejection_reason` and its key is simply collected by the
+//! `extra: Map<String, Value>` catch-all and re-emitted verbatim — same bytes, green gate, field
+//! gone from the type. So the gate has a **second, structural half** (`assert_golden` runs both):
+//! every key in the golden must be *claimed* by a named, typed field, proven by poisoning the
+//! value and requiring serde to reject it. Each test declares the golden's inventory of keys the
+//! DTO does not read, and the set must match exactly, so the inventory cannot rot in either
+//! direction. `byte_equality_alone_cannot_see_a_dropped_field_under_flatten` is the frozen proof
+//! that the two halves really do disagree.
 //!
 //! Strong vs envelope: `MeResponse`/`ModpackDto`/`DashboardResponse`/`LinkStatus`/`Deployments`/
 //! `Leaderboard` are fully typed (every field asserted). List bodies whose *item* type isn't ported
@@ -889,15 +899,21 @@ mod tests {
 // _index.tsv) must round-trip through its DTO **canonically byte-equal**. `canon` sorts object keys
 // recursively (order-independent, works with or without serde_json's preserve_order feature) and
 // normalizes whitespace/number-repr on BOTH sides equally, so the assertion isolates exactly one
-// thing: does the DTO's serialized field-set + values match the live backend's? Any drop / rename /
-// type change fails it. This is the load-bearing R-api proof (stronger than a browser round-trip:
-// deterministic, no network, compile-time-pinned goldens).
+// thing: does the DTO's serialized field-set + values match the live backend's?
+//
+// T-394: that comparison is textual, so on a struct carrying `#[serde(flatten)]` it is satisfied
+// by the flattened sibling re-emitting a key whose named field was deleted. `assert_golden` is
+// therefore two assertions — the byte-equality above, plus `assert_every_wire_key_is_claimed`,
+// which asks the *type* whether anything actually reads each key. Together they are the
+// load-bearing R-api proof (stronger than a browser round-trip: deterministic, no network,
+// compile-time-pinned goldens).
 // `pub(crate)` so `sse.rs`'s own tests can drive the one captured live SSE frame
 // (`LIVE_SSE_FRAME`) through the real decoder instead of keeping a second, drifting copy of it.
 #[cfg(test)]
 pub(crate) mod r_api {
     use super::*;
     use serde::de::DeserializeOwned;
+    use serde_json::json;
 
     /// Recursively key-sort + renormalize a JSON string to a canonical form.
     fn canon(s: &str) -> String {
@@ -921,8 +937,14 @@ pub(crate) mod r_api {
         serde_json::to_string(&sort(v)).unwrap()
     }
 
-    /// The gate: `golden` must deserialize into `T` and re-serialize canonical-equal to `golden`.
-    fn assert_golden<T: Serialize + DeserializeOwned>(golden: &str) {
+    /// Half one — the textual gate: `golden` must deserialize into `T` and re-serialize
+    /// canonical-equal to `golden`. This is the original `assert_golden`, unchanged.
+    ///
+    /// **It cannot see a dropped field on any struct carrying `#[serde(flatten)]`** — see
+    /// [`assert_every_wire_key_is_claimed`] for the half that can, and
+    /// [`byte_equality_alone_cannot_see_a_dropped_field_under_flatten`] for the proof that it
+    /// can't.
+    fn assert_canonical_round_trip<T: Serialize + DeserializeOwned>(golden: &str) {
         let dto: T = serde_json::from_str(golden)
             .unwrap_or_else(|e| panic!("R-api: golden does not deserialize into the DTO: {e}"));
         let back = serde_json::to_string(&dto).expect("DTO re-serializes");
@@ -930,6 +952,205 @@ pub(crate) mod r_api {
             canon(golden),
             canon(&back),
             "R-api: DTO must re-serialize canonically byte-equal to the live-backend golden"
+        );
+    }
+
+    /* ═══════════════════════ T-394 — the structural half of the gate ═══════════════════════
+       `assert_canonical_round_trip` compares two *strings*. A `#[serde(flatten)]` sibling can
+       satisfy that comparison on behalf of a named field that no longer exists: delete
+       `MissionCard::rejection_reason` and the key it used to own is simply collected by the
+       `extra: Map<String, Value>` catch-all instead, then re-emitted verbatim. Same bytes out,
+       gate green, field gone from the type. T-389 proved it as a negative control — with
+       `#[serde(skip)]` on `rejection_reason` the byte-equality passed and only its hand-written
+       "is this a named field with a value" assertion failed.
+
+       Hand-writing that assertion per field is not the fix: it has to be written again for every
+       field of every struct, and the fields it is NOT written for stay invisible — the same
+       "the gate can only see what someone remembered to look at" defect in a new costume.
+
+       So this half asserts on the **deserialized type** instead of the text, and it needs no
+       per-field code at all. For every position in the golden it replaces the value with a
+       poison and asks serde whether that breaks the decode. A named field with a real type
+       rejects at least one poison (a `String`/number/bool rejects both, a `Vec<_>` rejects the
+       object, a struct/map rejects the array). A key that is only being swept into a flatten
+       catch-all rejects neither — `Map<String, Value>` takes anything — and that is exactly the
+       signal "no named field of this DTO is reading this key". A `Value`-typed field is
+       indistinguishable from a catch-all here, correctly: it, too, reads nothing (T-306).
+
+       Each test therefore declares the golden's *inventory of holes* and the set must match
+       exactly, so the inventory cannot rot in either direction: a new entry means a named field
+       was dropped or renamed, a missing entry means a key was promoted to a named field.
+    */
+
+    /// One step down into the golden's JSON tree. Array indices render as `*`, so the inventory
+    /// is one line per **shape** rather than one per row.
+    #[derive(Clone, Copy)]
+    enum Step<'a> {
+        Key(&'a str),
+        Index(usize),
+    }
+
+    fn render(path: &[Step<'_>]) -> String {
+        path.iter()
+            .map(|s| match s {
+                Step::Key(k) => (*k).to_string(),
+                Step::Index(_) => "*".to_string(),
+            })
+            .collect::<Vec<_>>()
+            .join("/")
+    }
+
+    fn node_at<'a>(root: &'a Value, path: &[Step<'_>]) -> &'a Value {
+        let mut cur = root;
+        for step in path {
+            cur = match step {
+                Step::Key(k) => &cur[*k],
+                Step::Index(i) => &cur[*i],
+            };
+        }
+        cur
+    }
+
+    /// `root` with the node at `path` replaced by `poison`.
+    fn poisoned(root: &Value, path: &[Step<'_>], poison: &Value) -> Value {
+        let mut out = root.clone();
+        let mut cur = &mut out;
+        for step in path {
+            cur = match step {
+                Step::Key(k) => cur.get_mut(*k).expect("path was walked out of this tree"),
+                Step::Index(i) => cur.get_mut(*i).expect("path was walked out of this tree"),
+            };
+        }
+        *cur = poison.clone();
+        out
+    }
+
+    /// Is the node at `path` **claimed** — i.e. does some named field of `T` actually read it?
+    ///
+    /// Two poisons, because one is not enough: an object is rejected by every scalar and by
+    /// `Vec<_>`, an array is rejected by every scalar and by every struct/map. Claimed means at
+    /// least one of them breaks the decode.
+    fn claimed<T: DeserializeOwned>(root: &Value, path: &[Step<'_>]) -> bool {
+        [
+            json!({ "__t394_poison__": true }),
+            json!(["__t394_poison__"]),
+        ]
+        .iter()
+        .any(|p| serde_json::from_value::<T>(poisoned(root, path, p)).is_err())
+    }
+
+    /// Depth-first over the golden. An unclaimed position is recorded and **not** descended into:
+    /// everything under a `Value` sink is unclaimed by construction, and listing it would bury the
+    /// one line that matters.
+    fn walk<'a, T: DeserializeOwned>(
+        root: &'a Value,
+        path: &mut Vec<Step<'a>>,
+        out: &mut Vec<String>,
+    ) {
+        let visit = |path: &mut Vec<Step<'a>>, out: &mut Vec<String>| {
+            if claimed::<T>(root, path) {
+                walk::<T>(root, path, out);
+            } else {
+                out.push(render(path));
+            }
+        };
+        match node_at(root, path) {
+            Value::Object(m) => {
+                for k in m.keys() {
+                    path.push(Step::Key(k));
+                    visit(path, out);
+                    path.pop();
+                }
+            }
+            Value::Array(a) => {
+                for i in 0..a.len() {
+                    path.push(Step::Index(i));
+                    visit(path, out);
+                    path.pop();
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// Every key on the wire that no named field of `T` reads.
+    fn unclaimed_keys<T: DeserializeOwned>(golden: &str) -> Vec<String> {
+        let root: Value = serde_json::from_str(golden).expect("golden is valid JSON");
+        let mut out = Vec::new();
+        walk::<T>(&root, &mut Vec::new(), &mut out);
+        out.sort();
+        out.dedup();
+        out
+    }
+
+    /// Half two — the structural gate: the golden's unclaimed-key set must be exactly `expected`.
+    fn assert_every_wire_key_is_claimed<T: DeserializeOwned>(golden: &str, expected: &[&str]) {
+        let got = unclaimed_keys::<T>(golden);
+        let mut want: Vec<String> = expected.iter().map(|s| (*s).to_string()).collect();
+        want.sort();
+        want.dedup();
+        if got == want {
+            return;
+        }
+        let appeared: Vec<&String> = got.iter().filter(|k| !want.contains(k)).collect();
+        let vanished: Vec<&String> = want.iter().filter(|k| !got.contains(k)).collect();
+        panic!(
+            "R-api (T-394): the set of wire keys no named DTO field claims has changed.\n\
+             NEWLY UNCLAIMED {appeared:?}\n  \
+             — a named field was dropped or renamed, and a `#[serde(flatten)]` catch-all is now\n  \
+             swallowing its key. Byte-equality stays green through this; that is the whole point\n  \
+             of this assertion.\n\
+             NO LONGER UNCLAIMED {vanished:?}\n  \
+             — the key is a named field now. Drop it from this test's list.\n\
+             full unclaimed set: {got:?}"
+        );
+    }
+
+    /// The gate: both halves. `unclaimed` is this golden's inventory of keys the DTO does not
+    /// read — `&[]` means the DTO claims every byte on the wire.
+    fn assert_golden<T: Serialize + DeserializeOwned>(golden: &str, unclaimed: &[&str]) {
+        assert_canonical_round_trip::<T>(golden);
+        assert_every_wire_key_is_claimed::<T>(golden, unclaimed);
+    }
+
+    /// **The proof that the structural half is not vacuous, frozen as a test.**
+    ///
+    /// Two shapes of the same wire row. `Claimed` names `rejection_reason`; `Absorbed` is the
+    /// T-389 negative control — the field is `#[serde(skip)]`ped, so the flatten catch-all takes
+    /// the key instead. The old gate cannot tell them apart. The new one can, and this runs on
+    /// every `cargo test` rather than living in a commit message.
+    #[derive(Serialize, Deserialize)]
+    struct Claimed {
+        id: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        rejection_reason: Option<String>,
+        #[serde(flatten)]
+        extra: serde_json::Map<String, Value>,
+    }
+
+    #[derive(Serialize, Deserialize)]
+    struct Absorbed {
+        id: String,
+        #[serde(skip)]
+        #[allow(dead_code)]
+        rejection_reason: Option<String>,
+        #[serde(flatten)]
+        extra: serde_json::Map<String, Value>,
+    }
+
+    #[test]
+    fn byte_equality_alone_cannot_see_a_dropped_field_under_flatten() {
+        const ROW: &str = r#"{"id":"m1","rejection_reason":"too many AI"}"#;
+        // The defect: the textual gate is green either way. Deleting the named field changed
+        // nothing it can measure, because `extra` re-emits the key byte-for-byte.
+        assert_canonical_round_trip::<Claimed>(ROW);
+        assert_canonical_round_trip::<Absorbed>(ROW);
+        // The structural gate separates them by asking the *type*, not the text.
+        assert_eq!(unclaimed_keys::<Claimed>(ROW), Vec::<String>::new());
+        assert_eq!(
+            unclaimed_keys::<Absorbed>(ROW),
+            vec!["rejection_reason".to_string()],
+            "with no named field reading it, the key is only being swept into `extra`"
         );
     }
 
@@ -945,37 +1166,56 @@ pub(crate) mod r_api {
     // ── strong-typed bodies (every field asserted) ──
     #[test]
     fn me() {
-        assert_golden::<MeResponse>(golden!("GET__me.json"));
+        assert_golden::<MeResponse>(golden!("GET__me.json"), &[]);
     }
     #[test]
     fn modpack_current() {
-        assert_golden::<ModpackDto>(golden!("GET__modpacks__current.json"));
+        assert_golden::<ModpackDto>(golden!("GET__modpacks__current.json"), &[]);
     }
     #[test]
     fn dashboard() {
-        assert_golden::<DashboardResponse>(golden!("GET__dashboard.json"));
+        // The four still-untyped nested bodies, named. `server_status` is the third read site of
+        // the telemetry payload the module header calls out — typing it as `ServerStatusDto` would
+        // delete that line from this list, which is the point of keeping the list exact.
+        assert_golden::<DashboardResponse>(
+            golden!("GET__dashboard.json"),
+            &[
+                "my_assignment",
+                "next_event",
+                "recent_announcements/*",
+                "server_status",
+            ],
+        );
     }
     #[test]
     fn link_status() {
-        assert_golden::<LinkStatus>(golden!("GET__me__link__status.json"));
+        assert_golden::<LinkStatus>(golden!("GET__me__link__status.json"), &[]);
     }
     #[test]
     fn deployments() {
-        assert_golden::<Deployments>(golden!("GET__me__deployments.json"));
+        // Both lists are `Vec<Value>` — the service-record rows and the upcoming ops are not
+        // ported types yet, so nothing below them is asserted.
+        assert_golden::<Deployments>(
+            golden!("GET__me__deployments.json"),
+            &["service_history/*", "upcoming/*"],
+        );
     }
     #[test]
     fn leaderboards() {
-        assert_golden::<Leaderboard>(golden!("GET__leaderboards.json"));
+        // `data` is `Vec<Value>` — the envelope is proven, the row is not.
+        assert_golden::<Leaderboard>(golden!("GET__leaderboards.json"), &["data/*"]);
     }
     #[test]
     fn registry_envelope() {
-        assert_golden::<RegistryResponse>(golden!("GET__registry.json"));
+        assert_golden::<RegistryResponse>(golden!("GET__registry.json"), &[]);
     }
     #[test]
     fn mission_detail() {
-        assert_golden::<MissionDetail>(golden!(
-            "GET__missions__512d8658-7025-4a70-94e9-a1b44a7aa155.json"
-        ));
+        // `json_payload` is the editor superset, deliberately opaque (`Value`).
+        assert_golden::<MissionDetail>(
+            golden!("GET__missions__512d8658-7025-4a70-94e9-a1b44a7aa155.json"),
+            &["current_version/json_payload"],
+        );
     }
     /// T-389 — the golden above is a `draft`, so all three review-stamp fields are **absent** from
     /// it. Against `Option` + `skip_serializing_if` that round-trips absent → `None` → absent and
@@ -987,7 +1227,7 @@ pub(crate) mod r_api {
     #[test]
     fn mission_detail_rejected_carries_the_review_stamp() {
         const G: &str = golden!("GET__missions__82b937fc-c88e-4bb9-abb3-0bef67379398.json");
-        assert_golden::<MissionDetail>(G);
+        assert_golden::<MissionDetail>(G, &["current_version/json_payload"]);
         // Belt-and-braces on the round-trip: assert the golden really is the present case, so this
         // test cannot quietly decay into a second copy of the absent one if the fixture is
         // recaptured off a draft.
@@ -1002,18 +1242,20 @@ pub(crate) mod r_api {
     }
     #[test]
     fn event_hub() {
-        assert_golden::<EventHub>(golden!(
-            "GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json"
-        ));
+        assert_golden::<EventHub>(
+            golden!("GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json"),
+            &[],
+        );
     }
     /// T-306 — was `DataEnvelope<Value>` while the ORBAT selector reads `DataEnvelope<OrbatSquad>`
     /// live. Typing it immediately failed and found `OrbatSlot::assigned_to` skipping a key the
     /// backend emits as an explicit `null`.
     #[test]
     fn orbat_envelope() {
-        assert_golden::<DataEnvelope<OrbatSquad>>(golden!(
-            "GET__event-missions__89b1b731-37a8-4926-901a-3c7ff7de5eb3__orbat.json"
-        ));
+        assert_golden::<DataEnvelope<OrbatSquad>>(
+            golden!("GET__event-missions__89b1b731-37a8-4926-901a-3c7ff7de5eb3__orbat.json"),
+            &[],
+        );
     }
 
     // ── paginated `{data,total,limit,offset}` envelopes (item type ported per page) ──
@@ -1022,12 +1264,31 @@ pub(crate) mod r_api {
     /// as `37.0` from the old `f64`).
     #[test]
     fn events_envelope() {
-        assert_golden::<Paginated<EventListItem>>(golden!("GET__events.json"));
+        // The three row keys `EventListItem` does not name; they ride the `extra` catch-all.
+        assert_golden::<Paginated<EventListItem>>(
+            golden!("GET__events.json"),
+            &[
+                "data/*/created_at",
+                "data/*/created_by",
+                "data/*/updated_at",
+            ],
+        );
     }
+    /// The four `GET /missions` row keys `MissionCard` does not name — they ride the `extra`
+    /// catch-all, and this list is what stands between that catch-all and the T-394 blindness: the
+    /// moment a *named* field stops being named, its key joins this set and both `/missions` tests
+    /// go red. Shared by the two goldens so they cannot drift apart.
+    const MISSION_CARD_EXTRA: &[&str] = &[
+        "data/*/bookmarked",
+        "data/*/created_at",
+        "data/*/current_version_id",
+        "data/*/updated_at",
+    ];
+
     /// T-306 — was `Paginated<Value>` while the Mission Library reads `Paginated<MissionCard>`.
     #[test]
     fn missions_envelope() {
-        assert_golden::<Paginated<MissionCard>>(golden!("GET__missions.json"));
+        assert_golden::<Paginated<MissionCard>>(golden!("GET__missions.json"), MISSION_CARD_EXTRA);
     }
     /// T-389 — the `/missions` golden above has three `live` rows and one `draft`, so it pins
     /// `reviewed_by`/`reviewed_at` (the live rows were approved) but **no row carries a
@@ -1040,7 +1301,7 @@ pub(crate) mod r_api {
     #[test]
     fn missions_envelope_rejected_card_carries_its_reason() {
         const G: &str = golden!("GET__missions__scope-mine-rejected.json");
-        assert_golden::<Paginated<MissionCard>>(G);
+        assert_golden::<Paginated<MissionCard>>(G, MISSION_CARD_EXTRA);
         let page: Paginated<MissionCard> = serde_json::from_str(G).unwrap();
         let rejected: Vec<&MissionCard> = page
             .data
@@ -1068,28 +1329,31 @@ pub(crate) mod r_api {
     /// itself takes `Paginated<Value>`. Type this the day an `AnnouncementDto` lands.
     #[test]
     fn announcements_envelope() {
-        assert_golden::<Paginated<Value>>(golden!("GET__announcements.json"));
+        assert_golden::<Paginated<Value>>(golden!("GET__announcements.json"), &["data/*"]);
     }
     /// T-306 — was `Paginated<Value>` while the approvals queue reads `Paginated<ApprovalRow>`.
     #[test]
     fn approvals_envelope() {
-        assert_golden::<Paginated<ApprovalRow>>(golden!("GET__approvals.json"));
+        assert_golden::<Paginated<ApprovalRow>>(golden!("GET__approvals.json"), &[]);
     }
     /// T-306 — was `Paginated<Value>`; the faction manager reads `FactionListResponse`, which is not
     /// even the same envelope shape the test was asserting.
     #[test]
     fn factions_envelope() {
-        assert_golden::<FactionListResponse>(golden!("GET__factions.json"));
+        assert_golden::<FactionListResponse>(golden!("GET__factions.json"), &[]);
     }
     #[test]
     fn admin_users_envelope() {
-        assert_golden::<Paginated<AdminUserRow>>(golden!("GET__admin__users.json"));
+        assert_golden::<Paginated<AdminUserRow>>(golden!("GET__admin__users.json"), &[]);
     }
     /// Cursor envelope, not offset/total — and `Value` is honest here: the audit page reads
     /// `CursorList<Value>` too.
     #[test]
     fn audit_logs_envelope() {
-        assert_golden::<CursorList<Value>>(golden!("GET__admin__audit-logs.json"));
+        assert_golden::<CursorList<Value>>(
+            golden!("GET__admin__audit-logs.json"),
+            &["data/*", "next_cursor"],
+        );
     }
 
     // ── `{data}` envelopes ──
@@ -1101,7 +1365,7 @@ pub(crate) mod r_api {
     /// exists to catch it.
     #[test]
     fn servers_envelope() {
-        assert_golden::<DataEnvelope<ServerRowDto>>(golden!("GET__servers.json"));
+        assert_golden::<DataEnvelope<ServerRowDto>>(golden!("GET__servers.json"), &[]);
     }
 
     /// One **live** `GET /servers/:id/status/stream` frame, captured byte-exact off a running Axum
@@ -1141,15 +1405,15 @@ pub(crate) mod r_api {
     }
     #[test]
     fn wiki_envelope() {
-        assert_golden::<DataEnvelope<Value>>(golden!("GET__wiki.json"));
+        assert_golden::<DataEnvelope<Value>>(golden!("GET__wiki.json"), &["data/*"]);
     }
     #[test]
     fn vehicle_db_envelope() {
-        assert_golden::<DataEnvelope<Value>>(golden!("GET__vehicle-database.json"));
+        assert_golden::<DataEnvelope<Value>>(golden!("GET__vehicle-database.json"), &["data/*"]);
     }
     #[test]
     fn modpacks_list_envelope() {
-        assert_golden::<DataEnvelope<Value>>(golden!("GET__modpacks.json"));
+        assert_golden::<DataEnvelope<Value>>(golden!("GET__modpacks.json"), &["data/*"]);
     }
 
     // Guard: the fixture dir constant + macro base agree (a rename would break include_str! anyway,
