@@ -1355,3 +1355,403 @@ async fn blank_announcement_fields_are_refused_and_an_unknown_status_is_not_a_si
         );
     }
 }
+
+/// A zero-slot attach is refused, and the reasons it could be zero do not share one answer.
+///
+/// Pre-fix, every row of the table below returned **201** and materialized nothing:
+/// `orbat_template_for_mission` answered `Vec::new()` for a missing version, a swallowed DB
+/// error and an unreadable `orbat` alike, and `add_event_mission` committed regardless (T-227).
+#[tokio::test]
+async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = token(&app, "admin").await;
+
+    let mission = async |title: &str| -> String {
+        let (st, m) = call(
+            &app,
+            "POST",
+            "/api/v1/missions",
+            &admin,
+            Some(&format!(
+                r#"{{"title":"{title}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+            )),
+        )
+        .await;
+        assert_eq!(st, StatusCode::CREATED, "mission {title}: {m}");
+        m["id"].as_str().unwrap().to_string()
+    };
+    // `POST /missions` publishes a version of its own, so each case below sets
+    // `current_version_id` to exactly the state it means to test.
+    let publish = async |mission_id: &str, payload: &str| {
+        let vid = uuid::Uuid::new_v4();
+        sqlx::query(
+            "INSERT INTO mission_versions (id, mission_id, semver, json_payload, editor_notes, created_by, created_at) \
+             VALUES ($1, $2::uuid, '7.7.7', $3::jsonb, '', $4, now())",
+        )
+        .bind(vid)
+        .bind(mission_id)
+        .bind(payload)
+        .bind(DEV_USER)
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query("UPDATE missions SET current_version_id = $1 WHERE id = $2::uuid")
+            .bind(vid)
+            .bind(mission_id)
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    let attach = async |mission_id: &str, orbat: &str| -> (StatusCode, Value) {
+        let (st, e) = call(
+            &app,
+            "POST",
+            "/api/v1/events",
+            &admin,
+            Some(r#"{"start_time":"2027-08-01T00:00:00Z"}"#),
+        )
+        .await;
+        assert_eq!(st, StatusCode::CREATED, "event: {e}");
+        let event_id = e["id"].as_str().unwrap();
+        call(
+            &app,
+            "POST",
+            &format!("/api/v1/events/{event_id}/missions"),
+            &admin,
+            Some(&format!(
+                r#"{{"mission_id":"{mission_id}","start_time":"2027-08-01T00:00:00Z"{orbat}}}"#
+            )),
+        )
+        .await
+    };
+
+    // ── 1. No published version. The mission is real and the request is well-formed; it is the
+    // mission's STATE that cannot answer, so 409 and not 400. ──
+    let m = mission("T227 no version").await;
+    sqlx::query("UPDATE missions SET current_version_id = NULL WHERE id = $1::uuid")
+        .bind(&m)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let (st, b) = attach(&m, "").await;
+    assert_eq!(st, StatusCode::CONFLICT, "missing version: {b}");
+    assert!(
+        b["error"]
+            .as_str()
+            .unwrap()
+            .contains("no published version"),
+        "missing version must say so: {b}"
+    );
+
+    // ── 2. `current_version_id` naming a row that does not exist. The column has NO foreign key
+    // (`0001_initial_schema.sql:370`), so this is reachable — and it is OUR data that is wrong,
+    // which makes it a logged 500 and not something to blame on the caller. This is the
+    // in-suite half of "a database problem must never be silent"; the other half (a genuine
+    // sqlx failure) is now a plain `?` and rides the same `From<sqlx::Error>` 500. ──
+    let m = mission("T227 dangling").await;
+    sqlx::query("UPDATE missions SET current_version_id = gen_random_uuid() WHERE id = $1::uuid")
+        .bind(&m)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let (st, b) = attach(&m, "").await;
+    assert_eq!(
+        st,
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "dangling version id must not read as 'no ORBAT': {b}"
+    );
+
+    // ── 3. An `orbat` that cannot be read. Pre-fix this did not merely vanish — it fell through
+    // to the editor-derived ORBAT, so a DIFFERENT seating plan than the one authored could be
+    // materialized under a 201. 400, naming the payload, with serde's message attached. ──
+    let m = mission("T227 unreadable").await;
+    publish(
+        &m,
+        r#"{"orbat":[{"squad":"Alpha","slots":"not-an-array"}]}"#,
+    )
+    .await;
+    let (st, b) = attach(&m, "").await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "unreadable orbat: {b}");
+    assert!(
+        b["error"].as_str().unwrap().contains("`orbat`"),
+        "the message must name the payload field: {b}"
+    );
+    assert!(
+        b["details"]["orbat"].is_string(),
+        "serde's own reason must survive to the client: {b}"
+    );
+
+    // ── 4. A perfectly VALID payload that seats nobody — T-368's shape, and the one that needs
+    // no mistake at all. `input.orbat.is_empty()` cannot see it, because the squad list is not
+    // empty; only the slot count is. ──
+    let m = mission("T227 valid but empty").await;
+    publish(
+        &m,
+        r#"{"orbat":[{"faction":"USA","squad":"Alpha","slots":[]}]}"#,
+    )
+    .await;
+    let (st, b) = attach(&m, "").await;
+    assert_eq!(st, StatusCode::CONFLICT, "valid payload, no slots: {b}");
+    assert!(
+        b["error"].as_str().unwrap().contains("no slots"),
+        "must say the ORBAT is seatless: {b}"
+    );
+
+    // ── 5. The other door: an `orbat` on the REQUEST with no slots. Same catastrophe, and this
+    // one is the caller's payload, so 400. ──
+    let m = mission("T227 request empty").await;
+    let (st, b) = attach(
+        &m,
+        r#","orbat":[{"faction":"USA","squad":"Alpha","slots":[]}]"#,
+    )
+    .await;
+    assert_eq!(st, StatusCode::BAD_REQUEST, "request orbat, no slots: {b}");
+
+    // ── 6. Control — one real slot still attaches, and materializes exactly one row. Without
+    // this the whole test would pass by refusing everything. ──
+    let m = mission("T227 control").await;
+    let (st, b) = attach(
+        &m,
+        r#","orbat":[{"faction":"USA","callsign":"A","squad":"T227 Alpha","slots":[{"role":"SL"}]}]"#,
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "control must still attach: {b}");
+    let emid = b["id"].as_str().unwrap();
+    let seats: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM orbat_slots WHERE event_mission_id = $1::uuid")
+            .bind(emid)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(seats, 1, "the control attach must materialize its slot");
+}
+
+/// A seatless operation is not an unlimited one, and `events.max_slots` is now a real bound.
+///
+/// The registration guard read `capacity > 0 && registered >= capacity` — at `capacity == 0`
+/// that clause does not protect the comparison, it switches it off, so every seatless
+/// registration was accepted as `registered` without limit (T-227). `add_event_mission` now
+/// refuses to create a zero-slot mission, so the zero-capacity row here is **seeded directly**,
+/// which is also how the pre-fix rows and the dev seed arrive.
+#[tokio::test]
+async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = token(&app, "admin").await;
+    let enl = token(&app, "enlisted").await;
+
+    let mission = async |title: &str| -> String {
+        let (_, m) = call(
+            &app,
+            "POST",
+            "/api/v1/missions",
+            &admin,
+            Some(&format!(
+                r#"{{"title":"{title}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+            )),
+        )
+        .await;
+        m["id"].as_str().unwrap().to_string()
+    };
+    let event = async |max_slots: i64| -> String {
+        let (st, e) = call(
+            &app,
+            "POST",
+            "/api/v1/events",
+            &admin,
+            Some(&format!(
+                r#"{{"start_time":"2027-09-01T00:00:00Z","max_slots":{max_slots}}}"#
+            )),
+        )
+        .await;
+        assert_eq!(st, StatusCode::CREATED, "event: {e}");
+        e["id"].as_str().unwrap().to_string()
+    };
+
+    // ══ 1. ZERO CAPACITY REFUSES, RATHER THAN REGISTERING FOREVER ═════════════════════════
+    // Seeded past the attach guard, exactly as a row written before this fix would be.
+    let mission_id = mission("T227 seatless").await;
+    let ev = event(0).await;
+    let seatless: uuid::Uuid = sqlx::query_scalar(
+        "INSERT INTO event_missions (event_id, mission_id, start_time, created_at, updated_at) \
+         VALUES ($1::uuid, $2::uuid, '2027-09-01T00:00:00Z', now(), now()) RETURNING id",
+    )
+    .bind(&ev)
+    .bind(&mission_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let (st, b) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/event-missions/{seatless}/register"),
+        &enl,
+        Some(r#"{"slot_id":""}"#),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CONFLICT,
+        "a seatless operation must refuse, not register: {b}"
+    );
+    // Refused BEFORE any write — no registration row may exist for a bench sign-up that failed.
+    let rows: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM event_registrations WHERE event_mission_id = $1")
+            .bind(seatless)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(rows, 0, "the refusal must not have written a registration");
+
+    // ══ 2. `max_slots` BOUNDS THE WHOLE OPERATION ═════════════════════════════════════════
+    // 4 seats in the ORBAT but a cap of 2. Pre-fix `max_slots` was validated on create,
+    // editable via PATCH, rendered by the SPA as "{n} slot cap" — and read by nothing.
+    let mission_id = mission("T227 capped").await;
+    let ev = event(2).await;
+    let (st, em) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/events/{ev}/missions"),
+        &admin,
+        Some(&format!(
+            r#"{{"mission_id":"{mission_id}","start_time":"2027-09-01T00:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"T227 Capped","slots":[{{"role":"R0"}},{{"role":"R1"}},{{"role":"R2"}},{{"role":"R3"}}]}}]}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "attach: {em}");
+    let emid = em["id"].as_str().unwrap().to_string();
+
+    // Two seeded strangers fill the cap. dev-login is one fixed identity, so the other
+    // occupants are seeded and only the caller under test goes through the handler — the same
+    // idiom the G7b race tests use. `arma_id` has its own unique index.
+    for (i, id) in [OTHER, THIRD].iter().enumerate() {
+        sqlx::query(
+            "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+             VALUES ($1, 'Seeded', 'seeded', '', $2, '', 'enlisted', false, '', now(), now()) ON CONFLICT (discord_id) DO NOTHING",
+        )
+        .bind(id)
+        .bind(format!("t227-{id}"))
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, state) \
+             VALUES ($1::uuid, $2, NULL, 'registered') \
+             ON CONFLICT (event_mission_id, discord_id) DO UPDATE SET state = 'registered'",
+        )
+        .bind(&emid)
+        .bind(id)
+        .execute(&pool)
+        .await
+        .unwrap();
+        let _ = i;
+    }
+
+    // A free seat exists, so this refusal is the EVENT cap talking and not the ORBAT's.
+    let (st, orbat) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/event-missions/{emid}/orbat"),
+        &enl,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "orbat: {orbat}");
+    let slot0 = orbat["data"][0]["slots"][0]["id"].as_str().unwrap();
+    assert!(
+        orbat["data"][0]["slots"][0]["assigned_to"].is_null(),
+        "the seat under test must be free: {orbat}"
+    );
+    let (st, b) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/event-missions/{emid}/register"),
+        &enl,
+        Some(&format!(r#"{{"slot_id":"{slot0}"}}"#)),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CONFLICT,
+        "max_slots 2 with 2 registered must refuse a third person: {b}"
+    );
+    assert!(
+        b["error"].as_str().unwrap().contains("full"),
+        "the cap refusal must say the operation is full: {b}"
+    );
+    // And it refused before writing: the seat is still free and unclaimed.
+    let taken: Option<String> =
+        sqlx::query_scalar("SELECT assigned_to FROM orbat_slots WHERE id = $1::uuid")
+            .bind(slot0)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(taken, None, "a capped-out refusal must not claim the seat");
+
+    // Raising the cap lets the same request through — proving the refusal was the cap and not
+    // some unrelated gate, and that `max_slots` is now genuinely the value being read.
+    let (st, b) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/events/{ev}"),
+        &admin,
+        Some(r#"{"max_slots":3}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "raise the cap: {b}");
+    let (st, b) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/event-missions/{emid}/register"),
+        &enl,
+        Some(&format!(r#"{{"slot_id":"{slot0}"}}"#)),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "cap of 3 must admit the third: {b}");
+    assert_eq!(b["state"], "registered");
+
+    // Already inside the operation, so a second mission of the SAME event must not consume a
+    // second unit of an attendance cap that is now exactly full. A distinct mission, because
+    // `idx_event_mission` is unique on `(event_id, mission_id)`.
+    let mission_2 = mission("T227 capped second").await;
+    let (st, em2) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/events/{ev}/missions"),
+        &admin,
+        Some(&format!(
+            r#"{{"mission_id":"{mission_2}","start_time":"2027-09-02T00:00:00Z","orbat":[{{"faction":"USA","callsign":"B","squad":"T227 Second","slots":[{{"role":"R0"}}]}}]}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "second attach: {em2}");
+    let emid2 = em2["id"].as_str().unwrap().to_string();
+    let (st, orbat2) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/event-missions/{emid2}/orbat"),
+        &enl,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "orbat2: {orbat2}");
+    let slot_b = orbat2["data"][0]["slots"][0]["id"].as_str().unwrap();
+    let (st, b) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/event-missions/{emid2}/register"),
+        &enl,
+        Some(&format!(r#"{{"slot_id":"{slot_b}"}}"#)),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "an attendee already counted must not be refused by the cap again: {b}"
+    );
+}
