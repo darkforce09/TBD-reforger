@@ -46,9 +46,12 @@
 #   server + real clients).
 #
 # Usage:
-#   bash scripts/mod/world-boot.sh              # the gate
-#   bash scripts/mod/world-boot.sh --selftest   # prove the verdict logic can FAIL
-#   bash scripts/mod/world-boot.sh --keep-logs  # leave the run dir for inspection
+#   bash scripts/mod/world-boot.sh                    # the gate
+#   bash scripts/mod/world-boot.sh --selftest         # prove the verdict logic can FAIL
+#   bash scripts/mod/world-boot.sh --keep-logs        # leave the run dir for inspection
+#   bash scripts/mod/world-boot.sh --mission=<name>   # boot a hand-written golden
+#   bash scripts/mod/world-boot.sh --compiled         # boot an API-COMPILED document (T-186)
+#   bash scripts/mod/world-boot.sh --compiled=<uuid>  # ...of an EXISTING mission row
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -64,18 +67,34 @@ MAX_WAIT="${TBD_WORLDBOOT_TIMEOUT:-240}"
 GOLDENS="$ROOT/packages/tbd-schema/golden-missions"
 WARN_BASELINE="$ROOT/.world-boot-warning-baseline"
 
+# The live dev API. Overridable so this can be pointed at staging without editing the script.
+API_BASE="${TBD_API_BASE:-http://127.0.0.1:8080}"
+
 KEEP_LOGS=0
 SELFTEST=0
 MISSION=""
+COMPILED=0
+COMPILED_UUID=""
+# Baseline row this run ratchets against — see the RATCHET note in assess_log. Declared here so
+# it exists before assess_log is ever defined, including on the --selftest path.
+WARN_KEY=""
 for arg in "$@"; do
   case "$arg" in
-    --keep-logs) KEEP_LOGS=1 ;;
-    --selftest)  SELFTEST=1 ;;
-    --mission=*) MISSION="${arg#--mission=}" ;;
-    --mission)   echo "use --mission=<file|name>" >&2; exit 2 ;;
+    --keep-logs)  KEEP_LOGS=1 ;;
+    --selftest)   SELFTEST=1 ;;
+    --mission=*)  MISSION="${arg#--mission=}" ;;
+    --mission)    echo "use --mission=<file|name>" >&2; exit 2 ;;
+    --compiled)   COMPILED=1 ;;
+    --compiled=*) COMPILED=1; COMPILED_UUID="${arg#--compiled=}" ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
+
+# Mutually exclusive on purpose: both write the same profile file, so accepting both would
+# silently boot whichever ran last and report it under the other one's name.
+if [ "$COMPILED" -eq 1 ] && [ -n "$MISSION" ]; then
+  echo "ERROR: --compiled and --mission are mutually exclusive" >&2; exit 2
+fi
 
 # Resolve a bare golden name ("bridgehead-at-levie") to its file.
 if [ -n "$MISSION" ] && [ ! -f "$MISSION" ]; then
@@ -209,14 +228,19 @@ assess_log() {
     # Warning RATCHET, same idea as compile.sh's vanilla baseline: a rise is a regression and
     # fails; a fall is progress and asks you to tighten the file. A budget you never tighten
     # decays into a rubber stamp, so the drop case is deliberately noisy.
-    budget="$(grep -E "^$MISSION_ID[[:space:]]" "$WARN_BASELINE" 2>/dev/null | awk '{print $2}')"
+    #
+    # Keyed on WARN_KEY, not MISSION_ID, for one reason: a `--compiled` boot derives its
+    # `meta.id` from a freshly-minted mission UUID, so it is DIFFERENT on every run and could
+    # never match a baseline row — the ratchet would print "no baseline" forever and this lane
+    # would ship with no warning budget at all. WARN_KEY pins that lane to one stable row.
+    budget="$(grep -E "^$WARN_KEY[[:space:]]" "$WARN_BASELINE" 2>/dev/null | awk '{print $2}')"
     if [ -z "$budget" ]; then
-      echo "  note  no warning baseline for $MISSION_ID (observed $warns) — add: '$MISSION_ID $warns' to $(basename "$WARN_BASELINE")"
+      echo "  note  no warning baseline for $WARN_KEY (observed $warns) — add: '$WARN_KEY $warns' to $(basename "$WARN_BASELINE")"
     elif [ "$warns" -gt "$budget" ]; then
-      echo "  FAIL  validator warnings rose: $warns > baseline $budget for $MISSION_ID"
+      echo "  FAIL  validator warnings rose: $warns > baseline $budget for $WARN_KEY"
       rc=1
     elif [ "$warns" -lt "$budget" ]; then
-      echo "  note  warnings IMPROVED ($warns < baseline $budget) — tighten $(basename "$WARN_BASELINE") to '$MISSION_ID $warns'"
+      echo "  note  warnings IMPROVED ($warns < baseline $budget) — tighten $(basename "$WARN_BASELINE") to '$WARN_KEY $warns'"
     else
       echo "  ok    validator warnings at baseline ($warns)"
     fi
@@ -349,24 +373,17 @@ ln -sfn "$MOD_SRC" "$RUN_DIR/addons/tbd-framework"
 # LANDMINE: `$profile:` resolves to `<-profile-arg>/profile/`, NOT `<-profile-arg>/`. Seeding one
 # level up loads nothing, silently — measured by the wave-5 verifier after two dead boots.
 MISSION_ID=""
-if [ -n "$MISSION" ]; then
-  MISSION_ID="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get('meta',{}).get('id',''))" "$MISSION")"
-  [ -n "$MISSION_ID" ] || { echo "ERROR: $MISSION has no meta.id" >&2; exit 1; }
-  mkdir -p "$RUN_DIR/profile/profile/missions"
-  cp "$MISSION" "$RUN_DIR/profile/profile/missions/$MISSION_ID.json"
-  printf '{"backendUrl":"","serverToken":"","missionId":"%s","eventId":""}\n' \
-    "$MISSION_ID" > "$RUN_DIR/profile/profile/TBD_BackendConfig.json"
-  # The registry's primary path is `$TBD_Framework:Data/registry.json`, and that alias does NOT
-  # resolve for a loose addon — `Data/*.json` is a non-script resource, so it is gated by the same
-  # stale `resourceDatabase.rdb` as the menu presets. Without the profile fallback every slot fails
-  # with "kit resolve failed", which is a real TBD error and correctly fails this gate.
-  cp "$MOD_SRC/Data/registry.json" "$RUN_DIR/profile/profile/TBD_Registry.json"
-fi
 
 # Same kill discipline as compile.sh: the launcher runs under `setsid`, so the recorded PID
 # is a PROCESS GROUP LEADER and we signal the whole group. Never widen this to a name match —
 # a broad `pkill -f ArmaReforgerServer` would take out the operator's own dev server.
+#
+# Installed BEFORE the mission seeding below (it used to sit after) because `--compiled` creates a
+# real row in the operator's mission library. If the fetch fails halfway — the POST lands, the
+# `/compiled` GET 500s — the trap is what deletes it; without that, every failed run would leave
+# another orphan draft in the library.
 PIDFILE="$RUN_DIR/server.pid"
+SEEDED_UUID=""
 kill_run() {
   local pgid
   pgid="$(cat "$PIDFILE" 2>/dev/null)" || return 0
@@ -380,6 +397,12 @@ kill_run() {
 }
 cleanup() {
   kill_run
+  # Only ever deletes a mission THIS run created (`--compiled=<uuid>` sets no SEEDED_UUID), so an
+  # operator's own row can never be caught by it. Soft delete, same as the SPA's own delete.
+  if [ -n "$SEEDED_UUID" ] && [ -n "${DEV_ACCESS_TOKEN:-}" ]; then
+    curl -sS -o /dev/null -m 10 -X DELETE "$API_BASE/api/v1/missions/$SEEDED_UUID" \
+      -H "Authorization: Bearer $DEV_ACCESS_TOKEN" 2>/dev/null || true
+  fi
   if [ "$KEEP_LOGS" -eq 1 ]; then
     echo "run dir kept: $RUN_DIR"
   else
@@ -387,6 +410,220 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
+
+# ── --compiled: feed an API-COMPILED document to the real parser (T-186) ────────────────────
+# Everything above boots HAND-WRITTEN goldens, and the goldens are strictly RICHER than anything
+# `crates/map-engine-core/src/mission/flatten.rs` can emit (they carry radioPlan, briefings,
+# objectives, multiple factions — none of which the compiler produces). So a green
+# `--mission=<golden>` says nothing about the documents the website actually serves.
+#
+# Three lanes existed and never met: flatten.rs unit tests assert in Rust only; the API tests hold
+# `/compiled` to mission.schema.json but never parse it with Enfusion; this script boots real
+# missions but only goldens. Every website↔mod contract drift was therefore found in production —
+# T-181.46 is the proof (the compiler emitted `endOn:["faction_eliminated"]` for a mission where
+# only one faction held slots, and TBD_MissionValidator hard-rejected the whole document; the
+# schema was perfectly happy with it, so the API tests were green the entire time).
+#
+# This lane closes that: seed through the real API, fetch the real bytes from `GET /compiled`, and
+# hand THOSE to the real Enfusion parser. The fixture is deliberately the THINNEST document the
+# compiler can produce — one faction holding slots, which is what a freshly-authored editor
+# mission looks like and is exactly the shape T-181.46 died on.
+#
+# FAILURE DISCIPLINE (the whole point of the three helpers below): an env failure reported as a
+# code failure sends the next agent chasing a bug that does not exist. `api_env_fail` = the stack
+# is not up / the token is wrong; `api_doc_fail` = the API refused to produce a document, which is
+# a compiler or contract defect. curl's own exit status is the discriminator — a transport failure
+# never yields an HTTP status, so the two can never be conflated.
+api_env_fail() {
+  echo
+  echo "COMPILED BOOT: ENV FAIL — $1"
+  echo "  This is the HARNESS's environment. The mod was never started, so this says NOTHING"
+  echo "  about the mod or the compiler — do not read it as a code failure."
+  echo "  Bring the stack up and re-run:  make db-up && make api   (API expected at $API_BASE)"
+  exit 3
+}
+api_doc_fail() {
+  echo
+  echo "COMPILED BOOT: FAIL — $1"
+  echo "  The API would not produce a compiled document. That is a COMPILER/CONTRACT defect,"
+  echo "  not an environment one — re-running will not fix it. Check the API log: a 500 here is"
+  echo "  'compiled mission failed schema validation' (validated_compiled_body in"
+  echo "  apps/website/api/src/handlers/missions.rs), a 409 is 'no placed slots'."
+  exit 1
+}
+
+# The API's SERVICE_TOKEN. `apps/website/api/.env` is gitignored, so it does NOT exist in a slice
+# worktree — fall back to the MAIN checkout's copy. `--git-common-dir` is shared by every worktree
+# and points at the main repo's .git, so its parent is the main working tree (the same resolution
+# scripts/platform/wave.sh uses for CARGO_TARGET_DIR, and for the same reason).
+resolve_service_token() {
+  if [ -n "${TBD_SERVICE_TOKEN:-}" ]; then printf '%s' "$TBD_SERVICE_TOKEN"; return 0; fi
+  local common main_root f tok
+  common="$(git -C "$ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+  main_root="$(dirname "${common:-$ROOT/.git}")"
+  for f in "$ROOT/apps/website/api/.env" "$main_root/apps/website/api/.env"; do
+    [ -f "$f" ] || continue
+    tok="$(sed -n 's/^SERVICE_TOKEN=//p' "$f" | head -1 | tr -d '\r' | sed 's/^["'"'"']//;s/["'"'"']$//')"
+    [ -n "$tok" ] && { printf '%s' "$tok"; return 0; }
+  done
+  return 1
+}
+
+if [ "$COMPILED" -eq 1 ]; then
+  echo "==> seeding a compiled mission via $API_BASE"
+  SVC_TOKEN="$(resolve_service_token)" || api_env_fail \
+    "no SERVICE_TOKEN — set TBD_SERVICE_TOKEN, or add it to apps/website/api/.env"
+
+  # Reachability and the token in ONE probe, before anything is created. `/ingest/missions` is the
+  # cheapest service-token route there is.
+  probe_code="$(curl -sS -o /dev/null -w '%{http_code}' -m 10 \
+    -H "X-Service-Token: $SVC_TOKEN" "$API_BASE/api/v1/ingest/missions" 2>"$RUN_DIR/curl.err")"
+  probe_rc=$?
+  [ "$probe_rc" -eq 0 ] || api_env_fail \
+    "API unreachable at $API_BASE (curl exit $probe_rc: $(tr '\n' ' ' < "$RUN_DIR/curl.err"))"
+  [ "$probe_code" = "401" ] && api_env_fail \
+    "service token rejected (GET /api/v1/ingest/missions -> 401) — SERVICE_TOKEN does not match the running API"
+  [ "$probe_code" = "200" ] || api_env_fail \
+    "service-token probe GET /api/v1/ingest/missions -> HTTP $probe_code (expected 200)"
+
+  if [ -n "$COMPILED_UUID" ]; then
+    echo "    using existing mission $COMPILED_UUID"
+  else
+    # POST /missions is mission_maker+, so this needs a USER session, not the service token.
+    # dev-login mints exactly that with no Discord round-trip — development-only, which is also
+    # why a 404 here is an env failure (APP_ENV is not `development`), not a code one.
+    DEV_ACCESS_TOKEN="$(curl -sS -o /dev/null -D - -m 10 \
+      "$API_BASE/api/v1/auth/dev-login?role=mission_maker" 2>/dev/null \
+      | tr -d '\r' | sed -n 's/.*[#&]access_token=\([^&]*\).*/\1/p' | head -1)"
+    [ -n "$DEV_ACCESS_TOKEN" ] || api_env_fail \
+      "dev-login returned no access_token — is the API running with APP_ENV=development?"
+
+    # THE FIXTURE. Editor-graph shape (crates/map-engine-core/src/mission/flatten.rs `EditorPayload`),
+    # deliberately minimal and deliberately SINGLE-FACTION:
+    #   * one faction holding slots  -> the flatten pads a stub opponent and narrows `endOn` to
+    #     `["time_limit"]`. This is the T-181.46 shape.
+    #   * slot 3 carries `position.z` -> the document compiles as schemaVersion "1.2" (optional `y`),
+    #     so the mod's 1.1-vs-1.2 branch is exercised, not just the default. 136.0 is not arbitrary:
+    #     TBD_SpawnManager warns "jsonY deviates >2 m from surfaceY — stale DEM or mis-authored
+    #     slot?" and Everon's surface at (4890, 7780) is 135.844 (measured). An arbitrary elevation
+    #     made the harness emit that warning on EVERY run — a fixture artefact that reads exactly
+    #     like a real DEM defect, which is the sort of thing that costs an agent an afternoon.
+    #   * slot 2 carries a SlotLoadoutV2 -> the compiled `slot.loadout {gear,cargo}` block is
+    #     exercised. The ResourceNames are copied from golden-missions/slot-loadout-coverage.json,
+    #     which boots clean today, so an equip error here means the COMPILE broke, not the fixture.
+    cat >"$RUN_DIR/seed.json" <<'JSON'
+{
+  "title": "T-186 compiled-boot fixture",
+  "terrain": "everon",
+  "game_mode": "pvp",
+  "weather": "clear",
+  "time_of_day": "05:30",
+  "max_players": 8,
+  "briefing": "Generated by scripts/mod/world-boot.sh --compiled. Safe to delete.",
+  "payload": {
+    "schemaVersion": 1,
+    "editor": {
+      "factions": [{ "key": "blufor", "name": "US Army", "squadIds": ["sq_alpha"] }],
+      "squads": [{ "id": "sq_alpha", "callsign": "Alpha", "name": "Alpha", "slotIds": ["sl_sl", "sl_ar", "sl_rfl"] }],
+      "slots": [
+        {
+          "id": "sl_sl", "index": 0, "role": "SL",
+          "assetId": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et",
+          "position": { "x": 4870.0, "y": 7760.0, "z": 0.0, "rotation": 45.0 }
+        },
+        {
+          "id": "sl_ar", "index": 1, "role": "AR",
+          "assetId": "{5B1996C05B1E51A4}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et",
+          "position": { "x": 4880.0, "y": 7770.0, "z": 0.0, "rotation": 90.0 },
+          "loadout": {
+            "wear": {
+              "jacket": "{293F577C298061E3}Prefabs/Characters/Uniforms/Jacket_US_BDU_02.et",
+              "armoredVest": "{477A190AF2A17B8A}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_MG.et",
+              "headCover": "{B74A4FF0DD8BB116}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01.et",
+              "pants": "{604BB72BE8E023C2}Prefabs/Characters/Uniforms/Pants_US_BDU.et",
+              "boots": "{DAAFD15478BDE1C3}Prefabs/Characters/Footwear/CombatBoots_US_01.et"
+            },
+            "weapons": [
+              {
+                "slotIndex": 0, "slotType": "primary",
+                "weapon": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+                "magazine": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et"
+              }
+            ],
+            "cargo": [
+              {
+                "container": "vest",
+                "item": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+                "qty": 6
+              }
+            ]
+          }
+        },
+        {
+          "id": "sl_rfl", "index": 2, "role": "RFL",
+          "assetId": "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
+          "position": { "x": 4890.0, "y": 7780.0, "z": 136.0, "rotation": 315.0 }
+        }
+      ]
+    }
+  }
+}
+JSON
+    seed_code="$(curl -sS -o "$RUN_DIR/seed-resp.json" -w '%{http_code}' -m 30 \
+      -X POST "$API_BASE/api/v1/missions" \
+      -H "Authorization: Bearer $DEV_ACCESS_TOKEN" -H 'Content-Type: application/json' \
+      --data-binary @"$RUN_DIR/seed.json" 2>"$RUN_DIR/curl.err")"
+    seed_rc=$?
+    [ "$seed_rc" -eq 0 ] || api_env_fail \
+      "POST /api/v1/missions transport failure (curl exit $seed_rc: $(tr '\n' ' ' < "$RUN_DIR/curl.err"))"
+    if [ "$seed_code" != "201" ]; then
+      echo "  POST /api/v1/missions -> HTTP $seed_code"
+      head -c 600 "$RUN_DIR/seed-resp.json"; echo
+      api_doc_fail "the API rejected the editor payload this harness seeds (HTTP $seed_code)"
+    fi
+    COMPILED_UUID="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get('id',''))" "$RUN_DIR/seed-resp.json")"
+    [ -n "$COMPILED_UUID" ] || api_doc_fail "POST /api/v1/missions 201 but returned no mission id"
+    SEEDED_UUID="$COMPILED_UUID"   # arms the cleanup trap
+    echo "    seeded mission $COMPILED_UUID"
+  fi
+
+  # THE POINT OF THE WHOLE SLICE: these are the exact bytes the game server gets in production.
+  comp_code="$(curl -sS -o "$RUN_DIR/compiled.json" -w '%{http_code}' -m 60 \
+    -H "X-Service-Token: $SVC_TOKEN" \
+    "$API_BASE/api/v1/missions/$COMPILED_UUID/compiled" 2>"$RUN_DIR/curl.err")"
+  comp_rc=$?
+  [ "$comp_rc" -eq 0 ] || api_env_fail \
+    "GET /compiled transport failure (curl exit $comp_rc: $(tr '\n' ' ' < "$RUN_DIR/curl.err"))"
+  if [ "$comp_code" != "200" ]; then
+    echo "  GET /api/v1/missions/$COMPILED_UUID/compiled -> HTTP $comp_code"
+    head -c 1200 "$RUN_DIR/compiled.json"; echo
+    api_doc_fail "GET /compiled -> HTTP $comp_code (expected 200)"
+  fi
+
+  # Hand the fetched bytes to the SAME staging path `--mission=` uses, byte-for-byte. Copying
+  # rather than re-serialising matters: the mod must parse what the API served, not a
+  # round-tripped equivalent.
+  MISSION="$RUN_DIR/compiled.json"
+  WARN_KEY="compiled"
+  echo "    fetched $(wc -c <"$MISSION" | tr -d ' ') bytes of compiled document"
+fi
+
+if [ -n "$MISSION" ]; then
+  MISSION_ID="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get('meta',{}).get('id',''))" "$MISSION")"
+  [ -n "$MISSION_ID" ] || { echo "ERROR: $MISSION has no meta.id" >&2; exit 1; }
+  mkdir -p "$RUN_DIR/profile/profile/missions"
+  cp "$MISSION" "$RUN_DIR/profile/profile/missions/$MISSION_ID.json"
+  printf '{"backendUrl":"","serverToken":"","missionId":"%s","eventId":""}\n' \
+    "$MISSION_ID" > "$RUN_DIR/profile/profile/TBD_BackendConfig.json"
+  # The registry's primary path is `$TBD_Framework:Data/registry.json`, and that alias does NOT
+  # resolve for a loose addon — `Data/*.json` is a non-script resource, so it is gated by the same
+  # stale `resourceDatabase.rdb` as the menu presets. Without the profile fallback every slot fails
+  # with "kit resolve failed", which is a real TBD error and correctly fails this gate.
+  cp "$MOD_SRC/Data/registry.json" "$RUN_DIR/profile/profile/TBD_Registry.json"
+  # Goldens ratchet under their own stable `meta.id`; `--compiled` already pinned WARN_KEY above
+  # because its meta.id is UUID-derived and changes every run.
+  [ -n "$WARN_KEY" ] || WARN_KEY="$MISSION_ID"
+fi
 
 # The config the engine actually gets: the committed dev config with the local addon injected
 # into game.mods[]. Generated rather than committed so the GUID can never drift from the gproj.
