@@ -12,6 +12,11 @@
 - **T-251** (2690) — Production deployment story [ready] — No Dockerfile, no docker-compose.staging.yml (referenced by deploy.env.example and HOME_SERVER.md but absent), no deploy-website.sh, no deploy job in any of the four CI workflows, no TLS or reverse-proxy config in-repo, no pg_dump backup script, and no metrics, Sentry or OTel dependency.
 - **T-253** (2710) — Reclaim 65GB and stop double-compiling [ready] — target/ is 52GB, target-ci/ another 12GB, and .git/lfs holds 1.6GB of objects from tile pyramids untracked back on 2026-07-03. Disk is at 87%. Also no CARGO_TARGET_DIR is set, so the moment Rust work is sliced across worktrees each one starts a cold build.
 - **T-254** (2720) — Entity and object placement — the whole entities[] block [ready] — The Objects chip is a stub (eden_chrome.rs:1466-1470), place_at no-ops in objects mode (editor_ops.rs:1598-1602), the palette filters to kind==character (asset_catalog.rs:63), and the doc has no entities map. The mod has no reader either. Also blocks objective_destroy, which resolves rules.targetAlias against entities[].
+- **T-436** (3275) — Harden deploy-website.sh: require /home/sam/tbd/ prefix + case-insensitive prairielearn refuse [ready] — In-wave hotfix from wave 9 adversarial verify (M2/M3). deploy-website.sh refused only substring prairielearn (case-sensitive) and did not enforce the documented /home/sam/tbd/ prefix, so a filled deploy.env could dry-run/rsync --delete to arbitrary paths (e.g. /tmp/not-tbd-at-all). PrairieLearn mixed-case paths also slipped through.
+
+Repro before fix: DEPLOY_ENV with TBD_REMOTE_DIR=/tmp/not-tbd-at-all → --dry-run rc=0.
+
+Cure: fail-closed prefix check under /home/sam/tbd/ + case-insensitive prairielearn refuse.
 
 ## Next queued (top 10)
 

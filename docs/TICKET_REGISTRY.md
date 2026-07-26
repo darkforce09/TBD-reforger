@@ -2314,6 +2314,11 @@ Cure: align CI with make schema-validate (or document intentional narrowing with
 Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.
 
 Cure: unit test with terrain=arland expecting 4096² ring. |
+| T-436 | 3275 | ready | platform | Harden deploy-website.sh: require /home/sam/tbd/ prefix + case-insensitive prairielearn refuse | In-wave hotfix from wave 9 adversarial verify (M2/M3). deploy-website.sh refused only substring prairielearn (case-sensitive) and did not enforce the documented /home/sam/tbd/ prefix, so a filled deploy.env could dry-run/rsync --delete to arbitrary paths (e.g. /tmp/not-tbd-at-all). PrairieLearn mixed-case paths also slipped through.
+
+Repro before fix: DEPLOY_ENV with TBD_REMOTE_DIR=/tmp/not-tbd-at-all → --dry-run rc=0.
+
+Cure: fail-closed prefix check under /home/sam/tbd/ + case-insensitive prairielearn refuse. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

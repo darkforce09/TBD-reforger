@@ -234,3 +234,4 @@
 99	T-433	cms.rs announcement_body_persist_contract unit test is tautological	apps/website/api/src/handlers/cms.rs
 99	T-434	CI schema job still only validate+citations while make schema-validate runs nine	.github/workflows/ci.yml; Makefile
 99	T-435	Pin arland z_bounds polygon in flatten zone tests	crates/map-engine-core/src/mission/flatten.rs
+3	T-436	Harden deploy-website.sh path policy	scripts/deploy/deploy-website.sh; scripts/deploy/deploy.env.example

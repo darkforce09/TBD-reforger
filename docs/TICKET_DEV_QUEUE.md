@@ -37,3 +37,15 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-254`
 - **Targets:** website, mod
 - **Summary:** The Objects chip is a stub (eden_chrome.rs:1466-1470), place_at no-ops in objects mode (editor_ops.rs:1598-1602), the palette filters to kind==character (asset_catalog.rs:63), and the doc has no entities map. The mod has no reader either. Also blocks objective_destroy, which resolves rules.targetAlias against entities[].
+
+## T-436 — Harden deploy-website.sh: require /home/sam/tbd/ prefix + case-insensitive prairielearn refuse
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-436`
+- **Targets:** website
+- **Summary:** In-wave hotfix from wave 9 adversarial verify (M2/M3). deploy-website.sh refused only substring prairielearn (case-sensitive) and did not enforce the documented /home/sam/tbd/ prefix, so a filled deploy.env could dry-run/rsync --delete to arbitrary paths (e.g. /tmp/not-tbd-at-all). PrairieLearn mixed-case paths also slipped through.
+
+Repro before fix: DEPLOY_ENV with TBD_REMOTE_DIR=/tmp/not-tbd-at-all → --dry-run rc=0.
+
+Cure: fail-closed prefix check under /home/sam/tbd/ + case-insensitive prairielearn refuse.
