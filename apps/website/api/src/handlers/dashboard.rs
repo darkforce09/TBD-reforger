@@ -97,8 +97,21 @@ pub async fn get_dashboard(
 
     // Caller's assigned ORBAT slot for an upcoming mission.
     let my_assignment: Option<AssignmentSummary> = {
+        // `orbat_slots.callsign`/`loadout`/`tag` are NULLABLE columns behind non-optional
+        // `String` fields, so the nullable ones MUST be coalesced here — the column list is
+        // spelled out for exactly that reason and is the same one the other six `OrbatSlot`
+        // read sites use (`deployments.rs:103`, `events.rs:841`/`1052`/`1245`/`1449`/`1505`).
+        // A bare `orbat_slots.*` 500s the whole dashboard on a real NULL (T-329, measured:
+        // *"error occurred while decoding column `tag`: unexpected null"* for the two
+        // operator users holding a NULL-`tag` slot). Do NOT "fix" that by making the model
+        // fields `Option` — see the rejection recorded on `models::Match` (T-325). Every
+        // column is table-qualified because the joins make `id`/`start_time` ambiguous.
         let slot: Option<OrbatSlot> = sqlx::query_as(
-            "SELECT orbat_slots.* FROM orbat_slots \
+            "SELECT orbat_slots.id, orbat_slots.event_mission_id, orbat_slots.faction, \
+             orbat_slots.squad, COALESCE(orbat_slots.callsign, '') AS callsign, orbat_slots.role, \
+             COALESCE(orbat_slots.loadout, '') AS loadout, COALESCE(orbat_slots.tag, '') AS tag, \
+             orbat_slots.slot_index, orbat_slots.assigned_to, orbat_slots.assigned_at \
+             FROM orbat_slots \
              JOIN event_missions ON event_missions.id = orbat_slots.event_mission_id \
              JOIN events ON events.id = event_missions.event_id \
              WHERE orbat_slots.assigned_to = $1 AND event_missions.start_time > now() \
