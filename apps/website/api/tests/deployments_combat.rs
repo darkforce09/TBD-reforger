@@ -201,7 +201,10 @@ async fn derived_combat_figures_match_hand_computation() {
         "27 / 20 = 1.35, got {}",
         body["kd_ratio"]
     );
-    assert_eq!(body["command_games"], 2, "two command slots, not three matches");
+    assert_eq!(
+        body["command_games"], 2,
+        "two command slots, not three matches"
+    );
     assert_eq!(body["command_wins"], 1);
     assert!(
         (f(&body, "command_win_rate") - 0.5).abs() < 1e-9,
