@@ -2,11 +2,12 @@
 //! `ContentManagerPage` + `ContentEditor`. `<AdminGate>` → a transparent `SplitPane`: a post list
 //! (master) + the editor form (detail).
 //!
-//! T-159.25: fully interactive. The docs list is LOCAL state seeded from the same MOCK_DOCS the
-//! React page uses (a docs API doesn't exist yet — announcement publish is the one live mutation):
-//! New post / select / Save Draft mutate the local list; **Publish & Broadcast** maps the category
-//! onto the announcement `tag` and POSTs `/cms/announcements` (usePublishAnnouncement port; SOP has
-//! no tag → local-only publish, matching React). The Push-to-Discord Switch is live.
+//! T-267: Publish keeps the returned announcement id and re-Publish PATCHes that row (no duplicate
+//! POSTs). Delete / Discord re-push hit the live CMS routes. SOP has no `announcement_tag` variant
+//! (measured: `update|event|modpack_update|important` only) — mapped to closest tag `update`.
+//! Markdown toolbar inserts real markers into the body (no mock success toasts). Hero image upload
+//! needs multipart/`FormData` (web-sys features outside this file's owns) — honest error, not a
+//! fake success toast.
 #![allow(dead_code)]
 use crate::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
 use crate::ui::MaterialIcon;
@@ -69,14 +70,59 @@ const MD_TOOLS: &[(&str, &str)] = &[
     ("image", "Image"),
 ];
 
-/// Map a doc category onto the announcement `tag` enum (SOP has no equivalent).
+/// Create path — `POST /api/v1/cms/announcements`.
+fn announcement_create_path() -> &'static str {
+    "/cms/announcements"
+}
+
+/// Edit / archive path — `PATCH|DELETE /api/v1/cms/announcements/{id}`.
+fn announcement_id_path(id: &str) -> String {
+    format!("/cms/announcements/{id}")
+}
+
+/// Manual Discord (re)push — `POST /api/v1/cms/announcements/{id}/push-discord`.
+fn announcement_push_path(id: &str) -> String {
+    format!("/cms/announcements/{id}/push-discord")
+}
+
+/// Server-minted announcement ids are UUIDs (36 chars with hyphens). Local mock / new-post ids
+/// (`d1`, `new-…`) are not — those still POST on first Publish.
+fn is_server_id(id: &str) -> bool {
+    let b = id.as_bytes();
+    b.len() == 36 && b[8] == b'-' && b[13] == b'-' && b[18] == b'-' && b[23] == b'-'
+}
+
+/// Map a doc category onto the announcement `tag` enum.
+///
+/// Measured (`apps/website/api/src/handlers/cms.rs` `valid_tag` /
+/// `AnnouncementTag`): only `update|event|modpack_update|important`. There is **no** `sop` tag —
+/// SOP posts as the closest tag `update` so Publish hits the live API (no fake local-only toast).
 fn category_tag(category: &str) -> Option<&'static str> {
     match category {
-        "announcement" => Some("update"),
+        "announcement" | "sop" => Some("update"),
         "event" => Some("event"),
         "modpack" => Some("modpack_update"),
         "important" => Some("important"),
         _ => None,
+    }
+}
+
+/// Insert a real markdown snippet for a toolbar tool (no toast — the body change is the feedback).
+fn apply_md_tool(body: &str, tool: &str) -> String {
+    let snippet = match tool {
+        "Bold" => "**bold**",
+        "Italic" => "*italic*",
+        "Link" => "[text](https://)",
+        "List" => "\n- item",
+        "Image" => "![alt](https://)",
+        _ => return body.to_string(),
+    };
+    if body.is_empty() {
+        snippet.to_string()
+    } else if body.ends_with('\n') || tool == "List" {
+        format!("{body}{snippet}")
+    } else {
+        format!("{body} {snippet}")
     }
 }
 
@@ -99,6 +145,7 @@ pub fn ContentManagerPage() -> impl IntoView {
     let selected_id = RwSignal::new(Some("d1".to_string()));
     // The editor re-keys on selection: bump forces a rebuild seeded from the newly selected doc.
     let publish_busy = RwSignal::new(false);
+    let delete_busy = RwSignal::new(false);
 
     let new_post = move |_| {
         #[cfg(target_arch = "wasm32")]
@@ -185,7 +232,15 @@ pub fn ContentManagerPage() -> impl IntoView {
                                     .find(|d| Some(&d.id) == sel.as_ref());
                                 match doc {
                                     Some(d) => {
-                                        editor(d, docs, publish_busy, store).into_any()
+                                        editor(
+                                            d,
+                                            docs,
+                                            selected_id,
+                                            publish_busy,
+                                            delete_busy,
+                                            store,
+                                        )
+                                            .into_any()
                                     }
                                     None => {
                                         view! {
@@ -213,25 +268,33 @@ pub fn ContentManagerPage() -> impl IntoView {
 fn editor(
     d: Doc,
     docs: RwSignal<Vec<Doc>>,
+    selected_id: RwSignal<Option<String>>,
     publish_busy: RwSignal<bool>,
+    delete_busy: RwSignal<bool>,
     store: crate::auth::AuthStore,
 ) -> impl IntoView {
     #[cfg(not(target_arch = "wasm32"))]
-    let _ = (&store, publish_busy, docs);
+    let _ = (&store, publish_busy, delete_busy, docs, selected_id);
     let doc_id = StoredValue::new(d.id.clone());
+    let was_published = StoredValue::new(d.published);
     #[cfg(not(target_arch = "wasm32"))]
-    let _ = doc_id;
+    let _ = (&doc_id, &was_published);
     let title = RwSignal::new(d.title.clone());
     let body = RwSignal::new(d.body.clone());
     let category = RwSignal::new(d.category.clone());
     let push_discord = RwSignal::new(true);
 
-    // `current(status)` + `onChange(saveDoc)` — write the edited fields back into the local list.
+    // Write the edited fields back into the local list; optionally retarget the list id when the
+    // server mints a UUID on first Publish.
     #[cfg(target_arch = "wasm32")]
-    let apply = move |published: bool| {
+    let apply = move |published: bool, new_id: Option<String>| {
         let t = title.get_untracked().trim().to_string();
+        let old = doc_id.get_value();
         docs.update(|list| {
-            if let Some(doc) = list.iter_mut().find(|x| x.id == doc_id.get_value()) {
+            if let Some(doc) = list.iter_mut().find(|x| x.id == old) {
+                if let Some(ref nid) = new_id {
+                    doc.id = nid.clone();
+                }
                 doc.title = if t.is_empty() {
                     "Untitled Post".into()
                 } else {
@@ -243,12 +306,19 @@ fn editor(
                 doc.date = today_iso();
             }
         });
+        if let Some(nid) = new_id {
+            doc_id.set_value(nid.clone());
+            selected_id.set(Some(nid));
+        }
+        if published {
+            was_published.set_value(true);
+        }
     };
 
     let save_draft = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
-            apply(false);
+            apply(false, None);
             crate::toast::use_toasts().success("Draft saved");
         }
     };
@@ -264,9 +334,7 @@ fn editor(
                 return;
             }
             let Some(tag) = category_tag(&category.get_untracked()) else {
-                // SOPs have no announcement equivalent — publish locally only.
-                apply(true);
-                toasts.success("SOP published");
+                toasts.error("Unknown category — cannot publish");
                 return;
             };
             if publish_busy.get_untracked() {
@@ -274,6 +342,8 @@ fn editor(
             }
             publish_busy.set(true);
             let push = push_discord.get_untracked();
+            let id = doc_id.get_value();
+            let already_published = was_published.get_value();
             let payload = serde_json::json!({
                 "title": t,
                 "body": b,
@@ -283,33 +353,115 @@ fn editor(
                 "status": "published",
             });
             leptos::task::spawn_local(async move {
-                match crate::client::api_post::<serde_json::Value>(
-                    store,
-                    "/cms/announcements",
-                    payload,
-                )
-                .await
-                {
-                    Ok(_) => {
-                        apply(true);
+                let result = if is_server_id(&id) {
+                    // Edit existing row — never POST again (that duplicated announcements).
+                    match crate::client::api_patch::<serde_json::Value>(
+                        store,
+                        &announcement_id_path(&id),
+                        payload,
+                    )
+                    .await
+                    {
+                        Ok(_) => {
+                            // PATCH only auto-pushes on first publish / never-pushed. Re-push an
+                            // already-published row through the dedicated route.
+                            if push && already_published {
+                                match crate::client::api_post_ok(
+                                    store,
+                                    &announcement_push_path(&id),
+                                    serde_json::json!({}),
+                                )
+                                .await
+                                {
+                                    Ok(()) => Ok(None),
+                                    Err(e) => Err(e),
+                                }
+                            } else {
+                                Ok(None)
+                            }
+                        }
+                        Err(e) => Err(e),
+                    }
+                } else {
+                    match crate::client::api_post::<serde_json::Value>(
+                        store,
+                        announcement_create_path(),
+                        payload,
+                    )
+                    .await
+                    {
+                        Ok(created) => {
+                            let sid = created
+                                .get("id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or_default()
+                                .to_string();
+                            if sid.is_empty() || !is_server_id(&sid) {
+                                Err((0u16, Some("publish returned no id".into())))
+                            } else {
+                                Ok(Some(sid))
+                            }
+                        }
+                        Err(e) => Err(e),
+                    }
+                };
+                match result {
+                    Ok(new_id) => {
+                        apply(true, new_id);
                         toasts.success(if push {
                             "Published & broadcast to Discord"
                         } else {
                             "Published"
                         });
                     }
-                    Err(_) => toasts.error("Publish failed"),
+                    Err(e) => {
+                        toasts.error(crate::client::api_error_message(&e, "Publish failed"));
+                    }
                 }
                 publish_busy.set(false);
             });
         }
     };
-    let stub = move |msg: &'static str| {
-        move |_| {
-            #[cfg(target_arch = "wasm32")]
-            crate::toast::use_toasts().success(msg);
-            #[cfg(not(target_arch = "wasm32"))]
-            let _ = msg;
+
+    let handle_delete = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let toasts = crate::toast::use_toasts();
+            if delete_busy.get_untracked() {
+                return;
+            }
+            let id = doc_id.get_value();
+            if is_server_id(&id) {
+                delete_busy.set(true);
+                leptos::task::spawn_local(async move {
+                    match crate::client::api_delete(store, &announcement_id_path(&id)).await {
+                        Ok(()) => {
+                            docs.update(|list| list.retain(|d| d.id != id));
+                            selected_id.set(None);
+                            toasts.success("Announcement archived");
+                        }
+                        Err(e) => {
+                            toasts.error(crate::client::api_error_message(&e, "Delete failed"));
+                        }
+                    }
+                    delete_busy.set(false);
+                });
+            } else {
+                // Local-only draft / mock row — drop from the list; nothing to hit on the API.
+                docs.update(|list| list.retain(|d| d.id != id));
+                selected_id.set(None);
+                toasts.success("Draft discarded");
+            }
+        }
+    };
+
+    let handle_hero = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            // POST /cms/uploads is multipart (`file` field). Wiring it needs web-sys FormData/File
+            // features (Cargo.toml — outside content.rs owns). Honest refusal, not a success toast.
+            crate::toast::use_toasts()
+                .error("Hero image upload unavailable — multipart client not wired in this slice");
         }
     };
 
@@ -338,7 +490,8 @@ fn editor(
                     </select>
                     <button
                         type="button"
-                        on:click=stub("Hero image upload coming soon")
+                        data-testid="content-hero-image"
+                        on:click=handle_hero
                         class="flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-label-sm text-on-surface transition hover:bg-white/5"
                     >
                         <MaterialIcon name="image" class="text-[18px]" />
@@ -350,15 +503,13 @@ fn editor(
                 {MD_TOOLS
                     .iter()
                     .map(|(icon, label)| {
-                        let msg = StoredValue::new(format!("{label} (mock)"));
+                        let tool = (*label).to_string();
                         view! {
                             <button
                                 type="button"
+                                data-testid=format!("content-md-{}", label.to_lowercase())
                                 on:click=move |_| {
-                                    #[cfg(target_arch = "wasm32")]
-                                    crate::toast::use_toasts().success(msg.get_value());
-                                    #[cfg(not(target_arch = "wasm32"))]
-                                    let _ = msg;
+                                    body.update(|b| *b = apply_md_tool(b, &tool));
                                 }
                                 aria-label=*label
                                 title=*label
@@ -386,6 +537,15 @@ fn editor(
                 <div class="flex items-center gap-3">
                     <button
                         type="button"
+                        data-testid="content-delete"
+                        on:click=handle_delete
+                        prop:disabled=move || delete_busy.get()
+                        class="rounded-full border border-error-alert/40 px-6 py-3 text-label-md text-error-alert transition hover:bg-error-alert/10 disabled:opacity-50"
+                    >
+                        "Delete"
+                    </button>
+                    <button
+                        type="button"
                         on:click=save_draft
                         class="rounded-full border border-white/10 px-6 py-3 text-label-md text-on-surface transition hover:bg-white/5"
                     >
@@ -393,6 +553,7 @@ fn editor(
                     </button>
                     <button
                         type="button"
+                        data-testid="content-publish"
                         on:click=handle_publish
                         prop:disabled=move || publish_busy.get()
                         class="rounded-full bg-action px-7 py-3 text-label-md font-bold text-on-action shadow-[0_0_30px_rgba(59,130,246,0.4)] transition hover:bg-action/90 disabled:opacity-50"
@@ -432,5 +593,144 @@ fn switch(checked: RwSignal<bool>) -> impl IntoView {
             tabindex="-1"
             style="clip-path: inset(50%); overflow: hidden; white-space: nowrap; border: 0px; padding: 0px; width: 1px; height: 1px; margin: -1px; position: fixed; top: 0px; left: 0px;"
         />
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        announcement_create_path, announcement_id_path, announcement_push_path, apply_md_tool,
+        category_tag, is_server_id,
+    };
+
+    /// T-267 Class-R — every UI category (incl. SOP) must resolve to a live `announcement_tag`.
+    #[test]
+    fn category_tag_covers_all_ui_categories_including_sop() {
+        assert_eq!(category_tag("announcement"), Some("update"));
+        assert_eq!(
+            category_tag("sop"),
+            Some("update"),
+            "SOP has no enum variant — closest tag is update (perturbation: return None for sop)"
+        );
+        assert_eq!(category_tag("event"), Some("event"));
+        assert_eq!(category_tag("modpack"), Some("modpack_update"));
+        assert_eq!(category_tag("important"), Some("important"));
+        assert_eq!(category_tag("nope"), None);
+    }
+
+    #[test]
+    fn server_id_detects_uuid_not_local_mock() {
+        assert!(is_server_id("44fa4c17-5bd5-4c6b-b02d-4ccd52af6910"));
+        assert!(!is_server_id("d1"));
+        assert!(!is_server_id("new-1710000000000"));
+        assert!(!is_server_id(""));
+    }
+
+    #[test]
+    fn cms_paths_match_axum_routes() {
+        assert_eq!(announcement_create_path(), "/cms/announcements");
+        assert_eq!(
+            announcement_id_path("44fa4c17-5bd5-4c6b-b02d-4ccd52af6910"),
+            "/cms/announcements/44fa4c17-5bd5-4c6b-b02d-4ccd52af6910"
+        );
+        assert_eq!(
+            announcement_push_path("44fa4c17-5bd5-4c6b-b02d-4ccd52af6910"),
+            "/cms/announcements/44fa4c17-5bd5-4c6b-b02d-4ccd52af6910/push-discord"
+        );
+        const APP_RS: &str =
+            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../api/src/app.rs"));
+        assert!(
+            APP_RS.contains(r#""/cms/announcements""#),
+            "app.rs must register POST /cms/announcements"
+        );
+        assert!(
+            APP_RS.contains(r#""/cms/announcements/{id}""#),
+            "app.rs must register PATCH|DELETE /cms/announcements/{{id}}"
+        );
+        assert!(
+            APP_RS.contains(r#""/cms/announcements/{id}/push-discord""#),
+            "app.rs must register POST …/push-discord"
+        );
+        assert!(
+            APP_RS.contains(r#""/cms/uploads""#),
+            "app.rs must still register POST /cms/uploads (orphan until multipart client)"
+        );
+    }
+
+    /// Source guards — go RED if Publish discards the id again, SOP fakes success, or MD mocks.
+    /// Production-only slice of the file so assert strings cannot self-satisfy `include_str!`.
+    #[test]
+    fn publish_edit_delete_push_are_wired_no_fake_toasts() {
+        const SRC: &str = include_str!("content.rs");
+        let prod = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("content.rs must have a #[cfg(test)] module");
+        assert!(
+            prod.contains("api_patch::<serde_json::Value>"),
+            "re-Publish of a server id must PATCH (perturbation: remove api_patch)"
+        );
+        assert!(
+            prod.contains("api_delete(store, &announcement_id_path"),
+            "Delete must call api_delete on /cms/announcements/{{id}}"
+        );
+        assert!(
+            prod.contains("announcement_push_path") && prod.contains("api_post_ok"),
+            "re-push must hit …/push-discord via api_post_ok"
+        );
+        assert!(
+            prod.contains(".get(\"id\")"),
+            "POST create must read the returned id (perturbation: discard Ok(_) body)"
+        );
+        assert!(
+            prod.contains("is_server_id"),
+            "Publish must branch POST vs PATCH on server id"
+        );
+        assert!(
+            !prod.contains("success(\"SOP published\")"),
+            "SOP must not toast local-only success (perturbation: restore fake SOP toast)"
+        );
+        assert!(
+            prod.contains("\"announcement\" | \"sop\""),
+            "SOP must share the update tag arm with announcement"
+        );
+        assert!(
+            !prod.contains("(mock)"),
+            "markdown tools must not toast mock success"
+        );
+        assert!(
+            prod.contains("apply_md_tool"),
+            "markdown toolbar must mutate body via apply_md_tool"
+        );
+        assert!(
+            prod.contains("Hero image upload unavailable"),
+            "hero button must error honestly, not toast success"
+        );
+        assert!(
+            !prod.contains("Hero image upload coming soon"),
+            "old stub success toast must be gone"
+        );
+    }
+
+    #[test]
+    fn apply_md_tool_inserts_real_markers() {
+        assert_eq!(apply_md_tool("", "Bold"), "**bold**");
+        assert_eq!(apply_md_tool("hi", "Italic"), "hi *italic*");
+        assert!(apply_md_tool("x", "Link").contains("](https://)"));
+        assert!(apply_md_tool("x", "List").contains("- item"));
+        assert!(apply_md_tool("", "Image").starts_with("![alt]"));
+    }
+
+    /// Perturbation oracle: discarding next_cursor-style — if we mapped SOP to None again, Publish
+    /// would take the fake-success branch. This pins the RED difference.
+    #[test]
+    fn sop_none_mapping_is_detectably_wrong() {
+        let live = category_tag("sop");
+        let discarded: Option<&str> = None; // pre-T-267: category_tag("sop") → None → local toast
+        assert_eq!(live, Some("update"));
+        assert_ne!(
+            live, discarded,
+            "mapping SOP to None reintroduces the fake local-only publish path"
+        );
     }
 }
