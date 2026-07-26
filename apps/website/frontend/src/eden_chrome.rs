@@ -152,14 +152,141 @@ pub fn minutes_to_hhmm(min: u32) -> String {
     format!("{:02}:{:02}", (min / 60) % 24, min % 60)
 }
 
+/// `HH:MM` → minutes since midnight; `None` when it is not a clock.
+///
+/// **T-192 — the trailing `:SS` is accepted on purpose.** `missions.time_of_day` is a Postgres
+/// `time` selected as `::text`, so `mission_hydrate::apply_row_meta` writes `06:00:00` into
+/// `meta.environment.time` on every load. The old `split_once` parse read the remainder as `00:00`,
+/// failed, and silently parked the scrubber at the 06:00 default — so after a reload an author who
+/// had set 21:45 saw the slider claim 06:00. That is the same "your setting was quietly reverted"
+/// symptom this ticket exists to remove, on the same value.
 pub fn hhmm_to_minutes(s: &str) -> Option<u32> {
-    let (h, m) = s.split_once(':')?;
-    let h: u32 = h.parse().ok()?;
-    let m: u32 = m.parse().ok()?;
-    if h > 23 || m > 59 {
+    let mut parts = s.split(':');
+    let h: u32 = parts.next()?.parse().ok()?;
+    let m: u32 = parts.next()?.parse().ok()?;
+    if let Some(sec) = parts.next() {
+        let sec: u32 = sec.parse().ok()?;
+        if sec > 59 {
+            return None;
+        }
+    }
+    if parts.next().is_some() || h > 23 || m > 59 {
         return None;
     }
     Some(h * 60 + m)
+}
+
+/// A clock from any of the controls (or from the row hydrate) → canonical `HH:MM`; `None` when it
+/// is not one. The shape [`RowMirror::set_time`] sends to `PATCH /missions/{id}`.
+pub fn normalize_clock(s: &str) -> Option<String> {
+    hhmm_to_minutes(s).map(minutes_to_hhmm)
+}
+
+/// Is the route `:id` a real mission row? T-192.
+///
+/// The editor also mounts on synthetic ids — `mission_editor` falls back to `draft`, and the gate
+/// route drives a smoke id — where a row PATCH is a guaranteed 400. Cheap shape check rather than a
+/// `uuid` dependency the SPA does not otherwise carry.
+fn is_mission_row_id(s: &str) -> bool {
+    s.len() == 36
+        && s.as_bytes().iter().enumerate().all(|(i, b)| match i {
+            8 | 13 | 18 | 23 => *b == b'-',
+            _ => b.is_ascii_hexdigit(),
+        })
+}
+
+/// T-192 — mirrors an authored environment field onto the `missions` row.
+///
+/// **Why this exists.** The Mission Settings dialog and the top-strip scrubber below write
+/// `meta.environment.{time,weather}` into the CRDT document and nowhere else. Nothing PATCHed the
+/// row, and `mission_hydrate::apply_row_meta` re-applies the row over the document on every
+/// hydrate — so the author's setting was dropped on the wire (the compile read the row) **and**
+/// reverted locally on the next reload. The compile half is fixed in
+/// `api/src/services/mission_compile.rs`, which now prefers the environment carried by the saved
+/// payload; this is the half that stops the row from reverting it, and keeps the library dossier
+/// (which renders the row's Weather/Time) telling the truth.
+///
+/// **It rides the same event that writes the document.** Not a later `change`: the Mission Settings
+/// dialog re-runs its whole view closure on every `doc_tick`, and `update_environment` bumps
+/// `doc_tick`, so a `change` handler on a control the rebuild may have re-created is exactly the
+/// kind of thing that works until it doesn't — and its failure mode is this ticket's bug again,
+/// silently. Mirroring from the doc-write handler makes "the row disagrees with the document"
+/// unreachable rather than unlikely. [`RowMirror::last_time`] / [`RowMirror::last_weather`] absorb
+/// the resulting repeats (a held time spinner, a rebuild replaying a value).
+///
+/// `Copy` so each control's handler can capture it. Built at component **setup**: both
+/// `expect_context` and `use_params_map` resolve through the reactive owner, which a plain DOM
+/// event handler does not have.
+#[cfg(target_arch = "wasm32")]
+#[derive(Clone, Copy)]
+struct RowMirror {
+    auth: crate::auth::AuthStore,
+    mission_id: StoredValue<String>,
+    /// Last value handed to the row per field, so an unchanged one costs nothing. Cleared on a
+    /// failed PATCH so the next commit of the same value retries instead of assuming it landed.
+    last_time: StoredValue<String>,
+    last_weather: StoredValue<String>,
+}
+
+#[cfg(target_arch = "wasm32")]
+impl RowMirror {
+    fn from_route() -> Self {
+        use leptos_router::hooks::use_params_map;
+        let id = use_params_map()
+            .get_untracked()
+            .get("id")
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+        Self {
+            auth: expect_context::<crate::auth::AuthStore>(),
+            mission_id: StoredValue::new(id),
+            last_time: StoredValue::new(String::new()),
+            last_weather: StoredValue::new(String::new()),
+        }
+    }
+
+    /// PATCH one field of the row. Fire-and-forget on purpose: the document already holds the
+    /// authored value and Save Version is the durable path, so a failed mirror must never block or
+    /// undo the edit.
+    fn patch(self, field: &'static str, last: StoredValue<String>, value: String) {
+        let id = self.mission_id.get_value();
+        if value.is_empty() || last.get_value() == value || !is_mission_row_id(&id) {
+            return;
+        }
+        last.set_value(value.clone());
+        let auth = self.auth;
+        leptos::task::spawn_local(async move {
+            let body = serde_json::json!({ field: value });
+            if let Err(e) = crate::client::api_patch::<serde_json::Value>(
+                auth,
+                &format!("/missions/{id}"),
+                body,
+            )
+            .await
+            {
+                last.set_value(String::new()); // did not land — let the next commit retry
+                leptos::logging::warn!(
+                    "T-192: could not mirror {} onto the mission row: {}",
+                    field,
+                    crate::client::api_error_message(&e, "PATCH /missions/:id failed")
+                );
+            }
+        });
+    }
+
+    /// A clock from a control (`HH:MM`) or a row hydrate (`HH:MM:SS`) → `missions.time_of_day`.
+    /// `<input type="time">` reports a half-entered value as `""`, and [`normalize_clock`] rejects
+    /// anything else that is not a whole clock, so a partial edit never leaves the tab.
+    fn set_time(self, raw: &str) {
+        if let Some(t) = normalize_clock(raw) {
+            self.patch("time_of_day", self.last_time, t);
+        }
+    }
+
+    /// The weather select value → `missions.weather` (the PATCH rejects anything off the enum).
+    fn set_weather(self, raw: &str) {
+        self.patch("weather", self.last_weather, raw.to_string());
+    }
 }
 
 #[component]
@@ -190,6 +317,9 @@ pub fn TopCommandStrip(
     let open_menu = RwSignal::new(None::<usize>);
     let save_open = RwSignal::new(false);
     let save_notes = RwSignal::new(String::new());
+    // T-192 — row mirror for the inline scrubber / weather select. Setup-time, not handler-time.
+    #[cfg(target_arch = "wasm32")]
+    let row_mirror = RowMirror::from_route();
     // T-181.44 — per-problem lines from a rejected Save (`details` from the 400). Local to the
     // strip because the Save dialog is the only place they are read; `save_status` stays a
     // one-liner because it also renders in the strip itself.
@@ -400,7 +530,8 @@ pub fn TopCommandStrip(
                     })}
             </div>
             // Inline time scrubber + weather (screen 05 center) — same doc fields as the
-            // Mission Settings dialog (`update_environment`, one undo step per commit).
+            // Mission Settings dialog (`update_environment`, one undo step per commit), and
+            // T-192 the same `missions` row mirror, so the two entry points cannot disagree.
             <div class="flex shrink-0 items-center gap-2">
                 <input
                     type="range"
@@ -416,9 +547,11 @@ pub fn TopCommandStrip(
                         #[cfg(target_arch = "wasm32")]
                         {
                             let v: u32 = event_target_value(&ev).parse().unwrap_or(0);
+                            let hhmm = minutes_to_hhmm(v);
                             crate::editor_ops::update_environment(
-                                serde_json::json!({ "time": minutes_to_hhmm(v) }).to_string(),
+                                serde_json::json!({ "time": hhmm }).to_string(),
                             );
+                            row_mirror.set_time(&hhmm);
                         }
                         #[cfg(not(target_arch = "wasm32"))]
                         let _ = &ev;
@@ -433,9 +566,13 @@ pub fn TopCommandStrip(
                     prop:value=move || env.get().weather
                     on:change=move |ev| {
                         #[cfg(target_arch = "wasm32")]
-                        crate::editor_ops::update_environment(
-                            serde_json::json!({ "weather": event_target_value(&ev) }).to_string(),
-                        );
+                        {
+                            let w = event_target_value(&ev);
+                            crate::editor_ops::update_environment(
+                                serde_json::json!({ "weather": w }).to_string(),
+                            );
+                            row_mirror.set_weather(&w);
+                        }
                         #[cfg(not(target_arch = "wasm32"))]
                         let _ = &ev;
                     }
@@ -1668,6 +1805,10 @@ pub fn BottomToolbelt(
 /// undo step each). The render-pref controls (map style, grid, hillshade, world-layer toggles) land
 /// with the map-asset host (T-159.28) — noted in the dialog rather than shown as inert toggles.
 /// Renders no DOM while closed. T-159.26.
+///
+/// **T-192:** time and weather additionally mirror to the `missions` row through [`RowMirror`] on
+/// commit. `viewDistance` / `thermals` deliberately do **not** — they have no column, and where
+/// they should land instead is **T-193**.
 #[component]
 pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> impl IntoView {
     // Esc closes (the suite Dialog behavior).
@@ -1680,6 +1821,10 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
         });
         on_cleanup(move || esc.remove());
     }
+    // T-192 — read the route id + auth store here, in the component body: the reactive owner is
+    // live at setup and gone by the time a control's `on:change` fires.
+    #[cfg(target_arch = "wasm32")]
+    let row_mirror = RowMirror::from_route();
     let ctrl = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
     move || {
         if !open.get() {
@@ -1732,10 +1877,17 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                                     value=env.time.clone()
                                     on:input=move |ev| {
                                         #[cfg(target_arch = "wasm32")]
-                                        crate::editor_ops::update_environment(
-                                            serde_json::json!({ "time": event_target_value(&ev) })
-                                                .to_string(),
-                                        );
+                                        {
+                                            let t = event_target_value(&ev);
+                                            crate::editor_ops::update_environment(
+                                                serde_json::json!({ "time": t }).to_string(),
+                                            );
+                                            // T-192 — same handler as the doc write on purpose; a
+                                            // `change` listener would not survive this dialog's
+                                            // rebuild-per-doc-tick. Partial values arrive as "" and
+                                            // repeats are absorbed by the mirror's dedupe.
+                                            row_mirror.set_time(&t);
+                                        }
                                         #[cfg(not(target_arch = "wasm32"))]
                                         let _ = &ev;
                                     }
@@ -1772,10 +1924,13 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                                 prop:value=env.weather.clone()
                                 on:change=move |ev| {
                                     #[cfg(target_arch = "wasm32")]
-                                    crate::editor_ops::update_environment(
-                                        serde_json::json!({ "weather": event_target_value(&ev) })
-                                            .to_string(),
-                                    );
+                                    {
+                                        let w = event_target_value(&ev);
+                                        crate::editor_ops::update_environment(
+                                            serde_json::json!({ "weather": w }).to_string(),
+                                        );
+                                        row_mirror.set_weather(&w);
+                                    }
                                     #[cfg(not(target_arch = "wasm32"))]
                                     let _ = &ev;
                                 }
@@ -1953,8 +2108,8 @@ fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
 #[cfg(test)]
 mod tests {
     use super::{
-        apply_eden_chip, eden_chip_selected, hhmm_to_minutes, minutes_to_hhmm, EdenChip,
-        EDEN_SIDE_CHIPS, OBJECTS_COMING_SOON,
+        apply_eden_chip, eden_chip_selected, hhmm_to_minutes, is_mission_row_id, minutes_to_hhmm,
+        normalize_clock, EdenChip, EDEN_SIDE_CHIPS, OBJECTS_COMING_SOON,
     };
     use leptos::prelude::*;
 
@@ -1969,6 +2124,53 @@ mod tests {
         assert_eq!(hhmm_to_minutes("nope"), None);
         for m in [0u32, 1, 59, 60, 719, 1439] {
             assert_eq!(hhmm_to_minutes(&minutes_to_hhmm(m)), Some(m));
+        }
+    }
+
+    /// T-192 — `missions.time_of_day` is a Postgres `time`, so the row hydrate puts `HH:MM:SS` in
+    /// the document. The scrubber has to read it, or a reload silently shows 06:00 for a mission
+    /// set to 21:45 — the same reverted-setting symptom the ticket removes.
+    #[test]
+    fn scrubber_reads_the_row_hydrate_clock() {
+        assert_eq!(hhmm_to_minutes("21:45:00"), Some(1305));
+        assert_eq!(hhmm_to_minutes("06:00:00"), Some(360));
+        assert_eq!(hhmm_to_minutes("00:00:59"), Some(0));
+        // Still a clock parser, not a "contains digits" parser.
+        assert_eq!(hhmm_to_minutes("12:00:60"), None);
+        assert_eq!(hhmm_to_minutes("12:00:00:00"), None);
+        assert_eq!(hhmm_to_minutes("12"), None);
+        assert_eq!(hhmm_to_minutes("12:0a"), None);
+        assert_eq!(hhmm_to_minutes(""), None);
+    }
+
+    /// What [`super::RowMirror::set_time`] sends to `PATCH /missions/{id}`: a canonical `HH:MM`, or
+    /// nothing at all. A half-typed clock must never reach the row.
+    #[test]
+    fn normalize_clock_is_the_patch_shape() {
+        assert_eq!(normalize_clock("21:45").as_deref(), Some("21:45"));
+        assert_eq!(normalize_clock("21:45:00").as_deref(), Some("21:45"));
+        assert_eq!(normalize_clock("6:5").as_deref(), Some("06:05"));
+        for bad in ["", "2", "24:00", "12:60", "noon", "12:00:00:00"] {
+            assert_eq!(normalize_clock(bad), None, "{bad:?} must not be PATCHed");
+        }
+    }
+
+    /// The mirror only fires on a real row. `mission_editor` falls back to `draft` and the editor
+    /// gate mounts on a smoke id — a PATCH there is a guaranteed 400 and pure console noise.
+    #[test]
+    fn only_a_uuid_route_id_gets_mirrored() {
+        assert!(is_mission_row_id("3f2504e0-4f89-11d3-9a0c-0305e82c3301"));
+        assert!(is_mission_row_id("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"));
+        for bad in [
+            "",
+            "draft",
+            "smoke",
+            "3f2504e0-4f89-11d3-9a0c-0305e82c330",   // short
+            "3f2504e0-4f89-11d3-9a0c-0305e82c33011", // long
+            "3f2504e0x4f89-11d3-9a0c-0305e82c3301",  // dash in the wrong place
+            "3f2504e0-4f89-11d3-9a0c-0305e82c330g",  // non-hex
+        ] {
+            assert!(!is_mission_row_id(bad), "{bad:?} is not a mission row id");
         }
     }
 
