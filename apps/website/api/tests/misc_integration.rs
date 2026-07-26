@@ -365,7 +365,10 @@ async fn servers_crud_full_lifecycle() {
     assert_eq!(created["ip"], "10.20.30.40");
     assert_eq!(created["port"], 2001);
     assert_eq!(created["is_active"], true, "is_active defaults true");
-    assert!(created["status"].is_null(), "a fresh server has no telemetry");
+    assert!(
+        created["status"].is_null(),
+        "a fresh server has no telemetry"
+    );
     assert!(
         created.get("required_modpack_id").is_none(),
         "absent, not null — matches `GET /servers` and dto.rs::ServerRowDto"
@@ -378,7 +381,10 @@ async fn servers_crud_full_lifecycle() {
 
     // ── LIST — the row the SPA renders ───────────────────────────────────────────
     let row = list_row(&app, &admin, &id).await.expect("row is listed");
-    assert_eq!(row, created, "GET /servers serves exactly what POST returned");
+    assert_eq!(
+        row, created,
+        "GET /servers serves exactly what POST returned"
+    );
 
     // ── UPDATE — rename, re-address (IPv6), re-port ──────────────────────────────
     let (st, patched) = req(
@@ -629,7 +635,14 @@ async fn servers_write_validation_rejects_at_the_boundary() {
         let app = app.clone();
         let admin = admin.clone();
         async move {
-            let (st, b) = req(&app, Method::POST, "/api/v1/servers", Some(&admin), Some(body)).await;
+            let (st, b) = req(
+                &app,
+                Method::POST,
+                "/api/v1/servers",
+                Some(&admin),
+                Some(body),
+            )
+            .await;
             assert_eq!(st, StatusCode::BAD_REQUEST, "{why}: {b}");
             assert!(b["error"].is_string(), "{why}: envelope carries a message");
         }
@@ -685,7 +698,11 @@ async fn servers_write_validation_rejects_at_the_boundary() {
     // Required on create, and the message names the field rather than falling through to axum's.
     reject(json!({ "ip": "127.0.0.1", "port": 2201 }), "no name").await;
     reject(json!({ "name": "T235 Valid A", "port": 2201 }), "no ip").await;
-    reject(json!({ "name": "T235 Valid A", "ip": "127.0.0.1" }), "no port").await;
+    reject(
+        json!({ "name": "T235 Valid A", "ip": "127.0.0.1" }),
+        "no port",
+    )
+    .await;
 
     // `required_modpack_id` has no foreign key, so an unknown id used to store silently and the
     // card just lost its modpack panel with nothing complaining anywhere.
@@ -706,8 +723,10 @@ async fn servers_write_validation_rejects_at_the_boundary() {
         Method::POST,
         "/api/v1/servers",
         Some(&admin),
-        Some(json!({ "name": "T235 Valid A", "ip": "127.0.0.1", "port": 2201,
-                     "required_modpack_id": "not-a-uuid" })),
+        Some(
+            json!({ "name": "T235 Valid A", "ip": "127.0.0.1", "port": 2201,
+                     "required_modpack_id": "not-a-uuid" }),
+        ),
     )
     .await;
     assert_eq!(st, StatusCode::BAD_REQUEST, "{b}");

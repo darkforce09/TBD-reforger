@@ -93,14 +93,13 @@ pub async fn list_servers(
     State(state): State<AppState>,
     _u: AuthUser,
 ) -> Result<Json<Value>, ApiError> {
-    let servers: Vec<Server> =
-        sqlx::query_as(concat!(
-            "SELECT ",
-            server_cols!(),
-            " FROM servers ORDER BY name ASC"
-        ))
-            .fetch_all(&state.pool)
-            .await?;
+    let servers: Vec<Server> = sqlx::query_as(concat!(
+        "SELECT ",
+        server_cols!(),
+        " FROM servers ORDER BY name ASC"
+    ))
+    .fetch_all(&state.pool)
+    .await?;
     let mut out = Vec::with_capacity(servers.len());
     for s in servers {
         out.push(server_intel(&state.pool, s).await?);
@@ -119,15 +118,14 @@ pub async fn get_server_status(
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    let server: Option<Server> =
-        sqlx::query_as(concat!(
-            "SELECT ",
-            server_cols!(),
-            " FROM servers WHERE id = $1"
-        ))
-            .bind(id)
-            .fetch_optional(&state.pool)
-            .await?;
+    let server: Option<Server> = sqlx::query_as(concat!(
+        "SELECT ",
+        server_cols!(),
+        " FROM servers WHERE id = $1"
+    ))
+    .bind(id)
+    .fetch_optional(&state.pool)
+    .await?;
     let Some(server) = server else {
         return Err(ApiError::not_found("server not found"));
     };
