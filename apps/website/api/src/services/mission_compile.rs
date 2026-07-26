@@ -59,7 +59,10 @@ mod tests {
           {"id": "s1", "squadId": "sq1", "index": 0, "role": "SL", "assetId": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et", "position": {"x": 4839.2, "y": 6620.8, "z": 0, "rotation": 270},
            "loadout": {"version": 2,
              "wear": {"headCover": "res://helmet", "jacket": "res://bdu_blouse", "vest": "res://chest_rig", "armoredVest": "res://pasgt"},
-             "weapons": [{"slotIndex": 0, "slotType": "primary", "weapon": "res://m16", "optic": "res://acog", "magazine": "res://stanag", "attachments": []}],
+             "weapons": [{"slotIndex": 0, "slotType": "primary", "weapon": "res://m16", "optic": "res://acog", "magazine": "res://stanag", "attachments": []},
+                         {"slotIndex": 1, "slotType": "primary", "weapon": "res://m72", "attachments": []},
+                         {"slotIndex": 2, "slotType": "secondary", "weapon": "res://m9", "attachments": []},
+                         {"slotIndex": 3, "slotType": "grenade", "weapon": "res://m67", "attachments": []}],
              "cargo": [{"container": "vest", "item": "res://stanag", "qty": 4}]}},
           {"id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "position": {"x": 4836.9, "y": 6626.5, "z": 142.5, "rotation": 450}},
           {"id": "s3", "squadId": "sq1", "index": 2, "role": "TL", "position": {"x": 4831.2, "y": 6628.8, "z": 0, "rotation": 0}},
@@ -154,8 +157,28 @@ mod tests {
             "cargo qty verbatim"
         );
 
-        // G6: the compiled document (incl. the T-068.11 loadout block) validates
-        // against mission.schema.json.
+        // T-182 — all four authored weapon slots survive the compile, not just the rifle.
+        assert_eq!(
+            (
+                g.primary.as_deref(),
+                g.launcher.as_deref(),
+                g.handgun.as_deref(),
+                g.throwable.as_deref()
+            ),
+            (
+                Some("res://m16"),
+                Some("res://m72"),
+                Some("res://m9"),
+                Some("res://m67")
+            )
+        );
+
+        // G6: the compiled document (incl. the T-068.11 loadout block and the T-182 weapon
+        // slots) validates against mission.schema.json. This is the assertion that stands
+        // between a widened compiler and a 500 on GET /missions/:id/compiled — `gear` is
+        // `additionalProperties: false`, so emitting launcher/handgun/throwable without the
+        // matching schema keys would fail here, and in production the mod's error path would
+        // fall back to a STALE CACHED MISSION rather than surfacing the break.
         let bytes = serde_json::to_vec(&doc).unwrap();
         let details = validate_mission_document(&bytes).expect("schema compiles");
         assert!(details.is_empty(), "schema violations: {details:?}");

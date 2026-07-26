@@ -58,9 +58,11 @@ pub struct ModSlotLoadout {
 /// Fixed gear ResourceNames — the v1 mod-reader shape, same derivation the
 /// loadout-export schema documents: jacket→uniform, **armoredVest else vest→vest
 /// (known collapse: a chest rig layered under a plate carrier loses the rig —
-/// single-vest rule, documented)**, headCover→helmet, weapons[0] primary slot →
-/// primary/optic/magazine; A3 widens with pants/boots/handwear/backpack so an
-/// Arsenal-authored slot arrives complete. Empty slots are omitted, never empty
+/// single-vest rule, documented)**, headCover→helmet; A3 widens with
+/// pants/boots/handwear/backpack so an Arsenal-authored slot arrives complete.
+/// **T-182** adds the three weapon slots the compiler used to discard, so all
+/// four authored weapons now reach the wire — see `mod_slot_loadout` for the
+/// `(slotIndex, slotType)` selectors. Empty slots are omitted, never empty
 /// strings.
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -71,6 +73,16 @@ pub struct ModSlotGear {
     pub optic: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub magazine: Option<String>,
+    /// T-182 — the other three authored weapon slots. Named with the EDITOR's own vocabulary
+    /// (`arsenal_rules.rs` `WEAPON_SLOTS`) so the compiled document reads the same words the
+    /// Arsenal UI shows. None of the three carry optic/magazine sub-slots — those ride the
+    /// slotIndex-0 primary alone.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub launcher: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub handgun: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub throwable: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uniform: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -92,6 +104,13 @@ impl ModSlotGear {
         self.primary.is_none()
             && self.optic.is_none()
             && self.magazine.is_none()
+            // T-182 — a launcher-only (or throwable-only) gear block is authored content. Omit
+            // these three and `mod_slot_loadout` would drop the whole `loadout` key for such a
+            // slot, so the fields would never reach the wire in the one case they are the only
+            // thing on it.
+            && self.launcher.is_none()
+            && self.handgun.is_none()
+            && self.throwable.is_none()
             && self.uniform.is_none()
             && self.vest.is_none()
             && self.helmet.is_none()
@@ -374,7 +393,11 @@ fn mission_doc_id(id: &str) -> String {
 /// strings and malformed cargo rows drop (the editor tolerance); an all-empty
 /// result returns `None` so the whole `loadout` key is omitted. Gear derivation
 /// is the locked loadout-export rule: jacket→uniform, armoredVest else
-/// vest→vest, headCover→helmet, weapons[0] primary slot → primary/optic/magazine.
+/// vest→vest, headCover→helmet; and, since T-182, ALL FOUR authored weapon slots
+/// by `(slotIndex, slotType)` — `(0,primary)`→primary (+optic/magazine),
+/// `(1,primary)`→launcher, `(2,secondary)`→handgun, `(3,grenade)`→throwable.
+/// Before T-182 only `(0,primary)` was selected, so a player authored with a
+/// launcher, a sidearm or a grenade spawned without it.
 fn mod_slot_loadout(lo: &serde_json::Value) -> Option<ModSlotLoadout> {
     let non_empty = |v: Option<&serde_json::Value>| {
         v.and_then(serde_json::Value::as_str)
@@ -394,20 +417,33 @@ fn mod_slot_loadout(lo: &serde_json::Value) -> Option<ModSlotLoadout> {
         backpack: wear_key("backpack"),
         ..ModSlotGear::default()
     };
-    if let Some(primary) = lo
-        .get("weapons")
-        .and_then(serde_json::Value::as_array)
-        .and_then(|ws| {
+    // T-182 — select ALL FOUR authored weapon slots, each by its exact (slotIndex, slotType) pair.
+    // This used to match only (0, "primary") and silently drop the rest, so a slot authored with a
+    // launcher, a sidearm and a grenade spawned carrying none of them. The pairs are the editor's
+    // own table — keep byte-identical to `arsenal_rules.rs` `WEAPON_SLOTS`. Matching on the PAIR
+    // rather than the index alone matters: slots 0 and 1 are both slotType "primary" (two untyped
+    // long slots), so the index is what separates rifle from launcher, while slotType is what
+    // stops a mis-authored row landing in the wrong key.
+    let weapons = lo.get("weapons").and_then(serde_json::Value::as_array);
+    let weapon_at = |slot_index: i64, slot_type: &'static str| {
+        weapons.and_then(|ws| {
             ws.iter().find(|w| {
-                w.get("slotIndex").and_then(serde_json::Value::as_i64) == Some(0)
-                    && w.get("slotType").and_then(serde_json::Value::as_str) == Some("primary")
+                w.get("slotIndex").and_then(serde_json::Value::as_i64) == Some(slot_index)
+                    && w.get("slotType").and_then(serde_json::Value::as_str) == Some(slot_type)
             })
         })
-    {
+    };
+
+    if let Some(primary) = weapon_at(0, "primary") {
         gear.primary = non_empty(primary.get("weapon"));
+        // optic/magazine exist on the primary rifle alone — the other three slots have no
+        // sub-slots in the editor, so nothing is being dropped by not reading them there.
         gear.optic = non_empty(primary.get("optic"));
         gear.magazine = non_empty(primary.get("magazine"));
     }
+    gear.launcher = weapon_at(1, "primary").and_then(|w| non_empty(w.get("weapon")));
+    gear.handgun = weapon_at(2, "secondary").and_then(|w| non_empty(w.get("weapon")));
+    gear.throwable = weapon_at(3, "grenade").and_then(|w| non_empty(w.get("weapon")));
 
     let cargo: Vec<ModSlotCargo> = lo
         .get("cargo")
@@ -732,7 +768,10 @@ mod tests {
           {"id": "s1", "squadId": "sq1", "index": 0, "role": "SL", "assetId": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et", "position": {"x": 4839.2, "y": 6620.8, "z": 0, "rotation": 270},
            "loadout": {"version": 2,
              "wear": {"headCover": "res://helmet", "jacket": "res://bdu_blouse", "vest": "res://chest_rig", "armoredVest": "res://pasgt", "pants": "res://bdu_pants", "boots": null},
-             "weapons": [{"slotIndex": 0, "slotType": "primary", "weapon": "res://m16", "optic": "res://acog", "magazine": "res://stanag", "attachments": []}],
+             "weapons": [{"slotIndex": 0, "slotType": "primary", "weapon": "res://m16", "optic": "res://acog", "magazine": "res://stanag", "attachments": []},
+                         {"slotIndex": 1, "slotType": "primary", "weapon": "res://m72", "attachments": []},
+                         {"slotIndex": 2, "slotType": "secondary", "weapon": "res://m9", "attachments": []},
+                         {"slotIndex": 3, "slotType": "grenade", "weapon": "res://m67", "attachments": []}],
              "cargo": [{"container": "vest", "item": "res://stanag", "qty": 4},
                        {"container": "pants", "item": "res://bandage", "qty": 2},
                        {"container": "", "item": "res://dropped", "qty": 1}]}},
@@ -828,6 +867,17 @@ mod tests {
                 None
             )
         );
+        // T-182 — the other three authored weapon slots reach the wire under the editor's own
+        // key names. Asserted on the SERIALIZED document, not just the struct, because the whole
+        // point of the ticket is what the game server is handed.
+        assert_eq!(
+            (
+                g.launcher.as_deref(),
+                g.handgun.as_deref(),
+                g.throwable.as_deref()
+            ),
+            (Some("res://m72"), Some("res://m9"), Some("res://m67"))
+        );
         assert_eq!(lo.cargo.len(), 2);
         assert_eq!(
             (lo.cargo[0].container.as_str(), lo.cargo[0].qty),
@@ -847,6 +897,14 @@ mod tests {
         );
         assert!(wire["slots"][3]["loadout"].get("gear").is_none());
         assert_eq!(wire["slots"][3]["loadout"]["cargo"][0]["qty"], 40);
+
+        // T-182 — the three new keys on the actual wire, spelled exactly as the Arsenal UI and
+        // mission.schema.json spell them. A rename here is a silent contract break: the mod reads
+        // this block by field NAME via JsonLoadContext, which ignores keys it does not recognise.
+        let s1_gear = &wire["slots"][0]["loadout"]["gear"];
+        assert_eq!(s1_gear["launcher"], "res://m72");
+        assert_eq!(s1_gear["handgun"], "res://m9");
+        assert_eq!(s1_gear["throwable"], "res://m67");
     }
 
     #[test]
@@ -855,11 +913,66 @@ mod tests {
         let lo = serde_json::json!({"wear": {"vest": "res://rig", "armoredVest": ""}});
         let m = mod_slot_loadout(&lo).expect("gear");
         assert_eq!(m.gear.unwrap().vest.as_deref(), Some("res://rig"));
-        // Non-primary weapons never feed gear; empty strings drop; qty<1 drops.
+        // T-182 — INVERTED. This assertion used to read `is_none()`, pinning the bug: an RPG
+        // authored at slotIndex 1 produced no loadout at all, which is precisely how the silent
+        // discard survived a green test suite. A launcher is authored content and now stands on
+        // its own — the whole loadout survives on the strength of it, even though the jacket is
+        // an empty string and the cargo row is dropped for qty<1.
         let lo = serde_json::json!({
             "wear": {"jacket": ""},
             "weapons": [{"slotIndex": 1, "slotType": "primary", "weapon": "res://rpg"}],
             "cargo": [{"container": "vest", "item": "res://mag", "qty": 0}]
+        });
+        let m = mod_slot_loadout(&lo).expect("launcher-only loadout must survive");
+        let g = m.gear.expect("launcher-only gear");
+        assert_eq!(g.launcher.as_deref(), Some("res://rpg"));
+        // It must NOT be mistaken for the rifle — that would be the same loss wearing a new name.
+        assert!(g.primary.is_none() && g.handgun.is_none() && g.throwable.is_none());
+        assert!(m.cargo.is_empty());
+
+        // All four slots at once, each landing in its own key and none stealing another's.
+        let lo = serde_json::json!({
+            "weapons": [
+                {"slotIndex": 0, "slotType": "primary",   "weapon": "res://m4", "optic": "res://acog", "magazine": "res://stanag"},
+                {"slotIndex": 1, "slotType": "primary",   "weapon": "res://rpg"},
+                {"slotIndex": 2, "slotType": "secondary", "weapon": "res://m9"},
+                {"slotIndex": 3, "slotType": "grenade",   "weapon": "res://m67"}
+            ]
+        });
+        let g = mod_slot_loadout(&lo)
+            .expect("four weapons")
+            .gear
+            .expect("gear");
+        assert_eq!(
+            (
+                g.primary.as_deref(),
+                g.launcher.as_deref(),
+                g.handgun.as_deref(),
+                g.throwable.as_deref(),
+                g.optic.as_deref(),
+                g.magazine.as_deref()
+            ),
+            (
+                Some("res://m4"),
+                Some("res://rpg"),
+                Some("res://m9"),
+                Some("res://m67"),
+                Some("res://acog"),
+                Some("res://stanag")
+            )
+        );
+
+        // The PAIR is the selector, not the index: a row at the right index with the wrong
+        // slotType is not silently promoted into the key it half-matches.
+        let lo = serde_json::json!({
+            "weapons": [{"slotIndex": 2, "slotType": "primary", "weapon": "res://bogus"}]
+        });
+        assert!(mod_slot_loadout(&lo).is_none());
+
+        // A weapon row with an empty ResourceName drops rather than emitting an empty string
+        // (the schema's minLength: 1 would reject it at /compiled).
+        let lo = serde_json::json!({
+            "weapons": [{"slotIndex": 3, "slotType": "grenade", "weapon": ""}]
         });
         assert!(mod_slot_loadout(&lo).is_none());
         // Cargo-only survives without gear.
