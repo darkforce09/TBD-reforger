@@ -787,11 +787,9 @@ mod tests {
             root["vehiclesById"]["veh-OPFOR-apply-0"]["resourceName"],
             "{CCCC}UAZ.et"
         );
-        assert!(
-            root["vehiclesById"]["veh-OPFOR-apply-0"]
-                .get("position")
-                .is_some()
-        );
+        assert!(root["vehiclesById"]["veh-OPFOR-apply-0"]
+            .get("position")
+            .is_some());
         let xy = doc.vehicle_xy_flat();
         assert_eq!(xy.len(), 2);
     }
@@ -882,12 +880,10 @@ mod tests {
             1
         );
         // Old vehicles gone.
-        assert!(
-            root["vehiclesById"]
-                .as_object()
-                .map(|m| m.is_empty())
-                .unwrap_or(true)
-        );
+        assert!(root["vehiclesById"]
+            .as_object()
+            .map(|m| m.is_empty())
+            .unwrap_or(true));
     }
 
     #[test]
@@ -1236,7 +1232,12 @@ mod tests {
             }
             let squad_id = format!("squad-{side}-{n}");
             let ordinal = faction_squad_ids(doc, &faction_id).len();
-            doc.add_squad(&squad_id, &faction_id, &format!("Squad {}", ordinal + 1), None);
+            doc.add_squad(
+                &squad_id,
+                &faction_id,
+                &format!("Squad {}", ordinal + 1),
+                None,
+            );
             let slot_id = format!("slot-legacy-{n}");
             doc.add_slot(
                 &slot_id, &squad_id, "lyr", 0, "Rifleman", None, None, x, y, 0.0, 0.0,
@@ -1254,12 +1255,19 @@ mod tests {
         assert_eq!(side_squad_ids(&doc, "OPFOR").len(), 3, "pre-T-321 shape");
 
         let r = apply_faction_library(&doc, "OPFOR", "lyr", &two_role_lib()).expect("apply");
-        assert_eq!(side_squad_ids(&doc, "OPFOR"), vec![r.squad_id.clone()], "folded to one");
+        assert_eq!(
+            side_squad_ids(&doc, "OPFOR"),
+            vec![r.squad_id.clone()],
+            "folded to one"
+        );
         assert_eq!(r.leader_slot_id, a);
         assert_eq!(side_slot_count(&doc, "OPFOR"), 2);
 
         let s = slots(&doc);
-        assert_eq!(s[&a]["position"]["x"], 1000.0, "id + position survived the fold");
+        assert_eq!(
+            s[&a]["position"]["x"], 1000.0,
+            "id + position survived the fold"
+        );
         assert_eq!(s[&b]["position"]["x"], 1010.0);
         assert_eq!(s[&b]["callsign"], "A-2", "identity survived the fold");
         assert_eq!(s[&b]["rank"], "Corporal");
