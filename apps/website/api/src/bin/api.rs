@@ -10,7 +10,7 @@ use std::net::SocketAddr;
 use tracing_subscriber::EnvFilter;
 use website_api::config::Config;
 use website_api::state::AppState;
-use website_api::{app, db, handlers, services};
+use website_api::{app, db, handlers, realtime, services};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -45,6 +45,16 @@ async fn main() -> anyhow::Result<()> {
         "leaderboard MV scheduled refresh armed"
     );
     let _leaderboard = db::start_leaderboard_refresh(state.pool.clone(), lb_interval);
+    // T-272: scheduled `server_statuses` → SSE republish — immediate + interval (env
+    // `SERVER_STATUS_PUBLISH_INTERVAL_SECS`, default 10s). Closes the SSE loop when no
+    // game-server bridge calls ingest; ingest still publishes in-request.
+    let ss_interval = realtime::server_status_publish_interval();
+    tracing::info!(
+        secs = ss_interval.as_secs(),
+        "server-status SSE republish armed"
+    );
+    let _server_status =
+        realtime::start_server_status_publisher(state.pool.clone(), state.hub.clone(), ss_interval);
     let app = app::router(state);
 
     let addr = format!("0.0.0.0:{port}");

@@ -6,6 +6,18 @@
 //! `from_utf8_lossy` — no `TextDecoder`, and a multi-byte codepoint split across reads can only
 //! land inside one frame, never across the `\n\n` boundary the splitter keys on.
 //!
+//! # Where frames come from (T-272)
+//!
+//! The stream handler may emit one snapshot row on connect, then every later frame is a hub
+//! publish. Producers:
+//! 1. **Ingest** — `POST /ingest/server-status` → `publish_server_status` (immediate).
+//! 2. **Scheduled republish** — boot + interval poll of `server_statuses` (env
+//!    `SERVER_STATUS_PUBLISH_INTERVAL_SECS`, default 10s) so the pipe stays live without a
+//!    game-server bridge. Same JSON shape; decode is unchanged ([`decode_server_status_frame`]).
+//!
+//! Measured 2026-07-27: initial-snapshot + DTO decode are sound (R-api `LIVE_SSE_FRAME` pin).
+//! The pre-T-272 defect was zero *producers* after connect, not a client decode bug.
+//!
 //! Lifetime: like the editor's engine host, the stream is NOT torn down on SPA nav (leptos
 //! `on_cleanup` is Send-bound, and the `AbortController` handle is `!Send`) — the connection ends
 //! when the tab closes or the server drops it. One page = one stream; navigation leaks at most one
