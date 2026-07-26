@@ -10284,7 +10284,7 @@
     {
       "id": "T-366",
       "title": "time_of_day whitespace 500s, and username() lets a blank actor into every audit line",
-      "summary": "Both proven live by T-349, both in files it did not own.\n\n  **missions.rs:315** — `time_of_day: \"   \"` returns **500** `{\"error\":\"internal error\"}`, and so does `\"not-a-time\"`. An untrimmed is_empty() lets whitespace through to a Postgres `::time` cast. Confirmed still unfixed on main after T-346 shipped in that file. **:417** (the PATCH) has NO emptiness guard at all — `Some(t)` binds anything.\n\n  **handlers/mod.rs:101 `username()`** — `!n.is_empty()` is untrimmed, so a whitespace username bypasses the `_ => discord_id` fallback that exists to prevent exactly this. Demonstrated end to end via PATCH /admin/users/:id: `username = ''` correctly yields `actor_name = [000000000000000001]`, but `username = '   '` yields `actor_name = [   ]` and the audit message `\"    set     role to admin\"` — an audit line with no actor and no target. This function feeds EVERY audit line in the crate, which is what makes a cosmetic-looking bug worth fixing: the audit trail is the record you consult when something else has gone wrong.",
+      "summary": "Both proven live by T-349, both in files it did not own.\n\n  **missions.rs:315** — `time_of_day: \"   \"` returns **500** `{\"error\":\"internal error\"}`, and so does `\"not-a-time\"`. An untrimmed is_empty() lets whitespace through to a Postgres `::time` cast. Confirmed still unfixed on main after T-346 shipped in that file. **:417** (the PATCH) has NO emptiness guard at all — `Some(t)` binds anything.\n\n  **handlers/mod.rs:101 `username()`** — `!n.is_empty()` is untrimmed, so a whitespace username bypasses the `_ => discord_id` fallback that exists to prevent exactly this. Demonstrated end to end via PATCH /admin/users/:id: `username = ''` correctly yields `actor_name = [000000000000000001]`, but `username = '   '` yields `actor_name = [   ]` and the audit message `\"    set     role to admin\"` — an audit line with no actor and no target. This function feeds EVERY audit line in the crate, which is what makes a cosmetic-looking bug worth fixing: the audit trail is the record you consult when something else has gone wrong.\n\nSHIPPED 2026-07-26. One token — `!n.is_empty()` to `!n.trim().is_empty()` — and the reasoning is why it is worth recording.\n\nIT IS NOT ONE ACTION. All four audited admin actions produced anonymous lines: user.role_change, user.ban, user.unban, user.warn — e.g. `\"    permanently banned user '   '. Reason: 'probe'\"`. After the fix all four yield actor_name = [000000000000000001]. Tab+newline and NBSP (U+00A0) also fall through now, because str::trim is Unicode White_Space, not just ASCII. `username = ''` behaved correctly before AND after, which is what made whitespace a gap rather than a design choice.\n\nIT ESTABLISHED THERE IS NO COUNTERPART TRIM TO DISAGREE WITH, rather than assuming: the only writers of users.username are oauth.rs:117 (the login upsert, which rewrites on EVERY login and does not trim at any hop) and dev.rs (a literal). No CHECK constraint, no trigger, no btrim/NULLIF in SQL, and no request body in the crate carries a username field. Plus the value is never a key — write_audit's actor_id is bound separately from the string, which appears in no WHERE, comparison, join or ORDER BY. That is precisely the property `faction` lacked at events.rs:1735/:1923.\n\nIT REJECTED TRIMMING THE RETURN VALUE ON EVIDENCE, not style: admin.rs:342-344 hand-rolls the same `SELECT COALESCE(username, '')` for target_name WITHOUT the fallback and WITHOUT trimming. Trimming the return would have rendered one audit message's actor trimmed and its target padded — a fresh two-site disagreement, in a file this slice does not own. So `'  Sam  '` still displays as `[  Sam  ]` and is never turned into a discord_id; padding is cosmetic, namelessness is not.\n\nREACHABLE IN PRODUCTION, and it found the live mechanism: services/discord.rs:113 `display_name()` selects on `global_name.is_empty()` — an untrimmed FIELD-SELECTION test — so a Discord global_name of \"   \" wins that branch and is stored verbatim. Not hypothetical.",
       "program": "platform",
       "surfaces": [
         "API"
@@ -10292,14 +10292,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3182,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 2
+      "priority": 2,
+      "shipped_at": "1128c1e3"
     },
     {
       "id": "T-367",
@@ -10381,6 +10382,26 @@
       ],
       "executor": "claude-code",
       "priority": 3
+    },
+    {
+      "id": "T-371",
+      "title": "display_name() selects on an untrimmed is_empty, so a whitespace Discord name is stored verbatim",
+      "summary": "FOUND by T-366 while establishing whether trimming on read was safe. This is the WRITE side of the bug it fixed on the read side, and it is reachable in production.\n\n`services/discord.rs:113` `display_name()` chooses between `global_name` and `username` using `global_name.is_empty()` — an untrimmed FIELD-SELECTION test. So a Discord `global_name` of `\"   \"` wins that branch and is stored verbatim into `users.username` by the login upsert at `handlers/oauth.rs:117`, which rewrites on EVERY login.\n\nT-366 fixed the consequence (a whitespace username no longer produces an anonymous audit line) but deliberately did not touch this file. Note the shape: this is not a guard that should have trimmed, it is a CHOICE BETWEEN TWO FIELDS made on a test that whitespace passes — so the fix is to make the selection test meaningful, not to trim the winner.\n\nT-319 already hardened `DiscordUser.username` in this file (it required the field, closing the case where an absent username blanked the stored name). This is the adjacent case: present, non-empty, and meaningless. Read T-319's reasoning first — it established that a malformed upstream response is not a client error and there is no request to reject, so the only lever is whether the body decodes and what the code then selects.\n\nAlso fold in: `handlers/admin.rs:342-344` hand-rolls a duplicate of `handlers/mod.rs::username()` minus the discord_id fallback, so with `username = ''` a warn logs `\"000000000000000001 warned '': probe\"` — actor falls back, target renders empty. It should call `username()`. Doing so would also let the display-trim decision T-366 deferred land coherently across both halves instead of one.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3187,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }
