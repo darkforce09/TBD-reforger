@@ -172,21 +172,32 @@ const KNOWN_OPEN: &[(&str, &str, &str)] = &[
     // T-329 dashboard bug, in the file the ticket held up as the correct example. Benign *today*
     // only because `event_registrations`' one nullable column (`slot_id`) happens to map to an
     // `Option<Uuid>` field; one nullable column added to that table makes it the live bug.
-    ("src/handlers/deployments.rs", "*", "unfiled"),
-    // FIXED ON MAIN by T-330 @ 39e5d5a5 (`COALESCE(m.updated_at, m.created_at, sentinel)`).
-    // Retained only because this slice's base (2bd4d748) predates that commit, so the defect is
-    // still present *here*. Inert on main; prune on the next rebase — stderr will nag.
-    (
-        "src/handlers/approvals.rs",
-        "updated_at",
-        "T-330 — fixed on main",
-    ),
+    // `SELECT event_registrations.*` at deployments.rs:76 — the identical bare-`*` shape that made
+    // dashboard.rs 500 in production, sitting in the very file every other read site was told to
+    // copy. Benign only because `slot_id` HAPPENS to be Option<Uuid> today; the next nullable column
+    // on that table makes it a live 500 with no warning. Filed as T-341 (was "unfiled" when T-329
+    // wrote this line).
+    ("src/handlers/deployments.rs", "*", "T-341 — open"),
+    // EMPTY, and that is the point. Every entry this list ever held has been fixed rather than
+    // tolerated: T-329 (dashboard.rs bare `*`), T-330 (approvals.rs updated_at), T-340
+    // (events.rs briefing + thumbnail_url). The last two were pruned at merge by the command
+    // center, because each slice's own base predated the sibling fix that made its entry inert.
+    // BASELINE_CAP is now 0, so the next entry cannot be added without raising it in a diff.
 ];
 
 /// Ceiling on [`KNOWN_OPEN`] + [`KNOWN_OPEN_ROUTES`]. The teeth behind a tolerance list: entries
-/// can go inert harmlessly, but nobody can add a sixth without lowering... i.e. raising this
-/// number deliberately, in a diff a reviewer sees. Lower it as entries are pruned.
-const BASELINE_CAP: usize = 6;
+/// can go inert harmlessly, but nobody can add one without raising this number deliberately, in a
+/// diff a reviewer sees.
+///
+/// **One, as of the T-340 merge**, down from six. The only surviving entry is T-341
+/// (`deployments.rs` bare `*`); the rest were fixed rather than tolerated — T-329 (dashboard bare
+/// `*`), T-330 (approvals `updated_at`), T-340 (events `briefing` + `thumbnail_url`), the last two
+/// pruned at merge because each slice's own base predated the sibling fix that made its entry inert.
+///
+/// Leaving the cap at 6 would have been five slots of silent slack in the one suite whose whole
+/// purpose is to stop this bug class hiding — which is exactly the failure mode T-329 documented
+/// when it found the previous version passing vacuously. **T-341 takes this to 0.**
+const BASELINE_CAP: usize = 1;
 
 /// Routes that 5xx under the NULL blast because of a defect owned by **another ticket** — the
 /// behavioural mirror of [`KNOWN_OPEN`], with the same shrinking-baseline semantics: each entry
@@ -194,14 +205,9 @@ const BASELINE_CAP: usize = 6;
 /// slack. The precise cause of each is pinned by [`KNOWN_OPEN`]; this list only records that the
 /// route is user-visibly broken while that defect stands.
 const KNOWN_OPEN_ROUTES: &[(&str, &str, &str)] = &[
-    // T-340 pruned `/events/{id}` from here in the same commit as the two `KNOWN_OPEN` entries
-    // that pinned its cause: the route now serves 200 under the full NULL blast, so leaving the
-    // line would have read as "still broken" on a run where it is not.
-    (
-        "/approvals",
-        "missions.updated_at, handlers/approvals.rs:54",
-        "T-330 — fixed on main; inert once this branch rebases",
-    ),
+    // EMPTY. T-340 pruned `/events/{id}` in the same commit as the two `KNOWN_OPEN` entries that
+    // pinned its cause; `/approvals` was pruned at merge once T-330's fix was on main. Every route
+    // the NULL blast reaches now survives it.
 ];
 
 /// GET routes deliberately outside [`route_sweep`], each with the reason it cannot be swept.
