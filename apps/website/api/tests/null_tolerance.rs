@@ -108,6 +108,8 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
     ("mission_armories", "quantity"),
     // models::event::Event
     ("events", "match_id"),
+    ("events", "server_id"),  // T-260 Option<Uuid> — migration 0011
+    ("events", "modpack_id"), // T-260 Option<Uuid> — migration 0011
     // models::event::OrbatSlot
     ("orbat_slots", "assigned_to"),
     ("orbat_slots", "assigned_at"),
