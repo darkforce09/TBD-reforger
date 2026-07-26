@@ -42,6 +42,8 @@
 0	T-319	Unguarded defaulted fields reshuffle the wiki nav and blank a character name	apps/website/api/src/handlers/wiki.rs; apps/website/api/src/handlers/me.rs; apps/website/api/src/services/discord.rs
 0	T-226	Events can never be edited or detached from the UI	apps/website/frontend/src/event_manager.rs
 0	T-231	Identity linking last mile	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c
+1	T-335	One-off backfill for players who linked before T-326 shipped	apps/website/api/migrations
+1	T-336	recompute_user_stats belongs in services/, not private to the telemetry handler	apps/website/api/src/services; apps/website/api/src/handlers/telemetry.rs
 1	T-334	events.rs integration tests flake on a cold database	apps/website/api/tests/events.rs
 1	T-331	content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained	apps/website/api/seeds/content_golden.sql; apps/website/api/migrations
 1	T-332	PATCH /events/:id cannot clear a briefing or banner, and a mission cannot be re-attached	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
