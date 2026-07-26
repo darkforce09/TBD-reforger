@@ -9,9 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-245** (2630) — Registry fetch is unpaginated — about 7MB on every editor open [ready] — mission_editor.rs:196,215 fetch /registry and /registry/compat whole: 1,857 items and 20,908 edges. cargo_defaults_by_character then walks all 20,908 to build a seed map.
-- **T-247** (2650) — POST /admin/roles/sync has no UI and no scheduler [ready] — resync_all_roles works and is routed but has no frontend caller — it is curl-only. There is no scheduled sync either; the architecture doc claims a nightly cron, which is aspirational. The seed also ships a placeholder snowflake for the leader role.
-- **T-248** (2660) — oauth_state cookie survives the two early-return error paths [ready] — The clear-cookie string is built after the missing_code and invalid_state early returns, so both leave the ten-minute CSRF cookie live. DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL also have no startup guard, so a misconfigured secret is reported to the user as discord_unreachable — a misconfig disguised as an outage.
 
 ## Next queued (top 10)
 

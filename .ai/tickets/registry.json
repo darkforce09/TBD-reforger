@@ -7898,7 +7898,7 @@
       "impact": [
         "data-pipeline"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2630,
       "stream": "mission-creator",
       "targets": [
@@ -7936,7 +7936,7 @@
       "impact": [
         "discord"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2650,
       "stream": "web-platform",
       "targets": [
@@ -7955,7 +7955,7 @@
       "impact": [
         "discord"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2660,
       "stream": "web-platform",
       "targets": [
@@ -11544,6 +11544,91 @@
       ],
       "executor": "claude-code",
       "priority": 2
+    },
+    {
+      "id": "T-427",
+      "title": "Paginate or slim GET /registry and /registry/compat for editor first open",
+      "summary": "Follow-on from T-245 (wave 6). T-245 session-caches registry+compat so editor REMOUNTS skip the ~7MB dual fetch, but the first SPA open in a session still GETs both unpaginated endpoints and walks all compat edges for cargo_defaults_by_character.\n\nRepro: cold-load /missions/:id/edit; Network shows full GET /api/v1/registry and /api/v1/registry/compat (~1.8k items / ~20k edges). Remount within the same wasm session does not re-fetch (covered by t245_registry_session).\n\nCure lives in API pagination / narrower endpoints + frontend DTO/client — outside T-245 owns (mission_editor.rs only).",
+      "program": "platform",
+      "surfaces": [
+        "FE",
+        "BE"
+      ],
+      "impact": [
+        "mission-creator",
+        "perf"
+      ],
+      "status": "deferred",
+      "order": 3266,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-428",
+      "title": "Schedule Discord role resync; replace placeholder leader snowflake in seed",
+      "summary": "Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.\n\nRepro: grep apps/website/api and scripts for a timer/cron calling resync_all_roles — none. Seed row: ('1517290000000000000', 'Squad Leader', 'leader', 30).",
+      "program": "platform",
+      "surfaces": [
+        "BE",
+        "OPS"
+      ],
+      "impact": [
+        "auth",
+        "admin"
+      ],
+      "status": "deferred",
+      "order": 3267,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-429",
+      "title": "oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects",
+      "summary": "Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.\n\nRepro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in handlers/oauth.rs cover the helper; IT does not.",
+      "program": "platform",
+      "surfaces": [
+        "BE"
+      ],
+      "impact": [
+        "auth",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3268,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
+    },
+    {
+      "id": "T-430",
+      "title": "Production Config::validate should require DISCORD_CLIENT_ID",
+      "summary": "Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.\n\nRepro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured.",
+      "program": "platform",
+      "surfaces": [
+        "BE"
+      ],
+      "impact": [
+        "auth"
+      ],
+      "status": "deferred",
+      "order": 3269,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
     }
   ]
 }

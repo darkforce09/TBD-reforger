@@ -992,6 +992,20 @@ CONFIRMED SOUND, do not re-audit: T-215's design call that a map-placed vehicle 
      target-gate-check     3.0 GB   (new, T-421, after --all-targets clippy)
    Disk is at 91% (93 GB free) and the private-dir pattern is now the established answer to artifact isolation, so this set will keep growing. `reclaim` reporting '0 MB reclaimed' while 15 GB of gate caches sit at the repo root is itself a mild instance of the house defect -- a tool reporting completeness over a set it never looked at.
    Deliberate design tension to resolve rather than paper over: these dirs are EXPENSIVE TO REBUILD and being warm is the entire reason they are affordable (T-421 measured cold 23.4s vs warm 9.3s for the slice gate). So the answer is probably an explicit `reclaim --gate-dirs` opt-in, or an age-based sweep, NOT adding them to the default sweep.
+- **T-427** (deferred) — Paginate or slim GET /registry and /registry/compat for editor first open [FE, BE] — Follow-on from T-245 (wave 6). T-245 session-caches registry+compat so editor REMOUNTS skip the ~7MB dual fetch, but the first SPA open in a session still GETs both unpaginated endpoints and walks all compat edges for cargo_defaults_by_character.
+
+Repro: cold-load /missions/:id/edit; Network shows full GET /api/v1/registry and /api/v1/registry/compat (~1.8k items / ~20k edges). Remount within the same wasm session does not re-fetch (covered by t245_registry_session).
+
+Cure lives in API pagination / narrower endpoints + frontend DTO/client — outside T-245 owns (mission_editor.rs only).
+- **T-428** (deferred) — Schedule Discord role resync; replace placeholder leader snowflake in seed [BE, OPS] — Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.
+
+Repro: grep apps/website/api and scripts for a timer/cron calling resync_all_roles — none. Seed row: ('1517290000000000000', 'Squad Leader', 'leader', 30).
+- **T-429** (deferred) — oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects [BE] — Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.
+
+Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in handlers/oauth.rs cover the helper; IT does not.
+- **T-430** (deferred) — Production Config::validate should require DISCORD_CLIENT_ID [BE] — Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
+
+Repro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

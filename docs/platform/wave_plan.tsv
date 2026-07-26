@@ -225,3 +225,7 @@
 6	T-424	cargo test selectors matching zero tests exit 0	scripts/verify-t180-coherency.sh
 6	T-425	Vehicle alias table plus T-215 authoring gaps	apps/website/frontend/src/eden_chrome.rs; packages/tbd-schema/registry/kit-aliases.json
 6	T-426	Gate isolation residue: include_str inputs and unreclaimable gate dirs	scripts/platform/wave.sh
+99	T-427	Paginate or slim GET /registry and /registry/compat for editor first open	apps/website/api/src/handlers/registry.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/dto.rs
+99	T-428	Schedule Discord role resync; replace placeholder leader snowflake in seed	apps/website/api/src/services/role_sync.rs; apps/website/api/seeds/discord_roles.sql; apps/website/api/src/bin/api.rs
+99	T-429	oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects	apps/website/api/tests/oauth_redirect.rs
+99	T-430	Production Config::validate should require DISCORD_CLIENT_ID	apps/website/api/src/config.rs
