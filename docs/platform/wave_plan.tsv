@@ -63,6 +63,7 @@
 0	T-348	Five PATCH handlers let a whitespace value overwrite real content	apps/website/api/src/handlers/events.rs; apps/website/api/src/handlers/cms.rs
 0	T-349	wiki slug has no guard at all, and field_tools.rs was missed by the whole sweep	apps/website/api/src/handlers/wiki.rs; apps/website/api/src/handlers/field_tools.rs
 0	T-352	tbd-editor-adopted marker is unscoped per-account editor state	apps/website/frontend/src/editor_session.rs
+1	T-385	Join matches.terrain into /servers so the theater readout can come back	apps/website/api/src/handlers/servers.rs
 1	T-372	POST /admin/roles/sync demotes every admin who never completed a Discord login	apps/website/api/src/services/role_sync.rs
 1	T-373	Updating a library faction from a side destroys its emblem and every vehicle label	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/orbat_manager.rs
 1	T-374	The persist guard is byte-level, so an empty document overwrites a populated record	apps/website/frontend/src/yrs_persist.rs
