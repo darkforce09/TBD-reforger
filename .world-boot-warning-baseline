@@ -57,11 +57,34 @@
 #
 # ── T-208 (2026-07-26): the first COMPILER-SHAPED golden ───────────────────────────────────────
 # `golden-missions/compiler-shaped-two-faction.json` is the byte-for-byte output of
-# `crates/map-engine-core/src/mission/flatten.rs` over an editor graph — the nine blocks it emits
-# and nothing else. The four goldens above are hand-authored and strictly RICHER than anything the
-# compiler can produce (radioPlan, briefings, settings, objective/boundary zones, entities), so
-# until now every mod-side consumer was gated exclusively against documents the website cannot
-# serve. That asymmetry is how the T-181.46 single-faction hard-reject shipped.
+# `crates/map-engine-core/src/mission/flatten.rs` over an editor graph — the ten blocks it emits
+# and nothing else. The four goldens above are hand-authored and RICHER than the compiler's output
+# (briefings, settings, objective/boundary zones, entities), so until now every mod-side consumer
+# was gated exclusively against documents the website cannot serve. That asymmetry is how the
+# T-181.46 single-faction hard-reject shipped.
+#
+# ── T-208 second pass (2026-07-26): the byte-for-byte claim above is now ENFORCED ──────────────
+# It used to be prose. Nothing regenerated this file and diffed it — `compiler-shaped-two-faction`
+# appeared in zero `.rs`, `.sh`, `.yml` or Makefile, only in docs and in this comment. So when
+# T-203 taught flatten to emit `radioPlan`, the golden silently stopped being the compiler's
+# output and stayed stale for three commits. NEITHER GATE COULD SEE IT:
+#   * `xtask schema validate` cannot. `radioPlan` is not in mission.schema.json's top-level
+#     `required` (the emitter legitimately omits it for a plan with no nets, and
+#     TBD_RadioPlan.Parse treats an absent plan as legal). A document missing the block is a
+#     VALID document — it is just not this compiler's.
+#   * this ratchet cannot. The stale file booted `errors=0 warnings=0`, identical to the
+#     regenerated one. Being out of date is not a parse fault.
+# The guard is therefore a test, not a schema rule:
+# `map-engine-core mission::flatten::tests::compiler_shaped_golden_is_a_fresh_emitter_output`
+# recompiles the fixture and diffs it against these committed bytes, and a sibling test replays
+# the T-203 drift to prove the diff is not a no-op. THE FILE IS GENERATED — when that test fails
+# after an intentional emitter change, regenerate it (the panic prints the two lines) and re-boot
+# it. Hand-patching the delta in makes the diff pass while destroying the one property the file
+# has, which is exactly what happened the first time.
+#
+# `radioPlan` was in the "hand-goldens only" list above until T-203. It is not any more: the
+# compiler derives one net per side plus one per squad, and this file carries four of them. The
+# hand goldens are still richer, just not on that axis.
 #
 #   msn_4c7e1b089a354d62b1f7e30d5a86c941 0
 #
