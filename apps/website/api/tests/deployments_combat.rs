@@ -157,7 +157,24 @@ async fn derived_combat_figures_match_hand_computation() {
         "command_wins",
         "command_win_rate",
     ] {
-        assert!(obj.contains_key(key), "`{key}` must always be present");
+        // `get_my_deployments` builds all six keys unconditionally in one `json!`, and every
+        // failure path before it returns a non-200 that `deployments()` already asserted on. So a
+        // 200 response missing one of these is not reachable from *this* source tree — it means the
+        // test binary was linked against a `website-api` that predates the handler change.
+        //
+        // That is a real, measured failure mode, not a hypothetical: T-235 proved the shared
+        // `CARGO_TARGET_DIR` clobbers artifacts across worktrees under a *stable* filename hash, so
+        // a fresh test object can link a stale rlib. A fresh database does not fix it — the wrong
+        // code is in the binary, not the data. Reproduced deliberately: this exact assertion, this
+        // exact line, against the pre-T-233 handler on a virgin DB.
+        assert!(
+            obj.contains_key(key),
+            "`{key}` missing from a 200 response, which this source tree cannot produce — \
+             `handlers/deployments.rs` builds it unconditionally. Almost certainly a stale link, \
+             not a logic bug: rebuild with a private CARGO_TARGET_DIR under /var/tmp and confirm \
+             the binary is yours (`grep 'FROM leaderboard_totals WHERE discord_id' <test-binary>` \
+             must hit) before believing this failure. Full response: {body}"
+        );
     }
     assert!(
         body["kd_ratio"].is_null(),
