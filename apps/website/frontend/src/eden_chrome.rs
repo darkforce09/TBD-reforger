@@ -1790,6 +1790,32 @@ fn virtual_tree(
     .into_any()
 }
 
+/// T-215 — which palette a leaf belongs to. The tree machinery (guides, collapse, search) is
+/// identical for both; only the glyph and which `editor_ops` arm the press calls differ, and those
+/// are the two things that must not be shared — a Vehicles leaf that armed a character place would
+/// silently write a `slots` row.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum PaletteKind {
+    Character,
+    Vehicle,
+}
+
+impl PaletteKind {
+    const fn leaf_icon(self) -> &'static str {
+        match self {
+            Self::Character => "person",
+            Self::Vehicle => "directions_car",
+        }
+    }
+
+    const fn leaf_title(self) -> &'static str {
+        match self {
+            Self::Character => "Drag onto the map to place",
+            Self::Vehicle => "Drag onto the map to place this vehicle",
+        }
+    }
+}
+
 /// Render the palette recursively. A leaf (`payload.is_some()`) arms a place on `pointerdown` —
 /// **pointer-drag, not HTML5 DnD**: the gates drive trusted `Input.dispatchMouseEvent`, which
 /// synthesizes real pointer events into these handlers, where DnD would need `Input.setInterceptDrags`.
@@ -1803,6 +1829,8 @@ fn palette_rows(
     // T-178 A4 — ancestor ids for guide click (`len == depth`).
     id_prefix: &[String],
     collapsed: RwSignal<std::collections::HashSet<String>>,
+    // T-215 — Factions or Vehicles; picks the glyph and the `editor_ops` arm.
+    kind: PaletteKind,
 ) -> AnyView {
     let len = nodes.len();
     nodes
@@ -1834,7 +1862,7 @@ fn palette_rows(
                     let mut child_ids = gids.clone();
                     child_ids.push(n.id.clone());
                     let kids = if open {
-                        palette_rows(&n.children, depth + 1, &anc, &child_ids, collapsed)
+                        palette_rows(&n.children, depth + 1, &anc, &child_ids, collapsed, kind)
                     } else {
                         ().into_any()
                     };
@@ -1869,11 +1897,18 @@ fn palette_rows(
                     <button
                         type="button"
                         aria-label=aria
-                        title="Drag onto the map to place"
+                        title=kind.leaf_title()
                         class=PALETTE_LEAF
                         on:pointerdown=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::begin_place(payload.clone());
+                            match kind {
+                                PaletteKind::Character => {
+                                    crate::editor_ops::begin_place(payload.clone())
+                                }
+                                PaletteKind::Vehicle => {
+                                    crate::editor_ops::begin_place_vehicle(payload.clone())
+                                }
+                            }
                             // `editor_ops` is wasm-only, so the native view shell would see an
                             // unused capture (the `announcements.rs` `let _ = store;` idiom).
                             #[cfg(not(target_arch = "wasm32"))]
@@ -1882,7 +1917,7 @@ fn palette_rows(
                     >
                         {guide_spans(&anc, &gids, collapsed)}
                         <span class="size-4 shrink-0"></span>
-                        <MaterialIcon name="person" class="block text-sm" />
+                        <MaterialIcon name=kind.leaf_icon() class="block text-sm" />
                         <span class="truncate">{label}</span>
                     </button>
                 }
@@ -2056,9 +2091,16 @@ pub fn eden_chip_selected(chip: EdenChip, active_side: &str, objects_mode: bool)
 /// onto the map to place their slot. `fm_open` toggles the T-167 Faction Manager dialog.
 ///
 /// T-180.5 — Eden side chips above search drive `active_side` / Objects stub.
+///
+/// T-215 — the **Vehicles** tab is a real palette off the same `/registry` fetch (`vehicle_catalog`,
+/// built by `asset_catalog::build_vehicle_catalog_tree`), not the T-070 placeholder it was. Its
+/// leaves arm `editor_ops::begin_place_vehicle`, so a release on the canvas writes a `vehiclesById`
+/// row at that world point.
 #[component]
 pub fn DockRight(
     catalog: RwSignal<CatalogState>,
+    /// T-215 — the `kind == "vehicle"` half of the same registry fetch.
+    vehicle_catalog: RwSignal<CatalogState>,
     fm_open: RwSignal<bool>,
     active_side: RwSignal<String>,
     objects_mode: RwSignal<bool>,
@@ -2085,6 +2127,24 @@ pub fn DockRight(
     let tab = RwSignal::new(0usize);
     let search = RwSignal::new(String::new());
     let no_collapse = RwSignal::new(std::collections::HashSet::<String>::new());
+    // T-215 — the Vehicles tab keeps its OWN collapse set and search box. Sharing either with the
+    // Factions tab would mean a query typed against 178 vehicles silently filtering the roles the
+    // author switches back to, and a folder id collision between two trees built from different
+    // path vocabularies.
+    let vehicle_collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
+    let vehicle_seeded = StoredValue::new(false);
+    Effect::new(move |_| {
+        if vehicle_seeded.get_value() {
+            return;
+        }
+        if let CatalogState::Ready(nodes) = vehicle_catalog.get() {
+            let mut set = std::collections::HashSet::new();
+            collapsed_seed(&nodes, &mut set);
+            vehicle_collapsed.set(set);
+            vehicle_seeded.set_value(true);
+        }
+    });
+    let vehicle_search = RwSignal::new(String::new());
     let tab_btn = move |i: usize, label: &'static str| {
         view! {
             <button
@@ -2213,7 +2273,14 @@ pub fn DockRight(
                                         // Track the collapse set so a chevron toggle re-renders the
                                         // tree (palette_rows reads it untracked).
                                         palette_collapsed.track();
-                                        palette_rows(&nodes, 0, &[], &[], palette_collapsed)
+                                        palette_rows(
+                                            &nodes,
+                                            0,
+                                            &[],
+                                            &[],
+                                            palette_collapsed,
+                                            PaletteKind::Character,
+                                        )
                                     } else {
                                         let filtered =
                                             crate::asset_catalog::filter_catalog(&nodes, &q);
@@ -2225,7 +2292,14 @@ pub fn DockRight(
                                             }
                                                 .into_any()
                                         } else {
-                                            palette_rows(&filtered, 0, &[], &[], no_collapse)
+                                            palette_rows(
+                                                &filtered,
+                                                0,
+                                                &[],
+                                                &[],
+                                                no_collapse,
+                                                PaletteKind::Character,
+                                            )
                                         }
                                     }
                                 }
@@ -2234,10 +2308,90 @@ pub fn DockRight(
                     </div>
                 }
                     .into_any(),
+                // T-215 — Vehicles: the same tree machinery over the `kind == "vehicle"` rows.
+                // A leaf drop writes a `vehiclesById` row at the world point, owned by whichever
+                // Eden side the Factions tab's chips have selected (`active_side`) — the chips are
+                // not repeated here because there is one active side per editor, not per tab.
                 1 => view! {
-                    <p class="mt-3 text-label-sm normal-case text-outline">
-                        "Vehicle placement lands in T-070."
+                    <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Vehicles"</h3>
+                    <p class="mt-0.5 text-label-sm normal-case text-outline">
+                        "Drag a vehicle onto the map to place it."
                     </p>
+                    <input
+                        type="search"
+                        aria-label="Search vehicles"
+                        placeholder="Search vehicles…"
+                        class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
+                        on:input=move |ev| vehicle_search.set(event_target_value(&ev))
+                    />
+                    <div class="mt-2">
+                        {move || {
+                            if objects_mode.get() {
+                                return view! {
+                                    <p class="text-label-sm text-outline">{OBJECTS_COMING_SOON}</p>
+                                }
+                                    .into_any();
+                            }
+                            match vehicle_catalog.get() {
+                                CatalogState::Loading => {
+                                    view! {
+                                        <p class="text-label-sm text-outline">"Loading vehicles…"</p>
+                                    }
+                                        .into_any()
+                                }
+                                CatalogState::Failed => {
+                                    view! {
+                                        <p class="text-label-sm text-outline">
+                                            "Could not load the catalog."
+                                        </p>
+                                    }
+                                        .into_any()
+                                }
+                                CatalogState::Ready(nodes) if nodes.is_empty() => {
+                                    view! {
+                                        <p class="text-label-sm text-outline">
+                                            "No placeable vehicles."
+                                        </p>
+                                    }
+                                        .into_any()
+                                }
+                                CatalogState::Ready(nodes) => {
+                                    let q = vehicle_search.get();
+                                    if q.trim().is_empty() {
+                                        vehicle_collapsed.track();
+                                        palette_rows(
+                                            &nodes,
+                                            0,
+                                            &[],
+                                            &[],
+                                            vehicle_collapsed,
+                                            PaletteKind::Vehicle,
+                                        )
+                                    } else {
+                                        let filtered =
+                                            crate::asset_catalog::filter_catalog(&nodes, &q);
+                                        if filtered.is_empty() {
+                                            view! {
+                                                <p class="text-label-sm text-outline">
+                                                    "No vehicles match."
+                                                </p>
+                                            }
+                                                .into_any()
+                                        } else {
+                                            palette_rows(
+                                                &filtered,
+                                                0,
+                                                &[],
+                                                &[],
+                                                no_collapse,
+                                                PaletteKind::Vehicle,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }}
+                    </div>
                 }
                     .into_any(),
                 _ => view! {

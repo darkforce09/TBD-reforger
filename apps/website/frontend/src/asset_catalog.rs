@@ -106,6 +106,83 @@ pub fn build_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
     roots
 }
 
+/// How deep the vehicle tree opens on first paint. The character tree's rule 3 opens depth 0
+/// because depth 0 there is the FACTION — the axis an author picks first. The vehicle catalog is
+/// addon-rooted (`ArmaReforger/Vehicles/Wheeled/UAZ469`), so depth 0 is the addon and depth 1 is the
+/// literal word "Vehicles"; opening only depth 0 would show one folder containing one folder. Two
+/// levels lands the author on the axis that actually discriminates — Wheeled / Tracked / Helicopters.
+const VEHICLE_OPEN_DEPTH: usize = 2;
+
+/// T-215 — the **Vehicles** palette tree, off the same flat `/registry` fetch the Factions tab uses.
+///
+/// Two deliberate differences from [`build_catalog_tree`], both because a vehicle is not a role:
+///
+/// 1. **The folders are the WHOLE category path**, not the path minus its last segment. Rule 2 drops
+///    the last segment for characters because there it names the role and the leaf already is the
+///    role (`NATO/US_Army/Rifleman` → leaf "US Rifleman"). For a vehicle the last segment names the
+///    **family** (`.../Wheeled/UAZ469`) while the leaf is a specific variant ("UAZ469 PKM"), so
+///    dropping it would flatten every variant of every family into one folder and lose the only
+///    grouping the author has.
+/// 2. **`abstract` rows are excluded.** They are `*_base.et` templates that exist to be inherited
+///    from, not spawned — 40 of the 218 live vehicle rows. `faction_manager::kind_options` already
+///    filters them out of its vehicle picker for the same reason; placing one would author a
+///    resource the game cannot instantiate, and nothing downstream would report it.
+///
+/// `variant_of` is deliberately **not** filtered (unlike `kind_options`): zero live vehicle rows
+/// carry it today, and if any ever do, a factory variant of a vehicle is a thing an author wants to
+/// place, where a factory variant of a *weapon* is an Arsenal-picker duplicate.
+#[must_use]
+pub fn build_vehicle_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
+    let mut roots: Vec<CatalogNode> = Vec::new();
+
+    for item in items
+        .iter()
+        .filter(|i| i.kind == "vehicle" && i.r#abstract != Some(true))
+    {
+        let segs: Vec<&str> = item.category.split('/').filter(|s| !s.is_empty()).collect();
+
+        let mut cur = &mut roots;
+        let mut prefix = String::new();
+        for (depth, seg) in segs.iter().enumerate() {
+            if prefix.is_empty() {
+                prefix.push_str(seg);
+            } else {
+                prefix.push('/');
+                prefix.push_str(seg);
+            }
+            let idx = match cur.iter().position(|n| n.id == prefix) {
+                Some(i) => i,
+                None => {
+                    cur.push(CatalogNode {
+                        id: prefix.clone(),
+                        label: (*seg).to_string(),
+                        default_expanded: depth < VEHICLE_OPEN_DEPTH,
+                        children: Vec::new(),
+                        payload: None,
+                    });
+                    cur.len() - 1
+                }
+            };
+            cur = &mut cur[idx].children;
+        }
+
+        cur.push(CatalogNode {
+            id: item.resource_name.clone(),
+            label: item.display_name.clone(),
+            default_expanded: false,
+            children: Vec::new(),
+            // `role` carries the display label so the leaf is self-describing in a log or a test;
+            // the vehicle place path reads `asset_id` only (`editor_ops::place_at`).
+            payload: Some(PlacePayload {
+                asset_id: item.resource_name.clone(),
+                role: item.display_name.clone(),
+            }),
+        });
+    }
+
+    roots
+}
+
 /// Asset-search filter (T-172 B9 — the T-055 React behavior): case-insensitive label substring.
 /// A folder survives on a self-match (keeping its whole subtree) or on any descendant match
 /// (keeping only the matching children). Empty/whitespace query returns the tree unchanged.
@@ -238,5 +315,124 @@ mod tests {
         assert_eq!(nato, tree, "folder self-match keeps the full subtree");
 
         assert!(filter_catalog(&tree, "zzz-none").is_empty());
+    }
+
+    // ── T-215 — the Vehicles palette ────────────────────────────────────────────────────────────
+
+    /// A registry row shaped like the live `/registry` vehicle rows (the golden fixture is the
+    /// 21-row character/gear capture, so it holds none).
+    fn vehicle_row(resource: &str, name: &str, category: &str, is_abstract: bool) -> RegistryItem {
+        serde_json::from_value(serde_json::json!({
+            "id": resource,
+            "modpack_id": "mp",
+            "resource_name": resource,
+            "display_name": name,
+            "category": category,
+            "kind": "vehicle",
+            "abstract": is_abstract,
+            "sort_order": 0,
+            "created_at": "2026-07-26T00:00:00Z",
+            "updated_at": "2026-07-26T00:00:00Z",
+        }))
+        .expect("vehicle row deserializes")
+    }
+
+    fn vehicle_items() -> Vec<RegistryItem> {
+        let mut v = golden_items(); // 8 characters + 13 gear — none may reach this tree
+        v.push(vehicle_row(
+            "{A}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et",
+            "UAZ469",
+            "ArmaReforger/Vehicles/Wheeled/UAZ469",
+            false,
+        ));
+        v.push(vehicle_row(
+            "{B}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_PKM.et",
+            "UAZ469 PKM",
+            "ArmaReforger/Vehicles/Wheeled/UAZ469",
+            false,
+        ));
+        v.push(vehicle_row(
+            "{C}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_base.et",
+            "Mi8MT base",
+            "ArmaReforger/Vehicles/Helicopters/Mi8MT",
+            true, // abstract — a template, not placeable
+        ));
+        v
+    }
+
+    /// The whole category path becomes folders (not path-minus-last), so two variants of one family
+    /// stay under that family instead of collapsing into its parent.
+    #[test]
+    fn vehicle_tree_keeps_the_family_folder() {
+        let tree = build_vehicle_catalog_tree(&vehicle_items());
+
+        assert_eq!(tree.len(), 1, "one addon root");
+        assert_eq!(tree[0].id, "ArmaReforger");
+        assert!(tree[0].default_expanded, "addon root opens");
+
+        let vehicles = &tree[0].children[0];
+        assert_eq!(vehicles.id, "ArmaReforger/Vehicles");
+        assert!(vehicles.default_expanded, "depth 1 opens too");
+
+        let wheeled = vehicles
+            .children
+            .iter()
+            .find(|n| n.label == "Wheeled")
+            .expect("Wheeled folder");
+        assert!(
+            !wheeled.default_expanded,
+            "depth 2 is where the author chooses"
+        );
+
+        let uaz = &wheeled.children[0];
+        assert_eq!(
+            uaz.id, "ArmaReforger/Vehicles/Wheeled/UAZ469",
+            "the family segment survives as a folder"
+        );
+        assert_eq!(
+            uaz.children
+                .iter()
+                .map(|c| c.label.as_str())
+                .collect::<Vec<_>>(),
+            vec!["UAZ469", "UAZ469 PKM"],
+            "both variants sit under their family"
+        );
+        assert_eq!(
+            uaz.children[1].payload,
+            Some(PlacePayload {
+                asset_id: "{B}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_PKM.et".to_string(),
+                role: "UAZ469 PKM".to_string(),
+            }),
+            "the drop carries the real ResourceName"
+        );
+    }
+
+    /// `abstract` rows are templates the engine cannot spawn, and character/gear rows belong to the
+    /// other tab. Neither may reach a placeable leaf.
+    #[test]
+    fn vehicle_tree_excludes_abstract_and_non_vehicle_rows() {
+        let tree = build_vehicle_catalog_tree(&vehicle_items());
+
+        fn leaves(nodes: &[CatalogNode], out: &mut Vec<String>) {
+            for n in nodes {
+                if n.payload.is_some() {
+                    out.push(n.label.clone());
+                }
+                leaves(&n.children, out);
+            }
+        }
+        let mut found = Vec::new();
+        leaves(&tree, &mut found);
+        found.sort();
+
+        assert_eq!(
+            found,
+            vec!["UAZ469".to_string(), "UAZ469 PKM".to_string()],
+            "the abstract Mi8MT base and every character/gear row are excluded"
+        );
+        assert!(
+            !tree.iter().any(|n| n.label == "NATO"),
+            "the Factions tree must not leak into the Vehicles tab"
+        );
     }
 }
