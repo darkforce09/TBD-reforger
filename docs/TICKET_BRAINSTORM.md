@@ -965,6 +965,21 @@ Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in
 - **T-430** (deferred) — Production Config::validate should require DISCORD_CLIENT_ID [BE] — Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
 
 Repro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured.
+- **T-431** (deferred) — Identity-link attendance backfill still marks every mission on the event [BE] — MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.
+
+Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.
+
+Cure: same JOIN shape as T-230 telemetry ingest.
+- **T-432** (deferred) — Reserve or rename payloadExtras so authored wire keys cannot collide [FE] — MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.
+
+Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.
+
+Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage name.
+- **T-433** (deferred) — cms.rs announcement_body_persist_contract unit test is tautological [BE, tests] — MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.
+
+Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
+
+Cure: delete it or replace with a non-vacuous pin (handler/IT only).
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

@@ -7390,7 +7390,7 @@
       "impact": [
         "mc-integrity"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2370,
       "stream": "mission-creator",
       "targets": [
@@ -7607,7 +7607,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2480,
       "stream": "web-platform",
       "targets": [
@@ -7784,7 +7784,7 @@
       "impact": [
         "registry-hygiene"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2570,
       "stream": "infra",
       "targets": [
@@ -11623,6 +11623,68 @@
       ],
       "status": "deferred",
       "order": 3269,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
+    },
+    {
+      "id": "T-431",
+      "title": "Identity-link attendance backfill still marks every mission on the event",
+      "summary": "MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.\n\nRepro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.\n\nCure: same JOIN shape as T-230 telemetry ingest.",
+      "program": "platform",
+      "surfaces": [
+        "BE"
+      ],
+      "impact": [
+        "events",
+        "telemetry"
+      ],
+      "status": "deferred",
+      "order": 3270,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-432",
+      "title": "Reserve or rename payloadExtras so authored wire keys cannot collide",
+      "summary": "MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.\n\nRepro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.\n\nCure: treat payloadExtras as reserved internal, or pick a non-colliding storage name.",
+      "program": "platform",
+      "surfaces": [
+        "FE"
+      ],
+      "impact": [
+        "mission-creator"
+      ],
+      "status": "deferred",
+      "order": 3271,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
+    },
+    {
+      "id": "T-433",
+      "title": "cms.rs announcement_body_persist_contract unit test is tautological",
+      "summary": "MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.\n\nRepro: read the unit test; it cannot fail if handlers regress to sanitize_html.\n\nCure: delete it or replace with a non-vacuous pin (handler/IT only).",
+      "program": "platform",
+      "surfaces": [
+        "BE",
+        "tests"
+      ],
+      "impact": [
+        "cms"
+      ],
+      "status": "deferred",
+      "order": 3272,
       "stream": "web-platform",
       "targets": [
         "website"
