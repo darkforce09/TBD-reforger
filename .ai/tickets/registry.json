@@ -8091,7 +8091,7 @@
       "impact": [
         "mc-authoring"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2730,
       "stream": "mission-creator",
       "targets": [
@@ -8207,7 +8207,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2790,
       "stream": "web-platform",
       "targets": [
@@ -8245,7 +8245,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2810,
       "stream": "web-platform",
       "targets": [
@@ -11871,6 +11871,46 @@
       ],
       "status": "deferred",
       "order": 3281,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-443",
+      "title": "IT coverage for POST /vehicle-database (T-263 write path)",
+      "summary": "In-wave hotfix from wave 12 adversarial MAJOR. T-263 added create_vehicle + POST /api/v1/vehicle-database in handlers/wiki.rs and app.rs, but no IT/unit calls the write path. Cold gate cargo test -p website-api can PASS without ever inserting via this handler (content_read.rs only GETs vehicles + PUTs wiki).\n\nRepro: delete .post(create_vehicle) from app.rs or stub create_vehicle to always 500; wave gate still PASS.\n\nCure: extend apps/website/api/tests/content_read.rs (or sibling) with admin POST happy path + 400 on missing name/faction/armor_type + GET list contains the new row. Perturbation must RED if route/handler missing.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "shipped",
+      "order": 3282,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-444",
+      "title": "make seed does not apply wiki pages (content_golden only)",
+      "summary": "Residual from T-263 / wave 12 adversarial MINOR. make seed now applies vehicle_database.sql, but wiki manuals remain only in content_golden.sql (not in the seed recipe). Fresh seed DB → GET /wiki empty → SPA \"No manuals yet.\" (explicit empty, not silent mock).\n\nRepro: make db-up + make seed on empty DB; curl GET /api/v1/wiki → data:[]; vehicles have rows.\n\nCure: extract wiki INSERT seed (or include content_golden wiki section) into seeds/ + Makefile seed line, same shape as vehicle_database.sql.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3283,
       "stream": "web-platform",
       "targets": [
         "website"

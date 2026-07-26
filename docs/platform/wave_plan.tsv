@@ -152,7 +152,9 @@
 4	T-261	Leaderboard materialized view has no scheduled refresh	apps/website/api/src/db.rs; apps/website/api/src/bin/api.rs
 4	T-262	Zero foreign keys in the entire schema	apps/website/api/migrations
 5	T-255	Asset palette is not side-aware	apps/website/frontend/src/asset_catalog.rs; apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/mission_editor.rs
-5	T-263	Wiki and Vehicle Database are fully hardcoded	apps/website/frontend/src/wiki.rs; apps/website/frontend/src/vehicles.rs; apps/website/api/src/handlers/wiki.rs; apps/website/api/seeds/vehicle_database.sql; Makefile
+5	T-263	Wiki and Vehicle Database are fully hardcoded	apps/website/frontend/src/wiki.rs; apps/website/frontend/src/vehicles.rs; apps/website/api/src/handlers/wiki.rs; apps/website/api/src/app.rs; apps/website/api/seeds/vehicle_database.sql; Makefile
+4	T-443	IT coverage for POST /vehicle-database (T-263 write path)	apps/website/api/tests/content_read.rs
+99	T-444	make seed does not apply wiki pages (content_golden only)	Makefile; apps/website/api/seeds
 5	T-211	Zone and play-area draw tool	crates/map-engine-core/src/doc/store.rs
 5	T-264	Bookmarked tab with no bookmark button	apps/website/api/src/handlers/missions.rs
 5	T-265	Leave-of-Absence feature has zero UI	apps/website/frontend/src/deployments.rs
