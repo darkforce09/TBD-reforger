@@ -3384,16 +3384,17 @@ mod tests {
         assert!(!doc.kit_substitutions.is_empty(), "fixture must substitute");
 
         let wire = serde_json::to_value(&doc).unwrap();
-        // `serde_json::Map` is ordered by key here (no `preserve_order` feature), so this is a SET
-        // assertion — which is the right shape anyway: the mod binds this block by field NAME
-        // through `JsonLoadContext` and emission order means nothing to it. What matters is that
-        // the membership is exactly the schema's `properties`.
-        let keys: Vec<&str> = wire
+        // SET membership of top-level keys (T-220: `preserve_order` means iteration is insertion
+        // order, not BTreeMap sort — sort before compare so this stays a set assert). The mod binds
+        // this block by field NAME through `JsonLoadContext` and emission order means nothing to it.
+        // What matters is that the membership is exactly the schema's `properties`.
+        let mut keys: Vec<&str> = wire
             .as_object()
             .unwrap()
             .keys()
             .map(String::as_str)
             .collect();
+        keys.sort_unstable();
         assert_eq!(
             keys,
             [

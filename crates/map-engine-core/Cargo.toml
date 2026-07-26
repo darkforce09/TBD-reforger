@@ -32,7 +32,10 @@ world = ["dep:thiserror", "dep:flate2", "dep:serde", "serde_json/float_roundtrip
 [dependencies]
 png = { version = "0.17", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
-serde_json = { version = "1", optional = true }
+# `preserve_order` (T-220): IndexMap-backed objects so hydrate→compile keeps authored key/array
+# order. xtask + tbd-tools already pin this; without it here, `Map` is a BTreeMap and
+# `Object.values`-style compiles re-sort every by-id map by key.
+serde_json = { version = "1", optional = true, features = ["preserve_order"] }
 thiserror = { version = "2", optional = true }
 yrs = { version = "0.27", optional = true }
 flate2 = { version = "1", optional = true }
@@ -43,4 +46,4 @@ earcutr = "0.5.0"
 # fixture regardless of feature flags (plain `cargo test` in workspace CI runs featureless).
 # `float_roundtrip`: serde_json's default float parse is NOT correctly rounded (measured 1 ULP
 # off on fixture inputs); this feature makes parse exact — required for the ULP==0 gates.
-serde_json = { version = "1", features = ["float_roundtrip"] }
+serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }

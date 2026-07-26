@@ -6,10 +6,12 @@
 //!
 //! Save Version omits `orbat` (the server re-derives it via `parse_orbat_template`); Export includes
 //! it via `derive_orbat_from_editor`. The transforms are pure (`&str`/`Value` in → `Value` out, no
-//! live doc), so they unit-test natively and are reused unchanged behind the wasm editor. Output uses
-//! serde_json's default `Map` (BTreeMap → sorted keys), so a given doc compiles byte-deterministically;
-//! byte-order vs the React blob is **not** a parity target (the backend validator is order-agnostic and
-//! the T-159 Class R contract is semantic).
+//! live doc), so they unit-test natively and are reused unchanged behind the wasm editor.
+//!
+//! **T-220 — order.** `serde_json` is built with `preserve_order` (IndexMap), so object key order and
+//! `Object.values`-style arrays follow insertion order from the doc getters rather than re-sorting
+//! by key. Semantic equality is still what the backend validator checks; authored order is what a
+//! hydrate→compile round trip must not silently rewrite.
 //!
 //! @contract mission-editor-payload.schema.json (payload); exportSchema.ts MissionExport (envelope)
 
@@ -51,13 +53,37 @@ pub fn is_known_editor_payload_top_level(key: &str) -> bool {
     KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS.contains(&key)
 }
 
-/// `Object.values(obj[key])` — the by-id map's values as an array. Missing / non-object → `[]`.
-/// serde_json `Map` iteration is key-sorted, so the array order is deterministic (id-sorted).
-fn values_of(obj: &Value, key: &str) -> Vec<Value> {
-    obj.get(key)
-        .and_then(Value::as_object)
-        .map(|m| m.values().cloned().collect())
-        .unwrap_or_default()
+/// T-220 — emit by-id map values in `entityOrder[order_key]` sequence when present; otherwise
+/// fall back to map iteration. Ids missing from the map are skipped; map entries not listed in
+/// the order are appended in map-iteration order so nothing is silently dropped.
+fn values_of_ordered(small: &Value, by_id_key: &str, order_key: &str) -> Vec<Value> {
+    let Some(map) = small.get(by_id_key).and_then(Value::as_object) else {
+        return Vec::new();
+    };
+    let Some(order) = small
+        .get("entityOrder")
+        .and_then(|o| o.get(order_key))
+        .and_then(Value::as_array)
+    else {
+        return map.values().cloned().collect();
+    };
+    let mut seen = std::collections::HashSet::new();
+    let mut out = Vec::with_capacity(map.len());
+    for id_val in order {
+        let Some(id) = id_val.as_str() else {
+            continue;
+        };
+        if let Some(row) = map.get(id) {
+            out.push(row.clone());
+            seen.insert(id.to_string());
+        }
+    }
+    for (id, row) in map {
+        if !seen.contains(id) {
+            out.push(row.clone());
+        }
+    }
+    out
 }
 
 /// `{ ...obj[key] }` — the by-id map itself as an object (React keeps `loadouts` object-shaped).
@@ -108,14 +134,35 @@ pub fn compile_payload(small_maps_json: &str, slots_json: &str, include_orbat: b
     let slots: Value = serde_json::from_str(slots_json).unwrap_or_else(|_| json!({}));
     let meta = small.get("meta").cloned().unwrap_or(Value::Null);
 
-    // terrain = meta.terrain ?? 'everon'; map.bounds = [0, 0, width, height] (integer, like React).
+    // terrain = meta.terrain ?? 'everon'. Bounds default from terrain size when the author did not
+    // store any (T-220: authored `map.bounds` and other `map.*` keys must survive round-trip).
     let terrain = meta
         .get("terrain")
         .and_then(Value::as_str)
         .unwrap_or("everon")
         .to_string();
     let b = terrain_bounds(&terrain);
-    let bounds = json!([b[0] as i64, b[1] as i64, b[2] as i64, b[3] as i64]);
+    let default_bounds = json!([b[0] as i64, b[1] as i64, b[2] as i64, b[3] as i64]);
+
+    // T-220 — start from the authored `meta.map` object (hydrate stores the whole `map` payload
+    // there), then ensure `terrain` tracks the live meta key. Fill `bounds` only when absent so a
+    // stored custom bounds is not silently recomputed away.
+    let mut map_obj: Map<String, Value> = meta
+        .get("map")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
+    map_obj.insert("terrain".to_string(), json!(terrain));
+    if !map_obj.contains_key("bounds") {
+        map_obj.insert("bounds".to_string(), default_bounds);
+    }
+
+    // T-220 — preserve authored editor-payload `schemaVersion` (integer; schema has no maximum).
+    // Missing → literal 1 (fresh docs / pre-T-220 payloads).
+    let schema_version = meta
+        .get("schemaVersion")
+        .cloned()
+        .unwrap_or_else(|| json!(1));
 
     // environment = { ...(meta.environment ?? {}) }.
     let environment = meta
@@ -124,31 +171,57 @@ pub fn compile_payload(small_maps_json: &str, slots_json: &str, include_orbat: b
         .cloned()
         .unwrap_or_else(|| Value::Object(Map::new()));
 
-    // editor.slots = Object.values(slotsById) (the full exact-f64 slot dicts).
-    let slots_vec: Vec<Value> = slots
-        .as_object()
-        .map(|m| m.values().cloned().collect())
-        .unwrap_or_default();
+    // editor.slots = Object.values(slotsById) (the full exact-f64 slot dicts), ordered by
+    // hydrate's entityOrder.slots when present (T-220 — yrs maps are unordered).
+    let slots_vec: Vec<Value> = {
+        let order = small
+            .get("entityOrder")
+            .and_then(|o| o.get("slots"))
+            .and_then(Value::as_array);
+        match (slots.as_object(), order) {
+            (Some(map), Some(ord)) => {
+                let mut seen = std::collections::HashSet::new();
+                let mut out = Vec::with_capacity(map.len());
+                for id_val in ord {
+                    let Some(id) = id_val.as_str() else {
+                        continue;
+                    };
+                    if let Some(row) = map.get(id) {
+                        out.push(row.clone());
+                        seen.insert(id.to_string());
+                    }
+                }
+                for (id, row) in map {
+                    if !seen.contains(id) {
+                        out.push(row.clone());
+                    }
+                }
+                out
+            }
+            (Some(map), None) => map.values().cloned().collect(),
+            _ => Vec::new(),
+        }
+    };
 
     let mut payload = json!({
-        "schemaVersion": 1,
-        "map": { "terrain": terrain, "bounds": bounds },
+        "schemaVersion": schema_version,
+        "map": Value::Object(map_obj),
         "environment": environment,
         "loadouts": object_of(&small, "loadoutsById"),
-        "objectives": values_of(&small, "objectivesById"),
-        "vehicles": values_of(&small, "vehiclesById"),
-        "entities": values_of(&small, "entitiesById"),
-        "markers": values_of(&small, "markersById"),
+        "objectives": values_of_ordered(&small, "objectivesById", "objectives"),
+        "vehicles": values_of_ordered(&small, "vehiclesById", "vehicles"),
+        "entities": values_of_ordered(&small, "entitiesById", "entities"),
+        "markers": values_of_ordered(&small, "markersById", "markers"),
         "editor": {
             // Verbatim faction rows — this is also the wire for authored per-faction briefing
             // prose (`factions[i].briefing`); see this function's note. `mission-editor-payload
             // .schema.json` leaves `editor.factions` an unconstrained array, so the key validates
             // on Save, and the row stays LOSSLESS for reload (`MissionDocCore::hydrate`
             // `load_row`s every non-`id` field back verbatim).
-            "factions": values_of(&small, "factionsById"),
-            "squads": values_of(&small, "squadsById"),
+            "factions": values_of_ordered(&small, "factionsById", "factions"),
+            "squads": values_of_ordered(&small, "squadsById", "squads"),
             "slots": slots_vec,
-            "editorLayers": values_of(&small, "editorLayersById"),
+            "editorLayers": values_of_ordered(&small, "editorLayersById", "editorLayers"),
         },
     });
 
@@ -649,7 +722,8 @@ mod tests {
     }
 
     /// T-219 — `compile_payload` merges `payloadExtras` onto the wire payload, but never lets an
-    /// extra overwrite a key this function already authored (schemaVersion stays the literal 1).
+    /// extra overwrite a key this function already authored (schemaVersion stays the doc/default,
+    /// not the extras value — T-220 preserves authored versions via `meta.schemaVersion`).
     #[test]
     fn payload_extras_merge_does_not_overwrite_known_keys() {
         let small = json!({
@@ -680,6 +754,57 @@ mod tests {
         assert_eq!(p["map"]["terrain"], json!("everon"));
         assert_eq!(p["serverMigrationToken"], json!("keep-me"));
         assert!(p.get("payloadExtras").is_none());
+    }
+
+    /// T-220 — authored `schemaVersion` on meta survives compile (not forced back to literal 1).
+    #[test]
+    fn authored_schema_version_on_meta_is_emitted() {
+        let small = json!({
+            "meta": { "terrain": "everon", "schemaVersion": 2 },
+            "factionsById": {},
+            "squadsById": {},
+            "loadoutsById": {},
+            "itemsById": {},
+            "objectivesById": {},
+            "vehiclesById": {},
+            "entitiesById": {},
+            "markersById": {},
+            "editorLayersById": {}
+        })
+        .to_string();
+        let p = compile_payload(&small, "{}", false);
+        assert_eq!(p["schemaVersion"], json!(2));
+    }
+
+    /// T-220 — authored map keys beyond terrain/bounds survive; bounds are not recomputed away.
+    #[test]
+    fn authored_map_keys_and_bounds_survive_compile() {
+        let small = json!({
+            "meta": {
+                "terrain": "everon",
+                "map": {
+                    "terrain": "everon",
+                    "bounds": [10, 20, 30, 40],
+                    "center": [6400.5, 6400.25],
+                    "label": "ops-sector"
+                }
+            },
+            "factionsById": {},
+            "squadsById": {},
+            "loadoutsById": {},
+            "itemsById": {},
+            "objectivesById": {},
+            "vehiclesById": {},
+            "entitiesById": {},
+            "markersById": {},
+            "editorLayersById": {}
+        })
+        .to_string();
+        let p = compile_payload(&small, "{}", false);
+        assert_eq!(p["map"]["bounds"], json!([10, 20, 30, 40]));
+        assert_eq!(p["map"]["center"], json!([6400.5, 6400.25]));
+        assert_eq!(p["map"]["label"], json!("ops-sector"));
+        assert_eq!(p["map"]["terrain"], json!("everon"));
     }
 
     /// T-214 — the envelope's `briefing` is the mission ROW's library blurb (a **string**), and the
