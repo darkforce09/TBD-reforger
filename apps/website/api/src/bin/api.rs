@@ -36,6 +36,15 @@ async fn main() -> anyhow::Result<()> {
     // status the handlers derive. Safe to be late or absent — the registration window and
     // every read derive from `now()` at request time, never from this task's output.
     let _lifecycle = handlers::events::start_event_lifecycle(state.pool.clone());
+    // T-261: scheduled `leaderboard_totals` MV refresh — immediate + interval (env
+    // `LEADERBOARD_REFRESH_INTERVAL_SECS`, default 15m). Safety net when telemetry/me
+    // ingest is quiet; those callers still refresh in-request.
+    let lb_interval = db::leaderboard_refresh_interval();
+    tracing::info!(
+        secs = lb_interval.as_secs(),
+        "leaderboard MV scheduled refresh armed"
+    );
+    let _leaderboard = db::start_leaderboard_refresh(state.pool.clone(), lb_interval);
     let app = app::router(state);
 
     let addr = format!("0.0.0.0:{port}");
