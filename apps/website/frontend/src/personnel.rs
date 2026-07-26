@@ -12,6 +12,9 @@
 //! the reason as optional and posted `{}` when the operator left it blank, which now 400s. The
 //! prompt no longer lies, a blank answer is refused here without a request, and a server-side
 //! 400 is shown verbatim instead of a flat "Ban failed".
+//!
+//! T-247: Personnel is the SPA caller for `POST /admin/roles/sync` (was curl-only). The header
+//! "Sync Roles" control posts that path, toasts the `updated` count, and refetches the roster.
 #![allow(dead_code)]
 use crate::dto::{AdminUserRow, Paginated};
 use crate::ui::{cn, AdminGate, MaterialIcon};
@@ -27,6 +30,22 @@ const ROLE_OPTIONS: [(&str, &str); 4] = [
     ("mission_maker", "Mission Maker"),
     ("admin", "Admin"),
 ];
+
+/// Live admin route that re-applies `discord_roles` mappings (`resync_all_roles`).
+/// Locked here so the Personnel button cannot drift off the Axum registration in `app.rs`.
+const ADMIN_ROLES_SYNC_PATH: &str = "/admin/roles/sync";
+
+/// Read `{ "updated": N }` from the roles-sync response. A missing/non-integer `updated` is an
+/// error so a 2xx with `{}` cannot toast as a completed sync.
+fn roles_sync_updated_count(body: &serde_json::Value) -> Result<i64, &'static str> {
+    body.get("updated")
+        .and_then(|v| v.as_i64())
+        .ok_or("roles sync response missing updated count")
+}
+
+fn roles_sync_success_message(updated: i64) -> String {
+    format!("Discord roles resynced ({updated} user(s) updated)")
+}
 
 /// Initials fallback avatar (RosterRow carries no avatar URL) — mirrors admin.tsx `initials`.
 fn initials(name: &str) -> String {
@@ -102,6 +121,44 @@ fn PersonnelInner() -> impl IntoView {
         }
     });
     let refetch = Callback::new(move |()| roster.refetch());
+    let sync_busy = RwSignal::new(false);
+    let on_sync_roles = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            if sync_busy.get_untracked() {
+                return;
+            }
+            sync_busy.set(true);
+            let toasts = crate::toast::use_toasts();
+            leptos::task::spawn_local(async move {
+                match crate::client::api_post::<serde_json::Value>(
+                    store,
+                    ADMIN_ROLES_SYNC_PATH,
+                    serde_json::json!({}),
+                )
+                .await
+                {
+                    Ok(body) => match roles_sync_updated_count(&body) {
+                        Ok(n) => {
+                            toasts.success(roles_sync_success_message(n));
+                            refetch.run(());
+                        }
+                        Err(_) => {
+                            toasts.error("Role sync returned an unexpected response");
+                        }
+                    },
+                    Err(e) => {
+                        toasts.error(crate::client::api_error_message(&e, "Role sync failed"))
+                    }
+                }
+                sync_busy.set(false);
+            });
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = (store, sync_busy, refetch);
+        }
+    };
     let stub = move |msg: &'static str| {
         move |_| {
             #[cfg(target_arch = "wasm32")]
@@ -118,6 +175,21 @@ fn PersonnelInner() -> impl IntoView {
                     <div class="flex flex-wrap items-center justify-between gap-4">
                         <h1 class="text-headline-lg text-on-surface">"Personnel Roster"</h1>
                         <div class="flex items-center gap-2">
+                            <button
+                                type="button"
+                                on:click=on_sync_roles
+                                prop:disabled=move || sync_busy.get()
+                                class="flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-4 py-2 text-label-sm text-primary transition hover:bg-primary/20 disabled:opacity-50"
+                            >
+                                <MaterialIcon name="sync" class="text-[18px]" />
+                                {move || {
+                                    if sync_busy.get() {
+                                        "Syncing…"
+                                    } else {
+                                        "Sync Roles"
+                                    }
+                                }}
+                            </button>
                             <button
                                 type="button"
                                 on:click=stub("Sort options coming soon")
@@ -525,7 +597,43 @@ fn stat_reactive(
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_ban_reason, BanReason};
+    use super::{
+        classify_ban_reason, roles_sync_success_message, roles_sync_updated_count, BanReason,
+        ADMIN_ROLES_SYNC_PATH,
+    };
+
+    #[test]
+    fn admin_roles_sync_path_matches_live_api_route() {
+        // T-247: Personnel is the only SPA caller. If this drifts off app.rs's
+        // `.route("/admin/roles/sync", …)` the button posts into a 404 while curl still works.
+        assert_eq!(ADMIN_ROLES_SYNC_PATH, "/admin/roles/sync");
+    }
+
+    #[test]
+    fn roles_sync_updated_count_reads_integer() {
+        let body = serde_json::json!({ "updated": 12 });
+        assert_eq!(roles_sync_updated_count(&body), Ok(12));
+    }
+
+    #[test]
+    fn roles_sync_updated_count_rejects_missing_or_non_integer() {
+        // A vacuous `{}` 2xx must not toast as success — that is how curl-only stayed invisible.
+        assert!(roles_sync_updated_count(&serde_json::json!({})).is_err());
+        assert!(roles_sync_updated_count(&serde_json::json!({ "updated": "12" })).is_err());
+        assert!(roles_sync_updated_count(&serde_json::json!({ "updated": null })).is_err());
+    }
+
+    #[test]
+    fn roles_sync_success_message_names_the_count() {
+        assert_eq!(
+            roles_sync_success_message(0),
+            "Discord roles resynced (0 user(s) updated)"
+        );
+        assert_eq!(
+            roles_sync_success_message(3),
+            "Discord roles resynced (3 user(s) updated)"
+        );
+    }
 
     #[test]
     fn cancel_aborts_and_sends_nothing() {
