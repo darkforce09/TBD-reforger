@@ -192,12 +192,47 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     # `reap` already learned this lesson the hard way (see the note below it). `drop` did not, because
     # it is the SINGLE-slice path and always looked deliberate. Override with --force when the branch
     # is genuinely disposable.
+    # ── I PORTED THE WRONG GUARD. Read this before touching either check. ──────────────────────────
+    # The first version of this guard refused only on UNMERGED COMMITS, citing the T-352 incident. An
+    # adversarial review then measured that at drop time T-352's work had ALL LANDED — `main..branch`
+    # was 0 — so the guard would have been silent and the incident recurs unchanged. The condition
+    # that mattered was never "unmerged commits", it was "an agent is still writing here", i.e. a
+    # DIRTY TREE. `reap` has had that guard all along (see its note below); this ported one of its
+    # three and not the one that applies.
+    #
+    # Measured live at 1128c1e3 with the commits-only guard in place:
+    #   T-365  ahead=0  dirty=3  -> would DESTROY 3 UNSTAGED files (not in the object DB, unrecoverable)
+    #   T-369  ahead=0  dirty=2  -> would DESTROY 2 staged files
+    # And `wave.sh land` calls this in a loop AUTOMATICALLY, minutes after selecting the slice, with a
+    # merge and a full wave gate in between — so a resumed agent writing in that window is exactly the
+    # T-352 sequence.
     if [ "${3:-}" != "--force" ] && git rev-parse --verify "$branch" >/dev/null 2>&1; then
       ahead="$(git rev-list --count "main..$branch" 2>/dev/null || echo 0)"
       if [ "${ahead:-0}" -gt 0 ]; then
         echo "REFUSED: $branch has $ahead commit(s) not on main." >&2
         echo "         Merge them, or re-run with: $0 drop $slice --force" >&2
         git log --oneline "main..$branch" | sed 's/^/           /' >&2
+        exit 1
+      fi
+    fi
+    # The guard that actually covers the cited incident. LFS filters are neutralised because git-lfs
+    # is absent here and `status` otherwise exits 128 on an LFS-adjacent tree — which would make a
+    # DIRTY tree read as clean and defeat the whole check.
+    if [ "${3:-}" != "--force" ] && [ -d "$dir" ]; then
+      dirty="$(git -C "$dir" -c filter.lfs.process= -c filter.lfs.clean=cat \
+                 -c filter.lfs.smudge=cat -c filter.lfs.required=false \
+                 status --porcelain 2>/dev/null | wc -l)"
+      rc=$?
+      if [ "$rc" -ne 0 ]; then
+        echo "REFUSED: cannot read $dir's status (rc=$rc) — refusing to drop a tree I cannot inspect." >&2
+        exit 1
+      fi
+      if [ "${dirty:-0}" -gt 0 ]; then
+        echo "REFUSED: $dir has $dirty uncommitted change(s) — an agent may still be working." >&2
+        echo "         Unstaged work is not in the object database and cannot be recovered." >&2
+        git -C "$dir" -c filter.lfs.process= -c filter.lfs.required=false \
+            status --porcelain 2>/dev/null | head -10 | sed 's/^/           /' >&2
+        echo "         Wait for its report, or re-run with: $0 drop $slice --force" >&2
         exit 1
       fi
     fi

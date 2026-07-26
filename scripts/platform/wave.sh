@@ -64,11 +64,38 @@ export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$MAIN_ROOT/target}"
 # run()-level wrapper tried to `timeout hostrun` and failed outright; and wrapping on this side
 # kills the actual host process rather than just severing the bridge and orphaning a cargo build.
 GATE_TIMEOUT="${TBD_GATE_TIMEOUT:-1200}"
+#
+# TEST_DATABASE_URL IS IN THE WHITELIST FOR A REASON — read before removing it.
+# The whitelist used to carry CARGO_TARGET_DIR alone, and `run "test api"` runs `cargo test -p
+# website-api`. Every DB-backed integration test does `let Some(x) = boot() else { eprintln!("skip:
+# ..."); return; }`, and boot() returns None without TEST_DATABASE_URL — so 30 of them SKIPPED and the
+# step printed PASS. Measured 2026-07-26: `TEST_DATABASE_URL=x distrobox-host-exec sh -c 'echo
+# [$TEST_DATABASE_URL]'` -> [] , and the suite finishing in 0.00s for a DB-backed crate is the tell.
+#
+# Consequence, which is why this is a BLOCKER and not a nit: EVERY regression test this program added
+# — T-343, T-346, T-347, T-348, T-349, T-366 all live in tests/{missions,events,telemetry}.rs — was
+# invisible to the gate that cleared their slices. ci.yml:66 and Makefile:123 both set the var, so CI
+# had real coverage; the hole was specific to the gate. Third-order instance of this run's signature
+# defect: reporting success on code never examined.
+GATE_DB="${TBD_GATE_DB:-postgres://tbd:tbd@localhost:5434/tbd_gate_it?sslmode=disable}"
 if command -v distrobox-host-exec >/dev/null 2>&1; then
-  hostrun() { distrobox-host-exec timeout "$GATE_TIMEOUT" env "CARGO_TARGET_DIR=$CARGO_TARGET_DIR" "$@"; }
+  hostrun() { distrobox-host-exec timeout "$GATE_TIMEOUT" \
+                env "CARGO_TARGET_DIR=$CARGO_TARGET_DIR" "TEST_DATABASE_URL=${TEST_DATABASE_URL:-}" "$@"; }
 else
   hostrun() { timeout "$GATE_TIMEOUT" "$@"; }
 fi
+
+# Bring up a gate-private test database, and REFUSE to call a skipped suite a pass.
+#
+# Its own DB, not the Makefile's `rust_it`: slice agents run `make test-it` concurrently, and that
+# target DROPs and recreates rust_it, so sharing it would make the gate race them.
+ensure_gate_db() {
+  [ -n "${TEST_DATABASE_URL:-}" ] && return 0          # operator override wins
+  local psql="podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc"
+  if command -v distrobox-host-exec >/dev/null 2>&1; then psql="distrobox-host-exec $psql"; fi
+  $psql "CREATE DATABASE tbd_gate_it;" >/dev/null 2>&1 || true   # already-exists is fine
+  export TEST_DATABASE_URL="$GATE_DB"
+}
 
 plan_rows() { grep -v '^#' "$PLAN" 2>/dev/null | grep -v '^wave[[:space:]]' | sed '/^\s*$/d'; }
 ticket_title() { plan_rows | awk -F'\t' -v s="$1" '$2==s {print $3; exit}'; }
@@ -317,11 +344,26 @@ clippy_changed() {
       # `clippy (changed crates) PASS` / `SLICE GATE: PASS` without features, and
       # `error: useless use of format!` with them. The adversarial verifier found this; the gate did not.
       map-engine-core)
-        hostrun cargo clippy -p map-engine-core --features doc,mission --all-targets --quiet -- -D warnings || return 1 ;;
+        hostrun cargo clippy -p map-engine-core --features doc,mission,world --all-targets --quiet -- -D warnings || return 1 ;;
       *)
         hostrun cargo clippy -p "$c" --all-targets --quiet -- -D warnings || return 1 ;;
     esac
   done
+}
+
+# `cargo test -p website-api`, but a run where the DB tests skipped is a FAILURE, not a pass.
+gate_test_api() {
+  local out rc skips
+  out="$(hostrun cargo test -p website-api --quiet -- --nocapture 2>&1)"; rc=$?
+  skips="$(printf '%s\n' "$out" | grep -c '^skip:' || true)"
+  printf '%s\n' "$out"
+  if [ "$rc" -ne 0 ]; then return "$rc"; fi
+  if [ "${skips:-0}" -gt 0 ]; then
+    echo "REFUSING to call this a pass: ${skips} DB-backed test(s) SKIPPED."
+    echo "TEST_DATABASE_URL=${TEST_DATABASE_URL:-<unset>} — is postgres up on :5434? (make db-up)"
+    return 1
+  fi
+  return 0
 }
 
 # Cheap gate — what a slice agent runs before reporting done. Target: ~10 s warm.
@@ -377,7 +419,7 @@ cmd_gate() {
   run "clippy api"       hostrun cargo clippy -p website-api --all-targets --quiet -- -D warnings
   # --features doc,mission for the same reason as the test step below: without them clippy compiles
   # neither doc nor mission and passes on code it never read. Measured blind on flatten.rs.
-  run "clippy map-engine" hostrun cargo clippy -p map-engine-core --features doc,mission -p map-engine-render --all-targets --quiet -- -D warnings
+  run "clippy map-engine" hostrun cargo clippy -p map-engine-core --features doc,mission,world -p map-engine-render --all-targets --quiet -- -D warnings
   # NOTE: no `-D warnings` here, deliberately — ci.yml:113 runs frontend clippy WITHOUT it, so
   # warnings are advisory upstream and there are 25 of them on clean main. Adding -D here would make
   # the gate stricter than CI and red on arrival. The weakness is real but it is not this run's to
@@ -388,7 +430,10 @@ cmd_gate() {
   # (density::tests::corner_partition_identity — pre-existing, filed as its own ticket). A gate that
   # is red before any slice merges is a gate nothing can ever pass. ci.yml:68 tests website-api,
   # :115 tests website-frontend; map-engine is covered by its own job.
-  run "test api"         hostrun cargo test -p website-api --quiet
+  # ensure_gate_db + the skip count check are what stop this step passing vacuously. A suite that
+  # reports "ok" while every DB test printed `skip:` is worse than a red one: it is a green one.
+  ensure_gate_db
+  run "test api"         gate_test_api
   # --features mission is REQUIRED. The mission module is feature-gated, so a bare
   # `cargo test -p map-engine-core` runs 116 tests and silently skips 26 — every test in flatten.rs,
   # which is the most contended file in the backlog and the one T-182 inverted a pinning assertion
@@ -505,7 +550,17 @@ cmd_wave_close() {
     return 1
   fi
   echo "wave $w: verifier examined this exact tree ✓"
-  cmd_gate "$vsha" || { echo "REFUSED: wave gate is red on main"; return 1; }
+  # Gate against the wave's OWN BASE, not $vsha. The ancestor + behind checks above force
+  # vsha == HEAD, so `cmd_gate "$vsha"` was `cmd_gate HEAD` — and fmt_changed/wasm_changed/trunk all
+  # key off `$base..HEAD`, so they saw "nothing changed" and skipped. Measured: 0 files to fmt, trunk
+  # build SKIP. That silently omitted the single most expensive step, and the one MAJOR-1's private
+  # CARGO_TARGET_DIR fix exists to protect. It also reproduced verbatim the failure documented at the
+  # top of fmt_changed — "EMPTY on merged main, so without an explicit base this checked nothing
+  # exactly where it mattered most".
+  local wbase
+  wbase="$(git rev-parse "HEAD~${WAVE_GATE_DEPTH:-40}" 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -1)"
+  echo "gating wave $w against $(git rev-parse --short "$wbase") (not HEAD — that makes fmt/wasm/trunk vacuous)"
+  cmd_gate "$wbase" || { echo "REFUSED: wave gate is red on main"; return 1; }
   echo
   echo "WAVE $w CLOSED. Wave $((w+1)) may be dispatched."
 }

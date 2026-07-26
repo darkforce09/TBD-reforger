@@ -48,3 +48,4 @@ target-*/
 # wave-gate private trunk output (see scripts/platform/wave.sh trunk step)
 /dist-gate-frontend/
 /target-gate-trunk/
+/.ai/artifacts/last-verified
