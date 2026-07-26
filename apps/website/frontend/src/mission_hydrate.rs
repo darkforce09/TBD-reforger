@@ -41,9 +41,30 @@
 //!     [`clear_local_backups`] expires the records on a successful Save, and every restore refuses
 //!     (loudly) unless it is the live editor's own mission ([`live_editor_is`]).
 //!
+//! **T-223 — the conflict test asks the document, not a marker.** The test was
+//! `localStorage["tbd-editor-adopted:<id>"] == current_version.semver`: evidence about a version
+//! *number*, standing in for evidence about two documents. It was wrong in both directions and both
+//! were live.
+//!
+//!   * A marker that goes **missing** — cleared site data, a second browser profile, or a mission
+//!     whose first open predates its first saved version (that open marks `adopted = None`) —
+//!     prompted on a document byte-identical to the server's: a choice with no difference to choose
+//!     between, and no diff shown to reveal that.
+//!   * A marker that happens to **match** vouched for local content it had never seen. It is one
+//!     localStorage key per mission per *browser*, not per document, so two people who both adopted
+//!     `1.0.0` and then both edited each took the trust-local branch in silence — precisely the
+//!     divergence the prompt exists for. (T-221 is scoping the IndexedDB records to the user this
+//!     same wave; the marker is not scoped at all, which widens that hole rather than closing it.)
+//!
+//! [`classify_local`] replaces the marker with the only question that has an answer: **would
+//! adopting this payload change the document?** Empty local → adopt, nothing to lose; identical →
+//! no prompt, and a `dirty` flag that is provably clean; different → prompt. The marker is still
+//! *written* (Save and both adopt paths keep it current; `resolve_conflict_local` still clears it),
+//! but nothing reads it to make this decision any more.
+//!
 //! **Known gap, owned elsewhere:** the conflict modal itself (`mission_editor.rs`) still offers two
-//! buttons with no diff and no change count, so the user still chooses blind — this slice only makes
-//! the wrong choice survivable.
+//! buttons with no diff and no change count, so the user still chooses blind — T-191 makes the wrong
+//! choice survivable and T-223 makes the question a real one, but neither can show the answer.
 //!
 //! **Gate safety:** the whole path is skipped for a non-UUID id (the gate route is
 //! `/missions/smoke/edit`), so the 12 editor smokes — which all run on `smoke` — are untouched.
@@ -55,6 +76,7 @@ use std::rc::Rc;
 use leptos::prelude::*;
 use leptos::task::spawn_local;
 use map_engine_core::doc::MissionDocCore;
+use map_engine_core::mission::compile::compile_payload;
 use wasm_bindgen::prelude::*;
 
 use crate::auth::AuthStore;
@@ -77,9 +99,10 @@ const DEFAULT_LAYER_ID: &str = "layer-1";
 
 /// Fetch `GET /missions/:id` and reconcile it with the just-loaded local doc:
 ///  * new mission (empty server payload) → apply the row terrain only;
-///  * empty local (no IDB content) → hydrate the server payload, mark adopted, refresh;
-///  * local content that derives from this exact server semver → trust local silently;
-///  * genuinely divergent local content → set `conflict` so the UI can prompt.
+///  * no local content — no IDB record, or one that decodes to an empty document → hydrate the
+///    server payload, mark adopted, refresh;
+///  * local content a hydrate of the server payload would reproduce exactly → trust local silently;
+///  * local content that genuinely differs → set `conflict` so the UI can prompt.
 ///
 /// `loaded_from_idb` is the persist layer's flag. On any non-404 failure it leaves the doc as-is
 /// (local-only) — the caller shows no blocking error (the editor is usable on the local copy).
@@ -135,20 +158,55 @@ pub async fn hydrate_from_server(
         }
         return;
     }
-    let payload_json = serde_json::to_string(payload.unwrap()).unwrap_or_default();
+    let server = payload.unwrap();
+    let payload_json = serde_json::to_string(server).unwrap_or_default();
 
     if loaded_from_idb {
-        // New-tab / warm cold boot: if local derives from this exact server version, the delta is
-        // the user's own unsaved edits — trust local. Otherwise prompt.
-        if let (Some(adopted), Some(sv)) = (crate::editor_session::read_adopted(&id), &semver) {
-            if &adopted == sv {
-                return;
+        // T-223 — new-tab / warm cold boot. The decision is what the two documents CONTAIN; the
+        // `adopted` semver marker is no longer consulted (module header for why it was wrong in
+        // both directions).
+        let Some(local) = classify_local(&doc, server, &payload_json) else {
+            // No document to classify — the editor unmounted mid-boot and cleared the `Option`.
+            // Adopting and prompting would both act on something that is gone.
+            return;
+        };
+        match local {
+            // Nothing authored locally: the IDB record decoded to an empty document. That is the
+            // cold boot's situation, so take the cold boot's treatment — adopt under INIT (no undo
+            // step, or the first Ctrl+Z would restore an empty document) and take no pre-adopt
+            // snapshot, because there is nothing to lose.
+            Local::Empty => {
+                adopt_payload(&doc, &payload_json, &row, Adopt::Init);
+                crate::editor_session::mark_adopted(&id, semver.as_deref());
+                crate::mission_history::set_dirty(false);
+            }
+            // Local IS the server's document. Nothing to choose between, so nothing to ask: re-arm
+            // the marker (this branch is what heals one that went missing) and correct `dirty`.
+            //
+            // That `set_dirty(false)` is new, and it is earned. T-189 marks an IDB restore dirty
+            // because nothing on this path could prove the restored blob had ever been saved, and
+            // its own comment names the cost: "a save-then-immediately-reopen therefore shows the
+            // dot with a zero delta … the adopted marker records a semver, not a document digest,
+            // so nothing on this path can tell that case apart". A content test is that digest, so
+            // the zero delta is now measured rather than assumed.
+            Local::Matches => {
+                crate::editor_session::mark_adopted(&id, semver.as_deref());
+                crate::mission_history::set_dirty(false);
+            }
+            // Two different documents — ask. Note this now fires on a case the marker test
+            // swallowed: local content that diverges while the marker still names the server's
+            // current semver. Catching that (the second module-header defect) has a price, and it
+            // is that reopening a tab holding unsaved edits against the current version prompts
+            // where it used to pass straight through. Deliberate: "Keep local" is one click and
+            // "Load server" is reversible twice over (T-191), while a document silently replaced
+            // by one it never derived from is neither.
+            Local::Diverged => {
+                conflict.set(Some(crate::mission_editor::ConflictInfo {
+                    payload_json,
+                    semver,
+                }));
             }
         }
-        conflict.set(Some(crate::mission_editor::ConflictInfo {
-            payload_json,
-            semver,
-        }));
     } else {
         // Empty local → adopt the server payload (replaces the seed). Cold doc: INIT, no snapshot.
         adopt_payload(&doc, &payload_json, &row, Adopt::Init);
@@ -208,6 +266,105 @@ pub fn resolve_conflict_local(
     crate::editor_session::mark_adopted(&id, None);
     crate::mission_history::set_dirty(true);
     conflict.set(None);
+}
+
+/* ─────────── T-223 — the content test that replaced the `adopted` semver marker ─────────── */
+
+/// What the local document holds, measured against the server's current version.
+///
+/// Three states, because the old test only had two and the missing one is where the spurious
+/// prompts came from: "local exists" was treated as "local might be lost", when most of the time
+/// local *is* the server's document and there is nothing at stake.
+enum Local {
+    /// [`MissionDocCore::has_content`] is false — no factions, slots, objectives, vehicles or
+    /// markers. An IDB record exists but decodes to an empty document, so there is no local work
+    /// and no choice to offer.
+    Empty,
+    /// A hydrate of the server payload reproduces this document exactly: adopting would be a no-op.
+    /// Reachable with **no** adopted marker at all, which is the entire point.
+    Matches,
+    /// The two documents differ. The only state that warrants a prompt.
+    Diverged,
+}
+
+/// Classify the live document against the server's current version. `server` is the payload as
+/// fetched; `payload_json` is that same payload serialized — the exact bytes an adopt would
+/// hydrate, so the comparison is against the document the adopt would actually produce.
+///
+/// `None` means there is no document to classify (the editor unmounted mid-boot and cleared the
+/// `Option`) — distinct from [`Local::Empty`], which is a real document that happens to be empty.
+///
+/// Three tiers, cheapest first, because this runs on every warm boot of every saved mission and the
+/// last tier is O(document):
+///   1. [`MissionDocCore::has_content`] — O(1), and the only call site this predicate has ever had.
+///   2. slot count vs the payload's `editor.slots` length — O(1) on both sides, and it settles the
+///      common divergence (something was placed or deleted) without serializing anything. This is
+///      what keeps a 367k-slot mission off the deep tier unless it genuinely might be identical.
+///   3. compile both documents and compare the authored keys.
+fn classify_local(
+    doc: &DocHandle,
+    server: &serde_json::Value,
+    payload_json: &str,
+) -> Option<Local> {
+    let guard = doc.borrow();
+    let core = guard.as_ref()?;
+    if !core.has_content() {
+        return Some(Local::Empty);
+    }
+    if core.slot_count() != server_slot_count(server) {
+        return Some(Local::Diverged);
+    }
+    // Compare against the document the adopt WOULD produce, built by running the adopt's own
+    // `hydrate` on a throwaway core. Both sides then reach `compile_payload` by the identical path,
+    // so nothing about the payload's provenance can register as a difference: row order (`hydrate`
+    // keys rows by id and `compile_payload` re-emits them id-sorted, so a payload written by an
+    // editor that ordered them differently still matches), the default-layer reseed, the `items`
+    // map `hydrate` clears and never loads, and Yjs's integer encoding all line up by construction
+    // rather than by a rule restated here and left to drift.
+    //
+    // INIT origin for the same reason `restore_snapshot`'s fresh core uses it: a LOCAL hydrate
+    // pushes an undo step, and yrs keeps in-scope deleted blocks alive for as long as the stack
+    // item exists. This core is dropped at the end of the function; it should cost one document,
+    // not two.
+    let offered = MissionDocCore::new();
+    offered.set_origin_init(true);
+    offered.hydrate(payload_json, DEFAULT_LAYER_ID);
+    offered.set_origin_init(false);
+    let mine = compile_payload(&core.small_maps_json(), &core.slots_json(), false);
+    let theirs = compile_payload(&offered.small_maps_json(), &offered.slots_json(), false);
+    Some(if same_authored_content(&mine, &theirs) {
+        Local::Matches
+    } else {
+        Local::Diverged
+    })
+}
+
+/// How many slots the server payload carries. Absent / malformed → 0, which is exactly what
+/// `hydrate` would make of it.
+fn server_slot_count(server: &serde_json::Value) -> usize {
+    server
+        .pointer("/editor/slots")
+        .and_then(serde_json::Value::as_array)
+        .map_or(0, Vec::len)
+}
+
+/// The compiled keys that carry **authored** content — the whole of the comparison.
+///
+/// Deliberately excluded: `map` (terrain plus its derived bounds) and `environment` (time /
+/// weather). Those are mission-**row** fields: `GET /missions/:id` supplies them and `apply_row_meta`
+/// writes them into the local doc on every boot, *after* the hydrate — so local is expected to hold
+/// the row's current values while the payload holds whatever they were when it was saved. Comparing
+/// them would turn "somebody changed the mission's weather dropdown" into a data-loss prompt. The
+/// adopt half draws the line in the same place, for the same reason: `resolve_conflict_server`
+/// adopts with an empty `RowMeta` so the resolution does not touch them either. `schemaVersion` is a
+/// constant, and `orbat` is Export-only (both compiles here pass `include_orbat = false`).
+const AUTHORED_KEYS: [&str; 5] = ["editor", "loadouts", "objectives", "vehicles", "markers"];
+
+/// Do two compiled payloads carry the same authored document? `serde_json::Value` equality is deep
+/// and key-order-independent (serde_json's `Map` is a `BTreeMap`), and `compile_payload` emits the
+/// row arrays id-sorted — so this compares content, not bytes.
+fn same_authored_content(a: &serde_json::Value, b: &serde_json::Value) -> bool {
+    AUTHORED_KEYS.iter().all(|k| a.get(*k) == b.get(*k))
 }
 
 /// Mission-row fields from `GET /missions/:id` (title/terrain/time/weather) — the `apply_row_meta`
