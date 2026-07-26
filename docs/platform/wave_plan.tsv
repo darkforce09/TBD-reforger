@@ -32,6 +32,9 @@
 0	T-225	Event state machine and lifecycle automation	apps/website/api/src/handlers/events.rs
 0	T-205	Vehicle data has no seats, crew roles, cargo capacity or turret bindings	apps/website/frontend/src/vehicles.rs
 0	T-206	Item data is 78% empty	packages/tbd-schema/registry/registry-items.workbench.json
+1	T-331	content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained	apps/website/api/seeds/content_golden.sql; apps/website/api/migrations
+1	T-332	PATCH /events/:id cannot clear a briefing or banner, and a mission cannot be re-attached	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
+1	T-333	Dialog installs a window-level Escape listener per instance, so Esc closes stacked dialogs	apps/website/frontend/src/ui.rs
 1	T-329	GET /api/v1/dashboard 500s in production for two real users	apps/website/api/src/handlers/dashboard.rs; apps/website/api/tests/null_tolerance.rs
 1	T-330	GET /api/v1/approvals 500s on a NULL mission updated_at	apps/website/api/src/handlers/approvals.rs
 1	T-328	mcpd runs long-lived from the shared target dir	scripts/mod/mcp-daemon.sh
@@ -63,7 +66,7 @@
 3	T-236	server_fps type mismatch would silently drop every live frame	apps/website/api/src/models/telemetry.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/sse.rs; apps/website/frontend/src/server_intel.rs
 3	T-219	The editor silently deletes any top-level key it does not understand	crates/map-engine-core/src/doc/store.rs; crates/map-engine-core/src/mission/compile.rs
 3	T-239	Unticketed XSS hardening item from the Go purge	apps/website/api/src/services/text.rs; apps/website/api/src/handlers/cms.rs
-3	T-232	Six pages render literally nothing when real data arrives	apps/website/api/src/handlers/announcements.rs; apps/website/api/src/handlers/events.rs; apps/website/api/src/handlers/audit.rs; apps/website/api/src/handlers/deployments.rs
+3	T-232	Six pages render literally nothing when real data arrives	apps/website/frontend/src/announcements.rs; apps/website/frontend/src/dashboard.rs; apps/website/frontend/src/audit.rs; apps/website/frontend/src/deployments.rs; apps/website/frontend/src/events.rs; apps/website/frontend/src/modpacks.rs
 4	T-240	Cargo capacity is warn-only and never blocks	apps/website/frontend/src/arsenal_rules.rs
 4	T-241	Declare zones[].rules properties in the schema	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c
 4	T-243	Wire or delete the unused wasm flatten binding	crates/map-engine-wasm/src/lib.rs

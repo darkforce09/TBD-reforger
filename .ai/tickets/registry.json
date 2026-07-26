@@ -7524,13 +7524,14 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2440,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "191fd0df"
     },
     {
       "id": "T-227",
@@ -7632,7 +7633,7 @@
     {
       "id": "T-232",
       "title": "Six pages render literally nothing when real data arrives",
-      "summary": "The content-golden-gated branches are not untested code, they are absent — each is a literal ().into_any(): announcements.rs:67, events.rs:63,72, audit.rs:68,72, deployments.rs:163,189, dashboard.rs:341. Three also have an unconditionally empty detail pane with no selection state.",
+      "summary": "The content-golden-gated branches are not untested code, they are absent — each is a literal ().into_any(): announcements.rs:67, events.rs:63,72, audit.rs:68,72, deployments.rs:163,189, dashboard.rs:341. Three also have an unconditionally empty detail pane with no selection state.\n\nOWNS COLUMN WAS WRONG, corrected 2026-07-26 before dispatch. The plan pointed at four BACKEND handlers (apps/website/api/src/handlers/{announcements,events,audit,deployments}.rs) while the bug is in six FRONTEND page modules — an agent dispatched on it would have edited entirely the wrong files and found nothing. Caught by T-226, which confirmed the real site while working next door.\n\nThe defect, verified: `apps/website/frontend/src/events.rs:72` is a literal `().into_any()` for the NON-EMPTY branch, with an unconditional SplitPaneEmpty detail at :74-80. Fixtures have been populated since T-194 (GET__events.json = 4 events) and the live API returns 4 — so this is not 'correct but empty', the populated render branch was never written. Same shape confirmed at announcements.rs:68, dashboard.rs:342, audit.rs:72, deployments.rs:164 and :190, modpacks.rs:257 — six modules, matching this ticket's title exactly.",
       "program": "platform",
       "surfaces": [
         "SHELL"
@@ -9550,6 +9551,67 @@
       ],
       "executor": "claude-code",
       "priority": 2
+    },
+    {
+      "id": "T-331",
+      "title": "content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained",
+      "summary": "FOUND by T-228 while constraining role_played; blocking two thirds of that work and not in its owned directory.\n\n`seeds/content_golden.sql:358-369` inserts literal NULL into `matches.aar_replay_url` (2 rows) and `matches.winning_faction` (1 row), under ON CONFLICT (id) DO UPDATE SET ... = EXCLUDED.... **That seed is where the operator's live NULLs came from.** T-228 measured both branches on a pg_dump copy rather than arguing them:\n  - WITH the NOT NULL constraint: `psql < seeds/content_golden.sql` fails `ERROR: null value in column \"aar_replay_url\" ... violates not-null constraint`, exit 3, failing row rf-match-20260704-01.\n  - WITHOUT it: the backfill clears the NULLs, then re-running the seed puts all three back. A backfill-only migration is self-defeating.\n\nSo three `NULL` -> `''` edits at seeds/content_golden.sql:358-369 must land in the SAME commit as the constraint. The exact DDL is already recorded as a comment block at the foot of migrations/0009_role_played_not_null.sql so it does not need re-deriving.\n\n`''` destroys no meaning here and that was checked, not assumed: the mod omits winning_faction from the payload entirely when there is no winner (TBD_ResultsReporter.c:18,546), `outcome` carries pending/failure/aborted, and telemetry.rs:519 already writes COALESCE($8, '') on create — `''` is the canonical no-winner on the only write path that exists.\n\nNOT urgent: `make seed` (Makefile:25-26) does NOT apply content_golden.sql — it is a manual operator tool, so this is not CI-red today. It would make the golden DB un-rebuildable once the constraint lands. Do NOT touch match_player_stats.command_win, which T-228 checked and left alone: NULL there is a real third state (not a command slot / not adjudicated), distinct from false, and already Option<bool> on both sides.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3147,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-332",
+      "title": "PATCH /events/:id cannot clear a briefing or banner, and a mission cannot be re-attached",
+      "summary": "Two gaps found by T-226 while wiring the Event Manager's edit path. Both are backend; T-226 owned only the frontend file and correctly left them.\n\n1. **No null path on PATCH.** Every field on `PatchEventInput` is `Option<String>` where None means 'do not touch', so there is no way to CLEAR `briefing` or `banner_image_url`. The UI T-226 shipped sends `\"\"` to blank them, which works but is a workaround standing in for a missing contract. Decide the shape — a nullable wrapper, an explicit clear list, or bless `\"\"` as the documented clear signal — then make the UI match.\n\n2. **A mission cannot be attached after creation.** `POST /events/:id/missions` has a caller ONLY in the create flow, so an admin who detaches the last mission must delete and recreate the whole operation. The endpoint is not dead, which is why it fell outside T-226's three bullets — but T-226 shipping the detach button makes this reachable and therefore much more visible than it was. Add an attach path to the Event Manager's Attached Missions roster, next to Detach.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3148,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-333",
+      "title": "Dialog installs a window-level Escape listener per instance, so Esc closes stacked dialogs",
+      "summary": "Pre-existing, found by T-226 while stacking a confirm on top of an edit dialog. `ui.rs` `Dialog` installs a window-level Escape listener PER INSTANCE, so pressing Esc with both open closes BOTH — the confirm and the form behind it. The operator loses unsaved edits to dismiss a confirmation.\n\nT-226 did not touch it (`ui.rs` was not in its owns) and worked around it by testing the confirm path via clicks. Fix: only the topmost dialog should handle Escape — a shared stack/depth counter, or listen on the dialog element rather than window and let it stop propagation.\n\nLow priority but it affects every stacked dialog on the platform, and T-226 just added the first place users will meet it routinely.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3149,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
     }
   ]
 }
