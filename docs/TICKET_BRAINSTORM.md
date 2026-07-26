@@ -48,64 +48,7 @@ BLOCKED ON WORKBENCH (2026-07-26). A slice agent took this and refused rather th
 - **T-219** (idea) — The editor silently deletes any top-level key it does not understand [DATA] — mission-editor-payload.schema.json has no additionalProperties:false and no required, so the API stores arbitrary keys. But hydrate reads exactly seven paths (store.rs:1097-1158) and compile_payload rebuilds from a json! literal (compile.rs:85-99). A server-first field or migration will appear to work, persist, and be quietly erased on next Save. MissionDocCore::hydrate has zero unit tests.
 - **T-220** (idea) — Five more silent round-trip losses [DATA] — schemaVersion is regenerated as literal 1 so a stored 2 downgrades; map.bounds is recomputed and other map.* keys dropped; array order is not preserved (preserve_order is on in xtask/tools but not in map-engine-core, frontend or api); position sub-keys die on first edit; copy/paste strips unknown slot fields. A hydrate-then-compile property test catches all of them.
 - **T-222** (idea) — CLIENT_ID is hardcoded to 1 for every peer [DATA] — store.rs:26. Sound only because no peer updates ever arrive. Any sync transport must fix this first or merges will corrupt documents. Hard blocker on realtime collaboration.
-- **T-240** (idea) — Cargo capacity is warn-only and never blocks [ARS] — A real capacity model exists — CARGO_CONTAINERS (arsenal_rules.rs:595), grid dims, VOLUME_PER_CELL_CM3=50, CargoBudget (:721-754) — but over() (:729) never blocks save, export or compile, and nothing is recursive.
-
-== MOD BEHAVIOUR ANSWERED 2026-07-26 (paid-for subagent result; parent slice was cut for budget) ==
-The mod has NO runtime capacity math at all — zero volume/weight/grid arithmetic under
-Scripts/Game/. InsertCargo pushes at the engine and reads the bool; it does not even call
-CanInsertItemInStorage (that pre-check exists only on the weapon-slot path, :491/:495).
-
-On a cargo item that will not fit (TBD_LoadoutEquipHelper.c:1108-1145): it tries the authored
-container, then ANY storage on the character (logged Degrade/WARNING); if nothing accepts it, it
-deletes the entity, BREAKS the row qty loop, logs one ERROR naming slot+item+'no storage would
-accept unit N/M (character full)', and continues. So it drops THE ENTIRE REMAINING QUANTITY of
-that row, not one item. Never aborts the loadout, never leaves the character naked, never refuses
-to spawn the body.
-
-NOTHING READS THE RESULT. ReportVerdict only prints. bool IsComplete() (:197-200) has ZERO callers
-repo-wide — the answer to 'did we deliver the authored JSON' is computed and discarded.
-SpawnSlotBody returns the body unconditionally (:1070); MaterializeSlotBodies counts a failure only
-when the body is null; boot proceeds to LOBBY regardless. The only surface is log text, and the only
-thing that turns it into a failure is world-boot.sh's no-TBD-ERROR check — a CI gate, not runtime.
-
-SO: the operator gets a body in the field missing kit they authored, with a log line nobody reads.
-That makes frontend warn-only genuinely insufficient — but the durable fix is mod-side (consume
-IsComplete, or pre-check with Can*), not a client block. The website's CargoBudget model derives
-from Workbench export-time data (TBD_RegistryScan.c:896-909, cells = Ceil(maxVolume/50), hardcoded
-grid w=4) which the mod NEVER READS BACK.
-
-Also: recursion is a non-question at runtime — there is no capacity model to recurse through.
-
-== RECURSION ANSWERED: NOT REACHABLE (second paid-for subagent result) ==
-Blocked by schema in three independent places, so this half of the ticket needs no work:
-  CargoRow is three scalars (container, item, qty) with NO id/parent/path — a row cannot reference
-  another row, so a tree is not expressible even in principle (arsenal_rules.rs:586).
-  mission.schema.json:90-93 cargoContainer is a flat 4-token enum, and :282-297 sets
-  additionalProperties:false — a children/parentId key is rejected outright. loadout-export.schema.json
-  mirrors it byte-identically.
-  Enforced, not documented: golden-missions-invalid/cargo-container-typo.json is a negative golden, and
-  validated_compiled_body (missions.rs:1071-1116) 500s on any finding. The mod mirrors it independently
-  with a flat struct and a 4-way if-chain (TBD_LoadoutEquipHelper.c:1035-1051) that never descends.
-
-TWO REAL FINDINGS, both unenforced convention rather than constraint:
-  faction-library.schema.json:108-119 does NOT close the container enum — it is an open string,
-  diverging from its two sibling schemas. So an arbitrary token survives validate_faction_library_doc
-  and dies later as a 500 at the compiled gate: a server error where an author-time 400 belongs.
-  The SEED path bypasses the UI kind filter entirely. Of 16,223 character_default_cargo edges, 1,946
-  have a from_node kind outside CARGO_ADD_KINDS (arsenal.rs:843). It happens not to seed any
-  backpack/vest — data luck, not a rule.
-
-AND: real nesting EXISTS in the source scan and is deliberately flattened away.
-cargo_container_from_evidence (arsenal_rules.rs:180-192) keeps only the first path segment, discarding
-3,462 four-segment edges like Vest/Vest_ALICE_GL.et/MagPouch/... — a magazine inside a pouch inside a
-vest, collapsed to 'vest'.
-
-SO T-240 IS NOW FULLY SCOPED WITHOUT AN AGENT: recursion needs nothing; the frontend block is the
-wrong layer (the mod silently drops the row and nobody reads IsComplete); the two findings above are
-the only actionable items and neither is what the ticket asked for. Re-scope or close on next read.
-- **T-241** (idea) — Declare zones[].rules properties in the schema [DATA] — mission.schema.json:369-373 declares rules as an open object with zero properties, while the mod reads 16 named keys: graceSeconds, warnEverySeconds, penalty (TBD_MissionLoader.c:102-104) and 14 objective keys (TBD_ObjectiveRules.c:85-100). A typo validates clean and degrades silently at runtime.
 - **T-242** (idea) — Add vehicle and entity inventory to the entity schema [DATA] — $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) with no inventory model. The editor's vehicle row is {id,resourceName,position,squadId} (store.rs:527-548), also with no cargo. Vehicle inventory has no representation on any of the three surfaces.
-- **T-243** (idea) — Wire or delete the unused wasm flatten binding [DATA] — flatten_mod_document is exported at crates/map-engine-wasm/src/lib.rs:766-771 as the client twin of /compiled but has zero call sites. Export downloads the editor-superset envelope instead. There is no way for an author to preview the document the game server will actually receive.
 - **T-244** (idea) — No vehicle lane in the map-object catalogue [REG] — The Workbench export plus Rust classifier pipeline is real and produces 1,623 prefabs and 1.2M instances for Everon, but the kind enum covers building, tree, vegetation, rock, prop, utility, water and road — there is no vehicle kind. This is adding a lane to an existing pipeline, not building one.
 - **T-245** (idea) — Registry fetch is unpaginated — about 7MB on every editor open [REG] — mission_editor.rs:196,215 fetch /registry and /registry/compat whole: 1,857 items and 20,908 edges. cargo_defaults_by_character then walks all 20,908 to build a seed map.
 - **T-249** (idea) — Add a slot.y fixture [MOD] — No golden authors slots[].y, so the entire schema-1.2 path — Y_ABSENT sentinel (TBD_MissionSlotStruct.c:47,57), HasJsonY(), TBD_SpawnManager.c:957-973 — is untested end to end despite T-092.1 shipping it.
@@ -908,6 +851,68 @@ CONFIRMED NOT AN ISSUE, do not re-audit: modpacks.workshop_url reaches an <a hre
 
 1. handlers/approvals.rs:~105 -- ORDER BY COALESCE(updated_at, created_at, ...) ASC has NO unique tiebreaker, so LIMIT/OFFSET paging over tied keys is not a stable total order: a row can appear on two pages or none across successive requests. Does NOT affect T-399's fixed test (its target row holds the strictly-largest key, so it is last in every valid ordering) but it is latent for any future paged assertion. Tied rows already exist -- null_tolerance.rs:77 leaves rows that all collapse to the same sentinel. Fix is a trailing ', id ASC'.
 2. apps/website/api/tests/admin_field.rs find_in_approvals -- the offset < 100_000 guard permits 1000 HTTP round trips before failing. Correct but slow to fail; a tighter bound would diagnose faster.
+- **T-415** (deferred) — The mod never checks whether it delivered the authored loadout, and IsComplete has zero callers [MOD] — THE DURABLE FIX for T-240, which shipped the client half only. Confirmed twice by independent agents on 2026-07-26, and re-confirmed against the source during wave 4.
+
+The mod has NO runtime capacity math at all -- zero volume/weight/grid arithmetic under Scripts/Game/. InsertCargo pushes at the engine and reads the bool; it does not even call CanInsertItemInStorage (that pre-check exists only on the weapon-slot path, TBD_LoadoutEquipHelper.c:491/:495).
+
+On a cargo item that will not fit (TBD_LoadoutEquipHelper.c:1108-1145) it tries the authored container, then ANY storage on the character (logged Degrade/WARNING); if nothing accepts it, it DELETES THE ENTITY, **BREAKS the row qty loop** -- dropping THE ENTIRE REMAINING QUANTITY of that row, not one item -- logs one ERROR naming slot+item+'no storage would accept unit N/M (character full)', and continues. It never aborts the loadout, never leaves the character naked, never refuses to spawn.
+
+NOTHING READS THE RESULT. ReportVerdict only prints. `bool IsComplete()` (TBD_LoadoutEquipHelper.c:197-200) has ZERO CALLERS repo-wide -- verified again in wave 4 by `grep -rn IsComplete apps/ scripts/ crates/ packages/`, which returns exactly one hit: the definition. The answer to 'did we deliver the authored JSON' is computed and discarded. SpawnSlotBody returns the body unconditionally (:1070); MaterializeSlotBodies counts a failure only when the body is null; boot proceeds to LOBBY regardless. The only surface is log text, and the only thing that turns it into a failure is world-boot.sh's no-TBD-ERROR check -- a CI gate, not runtime.
+
+RESULT: the operator gets a body in the field missing kit they authored, with a log line nobody reads.
+
+FIX: consume IsComplete, or pre-check with the Can* family. Either closes it. Until then, EVERY client-side refusal (T-240's export gate included) is a heuristic over an export the mod never reads back -- the website's CargoBudget derives from Workbench export-time data (TBD_RegistryScan.c:896-909, cells = Ceil(maxVolume/50), hardcoded grid w=4) which the mod NEVER READS.
+
+NOT AN ISSUE, do not re-derive (two paid subagent runs already answered it): recursion is NOT REACHABLE. CargoRow is three scalars (container, item, qty) with no id/parent/path so a tree is not expressible even in principle (arsenal_rules.rs:586); mission.schema.json cargoContainer is a flat 4-token enum; additionalProperties:false rejects a children/parentId key outright.
+- **T-416** (deferred) — Cargo capacity belongs in wire_safety.rs, server-side, covering save and compile in one place [API, FRONTEND] — Recommendation from T-240's agent, endorsed by the command center, deliberately NOT built in wave 4 because it crosses files T-240 did not own.
+
+T-240 shipped the rule (arsenal_rules.rs:810 cargo_capacity_errors) and wired it to the Arsenal's loadout export (arsenal.rs:477 try_export). That is the only authoring-time refusal point the client HAS -- see the two structural findings in T-417. It is not the right home.
+
+THE PRECEDENT IS EXACT: crates/map-engine-core/src/mission/wire_safety.rs is a rule expressed in code rather than schema, one linear pass over the already-parsed editor payload, wired into apps/website/api/src/contract/validate.rs:101 (Save Version -> 400 carrying per-problem findings) and apps/website/api/src/services/mission_compile.rs:498 (the compiled gate). Its own header states the reason: the schema rejects the value 'long after the author pressed Save, in front of the wrong human.' The frontend already renders those findings -- mission_commands.rs:112-120 feeds them to the Save dialog. Cargo already reaches that payload (flatten.rs:1103-1126, ModSlotCargo).
+
+WHY IT IS BETTER: natively testable (the frontend seam is #![cfg(target_arch = \"wasm32\")] and cannot be proven by the gate), and it covers save AND compile in one place instead of one export button.
+
+THE ONE REAL DESIGN QUESTION: it needs the registry for weights and capacities, which the API has and the pure core crate does not. Resolve that before building -- either thread a registry handle in, or split the rule so core holds the arithmetic and the API supplies the table.
+
+Once this lands, T-240's frontend block becomes a nicety on top rather than the only line of defence.
+- **T-417** (deferred) — T-243's compiled-export artifact re-sorts keys, and its own comment says it does not [FRONTEND] — Two MINORs and a NIT from wave 4's adversarial verifier, plus two structural findings from T-240's agent. All in the frontend authoring surface.
+
+1. MINOR -- apps/website/frontend/src/mission_commands.rs:174-178. The shipped 'Export Compiled' file is NOT byte-identical to GET /compiled, and the comment claiming the difference is whitespace is FALSE. The code re-parses to serde_json::Value to pretty-print; Value::Object is a BTreeMap and `preserve_order` is enabled NOWHERE in the workspace (grep -rn preserve_order Cargo.lock apps/*/*/Cargo.toml crates/*/Cargo.toml -> empty), so the round trip RE-SORTS EVERY OBJECT'S KEYS ALPHABETICALLY.
+   MEASURED on mission 6d291619-8182-4164-866d-4e165a5516af: /compiled = 2006 bytes, key order schemaVersion,meta,environment,factions,orbat,slots,radioPlan,zones,flow,winConditions. Export download = 3006 bytes, key order environment,factions,flow,meta,orbat,radioPlan,schemaVersion,slots,winConditions,zones. Deep-equal after recursive key sort: TRUE -- so the mod still loads it and nothing is lost.
+   WHY IT MATTERS ANYWAY: mission_commands.rs:353-359 invites the reader to check the bridge output 'against a live GET /missions/:id/compiled'. A harness that does exactly that byte-compares and fails. The false comment plus the invitation together set a trap for whoever next verifies the twin.
+   NOT AFFECTED: the unit test client_twin_is_byte_identical_to_the_compiled_route compares two COMPACT to_vec outputs and is genuinely non-vacuous. The overclaim is the report headline applied to the shipped artifact, and the in-code comment.
+
+2. MINOR -- mission_commands.rs:92-97 (message) and :25-31 (the ROW_META doc). 'Export Compiled' misdiagnoses an expired or absent session as 'This mission has no saved server row yet -- save a version first, then export.' set_row_meta only runs on a successful GET /missions/:id; on a 401 the row never arrives. The mission DOES have a server row, and the suggested remedy would also 401. Reachable with JWT_ACCESS_TTL_MIN=15 and a long-idle tab whose refresh token has died. The ROW_META doc enumerates 'a local-only / non-UUID id, a 404, an offline boot' -- but not 401.
+   REPRO: fresh browser profile that never visited /auth/callback, open /missions/<id>/edit, call window.__editorCommands.compiled_document_json().
+
+3. NIT -- T-243's report says '1 mission with placed slots, 11 others refused'. Measured: 13 live missions (deleted_at IS NULL AND current_version_id IS NOT NULL) -- 1 x 200, 12 x 409 'no placed slots'. A further 40 rows with versions are soft-deleted and 404. Same conclusion, wrong count.
+
+4. STRUCTURAL, from T-240's agent -- THE ARSENAL HAS NO SAVE BUTTON. Every cargo mutation persists immediately: arsenal.rs:1029/1036/1042/1063 each call persist_cargo -> editor_ops::set_loadout. So 'block save' has no button to disable and the export gate is the only authoring-time refusal the client has. T-240's ticket assumed a save step that does not exist. REPRO: open Arsenal on any slot, click + on a cargo row, reload -- the qty is persisted with no save action.
+
+5. STRUCTURAL, from T-240's agent -- cargo authored into a container with NO GARMENT WORN is undeliverable and BOTH ENDS ARE QUIET. arsenal.rs:895-902 renders the group labelled 'no garment worn' with a total and no limit; over() is false so nothing tints. T-240's rule deliberately stays silent (never invent capacity) and says so at arsenal_rules.rs:800-808. The mod already detects exactly this -- TBD_LoadoutEquipHelper.c:1105-1106 Degrades with 'this slot's kit wears no %1 -- mission/kit authoring mismatch' -- so the engine knows and the author never hears it. REPRO: clear the vest row, add a magazine to the vest cargo container, export.
+
+CONFIRMED NON-ISSUE, do not investigate: the verifier noted the dev API 404s on /api/v1/health. That route never existed -- app.rs:297 registers /healthz, which returns 200 and is what preflight uses.
+- **T-418** (deferred) — map-engine-wasm is dead as a whole crate, and compile_export's briefing is a dead key [FRONTEND, DATA] — Two independent dead-surface findings from wave 4, both larger than the tickets that surfaced them.
+
+1. THE WHOLE map-engine-wasm CRATE IS DEAD, not just the binding T-243 deleted. `cargo tree -p map-engine-wasm --invert --depth 1` returns only itself -- zero reverse dependencies, and it appears in no [dependencies] table anywhere. Its Cargo.toml describes it as 'a shim exposing map-engine-core to the TypeScript UI shell', and that shell was DELETED at T-159.29.3: there are ZERO .ts/.tsx files outside node_modules and no map_engine_wasm* artifact is ever produced -- it is never wasm-packed. The Leptos SPA links map-engine-core DIRECTLY and says why (frontend/Cargo.toml:89 'instead of reaching it through the map-engine-wasm shim'; mission_doc.rs:5 'no map-engine-wasm JS shim, spec D2') -- that collapse was the point of T-159.15.
+   Its entire remaining surface (DemGrid, SeaBandResult, HillshadeResult, TbddResult, DecodedDem, SlotIndex, WorldStore, RenderEngine, ...) exports to a JS boundary that no longer exists, and it costs a fmt+clippy pass on every `make lint`. T-243 deleted only what its ticket named.
+   DECIDE: delete the crate, or document why it is kept (a planned future JS consumer is a legitimate answer -- an undocumented one is not).
+
+2. compile_export's envelope `briefing` always resolves to \"\". T-214 wired it to read meta.briefing, but apply_row_meta never threads it: mission_hydrate.rs:403-424's RowMeta carries only title/terrain/time/weather, so the key is absent and the field is dead. Pre-existing and already documented as such at compile.rs:164-172. REPRO: export any mission whose row has a briefing; the downloaded envelope's briefing is empty.
+- **T-419** (deferred) — Six mod comments now assert the schema is open, and four tickets will read them as the contract [MOD] — Filed by wave 4's T-241 agent, which correctly reported rather than fixed (the mod .c files were in its owns but changing mod prose was out of its scope).
+
+T-241 closed zones[].rules to a 16-key vocabulary with additionalProperties:false. Six comments in the mod now assert the opposite -- that the vocabulary is open and additive:
+  apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c:71, :72, :87
+  apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c:5, :6, :47
+Example, verbatim: 'The objective rule vocabulary. Additive and legal under `additionalProperties: true`'.
+
+WHY THIS MATTERS MORE THAN A NORMAL STALE COMMENT: T-241 is a DEPENDENCY ROOT. slice-collisions.py encodes T-201, T-211, T-212 and T-275 -> T-241 precisely so the zones vocabulary is declared ONCE instead of four tickets each inventing one. All four will read these headers as the contract for what they are building on, and the headers now describe a schema that no longer exists. This is the stale-doc trap that costs a whole slice.
+
+Comment-only edit, zero behavioural risk.
+
+ALSO IN THE SAME FILES: TBD_MissionLoader.c:88 documents graceSeconds as 'number >= 0' but the code at :389 also rejects > MAX_GRACE_SECONDS. The header omits the ceiling. T-275-adjacent.
+
+RECORDED DECISION so it is not re-litigated: T-241 deliberately did NOT encode conditional `required` for holdSeconds and targetAlias, though both are effectively mandatory (without them the objective goes inert with an operator-facing reason). Reason: it is a different defect from T-241's, and conditional requires are the shape most likely to collide with T-201/T-211/T-212. Both keys carry the requirement in prose instead. The command center endorsed this. Enforce it when a consumer actually needs it, not before.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

@@ -7803,7 +7803,7 @@
       "impact": [
         "arsenal"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2580,
       "stream": "mission-creator",
       "targets": [
@@ -7822,7 +7822,7 @@
       "impact": [
         "contract"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2590,
       "stream": "mission-creator",
       "targets": [
@@ -7860,7 +7860,7 @@
       "impact": [
         "contract"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2610,
       "stream": "mission-creator",
       "targets": [
@@ -11295,6 +11295,108 @@
       ],
       "status": "deferred",
       "order": 3235,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-415",
+      "title": "The mod never checks whether it delivered the authored loadout, and IsComplete has zero callers",
+      "summary": "THE DURABLE FIX for T-240, which shipped the client half only. Confirmed twice by independent agents on 2026-07-26, and re-confirmed against the source during wave 4.\n\nThe mod has NO runtime capacity math at all -- zero volume/weight/grid arithmetic under Scripts/Game/. InsertCargo pushes at the engine and reads the bool; it does not even call CanInsertItemInStorage (that pre-check exists only on the weapon-slot path, TBD_LoadoutEquipHelper.c:491/:495).\n\nOn a cargo item that will not fit (TBD_LoadoutEquipHelper.c:1108-1145) it tries the authored container, then ANY storage on the character (logged Degrade/WARNING); if nothing accepts it, it DELETES THE ENTITY, **BREAKS the row qty loop** -- dropping THE ENTIRE REMAINING QUANTITY of that row, not one item -- logs one ERROR naming slot+item+'no storage would accept unit N/M (character full)', and continues. It never aborts the loadout, never leaves the character naked, never refuses to spawn.\n\nNOTHING READS THE RESULT. ReportVerdict only prints. `bool IsComplete()` (TBD_LoadoutEquipHelper.c:197-200) has ZERO CALLERS repo-wide -- verified again in wave 4 by `grep -rn IsComplete apps/ scripts/ crates/ packages/`, which returns exactly one hit: the definition. The answer to 'did we deliver the authored JSON' is computed and discarded. SpawnSlotBody returns the body unconditionally (:1070); MaterializeSlotBodies counts a failure only when the body is null; boot proceeds to LOBBY regardless. The only surface is log text, and the only thing that turns it into a failure is world-boot.sh's no-TBD-ERROR check -- a CI gate, not runtime.\n\nRESULT: the operator gets a body in the field missing kit they authored, with a log line nobody reads.\n\nFIX: consume IsComplete, or pre-check with the Can* family. Either closes it. Until then, EVERY client-side refusal (T-240's export gate included) is a heuristic over an export the mod never reads back -- the website's CargoBudget derives from Workbench export-time data (TBD_RegistryScan.c:896-909, cells = Ceil(maxVolume/50), hardcoded grid w=4) which the mod NEVER READS.\n\nNOT AN ISSUE, do not re-derive (two paid subagent runs already answered it): recursion is NOT REACHABLE. CargoRow is three scalars (container, item, qty) with no id/parent/path so a tree is not expressible even in principle (arsenal_rules.rs:586); mission.schema.json cargoContainer is a flat 4-token enum; additionalProperties:false rejects a children/parentId key outright.",
+      "program": "platform",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3240,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-416",
+      "title": "Cargo capacity belongs in wire_safety.rs, server-side, covering save and compile in one place",
+      "summary": "Recommendation from T-240's agent, endorsed by the command center, deliberately NOT built in wave 4 because it crosses files T-240 did not own.\n\nT-240 shipped the rule (arsenal_rules.rs:810 cargo_capacity_errors) and wired it to the Arsenal's loadout export (arsenal.rs:477 try_export). That is the only authoring-time refusal point the client HAS -- see the two structural findings in T-417. It is not the right home.\n\nTHE PRECEDENT IS EXACT: crates/map-engine-core/src/mission/wire_safety.rs is a rule expressed in code rather than schema, one linear pass over the already-parsed editor payload, wired into apps/website/api/src/contract/validate.rs:101 (Save Version -> 400 carrying per-problem findings) and apps/website/api/src/services/mission_compile.rs:498 (the compiled gate). Its own header states the reason: the schema rejects the value 'long after the author pressed Save, in front of the wrong human.' The frontend already renders those findings -- mission_commands.rs:112-120 feeds them to the Save dialog. Cargo already reaches that payload (flatten.rs:1103-1126, ModSlotCargo).\n\nWHY IT IS BETTER: natively testable (the frontend seam is #![cfg(target_arch = \\\"wasm32\\\")] and cannot be proven by the gate), and it covers save AND compile in one place instead of one export button.\n\nTHE ONE REAL DESIGN QUESTION: it needs the registry for weights and capacities, which the API has and the pure core crate does not. Resolve that before building -- either thread a registry handle in, or split the rule so core holds the arithmetic and the API supplies the table.\n\nOnce this lands, T-240's frontend block becomes a nicety on top rather than the only line of defence.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3241,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-417",
+      "title": "T-243's compiled-export artifact re-sorts keys, and its own comment says it does not",
+      "summary": "Two MINORs and a NIT from wave 4's adversarial verifier, plus two structural findings from T-240's agent. All in the frontend authoring surface.\n\n1. MINOR -- apps/website/frontend/src/mission_commands.rs:174-178. The shipped 'Export Compiled' file is NOT byte-identical to GET /compiled, and the comment claiming the difference is whitespace is FALSE. The code re-parses to serde_json::Value to pretty-print; Value::Object is a BTreeMap and `preserve_order` is enabled NOWHERE in the workspace (grep -rn preserve_order Cargo.lock apps/*/*/Cargo.toml crates/*/Cargo.toml -> empty), so the round trip RE-SORTS EVERY OBJECT'S KEYS ALPHABETICALLY.\n   MEASURED on mission 6d291619-8182-4164-866d-4e165a5516af: /compiled = 2006 bytes, key order schemaVersion,meta,environment,factions,orbat,slots,radioPlan,zones,flow,winConditions. Export download = 3006 bytes, key order environment,factions,flow,meta,orbat,radioPlan,schemaVersion,slots,winConditions,zones. Deep-equal after recursive key sort: TRUE -- so the mod still loads it and nothing is lost.\n   WHY IT MATTERS ANYWAY: mission_commands.rs:353-359 invites the reader to check the bridge output 'against a live GET /missions/:id/compiled'. A harness that does exactly that byte-compares and fails. The false comment plus the invitation together set a trap for whoever next verifies the twin.\n   NOT AFFECTED: the unit test client_twin_is_byte_identical_to_the_compiled_route compares two COMPACT to_vec outputs and is genuinely non-vacuous. The overclaim is the report headline applied to the shipped artifact, and the in-code comment.\n\n2. MINOR -- mission_commands.rs:92-97 (message) and :25-31 (the ROW_META doc). 'Export Compiled' misdiagnoses an expired or absent session as 'This mission has no saved server row yet -- save a version first, then export.' set_row_meta only runs on a successful GET /missions/:id; on a 401 the row never arrives. The mission DOES have a server row, and the suggested remedy would also 401. Reachable with JWT_ACCESS_TTL_MIN=15 and a long-idle tab whose refresh token has died. The ROW_META doc enumerates 'a local-only / non-UUID id, a 404, an offline boot' -- but not 401.\n   REPRO: fresh browser profile that never visited /auth/callback, open /missions/<id>/edit, call window.__editorCommands.compiled_document_json().\n\n3. NIT -- T-243's report says '1 mission with placed slots, 11 others refused'. Measured: 13 live missions (deleted_at IS NULL AND current_version_id IS NOT NULL) -- 1 x 200, 12 x 409 'no placed slots'. A further 40 rows with versions are soft-deleted and 404. Same conclusion, wrong count.\n\n4. STRUCTURAL, from T-240's agent -- THE ARSENAL HAS NO SAVE BUTTON. Every cargo mutation persists immediately: arsenal.rs:1029/1036/1042/1063 each call persist_cargo -> editor_ops::set_loadout. So 'block save' has no button to disable and the export gate is the only authoring-time refusal the client has. T-240's ticket assumed a save step that does not exist. REPRO: open Arsenal on any slot, click + on a cargo row, reload -- the qty is persisted with no save action.\n\n5. STRUCTURAL, from T-240's agent -- cargo authored into a container with NO GARMENT WORN is undeliverable and BOTH ENDS ARE QUIET. arsenal.rs:895-902 renders the group labelled 'no garment worn' with a total and no limit; over() is false so nothing tints. T-240's rule deliberately stays silent (never invent capacity) and says so at arsenal_rules.rs:800-808. The mod already detects exactly this -- TBD_LoadoutEquipHelper.c:1105-1106 Degrades with 'this slot's kit wears no %1 -- mission/kit authoring mismatch' -- so the engine knows and the author never hears it. REPRO: clear the vest row, add a magazine to the vest cargo container, export.\n\nCONFIRMED NON-ISSUE, do not investigate: the verifier noted the dev API 404s on /api/v1/health. That route never existed -- app.rs:297 registers /healthz, which returns 200 and is what preflight uses.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3242,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-418",
+      "title": "map-engine-wasm is dead as a whole crate, and compile_export's briefing is a dead key",
+      "summary": "Two independent dead-surface findings from wave 4, both larger than the tickets that surfaced them.\n\n1. THE WHOLE map-engine-wasm CRATE IS DEAD, not just the binding T-243 deleted. `cargo tree -p map-engine-wasm --invert --depth 1` returns only itself -- zero reverse dependencies, and it appears in no [dependencies] table anywhere. Its Cargo.toml describes it as 'a shim exposing map-engine-core to the TypeScript UI shell', and that shell was DELETED at T-159.29.3: there are ZERO .ts/.tsx files outside node_modules and no map_engine_wasm* artifact is ever produced -- it is never wasm-packed. The Leptos SPA links map-engine-core DIRECTLY and says why (frontend/Cargo.toml:89 'instead of reaching it through the map-engine-wasm shim'; mission_doc.rs:5 'no map-engine-wasm JS shim, spec D2') -- that collapse was the point of T-159.15.\n   Its entire remaining surface (DemGrid, SeaBandResult, HillshadeResult, TbddResult, DecodedDem, SlotIndex, WorldStore, RenderEngine, ...) exports to a JS boundary that no longer exists, and it costs a fmt+clippy pass on every `make lint`. T-243 deleted only what its ticket named.\n   DECIDE: delete the crate, or document why it is kept (a planned future JS consumer is a legitimate answer -- an undocumented one is not).\n\n2. compile_export's envelope `briefing` always resolves to \\\"\\\". T-214 wired it to read meta.briefing, but apply_row_meta never threads it: mission_hydrate.rs:403-424's RowMeta carries only title/terrain/time/weather, so the key is absent and the field is dead. Pre-existing and already documented as such at compile.rs:164-172. REPRO: export any mission whose row has a briefing; the downloaded envelope's briefing is empty.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3243,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-419",
+      "title": "Six mod comments now assert the schema is open, and four tickets will read them as the contract",
+      "summary": "Filed by wave 4's T-241 agent, which correctly reported rather than fixed (the mod .c files were in its owns but changing mod prose was out of its scope).\n\nT-241 closed zones[].rules to a 16-key vocabulary with additionalProperties:false. Six comments in the mod now assert the opposite -- that the vocabulary is open and additive:\n  apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c:71, :72, :87\n  apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c:5, :6, :47\nExample, verbatim: 'The objective rule vocabulary. Additive and legal under `additionalProperties: true`'.\n\nWHY THIS MATTERS MORE THAN A NORMAL STALE COMMENT: T-241 is a DEPENDENCY ROOT. slice-collisions.py encodes T-201, T-211, T-212 and T-275 -> T-241 precisely so the zones vocabulary is declared ONCE instead of four tickets each inventing one. All four will read these headers as the contract for what they are building on, and the headers now describe a schema that no longer exists. This is the stale-doc trap that costs a whole slice.\n\nComment-only edit, zero behavioural risk.\n\nALSO IN THE SAME FILES: TBD_MissionLoader.c:88 documents graceSeconds as 'number >= 0' but the code at :389 also rejects > MAX_GRACE_SECONDS. The header omits the ceiling. T-275-adjacent.\n\nRECORDED DECISION so it is not re-litigated: T-241 deliberately did NOT encode conditional `required` for holdSeconds and targetAlias, though both are effectively mandatory (without them the objective goes inert with an operator-facing reason). Reason: it is a different defect from T-241's, and conditional requires are the shape most likely to collide with T-201/T-211/T-212. Both keys carry the requirement in prose instead. The command center endorsed this. Enforce it when a consumer actually needs it, not before.",
+      "program": "platform",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3244,
       "stream": "web-platform",
       "targets": [
         "website"

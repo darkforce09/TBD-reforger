@@ -213,3 +213,8 @@
 3	T-412	GET /members cannot return member 21; list_servers is N+1	apps/website/api/src/handlers/events.rs; apps/website/api/src/handlers/servers.rs
 3	T-413	Adopt the URL guard at the remaining writers and render sites	apps/website/api/src/handlers/missions.rs; apps/website/frontend/src/leaderboards.rs; apps/website/frontend/src/layout.rs; apps/website/frontend/src/settings.rs; apps/website/frontend/src/announcements.rs
 3	T-414	approvals ordering has no unique tiebreaker	apps/website/api/src/handlers/approvals.rs
+4	T-415	Mod never checks it delivered the authored loadout; IsComplete has zero callers	apps/mod/tbd-framework/Scripts/Game/TBD/Loadout/TBD_LoadoutEquipHelper.c
+4	T-416	Cargo capacity belongs in wire_safety.rs, covering save and compile	crates/map-engine-core/src/mission/wire_safety.rs; apps/website/api/src/contract/validate.rs
+4	T-417	Compiled-export artifact re-sorts keys; 401 misdiagnosed as no-server-row	apps/website/frontend/src/mission_commands.rs
+4	T-418	map-engine-wasm is dead as a whole crate; compile_export briefing is a dead key	crates/map-engine-wasm/src/lib.rs; apps/website/frontend/src/mission_hydrate.rs
+4	T-419	Six mod comments assert the zones schema is open after T-241 closed it	apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c
