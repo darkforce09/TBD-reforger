@@ -24,6 +24,72 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
+/// T-245 — SPA-session cache for the editor's unpaginated `/registry` + `/registry/compat`
+/// payloads (~7MB class). Survives `MissionEditorPage` remounts inside one SPA session so
+/// leaving `/missions/:id/edit` and coming back does **not** re-issue both full GETs or
+/// re-walk all compat edges for `cargo_defaults_by_character`.
+///
+/// True API pagination would need handler/DTO changes outside this file's owns list; this
+/// is the fix that fits `mission_editor.rs` alone. First open in a session still pays once.
+mod registry_session {
+    use std::cell::RefCell;
+    use std::collections::HashMap;
+
+    use crate::arsenal_rules::{CargoRow, CompatFeed};
+    use crate::dto::RegistryItem;
+
+    struct CachedCompat {
+        feed: CompatFeed,
+        cargo: HashMap<String, Vec<CargoRow>>,
+    }
+
+    thread_local! {
+        static REGISTRY: RefCell<Option<Vec<RegistryItem>>> = const { RefCell::new(None) };
+        static COMPAT: RefCell<Option<CachedCompat>> = const { RefCell::new(None) };
+    }
+
+    /// `true` when this mount must issue `GET /registry` (no SPA-session hit).
+    #[must_use]
+    pub fn must_fetch_registry() -> bool {
+        REGISTRY.with(|c| c.borrow().is_none())
+    }
+
+    /// `true` when this mount must issue `GET /registry/compat` (no SPA-session hit).
+    #[must_use]
+    pub fn must_fetch_compat() -> bool {
+        COMPAT.with(|c| c.borrow().is_none())
+    }
+
+    #[must_use]
+    pub fn cached_registry() -> Option<Vec<RegistryItem>> {
+        REGISTRY.with(|c| c.borrow().clone())
+    }
+
+    pub fn store_registry(items: Vec<RegistryItem>) {
+        REGISTRY.with(|c| *c.borrow_mut() = Some(items));
+    }
+
+    /// Clone of the session-ready compat feed + cargo seed map, if any.
+    #[must_use]
+    pub fn cached_compat() -> Option<(CompatFeed, HashMap<String, Vec<CargoRow>>)> {
+        COMPAT.with(|c| {
+            c.borrow()
+                .as_ref()
+                .map(|hit| (hit.feed.clone(), hit.cargo.clone()))
+        })
+    }
+
+    pub fn store_compat(feed: CompatFeed, cargo: HashMap<String, Vec<CargoRow>>) {
+        COMPAT.with(|c| *c.borrow_mut() = Some(CachedCompat { feed, cargo }));
+    }
+
+    #[cfg(test)]
+    pub fn clear_for_test() {
+        REGISTRY.with(|c| *c.borrow_mut() = None);
+        COMPAT.with(|c| *c.borrow_mut() = None);
+    }
+}
+
 /// Round CSS px → device-pixel backing size (≥1), matching the React oracle's `deviceSize`.
 #[cfg(target_arch = "wasm32")]
 fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
@@ -191,62 +257,93 @@ pub fn MissionEditorPage() -> impl IntoView {
         // into it cleanly. Provided by `AppLayout` above `<AppRoutes/>`, so present on this route.
         let auth = expect_context::<crate::auth::AuthStore>();
 
-        // T-159.22 — the Factions palette catalog. Fetched once at mount (not in `on_load`): it is
-        // engine-independent, so the dock fills even if wgpu never comes up. `kind == "character"`
-        // rows only — `build_catalog_tree` is the T-068.3 `buildCatalogTree` port.
-        spawn_local({
+        // T-159.22 — the Factions palette catalog. Engine-independent so the dock fills even if
+        // wgpu never comes up. `kind == "character"` rows only — `build_catalog_tree` is the
+        // T-068.3 `buildCatalogTree` port.
+        //
+        // T-245 — gate the unpaginated GET on the SPA-session cache. Remounts apply the cached
+        // rows synchronously (no network, no second tree rebuild from a fresh download).
+        {
             use crate::asset_catalog::{
                 build_catalog_tree, build_vehicle_catalog_tree, CatalogState,
             };
-            async move {
-                match crate::client::api_get::<crate::dto::RegistryResponse>(auth, "/registry")
-                    .await
-                {
-                    Ok(r) => {
-                        registry_items.set(Some(r.data.clone()));
-                        catalog.set(CatalogState::Ready(build_catalog_tree(&r.data)));
-                        // T-215 — the Vehicles tab, off the same rows.
-                        vehicle_catalog
-                            .set(CatalogState::Ready(build_vehicle_catalog_tree(&r.data)));
+            if registry_session::must_fetch_registry() {
+                spawn_local({
+                    async move {
+                        match crate::client::api_get::<crate::dto::RegistryResponse>(
+                            auth, "/registry",
+                        )
+                        .await
+                        {
+                            Ok(r) => {
+                                registry_session::store_registry(r.data.clone());
+                                registry_items.set(Some(r.data.clone()));
+                                catalog.set(CatalogState::Ready(build_catalog_tree(&r.data)));
+                                // T-215 — the Vehicles tab, off the same rows.
+                                vehicle_catalog.set(CatalogState::Ready(
+                                    build_vehicle_catalog_tree(&r.data),
+                                ));
+                            }
+                            Err(_) => {
+                                catalog.set(CatalogState::Failed);
+                                vehicle_catalog.set(CatalogState::Failed);
+                            }
+                        }
                     }
-                    Err(_) => {
-                        catalog.set(CatalogState::Failed);
-                        vehicle_catalog.set(CatalogState::Failed);
-                    }
-                }
+                });
+            } else if let Some(items) = registry_session::cached_registry() {
+                registry_items.set(Some(items.clone()));
+                catalog.set(CatalogState::Ready(build_catalog_tree(&items)));
+                vehicle_catalog
+                    .set(CatalogState::Ready(build_vehicle_catalog_tree(&items)));
             }
-        });
+        }
 
         // T-167 — compat edge feed for the Smart Arsenal (optic/magazine rows + validation). Own
         // fetch so a compat outage degrades the Arsenal to dumb dropdowns without touching /registry.
-        spawn_local({
+        //
+        // T-245 — same session gate: a remount reuses the cached CompatFeed + cargo seed map and
+        // skips the ~20k-edge GET + `cargo_defaults_by_character` walk.
+        {
             use crate::arsenal_rules::{CompatFeed, CompatGraph, CompatStatus};
-            async move {
-                match crate::client::api_get::<crate::dto::RegistryCompatResponse>(
-                    auth,
-                    "/registry/compat",
-                )
-                .await
-                {
-                    Ok(r) => {
-                        // T-068.15.2 — the CompatGraph drops evidence/qty, so the
-                        // character → default-cargo seed map is built from the raw
-                        // rows here and handed to the editor_ops seed hooks.
-                        crate::editor_ops::set_cargo_defaults(
-                            crate::arsenal_rules::cargo_defaults_by_character(&r.data),
-                        );
-                        compat.set(CompatFeed {
-                            status: CompatStatus::Ready,
-                            graph: CompatGraph::from_edges(&r.data),
-                        });
+            if registry_session::must_fetch_compat() {
+                spawn_local({
+                    async move {
+                        match crate::client::api_get::<crate::dto::RegistryCompatResponse>(
+                            auth,
+                            "/registry/compat",
+                        )
+                        .await
+                        {
+                            Ok(r) => {
+                                // T-068.15.2 — the CompatGraph drops evidence/qty, so the
+                                // character → default-cargo seed map is built from the raw
+                                // rows here and handed to the editor_ops seed hooks.
+                                let cargo =
+                                    crate::arsenal_rules::cargo_defaults_by_character(&r.data);
+                                let feed = CompatFeed {
+                                    status: CompatStatus::Ready,
+                                    graph: CompatGraph::from_edges(&r.data),
+                                };
+                                registry_session::store_compat(feed.clone(), cargo.clone());
+                                crate::editor_ops::set_cargo_defaults(cargo);
+                                compat.set(feed);
+                            }
+                            Err(_) => {
+                                // Do not cache a hard failure — a later remount may retry.
+                                compat.set(CompatFeed {
+                                    status: CompatStatus::Unavailable,
+                                    graph: CompatGraph::default(),
+                                });
+                            }
+                        }
                     }
-                    Err(_) => compat.set(CompatFeed {
-                        status: CompatStatus::Unavailable,
-                        graph: CompatGraph::default(),
-                    }),
-                }
+                });
+            } else if let Some((feed, cargo)) = registry_session::cached_compat() {
+                crate::editor_ops::set_cargo_defaults(cargo);
+                compat.set(feed);
             }
-        });
+        }
 
         canvas_ref.on_load(move |canvas: web_sys::HtmlCanvasElement| {
             let Some(container) = container_ref.get_untracked() else {
@@ -1727,5 +1824,103 @@ fn ConflictDialog(conflict: RwSignal<Option<ConflictInfo>>, conflict_id: String)
                 </div>
             }
         })
+    }
+}
+
+#[cfg(test)]
+mod t245_registry_session {
+    use super::registry_session;
+    use crate::arsenal_rules::{CompatFeed, CompatStatus};
+    use crate::dto::RegistryItem;
+    use std::collections::HashMap;
+
+    fn sample_item(resource_name: &str) -> RegistryItem {
+        RegistryItem {
+            id: "00000000-0000-0000-0000-000000000001".to_string(),
+            modpack_id: "test".to_string(),
+            resource_name: resource_name.to_string(),
+            display_name: resource_name.to_string(),
+            category: "NATO/Rifleman".to_string(),
+            icon_url: None,
+            kind: "character".to_string(),
+            r#abstract: None,
+            arsenal_type: None,
+            weight_kg: None,
+            volume_cm3: None,
+            max_weight_kg: None,
+            max_volume_cm3: None,
+            cargo_grid_w: None,
+            cargo_grid_h: None,
+            addon: None,
+            variant_of: None,
+            sort_order: 0,
+            created_at: "2026-01-01T00:00:00Z".to_string(),
+            updated_at: "2026-01-01T00:00:00Z".to_string(),
+        }
+    }
+
+    /// Cold session → both unpaginated GETs are still required (first open pays once).
+    #[test]
+    fn cold_session_must_fetch_both() {
+        registry_session::clear_for_test();
+        assert!(
+            registry_session::must_fetch_registry(),
+            "cold session must still GET /registry once"
+        );
+        assert!(
+            registry_session::must_fetch_compat(),
+            "cold session must still GET /registry/compat once"
+        );
+    }
+
+    /// After a successful fetch is stored, a remount must NOT plan another network round-trip
+    /// — this is the load-bearing T-245 contract (no ~7MB re-pay on every editor open).
+    #[test]
+    fn warm_session_skips_both_unpaginated_fetches() {
+        registry_session::clear_for_test();
+        let items = vec![sample_item("Prefab.Character.Test")];
+        registry_session::store_registry(items.clone());
+        let feed = CompatFeed {
+            status: CompatStatus::Ready,
+            graph: Default::default(),
+        };
+        registry_session::store_compat(feed, HashMap::new());
+
+        assert!(
+            !registry_session::must_fetch_registry(),
+            "warm session must skip GET /registry"
+        );
+        assert!(
+            !registry_session::must_fetch_compat(),
+            "warm session must skip GET /registry/compat"
+        );
+        let hit = registry_session::cached_registry().expect("registry session hit");
+        assert_eq!(hit.len(), 1);
+        assert_eq!(hit[0].resource_name, "Prefab.Character.Test");
+        let (feed_hit, _) = registry_session::cached_compat().expect("compat session hit");
+        assert_eq!(feed_hit.status, CompatStatus::Ready);
+    }
+
+    /// Mount source must consult the session gate before calling `api_get` for either path.
+    /// Guards against a future "helpful" revert to the always-spawn_local dual fetch.
+    #[test]
+    fn mount_source_gates_unpaginated_fetches_on_session_cache() {
+        let src = include_str!("mission_editor.rs");
+        assert!(
+            src.contains("registry_session::must_fetch_registry()"),
+            "mount path must gate GET /registry on must_fetch_registry()"
+        );
+        assert!(
+            src.contains("registry_session::must_fetch_compat()"),
+            "mount path must gate GET /registry/compat on must_fetch_compat()"
+        );
+        assert!(
+            src.contains("registry_session::store_registry"),
+            "successful /registry response must populate the session cache"
+        );
+        assert!(
+            src.contains("registry_session::store_compat"),
+            "successful /registry/compat response must populate the session cache"
+        );
     }
 }
