@@ -9250,14 +9250,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3132,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 0
+      "priority": 0,
+      "shipped_at": "7da9f742"
     },
     {
       "id": "T-317",
@@ -9424,6 +9425,27 @@
       ],
       "executor": "claude-code",
       "priority": 1
+    },
+    {
+      "id": "T-325",
+      "title": "Two telemetry models are non-Option String over nullable columns",
+      "summary": "FOUND by T-316, reported not fixed — `models/` was not in its owns list.\n\n`models::Match.winning_faction` and `MatchPlayerStat.role_played` are declared as plain `String` but their DB columns are NULLABLE. Any writer that puts a real NULL in either column breaks the READ path — the row fails to decode and the endpoint 500s.\n\nNothing hits it today only because T-316 deliberately kept writing `''` on insert to avoid tripping it. That is a landmine held down by one handler's politeness: the next writer, migration backfill, or manual DB fix that leaves a genuine NULL takes out the read path.\n\nThis is the same class as T-306 (server_fps f64-on-wire vs i64-in-DTO blanking the whole Server Intel page) — a type that disagrees with its column, discovered only when something finally produces the value the type cannot hold. Fix: make both `Option<String>` and handle None at the read sites, or make the columns NOT NULL with a default. Check which the data actually wants before choosing — a match with no winner is a real state, so Option is probably right for winning_faction.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3141,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }
