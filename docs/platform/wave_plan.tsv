@@ -12,7 +12,7 @@
 0	T-191	Load server version destroys local work non-undoably, then overwrites the backup	apps/website/frontend/src/mission_hydrate.rs
 0	T-192	Mission settings never reach the compiled document and are silently reverted	apps/website/frontend/src/eden_chrome.rs; apps/website/api/src/services/mission_compile.rs
 0	T-196	T-181 slices[] lists 39 of 54 slices	.ai/tickets/registry.json
-1	T-183	INDFOR squads spawn as US Army bodies	crates/map-engine-core/src/mission/kit.rs; crates/map-engine-core/src/mission/flatten.rs
+1	T-183	INDFOR squads spawn as US Army bodies	packages/tbd-schema/registry/kit-aliases.json; apps/mod/tbd-framework/Data/registry.json; apps/website/api/src/services/mission_compile.rs; crates/map-engine-core/src/mission/kit.rs
 1	T-194	Seed a populated content golden — root cause of every dead page	apps/website/frontend/tests/fixtures/api; apps/website/api/seeds
 1	T-195	Leaderboards actively throws away real data	apps/website/frontend/src/leaderboards.rs
 1	T-197	241 attachment edges and 26 attachment items are unreachable	apps/website/frontend/src/arsenal.rs
