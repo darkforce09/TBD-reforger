@@ -434,11 +434,32 @@ pub struct DashboardResponse {
 }
 
 /// `GET /me/deployments` — the caller's service record.
+///
+/// **T-233 — the combat block is `Option` on purpose, and must not be unwrapped to a default.**
+/// `kd_ratio` is `None` for a player with no ingested matches and `command_win_rate` is `None`
+/// whenever the player has never held a command slot (the common case). The backend distinguishes
+/// those from a genuinely measured `0.0` and sends `null`, because the defect this replaced was a
+/// constant `2.45` presented as telemetry — and `0.00` in an unmeasured slot is the same false
+/// claim in a quieter voice. Render nothing, not a zero.
+///
+/// `command_win_rate` is **not** a general win rate and must not be labelled "Win Rate": its
+/// denominator is `command_games`, i.e. only matches where the player held a command slot. A
+/// general win rate is not derivable at all — see the note on `handlers/deployments.rs`.
+///
+/// Every field is required (the backend always emits all six keys, `null` where unmeasured), so
+/// none is `skip_serializing_if`: `Option<f64>` round-trips `null` → `None` → `null`, which is the
+/// shape the golden pins.
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Deployments {
     pub total_operations: i64,
     pub attendance_rate: f64,
+    pub kills: i64,
+    pub deaths: i64,
+    pub kd_ratio: Option<f64>,
+    pub command_games: i64,
+    pub command_wins: i64,
+    pub command_win_rate: Option<f64>,
     pub service_history: Vec<Value>,
     pub upcoming: Vec<Value>,
 }
