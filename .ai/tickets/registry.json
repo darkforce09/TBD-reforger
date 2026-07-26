@@ -7462,13 +7462,14 @@
       "impact": [
         "mc-integrity"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2410,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "c24e9e35"
     },
     {
       "id": "T-224",
