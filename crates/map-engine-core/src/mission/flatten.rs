@@ -9,7 +9,7 @@
 //!
 //! @contract mission.schema.json#/
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use serde::Serialize;
 
@@ -151,6 +151,40 @@ pub struct ModOrbatFaction {
     pub groups: Vec<ModOrbatGroup>,
 }
 
+/// One `radioPlan.nets[]` entry (`mission.schema.json#/$defs/net`) — see
+/// [`derive_radio_plan`] for where the values come from and what they do not claim.
+#[derive(Debug, Serialize)]
+pub struct ModNet {
+    /// `^net:[a-z0-9_]+$`. Unique within the document — the mod treats it as the stable
+    /// channel key and the VOIP bridge keys voice channels on it
+    /// (`packages/tbd-schema/bridge/bridge-contract.md` §radioPlan → voice net mapping).
+    pub id: String,
+    /// Display name. Capped at [`MOD_MAX_LABEL_CHARS`] here so the mod never has to.
+    pub label: String,
+    /// NOT `#[serde(rename_all = "camelCase")]`: serde would camel-case `freq_mhz` to
+    /// `freqMhz`, and the mod binds this block by field NAME through `JsonLoadContext`,
+    /// which ignores keys it does not recognise. The whole radio plan would arrive with
+    /// every frequency at 0 — which `TBD_RadioPlan.Fault` then rejects as out-of-band,
+    /// so the failure mode is a silently empty plan, not a parse error.
+    #[serde(rename = "freqMHz")]
+    pub freq_mhz: f64,
+    /// Always set. Every derived net belongs to exactly one side — see [`derive_radio_plan`].
+    pub faction: String,
+    /// `"long"` on command nets, ABSENT on squad nets. Never `"short"` — see
+    /// [`derive_radio_plan`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub range: Option<String>,
+}
+
+/// `mission.schema.json#/$defs/radioPlan`. `nets` carries `minItems: 1`, so an empty plan
+/// is a schema violation rather than an empty block — the whole key is omitted instead
+/// (`radioPlan` is not in the schema's top-level `required`, and `TBD_RadioPlan.Parse`
+/// treats an absent plan as legal and logs `nets=0`).
+#[derive(Debug, Serialize)]
+pub struct ModRadioPlan {
+    pub nets: Vec<ModNet>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct ModCircle {
     pub x: f64,
@@ -231,6 +265,10 @@ pub struct ModMissionDocument {
     /// `BTreeMap` → sorted keys, matching Go's map marshalling.
     pub orbat: BTreeMap<String, ModOrbatFaction>,
     pub slots: Vec<ModSlot>,
+    /// T-203 — derived, never authored (nothing in the editor authors nets yet). `None`
+    /// omits the key entirely; see [`derive_radio_plan`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub radio_plan: Option<ModRadioPlan>,
     pub zones: Vec<ModZone>,
     pub flow: ModFlow,
     pub win_conditions: ModWinConditions,
@@ -332,6 +370,32 @@ const ROLE_FALLBACK: &str = "unassigned";
 /// collapse onto one callsign, or their derived slot ids collide and the mod's
 /// duplicate-id check (a hard error there) rejects the whole document.
 const CALLSIGN_FALLBACK: &str = "squad";
+
+/// `TBD_RadioPlan.MAX_NETS` (`apps/mod/tbd-framework/.../Radio/TBD_RadioPlan.c:91`).
+/// **The schema states no `maxItems` on `radioPlan.nets`** — this limit exists only in the
+/// mod, which accepts the first 32 nets in DOCUMENT ORDER and drops the rest. It is
+/// mirrored here so the cut is made by the side that can make it fairly: see
+/// [`derive_radio_plan`] for why document order is load-bearing.
+const MOD_MAX_NETS: usize = 32;
+
+/// `TBD_RadioPlan.MAX_LABEL_CHARS` (`TBD_RadioPlan.c:94`). Again mod-only — the schema puts
+/// no `maxLength` on `net.label`. `TBD_RadioPlan.CapLabel` truncates past it without a word
+/// to anyone, so the truncation is done here instead, where the compiled document a human
+/// can read already shows the string the player will see.
+const MOD_MAX_LABEL_CHARS: usize = 48;
+
+/// Bottom of `mission.schema.json#/$defs/net/freqMHz` (`minimum: 30`) and the base of the
+/// net frequency allocation. Deliberately the schema's own floor and not a number lifted
+/// from a golden mission — see [`derive_radio_plan`].
+const NET_FREQ_BASE_MHZ: f64 = 30.0;
+
+/// Spacing between allocated nets, in MHz. 0.5 MHz is exactly representable in binary
+/// floating point (so `base + step * i` is exact, and two compiles of one mission cannot
+/// drift), and it is a whole multiple of any transceiver frequency resolution the engine
+/// is likely to report — `TBD_RadioTuner.Constrain` rounds a requested frequency to
+/// `BaseTransceiver.GetFrequencyResolution()`, and a spacing finer than that step would
+/// round two distinct nets onto one frequency and silently merge two channels.
+const NET_FREQ_STEP_MHZ: f64 = 0.5;
 
 /// The schema's `minLength: 1` string fields cannot take the empty string, and the
 /// editor does not guarantee these are set. Substitute rather than emit a document
@@ -471,6 +535,139 @@ fn mod_slot_loadout(lo: &serde_json::Value) -> Option<ModSlotLoadout> {
     Some(ModSlotLoadout { gear, cargo })
 }
 
+/// One side's contribution to the radio plan, harvested from the ORBAT as it is built.
+/// `callsigns` are the group callsigns in document order — the same strings that reach
+/// `orbat.*.groups[].callsign` and `slots[].groupCallsign`, so a net cannot name a squad
+/// the compiled document does not contain.
+struct RadioNetSource {
+    faction_key: String,
+    display_name: String,
+    callsigns: Vec<String>,
+}
+
+/// Allocate a net id nothing else in this document has taken.
+///
+/// `^net:[a-z0-9_]+$` is a smaller alphabet than the callsigns feeding it, so two distinct
+/// squads CAN slug to one id ("Alpha 1" and "Alpha-1" both reduce to `alpha_1`). The
+/// numeric suffix is retried rather than assumed free, because `_2` can itself be an
+/// authored callsign — a squad literally called "Alpha 2" collides with the disambiguator
+/// for a duplicate "Alpha". Ids are the mod's stable channel key and the VOIP bridge's
+/// voice-channel key; two nets sharing one is two channels sharing one.
+fn unique_net_id(used: &mut HashSet<String>, faction_key: &str, source: &str) -> String {
+    let base = format!("net:{faction_key}_{}", slug_key(source, "net"));
+    if used.insert(base.clone()) {
+        return base;
+    }
+    for n in 2usize.. {
+        let candidate = format!("{base}_{n}");
+        if used.insert(candidate.clone()) {
+            return candidate;
+        }
+    }
+    unreachable!("the suffix search terminates — some n is always free")
+}
+
+/// `TBD_RadioPlan.CapLabel` in the compiler, on a char boundary.
+fn cap_net_label(label: &str) -> String {
+    label.chars().take(MOD_MAX_LABEL_CHARS).collect()
+}
+
+/// Derive `radioPlan.nets[]` from the ORBAT this compile just built (T-203).
+///
+/// ── Where this comes from, since nothing authors it ──────────────────────────────────
+/// The editor has no radio UI: there is no `radioPlan` anywhere in the editor payload, in
+/// `mission-editor-payload.schema.json`, or in the document core. So this is DERIVED, and
+/// the only honest thing to derive it from is the structure the compile already knows —
+/// factions and their squads. That is not a shape invented here: it is the shape every
+/// committed golden mission authors by hand (`bridgehead-at-levie.json`,
+/// `last-stand-at-montfort.json`, `slot-loadout-coverage.json` — one command net per side
+/// plus one net per squad), and the shape `docs/mod/tbd-reforger-platform-build-plan.md`
+/// §C2 describes ("a squad leader spawns already tuned to `cmd` + own squad net"). When the
+/// editor learns to author nets, an authored plan replaces this whole function; the seam is
+/// the single `derive_radio_plan(...)` call in [`flatten_to_mod_document`].
+///
+/// ── The frequencies are an ALLOCATION, not a doctrine ────────────────────────────────
+/// Nothing in this repo can tell the compiler what frequency a net should be on, so it does
+/// not pretend to know. Nets are numbered off the schema's own floor (30 MHz) in 0.5 MHz
+/// steps, in emission order. Two properties are all that is claimed for them: they are
+/// DETERMINISTIC (`/missions/:id/compiled` is re-fetched by the game server and must not
+/// change under it) and they are DISTINCT (two sides on one frequency would hear each
+/// other, which is the one way a frequency choice can be actively wrong).
+///
+/// The goldens' numbers were deliberately NOT copied. They read like doctrine — 41.0 for
+/// BLUFOR command, 51.0 for OPFOR — and reproducing them on every compiled mission would
+/// publish a frequency plan this program never agreed to. The community's own written
+/// practice is the opposite of a fixed plan: the doctrine wiki's `comms-dynamic` entry
+/// ("Operating With Looted Radios") says frequencies are randomized each match and treated
+/// as throwaway. A mechanical allocation is the honest reading of that; a fixed table is not.
+///
+/// ── Document order is load-bearing, because the mod truncates on it ──────────────────
+/// `TBD_RadioPlan.Parse` accepts the first [`MOD_MAX_NETS`] nets **across all factions**
+/// and warns about the rest. So a naive faction-major emission on a mission where the first
+/// side has 32+ squads would hand the second side ZERO nets — including its command net —
+/// and the only trace would be one truncation line in the server log. Two rules prevent it:
+///   1. every side's command net is emitted BEFORE any squad net, so no side can be
+///      silenced by another side's squad count;
+///   2. squad nets are then taken round-robin across sides, so the cut falls evenly.
+///
+/// The cut is also made HERE rather than left to the mod, so the compiled document a human
+/// reads is the plan the server actually runs.
+///
+/// ── `range` ─────────────────────────────────────────────────────────────────────────
+/// The schema advertises `short | long | any`, but only `long` does anything today:
+/// `TBD_RadioService.LongRangeFlag` (`TBD_RadioService.c:214-220`) returns 1 for `"long"`
+/// and 0 for everything else, so `short`, `any` and absent are one behaviour — pick the
+/// handheld. Command nets are therefore marked `long` (the one value that changes what the
+/// tuner does: it asks for the backpack set) and squad nets omit `range` entirely rather
+/// than say `"short"`, which would look like a distinction the mod does not make. If the
+/// mod ever starts honouring `short`, this is the line to revisit — not a comment to soften.
+///
+/// ── Every net is side-scoped ────────────────────────────────────────────────────────
+/// `faction` is always set. The schema makes it optional and the mod reads an empty faction
+/// as "shared with everybody" (`TBD_RadioPlan.GetNetsForFaction`), but nothing in the editor
+/// expresses "common channel", so emitting one would be handing both sides a frequency on a
+/// guess. Every faction key here is one the document declares, which is also what
+/// `TBD_RadioPlan.Fault` cross-checks before serving a net to anyone.
+fn derive_radio_plan(sources: &[RadioNetSource]) -> Option<ModRadioPlan> {
+    let mut nets: Vec<ModNet> = Vec::new();
+    let mut used_ids: HashSet<String> = HashSet::new();
+
+    let mut push =
+        |nets: &mut Vec<ModNet>, src: &RadioNetSource, slug: &str, label: &str, long: bool| {
+            let index = nets.len();
+            nets.push(ModNet {
+                id: unique_net_id(&mut used_ids, &src.faction_key, slug),
+                label: cap_net_label(label),
+                freq_mhz: NET_FREQ_BASE_MHZ + NET_FREQ_STEP_MHZ * index as f64,
+                faction: src.faction_key.clone(),
+                range: long.then(|| "long".to_string()),
+            });
+        };
+
+    // Rule 1 — every side's command net first. `display_name` is never empty (flatten falls
+    // back to the faction key), so the label can never be the bare " Command" the mod would
+    // still accept but a player would read as a blank channel.
+    for src in sources.iter().take(MOD_MAX_NETS) {
+        let label = format!("{} Command", src.display_name);
+        push(&mut nets, src, "cmd", &label, true);
+    }
+
+    // Rule 2 — squad nets, round-robin by rank across sides.
+    let deepest = sources.iter().map(|s| s.callsigns.len()).max().unwrap_or(0);
+    'ranks: for rank in 0..deepest {
+        for src in sources {
+            if nets.len() >= MOD_MAX_NETS {
+                break 'ranks;
+            }
+            if let Some(callsign) = src.callsigns.get(rank) {
+                push(&mut nets, src, callsign, callsign, false);
+            }
+        }
+    }
+
+    (!nets.is_empty()).then_some(ModRadioPlan { nets })
+}
+
 fn normalize_heading(rotation: f64) -> f64 {
     if rotation.is_nan() || rotation.is_infinite() {
         return 0.0;
@@ -500,6 +697,7 @@ pub fn flatten_to_mod_document(
     let mut doc_slots: Vec<ModSlot> = Vec::new();
     let mut centroids: HashMap<String, (f64, f64, i64)> = HashMap::new();
     let mut centroid_order: Vec<String> = Vec::new();
+    let mut radio_sources: Vec<RadioNetSource> = Vec::new();
     let mut any_y = false;
 
     for f in &ed.factions {
@@ -594,14 +792,24 @@ pub fn flatten_to_mod_document(
             });
         }
 
-        if !groups.is_empty() {
-            orbat.insert(faction_key.clone(), ModOrbatFaction { groups });
-        }
         let display_name = if f.name.is_empty() {
             faction_key.clone()
         } else {
             f.name.clone()
         };
+
+        if !groups.is_empty() {
+            // T-203 — harvested BEFORE `groups` moves into the orbat, and only for a faction
+            // that actually holds seats: the stub faction padded in below has no squads and no
+            // players, so giving it frequencies would put nets in the document that nobody can
+            // ever be served.
+            radio_sources.push(RadioNetSource {
+                faction_key: faction_key.clone(),
+                display_name: display_name.clone(),
+                callsigns: groups.iter().map(|g| g.callsign.clone()).collect(),
+            });
+            orbat.insert(faction_key.clone(), ModOrbatFaction { groups });
+        }
         factions.push(ModFaction {
             key: faction_key,
             display_name,
@@ -713,6 +921,7 @@ pub fn flatten_to_mod_document(
         factions,
         orbat,
         slots: doc_slots,
+        radio_plan: derive_radio_plan(&radio_sources),
         zones,
         flow: ModFlow {
             briefing_seconds: 600,
@@ -990,5 +1199,165 @@ mod tests {
             flatten_to_mod_document(&meta(), payload),
             Err(CompileError::NoSlots)
         ));
+    }
+
+    // ── T-203 radioPlan ──────────────────────────────────────────────────────────────────
+
+    /// Minimal editor payload: `(faction key, faction name, squad callsigns)`, one slot per
+    /// squad so every squad reaches the ORBAT and therefore the radio plan.
+    fn payload_with(factions: &[(&str, &str, &[&str])]) -> Vec<u8> {
+        let (mut fs, mut squads, mut slots) = (Vec::new(), Vec::new(), Vec::new());
+        for (fi, f) in factions.iter().enumerate() {
+            let squad_ids: Vec<String> = (0..f.2.len()).map(|i| format!("f{fi}s{i}")).collect();
+            for (i, callsign) in f.2.iter().enumerate() {
+                let slot_id = format!("f{fi}s{i}p0");
+                squads.push(serde_json::json!({
+                    "id": format!("f{fi}s{i}"), "callsign": callsign, "slotIds": [slot_id]
+                }));
+                slots.push(serde_json::json!({
+                    "id": slot_id, "index": 0, "role": "RFL",
+                    "position": {"x": 1.0, "y": 2.0, "z": 0.0, "rotation": 0.0}
+                }));
+            }
+            fs.push(serde_json::json!({"key": f.0, "name": f.1, "squadIds": squad_ids}));
+        }
+        serde_json::to_vec(
+            &serde_json::json!({"editor": {"factions": fs, "squads": squads, "slots": slots}}),
+        )
+        .expect("fixture serializes")
+    }
+
+    /// The whole derivation on the locked fixture: what is emitted, from what, and in what
+    /// order. Asserted on the SERIALIZED document as well as the struct, because the mod binds
+    /// this block by field NAME through `JsonLoadContext` and silently ignores keys it does not
+    /// recognise — a rename here is not a compile error anywhere, it is an empty radio plan.
+    #[test]
+    fn radio_plan_is_derived_from_the_orbat() {
+        let doc = flatten_to_mod_document(&meta(), FIXTURE.as_bytes()).expect("compiles");
+        let plan = doc.radio_plan.as_ref().expect("radioPlan emitted");
+
+        // Command nets FIRST (both sides), then squad nets round-robin. Labels come from the
+        // faction display name / the squad callsign the ORBAT already carries — `sq2` has no
+        // callsign, so its `name` ("Grom") is what reached the ORBAT and it is what reaches here.
+        let seen: Vec<String> = plan
+            .nets
+            .iter()
+            .map(|n| {
+                format!(
+                    "{} | {} | {:.1} | {} | {}",
+                    n.id,
+                    n.label,
+                    n.freq_mhz,
+                    n.faction,
+                    n.range.as_deref().unwrap_or("-")
+                )
+            })
+            .collect();
+        assert_eq!(
+            seen,
+            [
+                "net:blufor_cmd | US Army Command | 30.0 | blufor | long",
+                "net:opfor_cmd | Soviet VDV Command | 30.5 | opfor | long",
+                "net:blufor_alpha | Alpha | 31.0 | blufor | -",
+                "net:opfor_grom | Grom | 31.5 | opfor | -",
+            ]
+        );
+
+        let wire = serde_json::to_value(&doc).unwrap();
+        let nets = &wire["radioPlan"]["nets"];
+        // `freqMHz`, NOT the `freqMhz` that `rename_all = "camelCase"` would have produced.
+        // `TBD_RadioPlan.Fault` reads a missing frequency as 0, which is outside the schema
+        // band, so every net would be rejected and the plan would arrive empty.
+        assert_eq!(nets[0]["freqMHz"], 30.0);
+        assert!(nets[0].get("freqMhz").is_none());
+        // `range` is present ONLY where it does something. `TBD_RadioService.LongRangeFlag`
+        // (TBD_RadioService.c:214-220) returns 1 for "long" and 0 for everything else, so
+        // "short" and "any" are the same behaviour as absent — the squad nets do not claim a
+        // distinction the mod does not make.
+        assert_eq!(nets[0]["range"], "long");
+        assert!(nets[2].get("range").is_none() && nets[3].get("range").is_none());
+
+        // Deterministic: the game server re-fetches `/compiled` and the plan must not move
+        // under it. Frequencies are allocated by position, so this also pins the allocation.
+        let again = flatten_to_mod_document(&meta(), FIXTURE.as_bytes()).expect("compiles");
+        assert_eq!(serde_json::to_value(&again).unwrap(), wire);
+    }
+
+    /// The cap the schema does NOT state. `TBD_RadioPlan.Parse` takes the first
+    /// `MAX_NETS = 32` in document order across ALL factions and warns the rest away — so a
+    /// faction-major emission with a big first side would leave the second side with no nets
+    /// at all, command net included. This is the assertion that pins the ordering rules.
+    #[test]
+    fn radio_plan_never_silences_a_side_at_the_net_cap() {
+        let big: Vec<String> = (0..40).map(|i| format!("Sq{i}")).collect();
+        let refs: Vec<&str> = big.iter().map(String::as_str).collect();
+        let payload = payload_with(&[("blufor", "US Army", &refs), ("opfor", "Soviet VDV", &refs)]);
+        let doc = flatten_to_mod_document(&meta(), &payload).expect("compiles");
+        let nets = &doc.radio_plan.as_ref().expect("radioPlan emitted").nets;
+
+        // Cut here, so the mod never has to: 80 squads authored, 32 nets emitted.
+        assert_eq!(nets.len(), MOD_MAX_NETS);
+        // Both command nets survive, and they are the first two entries.
+        assert_eq!(
+            (nets[0].id.as_str(), nets[1].id.as_str()),
+            ("net:blufor_cmd", "net:opfor_cmd")
+        );
+        // The remaining budget splits evenly rather than falling entirely on one side.
+        let blufor = nets.iter().filter(|n| n.faction == "blufor").count();
+        assert_eq!((blufor, nets.len() - blufor), (16, 16));
+    }
+
+    /// Ids and frequencies are the two values that must not repeat: the mod and the VOIP
+    /// bridge key channels on `net.id`, and two sides sharing a frequency can hear each other.
+    /// The callsigns here all reduce to the same slug through the netId alphabet, and one of
+    /// them is spelled exactly like the disambiguator for another.
+    #[test]
+    fn radio_plan_ids_and_frequencies_are_unique() {
+        let blufor: &[&str] = &["Alpha 1", "Alpha-1", "Alpha 1 2", "cmd"];
+        let payload = payload_with(&[
+            ("blufor", "US Army", blufor),
+            ("opfor", "Soviet VDV", &["Alpha 1"]),
+        ]);
+        let doc = flatten_to_mod_document(&meta(), &payload).expect("compiles");
+        let nets = &doc.radio_plan.as_ref().expect("radioPlan emitted").nets;
+
+        let ids: HashSet<&str> = nets.iter().map(|n| n.id.as_str()).collect();
+        assert_eq!(ids.len(), nets.len(), "duplicate net id in {nets:?}");
+        // The faction command net is emitted first, so it keeps the plain `net:<faction>_cmd`
+        // and the squad literally called "cmd" is the one that gets suffixed.
+        assert!(ids.contains("net:blufor_cmd") && ids.contains("net:blufor_cmd_2"));
+
+        let freqs: HashSet<u64> = nets.iter().map(|n| (n.freq_mhz * 1000.0) as u64).collect();
+        assert_eq!(freqs.len(), nets.len(), "duplicate frequency in {nets:?}");
+        // Inside `mission.schema.json#/$defs/net/freqMHz` (30..=512) — a frequency outside it
+        // is rejected net-by-net by `TBD_RadioPlan.Fault`.
+        assert!(nets.iter().all(|n| (30.0..=512.0).contains(&n.freq_mhz)));
+        // Every net names a faction the document declares; nothing is emitted unscoped.
+        let declared: HashSet<&str> = doc.factions.iter().map(|f| f.key.as_str()).collect();
+        assert!(nets.iter().all(|n| declared.contains(n.faction.as_str())));
+    }
+
+    /// The other limit the schema does not state. `TBD_RadioPlan.CapLabel` truncates past
+    /// `MAX_LABEL_CHARS = 48` without telling anyone, so the compiler does it where the
+    /// compiled document shows the string the player will actually see. An empty label is a
+    /// hard rejection in `TBD_RadioPlan.Fault`, so the floor matters as much as the ceiling.
+    #[test]
+    fn radio_plan_label_is_capped_at_the_mod_limit() {
+        let long_name = "N".repeat(200);
+        let long_callsign = "C".repeat(200);
+        let payload = payload_with(&[
+            ("blufor", &long_name, &[long_callsign.as_str()]),
+            ("opfor", "", &["Grom"]),
+        ]);
+        let doc = flatten_to_mod_document(&meta(), &payload).expect("compiles");
+        let nets = &doc.radio_plan.as_ref().expect("radioPlan emitted").nets;
+
+        assert!(
+            nets.iter()
+                .all(|n| (1..=MOD_MAX_LABEL_CHARS).contains(&n.label.chars().count()))
+        );
+        assert_eq!(nets[0].label, "N".repeat(MOD_MAX_LABEL_CHARS));
+        // An unnamed faction falls back to its key, so the label is never a bare " Command".
+        assert_eq!(nets[1].label, "opfor Command");
     }
 }
