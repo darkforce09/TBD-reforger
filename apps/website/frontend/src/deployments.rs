@@ -1,7 +1,7 @@
 //! My Deployments (/deployments) — ported from pages/operations.tsx `DeploymentsPage`. `<AuthGate>`
 //! → `/deployments` Resource → `QueryState` → a two-pane service record: a left telemetry dossier
 //! (identity from the auth store + the mock K/D / win-rate / fav-loadout constants + total deploys)
-//! and a right pane (Active Orders banner + Combat History).
+//! and a right pane (Active Orders banner + Combat History + Leave of Absence).
 //!
 //! **Empty-DB golden (unchanged):** with no upcoming and an empty history the "No Active Orders" +
 //! "No Service History Compiled" states and the always-on dossier still render byte-for-byte as
@@ -17,15 +17,25 @@
 //! Neither branch fetches anything — `GET /me/deployments` returns both lists in one payload — so
 //! there is no second Resource here to go stale (the T-226 hazard). Items stay `serde_json::Value`;
 //! the fields read are pinned by the `registration_state` and `mission_outcome` enums.
+//!
+//! **T-265 — Leave of Absence.** The LOA backend (`POST/GET /me/leave-requests`,
+//! `GET/PATCH /admin/leave-requests`) had zero SPA surface. Member file+list and (for admins) the
+//! review queue live as sections on this page — no new route / nav entry (surface spec item 8).
+//! Each LOA panel owns its own `LocalResource` so a submit/review refetch cannot go stale against
+//! the deployments payload.
 #![allow(dead_code)]
 use crate::auth::AuthStore;
 use crate::datefmt::{countdown_label, format_local_datetime, format_short_date};
-use crate::dto::Deployments;
+use crate::dto::{CreateLeaveInput, DataEnvelope, Deployments, LeaveRequest, Paginated};
+use crate::nav::Role;
 use crate::ui::{badge_class, cn, MaterialIcon};
 // T-405 — the AAR `<a href>` at the bottom of Combat History is the sink of the T-391 XSS.
 use crate::url_guard;
 use leptos::prelude::*;
 use serde_json::Value;
+
+/// Form control recipe shared with CreateMissionDialog (macOS pill).
+const LOA_INPUT: &str = "w-full rounded-full bg-white/5 px-5 py-2.5 font-mono text-sm text-on-surface placeholder:text-on-surface-variant/60 outline-none transition focus:ring-1 focus:ring-primary/50";
 
 fn vstr(v: &Value, k: &str) -> String {
     v.get(k).and_then(Value::as_str).unwrap_or_default().into()
@@ -67,6 +77,51 @@ fn terrain_label(t: &str) -> String {
         Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
         None => "—".into(),
     }
+}
+
+/// Client-side mirror of `handlers::deployments::submit_leave` date rules. Bare `YYYY-MM-DD`
+/// only — the response wire form (`…T00:00:00Z`) must never be posted back.
+fn validate_loa_range(starts_on: &str, ends_on: &str) -> Result<(), &'static str> {
+    if starts_on.is_empty() || ends_on.is_empty() {
+        return Err("starts_on and ends_on are required");
+    }
+    if !is_ymd(starts_on) || !is_ymd(ends_on) {
+        return Err("dates must be YYYY-MM-DD");
+    }
+    if ends_on < starts_on {
+        return Err("ends_on must be on or after starts_on");
+    }
+    Ok(())
+}
+
+fn is_ymd(s: &str) -> bool {
+    let b = s.as_bytes();
+    b.len() == 10
+        && b[4] == b'-'
+        && b[7] == b'-'
+        && b[0..4].iter().all(u8::is_ascii_digit)
+        && b[5..7].iter().all(u8::is_ascii_digit)
+        && b[8..10].iter().all(u8::is_ascii_digit)
+}
+
+fn leave_status_variant(status: &str) -> &'static str {
+    match status {
+        "approved" => "success",
+        "denied" => "error",
+        "pending" => "warning",
+        _ => "neutral",
+    }
+}
+
+/// Serialize the create body the form POSTs — kept as a named helper so the DTO is exercised on
+/// the native test target (the submit closure itself is `cfg(wasm32)`).
+fn create_leave_body(starts_on: String, ends_on: String, reason: String) -> Value {
+    serde_json::to_value(CreateLeaveInput {
+        starts_on,
+        ends_on,
+        reason,
+    })
+    .unwrap_or(Value::Null)
 }
 
 /// "BLUFOR · Command · Platoon Leader" from whichever of `faction` / `squad` / `role` the backend
@@ -175,6 +230,9 @@ fn dossier(d: Deployments) -> impl IntoView {
         .map(|u| u.username.clone())
         .unwrap_or_default();
     let role = user.as_ref().map(|u| u.role.as_str()).unwrap_or_default();
+    let is_admin = user
+        .as_ref()
+        .is_some_and(|u| matches!(u.role, Role::Admin));
     let has_active = !d.upcoming.is_empty();
     let has_history = !d.service_history.is_empty();
     let upcoming = d.upcoming.clone();
@@ -214,7 +272,7 @@ fn dossier(d: Deployments) -> impl IntoView {
                     </div>
                 </aside>
 
-                // ── Right: active orders + combat history ──
+                // ── Right: active orders + combat history + LOA ──
                 <main class="custom-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto bg-surface-container-highest/10">
                     <section class="relative shrink-0 overflow-hidden border-b border-white/10">
                         <img
@@ -265,6 +323,10 @@ fn dossier(d: Deployments) -> impl IntoView {
                                 .into_any()
                         }}
                     </section>
+                    <LeaveOfAbsencePanel />
+                    {is_admin.then(|| {
+                        view! { <AdminLeaveQueue /> }
+                    })}
                 </main>
             </div>
         </div>
@@ -522,6 +584,439 @@ fn replay_href(replay: &str) -> Option<&str> {
     url_guard::is_http_url(replay).then_some(replay)
 }
 
+/* ─────────────────────────── T-265 Leave of Absence ─────────────────────────── */
+
+/// Member LOA: file a request (`POST /me/leave-requests`) + list own rows
+/// (`GET /me/leave-requests`). Surface-spec item 8 — lives on `/deployments`, no new route.
+#[component]
+fn LeaveOfAbsencePanel() -> impl IntoView {
+    let store = expect_context::<AuthStore>();
+    let mine = LocalResource::new(move || async move {
+        #[cfg(target_arch = "wasm32")]
+        {
+            crate::client::api_get::<DataEnvelope<LeaveRequest>>(store, "/me/leave-requests")
+                .await
+                .ok()
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = store;
+            None::<DataEnvelope<LeaveRequest>>
+        }
+    });
+    let starts_on = RwSignal::new(String::new());
+    let ends_on = RwSignal::new(String::new());
+    let reason = RwSignal::new(String::new());
+    let busy = RwSignal::new(false);
+    let form_error = RwSignal::new(None::<String>);
+
+    let on_submit = move |ev: leptos::ev::SubmitEvent| {
+        ev.prevent_default();
+        #[cfg(target_arch = "wasm32")]
+        {
+            let toasts = crate::toast::use_toasts();
+            let start = starts_on.get_untracked().trim().to_string();
+            let end = ends_on.get_untracked().trim().to_string();
+            let why = reason.get_untracked().trim().to_string();
+            if let Err(msg) = validate_loa_range(&start, &end) {
+                form_error.set(Some(msg.to_string()));
+                toasts.error(msg);
+                return;
+            }
+            form_error.set(None);
+            if busy.get_untracked() {
+                return;
+            }
+            busy.set(true);
+            let body = create_leave_body(start, end, why);
+            leptos::task::spawn_local(async move {
+                match crate::client::api_post::<LeaveRequest>(store, "/me/leave-requests", body)
+                    .await
+                {
+                    Ok(_) => {
+                        toasts.success("Leave request submitted");
+                        starts_on.set(String::new());
+                        ends_on.set(String::new());
+                        reason.set(String::new());
+                        mine.refetch();
+                    }
+                    Err(e) => toasts.error(crate::client::api_error_message(
+                        &e,
+                        "Failed to submit leave request",
+                    )),
+                }
+                busy.set(false);
+            });
+        }
+    };
+
+    view! {
+        <section class="border-t border-white/10 p-8">
+            <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+                <h2 class="font-mono text-xs uppercase tracking-widest text-on-surface-variant">
+                    "Leave of Absence"
+                </h2>
+                <span class="font-mono text-[10px] tracking-widest text-on-surface-variant/70 uppercase">
+                    "Submit Leave of Absence"
+                </span>
+            </div>
+            <form on:submit=on_submit class="mb-6 grid gap-4 md:grid-cols-4">
+                <div>
+                    <label class="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+                        "Starts on"
+                    </label>
+                    <input
+                        type="date"
+                        required
+                        prop:value=move || starts_on.get()
+                        on:input=move |ev| starts_on.set(event_target_value(&ev))
+                        class=LOA_INPUT
+                    />
+                </div>
+                <div>
+                    <label class="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+                        "Ends on"
+                    </label>
+                    <input
+                        type="date"
+                        required
+                        prop:value=move || ends_on.get()
+                        on:input=move |ev| ends_on.set(event_target_value(&ev))
+                        class=LOA_INPUT
+                    />
+                </div>
+                <div class="md:col-span-2">
+                    <label class="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+                        "Reason"
+                    </label>
+                    <input
+                        type="text"
+                        placeholder="Optional reason…"
+                        prop:value=move || reason.get()
+                        on:input=move |ev| reason.set(event_target_value(&ev))
+                        class=LOA_INPUT
+                    />
+                </div>
+                <div class="md:col-span-4 flex flex-wrap items-center gap-3">
+                    <button
+                        type="submit"
+                        prop:disabled=move || busy.get()
+                        class="inline-flex items-center gap-2 rounded-full border border-primary/50 bg-primary/15 px-5 py-2.5 font-mono text-xs tracking-widest text-primary uppercase transition hover:bg-primary/25 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <MaterialIcon name="event_busy" class="text-base" />
+                        {move || {
+                            if busy.get() { "Submitting…" } else { "Submit Leave of Absence" }
+                        }}
+                    </button>
+                    {move || {
+                        form_error
+                            .get()
+                            .map(|e| {
+                                view! {
+                                    <span class="font-mono text-xs text-error">{e}</span>
+                                }
+                            })
+                    }}
+                </div>
+            </form>
+            <Suspense fallback=move || {
+                view! {
+                    <p class="font-mono text-xs text-on-surface-variant">"Loading leave requests…"</p>
+                }
+            }>
+                {move || {
+                    mine.get().map(|opt| match opt {
+                        Some(env) => leave_rows(&env.data).into_any(),
+                        None => {
+                            view! {
+                                <p class="font-mono text-xs text-error">
+                                    "Failed to load leave requests."
+                                </p>
+                            }
+                                .into_any()
+                        }
+                    })
+                }}
+            </Suspense>
+        </section>
+    }
+}
+
+/// Admin review queue on the same page (admin role only). Prefer this over a new
+/// `/admin/leave-requests` route — `personnel.rs` / router are outside owns.
+#[component]
+fn AdminLeaveQueue() -> impl IntoView {
+    let store = expect_context::<AuthStore>();
+    let queue = LocalResource::new(move || async move {
+        #[cfg(target_arch = "wasm32")]
+        {
+            crate::client::api_get::<Paginated<LeaveRequest>>(store, "/admin/leave-requests")
+                .await
+                .ok()
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = store;
+            None::<Paginated<LeaveRequest>>
+        }
+    });
+
+    view! {
+        <section class="border-t border-white/10 p-8">
+            <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+                <h2 class="font-mono text-xs uppercase tracking-widest text-on-surface-variant">
+                    "LOA Review Queue"
+                </h2>
+                <span class="font-mono text-[10px] tracking-widest text-tactical-yellow/80 uppercase">
+                    "Admin"
+                </span>
+            </div>
+            <Suspense fallback=move || {
+                view! {
+                    <p class="font-mono text-xs text-on-surface-variant">"Loading review queue…"</p>
+                }
+            }>
+                {move || {
+                    queue.get().map(|opt| match opt {
+                        Some(page) => admin_leave_table(page.data, queue).into_any(),
+                        None => {
+                            view! {
+                                <p class="font-mono text-xs text-error">
+                                    "Failed to load LOA review queue."
+                                </p>
+                            }
+                                .into_any()
+                        }
+                    })
+                }}
+            </Suspense>
+        </section>
+    }
+}
+
+fn leave_rows(rows: &[LeaveRequest]) -> impl IntoView {
+    if rows.is_empty() {
+        return view! {
+            <div class="rounded-xl border border-white/10 px-4 py-6 text-center">
+                <p class="font-mono text-xs tracking-widest text-on-surface-variant uppercase">
+                    "No leave requests on file"
+                </p>
+            </div>
+        }
+        .into_any();
+    }
+    let rows = rows.to_vec();
+    view! {
+        <div class="custom-scrollbar overflow-x-auto rounded-xl border border-white/10">
+            <table class="w-full min-w-[36rem] border-collapse text-left text-sm">
+                <thead>
+                    <tr class="border-b border-white/10 bg-surface-container-lowest/40">
+                        <ServiceHead label="Starts" />
+                        <ServiceHead label="Ends" />
+                        <ServiceHead label="Reason" />
+                        <ServiceHead label="Status" />
+                        <ServiceHead label="Filed" />
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows
+                        .into_iter()
+                        .map(|r| {
+                            let status_label = r.status.clone();
+                            let variant = leave_status_variant(&r.status);
+                            let reason = if r.reason.is_empty() {
+                                "—".to_string()
+                            } else {
+                                r.reason.clone()
+                            };
+                            view! {
+                                <tr class="border-b border-white/5 transition last:border-b-0 hover:bg-white/[0.02]">
+                                    <td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-on-surface-variant">
+                                        {format_short_date(&r.starts_on)}
+                                    </td>
+                                    <td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-on-surface-variant">
+                                        {format_short_date(&r.ends_on)}
+                                    </td>
+                                    <td class="px-4 py-3 text-on-surface">{reason}</td>
+                                    <td class="px-4 py-3">
+                                        <span class=badge_class(variant)>{status_label}</span>
+                                    </td>
+                                    <td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-on-surface-variant">
+                                        {format_short_date(&r.created_at)}
+                                    </td>
+                                </tr>
+                            }
+                        })
+                        .collect_view()}
+                </tbody>
+            </table>
+        </div>
+    }
+    .into_any()
+}
+
+fn admin_leave_table(
+    rows: Vec<LeaveRequest>,
+    queue: LocalResource<Option<Paginated<LeaveRequest>>>,
+) -> impl IntoView {
+    let store = expect_context::<AuthStore>();
+    if rows.is_empty() {
+        return view! {
+            <div class="rounded-xl border border-white/10 px-4 py-6 text-center">
+                <p class="font-mono text-xs tracking-widest text-on-surface-variant uppercase">
+                    "No leave requests in the queue"
+                </p>
+            </div>
+        }
+        .into_any();
+    }
+    view! {
+        <div class="custom-scrollbar overflow-x-auto rounded-xl border border-white/10">
+            <table class="w-full min-w-[44rem] border-collapse text-left text-sm">
+                <thead>
+                    <tr class="border-b border-white/10 bg-surface-container-lowest/40">
+                        <ServiceHead label="Member" />
+                        <ServiceHead label="Starts" />
+                        <ServiceHead label="Ends" />
+                        <ServiceHead label="Reason" />
+                        <ServiceHead label="Status" />
+                        <ServiceHead label="Review" />
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows
+                        .into_iter()
+                        .map(|r| {
+                            let id = r.id.clone();
+                            let id_deny = r.id.clone();
+                            let status_label = r.status.clone();
+                            let variant = leave_status_variant(&r.status);
+                            let pending = r.status == "pending";
+                            let reason = if r.reason.is_empty() {
+                                "—".to_string()
+                            } else {
+                                r.reason.clone()
+                            };
+                            let on_approve = move |_| {
+                                #[cfg(target_arch = "wasm32")]
+                                {
+                                    let toasts = crate::toast::use_toasts();
+                                    let path = format!("/admin/leave-requests/{id}");
+                                    leptos::task::spawn_local(async move {
+                                        match crate::client::api_patch::<Value>(
+                                            store,
+                                            &path,
+                                            serde_json::json!({"status":"approved"}),
+                                        )
+                                        .await
+                                        {
+                                            Ok(_) => {
+                                                toasts.success("LOA approved");
+                                                queue.refetch();
+                                            }
+                                            Err(e) => toasts.error(
+                                                crate::client::api_error_message(
+                                                    &e,
+                                                    "Failed to approve LOA",
+                                                ),
+                                            ),
+                                        }
+                                    });
+                                }
+                                #[cfg(not(target_arch = "wasm32"))]
+                                {
+                                    let _ = (&store, &queue, &id);
+                                }
+                            };
+                            let on_deny = move |_| {
+                                #[cfg(target_arch = "wasm32")]
+                                {
+                                    let toasts = crate::toast::use_toasts();
+                                    let path = format!("/admin/leave-requests/{id_deny}");
+                                    leptos::task::spawn_local(async move {
+                                        match crate::client::api_patch::<Value>(
+                                            store,
+                                            &path,
+                                            serde_json::json!({"status":"denied"}),
+                                        )
+                                        .await
+                                        {
+                                            Ok(_) => {
+                                                toasts.success("LOA denied");
+                                                queue.refetch();
+                                            }
+                                            Err(e) => toasts.error(
+                                                crate::client::api_error_message(
+                                                    &e,
+                                                    "Failed to deny LOA",
+                                                ),
+                                            ),
+                                        }
+                                    });
+                                }
+                                #[cfg(not(target_arch = "wasm32"))]
+                                {
+                                    let _ = (&store, &queue, &id_deny);
+                                }
+                            };
+                            view! {
+                                <tr class="border-b border-white/5 transition last:border-b-0 hover:bg-white/[0.02]">
+                                    <td class="px-4 py-3 font-mono text-xs text-on-surface-variant">
+                                        {r.discord_id.clone()}
+                                    </td>
+                                    <td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-on-surface-variant">
+                                        {format_short_date(&r.starts_on)}
+                                    </td>
+                                    <td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-on-surface-variant">
+                                        {format_short_date(&r.ends_on)}
+                                    </td>
+                                    <td class="px-4 py-3 text-on-surface">{reason}</td>
+                                    <td class="px-4 py-3">
+                                        <span class=badge_class(variant)>{status_label}</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        {if pending {
+                                            view! {
+                                                <div class="flex flex-wrap gap-2">
+                                                    <button
+                                                        type="button"
+                                                        on:click=on_approve
+                                                        class="rounded-full bg-emerald-600/90 px-3 py-1.5 font-mono text-[10px] tracking-widest text-white uppercase transition hover:bg-emerald-500"
+                                                    >
+                                                        "Approve"
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        on:click=on_deny
+                                                        class="rounded-full border border-error/40 bg-error/10 px-3 py-1.5 font-mono text-[10px] tracking-widest text-error uppercase transition hover:bg-error/20"
+                                                    >
+                                                        "Deny"
+                                                    </button>
+                                                </div>
+                                            }
+                                                .into_any()
+                                        } else {
+                                            view! {
+                                                <span class="font-mono text-xs text-outline">
+                                                    {r.reviewed_by
+                                                        .clone()
+                                                        .unwrap_or_else(|| "—".into())}
+                                                </span>
+                                            }
+                                                .into_any()
+                                        }}
+                                    </td>
+                                </tr>
+                            }
+                        })
+                        .collect_view()}
+                </tbody>
+            </table>
+        </div>
+    }
+    .into_any()
+}
+
 #[component]
 fn ServiceHead(label: &'static str) -> impl IntoView {
     view! {
@@ -579,5 +1074,53 @@ mod tests {
             replay_href("https://aar.tbd/replays/abc.json"),
             Some("https://aar.tbd/replays/abc.json")
         );
+    }
+
+    /// Mirrors `submit_leave` — empty, non-YMD, and inverted ranges must fail before the POST.
+    #[test]
+    fn loa_date_validation_matches_backend_rules() {
+        assert_eq!(
+            validate_loa_range("", "2026-08-05").unwrap_err(),
+            "starts_on and ends_on are required"
+        );
+        assert_eq!(
+            validate_loa_range("nope", "2026-08-05").unwrap_err(),
+            "dates must be YYYY-MM-DD"
+        );
+        assert_eq!(
+            validate_loa_range("2026-08-01T00:00:00Z", "2026-08-05").unwrap_err(),
+            "dates must be YYYY-MM-DD"
+        );
+        assert_eq!(
+            validate_loa_range("2026-08-05", "2026-08-01").unwrap_err(),
+            "ends_on must be on or after starts_on"
+        );
+        assert!(validate_loa_range("2026-08-01", "2026-08-01").is_ok());
+        assert!(validate_loa_range("2026-08-01", "2026-08-05").is_ok());
+    }
+
+    #[test]
+    fn create_leave_body_is_bare_ymd_json() {
+        let v = create_leave_body(
+            "2026-08-01".into(),
+            "2026-08-05".into(),
+            "holiday".into(),
+        );
+        assert_eq!(
+            v,
+            serde_json::json!({
+                "starts_on": "2026-08-01",
+                "ends_on": "2026-08-05",
+                "reason": "holiday",
+            })
+        );
+    }
+
+    #[test]
+    fn leave_status_badge_variants() {
+        assert_eq!(leave_status_variant("pending"), "warning");
+        assert_eq!(leave_status_variant("approved"), "success");
+        assert_eq!(leave_status_variant("denied"), "error");
+        assert_eq!(leave_status_variant("bogus"), "neutral");
     }
 }
