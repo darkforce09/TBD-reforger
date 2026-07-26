@@ -29,6 +29,27 @@ pub fn terrain_bounds(terrain: &str) -> [f64; 4] {
     }
 }
 
+/// Top-level keys [`compile_payload`] itself authors (and `orbat` on the Export path).
+/// Everything else is a T-219 passthrough candidate, carried through the doc as
+/// `payloadExtras` (see `MissionDocCore::hydrate` / `small_maps_json`). Keep in lockstep with
+/// `is_known_editor_payload_top_level` in `doc/store.rs`.
+pub const KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS: &[&str] = &[
+    "schemaVersion",
+    "map",
+    "environment",
+    "loadouts",
+    "objectives",
+    "vehicles",
+    "markers",
+    "editor",
+    "orbat",
+];
+
+#[must_use]
+pub fn is_known_editor_payload_top_level(key: &str) -> bool {
+    KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS.contains(&key)
+}
+
 /// `Object.values(obj[key])` — the by-id map's values as an array. Missing / non-object → `[]`.
 /// serde_json `Map` iteration is key-sorted, so the array order is deterministic (id-sorted).
 fn values_of(obj: &Value, key: &str) -> Vec<Value> {
@@ -139,6 +160,21 @@ pub fn compile_payload(small_maps_json: &str, slots_json: &str, include_orbat: b
             obj.insert("orbat".to_string(), orbat_val);
         }
     }
+
+    // T-219 — re-emit unknown top-level keys that hydrate parked in `payloadExtras`. Never
+    // overwrite a key this function already authored (schemaVersion / map / editor / …), and never
+    // promote the side-channel name itself onto the wire payload.
+    if let Some(extras) = small.get("payloadExtras").and_then(Value::as_object)
+        && let Some(obj) = payload.as_object_mut()
+    {
+        for (k, v) in extras {
+            if is_known_editor_payload_top_level(k) || obj.contains_key(k) {
+                continue;
+            }
+            obj.insert(k.clone(), v.clone());
+        }
+    }
+
     payload
 }
 
@@ -570,6 +606,39 @@ mod tests {
         // Sanity that this really was a full round trip and not an empty doc agreeing with itself.
         assert_eq!(recompiled["editor"]["slots"].as_array().unwrap().len(), 1);
         assert_eq!(recompiled["map"]["terrain"], json!("everon"));
+    }
+
+    /// T-219 — `compile_payload` merges `payloadExtras` onto the wire payload, but never lets an
+    /// extra overwrite a key this function already authored (schemaVersion stays the literal 1).
+    #[test]
+    fn payload_extras_merge_does_not_overwrite_known_keys() {
+        let small = json!({
+            "meta": { "terrain": "everon" },
+            "factionsById": {},
+            "squadsById": {},
+            "loadoutsById": {},
+            "itemsById": {},
+            "objectivesById": {},
+            "vehiclesById": {},
+            "markersById": {},
+            "editorLayersById": {},
+            "payloadExtras": {
+                "schemaVersion": 99,
+                "serverMigrationToken": "keep-me",
+                "map": { "terrain": "arland" }
+            }
+        })
+        .to_string();
+
+        let p = compile_payload(&small, "{}", false);
+        assert_eq!(
+            p["schemaVersion"],
+            json!(1),
+            "known key must win over extras"
+        );
+        assert_eq!(p["map"]["terrain"], json!("everon"));
+        assert_eq!(p["serverMigrationToken"], json!("keep-me"));
+        assert!(p.get("payloadExtras").is_none());
     }
 
     /// T-214 — the envelope's `briefing` is the mission ROW's library blurb (a **string**), and the

@@ -162,10 +162,14 @@ impl MissionDocCore {
     /// runs this — these maps hold hundreds of entities. `meta` is `null` when empty (matching
     /// `docToSnapshot`). Enables migrating every non-render reader (compile, Outliner, Attributes) onto
     /// the shadow (Phase 3.2.2).
+    ///
+    /// When hydrate parked unknown top-level payload keys (T-219), they appear here as
+    /// `payloadExtras` — a compile side-channel, never a wire key itself.
     #[must_use]
     pub fn small_maps_json(&self) -> String {
         // Grab the root handles before opening the read txn (`get_or_insert_map` takes `&self`).
         let meta = self.doc.get_or_insert_map("meta");
+        let payload_extras = self.doc.get_or_insert_map("payloadExtras");
         let named: [(&str, MapRef); 8] = [
             ("factionsById", self.doc.get_or_insert_map("factions")),
             ("squadsById", self.doc.get_or_insert_map("squads")),
@@ -192,6 +196,10 @@ impl MissionDocCore {
         );
         for (key, map) in &named {
             root.insert((*key).to_string(), map.to_json(&txn));
+        }
+        // Omit when empty so a clean doc's snapshot shape stays unchanged.
+        if payload_extras.len(&txn) > 0 {
+            root.insert("payloadExtras".to_string(), payload_extras.to_json(&txn));
         }
 
         let mut buf = String::new();
@@ -1167,16 +1175,23 @@ impl MissionDocCore {
     /// `orbat[]` rebuild stays JS-side (it mints ids); the flip wrapper transforms lossy → an
     /// `editor`-shaped payload and calls this. If no layers were loaded, a default layer is reseeded
     /// with the JS-minted `default_layer_id` (mirrors `ensureDefaultLayer`).
+    ///
+    /// **T-219 — unknown top-level keys.** Keys that neither this loader nor `compile_payload`
+    /// author (`schemaVersion` / `map` / `environment` / `loadouts` / `objectives` / `vehicles` /
+    /// `markers` / `editor` / `orbat`) are parked in the `payloadExtras` root map and re-emitted on
+    /// the next Save. Without that, a server-first or migration field appears to persist, then
+    /// vanishes on the next hydrate→compile cycle.
     pub fn hydrate(&self, payload_json: &str, default_layer_id: &str) {
         let Any::Map(payload) = json_str_to_any(payload_json) else {
             return;
         };
-        // Grab the 5 non-tracked map handles before opening the txn (`get_or_insert_map` takes &self).
+        // Grab the non-tracked map handles before opening the txn (`get_or_insert_map` takes &self).
         let loadouts = self.doc.get_or_insert_map("loadouts");
         let items = self.doc.get_or_insert_map("items");
         let objectives = self.doc.get_or_insert_map("objectives");
         let vehicles = self.doc.get_or_insert_map("vehicles");
         let markers = self.doc.get_or_insert_map("markers");
+        let payload_extras = self.doc.get_or_insert_map("payloadExtras");
 
         let mut txn = self.begin();
         for m in [
@@ -1189,6 +1204,7 @@ impl MissionDocCore {
             &objectives,
             &vehicles,
             &markers,
+            &payload_extras,
         ] {
             m.clear(&mut txn);
         }
@@ -1216,6 +1232,15 @@ impl MissionDocCore {
             load_rows(&mut txn, &self.squads, editor.get("squads"));
             load_rows(&mut txn, &self.slots, editor.get("slots"));
             load_rows(&mut txn, &self.editor_layers, editor.get("editorLayers"));
+        }
+
+        // T-219 — park every top-level key this loader does not understand. Nested values stay
+        // opaque `Any` (same as `load_row`), so objects/arrays round-trip through yrs untouched.
+        for (k, v) in payload.iter() {
+            if is_known_editor_payload_top_level(k) {
+                continue;
+            }
+            payload_extras.insert(&mut txn, k.as_str(), v.clone());
         }
 
         if self.editor_layers.len(&txn) == 0 {
@@ -1782,6 +1807,24 @@ fn remove_slots_in_txn(
     for id in ids {
         slots.remove(&mut *txn, id.as_str());
     }
+}
+
+/// Keys `hydrate` / `compile_payload` already understand at the payload root (T-219).
+/// Must match `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS` in `mission/compile.rs` — duplicated here so
+/// the `doc` feature does not depend on `mission`.
+fn is_known_editor_payload_top_level(key: &str) -> bool {
+    matches!(
+        key,
+        "schemaVersion"
+            | "map"
+            | "environment"
+            | "loadouts"
+            | "objectives"
+            | "vehicles"
+            | "markers"
+            | "editor"
+            | "orbat"
+    )
 }
 
 /// Parse a JSON string to a `yrs` `Any` (JSON object → `Any::Map`, integer-valued numbers →
@@ -2565,6 +2608,129 @@ mod tests {
         let reloaded = MissionDocCore::new();
         reloaded.hydrate(&payload.to_string(), "lyr");
         reloaded
+    }
+
+    /// **T-219 — unknown top-level keys must survive hydrate → compile → hydrate → compile.**
+    ///
+    /// Before this ticket, `hydrate` only read known paths and `compile_payload` rebuilt from a
+    /// `json!` of known fields, so a server-first / migration key appeared to persist then vanished
+    /// on the next Save. The fixture uses a non-integral nested number so an `Any::BigInt` vs
+    /// `Any::Number` round-trip cannot silently paper over a drop.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn unknown_top_level_keys_survive_compile_hydrate_compile() {
+        let incoming = serde_json::json!({
+            "schemaVersion": 1,
+            "map": { "terrain": "everon" },
+            "environment": {},
+            "serverMigrationToken": "keep-me-v2",
+            "featureFlags": { "alpha": true, "n": 42.5 },
+            "editor": {
+                "factions": [],
+                "squads": [],
+                "slots": [],
+                "editorLayers": []
+            }
+        });
+
+        let doc = MissionDocCore::new();
+        doc.hydrate(&incoming.to_string(), "lyr");
+
+        let small = small_maps(&doc);
+        assert_eq!(
+            small["payloadExtras"]["serverMigrationToken"],
+            serde_json::json!("keep-me-v2"),
+            "hydrate must park unknown keys in payloadExtras"
+        );
+        assert_eq!(
+            small["payloadExtras"]["featureFlags"]["n"],
+            serde_json::json!(42.5)
+        );
+
+        let compiled = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        assert_eq!(
+            compiled["serverMigrationToken"],
+            serde_json::json!("keep-me-v2"),
+            "compile must re-emit parked unknown keys onto the wire payload"
+        );
+        assert_eq!(
+            compiled["featureFlags"],
+            serde_json::json!({ "alpha": true, "n": 42.5 })
+        );
+        assert!(
+            compiled.get("payloadExtras").is_none(),
+            "payloadExtras is a small_maps side-channel, never a wire key"
+        );
+
+        let reloaded = save_and_reload(&doc);
+        let recompiled = crate::mission::compile::compile_payload(
+            &reloaded.small_maps_json(),
+            &reloaded.slots_json(),
+            false,
+        );
+        assert_eq!(
+            recompiled["serverMigrationToken"],
+            serde_json::json!("keep-me-v2"),
+            "unknown keys must survive a full Save→reload→Save cycle"
+        );
+        assert_eq!(
+            recompiled["featureFlags"],
+            serde_json::json!({ "alpha": true, "n": 42.5 })
+        );
+        assert_eq!(recompiled["map"]["terrain"], serde_json::json!("everon"));
+        assert_eq!(recompiled["schemaVersion"], serde_json::json!(1));
+    }
+
+    /// T-219 — a second hydrate without the extras must clear the parked map (no sticky ghosts).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn hydrate_without_unknown_keys_clears_payload_extras() {
+        let with = serde_json::json!({
+            "schemaVersion": 1,
+            "map": { "terrain": "everon" },
+            "serverMigrationToken": "ghost",
+            "editor": {
+                "factions": [],
+                "squads": [],
+                "slots": [],
+                "editorLayers": []
+            }
+        });
+        let without = serde_json::json!({
+            "schemaVersion": 1,
+            "map": { "terrain": "everon" },
+            "editor": {
+                "factions": [],
+                "squads": [],
+                "slots": [],
+                "editorLayers": []
+            }
+        });
+
+        let doc = MissionDocCore::new();
+        doc.hydrate(&with.to_string(), "lyr");
+        assert!(
+            small_maps(&doc)["payloadExtras"]
+                .get("serverMigrationToken")
+                .is_some()
+        );
+
+        doc.hydrate(&without.to_string(), "lyr");
+        let small = small_maps(&doc);
+        assert!(
+            small.get("payloadExtras").is_none(),
+            "empty extras must be omitted from small_maps_json; got {small:?}"
+        );
+        let compiled = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        assert!(compiled.get("serverMigrationToken").is_none());
     }
 
     /// **T-215 — the round trip map placement is worthless without.**
