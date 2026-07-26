@@ -19,13 +19,14 @@ use map_engine_core::mission::flatten::scan_editor_payload_types;
 
 use crate::contract::{validate_mission_document, validate_mission_editor_payload};
 use crate::error::ApiError;
-use crate::handlers::{is_unique_violation, load_mission};
+use crate::handlers::{is_unique_violation, load_mission, username};
 use crate::middleware::{AuthUser, MissionMakerUser, ServiceAuth};
 use crate::models::{
-    GameMode, Mission, MissionArmory, MissionStatus, MissionVersion, TerrainType, WeatherType,
+    AuditSeverity, GameMode, Mission, MissionArmory, MissionStatus, MissionVersion, TerrainType,
+    WeatherType,
 };
 use crate::services::{
-    CompileError, ModMissionDocument, flatten_to_mod_document, mission_terrain_key,
+    CompileError, ModMissionDocument, flatten_to_mod_document, mission_terrain_key, write_audit,
 };
 use crate::state::AppState;
 
@@ -598,7 +599,21 @@ pub async fn delete_mission(
 
 /// `POST /api/v1/missions/:id/submit` — draft/rejected → pending (author/admin).
 ///
-/// @route POST /api/v1/missions/:id/submit
+/// **The only writer of `pending_approval` in the crate.** `apply_status_patch` refuses the value
+/// outright (driven: PATCH `{"status":"pending_approval"}` → 400), so `GET /approvals`
+/// (`approvals.rs:99`) can only ever show rows this handler wrote. T-234 measured the consequence:
+/// the SPA has **zero** callers of this route, so the admin queue is empty in production no matter
+/// how many missions exist. The endpoint itself is correct and stays as the one door in; the caller
+/// is the SPA's (`apps/website/frontend/src/missions.rs`, the `can_edit` "Manage" button row).
+///
+/// ── Authorisation, driven over HTTP against a live DB (T-234) ──────────────────────────────────
+/// `can_edit` = author **or** admin, the same predicate PATCH and DELETE use. Measured: a
+/// `mission_maker` who is not the author → **403 "not your mission"**; an admin who is not the
+/// author → **200**, mission moves to `pending_approval`. The admin override is deliberate and
+/// consistent with the rest of the file (an admin can already retitle, archive and delete any
+/// mission), and `GET /approvals` is admin-only, so the reviewer tier is unchanged either way.
+/// Accepted transitions are `draft` and `rejected`; `pending_approval` / `live` / `archived` all
+/// answer 409, so a double submit cannot enqueue a mission twice.
 pub async fn submit_mission(
     State(state): State<AppState>,
     user: AuthUser,
@@ -613,13 +628,73 @@ pub async fn submit_mission(
             "only draft or rejected missions can be submitted",
         ));
     }
-    sqlx::query(
-        "UPDATE missions SET status = 'pending_approval', rejection_reason = '', updated_at = now() \
-         WHERE id = $1",
+    // `reviewed_by` / `reviewed_at` are cleared for the same reason `rejection_reason` always was:
+    // this row is leaving the reviewed state, and a resubmission is a NEW review round. Before
+    // T-234 only the reason was wiped, so a rejected-then-resubmitted mission sat in the queue
+    // carrying the previous reviewer's stamp — driven: reject M, resubmit M, then
+    // `GET /missions/{M}` served `status: pending_approval` **with** `reviewed_by` and
+    // `reviewed_at` from the rejection, i.e. "already reviewed" on a mission awaiting review. Both
+    // columns are `skip_serializing_if = "Option::is_none"` (`models/mission.rs:110-113`), so
+    // NULLing them removes the fields exactly as they are absent on a never-reviewed mission — no
+    // literal `null` and no wire-shape change for any other row.
+    //
+    // The `status IN (…)` predicate makes the guard above ATOMIC rather than advisory. The check
+    // ran against a row loaded in an earlier statement, and the write named the id alone, so
+    // anything that moved the mission in between was silently overwritten — most reachably
+    // `apply_status_patch`, which accepts `archived` from *any* status, so a concurrent
+    // PATCH-to-archived plus this UPDATE left a mission un-archived and queued. `deleted_at IS
+    // NULL` mirrors `load_mission` (`handlers/mod.rs:83`) for the same reason: a concurrent soft
+    // delete otherwise gets its status rewritten underneath it.
+    let done = sqlx::query(
+        "UPDATE missions SET status = 'pending_approval', rejection_reason = '', \
+         reviewed_by = NULL, reviewed_at = NULL, updated_at = now() \
+         WHERE id = $1 AND status IN ('draft', 'rejected') AND deleted_at IS NULL",
     )
     .bind(m.id)
     .execute(&state.pool)
     .await?;
+    // Deliberately the SAME 409 the pre-check returns: every way to reach zero rows here means
+    // "this mission is no longer submittable", and a second error string for a lost race would
+    // only tell the client something it must handle identically (reload, look again).
+    if done.rows_affected() == 0 {
+        return Err(ApiError::conflict(
+            "only draft or rejected missions can be submitted",
+        ));
+    }
+    // The audit log is the ONLY durable record that a submission happened. The mission row has no
+    // `submitted_by`/`submitted_at`; `GET /approvals` projects `updated_at` as `submitted_at`
+    // (`approvals.rs:101`), and that column is bumped by every later PATCH — driven: PATCHing a
+    // pending mission's title moved its queue `submitted_at` forward by the edit's timestamp. So
+    // without this row, "who put this in my queue, and when" is unanswerable the moment the author
+    // touches the mission again, and unrecoverable once a reviewer approves it. Both counterparts
+    // (`mission.approve`, `mission.reject`) already audit; this was the transition that did not.
+    //
+    // `Info`, matching `mission.approve` — a submission is routine, and `Warn` is reserved for the
+    // destructive half (`mission.reject`). The actor is the CALLER, not the author, because the two
+    // differ whenever an admin submits on someone's behalf; the message names both in that case so
+    // the entry cannot be misread as the author having submitted it themselves.
+    let actor = &user.discord_id;
+    let actor_name = username(&state.pool, actor).await;
+    let message = if *actor == m.author_id {
+        format!("{actor_name} submitted mission '{}' for approval", m.title)
+    } else {
+        let author_name = username(&state.pool, &m.author_id).await;
+        format!(
+            "{actor_name} submitted {author_name}'s mission '{}' for approval",
+            m.title
+        )
+    };
+    write_audit(
+        &state.pool,
+        AuditSeverity::Info,
+        Some(actor),
+        &actor_name,
+        "mission.submit",
+        &message,
+        "mission",
+        &m.id.to_string(),
+    )
+    .await;
     Ok(Json(load(&state.pool, &id).await?))
 }
 
