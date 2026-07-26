@@ -418,6 +418,29 @@ gate_slice() {
 # With no base argument it falls back to HEAD~1, which is correct only for a single-slice wave.
 cmd_gate() {
   local base="${1:-HEAD~1}"
+  # A base git cannot resolve makes EVERY change-scoped step below diff against nothing:
+  # touch_changed, wasm_changed, fmt_changed and the trunk build each see an empty file list and
+  # print PASS/SKIP without examining a single line. That is this program's signature defect —
+  # a tool reporting success over an input it never looked at — living inside the gate runner.
+  #
+  # OBSERVED 2026-07-26 (found by T-394's slice agent, fixed here): the command center's own slice
+  # briefs said `wave.sh gate T-394`, putting a ticket id where a rev belongs. `git rev-parse
+  # T-394` fails, so `T-394..HEAD` resolved to nothing and the gate reported `wasm32 (frontend)
+  # PASS` plus `trunk build SKIP (frontend untouched)` on a slice that changed ONLY frontend Rust.
+  # Verdict: GATE: PASS. Three slices in that wave ran this way.
+  #
+  # Refuse instead. An unresolvable base is never a thing you meant.
+  if ! git rev-parse --verify --quiet "${base}^{commit}" >/dev/null 2>&1; then
+    if [[ "$base" =~ ^T-[0-9] ]]; then
+      echo "gate: '$base' is a ticket id, not a git base — the per-slice gate is a different command."
+      echo "        per-slice:  bash scripts/platform/wave.sh gate --slice $base"
+      echo "        wave gate:  bash scripts/platform/wave.sh gate [<base>]   (default HEAD~1)"
+    else
+      echo "gate: base '$base' is not a resolvable commit — refusing to run."
+      echo "        Every change-scoped step would diff against nothing and PASS without looking."
+    fi
+    return 2
+  fi
   echo "═══ platform wave gate (base ${base:0:12}) ═══"
   touch_changed "$base..HEAD"
   local fail=0
