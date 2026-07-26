@@ -98,6 +98,19 @@
 //!     that needs is a *document-identity* guard at the swap, mirroring the T-221 owner check one
 //!     level down; see the T-374 report.
 //!
+//! **One behaviour change this buys, stated plainly rather than discovered later.** Emptying a
+//! document *deliberately* — select-all, Delete — now also fails the guard, because at the blob level
+//! a document someone emptied on purpose and a document that was never populated are the same
+//! content-empty document, and `has_content()` is the predicate that draws that line. So a full
+//! delete no longer propagates to the local autosave record; a reload restores the pre-delete
+//! document. That is the correct side to err on and it is the side the codebase already picked:
+//! `mission_hydrate::classify_local` maps a content-empty doc to `Local::Empty`, "there is no local
+//! work and no choice to offer". The delete is still an undo step, the record is still cleared by a
+//! Save (`clear_local_backups`) and by `clear_state`, and the failure being traded away is an
+//! authored mission overwritten with nothing. If the distinction is ever wanted, it is available: a
+//! never-populated document has no delete set, an emptied one does — that is a delete-set parse, not
+//! a length check, and it is deliberately not in this slice.
+//!
 //! Same section, second defect: [`get_raw`] collapsed "no record" and "the read failed" into one
 //! `None`, and [`load_state`] reports that to the boot as "no local content" — a false negative that
 //! drives the cold path. Reads are now three-valued ([`RecordRead`]), a failure is reported, and
@@ -1097,6 +1110,33 @@ pub fn register_mission_persist(
             BLOCKED_UNREADABLE.with(Cell::get)
         ))
     }) as Box<dyn FnMut() -> JsValue>);
+    // T-374 — the crux, evaluated in the REAL wasm runtime rather than argued about.
+    //
+    // Constructs a fresh `MissionDocCore`, encodes it, and reports the bytes alongside both
+    // verdicts: what `bytes.is_empty()` would have decided and what the guard decides now. This
+    // exists because the defect is a claim about a specific byte sequence — an empty document
+    // encodes to `[0, 0]`, which is two bytes and therefore not empty — and a claim about bytes
+    // should be checkable on the target that produces them, not only on a native probe where
+    // var-int width or the yrs build could in principle differ.
+    //
+    // Read-only and side-effect-free: it touches neither the live document nor IndexedDB.
+    let empty_encode_fn = Closure::wrap(Box::new(move || -> JsValue {
+        let fresh = MissionDocCore::new();
+        let bytes = fresh.encode_state();
+        let list = bytes
+            .iter()
+            .map(u8::to_string)
+            .collect::<Vec<_>>()
+            .join(",");
+        JsValue::from_str(&format!(
+            r#"{{"bytes":[{list}],"len":{},"isEmpty":{},"hasContent":{},"oldGuardWouldWrite":{},"newGuardWrites":{}}}"#,
+            bytes.len(),
+            bytes.is_empty(),
+            fresh.has_content(),
+            !bytes.is_empty(),
+            blob_has_content(&bytes)
+        ))
+    }) as Box<dyn FnMut() -> JsValue>);
     // T-374 — the content predicate, over the record on disk for this mission. Answers "is what is
     // stored actually restorable to authored content", which is the question the old byte test only
     // appeared to answer.
@@ -1172,6 +1212,11 @@ pub fn register_mission_persist(
         &JsValue::from_str("stored_has_content"),
         stored_has_content_fn.as_ref(),
     );
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("empty_encode_probe"),
+        empty_encode_fn.as_ref(),
+    );
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__missionPersist"), &obj);
     }
@@ -1187,6 +1232,7 @@ pub fn register_mission_persist(
     adopt_fn.forget();
     blocked_fn.forget();
     stored_has_content_fn.forget();
+    empty_encode_fn.forget();
 
     // T-221 — one eviction sweep per editor boot. Spawned rather than awaited so the bridge stays
     // synchronously installed for the gate, and safe against the boot restore racing it: it only
