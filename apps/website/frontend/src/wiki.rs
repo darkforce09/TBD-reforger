@@ -1,155 +1,62 @@
-//! SOPs & Manuals (/wiki) — ported from pages/doctrine.tsx `WikiPage`. `<AuthGate>` → a `GlassSplit`:
-//! a category-grouped manual index (master) + a reading pane (detail) rendering the active manual's
-//! Markdown. Fully client-MOCK-driven (`MANUALS`); the Markdown renderer is ported byte-for-byte.
+//! SOPs & Manuals (/wiki) — ported from pages/doctrine.tsx `WikiPage`. `<AuthGate>` →
+//! `GET /api/v1/wiki` → a `GlassSplit`: category-grouped manual index (master) + reading pane
+//! (detail) rendering the active manual's Markdown. Admin edit mode PUTs `/wiki/{slug}`.
 //!
-//! **Gate scope (this slice):** the default render (search empty, `plan-timeline` selected, read
-//! mode) — the index + the article header + the full rendered Markdown body is byte-exact-verified.
-//! Search + the edit mode (textarea) are behavior — a follow-up.
+//! List items ride `DataEnvelope<Value>` (dto.rs already pins the wiki golden that way — no
+//! typed WikiPage DTO consumer yet).
 #![allow(dead_code)]
+use crate::dto::DataEnvelope;
+use crate::nav::Role;
 use crate::split_pane::{GlassSplit, ListDetailItem, SidebarSearch};
 use leptos::prelude::*;
+use serde_json::Value;
 
 const BADGE_NEUTRAL: &str = "inline-flex items-center gap-1 rounded border px-2 py-0.5 uppercase whitespace-nowrap border-outline-variant/40 bg-surface-variant/40 text-on-surface-variant";
 
-struct Manual {
-    id: &'static str,
-    category: &'static str,
-    title: &'static str,
-    updated: &'static str,
-    body: &'static str,
+fn vstr(v: &Value, k: &str) -> String {
+    v.get(k).and_then(Value::as_str).unwrap_or_default().into()
 }
 
-const CATEGORY_ORDER: [&str; 4] = [
-    "Leadership Fundamentals",
-    "Timeline & Mission Planning",
-    "Dynamic Communications Strategy",
-    "Combat Formations & Maneuvers",
-];
+fn vi64(v: &Value, k: &str) -> i64 {
+    v.get(k).and_then(Value::as_i64).unwrap_or(0)
+}
 
-const PLAN_TIMELINE_BODY: &str = r#"In a 1-life PvP environment, the plan you make in the staging area decides the fight before a single shot is fired. You do not get a second attempt. This guide uses the Swedish squad leader methodology — a simple, repeatable loop for turning a vague objective into a clear, time-bound plan your squad can actually execute under pressure.
+/// ISO timestamp → `YYYY-MM-DD` for the "Last updated" chip (no `datefmt` / js_sys — keeps
+/// native unit tests compiling).
+fn updated_day(iso: &str) -> String {
+    let day = iso.get(..10).unwrap_or("");
+    if day.len() == 10 && day.as_bytes().get(4) == Some(&b'-') {
+        day.to_string()
+    } else {
+        "—".into()
+    }
+}
 
-The whole process answers three questions, in order: **What is the problem? How much time do I have? How do we adapt when it breaks?**
+/// Resolve the active page from the route slug against the live list. Unknown/absent slug
+/// falls back to the first row (API already orders by `nav_order ASC, title ASC`).
+fn resolve_slug(pages: &[Value], slug: Option<&str>) -> Option<String> {
+    if let Some(s) = slug {
+        if pages.iter().any(|p| vstr(p, "slug") == s) {
+            return Some(s.to_string());
+        }
+    }
+    pages
+        .first()
+        .map(|p| vstr(p, "slug"))
+        .filter(|s| !s.is_empty())
+}
 
-## Phase 1 — Define the Problem
-
-Before you talk about movement, get brutally clear on what you are actually being asked to do and what stands in the way. If you cannot state the objective in one sentence, you are not ready to brief it.
-
-- **The objective.** What does winning look like — hold a grid, destroy an asset, break the enemy's main effort? Name it.
-- **Enemy composition.** How many, how equipped, armor or air? Where are they likely strong, and where are they thin?
-- **Terrain.** What covers our approach, what channels us into a kill zone, and what high ground matters?
-- **Our assets.** Squad size, weapon teams, vehicles, and — critically — how much daylight and time you have.
-
-> [!CRITICAL]
-> Plan against what the enemy *can* do, not what you *hope* they do. Build your plan around their most dangerous option, then exploit the gaps.
-
-## Phase 2 — Define the Timeline
-
-This is the part most squad leads skip, and it is the part that wins matches. Work **backwards** from the moment you expect contact and assign hard times to every step. A plan without a clock is just a wish.
-
-- Set your decisive moment — call it `H-Hour` (the assault, the ambush trigger, the objective seizure).
-- Back-plan from it: `H-15` in support-by-fire position, `H-30` at the last covered rally, `H-45` step off from staging.
-- Reserve time for the things that always run long: crossing danger areas, re-org after contact, and getting everyone on the same map.
-- Give the squad a **time hack** so every watch matches. "We move in 5" means nothing if nobody agrees on now.
-
-> [!TIP]
-> Budget roughly a third of your available time for planning and rehearsal, and two-thirds for movement and execution. If you spend the whole window talking, you will be rushing — and loud — when it counts.
-
-## Phase 3 — Execution & Adaptability
-
-No plan survives first contact. The point of Phases 1 and 2 is not a rigid script — it is to give your squad enough shared understanding that they keep fighting *your intent* when the plan falls apart and you can't talk to them.
-
-- Brief **intent**, not just instructions: "I want us holding the north ridge by `H+10`, even if Alpha gets pinned." Tell them the *why*.
-- Push decisions down. A fireteam that understands the goal will make a good call faster than they can raise you on a (possibly looted) radio.
-- Name your triggers and branches in advance: "If we take fire from the treeline, Bravo suppresses, Alpha flanks left — no further orders needed."
-- Run a 60-second rehearsal or backbrief. Have a team lead repeat the plan back; you will catch the gaps before the enemy does.
-
-> [!WARNING]
-> When the plan breaks, the worst choice is to freeze and wait for perfect information. Make a decision, communicate it in one line, and keep the squad moving. Momentum beats hesitation in a 1-life fight."#;
-
-// All five bodies ported from React doctrine.tsx (T-172 A4 — selection needs real articles).
-const MANUALS: &[Manual] = &[
-    Manual {
-        id: "plan-timeline",
-        category: "Timeline & Mission Planning",
-        title: "Timeline & Mission Planning",
-        updated: "2026-06-18",
-        body: PLAN_TIMELINE_BODY,
-    },
-    Manual {
-        id: "lead-role",
-        category: "Leadership Fundamentals",
-        title: "The Squad Leader Mindset",
-        updated: "2026-06-15",
-        body: r#"Your job is not to be the best shooter — it is to make the rest of the squad more effective than they would be alone. You fight with your radio and your map first, your rifle second. A squad lead who is heads-down in a firefight is a squad lead who has stopped leading.
-
-## What You Own
-
-- **The plan** — and making sure everyone understands the intent behind it.
-- **Tempo** — knowing when to push hard and when to slow down and reset.
-- **Information** — building the picture and pushing the relevant parts down.
-
-> [!TIP]
-> Position yourself where you can *see and influence*, not where the action is hottest. Usually that is just behind your lead element, with eyes on the objective.
-
-> [!CRITICAL]
-> Calm is contagious, and so is panic. The squad takes its emotional temperature from you — if you keep your voice level under fire, they will too."#,
-    },
-    Manual {
-        id: "lead-decisions",
-        category: "Leadership Fundamentals",
-        title: "Decision-Making Under Pressure",
-        updated: "2026-06-10",
-        body: r#"In a 1-life fight you will rarely have complete information, and waiting for it is itself a decision — usually a bad one. Train yourself to act on a good-enough read of the situation.
-
-## A Fast Decision Loop
-
-- **Read** — what just changed, and what is the biggest threat right now?
-- **Decide** — pick the option that keeps initiative and protects the squad.
-- **Act** — give one clear order and commit; correct on the move.
-
-> [!WARNING]
-> A decent decision made now beats a perfect decision made too late. Indecision gets people killed faster than a wrong call you correct quickly."#,
-    },
-    Manual {
-        id: "comms-dynamic",
-        category: "Dynamic Communications Strategy",
-        title: "Operating With Looted Radios",
-        updated: "2026-06-16",
-        body: r#"We do not use fixed frequencies. The enemy can loot a radio off a body and listen to everything you say — so our comms plan assumes the net is compromised from the start. Frequencies are randomized each match and treated as throwaway.
-
-## Assume You Are Being Heard
-
-- Distribute the match frequency in the staging area, never over an open channel.
-- If a member goes down in enemy territory, treat that frequency as **burned** and jump to your pre-agreed fallback.
-- Reference locations by features or a private grid-shift, not raw map grids the enemy can also read.
-- Keep transmissions short. Long, chatty traffic gives away your strength, intent, and rough position.
-
-> [!CRITICAL]
-> The moment a radio is lost behind enemy lines, every callsign and reference on that net is assumed compromised. Switch frequency and stop using any code words tied to it.
-
-> [!TIP]
-> Agree on a one-word **flash** signal before the op that means "the net is blown, jump to fallback now." One word, everyone moves, no debate on the radio."#,
-    },
-    Manual {
-        id: "combat-formations",
-        category: "Combat Formations & Maneuvers",
-        title: "Fire & Movement",
-        updated: "2026-06-05",
-        body: r#"Everything in a gunfight comes down to one principle: one element fixes the enemy with fire while the other moves. If nobody is shooting, nobody should be moving in the open.
-
-## Bounding
-
-- Split into a **base of fire** and a **maneuver element** before you make contact, not during.
-- Short bounds between hard cover — stay up only as long as your buddy can realistically cover you.
-- The flank, not the frontal push, wins the position. Use fire to pin them in place while you get to their side.
-
-> [!WARNING]
-> Stay dispersed. In a 1-life fight, two operators caught in the same blast or burst is two permanent losses for the rest of the match.
-
-> [!TIP]
-> Read the terrain backwards from the objective: pick your support-by-fire position and your assault lane *before* you move, and the formation almost chooses itself."#,
-    },
-];
+/// Distinct categories in first-seen order (which is nav_order order from the API list).
+fn category_order(pages: &[Value]) -> Vec<String> {
+    let mut out = Vec::new();
+    for p in pages {
+        let c = vstr(p, "category");
+        if !c.is_empty() && !out.iter().any(|x| x == &c) {
+            out.push(c);
+        }
+    }
+    out
+}
 
 /* ───────────────────────── Markdown renderer (ports renderInline + Markdown) ───────────────────────── */
 
@@ -356,13 +263,6 @@ fn parse_tag(line: &str) -> Option<(&str, &str)> {
 
 /* ───────────────────────────────── page ───────────────────────────────── */
 
-/// Resolve the active manual from the `/wiki/:slug` route param — unknown/absent slug falls back
-/// to the first manual (the `/wiki` default, `plan-timeline`). T-172 A4 + H11.
-fn resolve_wiki_selection(slug: Option<&str>) -> &'static Manual {
-    slug.and_then(|s| MANUALS.iter().find(|m| m.id == s))
-        .unwrap_or(&MANUALS[0])
-}
-
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum WikiMode {
     Read,
@@ -371,40 +271,126 @@ enum WikiMode {
 
 #[component]
 pub fn WikiPage() -> impl IntoView {
-    // Selection derives from the route (deep-linkable; back/forward work); rows navigate.
+    view! {
+        <crate::ui::AuthGate>
+            <WikiInner />
+        </crate::ui::AuthGate>
+    }
+}
+
+#[component]
+fn WikiInner() -> impl IntoView {
+    let store = expect_context::<crate::auth::AuthStore>();
+    let pages = LocalResource::new(move || async move {
+        #[cfg(target_arch = "wasm32")]
+        {
+            crate::client::api_get::<DataEnvelope<Value>>(store, "/wiki")
+                .await
+                .ok()
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = store;
+            None::<DataEnvelope<Value>>
+        }
+    });
+    view! {
+        <Suspense fallback=move || {
+            view! { <p class="text-on-surface-variant">"Loading…"</p> }
+        }>
+            {move || {
+                pages
+                    .get()
+                    .map(|opt| match opt {
+                        Some(env) => wiki_board(env.data, pages).into_any(),
+                        None => {
+                            view! { <p class="text-error">"Failed to load wiki."</p> }.into_any()
+                        }
+                    })
+            }}
+        </Suspense>
+    }
+}
+
+fn wiki_board(
+    page_list: Vec<Value>,
+    pages_res: LocalResource<Option<DataEnvelope<Value>>>,
+) -> impl IntoView {
+    let store = expect_context::<crate::auth::AuthStore>();
+    let is_admin = store.has_min_role(Role::Admin);
     let params = leptos_router::hooks::use_params_map();
-    let selected =
-        Memo::new(move |_| resolve_wiki_selection(params.read().get("slug").as_deref()).id);
     let search = RwSignal::new(String::new());
-    // READ/EDIT mode + session-local per-manual Markdown edits (React parity; no backend until
-    // the wiki CMS ships). Switching manuals drops back to read mode, like React.
     let mode = RwSignal::new(WikiMode::Read);
-    let edits = RwSignal::new(std::collections::HashMap::<&'static str, String>::new());
-    Effect::new(move |prev: Option<&'static str>| {
+    // Session-local draft body keyed by slug; Save clears the draft after a successful PUT.
+    let drafts = RwSignal::new(std::collections::HashMap::<String, String>::new());
+    let save_busy = RwSignal::new(false);
+    let save_err = RwSignal::new(None::<String>);
+
+    let page_list_for_sel = page_list.clone();
+    let selected =
+        Memo::new(move |_| resolve_slug(&page_list_for_sel, params.read().get("slug").as_deref()));
+
+    Effect::new(move |prev: Option<Option<String>>| {
         let id = selected.get();
-        if prev.is_some_and(|p| p != id) {
+        if prev.as_ref().is_some_and(|p| p != &id) {
             mode.set(WikiMode::Read);
+            save_err.set(None);
         }
         id
     });
+
+    let page_list_master = page_list.clone();
+    let page_list_detail = page_list;
+
     view! {
-        <crate::ui::AuthGate>
-            <GlassSplit
-                master_width="17rem"
-                master_header=master_header(search).into_any()
-                master=view! { {move || manual_index(selected.get(), &search.get())} }.into_any()
-                detail=view! {
-                    {move || {
-                        article(
-                            MANUALS.iter().find(|m| m.id == selected.get()).unwrap_or(&MANUALS[0]),
+        <GlassSplit
+            master_width="17rem"
+            master_header=master_header(search).into_any()
+            master=view! {
+                {move || {
+                    manual_index(
+                        selected.get(),
+                        &search.get(),
+                        &page_list_master,
+                    )
+                }}
+            }
+                .into_any()
+            detail=view! {
+                {move || {
+                    let slug = selected.get();
+                    let page = slug.as_ref().and_then(|s| {
+                        page_list_detail.iter().find(|p| vstr(p, "slug") == *s).cloned()
+                    });
+                    match page {
+                        Some(p) => article(
+                            p,
                             mode,
-                            edits,
+                            drafts,
+                            save_busy,
+                            save_err,
+                            is_admin,
+                            store,
+                            pages_res,
                         )
-                    }}
-                }
-                    .into_any()
-            />
-        </crate::ui::AuthGate>
+                        .into_any(),
+                        None => view! {
+                            <section class="flex h-full items-center justify-center p-8">
+                                <p class="font-mono text-sm text-on-surface-variant">
+                                    {if page_list_detail.is_empty() {
+                                        "No manuals yet."
+                                    } else {
+                                        "Select a manual."
+                                    }}
+                                </p>
+                            </section>
+                        }
+                        .into_any(),
+                    }
+                }}
+            }
+                .into_any()
+        />
     }
 }
 
@@ -419,42 +405,44 @@ fn master_header(search: RwSignal<String>) -> impl IntoView {
     }
 }
 
-fn manual_index(active_id: &'static str, query: &str) -> impl IntoView {
+fn manual_index(active_slug: Option<String>, query: &str, pages: &[Value]) -> impl IntoView {
     let query = query.to_string();
-    CATEGORY_ORDER
-        .iter()
+    let active = active_slug.unwrap_or_default();
+    category_order(pages)
+        .into_iter()
         .filter_map(move |category| {
-            // React filters on `${title} ${category}` (case-insensitive substring).
-            let rows: Vec<&Manual> = MANUALS
+            let rows: Vec<Value> = pages
                 .iter()
-                .filter(|m| m.category == *category)
-                .filter(|m| {
+                .filter(|p| vstr(p, "category") == category)
+                .filter(|p| {
                     crate::split_pane::search_matches(
                         &query,
-                        &format!("{} {}", m.title, m.category),
+                        &format!("{} {}", vstr(p, "title"), vstr(p, "category")),
                     )
                 })
+                .cloned()
                 .collect();
             if rows.is_empty() {
                 return None;
             }
+            let cat_label = category.clone();
             Some(view! {
                 <div class="mb-3">
                     <p class="px-1 py-1 font-mono text-[11px] tracking-widest text-outline uppercase">
-                        {*category}
+                        {cat_label}
                     </p>
                     <div class="mt-1 flex flex-col gap-1">
                         {rows
                             .into_iter()
                             .map(|m| {
-                                let id = m.id;
-                                // use_navigate is captured at view-build time (Router context is
-                                // live here); the callback just invokes the stored navigator.
+                                let id = vstr(&m, "slug");
+                                let title = vstr(&m, "title");
                                 let navigate = leptos_router::hooks::use_navigate();
+                                let active_row = id == active;
                                 view! {
                                     <ListDetailItem
-                                        active=m.id == active_id
-                                        title=view! { {m.title} }.into_any()
+                                        active=active_row
+                                        title=view! { {title} }.into_any()
                                         on_click=Callback::new(move |()| {
                                             navigate(&format!("/wiki/{id}"), Default::default());
                                         })
@@ -470,12 +458,25 @@ fn manual_index(active_id: &'static str, query: &str) -> impl IntoView {
 }
 
 fn article(
-    m: &'static Manual,
+    page: Value,
     mode: RwSignal<WikiMode>,
-    edits: RwSignal<std::collections::HashMap<&'static str, String>>,
+    drafts: RwSignal<std::collections::HashMap<String, String>>,
+    save_busy: RwSignal<bool>,
+    save_err: RwSignal<Option<String>>,
+    is_admin: bool,
+    store: crate::auth::AuthStore,
+    pages_res: LocalResource<Option<DataEnvelope<Value>>>,
 ) -> impl IntoView {
-    let id = m.id;
-    let body = m.body;
+    let slug = vstr(&page, "slug");
+    let title = vstr(&page, "title");
+    let category = vstr(&page, "category");
+    let icon = vstr(&page, "icon");
+    let nav_order = vi64(&page, "nav_order");
+    let body_md = vstr(&page, "body_md");
+    let updated = updated_day(&vstr(&page, "updated_at"));
+    let slug_for_draft = slug.clone();
+    let body_for_read = body_md.clone();
+
     view! {
         <section class="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
             <header class="flex shrink-0 items-start justify-between gap-4 border-b border-white/10 px-8 pt-8 pb-5 md:px-12">
@@ -484,42 +485,134 @@ fn article(
                         <span class=BADGE_NEUTRAL>
                             <span class="material-symbols-outlined text-[14px]">"schedule"</span>
                             "Last updated "
-                            {m.updated}
+                            {updated}
                         </span>
                         <span class="font-mono text-xs tracking-widest text-outline uppercase">
-                            {m.category}
+                            {category.clone()}
                         </span>
                     </div>
-                    <h1 class="text-4xl font-bold tracking-tight text-white">{m.title}</h1>
+                    <h1 class="text-4xl font-bold tracking-tight text-white">{title.clone()}</h1>
                 </div>
-                {read_edit_toggle(mode)}
+                {if is_admin {
+                    view! {
+                        <div class="flex shrink-0 flex-col items-end gap-2">
+                            {read_edit_toggle(mode)}
+                            {move || {
+                                if mode.get() == WikiMode::Edit {
+                                    let slug_put = slug.clone();
+                                    let title_put = title.clone();
+                                    let category_put = category.clone();
+                                    let icon_put = icon.clone();
+                                    let body_fallback = body_md.clone();
+                                    view! {
+                                        <button
+                                            type="button"
+                                            disabled=move || save_busy.get()
+                                            class="rounded-full border border-primary/40 bg-primary/15 px-4 py-1.5 font-mono text-xs tracking-widest text-primary uppercase hover:bg-primary/25 disabled:opacity-50"
+                                            on:click=move |_| {
+                                                if save_busy.get_untracked() {
+                                                    return;
+                                                }
+                                                save_busy.set(true);
+                                                save_err.set(None);
+                                                let draft = drafts
+                                                    .with_untracked(|d| d.get(&slug_put).cloned())
+                                                    .unwrap_or_else(|| body_fallback.clone());
+                                                let body = serde_json::json!({
+                                                    "category": category_put.clone(),
+                                                    "title": title_put.clone(),
+                                                    "icon": icon_put.clone(),
+                                                    "body_md": draft,
+                                                    "nav_order": nav_order,
+                                                });
+                                                let path = format!("/wiki/{slug_put}");
+                                                let slug_clear = slug_put.clone();
+                                                #[cfg(target_arch = "wasm32")]
+                                                {
+                                                    leptos::task::spawn_local(async move {
+                                                        match crate::client::api_put::<Value>(
+                                                            store, &path, body,
+                                                        )
+                                                        .await
+                                                        {
+                                                            Ok(_) => {
+                                                                drafts.update(|d| {
+                                                                    d.remove(&slug_clear);
+                                                                });
+                                                                mode.set(WikiMode::Read);
+                                                                pages_res.refetch();
+                                                            }
+                                                            Err(e) => {
+                                                                save_err.set(Some(
+                                                                    crate::client::api_error_message(
+                                                                        &e,
+                                                                        "Failed to save wiki page",
+                                                                    ),
+                                                                ));
+                                                            }
+                                                        }
+                                                        save_busy.set(false);
+                                                    });
+                                                }
+                                                #[cfg(not(target_arch = "wasm32"))]
+                                                {
+                                                    let _ = (store, path, body, pages_res, slug_clear);
+                                                    save_busy.set(false);
+                                                }
+                                            }
+                                        >
+                                            {move || {
+                                                if save_busy.get() { "Saving…" } else { "Save" }
+                                            }}
+                                        </button>
+                                        {move || {
+                                            save_err
+                                                .get()
+                                                .map(|m| {
+                                                    view! {
+                                                        <p class="max-w-xs text-right font-mono text-[11px] text-error-alert">
+                                                            {m}
+                                                        </p>
+                                                    }
+                                                })
+                                        }}
+                                    }
+                                        .into_any()
+                                } else {
+                                    ().into_any()
+                                }
+                            }}
+                        </div>
+                    }
+                        .into_any()
+                } else {
+                    ().into_any()
+                }}
             </header>
             {move || {
                 if mode.get() == WikiMode::Edit {
-                    // Distraction-free Markdown editor (React parity, T-172 H7): session-local
-                    // per-manual edits. Initial value read untracked so keystrokes never rebuild
-                    // the textarea (focus survives); the read branch tracks edits and re-renders.
-                    let initial = edits
-                        .with_untracked(|e| e.get(id).cloned())
-                        .unwrap_or_else(|| body.to_string());
+                    let initial = drafts
+                        .with_untracked(|e| e.get(&slug_for_draft).cloned())
+                        .unwrap_or_else(|| body_for_read.clone());
+                    let key = slug_for_draft.clone();
                     view! {
                         <textarea
                             prop:value=initial
                             spellcheck="false"
                             on:input=move |ev| {
-                                edits
-                                    .update(|e| {
-                                        e.insert(id, event_target_value(&ev));
-                                    })
+                                let v = event_target_value(&ev);
+                                drafts.update(|e| {
+                                    e.insert(key.clone(), v);
+                                });
                             }
                             class="h-full w-full flex-1 resize-none border-none bg-transparent p-8 font-mono text-sm leading-relaxed text-on-surface-variant outline-none focus:ring-0 md:p-12"
                         ></textarea>
                     }
                         .into_any()
                 } else {
-                    let source = edits
-                        .with(|e| e.get(id).cloned())
-                        .unwrap_or_else(|| body.to_string());
+                    let source = drafts
+                        .with(|e| e.get(&slug_for_draft).cloned())
+                        .unwrap_or_else(|| body_for_read.clone());
                     view! {
                         <article class="custom-scrollbar flex-1 overflow-y-auto p-8 md:p-12">
                             <div class="max-w-3xl">{render_markdown(&source)}</div>
@@ -532,8 +625,6 @@ fn article(
     }
 }
 
-/// The `[ READ ]` / `[ EDIT ]` pill toggle — live (T-172 H7). Class strings per state are
-/// byte-identical to the gate-era static render (read active by default).
 fn read_edit_toggle(mode: RwSignal<WikiMode>) -> impl IntoView {
     let btn = |m: WikiMode, label: &'static str| {
         view! {
@@ -562,20 +653,42 @@ fn read_edit_toggle(mode: RwSignal<WikiMode>) -> impl IntoView {
 
 #[cfg(test)]
 mod tests {
-    use super::{resolve_wiki_selection, MANUALS};
+    use super::{category_order, resolve_slug, updated_day};
+    use serde_json::json;
 
     #[test]
-    fn slug_resolution() {
-        assert_eq!(resolve_wiki_selection(None).id, "plan-timeline");
-        assert_eq!(resolve_wiki_selection(Some("lead-role")).id, "lead-role");
-        assert_eq!(resolve_wiki_selection(Some("nope")).id, "plan-timeline");
+    fn slug_resolution_falls_back_to_first() {
+        let pages = vec![
+            json!({"slug": "field-manual", "category": "Doctrine", "title": "Field Manual"}),
+            json!({"slug": "radio-procedure", "category": "Doctrine", "title": "Radio"}),
+        ];
+        assert_eq!(resolve_slug(&pages, None).as_deref(), Some("field-manual"));
+        assert_eq!(
+            resolve_slug(&pages, Some("radio-procedure")).as_deref(),
+            Some("radio-procedure")
+        );
+        assert_eq!(
+            resolve_slug(&pages, Some("nope")).as_deref(),
+            Some("field-manual")
+        );
     }
 
     #[test]
-    fn all_manuals_have_bodies() {
-        // T-172 A4: selection is only honest if every manual renders a real article.
-        for m in MANUALS {
-            assert!(!m.body.is_empty(), "{} body empty", m.id);
-        }
+    fn categories_preserve_first_seen_order() {
+        let pages = vec![
+            json!({"slug": "a", "category": "Doctrine"}),
+            json!({"slug": "b", "category": "Administration"}),
+            json!({"slug": "c", "category": "Doctrine"}),
+        ];
+        assert_eq!(
+            category_order(&pages),
+            vec!["Doctrine".to_string(), "Administration".to_string()]
+        );
+    }
+
+    #[test]
+    fn updated_day_takes_iso_prefix() {
+        assert_eq!(updated_day("2026-07-14T10:12:00Z"), "2026-07-14");
+        assert_eq!(updated_day(""), "—");
     }
 }

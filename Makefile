@@ -75,10 +75,11 @@ db-down: ## Stop local Postgres (keeps the data volume)
 db-logs: ## Tail the Postgres logs
 	cd $(WEB) && $(COMPOSE) logs -f db
 
-seed: ## Apply data seeds (Discord roles + registry catalog + starter faction library) to the running DB
+seed: ## Apply data seeds (Discord roles + registry catalog + starter faction library + vehicle IFF) to the running DB
 	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/discord_roles.sql
 	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/registry_dev.sql
 	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/faction_library.sql
+	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/vehicle_database.sql
 
 registry-import: ## Ingest the committed T-150 registry envelopes (items + compat) into the dev DB (T-068.9)
 	cd $(WEB) && cargo run --bin import-registry -- \
