@@ -10,13 +10,16 @@
 //! `gate doctor` runs before the suite (a prerequisite of `make leptos-gates`) and, in ~15 s:
 //! validates the resolved chromium + toolchain against the committed pins (`gate-env.json`), checks
 //! free RAM + orphaned chrome processes, checks that chromium can actually resolve a font
-//! ([`check_fonts`] — T-320), and runs a **short-timeout editor liveness probe** that FAILS with an
-//! actionable message + a native-stack hint instead of the 130 s hang. See
-//! `docs/website/EDITOR_GATE_RUNBOOK.md`.
+//! ([`check_fonts`] — T-320; a zero-font chromium is a hard fail as of T-362), and runs a
+//! **short-timeout editor liveness probe** that FAILS with an actionable message + a native-stack
+//! hint instead of the 130 s hang. See `docs/website/EDITOR_GATE_RUNBOOK.md`.
+//!
+//! The font cache the whole harness runs against is decided here too —
+//! [`ensure_gate_font_cache`], which every browser gate calls before launching chromium.
 
 use anyhow::{Context, Result};
 use serde_json::{Value, json};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 use std::time::Duration;
 
@@ -34,9 +37,24 @@ const NO_FONT_MARKER: &str = "Could not find any font";
 /// environment is reported in well under a second because the loop breaks on the first match.
 const FONT_PROBE_WINDOW_MS: u64 = 5_000;
 
-/* ───────────────────── T-320 — the gate owns its fontconfig cache ───────────────────── */
+/* ──────────────── T-320 / T-362 — the gate owns its fontconfig cache ──────────────── */
 
-/// Point chromium at a **gate-owned** fontconfig cache instead of the developer's `~/.cache`.
+/// Deliberate, **gate-scoped** override for [`gate_font_cache_dir`] (T-362).
+///
+/// This is the escape hatch that replaced "respect `XDG_CACHE_HOME`" — see
+/// [`ensure_gate_font_cache`] for why the general variable could not keep that job.
+const FONT_CACHE_ENV: &str = "TBD_GATE_FONT_CACHE";
+
+/// Why the gate is using the cache directory it is using — reported by [`check_fonts`], because a
+/// font cache the operator cannot see is a font cache nobody can debug.
+enum CacheOrigin {
+    /// The gate picked it (the normal case): `$TMPDIR/tbd-gate-cache-<distro>`.
+    Owned,
+    /// The operator pinned it explicitly via [`FONT_CACHE_ENV`].
+    Pinned,
+}
+
+/// Point chromium at a **gate-owned** fontconfig cache, unconditionally.
 ///
 /// # Why this exists (T-320 — the editor-gate wedge)
 ///
@@ -57,29 +75,164 @@ const FONT_PROBE_WINDOW_MS: u64 = 5_000;
 /// exactly why the failure looked editor-specific and unfixable from the app side.
 ///
 /// This is the same class of defect T-177 was created to kill: the gate depending on **unpinned
-/// external state**. A chromium-owned cache dir makes the font set a function of the machine's
+/// external state**. A gate-owned cache dir makes the font set a function of the machine's
 /// installed fonts only. The first run pays one fontconfig scan (~1 s); after that it is cached.
 ///
-/// Idempotent, and it never overrides an `XDG_CACHE_HOME` the caller set on purpose.
+/// # Why it is now unconditional (T-362)
+///
+/// It used to return early whenever `XDG_CACHE_HOME` was set, on the reasoning that an operator who
+/// sets it means it. The reasoning does not survive contact with this machine: the Debian container
+/// **exports `XDG_CACHE_HOME=~/.cache`**, which is precisely the shared host/container path whose
+/// poisoned cache caused T-320. So the fix documented itself as unconditional and was, in the one
+/// environment it was written for, disabled.
+///
+/// MEASURED 2026-07-26, end to end, with a cache warmed by a container-side chromium at a scratch
+/// `XDG_CACHE_HOME` and then read by a host-side one:
+///   * container chromium warms 35 `le64.cache-11` files and resolves fonts fine;
+///   * **host** chromium on that same directory logs
+///     `ERROR:ui/gfx/platform_font_skia.cc:258] Could not find any font: , sans`;
+///   * `gate doctor` pointed at it reported `✗ fonts` and then `✗ liveness … the headless browser
+///     process DIED`, whose underlying error was `cdp: ws call timed out (Runtime.evaluate)` — the
+///     T-320 signature that cost five sessions.
+///
+/// Controls (the gate's own cache, a virgin directory, and the operator's real `~/.cache`) all
+/// resolved fonts, so the variable is isolated: a cache written from the *other* distro at a shared
+/// path. The real `~/.cache` passing is why the hazard was latent rather than active — the two font
+/// trees here differ in directory mtime, and fontconfig's validity check rejects a cache whose
+/// recorded mtime does not match, so today each side quietly rescans. That is a coincidence of this
+/// machine's layout, not a property of the design, and it is one `fc-cache` away from ending.
+///
+/// Two further reasons owning beats verifying, which is why this does **not** merely check the
+/// operator's cache and keep using it:
+///   * **A shared cache is a TOCTOU.** Verification samples a directory a *third party* may rewrite;
+///     the poisoning write above took ~4 s from the container. A gate that verified at t=0 and runs
+///     smokes at t=60 has proved nothing. Owning the directory removes the race instead of sampling
+///     it.
+///   * **Falling back late would be unsafe.** Switching caches *after* discovering a bad one means a
+///     second `set_var` once the browser is already up — i.e. inside the multi-threaded window
+///     T-354 warned about, after `start_server` spawned tokio tasks and `reqwest::Client::new()`
+///     started reading proxy env vars. The only sound place to decide is before any of that.
+///
+/// A deliberate setting is still honoured — through [`FONT_CACHE_ENV`], which is *about the gate*.
+/// That distinction is the whole point: `XDG_CACHE_HOME` says "put caches here" and says nothing
+/// about whether sharing a fontconfig cache across distros is acceptable, whereas
+/// `TBD_GATE_FONT_CACHE` can only mean "the gate's font cache goes here".
+///
+/// # Thread safety
+///
+/// Still **not** safe to call from a multi-threaded process: `std::env::set_var` races every
+/// concurrent `getenv` in the process, including ones inside libc and reqwest, and no restructuring
+/// here changes that. What T-362 does change is that the *decision* no longer depends on the
+/// ambient environment, so moving the call is now behaviour-preserving — see
+/// [`gate_font_cache_dir`] for the hand-off that lets the `unsafe` disappear entirely.
 pub fn ensure_gate_font_cache() {
-    static ONCE: OnceLock<()> = OnceLock::new();
-    ONCE.get_or_init(|| {
-        if std::env::var_os("XDG_CACHE_HOME").is_some() {
-            return; // caller pinned it; respect that
-        }
-        let dir = gate_cache_dir();
-        if std::fs::create_dir_all(&dir).is_err() {
-            return; // best effort — the doctor's font check still reports the consequence
-        }
-        // SAFETY: called once, before any browser/subprocess is spawned, and nothing else in the
-        // harness reads or writes the environment. `Command` snapshots the parent env at spawn.
-        unsafe { std::env::set_var("XDG_CACHE_HOME", &dir) };
-    });
+    let _ = font_cache_install();
 }
 
-/// Where [`ensure_gate_font_cache`] puts the cache (also reported by the doctor).
-fn gate_cache_dir() -> PathBuf {
-    std::env::temp_dir().join("tbd-gate-cache")
+/// The one-shot install, memoised so the decision and its outcome are both stable.
+///
+/// `Err` is kept rather than swallowed: a cache the gate *failed* to install is a cache the smokes
+/// will not use, and [`check_fonts`] has to be able to say so instead of verifying an intention.
+fn font_cache_install() -> &'static Result<(), String> {
+    static ONCE: OnceLock<Result<(), String>> = OnceLock::new();
+    ONCE.get_or_init(|| {
+        let dir = gate_font_cache_dir();
+        std::fs::create_dir_all(dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
+        // SAFETY: called from the single-threaded prologue of a `gate` subcommand, before any
+        // browser/subprocess is spawned and before any tokio task exists. `Command` snapshots the
+        // parent env at spawn, so every chromium launched afterwards inherits this.
+        unsafe { std::env::set_var("XDG_CACHE_HOME", dir) };
+        Ok(())
+    })
+}
+
+/// Where the gate keeps the fontconfig cache it owns.
+///
+/// Public so the eventual per-child fix can use it: once `cdp::launch` sets
+/// `XDG_CACHE_HOME` on the `Command` itself (`.env("XDG_CACHE_HOME", gate_font_cache_dir())`)
+/// rather than inheriting it from the process, [`ensure_gate_font_cache`]'s `unsafe set_var` — and
+/// with it every question about when it is safe to call — can be deleted outright. That is the
+/// version of the T-354 hand-off that needs no single-threaded window at all.
+pub fn gate_font_cache_dir() -> &'static Path {
+    &resolved_font_cache().0
+}
+
+fn resolved_font_cache() -> &'static (PathBuf, CacheOrigin) {
+    static RESOLVED: OnceLock<(PathBuf, CacheOrigin)> = OnceLock::new();
+    RESOLVED.get_or_init(|| match std::env::var_os(FONT_CACHE_ENV) {
+        Some(v) if !v.is_empty() => (PathBuf::from(v), CacheOrigin::Pinned),
+        // An empty value is treated as unset, so `TBD_GATE_FONT_CACHE=` cannot accidentally point
+        // the cache at the process's cwd.
+        _ => (default_font_cache_dir(), CacheOrigin::Owned),
+    })
+}
+
+/// `$TMPDIR/tbd-gate-cache-<distro>` — keyed by the distro whose font tree the cache describes.
+///
+/// The suffix is not cosmetic. `$TMPDIR` is `/tmp`, and on this box `/tmp` is **shared** between the
+/// host and the Debian container (measured), so a bare `tbd-gate-cache` is itself a cross-distro
+/// shared path — the exact shape of the bug this function exists to prevent, just one directory
+/// over. It only fails to bite today because the gate binary is host-built and glibc keeps it from
+/// running in the container; the container's chromium runs fine there, which is all the poisoning
+/// ever needed. Keying on `/etc/os-release` `ID`+`VERSION_ID` means each distro warms and reads its
+/// own cache, so the guarantee stops depending on who happens to be able to launch the gate.
+fn default_font_cache_dir() -> PathBuf {
+    let name = match distro_slug() {
+        Some(slug) => format!("tbd-gate-cache-{slug}"),
+        // Unreadable `/etc/os-release` → the pre-T-362 name. Losing the discriminator is worse than
+        // the old behaviour in no way, and inventing an unstable one (pid, time) would defeat the
+        // caching this directory exists for.
+        None => "tbd-gate-cache".to_string(),
+    };
+    std::env::temp_dir().join(name)
+}
+
+/// `ID`+`VERSION_ID` from `/etc/os-release`, reduced to a filename-safe slug (`debian-12`).
+fn distro_slug() -> Option<String> {
+    let os_release = std::fs::read_to_string("/etc/os-release").ok()?;
+    let field = |key: &str| {
+        os_release
+            .lines()
+            .find_map(|l| l.strip_prefix(key))
+            .map(|v| v.trim().trim_matches('"').to_string())
+            .filter(|v| !v.is_empty())
+    };
+    let id = field("ID=")?;
+    let slug: String = match field("VERSION_ID=") {
+        Some(version) => format!("{id}-{version}"),
+        None => id,
+    }
+    .chars()
+    .map(|c| {
+        if c.is_ascii_alphanumeric() || c == '.' || c == '-' {
+            c
+        } else {
+            '_'
+        }
+    })
+    .collect();
+    Some(slug)
+}
+
+/// How the doctor names the cache chromium will actually inherit.
+///
+/// Deliberately reports the **effective** `XDG_CACHE_HOME` rather than the one the gate meant to
+/// install: if the install failed, the font probe below is measuring a different directory from the
+/// one the smokes will use, and that divergence is the single most useful thing to print.
+fn font_cache_report() -> String {
+    let (dir, origin) = resolved_font_cache();
+    let effective = std::env::var("XDG_CACHE_HOME").unwrap_or_else(|_| "<unset>".into());
+    let tag = match origin {
+        CacheOrigin::Owned => "gate-owned",
+        CacheOrigin::Pinned => "pinned by TBD_GATE_FONT_CACHE",
+    };
+    match font_cache_install() {
+        Ok(()) => format!("{effective} ({tag})"),
+        Err(e) => format!(
+            "{effective} — NOT the gate's cache ({}); {e}",
+            dir.display()
+        ),
+    }
 }
 
 /// Load the committed pin manifest (crate-local, deterministic — no cwd dependence).
@@ -113,11 +266,28 @@ pub async fn run(dist: Option<String>, strict: bool) -> Result<u8> {
     warnings += check_chromium(env);
     warnings += check_toolchain(env);
     warnings += check_resources(env);
-    let fonts_ok = check_fonts().await;
-    if !fonts_ok {
+    let fonts = check_fonts().await;
+    if matches!(fonts, FontProbe::Inconclusive) {
         warnings += 1;
     }
     warnings += check_dist(dist.as_deref().unwrap_or(DEFAULT_DIST));
+
+    // T-362 — a zero-font chromium is a HARD fail, and it short-circuits the liveness probe.
+    //
+    // Two changes from the T-320 shape, both measured against the poisoned-cache repro. It used to
+    // count as one *warning*, so a fonts failure that the liveness probe happened to survive exited
+    // **0** and handed the wedge to the suite — the gate reporting OK on an environment it had just
+    // proved was fatal. And running liveness anyway costs ~15 s to produce `the headless browser
+    // process DIED`, which is a true statement about a browser we already knew would die and reads
+    // as a renderer bug rather than a font cache. Failing here names the cause instead.
+    if matches!(fonts, FontProbe::NoFonts) {
+        print_font_wedge_hint();
+        println!(
+            "== gate doctor: FAIL — chromium cannot resolve a single font; every editor smoke would \
+             SIGABRT the browser (T-320)"
+        );
+        return Ok(1);
+    }
 
     let dist = dist.unwrap_or_else(|| DEFAULT_DIST.to_string());
     let live = liveness_probe(&dist, env).await;
@@ -144,7 +314,9 @@ pub async fn run(dist: Option<String>, strict: bool) -> Result<u8> {
     };
 
     if !live_ok {
-        if !fonts_ok {
+        // A confirmed zero-font environment already returned above, so the only fonts state left
+        // that could explain a dead browser is the one where the probe never got a verdict.
+        if matches!(fonts, FontProbe::Inconclusive) {
             print_font_wedge_hint();
         }
         print_wedge_hint();
@@ -249,6 +421,18 @@ fn check_resources(env: Option<&Value>) -> u32 {
     warn
 }
 
+/// What [`check_fonts`] learned. The three states are not decoration (T-362): "chromium told us it
+/// has no fonts" is a **guaranteed** browser SIGABRT on the editor route and must stop the gate,
+/// whereas "the probe could not run" taught us nothing and must not — collapsing both into `false`
+/// meant the only actionable one was reported at the same severity as a shrug.
+enum FontProbe {
+    Ok,
+    /// The marker fired: chromium resolved zero fonts. The T-320 wedge, pre-crash.
+    NoFonts,
+    /// The probe itself failed (no log, no spawn, chromium exited early) — verdict unknown.
+    Inconclusive,
+}
+
 /// **T-320 — can chromium resolve a font at all?**
 ///
 /// Launch chromium on `about:blank`, watch its own log for [`NO_FONT_MARKER`], kill it. That one line
@@ -267,9 +451,14 @@ fn check_resources(env: Option<&Value>) -> u32 {
 ///
 /// Timing measured here: chromium emits the font errors ~250–400 ms after launch, before the page
 /// exists at all, so [`FONT_PROBE_WINDOW_MS`] of silence is a sound "fonts are fine".
-async fn check_fonts() -> bool {
+///
+/// T-362 — this probe deliberately **inherits** `XDG_CACHE_HOME` instead of passing its own via
+/// `Command::env`. It has to measure what every other browser launch in the run will get, not what
+/// [`ensure_gate_font_cache`] intended; a probe that forces its own cache would pass while the
+/// smokes inherited a poisoned one, which is the exact failure this check exists to catch.
+async fn check_fonts() -> FontProbe {
     let Some(bin) = cdp::find_chromium() else {
-        return true; // already reported by check_chromium
+        return FontProbe::Ok; // already reported by check_chromium
     };
     let tag = format!("tbd-fontprobe-{}", std::process::id());
     let profile = std::env::temp_dir().join(&tag);
@@ -277,11 +466,11 @@ async fn check_fonts() -> bool {
     let _ = std::fs::remove_dir_all(&profile);
     let Ok(log) = std::fs::File::create(&log_path) else {
         println!("  ! fonts       could not open the font-probe log");
-        return false;
+        return FontProbe::Inconclusive;
     };
     let Ok(log2) = log.try_clone() else {
         println!("  ! fonts       could not open the font-probe log");
-        return false;
+        return FontProbe::Inconclusive;
     };
     let mut cmd = tokio::process::Command::new(&bin);
     if !cdp::is_headless_shell(&bin) {
@@ -299,7 +488,7 @@ async fn check_fonts() -> bool {
         Ok(c) => c,
         Err(e) => {
             println!("  ! fonts       could not run the chromium font probe: {e}");
-            return false;
+            return FontProbe::Inconclusive;
         }
     };
     let mut broken = false;
@@ -329,24 +518,28 @@ async fn check_fonts() -> bool {
     let _ = std::fs::remove_dir_all(&profile);
     let _ = std::fs::remove_file(&log_path);
     if broken {
+        // T-362 — name the cache on the FAILURE path too. Which directory chromium was reading is
+        // the first thing anyone needs and the one thing the old message omitted.
         println!(
             "  ✗ fonts       chromium resolves NO font ('{NO_FONT_MARKER}') — the editor page will \
              SIGABRT the browser on its first fallback glyph (T-320)"
         );
-        return false;
+        println!("                cache: {}", font_cache_report());
+        return FontProbe::NoFonts;
     }
     if died_early {
         println!(
             "  ! fonts       chromium exited during the font probe; its log said: {}",
             log_text.lines().last().unwrap_or("(nothing)")
         );
-        return false;
+        println!("                cache: {}", font_cache_report());
+        return FontProbe::Inconclusive;
     }
     println!(
         "  ✓ fonts       chromium resolves fonts (cache: {})",
-        std::env::var("XDG_CACHE_HOME").unwrap_or_else(|_| "<default>".into())
+        font_cache_report()
     );
-    true
+    FontProbe::Ok
 }
 
 /// The dist has to exist. A missing `--dist` used to serve 500s to every request and then fail on
@@ -488,17 +681,39 @@ fn print_font_wedge_hint() {
     );
     println!("    kills the BROWSER process, which the harness can only see as a CDP timeout.");
     println!(
-        "    • the usual cause is a cross-distro `~/.cache/fontconfig` (a container that shares the"
+        "    • the usual cause is a cross-distro fontconfig cache (a container that shares the home"
     );
     println!(
-        "      home dir cached ITS font set under the same directory hashes; chromium accepts those"
+        "      dir cached ITS font set under the same directory hashes; chromium accepts those"
     );
-    println!("      entries and never rescans). Remedy: rm -rf ~/.cache/fontconfig");
+    println!("      entries and never rescans).");
     println!(
-        "    • the gate normally sidesteps it by owning its cache — see `ensure_gate_font_cache`;"
+        "    • the gate sidesteps that by OWNING its cache — `ensure_gate_font_cache` always points"
     );
-    println!("      an XDG_CACHE_HOME you set yourself is respected and therefore also inherited.");
-    println!("    • verify with:  fc-list | wc -l   (0 = genuinely no fonts installed)");
+    println!(
+        "      chromium at $TMPDIR/tbd-gate-cache-<distro>, whatever XDG_CACHE_HOME says (T-362:"
+    );
+    println!(
+        "      it used to stand down when XDG_CACHE_HOME was set, which this container exports as"
+    );
+    println!("      ~/.cache — the very path the fix exists to avoid).");
+    println!(
+        "    • so if you are reading this, the gate's OWN cache is bad. Remedy: delete the directory"
+    );
+    println!(
+        "      named on the `cache:` line above and re-run; it is a cache and costs ~1 s to rebuild."
+    );
+    println!(
+        "    • to put it elsewhere deliberately, set TBD_GATE_FONT_CACHE (gate-scoped, so it cannot"
+    );
+    println!("      silently mean 'share a font cache with another distro').");
+    println!(
+        "    • verify the machine really has fonts:  fc-list | wc -l   (0 = none installed). Note a"
+    );
+    println!(
+        "      healthy fc-list proves nothing about chromium — T-320 had fc-list at 783 and chromium"
+    );
+    println!("      at zero, because they were reading different caches.");
 }
 
 fn print_wedge_hint() {
