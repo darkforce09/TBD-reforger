@@ -56,17 +56,36 @@ pub async fn list_vehicles(
 }
 
 /// Body for authoring a wiki page (admin).
+///
+/// **`icon` and `nav_order` are deliberately required — do not add `#[serde(default)]` to
+/// them (T-319).** Their three siblings below default *and are guarded* at the emptiness
+/// check in [`upsert_wiki_page`]; these two defaulted with nothing behind them, which is the
+/// same shape as T-185 (`roles`) and T-218 (`reason`): the default is not "no data", it
+/// decodes as an affirmative value and gets bound straight into the `ON CONFLICT DO UPDATE`.
+///
+/// This route is `PUT` — create *or replace* — so every write is a full overwrite of the
+/// stored row. Omitting `nav_order` therefore did not mean "leave the ordering alone", it
+/// wrote `0`, which sorts the page to the top of `ORDER BY nav_order ASC` and silently
+/// reshuffles the whole SOP navigation for every reader. Measured on the dev fixture: a
+/// body-only typo fix on `medical-sop` (`nav_order` 3, third in the nav) returned 200 and
+/// moved it to first, above the Field Manual, and wiped its `medical_services` icon in the
+/// same request.
+///
+/// Note the fix is *presence*, not non-emptiness — the two are different questions here and
+/// only the first one is the bug. `icon = ""` is a real, live state (the seeded
+/// `server-rules` page has no icon, and the model omits the key from its JSON when empty),
+/// and `nav_order = 0` is a legitimate "put me first". Both must stay writable. What must
+/// not stay writable is *silence*: an absent field is now a decode error, which the
+/// extractor below maps to 400, so a caller states its intent or gets told.
 #[derive(Debug, Deserialize)]
 pub struct WikiInput {
     #[serde(default)]
     category: String,
     #[serde(default)]
     title: String,
-    #[serde(default)]
     icon: String,
     #[serde(default)]
     body_md: String,
-    #[serde(default)]
     nav_order: i64,
 }
 
@@ -79,8 +98,12 @@ pub async fn upsert_wiki_page(
     Path(slug): Path<String>,
     body: Result<Json<WikiInput>, JsonRejection>,
 ) -> Result<Json<WikiPage>, ApiError> {
-    let Json(input) =
-        body.map_err(|_| ApiError::bad_request("category, title and body_md are required"))?;
+    // Names all five, because after T-319 all five must be *present* — an omitted `icon` or
+    // `nav_order` lands here as a decode error, and a 400 that only lists the other three
+    // sends the caller hunting for a field they already sent.
+    let Json(input) = body.map_err(|_| {
+        ApiError::bad_request("category, title, icon, body_md and nav_order are required")
+    })?;
     if input.category.is_empty() || input.title.is_empty() || input.body_md.is_empty() {
         return Err(ApiError::bad_request(
             "category, title and body_md are required",
