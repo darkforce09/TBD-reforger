@@ -130,6 +130,42 @@ to the slice's own diff against `main`.
     luck. When an agent reports having touched a file outside its list, verify the composition by
     hand before trusting the green gate.
 
+12. **The adversarial verifier runs every wave, and its findings are TRIAGED — not all promoted.**
+    Operator instruction, 2026-07-26, after the reviews generated work faster than the run closed it
+    and the feature backlog sat still for hours.
+
+    Rule 4 says run the verifier. This says what to do with what it finds:
+
+    | Verdict | Action |
+    |---|---|
+    | **BLOCKER** — main is broken, or data is at risk | Fix **in this wave**. The wave does not close. |
+    | **MAJOR** — a shipped ticket does not do what it claims | Fix in this wave **if** it can lose authored work or blocks a feature; otherwise file `deferred`. |
+    | **MINOR / NIT** | File as `deferred` **immediately**. Do not create wave work. |
+
+    **File deferred, never drop.** A diagnosed, reproducible ticket costs nothing to hold and is most
+    of the finding's value. `dispatchable()` in `slice-collisions.py` already filters `deferred`, so a
+    deferred ticket cannot enter a wave until someone promotes it.
+
+    Two criteria promote a non-BLOCKER, and only these two:
+    - it can **destroy work the operator authored**, or
+    - it **unblocks a feature** on the original backlog.
+
+    Everything else waits. The operator's framing, which is the correct one: *there will always be
+    bugs — that is what developing is. Knowing them is good. Spending the budget on things that do not
+    need fixing right now means nothing ships.*
+
+    **Precedent, so the calibration is legible.** On 2026-07-26 the reviews produced 46 findings.
+    Five were kept: two that could overwrite an authored mission with an empty document, one that
+    destroyed an authored emblem on every save, and two that were the briefings and markers blockers
+    (features, not defects). **Forty-one were deferred**, including an admin-lockout route and four
+    gate defects — all real, all recorded, none urgent.
+
+    The one class that is **always** a BLOCKER regardless of severity: **a gate that reports success
+    on code it never examined.** Four independent instances turned up in one night — the DB suite run
+    with no database, clippy run with no features, `render-check` unable to fail, and a fonts failure
+    that only warned. Each made every other claim in the program worthless until fixed, and none
+    would have surfaced without someone attacking the thing that says green.
+
 11. **Never land a slice until its agent has REPORTED.** `tree_state` answers "is the tree
     committed and clean", which is not the same question as "is the agent finished". In wave 1
     T-182 committed mid-run, `land` merged it and dropped the worktree, and the agent then found
