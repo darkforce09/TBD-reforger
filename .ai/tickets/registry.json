@@ -1,5 +1,5 @@
 {
-  "next_id": 308,
+  "next_id": 310,
   "tickets": [
     {
       "id": "T-001",
@@ -7342,13 +7342,14 @@
       "impact": [
         "mc-authoring"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2350,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "8e07338f"
     },
     {
       "id": "T-218",
@@ -9065,6 +9066,45 @@
       "stream": "web-platform",
       "targets": [
         "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-308",
+      "title": "Apply Template's refusal message never reaches the operator",
+      "summary": "T-217 stopped Apply Template from silently deleting squads: apply_faction_library now returns WouldCollapseSquads{side, squad_ids, slots_destroyed} BEFORE the first write, so the doc is byte-identical on refusal, and Display names exactly what would have been lost. But the explanation is discarded on the way out — editor_ops.rs:1424 does .is_ok() and orbat_manager.rs:276 prints a bare 'Apply failed.' The data loss is stopped either way; the guidance is not shown. Thread the error through to the toast.",
+      "program": "eden",
+      "surfaces": [
+        "ORBAT"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2308,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-309",
+      "title": "Preserve squads through Apply Template — needs a squad level in FactionDoc",
+      "summary": "The real fix T-217 could not make. FactionDoc is flat (roles[] + vehicles[]) with no squad level, and faction-library.schema.json is additionalProperties:false with required [side,name,roles,vehicles]; dto.rs:386 mirrors it flat. So save-as-template followed by Apply cannot round-trip N squads — T-217 made it refuse loudly instead of collapsing silently, which is correct but is not the feature. Needs: a squad level in faction-library.schema.json + FactionDoc, then BOTH sides of editor_ops — orbat_apply_faction and the flattening faction_doc_from_side_core. Until then, Apply is single-squad-only by contract.",
+      "program": "eden",
+      "surfaces": [
+        "ORBAT"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2309,
+      "stream": "mission-creator",
+      "targets": [
+        "website",
+        "root"
       ],
       "executor": "claude-code"
     }
