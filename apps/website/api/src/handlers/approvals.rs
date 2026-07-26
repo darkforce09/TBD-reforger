@@ -16,6 +16,19 @@ use crate::models::{AuditSeverity, Mission, MissionStatus, TerrainType};
 use crate::services::write_audit;
 use crate::state::AppState;
 
+/// The `list_approvals` projection.
+///
+/// **Every field is non-optional, so the query must `COALESCE` anything that can arrive NULL —
+/// and two of these six can (T-330).** `author_name` because the `LEFT JOIN` yields NULL for a
+/// mission whose author row is gone, and `submitted_at` because both columns it can read
+/// (`missions.updated_at`, `missions.created_at`) are nullable with no default. The other four
+/// are `NOT NULL` base-table columns on the driving table, so they cannot.
+///
+/// `Option` was considered and rejected for the reason `models/telemetry.rs` records for
+/// `Match::winning_faction` (T-325): the safety belongs in the query, not the type. Here the
+/// case against `Option` is stronger still, because `submitted_at` has no
+/// `skip_serializing_if` — making the field optional would emit a literal `"submitted_at":
+/// null` and change the wire shape for every reviewer client, not just the NULL row.
 #[derive(Debug, sqlx::FromRow)]
 struct ApprovalRaw {
     id: Uuid,
@@ -23,7 +36,7 @@ struct ApprovalRaw {
     terrain: TerrainType,
     author_id: String,
     author_name: String,
-    updated_at: DateTime<Utc>,
+    submitted_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize)]
@@ -51,11 +64,45 @@ pub async fn list_approvals(
     )
     .fetch_one(&state.pool)
     .await?;
+    // `submitted_at` reads `m.updated_at`, which is `timestamp with time zone` with **no
+    // NOT NULL and no DEFAULT** (`migrations/0001_initial_schema.sql:375`) — so any INSERT that
+    // omits the column stores NULL, and a bare `m.updated_at` decoded a 500:
+    // *"error occurred while decoding column `updated_at`: unexpected null; try decoding as an
+    // `Option`"*. `handlers/mod.rs:82` (`load_mission`, the canonical mission read) already
+    // coalesced this exact column; this query was the outlier that didn't. Its author clearly
+    // understood *join* nullability — `u.username` is NOT NULL in the schema and is coalesced
+    // anyway, because the LEFT JOIN makes it NULL for a mission whose author row is gone — and
+    // simply missed the base table's own nullability one column over.
+    //
+    // The fallback chain is deliberate and both links are load-bearing:
+    //
+    // 1. **`m.created_at`** — unlike `load_mission`, which serves `created_at` and `updated_at`
+    //    as separate wire fields, this row projects one timestamp onto one field the reviewer
+    //    reads as "when did this land in my queue". When the mission's own creation time is on
+    //    the row it is a real fact and a strictly better answer than a sentinel. `now()` was
+    //    rejected outright: it renders as "submitted just now" and sorts an unknown-age
+    //    submission to the *bottom* of an oldest-first review queue — a lie that also hides the
+    //    row it lies about.
+    // 2. **`'0001-01-01 00:00:00+00'`** — the Go zero `time.Time`, the crate-wide "unknown
+    //    timestamp" sentinel (`handlers/mod.rs:81`, `deployments.rs:127`, `:134`), which
+    //    `go_time` renders as `0001-01-01T00:00:00Z` and `tests/null_tolerance.rs` already
+    //    asserts for a NULL timestamp. It is what makes the fix **total**: `missions.created_at`
+    //    is *also* nullable with no default (`0001_initial_schema.sql:374`), so a two-argument
+    //    COALESCE would still 500 on a row with both timestamps NULL — which is exactly the
+    //    shape `tests/null_tolerance.rs:77`'s mission INSERT produces today (it omits both).
+    //
+    // `ORDER BY` uses the same expression so the queue order is the order of the timestamp the
+    // reviewer is shown. For every non-NULL row the expression *is* `m.updated_at`, so ordering
+    // and payload are byte-identical to before for all normal data; it only decides where the
+    // previously-undecodable rows land (with the sentinel: oldest-first, i.e. surfaced for a
+    // human, rather than Postgres's default NULLS LAST burying them past the last page).
     let raw: Vec<ApprovalRaw> = sqlx::query_as(
-        "SELECT m.id, m.title, m.terrain, m.author_id, COALESCE(u.username, '') AS author_name, m.updated_at \
+        "SELECT m.id, m.title, m.terrain, m.author_id, COALESCE(u.username, '') AS author_name, \
+         COALESCE(m.updated_at, m.created_at, '0001-01-01 00:00:00+00'::timestamptz) AS submitted_at \
          FROM missions m LEFT JOIN users u ON u.discord_id = m.author_id \
          WHERE m.status = 'pending_approval' AND m.deleted_at IS NULL \
-         ORDER BY m.updated_at ASC LIMIT $1 OFFSET $2",
+         ORDER BY COALESCE(m.updated_at, m.created_at, '0001-01-01 00:00:00+00'::timestamptz) ASC \
+         LIMIT $1 OFFSET $2",
     )
     .bind(limit)
     .bind(offset)
@@ -69,7 +116,7 @@ pub async fn list_approvals(
             terrain: r.terrain.as_str().to_string(),
             author_id: r.author_id,
             author_name: r.author_name,
-            submitted_at: r.updated_at,
+            submitted_at: r.submitted_at,
         })
         .collect();
     Ok(Json(
