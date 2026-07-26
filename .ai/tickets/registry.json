@@ -6668,13 +6668,14 @@
       "impact": [
         "arsenal"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2010,
       "stream": "mission-creator",
       "targets": [
         "root"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "f2dc5b1a"
     },
     {
       "id": "T-184",
