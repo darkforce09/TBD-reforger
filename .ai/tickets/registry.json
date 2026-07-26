@@ -1,5 +1,5 @@
 {
-  "next_id": 314,
+  "next_id": 315,
   "tickets": [
     {
       "id": "T-001",
@@ -7010,13 +7010,14 @@
       "impact": [
         "arsenal"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2180,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "0d4a2ae7"
     },
     {
       "id": "T-201",
@@ -9184,6 +9185,25 @@
       ],
       "status": "idea",
       "order": 2313,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-314",
+      "title": "Nothing reads doc.kit_substitutions — the last mile of T-200",
+      "summary": "T-200 attached a KitSubstitutionReport to the compiled document so the compiler stops silently swapping an authored character for the faction default (342 of 354 registry characters have no kit alias). It rides the returned value with #[serde(skip)], so every existing caller already holds it and the /compiled wire contract is unchanged — pinned by a test asserting the top-level key set is exactly the schema's ten properties. But no caller surfaces it yet. The last mile is a tracing::warn! in get_compiled_mission (apps/website/api/src/handlers/missions.rs) reading doc.kit_substitutions.details(), which T-200 did not own. Until then the report exists and nobody sees it. details() returns the same shape as wire_safety::scan_editor_payload so a caller can render both identically.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2314,
       "stream": "web-platform",
       "targets": [
         "website"
