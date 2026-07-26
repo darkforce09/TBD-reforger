@@ -8264,7 +8264,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2820,
       "stream": "web-platform",
       "targets": [
@@ -8283,7 +8283,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2830,
       "stream": "web-platform",
       "targets": [
@@ -8302,7 +8302,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2840,
       "stream": "web-platform",
       "targets": [
@@ -11911,6 +11911,27 @@
       ],
       "status": "deferred",
       "order": 3283,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-445",
+      "title": "Audit Load-more Class-R does not pin on_load_more UI wiring",
+      "summary": "Residual from T-266 / wave 13 adversarial MINOR. Class-R tests pin audit_logs_path / parse_next_cursor / merge_audit_page helpers, but nothing asserts on_load_more calls merge_audit_page. A replace bug (lines.set(page.data) instead of append) would keep those tests green while truncating the trail again.\n\nRepro: change Load more to replace the vec; cargo test -p website-frontend audit::tests still PASS.\n\nCure: include_str! / source guard (T-264 style) that on_load_more uses merge_audit_page + audit_logs_path(Some(before)).",
+      "program": "platform",
+      "surfaces": [
+        "FE",
+        "INFRA"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3284,
       "stream": "web-platform",
       "targets": [
         "website"

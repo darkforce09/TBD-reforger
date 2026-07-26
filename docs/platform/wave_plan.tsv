@@ -243,3 +243,4 @@
 99	T-440	Cold/schema gates never apply make seed / faction_library.sql	Makefile; scripts/platform/wave.sh; apps/website/api/seeds/faction_library.sql
 4	T-441	null_tolerance OPTION_FIELDS for events.server_id/modpack_id	apps/website/api/tests/null_tolerance.rs
 99	T-442	Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id	apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/dto.rs
+99	T-445	Audit Load-more Class-R does not pin on_load_more UI wiring	apps/website/frontend/src/audit.rs

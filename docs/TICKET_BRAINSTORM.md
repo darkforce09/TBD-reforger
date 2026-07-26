@@ -969,6 +969,11 @@ Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall ba
 Repro: make db-up + make seed on empty DB; curl GET /api/v1/wiki → data:[]; vehicles have rows.
 
 Cure: extract wiki INSERT seed (or include content_golden wiki section) into seeds/ + Makefile seed line, same shape as vehicle_database.sql.
+- **T-445** (deferred) — Audit Load-more Class-R does not pin on_load_more UI wiring [FE, INFRA] — Residual from T-266 / wave 13 adversarial MINOR. Class-R tests pin audit_logs_path / parse_next_cursor / merge_audit_page helpers, but nothing asserts on_load_more calls merge_audit_page. A replace bug (lines.set(page.data) instead of append) would keep those tests green while truncating the trail again.
+
+Repro: change Load more to replace the vec; cargo test -p website-frontend audit::tests still PASS.
+
+Cure: include_str! / source guard (T-264 style) that on_load_more uses merge_audit_page + audit_logs_path(Some(before)).
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
