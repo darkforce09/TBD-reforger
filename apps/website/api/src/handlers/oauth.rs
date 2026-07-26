@@ -478,7 +478,10 @@ mod tests {
             state: "xyz".into(),
         };
         let mut headers = HeaderMap::new();
-        headers.insert(header::COOKIE, HeaderValue::from_static("oauth_state=other"));
+        headers.insert(
+            header::COOKIE,
+            HeaderValue::from_static("oauth_state=other"),
+        );
         let resp = callback_csrf_reject("http://localhost:5173", &q, &headers)
             .expect("mismatched state must reject");
         assert!(
