@@ -17,6 +17,9 @@ async fn setup() -> Option<(Router, String)> {
     let _ = sqlx::query("DELETE FROM wiki_pages WHERE slug = 'content-test'")
         .execute(&pool)
         .await;
+    let _ = sqlx::query("DELETE FROM vehicle_databases WHERE name = 'content-test-vehicle'")
+        .execute(&pool)
+        .await;
     let app = app::router(AppState::new(
         pool,
         Config::for_tests(url, "content-secret"),
@@ -124,4 +127,68 @@ async fn content_reads_and_wiki_upsert() {
     // Unauthenticated read → 401.
     let (st, _) = call(&app, "GET", "/api/v1/announcements", None, None).await;
     assert_eq!(st, StatusCode::UNAUTHORIZED);
+}
+
+/// T-443: cold gate must exercise the T-263 write path (`POST /vehicle-database`).
+/// GET-only coverage previously let the gate pass with `create_vehicle` unregistered.
+#[tokio::test]
+async fn vehicle_database_create_round_trip() {
+    let Some((app, tok)) = setup().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let t = Some(tok.as_str());
+
+    let payload = r#"{"name":"content-test-vehicle","faction":"BLUFOR","armor_type":"MBT","amphibious":"no","primary_threat":"ATGM","profile_image_url":"https://example.com/v.png"}"#;
+    let (st, created) = call(&app, "POST", "/api/v1/vehicle-database", t, Some(payload)).await;
+    assert!(
+        st == StatusCode::OK || st == StatusCode::CREATED,
+        "admin POST happy path: {st} {created}"
+    );
+    assert_eq!(created["name"], "content-test-vehicle");
+    assert_eq!(created["faction"], "BLUFOR");
+    assert_eq!(created["armor_type"], "MBT");
+    assert_eq!(created["amphibious"], "no");
+    assert_eq!(created["primary_threat"], "ATGM");
+    assert_eq!(created["profile_image_url"], "https://example.com/v.png");
+    let id = created["id"]
+        .as_str()
+        .expect("created row must return id")
+        .to_string();
+
+    let (st, list) = call(&app, "GET", "/api/v1/vehicle-database", t, None).await;
+    assert_eq!(st, StatusCode::OK, "list after create: {list}");
+    let data = list["data"].as_array().expect("data array");
+    assert!(
+        data.iter()
+            .any(|row| row["id"] == id && row["name"] == "content-test-vehicle"),
+        "GET /vehicle-database must include the new row: {list}"
+    );
+
+    for bad in [
+        r#"{"faction":"BLUFOR","armor_type":"MBT"}"#,
+        r#"{"name":"","faction":"BLUFOR","armor_type":"MBT"}"#,
+        r#"{"name":"x","faction":"","armor_type":"MBT"}"#,
+        r#"{"name":"x","faction":"BLUFOR","armor_type":""}"#,
+        r#"{"name":"x","faction":"BLUFOR"}"#,
+        r#"{"name":"   ","faction":"BLUFOR","armor_type":"MBT"}"#,
+    ] {
+        let (st, body) = call(&app, "POST", "/api/v1/vehicle-database", t, Some(bad)).await;
+        assert_eq!(
+            st,
+            StatusCode::BAD_REQUEST,
+            "missing/empty required fields → 400 for {bad}: {body}"
+        );
+    }
+
+    // AuthGate sibling pattern: AdminUser rejects missing bearer with 401.
+    let (st, body) = call(
+        &app,
+        "POST",
+        "/api/v1/vehicle-database",
+        None,
+        Some(payload),
+    )
+    .await;
+    assert_eq!(st, StatusCode::UNAUTHORIZED, "unauthenticated POST: {body}");
 }
