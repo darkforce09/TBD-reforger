@@ -9050,7 +9050,7 @@
     {
       "id": "T-306",
       "title": "server_fps type mismatch silently blanks the whole Server Intel page",
-      "summary": "REPRODUCED by T-194 against a populated fixture, not inferred. models/telemetry.rs:102 serializes numeric(5,1) cast to float8; frontend/src/dto.rs:101 deserializes i64. A probe using the DTO verbatim: 'TBD Primary — Everon server_fps: 58.7 -> DROPPED (invalid type: floating point `58.7`, expected i64)'. Both read sites swallow the error — server_intel.rs:150 uses .ok() and sse.rs:80 uses `if let Ok(...)` — so against a COMPLETE, HEALTHY frame the page renders 0/0 players and '—' for uptime, FPS, time and weather, and the SSE stream reports connected while updating nothing. The whole page looks like a dead server. Fix the DTO to f64 (do not round the wire value). NOTE: the R-api golden gate CANNOT catch this — it types /servers as DataEnvelope<Value>, so the round-trip passes while the real DTO fails. Consider typing that fixture properly at the same time.\n\nINDEPENDENTLY CONFIRMED STILL LIVE by T-232 (2026-07-26), which found it from the frontend side and added a dimension the original filing missed:\n\n`sse.rs:80` does `if let Ok(json) = serde_json::from_str::<ServerStatusDto>(...)`, so EVERY LIVE TELEMETRY SSE FRAME SILENTLY FAILS TO DESERIALIZE AND IS DROPPED. Not just the Server Intel page render — the whole realtime stream is inert while reporting connected. T-232 also traced the same root cause to a confident `FPS: 0` on the dashboard card for a healthy server, which it fixed locally; the DTO itself (dto.rs:101 `pub server_fps: i64` against models/telemetry.rs:131 f64 over numeric(5,1)) was outside its ownership and is still wrong.\n\nTwo independent agents have now reached this from opposite directions. Fix the DTO to f64 and do NOT round the wire value.",
+      "summary": "REPRODUCED by T-194 against a populated fixture, not inferred. models/telemetry.rs:102 serializes numeric(5,1) cast to float8; frontend/src/dto.rs:101 deserializes i64. A probe using the DTO verbatim: 'TBD Primary — Everon server_fps: 58.7 -> DROPPED (invalid type: floating point `58.7`, expected i64)'. Both read sites swallow the error — server_intel.rs:150 uses .ok() and sse.rs:80 uses `if let Ok(...)` — so against a COMPLETE, HEALTHY frame the page renders 0/0 players and '—' for uptime, FPS, time and weather, and the SSE stream reports connected while updating nothing. The whole page looks like a dead server. Fix the DTO to f64 (do not round the wire value). NOTE: the R-api golden gate CANNOT catch this — it types /servers as DataEnvelope<Value>, so the round-trip passes while the real DTO fails. Consider typing that fixture properly at the same time.\n\nINDEPENDENTLY CONFIRMED STILL LIVE by T-232 (2026-07-26), which found it from the frontend side and added a dimension the original filing missed:\n\n`sse.rs:80` does `if let Ok(json) = serde_json::from_str::<ServerStatusDto>(...)`, so EVERY LIVE TELEMETRY SSE FRAME SILENTLY FAILS TO DESERIALIZE AND IS DROPPED. Not just the Server Intel page render — the whole realtime stream is inert while reporting connected. T-232 also traced the same root cause to a confident `FPS: 0` on the dashboard card for a healthy server, which it fixed locally; the DTO itself (dto.rs:101 `pub server_fps: i64` against models/telemetry.rs:131 f64 over numeric(5,1)) was outside its ownership and is still wrong.\n\nTwo independent agents have now reached this from opposite directions. Fix the DTO to f64 and do NOT round the wire value.\n\nSHIPPED 2026-07-26. Wire bytes captured off a live stack: `\"server_fps\":58.7`. Before, that exact frame through the real DTO gave `invalid type: floating point 58.7, expected i64 at line 1 column 121`. After, both the frame and the committed GET__servers.json pass.\n\nBROWSER-VERIFIED before/after on the same build, same stack, same frame — the page really did render a healthy server as dead: players 0 -> 47, max /0 -> /64, uptime — -> 05:30:42, FPS — -> 58.7 (Optimal), simulated time — -> 06:42, conditions — -> overcast, status dot offline-yellow -> success. The row itself loaded in both cases (IP and modpack name present in the DOM), so this was the DTO and not a fetch failure.\n\nZERO other ServerStatusDto fields mismatched — all ten swept against models/telemetry.rs AND the server_statuses columns. It also REMOVED the `#[serde(flatten)] extra` catch-all: nothing in the SPA ever read it, and leaving it would have let the newly-typed golden pass the day the backend grew a field. That does not loosen the live read (serde ignores unknown fields anyway) — it makes the GATE strict.\n\nTHE SWALLOWED ERRORS, decided per site rather than blanket-logged:\n  sse.rs:80 — decode_frame is now pure, returning Rejected{error,payload} instead of None; the loop warns and sets the error signal. `connected` STAYS true because it IS connected — claiming otherwise would be a second lie. The last good status is kept, not cleared. The warn is DEDUPED (first occurrence of each distinct error, then powers of ten) because a schema mismatch fails EVERY frame and a per-frame warn buries its own message in seconds.\n  server_intel.rs:150 — deliberately NOT blanket-logged. `.ok()` was conflating `\"status\": null` (a server with no telemetry row — the golden's third row is exactly this, so warning would cry wolf on every render) with a PRESENT but unparseable object (a real contract breach). Split: absent silent, present-but-unparseable audited.\n\nA STRUCTURAL INSIGHT WORTH KEEPING: the decode lives in dto.rs, not sse.rs, because `mod sse` is #[cfg(target_arch = \"wasm32\")] in main.rs — so ANY test module inside it is never compiled by `cargo test`. A frame-decode policy nobody can test is how this defect stayed invisible for a month. Seven new tests now run natively.\n\nTHE GOLDEN GATE — the more valuable half, and enumerated rather than eyeballed. Every `api_get::<T>` cross-referenced against its r_api test: SIX goldens were `Value` while a DTO read them live. All six typed. Typing them found TWO MORE latent drifts nobody had hit — EventListItem::percent was f64 over an integer wire (the golden's `37` re-serialised as `37.0`), and OrbatSlot::assigned_to carried skip_serializing_if over a field the backend emits as explicit null.\n\nIt also distinguished escape hatches from accurate statements: /announcements, /wiki, /vehicle-database, /modpacks and /admin/audit-logs stay `Value` because they have NO typed consumer, and three of them are not fetched by any page at all. Each test now says so. And the SSE payload had NO FIXTURE OF ANY KIND — the corpus is all GET bodies — so one captured live frame is now pinned as LIVE_SSE_FRAME.",
       "program": "platform",
       "surfaces": [
         "DATA"
@@ -9058,13 +9058,14 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2306,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "cb8a95f5"
     },
     {
       "id": "T-307",
@@ -9730,7 +9731,7 @@
     {
       "id": "T-339",
       "title": "Two gate-harness gaps T-320 could not reach from its own files",
-      "summary": "Both found and diagnosed by T-320, both left because the files were outside its ownership. Neither is red today; both are one small change.\n\n1. **`vsuite.rs:366` launches its own chromium** and therefore does NOT get T-320's `ensure_gate_font_cache()`. It is green only because it renders ordinary routes, which survive a zero-font environment — the mission editor is the one route that reaches a per-character fallback and aborts. Moving `ensure_gate_font_cache()` into `cdp::launch` closes it for EVERY caller in one line. `cdp.rs` was not T-320's file. Do this one first; it is the durable form of the fix.\n\n2. **`smokes.rs render_check` builds its Harness with `api_proxy: None`**, so render-check cannot reach an API at all (T-226 hit this independently and had to drive Chrome by hand). T-320 confirmed it is NOT a wedge — the editor boots, installs all three bridges and answers --assert-js with no backend — but any assertion needing live data is impossible. The flag has to be threaded through `bin/gate.rs` -> `RenderCheckArgs`, and `bin/gate.rs` was outside T-320's list.\n\nLeave `gate smoke hydrate` returning exit 2 on 'backend not reachable' alone: T-320 judged it correct, and it is — a data-safety gate that could not run must not report green.\n\nT-339 BITES HARDER THAN 'no API' — sharpened by T-338, which hit it and worked around it.\n\nWith api_proxy: None, `--seed-auth` leaves the session HALF-hydrated: bootstrap sets `user` from localStorage but /me fails, so `access_token` stays None, `is_authenticated()` is false, and THE WHOLE USER MENU — including Sign Out — never renders. So it is not merely 'no live data'; any probe of an authenticated surface silently tests a signed-out page.\n\nT-338's workaround, using the app's own path, worth keeping until this is fixed: boot at `--path '/auth/callback#access_token=x&refresh_token=y&expires_at=2036-01-01T00:00:00Z' --seed-auth`, or history.pushState plus a synthetic PopStateEvent to it. set_tokens writes only the three token signals, so `user` is untouched.\n\nTwo more harness facts from the same slice:\n  - leptos_router DROPS THE FRAGMENT on anchor-click navigation (location.hash empty, parse_callback_hash fails). pushState + PopStateEvent carries it.\n  - Navigating the TOP-LEVEL document into the editor and then doing IndexedDB + wasm-bridge work in that same document WEDGED the renderer on four separate attempts, including with per-step timeout races. Hosting the editor in an iframe and driving IDB from the top level is stable and boots in ~2 polls. Root cause not chased — it is not that ticket's, but it will bite the next frontend probe, and it is a DIFFERENT wedge from the fontconfig abort T-320 fixed.",
+      "summary": "Both found and diagnosed by T-320, both left because the files were outside its ownership. Neither is red today; both are one small change.\n\n1. **`vsuite.rs:366` launches its own chromium** and therefore does NOT get T-320's `ensure_gate_font_cache()`. It is green only because it renders ordinary routes, which survive a zero-font environment — the mission editor is the one route that reaches a per-character fallback and aborts. Moving `ensure_gate_font_cache()` into `cdp::launch` closes it for EVERY caller in one line. `cdp.rs` was not T-320's file. Do this one first; it is the durable form of the fix.\n\n2. **`smokes.rs render_check` builds its Harness with `api_proxy: None`**, so render-check cannot reach an API at all (T-226 hit this independently and had to drive Chrome by hand). T-320 confirmed it is NOT a wedge — the editor boots, installs all three bridges and answers --assert-js with no backend — but any assertion needing live data is impossible. The flag has to be threaded through `bin/gate.rs` -> `RenderCheckArgs`, and `bin/gate.rs` was outside T-320's list.\n\nLeave `gate smoke hydrate` returning exit 2 on 'backend not reachable' alone: T-320 judged it correct, and it is — a data-safety gate that could not run must not report green.\n\nT-339 BITES HARDER THAN 'no API' — sharpened by T-338, which hit it and worked around it.\n\nWith api_proxy: None, `--seed-auth` leaves the session HALF-hydrated: bootstrap sets `user` from localStorage but /me fails, so `access_token` stays None, `is_authenticated()` is false, and THE WHOLE USER MENU — including Sign Out — never renders. So it is not merely 'no live data'; any probe of an authenticated surface silently tests a signed-out page.\n\nT-338's workaround, using the app's own path, worth keeping until this is fixed: boot at `--path '/auth/callback#access_token=x&refresh_token=y&expires_at=2036-01-01T00:00:00Z' --seed-auth`, or history.pushState plus a synthetic PopStateEvent to it. set_tokens writes only the three token signals, so `user` is untouched.\n\nTwo more harness facts from the same slice:\n  - leptos_router DROPS THE FRAGMENT on anchor-click navigation (location.hash empty, parse_callback_hash fails). pushState + PopStateEvent carries it.\n  - Navigating the TOP-LEVEL document into the editor and then doing IndexedDB + wasm-bridge work in that same document WEDGED the renderer on four separate attempts, including with per-step timeout races. Hosting the editor in an iframe and driving IDB from the top level is stable and boots in ~2 polls. Root cause not chased — it is not that ticket's, but it will bite the next frontend probe, and it is a DIFFERENT wedge from the fontconfig abort T-320 fixed.\n\nT-354 ASSESSED THE ONE-LINE MOVE AND RECOMMENDS AGAINST cdp::launch, with a real safety argument rather than a preference:\n\nPutting `ensure_gate_font_cache()` in cdp::launch would relocate an `unsafe { set_var }` from a single-threaded prologue INTO A MULTI-THREADED WINDOW — `launch` runs AFTER start_server has spawned live tokio tasks, and `reqwest::Client::new()` (which reads proxy env vars) is called inside `launch` itself. The existing SAFETY comment's claim that 'nothing else reads the environment' stops being true there. OnceLock limits the race to the first launch per process, which for vsuite is the only launch, but that is luck rather than design.\n\nBETTER ONE-LINER: `bin/gate.rs::main`, before `Runtime::block_on` — provably single-threaded, covers every subcommand permanently, and lets the other three call sites go. Both files are in this ticket's scope; T-354 changed neither.",
       "program": "platform",
       "surfaces": [
         "CI"
@@ -10036,7 +10037,7 @@
     {
       "id": "T-354",
       "title": "Chrome's stderr pipe must be drained or CDP deadlocks with no error anywhere",
-      "summary": "FOUND by T-232 the hard way — its second harness hung silently until it worked this out. This is a harness-authoring trap that will cost every future agent hours if it is not written down.\n\n**Chrome's stderr pipe must be drained, or it blocks at 64 KB and deadlocks mid-CDP with no error surfaced anywhere.** The symptom is indistinguishable from the page hanging — which is precisely the misdiagnosis that cost this program five sessions on T-320, where the real cause was the browser process aborting on a font lookup.\n\nTwo more from the same slice, both of which produced a misleading 26/44 score on its first run:\n  - Chrome's `innerText` APPLIES CSS `text-transform: uppercase`, so an assertion against 'Attached Missions' fails against a rendered 'ATTACHED MISSIONS'. T-226 hit this independently and 'fixed' a non-bug because of it.\n  - The platform sidebar (`layout.rs:296`) and the mobile drawer (`:97`) are BOTH `<aside>`, so an `<aside>` selector is ambiguous.\n\nWhere this belongs: `docs/website/EDITOR_GATE_RUNBOOK.md` §Known harness gaps, which T-320 created for exactly this purpose, and `tools/tbd-tools/src/cdp.rs` if the drain is missing there too — check whether the committed harness has this bug, because if it does it is a live intermittent gate failure, not just a trap for hand-rolled probes.",
+      "summary": "FOUND by T-232 the hard way — its second harness hung silently until it worked this out. This is a harness-authoring trap that will cost every future agent hours if it is not written down.\n\n**Chrome's stderr pipe must be drained, or it blocks at 64 KB and deadlocks mid-CDP with no error surfaced anywhere.** The symptom is indistinguishable from the page hanging — which is precisely the misdiagnosis that cost this program five sessions on T-320, where the real cause was the browser process aborting on a font lookup.\n\nTwo more from the same slice, both of which produced a misleading 26/44 score on its first run:\n  - Chrome's `innerText` APPLIES CSS `text-transform: uppercase`, so an assertion against 'Attached Missions' fails against a rendered 'ATTACHED MISSIONS'. T-226 hit this independently and 'fixed' a non-bug because of it.\n  - The platform sidebar (`layout.rs:296`) and the mobile drawer (`:97`) are BOTH `<aside>`, so an `<aside>` selector is ambiguous.\n\nWhere this belongs: `docs/website/EDITOR_GATE_RUNBOOK.md` §Known harness gaps, which T-320 created for exactly this purpose, and `tools/tbd-tools/src/cdp.rs` if the drain is missing there too — check whether the committed harness has this bug, because if it does it is a live intermittent gate failure, not just a trap for hand-rolled probes.\n\nSHIPPED 2026-07-26 — and the committed harness WAS deadlocking live, not merely trapping hand-rolled probes.\n\n`cdp::launch` piped BOTH stdout (:181) and stderr (:182) and NOTHING anywhere read either. `Browser` held `child: Child` and only ever called .id() and .wait().\n\nMEASURED, not inspected: with --enable-logging=stderr --v=1 redirected to a FILE so nothing throttled it, chrome emitted 87,583 bytes of stderr IN THE FIRST SECOND on about:blank alone, 109,581 by t+6s. The pipe holds 65,536. Chrome crosses it before a page exists.\n\nTHE BLOCK CAUGHT LIVE: browser main thread (tid == pid) in syscall=1 (write), wchan=anon_pipe_write, fd/2 -> pipe:[62837202]. All 32 threads in state S — `ps` alone tells you nothing, which is why this was invisible.\n\nA/B ON THE COMMITTED CODE, isolated runs identical but for cdp.rs: undrained 4 PASS / 2 FAIL of 6; drained 18 PASS / 0 FAIL of 18. Wall time also fell 11-16s to 6s, because the launch poll was stalling on the same block. Intermittent because whichever thread owns the threshold-crossing write is the one that parks — a pool thread is survivable, the main thread is fatal. It drove the real `gate doctor` binary via CHROME_HEADLESS_SHELL pointed at a wrapper that execs the pinned chrome with logging flags appended, so it was a true control with zero code changes.\n\nIT REPRODUCES THE EXACT MISDIAGNOSIS: gate doctor printed 'the headless browser process DIED during the probe' and `cdp: ws call timed out (Runtime.evaluate)` — T-320's font-abort signature — while the browser sat ALIVE AND BLOCKED. So two independent root causes wear the same face.\n\nNEW P-1 DISCRIMINATOR, measured: wedged browser -> curl exit 52 (empty reply, socket accepted); genuinely dead browser -> exit 7 (refused).\n\nIMPLEMENTATION CARE WORTH KEEPING: drain uses read_until(b'\\n') + lossy decode, deliberately NOT `lines()`, which returns Err on invalid UTF-8 — and a drain that can stop early re-opens the deadlock, because chrome's logs carry page-controlled console text. A bounded 200-line tail is kept and exposed as Browser::recent_output(), because chrome's stderr was the only copy of its own abort reason and launch was discarding it.\n\nVERIFIED INDEPENDENTLY from the command center after merge: `gate doctor: OK — 0 warning(s)` with liveness green.\n\nIt also determined this does NOT explain T-338's top-level-document wedge: that wedged four CONSECUTIVE times, while this gap is scheduling roulette that passed 4 of 6 pre-fix, and document topology has no path to stderr volume. Worth re-running T-338's repro now, since recent_output() would show what chrome said.",
       "program": "platform",
       "surfaces": [
         "CI"
@@ -10044,14 +10045,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3170,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 1
+      "priority": 1,
+      "shipped_at": "b19a4634"
     },
     {
       "id": "T-355",
@@ -10076,7 +10078,7 @@
     {
       "id": "T-356",
       "title": "The other side of the armory join has the identical defect, still open",
-      "summary": "FOUND by T-346 while proving why it must NOT trim. This is the mirror image of T-346, on the other side of the same join, and it produces the same user-visible empty dossier card from the opposite direction.\n\n`crates/map-engine-core/src/mission/orbat.rs:23-25` — OrbatSquadTemplate.faction is #[serde(default)] and untrimmed. `apps/website/api/src/handlers/events.rs:391` binds it straight into orbat_slots.faction with no normalisation. So attaching a mission with no `faction` key stores `\"\"`, and a padded one stores the padding.\n\nWHY THIS MATTERS MORE THAN IT LOOKS: T-346 deliberately chose require-and-refuse over trimming precisely BECAUSE this side does not normalise — ORBAT \"  USA  \" plus armory \"  USA  \" renders correctly today, and a one-sided trim would have broken it. Fixing this side makes the whole join consistent and only then is normalising either side safe. Until then both sides must keep storing bytes verbatim.\n\nSo: apply the SAME shape T-346 used — require the field, refuse a value that differs from its trimmed form, store verbatim. Do NOT trim one side. If you decide to normalise both sides together, that is a defensible larger change, but it needs a migration for the live rows (orbat_slots holds 18 rows today) and it must land as one commit.\n\nRead T-346's work on main first; it is the reference implementation and its test pins the over-rejection direction too.",
+      "summary": "FOUND by T-346 while proving why it must NOT trim. This is the mirror image of T-346, on the other side of the same join, and it produces the same user-visible empty dossier card from the opposite direction.\n\n`crates/map-engine-core/src/mission/orbat.rs:23-25` — OrbatSquadTemplate.faction is #[serde(default)] and untrimmed. `apps/website/api/src/handlers/events.rs:391` binds it straight into orbat_slots.faction with no normalisation. So attaching a mission with no `faction` key stores `\"\"`, and a padded one stores the padding.\n\nWHY THIS MATTERS MORE THAN IT LOOKS: T-346 deliberately chose require-and-refuse over trimming precisely BECAUSE this side does not normalise — ORBAT \"  USA  \" plus armory \"  USA  \" renders correctly today, and a one-sided trim would have broken it. Fixing this side makes the whole join consistent and only then is normalising either side safe. Until then both sides must keep storing bytes verbatim.\n\nSo: apply the SAME shape T-346 used — require the field, refuse a value that differs from its trimmed form, store verbatim. Do NOT trim one side. If you decide to normalise both sides together, that is a defensible larger change, but it needs a migration for the live rows (orbat_slots holds 18 rows today) and it must land as one commit.\n\nRead T-346's work on main first; it is the reference implementation and its test pins the over-rejection direction too.\n\nNEW ASYMMETRY SINCE T-346, flagged by T-357 rather than buried: T-346 now REJECTS a whitespace-only ARMORY faction (`it.faction.trim().is_empty()` -> 400) while the ORBAT side still ACCEPTS one. So a whitespace-only ORBAT faction is now PERMANENTLY UNMATCHABLE — no armory row can legally be created that would join to it. That is an additional argument for require-and-refuse on this side, which would reject \"\\t\" symmetrically.\n\nAlso from T-357, which ran the real pipeline: a TAB-only editor key DOES validate and DOES land verbatim in orbat_slots.faction — but `slug_key` neutralises it to the `faction` fallback on the COMPILED path, so there is no wire hazard downstream. The damage is confined to the DB column and the join, which is exactly this ticket.",
       "program": "platform",
       "surfaces": [
         "API",
@@ -10105,14 +10107,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3173,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 2
+      "priority": 2,
+      "shipped_at": "b19a4634"
     },
     {
       "id": "T-358",
@@ -10127,6 +10130,87 @@
       ],
       "status": "idea",
       "order": 3174,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-359",
+      "title": "Server Intel always renders \"Theater Unknown\" — it reads a field the backend has no column for",
+      "summary": "FOUND by T-306 while typing the DTOs. `server_intel.rs` reads a `terrain` field that the backend has NO COLUMN for, so the fallback fires unconditionally and the page renders \"Theater Unknown\" for every server, always. Not an edge case — the normal and only outcome.\n\nDecide which side is wrong before writing anything. Either the column should exist (in which case this is a migration plus an ingest change, and the game server has to send it), or the field should not be read (in which case remove the readout rather than leaving a permanent placeholder). A third possibility worth checking: the terrain may be derivable from the current mission, which the server status already references via current_match_id.\n\nSame family as T-306 itself: a DTO asserting something the backend never provides. T-306 removed the `#[serde(flatten)] extra` catch-all specifically so this class fails a gate in future rather than rendering a placeholder — check whether that now catches this one, and if not, why not.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3175,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-360",
+      "title": "DashboardResponse.server_status is the third read of one payload and still Option<Value>",
+      "summary": "FOUND by T-306. The server-status payload has THREE read sites. T-306 typed two of them (ServerStatusDto for the SSE stream, ServerRowDto for /servers) and could not type the third: `DashboardResponse::server_status` is still `Option<Value>` because typing it requires changing `dashboard.rs`, outside T-306's ownership.\n\nThis is not cosmetic — it is why T-232 needed a `vf64` helper to read the FPS by hand off an untyped Value, and it is the last place the same numeric mismatch can silently recur. T-232 already fixed a confident `FPS: 0` on that card; typing the field is what stops the next one.\n\nAlso from T-306, and cheap to do here: `/members`, `/registry/compat` and `POST /fire-missions/solve` are live-typed with NO fixture at all, so nothing pins their wire shape. Adding those captures is the same job.\n\nRead T-306's work first — it established which goldens legitimately stay `Value` (no typed consumer) versus which are escape hatches, and its per-test annotations say which is which. Do not undo that distinction.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3176,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-361",
+      "title": "The gate cannot browser-test any SSE page — its proxy awaits the whole body",
+      "summary": "FOUND by T-306, which had to hand-roll a driver to verify its own fix.\n\n`gate serve`'s proxy does `upstream.bytes().await`, so it CANNOT proxy an endless event stream — the request never completes. Combined with `render-check` hardcoding `api_proxy: None` (T-339), there is no supported way to browser-test a page driven by Server-Sent Events. T-306 worked around it with a shim that replays captured frame bytes plus a close, so the body is finite; the bytes are real and the only deviation is the close, which the `\\n\\n` splitter is indifferent to.\n\nThat workaround is sound for one slice but should not be the standing answer: the SSE hub is the realtime spine of Server Intel and the dashboard, and it is currently unverifiable by the gate. Make the proxy stream rather than buffer (`bytes_stream()` rather than `bytes()`), which also fixes it for any future long-poll or chunked endpoint.\n\nSequence this with T-339, which threads `api_proxy` through `bin/gate.rs` -> RenderCheckArgs — without that, a streaming proxy still has no caller. Both are in tools/tbd-tools; do them together or T-339 first.",
+      "program": "platform",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3177,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-362",
+      "title": "XDG_CACHE_HOME silently disables T-320's fontconfig fix, and this container sets it",
+      "summary": "FOUND by T-354 while working next door, and it means a SHIPPED fix is conditional in the very environment it was written for.\n\n`ensure_gate_font_cache()` (doctor.rs, T-320) RETURNS EARLY when XDG_CACHE_HOME is set — a deliberate respect-the-operator's-setting escape hatch. But this container EXPORTS XDG_CACHE_HOME as `~/.cache`, which is precisely the shared host/container path whose poisoned fontconfig cache caused the original bug: chromium resolved ZERO fonts while `fc-list` reported 783, and the browser process took SIGABRT in Skia's per-character fallback.\n\nT-354 measured the current state: the doctor still passes that way TODAY, so `~/.cache/fontconfig` is not currently poisoned. **The hazard is latent, not active.** But T-320's fix reads as unconditional and is not, so the next time anything inside the Debian container runs fontconfig — which is what poisoned it originally — the fix silently does not apply and the failure returns wearing its old misleading face ('the browser DIED' / Runtime.evaluate timeout).\n\nDECIDE THE PRECEDENCE, do not just remove the escape hatch. An operator who sets XDG_CACHE_HOME deliberately has a reason. Options: honour it but VERIFY the cache resolves fonts and fall back loudly if not (probably right — it makes the guarantee unconditional without ignoring the setting); or ignore it for the gate specifically, since the gate's cache is an implementation detail rather than user data.\n\nThe `fonts` doctor check T-320 added is what makes either option safe: it launches chromium and watches for the marker, so a wrong precedence decision fails loudly at preflight instead of mid-run.",
+      "program": "platform",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3178,
       "stream": "web-platform",
       "targets": [
         "website"
