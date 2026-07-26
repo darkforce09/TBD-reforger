@@ -1412,15 +1412,22 @@ pub fn orbat_rename_squad(squad_id: String, name: String) -> bool {
 }
 
 /// T-180.8 — REPLACE-apply a Faction Library doc onto `side` (H-L2 / H-L7b).
-pub fn orbat_apply_faction(side: String, doc: FactionDoc) -> bool {
-    let did = OPS_CTX.with(|c| {
+///
+/// **T-308 — returns the refusal instead of swallowing it.** This used to be `-> bool` over
+/// `apply_faction_library(...).is_ok()`, so the one thing the operator needed — *which* squads
+/// block the apply and how to clear them — was discarded one line after it was computed, and the
+/// dialog printed "Apply failed." on top of a confirm the operator had already accepted. The
+/// `Err` string is `ApplyFactionError`'s own `Display`; the other two arms cover the cases where
+/// there is no document to apply onto at all (previously also a bare `false`).
+pub fn orbat_apply_faction(side: String, doc: FactionDoc) -> Result<(), String> {
+    let res = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
-            return false;
+            return Err("No mission editor is open.".to_string());
         };
         let d = ctx.doc.borrow();
         let Some(core) = d.as_ref() else {
-            return false;
+            return Err("No mission document is loaded.".to_string());
         };
         let layer_id = ensure_layer(ctx, core);
         let input = FactionLibraryInput {
@@ -1444,36 +1451,34 @@ pub fn orbat_apply_faction(side: String, doc: FactionDoc) -> bool {
                 })
                 .collect(),
         };
-        let ok = apply_faction_library(core, &side, &layer_id, &input).is_ok();
-        if ok {
-            // T-068.15.2 — seed default cargo after a kit apply. Cargo-key-absent
-            // slots only, so user edits and library-carried cargo[] are preserved;
-            // same borrow scope ⇒ one undo step with the apply.
-            if let Ok(map) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) {
-                if let Some(obj) = map.as_object() {
-                    for (sid, slot) in obj {
-                        let Some(rn) = slot
-                            .get("assetId")
-                            .and_then(|v| v.as_str())
-                            .filter(|s| !s.is_empty())
-                        else {
-                            continue;
-                        };
-                        let lo = slot
-                            .get("loadout")
-                            .filter(|l| !l.is_null())
-                            .map(|l| l.to_string());
-                        seed_cargo_in_core(core, sid, rn, lo.as_deref());
-                    }
+        apply_faction_library(core, &side, &layer_id, &input).map_err(|e| e.to_string())?;
+        // T-068.15.2 — seed default cargo after a kit apply. Cargo-key-absent
+        // slots only, so user edits and library-carried cargo[] are preserved;
+        // same borrow scope ⇒ one undo step with the apply.
+        if let Ok(map) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) {
+            if let Some(obj) = map.as_object() {
+                for (sid, slot) in obj {
+                    let Some(rn) = slot
+                        .get("assetId")
+                        .and_then(|v| v.as_str())
+                        .filter(|s| !s.is_empty())
+                    else {
+                        continue;
+                    };
+                    let lo = slot
+                        .get("loadout")
+                        .filter(|l| !l.is_null())
+                        .map(|l| l.to_string());
+                    seed_cargo_in_core(core, sid, rn, lo.as_deref());
                 }
             }
         }
-        ok
+        Ok(())
     });
-    if did {
+    if res.is_ok() {
         crate::mission_history::after_local_edit();
     }
-    did
+    res
 }
 
 /// T-180.8 — `add_vehicle` + `attach_vehicle` with map position (H-L7 / H8).

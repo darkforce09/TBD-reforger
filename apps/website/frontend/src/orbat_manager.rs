@@ -273,10 +273,18 @@ pub fn OrbatManagerDialog(
                                     status.set("Apply cancelled.".into());
                                     return;
                                 }
-                                if crate::editor_ops::orbat_apply_faction(side, uf.doc) {
-                                    status.set("Template applied.".into());
-                                } else {
-                                    status.set("Apply failed.".into());
+                                // T-308 — show the refusal, don't paraphrase it. The operator has
+                                // already accepted a "Replace all ORBAT under {side}" confirm, so
+                                // "Apply failed." is the worst possible reply: it neither undoes
+                                // the decision nor says what to do next. `orbat_apply_faction`
+                                // hands back `ApplyFactionError`'s own sentence, which names the
+                                // squads that block and how to clear them.
+                                match crate::editor_ops::orbat_apply_faction(side, uf.doc) {
+                                    Ok(()) => status.set("Template applied.".into()),
+                                    Err(msg) => {
+                                        leptos::logging::warn!("Apply Template refused: {msg}");
+                                        status.set(msg);
+                                    }
                                 }
                             }
                             #[cfg(not(target_arch = "wasm32"))]
@@ -399,12 +407,26 @@ pub fn OrbatManagerDialog(
                         }
                     >"Save as"</button>
                     <div class="ml-auto flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
-                        <span class="max-w-[12rem] truncate text-primary/80">{move || status.get()}</span>
                         <span>"Total Entities: "<span class="font-code-md text-primary">{entity_count}</span></span>
                         <span class="text-white/20">"|"</span>
                         <span>"Vehicles: "<span class="font-code-md text-tactical-yellow">{vehicle_count}</span></span>
                     </div>
                 </div>
+
+                // T-308 — status strip. This lived as a `max-w-[12rem] truncate` span inside the
+                // 48 px template bar, which clipped every message past ~30 characters — so the one
+                // message that matters, Apply's refusal (which squads block, and how to clear
+                // them), was structurally unreadable even once it was threaded out. Its own row,
+                // full width, wrapping, so the whole sentence lands.
+                <Show when=move || !status.get().is_empty()>
+                    <div
+                        role="status"
+                        aria-live="polite"
+                        class="shrink-0 whitespace-pre-wrap border-b border-white/5 bg-surface-container-low px-4 py-2 font-label-sm text-label-sm leading-relaxed text-primary/90"
+                    >
+                        {move || status.get()}
+                    </div>
+                </Show>
 
                 // Main: tree | inspector
                 <div class="flex min-h-0 flex-1 overflow-hidden">

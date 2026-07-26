@@ -9,6 +9,14 @@
 //! [`ApplyFactionError::WouldCollapseSquads`]), and it pinned every placement to the Everon centre
 //! regardless of the doc's actual terrain.
 //!
+//! T-308 fixed where T-217 drew that line. It refused at *more than one squad*, but
+//! [`super::place_character_under_side`] mints a **new squad for every single map placement**, so
+//! ">1 squad" is the ordinary state of any mission the operator has actually worked on — a fresh
+//! mission survived exactly one placement before Apply became permanently unusable. The refusal is
+//! now scoped to squads that carry **authoring** ([`squad_authorship`]); a bare placement artifact
+//! is folded into the Apply target instead, which keeps its body, id and map position and hands it
+//! a library role.
+//!
 //! Pure helper over [`MissionDocCore`] so H1–H4 / H9 run as native `cargo test --features doc`.
 
 use serde_json::Value;
@@ -101,29 +109,46 @@ pub struct ApplyFactionResult {
     pub vehicles_applied: usize,
 }
 
+/// One squad that blocks an Apply, and the authoring that makes it block (T-308).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AuthoredSquad {
+    /// The squad's id.
+    pub id: String,
+    /// The label the operator sees in the ORBAT tree (falls back to [`Self::id`] when unnamed).
+    pub name: String,
+    /// Why it reads as authored, phrased for the operator: `"3 slots"`, `"renamed"`, ….
+    pub why: String,
+    /// Slots it holds — the bodies that would change hands.
+    pub slots: usize,
+}
+
 /// Error from [`apply_faction_library`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ApplyFactionError {
     /// `side` was not BLUFOR / OPFOR / INDFOR.
     InvalidSide(String),
-    /// T-217 — the side holds more than one squad, and [`FactionLibraryInput`] has no squad level
-    /// to hold them. Apply is refused **before it writes anything**.
+    /// T-217 / T-308 — the side holds squads whose structure [`FactionLibraryInput`] has no squad
+    /// level to express. Apply is refused **before it writes anything**.
     ///
-    /// A faction library doc is `roles[] + vehicles[]`. Squad boundaries, `leaderSlotId`, callsign,
-    /// rank and map positions are not in it, so Save-as-template never captured them and Apply
-    /// could not restore them: the old code kept `squadIds[0]`, `remove_squad`'d the rest — which
-    /// takes each squad's slots with it — and reported success. That is unrecoverable loss of
-    /// operator work, so a multi-squad side is now refused instead. Expressing it properly needs a
-    /// squad level in `faction-library.schema.json` + `FactionDoc`, which is a schema change and
-    /// out of this fix's reach.
+    /// A faction library doc is `roles[] + vehicles[]`. Squad boundaries, names, callsigns and
+    /// vehicle assignments are not in it, so Save-as-template never captured them and Apply cannot
+    /// restore them: the pre-T-217 code kept `squadIds[0]`, `remove_squad`'d the rest — which takes
+    /// each squad's slots with it — and reported success. Expressing squads properly needs a squad
+    /// level in `faction-library.schema.json` + `FactionDoc`, which is a schema change and out of
+    /// this fix's reach.
+    ///
+    /// **T-308 scope:** only squads that show authoring block. `squadIds[0]` is the Apply target
+    /// and is mutated in place, so it never blocks; a placement-minted squad past it is folded in
+    /// (see [`squad_authorship`]) rather than refused over.
     WouldCollapseSquads {
         /// The side that was targeted.
         side: String,
-        /// Every live squad on the side, in `faction.squadIds` order. `[0]` is the one Apply would
-        /// have kept; `[1..]` are the ones it would have deleted.
+        /// Every live squad on the side, in `faction.squadIds` order. `[0]` is the Apply target.
         squad_ids: Vec<String>,
-        /// Slots inside `squad_ids[1..]` — the bodies that would have gone with them.
-        slots_destroyed: usize,
+        /// The squads past `[0]` that hold authoring — the ones that actually block.
+        blocking: Vec<AuthoredSquad>,
+        /// Slots inside [`Self::WouldCollapseSquads::blocking`] — the bodies at stake.
+        slots_at_risk: usize,
     },
 }
 
@@ -134,18 +159,30 @@ impl std::fmt::Display for ApplyFactionError {
             Self::WouldCollapseSquads {
                 side,
                 squad_ids,
-                slots_destroyed,
-            } => write!(
-                f,
-                "refusing to apply a template onto {side}: it has {} squads, and a faction \
-                 template is a flat role list with no squad level — applying would keep {} and \
-                 permanently delete the other {}, along with {slots_destroyed} slot(s) and their \
-                 leaders, callsigns, ranks and map positions. Nothing was changed. Merge the side \
-                 down to one squad first, or apply onto a side that has none.",
-                squad_ids.len(),
-                squad_ids.first().map_or("no squad", String::as_str),
-                squad_ids.len().saturating_sub(1),
-            ),
+                blocking,
+                slots_at_risk,
+            } => {
+                let named = blocking
+                    .iter()
+                    .map(|b| format!("\"{}\" ({})", b.name, b.why))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                write!(
+                    f,
+                    "refusing to apply a template onto {side}: it has {} squads, {} of them \
+                     holding ORBAT you authored — {named} — and a faction template is a flat role \
+                     list with no squad level. Applying folds the whole side into one squad, so \
+                     those squad boundaries, names, callsigns and vehicles would be gone for good: \
+                     Save-as-template never captured them, so nothing can put them back. Nothing \
+                     was changed — those squads, and the {} in them, are exactly as you left them, \
+                     leaders, callsigns, ranks and map positions included. Merge them into one \
+                     squad or delete them, then apply again. (Squads a map placement created and \
+                     you never edited are folded in automatically; these are not those.)",
+                    squad_ids.len(),
+                    blocking.len(),
+                    plural(*slots_at_risk, "slot"),
+                )
+            }
         }
     }
 }
@@ -161,10 +198,12 @@ impl std::error::Error for ApplyFactionError {}
 /// `uid` every spawn point / roster reference keys on. Vehicles stay
 /// replace-semantics (no downstream identity hangs off them).
 ///
-/// **Squads are never destroyed (T-217).** A side holding more than one squad is refused with
+/// **Authored squads are never destroyed (T-217 / T-308).** A side holding a squad the operator
+/// built — grouped, renamed, given a callsign or vehicles — is refused with
 /// [`ApplyFactionError::WouldCollapseSquads`] before the first write, because `lib` is flat and
-/// cannot carry them back. Apply targets a side with zero squads (mint one) or exactly one
-/// (mutate it) — one squad in, one squad out.
+/// cannot carry that back. Squads a **map placement** minted and the operator never touched are not
+/// that: they are folded into the target, so their bodies keep their ids and map positions and take
+/// library roles. One squad out, every placed body still on the map.
 ///
 /// Placement for NEW slots: `(anchor.x + 15*i, anchor.y)`; vehicles
 /// `(anchor.x + 30 + 20*j, anchor.y - 30)`, where `anchor` is [`apply_anchor_xy`] — the centre of
@@ -184,17 +223,23 @@ pub fn apply_faction_library(
     // T-217 — refuse BEFORE the first write. Everything below this point mutates the doc,
     // `ensure_side_faction` included, so the guard sits above all of it: a refused Apply leaves
     // the document exactly as it found it, with nothing half-applied to undo.
+    //
+    // T-308 — but refuse on *authoring*, not on arithmetic. `squadIds[0]` is the mutate target and
+    // survives by construction, so only `[1..]` can be lost; of those, only the ones
+    // `squad_authorship` calls authored are worth blocking a whole feature over.
     let existing_squads = faction_squad_ids(doc, &faction_id);
-    if existing_squads.len() > 1 {
-        let slots_destroyed: usize = existing_squads
-            .iter()
-            .skip(1)
-            .map(|sid| squad_slot_ids(doc, sid).len())
-            .sum();
+    let blocking: Vec<AuthoredSquad> = existing_squads
+        .iter()
+        .skip(1)
+        .filter_map(|sid| squad_authorship(doc, sid))
+        .collect();
+    if !blocking.is_empty() {
+        let slots_at_risk: usize = blocking.iter().map(|b| b.slots).sum();
         return Err(ApplyFactionError::WouldCollapseSquads {
             side: side.to_string(),
             squad_ids: existing_squads,
-            slots_destroyed,
+            blocking,
+            slots_at_risk,
         });
     }
 
@@ -207,8 +252,8 @@ pub fn apply_faction_library(
         lib.name.clone()
     };
 
-    // Reuse the side's one squad (renamed to the library), or mint one if it has none. The guard
-    // above already proved there is no second squad to lose.
+    // Reuse the side's first squad (renamed to the library), or mint one if it has none. The guard
+    // above already proved there is no *authored* squad to lose.
     let squad_id = match existing_squads.first() {
         Some(first) => {
             doc.rename_squad(first, &squad_name);
@@ -221,7 +266,28 @@ pub fn apply_faction_library(
         }
     };
 
-    // Existing slots in squad order = the mutate targets.
+    // T-308 — fold the placement-minted squads into the target BEFORE reading its slot list, so
+    // every placed body becomes a mutate target: its id, map position, callsign and rank survive
+    // and it takes a library role, instead of being stranded in a squad the flat template cannot
+    // describe. Leaving them alone was the other option and it is worse — the operator confirmed
+    // "replace all ORBAT under this side", and a side that comes back as the template *plus* two
+    // untouched leftovers is neither the old ORBAT nor the new one.
+    for folded in existing_squads.iter().skip(1) {
+        let carried = squad_slot_ids(doc, folded);
+        if carried.is_empty() {
+            // An empty squad (`orbat_add_squad`, still on its minted name) has nothing to carry
+            // over — drop the husk rather than leave it standing behind a whole-side replace.
+            doc.remove_squad(folded);
+            continue;
+        }
+        for slot_id in carried {
+            // `move_slot_to_squad` rewrites both `slotIds`, re-denses `index`, and garbage-collects
+            // the source squad as its last slot leaves — so the fold needs no cleanup pass.
+            doc.move_slot_to_squad(&slot_id, &squad_id);
+        }
+    }
+
+    // Existing slots in squad order (target's own first, then folded) = the mutate targets.
     let existing_slots = squad_slot_ids(doc, &squad_id);
 
     let mut slot_ids: Vec<String> = Vec::with_capacity(lib.roles.len());
@@ -347,6 +413,103 @@ fn faction_squad_ids(doc: &MissionDocCore, faction_id: &str) -> Vec<String> {
                 .collect()
         })
         .unwrap_or_default()
+}
+
+/// Does this squad hold operator authoring, or is it a squad the editor minted on its own? (T-308)
+///
+/// [`super::place_character_under_side`] mints a **new squad on every single map placement** — one
+/// slot, named `Squad {n}`, that slot auto-set as leader — and `editor_ops::orbat_add_squad` mints
+/// an empty one under the same `Squad {n}` label. So on any mission the operator has actually
+/// worked on, a multi-squad side is the *ordinary* state. T-217's `existing_squads.len() > 1`
+/// therefore refused the normal case: a brand-new mission survived exactly one placement before
+/// Apply Template was dead for good. Lowering the number would have been the wrong repair — the
+/// guard protects something real. Naming what it protects is the right one.
+///
+/// What a flat `FactionLibraryInput` provably cannot carry back is **squad-level** structure: the
+/// boundary the operator drew, the name they typed, the squad callsign, the vehicles they attached.
+/// A machine-minted squad has none of it. Folding it into the Apply target costs only a boundary no
+/// operator ever drew, and the body inside keeps its id, map position, callsign and rank —
+/// `update_slot_role_character` writes role/tag/character/loadout and nothing else — so it comes out
+/// the far side as a library role standing exactly where it was placed.
+///
+/// Slot-level `callsign`/`rank` are deliberately **not** a signal here for that same reason: they
+/// survive the fold intact. They are only ever at risk from the surplus-slot trim below, which is
+/// the same trim `squadIds[0]` has always been subject to and which the "Replace all ORBAT under
+/// {side}" confirm already covers.
+///
+/// `Some(_)` ⇒ authored, Apply must refuse. `None` ⇒ machine-minted, Apply may fold it in.
+fn squad_authorship(doc: &MissionDocCore, squad_id: &str) -> Option<AuthoredSquad> {
+    let root = serde_json::from_str::<Value>(&doc.small_maps_json()).ok()?;
+    let sq = root.get("squadsById")?.get(squad_id)?;
+
+    let name = sq
+        .get("name")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string();
+    let slots = sq
+        .get("slotIds")
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len);
+    let vehicles = sq
+        .get("vehicleIds")
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len);
+    let callsign = sq
+        .get("callsign")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .trim();
+
+    // First matching reason wins — one concrete phrase reads better in the refusal than a list.
+    // An EMPTY squad (`slots == 0`, from `orbat_add_squad`) is deliberately not a reason on its own:
+    // it holds no body, no name of the operator's choosing and nothing the template could restore,
+    // so blocking a whole-side replace on an invisible husk would be the same over-refusal this
+    // ticket exists to remove. Rename it, give it a callsign or a vehicle, and it blocks.
+    let why = if slots > 1 {
+        plural(slots, "slot")
+    } else if !is_minted_squad_name(&name) {
+        "renamed".to_string()
+    } else if !callsign.is_empty() {
+        format!("callsign {callsign}")
+    } else if vehicles > 0 {
+        plural(vehicles, "vehicle")
+    } else {
+        return None;
+    };
+
+    Some(AuthoredSquad {
+        id: squad_id.to_string(),
+        name: if name.trim().is_empty() {
+            squad_id.to_string()
+        } else {
+            name
+        },
+        why,
+        slots,
+    })
+}
+
+/// `1 slot` / `3 slots`. The refusal is the operator's entire explanation of why Apply stopped, so
+/// it is worth reading like a sentence rather than a debug dump.
+fn plural(n: usize, noun: &str) -> String {
+    if n == 1 {
+        format!("{n} {noun}")
+    } else {
+        format!("{n} {noun}s")
+    }
+}
+
+/// `true` when `name` is still the machine-minted `Squad {n}` label, i.e. nobody renamed it.
+///
+/// Matches the one format both minters use — [`super::place_character_under_side`] and
+/// `editor_ops::orbat_add_squad` both write `format!("Squad {}", ordinal + 1)`. An empty name counts
+/// as minted too: it is the absence of an operator's choice, not one.
+fn is_minted_squad_name(name: &str) -> bool {
+    let n = name.trim();
+    n.is_empty()
+        || n.strip_prefix("Squad ")
+            .is_some_and(|d| !d.is_empty() && d.bytes().all(|b| b.is_ascii_digit()))
 }
 
 /// Slot ids of a squad, in `slotIds` order (the mutate targets).
@@ -796,21 +959,31 @@ mod tests {
             ApplyFactionError::WouldCollapseSquads {
                 side,
                 squad_ids,
-                slots_destroyed,
+                blocking,
+                slots_at_risk,
             } => {
                 assert_eq!(side, "OPFOR");
                 assert_eq!(squad_ids, &seeded);
-                // squads 1 and 2, two slots each — the bodies the old path took with them.
-                assert_eq!(*slots_destroyed, 4);
+                // squads 1 and 2 — `squadIds[0]` is the mutate target and is never at risk.
+                assert_eq!(blocking.len(), 2);
+                assert_eq!(blocking[0].id, "squad-OPFOR-1");
+                assert_eq!(blocking[1].id, "squad-OPFOR-2");
+                // T-308: they block on the grouping, which is what a flat template cannot express.
+                assert!(blocking.iter().all(|b| b.why == "2 slots"), "{blocking:?}");
+                // two slots each — the bodies the old path took with them.
+                assert_eq!(*slots_at_risk, 4);
             }
             other => panic!("expected WouldCollapseSquads, got {other:?}"),
         }
 
-        // "…and say so": the message names the side, the count and the fact nothing changed.
+        // "…and say so": the message names the side, the count, the squads by name, and the fact
+        // nothing changed.
         let msg = err.to_string();
         assert!(msg.contains("OPFOR"), "{msg}");
         assert!(msg.contains("3 squads"), "{msg}");
         assert!(msg.contains("Nothing was changed"), "{msg}");
+        assert!(msg.contains("\"Squad 1\" (2 slots)"), "{msg}");
+        assert!(msg.contains("\"Squad 2\" (2 slots)"), "{msg}");
 
         // N in, N out — the whole document is untouched.
         assert_eq!(small(&doc), small_before);
@@ -934,6 +1107,233 @@ mod tests {
                 s["slot-BLUFOR-apply-0"]["position"]["y"], 6400.0,
                 "terrain {terrain:?}"
             );
+        }
+    }
+
+    // ── T-308 — the refusal threshold vs. how placements actually mint squads ────────────────────
+
+    /// One map placement, driven through the real `place_character_under_side` — the same call the
+    /// editor makes — so these tests exercise the shape the operator actually produces, not a
+    /// hand-built approximation of it.
+    fn place(doc: &MissionDocCore, side: &str, n: usize, x: f64, y: f64) -> String {
+        let slot_id = format!("slot-placed-{side}-{n}");
+        crate::doc::place_character_under_side(
+            doc,
+            side,
+            &slot_id,
+            "lyr",
+            "Rifleman",
+            None,
+            Some("{PLACED}Body.et".to_string()),
+            x,
+            y,
+            0.0,
+            0.0,
+        )
+        .expect("place");
+        slot_id
+    }
+
+    fn side_squad_ids(doc: &MissionDocCore, side: &str) -> Vec<String> {
+        faction_squad_ids(doc, &format!("faction-{side}"))
+    }
+
+    /// T-308 headline — **two placements then Apply is the normal case, and it works.**
+    ///
+    /// `place_character_under_side` mints a squad per placement, so T-217's `len() > 1` refusal
+    /// killed Apply Template the moment a mission held two placed characters. Both bodies must
+    /// come out the far side: same slot ids, same map positions, same callsign/rank, wearing the
+    /// library's roles — one squad, nothing deleted.
+    #[test]
+    fn two_placements_then_apply_folds_them_in() {
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        let a = place(&doc, "BLUFOR", 0, 1111.0, 2222.0);
+        let b = place(&doc, "BLUFOR", 1, 3333.0, 4444.0);
+        doc.update_slot_identity(&b, Some("A-2".into()), Some("Corporal".into()));
+        assert_eq!(side_squad_ids(&doc, "BLUFOR").len(), 2, "two squads minted");
+
+        let r = apply_faction_library(&doc, "BLUFOR", "lyr", &two_role_lib()).expect("apply");
+        assert_eq!(r.roles_applied, 2);
+        assert_eq!(
+            r.leader_slot_id, a,
+            "SL role landed on the first placed body"
+        );
+
+        // One squad out, named for the library — and it is the first placement's squad.
+        let squads = side_squad_ids(&doc, "BLUFOR");
+        assert_eq!(squads, vec![r.squad_id.clone()]);
+        assert_eq!(
+            small(&doc)["squadsById"][&r.squad_id]["name"],
+            "Soviet Army 1980s"
+        );
+        assert_eq!(side_slot_count(&doc, "BLUFOR"), 2);
+
+        // Both placed bodies survived, keeping id + position; only role/tag/character changed.
+        let s = slots(&doc);
+        assert_eq!(s[&a]["position"]["x"], 1111.0);
+        assert_eq!(s[&a]["position"]["y"], 2222.0);
+        assert_eq!(s[&b]["position"]["x"], 3333.0);
+        assert_eq!(s[&b]["position"]["y"], 4444.0);
+        assert_eq!(s[&a]["role"], "Squad Leader");
+        assert_eq!(s[&b]["role"], "Rifleman");
+        assert_eq!(s[&a]["assetId"], "{AAAA}Char.et");
+        assert_eq!(s[&b]["assetId"], "{BBBB}Rifleman.et");
+        // Identity the template never carried is untouched by the fold.
+        assert_eq!(s[&b]["callsign"], "A-2");
+        assert_eq!(s[&b]["rank"], "Corporal");
+    }
+
+    /// Five placements against a two-role library: the fold makes every placed body a mutate
+    /// target, so the side converges on the library exactly as a single-squad side does (H9), and
+    /// a re-apply is idempotent rather than a second refusal.
+    #[test]
+    fn many_placements_converge_and_reapply_is_idempotent() {
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        for i in 0..5 {
+            place(&doc, "OPFOR", i, 1000.0 + 10.0 * i as f64, 2000.0);
+        }
+        assert_eq!(side_squad_ids(&doc, "OPFOR").len(), 5);
+
+        apply_faction_library(&doc, "OPFOR", "lyr", &two_role_lib()).expect("first");
+        assert_eq!(side_squad_ids(&doc, "OPFOR").len(), 1);
+        assert_eq!(side_slot_count(&doc, "OPFOR"), 2);
+
+        apply_faction_library(&doc, "OPFOR", "lyr", &two_role_lib()).expect("second");
+        assert_eq!(side_squad_ids(&doc, "OPFOR").len(), 1);
+        assert_eq!(side_slot_count(&doc, "OPFOR"), 2);
+
+        // The first two placements are the surviving bodies, still where they were placed.
+        let s = slots(&doc);
+        assert_eq!(s["slot-placed-OPFOR-0"]["position"]["x"], 1000.0);
+        assert_eq!(s["slot-placed-OPFOR-1"]["position"]["x"], 1010.0);
+    }
+
+    /// The narrowing must not become a licence to collapse anything. A placement squad the operator
+    /// **renamed** is authoring the flat template cannot carry, so Apply still refuses — and still
+    /// writes nothing.
+    #[test]
+    fn a_renamed_placement_squad_still_refuses() {
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        place(&doc, "BLUFOR", 0, 1111.0, 2222.0);
+        place(&doc, "BLUFOR", 1, 3333.0, 4444.0);
+        let second = side_squad_ids(&doc, "BLUFOR")[1].clone();
+        doc.rename_squad(&second, "Alpha");
+
+        let small_before = small(&doc);
+        let slots_before = slots(&doc);
+        let err =
+            apply_faction_library(&doc, "BLUFOR", "lyr", &two_role_lib()).expect_err("refuse");
+        match &err {
+            ApplyFactionError::WouldCollapseSquads { blocking, .. } => {
+                assert_eq!(blocking.len(), 1);
+                assert_eq!(blocking[0].id, second);
+                assert_eq!(blocking[0].name, "Alpha");
+                assert_eq!(blocking[0].why, "renamed");
+            }
+            other => panic!("expected WouldCollapseSquads, got {other:?}"),
+        }
+        assert!(err.to_string().contains("\"Alpha\" (renamed)"), "{err}");
+        assert_eq!(small(&doc), small_before, "refusal writes nothing");
+        assert_eq!(slots(&doc), slots_before, "refusal writes nothing");
+    }
+
+    /// Vehicles are squad-level and the library's vehicle rows only ever land on the target squad,
+    /// so a placement squad the operator attached a vehicle to is authoring too.
+    #[test]
+    fn a_placement_squad_with_a_vehicle_still_refuses() {
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        place(&doc, "INDFOR", 0, 1111.0, 2222.0);
+        place(&doc, "INDFOR", 1, 3333.0, 4444.0);
+        let second = side_squad_ids(&doc, "INDFOR")[1].clone();
+        doc.add_vehicle("veh-hand", "{V}Truck.et", Some(1.0), Some(2.0), None, None);
+        doc.attach_vehicle(&second, "veh-hand");
+
+        let err =
+            apply_faction_library(&doc, "INDFOR", "lyr", &two_role_lib()).expect_err("refuse");
+        match &err {
+            ApplyFactionError::WouldCollapseSquads { blocking, .. } => {
+                assert_eq!(blocking.len(), 1);
+                assert_eq!(blocking[0].why, "1 vehicle");
+            }
+            other => panic!("expected WouldCollapseSquads, got {other:?}"),
+        }
+        // The vehicle is still attached — `garbage_collect_squad_in_txn` would have deleted it.
+        assert!(small(&doc)["vehiclesById"].get("veh-hand").is_some());
+    }
+
+    /// `editor_ops::orbat_add_squad` mints an EMPTY squad on the same `Squad {n}` name. It holds no
+    /// body and no operator-chosen anything, so it must not deadlock Apply — the fold drops the
+    /// husk. Rename it and it becomes authoring, and blocks like everything else.
+    #[test]
+    fn an_empty_minted_squad_folds_away_but_a_renamed_one_blocks() {
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        place(&doc, "BLUFOR", 0, 1111.0, 2222.0);
+        doc.add_squad("squad-BLUFOR-9", "faction-BLUFOR", "Squad 2", None);
+        assert_eq!(side_squad_ids(&doc, "BLUFOR").len(), 2);
+
+        apply_faction_library(&doc, "BLUFOR", "lyr", &two_role_lib()).expect("apply");
+        assert_eq!(side_squad_ids(&doc, "BLUFOR").len(), 1, "husk dropped");
+        assert!(small(&doc)["squadsById"].get("squad-BLUFOR-9").is_none());
+
+        // Same shape, but named by the operator → authoring → refuse.
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        place(&doc, "BLUFOR", 0, 1111.0, 2222.0);
+        doc.add_squad("squad-BLUFOR-9", "faction-BLUFOR", "Weapons Det", None);
+        let err =
+            apply_faction_library(&doc, "BLUFOR", "lyr", &two_role_lib()).expect_err("refuse");
+        assert!(
+            err.to_string().contains("\"Weapons Det\" (renamed)"),
+            "{err}"
+        );
+    }
+
+    /// `squadIds[0]` is the mutate target, so its own authoring never blocks: applying onto a side
+    /// whose only squad is hand-named with four bodies is the H9 happy path, not a refusal.
+    #[test]
+    fn the_target_squads_own_authoring_never_blocks() {
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        let seeded = seed_squads(&doc, "BLUFOR", 1, 4);
+        doc.rename_squad(&seeded[0], "Alpha");
+        let r = apply_faction_library(&doc, "BLUFOR", "lyr", &two_role_lib()).expect("apply");
+        assert_eq!(r.squad_id, seeded[0]);
+        assert_eq!(side_slot_count(&doc, "BLUFOR"), 2);
+    }
+
+    /// The rename test is only as good as the name it recognises — pin it against
+    /// `place_character_under_side`'s `format!("Squad {}", ordinal + 1)`.
+    #[test]
+    fn minted_squad_names_are_recognised() {
+        for minted in ["Squad 1", "Squad 2", "Squad 17", "Squad 0", "", "  "] {
+            assert!(is_minted_squad_name(minted), "{minted:?}");
+        }
+        for authored in [
+            "Alpha",
+            "Squad",
+            "Squad A",
+            "Squad ",
+            "1st Squad",
+            "Squad 1a",
+        ] {
+            assert!(!is_minted_squad_name(authored), "{authored:?}");
+        }
+        // …and the real thing: what a placement actually writes.
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        place(&doc, "BLUFOR", 0, 1.0, 2.0);
+        place(&doc, "BLUFOR", 1, 3.0, 4.0);
+        let root = small(&doc);
+        for sid in side_squad_ids(&doc, "BLUFOR") {
+            let name = root["squadsById"][&sid]["name"]
+                .as_str()
+                .unwrap_or_default();
+            assert!(is_minted_squad_name(name), "placement minted {name:?}");
         }
     }
 
