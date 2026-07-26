@@ -4,10 +4,18 @@
 //! to Discord consent. `discord_callback` validates state (constant-time), exchanges
 //! the code, upserts the user, syncs roles, and 302-redirects to the SPA callback with
 //! the tokens in the URL fragment — or to an error reason on any failure.
+//!
+//! **Role-sync invariant (T-185).** Roles are only ever written when Discord actually
+//! answered. See [`RoleSnapshot`] — an unreachable Discord must leave the stored
+//! snapshot and the user's tier untouched, because losing the snapshot is permanent.
 
 use axum::body::Body;
 use axum::extract::{Query, State};
-use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
+// Split rather than `{HeaderMap, HeaderValue, StatusCode, header}`: the two rustfmt style
+// editions in play disagree on where a lowercase module sorts inside a brace list, and the
+// merged form is stable under only one of them. Split, both agree.
+use axum::http::header;
+use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::Response;
 use serde::Deserialize;
 
@@ -16,6 +24,7 @@ use crate::handlers::auth::{issue_session, redirect_auth_error, session_redirect
 use crate::handlers::load_user;
 use crate::models::AuditSeverity;
 use crate::services;
+use crate::services::discord::GuildMember;
 use crate::state::AppState;
 
 /// Query params on the OAuth callback.
@@ -79,15 +88,20 @@ pub async fn discord_callback(
     let Ok(du) = state.discord.fetch_user(&tok.access_token).await else {
         return err("discord_unreachable");
     };
-    // Member roles drive the web role; tolerate non-members (None) as enlisted.
-    let role_ids = state
-        .discord
-        .fetch_guild_member(&tok.access_token)
-        .await
-        .ok()
-        .flatten()
-        .map(|m| m.roles)
-        .unwrap_or_default();
+    // Member roles drive the web role — but only when Discord actually answered.
+    let snapshot = if guild_configured(&state.cfg.discord_guild_id) {
+        classify_member_lookup(
+            &du.id,
+            state.discord.fetch_guild_member(&tok.access_token).await,
+        )
+    } else {
+        tracing::error!(
+            discord_id = %du.id,
+            "DISCORD_GUILD_ID is not configured — skipping role sync; \
+             stored Discord roles and web role left unchanged"
+        );
+        RoleSnapshot::Unavailable
+    };
 
     // Upsert the user from the fresh Discord profile (role is set separately below).
     let upsert = sqlx::query(
@@ -109,20 +123,26 @@ pub async fn discord_callback(
         return err("server_error");
     }
 
-    let Ok(role) = services::role_sync::sync_roles(&state.pool, &du.id, &role_ids).await else {
-        return err("server_error");
-    };
-    if sqlx::query("UPDATE users SET role = $1, updated_at = now() WHERE discord_id = $2")
-        .bind(role)
-        .bind(&du.id)
-        .execute(&state.pool)
-        .await
-        .is_err()
-    {
-        return err("server_error");
+    // Only a real answer from Discord may touch roles. `sync_roles` DELETEs every
+    // `user_discord_roles` row for this user before re-inserting, so calling it with a
+    // stand-in empty vec is what erased admins on a transient failure (T-185).
+    if let Some(role_ids) = snapshot.ids_to_persist() {
+        let Ok(role) = services::role_sync::sync_roles(&state.pool, &du.id, role_ids).await else {
+            return err("server_error");
+        };
+        if sqlx::query("UPDATE users SET role = $1, updated_at = now() WHERE discord_id = $2")
+            .bind(role)
+            .bind(&du.id)
+            .execute(&state.pool)
+            .await
+            .is_err()
+        {
+            return err("server_error");
+        }
     }
 
-    // Reload for current ban + Arma-link state.
+    // Reload for current ban + Arma-link state — and for the role, which is either the
+    // one just synced above or the untouched stored one when Discord was unreachable.
     let Ok(Some(fresh)) = load_user(&state.pool, &du.id).await else {
         return err("server_error");
     };
@@ -132,10 +152,30 @@ pub async fn discord_callback(
     let arma_linked = fresh.arma_id.is_some();
 
     let Ok((access, exp, refresh)) =
-        issue_session(&state, &du.id, role.as_str(), arma_linked).await
+        issue_session(&state, &du.id, fresh.role.as_str(), arma_linked).await
     else {
         return err("server_error");
     };
+
+    // A skipped sync is a degraded login, not a normal one: surface it where admins
+    // actually look, not only in the process log.
+    if snapshot.ids_to_persist().is_none() {
+        services::write_audit(
+            &state.pool,
+            AuditSeverity::Warn,
+            Some(&du.id),
+            &fresh.username,
+            "auth.role_sync_skipped",
+            &format!(
+                "Discord roles unavailable at login — kept {} for {}",
+                fresh.role.as_str(),
+                fresh.username
+            ),
+            "user",
+            &du.id,
+        )
+        .await;
+    }
 
     services::write_audit(
         &state.pool,
@@ -155,6 +195,71 @@ pub async fn discord_callback(
     )
 }
 
+/// What the Discord guild-member lookup actually told us about a user's roles.
+///
+/// The distinction is the whole point of T-185. [`services::role_sync::sync_roles`]
+/// DELETEs every `user_discord_roles` row for the user before re-inserting, then
+/// resolves the web role from what it just wrote — so handing it an empty vec both
+/// demotes the user to enlisted *and* destroys the snapshot. `resync_all_roles` reads
+/// that same table, so once it is gone there is nothing left to restore from: a
+/// two-second Discord timeout during one login permanently unmade an admin.
+///
+/// An empty role list may therefore only ever come from Discord genuinely saying "this
+/// user has no roles" — never from a timeout, a 5xx, or an unconfigured guild id.
+enum RoleSnapshot {
+    /// Discord answered. These ids are authoritative; empty means a real non-member.
+    Authoritative(Vec<String>),
+    /// We could not ask Discord at all. The stored snapshot and the user's current
+    /// tier must be left exactly as they are.
+    Unavailable,
+}
+
+impl RoleSnapshot {
+    /// The role ids to write, or `None` when nothing may be written.
+    ///
+    /// Do not paper over the `None` with a default — `unwrap_or_default()` on a failed
+    /// lookup is precisely the bug this type exists to prevent.
+    fn ids_to_persist(&self) -> Option<&[String]> {
+        match self {
+            RoleSnapshot::Authoritative(ids) => Some(ids),
+            RoleSnapshot::Unavailable => None,
+        }
+    }
+}
+
+/// True when a guild id is actually set.
+///
+/// Blank leaves `DiscordService` requesting `/users/@me/guilds//member`; Discord answers
+/// 404, and `fetch_guild_member` maps 404 to `Ok(None)` — "not a member". So a blank
+/// `DISCORD_GUILD_ID` is a misconfiguration that is indistinguishable from a legitimate
+/// non-member, and before T-185 it enlisted the entire community, one login at a time,
+/// without emitting a single log line.
+fn guild_configured(guild_id: &str) -> bool {
+    !guild_id.trim().is_empty()
+}
+
+/// Classify a `fetch_guild_member` outcome, logging loudly when Discord is unreachable.
+///
+/// `Ok(None)` is Discord's 404 for "not in this guild" — a real answer, so it is allowed
+/// to demote. `Err` is not an answer at all and must change nothing.
+fn classify_member_lookup(
+    discord_id: &str,
+    lookup: anyhow::Result<Option<GuildMember>>,
+) -> RoleSnapshot {
+    match lookup {
+        Ok(Some(m)) => RoleSnapshot::Authoritative(m.roles),
+        Ok(None) => RoleSnapshot::Authoritative(Vec::new()),
+        Err(e) => {
+            tracing::error!(
+                discord_id,
+                error = %e,
+                "discord guild-member lookup failed — keeping the stored role snapshot"
+            );
+            RoleSnapshot::Unavailable
+        }
+    }
+}
+
 /// Read a cookie value by name from the request's `Cookie` header.
 fn read_cookie(headers: &HeaderMap, name: &str) -> Option<String> {
     let raw = headers.get(header::COOKIE)?.to_str().ok()?;
@@ -170,4 +275,58 @@ fn with_set_cookie(mut resp: Response, cookie: &str) -> Response {
         resp.headers_mut().append(header::SET_COOKIE, hv);
     }
     resp
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn member(roles: &[&str]) -> GuildMember {
+        GuildMember {
+            nick: String::new(),
+            roles: roles.iter().map(|s| (*s).to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn transport_failure_writes_nothing() {
+        // The T-185 regression: a Discord timeout collapsed into an empty role vec, which
+        // sync_roles turned into "DELETE every stored role for this user" → Enlisted, with
+        // no snapshot left for resync_all_roles to restore from. `None` here is the proof
+        // that sync_roles — the only thing that deletes — is never reached on a failure.
+        let snap = classify_member_lookup("42", Err(anyhow::anyhow!("connection reset by peer")));
+        assert!(
+            snap.ids_to_persist().is_none(),
+            "an unreachable Discord must not write roles"
+        );
+    }
+
+    #[test]
+    fn real_non_member_still_demotes() {
+        // Discord's 404 is an answer: the user genuinely holds no guild roles, so the
+        // empty write (and the resulting Enlisted) is correct.
+        let snap = classify_member_lookup("42", Ok(None));
+        assert!(
+            matches!(snap.ids_to_persist(), Some(ids) if ids.is_empty()),
+            "a 404 non-member must still sync to no roles"
+        );
+    }
+
+    #[test]
+    fn member_roles_are_persisted_verbatim() {
+        let snap = classify_member_lookup("42", Ok(Some(member(&["1517", "8899"]))));
+        assert_eq!(
+            snap.ids_to_persist().expect("authoritative"),
+            ["1517", "8899"]
+        );
+    }
+
+    #[test]
+    fn blank_guild_id_is_not_configured() {
+        // A blank id must never reach Discord: the resulting 404 would read as Ok(None)
+        // and demote every user who logs in.
+        assert!(!guild_configured(""));
+        assert!(!guild_configured("   "));
+        assert!(guild_configured("1517285898817896559"));
+    }
 }
