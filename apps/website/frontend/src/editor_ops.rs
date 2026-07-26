@@ -1176,9 +1176,8 @@ const ORBAT_SLOT_SPACING_X: f64 = 15.0;
 /// **T-188 — placement.** This used to hand `add_slot` `0.0, 0.0, 0.0, 0.0`, so every role added
 /// from the ORBAT dock materialised at world origin — the terrain's south-west corner, nowhere near
 /// its squad, and stacked on every other Add Role. It now anchors the way the sibling
-/// [`orbat_add_vehicle`] already does: [`squad_anchor_xy`] (leader, else first slot) with the
-/// shared apply anchor as the empty-squad fallback, offset along +x by the slot's index so members
-/// line up instead of overlapping.
+/// [`orbat_add_vehicle`] already does, off the squad's own geometry: see [`next_slot_xy`] for the
+/// lane, and [`squad_anchor_xy`] for the empty-squad fallback.
 pub fn orbat_add_slot(squad_id: String, role: String) -> Option<String> {
     let id = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -1198,10 +1197,7 @@ pub fn orbat_add_slot(squad_id: String, role: String) -> Option<String> {
         } else {
             role
         };
-        // Fall back to Everon centre only for a squad with nothing to anchor against — the same
-        // origin `apply_faction_library` mints a fresh squad at.
-        let (ax, ay) = squad_anchor_xy(core, &sq).unwrap_or((APPLY_ANCHOR_X, APPLY_ANCHOR_Y));
-        let x = ax + ORBAT_SLOT_SPACING_X * f64::from(index);
+        let (x, y) = next_slot_xy(core, &sq);
         let asset_id = asset_id_for_role(core, &sq, &role);
         core.add_slot(
             &slot_id,
@@ -1212,7 +1208,7 @@ pub fn orbat_add_slot(squad_id: String, role: String) -> Option<String> {
             None,
             asset_id.clone(),
             x,
-            ay,
+            y,
             0.0,
             0.0,
         );
@@ -1235,14 +1231,29 @@ pub fn orbat_add_slot(squad_id: String, role: String) -> Option<String> {
 /// T-188 — best-effort `assetId` for a role added from the ORBAT dock.
 ///
 /// Add Role has no character picker (the palette drag is the only place a character is chosen), so
-/// the slot was minted with `assetId` absent — a body-less slot the place path never produces and
-/// that compiles to no spawn. Derive one from the doc instead: the resource name an existing slot
-/// with the **same role** already carries, nearest first — the squad itself, then sibling squads
-/// under the same faction, then anywhere in the mission. Returns `None` when the mission holds no
-/// slot for that role yet, which `add_slot` then omits exactly as before.
+/// the slot is minted with no `assetId` of its own. Derive one from the doc instead: the resource
+/// name an existing slot with the **same role** already carries, nearest first — the squad itself,
+/// then sibling squads under the same faction. Deterministic: both tiers walk ordered doc arrays
+/// (`faction.squadIds` / `squad.slotIds`), never the unordered `slotsById` map, so two identical
+/// missions pick the same character.
 ///
 /// Deliberately role-keyed, not "any squad-mate": borrowing the squad leader's prefab for a
 /// Rifleman would swap the character out for the wrong one, which is worse than leaving it unset.
+///
+/// **Scope is the faction, and stops there (wave-1 fix).** A third tier used to sweep the whole
+/// mission (`obj.keys()`), matching on `role` alone with no faction predicate anywhere. That is a
+/// cross-faction character leak, and it is reachable with stock data: `faction-library.sample.json`
+/// defines only `Rifleman` / `Squad Leader`, both on `Character_USSR_Rifleman.et`, and both ORBAT
+/// "Add Role" buttons hardcode `"Rifleman"` — apply the Soviet template, add a BLUFOR squad, hit
+/// Add Role, and tiers 1–2 come up empty while tier 3 hands the BLUFOR slot a USSR body. It reaches
+/// the game intact: `kit-aliases.json` maps that resource to `kit:sov_rifleman` and
+/// `mission::flatten` resolves the kit per-`assetId`.
+///
+/// Returning `None` is the **correct** outcome, not a gap. `flatten` falls back to
+/// `KitAliases::faction_default(faction_key)` for a slot with no `assetId`, i.e. the slot compiles
+/// to its own faction's default kit — so tier 3 traded a faction-correct default for a possibly
+/// faction-wrong pick. Tiers 1–2 already cover every character the faction owns; anything beyond
+/// them is by definition another faction's.
 fn asset_id_for_role(
     core: &MissionDocCore,
     sq: &crate::outliner::SquadRow,
@@ -1251,17 +1262,12 @@ fn asset_id_for_role(
     let root = serde_json::from_str::<serde_json::Value>(&core.slots_json()).ok()?;
     let obj = root.as_object()?;
 
-    // Search order, widest last. Sibling squads walk `faction.squadIds` / `squad.slotIds`, and the
-    // whole-mission sweep sorts its ids, so the pick is deterministic — the doc's maps are not
-    // ordered, and an arbitrary order would hand two identical missions different characters.
     let squads = squad_rows(core);
     let siblings = faction_rows(core)
         .into_iter()
         .find(|f| f.id == sq.faction_id)
         .map(|f| f.squad_ids)
         .unwrap_or_default();
-    let mut every_id: Vec<&String> = obj.keys().collect();
-    every_id.sort();
 
     let mut candidates: Vec<&String> = sq.slot_ids.iter().collect();
     for sid in &siblings {
@@ -1269,7 +1275,6 @@ fn asset_id_for_role(
             candidates.extend(s.slot_ids.iter());
         }
     }
-    candidates.extend(every_id);
 
     candidates.into_iter().find_map(|id| {
         let slot = obj.get(id)?;
@@ -1572,19 +1577,59 @@ fn faction_doc_from_side_core(core: &MissionDocCore, side: &str) -> FactionDoc {
     }
 }
 
+/// One slot's map position out of a parsed `slots_json`. `None` when the id is stale (the slot was
+/// removed) or the stored position is malformed.
+fn slot_xy(root: &serde_json::Value, id: &str) -> Option<(f64, f64)> {
+    let pos = root.get(id)?.get("position")?;
+    Some((pos.get("x")?.as_f64()?, pos.get("y")?.as_f64()?))
+}
+
+/// The squad's anchor out of an already-parsed `slots_json`: the leader if it still exists, else the
+/// first slot that does. `None` only for a squad with nothing live to anchor against, which leaves
+/// the fallback to the caller.
+///
+/// **T-188 wave-1 fix — chained, not single-shot.** This used to resolve exactly one id (leader when
+/// set, otherwise `slot_ids.first()`) and return `None` the moment that lookup missed.
+/// [`delete_selection`] deletes straight through `core.remove_slots`, which rewrites `slotIds` but
+/// never touches `leaderSlotId` — so deleting the squad leader off the map left a **stale** anchor
+/// id, `root.get(&anchor_id)` missed, and both callers fell through to
+/// `unwrap_or((APPLY_ANCHOR_X, APPLY_ANCHOR_Y))`: the new slot / vehicle materialised at the Everon
+/// centre, the exact world-origin symptom T-188 was written to stop. Walking leader → every live
+/// slot keeps the squad's own geometry as the anchor and reserves the constant for a squad that
+/// genuinely has no body left.
+fn squad_anchor_in(root: &serde_json::Value, sq: &crate::outliner::SquadRow) -> Option<(f64, f64)> {
+    std::iter::once(sq.leader_slot_id.as_str())
+        .chain(sq.slot_ids.iter().map(String::as_str))
+        .filter(|id| !id.is_empty())
+        .find_map(|id| slot_xy(root, id))
+}
+
 fn squad_anchor_xy(core: &MissionDocCore, sq: &crate::outliner::SquadRow) -> Option<(f64, f64)> {
-    let anchor_id = if !sq.leader_slot_id.is_empty() {
-        sq.leader_slot_id.clone()
-    } else {
-        sq.slot_ids.first()?.clone()
-    };
+    let root = serde_json::from_str::<serde_json::Value>(&core.slots_json()).ok()?;
+    squad_anchor_in(&root, sq)
+}
+
+/// T-188 — where the **next** slot added to `sq` belongs, in the squad's `ORBAT_SLOT_SPACING_X`
+/// row. Falls back to the Everon centre only for a squad with nothing to anchor against — the same
+/// origin `apply_faction_library` mints a fresh squad at.
+///
+/// **Wave-1 fix — the lane comes from geometry, not from a count.** It used to be
+/// `anchor + 15 m * slot_ids.len()`. `remove_slots` deletes ids without reindexing the survivors, so
+/// after deleting the middle of three slots `len()` is 2 while a survivor still sits at
+/// `anchor + 30 m` — the next Add Role landed exactly on top of it, re-creating the stacking this
+/// ticket exists to fix. `max(x) + 15 m` is free by construction no matter which ids were removed.
+fn next_slot_xy(core: &MissionDocCore, sq: &crate::outliner::SquadRow) -> (f64, f64) {
     let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) else {
-        return None;
+        return (APPLY_ANCHOR_X, APPLY_ANCHOR_Y);
     };
-    let pos = root.get(&anchor_id)?.get("position")?;
-    let x = pos.get("x")?.as_f64()?;
-    let y = pos.get("y")?.as_f64()?;
-    Some((x, y))
+    let (ax, ay) = squad_anchor_in(&root, sq).unwrap_or((APPLY_ANCHOR_X, APPLY_ANCHOR_Y));
+    let x = sq
+        .slot_ids
+        .iter()
+        .filter_map(|id| slot_xy(&root, id).map(|(x, _)| x))
+        .reduce(f64::max)
+        .map_or(ax, |max_x| max_x + ORBAT_SLOT_SPACING_X);
+    (x, ay)
 }
 
 /// Patch inspector fields: role/tag via `update_slot`, callsign/rank via `update_slot_identity`.
