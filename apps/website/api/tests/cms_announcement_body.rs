@@ -7,16 +7,25 @@
 //! These tests pin the HTTP round-trip: create and body-only PATCH store authored text
 //! **byte-identical**, and a body-only PATCH recomputes `snippet` (capped) from the new body.
 //!
-//! RED perturbation: re-introduce `sanitize_html(&input.body)` in `handlers/cms.rs` — the
-//! `assert_eq!(body, AUTHOR)` arms fail because the row contains `&lt;` / `&amp;`.
+//! RED perturbation (T-239): re-introduce `sanitize_html(&input.body)` in `handlers/cms.rs` —
+//! the `assert_eq!(body, AUTHOR)` arms fail because the row contains `&lt;` / `&amp;`.
+//!
+//! **T-246 — `POST …/push-discord` refuses non-published.** Create/PATCH already gate Discord
+//! push on `status == published`; the dedicated route did not. Tests below prove draft → 400
+//! and published → 200 against a local mock webhook.
+//!
+//! RED perturbation (T-246): drop the `status != Published` guard in `push_announcement_discord`
+//! — `push_discord_refuses_draft` fails (draft reaches the webhook / returns 200).
 //!
 //! Skips without `TEST_DATABASE_URL` — a skip is a failure to have tested, not a pass.
 
 mod common;
 
+use axum::Json as AxumJson;
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
+use axum::routing::post;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use tower::ServiceExt;
@@ -28,14 +37,29 @@ const SUITE: &str = "cms_announcement_body";
 const AUTHOR: &str = "Damage threshold: a < b & c > d";
 
 async fn boot() -> Option<(Router, PgPool)> {
+    boot_with_webhook(String::new()).await
+}
+
+async fn boot_with_webhook(webhook_url: String) -> Option<(Router, PgPool)> {
     let url = std::env::var("TEST_DATABASE_URL").ok()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
-    let app = app::router(AppState::new(
-        pool.clone(),
-        Config::for_tests(url, "t239-secret"),
-    ));
+    let mut cfg = Config::for_tests(url, "t239-secret");
+    cfg.discord_webhook_url = webhook_url;
+    let app = app::router(AppState::new(pool.clone(), cfg));
     Some((app, pool))
+}
+
+/// Local Discord-webhook stand-in (same pattern as `services_http.rs`).
+async fn spawn_mock_webhook() -> String {
+    let l = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = l.local_addr().unwrap();
+    let router = Router::new().route(
+        "/wh",
+        post(|| async { AxumJson(json!({ "id": "t246-msg" })) }),
+    );
+    tokio::spawn(async move { axum::serve(l, router).await.unwrap() });
+    format!("http://{addr}/wh")
 }
 
 async fn send(
@@ -184,4 +208,151 @@ async fn explicit_snippet_is_hard_capped_at_200_runes() {
         "explicit snippet must be capped (pre-T-239 stored all 250)"
     );
     assert!(snip.ends_with('…'));
+}
+
+/// T-246 — draft must not reach Discord even when a webhook is configured.
+#[tokio::test]
+async fn push_discord_refuses_draft() {
+    let Some((app, _pool)) = boot_with_webhook(spawn_mock_webhook().await).await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let token = common::dev_login_token(&app, SUITE, "admin").await;
+    let title = format!("t246-draft-{}", uuid::Uuid::new_v4());
+
+    let (status, resp) = send(
+        &app,
+        "POST",
+        "/api/v1/cms/announcements",
+        &token,
+        json!({"title": title, "body": "draft body", "tag": "update"}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "create draft: {resp}");
+    assert_eq!(resp["status"], "draft");
+    let id = resp["id"].as_str().unwrap();
+
+    let (status, resp) = send(
+        &app,
+        "POST",
+        &format!("/api/v1/cms/announcements/{id}/push-discord"),
+        &token,
+        json!({}),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "draft push must 400: {resp}"
+    );
+    let err = resp["error"].as_str().unwrap_or("");
+    assert!(
+        err.contains("published"),
+        "error must name published requirement, got: {err:?}"
+    );
+}
+
+/// T-246 — archived is also refused (same hole as draft before the guard).
+#[tokio::test]
+async fn push_discord_refuses_archived() {
+    let Some((app, _pool)) = boot_with_webhook(spawn_mock_webhook().await).await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let token = common::dev_login_token(&app, SUITE, "admin").await;
+    let title = format!("t246-arch-{}", uuid::Uuid::new_v4());
+
+    let (status, resp) = send(
+        &app,
+        "POST",
+        "/api/v1/cms/announcements",
+        &token,
+        json!({
+            "title": title,
+            "body": "was published",
+            "tag": "update",
+            "status": "published",
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "create: {resp}");
+    let id = resp["id"].as_str().unwrap().to_string();
+
+    let resp = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri(format!("/api/v1/cms/announcements/{id}"))
+                .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                .body(Body::empty())
+                .expect("build"),
+        )
+        .await
+        .expect("delete");
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+
+    let (status, resp) = send(
+        &app,
+        "POST",
+        &format!("/api/v1/cms/announcements/{id}/push-discord"),
+        &token,
+        json!({}),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "archived push must 400: {resp}"
+    );
+}
+
+/// T-246 — published + configured webhook → 200 `{pushed:true}`.
+#[tokio::test]
+async fn push_discord_allows_published() {
+    let Some((app, pool)) = boot_with_webhook(spawn_mock_webhook().await).await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let token = common::dev_login_token(&app, SUITE, "admin").await;
+    let title = format!("t246-pub-{}", uuid::Uuid::new_v4());
+
+    let (status, resp) = send(
+        &app,
+        "POST",
+        "/api/v1/cms/announcements",
+        &token,
+        json!({
+            "title": title,
+            "body": "live body",
+            "tag": "update",
+            "status": "published",
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "create published: {resp}");
+    assert_eq!(resp["status"], "published");
+    let id = resp["id"].as_str().unwrap().to_string();
+
+    let (status, resp) = send(
+        &app,
+        "POST",
+        &format!("/api/v1/cms/announcements/{id}/push-discord"),
+        &token,
+        json!({}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "published push: {resp}");
+    assert_eq!(resp["pushed"], true);
+
+    let uid: uuid::Uuid = id.parse().unwrap();
+    let (pushed, msg_id): (bool, String) = sqlx::query_as(
+        "SELECT pushed_to_discord, COALESCE(discord_message_id, '') FROM announcements WHERE id = $1",
+    )
+    .bind(uid)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert!(pushed, "row must record webhook success");
+    assert_eq!(msg_id, "t246-msg");
 }

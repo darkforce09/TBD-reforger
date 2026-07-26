@@ -367,6 +367,10 @@ pub async fn delete_announcement(
 /// `POST /api/v1/cms/announcements/:id/push-discord` — manual (re)push.
 ///
 /// @route POST /api/v1/cms/announcements/:id/push-discord
+///
+/// **T-246** — refuse unless `status == published`. Create/PATCH already gate Discord
+/// push on published; this dedicated route did not, so a draft or archived row could
+/// be broadcast if the endpoint was hit (SPA-unreachable today, still a live hole).
 pub async fn push_announcement_discord(
     State(state): State<AppState>,
     _a: AdminUser,
@@ -375,12 +379,17 @@ pub async fn push_announcement_discord(
     let Ok(id) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    if !state.webhook.enabled() {
-        return Err(ApiError::bad_request("discord webhook not configured"));
-    }
     let Some(a) = reload(&state, id).await? else {
         return Err(ApiError::not_found("announcement not found"));
     };
+    if a.status != AnnouncementStatus::Published {
+        return Err(ApiError::bad_request(
+            "only published announcements can be pushed to Discord",
+        ));
+    }
+    if !state.webhook.enabled() {
+        return Err(ApiError::bad_request("discord webhook not configured"));
+    }
     if !push_to_discord(&state, &a).await {
         return Err(ApiError::new(
             StatusCode::BAD_GATEWAY,
