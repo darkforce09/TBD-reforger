@@ -13,8 +13,8 @@ use crate::handlers::field_tools::UPLOAD_DIR;
 use crate::handlers::username;
 use crate::middleware::AdminUser;
 use crate::models::{Announcement, AnnouncementStatus, AnnouncementTag, AuditSeverity};
-use crate::services::text::is_http_url;
-use crate::services::{sanitize_html, snippet, write_audit};
+use crate::services::text::{cap_runes, is_http_url};
+use crate::services::{snippet, write_audit};
 use crate::state::AppState;
 
 const MAX_UPLOAD_BYTES: usize = 5 << 20;
@@ -80,9 +80,13 @@ fn valid_announcement_status(s: &str) -> Option<AnnouncementStatus> {
     }
 }
 
+/// Build the stored `snippet` column. Always respects the **200-rune** cap — even when the
+/// caller supplies `snippet` explicitly (pre-T-239 returned that value verbatim and skipped the
+/// limit). Derived snippets collapse whitespace via [`snippet`]; explicit ones only hard-cap so
+/// intentional spacing in a hand-written teaser survives.
 fn snippet_from(explicit: &str, body: &str) -> String {
     if !explicit.is_empty() {
-        explicit.to_string()
+        cap_runes(explicit, 200)
     } else {
         snippet(body, 200)
     }
@@ -152,8 +156,7 @@ pub async fn create_announcement(
     let Json(input) = body.map_err(|_| ApiError::bad_request("title and body are required"))?;
     // `trim()`, not bare `is_empty()`: a whitespace-only title or body is not content, and this
     // guard is the only thing standing between it and a **published** announcement pushed to
-    // Discord at the bottom of this function. `sanitize_html("   ")` is `"   "`, so nothing
-    // downstream catches it either. Measured on the pre-fix binary, `{"title":"   ", ...}`
+    // Discord at the bottom of this function. Measured on the pre-fix binary, `{"title":"   ", ...}`
     // returned 201 and stored a three-space title. Empty was already refused here, so unlike
     // `events.rs::check_name_override` there is no "" case to preserve — but the stored bytes
     // stay verbatim below for the same reason: a padded-but-real title renders fine today and
@@ -167,9 +170,11 @@ pub async fn create_announcement(
     // T-405 — see `validated_thumbnail`. Rejected before the INSERT, so a bad URL stores nothing.
     let thumbnail_url = validated_thumbnail(&input.thumbnail_url)?;
     let author = &admin.0.discord_id;
-    // Sanitize author-supplied HTML before persist (no stored XSS).
-    let body_html = sanitize_html(&input.body);
-    let snip = snippet_from(&input.snippet, &body_html);
+    // **T-239 — plain-text body contract.** The SPA renders body as a Leptos text node, not
+    // `inner_html`. Do **not** ammonia-sanitize here: that HTML-escapes `<`/`&`, then Leptos
+    // escapes again, and authors see literal `a &lt; b`. XSS for this field is the text escape
+    // at render; store the authored bytes.
+    let snip = snippet_from(&input.snippet, &input.body);
     // Absent (`#[serde(default)]` → `""`) is a Draft; anything else must be a status this
     // resource actually has, or the caller hears about it. See [`valid_announcement_status`].
     let status = if input.status.is_empty() {
@@ -189,7 +194,7 @@ pub async fn create_announcement(
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, '', now(), now()) RETURNING id, title, body, COALESCE(snippet, '') AS snippet, tag, COALESCE(thumbnail_url, '') AS thumbnail_url, author_id, status, is_pinned, pushed_to_discord, COALESCE(discord_message_id, '') AS discord_message_id, published_at, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at",
     )
     .bind(&input.title)
-    .bind(&body_html)
+    .bind(&input.body)
     .bind(&snip)
     .bind(tag)
     .bind(&thumbnail_url)
@@ -284,11 +289,17 @@ pub async fn update_announcement(
     if let Some(t) = &input.title {
         qb.push(", title = ").push_bind(t.clone());
     }
+    // T-239: store body as authored plain text (see create_announcement). When body changes and
+    // the caller did not send a new snippet, recompute the preview so the list teaser cannot
+    // contradict the article (pre-T-239 left the old snippet in place on body-only PATCH).
     if let Some(b) = &input.body {
-        qb.push(", body = ").push_bind(sanitize_html(b));
+        qb.push(", body = ").push_bind(b.clone());
+        if input.snippet.is_none() {
+            qb.push(", snippet = ").push_bind(snippet_from("", b));
+        }
     }
     if let Some(s) = &input.snippet {
-        qb.push(", snippet = ").push_bind(s.clone());
+        qb.push(", snippet = ").push_bind(snippet_from(s, ""));
     }
     if let Some(t) = &input.tag {
         let Some(tag) = valid_tag(t) else {
@@ -441,4 +452,37 @@ async fn reload(state: &AppState, id: Uuid) -> Result<Option<Announcement>, ApiE
         .fetch_optional(&state.pool)
         .await
         .map_err(ApiError::from)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::services::sanitize_html;
+
+    /// T-239: the persist path must be identity for plain text — ammonia is the old bug.
+    /// RED: swap `authored.to_string()` for `sanitize_html(authored)` — fails on `&lt;`.
+    #[test]
+    fn announcement_body_persist_contract_is_identity_not_ammonia() {
+        let authored = "Damage threshold: a < b & c > d";
+        let would_have_stored = sanitize_html(authored);
+        assert_ne!(
+            would_have_stored, authored,
+            "pre-write evidence: ammonia still mutates plain text"
+        );
+        let stored = authored.to_string(); // what create/update bind today
+        assert_eq!(stored, authored);
+        assert!(!stored.contains("&lt;"));
+    }
+
+    #[test]
+    fn snippet_from_caps_explicit_and_derives_from_body() {
+        let long = "x".repeat(250);
+        let capped = snippet_from(&long, "ignored");
+        assert_eq!(capped.chars().count(), 200);
+        assert!(capped.ends_with('…'));
+
+        let derived = snippet_from("", "a < b & c");
+        assert_eq!(derived, "a < b & c");
+        assert!(!derived.contains("&lt;"));
+    }
 }

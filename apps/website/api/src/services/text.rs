@@ -1,15 +1,24 @@
-//! Text utilities — Rust port of `services/text.go`. HTML sanitize + snippet/truncate, plus
-//! the crate's one URL write-boundary guard ([`is_http_url`], T-391).
+//! Text utilities — Rust port of `services/text.go`. Snippet/truncate, an HTML cleaner kept for
+//! callers that truly render HTML, plus the crate's one URL write-boundary guard
+//! ([`is_http_url`], T-391).
+//!
+//! **T-239 contract (announcement bodies):** the SPA renders `announcements.body` as a Leptos
+//! **text** node (`announcements.rs` `{p.to_string()}`), not via `inner_html`. There is no live
+//! HTML sink for UGC. Applying [`sanitize_html`] (ammonia) before persist therefore buys zero
+//! XSS defence and **double-escapes** bare `<` / `&` (ammonia escapes, then Leptos escapes again
+//! → authors see literal `a &lt; b`). CMS stores body as authored plain text; Leptos owns the
+//! single escape at render. The old open item ("exact UGCPolicy→ammonia allowlist + golden +
+//! no-XSS property test") is **closed** — without an HTML sink that programme is defence theatre,
+//! not a live-bug fix. Keep [`sanitize_html`] only for a future *real* HTML field.
 
 use std::sync::OnceLock;
 
 use url::Url;
 
-/// Sanitize user-authored rich text (announcement bodies). Go used
-/// `bluemonday.UGCPolicy()`; this uses `ammonia` — a **documented bounded deviation**
-/// (gate G8): different engines, so output is not guaranteed byte-identical on edge
-/// cases. The exact UGCPolicy→ammonia allowlist mapping + a golden-corpus + no-XSS
-/// property test land with the differential harness. Built once.
+/// HTML cleaner (ammonia). **Not** the announcement-body path — see module docs / T-239.
+///
+/// Go used `bluemonday.UGCPolicy()`; ammonia is a bounded engine deviation (gate G8). Do **not**
+/// call this on a field that the SPA will render as a text node.
 pub fn sanitize_html(body: &str) -> String {
     static CLEANER: OnceLock<ammonia::Builder<'static>> = OnceLock::new();
     CLEANER
@@ -262,5 +271,39 @@ mod tests {
         let out = sanitize_html("<p>ok</p><script>alert(1)</script>");
         assert!(out.contains("ok"));
         assert!(!out.contains("<script"));
+    }
+
+    /// Golden: ammonia HTML-escapes bare `<` / `&`. This is exactly why CMS must not call
+    /// [`sanitize_html`] on announcement bodies that Leptos then text-escapes (T-239).
+    ///
+    /// RED perturbation: flip the `assert_ne!` to `assert_eq!` (claim identity) — this test
+    /// goes red, proving the pin still observes ammonia's mutation rather than a no-op cleaner.
+    #[test]
+    fn sanitize_html_escapes_bare_angle_brackets_and_ampersands() {
+        let authored = "Damage threshold: a < b & c > d";
+        let cleaned = sanitize_html(authored);
+        assert_ne!(
+            cleaned, authored,
+            "ammonia must mutate plain text containing < / & (else the T-239 double-escape \
+             diagnosis is stale)"
+        );
+        assert!(
+            cleaned.contains("&lt;") || cleaned.contains("&amp;"),
+            "expected HTML entities in {cleaned:?}"
+        );
+        // Scripts still die — the cleaner is real HTML sanitation, just the wrong tool for
+        // a text-rendered field.
+        assert!(!sanitize_html("<script>alert(1)</script>").contains("<script"));
+    }
+
+    /// Round-trip pin for the text-field contract: snippet derivation must not introduce
+    /// HTML entities. RED: replace `snippet` with `sanitize_html` below — fails on `a < b`.
+    #[test]
+    fn snippet_preserves_bare_angle_brackets() {
+        let authored = "a < b & c";
+        let snip = snippet(authored, 200);
+        assert_eq!(snip, authored);
+        assert!(!snip.contains("&lt;"));
+        assert!(!snip.contains("&amp;"));
     }
 }
