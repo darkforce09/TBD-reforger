@@ -630,18 +630,54 @@ cmd_verified() {
 
 # Land every slice that is ready. No barrier — see note 2.
 cmd_land() {
-  local barrier=0
-  [ "${1:-}" = "--wave" ] && barrier=1
+  # ARGUMENTS ARE AN ALLOWLIST, and unknown ones are REFUSED.
+  #
+  # This used to be `[ "${1:-}" = "--wave" ] && barrier=1` and nothing else, so any other argument
+  # was silently discarded: `land T-204` was byte-for-byte `land`, and landed every committed slice
+  # in the wave. OBSERVED 2026-07-26 — it merged T-389 and T-229 whose agents had not yet REPORTED,
+  # defeating rule 11 from inside the tool that rule depends on, and dropped their worktrees out
+  # from under two live agents. Nothing was lost only because the gate happened to pass.
+  #
+  # That is this run's signature defect one more time: an interface that reads narrow and acts wide.
+  # A filter-shaped argument MUST filter or MUST refuse — silently ignoring it is the one option
+  # that cannot be discovered before it does damage.
+  local barrier=0 only=() a
+  for a in "$@"; do
+    case "$a" in
+      --wave) barrier=1 ;;
+      '')     ;;
+      T-[0-9]*) only+=("$a") ;;
+      *) echo "land: refusing unknown argument '$a' (expected --wave and/or T-nnn ticket ids)" >&2
+         return 2 ;;
+    esac
+  done
   local w; w="$(current_wave)"
   [ "$w" = "done" ] && { echo "nothing to land"; return 0; }
 
-  local t st ready=() blocked=()
+  local t st ready=() blocked=() skipped=()
   for t in $(wave_tickets "$w"); do
     is_shipped "$t" && continue
+    if [ "${#only[@]}" -gt 0 ] && ! printf '%s\n' "${only[@]}" | grep -qx "$t"; then
+      skipped+=("$t"); continue
+    fi
     st="$(tree_state "$t")"
     if [ "$st" = committed ] && has_work "$t"; then ready+=("$t")
     else blocked+=("$t"); fi
   done
+
+  # A named ticket that is not in the current wave would otherwise land NOTHING and say
+  # "no slice is ready" — indistinguishable from "your slice is not finished".
+  if [ "${#only[@]}" -gt 0 ]; then
+    local want miss=()
+    for want in "${only[@]}"; do
+      printf '%s\n' $(wave_tickets "$w") | grep -qx "$want" || miss+=("$want")
+    done
+    [ "${#miss[@]}" -gt 0 ] && {
+      echo "land: ${miss[*]} not in wave $w — nothing named was landed" >&2; return 2; }
+    # "other unshipped", NOT "other ready" — these were filtered out before tree_state ran, so
+    # their readiness is unknown and claiming it would be the same overclaim this script exists to catch.
+    echo "landing ONLY: ${only[*]}${skipped[0]:+  (holding ${#skipped[@]} other unshipped slice(s))}"
+  fi
 
   if [ "${#ready[@]}" -eq 0 ]; then echo "no slice is ready to land"; return 0; fi
   if [ "$barrier" -eq 1 ] && [ "${#blocked[@]}" -gt 0 ]; then
@@ -731,7 +767,7 @@ case "${1:-status}" in
   wave)   if [ "${2:-}" = "--close" ]; then cmd_wave_close; else cmd_wave; fi ;;
   verified) cmd_verified "${2:-}" ;;
   reclaim) cmd_reclaim ;;
-  land)   cmd_land "${2:-}" ;;
+  land)   shift; cmd_land "$@" ;;
   revert) cmd_revert "${2:-}" ;;
   push)   cmd_push ;;
   *) sed -n '2,40p' "$0"; exit 1 ;;

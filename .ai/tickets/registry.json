@@ -7082,7 +7082,7 @@
     {
       "id": "T-204",
       "title": "Emit mission flow and winConditions instead of hardcoding them",
-      "summary": "Emit mission flow instead of hardcoding it. RE-SCOPED 2026-07-26 to compiler-only: T-181.38 made the MOD parse and honour the flow block, so the consumer is ready and waiting. flatten.rs:682-688 still hardcodes briefing_seconds=600, safe_start_seconds=300, time_limit_seconds=5400, jip=until_safestart_end. timeLimitSeconds is the operator's mission duration. NOTE: the winConditions half of the original title is already handled by T-181.46 — do not touch endOn. HANDOFF FROM T-224 (shipped 2026-07-26): the UI half is done. Mission Settings now authors timeLimitSeconds, jip, safeStartSeconds and briefingSeconds into meta.environment under those exact key names — deliberately meta.environment and not a meta.flow sibling, because compile_payload builds the saved version from exactly meta.terrain + meta.environment and hydrate restores exactly those two, so a sibling would be dropped on Save and gone on reload. ModFlow in flatten.rs still splices in 600/300/5400/'until_safestart_end' and never reads the payload, so TODAY an authored duration is stored, saved, reloaded and displayed back correctly and the compiled document still says 5400. This ticket is now purely: read those four keys off the saved payload's top-level environment instead of hardcoding.",
+      "summary": "Emit mission flow instead of hardcoding it. RE-SCOPED 2026-07-26 to compiler-only: T-181.38 made the MOD parse and honour the flow block, so the consumer is ready and waiting. flatten.rs:682-688 still hardcodes briefing_seconds=600, safe_start_seconds=300, time_limit_seconds=5400, jip=until_safestart_end. timeLimitSeconds is the operator's mission duration. NOTE: the winConditions half of the original title is already handled by T-181.46 — do not touch endOn. HANDOFF FROM T-224 (shipped 2026-07-26): the UI half is done. Mission Settings now authors timeLimitSeconds, jip, safeStartSeconds and briefingSeconds into meta.environment under those exact key names — deliberately meta.environment and not a meta.flow sibling, because compile_payload builds the saved version from exactly meta.terrain + meta.environment and hydrate restores exactly those two, so a sibling would be dropped on Save and gone on reload. ModFlow in flatten.rs still splices in 600/300/5400/'until_safestart_end' and never reads the payload, so TODAY an authored duration is stored, saved, reloaded and displayed back correctly and the compiled document still says 5400. This ticket is now purely: read those four keys off the saved payload's top-level environment instead of hardcoding.\n\nSHIPPED. ModFlow is now derive_flow(&parsed.environment); flatten.rs only, +366/-6. ENGINE-VERIFIED, not just unit-tested: booted --compiled=<uuid> on a 900/120/2700/disabled mission and the mod logged all four as `(authored)` (SRC_AUTHORED not SRC_DEFAULT), with TBD_SafestartManager quoting `next arm = 2:00` back from its own m_iConfiguredSeconds. WORLD BOOT: PASS, errors=0, warnings=1 (T-299's baseline stub, not this slice).\nNon-vacuity PROVEN empirically: the agent restored the hardcode and watched its new tests fail (left: 600, right: 480), then restored from the commit — the check I have had to demand five times this run, done unprompted.\nDeliberately emits DEFAULTS rather than omitting: `flow` declares no required properties so omission is legal, but it is NOT behaviour-preserving — absent `jip` parses to \"\" and PolicyFromString returns ALWAYS (TBD_FrameworkManager.c:185-194), holding the JIP door open all round, and absent `timeLimitSeconds` leaves ArmRoundClock unarmed AND trips a new CheckTimeLimitReachable warning that moves the boot gate off baseline.\nAuthored 0 passes through (the only way to say 'no limit'); negative/wrong-typed reads as unauthored, mirroring read_flow_seconds exactly so dialog and compiler cannot disagree. environment stays a bare Value, so T-367's scan_editor_payload_types accept set is unchanged — a typed Option<i64> would have replayed the T-202 regression on payloads carrying 5400.0.\nUnits are seconds at every rung with no conversion anywhere. Not proven: that a round actually ends at 2700s or a joiner is refused — world-boot has no players and never leaves LOADING. Needs executor: human.",
       "program": "eden",
       "surfaces": [
         "DATA"
@@ -7090,13 +7090,14 @@
       "impact": [
         "contract"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2220,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "2026-07-26"
     },
     {
       "id": "T-205",
@@ -7586,13 +7587,14 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2470,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "2026-07-26"
     },
     {
       "id": "T-230",
@@ -7657,7 +7659,7 @@
     {
       "id": "T-233",
       "title": "Deployments page shows fabricated K/D and win rate as real telemetry",
-      "summary": "deployments.rs:18-23 defines MOCK_KD 2.45, MOCK_WIN_RATE 68% and fake favourite weapon/asset, rendered at :132-133 as live stats. Only total_operations is real.\n\nSHIPPED, and the NEAR-MISS WAS THE TRAP. The four fabricated readouts split three ways:\n  K/D — REAL. It read leaderboard_totals.kd_ratio rather than recomputing, because that view is the crate's only definition of K/D and is what /leaderboards and /users/:id/stats serve. A second query here is exactly how the Deployments page and the Leaderboard come to disagree about one player. Verified the view refreshes on all three write paths.\n  WIN RATE — `command_win_rate` LOOKS like the field you want and is not: its denominator is `count(*) FILTER (WHERE is_command)`, and command_win is a documented tri-state where NULL means 'not a command slot'. A GENERAL win rate is not derivable at all — match_player_stats has no faction column, so matches.winning_faction has nothing per-player to compare against. It served the figure under its real name, because calling it win_rate would **rebuild the same lie out of real numbers**.\n  FAVOURITE WEAPON / ASSET — nothing records them. The only weapon-ish columns platform-wide are a mortar input, what a mission OFFERS, authored intent, and vehicles KILLED. Removed with an assert-absent tripwire, per T-359's precedent.\n\nTHE ZERO CASE: null, never 0.00 — because **0.00 is a measurement claim, which is 2.45 in a quieter voice.** A player with no matches has no MV row, so fetch_optional IS the zero case; a player who has never commanded gets null keyed off command_games IS NULL, since the view flattens that to 0. A measured 0.0 is still sent, so the two stay distinguishable. This deliberately diverges from leaderboards.rs:127-141, which unwrap_or's an all-zero row and cannot tell them apart.\n\nNumbers checked against arithmetic done separately, then re-captured from a real API boot. Golden diffed: exactly six keys added, none removed, NONE CHANGED.\n\nFound in passing: the seed credits the dev admin with total_deployments = 17 while seeding only 2 matches, so the golden reads total_operations 17 beside a K/D spanning 2 matches — a self-contradicting page.\n\n== REVERTED 2026-07-26 AND HANDED BACK: the test fails on a clean database ==\ndeployments_combat.rs:160 — `kills` must always be present — fails on a FRESH ISOLATED database (t233_iso, that binary alone), so it is not T-334's shared-fixture contention. The test and the implementation disagree, even though handlers/deployments.rs:264-267 builds \"kills\" in a json! unconditionally.\nStrong hypothesis for its reported 126/0, from T-235's measurement: the shared CARGO_TARGET_DIR CLOBBERS ARTIFACTS ACROSS WORKTREES, so that run may have used a stale or foreign binary that never contained this test. Filed as T-390. The agent was told to use a private target dir and verify the binary is its own.\nEverything else about the slice stands and I want it back — the command_win_rate naming call, read-the-view-rather-than-recompute, and null-over-0.00.",
+      "summary": "deployments.rs:18-23 defines MOCK_KD 2.45, MOCK_WIN_RATE 68% and fake favourite weapon/asset, rendered at :132-133 as live stats. Only total_operations is real.\n\nSHIPPED, and the NEAR-MISS WAS THE TRAP. The four fabricated readouts split three ways:\n  K/D — REAL. It read leaderboard_totals.kd_ratio rather than recomputing, because that view is the crate's only definition of K/D and is what /leaderboards and /users/:id/stats serve. A second query here is exactly how the Deployments page and the Leaderboard come to disagree about one player. Verified the view refreshes on all three write paths.\n  WIN RATE — `command_win_rate` LOOKS like the field you want and is not: its denominator is `count(*) FILTER (WHERE is_command)`, and command_win is a documented tri-state where NULL means 'not a command slot'. A GENERAL win rate is not derivable at all — match_player_stats has no faction column, so matches.winning_faction has nothing per-player to compare against. It served the figure under its real name, because calling it win_rate would **rebuild the same lie out of real numbers**.\n  FAVOURITE WEAPON / ASSET — nothing records them. The only weapon-ish columns platform-wide are a mortar input, what a mission OFFERS, authored intent, and vehicles KILLED. Removed with an assert-absent tripwire, per T-359's precedent.\n\nTHE ZERO CASE: null, never 0.00 — because **0.00 is a measurement claim, which is 2.45 in a quieter voice.** A player with no matches has no MV row, so fetch_optional IS the zero case; a player who has never commanded gets null keyed off command_games IS NULL, since the view flattens that to 0. A measured 0.0 is still sent, so the two stay distinguishable. This deliberately diverges from leaderboards.rs:127-141, which unwrap_or's an all-zero row and cannot tell them apart.\n\nNumbers checked against arithmetic done separately, then re-captured from a real API boot. Golden diffed: exactly six keys added, none removed, NONE CHANGED.\n\nFound in passing: the seed credits the dev admin with total_deployments = 17 while seeding only 2 matches, so the golden reads total_operations 17 beside a K/D spanning 2 matches — a self-contradicting page.\n\n== REVERTED 2026-07-26 AND HANDED BACK: the test fails on a clean database ==\ndeployments_combat.rs:160 — `kills` must always be present — fails on a FRESH ISOLATED database (t233_iso, that binary alone), so it is not T-334's shared-fixture contention. The test and the implementation disagree, even though handlers/deployments.rs:264-267 builds \"kills\" in a json! unconditionally.\nStrong hypothesis for its reported 126/0, from T-235's measurement: the shared CARGO_TARGET_DIR CLOBBERS ARTIFACTS ACROSS WORKTREES, so that run may have used a stale or foreign binary that never contained this test. Filed as T-390. The agent was told to use a private target dir and verify the binary is its own.\nEverything else about the slice stands and I want it back — the command_win_rate naming call, read-the-view-rather-than-recompute, and null-over-0.00.\n\nRE-LANDED and green. I reverted this earlier because its test failed on a fresh isolated DB, and T-235's hypothesis was that the SHARED CARGO_TARGET_DIR served a stale or foreign binary so its original '126 passed' was never trustworthy. T-390 fixed exactly that (private target-gate-api/target-gate-mapengine with CARGO_INCREMENTAL=0) and the gate now runs the DB suite against a real provisioned database instead of skipping it. It passes under both fixes, which is the first time this ticket has been *meaningfully* tested. The revert was correct on the evidence available then; the evidence was the defective gate.",
       "program": "platform",
       "surfaces": [
         "SHELL"
@@ -7665,14 +7667,14 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2510,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "shipped_at": "28e9fbb6"
+      "shipped_at": "2026-07-26"
     },
     {
       "id": "T-234",
@@ -10774,14 +10776,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3205,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 1
+      "priority": 1,
+      "shipped_at": "2026-07-26"
     },
     {
       "id": "T-390",
