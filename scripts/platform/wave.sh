@@ -898,18 +898,14 @@ gate_trunk_build() {
 #   IN   n6                 rc=0  N6 building-geometry sentence single-source
 #   IN   n10                rc=0  N10 tile-budget single-source
 #   IN   citations          rc=0  @contract citation integrity (35 citations)
-#   OUT  height-labels      rc=1  RED ON MAIN, and not because of any slice. G2-G6 all PASS and it
-#                                 then dies in the ASL oracle with "dem decode: PNG decode: Invalid
-#                                 PNG signature": packages/map-assets/everon/dem/everon-dem-16bit.png
-#                                 is a 133-byte git-lfs POINTER (declared size 71,911,548) and
-#                                 git-lfs is absent from the container's PATH *and* the host's.
-#                                 Adding it would red every future wave — T-409's failure mode, and
-#                                 worse than the hole being closed here, because a gate everyone
-#                                 routes around teaches agents that gate failures are noise.
-#                                 TO INCLUDE IT: put git-lfs on PATH, `make lfs-dem`, confirm
-#                                 `cargo run -p xtask -- schema height-labels` is rc=0 on a clean
-#                                 main, then move it from GATE_SCHEMA_EXCLUDED to GATE_SCHEMA_GATES.
-#                                 Nothing else has to change.
+#   CTX  height-labels      PER-CONTEXT (T-422). In make schema-validate always. GREEN on main
+#                                 when the DEM is a real PNG (~71 MB, magic \x89PNG). In a
+#                                 worktree that still has the 133-byte LFS pointer, the same
+#                                 sub-gate is RED for an env reason, not a schema reason. T-420
+#                                 forever-excluded it off a worktree measurement and told
+#                                 maintainers to `make lfs-dem` for a main-only green gate that
+#                                 was never red on main. Runtime inclusion follows the DEM in
+#                                 THIS tree; the tripwire still demands the Makefile name.
 # Also enumerated and NOT wired, because they are not in the schema-validate contract — they belong
 # to `make verify-terrain` and the label lane, and widening the gate past its stated authority is a
 # separate decision from closing this hole:
@@ -917,11 +913,17 @@ gate_trunk_build() {
 #   n/a  locations          rc=0  locations G2-G7
 #   n/a  town-labels        rc=0  town-label gates
 #   n/a  road-names         rc=0  road-name gates
-#   n/a  terrain-alignment  rc=1  RED, same LFS DEM pointer as height-labels ("png read_info:
-#                                 Invalid PNG signature") — anchors validate, then the decode dies.
+#   n/a  terrain-alignment  — same DEM dependency as height-labels; still outside this contract.
 #   n/a  codegen / validate-file / flatten-orbat-slots — generators and tools, not gates.
-GATE_SCHEMA_GATES="validate map-object-golden map-glyphs map-object-enums type-inventory t090-specs n6 n10 citations"
-GATE_SCHEMA_EXCLUDED="height-labels"
+#
+# GATE_SCHEMA_VALIDATE_GATES must equal `make schema-validate`'s sub-gate SET (order = Makefile).
+# citations comes from `make verify-citations` / ci-local-schema and is layered on after the
+# tripwire. height-labels stays in VALIDATE_GATES even when a worktree skips running it.
+GATE_SCHEMA_VALIDATE_GATES="validate map-object-golden map-glyphs height-labels map-object-enums type-inventory t090-specs n6 n10"
+GATE_SCHEMA_EXTRA_GATES="citations"
+# DEM path height-labels (and terrain-alignment) decode. Probe is PNG magic, not byte size —
+# size alone would green a truncated file and red a future compressor win.
+GATE_SCHEMA_DEM="packages/map-assets/everon/dem/everon-dem-16bit.png"
 # A PRIVATE TARGET DIR, for the same reason as `test api` / `test map-engine` / `test frontend`, and
 # it is not theoretical here — it was MEASURED while this step was being written, on this machine,
 # with three sibling slices live:
@@ -943,51 +945,109 @@ GATE_SCHEMA_EXCLUDED="height-labels"
 #
 # A schema gate that runs a STRANGER'S validator is this program's signature defect wearing the
 # costume of the fix for it, so the step gets its own dir. ONE dir, not one per tree (a per-ticket
-# dir grows without bound at ~1.7 GB each), plus a CONTENT stamp: when this tree's xtask sources
-# hash differently from whatever last built here, the dir is thrown away and rebuilt. Measured:
-# 14 s from cold, ~0.1 s warm, 1.7 GB resident. Content, not mtime — mtime is the thing that lied.
+# dir grows without bound at ~1.7 GB each), plus a CONTENT stamp: when this tree's xtask *and its
+# path deps* hash differently from whatever last built here, the dir is thrown away and rebuilt.
+# T-420 stamped only xtask/src + xtask/Cargo.toml + Cargo.lock while xtask depends on tbd-tools
+# and map-engine-core BY PATH — two slice trees could share GATE_SCHEMA_TARGET with the same stamp
+# while map-engine-core differed (T-422 defect 3; T-421's touch_workspace closed the live mtime
+# foreign-binary path, but the stamp itself stayed incomplete). Measured: 14 s from cold, ~0.1 s
+# warm, 1.7 GB resident. Content, not mtime — mtime is the thing that lied.
 GATE_SCHEMA_TARGET="${TBD_GATE_SCHEMA_TARGET:-$MAIN_ROOT/target-gate-schema}"
+
+# True iff THIS tree's Everon DEM is a real PNG (not a git-lfs pointer, not missing).
+schema_dem_materialized() {
+  [ -f "$GATE_SCHEMA_DEM" ] || return 1
+  local sig
+  sig="$(od -An -tx1 -N8 "$GATE_SCHEMA_DEM" | tr -d ' \n')"
+  [ "$sig" = "89504e470d0a1a0a" ]
+}
+
+# Parse `make schema-validate` recipe names. Survives blank lines, column-0 `#` comments, and
+# backslash continuations — the three shapes that made T-420's awk silently narrow (3-of-9 /
+# 8-of-9) while GNU make still ran all nine. Ends the recipe only on a real next target line.
+schema_makefile_validate_gates() {
+  awk '
+    /^schema-validate:/ { i=1; next }
+    i {
+      if (/^[[:space:]]*$/) next
+      if (/^#/) next
+      if (!/^\t/) exit
+      line = $0
+      sub(/^\t+/, "", line)
+      while (line ~ /\\[[:space:]]*$/) {
+        sub(/\\[[:space:]]*$/, "", line)
+        if ((getline nxt) <= 0) break
+        sub(/^\t+/, "", nxt)
+        if (nxt ~ /^#/ || nxt ~ /^[[:space:]]*$/) continue
+        line = line nxt
+      }
+      print line
+    }
+  ' Makefile | sed -n 's/.*-p xtask -- schema \([a-z0-9-]*\).*/\1/p'
+}
 
 gate_schema() {
   # DRIFT TRIPWIRE. A hardcoded list is readable and greppable but it rots silently, and the way it
   # rots is precisely this ticket: `make schema-validate` grows a tenth sub-gate, nobody adds it
-  # here, and the wave gate goes on printing PASS over whatever that gate checks. So diff the list
-  # against the Makefile recipe every run and refuse when they disagree.
-  local mk_gates
-  mk_gates="$(awk '/^schema-validate:/{i=1;next} i&&/^\t/{print;next} i{exit}' Makefile \
-              | sed -n 's/.*-p xtask -- schema \([a-z0-9-]*\).*/\1/p')"
-  # The tripwire has to be non-vacuous too, or it is one more tool reporting on an input it never
-  # read: a reformatted recipe that parses to the empty set would "agree" with any list at all.
+  # here, and the wave gate goes on printing PASS over whatever that gate checks. Diff the SET
+  # against the Makefile recipe every run and refuse when they disagree — including PARTIAL
+  # parses. T-420 only refused an EMPTY parse; a blank/`#`/continuation mid-recipe narrowed the
+  # awk output while make still ran all nine, and the one-way ⊆ check stayed green over the hole.
+  local mk_gates mk_sorted want_sorted
+  mk_gates="$(schema_makefile_validate_gates)"
   if [ -z "$mk_gates" ]; then
     echo "schema: read 0 sub-gates out of the schema-validate recipe in Makefile."
     echo "        The drift check is the only thing keeping this step's list honest, so a step that"
     echo "        could not run it must not go on to report PASS. Fix the parse, or the recipe."
     return 1
   fi
-  local m unknown=""
-  for m in $mk_gates; do
-    case " $GATE_SCHEMA_GATES $GATE_SCHEMA_EXCLUDED " in
-      *" $m "*) ;;
-      *) unknown="$unknown $m" ;;
-    esac
+  mk_sorted="$(printf '%s\n' $mk_gates | LC_ALL=C sort | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
+  want_sorted="$(printf '%s\n' $GATE_SCHEMA_VALIDATE_GATES | LC_ALL=C sort | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
+  if [ "$mk_sorted" != "$want_sorted" ]; then
+    echo "schema: Makefile schema-validate set disagrees with GATE_SCHEMA_VALIDATE_GATES."
+    echo "        makefile: $mk_sorted"
+    echo "        wave.sh:  $want_sorted"
+    echo "        A narrowed parse or a tenth sub-gate would keep printing PASS over unchecked"
+    echo "        contracts. Fail closed: sync the list, or fix the recipe parse."
+    return 1
+  fi
+
+  # Runtime run-set: every VALIDATE gate, minus height-labels only when THIS tree's DEM is not a
+  # materialized PNG, plus citations. Never a forever-exclusion list.
+  local run_gates="" g skipped=""
+  for g in $GATE_SCHEMA_VALIDATE_GATES; do
+    if [ "$g" = "height-labels" ] && ! schema_dem_materialized; then
+      skipped="height-labels"
+      echo "schema: height-labels SKIP in this tree — $GATE_SCHEMA_DEM is not a materialized PNG"
+      echo "        (LFS pointer or missing). On main with a real DEM this sub-gate RUNS; do not"
+      echo "        treat a worktree skip as 'red on main' or chase make lfs-dem for that."
+      continue
+    fi
+    run_gates="$run_gates $g"
   done
-  if [ -n "$unknown" ]; then
-    echo "schema: 'make schema-validate' runs sub-gate(s) this step does not:$unknown"
-    echo "        The gate would keep printing PASS over everything they check. Add each one to"
-    echo "        GATE_SCHEMA_GATES above — or to GATE_SCHEMA_EXCLUDED, with the verdict that"
-    echo "        justifies it and what would have to be true to include it later."
+  for g in $GATE_SCHEMA_EXTRA_GATES; do
+    run_gates="$run_gates $g"
+  done
+  run_gates="${run_gates# }"
+  if [ -z "$run_gates" ]; then
+    echo "schema: run-set is empty after per-context filtering — refusing vacuous PASS."
     return 1
   fi
 
   # ---- make sure the xtask we are about to trust is THIS tree's (see GATE_SCHEMA_TARGET) ----
-  local nsrc; nsrc=$(find xtask/src -name '*.rs' -type f 2>/dev/null | wc -l)
+  local nsrc
+  nsrc=$(find xtask/src crates/map-engine-core/src tools/tbd-tools/src -name '*.rs' -type f 2>/dev/null | wc -l)
   if [ "$nsrc" -eq 0 ]; then
-    echo "schema: found no xtask/src/*.rs to stamp — cannot tell whose binary would run."
+    echo "schema: found no stamp inputs under xtask/ + map-engine-core/ + tbd-tools/ — cannot tell whose binary would run."
     return 1
   fi
   local stamp
-  stamp="$( { find xtask/src -name '*.rs' -type f | LC_ALL=C sort | xargs cat
-              cat xtask/Cargo.toml Cargo.lock; } 2>/dev/null | cksum | tr -d ' ')"
+  # Path deps matter: xtask/Cargo.toml pulls tbd-tools + map-engine-core by path. Stamping only
+  # xtask left two trees with divergent map-engine-core sharing one GATE_SCHEMA_TARGET stamp.
+  stamp="$( { find xtask/src crates/map-engine-core/src tools/tbd-tools/src -name '*.rs' -type f 2>/dev/null \
+                | LC_ALL=C sort | xargs cat
+              cat xtask/Cargo.toml crates/map-engine-core/Cargo.toml tools/tbd-tools/Cargo.toml Cargo.lock
+            } 2>/dev/null | cksum | tr -d ' ')"
   local stampfile="$GATE_SCHEMA_TARGET/.tbd-xtask-src"
   if [ "$(cat "$stampfile" 2>/dev/null)" != "$stamp" ]; then
     rm -rf "$GATE_SCHEMA_TARGET"
@@ -1006,11 +1066,11 @@ gate_schema() {
   fi
   printf '%s\n' "$stamp" > "$stampfile"
 
-  local want=0 g
-  for g in $GATE_SCHEMA_GATES; do want=$((want+1)); done
+  local want=0
+  for g in $run_gates; do want=$((want+1)); done
 
   local rc ran=0 timedout=0 failed="" detail="" out
-  for g in $GATE_SCHEMA_GATES; do
+  for g in $run_gates; do
     out="$(hostrun env "CARGO_TARGET_DIR=$GATE_SCHEMA_TARGET" \
              cargo run -q -p xtask -- schema "$g" 2>&1)"; rc=$?
     ran=$((ran+1))
@@ -1023,7 +1083,7 @@ gate_schema() {
 $(printf '%s\n' "$out" | tail -6)"
   done
 
-  # NON-VACUITY. An empty GATE_SCHEMA_GATES, or a loop that exits early, reaches the verdict below
+  # NON-VACUITY. An empty run-set, or a loop that exits early, reaches the verdict below
   # having validated nothing — and would print PASS. That is the defect this function was added to
   # fix, one layer in. Count what actually executed and refuse to interpret a set that did not run.
   if [ "$ran" -eq 0 ] || [ "$ran" -ne "$want" ]; then
@@ -1035,11 +1095,19 @@ $(printf '%s\n' "$out" | tail -6)"
   # verdict printed first is the line that gets cut when several sub-gates fail at once.
   if [ -n "$failed" ]; then
     printf '%s\n' "$detail"
-    echo "schema: FAILED$failed  ($ran sub-gates run; excluded: $GATE_SCHEMA_EXCLUDED — see gate_schema)"
+    if [ -n "$skipped" ]; then
+      echo "schema: FAILED$failed  ($ran sub-gates run; context-skipped: $skipped — DEM not materialized here)"
+    else
+      echo "schema: FAILED$failed  ($ran sub-gates run)"
+    fi
     [ "$timedout" -eq 1 ] && return 124
     return 1
   fi
-  echo "schema: $ran sub-gates OK ($GATE_SCHEMA_GATES)"
+  if [ -n "$skipped" ]; then
+    echo "schema: $ran sub-gates OK ($run_gates; context-skipped: $skipped)"
+  else
+    echo "schema: $ran sub-gates OK ($run_gates)"
+  fi
 }
 
 # Refuse a gate whose change set is EMPTY.
