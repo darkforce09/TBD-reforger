@@ -8321,7 +8321,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2850,
       "stream": "web-platform",
       "targets": [
@@ -8340,7 +8340,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2860,
       "stream": "web-platform",
       "targets": [
@@ -8397,7 +8397,7 @@
       "impact": [
         "platform-server"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2890,
       "stream": "web-platform",
       "targets": [
