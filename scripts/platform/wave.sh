@@ -746,7 +746,10 @@ gate_trunk_build() {
   # `return $?`, not `return 1`: hostrun applies the timeout host-side and run() reports 124 as
   # "FAIL (TIMEOUT)" rather than a build failure. Flattening it here would relabel the single most
   # expensive step's timeout as a code error — the same category mistake this whole function is about.
-  hostrun sh -c "cd '$fdir' && CARGO_TARGET_DIR='$GATE_TRUNK_TARGET' trunk build --release --dist '$GATE_TRUNK_DIST'" \
+  # MEASURED 2026-07-26: Cursor/agent shells export NO_COLOR=1. trunk 0.21.14's clap binds
+  # that env to `--no-color` and then rejects the value `1` (`possible values: true, false`),
+  # so the wave gate printed `trunk build FAIL` over a healthy tree. Unset for this step only.
+  hostrun sh -c "cd '$fdir' && unset NO_COLOR && CARGO_TARGET_DIR='$GATE_TRUNK_TARGET' trunk build --release --dist '$GATE_TRUNK_DIST'" \
     || return $?
   # NON-VACUITY. Exit 0 only says trunk was happy; it does not say trunk HONOURED either flag. A
   # Trunk.toml key, a config-precedence change on upgrade, or one dropped quote in the sh -c above
