@@ -757,11 +757,44 @@ pub async fn create_version(
         }
         Err(e) => return Err(e.into()),
     };
-    sqlx::query("UPDATE missions SET current_version_id = $1 WHERE id = $2")
+    // Library lists `ORDER BY updated_at DESC` (`list` above); approvals projects
+    // `updated_at` as `submitted_at`. A bare `current_version_id` write left both clocks
+    // frozen at create/PATCH time, so a save that only touched the editor payload never
+    // bubbled the mission to the top of either surface. Bump in the same statement that
+    // points `current_version_id` — same shape as `submit_mission`'s `updated_at = now()`.
+    sqlx::query("UPDATE missions SET current_version_id = $1, updated_at = now() WHERE id = $2")
         .bind(version.id)
         .bind(m.id)
         .execute(&state.pool)
         .await?;
+    // Mirror `mission.submit` / `mission.approve`: the audit row is the only durable
+    // "who saved what, when" record. The version row itself has `created_by`, but nothing
+    // indexes saves onto the mission timeline the admin audit log reads.
+    let actor = &user.discord_id;
+    let actor_name = username(&state.pool, actor).await;
+    let message = if *actor == m.author_id {
+        format!(
+            "{actor_name} saved version {} of mission '{}'",
+            input.semver, m.title
+        )
+    } else {
+        let author_name = username(&state.pool, &m.author_id).await;
+        format!(
+            "{actor_name} saved version {} of {author_name}'s mission '{}'",
+            input.semver, m.title
+        )
+    };
+    write_audit(
+        &state.pool,
+        AuditSeverity::Info,
+        Some(actor),
+        &actor_name,
+        "mission.version",
+        &message,
+        "mission",
+        &m.id.to_string(),
+    )
+    .await;
     Ok((StatusCode::CREATED, Json(version)))
 }
 
