@@ -327,6 +327,28 @@ pub struct MissionCard {
     pub briefing: Option<String>,
     pub author_name: String,
     pub author_avatar: String,
+    /// **T-389 — the review stamp, promoted out of `extra` because the page now reads it.**
+    /// `GET /missions` has always carried these three (`handlers/missions.rs` `MISSION_COLS`
+    /// selects all of them), so they were silently absorbed by the `extra` catch-all below and
+    /// round-tripped without any DTO naming them. The library card renders the rejection reason on
+    /// the author's own returned mission, so they are named fields now — `extra` proving the *wire*
+    /// is not the same as a DTO the *page* can read (T-306).
+    ///
+    /// **Why the golden had to grow rather than just the struct (T-359).** All three are
+    /// `skip_serializing_if` on the backend (`models/mission.rs:108-113`), so on a never-reviewed
+    /// mission they are absent from the wire entirely. An `Option` + `skip_serializing_if` here
+    /// round-trips absent → `None` → absent, which means the R-api gate stays **green over a field
+    /// the backend never sent** — the exact hazard T-359 found. The pre-existing goldens are a
+    /// `draft` detail and a list whose four rows carry no `rejection_reason` at all, so they cannot
+    /// speak to the present case. `GET__missions__scope-mine-rejected.json` +
+    /// `GET__missions__82b937fc-c88e-4bb9-abb3-0bef67379398.json` were captured off a genuinely
+    /// rejected mission specifically so every field below is non-absent in at least one golden.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rejection_reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reviewed_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reviewed_at: Option<String>,
     #[serde(flatten)]
     pub extra: serde_json::Map<String, Value>,
 }
@@ -701,6 +723,21 @@ pub struct MissionDetail {
     pub custom_terrain_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbnail_url: Option<String>,
+    /// **T-389 — the review stamp.** `rejection_reason` is the *only* thing an author is ever told
+    /// about why their mission came back (`handlers/approvals.rs:217` is its sole writer), and until
+    /// this slice no DTO named it, so the dossier could not render it. Unlike `MissionCard` this
+    /// struct has **no `extra` catch-all** — T-306 removed it precisely so a field the backend does
+    /// not send fails the gate instead of rendering a placeholder — which means adding these three
+    /// is a real shape assertion, not a widening.
+    ///
+    /// See the `MissionCard` counterpart for why a *rejected* golden had to be captured alongside
+    /// the change: absent → `None` → absent round-trips green and proves nothing (T-359).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rejection_reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reviewed_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reviewed_at: Option<String>,
 }
 
 /// One armory row inside `armory_by_faction[].items[]` (T-159.25 faction dossiers). The flattened
@@ -940,6 +977,29 @@ pub(crate) mod r_api {
             "GET__missions__512d8658-7025-4a70-94e9-a1b44a7aa155.json"
         ));
     }
+    /// T-389 — the golden above is a `draft`, so all three review-stamp fields are **absent** from
+    /// it. Against `Option` + `skip_serializing_if` that round-trips absent → `None` → absent and
+    /// asserts nothing at all about `rejection_reason` / `reviewed_by` / `reviewed_at` — T-359's
+    /// hazard exactly. This golden was captured off a mission driven through the real
+    /// submit → reject path, so every one of the three is **present and non-empty** on the wire and
+    /// the round-trip has something to be wrong about. The two tests are a matched pair: absent case
+    /// above, present case here.
+    #[test]
+    fn mission_detail_rejected_carries_the_review_stamp() {
+        const G: &str = golden!("GET__missions__82b937fc-c88e-4bb9-abb3-0bef67379398.json");
+        assert_golden::<MissionDetail>(G);
+        // Belt-and-braces on the round-trip: assert the golden really is the present case, so this
+        // test cannot quietly decay into a second copy of the absent one if the fixture is
+        // recaptured off a draft.
+        let d: MissionDetail = serde_json::from_str(G).unwrap();
+        assert_eq!(d.status, "rejected");
+        assert!(
+            d.rejection_reason.as_deref().is_some_and(|r| !r.is_empty()),
+            "the rejected golden must carry a non-empty rejection_reason"
+        );
+        assert!(d.reviewed_by.is_some(), "and the reviewer");
+        assert!(d.reviewed_at.is_some(), "and the review timestamp");
+    }
     #[test]
     fn event_hub() {
         assert_golden::<EventHub>(golden!(
@@ -968,6 +1028,41 @@ pub(crate) mod r_api {
     #[test]
     fn missions_envelope() {
         assert_golden::<Paginated<MissionCard>>(golden!("GET__missions.json"));
+    }
+    /// T-389 — the `/missions` golden above has three `live` rows and one `draft`, so it pins
+    /// `reviewed_by`/`reviewed_at` (the live rows were approved) but **no row carries a
+    /// `rejection_reason`**, which is the one field the library card now renders. Captured from
+    /// `GET /missions?scope=mine` as the author after a real rejection.
+    ///
+    /// Naming: `fixture_for()` in `vsuite.rs` strips the query string, so `/api/v1/missions?scope=…`
+    /// resolves to `GET__missions.json` and this file can never shadow it during a DOM capture — it
+    /// is read by this test alone, deliberately, so recapturing it cannot move any oracle freeze.
+    #[test]
+    fn missions_envelope_rejected_card_carries_its_reason() {
+        const G: &str = golden!("GET__missions__scope-mine-rejected.json");
+        assert_golden::<Paginated<MissionCard>>(G);
+        let page: Paginated<MissionCard> = serde_json::from_str(G).unwrap();
+        let rejected: Vec<&MissionCard> = page
+            .data
+            .iter()
+            .filter(|m| m.status == "rejected")
+            .collect();
+        assert!(
+            !rejected.is_empty(),
+            "this golden exists to cover the rejected card; recapture it off a rejected mission"
+        );
+        for m in rejected {
+            assert!(
+                m.rejection_reason.as_deref().is_some_and(|r| !r.is_empty()),
+                "a rejected card must carry the reason the page renders"
+            );
+            // The field must be a NAMED field, not swept into `extra` — that is the difference
+            // between proving the wire and giving the page something it can read (T-306).
+            assert!(
+                !m.extra.contains_key("rejection_reason"),
+                "rejection_reason must be a named field, not absorbed by the `extra` catch-all"
+            );
+        }
     }
     /// Still `Value`, and that is the honest statement: no DTO reads `/announcements` — the page
     /// itself takes `Paginated<Value>`. Type this the day an `AnnouncementDto` lands.
