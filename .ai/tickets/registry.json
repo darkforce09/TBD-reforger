@@ -7675,7 +7675,7 @@
     {
       "id": "T-234",
       "title": "Mission approvals queue can never fill",
-      "summary": "POST /missions/{id}/submit (missions.rs:541) is the only writer of pending_approval and nothing in the SPA calls it. So /admin/approvals is permanently empty in production while the page displays mock approved and rejected lists that also drive the tab counters. Two destructive-sounding buttons do nothing.",
+      "summary": "POST /missions/{id}/submit (missions.rs:541) is the only writer of pending_approval and nothing in the SPA calls it. So /admin/approvals is permanently empty in production while the page displays mock approved and rejected lists that also drive the tab counters. Two destructive-sounding buttons do nothing.\n\nSHIPPED. THE QUEUE REALLY CANNOT FILL, proven BOTH directions: submitting over real HTTP filled GET /approvals (total 0->1->3), approve -> live, reject -> rejected + reason, resubmit -> back in queue; and the only other candidate writer is refused — PATCH with status pending_approval returns 400, because apply_status_patch whitelists archived/draft only. The frontend has ZERO references to /submit (the 10 'submit' hits are HTML on:submit, submitted_at, and wgpu queue.submit).\n\nTHE TICKET'S SECOND HALF WAS STALE: the mock approved/rejected lists were CLIENT-side and T-218 already deleted them, along with the counters and both fake buttons. `mock_approved`/`mock_rejected` survive only in comments, deferred to T-283. The API never served mock mission data, so the 'more serious half' I flagged as possibly API-side never existed.\n\nTHREE GENUINE DEFECTS FOUND AND FIXED IN THE HANDLER:\n  1. Resubmit left the PREVIOUS review round on the row — it cleared rejection_reason but not reviewed_by/reviewed_at. Driven: reject -> resubmit -> GET served `pending_approval` WITH the rejection's reviewer stamp. Both are skip_serializing_if, so NULLing them makes the wire identical to a never-reviewed mission — no shape change.\n  2. THE STATUS GUARD WAS ADVISORY — it tested a row loaded by an earlier statement while the UPDATE named the id alone. Now `AND status IN ('draft','rejected') AND deleted_at IS NULL` with rows_affected()==0 -> the same 409, measured across all five statuses plus a soft-deleted draft (1/0/0/1/0/0). The reachable clobber was a concurrent PATCH-to-archived (accepted from ANY status) leaving a mission un-archived AND queued.\n  3. Nothing recorded a submission. approve and reject both audit; the transition that CREATES the reviewer's work did not, and the row has no submitted_by/submitted_at. Added mission.submit, naming the caller and — when they differ — the author.\n\nAUTHORISATION, measured: GET /approvals as the AUTHOR (mission_maker) is **403** — admin-tier, so the author cannot see the queue they fed. submit by a non-author is 403; by an admin on someone else's mission is 200 (the same override PATCH/DELETE grant); from pending_approval/live/archived is 409 each.\n\n**125 passed, 0 failed, 0 SKIPPED** across 22 binaries with both TEST_DATABASE_URL and MIGRATE_TEST_DATABASE_URL set — the first agent to report against the gate's new honesty. Its new test was falsified: reverting only the handler makes it fail on the reviewer-stamp assertion.\n\nRECORDED, NOT FIXED: /approvals `submitted_at` is actually missions.updated_at (approvals.rs:101), and PATCH bumps it — measured, editing a pending mission's title moved its queue timestamp forward and REORDERED the oldest-first queue. Real fix is a submitted_at column, same column T-337 wants. The new audit row preserves the true submission time meanwhile. Also: an author can PATCH content while pending_approval, so a reviewer may approve something other than what was submitted, and there is no withdraw endpoint so blocking it would strand authors — a policy call. And T-283 is BLOCKED: no endpoint can list approved/rejected missions, because ListQuery has no status param and push_filters' global scope is `status='live' OR (author_id=me AND status<>'archived')`.",
       "program": "platform",
       "surfaces": [
         "SHELL"
@@ -7683,13 +7683,14 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2520,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "49c877fe"
     },
     {
       "id": "T-235",
@@ -10754,6 +10755,26 @@
       ],
       "executor": "claude-code",
       "priority": 3
+    },
+    {
+      "id": "T-389",
+      "title": "Wire the Submit for Approval button, and let the author read the verdict",
+      "summary": "MAKES T-234's WORK REACHABLE. T-234 proved POST /missions/{id}/submit is the sole door into the approvals queue and that the SPA never calls it, so /admin/approvals is permanently empty in production. It hardened the endpoint (SQL-enforced status guard, cleared stale review stamps, added a mission.submit audit) and specified the caller precisely.\n\nTHE BUTTON: apps/website/frontend/src/missions.rs:833 — the `<div class=\"flex flex-wrap gap-2\">` row in the can_edit Manage section (Archive :834-845, Delete :846-853). Gate on `m.status == \"draft\" || m.status == \"rejected\"`; handler mirrors toggle_archive (:676-715) but calls `api_post_ok(store, &format!(\"/missions/{id}/submit\"), json!({}))` then `changed.run(())`. approvals.rs:302 already uses that exact shape.\n\nTWO SUPPORTING GAPS — wiring the button without these gives the author a button and NO FEEDBACK LOOP, which is worse than no button:\n  missions.rs:46-55 `visibility_badge` has no \"rejected\" arm, so it falls through to `other => (other.to_string(), \"neutral\")` and renders the raw string `rejected`.\n  dto.rs has NO rejection_reason / reviewed_by / reviewed_at on MissionCard (:312) or MissionDetail (:657). The API writes rejection_reason (approvals.rs:217) and **it is the only thing an author is ever told about why their mission came back.** That is T-313's subject (deferred); this is the cheapest useful slice of it, so do that much here.\n\nAlso: missions.rs:615 gates on `is_maker && (is_owner || is_admin)`, stricter than the API's `author || admin` — so a non-maker author is shown no Manage section for their own mission.\n\nNOTE the DTO mirror is R-api golden-tested, so a shape change needs the golden recaptured in the SAME commit, never ahead of the route. T-306 removed a #[serde(flatten)] catch-all precisely so a DTO asserting a field the backend lacks fails a gate rather than rendering a placeholder.\n\nAnd one thing T-234 measured that shapes the UX: GET /approvals is admin-tier, so **the author cannot see the queue they fed.** Decide whether the author needs a view of their own pending submission, or whether the status badge plus the rejection reason on their own mission card is sufficient. The second is probably right and is what this ticket describes.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3205,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
     }
   ]
 }

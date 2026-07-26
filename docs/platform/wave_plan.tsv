@@ -107,6 +107,7 @@
 0	T-328	mcpd runs long-lived from the shared target dir	scripts/mod/mcp-daemon.sh
 0	T-336	recompute_user_stats belongs in services/, not private to the telemetry handler	apps/website/api/src/services; apps/website/api/src/handlers/telemetry.rs
 0	T-331	content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained	apps/website/api/seeds/content_golden.sql; apps/website/api/migrations
+1	T-389	Wire the Submit for Approval button, and let the author read the verdict	apps/website/frontend/src/missions.rs; apps/website/frontend/src/dto.rs
 1	T-373	Updating a library faction from a side destroys its emblem and every vehicle label	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/orbat_manager.rs
 1	T-374	The persist guard is byte-level, so an empty document overwrites a populated record	apps/website/frontend/src/yrs_persist.rs
 1	T-380	An edit during boot can persist the 8-slot fixture seed over a real mission	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/mission_history.rs
