@@ -31,6 +31,73 @@ sites are real vs mock — saves a 150k-token re-derivation).
 ticket summary or a code comment. If it is in neither, it was not recorded and you should re-derive
 it rather than trust a recollection.
 
+## WHERE THE RUN LEFT OFF — 2026-07-26, waves 3-5, PAUSED
+
+Read this before dispatching. Everything below is either not derivable from the tickets, or is
+sequencing that a cold start would otherwise have to guess.
+
+**Shipped, gated, verified, pushed:** waves 3 (T-405, T-406, T-399), 4 (T-240, T-241, T-243),
+5 (T-215, T-216, T-244, T-420, T-421). Tip `77214f04` + the T-421 merge. **Eleven tickets shipped,
+twelve filed** (T-409…T-426, minus the shipped ones).
+
+**Wave shape in force is the OPERATOR'S, and it overrides rule 3 / correction 2 below:**
+3 agents → **all three report** → merge all → wave gate → **one** adversarial verifier after the
+merge → triage → close. Tokens and command-center attention are the constraint, not wall clock.
+The no-barrier rule below is suspended; do not restore it without the operator.
+
+**`wave.sh land` refuses tickets promoted out of plan-wave order.** All three waves were merged by
+hand — `git merge --no-ff` per slice, then `wave.sh gate <base>` on merged main, then drop the
+worktrees. That is `cmd_land`'s exact sequence and it keeps every safety property. The refusal is
+correct behaviour, not a bug; do not "fix" it into landing the wrong set.
+
+**Point `TBD_GATE_DB` at a fresh cold database for every wave gate.** All three waves passed only
+because of this. The shared `tbd_gate_it` is at ~26 `pending_approval` rows and reds
+`missions.rs:1002` on any run. That is T-410/T-411, not your slice.
+
+### The three wave.sh tickets are SEQUENCED. Do not merge them into one pass.
+
+| order | ticket | why this order |
+|---|---|---|
+| ~~1~~ | ~~T-421~~ | **SHIPPED.** The mtime/foreign-artifact BLOCKER. Everything else stands on it. |
+| 2 | **T-409** | T-406's hard-fails that false-red on legitimate slices. Blocks real work today. |
+| 3 | **T-422** | `gate_schema`'s wrongly-excluded green gate + silently-narrowing tripwire. |
+| 4 | T-426 | Residue: `include_str!` inputs escape invalidation; gate dirs unreclaimable. |
+
+Each was found by attacking the thing that says green, and each is one small change from being
+reachable. T-421 partially mitigated T-422's third defect — read that note before scoping it.
+
+### What waves 3-5 actually cost, and what they were worth
+
+Roughly 4-5 M subagent tokens for eleven tickets. **The verifiers repeatedly earned more than the
+slices**: wave 3's found T-406's new hard-fails refusing legitimate work (the inverse of the usual
+defect); wave 5's proved `cargo check --workspace` returning rc=0 over a file containing
+`THIS IS NOT RUST AND CANNOT COMPILE`. Two of three verifiers also **disproved** command-center
+worries, which is worth as much — do not treat a "nothing found" verifier as wasted.
+
+### Judgement calls made deliberately — do not re-litigate without new evidence
+
+- **T-216 shipped ZERO of its six fields on purpose.** `mission.schema.json` closes `$defs/slot`,
+  `$defs/group` and the root, and `/compiled` 500s on violation, so emitting them would take the
+  route down for every mission. It shipped a compile-boundary **ledger** that goes red when T-242
+  widens the schema — a dead feature converted into visible work. That is the intended outcome.
+- **T-241 declared minima only**, leaving every maximum to T-275 so the two cannot disagree. It
+  also declined conditional `required` for `holdSeconds`/`targetAlias` — a different defect, and the
+  shape most likely to collide with T-201/T-211/T-212.
+- **T-215 map-placed vehicles carry no `squadId`.** Attaching would hit
+  `place_orbat.rs:157-161`, close the side's current squad, and silently split the fireteam being
+  built around it (the T-321 defect). Side goes on `factionId` instead.
+- **T-240 blocks only on capacity faults**, not the whole fault list. Making compat faults blocking
+  is an unmeasured behaviour change that would strand an author with an incompatible optic.
+
+### Two tickets were STALE and were corrected in place
+
+T-242 (claimed `$defs/entity` has no inventory model; T-198 landed `inventory` in `2070eecdd`) and
+T-410 (missed the `missions.rs:1002` ratchet). **The command center briefed an agent off T-242's
+stale summary and was corrected by the agent.** Assume more of the `idea` backlog is stale; verify
+the defect on `main` before writing code, every time.
+
+**Next wave when work resumes:** T-245, T-247, T-248 — plan rows correct, `owns` verified, dispatches cold.
+
 ## THE SIGNATURE DEFECT — what to be suspicious of
 
 Across the 2026-07-26 run, **seven independent instances** of one pattern were found, and it caused
@@ -88,6 +155,21 @@ record the correction in the ticket and tell the operator plainly.
 - **`distrobox-host-exec` does not forward env** — pass it explicitly via an `env` whitelist.
 - **A rate-limited subagent reports `<status>completed</status>`.** Treat the reset string as a
   FAILURE or you will mark dead agents as done.
+- **A `git checkout` restore does not reliably re-trigger a cargo rebuild.** Cargo's freshness test
+  is mtime-based, and a restored file can be *older* than the artifact built from the perturbed
+  version — so the tool keeps reporting the perturbed verdict over correct source. **This attacks
+  the perturbation habit itself**: every loop is break → see red → restore → see green, and the
+  GREEN half can be stale. Measured twice on 2026-07-26 (T-244 mid-verification; T-420 running a
+  foreign `xtask` its own tree could not produce). T-421 fixed the gate via `touch_workspace`;
+  **a slice agent's own manual loop is still exposed** — `touch` the file after restoring, and
+  brief agents to check the file rather than believe the tool.
+- **`make` is not on the container PATH either**, alongside cargo/rustfmt/xtask. Route it through
+  `distrobox-host-exec` like the rest. Only `wave.sh` runs directly, never wrapped.
+- **`rg` is container-only; `cargo` is host-only; `grep` exists on both.** A gate that needs both a
+  static scan and a cargo call cannot use ripgrep — `if rg …; then fail; fi` exits 127 when absent,
+  the `if` is false, and the ban prints OK having compared nothing. Use `grep -E` and read the exit
+  status: 0 match / 1 no-match / 2 file missing / 127 tool absent. Only the last two are new
+  information and both must fail closed.
 
 ## The shape
 

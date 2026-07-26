@@ -224,3 +224,4 @@
 6	T-423	T-216 contract-floor test cannot detect a floor rename	crates/map-engine-core/src/mission/flatten.rs
 6	T-424	cargo test selectors matching zero tests exit 0	scripts/verify-t180-coherency.sh
 6	T-425	Vehicle alias table plus T-215 authoring gaps	apps/website/frontend/src/eden_chrome.rs; packages/tbd-schema/registry/kit-aliases.json
+6	T-426	Gate isolation residue: include_str inputs and unreclaimable gate dirs	scripts/platform/wave.sh
