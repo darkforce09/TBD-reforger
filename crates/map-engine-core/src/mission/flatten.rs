@@ -590,6 +590,18 @@ pub enum CompileError {
 #[serde(default)]
 struct EditorPayload {
     editor: EditorGraph,
+    /// T-204 — the saved payload's TOP-LEVEL `environment` bag, sibling of `editor`, which is where
+    /// `compile_payload` puts the editor's `meta.environment` verbatim. Carries the four authored
+    /// `flow` keys; see [`derive_flow`] for the full route and [`authored_flow_seconds`] for units.
+    ///
+    /// Deliberately a bare [`serde_json::Value`] and not a typed struct. The bag is shared and
+    /// free-form (`time`, `weather`, and editor-local render prefs like `showHillshade` all live in
+    /// it), stored payloads are immutable, and a typed field would let one wrong-typed key in an
+    /// existing payload become a permanent `CompileError::Parse` → HTTP 500. `Value` accepts any
+    /// JSON — object, null, scalar, absent — so this cannot narrow the set of payloads that compile,
+    /// which is the invariant `scan_editor_payload_types` (T-367) exists to hold. The accept/reject
+    /// decision moves to the read helpers, where it matches the dialog's read-back exactly.
+    environment: serde_json::Value,
 }
 
 #[derive(Debug, Default, serde::Deserialize)]
@@ -1270,6 +1282,139 @@ fn cap_net_label(label: &str) -> String {
     label.chars().take(MOD_MAX_LABEL_CHARS).collect()
 }
 
+// ---- T-204: the authored mission-flow block ----
+
+/// What a mission that authors nothing runs with — `flow.briefingSeconds`, in **seconds**.
+///
+/// These four are the constants this emitter spliced in UNCONDITIONALLY before T-204, kept as the
+/// fallback rather than retired, and `pub` so the authoring half can stop mirroring them. They are
+/// currently duplicated as `eden_chrome::FLOW_DEFAULT_*` in the Leptos crate, which reads them back
+/// into Mission Settings for an unauthored mission (`read_flow_seconds(key, default)`); that crate
+/// already depends on this one with the `mission` feature, so a later slice can import these and
+/// delete its copies. Until it does the two sets must stay equal — T-224 states the invariant from
+/// its side: "if they ever disagree, the dialog is lying about an unauthored mission."
+///
+/// ## Why an unauthored field emits a default instead of being omitted
+///
+/// Omission is legal and it is NOT behaviour-preserving. `flow` is in the schema's top-level
+/// `required` but declares no `required` PROPERTIES, and `TBD_MissionFlowStruct` gives every field an
+/// `ABSENT = -1000000` initializer, so a missing key parses fine and `ResolveSeconds` reports it as
+/// `SRC_DEFAULT` — `golden-missions/empty-warning-fields.json` authors a literal `"flow": {}` and the
+/// mod is built to treat it exactly like a document with no block at all. So omitting would not
+/// break anything. It would silently change what every EXISTING mission does, in two places, because
+/// the mod's "default" is not this emitter's default:
+///
+/// * **`jip`** — an absent key decodes to the empty string, and `TBD_MissionFlow.PolicyFromString`
+///   maps anything it does not recognise to **`ALWAYS`** (`TBD_FrameworkManager.c:185-194`). Omitting
+///   would turn today's `until_safestart_end` into a JIP door held open for the whole round, on every
+///   mission that never opened Mission Settings. That is a security-shaped regression delivered by
+///   deletion, and it would not log as one — `ReportJip` would faithfully report `always`.
+/// * **`timeLimitSeconds`** — `ABSENT` resolves to `UNSET` (`-1`) and `ArmRoundClock` has no duration
+///   to arm, i.e. **no time limit**: the round never auto-ends. It also makes
+///   `TBD_MissionValidator.CheckTimeLimitReachable` emit a fresh WARNING on any mission declaring a
+///   `time_limit` win condition, which would move the boot gate off its 3-warning baseline.
+///
+/// `safeStartSeconds` is the one field where omission would be inert —
+/// `TBD_SafestartManager.DEFAULT_COUNTDOWN_SECONDS` is also 300, and `ApplySafeStartSeconds` does not
+/// call `AdminSetSeconds` at all unless the source is `SRC_AUTHORED`. `briefingSeconds` is advisory
+/// (announced on stage entry, nothing auto-advances). Emitting all four keeps the block uniform with
+/// the four goldens that author it and keeps one reading of "unauthored" instead of a per-field mix.
+pub const FLOW_DEFAULT_BRIEFING_S: i64 = 600;
+/// Unauthored `flow.safeStartSeconds`, in seconds. See [`FLOW_DEFAULT_BRIEFING_S`].
+pub const FLOW_DEFAULT_SAFESTART_S: i64 = 300;
+/// Unauthored `flow.timeLimitSeconds`, in seconds. See [`FLOW_DEFAULT_BRIEFING_S`].
+pub const FLOW_DEFAULT_TIMELIMIT_S: i64 = 5400;
+/// Unauthored `flow.jip`. See [`FLOW_DEFAULT_BRIEFING_S`].
+pub const FLOW_DEFAULT_JIP: &str = "until_safestart_end";
+
+/// The `jip` domain, pinned to `mission.schema.json#/$defs/flow/properties/jip` — three values.
+///
+/// Checked here rather than trusted, because the failure is silent on both sides: a value outside
+/// this set fails the schema's `enum` (so `/compiled` would serve a document the route's own
+/// validation rejects) AND `PolicyFromString` would map it to `ALWAYS` rather than complain.
+const JIP_VALUES: [&str; 3] = ["disabled", "until_safestart_end", "always"];
+
+/// One authored duration out of the payload's top-level `environment` bag, or `default`.
+///
+/// **Unit: seconds, and no conversion happens anywhere.** The Mission Settings box holds seconds,
+/// this reads seconds, `mission.schema.json` types `integer, minimum 0` seconds, and every mod reader
+/// takes seconds. T-224 chose a seconds box over a minutes box precisely so no rung has to divide: a
+/// minutes control would have to round an authored 5430 s to 90 or 91 and rewrite a value the author
+/// never touched. So "90 minutes" is authored as `5400`, and the only place minutes appear is the
+/// read-only echo beside the box (`fmt_duration_secs`).
+///
+/// **A wrong-typed or negative value reads as UNAUTHORED, not as an error and not as `0`.** Three
+/// reasons, in order of weight:
+/// 1. It mirrors `eden_chrome::read_flow_seconds`'s `.as_i64().filter(|n| *n >= 0)` exactly, so the
+///    dialog and the compiler cannot disagree about what a given payload means. That agreement is
+///    the whole contract T-224 asked for.
+/// 2. A negative would violate the schema's `minimum: 0` and make `/compiled` serve an invalid
+///    document; the mod would report it `SRC_INVALID` and run the default anyway.
+/// 3. Rejecting instead would break T-367's standing rule that the save-time accept set IS the
+///    compile set. `environment` is a shared free-form bag — it also carries `time`, `weather` and
+///    editor-local render prefs — stored payloads are immutable, and the sibling reader of this same
+///    block (`mission_compile::authored_environment`) is deliberately tolerant for exactly that
+///    reason. A typed `Option<i64>` field here would turn any stored payload with, say,
+///    `timeLimitSeconds: 5400.0` into a permanent HTTP 500, which is the T-202 regression replayed.
+///
+/// `0` is passed through, because `0` is a real authored value: on `timeLimitSeconds` it is the ONLY
+/// way to say "no time limit", and `TBD_MissionValidator` reads it as an explicit no-limit. Hence
+/// `Option` + a `None` fallback rather than any truthiness or `> 0` test.
+fn authored_flow_seconds(env: &serde_json::Value, key: &str, default: i64) -> i64 {
+    env.get(key)
+        .and_then(serde_json::Value::as_i64)
+        .filter(|n| *n >= 0)
+        .unwrap_or(default)
+}
+
+/// The authored `flow.jip`, or [`FLOW_DEFAULT_JIP`]. Mirrors `eden_chrome::read_flow_jip`'s filter:
+/// a value outside [`JIP_VALUES`] is treated as unauthored rather than forwarded.
+fn authored_flow_jip(env: &serde_json::Value) -> String {
+    env.get("jip")
+        .and_then(serde_json::Value::as_str)
+        .filter(|v| JIP_VALUES.contains(v))
+        .unwrap_or(FLOW_DEFAULT_JIP)
+        .to_string()
+}
+
+/// Build the `flow` block from what Mission Settings authored (T-204).
+///
+/// ## Where the authored values come from
+///
+/// `Mission Settings → eden_chrome::render_flow_section` writes `briefingSeconds`,
+/// `safeStartSeconds`, `timeLimitSeconds` and `jip` into `meta.environment` in the CRDT document
+/// (`author_env`, one undo step each). On Save, `mission::compile::compile_payload` copies
+/// `meta.environment` verbatim onto the payload's **top-level `environment`** object, and that is the
+/// key this function reads. So the four names here are the authored key names, unprefixed — they are
+/// NOT nested under a `flow` object on the way in, and the third column of
+/// `eden_chrome::AUTHORED_FLOW_KEYS` is the mapping being honoured.
+///
+/// Reading the payload rather than [`MissionMeta`] is what makes both compile paths agree with one
+/// change: the API path (`mission_compile::flatten_to_mod_document`) and the wasm Export path
+/// (`flatten_mod_document_json`) hand [`flatten_to_mod_document`] the same payload bytes, and only
+/// `time`/`weather` are lifted out into `MissionMeta`. Adding these four to `MissionMeta` instead
+/// would have meant a second lift in the API service and left Export on the hardcodes.
+///
+/// `environment` is deserialised as a bare [`serde_json::Value`] (see [`authored_flow_seconds`] for
+/// why it is not a typed struct), so an absent, null or non-object bag simply yields no keys and
+/// every field falls back — which is what a legacy payload saved before T-224 does.
+fn derive_flow(env: &serde_json::Value) -> ModFlow {
+    ModFlow {
+        briefing_seconds: authored_flow_seconds(env, "briefingSeconds", FLOW_DEFAULT_BRIEFING_S),
+        safe_start_seconds: authored_flow_seconds(
+            env,
+            "safeStartSeconds",
+            FLOW_DEFAULT_SAFESTART_S,
+        ),
+        time_limit_seconds: authored_flow_seconds(
+            env,
+            "timeLimitSeconds",
+            FLOW_DEFAULT_TIMELIMIT_S,
+        ),
+        jip: authored_flow_jip(env),
+    }
+}
+
 /// Derive `radioPlan.nets[]` from the ORBAT this compile just built (T-203).
 ///
 /// ── Where this comes from, since nothing authors it ──────────────────────────────────
@@ -1646,12 +1791,7 @@ pub fn flatten_to_mod_document(
         slots: doc_slots,
         radio_plan: derive_radio_plan(&radio_sources),
         zones,
-        flow: ModFlow {
-            briefing_seconds: 600,
-            safe_start_seconds: 300,
-            time_limit_seconds: 5400,
-            jip: "until_safestart_end".to_string(),
-        },
+        flow: derive_flow(&parsed.environment),
         win_conditions: ModWinConditions {
             mode: "attrition".to_string(),
             // `faction_eliminated` is only declared when at least two factions actually HOLD
@@ -3255,6 +3395,226 @@ mod tests {
             assert!(
                 scan_editor_payload_types(bytes).is_empty(),
                 "{name} compiles but the save boundary would have rejected it"
+            );
+        }
+    }
+
+    // ---- T-204: the authored mission-flow block ----
+
+    /// [`FIXTURE`] with a top-level `environment` spliced in — the shape `compile_payload` saves,
+    /// where the editor's `meta.environment` becomes the payload's own `environment` sibling of
+    /// `editor`. Built by parsing and re-serialising rather than by string concatenation so the
+    /// fixture stays the single definition of the graph.
+    fn fixture_with_environment(env: serde_json::Value) -> Vec<u8> {
+        let mut payload: serde_json::Value =
+            serde_json::from_str(FIXTURE).expect("the fixture is valid JSON");
+        payload
+            .as_object_mut()
+            .expect("the fixture is a JSON object")
+            .insert("environment".to_string(), env);
+        serde_json::to_vec(&payload).expect("re-serialise")
+    }
+
+    fn flow_of(env: serde_json::Value) -> ModFlow {
+        flatten_to_mod_document(&meta(), &fixture_with_environment(env))
+            .expect("the fixture compiles")
+            .flow
+    }
+
+    /// The ticket: an authored duration must reach the compiled document. Before T-204 all four of
+    /// these were discarded and the block always read 600/300/5400/until_safestart_end.
+    ///
+    /// Every value here is deliberately DIFFERENT from its default, so the assertion cannot pass by
+    /// accidentally reading the fallback — the exact coincidence that hid the mod-side bug T-181.38
+    /// fixed, where a hardcoded 300 s safestart happened to match the one mission anybody tested.
+    #[test]
+    fn authored_flow_values_reach_the_compiled_document() {
+        let flow = flow_of(serde_json::json!({
+            "briefingSeconds": 480,
+            "safeStartSeconds": 180,
+            "timeLimitSeconds": 3000,
+            "jip": "disabled",
+        }));
+
+        assert_eq!(flow.briefing_seconds, 480);
+        assert_eq!(flow.safe_start_seconds, 180);
+        assert_eq!(flow.time_limit_seconds, 3000);
+        assert_eq!(flow.jip, "disabled");
+    }
+
+    /// The authored keys ride the SAME bag as `time`/`weather` and the editor-local render prefs.
+    /// Reading one must not disturb the others, and an unrelated key must not be mistaken for one.
+    #[test]
+    fn the_flow_keys_share_the_environment_bag_without_colliding() {
+        let payload = fixture_with_environment(serde_json::json!({
+            "time": "18:45",
+            "weather": "overcast",
+            "showHillshade": true,
+            "showGrid": false,
+            "timeLimitSeconds": 7200,
+        }));
+        let doc = flatten_to_mod_document(&meta(), &payload).expect("compiles");
+
+        assert_eq!(doc.flow.time_limit_seconds, 7200);
+        // The other three still fall back — one authored key does not imply the block.
+        assert_eq!(doc.flow.briefing_seconds, FLOW_DEFAULT_BRIEFING_S);
+        assert_eq!(doc.flow.jip, FLOW_DEFAULT_JIP);
+        // `environment.dateTime` still comes from MissionMeta.time_of_day, untouched by this slice:
+        // the payload's `time` is lifted into MissionMeta by the API service, not read here.
+        assert_eq!(
+            doc.environment
+                .as_ref()
+                .expect("environment block")
+                .date_time,
+            format!("{COMPILE_DATE_ANCHOR}T05:30:00Z")
+        );
+    }
+
+    /// `timeLimitSeconds: 0` is a STATEMENT — "no time limit" — and the only way to say it. It must
+    /// survive as `0` and must not be confused with "the author said nothing".
+    ///
+    /// This is the trap a truthiness or `> 0` test would fall into, and the mod is built around the
+    /// same distinction: `TBD_MissionFlowStruct` uses an `ABSENT = -1000000` sentinel rather than `0`
+    /// precisely so `0` can mean this, and `TBD_MissionValidator.CheckTimeLimitReachable` reports an
+    /// authored `0` with different words than an unauthored field.
+    #[test]
+    fn an_authored_zero_duration_is_kept_and_not_read_as_unauthored() {
+        let flow = flow_of(serde_json::json!({
+            "briefingSeconds": 0,
+            "safeStartSeconds": 0,
+            "timeLimitSeconds": 0,
+        }));
+
+        assert_eq!(flow.briefing_seconds, 0);
+        assert_eq!(flow.safe_start_seconds, 0);
+        assert_eq!(flow.time_limit_seconds, 0);
+    }
+
+    /// A mission that authors nothing must compile to the values it RUNS with today. Omitting the
+    /// keys instead would be legal under the schema and would silently change two behaviours on every
+    /// existing mission — `jip` to `ALWAYS` and the round clock to never-arm. See
+    /// [`FLOW_DEFAULT_BRIEFING_S`] for the full argument.
+    #[test]
+    fn an_unauthored_mission_emits_the_defaults_it_runs_with() {
+        for (label, env) in [
+            ("absent", None),
+            ("empty object", Some(serde_json::json!({}))),
+            // A legacy payload saved before the editor authored any environment at all.
+            ("null", Some(serde_json::Value::Null)),
+            // Defensive: the bag has been non-object in stored payloads before, which is why
+            // `mission_compile::authored_environment` guards for it too.
+            ("non-object", Some(serde_json::json!("clear"))),
+        ] {
+            let doc = match env {
+                None => flatten_to_mod_document(&meta(), FIXTURE.as_bytes()),
+                Some(e) => flatten_to_mod_document(&meta(), &fixture_with_environment(e)),
+            }
+            .unwrap_or_else(|e| panic!("{label} environment must still compile: {e}"));
+
+            assert_eq!(
+                doc.flow.briefing_seconds, FLOW_DEFAULT_BRIEFING_S,
+                "{label}"
+            );
+            assert_eq!(
+                doc.flow.safe_start_seconds, FLOW_DEFAULT_SAFESTART_S,
+                "{label}"
+            );
+            assert_eq!(
+                doc.flow.time_limit_seconds, FLOW_DEFAULT_TIMELIMIT_S,
+                "{label}"
+            );
+            assert_eq!(doc.flow.jip, FLOW_DEFAULT_JIP, "{label}");
+        }
+    }
+
+    /// A value the schema would reject must never reach the document — `/compiled` serves these bytes
+    /// to a game server against `mission.schema.json`, so a negative duration or an off-enum `jip`
+    /// would make the route's own contract fail. Each falls back, exactly as Mission Settings reads
+    /// it back (`eden_chrome::read_flow_seconds` / `read_flow_jip` apply the identical filters).
+    #[test]
+    fn out_of_range_and_wrong_typed_values_fall_back_to_the_default() {
+        for bad in [
+            serde_json::json!(-1),
+            serde_json::json!(-5400),
+            serde_json::json!("5400"),
+            serde_json::json!(5400.5),
+            serde_json::json!(true),
+            serde_json::json!(null),
+            serde_json::json!([5400]),
+        ] {
+            let flow = flow_of(serde_json::json!({ "timeLimitSeconds": bad.clone() }));
+            assert_eq!(
+                flow.time_limit_seconds, FLOW_DEFAULT_TIMELIMIT_S,
+                "timeLimitSeconds {bad} must read as unauthored"
+            );
+        }
+
+        for bad in [
+            serde_json::json!("Disabled"),
+            serde_json::json!("until_safestart"),
+            serde_json::json!(""),
+            serde_json::json!(0),
+        ] {
+            let flow = flow_of(serde_json::json!({ "jip": bad.clone() }));
+            assert_eq!(
+                flow.jip, FLOW_DEFAULT_JIP,
+                "jip {bad} must read as unauthored"
+            );
+        }
+    }
+
+    /// Every `jip` the schema admits must pass through. Asserted over [`JIP_VALUES`] itself so a
+    /// fourth value added to the enum cannot be silently dropped by this filter.
+    #[test]
+    fn every_schema_legal_jip_reaches_the_document() {
+        for want in JIP_VALUES {
+            let flow = flow_of(serde_json::json!({ "jip": want }));
+            assert_eq!(flow.jip, want);
+        }
+    }
+
+    /// The defaults are not free-floating numbers: they are what the committed golden — which T-208's
+    /// drift guard pins to this emitter's output — actually carries. If someone retunes a constant
+    /// without regenerating the golden, this says so in one line instead of leaving the drift guard's
+    /// whole-document diff to be read.
+    #[test]
+    fn the_flow_defaults_are_the_values_the_committed_golden_carries() {
+        let golden: serde_json::Value =
+            serde_json::from_str(COMPILER_SHAPED_GOLDEN).expect("the golden is valid JSON");
+        let flow = &golden["flow"];
+
+        assert_eq!(flow["briefingSeconds"], FLOW_DEFAULT_BRIEFING_S);
+        assert_eq!(flow["safeStartSeconds"], FLOW_DEFAULT_SAFESTART_S);
+        assert_eq!(flow["timeLimitSeconds"], FLOW_DEFAULT_TIMELIMIT_S);
+        assert_eq!(flow["jip"], FLOW_DEFAULT_JIP);
+    }
+
+    /// T-204 must not narrow T-367's boundary. `scan_editor_payload_types`' verdict IS
+    /// `from_slice::<EditorPayload>`, so adding a field to that struct could have turned a stored
+    /// payload into a save-time 400 and a compile-time 500. `environment: serde_json::Value` cannot:
+    /// every one of these bags parses, so each still saves clean AND still compiles.
+    ///
+    /// This is the T-202 regression the precheck was built for, checked in the direction that matters
+    /// — a payload that compiles today must not start being rejected.
+    #[test]
+    fn a_malformed_environment_neither_fails_the_precheck_nor_the_compile() {
+        for env in [
+            serde_json::json!({"timeLimitSeconds": "90 minutes"}),
+            serde_json::json!({"timeLimitSeconds": 5400.0}),
+            serde_json::json!({"jip": 3}),
+            serde_json::json!({"briefingSeconds": {"minutes": 10}}),
+            serde_json::json!("not an object"),
+            serde_json::json!(42),
+            serde_json::Value::Null,
+        ] {
+            let payload = fixture_with_environment(env.clone());
+            assert!(
+                scan_editor_payload_types(&payload).is_empty(),
+                "the save boundary must not reject environment {env}"
+            );
+            assert!(
+                flatten_to_mod_document(&meta(), &payload).is_ok(),
+                "environment {env} must still compile"
             );
         }
     }
