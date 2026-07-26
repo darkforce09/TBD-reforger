@@ -4,7 +4,7 @@
 //!
 //! T-159.25: fully interactive — live search (`?q=`), row selection, and the dossier with the
 //! LIVE role editor (PATCH /admin/users/:discordId) and ban (POST …/ban, reason via the same
-//! window.prompt React uses); Sort/Filter/Issue-Warning stay the React toast stubs.
+//! window.prompt React uses).
 //!
 //! T-323: the ban reason is **required**. T-317 made the backend reject a missing or
 //! whitespace-only `reason` — before that fix a re-ban with no reason silently erased both the
@@ -15,6 +15,12 @@
 //!
 //! T-247: Personnel is the SPA caller for `POST /admin/roles/sync` (was curl-only). The header
 //! "Sync Roles" control posts that path, toasts the `updated` count, and refetches the roster.
+//!
+//! T-268: Issue Warning posts `POST /admin/users/:discordId/warnings` with the same required-
+//! reason prompt as ban (the prior mock success toast is gone). When `is_banned`, the dossier
+//! shows **Unban** → `DELETE …/ban` instead of a dead "Personnel Banned" label. Header Sort /
+//! Filter cycle client-side modes over the loaded page (roster API has no sort/filter query).
+//! Deployments stays "—" — `RosterRow` / `AdminUserRow` do not carry `total_deployments`.
 #![allow(dead_code)]
 use crate::dto::{AdminUserRow, Paginated};
 use crate::ui::{cn, AdminGate, MaterialIcon};
@@ -34,6 +40,123 @@ const ROLE_OPTIONS: [(&str, &str); 4] = [
 /// Live admin route that re-applies `discord_roles` mappings (`resync_all_roles`).
 /// Locked here so the Personnel button cannot drift off the Axum registration in `app.rs`.
 const ADMIN_ROLES_SYNC_PATH: &str = "/admin/roles/sync";
+
+/// Path suffix templates locked to `app.rs` registrations (T-268). Ban and warnings share the
+/// `:discordId` segment; unban is DELETE on the same ban path.
+fn admin_user_ban_path(discord_id: &str) -> String {
+    format!("/admin/users/{discord_id}/ban")
+}
+
+fn admin_user_warnings_path(discord_id: &str) -> String {
+    format!("/admin/users/{discord_id}/warnings")
+}
+
+/// Client-side roster sort — the list endpoint only offers `ORDER BY username ASC` + `?q=`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SortMode {
+    NameAsc,
+    WarningsDesc,
+    RoleAsc,
+    BannedFirst,
+}
+
+impl SortMode {
+    const ALL: [SortMode; 4] = [
+        SortMode::NameAsc,
+        SortMode::WarningsDesc,
+        SortMode::RoleAsc,
+        SortMode::BannedFirst,
+    ];
+
+    fn next(self) -> Self {
+        let i = Self::ALL.iter().position(|m| *m == self).unwrap_or(0);
+        Self::ALL[(i + 1) % Self::ALL.len()]
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            SortMode::NameAsc => "Sort: Name",
+            SortMode::WarningsDesc => "Sort: Warnings",
+            SortMode::RoleAsc => "Sort: Role",
+            SortMode::BannedFirst => "Sort: Banned",
+        }
+    }
+}
+
+/// Client-side roster filter — Active / Banned / All over the loaded page.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum FilterMode {
+    All,
+    Active,
+    Banned,
+}
+
+impl FilterMode {
+    const ALL: [FilterMode; 3] = [FilterMode::All, FilterMode::Active, FilterMode::Banned];
+
+    fn next(self) -> Self {
+        let i = Self::ALL.iter().position(|m| *m == self).unwrap_or(0);
+        Self::ALL[(i + 1) % Self::ALL.len()]
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            FilterMode::All => "Filter: All",
+            FilterMode::Active => "Filter: Active",
+            FilterMode::Banned => "Filter: Banned",
+        }
+    }
+}
+
+fn apply_roster_filter(mut users: Vec<AdminUserRow>, mode: FilterMode) -> Vec<AdminUserRow> {
+    match mode {
+        FilterMode::All => users,
+        FilterMode::Active => {
+            users.retain(|u| !u.is_banned);
+            users
+        }
+        FilterMode::Banned => {
+            users.retain(|u| u.is_banned);
+            users
+        }
+    }
+}
+
+fn apply_roster_sort(mut users: Vec<AdminUserRow>, mode: SortMode) -> Vec<AdminUserRow> {
+    match mode {
+        SortMode::NameAsc => {
+            users.sort_by(|a, b| {
+                display_name(a)
+                    .to_ascii_lowercase()
+                    .cmp(&display_name(b).to_ascii_lowercase())
+                    .then_with(|| a.discord_id.cmp(&b.discord_id))
+            });
+        }
+        SortMode::WarningsDesc => {
+            users.sort_by(|a, b| {
+                b.warnings
+                    .cmp(&a.warnings)
+                    .then_with(|| display_name(a).cmp(&display_name(b)))
+            });
+        }
+        SortMode::RoleAsc => {
+            users.sort_by(|a, b| {
+                a.role
+                    .as_str()
+                    .cmp(b.role.as_str())
+                    .then_with(|| display_name(a).cmp(&display_name(b)))
+            });
+        }
+        SortMode::BannedFirst => {
+            users.sort_by(|a, b| {
+                b.is_banned
+                    .cmp(&a.is_banned)
+                    .then_with(|| display_name(a).cmp(&display_name(b)))
+            });
+        }
+    }
+    users
+}
 
 /// Read `{ "updated": N }` from the roles-sync response. A missing/non-integer `updated` is an
 /// error so a 2xx with `{}` cannot toast as a completed sync.
@@ -122,6 +245,8 @@ fn PersonnelInner() -> impl IntoView {
     });
     let refetch = Callback::new(move |()| roster.refetch());
     let sync_busy = RwSignal::new(false);
+    let sort_mode = RwSignal::new(SortMode::NameAsc);
+    let filter_mode = RwSignal::new(FilterMode::All);
     let on_sync_roles = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
@@ -159,14 +284,8 @@ fn PersonnelInner() -> impl IntoView {
             let _ = (store, sync_busy, refetch);
         }
     };
-    let stub = move |msg: &'static str| {
-        move |_| {
-            #[cfg(target_arch = "wasm32")]
-            crate::toast::use_toasts().success(msg);
-            #[cfg(not(target_arch = "wasm32"))]
-            let _ = msg;
-        }
-    };
+    let on_cycle_sort = move |_| sort_mode.update(|m| *m = m.next());
+    let on_cycle_filter = move |_| filter_mode.update(|m| *m = m.next());
     view! {
         <div class="flex h-full w-full flex-1 overflow-hidden bg-surface-glass backdrop-blur-xl">
             // ── Left: data table (70%) ──
@@ -192,19 +311,19 @@ fn PersonnelInner() -> impl IntoView {
                             </button>
                             <button
                                 type="button"
-                                on:click=stub("Sort options coming soon")
+                                on:click=on_cycle_sort
                                 class="flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-label-sm text-on-surface transition hover:bg-white/5"
                             >
                                 <MaterialIcon name="swap_vert" class="text-[18px]" />
-                                "Sort"
+                                {move || sort_mode.get().label()}
                             </button>
                             <button
                                 type="button"
-                                on:click=stub("Filter options coming soon")
+                                on:click=on_cycle_filter
                                 class="flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-label-sm text-on-surface transition hover:bg-white/5"
                             >
                                 <MaterialIcon name="filter_list" class="text-[18px]" />
-                                "Filter"
+                                {move || filter_mode.get().label()}
                             </button>
                         </div>
                     </div>
@@ -229,10 +348,16 @@ fn PersonnelInner() -> impl IntoView {
                         view! { <p class="text-on-surface-variant">"Loading…"</p> }
                     }>
                         {move || {
+                            let sort = sort_mode.get();
+                            let filter = filter_mode.get();
                             roster
                                 .get()
                                 .map(|opt| match opt {
-                                    Some(page) => roster_table(page.data, selected_id).into_any(),
+                                    Some(page) => {
+                                        let users =
+                                            apply_roster_sort(apply_roster_filter(page.data, filter), sort);
+                                        roster_table(users, selected_id).into_any()
+                                    }
                                     None => {
                                         view! { <p class="text-error">"Failed to load data."</p> }
                                             .into_any()
@@ -364,11 +489,12 @@ fn roster_row(u: AdminUserRow, selected_id: RwSignal<Option<String>>) -> impl In
     }
 }
 
-/// What the client does with whatever `window.prompt` handed back for a ban reason.
+/// What the client does with whatever `window.prompt` handed back for a **required reason**
+/// (ban **or** warning — both endpoints reject blank/whitespace the same way).
 ///
 /// T-323 — the three outcomes are genuinely different and must not collapse into one. Cancel is
-/// an abandoned action; OK-with-blank is an attempted ban that is missing its reason; anything
-/// else is a ban to send. Split out as a plain function because the caller is a wasm-only
+/// an abandoned action; OK-with-blank is an attempted write that is missing its reason; anything
+/// else is a reason to send. Split out as a plain function because the caller is a wasm-only
 /// closure behind a `window.prompt`, which no test can drive — this way the decision itself is
 /// pinned by host-side unit tests.
 #[derive(Debug, PartialEq, Eq)]
@@ -399,7 +525,8 @@ fn classify_ban_reason(answer: Option<&str>) -> BanReason {
 }
 
 /// The right-pane dossier (admin.tsx `PersonnelDossier`): profile header, service telemetry, the
-/// inline role editor (live PATCH) and the docked actions (live ban; warning stays a stub).
+/// inline role editor (live PATCH), Issue Warning (live POST …/warnings), Ban (live POST …/ban),
+/// and Unban when banned (live DELETE …/ban).
 fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
     let store = expect_context::<crate::auth::AuthStore>();
     #[cfg(not(target_arch = "wasm32"))]
@@ -423,6 +550,8 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
     let editing_role = RwSignal::new(false);
     let banned = RwSignal::new(u.is_banned);
     let ban_busy = RwSignal::new(false);
+    let warn_busy = RwSignal::new(false);
+    let warnings = RwSignal::new(u.warnings);
 
     let on_role_change = move |ev: leptos::ev::Event| {
         let next = event_target_value(&ev);
@@ -475,7 +604,7 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                 BanReason::Send(reason) => reason,
             };
             ban_busy.set(true);
-            let path = format!("/admin/users/{}/ban", uid.get_value());
+            let path = admin_user_ban_path(&uid.get_value());
             let body = serde_json::json!({ "reason": reason });
             leptos::task::spawn_local(async move {
                 match crate::client::api_post_ok(store, &path, body).await {
@@ -492,9 +621,66 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
             });
         }
     };
-    let warn_stub = move |_| {
+
+    let on_unban = move |_| {
         #[cfg(target_arch = "wasm32")]
-        crate::toast::use_toasts().success("Warning issued (mock)");
+        {
+            if !banned.get_untracked() || ban_busy.get_untracked() {
+                return;
+            }
+            let toasts = crate::toast::use_toasts();
+            ban_busy.set(true);
+            let path = admin_user_ban_path(&uid.get_value());
+            leptos::task::spawn_local(async move {
+                match crate::client::api_delete(store, &path).await {
+                    Ok(()) => {
+                        toasts.success("Personnel unbanned");
+                        banned.set(false);
+                        refetch.run(());
+                    }
+                    Err(e) => toasts.error(crate::client::api_error_message(&e, "Unban failed")),
+                }
+                ban_busy.set(false);
+            });
+        }
+    };
+
+    let on_warn = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            if warn_busy.get_untracked() {
+                return;
+            }
+            let Some(win) = web_sys::window() else {
+                return;
+            };
+            let toasts = crate::toast::use_toasts();
+            let Ok(answer) = win.prompt_with_message("Warning reason (required):") else {
+                return;
+            };
+            let reason = match classify_ban_reason(answer.as_deref()) {
+                BanReason::Abort => return,
+                BanReason::Reject => {
+                    toasts.error("Warning reason is required");
+                    return;
+                }
+                BanReason::Send(reason) => reason,
+            };
+            warn_busy.set(true);
+            let path = admin_user_warnings_path(&uid.get_value());
+            let body = serde_json::json!({ "reason": reason });
+            leptos::task::spawn_local(async move {
+                match crate::client::api_post_ok(store, &path, body).await {
+                    Ok(()) => {
+                        toasts.success("Warning issued");
+                        warnings.update(|n| *n = n.saturating_add(1));
+                        refetch.run(());
+                    }
+                    Err(e) => toasts.error(crate::client::api_error_message(&e, "Warning failed")),
+                }
+                warn_busy.set(false);
+            });
+        }
     };
 
     view! {
@@ -510,9 +696,10 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                 </div>
 
                 <div class="mt-6 grid grid-cols-2 gap-3">
+                    // RosterRow / AdminUserRow omit total_deployments — honest unknown, not a fake 0.
                     {stat("Deployments", "—".to_string())}
                     {stat_reactive("Current Rank", move || role.get().to_uppercase())}
-                    {stat("Warnings", u.warnings.to_string())}
+                    {stat_reactive("Warnings", move || warnings.get().to_string())}
                     {stat_reactive(
                         "Status",
                         move || if banned.get() { "Banned".into() } else { "Active".into() },
@@ -555,21 +742,44 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                 </button>
                 <button
                     type="button"
-                    on:click=warn_stub
-                    class="flex items-center justify-center gap-2 rounded-lg border border-tactical-yellow/30 py-2.5 text-label-md text-tactical-yellow transition hover:bg-tactical-yellow/10"
+                    on:click=on_warn
+                    prop:disabled=move || warn_busy.get()
+                    class="flex items-center justify-center gap-2 rounded-lg border border-tactical-yellow/30 py-2.5 text-label-md text-tactical-yellow transition hover:bg-tactical-yellow/10 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                     <MaterialIcon name="warning" class="text-[18px]" />
-                    "Issue Warning"
+                    {move || if warn_busy.get() { "Issuing…" } else { "Issue Warning" }}
                 </button>
-                <button
-                    type="button"
-                    on:click=on_ban
-                    prop:disabled=move || banned.get() || ban_busy.get()
-                    class="flex items-center justify-center gap-2 rounded-lg bg-error-alert/15 py-2.5 text-label-md font-medium text-error-alert transition hover:bg-error-alert/25 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                    <MaterialIcon name="gavel" class="text-[18px]" />
-                    {move || if banned.get() { "Personnel Banned" } else { "Ban Personnel" }}
-                </button>
+                {move || {
+                    if banned.get() {
+                        view! {
+                            <button
+                                type="button"
+                                on:click=on_unban
+                                prop:disabled=move || ban_busy.get()
+                                data-testid="personnel-unban"
+                                class="flex items-center justify-center gap-2 rounded-lg border border-success/30 bg-success/10 py-2.5 text-label-md font-medium text-success transition hover:bg-success/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                <MaterialIcon name="lock_open" class="text-[18px]" />
+                                {move || if ban_busy.get() { "Unbanning…" } else { "Unban Personnel" }}
+                            </button>
+                        }
+                            .into_any()
+                    } else {
+                        view! {
+                            <button
+                                type="button"
+                                on:click=on_ban
+                                prop:disabled=move || ban_busy.get()
+                                data-testid="personnel-ban"
+                                class="flex items-center justify-center gap-2 rounded-lg bg-error-alert/15 py-2.5 text-label-md font-medium text-error-alert transition hover:bg-error-alert/25 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                <MaterialIcon name="gavel" class="text-[18px]" />
+                                {move || if ban_busy.get() { "Banning…" } else { "Ban Personnel" }}
+                            </button>
+                        }
+                            .into_any()
+                    }
+                }}
             </div>
         </div>
     }
@@ -598,9 +808,31 @@ fn stat_reactive(
 #[cfg(test)]
 mod tests {
     use super::{
+        admin_user_ban_path, admin_user_warnings_path, apply_roster_filter, apply_roster_sort,
         classify_ban_reason, roles_sync_success_message, roles_sync_updated_count, BanReason,
-        ADMIN_ROLES_SYNC_PATH,
+        FilterMode, SortMode, ADMIN_ROLES_SYNC_PATH,
     };
+    use crate::dto::AdminUserRow;
+    use crate::nav::Role;
+
+    fn row(
+        discord_id: &str,
+        username: &str,
+        role: Role,
+        is_banned: bool,
+        warnings: i64,
+    ) -> AdminUserRow {
+        AdminUserRow {
+            discord_id: discord_id.into(),
+            username: username.into(),
+            discord_handle: username.into(),
+            arma_id: None,
+            arma_character: String::new(),
+            role,
+            is_banned,
+            warnings,
+        }
+    }
 
     #[test]
     fn admin_roles_sync_path_matches_live_api_route() {
@@ -616,6 +848,92 @@ mod tests {
              Personnel posts ADMIN_ROLES_SYNC_PATH"
         );
         assert_eq!(ADMIN_ROLES_SYNC_PATH, "/admin/roles/sync");
+    }
+
+    #[test]
+    fn admin_ban_and_warnings_paths_match_live_api_routes() {
+        // T-268: path helpers must track app.rs — a const echo of itself stays green forever.
+        // Ban/warnings registrations are multi-line `.route(\n  "…"` — match the path string.
+        const APP_RS: &str =
+            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../api/src/app.rs"));
+        assert!(
+            APP_RS.contains(r#""/admin/users/{discordId}/ban""#),
+            "app.rs must register ban/unban on /admin/users/{{discordId}}/ban"
+        );
+        assert!(
+            APP_RS.contains(r#""/admin/users/{discordId}/warnings""#),
+            "app.rs must register warnings on /admin/users/{{discordId}}/warnings"
+        );
+        assert!(
+            APP_RS.contains("unban_user"),
+            "app.rs ban route must wire DELETE to unban_user"
+        );
+        assert_eq!(admin_user_ban_path("42"), "/admin/users/42/ban");
+        assert_eq!(admin_user_warnings_path("42"), "/admin/users/42/warnings");
+    }
+
+    #[test]
+    fn issue_warning_is_not_a_mock_toast() {
+        // T-268 defect: Issue Warning toasted a fake success while POST …/warnings worked.
+        // Forbidden / required phrases assembled so include_str cannot false-green off this test.
+        const SRC: &str = include_str!("personnel.rs");
+        let mock_toast = format!("{}{}", "Warning issued ", "(mock)");
+        let real_toast = format!("{}{}", "toasts.success(", r#""Warning issued")"#);
+        assert!(
+            !SRC.contains(&mock_toast),
+            "Issue Warning must not toast a mock success (perturbation: reintroduce the mock toast)"
+        );
+        assert!(
+            SRC.contains("admin_user_warnings_path")
+                && SRC.contains(&format!("{}{}", "api_post_ok", "(store, &path, body)")),
+            "Issue Warning must POST via admin_user_warnings_path + api_post_ok"
+        );
+        assert!(
+            SRC.contains("Warning reason (required):"),
+            "warning prompt must require a reason (mirror ban)"
+        );
+        assert!(
+            SRC.contains(&real_toast),
+            "success toast after a real POST must say Warning issued"
+        );
+    }
+
+    #[test]
+    fn unban_control_deletes_ban_when_banned() {
+        // T-268: bans were irreversible from the SPA. Needles assembled so include_str cannot
+        // false-green off this assert's own string literals.
+        const SRC: &str = include_str!("personnel.rs");
+        let delete_call = format!("{}{}", "api_delete", "(store, &path)");
+        let unban_label = format!("{}{}", "Unban ", "Personnel");
+        let unban_testid = format!("{}{}", "personnel-", "unban");
+        assert!(
+            SRC.contains(&delete_call),
+            "Unban must DELETE via api_delete (perturbation: drop api_delete call)"
+        );
+        assert!(
+            SRC.contains("admin_user_ban_path") && SRC.contains(&unban_label),
+            "banned dossier must expose Unban Personnel on the ban path"
+        );
+        assert!(
+            SRC.contains(&unban_testid),
+            "unban control needs a stable testid"
+        );
+    }
+
+    #[test]
+    fn sort_and_filter_are_not_toast_stubs() {
+        const SRC: &str = include_str!("personnel.rs");
+        // Assemble so the assert literals cannot false-green the include_str scan.
+        let sort_stub = format!("{}{}", "Sort options ", "coming soon");
+        let filter_stub = format!("{}{}", "Filter options ", "coming soon");
+        assert!(
+            !SRC.contains(&sort_stub) && !SRC.contains(&filter_stub),
+            "Sort/Filter must not toast stub copy"
+        );
+        assert!(
+            SRC.contains("apply_roster_sort") && SRC.contains("apply_roster_filter"),
+            "header Sort/Filter must drive apply_roster_sort / apply_roster_filter"
+        );
     }
 
     #[test]
@@ -681,5 +999,58 @@ mod tests {
             classify_ban_reason(Some("Repeated TK after warning")),
             BanReason::Send("Repeated TK after warning".to_string())
         );
+    }
+
+    #[test]
+    fn filter_active_and_banned() {
+        let users = vec![
+            row("1", "Alice", Role::Enlisted, false, 0),
+            row("2", "Bob", Role::Enlisted, true, 1),
+            row("3", "Cara", Role::Leader, false, 0),
+        ];
+        let active = apply_roster_filter(users.clone(), FilterMode::Active);
+        assert_eq!(
+            active
+                .iter()
+                .map(|u| u.username.as_str())
+                .collect::<Vec<_>>(),
+            vec!["Alice", "Cara"]
+        );
+        let banned = apply_roster_filter(users, FilterMode::Banned);
+        assert_eq!(
+            banned
+                .iter()
+                .map(|u| u.username.as_str())
+                .collect::<Vec<_>>(),
+            vec!["Bob"]
+        );
+    }
+
+    #[test]
+    fn sort_warnings_desc_and_banned_first() {
+        let users = vec![
+            row("1", "Alice", Role::Enlisted, false, 0),
+            row("2", "Bob", Role::Admin, true, 1),
+            row("3", "Cara", Role::Leader, false, 5),
+        ];
+        let by_warn = apply_roster_sort(users.clone(), SortMode::WarningsDesc);
+        assert_eq!(
+            by_warn
+                .iter()
+                .map(|u| u.username.as_str())
+                .collect::<Vec<_>>(),
+            vec!["Cara", "Bob", "Alice"]
+        );
+        let banned_first = apply_roster_sort(users, SortMode::BannedFirst);
+        assert_eq!(banned_first[0].username, "Bob");
+        assert!(banned_first[0].is_banned);
+    }
+
+    #[test]
+    fn sort_and_filter_modes_cycle() {
+        assert_eq!(SortMode::NameAsc.next(), SortMode::WarningsDesc);
+        assert_eq!(SortMode::BannedFirst.next(), SortMode::NameAsc);
+        assert_eq!(FilterMode::All.next(), FilterMode::Active);
+        assert_eq!(FilterMode::Banned.next(), FilterMode::All);
     }
 }
