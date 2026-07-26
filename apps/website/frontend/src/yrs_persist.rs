@@ -40,8 +40,31 @@
 //!     it no longer matches, so A's bytes can never be filed under B.
 //!   * **Records belonging to other accounts are evicted at editor boot**
 //!     ([`evict_foreign_records`]). That is the backstop which also covers session expiry and a
-//!     browser closed without signing out — neither of which any sign-out handler ever sees. The
-//!     synchronous sign-out path calls [`purge_owner`] directly.
+//!     browser closed without signing out — neither of which any sign-out handler ever sees.
+//!
+//! # T-338 — sign-out is finally wired to the purge this module documented
+//!
+//! T-221 shipped [`purge_owner`] `pub`, tested and ready, and this header said "the synchronous
+//! sign-out path calls [`purge_owner`] directly". Nothing did. For two waves
+//! [`evict_foreign_records`] was its only caller repo-wide, so signing out namespaced the departing
+//! account's drafts away from the next person without deleting them — on a shared machine the
+//! documents sat on the disk until some later editor boot happened to notice, and "signed out" did
+//! not mean the work was gone.
+//!
+//! `auth::clear_session` now calls it, by way of `mission_hydrate::purge_local_documents`, which
+//! drops the RAM half of the same records in the same breath (see that module's T-338 section — the
+//! in-memory snapshot cache in front of this store was the other half of the leak).
+//!
+//! **The owner is captured before the session is cleared, and that ordering is the fix, not a
+//! detail.** [`current_owner`] reads `localStorage["tbd-auth"]`, and sign-out clears both the signals
+//! and that blob; resolve the token afterwards and it is [`ANON_OWNER`], so the purge would delete a
+//! signed-out visitor's drafts and leave the departing account's exactly where they were — the
+//! inverse of the intent, and silent. `clear_session` therefore reads `discord_id` out of the session
+//! signal first and passes it in.
+//!
+//! The boot-time eviction stays exactly as it was and is still the load-bearing backstop: no
+//! sign-out handler runs for a session that expires, a token that is revoked, or a browser that is
+//! closed with the tab open.
 #![allow(clippy::cast_precision_loss)] // usize slot count → f64 for the JS bridge; tiny.
 
 use std::cell::{Cell, RefCell};
@@ -102,7 +125,16 @@ fn current_owner() -> Option<String> {
 }
 
 /// [`current_owner`] with the signed-out fallback applied — the namespace a read or write uses now.
-fn owner_token() -> String {
+///
+/// **T-338 — `pub`, because a second cache had to agree with this one.** `mission_hydrate` keeps an
+/// in-memory copy of each T-191 snapshot in front of these records, and it was not keyed by account:
+/// its lookup hit before the scoped IDB read, so within one page load a change of account did not
+/// hide the previous account's document. There is exactly one right token for that cache to key on —
+/// this one — because any other choice makes "is a backup on record?" and "can a restore read it?"
+/// two different questions, and the whole hazard is a `has()` that answers for a document the reader
+/// cannot legitimately have.
+#[must_use]
+pub fn owner_token() -> String {
     current_owner().unwrap_or_else(|| ANON_OWNER.to_string())
 }
 
@@ -315,7 +347,15 @@ pub async fn clear_state(id: &str) -> Result<(), idb::Error> {
 ///
 /// Public because sign-out has to be able to call it: clearing the session leaves the drafts behind,
 /// and on a shared machine "signed out" has to mean the work is gone from the disk too, not merely
-/// namespaced away from the next person. Used here by [`evict_foreign_records`].
+/// namespaced away from the next person.
+///
+/// Two callers, and they cover the two ways an account stops using this machine: [`evict_foreign_records`]
+/// at the next editor boot (session expiry, revoked token, browser closed), and — since T-338 —
+/// `mission_hydrate::purge_local_documents` from `auth::clear_session` on a deliberate sign-out.
+///
+/// One prefix scan covers all three record kinds by construction: the live doc `<id>` and both T-191
+/// snapshot slots (`<id>::pre-adopt` / `<id>::pre-restore`) are logical keys under the same owner
+/// prefix, so nothing here has to know they exist.
 pub async fn purge_owner(owner: &str) -> usize {
     let prefix = owner_prefix(owner);
     let doomed: Vec<String> = all_keys()

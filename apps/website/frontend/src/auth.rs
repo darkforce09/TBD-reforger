@@ -232,12 +232,47 @@ impl AuthStore {
         self.expires_at.set(Some(t.expires_at));
     }
 
+    /// Drop the session — and, since T-338, the local documents that belong to it.
+    ///
+    /// **Why the purge lives here rather than at the Sign Out click.** The editor keeps the whole
+    /// mission document in IndexedDB (`yrs_persist`) plus a RAM cache of the T-191 recovery snapshots
+    /// (`mission_hydrate`), both namespaced by the signed-in `discord_id` since T-221. Clearing the
+    /// session used to leave every one of those records in place: namespaced away from the next
+    /// person, but still on the machine, and — because the RAM cache was not namespaced at all —
+    /// still readable by whoever signed in next within the same page load. That is the leak T-338
+    /// closes, and it closes here because this is the function that destroys the identity the records
+    /// are filed under. Any purge bolted onto a UI handler instead would be one handler among the
+    /// several that can end a session.
+    ///
+    /// **The capture must precede the clear.** `yrs_persist` resolves the owner token from
+    /// `localStorage["tbd-auth"]`, and a sign-out clears the signals here and that blob a moment later
+    /// (`layout.rs`). Ask for the token after this function has run and the answer is `anon`: the purge
+    /// would delete a signed-out visitor's drafts — a real state, the editor route has no auth guard —
+    /// and leave the departing account's untouched. So the `discord_id` is read off the signal first,
+    /// while it still exists, and passed in explicitly. Reading the signal rather than localStorage
+    /// also keeps the two orderings independent: nothing here depends on when the caller re-persists.
+    ///
+    /// An absent or blank `discord_id` purges **nothing**. There is no account to attribute the
+    /// records to, and the fallback token would be `anon` — the namespace a signed-out visitor's own
+    /// work lives in, which a stray session clear must not be able to delete.
     pub fn clear_session(&self) {
+        #[cfg(target_arch = "wasm32")]
+        let departing = self
+            .user
+            .get_untracked()
+            .map(|u| u.discord_id)
+            .filter(|id| !id.trim().is_empty());
+
         self.access_token.set(None);
         self.refresh_token.set(None);
         self.expires_at.set(None);
         self.user.set(None);
         self.bootstrapping.set(false);
+
+        #[cfg(target_arch = "wasm32")]
+        if let Some(owner) = departing {
+            crate::mission_hydrate::purge_local_documents(&owner);
+        }
     }
 
     pub fn is_authenticated(&self) -> bool {
