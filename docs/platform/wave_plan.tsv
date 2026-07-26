@@ -63,6 +63,19 @@
 0	T-348	Five PATCH handlers let a whitespace value overwrite real content	apps/website/api/src/handlers/events.rs; apps/website/api/src/handlers/cms.rs
 0	T-349	wiki slug has no guard at all, and field_tools.rs was missed by the whole sweep	apps/website/api/src/handlers/wiki.rs; apps/website/api/src/handlers/field_tools.rs
 0	T-352	tbd-editor-adopted marker is unscoped per-account editor state	apps/website/frontend/src/editor_session.rs
+1	T-372	POST /admin/roles/sync demotes every admin who never completed a Discord login	apps/website/api/src/services/role_sync.rs
+1	T-373	Updating a library faction from a side destroys its emblem and every vehicle label	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/orbat_manager.rs
+1	T-374	The persist guard is byte-level, so an empty document overwrites a populated record	apps/website/frontend/src/yrs_persist.rs
+1	T-375	An authored mission title is dropped by Save and overwritten by the stale row on reload	crates/map-engine-core/src/mission/compile.rs
+1	T-376	The registry importer NULLs ten populated columns from a partial envelope	apps/website/api/src/services/registry_import.rs
+1	T-377	PATCH and the compiler hold opposite meanings for an empty weather string	apps/website/api/src/handlers/missions.rs
+1	T-378	gate v-suite accept can write the literal string null over a committed golden	tools/tbd-tools/src/vsuite.rs; tools/tbd-tools/src/world/build.rs
+1	T-379	role_played accepts a blank and replaces a populated scoreline	apps/website/api/src/handlers/telemetry.rs
+1	T-380	An edit during boot can persist the 8-slot fixture seed over a real mission	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/mission_history.rs
+1	T-381	The integration suite can point at the live database, and one delete is unscoped	apps/website/api/tests/factions.rs
+1	T-382	Empty-but-valid payload becomes current_version_id with no rollback route	apps/website/api/src/handlers/missions.rs
+1	T-383	Four tooling paths overwrite committed files with empty or wrong content	xtask/src/cmds.rs; xtask/src/sync.rs; xtask/src/schema_gates.rs
+1	T-384	Re-pointing a match to another event leaves the first event marked attended	apps/website/api/src/handlers/telemetry.rs
 1	T-371	display_name() selects on an untrimmed is_empty, so a whitespace Discord name is stored verbatim	apps/website/api/src/services/discord.rs; apps/website/api/src/handlers/admin.rs
 1	T-370	Remove the 8 dead mark_adopted call sites — move the purge first	apps/website/frontend/src/mission_hydrate.rs
 1	T-367	T-202 turned a silently-ignored field into a permanent 500 on compile	apps/website/api/src/handlers/missions.rs; crates/map-engine-core/src/mission/flatten.rs

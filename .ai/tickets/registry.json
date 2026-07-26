@@ -10346,7 +10346,7 @@
     {
       "id": "T-369",
       "title": "A corrected match re-POST silently skips attendance forever",
-      "summary": "FOUND by the adversarial verifier, and it contradicts T-316's own stated rule.\n\nOn the re-ingest branch, `upsert_match` (telemetry.rs:555-582) OMITS `event_id`, `mission_id`, `terrain` and `started_at` from the UPDATE and returns the STORED `ev`. So: a first POST carrying a `source_match_id` but no `event_id`, followed by a corrected re-POST carrying the right one, **silently skips attendance forever** — `if let Some(eid) = event_id` at :489 sees `None` because the stored row still has none.\n\nThat is the opposite of what T-316 decided for the sibling fields: for `ended_at`, `winning_faction` and `aar_replay_url` a PRESENT field wins; for these four it is discarded. T-316's per-struct reasoning was careful and deliberate, so this is very likely an oversight in the re-ingest branch rather than a decision — but read that reasoning before changing it, and if the asymmetry IS intentional, document it, because nothing currently says so.\n\nLow practical reach today (the mod re-sends an identical payload), which is why it is P2 rather than P1. But attendance is the thing operators actually check after an op, and a correction that silently does nothing is worse than one that errors.",
+      "summary": "FOUND by the adversarial verifier, and it contradicts T-316's own stated rule.\n\nOn the re-ingest branch, `upsert_match` (telemetry.rs:555-582) OMITS `event_id`, `mission_id`, `terrain` and `started_at` from the UPDATE and returns the STORED `ev`. So: a first POST carrying a `source_match_id` but no `event_id`, followed by a corrected re-POST carrying the right one, **silently skips attendance forever** — `if let Some(eid) = event_id` at :489 sees `None` because the stored row still has none.\n\nThat is the opposite of what T-316 decided for the sibling fields: for `ended_at`, `winning_faction` and `aar_replay_url` a PRESENT field wins; for these four it is discarded. T-316's per-struct reasoning was careful and deliberate, so this is very likely an oversight in the re-ingest branch rather than a decision — but read that reasoning before changing it, and if the asymmetry IS intentional, document it, because nothing currently says so.\n\nLow practical reach today (the mod re-sends an identical payload), which is why it is P2 rather than P1. But attendance is the thing operators actually check after an op, and a correction that silently does nothing is worse than one that errors.\n\nSHIPPED. OVERSIGHT, NOT INTENT — settled by ARCHAEOLOGY rather than inference. The agent read the pre-Rust Go original (c05ddbc9e^:apps/website/internal/handlers/telemetry.go) and found the four-column list is a VERBATIM CARRY-OVER of T-001's `Updates(map[string]any{\"ended_at\",\"outcome\",\"winning_faction\",\"aar_replay_url\"})`, commented 'mutable result fields'. T-316 changed what those four columns MEAN and never revisited which columns were IN the list. It also noted T-316 named and justified five of MatchInput's nine fields and never mentions these four — a ticket that careful did not silently decide them.\n\nReproduced with real values: both POSTs returned 200 with the SAME match_id, so the dedupe key worked and only the correction was thrown away. event_id/mission_id/terrain stayed NULL, started_at kept POST 1's now(), state stayed `registered`, attendance_rate 0.0.\n\nTWO STRUCTURAL CARES: started_at binds m.started_at and NEVER the create path's unwrap_or_else(Utc::now) — it MOVED that default down into the INSERT so it cannot be in scope beside the UPDATE and look right there. And `RETURNING event_id` now gives the caller the MERGED value; returning the pre-update column was the other half of why the correction did nothing.\n\nAll six T-316 decisions re-verified individually on a live server, plus T-347's blank-dedupe test. 119/119. attendance_rate 0.00 -> 50.00; leaderboard_totals checked and correctly unaffected (it aggregates match_player_stats, not attendance).\n\nNEW CONSEQUENCE ITS OWN FIX CREATED, flagged not hidden: the re-point is now reachable, and the attendance UPDATE only ever SETS attended, never retracts. Re-pointing a match from EV1 to EV2 marks EV2 attended and LEAVES EV1 attended, inflating attendance_rate to 100%. There is no record of which match marked a registration, so the write is not currently reversible — a contract decision, filed as T-384.",
       "program": "platform",
       "surfaces": [
         "API"
@@ -10354,14 +10354,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3185,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 2
+      "priority": 2,
+      "shipped_at": "80120c1d"
     },
     {
       "id": "T-370",
@@ -10396,6 +10397,270 @@
       ],
       "status": "idea",
       "order": 3187,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-372",
+      "title": "POST /admin/roles/sync demotes every admin who never completed a Discord login",
+      "summary": "VERIFIED FROM THE COMMAND CENTER. One admin button press can lock every admin out of the platform, and that route is the only way back.\n\nservices/role_sync.rs:65-67 — `resolve_role` returns `Ok(UserRole::Enlisted)` when `role_ids` is EMPTY. `resync_all_roles` (:38) walks EVERY user, reads their stored snowflakes, and writes the resolved role when it differs (:51 `UPDATE users SET role = $1 WHERE discord_id = $2`). **Absent stored data decodes as an affirmative `enlisted`.**\n\n`user_discord_roles` has EXACTLY ONE writer — `sync_roles`, called only from the Discord OAuth callback (confirmed by grep across src/, seeds/, tests/, migrations/). No seed populates it. So every user who has never completed a Discord login holds zero rows, including:\n  - the dev-login operator `000000000000000001`, which handlers/dev.rs:41-54 upserts as `admin`;\n  - anyone hand-promoted via PATCH /admin/users/{discordId} — handlers/admin.rs:149 writes the role and never touches user_discord_roles.\n\nOne POST /api/v1/admin/roles/sync demotes all of them — **including the admin who pressed it.** On a dev or staging DB that is total admin lockout.\n\nTHE ASYMMETRY IS THE PROOF THIS IS A BUG: the OAuth path is already hardened against exactly this. T-185 introduced `RoleSnapshot::Authoritative` vs `Unavailable` (oauth.rs:129) with six regression tests at oauth.rs:280-385, and discord.rs:145-149 explicitly refuses #[serde(default)] on `roles`. `resync_all_roles` has no equivalent guard — and the comment at oauth.rs:295-296 NAMES the dependency: 'with no snapshot left for resync_all_roles to restore from.'\n\nFIX: give resync the same treatment. A user with no stored snowflakes has NO SNAPSHOT, which is not the same statement as NO ROLES, and must be SKIPPED rather than demoted. Read T-185's reasoning first — it drew this exact distinction one function over.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3188,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-373",
+      "title": "Updating a library faction from a side destroys its emblem and every vehicle label",
+      "summary": "The sharpest finding of the CRDT/round-trip audit. `PUT /factions/:id` is a WHOLE-DOCUMENT replace, and the body handed to it is derived entirely from the mission document with two fields hardcoded to None.\n\nfrontend/src/editor_ops.rs:1589-1605 — `faction_doc_from_side_core` builds a `FactionDoc` with `emblem: None` and `label: None` on every vehicle. frontend/src/orbat_manager.rs:309-327 — the 'Update selected library faction from this side' button PUTs that derived doc, reading the STORED library doc for exactly one field (`name`).\n\nBecause the PUT replaces the whole document and `skip_serializing_if = \"Option::is_none\"` omits the keys:\n  - **the stored emblem is destroyed on every Save**;\n  - **every authored vehicle label in the template is destroyed**;\n  - a role whose slot carries no loadout/tag loses the template's authored loadout for that role;\n  - if the mission's side has no squads or vehicles, `roles: []` / `vehicles: []` ARE serialized (no skip on Vec) and faction-library.schema.json has no `minItems`, so **the entire library faction is emptied** and still validates.\n\nThe sibling path is safe and shows what right looks like: faction_manager.rs:90-121 round-trips the full FactionDoc it loaded at :84-88. And the reverse direction is defended — `apply_faction_library` refuses with WouldCollapseSquads before its first write (doc/apply_faction.rs:211-240, T-217/T-308). So this direction is the only unguarded one.\n\nFIX: read the stored doc and merge, rather than deriving a replacement — or make the endpoint accept a partial. Do NOT simply stop sending the button's data; the feature is legitimate. Note handlers/factions.rs is T-358's this wave (it is fixing the untrimmed name on the same endpoint) — coordinate, and consider whether the endpoint should take an If-Match/ETag, since there is currently no versioning and a stale client write is unrecoverable.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3189,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-374",
+      "title": "The persist guard is byte-level, so an empty document overwrites a populated record",
+      "summary": "The guard that exists to prevent exactly this does not implement it.\n\nfrontend/src/yrs_persist.rs:516-534 `run_save` ends with:\n    let bytes = (pending.get_bytes)();\n    if bytes.is_empty() { return; }  // 'never overwrite a good record with an empty/truncated blob'\n\n`bytes.is_empty()` is a BYTE test, not a CONTENT test. `encode_state()` is `encode_state_as_update_v1(&StateVector::default())`, which writes a var-int client count then the delete set — so **an empty document encodes to `[0, 0]`, two bytes, non-empty**, and sails straight past the guard. `get_bytes` only yields `Vec::new()` when the doc Option is None, which `is_cancelled` already catches. So the module header's stated promise at :12 is not implemented.\n\n**The predicate already exists and is not consulted:** `has_content()` (crates/map-engine-core/src/doc/store.rs:1293-1303) has exactly ONE call site — mission_hydrate::classify_local:344 — and is never used on the write path. Use it.\n\nSame byte-level test in the snapshot pair: `snapshot_local` (mission_hydrate.rs:740-760) captures a content-empty doc, and `has_snapshot` (:768-775) reports true for it — so `__missionBackup.restore()` can put an empty document over a good live doc, and the re-armed persist writes it 5s later. Mitigated (console-only, exact `live_editor_is` guard, and the displaced doc is banked so `undoRestore()` recovers it) but the same root cause.\n\nAlso worth fixing while in there: `get_raw` (:238-247) collapses 'record absent' and 'IDB read failed' into the same None, and `load_state` reports that as 'no local content' — a false negative that then drives the boot down the cold path.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3190,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-375",
+      "title": "An authored mission title is dropped by Save and overwritten by the stale row on reload",
+      "summary": "ROUND-TRIP DROPS THE FIELD. crates/map-engine-core/src/mission/compile.rs:111-130 emits only `map.terrain` and `environment` out of `meta` — **the title is not in the compiled payload.** It is authored doc-only (eden_chrome.rs:1038-1040 -> editor_ops::set_title -> store.rs:1021-1024), and the T-192 row mirror covers only time_of_day/weather (eden_chrome.rs:492-497).\n\nSo on the next boot `hydrate_from_server` calls `apply_row`/`adopt_payload`, which writes the STALE ROW TITLE back over the doc. The authored title survives only in the local IndexedDB blob and is overwritten by a stale server value on reload. Export does carry it (compile_export:189-193), which is why this looks fine until someone reloads.\n\nRelated and already documented but still live: compile_export:211-215 reads `meta.briefing`, which `apply_row_meta` never threads, so the export envelope's briefing is permanently \"\".\n\nFix either half — emit the title in the compiled payload, or mirror it to the row like weather. Mirroring is probably right (the row is what the library and the mod read), but then it needs the same non-blank guard eden_chrome.rs:706-710 already applies. Note apply_row_meta tests only `is_empty`, so a WHITESPACE title currently propagates into the doc.\n\nAlso in the same family, latent: the `items` root map is cleared by `hydrate` (store.rs:1101/1114) and never emitted by compile_payload. Nothing authors `items` today, so it is not live — but the clear-then-load design means the NEXT root map added without a matching compile key inherits this silently. Worth a guard that fails loudly on a root the compile does not emit.",
+      "program": "platform",
+      "surfaces": [
+        "DATA",
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3191,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-376",
+      "title": "The registry importer NULLs ten populated columns from a partial envelope",
+      "summary": "services/registry_import.rs:201-219 — the `ON CONFLICT DO UPDATE` sets ten columns that bind from `#[serde(default)] Option<T>` fields (contract/generated/registry_items.rs:196-238, bound at :167-189). Absent in the envelope -> None -> NULL -> **written over a populated column.** The file's own comment at :166 states the mechanism: 'v2 envelopes bind NULL columns.'\n\nTHREE THINGS MAKE THIS A DEFECT RATHER THAN A CHOICE:\n  1. `icon_url` is the ONE column deliberately excluded from the DO UPDATE, with the rationale spelled out at :110-114 ('curated icons survive re-imports'). Preserve-semantics were reasoned about for exactly one column and never extended.\n  2. The schema says absent means UNKNOWN, not clear: weight_kg/volume_cm3/max_* all carry 'Absent when the value is an engine class default not serialized in the prefab — never guessed.'\n  3. `IS DISTINCT FROM` at :210-219 does not protect — it is the TRIGGER. Stored-non-NULL vs incoming-NULL IS distinct, so the row updates and counts as `updated`.\n\nNo envelope-version gate exists: `import_items` never reads `env.registry_items_version`. And the idempotency test (tests/registry_compat.rs:387) re-imports the SAME BYTES — precisely the case where the NULLs match — so the downgrade path is untested.\n\nBlast radius: handlers/registry.rs:82-94 serves all ten; weight_kg and cargo_grid_w/h drive the Arsenal capacity UI. Fix precedent is in the file already: `COALESCE(EXCLUDED.col, registry_items.col)`, matching icon_url. Secondary, same statement: display_name/category are minLength:1, which blocks \"\" but not \"   \", and :153 binds untrimmed.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3192,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-377",
+      "title": "PATCH and the compiler hold opposite meanings for an empty weather string",
+      "summary": "TWO HALVES OF ONE T-192 FIX DISAGREEING, and the only defence is client-side.\n\nhandlers/missions.rs:48-56 — `valid_weather` maps `\"\" | \"clear\"` to `WeatherType::Clear`. So PATCH /missions/:id with `{\"weather\": \"\"}` **silently rewrites a stored `dense_fog` to `clear` and answers 200.**\n\nservices/mission_compile.rs:127-136 does the opposite, deliberately, and says so at :126: `weather_preset(\"\")` returns None so that 'an absent value must fall through to the row, not overwrite it.' And :32-36 documents that the editor MIRRORS meta.environment.weather to the row through this exact PATCH. So the compiler treats \"\" as 'not authored, keep the row' and the PATCH treats it as 'set clear'.\n\n**The defence is in the client, not the server:** frontend/src/eden_chrome.rs:706-710 guards with `if value.is_empty() || !is_mission_row_id(&id) { return; }`. Any direct API caller — curl, the mod, a future client — reaches the hole.\n\nFix: drop \"\" from valid_weather's clear arm so both halves agree that blank means not-authored. Same handler, also unguarded and worth the same pass: `title` (:393-395, and create at :296 DOES reject empty, so the two disagree), `custom_terrain_name`, `briefing`, `thumbnail_url` (:430-435 — defensible for the last two). And `time_of_day: \"\"` binds `''::time`, a Postgres cast error, so it 500s rather than blanking — already relayed to T-367.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3193,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-378",
+      "title": "gate v-suite accept can write the literal string null over a committed golden",
+      "summary": "The worst of the tooling cluster, because it destroys the baselines every other gate is measured against.\n\ntools/tbd-tools/src/vsuite.rs:390 — `std::fs::write(&gold_file, &cap.dom)?` with NO validity check. inject.rs:107-108 returns the 4-byte string `\"null\"` when the SPA fails to mount, and the stability loop BREAKS on the second identical `\"null\"` — which is the fast path, so a broken mount reaches the write quickly and confidently. `gate v-suite accept` then writes `null` over a committed golden.\n\n**`verify` mode parses the DOM (:430); `accept` does not.** That asymmetry is the bug: the mode that only reads is careful, and the mode that writes is not.\n\nThis is the same class as T-352's 8-byte wasm and T-320's zero-font browser: a build or capture that produces something structurally empty, on a success path, which then overwrites something good. Add the same check `verify` already has, plus a floor on plausible DOM size.\n\nAlso fold in the sibling with real blast radius: tools/tbd-tools/src/world/build.rs:529 — `} else { let _ = std::fs::remove_dir_all(&density_dir); }`. A non-density `--phase` **deletes all 625 committed packages/map-assets/everon/objects/density/*.bin**, the error is discarded, and the manifest is left dangling. Those are LFS-adjacent build artifacts that took a Workbench export to produce.",
+      "program": "platform",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3194,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-379",
+      "title": "role_played accepts a blank and replaces a populated scoreline",
+      "summary": "handlers/telemetry.rs:461-470, bound at :475 — the `ON CONFLICT DO UPDATE` sets `role_played = EXCLUDED.role_played`, and the pre-transaction validation loop at :432-439 checks `arma_id` and `source_event_id` for blankness but **not `role_played`**.\n\nIt is a required String, so ABSENCE is a 400 (T-316's fix). Present-and-blank passes, and `''` replaces a populated role. Migration 0009 made the column `NOT NULL DEFAULT ''`, so `''` is a storable value — **NOT NULL does not close this.**\n\nThis is the same shape the file has already fixed twice: `outcome` rejects blank at :414-420 (T-316) and `source_match_id` rejects blank at :297-307 (T-347). role_played was simply missed by both.\n\nAlso in the same statement, and a genuine judgement call rather than an oversight: `discord_id = EXCLUDED.discord_id` binds a lookup result that is None when no user matches the arma_id, so a re-ingest after an UNLINK nulls a previously-populated discord_id. T-326 established that unlink SHOULD release the rows, so that is probably intended — but say so in a comment, because nothing currently does.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3195,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-380",
+      "title": "An edit during boot can persist the 8-slot fixture seed over a real mission",
+      "summary": "REACHABLE, bounded by the 5s debounce. The boot ordering is otherwise correct — no boot-path save is armed before load and hydrate have both awaited — but the MUTATOR path is live before either resolves.\n\nmission_editor.rs:276 synchronously creates a seeded doc (8 fixture slots). The window keydown handler is registered synchronously at :362, and the boot overlay is DELIBERATELY click-through (:1387-1388: 'pointer-events-none so it never intercepts an operator / editor-smoke click'). mission_history.rs:374 calls `schedule_edit_persist` inside `after_doc_change`.\n\nSo: edit during boot -> 5s timer armed -> if `load_state` has not yet swapped the restored core (a several-hundred-MB blob for the documented 367k-slot missions), the timer fires and `run_save` persists the **8-slot fixture seed over the good record.** It passes every guard: non-empty, owner matches, not cancelled. Nothing gates the writer on `restore_settled` or `ready`, and there is no content-level or slot-count sanity check.\n\nSecondary, same window: :441 swaps the doc wholesale, so an edit made before the restore lands is silently discarded.\n\nFix with T-374 (the content-level guard) if possible — a slot-count or has_content() check would close both. Otherwise gate the debounced writer on `restore_settled`.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3196,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-381",
+      "title": "The integration suite can point at the live database, and one delete is unscoped",
+      "summary": "All 20 files in apps/website/api/tests/ early-return unless TEST_DATABASE_URL is set, and Makefile:121-123 points it at a dedicated `rust_it`. But **nothing validates the target database name**, so an exported `TEST_DATABASE_URL=.../tbd_reforger` runs the whole suite against the live dev DB.\n\nThe one unscoped destructive statement: tests/factions.rs:18 — `DELETE FROM user_factions` with **no WHERE**. Wipes the table. Every other suite scopes to test-owned rows. Also tests/identity_link.rs:26 — `UPDATE users SET arma_id = NULL WHERE discord_id = $3` against the shared dev operator row.\n\ntests/null_tolerance.rs:240-245 already documents the shared-dev-row hazard, so the awareness exists and the guard does not.\n\nTwo fixes, both cheap: refuse to run unless the database name matches a test pattern (`rust_it`, `*_it`, `*_probe`), and scope that DELETE. Several agents this run have created and dropped their own throwaway DBs correctly — the convention exists; enforce it.",
+      "program": "platform",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3197,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-382",
+      "title": "Empty-but-valid payload becomes current_version_id with no rollback route",
+      "summary": "mission-editor-payload.schema.json has NO top-level `required`, no `minProperties`, and `editor.slots` is a bare `{\"type\":\"array\"}` with no `minItems`. `create_version` requires only that payload be Some and semver non-empty (missions.rs:587), then `validate_payload` passes `{}` clean — the crate's own test pins this as valid at contract/validate.rs:151-156.\n\nSo `{\"semver\":\"0.1.5\",\"payload\":{}}` returns 201 and `UPDATE missions SET current_version_id` (missions.rs:611) moves the pointer. Downstream: `/compiled` 409s on NoSlots so the game server can no longer load the mission; `orbat_template_for_mission` materialises ZERO orbat_slots on attach; `ingest_event_roster` omits the mission.\n\n`current_version_id` has exactly two writers and **there is no endpoint to re-point it at an older version**, so through the API this is unrecoverable. The prior version row does survive in mission_versions, so an operator can fix it with psql — which is why this is judgement rather than clear-cut, and why the fix might be a rollback route rather than a stricter schema.\n\nNote T-357 measured that a naive tightening of that schema would have 400'd six real live missions, so do not reach for `minItems` without checking. A gate at write time is what is missing; the gate at read time (409) already exists and is too late.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3198,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-383",
+      "title": "Four tooling paths overwrite committed files with empty or wrong content",
+      "summary": "The tail of the tooling cluster (T-378 has the two worst). All the same shape: a success path writing structurally empty or silently-lossy content over something committed.\n\n  xtask/src/cmds.rs:765-774 — `cmd_set_status` has no non-empty check and no enum, so `./scripts/ticket set-status T-090 \"\"` writes `\"status\": \"\"` over `\"ready\"`. The registry is the source of truth for the whole program.\n  xtask/src/sync.rs:403 + registry.rs:133-138 — `inject_marker_block` collapses the ROADMAP marker block to a bare heading when `tickets` is missing or empty, and CLAUDE.md's 'Latest shipped' falls back to a HARDCODED WRONG `\"T-066\"`.\n  xtask/src/schema_gates.rs:1174-1195 — `flatten-orbat-slots --in-place` emits 8 of the schema's 11 slot keys, silently dropping `loadout` and `uid` from 3 of 5 committed goldens, and force-stamps `schemaVersion = \"1.1\"` over the deliberate 1.0 fixture.\n  enf/apidoc.rs:168 — header-only TSV overwrite that exits 0.\n  Also: world/aux.rs:1009/1022/1050, world/build.rs:664/958, map/labels.rs:455, map/sap.rs:1007.\n\nNone is urgent alone; together they are why a golden or a registry field can go wrong with nothing red. A shared 'refuse to write structurally empty output' helper would close most of them.",
+      "program": "platform",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3199,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-384",
+      "title": "Re-pointing a match to another event leaves the first event marked attended",
+      "summary": "CREATED BY T-369's OWN FIX, and it flagged it rather than hiding it. The re-point path is now reachable — a corrected re-POST can move a match from EV1 to EV2 — but the attendance UPDATE only ever SETS `attended`, never retracts.\n\nMeasured by T-369: re-pointing a match from EV1 to EV2 marks EV2 attended and **leaves EV1 attended**, inflating attendance_rate to 100%.\n\nThis needs a contract decision, not a patch: there is no record of WHICH match marked a registration as attended, so the write is not currently reversible. Options — store the match id on the registration so it can be retracted; recompute attendance from match_player_stats rather than storing a flag; or declare attendance monotonic and document it.\n\nRecomputing is probably right and matches how T-326 handled deployments (it refused to re-derive 'a deployment' in a second place, precisely so two definitions could not drift). Read T-369's reasoning and T-316's per-field rules first.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3200,
       "stream": "web-platform",
       "targets": [
         "website"
