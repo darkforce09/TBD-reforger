@@ -238,6 +238,36 @@
       "headingDeg": 220.0
     }
   ],
+  "radioPlan": {
+    "nets": [
+      {
+        "id": "net:blufor_cmd",
+        "label": "US Army Command",
+        "freqMHz": 30.0,
+        "faction": "blufor",
+        "range": "long"
+      },
+      {
+        "id": "net:opfor_cmd",
+        "label": "Soviet VDV Command",
+        "freqMHz": 30.5,
+        "faction": "opfor",
+        "range": "long"
+      },
+      {
+        "id": "net:blufor_ranger",
+        "label": "Ranger",
+        "freqMHz": 31.0,
+        "faction": "blufor"
+      },
+      {
+        "id": "net:opfor_grom",
+        "label": "Grom",
+        "freqMHz": 31.5,
+        "faction": "opfor"
+      }
+    ]
+  },
   "zones": [
     {
       "id": "z_spawn_blufor",

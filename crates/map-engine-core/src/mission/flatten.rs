@@ -1894,4 +1894,267 @@ mod tests {
         );
         assert!(!out.contains('…'), "nothing is elided: {out}");
     }
+
+    // ── T-208 second pass — the compiler-shaped golden regenerates from HERE ─────────────
+    //
+    // `packages/tbd-schema/golden-missions/compiler-shaped-two-faction.json` is the only
+    // committed golden whose entire claimed value is being BYTE-FAITHFUL to this emitter: the
+    // other four are hand-authored documents that exercise the mod's parser, and they are
+    // allowed to say things the compiler cannot. That claim was prose only. Nothing in any
+    // `.rs`, `.sh`, `.yml` or `Makefile` regenerated the file and diffed it, so when T-203
+    // taught `flatten_to_mod_document` to emit `radioPlan`, the golden simply stopped being
+    // the compiler's output and no gate anywhere noticed:
+    //
+    //   * `xtask schema validate` cannot notice. `radioPlan` is deliberately NOT in
+    //     `mission.schema.json`'s top-level `required` — the emitter legitimately omits it for
+    //     a plan with no nets, and `TBD_RadioPlan.Parse` treats an absent plan as legal. A
+    //     document missing the block is a VALID document; it is just not this compiler's.
+    //   * `world-boot.sh` cannot notice. It boots what is committed and the stale file booted
+    //     clean (`errors=0 warnings=0`) — being out of date is not a parse fault.
+    //
+    // So the only thing that can catch this drift is a re-run of the emitter against the
+    // committed bytes, which is what lives below. The fixture is the editor graph the golden
+    // was compiled from; it is inline rather than a second committed file so the payload and
+    // the assertion can never drift apart on their own.
+    //
+    // WHEN THIS TEST FAILS after an intentional emitter change, the fix is to REGENERATE the
+    // golden (`serde_json::to_string_pretty` + a trailing newline — the two lines the test
+    // prints), never to hand-patch the delta into the JSON. A hand-patched file passes the
+    // diff while ceasing to be an emitter output, which is exactly the property being pinned.
+
+    /// The editor graph `compiler-shaped-two-faction.json` is the compiled output of.
+    ///
+    /// Deliberately holds no unaliased character: every `assetId` is either a `kit-aliases.json`
+    /// row or absent. The AT seat carries no `assetId` at all — the "+ button" case, which
+    /// `flatten_to_mod_document` resolves to the faction default WITHOUT recording a
+    /// substitution. That keeps this fixture a pure emitter-shape fixture and leaves the
+    /// substitution behaviour to T-200's own tests, which own it.
+    const COMPILER_SHAPED_PAYLOAD: &str = r#"{
+      "schemaVersion": 1,
+      "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
+      "editor": {
+        "factions": [
+          {"id": "f_blu", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq_ranger"]},
+          {"id": "f_opf", "key": "OPFOR", "name": "Soviet VDV", "squadIds": ["sq_grom"]}
+        ],
+        "squads": [
+          {"id": "sq_ranger", "factionId": "f_blu", "callsign": "Ranger", "name": "Ranger 1-1",
+           "slotIds": ["n0", "n1", "n2", "n3", "n4"]},
+          {"id": "sq_grom", "factionId": "f_opf", "callsign": "Grom", "name": "Grom 1",
+           "slotIds": ["n5", "n6", "n7"]}
+        ],
+        "slots": [
+          {"id": "n0", "squadId": "sq_ranger", "index": 0, "role": "SL",
+           "assetId": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et",
+           "position": {"x": 4837.6, "y": 7710.8, "z": 0, "rotation": 45},
+           "loadout": {"version": 2,
+             "wear": {
+               "headCover": "{B74A4FF0DD8BB116}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01.et",
+               "jacket": "{293F577C298061E3}Prefabs/Characters/Uniforms/Jacket_US_BDU_02.et",
+               "vest": "{477A190AF2A17B8A}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_MG.et",
+               "pants": "{604BB72BE8E023C2}Prefabs/Characters/Uniforms/Pants_US_BDU.et",
+               "boots": "{DAAFD15478BDE1C3}Prefabs/Characters/Footwear/CombatBoots_US_01.et",
+               "handwear": "{8266820FFDE17477}Prefabs/Characters/Handwear/Gloves_Wool_01/Gloves_Wool_01.et",
+               "backpack": "{06B68C58B72EAAC6}Prefabs/Items/Equipment/Backpacks/Backpack_ALICE_Medium.et"},
+             "weapons": [
+               {"slotIndex": 0, "slotType": "primary",
+                "weapon": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+                "optic": "{F358F46ADA42A197}Prefabs/Weapons/Attachments/Optics/Optic_4x20/Optic_4x20_base.et",
+                "magazine": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+                "attachments": []},
+               {"slotIndex": 2, "slotType": "secondary",
+                "weapon": "{1353C6EAD1DCFE43}Prefabs/Weapons/Handguns/M9/Handgun_M9.et", "attachments": []},
+               {"slotIndex": 3, "slotType": "grenade",
+                "weapon": "{E8F00BF730225B00}Prefabs/Weapons/Grenades/Grenade_M67.et", "attachments": []}],
+             "cargo": [
+               {"container": "vest",
+                "item": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+                "qty": 6},
+               {"container": "jacket",
+                "item": "{D70216B1B2889129}Prefabs/Items/Medicine/Tourniquet_01/Tourniquet_US_01.et", "qty": 1},
+               {"container": "backpack",
+                "item": "{13772C903CB5E4F7}Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_folded.et",
+                "qty": 1}]}},
+          {"id": "n1", "squadId": "sq_ranger", "index": 1, "role": "AR",
+           "assetId": "{5B1996C05B1E51A4}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et",
+           "position": {"x": 4844.9, "y": 7716.4, "z": 0, "rotation": 45}},
+          {"id": "n2", "squadId": "sq_ranger", "index": 2, "role": "AT",
+           "position": {"x": 4833.2, "y": 7721.5, "z": 0, "rotation": 40},
+           "loadout": {"version": 2, "wear": {},
+             "weapons": [
+               {"slotIndex": 0, "slotType": "primary",
+                "weapon": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+                "magazine": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+                "attachments": []},
+               {"slotIndex": 1, "slotType": "primary",
+                "weapon": "{9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et", "attachments": []}],
+             "cargo": []}},
+          {"id": "n3", "squadId": "sq_ranger", "index": 3, "role": "RFL",
+           "assetId": "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
+           "position": {"x": 4850.1, "y": 7727.2, "z": 0, "rotation": 50}},
+          {"id": "n4", "squadId": "sq_ranger", "index": 4, "role": "RFL",
+           "assetId": "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
+           "position": {"x": 4844.2, "y": 7719.1, "z": 0, "rotation": 45},
+           "loadout": {"version": 2, "wear": {}, "weapons": [],
+             "cargo": [
+               {"container": "vest",
+                "item": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+                "qty": 4}]}},
+          {"id": "n5", "squadId": "sq_grom", "index": 0, "role": "SL",
+           "assetId": "{5436629450D8387A}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et",
+           "position": {"x": 5182.7, "y": 7982.4, "z": 0, "rotation": 225},
+           "loadout": {"version": 2,
+             "wear": {
+               "headCover": "{E49D9EE7E2B3016C}Prefabs/Characters/HeadGear/Helmet_ZSh5_01/Helmet_ZSh5_01.et",
+               "jacket": "{9F546CCA2582D16F}Prefabs/Characters/Uniforms/Jacket_M88.et",
+               "vest": "{ADE19B33DCBB9005}Prefabs/Characters/Vests/Vest_6B2/Vest_6B2.et",
+               "pants": "{DCF980831E880F6A}Prefabs/Characters/Uniforms/Pants_M88.et",
+               "boots": "{4C6029AB8BF5C044}Prefabs/Characters/Footwear/CombatBoots_Soviet_01_Dirty.et"},
+             "weapons": [
+               {"slotIndex": 0, "slotType": "primary",
+                "weapon": "{43497A18DD888667}Prefabs/Weapons/Rifles/AK74/Rifle_AK74_base.et",
+                "optic": "{ACDF49FACD0701A8}Prefabs/Weapons/Attachments/Optics/Optic_1P29/Optic_1P29.et",
+                "magazine": "{63C1E699345B24F9}Prefabs/Weapons/Magazines/Magazine_545x39_AK_30rnd_Base.et",
+                "attachments": []},
+               {"slotIndex": 3, "slotType": "grenade",
+                "weapon": "{645C73791ECA1698}Prefabs/Weapons/Grenades/Grenade_RGD5.et", "attachments": []}],
+             "cargo": []}},
+          {"id": "n6", "squadId": "sq_grom", "index": 1, "role": "AR",
+           "assetId": "{23ADBBC31B6A3DC6}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR.et",
+           "position": {"x": 5190.1, "y": 7988.6, "z": 0, "rotation": 230}},
+          {"id": "n7", "squadId": "sq_grom", "index": 2, "role": "RFL",
+           "assetId": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+           "position": {"x": 5179.2, "y": 7993.0, "z": 0, "rotation": 220}}
+        ],
+        "editorLayers": []
+      }
+    }"#;
+
+    /// The mission row `COMPILER_SHAPED_PAYLOAD` was compiled under.
+    fn compiler_shaped_meta() -> MissionMeta {
+        MissionMeta {
+            id: "4c7e1b08-9a35-4d62-b1f7-e30d5a86c941".into(),
+            title: "Grid Sweep at Montignac".into(),
+            author: "184472930165846017".into(),
+            terrain: "everon".into(),
+            custom_terrain_name: String::new(),
+            max_players: 12,
+            time_of_day: "06:15".into(),
+            weather_preset: "overcast".into(),
+        }
+    }
+
+    /// The committed golden, pulled in by `include_str!` so the file is a COMPILE-TIME input:
+    /// editing the JSON rebuilds this test. A `std::fs::read_to_string` would have made the
+    /// golden a runtime path that a stale build could skip past.
+    const COMPILER_SHAPED_GOLDEN: &str = include_str!(
+        "../../../../packages/tbd-schema/golden-missions/compiler-shaped-two-faction.json"
+    );
+
+    /// Serialize a compiled document exactly the way the golden file is written: pretty,
+    /// two-space, one trailing newline. The ONE definition — both the guard and the
+    /// drift-detection proof below go through it, so they cannot disagree about what
+    /// "the emitter's output" means.
+    fn golden_text(doc: &ModMissionDocument) -> String {
+        let mut s = serde_json::to_string_pretty(doc).expect("serialize compiled document");
+        s.push('\n');
+        s
+    }
+
+    /// First line where `expected` and `actual` differ, as `(1-based line, expected, actual)`.
+    /// A missing or extra block shows up as the first line of the block rather than as a
+    /// whole-file dump — the T-203 `radioPlan` drift is 4 nets deep inside a 280-line file.
+    fn first_line_difference(expected: &str, actual: &str) -> Option<(usize, String, String)> {
+        let (mut e, mut a) = (expected.lines(), actual.lines());
+        let mut n = 0usize;
+        loop {
+            n += 1;
+            match (e.next(), a.next()) {
+                (None, None) => return None,
+                (le, la) if le == la => continue,
+                (le, la) => {
+                    let show = |l: Option<&str>| l.unwrap_or("<end of file>").to_string();
+                    return Some((n, show(le), show(la)));
+                }
+            }
+        }
+    }
+
+    /// The guard. `compiler-shaped-two-faction.json` must be what this emitter produces TODAY,
+    /// not what it produced the day the file was written.
+    #[test]
+    fn compiler_shaped_golden_is_a_fresh_emitter_output() {
+        let doc =
+            flatten_to_mod_document(&compiler_shaped_meta(), COMPILER_SHAPED_PAYLOAD.as_bytes())
+                .expect("the compiler-shaped fixture compiles");
+
+        // Nothing was substituted, so the golden's kits are the author's own choices and the
+        // file is readable as written. Asserted, not assumed: a kit-aliases row deleted out from
+        // under this fixture would otherwise quietly turn a named character into a default and
+        // still round-trip, because the report is `#[serde(skip)]` and never reaches the bytes.
+        assert!(
+            doc.kit_substitutions.rows().is_empty(),
+            "fixture must name only aliased characters: {:?}",
+            doc.kit_substitutions.details()
+        );
+
+        let regenerated = golden_text(&doc);
+        if let Some((line, expected, actual)) =
+            first_line_difference(COMPILER_SHAPED_GOLDEN, &regenerated)
+        {
+            panic!(
+                "packages/tbd-schema/golden-missions/compiler-shaped-two-faction.json is no \
+                 longer this emitter's output.\n\
+                 First difference at line {line}:\n  \
+                 committed:   {expected}\n  \
+                 regenerated: {actual}\n\n\
+                 If the emitter change was intentional, REGENERATE the file — do not hand-patch \
+                 the delta in, or it stops being a byte-faithful compiler output and this gate \
+                 stops meaning anything:\n  \
+                 let mut s = serde_json::to_string_pretty(&doc).unwrap();\n  \
+                 s.push('\\n');\n\n\
+                 Then re-run `scripts/mod/world-boot.sh \
+                 --mission=compiler-shaped-two-faction`, because a regenerated document is a \
+                 new document as far as the mod's parser is concerned."
+            );
+        }
+    }
+
+    /// Proof the guard above is not vacuous — it must FAIL on exactly the drift that got past
+    /// everything: T-203 added `radioPlan` and the committed file kept the pre-T-203 shape.
+    ///
+    /// Replayed by deleting the block back out of the committed bytes rather than by asserting
+    /// on a hand-written string, so this stays honest if the block's contents ever change.
+    #[test]
+    fn the_guard_catches_the_t203_radio_plan_drift() {
+        let open = COMPILER_SHAPED_GOLDEN
+            .find("  \"radioPlan\": {\n")
+            .expect("the regenerated golden carries a radioPlan block");
+        let close = COMPILER_SHAPED_GOLDEN[open..]
+            .find("\n  },\n")
+            .expect("radioPlan block is closed")
+            + open
+            + "\n  },\n".len();
+        let pre_t203: String = format!(
+            "{}{}",
+            &COMPILER_SHAPED_GOLDEN[..open],
+            &COMPILER_SHAPED_GOLDEN[close..]
+        );
+
+        // Sanity: the replay really is the old file — same document minus the one block.
+        assert!(!pre_t203.contains("radioPlan"));
+        assert!(pre_t203.contains("\"zones\"") && pre_t203.contains("\"slots\""));
+        assert!(pre_t203.lines().count() < COMPILER_SHAPED_GOLDEN.lines().count());
+
+        let (line, expected, actual) = first_line_difference(&pre_t203, COMPILER_SHAPED_GOLDEN)
+            .expect(
+                "dropping radioPlan MUST register as a difference — otherwise the guard is a \
+                     no-op and the golden can rot again exactly the way it just did",
+            );
+        assert!(
+            actual.contains("radioPlan"),
+            "the diff must point AT the dropped block, not somewhere downstream of it \
+             (line {line}: {expected:?} vs {actual:?})"
+        );
+    }
 }
