@@ -62,6 +62,7 @@
 0	T-354	Chrome's stderr pipe must be drained or CDP deadlocks with no error anywhere	docs/website/EDITOR_GATE_RUNBOOK.md; tools/tbd-tools/src/cdp.rs
 0	T-348	Five PATCH handlers let a whitespace value overwrite real content	apps/website/api/src/handlers/events.rs; apps/website/api/src/handlers/cms.rs
 0	T-349	wiki slug has no guard at all, and field_tools.rs was missed by the whole sweep	apps/website/api/src/handlers/wiki.rs; apps/website/api/src/handlers/field_tools.rs
+1	T-370	Remove the 8 dead mark_adopted call sites — move the purge first	apps/website/frontend/src/mission_hydrate.rs
 1	T-367	T-202 turned a silently-ignored field into a permanent 500 on compile	apps/website/api/src/handlers/missions.rs; crates/map-engine-core/src/mission/flatten.rs
 1	T-368	The mission armory cannot be set from the UI at all — the endpoint has no frontend caller	apps/website/frontend/src/mission_overview.rs
 1	T-369	A corrected match re-POST silently skips attendance forever	apps/website/api/src/handlers/telemetry.rs

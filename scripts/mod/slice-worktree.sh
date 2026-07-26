@@ -179,6 +179,28 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
     [ -n "$slice" ] || { echo "usage: $0 drop <slice>" >&2; exit 2; }
     slice="$(parent_slice "$slice")"
     dir="$BASE/$slice"; branch="slice/$slice"
+    # REFUSE if the branch still holds work that is not on main. `git branch -D` is a FORCE delete,
+    # so dropping an unmerged branch leaves its commits as unreferenced objects — recoverable only by
+    # someone who thinks to look, which nobody does.
+    #
+    # OBSERVED 2026-07-26 on this very slice: the command center landed T-352's first two commits and
+    # dropped the worktree, then RESUMED the agent. The agent found its own worktree and branch gone
+    # mid-session, its commits surviving only as loose objects, and had to recreate the branch and
+    # restore the worktree itself before it could finish. It reported that rather than losing the work,
+    # which is the only reason this was noticed at all.
+    #
+    # `reap` already learned this lesson the hard way (see the note below it). `drop` did not, because
+    # it is the SINGLE-slice path and always looked deliberate. Override with --force when the branch
+    # is genuinely disposable.
+    if [ "${3:-}" != "--force" ] && git rev-parse --verify "$branch" >/dev/null 2>&1; then
+      ahead="$(git rev-list --count "main..$branch" 2>/dev/null || echo 0)"
+      if [ "${ahead:-0}" -gt 0 ]; then
+        echo "REFUSED: $branch has $ahead commit(s) not on main." >&2
+        echo "         Merge them, or re-run with: $0 drop $slice --force" >&2
+        git log --oneline "main..$branch" | sed 's/^/           /' >&2
+        exit 1
+      fi
+    fi
     git worktree remove --force "$dir" 2>/dev/null || rm -rf "$dir"
     git branch -D "$branch" 2>/dev/null || true
     git worktree prune
