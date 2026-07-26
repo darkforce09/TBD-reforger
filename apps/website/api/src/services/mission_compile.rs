@@ -693,8 +693,9 @@ mod tests {
             "weatherPreset": m.weather.as_str(),
         })
         .to_string();
-        let previewed = flatten::flatten_mod_document_json(meta_json.as_bytes(), payload.as_bytes())
-            .expect("client path compiles");
+        let previewed =
+            flatten::flatten_mod_document_json(meta_json.as_bytes(), payload.as_bytes())
+                .expect("client path compiles");
 
         assert_eq!(
             String::from_utf8_lossy(&previewed),

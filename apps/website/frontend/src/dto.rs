@@ -1296,7 +1296,10 @@ pub(crate) mod r_api {
             d.author_id, d.author_name,
             "this golden can no longer tell author_id from author_name — recapture one that can",
         );
-        assert_eq!(meta.author, d.author_id, "author is the Discord id, not the display name");
+        assert_eq!(
+            meta.author, d.author_id,
+            "author is the Discord id, not the display name"
+        );
 
         assert_eq!(meta.id, d.id);
         assert_eq!(meta.title, d.title);
@@ -1313,15 +1316,24 @@ pub(crate) mod r_api {
         // Nothing load-bearing may be silently empty: an all-`Default` meta would satisfy several
         // of the equalities above if the golden itself went blank.
         assert!(!meta.id.is_empty() && !meta.title.is_empty() && !meta.terrain.is_empty());
-        assert!(meta.max_players > 0, "playerRange upper bound comes from here");
+        assert!(
+            meta.max_players > 0,
+            "playerRange upper bound comes from here"
+        );
 
         // And the wire round trip the wasm caller actually performs: serialize → the camelCase
         // bytes `flatten_mod_document_json` parses → back. A rename on either side breaks this.
         let json = serde_json::to_string(&meta).unwrap();
         let back: map_engine_core::mission::flatten::MissionMeta =
             serde_json::from_str(&json).unwrap();
-        assert_eq!(back.max_players, meta.max_players, "maxPlayers survives the round trip");
-        assert_eq!(back.time_of_day, meta.time_of_day, "timeOfDay survives the round trip");
+        assert_eq!(
+            back.max_players, meta.max_players,
+            "maxPlayers survives the round trip"
+        );
+        assert_eq!(
+            back.time_of_day, meta.time_of_day,
+            "timeOfDay survives the round trip"
+        );
         assert_eq!(back.weather_preset, meta.weather_preset);
         assert_eq!(back.custom_terrain_name, meta.custom_terrain_name);
         assert_eq!(back.author, meta.author);

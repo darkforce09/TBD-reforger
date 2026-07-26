@@ -3771,8 +3771,14 @@ mod tests {
 
         for (name, env) in [
             ("absent", serde_json::json!({})),
-            ("wrong types", serde_json::json!({"time": 2145, "weather": false})),
-            ("blank strings", serde_json::json!({"time": "", "weather": ""})),
+            (
+                "wrong types",
+                serde_json::json!({"time": 2145, "weather": false}),
+            ),
+            (
+                "blank strings",
+                serde_json::json!({"time": "", "weather": ""}),
+            ),
             (
                 "off-enum + junk",
                 serde_json::json!({"time": "half past four", "weather": "blizzard"}),
@@ -3792,12 +3798,18 @@ mod tests {
 
         // Each field displaces independently — weather alone must not drag time along.
         let mut meta = row();
-        apply_authored_environment(&mut meta, &env_payload(serde_json::json!({"weather": "overcast"})));
+        apply_authored_environment(
+            &mut meta,
+            &env_payload(serde_json::json!({"weather": "overcast"})),
+        );
         assert_eq!(meta.weather_preset, "overcast");
         assert_eq!(meta.time_of_day, "05:30");
 
         let mut meta = row();
-        apply_authored_environment(&mut meta, &env_payload(serde_json::json!({"time": "19:05"})));
+        apply_authored_environment(
+            &mut meta,
+            &env_payload(serde_json::json!({"time": "19:05"})),
+        );
         assert_eq!(meta.time_of_day, "19:05");
         assert_eq!(meta.weather_preset, "clear");
 
