@@ -97,11 +97,26 @@ current_wave() {
 
 wave_tickets() { plan_rows | awk -F'\t' -v w="$1" '$1==w {print $2}'; }
 
-# committed | dirty | absent
+# committed | dirty | absent | unknown
+#
+# This is the guard that stops `land` merging a slice an agent is still writing into, so a silent
+# failure here is a correctness bug, not an inconvenience: swallowing the error with 2>/dev/null and
+# testing for empty output makes a FAILED status indistinguishable from a CLEAN one, and the
+# half-finished slice merges. Verified 2026-07-26 that bare `status --porcelain` is unaffected by the
+# missing git-lfs (only `add`/`stash` run the clean filters), but check the exit status anyway —
+# `land` treats anything that is not `committed` as not-ready.
 tree_state() {
-  local d="$WORKTREES/$1"
+  local d="$WORKTREES/$1" out rc
   [ -d "$d" ] || { echo absent; return; }
-  if [ -n "$(git -C "$d" status --porcelain 2>/dev/null)" ]; then echo dirty; else echo committed; fi
+  # git-lfs is installed neither in the container nor on the host, and `status` runs the clean
+  # filter to re-hash modified files. In a worktree that has touched anything LFS-adjacent this
+  # aborts with `git-lfs filter-process: not found` / `fatal: the remote end hung up unexpectedly`
+  # and exit 128 — OBSERVED on slice/T-192 mid-run. Neutralise the filters for this read-only check,
+  # exactly as slice-worktree.sh:19-31 already does for the same reason.
+  out="$(git -C "$d" -c filter.lfs.process= -c filter.lfs.clean=cat -c filter.lfs.smudge=cat \
+         -c filter.lfs.required=false status --porcelain 2>/dev/null)"; rc=$?
+  if [ "$rc" -ne 0 ]; then echo unknown; return; fi
+  if [ -n "$out" ]; then echo dirty; else echo committed; fi
 }
 has_work() { [ "$(git rev-list --count "main..slice/$1" 2>/dev/null || echo 0)" -gt 0 ]; }
 
@@ -127,6 +142,8 @@ cmd_status() {
       printf "  %-9s tree clean, no commits yet\n" "$t"
     elif [ "$st" = dirty ]; then
       printf "  %-9s IN PROGRESS (uncommitted)\n" "$t"
+    elif [ "$st" = unknown ]; then
+      printf "  %-9s ⚠ STATUS UNREADABLE — will not land\n" "$t"
     else
       printf "  %-9s not started\n" "$t"
     fi
