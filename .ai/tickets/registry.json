@@ -7579,7 +7579,7 @@
     {
       "id": "T-229",
       "title": "Match ingest silently drops unlinked players and never backfills",
-      "summary": "telemetry.rs:243-247 skips a player whose arma_id does not resolve, still inserts the row with a null discord_id and reports only the submitted count. leaderboard_totals filters on non-null discord_id so those rows are permanently invisible, and because the upsert key includes arma_id, linking later does not backfill.",
+      "summary": "telemetry.rs:243-247 skips a player whose arma_id does not resolve, still inserts the row with a null discord_id and reports only the submitted count. leaderboard_totals filters on non-null discord_id so those rows are permanently invisible, and because the upsert key includes arma_id, linking later does not backfill.\n\nSHIPPED (664a4150 + 6d326b5c, merged 32e59d36). 45 non-comment lines; NOTHING STORED CHANGED. Reproduced the invisibility with real rows on an isolated DB: an unlinked arma_id ingests 200 and its 17 kills appear nowhere in leaderboard_totals — not staleness (the MV refreshes in-request; a 17->4 correction moved it immediately) but structural, via `WHERE discord_id IS NOT NULL` at 0001_initial_schema.sql:289.\nTHE TICKET'S PREMISE WAS HALF STALE: 'because the upsert key includes arma_id, linking later does not backfill' is wrong — T-326 already built the backfill (me.rs:41 BACKFILL_MATCH_STATS inside the code-consuming transaction, plus BACKFILL_ATTENDANCE and a post-commit recompute + MV refresh), and that arma_id key is precisely what lets it find the row. Confirmed live: after link-confirm the same row reads kills=17 kd_ratio=5.67 missions_played=1. Pinned from the ingest side so a me.rs regression fails this suite.\nChose to keep the row and the 200 and end the silence, NOT 400: the row is recoverable by T-326, the transaction is atomic so there is no per-player 400, and decisively the shipping mod implements no link flow at all (TBD_ResultsReporter.c:23-35), so an unresolved arma_id is EVERY player in EVERY production match — a 400 would reject 100% of live ingest and dropping the row would make the loss permanent. Response gains linked/unlinked/unlinked_arma_ids beside the unchanged players count (linked+unlinked==players always), plus one audit row per affected ingest, written FIRST after the commit because recompute_user_stats propagates with `?`. Deliberately Info not Warn — with no link flow it fires every ingest, and an always-on warning is the false server.low_fps WARN that T-316 was filed to delete.\nFixed a flake it caused: T-347's test asserted count(*) FROM matches, a cross-test assertion in a parallel suite that its legitimate row tripped 2-in-11. Scoped to the actual invariant (source_match_id IS NULL OR btrim = ''); 8/8 stable after. Full website-api suite 134 passed, 0 failed, 0 DB tests SKIPPED.\nIts production-400 flag is real and is now T-393 (P0) — it said it had filed a task and had not.",
       "program": "platform",
       "surfaces": [
         "DATA"
@@ -10847,6 +10847,28 @@
       ],
       "executor": "claude-code",
       "priority": 1
+    },
+    {
+      "id": "T-393",
+      "title": "T-316 made five player fields required that the shipping mod has never sent — all production match ingest 400s",
+      "summary": "P0, and it is arithmetic rather than a hypothesis. VERIFIED BY THE COMMAND CENTER ON MAIN, not taken on report.\n\n`handlers/telemetry.rs:400-411` `PlayerStatInput` requires NINE fields. `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c:565-570` `BuildPlayerRow` emits FOUR, and the JSON is hand-built by string concatenation so there is no serializer to quietly fill the rest:\n    sent      : arma_id, role_played, deaths, source_event_id\n    REQUIRED, NEVER SENT: kills, team_kills, longest_kill_m, vehicles_destroyed, is_command\n`command_win` is `Option<bool>` so it is genuinely fine. Serde rejects on the first missing field, so **every match report from every production server 400s**, and the whole telemetry pipeline — match rows, per-player stats, attendance marking, user-stat recompute, leaderboard refresh — is dead on arrival. Nothing downstream of ingest can work.\n\nThis is not a defect in T-316's reasoning, which is written out at telemetry.rs:375-398 and is sound: full replace with the fields required beats GREATEST (half the struct is not a counter, and it makes the row a permanent high-water mark no anti-cheat correction can lower) and beats 409 (retry safety is the contract). The defect is that it changed a wire contract WITHOUT CHECKING THE ONLY CLIENT. Its own justification — 'an incomplete body is a bug in the sender, now answered with a 400 instead of a silent zeroing' — inverts here: the sender is not broken, the contract moved under it. The header at telemetry.rs still describes these as `#[serde(default)]`, so the file documents the pre-T-316 shape.\n\nNEEDS A CONTRACT DECISION, NOT A PATCH — do not just re-add `#[serde(default)]`, because that restores exactly the silent-zeroing corruption T-316 was filed to kill (a re-ingest omitting them wrote kills=0 over a real scoreline, which refresh_leaderboard then summed in the same request). The two honest options:\n  (a) MOD SENDS ALL NINE. Correct long-term, and the mod may not have the data — check whether       Enfusion exposes kills/team_kills/longest_kill/vehicles_destroyed per player at all before       committing to this. If it does not, (a) is impossible and the choice is made.\n  (b) SPLIT THE CONTRACT into a required identity/role core and an OPTIONAL counters sub-object,       so an absent counters block means 'not reported' (leave stored values alone) while a present       one is authoritative and fully replaces. That preserves T-316's anti-corruption property       exactly — omission stops being a write — without requiring data the sender may not have.\n(b) is the smaller and safer change and does not depend on unknown engine capability.\n\nT-229 flagged this and stated it had filed a task; it had NOT — no registry row existed. Verified and filed here. Landing T-229 (unlinked-player reporting) on top of an endpoint that 400s for every real request means that feature is also unreachable in production until this is fixed.\n\nTest gap that let this through: every telemetry test builds its own complete JSON body, so the suite has NO fixture asserting the actual shipping mod payload is accepted. A single golden-payload test copied verbatim from BuildPlayerRow's output would have caught it and would catch the next contract drift. Add it as part of the fix — that is the durable half.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "MOD"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3209,
+      "stream": "web-platform",
+      "targets": [
+        "website",
+        "mod"
+      ],
+      "executor": "claude-code",
+      "priority": 0
     }
   ]
 }
