@@ -350,8 +350,20 @@ pub(crate) fn download_json(filename: &str, contents: &str) -> Result<(), JsValu
 /// same leaked-closure `js_sys::Object` idiom as `register_mission_doc`). `compile_save_json()` and
 /// `compile_export_json()` return the compiled JSON strings; the export path pins `exportedAt` +
 /// `missionId`/`version` to fixed values so the gate output is byte-deterministic.
+///
+/// **T-243 adds `compiled_document_json()`** — the same bytes the "Export Compiled" button
+/// downloads. It is on the bridge for the reason the other two are: a compile whose only entry
+/// point is a `<button>` and a `Blob` download is a compile no harness can read back, and this one
+/// makes a claim worth checking against a live `GET /missions/:id/compiled`. Unlike its two peers
+/// it pins nothing: its whole value is being the real output. On a failure it returns the same
+/// author-facing message the toast shows (a plain string either way — the caller can tell them
+/// apart by parsing).
 pub fn register_editor_commands(doc: DocHandle) {
     let obj = js_sys::Object::new();
+
+    let compiled_doc = Closure::wrap(Box::new(move || -> JsValue {
+        JsValue::from_str(&compiled_document_json().unwrap_or_else(|e| e))
+    }) as Box<dyn FnMut() -> JsValue>);
 
     let compile_save = {
         let doc = doc.clone();
@@ -400,10 +412,16 @@ pub fn register_editor_commands(doc: DocHandle) {
         &JsValue::from_str("compile_export_json"),
         compile_export_fn.as_ref(),
     );
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("compiled_document_json"),
+        compiled_doc.as_ref(),
+    );
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__editorCommands"), &obj);
     }
     // Leaked like the other editor bridges (harness reads them across the page lifetime).
     compile_save.forget();
     compile_export_fn.forget();
+    compiled_doc.forget();
 }
