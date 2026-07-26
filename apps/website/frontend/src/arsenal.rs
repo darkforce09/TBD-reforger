@@ -183,6 +183,26 @@ fn attachment_errors(picks: &HashMap<String, String>, feed: &CompatFeed) -> Vec<
     errs
 }
 
+/// T-240 — every fault on this loadout, in one list: the compat edge rows
+/// ([`validate_loadout`]), the stranded attachments ([`attachment_errors`]), and the
+/// over-capacity cargo containers ([`rules::cargo_capacity_errors`]).
+///
+/// This is what the verdict badge counts and what the per-row error line reads. All three
+/// sources are keyed on the row whose pick the author must change, and all three degrade to
+/// empty when the compat feed never arrived — a feed we did not receive must never fail a
+/// loadout. (Capacity does not need the feed at all; it reads the registry.)
+fn loadout_faults(
+    picks: &HashMap<String, String>,
+    cargo: &[rules::CargoRow],
+    feed: &CompatFeed,
+    idx: &HashMap<String, &RegistryItem>,
+) -> Vec<rules::RowError> {
+    let mut errs = validate_loadout(picks, feed.ready_graph(), feed.status);
+    errs.extend(attachment_errors(picks, feed));
+    errs.extend(rules::cargo_capacity_errors(picks, cargo, idx));
+    errs
+}
+
 /// `loadoutToPicks` — read the slot's `SlotLoadoutV2` JSON into a per-key `resource_name` map. An
 /// absent loadout → all-empty picks. Weapons resolve by `slotIndex`; wear by key.
 pub fn loadout_to_picks(loadout_json: Option<&str>) -> std::collections::HashMap<String, String> {
@@ -444,6 +464,32 @@ fn export_modpack_id(items: &[RegistryItem]) -> String {
         .unwrap_or_default()
 }
 
+/// T-240 — the export gate. `Ok` is the `loadout-export.schema.json` document; on `Err` there are
+/// **no bytes at all**, only the refusals, so a refusal cannot be half-downloaded.
+///
+/// Refuses on **capacity faults only** ([`rules::cargo_capacity_errors`]), deliberately not on the
+/// whole [`loadout_faults`] list. The compat / stranded-attachment faults predate this ticket, have
+/// never blocked an export, and making them blocking is a separate behaviour change nobody has
+/// measured — the badge still counts them so the author sees them. Capacity is different in kind:
+/// what it flags is kit the game will silently drop on the way to the field, so the file is a lie
+/// about the soldier it describes.
+///
+/// Structured to lift: the `Err` arm is already a list of independent findings, the same shape
+/// `validate_mission_editor_payload` returns, for when this rule moves server-side.
+pub fn try_export(
+    picks: &HashMap<String, String>,
+    cargo: &[rules::CargoRow],
+    items: &[RegistryItem],
+    modpack_id: &str,
+) -> Result<String, Vec<rules::RowError>> {
+    let idx = index_by_name(items);
+    let refusals = rules::cargo_capacity_errors(picks, cargo, &idx);
+    if !refusals.is_empty() {
+        return Err(refusals);
+    }
+    Ok(picks_to_export(picks, cargo, modpack_id))
+}
+
 /// The Smart Arsenal tab — mounted in the Attributes modal (T-159.26 seam). `registry` is the flat
 /// catalog; `compat` the edge feed (both fetched once by the editor); `slot_id` + `loadout_json`
 /// come from the modal's re-read.
@@ -676,9 +722,9 @@ pub fn ArsenalTab(
                                     }
                                     // T-197 — attachment faults are keyed on the WEAPON row, so
                                     // they surface on the row whose pick the author must change.
-                                    let mut faults = validate_loadout(&map, feed.ready_graph(), feed.status);
-                                    faults.extend(attachment_errors(&map, &feed));
-                                    let err = faults
+                                    // T-240 — over-capacity cargo joins them, keyed on the garment
+                                    // row backing the container.
+                                    let err = loadout_faults(&map, &cargo.get(), &feed, &idx)
                                         .into_iter()
                                         .find(|e| e.key == row.key)
                                         .map(|e| e.message);
@@ -772,14 +818,15 @@ pub fn ArsenalTab(
                             {move || cargo_panel(cargo, picks, items, names, persist_cargo)}
                         </div>
                         // Bottom: validation verdict + loadout download.
-                        <div class="flex items-center justify-between">
+                        <div class="flex items-center justify-between gap-2">
                             {move || {
                                 let feed = compat.get();
                                 let map = picks.get();
-                                let mut errs = validate_loadout(&map, feed.ready_graph(), feed.status);
+                                let its = items.get_value();
                                 // T-197 — a stranded attachment is a real loadout fault; the
                                 // verdict badge counts it alongside the edge-row faults.
-                                errs.extend(attachment_errors(&map, &feed));
+                                // T-240 — and over-capacity cargo alongside both.
+                                let errs = loadout_faults(&map, &cargo.get(), &feed, &index_by_name(&its));
                                 if errs.is_empty() {
                                     view! {
                                         <span
@@ -802,31 +849,74 @@ pub fn ArsenalTab(
                                         .into_any()
                                 }
                             }}
-                            <button
-                                type="button"
-                                class="flex items-center gap-1.5 rounded-lg border border-outline-variant/40 px-3 py-1.5 text-label-sm font-medium text-on-surface transition-colors hover:bg-white/10"
-                                on:click=move |_| {
-                                    // T-199 — the FILE contract, not the doc field. `picks_to_export`
-                                    // writes `loadout-export.schema.json` v2; the old call wrote the
-                                    // editor's `SlotLoadoutV2` dict, which fails both `oneOf` branches
-                                    // and which the mod reader refuses. An empty Arsenal still exports:
-                                    // a bare-soldier document is valid and says so (all-null wear, no
-                                    // weapons), where the old "clear the field" `None` had to be papered
-                                    // over with a hand-written literal that was itself non-conforming.
-                                    #[cfg(target_arch = "wasm32")]
-                                    {
-                                        let json = picks_to_export(
+                            // T-240 — the export refusal, said out loud next to the button that
+                            // stopped working. The per-container reason (with its estimate
+                            // caveat) is on the garment row and on this control's tooltip.
+                            <div class="flex min-w-0 items-center gap-2">
+                                {move || {
+                                    let its = items.get_value();
+                                    let refusals = rules::cargo_capacity_errors(
+                                        &picks.get(), &cargo.get(), &index_by_name(&its),
+                                    );
+                                    if refusals.is_empty() {
+                                        return ().into_any();
+                                    }
+                                    let n = refusals.len();
+                                    let why = refusals
+                                        .iter()
+                                        .map(|e| e.message.as_str())
+                                        .collect::<Vec<_>>()
+                                        .join("\n\n");
+                                    view! {
+                                        <span
+                                            data-export-blocked=n.to_string()
+                                            title=why
+                                            class="truncate text-label-sm normal-case text-error-alert"
+                                        >
+                                            {format!(
+                                                "Export blocked — {n} container(s) over the catalogued capacity",
+                                            )}
+                                        </span>
+                                    }
+                                        .into_any()
+                                }}
+                                <button
+                                    type="button"
+                                    prop:disabled=move || {
+                                        let its = items.get_value();
+                                        !rules::cargo_capacity_errors(
+                                            &picks.get(), &cargo.get(), &index_by_name(&its),
+                                        )
+                                            .is_empty()
+                                    }
+                                    class="flex shrink-0 items-center gap-1.5 rounded-lg border border-outline-variant/40 px-3 py-1.5 text-label-sm font-medium text-on-surface transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:border-outline-variant/20 disabled:text-outline disabled:hover:bg-transparent"
+                                    on:click=move |_| {
+                                        // T-199 — the FILE contract, not the doc field. `picks_to_export`
+                                        // writes `loadout-export.schema.json` v2; the old call wrote the
+                                        // editor's `SlotLoadoutV2` dict, which fails both `oneOf` branches
+                                        // and which the mod reader refuses. An empty Arsenal still exports:
+                                        // a bare-soldier document is valid and says so (all-null wear, no
+                                        // weapons), where the old "clear the field" `None` had to be papered
+                                        // over with a hand-written literal that was itself non-conforming.
+                                        //
+                                        // T-240 — through `try_export`, not `picks_to_export`. The
+                                        // `disabled` attribute is the affordance; THIS is the gate. A
+                                        // refusal produces no bytes, so there is nothing to download.
+                                        #[cfg(target_arch = "wasm32")]
+                                        if let Ok(json) = try_export(
                                             &picks.get_untracked(),
                                             &cargo.get_untracked(),
+                                            &items.get_value(),
                                             &export_modpack_id(&items.get_value()),
-                                        );
-                                        let _ = crate::mission_commands::download_json("loadout-export.json", &json);
+                                        ) {
+                                            let _ = crate::mission_commands::download_json("loadout-export.json", &json);
+                                        }
                                     }
-                                }
-                            >
-                                <span class="material-symbols-outlined text-[16px]">"download"</span>
-                                "Download loadout JSON"
-                            </button>
+                                >
+                                    <span class="material-symbols-outlined text-[16px]">"download"</span>
+                                    "Download loadout JSON"
+                                </button>
+                            </div>
                         </div>
                         <p class="text-label-sm normal-case text-outline">
                             "Weapon attachments are multi-select in the compat panel — pick a weapon region on the rail to see what it accepts. Container cargo (mags, medical, throwables) lives in the Cargo panel above — seeded from the character's engine defaults. Dedicated equipment wear rows (binoculars, radios, glasses) come with the equipment slice."
@@ -848,17 +938,12 @@ const CARGO_ADD_KINDS: &[&str] = &[
     "gear_explosive",
 ];
 
-/// The worn garment backing a cargo container key (`vest` accepts the armoredVest row).
-fn cargo_garment(picks: &HashMap<String, String>, container: &str) -> Option<String> {
-    let direct = picks.get(container).filter(|v| !v.is_empty()).cloned();
-    if container == "vest" {
-        return direct.or_else(|| picks.get("armoredVest").filter(|v| !v.is_empty()).cloned());
-    }
-    direct
-}
-
 /// T-068.15.2 — the per-container cargo editor: rows (name × qty, stepper, remove),
-/// an add picker, and the warn-only budget vs the garment's registry capacity.
+/// an add picker, and the budget vs the garment's registry capacity.
+///
+/// T-240 — the container→worn-garment alias used to live here as a second copy of the rule
+/// `arsenal_rules` already documents; it is now [`rules::cargo_garment`] alone, so the readout
+/// and the block can never disagree about which garment backs a container.
 fn cargo_panel(
     cargo: RwSignal<Vec<rules::CargoRow>>,
     picks: RwSignal<HashMap<String, String>>,
@@ -885,7 +970,7 @@ fn cargo_panel(
         .iter()
         .map(|container| {
             let container: &'static str = container;
-            let garment_rn = cargo_garment(&picks_now, container);
+            let garment_rn = rules::cargo_garment(&picks_now, container).map(|(_, rn)| rn);
             let rows: Vec<(usize, rules::CargoRow)> = rows_now
                 .iter()
                 .enumerate()
@@ -895,10 +980,9 @@ fn cargo_panel(
             if garment_rn.is_none() && rows.is_empty() {
                 return ().into_any();
             }
-            let garment_item = garment_rn.as_deref().and_then(|rn| idx.get(rn).copied());
+            let garment_item = garment_rn.and_then(|rn| idx.get(rn).copied());
             let garment_label = garment_rn
-                .as_ref()
-                .map(|rn| names.with_value(|n| n.get(rn).cloned().unwrap_or_else(|| rn.clone())))
+                .map(|rn| names.with_value(|n| n.get(rn).cloned().unwrap_or_else(|| rn.to_string())))
                 .unwrap_or_else(|| "no garment worn".to_string());
             let only_rows: Vec<rules::CargoRow> = rows.iter().map(|(_, r)| r.clone()).collect();
             let budget = rules::cargo_budget(&idx, garment_item, &only_rows);
@@ -1974,5 +2058,145 @@ mod tests {
             export_modpack_id(std::slice::from_ref(&it)),
             "00000000-0000-4000-a000-000000000001"
         );
+    }
+
+    /* ─────────── T-240 — the export button refuses over-capacity cargo ─────────── */
+
+    fn gear(rn: &str, name: &str, kind: &str) -> RegistryItem {
+        RegistryItem {
+            id: String::new(),
+            modpack_id: "mp".into(),
+            resource_name: rn.into(),
+            display_name: name.into(),
+            category: String::new(),
+            icon_url: None,
+            kind: kind.into(),
+            r#abstract: None,
+            arsenal_type: None,
+            weight_kg: None,
+            volume_cm3: None,
+            max_weight_kg: None,
+            max_volume_cm3: None,
+            cargo_grid_w: None,
+            cargo_grid_h: None,
+            addon: None,
+            variant_of: None,
+            sort_order: 0,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+
+    fn row(container: &str, item: &str, qty: i64) -> rules::CargoRow {
+        rules::CargoRow {
+            container: container.into(),
+            item: item.into(),
+            qty,
+        }
+    }
+
+    /// A 0.5 kg / 60 cm³ magazine and a chest rig catalogued at 5 kg / 200 cm³.
+    fn capacity_catalog() -> Vec<RegistryItem> {
+        let mut mag = gear("res://mag_stanag", "STANAG 30rd", "magazine");
+        mag.weight_kg = Some(0.5);
+        mag.volume_cm3 = Some(60.0);
+        let mut vest = gear("res://chest_rig", "Chest Rig", "gear_vest");
+        vest.max_weight_kg = Some(5.0);
+        vest.max_volume_cm3 = Some(200.0);
+        vec![mag, vest]
+    }
+
+    #[test]
+    fn over_capacity_cargo_cannot_be_exported_and_legitimate_cargo_still_can() {
+        let items = capacity_catalog();
+        let p = picks(&[("vest", "res://chest_rig")]);
+
+        // 4 × 60 = 240 cm³ into a 200 cm³ rig. The export is REFUSED, and a refusal carries
+        // reasons instead of bytes — there is no document to half-download.
+        let over = vec![row("vest", "res://mag_stanag", 4)];
+        let reasons = try_export(&p, &over, &items, "mp")
+            .expect_err("over-capacity cargo must not reach a file");
+        assert_eq!(reasons.len(), 1);
+        assert_eq!(reasons[0].key, "vest");
+        assert!(
+            reasons[0].message.contains("240 / 200 cm³"),
+            "{}",
+            reasons[0].message
+        );
+        assert!(
+            reasons[0].message.ends_with(rules::CARGO_CAPACITY_CAVEAT),
+            "the refusal must carry its own estimate caveat: {}",
+            reasons[0].message
+        );
+
+        // The same author, one magazine lighter: 180 ≤ 200. They still get their file, and it
+        // is the real document — the gate refuses or gets out of the way, it never degrades.
+        let ok = vec![row("vest", "res://mag_stanag", 3)];
+        let json = try_export(&p, &ok, &items, "mp").expect("legitimate cargo must still export");
+        assert_eq!(
+            json,
+            picks_to_export(&p, &ok, "mp"),
+            "an accepted export must be byte-identical to the unguarded one"
+        );
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["loadoutVersion"], "2");
+        assert_eq!(v["cargo"][0]["qty"], 3);
+    }
+
+    #[test]
+    fn the_export_gate_never_refuses_on_capacity_it_does_not_have() {
+        // An uncatalogued garment, no garment at all, and a bare Arsenal must all still export.
+        // A gate that refuses everything is indistinguishable from a broken button.
+        let mut items = capacity_catalog();
+        items.push(gear("res://unknown_rig", "Uncatalogued Rig", "gear_vest"));
+        let heavy = vec![row("vest", "res://mag_stanag", 40)];
+
+        for (label, p) in [
+            (
+                "garment with no catalogued capacity",
+                picks(&[("vest", "res://unknown_rig")]),
+            ),
+            ("no garment worn", picks(&[])),
+            (
+                "garment the catalog does not know",
+                picks(&[("vest", "res://ghost")]),
+            ),
+        ] {
+            assert!(
+                try_export(&p, &heavy, &items, "mp").is_ok(),
+                "must still export — {label}"
+            );
+        }
+        // And the pre-T-240 baseline: a full loadout over a catalog with no capacity columns
+        // at all exports exactly as it did before this ticket.
+        assert!(try_export(&full_picks(), &[], &[], "mp").is_ok());
+    }
+
+    #[test]
+    fn the_verdict_counts_capacity_beside_compat_and_attachment_faults() {
+        let items = capacity_catalog();
+        let idx = index_by_name(&items);
+        // A ready feed with no edges → the packed attachment on the primary is stranded.
+        let feed = attachment_feed(&[]);
+        let mut p = picks(&[("vest", "res://chest_rig"), ("primary", "res://rifle_m16")]);
+        p.insert(
+            attachments_key("primary"),
+            pack_attachments(&["res://supp".into()]),
+        );
+
+        let faults = loadout_faults(&p, &[row("vest", "res://mag_stanag", 4)], &feed, &idx);
+        assert_eq!(
+            faults.len(),
+            2,
+            "one stranded attachment + one over-capacity vest"
+        );
+        let keys: Vec<&str> = faults.iter().map(|e| e.key).collect();
+        assert!(keys.contains(&"primary"), "{keys:?}");
+        assert!(keys.contains(&"vest"), "{keys:?}");
+
+        // Empty the cargo and the capacity fault goes with it — the attachment one stays.
+        let faults = loadout_faults(&p, &[], &feed, &idx);
+        assert_eq!(faults.len(), 1);
+        assert_eq!(faults[0].key, "primary");
     }
 }
