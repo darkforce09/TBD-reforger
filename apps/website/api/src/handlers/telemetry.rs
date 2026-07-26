@@ -6,6 +6,7 @@ use axum::extract::rejection::JsonRejection;
 use axum::response::Json;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
+use serde::de::IgnoredAny;
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -369,17 +370,23 @@ pub struct MatchInput {
     aar_replay_url: Option<String>,
 }
 
-/// One player's final line for one match.
+/// One player's final line for one match: a required identity/role **core**, plus an
+/// optional, all-or-nothing **counters** block.
 ///
-/// **The counters are deliberately required — do not add `#[serde(default)]` back (T-316).**
+/// **Absent `counters` is not a write. Present `counters` is authoritative and replaces all
+/// of them.** That single sentence is the whole contract, and it is what preserves T-316's
+/// property — omission stops being a write — while T-393 restores a wire shape the one
+/// shipping client can actually satisfy.
+///
+/// # What T-316 established, and why it stands
+///
 /// This row is keyed `(match_id, arma_id, source_event_id)` and holds *final per-match
-/// totals*, and the upsert replaces them wholesale, so a re-ingest that omitted them wrote
+/// totals*, and the upsert replaces them wholesale, so a re-ingest that defaulted them wrote
 /// `kills=0 deaths=0 … is_command=false command_win=NULL` over a real scoreline — which
-/// `leaderboard_totals` then summed, in the same request, via `refresh_leaderboard`.
-///
-/// Three fixes were on the table and only one of them is honest:
+/// `leaderboard_totals` then summed, in the same request, via `refresh_leaderboard`. Three
+/// fixes were on the table and only one of them was honest:
 /// - **`GREATEST(existing, incoming)`** — rejected. It reads as "counters only go up", but
-///   half this struct is not a counter: `is_command`, `command_win` and `role_played` were
+///   half this row is not a counter: `is_command`, `command_win` and `role_played` were
 ///   corrupted by the same write and `GREATEST` means nothing for them, so the rule would
 ///   have to be applied field-by-field and would stop being a rule. Worse, it makes the row
 ///   a permanent high-water mark: a downward correction after an anti-cheat review could
@@ -389,17 +396,127 @@ pub struct MatchInput {
 /// - **Reject the re-ingest as a duplicate** — rejected. Retry safety is the contract here;
 ///   the endpoint is documented and tested as idempotent, and a game server that retries a
 ///   dropped response must not get a 409.
-/// - **Full replace, with the fields required** — taken. The POST is authoritative for this
-///   player-in-this-match, a restatement is exactly what a retry sends, corrections still
-///   work in both directions, and an incomplete body is what it always was: a bug in the
-///   sender, now answered with a 400 instead of a silent zeroing.
+/// - **Full replace, with the counters required** — taken. The POST is authoritative for
+///   this player-in-this-match, a restatement is exactly what a retry sends, and corrections
+///   still work in both directions.
 ///
-/// `command_win` stays optional because it is a genuine tri-state — `NULL` means "not a
-/// command slot / not adjudicated", which is a different statement from `false`.
+/// **Do not put `#[serde(default)]` back on any counter.** It is the exact mechanism of the
+/// silent zeroing above, and nothing below reintroduces it: the block is `Option`, and every
+/// field *inside* the block is required.
+///
+/// # What T-316 got wrong, and what T-393 changes
+///
+/// Its last clause — "an incomplete body is a bug in the sender" — inverted here, because it
+/// changed a wire contract without checking the only client. `TBD_ResultsReporter.c`
+/// `BuildPlayerRow` hand-builds four keys (`arma_id`, `role_played`, `deaths`,
+/// `source_event_id`) by string concatenation, so there is no serializer to quietly fill the
+/// rest, and it omits them *on purpose* — the mod reports only what it can measure. Serde
+/// rejects on the first missing field, so **every match report from every production server
+/// 400'd**: match rows, per-player stats, attendance, user-stat recompute and leaderboard
+/// refresh were all dead on arrival. The sender was not broken; the contract moved under it.
+///
+/// So the fields split by *who is entitled to state them*:
+/// - **Core (required)** — `arma_id`, `role_played`, `source_event_id`. Identity and role.
+///   Any reporter that knows a player was in a match knows all three; two of them are the
+///   dedupe key. `role_played` stays required and always-replaced for the T-316 reason: it
+///   was corrupted by the same write, and a reporter that can name the player can name the
+///   slot they held.
+/// - **Counters (optional block, all-or-nothing)** — a *measurement*, made by one reporter,
+///   about one player, in one match. A **partial** block is still a 400: the fields inside
+///   it carry no `default`, so a missing key is a decode error exactly as before.
+///
+/// This is not a weakening of T-316, it is the same rule stated one level up. Before: a
+/// present-but-incomplete body silently zeroed. Now: a body either states the scoreline in
+/// full or does not state it at all, and "does not state it" writes nothing. Silence is no
+/// longer a value.
+///
+/// # Why `deaths` is inside the block and not in the core
+///
+/// This is the one genuinely arguable line, since the mod does send `deaths` today and moving
+/// it means that value is currently dropped. It goes in the block anyway, for two reasons:
+/// - **`kd_ratio` couples it to `kills`.** `leaderboard_totals` is
+///   `round(sum(kills) / sum(deaths), 2)` (`0001_initial_schema.sql:274-277`). A contract that
+///   lets `deaths` be written *without* `kills` is a contract that lets a low-fidelity
+///   re-ingest corrupt a derived aggregate — 17 kills over 1 death instead of 3. `deaths` is
+///   not separable from the block it is divided into.
+/// - **A scoreline is one measurement by one reporter.** Splitting any counter out lets two
+///   reporters interleave into a single row — a full report writes `17/3/…`, then the mod's
+///   one-life report rewrites `deaths` to `1` and leaves `kills` at `17`. Half the row from
+///   each source is precisely the corruption shape T-316 exists to prevent; an all-or-nothing
+///   block is only all-or-nothing if it is complete.
+///
+/// **Consequence, stated out loud:** the mod's top-level `"deaths"` key is now an unknown
+/// field and is silently ignored (serde does not deny unknown fields here, and it must not —
+/// denying them would 400 the shipping payload all over again). Its four-key row therefore
+/// lands as identity-core-only and writes no counters at all. Recovering that one number is a
+/// mod-side change — emit a complete `counters` object — not a contract change here.
+///
+/// `command_win` stays `Option<bool>` because it is a genuine tri-state: `NULL` means "not a
+/// command slot / not adjudicated", which is a different statement from `false`. It is the
+/// one field inside the block that may be omitted, and omitting it means `NULL`, not "keep".
 #[derive(Debug, Deserialize)]
 pub struct PlayerStatInput {
     arma_id: String,
     role_played: String,
+    source_event_id: String,
+    /// Absent (or `null`) = this POST makes no claim about the scoreline, so the upsert does
+    /// not name the counter columns at all. Present = authoritative for every one of them.
+    counters: Option<PlayerCountersInput>,
+
+    // ---- legacy-shape tripwire (T-393) — presence only; the values are discarded ----
+    //
+    // These five keys used to live here, at the row's top level. Serde ignores unknown fields
+    // (and must — denying them would 400 the shipping mod's extra `deaths`), so a sender still
+    // using the pre-T-393 flat body would be *silently* accepted and write no counters at all:
+    // a fresh row would take the DDL zeros while the sender's 200 implied its scoreline landed.
+    // That is the T-316 failure mode wearing new clothes — a silent loss where the sender
+    // believes it stated something — so the flat shape is detected and rejected out loud by
+    // `reject_legacy_counter_shape` instead of being ignored into a zero row.
+    //
+    // `deaths` is deliberately **not** on this list even though it moved with the others: the
+    // shipping `TBD_ResultsReporter.c` sends exactly `arma_id`/`role_played`/`deaths`/
+    // `source_event_id`, and rejecting a top-level `deaths` would 400 every production match
+    // report — which is the defect this ticket exists to fix. It is tolerated and ignored, and
+    // the struct doc says so out loud. Nothing else that moved is tolerated, because nothing
+    // else has a shipping sender.
+    #[serde(rename = "kills")]
+    legacy_kills: Option<IgnoredAny>,
+    #[serde(rename = "team_kills")]
+    legacy_team_kills: Option<IgnoredAny>,
+    #[serde(rename = "longest_kill_m")]
+    legacy_longest_kill_m: Option<IgnoredAny>,
+    #[serde(rename = "vehicles_destroyed")]
+    legacy_vehicles_destroyed: Option<IgnoredAny>,
+    #[serde(rename = "is_command")]
+    legacy_is_command: Option<IgnoredAny>,
+}
+
+impl PlayerStatInput {
+    /// `Some(key)` when this row carries a moved counter at its top level — i.e. it was built
+    /// against the pre-T-393 flat contract and its scoreline would otherwise be dropped on the
+    /// floor. See the tripwire fields above for why `deaths` is not among them.
+    fn legacy_counter_key(&self) -> Option<&'static str> {
+        [
+            ("kills", &self.legacy_kills),
+            ("team_kills", &self.legacy_team_kills),
+            ("longest_kill_m", &self.legacy_longest_kill_m),
+            ("vehicles_destroyed", &self.legacy_vehicles_destroyed),
+            ("is_command", &self.legacy_is_command),
+        ]
+        .into_iter()
+        .find_map(|(name, seen)| seen.as_ref().map(|_| name))
+    }
+}
+
+/// The measured half of a player's line — all of it, or none of it.
+///
+/// Every field here is **required on purpose**; this is where T-316's "no `#[serde(default)]`"
+/// rule actually lives now. The block as a whole is optional (`PlayerStatInput::counters`),
+/// which is the T-393 fix; the fields inside it are not, which is the T-316 fix. A body that
+/// sends `{"kills": 17}` and stops is a sender that has half a scoreline and does not know it,
+/// and it gets a 400 rather than five zeros.
+#[derive(Debug, Deserialize)]
+pub struct PlayerCountersInput {
     kills: i64,
     deaths: i64,
     team_kills: i64,
@@ -407,7 +524,6 @@ pub struct PlayerStatInput {
     vehicles_destroyed: i64,
     is_command: bool,
     command_win: Option<bool>,
-    source_event_id: String,
 }
 
 /// Both keys are required: the handler's own error message has always claimed "match and
@@ -514,6 +630,18 @@ pub async fn ingest_match_results(
         if p.source_event_id.trim().is_empty() {
             return Err(ApiError::bad_request("player source_event_id is required"));
         }
+        // T-393. A pre-split flat body would otherwise be accepted silently and store zeros —
+        // read the tripwire fields on `PlayerStatInput`. The message names the key it found and
+        // the shape to move it to, because the sender is a game server whose only channel back
+        // is this string (`TBD_ResultsReporter.c` `OnSendError` logs the response body verbatim).
+        if let Some(key) = p.legacy_counter_key() {
+            return Err(ApiError::bad_request(format!(
+                "player counters moved into a nested \"counters\" object (T-393); found top-level \
+                 \"{key}\". Send all of kills/deaths/team_kills/longest_kill_m/vehicles_destroyed/\
+                 is_command inside \"counters\", or omit \"counters\" entirely to leave the stored \
+                 scoreline untouched"
+            )));
+        }
     }
 
     let mut tx = state.pool.begin().await?;
@@ -561,31 +689,65 @@ pub async fn ingest_match_results(
         // Worth stating because T-229 was filed on the premise that "the upsert key includes
         // arma_id, [so] linking later does not backfill": the key is exactly what makes both this
         // statement and T-326's backfill able to find the row again.
-        sqlx::query(
-            "INSERT INTO match_player_stats \
-             (match_id, arma_id, discord_id, role_played, kills, deaths, team_kills, \
-              longest_kill_m, vehicles_destroyed, is_command, command_win, source_event_id) \
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) \
-             ON CONFLICT (match_id, arma_id, source_event_id) DO UPDATE SET \
-              discord_id = EXCLUDED.discord_id, role_played = EXCLUDED.role_played, \
-              kills = EXCLUDED.kills, deaths = EXCLUDED.deaths, team_kills = EXCLUDED.team_kills, \
-              longest_kill_m = EXCLUDED.longest_kill_m, vehicles_destroyed = EXCLUDED.vehicles_destroyed, \
-              is_command = EXCLUDED.is_command, command_win = EXCLUDED.command_win",
-        )
-        .bind(match_id)
-        .bind(arma_id)
-        .bind(&discord_id)
-        .bind(&p.role_played)
-        .bind(p.kills)
-        .bind(p.deaths)
-        .bind(p.team_kills)
-        .bind(p.longest_kill_m)
-        .bind(p.vehicles_destroyed)
-        .bind(p.is_command)
-        .bind(p.command_win)
-        .bind(source_event_id)
-        .execute(&mut *tx)
-        .await?;
+        //
+        // **T-393 — two statements, because "absent counters is not a write" has to be true of
+        // the SQL and not just of the struct.** The counters-absent statement does not name the
+        // counter columns *at all*: on a fresh row they take their DDL defaults (`0` / `false`
+        // / `NULL` — `0001_initial_schema.sql:251-265`), and on a conflict the `DO UPDATE SET`
+        // touches only `discord_id` and `role_played`, so a stored scoreline is not read, not
+        // rewritten, and not even locked against on those columns.
+        //
+        // Deliberately **not** a read-modify-write (`SELECT` the current counters, re-bind
+        // them): that is the same end state through a race. Two concurrent POSTs for one row —
+        // a retry overlapping the original, which this endpoint's whole retry contract makes
+        // routine — would each read the pre-update values and the later writer would restore
+        // the counters the earlier one had just replaced. Not naming a column cannot lose a
+        // write that way; re-binding its old value can.
+        match &p.counters {
+            Some(c) => {
+                sqlx::query(
+                    "INSERT INTO match_player_stats \
+                     (match_id, arma_id, discord_id, role_played, kills, deaths, team_kills, \
+                      longest_kill_m, vehicles_destroyed, is_command, command_win, source_event_id) \
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) \
+                     ON CONFLICT (match_id, arma_id, source_event_id) DO UPDATE SET \
+                      discord_id = EXCLUDED.discord_id, role_played = EXCLUDED.role_played, \
+                      kills = EXCLUDED.kills, deaths = EXCLUDED.deaths, team_kills = EXCLUDED.team_kills, \
+                      longest_kill_m = EXCLUDED.longest_kill_m, vehicles_destroyed = EXCLUDED.vehicles_destroyed, \
+                      is_command = EXCLUDED.is_command, command_win = EXCLUDED.command_win",
+                )
+                .bind(match_id)
+                .bind(arma_id)
+                .bind(&discord_id)
+                .bind(&p.role_played)
+                .bind(c.kills)
+                .bind(c.deaths)
+                .bind(c.team_kills)
+                .bind(c.longest_kill_m)
+                .bind(c.vehicles_destroyed)
+                .bind(c.is_command)
+                .bind(c.command_win)
+                .bind(source_event_id)
+                .execute(&mut *tx)
+                .await?;
+            }
+            None => {
+                sqlx::query(
+                    "INSERT INTO match_player_stats \
+                     (match_id, arma_id, discord_id, role_played, source_event_id) \
+                     VALUES ($1, $2, $3, $4, $5) \
+                     ON CONFLICT (match_id, arma_id, source_event_id) DO UPDATE SET \
+                      discord_id = EXCLUDED.discord_id, role_played = EXCLUDED.role_played",
+                )
+                .bind(match_id)
+                .bind(arma_id)
+                .bind(&discord_id)
+                .bind(&p.role_played)
+                .bind(source_event_id)
+                .execute(&mut *tx)
+                .await?;
+            }
+        }
     }
 
     // Mark attendance for scheduled operations (resolve via the event's missions).
