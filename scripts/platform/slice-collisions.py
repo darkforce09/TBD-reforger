@@ -107,7 +107,12 @@ def repack():
     rows = [r for r in plan_rows() if not shipped(r['id'], reg)]
     done = [r for r in plan_rows() if shipped(r['id'], reg)]
     waves, remaining, n = [], list(rows), 0
-    landed = set()
+    # Seed `landed` with everything already shipped. Without this, a DEPS edge pointing at a shipped
+    # ticket can never be satisfied — the dependency is filtered out of `rows` as done, so it never
+    # enters `landed`, and every dependent deadlocks. Hit for real on 2026-07-26 once T-186 shipped:
+    # T-209 -> T-186 and T-251 -> T-209 both became unschedulable.
+    landed = {tid for tid, t in registry().items()
+              if t.get('status') in ('shipped', 'cancelled')}
     last = [r for r in remaining if r['id'] in RUN_LAST]
     remaining = [r for r in remaining if r['id'] not in RUN_LAST]
     while remaining:
