@@ -524,6 +524,17 @@ impl MissionDocCore {
 
     /// Insert a vehicle row into `vehiclesById` (T-180.2 B-L8). Minimal shape:
     /// `{id, resourceName}` + optional `position`.
+    ///
+    /// **T-215 — this shape is the contract floor.** `{id, resourceName, position, squadId}` is what
+    /// every reader of `vehiclesById` is written against, so nothing here may be renamed, retyped or
+    /// dropped; new information goes on as *new* keys. The two this ticket adds are
+    /// [`Self::set_vehicle_faction`] (`factionId`) and [`Self::set_vehicle_cargo`] (`cargo`), each
+    /// written by its own mutator so a caller that wants only the floor emits only the floor.
+    ///
+    /// `position` is written **only when both `x` and `y` are given** — a vehicle with no map
+    /// position is a legitimate row (that is what the ORBAT-only path produced before map placement
+    /// existed), and a `position` of `{0,0,0,0}` would put it at the terrain's south-west corner
+    /// rather than nowhere.
     pub fn add_vehicle(
         &self,
         id: &str,
@@ -544,6 +555,70 @@ impl MissionDocCore {
                 "position",
                 position_any(x, y, z.unwrap_or(0.0), rotation.unwrap_or(0.0)),
             );
+        }
+    }
+
+    /// T-215 — record which Eden **side** owns a map-placed vehicle, as `factionId`.
+    ///
+    /// **Why this is not [`Self::attach_vehicle`].** A map placement deliberately does not join the
+    /// side's squad. `place_orbat::is_open_for_placement` counts a squad holding *any* vehicle as
+    /// authored, so attaching one would close the side's current squad, and the next character
+    /// placement would mint a fresh one — reintroducing the one-squad-per-click defect T-321 was
+    /// written to remove. `factionId` records the same authored intent (which side this vehicle
+    /// belongs to) without touching `squadIds` / `vehicleIds`, so the placement rule is unaffected.
+    ///
+    /// Purely **additive** to the T-180.2 row: `squadId` keeps its exact meaning and is untouched
+    /// here (written by `attach_vehicle`, cleared by `detach_vehicle`). A squad-attached vehicle
+    /// therefore carries both, and a map-placed one carries only `factionId` — a reader that
+    /// resolves the side through `squadId` alone still gets the right answer for every row that has
+    /// one, and gets `None` (not a wrong side) for the rows that do not.
+    pub fn set_vehicle_faction(&self, vehicle_id: &str, faction_id: &str) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id) {
+            v.insert(&mut txn, "factionId", faction_id);
+        }
+    }
+
+    /// T-215 — what a vehicle is carrying: `vehicle.cargo = [{item, qty}]`.
+    ///
+    /// The row shape is `mission.schema.json` `$defs/entityInventory` **verbatim**: `item` is an
+    /// Enfusion ResourceName, `qty` is a UNIT COUNT (not a stack size), and there is deliberately no
+    /// `container` key — for an entity the container *is* the entity, which is exactly why that def
+    /// is not a `$defs/cargoContainer` row. That contract already landed on main at T-198
+    /// (`2070eecd`, "vehicle and crate inventory gets a home on $defs/entity"), so authoring vehicle
+    /// cargo needs **no** schema change; only a compiled-document emitter is still missing.
+    ///
+    /// Malformed rows are **dropped, not written**: an empty `item` violates `minLength: 1` and a
+    /// `qty < 1` violates `minimum: 1`, so writing either would produce a document that cannot
+    /// validate — strictly worse than one that lost a row it could never have shipped.
+    ///
+    /// An empty result **removes** the key rather than writing `[]`. `$defs/entityInventory` defines
+    /// absent and `[]` to mean the same thing ("leave the prefab's own contents alone"), and absent
+    /// is the smaller document.
+    ///
+    /// `qty` is written as `Any::BigInt` because that is the variant [`value_to_any`] produces for
+    /// an integral JSON number on the way back in; writing `Any::Number` would make the same JSON
+    /// round-trip to a different `Any`, which is the class of drift `any_to_f64` exists to absorb
+    /// for coordinates and which is avoidable outright here.
+    pub fn set_vehicle_cargo(&self, vehicle_id: &str, rows: &[(String, i64)]) {
+        let mut txn = self.begin();
+        let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id) else {
+            return;
+        };
+        let kept: Vec<Any> = rows
+            .iter()
+            .filter(|(item, qty)| !item.trim().is_empty() && *qty >= 1)
+            .map(|(item, qty)| {
+                Any::Map(Arc::new(HashMap::from([
+                    ("item".to_string(), Any::String(item.as_str().into())),
+                    ("qty".to_string(), Any::BigInt(*qty)),
+                ])))
+            })
+            .collect();
+        if kept.is_empty() {
+            v.remove(&mut txn, "cargo");
+        } else {
+            v.insert(&mut txn, "cargo", Any::Array(kept.into()));
         }
     }
 
@@ -2468,6 +2543,151 @@ mod tests {
             "detach must keep the vehicle row"
         );
         assert!(root["vehiclesById"]["veh-1"].get("squadId").is_none());
+    }
+
+    /// The vehicle rows of a doc, keyed by id, straight off `small_maps_json` (T-215).
+    fn vehicles_of(doc: &MissionDocCore) -> serde_json::Value {
+        small_maps(doc)["vehiclesById"].clone()
+    }
+
+    /// Save → reload, exactly as the editor does it: compile the doc to a `json_payload` and
+    /// `hydrate` a fresh core from it (T-215).
+    ///
+    /// `#[cfg(feature = "mission")]` — the reason the suite must run `--features doc,mission`;
+    /// `--features doc` alone compiles the compiler out and silently skips its callers.
+    #[cfg(feature = "mission")]
+    fn save_and_reload(doc: &MissionDocCore) -> MissionDocCore {
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&payload.to_string(), "lyr");
+        reloaded
+    }
+
+    /// **T-215 — the round trip map placement is worthless without.**
+    ///
+    /// Before this ticket a vehicle's position was *derived* (leader ±30 m), so no test could tell a
+    /// surviving position from a re-derived one. Place one at an authored map point instead, save,
+    /// reload, and assert every component comes back bit-exact.
+    ///
+    /// The coordinates are deliberately **non-integral**: `value_to_any` encodes integral JSON
+    /// numbers as `Any::BigInt` and the rest as `Any::Number`, so an integer fixture could pass
+    /// while a real 2-decimal map click silently lost its fraction.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn map_placed_vehicle_position_round_trips_through_compile_and_hydrate() {
+        let doc = orbat_fixture();
+        doc.add_vehicle(
+            "veh-map",
+            "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
+            Some(4870.25),
+            Some(7760.5),
+            Some(12.75),
+            Some(137.5),
+        );
+        doc.set_vehicle_faction("veh-map", "faction-BLUFOR");
+
+        let authored = vehicles_of(&doc)["veh-map"].clone();
+        assert_eq!(authored["position"]["x"], serde_json::json!(4870.25));
+        assert_eq!(authored["position"]["y"], serde_json::json!(7760.5));
+        assert_eq!(authored["position"]["z"], serde_json::json!(12.75));
+        assert_eq!(authored["position"]["rotation"], serde_json::json!(137.5));
+        assert_eq!(authored["factionId"], serde_json::json!("faction-BLUFOR"));
+
+        // A map placement must NOT join a squad — see `set_vehicle_faction` for why (T-321).
+        assert!(
+            authored.get("squadId").is_none(),
+            "map placement must not attach to a squad: {authored}"
+        );
+        let vids = small_maps(&doc)["squadsById"]["sq-a"]
+            .get("vehicleIds")
+            .and_then(|v| v.as_array())
+            .map_or(0, Vec::len);
+        assert_eq!(vids, 0, "no squad may acquire a map-placed vehicle");
+
+        let survived = vehicles_of(&save_and_reload(&doc))["veh-map"].clone();
+        assert_eq!(
+            survived, authored,
+            "the vehicle row must survive save → reload whole"
+        );
+    }
+
+    /// **T-215 — authored vehicle cargo survives the same round trip.**
+    ///
+    /// The emitted rows are `mission.schema.json` `$defs/entityInventory` verbatim — `{item, qty}`
+    /// and nothing else. Asserting the exact row (not just its presence) is what keeps a stray
+    /// `container` key, the character-side spelling, from creeping in: an entity's container is the
+    /// entity, and that def is closed (`additionalProperties: false`).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn map_placed_vehicle_cargo_round_trips_as_entity_inventory_rows() {
+        let doc = orbat_fixture();
+        doc.add_vehicle(
+            "veh-map",
+            "{AAAA}Prefabs/Vehicles/T.et",
+            Some(1.5),
+            Some(2.5),
+            Some(0.0),
+            Some(0.0),
+        );
+        doc.set_vehicle_cargo(
+            "veh-map",
+            &[
+                ("{BBBB}Prefabs/Weapons/M16.et".to_string(), 4),
+                ("{CCCC}Prefabs/Items/Bandage.et".to_string(), 12),
+            ],
+        );
+
+        let authored = vehicles_of(&doc)["veh-map"]["cargo"].clone();
+        assert_eq!(
+            authored,
+            serde_json::json!([
+                { "item": "{BBBB}Prefabs/Weapons/M16.et", "qty": 4 },
+                { "item": "{CCCC}Prefabs/Items/Bandage.et", "qty": 12 },
+            ]),
+            "cargo rows must be $defs/entityInventory verbatim"
+        );
+
+        let survived = vehicles_of(&save_and_reload(&doc))["veh-map"]["cargo"].clone();
+        assert_eq!(survived, authored, "cargo must survive save → reload whole");
+    }
+
+    /// T-215 — rows the schema cannot represent are dropped, and an empty result removes the key
+    /// rather than writing `[]` (`$defs/entityInventory`: absent and `[]` mean the same thing).
+    #[test]
+    fn set_vehicle_cargo_drops_unrepresentable_rows_and_clears_on_empty() {
+        let doc = orbat_fixture();
+        doc.add_vehicle(
+            "v",
+            "{AAAA}P.et",
+            Some(1.0),
+            Some(1.0),
+            Some(0.0),
+            Some(0.0),
+        );
+
+        doc.set_vehicle_cargo(
+            "v",
+            &[
+                ("   ".to_string(), 3),         // empty item — minLength: 1
+                ("{BBBB}P.et".to_string(), 0),  // qty 0 — minimum: 1
+                ("{CCCC}P.et".to_string(), -1), // negative qty
+                ("{DDDD}P.et".to_string(), 1),  // the only representable row
+            ],
+        );
+        assert_eq!(
+            vehicles_of(&doc)["v"]["cargo"],
+            serde_json::json!([{ "item": "{DDDD}P.et", "qty": 1 }]),
+        );
+
+        doc.set_vehicle_cargo("v", &[]);
+        assert!(
+            vehicles_of(&doc)["v"].get("cargo").is_none(),
+            "an empty result must REMOVE the key, not write []"
+        );
     }
 
     /// B7 — dense index rewrite 0..n-1 after move.

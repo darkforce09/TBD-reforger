@@ -1790,6 +1790,67 @@ fn virtual_tree(
     .into_any()
 }
 
+/// T-215 — registry kinds the vehicle cargo picker offers.
+///
+/// A superset of `arsenal::CARGO_ADD_KINDS` (magazine / ammo / gear_item / throwable / explosive) on
+/// purpose. That list answers "what goes inside a **worn garment**", so it excludes rifles, vests
+/// and backpacks — things a person carries *on* rather than *in* themselves. A truck bed has no such
+/// distinction: spare weapons, spare armour and spare packs are exactly what a resupply vehicle is
+/// loaded with, and excluding them would make the feature useless for its main use.
+///
+/// Still excluded: `character` (a person is not cargo — crews are ORBAT slots), `vehicle` and
+/// `vehicle_weapon` (nesting a vehicle inside a vehicle is not a thing the engine's storage does),
+/// and `other` (the export's escape hatch, whose contents are by definition unclassified).
+const VEHICLE_CARGO_KINDS: &[&str] = &[
+    "magazine",
+    "ammo",
+    "gear_item",
+    "gear_throwable",
+    "gear_explosive",
+    "gear_primary",
+    "gear_handgun",
+    "gear_launcher",
+    "gear_binoculars",
+    "gear_vest",
+    "gear_armored_vest",
+    "gear_backpack",
+    "gear_helmet",
+    "gear_jacket",
+    "gear_pants",
+    "gear_boots",
+    "gear_gloves",
+    "gear_glasses",
+    "optic",
+    "attachment",
+    "crate",
+];
+
+/// T-215 — which palette a leaf belongs to. The tree machinery (guides, collapse, search) is
+/// identical for both; only the glyph and which `editor_ops` arm the press calls differ, and those
+/// are the two things that must not be shared — a Vehicles leaf that armed a character place would
+/// silently write a `slots` row.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum PaletteKind {
+    Character,
+    Vehicle,
+}
+
+impl PaletteKind {
+    const fn leaf_icon(self) -> &'static str {
+        match self {
+            Self::Character => "person",
+            Self::Vehicle => "directions_car",
+        }
+    }
+
+    const fn leaf_title(self) -> &'static str {
+        match self {
+            Self::Character => "Drag onto the map to place",
+            Self::Vehicle => "Drag onto the map to place this vehicle",
+        }
+    }
+}
+
 /// Render the palette recursively. A leaf (`payload.is_some()`) arms a place on `pointerdown` —
 /// **pointer-drag, not HTML5 DnD**: the gates drive trusted `Input.dispatchMouseEvent`, which
 /// synthesizes real pointer events into these handlers, where DnD would need `Input.setInterceptDrags`.
@@ -1803,6 +1864,8 @@ fn palette_rows(
     // T-178 A4 — ancestor ids for guide click (`len == depth`).
     id_prefix: &[String],
     collapsed: RwSignal<std::collections::HashSet<String>>,
+    // T-215 — Factions or Vehicles; picks the glyph and the `editor_ops` arm.
+    kind: PaletteKind,
 ) -> AnyView {
     let len = nodes.len();
     nodes
@@ -1834,7 +1897,7 @@ fn palette_rows(
                     let mut child_ids = gids.clone();
                     child_ids.push(n.id.clone());
                     let kids = if open {
-                        palette_rows(&n.children, depth + 1, &anc, &child_ids, collapsed)
+                        palette_rows(&n.children, depth + 1, &anc, &child_ids, collapsed, kind)
                     } else {
                         ().into_any()
                     };
@@ -1869,11 +1932,18 @@ fn palette_rows(
                     <button
                         type="button"
                         aria-label=aria
-                        title="Drag onto the map to place"
+                        title=kind.leaf_title()
                         class=PALETTE_LEAF
                         on:pointerdown=move |_| {
                             #[cfg(target_arch = "wasm32")]
-                            crate::editor_ops::begin_place(payload.clone());
+                            match kind {
+                                PaletteKind::Character => {
+                                    crate::editor_ops::begin_place(payload.clone())
+                                }
+                                PaletteKind::Vehicle => {
+                                    crate::editor_ops::begin_place_vehicle(payload.clone())
+                                }
+                            }
                             // `editor_ops` is wasm-only, so the native view shell would see an
                             // unused capture (the `announcements.rs` `let _ = store;` idiom).
                             #[cfg(not(target_arch = "wasm32"))]
@@ -1882,7 +1952,7 @@ fn palette_rows(
                     >
                         {guide_spans(&anc, &gids, collapsed)}
                         <span class="size-4 shrink-0"></span>
-                        <MaterialIcon name="person" class="block text-sm" />
+                        <MaterialIcon name=kind.leaf_icon() class="block text-sm" />
                         <span class="truncate">{label}</span>
                     </button>
                 }
@@ -1891,6 +1961,223 @@ fn palette_rows(
         })
         .collect::<Vec<_>>()
         .into_any()
+}
+
+/// T-215 — the **Placed** section under the Vehicles palette: every `vehiclesById` row with its map
+/// position, a delete, and an expandable `{item, qty}` cargo editor.
+///
+/// This is where authored vehicle cargo is entered. It lives in the Vehicles tab rather than in the
+/// Attributes modal because Attributes is keyed on a **slot** id and reads the slot SoA — a vehicle
+/// is deliberately off that SoA, so opening it there would need a second, parallel modal for a
+/// two-field entity. Under the palette that produced them, the placed list is also the only surface
+/// that shows an author what they have already put down.
+///
+/// Native builds render nothing: `editor_ops` is `#![cfg(target_arch = "wasm32")]`, so there is no
+/// document to read (the same reason `CatalogState` never leaves `Loading` on the native shell).
+#[cfg(target_arch = "wasm32")]
+fn placed_vehicles_panel(
+    doc_tick: RwSignal<u64>,
+    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    expanded: RwSignal<std::collections::HashSet<String>>,
+) -> AnyView {
+    use crate::editor_ops::{VehicleCargoRow, VehicleRow};
+
+    // Re-read the doc on every mutation — `MissionDocCore` has no change subscription, so this is
+    // the same pull-mirror tick the Attributes modal uses.
+    doc_tick.track();
+    let rows: Vec<VehicleRow> = crate::editor_ops::vehicle_rows();
+    if rows.is_empty() {
+        return ().into_any();
+    }
+
+    let items = registry_items.get().unwrap_or_default();
+    let names: HashMap<String, String> = items
+        .iter()
+        .map(|i| (i.resource_name.clone(), i.display_name.clone()))
+        .collect();
+    let mut addable: Vec<(String, String)> = items
+        .iter()
+        .filter(|i| VEHICLE_CARGO_KINDS.contains(&i.kind.as_str()))
+        .filter(|i| !i.r#abstract.unwrap_or(false))
+        .map(|i| (i.resource_name.clone(), i.display_name.clone()))
+        .collect();
+    addable.sort_by(|a, b| a.1.cmp(&b.1));
+    let addable = StoredValue::new(addable);
+    let names = StoredValue::new(names);
+
+    let label_of =
+        move |rn: &str| names.with_value(|n| n.get(rn).cloned().unwrap_or_else(|| rn.to_string()));
+
+    let body = rows
+        .into_iter()
+        .map(|v| {
+            let vid = v.id.clone();
+            let open = expanded.with(|e| e.contains(&vid));
+            let title = label_of(&v.resource_name);
+            let pos = v.xy.map_or_else(
+                // A vehicle added from the ORBAT Manager before it was ever dropped has no
+                // position. Saying so is the point — it is the state this ticket exists to end.
+                || "not placed".to_string(),
+                |(x, y)| format!("{x:.1}, {y:.1}"),
+            );
+            let cargo = v.cargo.clone();
+            let n_cargo = cargo.len();
+
+            let (id_toggle, id_del) = (vid.clone(), vid.clone());
+            let head = view! {
+                <div class="flex items-center gap-1.5 rounded px-1.5 py-1 hover:bg-white/5">
+                    <span
+                        role="button"
+                        tabindex="-1"
+                        aria-label=format!("Toggle cargo for {title}")
+                        aria-expanded=if open { "true" } else { "false" }
+                        class="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded text-outline hover:text-on-surface"
+                        on:click=move |_| {
+                            expanded
+                                .update(|e| {
+                                    if !e.remove(&id_toggle) {
+                                        e.insert(id_toggle.clone());
+                                    }
+                                });
+                        }
+                    >
+                        <MaterialIcon
+                            name=if open { "expand_more" } else { "chevron_right" }
+                            class="block text-sm"
+                        />
+                    </span>
+                    <MaterialIcon name="directions_car" class="block shrink-0 text-sm" />
+                    <span class="min-w-0 flex-1 truncate text-label-sm text-on-surface">{title}</span>
+                    <span class="shrink-0 font-mono text-label-sm tabular-nums text-outline">
+                        {pos}
+                    </span>
+                    <span class="shrink-0 font-mono text-label-sm tabular-nums text-outline">
+                        {format!("{n_cargo}\u{a0}items")}
+                    </span>
+                    <button
+                        type="button"
+                        aria-label="Remove vehicle"
+                        class="shrink-0 rounded p-0.5 text-on-surface-variant hover:text-error-alert"
+                        on:click=move |_| {
+                            crate::editor_ops::remove_vehicle(id_del.clone());
+                        }
+                    >
+                        <MaterialIcon name="delete" class="block text-sm" />
+                    </button>
+                </div>
+            };
+
+            if !open {
+                return head.into_any();
+            }
+
+            let rows_for_edit = cargo.clone();
+            let id_add = vid.clone();
+            let editor = cargo
+                .into_iter()
+                .enumerate()
+                .map(|(i, row)| {
+                    let label = label_of(&row.item);
+                    let (base_q, base_r) = (rows_for_edit.clone(), rows_for_edit.clone());
+                    let (id_q, id_r) = (vid.clone(), vid.clone());
+                    view! {
+                        <div class="flex items-center gap-1.5 py-0.5 pl-7 pr-1.5">
+                            <span class="min-w-0 flex-1 truncate text-label-sm text-on-surface-variant">
+                                {label}
+                            </span>
+                            <input
+                                type="number"
+                                min="1"
+                                aria-label="Quantity"
+                                class="w-14 shrink-0 rounded border border-outline-variant/40 bg-surface-container-lowest/60 px-1 py-0.5 text-right font-mono text-label-sm tabular-nums text-on-surface outline-none focus:border-primary/60"
+                                prop:value=row.qty.to_string()
+                                on:change=move |ev| {
+                                    let Ok(q) = event_target_value(&ev).trim().parse::<i64>() else {
+                                        return;
+                                    };
+                                    let mut next = base_q.clone();
+                                    if let Some(r) = next.get_mut(i) {
+                                        r.qty = q;
+                                    }
+                                    crate::editor_ops::set_vehicle_cargo(id_q.clone(), next);
+                                }
+                            />
+                            <button
+                                type="button"
+                                aria-label="Remove cargo row"
+                                class="shrink-0 rounded p-0.5 text-on-surface-variant hover:text-error-alert"
+                                on:click=move |_| {
+                                    let mut next = base_r.clone();
+                                    if i < next.len() {
+                                        next.remove(i);
+                                    }
+                                    crate::editor_ops::set_vehicle_cargo(id_r.clone(), next);
+                                }
+                            >
+                                <MaterialIcon name="close" class="block text-sm" />
+                            </button>
+                        </div>
+                    }
+                })
+                .collect_view();
+
+            let base_add = rows_for_edit;
+            view! {
+                {head}
+                {editor}
+                <div class="py-0.5 pl-7 pr-1.5">
+                    <select
+                        aria-label="Add cargo"
+                        class="w-full rounded border border-outline-variant/40 bg-surface-container-lowest/60 px-1.5 py-0.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
+                        on:change=move |ev| {
+                            let item = event_target_value(&ev);
+                            if item.is_empty() {
+                                return;
+                            }
+                            let mut next = base_add.clone();
+                            // Adding an item already present bumps it rather than writing a second
+                            // row for the same prefab: `qty` is a unit count, so two rows of 3 and
+                            // one row of 6 are the same load, and the collapsed form is the one an
+                            // author can read.
+                            if let Some(r) = next.iter_mut().find(|r| r.item == item) {
+                                r.qty = r.qty.saturating_add(1);
+                            } else {
+                                next.push(VehicleCargoRow { item, qty: 1 });
+                            }
+                            crate::editor_ops::set_vehicle_cargo(id_add.clone(), next);
+                        }
+                    >
+                        <option value="">"Add cargo…"</option>
+                        {addable
+                            .get_value()
+                            .into_iter()
+                            .map(|(rn, label)| view! { <option value=rn>{label}</option> })
+                            .collect_view()}
+                    </select>
+                </div>
+            }
+            .into_any()
+        })
+        .collect_view();
+
+    view! {
+        <div class="mt-3 border-t border-white/5 pt-2">
+            <h3 class="text-label-md font-semibold text-on-surface">"Placed"</h3>
+            <div class="mt-1">{body}</div>
+        </div>
+    }
+    .into_any()
+}
+
+/// Native shell: no document, nothing to list. See the wasm sibling.
+#[cfg(not(target_arch = "wasm32"))]
+fn placed_vehicles_panel(
+    doc_tick: RwSignal<u64>,
+    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    expanded: RwSignal<std::collections::HashSet<String>>,
+) -> AnyView {
+    let _ = (doc_tick, registry_items, expanded);
+    ().into_any()
 }
 
 /// Collect the folder ids whose `default_expanded` is false — the palette's initial collapsed
@@ -2056,9 +2343,20 @@ pub fn eden_chip_selected(chip: EdenChip, active_side: &str, objects_mode: bool)
 /// onto the map to place their slot. `fm_open` toggles the T-167 Faction Manager dialog.
 ///
 /// T-180.5 — Eden side chips above search drive `active_side` / Objects stub.
+///
+/// T-215 — the **Vehicles** tab is a real palette off the same `/registry` fetch (`vehicle_catalog`,
+/// built by `asset_catalog::build_vehicle_catalog_tree`), not the T-070 placeholder it was. Its
+/// leaves arm `editor_ops::begin_place_vehicle`, so a release on the canvas writes a `vehiclesById`
+/// row at that world point.
 #[component]
 pub fn DockRight(
     catalog: RwSignal<CatalogState>,
+    /// T-215 — the `kind == "vehicle"` half of the same registry fetch.
+    vehicle_catalog: RwSignal<CatalogState>,
+    /// T-215 — the raw registry rows, for the placed-vehicle cargo picker's labels and options.
+    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    /// T-215 — the doc-change tick the placed-vehicle list re-reads on.
+    doc_tick: RwSignal<u64>,
     fm_open: RwSignal<bool>,
     active_side: RwSignal<String>,
     objects_mode: RwSignal<bool>,
@@ -2085,6 +2383,26 @@ pub fn DockRight(
     let tab = RwSignal::new(0usize);
     let search = RwSignal::new(String::new());
     let no_collapse = RwSignal::new(std::collections::HashSet::<String>::new());
+    // T-215 — the Vehicles tab keeps its OWN collapse set and search box. Sharing either with the
+    // Factions tab would mean a query typed against 178 vehicles silently filtering the roles the
+    // author switches back to, and a folder id collision between two trees built from different
+    // path vocabularies.
+    let vehicle_collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
+    let vehicle_seeded = StoredValue::new(false);
+    Effect::new(move |_| {
+        if vehicle_seeded.get_value() {
+            return;
+        }
+        if let CatalogState::Ready(nodes) = vehicle_catalog.get() {
+            let mut set = std::collections::HashSet::new();
+            collapsed_seed(&nodes, &mut set);
+            vehicle_collapsed.set(set);
+            vehicle_seeded.set_value(true);
+        }
+    });
+    let vehicle_search = RwSignal::new(String::new());
+    // T-215 — which placed vehicles have their cargo editor open.
+    let vehicle_expanded = RwSignal::new(std::collections::HashSet::<String>::new());
     let tab_btn = move |i: usize, label: &'static str| {
         view! {
             <button
@@ -2213,7 +2531,14 @@ pub fn DockRight(
                                         // Track the collapse set so a chevron toggle re-renders the
                                         // tree (palette_rows reads it untracked).
                                         palette_collapsed.track();
-                                        palette_rows(&nodes, 0, &[], &[], palette_collapsed)
+                                        palette_rows(
+                                            &nodes,
+                                            0,
+                                            &[],
+                                            &[],
+                                            palette_collapsed,
+                                            PaletteKind::Character,
+                                        )
                                     } else {
                                         let filtered =
                                             crate::asset_catalog::filter_catalog(&nodes, &q);
@@ -2225,7 +2550,14 @@ pub fn DockRight(
                                             }
                                                 .into_any()
                                         } else {
-                                            palette_rows(&filtered, 0, &[], &[], no_collapse)
+                                            palette_rows(
+                                                &filtered,
+                                                0,
+                                                &[],
+                                                &[],
+                                                no_collapse,
+                                                PaletteKind::Character,
+                                            )
                                         }
                                     }
                                 }
@@ -2234,10 +2566,91 @@ pub fn DockRight(
                     </div>
                 }
                     .into_any(),
+                // T-215 — Vehicles: the same tree machinery over the `kind == "vehicle"` rows.
+                // A leaf drop writes a `vehiclesById` row at the world point, owned by whichever
+                // Eden side the Factions tab's chips have selected (`active_side`) — the chips are
+                // not repeated here because there is one active side per editor, not per tab.
                 1 => view! {
-                    <p class="mt-3 text-label-sm normal-case text-outline">
-                        "Vehicle placement lands in T-070."
+                    <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Vehicles"</h3>
+                    <p class="mt-0.5 text-label-sm normal-case text-outline">
+                        "Drag a vehicle onto the map to place it."
                     </p>
+                    <input
+                        type="search"
+                        aria-label="Search vehicles"
+                        placeholder="Search vehicles…"
+                        class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
+                        on:input=move |ev| vehicle_search.set(event_target_value(&ev))
+                    />
+                    <div class="mt-2">
+                        {move || {
+                            if objects_mode.get() {
+                                return view! {
+                                    <p class="text-label-sm text-outline">{OBJECTS_COMING_SOON}</p>
+                                }
+                                    .into_any();
+                            }
+                            match vehicle_catalog.get() {
+                                CatalogState::Loading => {
+                                    view! {
+                                        <p class="text-label-sm text-outline">"Loading vehicles…"</p>
+                                    }
+                                        .into_any()
+                                }
+                                CatalogState::Failed => {
+                                    view! {
+                                        <p class="text-label-sm text-outline">
+                                            "Could not load the catalog."
+                                        </p>
+                                    }
+                                        .into_any()
+                                }
+                                CatalogState::Ready(nodes) if nodes.is_empty() => {
+                                    view! {
+                                        <p class="text-label-sm text-outline">
+                                            "No placeable vehicles."
+                                        </p>
+                                    }
+                                        .into_any()
+                                }
+                                CatalogState::Ready(nodes) => {
+                                    let q = vehicle_search.get();
+                                    if q.trim().is_empty() {
+                                        vehicle_collapsed.track();
+                                        palette_rows(
+                                            &nodes,
+                                            0,
+                                            &[],
+                                            &[],
+                                            vehicle_collapsed,
+                                            PaletteKind::Vehicle,
+                                        )
+                                    } else {
+                                        let filtered =
+                                            crate::asset_catalog::filter_catalog(&nodes, &q);
+                                        if filtered.is_empty() {
+                                            view! {
+                                                <p class="text-label-sm text-outline">
+                                                    "No vehicles match."
+                                                </p>
+                                            }
+                                                .into_any()
+                                        } else {
+                                            palette_rows(
+                                                &filtered,
+                                                0,
+                                                &[],
+                                                &[],
+                                                no_collapse,
+                                                PaletteKind::Vehicle,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }}
+                    </div>
+                    {move || placed_vehicles_panel(doc_tick, registry_items, vehicle_expanded)}
                 }
                     .into_any(),
                 _ => view! {
@@ -2776,8 +3189,82 @@ mod tests {
         CARRIED_ENV_KEYS, EDEN_SIDE_CHIPS, ENV_UNCARRIED_NOTE, FLOW_DEFAULT_BRIEFING_S,
         FLOW_DEFAULT_JIP, FLOW_DEFAULT_SAFESTART_S, FLOW_DEFAULT_TIMELIMIT_S, JIP_OPTIONS,
         MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER, OBJECTS_COMING_SOON, SETTINGS_UNREAD_NOTE,
+        VEHICLE_CARGO_KINDS,
     };
     use leptos::prelude::*;
+
+    // ── T-215 — the Vehicles tab ────────────────────────────────────────────────────────────────
+
+    /// The tab was a one-line promise that placement would arrive in T-070, and the only vehicle
+    /// path was the ORBAT Manager's derived position. Both halves of the replacement are pinned:
+    /// the placeholder is gone, and a Vehicles leaf arms the **vehicle** place, not the character
+    /// one.
+    ///
+    /// Source inspection, following `orbat_manager`'s precedent, because the thing under test is a
+    /// Leptos view whose handlers are `#[cfg(target_arch = "wasm32")]` — a native test cannot mount
+    /// it or fire the `pointerdown`. What it can do is fail loudly if the wiring is unpicked.
+    ///
+    /// **Every needle is assembled at run time, and must stay that way.** This test searches the
+    /// file it is written in, so a needle spelled out contiguously — in an assertion, or in prose
+    /// *about* an assertion — puts itself into the haystack: absence checks can then never pass and
+    /// presence checks can never fail. That happened three times while writing this, and the third
+    /// was caught only by perturbation: a bare-symbol `contains` for the vehicle arm stayed GREEN
+    /// after the leaf was rewired to the character path, because the test's own literal satisfied
+    /// it. This program's signature defect in miniature — a check reporting success over an input
+    /// it never examined. The needle is therefore the whole call **expression**, which the file's
+    /// prose (which names the bare function) never contains.
+    #[test]
+    fn vehicles_tab_places_instead_of_promising() {
+        const SRC: &str = include_str!("eden_chrome.rs");
+        let stub = |what: &str, ticket: &str| format!("{what} placement {} {ticket}.", "lands in");
+        let arm = |f: &str| format!("editor_ops::{f}{}", "(payload.clone())");
+
+        assert!(
+            !SRC.contains(&stub("Vehicle", "T-070")),
+            "the Vehicles tab placeholder must be gone"
+        );
+        assert!(
+            SRC.contains(&arm("begin_place_vehicle")),
+            "a Vehicles leaf must arm the vehicle place path"
+        );
+        // The Markers tab is deliberately still a stub (T-069) — if this ever stops being true the
+        // assertion above stops proving that THIS tab is the one that got wired.
+        assert!(
+            SRC.contains(&stub("Marker", "T-069")),
+            "the Markers stub is out of scope and must be untouched"
+        );
+
+        let ops = include_str!("editor_ops.rs");
+        assert!(
+            ops.contains("pub fn begin_place_vehicle"),
+            "editor_ops must expose the vehicle arm"
+        );
+        assert!(
+            ops.contains("core.add_vehicle("),
+            "the vehicle place must reach the core mutator"
+        );
+    }
+
+    /// A vehicle's cargo picker must never offer a person or another vehicle. `character` rows are
+    /// crews (ORBAT slots, not freight) and nesting a vehicle inside a vehicle is not something the
+    /// engine's storage does — either would author a document whose only failure mode is silence.
+    #[test]
+    fn vehicle_cargo_picker_excludes_people_and_vehicles() {
+        for banned in ["character", "vehicle", "vehicle_weapon", "other"] {
+            assert!(
+                !VEHICLE_CARGO_KINDS.contains(&banned),
+                "{banned} must not be offered as vehicle cargo"
+            );
+        }
+        // …and it is a genuine superset of the worn-garment list, which is the whole reason it is a
+        // separate constant rather than a reuse of `arsenal::CARGO_ADD_KINDS`.
+        for expected in ["magazine", "ammo", "gear_primary", "gear_backpack"] {
+            assert!(
+                VEHICLE_CARGO_KINDS.contains(&expected),
+                "{expected} is exactly what a resupply vehicle carries"
+            );
+        }
+    }
 
     #[test]
     fn time_scrubber_roundtrip() {

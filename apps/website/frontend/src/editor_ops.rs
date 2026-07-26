@@ -67,9 +67,22 @@ struct OpsCtx {
     /// T-159.26 — reactive doc-change tick (the modal's re-read trigger; `doc_ver` is non-reactive).
     doc_tick: RwSignal<u64>,
     /// The in-flight palette drag: `Some` between a leaf `pointerdown` and the canvas `pointerup`.
-    pending: RefCell<Option<PlacePayload>>,
+    pending: RefCell<Option<Pending>>,
     /// Monotonic minter for placed-slot ids; [`mint_id`] still proves uniqueness against the doc.
     next_id: Cell<u32>,
+}
+
+/// T-215 — which palette armed the in-flight place. The two tabs hand the map the same
+/// [`PlacePayload`] but write **different entities**: a Factions leaf becomes a `slots` row through
+/// `place_character_under_side`, a Vehicles leaf becomes a `vehiclesById` row through `add_vehicle`.
+///
+/// The discriminant lives here, on the armed value, rather than on a separate "current tab" signal:
+/// the tab can change (or the dock can unmount) between the leaf's `pointerdown` and the canvas's
+/// `pointerup`, and a place must commit the entity the operator actually picked up.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Pending {
+    Character(PlacePayload),
+    Vehicle(PlacePayload),
 }
 
 /// One slot's editable attributes, read from the materialized SoA for the Attributes modal.
@@ -944,13 +957,26 @@ pub fn set_active_layer(id: Option<String>) {
 ///
 /// T-180.5 — no-op while the Objects chip is active (stub catalog; place must not panic).
 pub fn begin_place(payload: PlacePayload) {
+    arm(Pending::Character(payload));
+}
+
+/// T-215 — Vehicles-palette leaf `pointerdown` → arm a **vehicle** place. Same lifecycle as
+/// [`begin_place`] (consumed by [`place_at`], dropped by [`cancel_pending`]), so the map's
+/// `has_pending` ghost and the release-over-chrome cancel need no vehicle-specific branch.
+pub fn begin_place_vehicle(payload: PlacePayload) {
+    arm(Pending::Vehicle(payload));
+}
+
+/// Arm a place, honouring the T-180.5 Objects stub (which must clear rather than keep the previous
+/// arm — an armed place surviving a chip switch would commit on the next canvas release).
+fn arm(pending: Pending) {
     OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             if ctx.objects_mode.get_untracked() {
                 *ctx.pending.borrow_mut() = None;
                 return;
             }
-            *ctx.pending.borrow_mut() = Some(payload);
+            *ctx.pending.borrow_mut() = Some(pending);
         }
     });
 }
@@ -1519,6 +1545,171 @@ pub fn orbat_add_vehicle(squad_id: String, resource_name: String) -> Option<Stri
     id
 }
 
+/// T-215 — the vehicle half of [`place_at`]: a `vehiclesById` row at the operator's map point,
+/// owned by the active Eden side. Returns `false` on an unknown side (the same refusal
+/// `place_character_under_side` gives), leaving the doc untouched.
+///
+/// **Why this does not attach the vehicle to a squad.** The obvious symmetry with the character path
+/// would be `attach_vehicle` onto the side's current squad — and it is wrong.
+/// `place_orbat::is_open_for_placement` treats a squad holding *any* vehicle as authored, so the
+/// attach would close the side's current squad and the very next character placement would mint a
+/// fresh one. Placing a truck would silently split the fireteam being built around it, which is the
+/// one-squad-per-click defect T-321 exists to prevent. The side is recorded on the vehicle itself
+/// (`factionId`) instead; `attach_vehicle` remains the way to say "this squad's vehicle", from the
+/// ORBAT Manager where that is what the operator means.
+///
+/// `z`/`rotation` are `0.0` for the same reason the character path uses them: the flat-map commit
+/// has no DEM sample yet. Heading is authored afterwards, not guessed at drop.
+fn place_vehicle_in_core(
+    core: &MissionDocCore,
+    side: &str,
+    vehicle_id: &str,
+    resource_name: &str,
+    x: f64,
+    y: f64,
+) -> bool {
+    if !matches!(side, "BLUFOR" | "OPFOR" | "INDFOR") || resource_name.trim().is_empty() {
+        return false;
+    }
+    let faction_id = ensure_side_faction(core, side);
+    core.add_vehicle(
+        vehicle_id,
+        resource_name,
+        Some(x),
+        Some(y),
+        Some(0.0),
+        Some(0.0),
+    );
+    core.set_vehicle_faction(vehicle_id, &faction_id);
+    true
+}
+
+/// T-215 — one authored cargo row on a vehicle: `{item, qty}`, `mission.schema.json`
+/// `$defs/entityInventory`. No `container` key — for an entity the container *is* the entity.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VehicleCargoRow {
+    pub item: String,
+    pub qty: i64,
+}
+
+/// T-215 — one vehicle as the docks need it: identity, where it is, and what it carries.
+#[derive(Clone, Debug, PartialEq)]
+pub struct VehicleRow {
+    pub id: String,
+    pub resource_name: String,
+    /// `None` for a vehicle that has never been given a map position — the state every
+    /// ORBAT-added vehicle was in before this ticket, and still is when added from the ORBAT
+    /// Manager without a drop.
+    pub xy: Option<(f64, f64)>,
+    /// `faction-{SIDE}` when the vehicle was map-placed; empty when it only has a squad.
+    pub faction_id: String,
+    /// Empty when the vehicle is not attached to a squad (every map-placed vehicle).
+    pub squad_id: String,
+    pub cargo: Vec<VehicleCargoRow>,
+}
+
+/// Read every `vehiclesById` row for the docks. Off `small_maps_json`, like [`squad_rows`] —
+/// vehicles are deliberately off the slot SoA, so there is no columnar reader to use instead.
+#[must_use]
+pub fn vehicle_rows() -> Vec<VehicleRow> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return Vec::new();
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return Vec::new();
+        };
+        let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) else {
+            return Vec::new();
+        };
+        let Some(map) = root.get("vehiclesById").and_then(|v| v.as_object()) else {
+            return Vec::new();
+        };
+        let mut rows: Vec<VehicleRow> = map
+            .iter()
+            .map(|(id, v)| {
+                let s = |k: &str| {
+                    v.get(k)
+                        .and_then(|x| x.as_str())
+                        .unwrap_or_default()
+                        .to_string()
+                };
+                let pos = v.get("position");
+                VehicleRow {
+                    id: id.clone(),
+                    resource_name: s("resourceName"),
+                    xy: pos.and_then(|p| Some((p.get("x")?.as_f64()?, p.get("y")?.as_f64()?))),
+                    faction_id: s("factionId"),
+                    squad_id: s("squadId"),
+                    cargo: v
+                        .get("cargo")
+                        .and_then(|c| c.as_array())
+                        .map(|a| {
+                            a.iter()
+                                .filter_map(|r| {
+                                    Some(VehicleCargoRow {
+                                        item: r.get("item")?.as_str()?.to_string(),
+                                        qty: r.get("qty")?.as_i64()?,
+                                    })
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default(),
+                }
+            })
+            .collect();
+        // `small_maps_json` is a serde_json object (key-sorted), but sort explicitly so the dock
+        // order is a property of this reader rather than of a JSON implementation detail.
+        rows.sort_by(|a, b| a.id.cmp(&b.id));
+        rows
+    })
+}
+
+/// T-215 — replace a vehicle's authored cargo, then the shared dirty tail (one undo step).
+/// Rows the schema cannot represent are dropped by the core mutator; an empty list clears the key.
+pub fn set_vehicle_cargo(vehicle_id: String, rows: Vec<VehicleCargoRow>) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let pairs: Vec<(String, i64)> = rows.into_iter().map(|r| (r.item, r.qty)).collect();
+        core.set_vehicle_cargo(&vehicle_id, &pairs);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// T-215 — delete a placed vehicle (the map palette can create them, so something must be able to
+/// remove them). Core [`MissionDocCore::remove_vehicle`] also detaches it from any squad.
+pub fn remove_vehicle(vehicle_id: String) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.remove_vehicle(&vehicle_id);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
 /// T-180.8 — inverse of Apply: build a FactionDoc from the live side graph (Save / Save as).
 ///
 /// **T-373 — what comes back is a PARTIAL, not a document.** Two `faction-library.schema.json`
@@ -1774,9 +1965,12 @@ pub fn refile_slot(slot_id: String, dest_squad_id: String) -> bool {
     did
 }
 
-/// Commit an armed place at a **world** position: mint a new squad under [`OpsCtx::active_side`],
-/// file the slot as sole member / leader, select it, and run the shared post-change tail. Returns
-/// `false` when nothing was armed.
+/// Commit an armed place at a **world** position, then select it and run the shared post-change
+/// tail. Returns `false` when nothing was armed.
+///
+/// A **Factions** leaf files a slot into the side's current squad
+/// ([`place_character_under_side`]). A **Vehicles** leaf (T-215) writes a `vehiclesById` row at the
+/// same world point — see [`place_vehicle_in_core`] for why that one does not join a squad.
 ///
 /// `z = 0.0` / `rotation = 0.0` match the T-159.19 drag commit's DEM-not-ready case (React's
 /// `terrainZ` on the flat map).
@@ -1791,43 +1985,57 @@ pub fn place_at(x: f64, y: f64) -> bool {
             *ctx.pending.borrow_mut() = None;
             return false;
         }
-        let Some(payload) = ctx.pending.borrow_mut().take() else {
+        let Some(pending) = ctx.pending.borrow_mut().take() else {
             return false;
         };
         // Scoped: the mutators open write txns, which must be gone before `after_local_edit`'s
-        // read txn.
-        let id = {
+        // read txn. `select` is the id to leave selected, or `None` — the selection is the SLOT
+        // selection (`select_tool::pick` runs over the slot SoA, and SEL counts it), so putting a
+        // vehicle id in it would show `SEL 1` with nothing highlighted anywhere.
+        let select = {
             let d = ctx.doc.borrow();
             let Some(core) = d.as_ref() else {
                 return false;
             };
-            let layer_id = ensure_layer(ctx, core);
             let side = ctx.active_side.get_untracked();
             let id = mint_id(ctx, core);
-            let asset_id = payload.asset_id.clone();
-            if place_character_under_side(
-                core,
-                &side,
-                &id,
-                &layer_id,
-                &payload.role,
-                None,
-                Some(payload.asset_id),
-                x,
-                y,
-                0.0,
-                0.0,
-            )
-            .is_err()
-            {
-                return false;
+            match pending {
+                Pending::Vehicle(payload) => {
+                    if !place_vehicle_in_core(core, &side, &id, &payload.asset_id, x, y) {
+                        return false;
+                    }
+                    None
+                }
+                Pending::Character(payload) => {
+                    let layer_id = ensure_layer(ctx, core);
+                    let asset_id = payload.asset_id.clone();
+                    if place_character_under_side(
+                        core,
+                        &side,
+                        &id,
+                        &layer_id,
+                        &payload.role,
+                        None,
+                        Some(payload.asset_id),
+                        x,
+                        y,
+                        0.0,
+                        0.0,
+                    )
+                    .is_err()
+                    {
+                        return false;
+                    }
+                    // T-068.15.2 — a fresh placement has no loadout: seed the character's
+                    // default cargo (same borrow scope ⇒ same undo step as the place).
+                    seed_cargo_in_core(core, &id, &asset_id, None);
+                    Some(id)
+                }
             }
-            // T-068.15.2 — a fresh placement has no loadout: seed the character's
-            // default cargo (same borrow scope ⇒ same undo step as the place).
-            seed_cargo_in_core(core, &id, &asset_id, None);
-            id
         };
-        *ctx.selection.borrow_mut() = vec![id];
+        if let Some(id) = select {
+            *ctx.selection.borrow_mut() = vec![id];
+        }
         true
     });
     if placed {

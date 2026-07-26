@@ -117,6 +117,10 @@ pub fn MissionEditorPage() -> impl IntoView {
     // T-180.5 — Objects chip stub (place no-op while true).
     let objects_mode = RwSignal::new(false);
     let catalog = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
+    // T-215 — the Vehicles tab's tree, built from the SAME `/registry` response as `catalog`
+    // (`kind == "vehicle"` instead of `"character"`). One fetch, two trees: a second request for
+    // rows already in hand would double a ~940 KB payload for nothing.
+    let vehicle_catalog = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
     // T-159.26 — Attributes modal: the open slot id + a doc-change tick the modal re-reads on
     // (`doc_ver` is a plain Rc<Cell>, not reactive; refresh_docks bumps this signal instead).
     let attrs_open = RwSignal::new(None::<String>);
@@ -191,7 +195,9 @@ pub fn MissionEditorPage() -> impl IntoView {
         // engine-independent, so the dock fills even if wgpu never comes up. `kind == "character"`
         // rows only — `build_catalog_tree` is the T-068.3 `buildCatalogTree` port.
         spawn_local({
-            use crate::asset_catalog::{build_catalog_tree, CatalogState};
+            use crate::asset_catalog::{
+                build_catalog_tree, build_vehicle_catalog_tree, CatalogState,
+            };
             async move {
                 match crate::client::api_get::<crate::dto::RegistryResponse>(auth, "/registry")
                     .await
@@ -199,8 +205,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                     Ok(r) => {
                         registry_items.set(Some(r.data.clone()));
                         catalog.set(CatalogState::Ready(build_catalog_tree(&r.data)));
+                        // T-215 — the Vehicles tab, off the same rows.
+                        vehicle_catalog
+                            .set(CatalogState::Ready(build_vehicle_catalog_tree(&r.data)));
                     }
-                    Err(_) => catalog.set(CatalogState::Failed),
+                    Err(_) => {
+                        catalog.set(CatalogState::Failed);
+                        vehicle_catalog.set(CatalogState::Failed);
+                    }
                 }
             }
         });
@@ -1350,6 +1362,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                 <div class="absolute bottom-0 right-0 top-12 z-20 w-80">
                     <crate::eden_chrome::DockRight
                         catalog
+                        vehicle_catalog
+                        registry_items
+                        doc_tick
                         fm_open
                         active_side
                         objects_mode
