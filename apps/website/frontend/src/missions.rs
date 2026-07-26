@@ -42,6 +42,21 @@ fn game_mode_label(m: &str) -> &str {
     }
 }
 
+/// T-264 — `MissionCard.bookmarked` rides the `extra` catch-all (dto.rs `MISSION_CARD_EXTRA`);
+/// `MissionDetail.bookmarked` is a named field. The card control must read the wire bool the
+/// Bookmarked tab filters on, not invent a second source of truth.
+fn card_is_bookmarked(m: &MissionCard) -> bool {
+    m.extra
+        .get("bookmarked")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+}
+
+/// `POST|DELETE /missions/:id/bookmark` — pinned by the Class-R source test below.
+fn bookmark_api_path(id: &str) -> String {
+    format!("/missions/{id}/bookmark")
+}
+
 /// Mission visibility badge — status → (label, badge variant), missions.tsx `VISIBILITY`.
 ///
 /// **T-389 — `rejected` was missing and fell through to the `other` arm**, which renders the raw
@@ -234,6 +249,7 @@ pub fn MissionLibraryPage() -> impl IntoView {
                                                     me_id,
                                                     open_preview,
                                                     open_create,
+                                                    refetch_all,
                                                 )
                                                 .into_any()
                                         }
@@ -342,6 +358,7 @@ fn body(
     me_id: StoredValue<Option<String>>,
     open_preview: impl Fn(String) + Copy + 'static,
     open_create: impl Fn() + Copy + 'static,
+    changed: Callback<()>,
 ) -> impl IntoView {
     view! {
         <>
@@ -488,7 +505,7 @@ fn body(
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {missions
                             .into_iter()
-                            .map(|m| mission_card(m, me_id, open_preview))
+                            .map(|m| mission_card(m, me_id, open_preview, changed))
                             .collect_view()}
                     </div>
                 }
@@ -502,7 +519,9 @@ fn mission_card(
     m: MissionCard,
     me_id: StoredValue<Option<String>>,
     open_preview: impl Fn(String) + Copy + 'static,
+    changed: Callback<()>,
 ) -> impl IntoView {
+    let store = expect_context::<crate::auth::AuthStore>();
     let art = m
         .thumbnail_url
         .clone()
@@ -535,77 +554,162 @@ fn mission_card(
         .unwrap_or_else(|| "?".into());
     let has_avatar = !m.author_avatar.is_empty();
     let mid = m.id.clone();
+    let mid_bm = m.id.clone();
+    // T-264 — optimistic latch so the star flips before the list refetch lands (and so the
+    // Bookmarked tab can populate off the POST without waiting for a full remount).
+    let bookmarked = RwSignal::new(card_is_bookmarked(&m));
+    let bookmark_busy = RwSignal::new(false);
+    let status = m.status.clone();
+    let toggle_bookmark = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            if bookmark_busy.get_untracked() {
+                return;
+            }
+            let next = !bookmarked.get_untracked();
+            bookmarked.set(next);
+            bookmark_busy.set(true);
+            let toasts = crate::toast::use_toasts();
+            let path = bookmark_api_path(&mid_bm);
+            leptos::task::spawn_local(async move {
+                let result = if next {
+                    crate::client::api_post_ok(store, &path, serde_json::json!({})).await
+                } else {
+                    crate::client::api_delete(store, &path).await
+                };
+                match result {
+                    Ok(()) => {
+                        toasts.success(if next {
+                            "Mission bookmarked"
+                        } else {
+                            "Bookmark removed"
+                        });
+                        changed.run(());
+                    }
+                    Err(e) => {
+                        bookmarked.set(!next);
+                        toasts.error(crate::client::api_error_message(
+                            &e,
+                            if next {
+                                "Could not bookmark mission"
+                            } else {
+                                "Could not remove bookmark"
+                            },
+                        ));
+                    }
+                }
+                bookmark_busy.set(false);
+            });
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = (&store, &changed, &mid_bm, bookmarked, bookmark_busy);
+        }
+    };
     view! {
-        <button
-            type="button"
-            on:click=move |_| open_preview(mid.clone())
-            class="group overflow-hidden rounded-2xl border border-white/10 bg-surface-container/60 text-left transition-all hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl"
-        >
-            <div class="relative h-48 w-full overflow-hidden bg-surface-container-low">
-                <img
-                    src=art
-                    alt=""
-                    class="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <span class="absolute top-3 left-3">
-                    <span class=format!(
-                        "{} border-white/10 bg-black/70",
-                        badge_class("primary"),
-                    )>{game_mode_label(&m.game_mode).to_string()}</span>
-                </span>
-                <span class="absolute top-3 right-3">{visibility_badge(&m.status)}</span>
-            </div>
-            <div class="p-4">
-                <div class="mb-3 flex items-center gap-2">
-                    {if has_avatar {
+        // Outer div (not a single button) so the bookmark control is a real sibling button —
+        // nesting <button> inside <button> is illegal HTML and breaks the click target.
+        <div class="group relative overflow-hidden rounded-2xl border border-white/10 bg-surface-container/60 transition-all hover:-translate-y-0.5 hover:border-white/25 hover:shadow-xl">
+            <button
+                type="button"
+                on:click=move |_| open_preview(mid.clone())
+                class="w-full text-left"
+            >
+                <div class="relative h-48 w-full overflow-hidden bg-surface-container-low">
+                    <img
+                        src=art
+                        alt=""
+                        class="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <span class="absolute top-3 left-3">
+                        <span class=format!(
+                            "{} border-white/10 bg-black/70",
+                            badge_class("primary"),
+                        )>{game_mode_label(&m.game_mode).to_string()}</span>
+                    </span>
+                </div>
+                <div class="p-4">
+                    <div class="mb-3 flex items-center gap-2">
+                        {if has_avatar {
+                            view! {
+                                <img
+                                    src=m.author_avatar.clone()
+                                    alt=""
+                                    class="h-6 w-6 rounded-full object-cover"
+                                />
+                            }
+                                .into_any()
+                        } else {
+                            view! {
+                                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-surface-container-high text-label-sm text-on-surface-variant">
+                                    {initial}
+                                </span>
+                            }
+                                .into_any()
+                        }}
+                        <span class="text-label-md text-on-surface-variant">
+                            {m.author_name.clone()}
+                        </span>
+                    </div>
+                    <h3 class="text-headline-sm font-bold text-on-surface">{m.title.clone()}</h3>
+                    {rejection_note
+                        .map(|reason| {
+                            view! {
+                                <div class="mt-3 flex items-start gap-2 rounded-lg border border-error-alert/30 bg-error-alert/10 px-3 py-2 text-left">
+                                    <MaterialIcon
+                                        name="assignment_return"
+                                        class="text-[16px] leading-5 text-error-alert"
+                                    />
+                                    <span class="text-label-md text-on-surface-variant line-clamp-2">
+                                        <span class="font-semibold text-error-alert">
+                                            "Returned: "
+                                        </span>
+                                        {reason}
+                                    </span>
+                                </div>
+                            }
+                        })}
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <span class="rounded-md border border-white/5 bg-black/30 px-2 py-0.5 font-mono text-label-sm text-on-surface-variant">
+                            {terrain_label(&m.terrain)}
+                        </span>
+                        <span class="rounded-md border border-white/5 bg-black/30 px-2 py-0.5 font-mono text-label-sm text-on-surface-variant">
+                            {m.max_players} " MAX"
+                        </span>
+                    </div>
+                </div>
+            </button>
+            // T-264 — bookmark control. Sibling of the open-dossier button (not nested). Status
+            // badge sits beside it so the star owns the top-right hit target without covering copy.
+            <div class="pointer-events-none absolute top-3 right-3 z-10 flex items-center gap-2">
+                <button
+                    type="button"
+                    data-testid="mission-bookmark-toggle"
+                    aria-label=move || {
+                        if bookmarked.get() {
+                            "Remove bookmark"
+                        } else {
+                            "Bookmark mission"
+                        }
+                    }
+                    prop:disabled=move || bookmark_busy.get()
+                    on:click=toggle_bookmark
+                    class="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/70 text-on-surface backdrop-blur-md transition-colors hover:bg-black/50 disabled:opacity-60"
+                >
+                    {move || {
+                        let filled = bookmarked.get();
                         view! {
-                            <img
-                                src=m.author_avatar.clone()
-                                alt=""
-                                class="h-6 w-6 rounded-full object-cover"
+                            <MaterialIcon
+                                name="bookmark"
+                                class="text-[18px] text-tactical-yellow"
+                                filled=filled
                             />
                         }
-                            .into_any()
-                    } else {
-                        view! {
-                            <span class="flex h-6 w-6 items-center justify-center rounded-full bg-surface-container-high text-label-sm text-on-surface-variant">
-                                {initial}
-                            </span>
-                        }
-                            .into_any()
                     }}
-                    <span class="text-label-md text-on-surface-variant">
-                        {m.author_name.clone()}
-                    </span>
-                </div>
-                <h3 class="text-headline-sm font-bold text-on-surface">{m.title.clone()}</h3>
-                {rejection_note
-                    .map(|reason| {
-                        view! {
-                            <div class="mt-3 flex items-start gap-2 rounded-lg border border-error-alert/30 bg-error-alert/10 px-3 py-2 text-left">
-                                <MaterialIcon
-                                    name="assignment_return"
-                                    class="text-[16px] leading-5 text-error-alert"
-                                />
-                                <span class="text-label-md text-on-surface-variant line-clamp-2">
-                                    <span class="font-semibold text-error-alert">
-                                        "Returned: "
-                                    </span>
-                                    {reason}
-                                </span>
-                            </div>
-                        }
-                    })}
-                <div class="mt-3 flex flex-wrap gap-2">
-                    <span class="rounded-md border border-white/5 bg-black/30 px-2 py-0.5 font-mono text-label-sm text-on-surface-variant">
-                        {terrain_label(&m.terrain)}
-                    </span>
-                    <span class="rounded-md border border-white/5 bg-black/30 px-2 py-0.5 font-mono text-label-sm text-on-surface-variant">
-                        {m.max_players} " MAX"
-                    </span>
-                </div>
+                </button>
+                <span class="pointer-events-none">{visibility_badge(&status)}</span>
             </div>
-        </button>
+        </div>
     }
 }
 
@@ -755,6 +859,9 @@ fn dossier_sheet_body(
     let status_busy = RwSignal::new(false);
     let delete_busy = RwSignal::new(false);
     let submit_busy = RwSignal::new(false);
+    // T-264 — dossier star mirrors MissionDetail.bookmarked (named field, not extra).
+    let bookmarked = RwSignal::new(m.bookmarked);
+    let bookmark_busy = RwSignal::new(false);
     // T-389 — the only two statuses `POST /missions/:id/submit` accepts; everything else answers 409
     // ("only draft or rejected missions can be submitted", `handlers/missions.rs:626`). Gating the
     // button on the same predicate means the author never sees an action that is guaranteed to fail.
@@ -778,6 +885,54 @@ fn dossier_sheet_body(
         .flatten();
     let reviewed_at = m.reviewed_at.clone();
     let show_returned = m.status == "rejected" && can_manage;
+
+    // T-264 — POST when off, DELETE when on; optimistic latch + list refetch via `changed`.
+    let toggle_bookmark = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            if bookmark_busy.get_untracked() {
+                return;
+            }
+            let next = !bookmarked.get_untracked();
+            bookmarked.set(next);
+            bookmark_busy.set(true);
+            let toasts = crate::toast::use_toasts();
+            let path = bookmark_api_path(&id_sv.get_value());
+            leptos::task::spawn_local(async move {
+                let result = if next {
+                    crate::client::api_post_ok(store, &path, serde_json::json!({})).await
+                } else {
+                    crate::client::api_delete(store, &path).await
+                };
+                match result {
+                    Ok(()) => {
+                        toasts.success(if next {
+                            "Mission bookmarked"
+                        } else {
+                            "Bookmark removed"
+                        });
+                        changed.run(());
+                    }
+                    Err(e) => {
+                        bookmarked.set(!next);
+                        toasts.error(crate::client::api_error_message(
+                            &e,
+                            if next {
+                                "Could not bookmark mission"
+                            } else {
+                                "Could not remove bookmark"
+                            },
+                        ));
+                    }
+                }
+                bookmark_busy.set(false);
+            });
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = (&store, &changed, id_sv, bookmarked, bookmark_busy);
+        }
+    };
 
     // toggleArchive — useSetMissionStatus port (PATCH /missions/:id {status}).
     let toggle_archive = move |_| {
@@ -911,6 +1066,27 @@ fn dossier_sheet_body(
         <div class="relative h-64 w-full shrink-0 md:h-80">
             <img src=art alt="" class="h-full w-full object-cover" />
             <div class="absolute inset-0 bg-gradient-to-t from-surface/90 to-transparent"></div>
+            <button
+                type="button"
+                data-testid="mission-bookmark-toggle"
+                aria-label=move || {
+                    if bookmarked.get() {
+                        "Remove bookmark"
+                    } else {
+                        "Bookmark mission"
+                    }
+                }
+                prop:disabled=move || bookmark_busy.get()
+                on:click=toggle_bookmark
+                class="absolute top-5 right-16 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-tactical-yellow backdrop-blur-md transition-colors hover:bg-black/50 disabled:opacity-60"
+            >
+                {move || {
+                    let filled = bookmarked.get();
+                    view! {
+                        <MaterialIcon name="bookmark" class="text-[20px]" filled=filled />
+                    }
+                }}
+            </button>
             <button
                 type="button"
                 aria-label="Close"
@@ -1164,5 +1340,102 @@ fn dossier_sheet_body(
                 </button>
             </div>
         </crate::ui::Dialog>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{bookmark_api_path, card_is_bookmarked};
+    use crate::dto::MissionCard;
+    use serde_json::json;
+
+    /// T-264 Class-R — the Bookmarked tab is dead unless this file both *renders* a control and
+    /// *calls* POST/DELETE `/missions/{id}/bookmark`. Source guards go red under perturbation
+    /// (delete the path format, the testids, or the api_post_ok/api_delete arms).
+    #[test]
+    fn bookmark_control_and_handlers_are_wired() {
+        const SRC: &str = include_str!("missions.rs");
+        assert!(
+            SRC.contains("data-testid=\"mission-bookmark-toggle\""),
+            "bookmark control must be present on the Mission Library surface \
+             (perturbation: remove data-testid=\"mission-bookmark-toggle\")"
+        );
+        assert!(
+            SRC.contains("Bookmark mission"),
+            "bookmark control needs an accessible name when off"
+        );
+        assert!(
+            SRC.contains("Remove bookmark"),
+            "bookmark control needs an accessible name when on"
+        );
+        assert!(
+            SRC.contains(r#"name="bookmark""#),
+            "bookmark control must render the bookmark Material icon"
+        );
+        // POST when off — must not be a toast-only stub.
+        assert!(
+            SRC.contains("api_post_ok(store, &path, serde_json::json!({}))")
+                && SRC.contains("bookmark_api_path"),
+            "toggling on must POST via api_post_ok(bookmark_api_path(...))"
+        );
+        // DELETE when on.
+        assert!(
+            SRC.contains("api_delete(store, &path)"),
+            "toggling off must DELETE via api_delete"
+        );
+        assert_eq!(
+            bookmark_api_path("abc"),
+            "/missions/abc/bookmark",
+            "path helper must match Axum POST|DELETE /missions/{{id}}/bookmark"
+        );
+        // Live router registration — same shape as personnel.rs ADMIN_ROLES_SYNC_PATH pin.
+        const APP_RS: &str =
+            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../api/src/app.rs"));
+        assert!(
+            APP_RS.contains(r#""/missions/{id}/bookmark""#),
+            "apps/website/api/src/app.rs must still register /missions/{{id}}/bookmark"
+        );
+    }
+
+    #[test]
+    fn card_is_bookmarked_reads_wire_extra_bool() {
+        // MissionCard.bookmarked lives in `extra` until a dto promotion; the card control must
+        // still see the same bool the Bookmarked scope filter uses.
+        let on: MissionCard = serde_json::from_value(json!({
+            "id": "1",
+            "title": "t",
+            "author_id": "a",
+            "terrain": "everon",
+            "game_mode": "pve_coop",
+            "weather": "clear",
+            "time_of_day": "dawn",
+            "max_players": 16,
+            "status": "live",
+            "author_name": "x",
+            "author_avatar": "",
+            "bookmarked": true
+        }))
+        .unwrap();
+        let off: MissionCard = serde_json::from_value(json!({
+            "id": "1",
+            "title": "t",
+            "author_id": "a",
+            "terrain": "everon",
+            "game_mode": "pve_coop",
+            "weather": "clear",
+            "time_of_day": "dawn",
+            "max_players": 16,
+            "status": "live",
+            "author_name": "x",
+            "author_avatar": "",
+            "bookmarked": false
+        }))
+        .unwrap();
+        assert!(card_is_bookmarked(&on));
+        assert!(!card_is_bookmarked(&off));
+        assert!(
+            on.extra.get("bookmarked").and_then(|v| v.as_bool()) == Some(true),
+            "bookmarked must remain on the extra catch-all for MissionCard (dto owns naming)"
+        );
     }
 }
