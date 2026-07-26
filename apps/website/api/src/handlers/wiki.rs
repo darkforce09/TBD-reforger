@@ -179,3 +179,71 @@ pub async fn upsert_wiki_page(
         .await?;
     Ok(Json(page))
 }
+
+/// Body for authoring a vehicle-database / IFF row (admin).
+///
+/// `name`, `faction`, and `armor_type` are required and non-empty. The three optional columns
+/// default to empty string so a create that omits them still lands a full row (the list SELECT
+/// already `COALESCE`s nulls to `''`, and the model skips empty strings on serialize).
+#[derive(Debug, Deserialize)]
+pub struct VehicleInput {
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    faction: String,
+    #[serde(default)]
+    armor_type: String,
+    #[serde(default)]
+    amphibious: String,
+    #[serde(default)]
+    primary_threat: String,
+    #[serde(default)]
+    profile_image_url: String,
+}
+
+/// `POST /api/v1/vehicle-database` — insert an IFF row (admin). T-263: the table previously had
+/// GET + golden seed rows only; no write path existed anywhere in the crate.
+///
+/// @route POST /api/v1/vehicle-database
+pub async fn create_vehicle(
+    State(state): State<AppState>,
+    _admin: AdminUser,
+    body: Result<Json<VehicleInput>, JsonRejection>,
+) -> Result<Json<VehicleDatabase>, ApiError> {
+    let Json(input) = body.map_err(|_| {
+        ApiError::bad_request(
+            "name, faction, armor_type, amphibious, primary_threat and profile_image_url are required",
+        )
+    })?;
+    if input.name.trim().is_empty()
+        || input.faction.trim().is_empty()
+        || input.armor_type.trim().is_empty()
+    {
+        return Err(ApiError::bad_request(
+            "name, faction and armor_type are required",
+        ));
+    }
+    let id: uuid::Uuid = sqlx::query_scalar(
+        "INSERT INTO vehicle_databases (name, faction, armor_type, amphibious, primary_threat, profile_image_url) \
+         VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, ''), NULLIF($6, '')) \
+         RETURNING id",
+    )
+    .bind(input.name.trim())
+    .bind(input.faction.trim())
+    .bind(input.armor_type.trim())
+    .bind(input.amphibious.trim())
+    .bind(input.primary_threat.trim())
+    .bind(input.profile_image_url.trim())
+    .fetch_one(&state.pool)
+    .await?;
+
+    let vehicle: VehicleDatabase = sqlx::query_as(
+        "SELECT id, name, faction, armor_type, COALESCE(amphibious, '') AS amphibious, \
+         COALESCE(primary_threat, '') AS primary_threat, COALESCE(profile_image_url, '') AS profile_image_url \
+         FROM vehicle_databases WHERE id = $1",
+    )
+    .bind(id)
+    .fetch_one(&state.pool)
+    .await?;
+    Ok(Json(vehicle))
+}

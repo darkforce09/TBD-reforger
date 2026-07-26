@@ -53,7 +53,10 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
             "/wiki/{slug}",
             get(handlers::wiki::get_wiki_page).put(handlers::wiki::upsert_wiki_page),
         )
-        .route("/vehicle-database", get(handlers::wiki::list_vehicles))
+        .route(
+            "/vehicle-database",
+            get(handlers::wiki::list_vehicles).post(handlers::wiki::create_vehicle),
+        )
         .route("/modpacks", get(handlers::modpacks::list_modpacks))
         .route(
             "/modpacks/current",
