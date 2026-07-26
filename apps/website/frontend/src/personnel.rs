@@ -5,6 +5,13 @@
 //! T-159.25: fully interactive — live search (`?q=`), row selection, and the dossier with the
 //! LIVE role editor (PATCH /admin/users/:discordId) and ban (POST …/ban, reason via the same
 //! window.prompt React uses); Sort/Filter/Issue-Warning stay the React toast stubs.
+//!
+//! T-323: the ban reason is **required**. T-317 made the backend reject a missing or
+//! whitespace-only `reason` — before that fix a re-ban with no reason silently erased both the
+//! previous reason and `banned_at`. This page was the stale half of that change: it advertised
+//! the reason as optional and posted `{}` when the operator left it blank, which now 400s. The
+//! prompt no longer lies, a blank answer is refused here without a request, and a server-side
+//! 400 is shown verbatim instead of a flat "Ban failed".
 #![allow(dead_code)]
 use crate::dto::{AdminUserRow, Paginated};
 use crate::ui::{cn, AdminGate, MaterialIcon};
@@ -285,6 +292,40 @@ fn roster_row(u: AdminUserRow, selected_id: RwSignal<Option<String>>) -> impl In
     }
 }
 
+/// What the client does with whatever `window.prompt` handed back for a ban reason.
+///
+/// T-323 — the three outcomes are genuinely different and must not collapse into one. Cancel is
+/// an abandoned action; OK-with-blank is an attempted ban that is missing its reason; anything
+/// else is a ban to send. Split out as a plain function because the caller is a wasm-only
+/// closure behind a `window.prompt`, which no test can drive — this way the decision itself is
+/// pinned by host-side unit tests.
+#[derive(Debug, PartialEq, Eq)]
+enum BanReason {
+    /// `prompt` → `null` (Cancel): the operator backed out. No request, no toast.
+    Abort,
+    /// OK with a blank or whitespace-only answer. Refuse locally: posting `{}` is exactly the
+    /// 400 this ticket fixes, and substituting a placeholder ("No reason given") to satisfy the
+    /// validator would reintroduce the unexplained ban T-317 exists to stop.
+    Reject,
+    /// A real reason, trimmed. The server stores `reason.trim()` and rejects whitespace-only, so
+    /// trimming here keeps client and server from disagreeing about what counts as empty.
+    Send(String),
+}
+
+fn classify_ban_reason(answer: Option<&str>) -> BanReason {
+    match answer {
+        None => BanReason::Abort,
+        Some(raw) => {
+            let reason = raw.trim();
+            if reason.is_empty() {
+                BanReason::Reject
+            } else {
+                BanReason::Send(reason.to_string())
+            }
+        }
+    }
+}
+
 /// The right-pane dossier (admin.tsx `PersonnelDossier`): profile header, service telemetry, the
 /// inline role editor (live PATCH) and the docked actions (live ban; warning stays a stub).
 fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
@@ -345,24 +386,25 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
             if banned.get_untracked() || ban_busy.get_untracked() {
                 return;
             }
-            // window.prompt parity — null (Cancel) aborts; empty string sends no reason.
             let Some(win) = web_sys::window() else {
                 return;
             };
-            let Ok(reason) = win.prompt_with_message("Ban reason (optional):") else {
+            let toasts = crate::toast::use_toasts();
+            // `Err` is a prompt the browser refused to show — same silent abort as Cancel.
+            let Ok(answer) = win.prompt_with_message("Ban reason (required):") else {
                 return;
             };
-            let Some(reason) = reason else {
-                return; // Cancel
+            let reason = match classify_ban_reason(answer.as_deref()) {
+                BanReason::Abort => return,
+                BanReason::Reject => {
+                    toasts.error("Ban reason is required");
+                    return;
+                }
+                BanReason::Send(reason) => reason,
             };
             ban_busy.set(true);
-            let toasts = crate::toast::use_toasts();
             let path = format!("/admin/users/{}/ban", uid.get_value());
-            let body = if reason.is_empty() {
-                serde_json::json!({})
-            } else {
-                serde_json::json!({ "reason": reason })
-            };
+            let body = serde_json::json!({ "reason": reason });
             leptos::task::spawn_local(async move {
                 match crate::client::api_post_ok(store, &path, body).await {
                     Ok(()) => {
@@ -370,7 +412,9 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                         banned.set(true);
                         refetch.run(());
                     }
-                    Err(_) => toasts.error("Ban failed"),
+                    // The 400 body says exactly what is wrong; a flat "Ban failed" threw that
+                    // away. `api_error_message` is the house helper (event_hub/missions/…).
+                    Err(e) => toasts.error(crate::client::api_error_message(&e, "Ban failed")),
                 }
                 ban_busy.set(false);
             });
@@ -476,5 +520,49 @@ fn stat_reactive(
             <p class="text-label-sm text-on-surface-variant uppercase">{label}</p>
             <p class="mt-0.5 truncate text-label-md font-semibold text-on-surface">{move || value()}</p>
         </div>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{classify_ban_reason, BanReason};
+
+    #[test]
+    fn cancel_aborts_and_sends_nothing() {
+        // `window.prompt` → None. Abort carries no toast: the operator chose not to ban.
+        assert_eq!(classify_ban_reason(None), BanReason::Abort);
+    }
+
+    #[test]
+    fn ok_with_blank_is_refused_before_any_request() {
+        // The T-323 break: this branch used to POST `{}`, which T-317 correctly answers with
+        // 400 "reason is required". Reject means the client never makes the request at all.
+        assert_eq!(classify_ban_reason(Some("")), BanReason::Reject);
+    }
+
+    #[test]
+    fn whitespace_only_is_refused_too() {
+        // The server rejects a whitespace-only reason. Agreeing here keeps the operator from
+        // seeing a 400 for input that looked non-empty in the prompt.
+        for blank in ["   ", "\t", "\n", " \t\n "] {
+            assert_eq!(
+                classify_ban_reason(Some(blank)),
+                BanReason::Reject,
+                "{blank:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_real_reason_is_sent_trimmed() {
+        // The server stores `reason.trim()`, so the client sends the same bytes it will store.
+        assert_eq!(
+            classify_ban_reason(Some("  Repeated TK after warning  ")),
+            BanReason::Send("Repeated TK after warning".to_string())
+        );
+        assert_eq!(
+            classify_ban_reason(Some("Repeated TK after warning")),
+            BanReason::Send("Repeated TK after warning".to_string())
+        );
     }
 }
