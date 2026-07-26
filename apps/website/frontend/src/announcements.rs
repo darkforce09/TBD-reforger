@@ -2,16 +2,87 @@
 //! `<AuthGate>` → `/announcements` Resource → `QueryState` → a topo-map/frosted-glass encasing
 //! around a transparent `SplitPane` (Comms Link master list + reading detail pane).
 //!
-//! **Gate scope (this slice):** the empty-DB `/announcements` golden (Paginated empty) → the master
-//! shows "No announcements yet." and, with nothing selected, the detail shows `SplitPaneEmpty`.
-//! Byte-exact-verified. The populated list (ListDetailItem rows) + `AnnouncementDetail` reader are
-//! content-golden gated; the announcement item type stays `serde_json::Value` until then.
+//! **Empty-DB golden (unchanged):** with `Paginated` empty the master still shows
+//! "No announcements yet." and, with nothing selected, the detail still shows `SplitPaneEmpty` —
+//! byte-exact-verified.
+//!
+//! **T-232:** the populated half was never written — the non-empty master branch was a literal
+//! `().into_any()`, so a real `/announcements` payload (4 rows against the live API) rendered an
+//! empty aside next to a permanently empty reading pane. Both halves now exist: pinned-first
+//! `ListDetailItem` rows drive a `selected` id, and the detail pane is the reading view
+//! (tag + PINNED chip, headline, byline, body prose).
+//!
+//! Selection is deliberately **not** auto-advanced to the first row (unlike `events.rs`, whose
+//! surface spec asks for it): this is the Apple-Mail port, where the resting state is "nothing
+//! opened yet", and it keeps the empty-DB golden's `SplitPaneEmpty` as the honest zero-selection
+//! render rather than a special case of it.
+//!
+//! The detail needs **no second fetch** — the list payload already carries `body` — so the T-226
+//! stale-Resource hazard (a `Resource` serving its previous value under a new row's chrome) cannot
+//! arise here. The row items stay `serde_json::Value`; the fields read are pinned by the enum
+//! vocabulary in `announcement_tag` (`update` / `event` / `modpack_update` / `important`).
 #![allow(dead_code)]
+use crate::datefmt::{format_local_datetime, format_short_date};
 use crate::dto::Paginated;
-use crate::split_pane::{SplitPane, SplitPaneEmpty};
-use crate::ui::{AuthGate, MaterialIcon};
+use crate::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
+use crate::ui::{badge_class, AuthGate, MaterialIcon};
 use leptos::prelude::*;
 use serde_json::Value;
+
+fn vstr(v: &Value, k: &str) -> String {
+    v.get(k).and_then(Value::as_str).unwrap_or_default().into()
+}
+fn vbool(v: &Value, k: &str) -> bool {
+    v.get(k).and_then(Value::as_bool).unwrap_or(false)
+}
+
+/// `announcement_tag` → its `badge_class` variant. An unknown tag (one added server-side before
+/// this table learns it) degrades to the neutral chip rather than vanishing.
+fn tag_variant(tag: &str) -> &'static str {
+    match tag {
+        "modpack_update" => "primary",
+        "event" => "tertiary",
+        "important" => "error",
+        _ => "neutral",
+    }
+}
+
+/// `modpack_update` → `MODPACK UPDATE`. An absent tag reads `NOTICE`.
+fn tag_label(tag: &str) -> String {
+    if tag.is_empty() {
+        return "NOTICE".into();
+    }
+    tag.replace('_', " ").to_uppercase()
+}
+
+/// The row's preview line: the backend's `snippet` when it wrote one, else the body's opening
+/// paragraph. `ListDetailItem` line-clamps to two lines, so no truncation is done here.
+fn preview_text(p: &Value) -> String {
+    let s = vstr(p, "snippet");
+    if !s.is_empty() {
+        return s;
+    }
+    let body = vstr(p, "body");
+    body.split("\n\n").next().unwrap_or_default().to_string()
+}
+
+/// Announcement bodies are authored as markdown. Rendering it is `wiki.rs`'s `render_markdown`,
+/// which is private to that module (T-232 does not own it) — so the reader splits on blank lines
+/// and lets `whitespace-pre-line` keep single newlines, the same treatment `event_hub.rs` gives a
+/// briefing. Inline `**bold**` / backticks therefore show as written; see the report's follow-up.
+fn body_paragraphs(body: &str) -> impl IntoView + use<> {
+    body.split("\n\n")
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .map(|p| {
+            view! {
+                <p class="whitespace-pre-line text-sm leading-relaxed text-on-surface-variant">
+                    {p.to_string()}
+                </p>
+            }
+        })
+        .collect_view()
+}
 
 #[component]
 pub fn AnnouncementsPage() -> impl IntoView {
@@ -57,28 +128,108 @@ fn AnnouncementsInner() -> impl IntoView {
 }
 
 fn board(posts: Vec<Value>) -> impl IntoView {
-    // Pinned-first sort + selection are content-golden gated (empty list → no rows, nothing selected).
-    let master = if posts.is_empty() {
-        view! {
-            <p class="px-1 py-4 text-label-md text-on-surface-variant">"No announcements yet."</p>
-        }
-        .into_any()
-    } else {
-        // ListDetailItem rows — content-golden gated.
-        ().into_any()
-    };
+    // Pinned-first, then the server's order preserved (`sort_by_key` is stable) — the React
+    // `sort((a,b) => Number(b.is_pinned) - Number(a.is_pinned))`.
+    let mut posts = posts;
+    posts.sort_by_key(|p| !vbool(p, "is_pinned"));
+    // The rows and the reader both read the same fetched payload, so it is stored once and read by
+    // both closures. Nothing here refetches, so nothing here can go stale.
+    let posts = StoredValue::new(posts);
+    let selected = RwSignal::new(None::<String>);
+
+    let master = view! {
+        {move || {
+            posts
+                .with_value(|posts| {
+                    if posts.is_empty() {
+                        return view! {
+                            <p class="px-1 py-4 text-label-md text-on-surface-variant">
+                                "No announcements yet."
+                            </p>
+                        }
+                            .into_any();
+                    }
+                    posts
+                        .iter()
+                        .map(|p| {
+                            let id = vstr(p, "id");
+                            let click_id = id.clone();
+                            let pinned = vbool(p, "is_pinned");
+                            let tag = vstr(p, "tag");
+                            let title = vstr(p, "title");
+                            let title = if title.is_empty() {
+                                "Untitled Post".to_string()
+                            } else {
+                                title
+                            };
+                            let date = format_short_date(&vstr(p, "published_at"));
+                            let preview = preview_text(p);
+                            view! {
+                                <ListDetailItem
+                                    active=selected.get().as_deref() == Some(id.as_str())
+                                    meta=view! { {date} }.into_any()
+                                    dot_class=if pinned { "bg-tactical-yellow" } else { "" }
+                                    title=view! { {title} }.into_any()
+                                    trailing=view! {
+                                        <span class=badge_class(tag_variant(&tag))>
+                                            {tag_label(&tag)}
+                                        </span>
+                                    }
+                                        .into_any()
+                                    preview=view! { {preview} }.into_any()
+                                    on_click=Callback::new(move |()| {
+                                        selected.set(Some(click_id.clone()))
+                                    })
+                                />
+                            }
+                        })
+                        .collect_view()
+                        .into_any()
+                })
+        }}
+    }
+    .into_any();
+
+    let detail = view! {
+        {move || {
+            let Some(id) = selected.get() else {
+                // Nothing opened yet — including the empty-DB golden, where there is nothing to
+                // open. Same render either way.
+                return view! {
+                    <SplitPaneEmpty
+                        icon=view! { <MaterialIcon name="campaign" class="text-4xl" /> }.into_any()
+                        message="Select a broadcast to read."
+                    />
+                }
+                    .into_any();
+            };
+            posts
+                .with_value(|posts| {
+                    match posts.iter().find(|p| vstr(p, "id") == id) {
+                        Some(p) => reader(p).into_any(),
+                        // Unreachable while the list is the only source of ids, but a selection
+                        // that outlives its row must not render a blank pane.
+                        None => {
+                            view! {
+                                <SplitPaneEmpty
+                                    icon=view! { <MaterialIcon name="campaign" class="text-4xl" /> }
+                                        .into_any()
+                                    message="That broadcast is no longer in the feed."
+                                />
+                            }
+                                .into_any()
+                        }
+                    }
+                })
+        }}
+    }
+    .into_any();
+
     let master_header = view! {
         <>
             <h2 class="text-headline-sm tracking-wide text-on-surface uppercase">"Comms Link"</h2>
             <MaterialIcon name="filter_list" class="text-outline" />
         </>
-    }
-    .into_any();
-    let detail = view! {
-        <SplitPaneEmpty
-            icon=view! { <MaterialIcon name="campaign" class="text-4xl" /> }.into_any()
-            message="Select a broadcast to read."
-        />
     }
     .into_any();
 
@@ -89,5 +240,65 @@ fn board(posts: Vec<Value>) -> impl IntoView {
                 <SplitPane transparent=true master_header=master_header master=master detail=detail />
             </div>
         </div>
+    }
+}
+
+/// The reading pane for one selected broadcast — the `AnnouncementDetail` half of the Apple-Mail
+/// port. Optional fields (`thumbnail_url`, `discord_message_id`) are omitted by the backend when
+/// empty, so each is gated on being non-empty rather than rendered as a blank slot.
+fn reader(p: &Value) -> impl IntoView + use<> {
+    let tag = vstr(p, "tag");
+    let pinned = vbool(p, "is_pinned");
+    let title = vstr(p, "title");
+    let title = if title.is_empty() {
+        "Untitled Post".to_string()
+    } else {
+        title
+    };
+    let published = format_local_datetime(&vstr(p, "published_at"));
+    let author = vstr(p, "author_id");
+    let thumb = vstr(p, "thumbnail_url");
+    let pushed = vbool(p, "pushed_to_discord");
+    let body = vstr(p, "body");
+    view! {
+        <article class="mx-auto flex w-full max-w-3xl flex-col gap-6 px-8 py-10">
+            <header class="flex flex-col gap-3 border-b border-outline-variant/30 pb-6">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class=badge_class(tag_variant(&tag))>{tag_label(&tag)}</span>
+                    {pinned
+                        .then(|| {
+                            view! { <span class=badge_class("warning")>"Pinned"</span> }
+                        })}
+                    {pushed
+                        .then(|| {
+                            view! {
+                                <span class="inline-flex items-center gap-1 font-mono text-xs text-on-surface-variant">
+                                    <MaterialIcon name="forum" class="text-sm" />
+                                    "Pushed to Discord"
+                                </span>
+                            }
+                        })}
+                </div>
+                <h1 class="text-headline-md tracking-tight text-on-surface">{title}</h1>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-on-surface-variant">
+                    <span class="inline-flex items-center gap-1">
+                        <MaterialIcon name="account_circle" class="text-sm" />
+                        {if author.is_empty() { "Command".to_string() } else { author }}
+                    </span>
+                    <span>{published}</span>
+                </div>
+            </header>
+            {(!thumb.is_empty())
+                .then(|| {
+                    view! {
+                        <img
+                            src=thumb
+                            alt=""
+                            class="max-h-72 w-full rounded-xl border border-white/10 object-cover"
+                        />
+                    }
+                })}
+            <div class="flex flex-col gap-4">{body_paragraphs(&body)}</div>
+        </article>
     }
 }
