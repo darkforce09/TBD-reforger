@@ -7719,7 +7719,7 @@
     {
       "id": "T-236",
       "title": "server_fps type mismatch would silently drop every live frame",
-      "summary": "models/telemetry.rs:102 serializes f64; frontend/src/dto.rs:101 deserializes i64. serde rejects 44.5 into i64, so every real status frame would fail to parse at sse.rs:80 and be dropped with no error. Never caught because the servers fixture is empty. Also server_intel.rs:155 reads a terrain field that exists on neither the model nor the table.",
+      "summary": "models/telemetry.rs:102 serializes f64; frontend/src/dto.rs:101 deserializes i64. serde rejects 44.5 into i64, so every real status frame would fail to parse at sse.rs:80 and be dropped with no error. Never caught because the servers fixture is empty. Also server_intel.rs:155 reads a terrain field that exists on neither the model nor the table.\n\n== CANCELLED 2026-07-26 AS A DUPLICATE — the defect was already fixed, and this was VERIFIED, not assumed ==\nDispatched in wave 2 and the slice agent correctly returned zero commits. T-236 is a stale duplicate of T-306 (`dba0cc9c`, shipped) plus T-359 (`4e4a5f6f`, shipped), reached from the opposite direction; its cited line numbers (telemetry.rs:102, dto.rs:101) predate both.\n\nCurrent state on main, checked field by field:\n - `dto.rs:164` is already `pub server_fps: f64`, agreeing with `models/telemetry.rs:131` and with `migrations/0001_initial_schema.sql:459` (`numeric(5,1) NOT NULL`). f64 is the correct side: ingest input is Option<f64> (handlers/telemetry.rs:88), the mod payload test posts 58.5, the seed records 17.3, and every read query casts ::float8.\n - The phantom `terrain` read at server_intel.rs was deleted by T-359, with a guard test (`servers_golden_carries_no_terrain`) that goes red the day a /servers row grows the key.\n - Unparseable frames no longer vanish: `decode_server_status_frame` returns `SseFrame::Rejected{error,payload}` and sse.rs routes it through `audit_rejected_frame`, deduped by powers of ten.\n - The empty-fixture root cause is gone: `GET__servers.json` carries three populated rows with server_fps 58.7 and 29.4 plus a deliberate null-status row.\n\nPERTURBATION RECEIPT (why this is a verified cancellation rather than a guess): restoring `i64` makes four tests fail, including `a_live_frame_decodes_into_a_status` returning `Rejected { error: \"invalid type: floating point `58.7`, expected i64\" }` — the original bug reproduced, a healthy frame parsing to a silent drop — and `servers_envelope` going red, which the ticket's alleged empty `{\"data\":[]}` fixture could not have produced.\n\nPROCESS LESSON, worth more than the ticket: `dispatchable()` filters `deferred` but nothing detects a ticket whose defect a DIFFERENT ticket already fixed. 114 tickets sit at `idea` and an unknown number are in this state. A cheap staleness pass (does the cited line still say what the summary claims?) before dispatch would have saved a slice slot. Every future brief should open with \"verify the defect still exists on main before writing code; if it is already fixed, stop and report that.\"\n\nResidual, NOT a live defect but a live class of blind spot: server_intel.rs:11-23 defines a typed DTO with no live reader — the page fetches DataEnvelope<Value>, so ServerRowDto's only references are its own definition and its own golden. A DTO read only by its golden proves the wire, not the page, which is exactly how the terrain placeholder survived a month (every v_* helper ends in unwrap_or_default() and cannot tell \"key absent\" from \"key empty\"). T-359 deferred adopting the typed DTO deliberately: `status` needs to keep its tolerant two-branch parse or one bad status takes the whole page down.",
       "program": "platform",
       "surfaces": [
         "SHELL"
@@ -7727,7 +7727,7 @@
       "impact": [
         "platform-server"
       ],
-      "status": "ready",
+      "status": "cancelled",
       "order": 2540,
       "stream": "web-platform",
       "targets": [
@@ -10839,7 +10839,7 @@
       "impact": [
         "mission-authoring"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 3208,
       "stream": "web-platform",
       "targets": [
