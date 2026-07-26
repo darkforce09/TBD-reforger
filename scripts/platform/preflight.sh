@@ -39,6 +39,16 @@ free_gb=$(df -BG --output=avail "$ROOT" | tail -1 | tr -dc '0-9')
 if   [ "$free_gb" -ge 40 ]; then ok "disk" "${free_gb}G free"
 elif [ "$free_gb" -ge 20 ]; then soft "disk" "${free_gb}G free — tight; make clean-targets first"
 else nope "disk" "${free_gb}G free — below the 20G floor"; fi
+# Name the reclaimable space rather than just the shortfall. On 2026-07-26 the disk hit 252 MB free of
+# 952 GB and two gate steps failed with "No space left on device", which reads as a build error — while
+# ~116 GB of shipped-slice target dirs sat in /var/tmp. A disk warning that does not say where the space
+# went sends someone hunting; this says it.
+orphan_mb=$(du -sm /var/tmp/*target* /var/tmp/v2-* 2>/dev/null | awk '{s+=$1} END{print s+0}')
+if [ "${orphan_mb:-0}" -gt 4096 ]; then
+  soft "reclaimable" "$((orphan_mb/1024))G of build caches in /var/tmp — bash scripts/platform/wave.sh reclaim"
+else
+  ok "reclaimable" "$((orphan_mb/1024))G of stale build caches"
+fi
 
 # 4. CARGO_TARGET_DIR must be shared, and no worktree may have grown its own target/.
 [ -n "${CARGO_TARGET_DIR:-}" ] && ok "CARGO_TARGET_DIR" "$CARGO_TARGET_DIR" \
