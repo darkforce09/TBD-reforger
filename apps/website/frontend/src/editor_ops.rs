@@ -1620,15 +1620,7 @@ fn place_object_in_core(
     // but write the schema factionKey on the entity itself — not `faction-{SIDE}`.
     let _ = ensure_side_faction(core, side);
     let faction = side.to_lowercase();
-    core.add_entity(
-        entity_id,
-        &alias,
-        &payload.asset_id,
-        x,
-        y,
-        0.0,
-        0.0,
-    );
+    core.add_entity(entity_id, &alias, &payload.asset_id, x, y, 0.0, 0.0);
     core.set_entity_faction(entity_id, &faction);
     true
 }

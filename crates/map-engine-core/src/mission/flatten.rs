@@ -2712,7 +2712,10 @@ mod tests {
         assert_eq!(e.faction.as_deref(), Some("blufor"));
         let wire = serde_json::to_value(&doc).expect("wire");
         let row = &wire["entities"][0];
-        assert!(row.get("id").is_none(), "editor id must not reach schema wire");
+        assert!(
+            row.get("id").is_none(),
+            "editor id must not reach schema wire"
+        );
         assert!(
             row.get("resourceName").is_none(),
             "editor resourceName must not reach schema wire"

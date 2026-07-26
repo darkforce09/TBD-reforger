@@ -703,6 +703,7 @@ impl MissionDocCore {
     /// ResourceName the Objects palette dropped — kept for editor display/reload; flatten
     /// drops it when emitting the game-server `entities[]` (schema `additionalProperties: false`).
     /// Position is always written (Objects placement is map-only — there is no ORBAT-only path).
+    #[allow(clippy::too_many_arguments)]
     pub fn add_entity(
         &self,
         id: &str,
@@ -2661,10 +2662,7 @@ mod tests {
         let root = small_maps(&doc);
         let row = &root["entitiesById"]["e1"];
         assert_eq!(row["alias"], "prop:ammo_crate");
-        assert_eq!(
-            row["resourceName"],
-            "{FA}Prefabs/Props/Military/AmmoBox.et"
-        );
+        assert_eq!(row["resourceName"], "{FA}Prefabs/Props/Military/AmmoBox.et");
         assert_eq!(row["faction"], "blufor");
         assert_eq!(row["position"]["x"], 100.0);
         assert_eq!(row["position"]["y"], 200.0);

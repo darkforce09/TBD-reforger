@@ -260,12 +260,12 @@ pub fn derive_object_alias(resource_name: &str, display_name: &str) -> String {
             return (*alias).to_string();
         }
     }
-    let prefix =
-        if resource_name.contains("Composition") || resource_name.contains("Compositions") {
-            "comp"
-        } else {
-            "prop"
-        };
+    let prefix = if resource_name.contains("Composition") || resource_name.contains("Compositions")
+    {
+        "comp"
+    } else {
+        "prop"
+    };
     let slug = object_alias_slug(display_name);
     format!("{prefix}:{slug}")
 }
