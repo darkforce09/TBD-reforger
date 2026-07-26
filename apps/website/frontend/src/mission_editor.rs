@@ -201,6 +201,19 @@ pub fn MissionEditorPage() -> impl IntoView {
     // T-159.27 — the flat registry gear rows for the Attributes Arsenal tab (populated by the same
     // /registry fetch that builds the Factions palette). None until it lands.
     let registry_items = RwSignal::new(None::<Vec<crate::dto::RegistryItem>>);
+
+    // T-255 — Factions palette is side-aware: rebuild whenever Eden chips change `active_side` or
+    // the `/registry` rows land. Fetch paths below only write `registry_items` (+ vehicles); this
+    // Effect owns `catalog` Ready trees so a BLUFOR→OPFOR chip flip drops NATO and shows USSR.
+    {
+        use crate::asset_catalog::{build_catalog_tree, CatalogState};
+        Effect::new(move |_| {
+            let side = active_side.get();
+            if let Some(items) = registry_items.get() {
+                catalog.set(CatalogState::Ready(build_catalog_tree(&items, &side)));
+            }
+        });
+    }
     // T-167 — the compat edge feed for the Smart Arsenal (optic/magazine edge rows + validation).
     // Fetched once alongside /registry; starts Loading, degrades to Unavailable on error.
     let compat = RwSignal::new(crate::arsenal_rules::CompatFeed::default());
@@ -259,14 +272,12 @@ pub fn MissionEditorPage() -> impl IntoView {
 
         // T-159.22 — the Factions palette catalog. Engine-independent so the dock fills even if
         // wgpu never comes up. `kind == "character"` rows only — `build_catalog_tree` is the
-        // T-068.3 `buildCatalogTree` port.
+        // T-068.3 `buildCatalogTree` port (T-255: filtered by `active_side` in the Effect above).
         //
         // T-245 — gate the unpaginated GET on the SPA-session cache. Remounts apply the cached
         // rows synchronously (no network, no second tree rebuild from a fresh download).
         {
-            use crate::asset_catalog::{
-                build_catalog_tree, build_vehicle_catalog_tree, CatalogState,
-            };
+            use crate::asset_catalog::{build_vehicle_catalog_tree, CatalogState};
             if registry_session::must_fetch_registry() {
                 spawn_local({
                     async move {
@@ -279,7 +290,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                             Ok(r) => {
                                 registry_session::store_registry(r.data.clone());
                                 registry_items.set(Some(r.data.clone()));
-                                catalog.set(CatalogState::Ready(build_catalog_tree(&r.data)));
+                                // T-255 — character `catalog` Ready tree is owned by the
+                                // active_side Effect (rebuilds on chip flip).
                                 // T-215 — the Vehicles tab, off the same rows.
                                 vehicle_catalog
                                     .set(CatalogState::Ready(build_vehicle_catalog_tree(&r.data)));
@@ -293,7 +305,6 @@ pub fn MissionEditorPage() -> impl IntoView {
                 });
             } else if let Some(items) = registry_session::cached_registry() {
                 registry_items.set(Some(items.clone()));
-                catalog.set(CatalogState::Ready(build_catalog_tree(&items)));
                 vehicle_catalog.set(CatalogState::Ready(build_vehicle_catalog_tree(&items)));
             }
         }
