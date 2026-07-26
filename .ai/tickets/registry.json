@@ -7390,7 +7390,7 @@
       "impact": [
         "mc-integrity"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2370,
       "stream": "mission-creator",
       "targets": [
@@ -7607,7 +7607,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2480,
       "stream": "web-platform",
       "targets": [
@@ -7784,7 +7784,7 @@
       "impact": [
         "registry-hygiene"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2570,
       "stream": "infra",
       "targets": [

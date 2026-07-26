@@ -135,8 +135,8 @@
 2	T-247	POST /admin/roles/sync has no UI and no scheduler	apps/website/frontend/src/personnel.rs
 2	T-248	oauth_state cookie survives the two early-return error paths	apps/website/api/src/handlers/oauth.rs; apps/website/api/src/config.rs
 2	T-219	The editor silently deletes any top-level key it does not understand	crates/map-engine-core/src/doc/store.rs; crates/map-engine-core/src/mission/compile.rs
-3	T-239	Unticketed XSS hardening item from the Go purge	apps/website/api/src/services/text.rs; apps/website/api/src/handlers/cms.rs
-3	T-230	Attendance marks every mission in the event and breaks the roster counters	apps/website/api/src/handlers/telemetry.rs
+3	T-239	Unticketed XSS hardening item from the Go purge	apps/website/api/src/services/text.rs; apps/website/api/src/handlers/cms.rs; apps/website/frontend/src/announcements.rs; apps/website/api/tests/cms_announcement_body.rs
+3	T-230	Attendance marks every mission in the event and breaks the roster counters	apps/website/api/src/handlers/telemetry.rs; apps/website/api/tests/telemetry.rs
 3	T-249	Add a slot.y fixture	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c; apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c
 3	T-201	Emit zones[] beyond the synthetic spawn circle	crates/map-engine-core/src/mission/flatten.rs; apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
 3	T-250	Warn on unconsumed mission-document keys	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c
