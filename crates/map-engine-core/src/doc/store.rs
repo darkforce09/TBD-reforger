@@ -2713,9 +2713,11 @@ mod tests {
 
         let doc = MissionDocCore::new();
         doc.hydrate(&with.to_string(), "lyr");
-        assert!(small_maps(&doc)["payloadExtras"]
-            .get("serverMigrationToken")
-            .is_some());
+        assert!(
+            small_maps(&doc)["payloadExtras"]
+                .get("serverMigrationToken")
+                .is_some()
+        );
 
         doc.hydrate(&without.to_string(), "lyr");
         let small = small_maps(&doc);

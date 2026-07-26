@@ -631,7 +631,11 @@ mod tests {
         .to_string();
 
         let p = compile_payload(&small, "{}", false);
-        assert_eq!(p["schemaVersion"], json!(1), "known key must win over extras");
+        assert_eq!(
+            p["schemaVersion"],
+            json!(1),
+            "known key must win over extras"
+        );
         assert_eq!(p["map"]["terrain"], json!("everon"));
         assert_eq!(p["serverMigrationToken"], json!("keep-me"));
         assert!(p.get("payloadExtras").is_none());
