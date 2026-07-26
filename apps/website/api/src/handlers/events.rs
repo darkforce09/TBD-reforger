@@ -1134,9 +1134,24 @@ pub async fn get_orbat(
 
 // --- Registration (G7b) ---
 
-#[derive(Debug, Deserialize, Default)]
+/// The registration body.
+///
+/// **`slot_id` is deliberately required — do not add `#[serde(default)]` to it (T-318).**
+/// Same shape as T-185 and T-218: the default is not "no data", it decodes as an affirmative
+/// empty value and gets bound straight into a write. Here the write is the upsert below, whose
+/// `DO UPDATE SET slot_id = EXCLUDED.slot_id` turns an *existing* registration's seat into
+/// `NULL` — while `orbat_slots.assigned_to` still names the user. That pair is the orphan: the
+/// seat reads as occupied to everyone else, and [`withdraw_from_event_mission`] used to look the
+/// seat up *through* the column that was just nulled, so the occupant could not release it
+/// either.
+///
+/// Registering without a seat (bench / waitlist) is still supported — it is `{"slot_id": ""}`,
+/// spelled out. `{}` no longer means it. The two are the same to the handler but not to a
+/// reader: an empty string is a caller saying "no seat", an absent field is a caller who did not
+/// say anything, and only one of those should be allowed to blank a claim. Making it explicit
+/// costs a client nothing and turns the most common malformed body into a decode error.
+#[derive(Debug, Deserialize)]
 pub struct RegisterBody {
-    #[serde(default)]
     slot_id: String,
 }
 
@@ -1166,7 +1181,15 @@ pub async fn register_for_event_mission(
     let em = load_em(&state.pool, &emid).await?;
     let me = &user.discord_id;
     let is_admin = user.role == "admin";
-    let body = body.ok().map(|Json(b)| b).unwrap_or_default();
+    // `.ok()...unwrap_or_default()` here collapsed *every* extractor failure — malformed JSON, a
+    // missing body, the wrong `Content-Type` — into `slot_id: ""`, which is the "no seat" branch,
+    // which nulls the caller's existing claim on the way past. A fat-fingered request could
+    // therefore orphan a seat with a 200 and no diagnostic anywhere. `map_err` is what the other
+    // ~25 handlers in this crate do, including the four other `JsonRejection` sites in this file;
+    // this one was the outlier (T-318).
+    let Json(body) = body.map_err(|_| {
+        ApiError::bad_request("slot_id is required (send \"\" to register without a seat)")
+    })?;
 
     let mut tx = state.pool.begin().await?;
     // Serialize registrations per event mission — the capacity/waitlist decision is
@@ -1294,22 +1317,56 @@ pub async fn withdraw_from_event_mission(
     let me = &user.discord_id;
 
     let mut tx = state.pool.begin().await?;
-    let reg: Option<(Uuid, Option<Uuid>, RegistrationState)> = sqlx::query_as(
-        "SELECT id, slot_id, state FROM event_registrations WHERE event_mission_id = $1 AND discord_id = $2",
+    // `slot_id` is deliberately NOT selected any more — see the release below.
+    let reg: Option<(Uuid, RegistrationState)> = sqlx::query_as(
+        "SELECT id, state FROM event_registrations WHERE event_mission_id = $1 AND discord_id = $2",
     )
     .bind(em.id)
     .bind(me)
     .fetch_optional(&mut *tx)
     .await?;
-    let Some((reg_id, reg_slot, reg_state)) = reg else {
-        return Err(ApiError::not_found("not registered"));
+
+    // ══ RELEASE BY OCCUPANT, NOT BY THE REGISTRATION'S `slot_id` (T-318) ══════════════════
+    // This used to be `if let Some(sid) = reg_slot`, i.e. it freed the seat the *registration*
+    // pointed at. That reads the seat through a column any registration write can blank, so the
+    // one state that most needed releasing — claim held, `slot_id` nulled — was exactly the state
+    // it skipped. `assigned_to` is the seat claim itself; it is the only column that has to be
+    // true for the seat to read as occupied, so it is the one to key off.
+    //
+    // This is a broader delete than the old one, so both bounds are load-bearing:
+    //   * `assigned_to = $2` — only seats that name the caller. It is definitionally impossible to
+    //     free a seat the caller does not hold, and unlike the old `WHERE id = $1` it can no
+    //     longer strip someone *else's* claim when a registration's `slot_id` has drifted onto a
+    //     seat that has since been reassigned.
+    //   * `event_mission_id = $1` — only this operation. Without it, withdrawing from one mission
+    //     would unseat the caller from every other event they are signed up for. The old form had
+    //     no event-mission bound at all and leaned entirely on `slot_id` being trustworthy.
+    // Together they are a subset of the old behaviour on healthy rows and a superset only on the
+    // orphans, which is the whole point.
+    let released = sqlx::query(
+        "UPDATE orbat_slots SET assigned_to = NULL, assigned_at = NULL \
+         WHERE event_mission_id = $1 AND assigned_to = $2",
+    )
+    .bind(em.id)
+    .bind(me)
+    .execute(&mut *tx)
+    .await?
+    .rows_affected();
+
+    let Some((reg_id, reg_state)) = reg else {
+        // Seats orphaned before this fix ended up here: the no-op withdraw still deleted the
+        // registration row, so the occupant's *second* attempt got a 404 and the seat stayed
+        // claimed forever. Withdrawing is now allowed to mean "release whatever I hold here",
+        // which is what unsticks that backlog without an admin. A caller who genuinely holds
+        // nothing released nothing, so they still get the same 404 as before.
+        if released == 0 {
+            return Err(ApiError::not_found("not registered"));
+        }
+        tx.commit().await?;
+        return Ok(Json(json!({ "withdrawn": true })));
     };
-    if let Some(sid) = reg_slot {
-        sqlx::query("UPDATE orbat_slots SET assigned_to = NULL, assigned_at = NULL WHERE id = $1")
-            .bind(sid)
-            .execute(&mut *tx)
-            .await?;
-    }
+    // No waitlist promotion on that path: an orphan has no registration row, so it was never
+    // counted against capacity, and promoting for it would over-fill the operation.
     let was_registered = reg_state == RegistrationState::Registered;
     sqlx::query("DELETE FROM event_registrations WHERE id = $1")
         .bind(reg_id)

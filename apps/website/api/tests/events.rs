@@ -15,6 +15,8 @@ use website_api::state::AppState;
 use website_api::{app, db};
 
 const OTHER: &str = "000000000000000002";
+/// The identity `dev-login` mints for every role (`handlers::dev::DEV_USER_ID`).
+const DEV_USER: &str = "000000000000000001";
 
 async fn boot() -> Option<(Router, PgPool)> {
     let url = std::env::var("TEST_DATABASE_URL").ok()?;
@@ -279,5 +281,262 @@ async fn event_orbat_registration_and_race() {
         st,
         StatusCode::FORBIDDEN,
         "enlisted cannot reserve (needs leader)"
+    );
+}
+
+/// T-318 — the registration upsert used to orphan an ORBAT seat that nobody could free.
+///
+/// Two independent failures, both covered here because fixing either alone leaves the bug
+/// live: a bad body was collapsed into "no seat" and blanked `event_registrations.slot_id`
+/// on the way past (creating orphans), and `withdraw` looked the seat up *through* that same
+/// column (so it could never clean one up). The invariant the whole test is really asserting
+/// is that `orbat_slots.assigned_to` and `event_registrations.slot_id` cannot be left
+/// disagreeing in a way that strands a seat.
+#[tokio::test]
+async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = token(&app, "admin").await;
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'Other', 'other', '', '', '', 'enlisted', false, '', now(), now()) ON CONFLICT (discord_id) DO NOTHING",
+    )
+    .bind(OTHER)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Two event-missions: the one under test, plus a second one that must stay untouched
+    // when we withdraw from the first (the by-user release has to be event-scoped).
+    let mk_em = async |title: &str, squad: &str, slots: &str| -> String {
+        let (_, m) = call(
+            &app,
+            "POST",
+            "/api/v1/missions",
+            &admin,
+            Some(&format!(
+                r#"{{"title":"{title}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+            )),
+        )
+        .await;
+        let mission_id = m["id"].as_str().unwrap().to_string();
+        let (_, e) = call(
+            &app,
+            "POST",
+            "/api/v1/events",
+            &admin,
+            Some(r#"{"start_time":"2027-03-01T00:00:00Z"}"#),
+        )
+        .await;
+        let event_id = e["id"].as_str().unwrap().to_string();
+        let (st, em) = call(
+            &app,
+            "POST",
+            &format!("/api/v1/events/{event_id}/missions"),
+            &admin,
+            Some(&format!(
+                r#"{{"mission_id":"{mission_id}","start_time":"2027-03-01T00:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"{squad}","slots":[{slots}]}}]}}"#
+            )),
+        )
+        .await;
+        assert_eq!(st, StatusCode::CREATED, "attach: {em}");
+        em["id"].as_str().unwrap().to_string()
+    };
+    let emid = mk_em("T-318 Op", "Alpha", r#"{"role":"SL"},{"role":"RTO"}"#).await;
+    let other_emid = mk_em("T-318 Op B", "Bravo", r#"{"role":"SL"}"#).await;
+
+    let slots = async |em: &str| -> Vec<String> {
+        let (_, o) = call(
+            &app,
+            "GET",
+            &format!("/api/v1/event-missions/{em}/orbat"),
+            &admin,
+            None,
+        )
+        .await;
+        o["data"][0]["slots"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|s| s["id"].as_str().unwrap().to_string())
+            .collect()
+    };
+    let mine = slots(&emid).await;
+    let (slot0, slot1) = (mine[0].clone(), mine[1].clone());
+    let far_slot = slots(&other_emid).await[0].clone();
+
+    let seat = async |id: &str| -> Option<String> {
+        sqlx::query_scalar::<_, Option<String>>("SELECT assigned_to FROM orbat_slots WHERE id = $1")
+            .bind(id.parse::<uuid::Uuid>().unwrap())
+            .fetch_one(&pool)
+            .await
+            .unwrap()
+    };
+    let reg_slot = async |em: &str| -> Option<Option<uuid::Uuid>> {
+        sqlx::query_scalar::<_, Option<uuid::Uuid>>(
+            "SELECT slot_id FROM event_registrations WHERE event_mission_id = $1 AND discord_id = $2",
+        )
+        .bind(em.parse::<uuid::Uuid>().unwrap())
+        .bind(DEV_USER)
+        .fetch_optional(&pool)
+        .await
+        .unwrap()
+    };
+    let register = async |em: &str, body: Option<&str>| -> StatusCode {
+        call(
+            &app,
+            "POST",
+            &format!("/api/v1/event-missions/{em}/register"),
+            &admin,
+            body,
+        )
+        .await
+        .0
+    };
+    let withdraw = async |em: &str| -> StatusCode {
+        call(
+            &app,
+            "DELETE",
+            &format!("/api/v1/event-missions/{em}/register"),
+            &admin,
+            None,
+        )
+        .await
+        .0
+    };
+
+    // ── Part 1: a bad body is a 400, not a silent claim-blanking 200 ─────────
+    let claim = format!(r#"{{"slot_id":"{slot0}"}}"#);
+    assert_eq!(register(&emid, Some(&claim)).await, StatusCode::OK);
+    assert_eq!(seat(&slot0).await.as_deref(), Some(DEV_USER), "claimed");
+
+    // Each of these used to return 200 and null the registration's `slot_id` while leaving
+    // `assigned_to` set — the orphan. `{}` is in the list on purpose: it is well-formed JSON,
+    // and only decodes as "no seat" if `slot_id` carries `#[serde(default)]`.
+    for (label, body) in [
+        ("malformed json", Some(r#"{"slot_id":"#)),
+        ("empty object", Some("{}")),
+        ("wrong json type", Some("[]")),
+        ("no body / no content-type", None),
+    ] {
+        assert_eq!(
+            register(&emid, body).await,
+            StatusCode::BAD_REQUEST,
+            "{label} must be rejected"
+        );
+        assert_eq!(
+            seat(&slot0).await.as_deref(),
+            Some(DEV_USER),
+            "{label} must not release the seat"
+        );
+        assert_eq!(
+            reg_slot(&emid).await.flatten().map(|u| u.to_string()),
+            Some(slot0.clone()),
+            "{label} must not blank the registration"
+        );
+    }
+
+    // Registering with no seat on purpose is still a legal request — it just has to say so.
+    assert_eq!(
+        register(&emid, Some(r#"{"slot_id":""}"#)).await,
+        StatusCode::OK,
+        "explicit empty slot_id is the bench registration"
+    );
+
+    // ── Part 2: withdraw frees the seat through `assigned_to`, not `slot_id` ─
+    // That bench registration just reproduced the orphan *shape* — claim held, registration
+    // blank. Pre-T-318 this was terminal; withdraw skipped it and then deleted the row.
+    assert!(
+        reg_slot(&emid).await.unwrap().is_none(),
+        "registration blank"
+    );
+    assert_eq!(seat(&slot0).await.as_deref(), Some(DEV_USER), "seat held");
+    assert_eq!(withdraw(&emid).await, StatusCode::OK);
+    assert_eq!(seat(&slot0).await, None, "withdraw must free the orphan");
+
+    // The worst pre-existing state: seat claimed with NO registration row at all, which is
+    // where every orphan ended up after its owner's first (silently useless) withdraw.
+    sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
+        .bind(DEV_USER)
+        .bind(slot0.parse::<uuid::Uuid>().unwrap())
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert!(reg_slot(&emid).await.is_none(), "no registration row");
+    assert_eq!(
+        withdraw(&emid).await,
+        StatusCode::OK,
+        "a stranded seat must be releasable by its occupant"
+    );
+    assert_eq!(seat(&slot0).await, None);
+
+    // ── Part 2b: the broader delete must not over-free ───────────────────────
+    // Someone else's seat in the same operation, and my own seat in a different one.
+    sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
+        .bind(OTHER)
+        .bind(slot1.parse::<uuid::Uuid>().unwrap())
+        .execute(&pool)
+        .await
+        .unwrap();
+    let far_claim = format!(r#"{{"slot_id":"{far_slot}"}}"#);
+    assert_eq!(
+        register(&other_emid, Some(&far_claim)).await,
+        StatusCode::OK
+    );
+    assert_eq!(register(&emid, Some(&claim)).await, StatusCode::OK);
+
+    assert_eq!(withdraw(&emid).await, StatusCode::OK);
+    assert_eq!(seat(&slot0).await, None, "my seat here is freed");
+    assert_eq!(
+        seat(&slot1).await.as_deref(),
+        Some(OTHER),
+        "another user's seat in the same event-mission must survive"
+    );
+    assert_eq!(
+        seat(&far_slot).await.as_deref(),
+        Some(DEV_USER),
+        "my seat in a different event-mission must survive"
+    );
+
+    // And holding nothing here is still a 404 — the fallback widened what withdraw can free,
+    // not who is allowed to call it or what it reports when there is nothing to do.
+    assert_eq!(withdraw(&emid).await, StatusCode::NOT_FOUND);
+
+    // Seat-switching double-claims on the register side (a known, separate defect: the upsert
+    // never releases the seat it is moving off). Withdraw must clean up *all* of it.
+    assert_eq!(register(&emid, Some(&claim)).await, StatusCode::OK);
+    let claim1 = format!(r#"{{"slot_id":"{slot1}"}}"#);
+    sqlx::query("UPDATE orbat_slots SET assigned_to = NULL, assigned_at = NULL WHERE id = $1")
+        .bind(slot1.parse::<uuid::Uuid>().unwrap())
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(register(&emid, Some(&claim1)).await, StatusCode::OK);
+    let held: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM orbat_slots WHERE event_mission_id = $1 AND assigned_to = $2",
+    )
+    .bind(emid.parse::<uuid::Uuid>().unwrap())
+    .bind(DEV_USER)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        held, 2,
+        "register leaves the previous seat claimed (T-318 follow-up)"
+    );
+    assert_eq!(withdraw(&emid).await, StatusCode::OK);
+    let held: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM orbat_slots WHERE event_mission_id = $1 AND assigned_to = $2",
+    )
+    .bind(emid.parse::<uuid::Uuid>().unwrap())
+    .bind(DEV_USER)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        held, 0,
+        "withdraw must free every seat the caller holds here"
     );
 }
