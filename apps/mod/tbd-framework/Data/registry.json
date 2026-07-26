@@ -56,6 +56,36 @@
       "displayName": "USSR Automatic Rifleman"
     },
     {
+      "alias": "preset:fia",
+      "guid": "{84B40583F4D1B7A3}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et",
+      "displayName": "FIA (POC — faction preset resolves to rifleman until TBD-Content)"
+    },
+    {
+      "alias": "kit:fia_rifleman",
+      "guid": "{84B40583F4D1B7A3}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et",
+      "displayName": "FIA Rifleman"
+    },
+    {
+      "alias": "kit:fia_sl",
+      "guid": "{677B515F119222C2}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_SL.et",
+      "displayName": "FIA Squad Leader"
+    },
+    {
+      "alias": "kit:fia_medic",
+      "guid": "{45A02CA25CBA9443}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Medic.et",
+      "displayName": "FIA Medic"
+    },
+    {
+      "alias": "preset:civ",
+      "guid": "{22E43956740A6794}Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et",
+      "displayName": "Civilians (POC — preset resolves to the randomized civilian until TBD-Content)"
+    },
+    {
+      "alias": "kit:civ_generic",
+      "guid": "{22E43956740A6794}Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et",
+      "displayName": "Generic Civilian"
+    },
+    {
       "alias": "veh:m151_mg",
       "guid": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
       "displayName": "M151A2 (M2HB)",

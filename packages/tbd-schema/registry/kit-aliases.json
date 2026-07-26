@@ -1,5 +1,5 @@
 {
-  "$comment": "ResourceName -> kit: alias mapping for the mission compile flatten (T-092.2). Derived from the kit:/preset: entries of the mod alias spawn registry (apps/mod/tbd-framework/Data/registry.json) — that registry maps alias -> prefab ResourceName for spawn; this file is its inverse plus per-faction fallbacks. Consumed by the frontend flatten (flattenModDocument.ts) and the Go flatten (internal/services/mission_compile.go via the schema-codegen copy). Editor slots whose assetId has no kit row here flatten to their faction's default kit (with a warning) so the compiled document always satisfies mission.schema.json's kit pattern.",
+  "$comment": "ResourceName -> kit: alias mapping for the mission compile flatten (T-092.2). Derived from the kit:/preset: entries of the mod alias spawn registry (apps/mod/tbd-framework/Data/registry.json) — that registry maps alias -> prefab ResourceName for spawn; this file is its inverse plus per-faction fallbacks. Consumed by the frontend flatten (flattenModDocument.ts) and the Go flatten (internal/services/mission_compile.go via the schema-codegen copy). Editor slots whose assetId has no kit row here flatten to their faction's default kit (with a warning) so the compiled document always satisfies mission.schema.json's kit pattern. T-183: factionDefaults MUST carry a row for every faction key TBD_SpawnManager.EngineFactionKey maps (blufor/opfor/indfor/civ). A missing row is not an error — KitAliases::faction_default silently returns fallbackFaction (blufor), so an INDFOR slot compiled to kit:us_rifleman and the mod then spawned a US body while forcing engine faction FIA. fallbackFaction stays as the guard for a genuinely unknown key; it must not be load-bearing for a key the mod knows.",
   "generatedFrom": "apps/mod/tbd-framework/Data/registry.json",
   "kits": [
     {
@@ -33,11 +33,29 @@
     {
       "alias": "kit:sov_ar",
       "resourceName": "{23ADBBC31B6A3DC6}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR.et"
+    },
+    {
+      "alias": "kit:fia_rifleman",
+      "resourceName": "{84B40583F4D1B7A3}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et"
+    },
+    {
+      "alias": "kit:fia_sl",
+      "resourceName": "{677B515F119222C2}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_SL.et"
+    },
+    {
+      "alias": "kit:fia_medic",
+      "resourceName": "{45A02CA25CBA9443}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Medic.et"
+    },
+    {
+      "alias": "kit:civ_generic",
+      "resourceName": "{22E43956740A6794}Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et"
     }
   ],
   "factionDefaults": {
     "blufor": { "kit": "kit:us_rifleman", "preset": "preset:us_army_82nd" },
-    "opfor": { "kit": "kit:sov_rifleman", "preset": "preset:sov_vdv" }
+    "opfor": { "kit": "kit:sov_rifleman", "preset": "preset:sov_vdv" },
+    "indfor": { "kit": "kit:fia_rifleman", "preset": "preset:fia" },
+    "civ": { "kit": "kit:civ_generic", "preset": "preset:civ" }
   },
   "fallbackFaction": "blufor"
 }
