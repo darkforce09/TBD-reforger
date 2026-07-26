@@ -82,8 +82,17 @@ def collides(a, b):
     return False
 
 
-def pack(cands, already=(), landed=frozenset(), enforce_deps=True):
-    """Greedy maximum disjoint set, honouring plan order (which is priority order) and DEPS."""
+def pack(cands, already=(), landed=None, enforce_deps=True):
+    """Greedy maximum disjoint set, honouring plan order (which is priority order) and DEPS.
+
+    `landed` defaults to everything already shipped. It MUST NOT default to an empty set: repack()
+    seeded it explicitly but main() did not, so `wave.sh prep` — the only dispatch view — silently
+    skipped every ticket carrying a DEPS edge, forever. 11 tickets were unreachable, including
+    T-209 whose dependency T-186 had already shipped. Computing it here covers both callers.
+    """
+    if landed is None:
+        landed = {tid for tid, t in registry().items()
+                  if t.get('status') in ('shipped', 'cancelled')}
     chosen, used = [], list(already)
     for c in cands:
         if enforce_deps:

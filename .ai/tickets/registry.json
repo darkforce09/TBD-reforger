@@ -1,5 +1,5 @@
 {
-  "next_id": 310,
+  "next_id": 313,
   "tickets": [
     {
       "id": "T-001",
@@ -7164,13 +7164,14 @@
       "impact": [
         "e2e"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2260,
       "stream": "mod-framework",
       "targets": [
         "root"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "c6f19ce1"
     },
     {
       "id": "T-209",
@@ -7183,13 +7184,14 @@
       "impact": [
         "e2e"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2270,
       "stream": "mod-framework",
       "targets": [
         "mod"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "7a6df0b1"
     },
     {
       "id": "T-210",
@@ -9104,6 +9106,65 @@
       "stream": "mission-creator",
       "targets": [
         "website",
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-310",
+      "title": "Arsenal attachments never reach the compiled document",
+      "summary": "T-197 wired attachment edges into the Arsenal UI and they persist in SlotLoadoutV2, but flatten.rs mod_slot_loadout reads only weapon/optic/magazine, and mission.schema.json gear is additionalProperties:false over 13 STRING fields with no place for a list. So an author picks a suppressor, sees it in the picker, sees it counted in the weight readout — and the player spawns without it. This is the exact defect class T-193 deleted two controls for in the same wave. T-197's commit body acknowledged it but filed no ticket, which CLAUDE.md's HARD GATE says is not permission. Needs a schema shape for weapon attachments plus flatten emission plus a mod reader — TBD_LoadoutEquipHelper.c:21-25 already mounts optic/magazine into SCR_WeaponAttachmentsStorageComponent, which is the same storage attachments would use.",
+      "program": "eden",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "e2e"
+      ],
+      "status": "idea",
+      "order": 2310,
+      "stream": "mission-creator",
+      "targets": [
+        "website",
+        "root",
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-311",
+      "title": "Leaderboard ORDER BY has no tie-breaker, so paging is unstable",
+      "summary": "handlers/leaderboards.rs:44-50 — none of the five ORDER BY arms has a tie-breaker, so with LIMIT/OFFSET the row SET is unstable, not merely the order within it. T-194's content golden introduces 4-way ties in team_kills, missions_played and command_win_rate, so this is now reachable with the committed seed. Fix: append `, lt.discord_id ASC` to each arm.",
+      "program": "eden",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "e2e"
+      ],
+      "status": "idea",
+      "order": 2311,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-312",
+      "title": "make mod-compile-selftest reports OK when the gate never ran",
+      "summary": "Found by T-209, and it is the sharpest instance of the pattern: the one check whose entire purpose is proving the compile gate can FAIL will print SELFTEST OK and exit 0 when it never ran at all. Reproduced. T-209's new workflow deliberately avoids the target and calls the script directly, but the Makefile target is still there for anyone who trusts it.",
+      "program": "infra",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "e2e"
+      ],
+      "status": "idea",
+      "order": 2312,
+      "stream": "infra",
+      "targets": [
         "root"
       ],
       "executor": "claude-code"

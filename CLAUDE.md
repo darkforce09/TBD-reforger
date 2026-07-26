@@ -778,7 +778,7 @@ Markers (**T-069**) deferred.
 - **T-092** — mod compile + spawn Y/yaw — **shipped** @ `a73224f2`
 - **T-180** — ORBAT + Eden placement (**COMPLETE** @ `cba837b3`; coherency `make verify-t180`)
 - Ruler/LoS/viewshed — after T-069/T-070 as needed.
-- Real Discord OAuth credentials are blank in `.env` (dev uses dev-login).
+- Discord OAuth credentials ARE populated in `apps/website/api/.env` (client id, secret, guild id); `DISCORD_BOT_TOKEN` and `DISCORD_WEBHOOK_URL` are empty and the bot token is read by no consumer. Dev still uses dev-login by default. Runbook: [`DEV_RUNBOOK.md`](docs/website/DEV_RUNBOOK.md) — and note `FRONTEND_URL`/`DISCORD_REDIRECT_URL` host mismatch (T-303) breaks the first live login.
 - Telemetry is ingested via service-token endpoints; no live game-server bridge wired.
 - A fresh DB is empty of content (events, missions, etc.) — seed those via the API
   or `psql`. The committed seeds live at `apps/website/api/seeds/`: `discord_roles.sql` +

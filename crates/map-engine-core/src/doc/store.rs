@@ -1078,8 +1078,6 @@ impl MissionDocCore {
         let mut env: HashMap<String, Any> = HashMap::new();
         env.insert("time".to_string(), Any::String("06:00".into()));
         env.insert("weather".to_string(), Any::String("clear".into()));
-        env.insert("viewDistance".to_string(), Any::BigInt(1600));
-        env.insert("thermals".to_string(), Any::Bool(false));
         self.meta
             .insert(&mut txn, "environment", Any::Map(Arc::new(env)));
     }
