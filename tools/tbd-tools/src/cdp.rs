@@ -5,15 +5,16 @@
 //! lavapipe WebGPU flags, fixed 1440×900 dsf=1 viewport applied BEFORE navigation, init
 //! scripts on document-start.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex as StdMutex};
 use std::time::Duration;
 
 use anyhow::{Context, Result, anyhow};
 use futures_util::SinkExt;
 use futures_util::stream::{SplitSink, StreamExt};
 use serde_json::{Value, json};
+use tokio::io::AsyncBufReadExt;
 use tokio::net::TcpStream;
 use tokio::process::{Child, Command};
 use tokio::sync::{Mutex, mpsc, oneshot};
@@ -100,9 +101,24 @@ pub struct Browser {
     /// Per-launch chromium profile dir (T-166 hygiene). Every smoke gets its OWN profile so OPFS
     /// + IndexedDB (large persisted world/mission state) never bleed across smokes in a suite run.
     user_data_dir: PathBuf,
+    /// Chrome's own recent stdout+stderr, filled by the [`drain_pipe`] tasks (T-354).
+    log_tail: Arc<StdMutex<VecDeque<String>>>,
 }
 
 impl Browser {
+    /// Chrome's own last [`LOG_TAIL_LINES`] output lines, oldest first (T-354).
+    ///
+    /// This is the browser's account of its own death — what runbook P2 goes hunting for by
+    /// re-launching chromium by hand. Worth printing on any wedge/timeout path: a `FATAL` /
+    /// `SK_ABORT` / `Received signal` line here names the cause, and its **absence** is itself
+    /// informative (the browser never got as far as complaining).
+    pub fn recent_output(&self) -> Vec<String> {
+        self.log_tail
+            .lock()
+            .map(|t| t.iter().cloned().collect())
+            .unwrap_or_default()
+    }
+
     /// SIGTERM the whole chrome PROCESS GROUP (T-166). Chrome forks renderer/gpu/zygote children;
     /// signalling only the parent pid (the old behavior) orphaned those children, which kept
     /// pegging every core under SwiftShader software GL → the *next* smoke's page starved of CPU
@@ -145,6 +161,71 @@ impl Drop for Browser {
     }
 }
 
+/// How many of chrome's most recent output lines a [`Browser`] keeps ([`Browser::recent_output`]).
+const LOG_TAIL_LINES: usize = 200;
+
+/// Consume one of chrome's output pipes until EOF, keeping the last [`LOG_TAIL_LINES`] lines.
+///
+/// # Why this exists (T-354 — the undrained-pipe deadlock)
+///
+/// [`launch`] hands chrome piped stdout+stderr. A pipe holds **64 KiB**; once it fills and nobody
+/// reads, the next `write(2)` **blocks the thread that issued it** — indefinitely, because a pipe
+/// nobody drains never drains. Chromium is chatty. MEASURED on this box with
+/// `--enable-logging=stderr --v=1`, writing to a file so nothing throttled it: **87,583 bytes of
+/// stderr inside the first second** on `about:blank` alone, 109,581 by t+6 s. That is 1.34× the
+/// buffer before a page exists at all.
+///
+/// So the buffer fills, and *which* chrome thread happens to own the write that crosses the
+/// threshold decides the outcome: a `ThreadPoolForeground` thread merely parks, but the **browser
+/// main thread** parking stops the DevTools endpoint dead. MEASURED mid-hang: main thread in
+/// `syscall=1 (write)` on `wchan=anon_pipe_write` with `fd/2 -> pipe:[…]`, and `/json/version`
+/// accepting the TCP connection then answering **nothing** (`curl(52) Empty reply`, as against
+/// `curl(7) Connection refused` from a browser that is genuinely gone). Every `Runtime.evaluate`
+/// after that times out.
+///
+/// Two things make it expensive. It is **intermittent** — thread-scheduling roulette, so it passes
+/// often enough to look like flake. And it is **self-disguising**: the harness sees exactly the
+/// T-320 font-abort signature (`cdp: ws call timed out (Runtime.evaluate)`, which `gate doctor`
+/// then reports as "the headless browser process DIED"), so the diagnosis points at Skia while the
+/// browser sits alive and blocked in `write`. T-232 lost its second hand-rolled harness to this;
+/// T-320 lost five sessions to the same signature from a genuinely different cause. Draining
+/// removes the failure mode rather than detecting it: chrome cannot block on a pipe someone is
+/// always reading.
+///
+/// The tail is the other half. Chrome's stderr is the **only** copy of its own abort reason
+/// (runbook P2) and [`launch`] used to discard it, which is why the debug recipe had to re-launch
+/// chromium by hand with `--enable-logging=stderr` and hope an intermittent fault reproduced.
+fn drain_pipe<R>(pipe: R, tail: Arc<StdMutex<VecDeque<String>>>)
+where
+    R: tokio::io::AsyncRead + Unpin + Send + 'static,
+{
+    tokio::spawn(async move {
+        let mut pipe = tokio::io::BufReader::new(pipe);
+        let mut buf = Vec::new();
+        loop {
+            buf.clear();
+            // `read_until` + lossy decode, NOT `lines()`: `lines()` returns `Err` on invalid UTF-8,
+            // and a drain that can stop early is a drain that can re-open the deadlock. Chrome's
+            // logs carry page-controlled text (console output), so that is reachable, not theory.
+            match pipe.read_until(b'\n', &mut buf).await {
+                // EOF (chrome and every fd-inheriting child are gone) or a broken pipe: either way
+                // there is nothing left that could block on a write.
+                Ok(0) | Err(_) => return,
+                Ok(_) => {}
+            }
+            let line = String::from_utf8_lossy(&buf).trim_end().to_string();
+            // Locked only for the push, never across an await — hence the std mutex, so the
+            // accessor can stay sync and be callable from an error path.
+            if let Ok(mut t) = tail.lock() {
+                if t.len() == LOG_TAIL_LINES {
+                    t.pop_front();
+                }
+                t.push_back(line);
+            }
+        }
+    });
+}
+
 /// Spawn a headless chromium with SwiftShader WebGL2 + lavapipe WebGPU.
 pub async fn launch(debug_port: u16, extra_args: &[String]) -> Result<Browser> {
     let chromium = find_chromium().ok_or_else(|| {
@@ -172,16 +253,29 @@ pub async fn launch(debug_port: u16, extra_args: &[String]) -> Result<Browser> {
     args.push("--force-device-scale-factor=1".into());
     args.push("about:blank".into());
     args.extend(extra_args.iter().cloned());
-    let child = Command::new(&chromium)
+    let mut child = Command::new(&chromium)
         .args(&args)
         // Own process group (leader pid == child pid) so shutdown can signal the whole chrome
         // tree — renderer/gpu children included — without touching the harness (T-166).
         .process_group(0)
         .stdin(std::process::Stdio::null())
+        // Both pipes are DRAINED below — piping either one without reading it deadlocks chrome at
+        // 64 KiB. See [`drain_pipe`] (T-354).
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()
         .with_context(|| format!("spawn {}", chromium.display()))?;
+    // T-354 — start draining BEFORE the first `/json/version` poll below. Chrome writes past the
+    // 64 KiB buffer inside its first second, so a drain started any later races the very deadlock
+    // it exists to prevent. Both fds: stdout is "usually empty", and that assumption is exactly the
+    // kind that turns into an intermittent hang.
+    let log_tail = Arc::new(StdMutex::new(VecDeque::with_capacity(LOG_TAIL_LINES)));
+    if let Some(out) = child.stdout.take() {
+        drain_pipe(out, Arc::clone(&log_tail));
+    }
+    if let Some(err) = child.stderr.take() {
+        drain_pipe(err, Arc::clone(&log_tail));
+    }
     let http = reqwest::Client::new();
     for _ in 0..80 {
         if let Ok(r) = http
@@ -199,6 +293,7 @@ pub async fn launch(debug_port: u16, extra_args: &[String]) -> Result<Browser> {
         debug_port,
         http,
         user_data_dir,
+        log_tail,
     })
 }
 
