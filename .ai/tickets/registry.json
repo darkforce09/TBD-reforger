@@ -9809,7 +9809,7 @@
     {
       "id": "T-343",
       "title": "warn_user accepts a whitespace-only reason — T-317's fix, one handler over",
-      "summary": "FOUND by T-323. `handlers/admin.rs:284-286` — `warn_user` checks `input.reason.is_empty()` WITHOUT trimming, so a whitespace-only warning reason is accepted and stored. That is precisely the defect T-317 closed for `ban_user` in the same file this morning, one handler down.\n\nT-317 swept for extractor collapses and fixed those; this is the adjacent shape — a present-but-meaningless value rather than an absent one — and it was missed because the sweep keyed on `#[serde(default)]` and `.ok().unwrap_or_default()`, not on unguarded emptiness checks.\n\nAlso inconsistent: warn_user's message is `\"reason required\"` while ban_user's is `\"reason is required\"`. Pick one; a client matching on error text will be surprised.\n\nWhile in there, sweep for the third shape: every `is_empty()` guard in the crate that should be `trim().is_empty()`. T-319 fixed one in me.rs; T-326 fixed another in ingest_link_confirm, where an untrimmed arma_id made an account read as linked while being invisible to every future match ingest. This class has produced four tickets and the sweep has never been done systematically.",
+      "summary": "FOUND by T-323. `handlers/admin.rs:284-286` — `warn_user` checks `input.reason.is_empty()` WITHOUT trimming, so a whitespace-only warning reason is accepted and stored. That is precisely the defect T-317 closed for `ban_user` in the same file this morning, one handler down.\n\nT-317 swept for extractor collapses and fixed those; this is the adjacent shape — a present-but-meaningless value rather than an absent one — and it was missed because the sweep keyed on `#[serde(default)]` and `.ok().unwrap_or_default()`, not on unguarded emptiness checks.\n\nAlso inconsistent: warn_user's message is `\"reason required\"` while ban_user's is `\"reason is required\"`. Pick one; a client matching on error text will be surprised.\n\nWhile in there, sweep for the third shape: every `is_empty()` guard in the crate that should be `trim().is_empty()`. T-319 fixed one in me.rs; T-326 fixed another in ingest_link_confirm, where an untrimmed arma_id made an account read as linked while being invisible to every future match ingest. This class has produced four tickets and the sweep has never been done systematically.\n\nSHIPPED with the systematic sweep asked for: 100 is_empty() sites (89 non-test) and 24 trim() sites enumerated and categorised. Split into T-346..T-351.\n\nTHREE CORRECTIONS TO MY FRAMING, each established by running rather than by analogy:\n  1. NO CLOBBER. This is an INSERT, not T-317's UPDATE. The sentinel survived every bad request intact. Severity is a meaningless row stored, not data destroyed.\n  2. The audit trail was NOT independently wrong here. T-317's 'every bad request wrote Reason: ' does not reproduce — issue_warning already used map_err, so rejected requests return before write_audit. Only the whitespace case wrote a bad row.\n  3. A SECOND defect the untrimmed guard was hiding: even a VALID padded reason was stored with its padding, so warnings.reason and users.ban_reason normalised the same operator text differently.\n\nThe real harm is narrower but permanent: the roster tally is count(*) with no predicate on reason and the SPA reds the cell at >0, while NO endpoint in the crate returns warnings.reason. A blank warning marks someone as disciplined, forever, unreadably.\n\nAlso fixed in-file: send_rcon bound `map` untrimmed into audit_logs.message; and #[serde(default)] dropped from WarnInput.reason, UpdateUserInput.role, RconInput.action — proven wire-identical by running the same matrix against both binaries. RconInput.map/command keep theirs, genuinely optional.",
       "program": "platform",
       "surfaces": [
         "API"
@@ -9817,14 +9817,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3159,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 2
+      "priority": 2,
+      "shipped_at": "a0199601"
     },
     {
       "id": "T-344",
@@ -9859,6 +9860,128 @@
       ],
       "status": "idea",
       "order": 3161,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-346",
+      "title": "set_armory binds the faction join key untrimmed and defaulted",
+      "summary": "HIGHEST-SEVERITY find of T-343's sweep, and the one to do first.\n\nhandlers/missions.rs:766 — `set_armory` binds `faction` UNTRIMMED and carries #[serde(default)], two lines above the correctly-trimmed `item_name`. `faction` is the JOIN KEY, matched by exact equality at events.rs:796, frontend/event_hub.rs:415 and frontend/mission_overview.rs:218.\n\nConsequence: the armory reads as saved and renders EMPTY in the Event Hub dossier. The author sees success and the players see nothing.\n\nWHY IT IS NOT JUST A TRIM: it is reachable with NO WHITESPACE AT ALL, via the #[serde(default)] — so a trim-only fix would look like it worked while leaving the defect open. Both halves are required, exactly as T-315 found for `items`/`item_name` in this same handler.\n\n══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══\nT-343 found these and they bind on any ticket in this family:\n  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.\n  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.\nTrimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3162,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-347",
+      "title": "A whitespace source_match_id becomes a live dedupe key and destroys match history",
+      "summary": "FOUND by T-343's sweep. The worst mechanism in the whole family.\n\nhandlers/telemetry.rs:476 guards with `!s.is_empty()`; :515 binds the RAW Option into a UNIQUE index. So:\n  `\"   \"` passes the guard and becomes a LIVE DEDUPE KEY. Every later distinct match collapses onto match #1 — rosters overwritten, scorelines destroyed rather than summed, total_deployments stuck at 1 — and the endpoint returns 200 every single time.\n  `Some(\"\")` makes the two halves disagree, raising 23505, which is a PERMANENT 500 for that sender.\n\nThis is a service-token endpoint, so a game-server bug or a retry does it silently with no human in the loop. It is the same class T-316 fixed for the counters, on the identity column instead.\n\nNote T-316 deliberately left `source_match_id` optional (\"it creates, it doesn't corrupt\") — that judgement was right about the ABSENT case and this is the PRESENT-BUT-BLANK case, which does corrupt. Fix the guard and the bind together so they cannot disagree.\n\n══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══\nT-343 found these and they bind on any ticket in this family:\n  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.\n  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.\nTrimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3163,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-348",
+      "title": "Five PATCH handlers let a whitespace value overwrite real content",
+      "summary": "FOUND by T-343's sweep — the destructive-write group. Each is a value that passes an `is_empty()` guard as whitespace and overwrites something real:\n\n  events.rs:483 and :968 — `name_override`. Defeats SIX downstream is_empty() fallbacks at once, and is one keystroke away in the admin UI. **Fix the two WRITES, not the readers** — all readers already handle \"\" correctly.\n  missions.rs:393 — PATCH `title`. Unrecoverable, and a blank title sorts FIRST in the in-game mission browser.\n  cms.rs:190 — PATCH `title`/`body`. A blank body can ship to Discord.\n  telemetry.rs:497-498 — `winning_faction` / `aar_replay_url`, the same pair T-316 hardened against absence but not against blankness.\n\nAlso in this group, the same shape one level down: missions.rs:587/598 semver — `\" 0.1.0 \"` is not `\"0.1.0\"`, so a padded version returns 201 instead of 409 and then goes live.\n\n══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══\nT-343 found these and they bind on any ticket in this family:\n  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.\n  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.\nTrimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3164,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-349",
+      "title": "wiki slug has no guard at all, and field_tools.rs was missed by the whole sweep",
+      "summary": "Two gaps from T-343's sweep that are notable for being unguarded rather than mis-guarded.\n\n1. **handlers/wiki.rs:98,119 — `slug` has NO guard whatsoever.** It is the unique key AND the ON CONFLICT target. A blank or whitespace slug is therefore a live upsert key.\n\n2. **handlers/field_tools.rs was missed entirely by the T-315..T-319 sweep.** It carries unguarded values at :87 and :116 PLUS five #[serde(default)] on required fields at :29-38, and none of the 'deliberately required' annotations every sibling handler now has. That is the whole file never having been looked at, which is worth more attention than any single line in it.\n\nAlso fold in: missions.rs:315/417 — `time_of_day` where `'   '::time` is a **500**; and handlers/mod.rs:101 `username()`, which feeds every audit line in the crate.\n\n══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══\nT-343 found these and they bind on any ticket in this family:\n  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.\n  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.\nTrimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3165,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-350",
+      "title": "Four sites report an identity as linked when it is whitespace",
+      "summary": "FOUND by T-343. auth.rs:165, oauth.rs:152, me.rs:77 and me.rs:160 all gate \"linked\" on `Option::is_some()` with no content check. A legacy whitespace row therefore reads as LINKED at all four and RESOLVES at none — the exact silent-uselessness T-326 found, surviving in the read path after T-326 fixed the write path.\n\nRelated and in the same family: events.rs:2039 — the roster guards `u.arma_id <> ''` rather than `btrim(...) <> ''` and emits the value verbatim as the seating key at :2050, while all five other arma_id sites trim. Latent for rows written today, live for anything predating T-326.\n\nAlso: deployments.rs:241 `submit_leave.reason` has no guard — the fourth `reason` field in this family after T-218, T-317 and T-343.\n\n══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══\nT-343 found these and they bind on any ticket in this family:\n  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.\n  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.\nTrimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3166,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-351",
+      "title": "Nothing pins the arma_id trim, and legacy whitespace rows are still in the tables",
+      "summary": "TWO STRUCTURAL GAPS T-343 identified. These are why this bug class keeps coming back.\n\n1. **No test anywhere pins the arma_id trim.** tests/identity_link.rs only ever posts \"steam-xyz\". So T-326's fix and T-316's binding are held in place by COMMENTS, NOT GATES — the next refactor can undo either silently, and the symptom (an account that reads as linked while being invisible to every match ingest) is invisible until someone notices their stats are missing. Add a test that posts a padded arma_id and asserts both the stored value and that the ingest resolver finds it.\n\n2. **No btrim migration exists**, so legacy whitespace rows predating T-326/T-317 are still in the tables. Every read-path fix in T-350 is a workaround for data that could simply be normalised. Count the affected rows on a pg_dump copy FIRST and report the number — T-228 established that discipline and it is what stopped a migration that would have made the API refuse to boot.\n\nDo these together: the migration cleans the past, the test protects the future.\n\n══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══\nT-343 found these and they bind on any ticket in this family:\n  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.\n  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.\nTrimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3167,
       "stream": "web-platform",
       "targets": [
         "website"

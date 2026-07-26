@@ -46,6 +46,12 @@
 0	T-326	Matches played before an identity link never backfill, so deployments undercount	apps/website/api/src/handlers/me.rs
 0	T-324	Claiming a second ORBAT seat does not release the first	apps/website/api/src/handlers/events.rs
 0	T-228	ORBAT unique index omits faction — cross-faction squad names 500 on attach	apps/website/api/migrations
+1	T-346	set_armory binds the faction join key untrimmed and defaulted	apps/website/api/src/handlers/missions.rs
+1	T-347	A whitespace source_match_id becomes a live dedupe key and destroys match history	apps/website/api/src/handlers/telemetry.rs
+1	T-348	Five PATCH handlers let a whitespace value overwrite real content	apps/website/api/src/handlers/events.rs; apps/website/api/src/handlers/cms.rs
+1	T-349	wiki slug has no guard at all, and field_tools.rs was missed by the whole sweep	apps/website/api/src/handlers/wiki.rs; apps/website/api/src/handlers/field_tools.rs
+1	T-350	Four sites report an identity as linked when it is whitespace	apps/website/api/src/handlers/auth.rs; apps/website/api/src/handlers/oauth.rs; apps/website/api/src/handlers/deployments.rs
+1	T-351	Nothing pins the arma_id trim, and legacy whitespace rows are still in the tables	apps/website/api/tests/identity_link.rs; apps/website/api/migrations
 1	T-345	The doc cannot hold a marker at all — load_row requires a string id	crates/map-engine-core/src/doc/store.rs
 1	T-344	One doc mutator to author per-faction briefing prose	crates/map-engine-core/src/doc/store.rs
 1	T-340	GET /events/:id still 500s on a NULL briefing OR thumbnail_url	apps/website/api/src/handlers/events.rs
