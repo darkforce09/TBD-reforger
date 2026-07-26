@@ -184,9 +184,13 @@ file_edition() {
   echo 2021
 }
 
+# Takes the diff base. Defaults to main...HEAD, which is correct inside a WORKTREE (the slice gate)
+# and EMPTY on merged main (the wave gate) — so without an explicit base this silently checked
+# nothing exactly where it mattered most. It hid a real rustfmt violation in mission_compile.rs
+# through five consecutive green wave gates.
 fmt_changed() {
-  local files f ed rc=0
-  files="$(git diff --name-only main...HEAD 2>/dev/null | grep '\.rs$' || true)"
+  local base="${1:-main...HEAD}" files f ed rc=0
+  files="$(git diff --name-only "$base" 2>/dev/null | grep '\.rs$' || true)"
   [ -z "$files" ] && { echo "no Rust files changed"; return 0; }
   for f in $files; do
     [ -f "$f" ] || continue
@@ -201,7 +205,8 @@ fmt_changed() {
 # file it never looked at. T-188 hit exactly this. Any slice touching the frontend must be checked
 # for wasm32 or the gate is decorative. Warm cost measured: 0.16s.
 wasm_changed() {
-  git diff --name-only main...HEAD 2>/dev/null | grep -q '^apps/website/frontend/' || {
+  local base="${1:-main...HEAD}"
+  git diff --name-only "$base" 2>/dev/null | grep -q '^apps/website/frontend/' || {
     echo "frontend untouched"; return 0; }
   hostrun cargo check -p website-frontend --target wasm32-unknown-unknown --quiet
 }
@@ -244,8 +249,8 @@ cmd_gate() {
     else echo FAIL; printf '%s\n' "$out" | tail -15 | sed 's/^/      /'; fail=1; fi
   }
   run "cargo check"      hostrun cargo check --workspace --quiet
-  run "wasm32 (frontend)" wasm_changed
-  run "fmt (changed)"    fmt_changed
+  run "wasm32 (frontend)" wasm_changed "$base..HEAD"
+  run "fmt (changed)"    fmt_changed "$base..HEAD"
   # Clippy is scoped to the crates CI actually gates, NOT --workspace.
   #
   # `cargo clippy --workspace --all-targets -- -D warnings` is red on clean main — ~45 errors, almost

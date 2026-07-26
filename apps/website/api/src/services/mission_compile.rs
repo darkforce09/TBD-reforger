@@ -14,7 +14,7 @@ use crate::models::{Mission, WeatherType};
 use map_engine_core::mission::flatten::{self, MissionMeta};
 
 pub use map_engine_core::mission::flatten::{
-    mission_terrain_key, CompileError, ModMissionDocument, ModSlot,
+    CompileError, ModMissionDocument, ModSlot, mission_terrain_key,
 };
 
 /// Build the compiled mod mission document from a mission row + its version payload. Thin wrapper
