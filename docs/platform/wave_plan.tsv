@@ -46,6 +46,10 @@
 0	T-326	Matches played before an identity link never backfill, so deployments undercount	apps/website/api/src/handlers/me.rs
 0	T-324	Claiming a second ORBAT seat does not release the first	apps/website/api/src/handlers/events.rs
 0	T-228	ORBAT unique index omits faction — cross-faction squad names 500 on attach	apps/website/api/migrations
+1	T-340	GET /events/:id still 500s on a NULL briefing OR thumbnail_url	apps/website/api/src/handlers/events.rs
+1	T-341	deployments.rs has a bare SELECT * and swallows decode errors, in the file held up as the good example	apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/dashboard_reads.rs
+1	T-342	Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt	apps/website/frontend/src/personnel.rs
+1	T-343	warn_user accepts a whitespace-only reason — T-317's fix, one handler over	apps/website/api/src/handlers/admin.rs
 1	T-338	Sign-out does not purge local documents, so account A's mission is restorable by B	apps/website/frontend/src/mission_hydrate.rs; apps/website/frontend/src/yrs_persist.rs; apps/website/frontend/src/auth.rs
 1	T-339	Two gate-harness gaps T-320 could not reach from its own files	tools/tbd-tools/src/cdp.rs; tools/tbd-tools/src/bin/gate.rs; tools/tbd-tools/src/vsuite.rs
 1	T-337	Approving or rejecting a mission never touches updated_at	apps/website/api/src/handlers/approvals.rs

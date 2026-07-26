@@ -9401,14 +9401,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3139,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 1
+      "priority": 1,
+      "shipped_at": "367fcaf2"
     },
     {
       "id": "T-324",
@@ -9519,7 +9520,7 @@
     {
       "id": "T-329",
       "title": "GET /api/v1/dashboard 500s in production for two real users",
-      "summary": "FIRING RIGHT NOW ON LIVE DATA. Found by T-325's sweep and captured, not inferred:\n  `error occurred while decoding column \"callsign\": unexpected null`\n\nhandlers/dashboard.rs:101 does `SELECT orbat_slots.*`. It is the ONLY one of six OrbatSlot read sites that uses a bare `*` instead of the coalescing column list — the other five, e.g. deployments.rs:103, spell the columns out and COALESCE the nullable ones.\n\nIn the operator's `tbd_reforger` today: 9 of 16 orbat_slots rows carry a NULL in callsign/loadout/tag, and TWO of those have `assigned_to` set. So GET /api/v1/dashboard 500s right now for discord_ids ...002 and ...005. The dashboard is the landing page after login.\n\nFix is small: copy the coalescing column list from deployments.rs:103. Do NOT 'fix' it by making the model fields Option — T-325 established why that is wrong (the wire cannot express the distinction; `skip_serializing_if = String::is_empty` already omits the key, so None and \"\" would be two encodings of one state, and the committed goldens depend on the current shape).\n\nALSO IN SCOPE, because it is the reason this survived: tests/null_tolerance.rs is a purpose-built regression suite for exactly this bug class and MISSES all three instances T-325 found. It also never touches `matches` or `match_player_stats` at all. Extend it so this class cannot recur silently — that is worth more than the one-line query fix.",
+      "summary": "FIRING RIGHT NOW ON LIVE DATA. Found by T-325's sweep and captured, not inferred:\n  `error occurred while decoding column \"callsign\": unexpected null`\n\nhandlers/dashboard.rs:101 does `SELECT orbat_slots.*`. It is the ONLY one of six OrbatSlot read sites that uses a bare `*` instead of the coalescing column list — the other five, e.g. deployments.rs:103, spell the columns out and COALESCE the nullable ones.\n\nIn the operator's `tbd_reforger` today: 9 of 16 orbat_slots rows carry a NULL in callsign/loadout/tag, and TWO of those have `assigned_to` set. So GET /api/v1/dashboard 500s right now for discord_ids ...002 and ...005. The dashboard is the landing page after login.\n\nFix is small: copy the coalescing column list from deployments.rs:103. Do NOT 'fix' it by making the model fields Option — T-325 established why that is wrong (the wire cannot express the distinction; `skip_serializing_if = String::is_empty` already omits the key, so None and \"\" would be two encodings of one state, and the committed goldens depend on the current shape).\n\nALSO IN SCOPE, because it is the reason this survived: tests/null_tolerance.rs is a purpose-built regression suite for exactly this bug class and MISSES all three instances T-325 found. It also never touches `matches` or `match_player_stats` at all. Extend it so this class cannot recur silently — that is worth more than the one-line query fix.\n\nTWO CORRECTIONS TO THIS TICKET, from the agent that fixed it. The captured error I quoted names the WRONG COLUMN: `callsign` is NOT NULL on all 18 of the operator's orbat_slots rows. It is `tag` that is NULL — on 9 rows, including exactly the two with assigned_to set. Users and mechanism right, column wrong. And there are SEVEN OrbatSlot read sites, not six; dashboard.rs was the only bare one, the other six all coalesce.\n\nWHY null_tolerance.rs MISSED ALL THREE — three structural failures, not a forgotten case:\n  1. It LISTED endpoints — 5 of 44 GET routes, and none of the three defects lived in those 5.\n  2. ITS ROWS WERE UNREACHABLE. It authenticated as dev-login (...001) but seeded rows against ...099, and never set orbat_slots.assigned_to. Every `WHERE assigned_to = $me` branch — exactly where this bug lived — was dead. Calling /dashboard would have passed VACUOUSLY. tests/dashboard_reads.rs:80 still does that today.\n  3. It LISTED tables, never inserting matches/match_player_stats at all, and ASSUMED omitting an INSERT column yields NULL — true only while no nullable column has a DEFAULT, and never verified.\n\nNow it mints its own session so caller-scoped predicates resolve to its own rows; NULLs every nullable column from information_schema by explicit UPDATE and asserts the NULLs landed; sweeps every GET route with a guard that parses src/app.rs and fails when a route is added uncovered; and adds a STATIC ENUMERATOR cross-referencing every SELECT literal in src/ against information_schema, failing on a bare `*` or an un-COALESCEd nullable column. That half needs no predicate, so it reaches handlers no test exercises. Proven: reinstating the bare `*` turns both red, the static one naming the file and line. Catches all three known instances, each by both halves independently.\n\nHonest about residual gaps: select lists assembled past their literal prefix (QueryBuilder::push), untyped query/query_scalar, and non-GET handlers behaviourally (three OrbatSlot reads live in POST handlers, caught only by the static half).",
       "program": "platform",
       "surfaces": [
         "API"
@@ -9527,14 +9528,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3145,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 0
+      "priority": 0,
+      "shipped_at": "367fcaf2"
     },
     {
       "id": "T-330",
@@ -9733,6 +9735,86 @@
       ],
       "status": "idea",
       "order": 3155,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-340",
+      "title": "GET /events/:id still 500s on a NULL briefing OR thumbnail_url",
+      "summary": "T-307 IS STILL OPEN and now has a second instance. Confirmed by T-329 against main at ccbcda8b: T-324 shipped without fixing it.\n\nhandlers/events.rs:832 does `SELECT title, terrain, game_mode, briefing, thumbnail_url FROM missions` into a tuple of non-optional Strings. T-325 reported `briefing`; **`thumbnail_url` in the same query is a second, previously unreported instance.** GET /api/v1/events/{id} 500s on EITHER.\n\nIt is reachable from any fresh seed: seeds/mock_data.sql:25 omits thumbnail_url from its INSERT column list. So a developer seeding a clean database takes down the Event Hub and has no reason to suspect the query.\n\nFix at the query with COALESCE, NOT by making the model fields Option — read the reasoning T-325 recorded in models/telemetry.rs first; the wire contract is golden-tested and `None` vs `\"\"` would be two encodings of one state. T-330 also established that a nullable column with no DEFAULT can be NULL even when nothing writes it today, and that chaining through a sibling column (created_at) is more honest than a bare sentinel — consider whether thumbnail_url has an honest fallback.\n\nT-329's new static enumerator in tests/null_tolerance.rs already NAMES this file. Verify your fix clears its entry rather than just silencing it, and prune the tolerance entry in the same commit.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3156,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-341",
+      "title": "deployments.rs has a bare SELECT * and swallows decode errors, in the file held up as the good example",
+      "summary": "FOUND by T-329 while fixing the sibling bug. The irony is the point: deployments.rs:103 is what every other read site was told to copy, and two other statements in the same file are the defects it was supposed to model against.\n\n1. **`deployments.rs:76`** — `SELECT event_registrations.*`, the identical bare-`*` shape that made dashboard.rs 500 in production. Benign only because `slot_id` HAPPENS to be `Option<Uuid>` today. Any future nullable column on that table makes this a live 500, and nothing warns you.\n\n2. **`deployments.rs:55`** — `mission_title_terrain` swallows every error via `.ok().flatten()`, so a decode failure degrades silently to `None` instead of surfacing. That is the same class as the gate defects this program has fixed repeatedly: something reporting success while examining less than it claims. A missing mission title reads as 'no mission' rather than 'this query is broken'.\n\n3. **`tests/dashboard_reads.rs:80`** asserts /dashboard is 200 but passes VACUOUSLY — same reachability defect T-329 found in null_tolerance.rs: it authenticates as one user and the assertion depends on rows belonging to another. Fix it the way T-329 fixed its own: mint a session whose identity owns the seeded rows.\n\nT-329's static enumerator will name :76 once it runs; check whether it is in the tolerance list and prune it as part of this.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3157,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-342",
+      "title": "Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt",
+      "summary": "RECOMMENDED by T-323 with a hard engineering reason rather than a taste argument, which is why it is filed rather than dismissed.\n\npersonnel.rs's ban flow uses `window.prompt`. T-323 established, by trying: **overriding window.prompt from JS does NOT intercept the web_sys call** (patching Window.prototype.prompt does not either), and with the CDP Page domain enabled and no dialog handler a real prompt BLOCKS THE RENDERER. So the browser gate cannot drive this destructive admin action at all, in principle, while it remains a native prompt. T-323 had to prove its fix with host-side unit tests on an extracted `classify_ban_reason` instead — good work, but it means the actual click path is untested forever.\n\nA shared Dialog/Sheet also lets the required-reason rule be INLINE — disable the confirm button — rather than teaching it through an error toast after the fact, which is what T-323 had to settle for. The platform already has the Dialog vocabulary; T-226's Event Manager edit dialog (landed today, 31/31 browser assertions) is the freshest reference.\n\nTwo smaller items in the same file, worth folding in:\n  - personnel.rs:333 — the role editor still does `Err(_) => toasts.error(\"Failed to update role\")`, discarding the server message exactly as the ban did. One-line api_error_message fix.\n  - 'Issue Warning' is still a mock toast although POST /admin/users/:id/warnings exists.\n\nNote the browser gate is HEALTHY as of T-320, so a Dialog version IS testable end to end — that is the payoff.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3158,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-343",
+      "title": "warn_user accepts a whitespace-only reason — T-317's fix, one handler over",
+      "summary": "FOUND by T-323. `handlers/admin.rs:284-286` — `warn_user` checks `input.reason.is_empty()` WITHOUT trimming, so a whitespace-only warning reason is accepted and stored. That is precisely the defect T-317 closed for `ban_user` in the same file this morning, one handler down.\n\nT-317 swept for extractor collapses and fixed those; this is the adjacent shape — a present-but-meaningless value rather than an absent one — and it was missed because the sweep keyed on `#[serde(default)]` and `.ok().unwrap_or_default()`, not on unguarded emptiness checks.\n\nAlso inconsistent: warn_user's message is `\"reason required\"` while ban_user's is `\"reason is required\"`. Pick one; a client matching on error text will be surprised.\n\nWhile in there, sweep for the third shape: every `is_empty()` guard in the crate that should be `trim().is_empty()`. T-319 fixed one in me.rs; T-326 fixed another in ingest_link_confirm, where an untrimmed arma_id made an account read as linked while being invisible to every future match ingest. This class has produced four tickets and the sweep has never been done systematically.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3159,
       "stream": "web-platform",
       "targets": [
         "website"

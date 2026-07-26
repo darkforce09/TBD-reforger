@@ -238,6 +238,53 @@ touch_changed() {
   done
 }
 
+# Clippy, scoped to the crates the slice actually touched, WITH --all-targets.
+#
+# WHY THIS EXISTS: the slice gate ran check + wasm32 + fmt and no clippy at all, so a lint in a slice's
+# own code could not surface until the wave gate ran `clippy --all-targets` on merged main — where it
+# reads as somebody else's problem and blocks every other slice in the group. Hit for real on T-329,
+# which added a large test file: `doc_list_item_without_indentation` and an unnecessary `to_string`,
+# both in code it wrote, neither visible to the gate it was told to pass.
+#
+# --all-targets is the load-bearing flag: the wave gate uses it, so tests and benches are gated there.
+# Without it here, a test-only lint is invisible to the agent and certain to land red. That is exactly
+# the T-329 case.
+#
+# Scoped to changed crates rather than the workspace because `clippy --workspace -D warnings` is red on
+# clean main (~45 errors in tools/tbd-tools and xtask, which CI has never gated) — a gate nothing can
+# pass teaches agents that gate failures are noise. Frontend goes through wasm32 with NO -D, matching
+# ci.yml:113; everything else takes -D warnings, matching the wave gate.
+clippy_changed() {
+  local base="${1:-main...HEAD}" files crates=() c
+  files="$( { git diff --name-only "$base" 2>/dev/null
+              git status --porcelain 2>/dev/null | sed 's/^...//'
+            } | grep '\.rs$' | sort -u || true)"
+  [ -z "$files" ] && { echo "no rust changes"; return 0; }
+  # Map each file to its owning crate by walking up to the nearest Cargo.toml with a [package] name.
+  for f in $files; do
+    local d; d="$(dirname "$f")"
+    while [ "$d" != "." ] && [ "$d" != "/" ]; do
+      if [ -f "$d/Cargo.toml" ] && grep -q '^\[package\]' "$d/Cargo.toml" 2>/dev/null; then
+        c="$(sed -n '/^\[package\]/,/^\[/p' "$d/Cargo.toml" | sed -n 's/^name *= *"\([^"]*\)".*/\1/p' | head -1)"
+        [ -n "$c" ] && case " ${crates[*]-} " in *" $c "*) ;; *) crates+=("$c") ;; esac
+        break
+      fi
+      d="$(dirname "$d")"
+    done
+  done
+  [ "${#crates[@]}" -eq 0 ] && { echo "no crate resolved"; return 0; }
+  for c in "${crates[@]}"; do
+    case "$c" in
+      website-frontend)
+        hostrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --quiet || return 1 ;;
+      # Not gated by CI and red on clean main — checking them would fail every slice that touches them.
+      tbd-tools|xtask) printf '(skipped %s: red on main, ungated by CI) ' "$c" ;;
+      *)
+        hostrun cargo clippy -p "$c" --all-targets --quiet -- -D warnings || return 1 ;;
+    esac
+  done
+}
+
 # Cheap gate — what a slice agent runs before reporting done. Target: ~10 s warm.
 gate_slice() {
   local tid="${1:-}"
@@ -249,6 +296,7 @@ gate_slice() {
   run "cargo check"  hostrun cargo check --workspace --quiet
   run "wasm32 (frontend)" wasm_changed
   run "fmt (changed)" fmt_changed
+  run "clippy (changed crates)" clippy_changed
   echo
   [ "$fail" -ne 0 ] && { echo "SLICE GATE: FAIL"; return 1; }
   echo "SLICE GATE: PASS"
