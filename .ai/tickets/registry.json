@@ -11191,7 +11191,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3230,
       "stream": "web-platform",
       "targets": [
