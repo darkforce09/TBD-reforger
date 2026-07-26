@@ -2,13 +2,31 @@
 //! Resource → `QueryState` (loading/error/content) → the bento (hero + server/deployment/modpack
 //! cards + intelligence feed). DOM + class strings matched 1:1 to the React render (authed V-gate).
 //!
-//! **Gate scope (this slice):** the empty-DB `/dashboard` golden — `next_event`/`my_assignment`/
-//! `server_status` null, `current_modpack` present, no announcements — so the *null/empty* branches
-//! (and the modpack card via [`format_bytes`]) are byte-exact-verified. The populated branches
-//! (countdown, live server stats, assignment, announcement rows) render faithfully but are only
-//! V-gate-covered once a seeded content golden exists (follow-up); their date/uptime formatters port
-//! then. Nested bodies stay `serde_json::Value` until their own DTOs are golden-proven.
+//! **Empty-DB golden (unchanged):** with `next_event`/`my_assignment`/`server_status` null,
+//! `current_modpack` present and no announcements, every null/empty branch still renders
+//! byte-for-byte as before — the T-232 work below only touches the `Some`/non-empty arms.
+//!
+//! **T-232 — this is a bento, not a list, so its one `().into_any()` gated only part of the page.**
+//! The hero, the three cards and the feed each have their own branch, and three of them were wrong
+//! against real data:
+//!
+//! 1. **Intelligence feed rows** — the literal `().into_any()`. A non-empty
+//!    `recent_announcements` (3 rows live) rendered *nothing*: the card had a heading over blank
+//!    space. Now one date-pill + title + snippet row per announcement, linking to `/announcements`.
+//! 2. **Hero countdown** — read `format!("T-MINUS {}", start_time)`, i.e. the literal
+//!    `T-MINUS 2026-08-01T19:00:00Z`. `datefmt::countdown_label` is the port of the React
+//!    `countdownLabel` the spec asks for (element 3) and was already in the tree, unused here.
+//! 3. **Server uptime** — the `Some` and `None` arms both returned `"—"`, so an online server with
+//!    `uptime_seconds: 19842` reported no uptime at all. Now `format_uptime`.
+//!
+//! One more live defect in the same block: `server_fps` is `numeric(5,1)` on the wire (`58.7`), and
+//! reading it with `as_i64()` yields `None` → the card rendered a confident **`FPS: 0`** for a
+//! healthy server. It is read as an `f64` now. See the report for the matching `dto.rs` bug this
+//! shares a root cause with.
+//!
+//! Nested bodies stay `serde_json::Value` until their own DTOs are golden-proven.
 #![allow(dead_code)]
+use crate::datefmt::{countdown_label, format_short_date};
 use crate::dto::DashboardResponse;
 use crate::ui::{cn, AuthGate, MaterialIcon};
 use leptos::prelude::*;
@@ -38,6 +56,22 @@ fn vint(v: &Value, k: &str) -> i64 {
 }
 fn vbool(v: &Value, k: &str) -> bool {
     v.get(k).and_then(Value::as_bool).unwrap_or(false)
+}
+/// `server_fps` is `numeric(5,1)` (`58.7`), so it must be read as a float — `as_i64()` returns
+/// `None` on a non-integral number and the `unwrap_or(0)` behind it printed `FPS: 0` for a healthy
+/// server. `as_f64()` accepts both an integral and a fractional JSON number.
+fn vf64(v: &Value, k: &str) -> Option<f64> {
+    v.get(k).and_then(Value::as_f64)
+}
+
+/// lib/format.ts `formatUptime` — HH:MM:SS zero-padded. A local copy of `server_intel.rs`'s
+/// helper: that one is private to its module and `server_intel.rs` is not T-232's to change. Lifting
+/// the pair into a shared home is noted as a follow-up rather than done from inside this slice.
+fn format_uptime(seconds: i64) -> String {
+    let h = seconds / 3600;
+    let m = (seconds % 3600) / 60;
+    let s = seconds % 60;
+    format!("{h:02}:{m:02}:{s:02}")
 }
 
 #[component]
@@ -119,8 +153,18 @@ fn bento(d: DashboardResponse) -> impl IntoView {
                 <div class="relative z-10 flex w-full flex-wrap items-end justify-between gap-4">
                     <div class="flex flex-col">
                         <h2 class="text-glow mb-2 font-mono text-5xl font-bold tracking-tighter text-primary md:text-7xl">
+                            // T-232: was `format!("T-MINUS {}", start_time)` — the raw ISO instant.
+                            // `countdown_label` is the `countdownLabel` port (and yields "LIVE NOW"
+                            // once the operation has started, which the raw string never could).
                             {match &next {
-                                Some(n) => format!("T-MINUS {}", vstr(n, "start_time")),
+                                Some(n) => {
+                                    let label = countdown_label(&vstr(n, "start_time"));
+                                    if label == "LIVE NOW" {
+                                        label
+                                    } else {
+                                        format!("T-MINUS {label}")
+                                    }
+                                }
                                 None => "NO UPCOMING OPS".to_string(),
                             }}
                         </h2>
@@ -206,16 +250,18 @@ fn bento(d: DashboardResponse) -> impl IntoView {
                         // "FPS: " literal + the value are separate text nodes (React JSX split).
                         <span>
                             "FPS: "
-                            {match &server {
-                                Some(s) => vint(s, "server_fps").to_string(),
+                            // T-232: read as f64 — `numeric(5,1)` on the wire, so `as_i64()` was
+                            // always `None` and this printed `0`.
+                            {match server.as_ref().and_then(|s| vf64(s, "server_fps")) {
+                                Some(f) => format!("{f}"),
                                 None => "—".to_string(),
                             }}
                         </span>
                         <span>
                             "UPTIME: "
-                            // formatUptime(uptime_seconds) for the Some case is content-golden gated.
+                            // T-232: both arms returned "—", so uptime never rendered at all.
                             {match &server {
-                                Some(_s) => "—".to_string(),
+                                Some(s) => format_uptime(vint(s, "uptime_seconds")),
                                 None => "—".to_string(),
                             }}
                         </span>
@@ -338,11 +384,73 @@ fn bento(d: DashboardResponse) -> impl IntoView {
                         }
                             .into_any()
                     } else {
-                        // Populated announcement rows: content-golden gated (see module note).
-                        ().into_any()
+                        announcements.into_iter().map(intel_row).collect_view().into_any()
                     }}
                 </div>
             </div>
         </div>
+    }
+}
+
+/// One Recent Intelligence row — spec elements 19/20: a mono date pill, the headline, the snippet,
+/// and the whole row a link.
+///
+/// Element 20 wants `/announcements/:id`, but `router.rs` registers no such route (the feed is a
+/// `SplitPane` with in-page selection, not a per-post page), so an anchor there would 404 on the
+/// SPA. It links to `/announcements` instead, which is where the reader for that post actually
+/// lives. Deep-linking a selected broadcast needs a route this slice does not own — reported.
+fn intel_row(a: Value) -> impl IntoView {
+    let title = vstr(&a, "title");
+    let title = if title.is_empty() {
+        "Untitled Post".to_string()
+    } else {
+        title
+    };
+    let pinned = vbool(&a, "is_pinned");
+    let date = format_short_date(&vstr(&a, "published_at"));
+    // `snippet` is optional on the wire; fall back to the body's opening paragraph so a post
+    // published without one is not a bare headline.
+    let snippet = {
+        let s = vstr(&a, "snippet");
+        if s.is_empty() {
+            vstr(&a, "body")
+                .split("\n\n")
+                .next()
+                .unwrap_or_default()
+                .to_string()
+        } else {
+            s
+        }
+    };
+    view! {
+        <a
+            href="/announcements"
+            class="group/row flex items-start gap-3 rounded-lg border border-transparent p-3 transition-all hover:border-outline-variant/30 hover:bg-surface-variant/40"
+        >
+            <span class="mt-0.5 shrink-0 rounded border border-border-subtle bg-surface-container-lowest px-2 py-0.5 font-mono text-[10px] tracking-widest text-on-surface-variant uppercase">
+                {date}
+            </span>
+            <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                    {pinned
+                        .then(|| {
+                            view! { <MaterialIcon name="push_pin" class="text-[14px] text-tactical-yellow" /> }
+                        })}
+                    <h4 class="truncate text-label-md font-semibold text-on-surface-variant group-hover/row:text-on-surface">
+                        {title}
+                    </h4>
+                </div>
+                {(!snippet.is_empty())
+                    .then(|| {
+                        view! {
+                            <p class="mt-1 line-clamp-2 text-label-sm text-outline">{snippet}</p>
+                        }
+                    })}
+            </div>
+            <MaterialIcon
+                name="chevron_right"
+                class="mt-0.5 shrink-0 text-[18px] text-outline transition-transform group-hover/row:translate-x-0.5"
+            />
+        </a>
     }
 }
