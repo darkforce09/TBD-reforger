@@ -6991,13 +6991,14 @@
       "impact": [
         "arsenal"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2170,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "b53866e0"
     },
     {
       "id": "T-200",
