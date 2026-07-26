@@ -65,6 +65,32 @@ pub async fn discord_login(State(state): State<AppState>) -> Response {
     }
 }
 
+/// Clear the CSRF `oauth_state` cookie. Every callback response that has decided
+/// the cookie is missing/invalid — or that has successfully consumed it — must
+/// emit this. T-248: the early `missing_code` / `invalid_state` returns used to
+/// skip it and leave the ten-minute cookie live for replay.
+const OAUTH_STATE_CLEAR: &str = "oauth_state=; Path=/; Max-Age=0; HttpOnly";
+
+/// CSRF pre-check for the Discord callback. `Some(resp)` is a finished error
+/// redirect that already clears `oauth_state`; `None` means state matched and
+/// the caller may proceed (and must still clear the cookie on every exit).
+fn callback_csrf_reject(fe: &str, q: &CallbackQuery, headers: &HeaderMap) -> Option<Response> {
+    if q.code.is_empty() || q.state.is_empty() {
+        return Some(with_set_cookie(
+            redirect_auth_error(fe, "missing_code"),
+            OAUTH_STATE_CLEAR,
+        ));
+    }
+    let cookie_state = read_cookie(headers, "oauth_state").unwrap_or_default();
+    if cookie_state.is_empty() || !auth::constant_time_equal(&q.state, &cookie_state) {
+        return Some(with_set_cookie(
+            redirect_auth_error(fe, "invalid_state"),
+            OAUTH_STATE_CLEAR,
+        ));
+    }
+    None
+}
+
 /// `GET /api/v1/auth/discord/callback` — complete the flow.
 ///
 /// @route GET /api/v1/auth/discord/callback
@@ -74,16 +100,11 @@ pub async fn discord_callback(
     Query(q): Query<CallbackQuery>,
 ) -> Response {
     let fe = &state.cfg.frontend_url;
-    if q.code.is_empty() || q.state.is_empty() {
-        return redirect_auth_error(fe, "missing_code");
-    }
-    let cookie_state = read_cookie(&headers, "oauth_state").unwrap_or_default();
-    if cookie_state.is_empty() || !auth::constant_time_equal(&q.state, &cookie_state) {
-        return redirect_auth_error(fe, "invalid_state");
+    if let Some(reject) = callback_csrf_reject(fe, &q, &headers) {
+        return reject;
     }
     // State is valid — every response from here clears the cookie (Go clears here too).
-    const CLEAR: &str = "oauth_state=; Path=/; Max-Age=0; HttpOnly";
-    let err = |reason: &str| with_set_cookie(redirect_auth_error(fe, reason), CLEAR);
+    let err = |reason: &str| with_set_cookie(redirect_auth_error(fe, reason), OAUTH_STATE_CLEAR);
 
     let Ok(tok) = state.discord.exchange_code(&q.code).await else {
         return err("discord_unreachable");
@@ -223,7 +244,7 @@ pub async fn discord_callback(
 
     with_set_cookie(
         session_redirect(fe, &access, &refresh, exp, arma_linked),
-        CLEAR,
+        OAUTH_STATE_CLEAR,
     )
 }
 
@@ -413,5 +434,71 @@ mod tests {
         assert!(!guild_configured(""));
         assert!(!guild_configured("   "));
         assert!(guild_configured("1517285898817896559"));
+    }
+
+    fn set_cookie_values(resp: &Response) -> Vec<String> {
+        resp.headers()
+            .get_all(header::SET_COOKIE)
+            .iter()
+            .filter_map(|v| v.to_str().ok().map(str::to_string))
+            .collect()
+    }
+
+    fn clears_oauth_state(resp: &Response) -> bool {
+        set_cookie_values(resp).iter().any(|c| {
+            c.contains("oauth_state=") && c.contains("Max-Age=0") && c.contains("HttpOnly")
+        })
+    }
+
+    /// T-248 — `missing_code` must clear the CSRF cookie. Before the fix the early
+    /// return skipped `OAUTH_STATE_CLEAR` and left the ten-minute cookie live.
+    #[test]
+    fn missing_code_clears_oauth_state_cookie() {
+        let q = CallbackQuery {
+            code: String::new(),
+            state: String::new(),
+        };
+        let headers = HeaderMap::new();
+        let resp = callback_csrf_reject("http://localhost:5173", &q, &headers)
+            .expect("empty code/state must reject");
+        assert!(
+            clears_oauth_state(&resp),
+            "missing_code must Set-Cookie oauth_state Max-Age=0; got {:?}",
+            set_cookie_values(&resp)
+        );
+        let loc = resp.headers()[header::LOCATION].to_str().unwrap();
+        assert!(loc.contains("error=missing_code"), "{loc}");
+    }
+
+    /// T-248 — `invalid_state` (present query, absent/mismatched cookie) must clear too.
+    #[test]
+    fn invalid_state_clears_oauth_state_cookie() {
+        let q = CallbackQuery {
+            code: "abc".into(),
+            state: "xyz".into(),
+        };
+        let mut headers = HeaderMap::new();
+        headers.insert(header::COOKIE, HeaderValue::from_static("oauth_state=other"));
+        let resp = callback_csrf_reject("http://localhost:5173", &q, &headers)
+            .expect("mismatched state must reject");
+        assert!(
+            clears_oauth_state(&resp),
+            "invalid_state must Set-Cookie oauth_state Max-Age=0; got {:?}",
+            set_cookie_values(&resp)
+        );
+        let loc = resp.headers()[header::LOCATION].to_str().unwrap();
+        assert!(loc.contains("error=invalid_state"), "{loc}");
+    }
+
+    /// Matching state is not a reject — the caller proceeds and clears on every exit.
+    #[test]
+    fn matching_state_is_not_a_csrf_reject() {
+        let q = CallbackQuery {
+            code: "abc".into(),
+            state: "good".into(),
+        };
+        let mut headers = HeaderMap::new();
+        headers.insert(header::COOKIE, HeaderValue::from_static("oauth_state=good"));
+        assert!(callback_csrf_reject("http://localhost:5173", &q, &headers).is_none());
     }
 }
