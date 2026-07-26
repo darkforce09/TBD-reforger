@@ -195,7 +195,9 @@ pub fn MissionEditorPage() -> impl IntoView {
         // engine-independent, so the dock fills even if wgpu never comes up. `kind == "character"`
         // rows only — `build_catalog_tree` is the T-068.3 `buildCatalogTree` port.
         spawn_local({
-            use crate::asset_catalog::{build_catalog_tree, build_vehicle_catalog_tree, CatalogState};
+            use crate::asset_catalog::{
+                build_catalog_tree, build_vehicle_catalog_tree, CatalogState,
+            };
             async move {
                 match crate::client::api_get::<crate::dto::RegistryResponse>(auth, "/registry")
                     .await
@@ -1361,6 +1363,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                     <crate::eden_chrome::DockRight
                         catalog
                         vehicle_catalog
+                        registry_items
+                        doc_tick
                         fm_open
                         active_side
                         objects_mode

@@ -1640,9 +1640,7 @@ pub fn vehicle_rows() -> Vec<VehicleRow> {
                 VehicleRow {
                     id: id.clone(),
                     resource_name: s("resourceName"),
-                    xy: pos.and_then(|p| {
-                        Some((p.get("x")?.as_f64()?, p.get("y")?.as_f64()?))
-                    }),
+                    xy: pos.and_then(|p| Some((p.get("x")?.as_f64()?, p.get("y")?.as_f64()?))),
                     faction_id: s("factionId"),
                     squad_id: s("squadId"),
                     cargo: v

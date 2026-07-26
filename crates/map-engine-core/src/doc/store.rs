@@ -2625,7 +2625,14 @@ mod tests {
     #[test]
     fn map_placed_vehicle_cargo_round_trips_as_entity_inventory_rows() {
         let doc = orbat_fixture();
-        doc.add_vehicle("veh-map", "{AAAA}Prefabs/Vehicles/T.et", Some(1.5), Some(2.5), Some(0.0), Some(0.0));
+        doc.add_vehicle(
+            "veh-map",
+            "{AAAA}Prefabs/Vehicles/T.et",
+            Some(1.5),
+            Some(2.5),
+            Some(0.0),
+            Some(0.0),
+        );
         doc.set_vehicle_cargo(
             "veh-map",
             &[
@@ -2653,15 +2660,22 @@ mod tests {
     #[test]
     fn set_vehicle_cargo_drops_unrepresentable_rows_and_clears_on_empty() {
         let doc = orbat_fixture();
-        doc.add_vehicle("v", "{AAAA}P.et", Some(1.0), Some(1.0), Some(0.0), Some(0.0));
+        doc.add_vehicle(
+            "v",
+            "{AAAA}P.et",
+            Some(1.0),
+            Some(1.0),
+            Some(0.0),
+            Some(0.0),
+        );
 
         doc.set_vehicle_cargo(
             "v",
             &[
-                ("   ".to_string(), 3),               // empty item — minLength: 1
-                ("{BBBB}P.et".to_string(), 0),        // qty 0 — minimum: 1
-                ("{CCCC}P.et".to_string(), -1),       // negative qty
-                ("{DDDD}P.et".to_string(), 1),        // the only representable row
+                ("   ".to_string(), 3),         // empty item — minLength: 1
+                ("{BBBB}P.et".to_string(), 0),  // qty 0 — minimum: 1
+                ("{CCCC}P.et".to_string(), -1), // negative qty
+                ("{DDDD}P.et".to_string(), 1),  // the only representable row
             ],
         );
         assert_eq!(
