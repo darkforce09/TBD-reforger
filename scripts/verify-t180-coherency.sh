@@ -64,6 +64,28 @@ cargo test -p map-engine-core --features mission --lib derives_from_editor_sorte
 cargo test -p map-engine-core --features mission --lib compile_export_orbat_loadout -- --quiet
 ok "derive/compile loadout gates"
 
+# ── T-216 — THE COMPILE BOUNDARY. Read this before trimming the list above. ───
+#
+# Every selector in this file up to here proves the editor can AUTHOR a T-180 value
+# (doc::place_orbat, doc::store), that the map can DRAW it (slots_gpu, map-engine-render)
+# or that the ORBAT derive keeps it (mission::orbat, mission::compile). Not one of them
+# named a test in `mission::flatten` — so the gate never crossed the edge where the
+# document is handed to the game server, and six values crossed nothing: a squad's
+# leaderSlotId, a slot's tag / callsign / rank / stance, and the whole vehicle roster.
+# Measured 2026-07-26: a payload authoring all six compiles to a document carrying none,
+# with this script printing ALL PASS. A gate is worth nothing until you know what it looked at.
+#
+# These two are that missing edge. The ledger walks each value from the saved payload to
+# the serialized wire and asserts against mission.schema.json — so when the contract widens
+# (T-242), the row for the newly-legal key turns red and the dead feature becomes visible
+# work instead of staying quietly dead. The second pins the compiled slot's key set, so
+# nothing can be added to or removed from the website<->mod interface in silence.
+cargo test -p map-engine-core --features mission --lib \
+  the_compile_boundary_ledger_is_checked_against_the_contract -- --quiet
+cargo test -p map-engine-core --features mission --lib \
+  a_compiled_slot_carries_exactly_these_keys -- --quiet
+ok "compile-boundary ledger + compiled-slot key set"
+
 # ── E / F / G / H / I — FE (bin crate) ────────────────────────────────────────
 cargo test -p website-frontend eden_side -- --quiet
 cargo test -p website-frontend apply_eden -- --quiet
