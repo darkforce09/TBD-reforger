@@ -235,6 +235,18 @@ class TBD_MissionFlowStruct
 	string jip;                    //!< "disabled" | "until_safestart_end" | "always". Empty = absent.
 }
 
+//! One mission-placed world object (`mission.schema.json#/$defs/entity`) — T-254.
+//! Field names must equal the JSON keys. OPTIONAL inventory is ignored here (no consumer yet).
+//! @contract mission.schema.json#/$defs/entity
+class TBD_MissionEntityStruct
+{
+	string alias;      //!< Registry alias (`prop:`/`comp:`/…). Schema-required.
+	float x;           //!< World X metres. Schema-required.
+	float z;           //!< World Z metres. Schema-required.
+	float headingDeg;  //!< Yaw degrees 0..360. OPTIONAL — 0 when absent (JsonLoadContext default).
+	string faction;    //!< Faction key. OPTIONAL — empty when absent.
+}
+
 //! Full mission document parsed from the backend — the canonical contract the loader
 //! consumes. schemaVersion is the canonical STRING ("1.0"/"1.1"/"1.2"), distinct from the
 //! website's integer editor/export version. Field names must equal the JSON keys.
@@ -247,6 +259,11 @@ class TBD_MissionDocumentStruct
 	ref array<ref TBD_MissionZoneStruct> zones;               //!< Spawn/objective/boundary zones.
 	ref map<string, ref TBD_MissionOrbatFactionStruct> orbat; //!< ORBAT keyed by faction.
 	ref array<ref TBD_MissionSlotStruct> slots;               //!< Flattened spawn slots (schema 1.1).
+	//! T-254 — mission-placed world objects (`entities[]`). OPTIONAL: missions authored before
+	//! this field existed carry none, so null here is legal. When present, `SpawnMissionEntities`
+	//! places them so destroy-alias resolution can find them in the world.
+	//! @contract mission.schema.json#/properties/entities
+	ref array<ref TBD_MissionEntityStruct> entities;
 	ref TBD_MissionWinConditionsStruct winConditions;         //!< T-181.13 round-end triggers.
 	//! T-181.38 — event pacing. ALWAYS non-null after a parse, even for a mission with no `flow`
 	//! key: `JsonLoadContext` allocates it regardless. Test its FIELDS against
@@ -406,6 +423,85 @@ class TBD_MissionLoader
 			return null;
 
 		return s_Mission.zones;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-254 — the raw `entities[]` array, or null when no VALID mission is loaded / none authored.
+	//! @contract mission.schema.json#/properties/entities
+	static array<ref TBD_MissionEntityStruct> GetEntities()
+	{
+		if (!s_Valid || !s_Mission)
+			return null;
+
+		return s_Mission.entities;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-254 — spawn every authored `entities[]` row into the world so destroy-alias resolution
+	//! (`TBD_ObjectiveRegistry.ArmDestroyTargets`) can find matching prefabs inside its zone.
+	//!
+	//! Resolves each `alias` through `TBD_Registry` (auto-loads if needed). Rows whose alias is not
+	//! in `Data/registry.json` are skipped with a warning — extending that file with `prop:`/`comp:`
+	//! rows is outside this loader's owns when the Objects palette synthesises new aliases.
+	//! Idempotent for a given load: call once after a valid parse (see `ParseMissionJson`).
+	static void SpawnMissionEntities()
+	{
+		array<ref TBD_MissionEntityStruct> entities = GetEntities();
+		if (!entities || entities.Count() == 0)
+			return;
+
+		int spawned = 0;
+		int skipped = 0;
+		foreach (TBD_MissionEntityStruct ent : entities)
+		{
+			if (!ent || ent.alias.IsEmpty())
+			{
+				skipped++;
+				continue;
+			}
+
+			bool ok;
+			ResourceName prefab = TBD_Registry.Resolve(ent.alias, ok);
+			if (!ok || prefab.IsEmpty())
+			{
+				Print(string.Format("[TBD][Entities] skip alias='%1' — not in registry", ent.alias), LogLevel.WARNING);
+				skipped++;
+				continue;
+			}
+
+			Resource resource = Resource.Load(prefab);
+			if (!resource || !resource.IsValid())
+			{
+				Print(string.Format("[TBD][Entities] Resource.Load failed for alias='%1' prefab=%2", ent.alias, prefab), LogLevel.ERROR);
+				skipped++;
+				continue;
+			}
+
+			float surfaceY = GetGame().GetWorld().GetSurfaceY(ent.x, ent.z);
+			vector pos = Vector(ent.x, surfaceY, ent.z);
+
+			EntitySpawnParams params = new EntitySpawnParams();
+			params.TransformMode = ETransformMode.WORLD;
+			Math3D.MatrixIdentity4(params.Transform);
+			params.Transform[3] = pos;
+
+			float yawRad = ent.headingDeg * Math.DEG2RAD;
+			params.Transform[0] = Vector(Math.Cos(yawRad), 0, Math.Sin(yawRad));
+			params.Transform[2] = Vector(-Math.Sin(yawRad), 0, Math.Cos(yawRad));
+
+			IEntity body = GetGame().SpawnEntityPrefab(resource, GetGame().GetWorld(), params);
+			if (!body)
+			{
+				Print(string.Format("[TBD][Entities] SpawnEntityPrefab failed for alias='%1'", ent.alias), LogLevel.ERROR);
+				skipped++;
+				continue;
+			}
+
+			spawned++;
+			Print(string.Format("[TBD][Entities] spawned alias='%1' at %2 heading=%3", ent.alias, pos.ToString(), ent.headingDeg));
+		}
+
+		Print(string.Format("[TBD][Entities] spawn done spawned=%1 skipped=%2", spawned, skipped));
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -703,6 +799,10 @@ class TBD_MissionLoader
 		}
 
 		s_Valid = true;
+
+		// T-254 — place authored entities[] so destroy targets can exist in the world. Registry
+		// Resolve auto-loads; unknown aliases are warned and skipped inside SpawnMissionEntities.
+		SpawnMissionEntities();
 
 		// T-181.13.1 — a valid mission document is the earliest moment an end-of-round results
 		// report could mean anything, and this is a server-only path (BeginLoad is reached only

@@ -57,6 +57,9 @@ pub struct MissionDocCore {
     meta: MapRef,
     /// Root `vehicles` map (`vehiclesById` in [`Self::small_maps_json`]) — undo-scoped (T-180.2).
     vehicles: MapRef,
+    /// Root `entities` map (`entitiesById` in [`Self::small_maps_json`]) — undo-scoped (T-254).
+    /// Mission-placed world objects (props/crates/compositions) for schema `entities[]`.
+    entities: MapRef,
     /// When true, mutators stamp `INIT` (untracked) instead of `LOCAL` — set around boot / hydrate /
     /// default-seeding so a load is not an undo step. Interior mutability: mutators take `&self`.
     init_mode: Cell<bool>,
@@ -75,6 +78,7 @@ impl MissionDocCore {
         let editor_layers = doc.get_or_insert_map("editorLayers");
         let meta = doc.get_or_insert_map("meta");
         let vehicles = doc.get_or_insert_map("vehicles");
+        let entities = doc.get_or_insert_map("entities");
 
         // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
         // stack item only when `last_change > 0 && now - last_change < capture_timeout_millis`
@@ -104,6 +108,7 @@ impl MissionDocCore {
         undo_mgr.expand_scope(&doc, &editor_layers);
         undo_mgr.expand_scope(&doc, &meta);
         undo_mgr.expand_scope(&doc, &vehicles);
+        undo_mgr.expand_scope(&doc, &entities);
 
         Self {
             doc,
@@ -113,6 +118,7 @@ impl MissionDocCore {
             editor_layers,
             meta,
             vehicles,
+            entities,
             init_mode: Cell::new(false),
             undo_mgr,
         }
@@ -170,13 +176,14 @@ impl MissionDocCore {
         // Grab the root handles before opening the read txn (`get_or_insert_map` takes `&self`).
         let meta = self.doc.get_or_insert_map("meta");
         let payload_extras = self.doc.get_or_insert_map("payloadExtras");
-        let named: [(&str, MapRef); 8] = [
+        let named: [(&str, MapRef); 9] = [
             ("factionsById", self.doc.get_or_insert_map("factions")),
             ("squadsById", self.doc.get_or_insert_map("squads")),
             ("loadoutsById", self.doc.get_or_insert_map("loadouts")),
             ("itemsById", self.doc.get_or_insert_map("items")),
             ("objectivesById", self.doc.get_or_insert_map("objectives")),
             ("vehiclesById", self.doc.get_or_insert_map("vehicles")),
+            ("entitiesById", self.doc.get_or_insert_map("entities")),
             ("markersById", self.doc.get_or_insert_map("markers")),
             (
                 "editorLayersById",
@@ -689,6 +696,48 @@ impl MissionDocCore {
         }
     }
 
+    /// T-254 — insert a mission-placed world object into `entitiesById`.
+    ///
+    /// Editor row shape: `{id, alias, resourceName, position}`. `alias` is the schema
+    /// `#/$defs/entity.alias` (`prop:`/`comp:`/…). `resourceName` is the registry-items
+    /// ResourceName the Objects palette dropped — kept for editor display/reload; flatten
+    /// drops it when emitting the game-server `entities[]` (schema `additionalProperties: false`).
+    /// Position is always written (Objects placement is map-only — there is no ORBAT-only path).
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_entity(
+        &self,
+        id: &str,
+        alias: &str,
+        resource_name: &str,
+        x: f64,
+        y: f64,
+        z: f64,
+        rotation: f64,
+    ) {
+        let mut txn = self.begin();
+        let e = self
+            .entities
+            .insert(&mut txn, id, MapPrelim::from([("id", id)]));
+        e.insert(&mut txn, "alias", alias);
+        e.insert(&mut txn, "resourceName", resource_name);
+        e.insert(&mut txn, "position", position_any(x, y, z, rotation));
+    }
+
+    /// T-254 — schema `entity.faction` (factionKey slug, e.g. `blufor`). Stored under the schema
+    /// key name so compile can pass the row through after stripping editor-only fields.
+    pub fn set_entity_faction(&self, entity_id: &str, faction: &str) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(e)) = self.entities.get(&txn, entity_id) {
+            e.insert(&mut txn, "faction", faction);
+        }
+    }
+
+    /// T-254 — delete a placed world-object row from `entitiesById`.
+    pub fn remove_entity(&self, entity_id: &str) {
+        let mut txn = self.begin();
+        self.entities.remove(&mut txn, entity_id);
+    }
+
     /// Flat `[x0,y0,x1,y1,…]` for every vehicle that has a `position` (T-180.8 map bind).
     /// Order is map-iteration order (not pick-indexed — vehicles stay off the slot SoA).
     #[must_use]
@@ -1190,6 +1239,7 @@ impl MissionDocCore {
         let items = self.doc.get_or_insert_map("items");
         let objectives = self.doc.get_or_insert_map("objectives");
         let vehicles = self.doc.get_or_insert_map("vehicles");
+        let entities = self.doc.get_or_insert_map("entities");
         let markers = self.doc.get_or_insert_map("markers");
         let payload_extras = self.doc.get_or_insert_map("payloadExtras");
 
@@ -1203,6 +1253,7 @@ impl MissionDocCore {
             &items,
             &objectives,
             &vehicles,
+            &entities,
             &markers,
             &payload_extras,
         ] {
@@ -1220,6 +1271,7 @@ impl MissionDocCore {
 
         load_rows(&mut txn, &objectives, payload.get("objectives"));
         load_rows(&mut txn, &vehicles, payload.get("vehicles"));
+        load_rows(&mut txn, &entities, payload.get("entities"));
         load_rows(&mut txn, &markers, payload.get("markers"));
         if let Some(Any::Map(lo)) = payload.get("loadouts") {
             for v in lo.values() {
@@ -1588,17 +1640,19 @@ impl MissionDocCore {
     }
 
     /// True if the doc holds authored content beyond seeded defaults — any faction / slot / objective
-    /// / vehicle / marker. Backs `useMissionEditor.hasLocalContent` (the warm-session / conflict gate).
+    /// / vehicle / entity / marker. Backs `useMissionEditor.hasLocalContent` (the warm-session / conflict gate).
     #[must_use]
     pub fn has_content(&self) -> bool {
         let objectives = self.doc.get_or_insert_map("objectives");
         let vehicles = self.doc.get_or_insert_map("vehicles");
+        let entities = self.doc.get_or_insert_map("entities");
         let markers = self.doc.get_or_insert_map("markers");
         let txn = self.doc.transact();
         self.factions.len(&txn) > 0
             || self.slots.len(&txn) > 0
             || objectives.len(&txn) > 0
             || vehicles.len(&txn) > 0
+            || entities.len(&txn) > 0
             || markers.len(&txn) > 0
     }
 }
@@ -1821,6 +1875,7 @@ fn is_known_editor_payload_top_level(key: &str) -> bool {
             | "loadouts"
             | "objectives"
             | "vehicles"
+            | "entities"
             | "markers"
             | "editor"
             | "orbat"
@@ -2277,6 +2332,7 @@ mod tests {
             "itemsById",
             "objectivesById",
             "vehiclesById",
+            "entitiesById",
             "markersById",
             "editorLayersById",
         ] {
@@ -2586,6 +2642,39 @@ mod tests {
             "detach must keep the vehicle row"
         );
         assert!(root["vehiclesById"]["veh-1"].get("squadId").is_none());
+    }
+
+    /// T-254 — `add_entity` writes alias + resourceName + position into `entitiesById`, and
+    /// `set_entity_faction` stamps the schema factionKey. Undo removes the row.
+    #[test]
+    fn add_entity_materializes_entities_by_id_and_is_undoable() {
+        let mut doc = MissionDocCore::new();
+        doc.add_entity(
+            "e1",
+            "prop:ammo_crate",
+            "{FA}Prefabs/Props/Military/AmmoBox.et",
+            100.0,
+            200.0,
+            0.0,
+            90.0,
+        );
+        doc.set_entity_faction("e1", "blufor");
+        let root = small_maps(&doc);
+        let row = &root["entitiesById"]["e1"];
+        assert_eq!(row["alias"], "prop:ammo_crate");
+        assert_eq!(row["resourceName"], "{FA}Prefabs/Props/Military/AmmoBox.et");
+        assert_eq!(row["faction"], "blufor");
+        assert_eq!(row["position"]["x"], 100.0);
+        assert_eq!(row["position"]["y"], 200.0);
+        assert_eq!(row["position"]["rotation"], 90.0);
+        // add_entity and set_entity_faction are separate LOCAL txns (same pattern as vehicles).
+        assert!(doc.undo()); // faction
+        assert!(doc.undo()); // row
+        let root = small_maps(&doc);
+        assert!(
+            root["entitiesById"].get("e1").is_none(),
+            "two undos must remove the placed entity"
+        );
     }
 
     /// The vehicle rows of a doc, keyed by id, straight off `small_maps_json` (T-215).
