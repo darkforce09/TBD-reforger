@@ -13,6 +13,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use serde::Serialize;
 
+use crate::mission::compile::terrain_bounds;
 use crate::mission::kit::load_kit_aliases;
 use crate::mission::wire_safety::is_wire_unsafe;
 
@@ -193,9 +194,12 @@ pub struct ModCircle {
     pub r: f64,
 }
 
+/// Compiled zone geometry — `mission.schema.json#/$defs/shape` (`oneOf` circle | polygon).
 #[derive(Debug, Serialize)]
-pub struct ModZoneShape {
-    pub circle: ModCircle,
+#[serde(untagged)]
+pub enum ModZoneShape {
+    Circle { circle: ModCircle },
+    Polygon { polygon: Vec<[f64; 2]> },
 }
 
 #[derive(Debug, Serialize)]
@@ -204,8 +208,13 @@ pub struct ModZone {
     #[serde(rename = "type")]
     pub kind: String,
     #[serde(skip_serializing_if = "String::is_empty")]
+    pub label: String,
+    #[serde(skip_serializing_if = "String::is_empty")]
     pub faction: String,
     pub shape: ModZoneShape,
+    /// Zone-type rules (`mission.schema.json#/$defs/zoneRules`) — passed through verbatim when authored.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rules: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize)]
@@ -589,6 +598,10 @@ pub enum CompileError {
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(default)]
 struct EditorPayload {
+    /// Authored play-area / objective zones saved in the payload (`zones[]` at the editor-payload
+    /// root). T-211 will wire a doc mutator + draw tool; until then tests and hydrated golden
+    /// missions inject rows here and flatten carries them into the compiled document.
+    zones: Vec<ZoneIn>,
     editor: EditorGraph,
     /// T-204 — the saved payload's TOP-LEVEL `environment` bag, sibling of `editor`, which is where
     /// `compile_payload` puts the editor's `meta.environment` verbatim. Carries the four authored
@@ -695,6 +708,34 @@ struct MarkerIn {
     z: f64,
     icon: String,
     label: String,
+}
+
+/// One authored payload `zones[]` row — mirrors `mission.schema.json#/$defs/zone`.
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(default)]
+struct ZoneIn {
+    id: String,
+    #[serde(rename = "type")]
+    kind: String,
+    label: String,
+    faction: String,
+    shape: Option<ShapeIn>,
+    rules: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(default)]
+struct ShapeIn {
+    circle: Option<CircleIn>,
+    polygon: Option<Vec<Vec<f64>>>,
+}
+
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(default)]
+struct CircleIn {
+    x: f64,
+    z: f64,
+    r: f64,
 }
 
 // ---- T-367: the save-time precheck that keeps a type error out of the compile path ----
@@ -1526,6 +1567,132 @@ fn normalize_heading(rotation: f64) -> f64 {
     (rotation % 360.0 + 360.0) % 360.0
 }
 
+/// One-decimal metre rounding — matches spawn-zone synthesis and the historical TS flatten.
+fn round_coord(v: f64) -> f64 {
+    (v * 10.0).round() / 10.0
+}
+
+fn shape_from_input(shape: &ShapeIn) -> Option<ModZoneShape> {
+    let has_polygon = shape.polygon.as_ref().is_some_and(|p| p.len() >= 3);
+    let has_circle = shape.circle.as_ref().is_some_and(|c| c.r > 0.0);
+
+    if has_polygon {
+        let mut ring = Vec::new();
+        for pair in shape.polygon.as_ref().expect("has_polygon") {
+            if pair.len() == 2 {
+                ring.push([round_coord(pair[0]), round_coord(pair[1])]);
+            }
+        }
+        if ring.len() >= 3 {
+            return Some(ModZoneShape::Polygon { polygon: ring });
+        }
+    }
+
+    if has_circle {
+        let c = shape.circle.as_ref().expect("has_circle");
+        return Some(ModZoneShape::Circle {
+            circle: ModCircle {
+                x: round_coord(c.x),
+                z: round_coord(c.z),
+                r: round_coord(c.r),
+            },
+        });
+    }
+
+    None
+}
+
+fn flatten_authored_zone(raw: &ZoneIn) -> Option<ModZone> {
+    let shape = raw.shape.as_ref().and_then(shape_from_input)?;
+    let id = if raw.id.is_empty() {
+        return None;
+    } else {
+        raw.id.clone()
+    };
+    let kind = if raw.kind.is_empty() {
+        return None;
+    } else {
+        raw.kind.clone()
+    };
+    let faction = if raw.faction.is_empty() {
+        String::new()
+    } else {
+        slug_key(&raw.faction, "faction")
+    };
+    Some(ModZone {
+        id,
+        kind,
+        label: raw.label.clone(),
+        faction,
+        shape,
+        rules: raw.rules.clone(),
+    })
+}
+
+fn synthesize_spawn_zones(
+    centroid_order: &[String],
+    centroids: &HashMap<String, (f64, f64, i64)>,
+) -> Vec<ModZone> {
+    let mut zones = Vec::new();
+    for faction_key in centroid_order {
+        let (sx, sz, n) = centroids[faction_key];
+        let nf = n as f64;
+        zones.push(ModZone {
+            id: format!("z_spawn_{faction_key}"),
+            kind: "spawn".to_string(),
+            faction: faction_key.clone(),
+            label: String::new(),
+            shape: ModZoneShape::Circle {
+                circle: ModCircle {
+                    x: round_coord(sx / nf),
+                    z: round_coord(sz / nf),
+                    r: SPAWN_ZONE_RADIUS_M,
+                },
+            },
+            rules: None,
+        });
+    }
+    zones
+}
+
+fn synthesize_terrain_boundary(terrain_key: &str) -> ModZone {
+    let [min_x, min_z, max_x, max_z] = terrain_bounds(terrain_key);
+    ModZone {
+        id: "z_bounds".to_string(),
+        kind: "boundary".to_string(),
+        label: String::new(),
+        faction: String::new(),
+        shape: ModZoneShape::Polygon {
+            polygon: vec![
+                [min_x, min_z],
+                [max_x, min_z],
+                [max_x, max_z],
+                [min_x, max_z],
+            ],
+        },
+        rules: None,
+    }
+}
+
+fn zones_have_boundary(zones: &[ModZone]) -> bool {
+    zones.iter().any(|z| z.kind == "boundary")
+}
+
+/// Merge authored payload zones, per-faction spawn circles, and a terrain boundary fallback.
+fn derive_zones(
+    authored: &[ZoneIn],
+    centroid_order: &[String],
+    centroids: &HashMap<String, (f64, f64, i64)>,
+    terrain_key: &str,
+) -> Vec<ModZone> {
+    let mut zones: Vec<ModZone> = authored.iter().filter_map(flatten_authored_zone).collect();
+    zones.extend(synthesize_spawn_zones(centroid_order, centroids));
+    if !zones_have_boundary(&zones) {
+        zones.push(synthesize_terrain_boundary(terrain_key));
+    }
+    zones
+}
+
 /// Build the compiled mod mission document. Fields the editor never authors (zones,
 /// flow, winConditions, templateId, playerRange, presetId) are synthesized with the
 /// same defaults as `flattenModDocument.ts`. Returns [`CompileError::NoSlots`] when
@@ -1717,23 +1884,9 @@ pub fn flatten_to_mod_document(
         });
     }
 
-    let mut zones: Vec<ModZone> = Vec::new();
-    for faction_key in &centroid_order {
-        let (sx, sz, n) = centroids[faction_key];
-        let nf = n as f64;
-        zones.push(ModZone {
-            id: format!("z_spawn_{faction_key}"),
-            kind: "spawn".to_string(),
-            faction: faction_key.clone(),
-            shape: ModZoneShape {
-                circle: ModCircle {
-                    x: (sx / nf * 10.0).round() / 10.0,
-                    z: (sz / nf * 10.0).round() / 10.0,
-                    r: SPAWN_ZONE_RADIUS_M,
-                },
-            },
-        });
-    }
+    let terrain = mission_terrain_key(&mission.terrain, &mission.custom_terrain_name);
+
+    let zones = derive_zones(&parsed.zones, &centroid_order, &centroids, &terrain);
 
     // `faction_eliminated` is only declared when at least two factions actually HOLD SLOTS. The
     // mod's validator rejects the document outright otherwise ("declares faction_eliminated but
@@ -1759,8 +1912,6 @@ pub fn flatten_to_mod_document(
     } else {
         mission.max_players
     };
-
-    let terrain = mission_terrain_key(&mission.terrain, &mission.custom_terrain_name);
 
     let meta = ModMeta {
         id: mission_doc_id(&mission.id),
@@ -2679,6 +2830,130 @@ mod tests {
         ));
     }
 
+    // ── T-201 zones[] beyond synthetic spawn circles ───────────────────────────────────
+
+    /// Minimal two-faction payload for zone emission tests (one slot per side).
+    fn zones_test_payload(extra: &str) -> Vec<u8> {
+        format!(
+            r#"{{
+              "zones": {extra},
+              "editor": {{
+                "factions": [
+                  {{"key": "BLUFOR", "name": "US", "squadIds": ["sq_a"]}},
+                  {{"key": "OPFOR", "name": "USSR", "squadIds": ["sq_b"]}}
+                ],
+                "squads": [
+                  {{"id": "sq_a", "callsign": "Alpha", "slotIds": ["s_a"]}},
+                  {{"id": "sq_b", "callsign": "Grom", "slotIds": ["s_b"]}}
+                ],
+                "slots": [
+                  {{"id": "s_a", "index": 0, "role": "RFL",
+                   "position": {{"x": 1000.0, "y": 2000.0, "z": 0, "rotation": 0}}}},
+                  {{"id": "s_b", "index": 0, "role": "RFL",
+                   "position": {{"x": 6000.0, "y": 7000.0, "z": 0, "rotation": 0}}}}
+                ]
+              }}
+            }}"#
+        )
+        .into_bytes()
+    }
+
+    #[test]
+    fn compiled_zones_include_spawn_circles_and_terrain_boundary_fallback() {
+        let doc = flatten_to_mod_document(&meta(), &zones_test_payload("[]")).expect("compiles");
+        let kinds: Vec<&str> = doc.zones.iter().map(|z| z.kind.as_str()).collect();
+        assert_eq!(kinds, ["spawn", "spawn", "boundary"], "{kinds:?}");
+        assert!(
+            doc.zones
+                .iter()
+                .any(|z| z.id == "z_spawn_blufor" && z.kind == "spawn"),
+            "spawn disk for blufor"
+        );
+        let bounds = doc
+            .zones
+            .iter()
+            .find(|z| z.id == "z_bounds")
+            .expect("terrain boundary fallback");
+        assert_eq!(bounds.kind, "boundary");
+        assert!(
+            matches!(bounds.shape, ModZoneShape::Polygon { .. }),
+            "fallback AO is a polygon, not another spawn disk"
+        );
+    }
+
+    #[test]
+    fn authored_boundary_polygon_and_base_protection_circle_reach_the_compiled_document() {
+        let payload = zones_test_payload(
+            r#"[
+              {
+                "id": "z_ao",
+                "type": "boundary",
+                "shape": {
+                  "polygon": [
+                    [4500, 6400],
+                    [6400, 6400],
+                    [6400, 7600],
+                    [4500, 7600]
+                  ]
+                },
+                "rules": { "graceSeconds": 20, "penalty": "kill" }
+              },
+              {
+                "id": "z_base",
+                "type": "base_protection",
+                "faction": "opfor",
+                "shape": { "circle": { "x": 6010, "z": 7211.5, "r": 250 } }
+              }
+            ]"#,
+        );
+        let doc = flatten_to_mod_document(&meta(), &payload).expect("compiles");
+        let boundary = doc
+            .zones
+            .iter()
+            .find(|z| z.id == "z_ao")
+            .expect("authored boundary");
+        assert_eq!(boundary.kind, "boundary");
+        let ModZoneShape::Polygon { polygon } = &boundary.shape else {
+            panic!("boundary must be a polygon");
+        };
+        assert_eq!(polygon.len(), 4);
+        assert_eq!(
+            boundary.rules.as_ref().and_then(|r| r.get("penalty")),
+            Some(&serde_json::json!("kill"))
+        );
+
+        let base = doc
+            .zones
+            .iter()
+            .find(|z| z.id == "z_base")
+            .expect("authored base_protection");
+        assert_eq!(base.kind, "base_protection");
+        assert_eq!(base.faction, "opfor");
+        let ModZoneShape::Circle { circle } = &base.shape else {
+            panic!("base_protection must be a circle");
+        };
+        assert_eq!(circle.r, 250.0);
+
+        assert!(
+            !doc.zones.iter().any(|z| z.id == "z_bounds"),
+            "authored boundary supersedes the terrain fallback"
+        );
+        assert!(
+            doc.zones.iter().filter(|z| z.kind == "spawn").count() == 2,
+            "spawn synthesis still runs alongside authored play-area zones"
+        );
+    }
+
+    /// RED perturbation anchor: if terrain-boundary synthesis is removed, spawn-only missions return.
+    #[test]
+    fn spawn_only_without_terrain_boundary_is_a_regression() {
+        let doc = flatten_to_mod_document(&meta(), &zones_test_payload("[]")).expect("compiles");
+        assert!(
+            doc.zones.iter().any(|z| z.kind == "boundary"),
+            "spawn-only output leaves play-area enforcement dark in TBD_ZoneRegistry"
+        );
+    }
+
     // ── T-203 radioPlan ──────────────────────────────────────────────────────────────────
 
     /// Minimal editor payload: `(faction key, faction name, squad callsigns)`, one slot per
@@ -3282,6 +3557,22 @@ mod tests {
         let mut s = serde_json::to_string_pretty(doc).expect("serialize compiled document");
         s.push('\n');
         s
+    }
+
+    /// Operator/agent helper — `cargo test -p map-engine-core --features doc,mission,world \
+    /// regen_compiler_shaped_fixture -- --ignored --exact --nocapture`
+    #[test]
+    #[ignore = "manual golden regeneration"]
+    fn regen_compiler_shaped_fixture() {
+        let doc =
+            flatten_to_mod_document(&compiler_shaped_meta(), COMPILER_SHAPED_PAYLOAD.as_bytes())
+                .expect("compiles");
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../packages/tbd-schema/golden-missions/compiler-shaped-two-faction.json"
+        );
+        std::fs::write(path, golden_text(&doc)).expect("write golden");
+        eprintln!("regenerated {path}");
     }
 
     /// First line where `expected` and `actual` differ, as `(1-based line, expected, actual)`.
