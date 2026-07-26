@@ -156,9 +156,9 @@
 4	T-443	IT coverage for POST /vehicle-database (T-263 write path)	apps/website/api/tests/content_read.rs
 99	T-444	make seed does not apply wiki pages (content_golden only)	Makefile; apps/website/api/seeds
 5	T-211	Zone and play-area draw tool	crates/map-engine-core/src/doc/store.rs
-5	T-264	Bookmarked tab with no bookmark button	apps/website/api/src/handlers/missions.rs
-5	T-265	Leave-of-Absence feature has zero UI	apps/website/frontend/src/deployments.rs
-5	T-266	No pagination anywhere in the SPA	apps/website/api/src/handlers/audit.rs
+5	T-264	Bookmarked tab with no bookmark button	apps/website/frontend/src/missions.rs
+5	T-265	Leave-of-Absence feature has zero UI	apps/website/frontend/src/deployments.rs; apps/website/frontend/src/nav.rs; apps/website/frontend/src/dto.rs
+5	T-266	No pagination anywhere in the SPA	apps/website/frontend/src/audit.rs
 5	T-267	CMS announcements can be created but never edited, deleted or re-pushed	apps/website/api/src/models/content.rs
 5	T-268	Personnel — Issue Warning is a mock over a working endpoint, and there is no unban	apps/website/frontend/src/personnel.rs
 6	T-269	Real RCON transport — the current endpoint is a no-op that reports success	apps/website/api/src/handlers/admin.rs

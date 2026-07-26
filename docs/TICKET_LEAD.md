@@ -9,6 +9,9 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-264** (2820) — Bookmarked tab with no bookmark button [ready] — missions.rs:21 ships a bookmarked scope with backend support, but there is no bookmark control anywhere in the SPA and POST/DELETE /missions/{id}/bookmark are orphaned, so the tab can only ever be empty.
+- **T-265** (2830) — Leave-of-Absence feature has zero UI [ready] — Four endpoints and the leave_requests table are fully implemented and tested, with no page, no nav entry and no caller. An entire shipped backend feature nobody can reach.
+- **T-266** (2840) — No pagination anywhere in the SPA [ready] — Every list endpoint returns data, total, limit and offset (audit uses next_cursor), but no page reads any of them — audit.rs fetches a cursor list and discards next_cursor. Every list is silently truncated at the default limit of 20.
 
 ## Next queued (top 10)
 
