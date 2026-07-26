@@ -37,3 +37,15 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-260`
 - **Targets:** website
 - **Summary:** Grep for server_id or modpack_id over events.rs and models/event.rs returns zero, and the events table has no such columns. The Event Hub modpack chip fetches the global /modpacks/current, so every event shows the same pack.
+
+## T-441 — null_tolerance OPTION_FIELDS must allow events.server_id/modpack_id
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-441`
+- **Targets:** website
+- **Summary:** In-wave hotfix from wave 11 gate RED after T-260. Event.server_id and Event.modpack_id are Option<Uuid>, but apps/website/api/tests/null_tolerance.rs OPTION_FIELDS only listed events.match_id. Cold gate fails no_query_as_reads_a_nullable_column_without_coalesce on dashboard.rs + deployments.rs SELECTs.
+
+Repro: after T-260 merge, wave.sh gate → null_tolerance FAIL on server_id/modpack_id without COALESCE.
+
+Cure: add ("events", "server_id") and ("events", "modpack_id") to OPTION_FIELDS (same claim as match_id).

@@ -2343,6 +2343,11 @@ Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scrip
 Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.
 
 Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB). |
+| T-441 | 3280 | ready | platform | null_tolerance OPTION_FIELDS must allow events.server_id/modpack_id | In-wave hotfix from wave 11 gate RED after T-260. Event.server_id and Event.modpack_id are Option<Uuid>, but apps/website/api/tests/null_tolerance.rs OPTION_FIELDS only listed events.match_id. Cold gate fails no_query_as_reads_a_nullable_column_without_coalesce on dashboard.rs + deployments.rs SELECTs.
+
+Repro: after T-260 merge, wave.sh gate → null_tolerance FAIL on server_id/modpack_id without COALESCE.
+
+Cure: add ("events", "server_id") and ("events", "modpack_id") to OPTION_FIELDS (same claim as match_id). |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

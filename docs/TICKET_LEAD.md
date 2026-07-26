@@ -12,6 +12,11 @@
 - **T-258** (2760) — POST /versions is unaudited and does not bump updated_at [ready] — No trail of who saved what. The mission library orders by updated_at and the approvals queue reports it as submitted_at, so both show stale ordering. editor_notes is write-only — typed, POSTed, never read back, not even on the DTO.
 - **T-259** (2770) — The mod has no reader for the settings block [ready] — mission.schema.json:451-462 defines respawn, spectatorPolicy and nightVision. TBD_MissionDocumentStruct has no settings member and flatten has no settings field. The block appears only in the schema, the four hand-written goldens and one doc.
 - **T-260** (2780) — Events carry no server or modpack [ready] — Grep for server_id or modpack_id over events.rs and models/event.rs returns zero, and the events table has no such columns. The Event Hub modpack chip fetches the global /modpacks/current, so every event shows the same pack.
+- **T-441** (3280) — null_tolerance OPTION_FIELDS must allow events.server_id/modpack_id [ready] — In-wave hotfix from wave 11 gate RED after T-260. Event.server_id and Event.modpack_id are Option<Uuid>, but apps/website/api/tests/null_tolerance.rs OPTION_FIELDS only listed events.match_id. Cold gate fails no_query_as_reads_a_nullable_column_without_coalesce on dashboard.rs + deployments.rs SELECTs.
+
+Repro: after T-260 merge, wave.sh gate → null_tolerance FAIL on server_id/modpack_id without COALESCE.
+
+Cure: add ("events", "server_id") and ("events", "modpack_id") to OPTION_FIELDS (same claim as match_id).
 
 ## Next queued (top 10)
 

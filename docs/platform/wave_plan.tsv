@@ -239,3 +239,4 @@
 99	T-438	deploy-staging.sh still looks for docker-compose.staging.yml under apps/website/api	scripts/mod/deploy-staging.sh
 99	T-439	Objects palette aliases need prop:/comp: rows in mod Data/registry.json	apps/mod/tbd-framework/Data/registry.json; apps/website/frontend/src/asset_catalog.rs
 99	T-440	Cold/schema gates never apply make seed / faction_library.sql	Makefile; scripts/platform/wave.sh; apps/website/api/seeds/faction_library.sql
+4	T-441	null_tolerance OPTION_FIELDS for events.server_id/modpack_id	apps/website/api/tests/null_tolerance.rs
