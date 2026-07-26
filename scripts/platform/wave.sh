@@ -33,7 +33,32 @@
 #   bash scripts/platform/wave.sh push        # push main
 set -uo pipefail
 
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# `$0` IS THE SHELL, NOT THIS FILE, when the script is sourced or piped — read before simplifying.
+#
+# MEASURED 2026-07-26: `bash -c 'source .../wave.sh status'` from a scratch directory printed
+# `open: 0 / 0 tickets` and `ALL WAVES COMPLETE` about a directory that is not the repo, because
+# `$0` was `bash`, `dirname` was `.`, and ROOT became `cwd/../..`.
+#
+# Blast radius was `status`/`wave` only and the GATE was never affected — MAIN_ROOT below comes from
+# `git rev-parse --git-common-dir`, and cmd_gate refuses at rev-parse/refuse_empty_range before
+# take_gate_lock when git does not resolve — so there is no path where the gate locked the wrong
+# place and reported PASS on the wrong tree. It is fixed anyway, and asserted rather than assumed,
+# because "a tool reporting confidently on an input it never examined" is the single defect this
+# whole file exists to prevent and it does not get an exemption for being cheap.
+#
+# ${BASH_SOURCE[0]} is this file under both execution and sourcing. When the script is PIPED into a
+# shell there is no such path at all, so the assert below is what catches that case: refuse loudly
+# rather than describe a stranger's directory.
+_self="${BASH_SOURCE[0]:-$0}"
+ROOT="$(cd "$(dirname "$_self")/../.." 2>/dev/null && pwd)"
+if [ -z "$ROOT" ] || [ ! -f "$ROOT/scripts/platform/wave.sh" ]; then
+  echo "wave.sh: cannot locate the repo root from '$_self' (resolved '${ROOT:-<nothing>}')." >&2
+  echo "         Every path below would describe some other directory, and 'status' would report" >&2
+  echo "         ALL WAVES COMPLETE about it. Run it as a file — bash scripts/platform/wave.sh —" >&2
+  echo "         rather than piping it into a shell." >&2
+  # `return` when sourced (do not kill the caller's shell), `exit` when executed.
+  return 2 2>/dev/null || exit 2
+fi
 cd "$ROOT"
 PLAN="${TBD_WAVE_PLAN:-docs/platform/wave_plan.tsv}"
 REGISTRY=".ai/tickets/registry.json"
@@ -83,11 +108,41 @@ GATE_DB="${TBD_GATE_DB:-postgres://tbd:tbd@localhost:5434/tbd_gate_it?sslmode=di
 # two are never the paths `trunk serve` owns. See gate_trunk_build for the measurement.
 GATE_TRUNK_TARGET="${TBD_GATE_TRUNK_TARGET:-$MAIN_ROOT/target-gate-trunk}"
 GATE_TRUNK_DIST="${TBD_GATE_TRUNK_DIST:-$MAIN_ROOT/dist-gate-frontend}"
-if command -v distrobox-host-exec >/dev/null 2>&1; then
+# `command -v distrobox-host-exec` IS TRUE ON THE HOST TOO — read before simplifying this back.
+#
+# The binary is installed on BOTH sides of the bridge: /usr/bin/distrobox-host-exec exists in the
+# container AND on the host. So `command -v` alone selected the bridge even from a host shell, where
+# it refuses. MEASURED 2026-07-26 on the host:
+#     $ distrobox-host-exec echo hi
+#     You must run  distrobox-host-exec inside a container!      (exit 126)
+# run() cannot tell that from a compile error, so it reported an ordinary step FAIL — OBSERVED
+# 10/10 steps red, which reads as a catastrophically broken tree and sends whoever is holding the
+# pager hunting a phantom for an hour. Same family as everything else in this file: the tool was
+# confident about a thing it had not actually checked.
+#
+# Detect which side we are on using distrobox's OWN test (distrobox-host-exec:130), copied rather
+# than reinvented so the two can never disagree about what "in a container" means.
+#
+# On the host the bridge is not merely unavailable, it is UNNECESSARY: cargo, rustfmt and trunk are
+# native there — being native on the host is the entire reason the bridge exists in the other
+# direction — so run them directly. Erroring out instead would replace a phantom failure with a
+# hard stop on a run that would have worked. But do NOT switch behaviour silently either: announce
+# it once, by name, so the log says what happened and why.
+in_container() { [ -f /run/.containerenv ] || [ -f /.dockerenv ] || [ -n "${container:-}" ]; }
+if command -v distrobox-host-exec >/dev/null 2>&1 && in_container; then
+  HOST_BRIDGE=1
   hostrun() { distrobox-host-exec timeout "$GATE_TIMEOUT" \
                 env "CARGO_TARGET_DIR=$CARGO_TARGET_DIR" "TEST_DATABASE_URL=${TEST_DATABASE_URL:-}" \
                     "MIGRATE_TEST_DATABASE_URL=${MIGRATE_TEST_DATABASE_URL:-}" "$@"; }
 else
+  HOST_BRIDGE=0
+  if command -v distrobox-host-exec >/dev/null 2>&1; then
+    echo "wave.sh: NOTE — this is the HOST shell, not the dev container." >&2
+    echo "         distrobox-host-exec is installed here too but refuses outside a container" >&2
+    echo "         ('You must run  distrobox-host-exec inside a container!', rc 126). Bridging" >&2
+    echo "         through it would have failed EVERY step and read as a broken tree." >&2
+    echo "         Running cargo/rustfmt/trunk natively instead — correct here, and expected." >&2
+  fi
   hostrun() { timeout "$GATE_TIMEOUT" "$@"; }
 fi
 
@@ -98,13 +153,37 @@ fi
 ensure_gate_db() {
   [ -n "${TEST_DATABASE_URL:-}" ] && return 0          # operator override wins
   local psql="podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc"
-  if command -v distrobox-host-exec >/dev/null 2>&1; then psql="distrobox-host-exec $psql"; fi
+  # Same host/container test as hostrun above, and for the same reason: `command -v` alone is TRUE
+  # on the host, where prefixing this with the bridge makes every psql call exit 126.
+  [ "$HOST_BRIDGE" = 1 ] && psql="distrobox-host-exec $psql"
   $psql "CREATE DATABASE tbd_gate_it;" >/dev/null 2>&1 || true   # already-exists is fine
   export TEST_DATABASE_URL="$GATE_DB"
   # tests/db_migrate.rs takes a SECOND variable and its own database, because it exercises the
   # migration chain from empty — it cannot share a DB the other suites have already migrated.
   # Found only because gate_test_api refuses on any skip: with the first fix in, 28 of 30 skips
   # cleared and these two remained, naming a variable nothing had mentioned.
+  #
+  # THE DROP BELOW IS DESTRUCTIVE AND IS ONLY SAFE UNDER THE GATE LOCK — read before moving this
+  # call, and before adding a fourth caller.
+  #
+  # `DROP DATABASE ... WITH (FORCE)` terminates every session on tbd_gate_migrate. Grepped
+  # 2026-07-26: nothing else in the tree names that database or MIGRATE_TEST_DATABASE_URL except
+  # tests/db_migrate.rs and tests/models_fromrow.rs — i.e. the only thing it can ever kill is
+  # ANOTHER GATE'S test run. Gate B's startup force-drops the DB gate A's db_migrate is connected
+  # to. That is a third concurrency mechanism on top of the two the lock header names.
+  #
+  # It is closed by the flock, not by anything here — which means it was only ever as good as the
+  # lock ACTUALLY being held, and before T-406 it was not: take_gate_lock returned 0 after failing
+  # to lock, so on a full disk (252 MB free, recorded in cmd_reclaim's header) this ran
+  # unserialised. Assert the invariant rather than assume it. Deliberately NOT a per-run database
+  # name: one mechanism that is checked beats two that are hoped for, and a per-run name leaks a
+  # database every time a gate is killed.
+  if [ "${GATE_LOCK_HELD:-0}" != 1 ]; then
+    echo "gate: REFUSING to reset tbd_gate_migrate — the gate lock is NOT held, so a concurrent"
+    echo "        gate's db_migrate run may be connected to it and WITH (FORCE) would kill it."
+    echo "        ensure_gate_db must be called after take_gate_lock."
+    return 2
+  fi
   $psql "DROP DATABASE IF EXISTS tbd_gate_migrate WITH (FORCE);" >/dev/null 2>&1 || true
   $psql "CREATE DATABASE tbd_gate_migrate;" >/dev/null 2>&1 || true
   export MIGRATE_TEST_DATABASE_URL="${MIGRATE_TEST_DATABASE_URL:-postgres://tbd:tbd@localhost:5434/tbd_gate_migrate?sslmode=disable}"
@@ -231,6 +310,35 @@ cmd_prep() {
   echo "(slice-worktree.sh is program-agnostic; it keys off the branch name only)"
 }
 
+# The changed-Rust-file list, and the one distinction the change-scoped steps kept getting wrong.
+#
+# Union of COMMITTED and WORKING-TREE changes. Diffing the base alone means an agent running the
+# slice gate before committing gets "no Rust files changed" and a vacuous PASS — observed on both
+# T-182 and T-185, where the same gate went red the moment the work was committed. A gate that only
+# works if you already did the right thing is not a gate.
+#
+# THE DISTINCTION: a path being LISTED here does not mean it EXISTS. Deletions and renames appear in
+# both `git diff --name-only` and `git status --porcelain`, and the file they name is gone. Every
+# caller then does `[ -f "$f" ] || continue`, so a range whose Rust files were ALL deleted or renamed
+# passed refuse_empty_range (the list is non-empty), skipped every entry, and returned 0.
+# MEASURED 2026-07-26 on a synthetic all-deletions range: `fmt (changed)` returned 0 with rustfmt
+# invoked ZERO times, and touch_changed invalidated no fingerprint — which is the only thing it
+# exists to do, and the thing that makes every cargo step below trustworthy.
+#
+# So the callers now count LISTED against PRESENT and refuse when nothing was examined.
+# "Examined nothing" is not "examined everything and it was fine" — that equation is this
+# program's signature defect and it does not get a pass for being one `[ -f ]` deep.
+#
+# (`git status --porcelain` renders a staged rename as `R  old -> new`, so the sed leaves one
+# arrow-joined pseudo-path in the list. `[ -f ]` drops it and `git diff --name-only` lists the real
+# new path separately, so it costs a phantom LISTED and nothing else.)
+changed_rs() {
+  local base="${1:-main...HEAD}"
+  { git diff --name-only "$base" 2>/dev/null
+    git status --porcelain 2>/dev/null | sed 's/^...//'
+  } | grep '\.rs$' | sort -u || true
+}
+
 # Format ONLY the files this slice changed against main.
 #
 # `cargo fmt --all --check` is deliberately NOT used: 32 files are already unformatted on main
@@ -259,20 +367,27 @@ file_edition() {
 # nothing exactly where it mattered most. It hid a real rustfmt violation in mission_compile.rs
 # through five consecutive green wave gates.
 fmt_changed() {
-  local base="${1:-main...HEAD}" files f ed rc=0
-  # Union of COMMITTED and WORKING-TREE changes. Diffing the base alone means an agent running the
-  # slice gate before committing gets "no Rust files changed" and a vacuous PASS — observed on both
-  # T-182 and T-185, where the same gate went red the moment the work was committed. A gate that
-  # only works if you already did the right thing is not a gate.
-  files="$( { git diff --name-only "$base" 2>/dev/null
-              git status --porcelain 2>/dev/null | sed 's/^...//'
-            } | grep '\.rs$' | sort -u || true)"
+  local base="${1:-main...HEAD}" files f ed rc=0 listed=0 checked=0
+  files="$(changed_rs "$base")"
+  # A range with no Rust files at all is a legitimate SKIP — that is a backend-untouched slice, and
+  # refuse_empty_range has already proved the range as a whole is non-empty.
   [ -z "$files" ] && { echo "no Rust files changed"; return 0; }
   for f in $files; do
-    [ -f "$f" ] || continue
+    listed=$((listed+1))
+    [ -f "$f" ] || continue          # deleted or renamed away — see changed_rs
+    checked=$((checked+1))
     ed="$(file_edition "$f")"
     hostrun rustfmt --edition "$ed" --check "$f" || rc=1
   done
+  # Non-vacuity. Files were named and NONE of them survive in the working tree, so rustfmt was
+  # never invoked and `fmt (changed) PASS` would be a verdict about nothing.
+  if [ "$checked" -eq 0 ]; then
+    echo "fmt: REFUSING to pass — all $listed changed Rust file(s) are gone from the working tree"
+    echo "        (deleted or renamed), so rustfmt was invoked ZERO times."
+    echo "        'examined nothing' is not 'examined everything and it was fine'."
+    return 1
+  fi
+  echo "rustfmt checked $checked of $listed listed file(s)"
   return "$rc"
 }
 
@@ -300,12 +415,22 @@ wasm_changed() {
 # That means a slice gate can print PASS on source it never compiled — which makes every other
 # check in this file advisory. Bumping mtime on the changed files invalidates the fingerprint.
 touch_changed() {
-  local base="${1:-main...HEAD}" f
-  for f in $( { git diff --name-only "$base" 2>/dev/null
-                git status --porcelain 2>/dev/null | sed 's/^...//'
-              } | grep '\.rs$' | sort -u ); do
-    [ -f "$f" ] && touch "$f"
+  local base="${1:-main...HEAD}" f listed=0 touched=0
+  for f in $(changed_rs "$base"); do
+    listed=$((listed+1))
+    [ -f "$f" ] && { touch "$f"; touched=$((touched+1)); }
   done
+  # Non-vacuity, and this one is load-bearing for every step after it: if nothing was touched then
+  # no fingerprint was invalidated, so cargo is free to hand this gate an artifact built from
+  # ANOTHER worktree's source — the exact T-193/T-235 failure the header above describes. Silence
+  # here would make check/clippy/test advisory without saying so. Callers turn this into a red.
+  if [ "$listed" -gt 0 ] && [ "$touched" -eq 0 ]; then
+    echo "  touch_changed: REFUSING — $listed changed Rust file(s) listed, NONE present in the"
+    echo "                 working tree, so no cargo fingerprint was invalidated. Every step below"
+    echo "                 could run on a stale or foreign artifact and would not be able to tell."
+    return 1
+  fi
+  return 0
 }
 
 # Clippy, scoped to the crates the slice actually touched, WITH --all-targets.
@@ -326,9 +451,7 @@ touch_changed() {
 # ci.yml:113; everything else takes -D warnings, matching the wave gate.
 clippy_changed() {
   local base="${1:-main...HEAD}" files crates=() c
-  files="$( { git diff --name-only "$base" 2>/dev/null
-              git status --porcelain 2>/dev/null | sed 's/^...//'
-            } | grep '\.rs$' | sort -u || true)"
+  files="$(changed_rs "$base")"
   [ -z "$files" ] && { echo "no rust changes"; return 0; }
   # Map each file to its owning crate by walking up to the nearest Cargo.toml with a [package] name.
   for f in $files; do
@@ -342,7 +465,19 @@ clippy_changed() {
       d="$(dirname "$d")"
     done
   done
-  [ "${#crates[@]}" -eq 0 ] && { echo "no crate resolved"; return 0; }
+  # Non-vacuity, the sibling of the fmt_changed check above. This branch used to print
+  # "no crate resolved" and return 0, i.e. `clippy (changed crates) PASS` having compiled nothing.
+  # Printing a reason is not the same as reporting a result: the verdict still read as clean.
+  #
+  # Note this is deliberately NOT keyed on the files existing. A slice that DELETES a file leaves
+  # its crate's Cargo.toml in place, the crate resolves, and clippy genuinely lints the crate the
+  # file was removed from — that is real examination and must stay green. The vacuous case is
+  # exactly this one: nothing to lint at all.
+  [ "${#crates[@]}" -eq 0 ] && {
+    echo "clippy: REFUSING to pass — the changed Rust file(s) resolved to NO crate, so clippy was"
+    echo "        invoked ZERO times. 'examined nothing' is not 'examined everything and it was"
+    echo "        fine'. (Files listed: $(printf '%s\n' "$files" | wc -l).)"
+    return 1; }
   for c in "${crates[@]}"; do
     case "$c" in
       website-frontend)
@@ -451,10 +586,32 @@ gate_trunk_build() {
   # Refuse to build UN-ISOLATED rather than race. Once either private path is collapsed onto a
   # shared one, every trunk failure past this line is an environment race wearing a compile error's
   # clothes, and the agent reading it has no way to tell.
-  if [ "$GATE_TRUNK_TARGET" = "$CARGO_TARGET_DIR" ] || [ "$GATE_TRUNK_DIST" = "$fdir/dist" ]; then
+  #
+  # TWO CORRECTIONS, both measured 2026-07-26:
+  #   * The dist this guard must protect is the one `trunk serve` OWNS, which is MAIN's — but $ROOT
+  #     inside a worktree is the WORKTREE, so the old compare checked
+  #     .ai/artifacts/worktrees/T-nnn/apps/website/frontend/dist and never looked at the path the
+  #     dev server actually writes. Check both: main's (the collision that matters) and this tree's
+  #     (still not somewhere a gate should be writing).
+  #   * Both compares were plain strings, so a symlink or a `./` spelling of the same directory
+  #     walked straight through a guard whose entire job is "are these two the same place".
+  #     Canonicalise first. readlink -f resolves symlinks and normalises lexically, and still
+  #     answers for a path that does not exist yet (the gate's private dirs on a cold machine).
+  # Only reachable by setting TBD_GATE_TRUNK_DIST/TARGET — the defaults never collapse — which is
+  # precisely why it must be right: the one caller who ever trips it is overriding on purpose.
+  local _c_gt _c_gd _c_shared _c_serve _c_wt
+  _c_gt="$(readlink -f -- "$GATE_TRUNK_TARGET" 2>/dev/null || printf '%s' "$GATE_TRUNK_TARGET")"
+  _c_gd="$(readlink -f -- "$GATE_TRUNK_DIST"   2>/dev/null || printf '%s' "$GATE_TRUNK_DIST")"
+  _c_shared="$(readlink -f -- "$CARGO_TARGET_DIR" 2>/dev/null || printf '%s' "$CARGO_TARGET_DIR")"
+  _c_serve="$(readlink -f -- "$MAIN_ROOT/apps/website/frontend/dist" 2>/dev/null || printf '%s' "$MAIN_ROOT/apps/website/frontend/dist")"
+  _c_wt="$(readlink -f -- "$fdir/dist" 2>/dev/null || printf '%s' "$fdir/dist")"
+  if [ "$_c_gt" = "$_c_shared" ] || [ "$_c_gd" = "$_c_serve" ] || [ "$_c_gd" = "$_c_wt" ]; then
     echo "trunk: gate build paths are not private — refusing to race the operator's dev server."
-    echo "        target=$GATE_TRUNK_TARGET"
-    echo "        dist=$GATE_TRUNK_DIST"
+    echo "        gate target=$GATE_TRUNK_TARGET  ->  $_c_gt"
+    echo "        gate dist  =$GATE_TRUNK_DIST    ->  $_c_gd"
+    echo "        shared cargo target = $_c_shared"
+    echo "        dev server's dist   = $_c_serve   (main — this is the one trunk serve owns)"
+    echo "        this tree's dist    = $_c_wt"
     return 1
   fi
   t0="$(date +%s)"
@@ -468,12 +625,23 @@ gate_trunk_build() {
   # would put the output back into the shared paths and the isolation would be gone SILENTLY — the
   # gate would keep printing PASS right up until the day it raced again. So prove it every run:
   # both private paths must have taken a write from THIS build.
-  hit="$(find "$GATE_TRUNK_DIST" -name '*_bg.wasm' -newermt "@$((t0 - 5))" 2>/dev/null | head -1)"
+  #
+  # NO SLACK on t0, and the 5 s that used to be here is REMOVED rather than reduced. `date +%s`
+  # truncates downward, so t0 <= the real start instant T0; the build takes minutes, so every file
+  # it writes has mtime T_w > T0 >= t0; and `-newermt` is STRICTLY greater (verified 2026-07-26: a
+  # file whose mtime equals the argument does not match). So T_w > t0 holds with certainty and the
+  # slack bought nothing. It cost something, though: `@$((t0 - 5))` accepted a wasm written up to
+  # five seconds BEFORE this build started — i.e. exactly the stale artifact from a just-finished
+  # build that this guard exists to reject. The one assumption is sub-second mtime granularity;
+  # measured on the real gate paths, both are btrfs recording nanoseconds
+  # ($MAIN_ROOT/target -> .240760778). Even at whole-second granularity a multi-minute build still
+  # lands many seconds past t0.
+  hit="$(find "$GATE_TRUNK_DIST" -name '*_bg.wasm' -newermt "@$t0" 2>/dev/null | head -1)"
   [ -n "$hit" ] || {
     echo "trunk: reported success but $GATE_TRUNK_DIST holds no wasm from this run."
     echo "        --dist was not honoured — the gate is writing into a dist the dev server owns."
     return 1; }
-  hit="$(find "$GATE_TRUNK_TARGET/wasm-opt" -name '*.wasm' -newermt "@$((t0 - 5))" 2>/dev/null | head -1)"
+  hit="$(find "$GATE_TRUNK_TARGET/wasm-opt" -name '*.wasm' -newermt "@$t0" 2>/dev/null | head -1)"
   [ -n "$hit" ] || {
     echo "trunk: reported success but $GATE_TRUNK_TARGET/wasm-opt holds no wasm from this run."
     echo "        CARGO_TARGET_DIR was not honoured — wasm-opt staging is shared with the dev server."
@@ -544,11 +712,54 @@ refuse_empty_range() {
 # per-tree target is ~44 GB, the repo's own is 52 GB) and exhausts the disk by the third slice.
 #
 # The lock lives under the MAIN repo's target/ — the one directory every worktree already agrees on
-# (correction 1), gitignored at /target/. flock releases when the fd closes, i.e. on process exit,
-# so a killed or timed-out gate cannot wedge the queue: there is no stale lock to clear by hand.
+# (correction 1), gitignored at /target/.
+#
+# LOCK RELEASE — the previous claim here ("a killed or timed-out gate cannot wedge the queue: there
+# is no stale lock to clear by hand") was FALSE IN GENERAL and is corrected rather than deleted,
+# because the thing that makes it true today is not obvious and someone will otherwise re-derive it
+# wrongly.
+#
+# flock releases when the LAST fd on the description closes. `exec 9>>` does not set close-on-exec,
+# so every child inherits fd 9 and a descendant that outlives the gate keeps the lock. MEASURED
+# 2026-07-26, bash 5.2.15, 3/3 trials: a `setsid sleep` backgrounded from a gate that was then
+# SIGKILLed held the lock afterwards. Bash offers no clean fix — the `exec {var}>>` form, which is
+# the usual suggestion, leaks identically (also 3/3); bash has no builtin that sets FD_CLOEXEC on a
+# redirection.
+#
+# WHY IT IS SAFE ANYWAY, TODAY: every expensive step goes through hostrun, and distrobox-host-exec
+# does NOT propagate fd 9 across the bridge, so no cargo/trunk process on the host can hold it.
+# Container-side descendants could, and none of the current steps background anything container-side.
+# THE COST IF THAT EVER CHANGES: every subsequent gate waits GATE_LOCK_MAX (3600 s) and then refuses.
+# So: do not add a step that backgrounds a process container-side without closing fd 9 in it
+# (`cmd 9>&-`).
 GATE_LOCK="${TBD_GATE_LOCK:-$MAIN_ROOT/target/.tbd-gate.lock}"
 GATE_LOCK_POLL="${TBD_GATE_LOCK_POLL:-30}"     # heartbeat interval while blocked
 GATE_LOCK_MAX="${TBD_GATE_LOCK_MAX:-3600}"     # give up (REFUSE, never run unserialised) after this
+
+# Set by take_gate_lock on success. ensure_gate_db refuses its destructive DROP without it, and the
+# verdict printer refuses to render a plain PASS without it.
+GATE_LOCK_HELD=0
+GATE_UNSERIALISED=0
+GATE_UNSERIALISED_WHY=""
+
+# The verdict, and the reason it is a function rather than an `echo`.
+#
+# A gate that could not serialise must not be able to print a string that looks like a clean pass.
+# Labelling it in the VERDICT ITSELF — not in a warning fifteen lines earlier that scrolls off, and
+# not only in an exit code — is the point: whatever a human or a log scraper reads last has to carry
+# the caveat. FAIL is labelled too, because an unserialised red is just as likely to be a sibling's
+# artifacts as it is to be a real defect, and sending someone to debug working code is this
+# program's most expensive failure shape.
+gate_verdict() {                      # $1 = PASS|FAIL   $2 = label
+  if [ "$GATE_UNSERIALISED" = 1 ]; then
+    printf '%s: %s — UNSERIALISED, NOT A CLEAN %s\n' "$2" "$1" "$1"
+    printf '        %s, so another worktree may have been building into the same paths\n' "$GATE_UNSERIALISED_WHY"
+    printf '        while this ran. The verdict describes an unknown tree. Fix the lock and re-run\n'
+    printf '        before acting on it.\n'
+  else
+    printf '%s: %s\n' "$2" "$1"
+  fi
+}
 
 # A gate that blocks silently for minutes is indistinguishable from a hung one, and this program
 # runs unattended — so the wait announces itself, names the holder, and heartbeats until it clears.
@@ -558,9 +769,43 @@ take_gate_lock() {
   # Probe in a SUBSHELL. `exec 9>>file` with a trailing `2>/dev/null` would redirect this shell's
   # stderr permanently, and a failed bare-redirection `exec` can take the shell down with it.
   if ! command -v flock >/dev/null 2>&1 || ! ( : >>"$GATE_LOCK" ) 2>/dev/null; then
-    echo "gate: WARNING — cannot lock ($GATE_LOCK): this gate is NOT serialised."
-    echo "        If another worktree gates at the same time, both verdicts are unreliable."
-    return 0
+    # REFUSE, do not degrade. This used to print a WARNING and `return 0`, so the gate ran on and
+    # printed `GATE: PASS` with the serialisation guarantee silently void. MEASURED 2026-07-26 by
+    # extracting this function: unwritable lock path -> rc 0; flock off PATH -> rc 0; held by
+    # another gate -> rc 2. Two of three failure branches degraded, and only the third matched the
+    # policy the branch below states in its own comment ("Refusing beats proceeding").
+    #
+    # WHY REFUSE RATHER THAN WARN-AND-PASS, given the wait branch already refuses:
+    #   * The unwritable branch is reachable on a FULL DISK — cmd_reclaim's header records that
+    #     actually happening at 252 MB free mid-wave. A disk that full is exactly when steps start
+    #     failing with "No space left on device" that reads like a build error, i.e. the worst
+    #     possible moment to also hand out a verdict nobody can trust.
+    #   * What the lock buys is not a nicety. T-334 watched target-gate-api/debug/deps/events-* be
+    #     overwritten mid-session by a sibling worktree and found MAIN's literals inside a binary
+    #     its own gate had just produced. Unserialised, "N passed" is not a claim about this slice.
+    #   * Both callers already do `|| return $?`, and cmd_land treats rc 2 as red, so refusing
+    #     fails safe end to end with no call-site change.
+    #   * The asymmetry settles it: refusing wrongly costs one human command; degrading wrongly
+    #     lands a slice on an unreliable green, which is the failure this entire file is about.
+    local why
+    if command -v flock >/dev/null 2>&1; then why="the lock file ($GATE_LOCK) is not writable"
+    else why="flock is not on PATH"; fi
+    echo "gate: REFUSING — $why, so this gate CANNOT be serialised."
+    echo "        Two gates at once report on each other's artifacts (shared gate target dirs and"
+    echo "        one gate database), and an unserialised verdict is the thing this lock exists to"
+    echo "        prevent. A full disk reaches this branch — check \`df\` and \`wave.sh reclaim\`."
+    # Escape hatch, for a machine where flock genuinely is not available. It does NOT restore the
+    # old behaviour: it proceeds with the verdict itself relabelled, so nothing downstream and
+    # nobody reading a log can mistake the result for a clean pass.
+    if [ "${TBD_GATE_ALLOW_UNSERIALISED:-0}" = 1 ]; then
+      GATE_UNSERIALISED=1
+      GATE_UNSERIALISED_WHY="$why"
+      echo "        TBD_GATE_ALLOW_UNSERIALISED=1 — proceeding DEGRADED at your instruction."
+      echo "        The verdict will be labelled UNSERIALISED and must not be read as a pass."
+      return 0
+    fi
+    echo "        Override deliberately with TBD_GATE_ALLOW_UNSERIALISED=1 (verdict gets labelled)."
+    return 2
   fi
   exec 9>>"$GATE_LOCK"
   if ! flock -n 9; then
@@ -586,6 +831,8 @@ take_gate_lock() {
     done
     echo "gate: lock acquired after ~${waited}s."
   fi
+  # The lock is genuinely ours from here. ensure_gate_db's destructive DROP asserts on this.
+  GATE_LOCK_HELD=1
   printf '%s  pid %s  %s  since %s\n' "$what" "$$" "$ROOT" "$(date -u +%FT%TZ)" \
     > "$GATE_LOCK.holder" 2>/dev/null || true
   # Clear the note on the way out, but only if it is still OURS — otherwise a finishing gate would
@@ -604,8 +851,11 @@ gate_slice() {
   # Even the cheap gate builds into the SHARED CARGO_TARGET_DIR (cargo check, clippy), which is
   # exactly the dir T-193 and T-235 measured one worktree's artifacts appearing in another's.
   take_gate_lock "slice ${tid:-?}" || return $?
-  touch_changed
   local fail=0
+  # touch_changed's rc was previously DISCARDED, which mattered: its whole job is to invalidate the
+  # cargo fingerprints the steps below depend on, so "it invalidated nothing" has to be a red, not
+  # a line of output nobody is looking at. See touch_changed.
+  touch_changed || fail=1
   run() { local l="$1"; shift; printf "  %-24s " "$l"
     if out="$("$@" 2>&1)"; then echo PASS; else echo FAIL; printf '%s\n' "$out" | tail -15 | sed 's/^/      /'; fail=1; fi; }
   run "cargo check"  hostrun cargo check --workspace --quiet
@@ -613,8 +863,8 @@ gate_slice() {
   run "fmt (changed)" fmt_changed
   run "clippy (changed crates)" clippy_changed
   echo
-  [ "$fail" -ne 0 ] && { echo "SLICE GATE: FAIL"; return 1; }
-  echo "SLICE GATE: PASS"
+  [ "$fail" -ne 0 ] && { gate_verdict FAIL "SLICE GATE"; return 1; }
+  gate_verdict PASS "SLICE GATE"
 }
 
 # Full gate — runs once per wave on merged main.
@@ -662,8 +912,9 @@ cmd_gate() {
   # on it have to be inside the same critical section or the invalidation means nothing.
   take_gate_lock "wave gate ${base:0:12}" || return $?
   echo "═══ platform wave gate (base ${base:0:12}) ═══"
-  touch_changed "$base..HEAD"
   local fail=0
+  # rc honoured, not discarded — see the same call in gate_slice.
+  touch_changed "$base..HEAD" || fail=1
   # hostrun applies the timeout host-side; run() only has to report 124 distinctly from a real fail.
   run() {
     local l="$1"; shift
@@ -699,7 +950,9 @@ cmd_gate() {
   # :115 tests website-frontend; map-engine is covered by its own job.
   # ensure_gate_db + the skip count check are what stop this step passing vacuously. A suite that
   # reports "ok" while every DB test printed `skip:` is worse than a red one: it is a green one.
-  ensure_gate_db
+  # rc honoured: ensure_gate_db now refuses to force-drop tbd_gate_migrate without the gate lock,
+  # and a gate that could not prepare its database must not go on to interpret the result.
+  ensure_gate_db || fail=1
   run "test api"         gate_test_api
   # --features mission is REQUIRED. The mission module is feature-gated, so a bare
   # `cargo test -p map-engine-core` runs 116 tests and silently skips 26 — every test in flatten.rs,
@@ -732,8 +985,8 @@ cmd_gate() {
   fi
   run "ticket registry"  hostrun ./scripts/ticket check
   echo
-  [ "$fail" -ne 0 ] && { echo "GATE: FAIL"; return 1; }
-  echo "GATE: PASS"
+  [ "$fail" -ne 0 ] && { gate_verdict FAIL "GATE"; return 1; }
+  gate_verdict PASS "GATE"
 }
 
 # ── WAVE DISCIPLINE ──────────────────────────────────────────────────────────────────────────────
