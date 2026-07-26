@@ -3,6 +3,22 @@
 //! SQL for a second user id, then driven through the real handler — deterministically
 //! exercising the G7b race-loser code (conditional claim reject + reservation guard).
 //! Skips without `TEST_DATABASE_URL`.
+//!
+//! # Fixture ownership (T-334)
+//!
+//! `cargo test -p website-api` builds 22 test binaries and runs them concurrently against
+//! **one** database. This suite's seeded actors therefore live in a private id range that
+//! no other suite touches — see [`OTHER`] and [`THIRD`]. They previously sat on
+//! `000000000000000002` / `000000000000000003`, and `...003` was **double-booked** with
+//! `tests/telemetry.rs`'s `PLAYER_DISCORD` (`telemetry.rs:17`), whose seed carries
+//! `ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id` — i.e. one binary
+//! rewriting the other's fixture row mid-run. Both ids are also the dev seed's own
+//! (`seeds/content_golden.sql:162-167`).
+//!
+//! The dev-login extractor now lives in [`common::dev_login_token`], which reports the
+//! status, the body and the asking suite on failure instead of panicking on a missing
+//! `Location` header. That module also records why the T-365 "dev-login 403s a banned
+//! account" diagnosis is false — read it there before re-deriving it.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -14,12 +30,32 @@ use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db};
 
-const OTHER: &str = "000000000000000002";
+mod common;
+
+/// This suite's second actor: the one already holding a seat when the caller claims.
+///
+/// Namespaced to T-334 so no other test binary can write it. Verified unused across the
+/// whole repository — the 18 sibling suites, `src/`, and `seeds/` — before it was picked.
+const OTHER: &str = "000000000000334002";
 /// A third seeded identity — the one that must stay on the waitlist while someone else
-/// moves between seats (T-324).
-const THIRD: &str = "000000000000000003";
+/// moves between seats (T-324). Same T-334 private range as [`OTHER`], and the id that
+/// used to collide with `tests/telemetry.rs`.
+const THIRD: &str = "000000000000334003";
 /// The identity `dev-login` mints for every role (`handlers::dev::DEV_USER_ID`).
-const DEV_USER: &str = "000000000000000001";
+///
+/// Still shared with every other dev-login caller — that is inherent to the handler, not
+/// something this suite can namespace away. Nothing here asserts on that row's columns;
+/// it is only ever the *subject* of a request whose effects are checked in this suite's
+/// own `events` / `orbat_slots` rows.
+const DEV_USER: &str = common::DEV_LOGIN_USER;
+
+/// `arma_id` for a seeded actor. It must be unique across the whole database
+/// (`idx_users_arma_id` is a non-partial `CREATE UNIQUE INDEX`), and deriving it from the
+/// already-private discord id makes it unique for free — where the previous `''` was a
+/// single global slot that any second suite writing `''` would collide on.
+fn arma(discord_id: &str) -> String {
+    format!("events-arma-{discord_id}")
+}
 
 async fn boot() -> Option<(Router, PgPool)> {
     let url = std::env::var("TEST_DATABASE_URL").ok()?;
@@ -33,24 +69,7 @@ async fn boot() -> Option<(Router, PgPool)> {
 }
 
 async fn token(app: &Router, role: &str) -> String {
-    let resp = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri(format!("/api/v1/auth/dev-login?role={role}"))
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    let loc = resp.headers()[header::LOCATION].to_str().unwrap();
-    loc.split_once('#')
-        .unwrap()
-        .1
-        .split('&')
-        .find_map(|p| p.strip_prefix("access_token="))
-        .unwrap()
-        .to_string()
+    common::dev_login_token(app, "events", role).await
 }
 
 async fn call(
@@ -89,14 +108,7 @@ async fn event_orbat_registration_and_race() {
     let leader = token(&app, "leader").await;
     let enl = token(&app, "enlisted").await;
     // A distinct second user for the seeded conflict paths.
-    sqlx::query(
-        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'Other', 'other', '', '', '', 'enlisted', false, '', now(), now()) ON CONFLICT (discord_id) DO NOTHING",
-    )
-    .bind(OTHER)
-    .execute(&pool)
-    .await
-    .unwrap();
+    common::seed_user(&pool, OTHER, "Other", &arma(OTHER), "enlisted").await;
 
     // Mission (admin ≥ mission_maker) + event + attach with a 2-slot ORBAT.
     let (st, m) = call(
@@ -302,14 +314,7 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
         return;
     };
     let admin = token(&app, "admin").await;
-    sqlx::query(
-        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-         VALUES ($1, 'Other', 'other', '', '', '', 'enlisted', false, '', now(), now()) ON CONFLICT (discord_id) DO NOTHING",
-    )
-    .bind(OTHER)
-    .execute(&pool)
-    .await
-    .unwrap();
+    common::seed_user(&pool, OTHER, "Other", &arma(OTHER), "enlisted").await;
 
     // Two event-missions: the one under test, plus a second one that must stay untouched
     // when we withdraw from the first (the by-user release has to be event-scoped).
@@ -675,16 +680,8 @@ async fn register_moves_the_caller_s_seat() {
     let admin = token(&app, "admin").await;
     for id in [OTHER, THIRD] {
         // `arma_id` carries its own unique index, so seeded users cannot all share the empty
-        // string the way one of them can.
-        sqlx::query(
-            "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-             VALUES ($1, 'Seeded', 'seeded', '', $2, '', 'enlisted', false, '', now(), now()) ON CONFLICT (discord_id) DO NOTHING",
-        )
-        .bind(id)
-        .bind(format!("t324-{id}"))
-        .execute(&pool)
-        .await
-        .unwrap();
+        // string the way one of them can — `arma()` derives a distinct one per actor.
+        common::seed_user(&pool, id, "Seeded", &arma(id), "enlisted").await;
     }
 
     // The operation under test (3 slots), plus a second one the release must never reach.
@@ -1629,16 +1626,8 @@ async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event(
     // Two seeded strangers fill the cap. dev-login is one fixed identity, so the other
     // occupants are seeded and only the caller under test goes through the handler — the same
     // idiom the G7b race tests use. `arma_id` has its own unique index.
-    for (i, id) in [OTHER, THIRD].iter().enumerate() {
-        sqlx::query(
-            "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
-             VALUES ($1, 'Seeded', 'seeded', '', $2, '', 'enlisted', false, '', now(), now()) ON CONFLICT (discord_id) DO NOTHING",
-        )
-        .bind(id)
-        .bind(format!("t227-{id}"))
-        .execute(&pool)
-        .await
-        .unwrap();
+    for id in [OTHER, THIRD] {
+        common::seed_user(&pool, id, "Seeded", &arma(id), "enlisted").await;
         sqlx::query(
             "INSERT INTO event_registrations (event_mission_id, discord_id, slot_id, state) \
              VALUES ($1::uuid, $2, NULL, 'registered') \
@@ -1649,7 +1638,6 @@ async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event(
         .execute(&pool)
         .await
         .unwrap();
-        let _ = i;
     }
 
     // A free seat exists, so this refusal is the EVENT cap talking and not the ORBAT's.
