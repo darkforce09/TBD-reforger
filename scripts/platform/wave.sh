@@ -215,11 +215,20 @@ ensure_gate_db() {
   # unserialised. Assert the invariant rather than assume it. Deliberately NOT a per-run database
   # name: one mechanism that is checked beats two that are hoped for, and a per-run name leaks a
   # database every time a gate is killed.
-  if [ "${GATE_LOCK_HELD:-0}" != 1 ]; then
+  # GATE_LOCK_HELD=1 is the normal path. GATE_UNSERIALISED=1 is the deliberate escape hatch
+  # (TBD_GATE_ALLOW_UNSERIALISED=1): the operator accepted a degraded verdict, and the full gate
+  # must still be able to reset its private migrate DB. T-409: the hatch used to return 0 from
+  # take_gate_lock without setting GATE_LOCK_HELD, so ensure_gate_db refused and every full-gate
+  # run under the hatch printed GATE: FAIL — UNSERIALISED regardless of the code.
+  if [ "${GATE_LOCK_HELD:-0}" != 1 ] && [ "${GATE_UNSERIALISED:-0}" != 1 ]; then
     echo "gate: REFUSING to reset tbd_gate_migrate — the gate lock is NOT held, so a concurrent"
     echo "        gate's db_migrate run may be connected to it and WITH (FORCE) would kill it."
     echo "        ensure_gate_db must be called after take_gate_lock."
     return 2
+  fi
+  if [ "${GATE_LOCK_HELD:-0}" != 1 ] && [ "${GATE_UNSERIALISED:-0}" = 1 ]; then
+    echo "gate: WARNING — resetting tbd_gate_migrate WITHOUT the lock (TBD_GATE_ALLOW_UNSERIALISED)."
+    echo "        A concurrent gate's db_migrate may be connected; WITH (FORCE) would kill it."
   fi
   $psql "DROP DATABASE IF EXISTS tbd_gate_migrate WITH (FORCE);" >/dev/null 2>&1 || true
   $psql "CREATE DATABASE tbd_gate_migrate;" >/dev/null 2>&1 || true
@@ -416,13 +425,14 @@ fmt_changed() {
     ed="$(file_edition "$f")"
     hostrun rustfmt --edition "$ed" --check "$f" || rc=1
   done
-  # Non-vacuity. Files were named and NONE of them survive in the working tree, so rustfmt was
-  # never invoked and `fmt (changed) PASS` would be a verdict about nothing.
+  # Deletion/rename-only is a legitimate SKIP for rustfmt: there is no source left to format.
+  # T-406 keyed checked==0 as vacuous and refused; T-409 corrected it — the same shape already
+  # stayed green in clippy_changed (crate still resolves and is linted). Silence stays banned:
+  # we always name the skip. The vacuous refuse that must NOT return green is elsewhere —
+  # clippy with zero resolved crates, touch that invalidated no fingerprint.
   if [ "$checked" -eq 0 ]; then
-    echo "fmt: REFUSING to pass — all $listed changed Rust file(s) are gone from the working tree"
-    echo "        (deleted or renamed), so rustfmt was invoked ZERO times."
-    echo "        'examined nothing' is not 'examined everything and it was fine'."
-    return 1
+    echo "fmt: all $listed changed Rust file(s) deleted/renamed away — nothing to format"
+    return 0
   fi
   echo "rustfmt checked $checked of $listed listed file(s)"
   return "$rc"
@@ -456,20 +466,76 @@ wasm_changed() {
 #
 # That means a slice gate can print PASS on source it never compiled — which makes every other
 # check in this file advisory. Bumping mtime on the changed files invalidates the fingerprint.
+# Directory of the [package] Cargo.toml owning a .rs path, or empty.
+# Walk-up first; orphan fragments (apps/website/shared/*.rs) have no package ancestor — those
+# are handled by the include!-consumer path in clippy_changed / the touch fallback below.
+owning_package_dir() {
+  local f="$1" d
+  d="$(dirname "$f")"
+  while [ "$d" != "." ] && [ "$d" != "/" ]; do
+    if [ -f "$d/Cargo.toml" ] && grep -q '^\[package\]' "$d/Cargo.toml" 2>/dev/null; then
+      printf '%s\n' "$d"
+      return 0
+    fi
+    d="$(dirname "$d")"
+  done
+  return 1
+}
+
+# Cargo.toml dirs of every crate that include!s an orphan .rs fragment.
+# grep, not rg — rg is container-only (PLATFORM_FACTORY.md Known traps).
+include_consumer_package_dirs() {
+  local orphan="$1" base consumer incl cand orphan_abs d
+  base="$(basename "$orphan")"
+  orphan_abs="$(realpath -m "$orphan")"
+  while IFS= read -r consumer; do
+    [ -f "$consumer" ] || continue
+    grep -qF "$base" "$consumer" || continue
+    while IFS= read -r incl; do
+      [ -n "$incl" ] || continue
+      cand="$(cd "$(dirname "$consumer")" && realpath -m "$incl")"
+      [ "$cand" = "$orphan_abs" ] || continue
+      d="$(owning_package_dir "$consumer")" || continue
+      printf '%s\n' "$d"
+    done < <(grep -oE 'include!\(\s*"[^"]+"\s*\)' "$consumer" 2>/dev/null \
+             | sed -E 's/.*include!\([[:space:]]*"([^"]+)"[[:space:]]*\).*/\1/' \
+             | grep -F "$base" || true)
+  done < <(grep -rl --include='*.rs' --exclude-dir=target "include!(" apps packages crates tools 2>/dev/null || true)
+}
+
 touch_changed() {
-  local base="${1:-main...HEAD}" f listed=0 touched=0
+  local base="${1:-main...HEAD}" f listed=0 touched=0 d
   for f in $(changed_rs "$base"); do
     listed=$((listed+1))
-    [ -f "$f" ] && { touch "$f"; touched=$((touched+1)); }
+    if [ -f "$f" ]; then
+      touch "$f"
+      touched=$((touched+1))
+      continue
+    fi
+    # Deleted/renamed-away: the file cannot be touched, but its crate (or include! consumers)
+    # still needs a fingerprint bump — otherwise cargo is free to reuse a stale artifact that
+    # still contains the deleted code. T-409: deletion-only used to hard-fail here while
+    # clippy_changed correctly stayed green.
+    d="$(owning_package_dir "$f" || true)"
+    if [ -n "$d" ] && [ -f "$d/Cargo.toml" ]; then
+      touch "$d/Cargo.toml"
+      touched=$((touched+1))
+      continue
+    fi
+    while IFS= read -r d; do
+      [ -n "$d" ] && [ -f "$d/Cargo.toml" ] || continue
+      touch "$d/Cargo.toml"
+      touched=$((touched+1))
+    done < <(include_consumer_package_dirs "$f" | sort -u)
   done
-  # Non-vacuity, and this one is load-bearing for every step after it: if nothing was touched then
-  # no fingerprint was invalidated, so cargo is free to hand this gate an artifact built from
-  # ANOTHER worktree's source — the exact T-193/T-235 failure the header above describes. Silence
-  # here would make check/clippy/test advisory without saying so. Callers turn this into a red.
+  # Non-vacuity, load-bearing for every step after it: listed Rust changes but NOTHING's
+  # fingerprint was invalidated → cargo may hand this gate a foreign/stale artifact.
+  # Deletion-only that resolved to an owning crate (or include! consumers) is green above;
+  # this refuse is the residual "wrong reason" case (orphan path, no package, no include!).
   if [ "$listed" -gt 0 ] && [ "$touched" -eq 0 ]; then
-    echo "  touch_changed: REFUSING — $listed changed Rust file(s) listed, NONE present in the"
-    echo "                 working tree, so no cargo fingerprint was invalidated. Every step below"
-    echo "                 could run on a stale or foreign artifact and would not be able to tell."
+    echo "  touch_changed: REFUSING — $listed changed Rust file(s) listed, but no source and no"
+    echo "                 owning crate Cargo.toml could be touched, so no cargo fingerprint was"
+    echo "                 invalidated. Every step below could run on a stale or foreign artifact."
     return 1
   fi
   return 0
@@ -571,29 +637,35 @@ touch_workspace() {
 # pass teaches agents that gate failures are noise. Frontend goes through wasm32 with NO -D, matching
 # ci.yml:113; everything else takes -D warnings, matching the wave gate.
 clippy_changed() {
-  local base="${1:-main...HEAD}" files crates=() c
+  local base="${1:-main...HEAD}" files crates=() c d f pkg
   files="$(changed_rs "$base")"
   [ -z "$files" ] && { echo "no rust changes"; return 0; }
   # Map each file to its owning crate by walking up to the nearest Cargo.toml with a [package] name.
+  # Orphan fragments (apps/website/shared/*.rs) have no package ancestor — the walk stops at '.' —
+  # but they are include!'d into real crates (T-405 is_http_url_cases.rs → website-api +
+  # website-frontend). T-406's empty-crates refuse false-red'd that shape; resolve via include!
+  # consumers before refusing.
   for f in $files; do
-    local d; d="$(dirname "$f")"
-    while [ "$d" != "." ] && [ "$d" != "/" ]; do
-      if [ -f "$d/Cargo.toml" ] && grep -q '^\[package\]' "$d/Cargo.toml" 2>/dev/null; then
-        c="$(sed -n '/^\[package\]/,/^\[/p' "$d/Cargo.toml" | sed -n 's/^name *= *"\([^"]*\)".*/\1/p' | head -1)"
-        [ -n "$c" ] && case " ${crates[*]-} " in *" $c "*) ;; *) crates+=("$c") ;; esac
-        break
-      fi
-      d="$(dirname "$d")"
-    done
+    d="$(owning_package_dir "$f" || true)"
+    if [ -n "$d" ]; then
+      c="$(sed -n '/^\[package\]/,/^\[/p' "$d/Cargo.toml" | sed -n 's/^name *= *"\([^"]*\)".*/\1/p' | head -1)"
+      [ -n "$c" ] && case " ${crates[*]-} " in *" $c "*) ;; *) crates+=("$c") ;; esac
+      continue
+    fi
+    while IFS= read -r pkg; do
+      [ -n "$pkg" ] && [ -f "$pkg/Cargo.toml" ] || continue
+      c="$(sed -n '/^\[package\]/,/^\[/p' "$pkg/Cargo.toml" | sed -n 's/^name *= *"\([^"]*\)".*/\1/p' | head -1)"
+      [ -n "$c" ] && case " ${crates[*]-} " in *" $c "*) ;; *) crates+=("$c") ;; esac
+    done < <(include_consumer_package_dirs "$f" | sort -u)
   done
-  # Non-vacuity, the sibling of the fmt_changed check above. This branch used to print
-  # "no crate resolved" and return 0, i.e. `clippy (changed crates) PASS` having compiled nothing.
-  # Printing a reason is not the same as reporting a result: the verdict still read as clean.
+  # Non-vacuity. This branch used to print "no crate resolved" and return 0, i.e.
+  # `clippy (changed crates) PASS` having compiled nothing. Printing a reason is not the same
+  # as reporting a result: the verdict still read as clean.
   #
-  # Note this is deliberately NOT keyed on the files existing. A slice that DELETES a file leaves
-  # its crate's Cargo.toml in place, the crate resolves, and clippy genuinely lints the crate the
-  # file was removed from — that is real examination and must stay green. The vacuous case is
-  # exactly this one: nothing to lint at all.
+  # Deliberately NOT keyed on the files existing. A slice that DELETES a file leaves its crate's
+  # Cargo.toml in place, the crate resolves, and clippy genuinely lints the crate the file was
+  # removed from — that is real examination and must stay green. The vacuous case is exactly
+  # this one: nothing to lint at all (no package ancestor AND no include! consumer).
   [ "${#crates[@]}" -eq 0 ] && {
     echo "clippy: REFUSING to pass — the changed Rust file(s) resolved to NO crate, so clippy was"
     echo "        invoked ZERO times. 'examined nothing' is not 'examined everything and it was"
@@ -986,9 +1058,15 @@ $(printf '%s\n' "$out" | tail -6)"
 # step examined anything and the verdict describes nothing.
 refuse_empty_range() {
   local range="$1" what="$2"
-  local n; n=$(git diff --name-only "$range" 2>/dev/null | wc -l)
+  # Same committed ∪ working-tree union as changed_rs. Diffing the range alone refused
+  # `gate --slice` when a slice had working-tree changes but no commits yet — contradicting
+  # changed_rs's stated purpose (T-409 NIT; pre-existing, not T-406).
+  local n
+  n=$( { git diff --name-only "$range" 2>/dev/null
+         git status --porcelain 2>/dev/null | sed 's/^...//'
+       } | sort -u | sed '/^$/d' | wc -l)
   [ "$n" -gt 0 ] && return 0
-  echo "gate: '$range' contains no changed files — refusing to run."
+  echo "gate: '$range' (plus working tree) contains no changed files — refusing to run."
   echo "        Every change-scoped step (wasm32, fmt, clippy, trunk) would report PASS/SKIP"
   echo "        without reading a line, and the verdict would describe nothing."
   echo "        $what"
@@ -1126,7 +1204,9 @@ take_gate_lock() {
     echo "        prevent. A full disk reaches this branch — check \`df\` and \`wave.sh reclaim\`."
     # Escape hatch, for a machine where flock genuinely is not available. It does NOT restore the
     # old behaviour: it proceeds with the verdict itself relabelled, so nothing downstream and
-    # nobody reading a log can mistake the result for a clean pass.
+    # nobody reading a log can mistake the result for a clean pass. GATE_UNSERIALISED=1 is what
+    # lets ensure_gate_db still reset tbd_gate_migrate under this hatch (T-409); GATE_LOCK_HELD
+    # stays 0 — we do not pretend the flock is held.
     if [ "${TBD_GATE_ALLOW_UNSERIALISED:-0}" = 1 ]; then
       GATE_UNSERIALISED=1
       GATE_UNSERIALISED_WHY="$why"
