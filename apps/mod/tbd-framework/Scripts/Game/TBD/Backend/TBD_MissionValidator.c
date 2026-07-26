@@ -126,6 +126,7 @@ class TBD_MissionValidator
 		CheckFactionCoverage(mission, slotsPerFaction);
 		CheckWinConditions(mission, slotsPerFaction);
 		CheckZones(mission, declaredFactions);
+		CheckUnconsumedKeys(mission);
 
 		Report();
 		return s_aErrors.IsEmpty();
@@ -1127,6 +1128,85 @@ class TBD_MissionValidator
 			|| trigger == TBD_ObjectiveRegistry.TRIGGER_ALL_CAPTURED
 			|| trigger == TBD_ObjectiveRegistry.TRIGGER_DESTROYED
 			|| trigger == TBD_ObjectiveRegistry.TRIGGER_HOLD_EXPIRED;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-250 — keys the typed parser drops because `TBD_MissionDocumentStruct` does not model them.
+	//!
+	//! `JsonLoadContext` maps JSON keys onto named class fields and silently ignores everything
+	//! else. An author can therefore ship a schema-valid mission whose `environment`, `settings`,
+	//! `entities`, `layers`, `factions[].tickets` or `orbat` `roles[].radio` blocks parse clean and
+	//! vanish before any consumer runs — the failure mode this slice closes.
+	//!
+	//! Presence is read from the raw JSON string captured at parse time
+	//! (`TBD_MissionLoader.GetRawJson`), because the parsed struct cannot answer "was this key
+	//! authored?" for a field it never declared. The probe is deliberately dumb — a quoted key
+	//! followed by `:` — which is exact for this contract: each watched key appears at most once per
+	//! logical slot (`radio` is `"radio":`, not `"radioPlan":`).
+	//!
+	//! Host gate: `make schema-validate` greps this file for the `T-250-UNCONSUMED-WARN:` markers
+	//! below and for `CheckUnconsumedKeys` being wired from `Run()`.
+	protected static void CheckUnconsumedKeys(TBD_MissionDocumentStruct mission)
+	{
+		if (!mission)
+			return;
+
+		string json = TBD_MissionLoader.GetRawJson();
+		if (json.IsEmpty())
+			return;
+
+		// T-250-UNCONSUMED-WARN: environment
+		if (JsonAuthoredKey(json, "environment"))
+		{
+			AddWarning("environment",
+				"authored but TBD_MissionDocumentStruct does not model it — weather and time of day are not applied at load");
+		}
+
+		// T-250-UNCONSUMED-WARN: settings
+		if (JsonAuthoredKey(json, "settings"))
+		{
+			AddWarning("settings",
+				"authored but no code reads it — respawn policy, spectator rules and night-vision are not applied");
+		}
+
+		// T-250-UNCONSUMED-WARN: entities
+		if (JsonAuthoredKey(json, "entities"))
+		{
+			AddWarning("entities",
+				"authored but the mod does not spawn mission entities — placed props and vehicles in this block are discarded on load");
+		}
+
+		// T-250-UNCONSUMED-WARN: layers
+		if (JsonAuthoredKey(json, "layers"))
+		{
+			AddWarning("layers",
+				"authored but decoration layers are not loaded — tier-2 layer aliases in this block are discarded on load");
+		}
+
+		// T-250-UNCONSUMED-WARN: tickets
+		if (JsonAuthoredKey(json, "tickets"))
+		{
+			AddWarning("factions.tickets",
+				"authored on one or more factions but TBD_MissionFactionStruct does not model tickets — respawn pools are not applied");
+		}
+
+		// T-250-UNCONSUMED-WARN: radio
+		if (JsonAuthoredKey(json, "radio"))
+		{
+			AddWarning("orbat.roles.radio",
+				"authored on one or more ORBAT roles but TBD_MissionOrbatRoleStruct does not model radio — spawn net tuning is not applied");
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! True when `json` contains a `"key":` property assignment. See CheckUnconsumedKeys.
+	protected static bool JsonAuthoredKey(string json, string key)
+	{
+		if (json.IsEmpty() || key.IsEmpty())
+			return false;
+
+		string needle = "\"" + key + "\":";
+		return json.IndexOf(needle) >= 0;
 	}
 
 	//------------------------------------------------------------------------------------------------
