@@ -124,7 +124,7 @@
 1	T-394	assert_golden cannot detect a dropped field under #[serde(flatten)]	apps/website/frontend/src/dto.rs
 1	T-334	events.rs integration tests flake on a cold database	apps/website/api/tests/events.rs
 1	T-240	Cargo capacity is warn-only and never blocks	apps/website/frontend/src/arsenal_rules.rs
-1	T-241	Declare zones[].rules properties in the schema	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c
+1	T-241	Declare zones[].rules properties in the schema	packages/tbd-schema/schema/mission.schema.json; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c
 1	T-243	Wire or delete the unused wasm flatten binding	crates/map-engine-wasm/src/lib.rs
 1	T-215	Vehicle placement on the map with position and cargo	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_chrome.rs; crates/map-engine-core/src/doc/store.rs
 1	T-391	Live javascript: XSS via aar_replay_url, and zero URL validation in the API	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/services/text.rs
@@ -207,3 +207,9 @@
 4	T-401	git-lfs absent makes wave.sh change detection silently half-dead	scripts/platform/wave.sh
 5	T-408	CSV formula injection in the audit export, and a PATCH tier that outlives its role	apps/website/api/src/handlers/audit.rs; apps/website/api/src/handlers/missions.rs
 5	T-404	Doc/comment hygiene: in-code statements that are now false	apps/website/api/tests/common/mod.rs; apps/website/api/src/handlers/deployments.rs; docs/platform/frontend_data_provenance.md
+3	T-409	wave.sh non-vacuity guards false-red on legitimate slices	scripts/platform/wave.sh
+3	T-410	Residual ORDER BY ASC ratchets in the integration suites	apps/website/api/tests/missions.rs; apps/website/api/tests/dashboard_reads.rs; apps/website/api/src/handlers/dashboard.rs
+3	T-411	Per-wave gate database names so residue cannot ratchet	scripts/platform/wave.sh
+3	T-412	GET /members cannot return member 21; list_servers is N+1	apps/website/api/src/handlers/events.rs; apps/website/api/src/handlers/servers.rs
+3	T-413	Adopt the URL guard at the remaining writers and render sites	apps/website/api/src/handlers/missions.rs; apps/website/frontend/src/leaderboards.rs; apps/website/frontend/src/layout.rs; apps/website/frontend/src/settings.rs; apps/website/frontend/src/announcements.rs
+3	T-414	approvals ordering has no unique tiebreaker	apps/website/api/src/handlers/approvals.rs
