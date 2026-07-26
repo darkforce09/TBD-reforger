@@ -11,8 +11,9 @@
 #   bash scripts/deploy/deploy-website.sh --dry-run
 #   bash scripts/deploy/deploy-website.sh
 #
-# Never deploys under /home/sam/prairielearn/ (or any path containing "prairielearn").
-# Game server deploy remains scripts/mod/deploy-staging.sh.
+# TBD_REMOTE_DIR must live under /home/sam/tbd/ (prefix-enforced). Also refuses any
+# path/host containing "prairielearn" case-insensitively. Game server deploy remains
+# scripts/mod/deploy-staging.sh.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -85,12 +86,36 @@ source "$ENV_FILE"
 
 # Refuse any PrairieLearn path — remote dir, profile-ish vars we might grow, and the
 # SSH host string if someone points it at a PL box path by mistake in the value.
+# Case-insensitive (M3): PrairieLearn / PRAIRIELEARN / mixed case must all fail closed.
 refuse_prairielearn() {
   local label="$1"
   local value="$2"
-  if [[ "$value" == *prairielearn* ]]; then
+  local lowered="${value,,}"
+  if [[ "$lowered" == *prairielearn* ]]; then
     echo "Refusing to deploy: $label must not contain 'prairielearn' (got: $value)" >&2
     echo "TBD lives under /home/sam/tbd/ only — see docs/website/HOME_SERVER.md." >&2
+    exit 1
+  fi
+}
+
+# Fail-closed: TBD_REMOTE_DIR must be under /home/sam/tbd/ after stripping trailing
+# slashes. Reject ".." so /home/sam/tbd/../elsewhere cannot escape the prefix (M2).
+require_tbd_remote_prefix() {
+  local raw="$1"
+  local dir="$raw"
+  # Normalize trailing slashes (keep a lone "/" as "/").
+  while [[ "$dir" == */ && "$dir" != / ]]; do
+    dir="${dir%/}"
+  done
+  if [[ "$dir" == *..* ]]; then
+    echo "Refusing to deploy: TBD_REMOTE_DIR must not contain '..' (got: $raw)" >&2
+    echo "TBD_REMOTE_DIR must be under /home/sam/tbd/ — see docs/website/HOME_SERVER.md." >&2
+    exit 1
+  fi
+  local allowed="/home/sam/tbd"
+  if [[ "$dir" != "$allowed" && "$dir" != "$allowed"/* ]]; then
+    echo "Refusing to deploy: TBD_REMOTE_DIR must be under /home/sam/tbd/ (got: $raw)" >&2
+    echo "rsync --delete to paths outside /home/sam/tbd/ is forbidden." >&2
     exit 1
   fi
 }
@@ -101,6 +126,7 @@ refuse_prairielearn "TBD_SSH_HOST" "$TBD_SSH_HOST"
 if [ -n "${TBD_PROFILE_DIR:-}" ]; then
   refuse_prairielearn "TBD_PROFILE_DIR" "$TBD_PROFILE_DIR"
 fi
+require_tbd_remote_prefix "$TBD_REMOTE_DIR"
 
 SSH_BASE=(ssh -o StrictHostKeyChecking=no)
 if [ -n "${TBD_SSH_PASS:-}" ]; then
