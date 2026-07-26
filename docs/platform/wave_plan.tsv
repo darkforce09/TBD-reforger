@@ -46,6 +46,7 @@
 0	T-326	Matches played before an identity link never backfill, so deployments undercount	apps/website/api/src/handlers/me.rs
 0	T-324	Claiming a second ORBAT seat does not release the first	apps/website/api/src/handlers/events.rs
 0	T-228	ORBAT unique index omits faction — cross-faction squad names 500 on attach	apps/website/api/migrations
+1	T-344	One doc mutator to author per-faction briefing prose	crates/map-engine-core/src/doc/store.rs
 1	T-340	GET /events/:id still 500s on a NULL briefing OR thumbnail_url	apps/website/api/src/handlers/events.rs
 1	T-341	deployments.rs has a bare SELECT * and swallows decode errors, in the file held up as the good example	apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/dashboard_reads.rs
 1	T-342	Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt	apps/website/frontend/src/personnel.rs

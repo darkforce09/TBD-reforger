@@ -7278,7 +7278,7 @@
     {
       "id": "T-214",
       "title": "Briefing text editor — situation, mission, execution, per faction",
-      "summary": "No control exists and the export envelope hardcodes briefing to an empty string (compile.rs:166). The mod's briefing screen reads situation/mission/execution per faction.",
+      "summary": "No control exists and the export envelope hardcodes briefing to an empty string (compile.rs:166). The mod's briefing screen reads situation/mission/execution per faction.\n\nSHIPPED AS AN HONEST PARTIAL 2026-07-26, and it corrected the ticket's central premise.\n\nTHE SINGULAR/PLURAL MISMATCH IS NOT A BUG. They are two different fields:\n  `briefing` (envelope, STRING) = the `missions.briefing` DB COLUMN — the library dossier blurb. Authority handlers/missions.rs:1113 build_mission_doc; consumers frontend mission_overview.rs:124 (\"No briefing provided.\") and approvals.rs:388.\n  `briefings` (mission.schema.json:466, OBJECT keyed by faction) = the in-game briefing screen prose. That is T-202's.\nSo compile.rs:166 was a separate, smaller defect — the client envelope dropped a field the API's envelope carries. It now reads meta.briefing, the established channel (title/terrain/environment all arrive that way via apply_row_meta). Putting an object there would have broken the mirror with build_mission_doc.\n\nTHE ASYMMETRY THAT MADE THIS CHEAP, verified by running not reading: the doc's READ and HYDRATE halves already round-trip a per-faction briefing object with ZERO change to store.rs. small_maps_json() emits factions via to_json() verbatim; compile.rs values_of() clones each row whole; load_row() (:1555) re-inserts every non-id field verbatim with nested objects staying opaque Any::Maps. The agent proved it using `hydrate` as the writer. Only a WRITE MUTATOR is missing — split to T-344.\n\nSHAPES, for diffing against T-202: doc `factionsById[<id>].briefing = {situation?, mission?, execution?}`, absent when unauthored so \"none\" is distinguishable from \"empty\"; payload `editor.factions[i].briefing` with key `slug_key(f.key)` — the SAME slug orbat and slots[].faction use, confirmed across all four goldens.\n\nProse hangs on the faction ROW rather than a sibling map because `briefings` is additionalProperties-open: a stale entry naming a DELETED faction still validates and would ship prose for a side that no longer exists. On the row that state is unrepresentable.\n\nMUTATION PROBE, so the newline claim is not vacuous: a newline->space sanitiser in values_of fails all three new tests AND the other 209 pass under it — so these are the ONLY guard on newline survival in the tree. Applied out of git, restored by cp, md5-verified.\n\nCORRECTION TO MY OWN BRIEF: the `doc` feature adds 54 lib tests, not ~155. A mission-only run reports 157, not ~142. Baseline 209 was exact; this took it to 212.",
       "program": "eden",
       "surfaces": [
         "MAP",
@@ -7287,13 +7287,14 @@
       "impact": [
         "mc-authoring"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2320,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "ba0aba5c"
     },
     {
       "id": "T-215",
@@ -9821,6 +9822,26 @@
       ],
       "executor": "claude-code",
       "priority": 2
+    },
+    {
+      "id": "T-344",
+      "title": "One doc mutator to author per-faction briefing prose",
+      "summary": "SPLIT FROM T-214, which proved everything around it already works and refused to reach into a file it did not own.\n\nNEEDS EXACTLY ONE MUTATOR in crates/map-engine-core/src/doc/store.rs, e.g.\n  set_faction_briefing(faction_id, situation, mission, execution)\ninserting an `Any::Map` under `briefing` on the faction row.\n\nWHAT YOU DO NOT NEED TO CHANGE, and T-214 verified each by running it:\n  - `hydrate` / `load_row` (:1555) — already re-inserts every non-id field verbatim, nested objects staying opaque Any::Maps.\n  - `small_maps_json()` (:166) — already emits the faction map via to_json() verbatim.\n  - `compile.rs values_of()` — already clones each faction row whole.\nSo doc -> payload -> server -> hydrate -> doc round-trips the object today. T-214's test `briefing_prose_round_trips_through_the_document_core` proves it using hydrate AS the writer, which is precisely why only the author-side write is missing.\n\n`factions` is already in undo scope (store.rs:103), so authoring is undoable for free — do not add a second scope.\n\nSHAPE IS FIXED, do not renegotiate it: `factionsById[<factionId>].briefing = {situation?, mission?, execution?}`, absent when unauthored. T-202 emits from it and T-214 writes the payload from it; a third shape here breaks both.\n\nOPTIONAL AND SEPARABLE, mentioned by T-214: apply_row_meta (:1042) could thread the row's `briefing` DB column into `meta.briefing` to light up the envelope field, which currently always resolves to \"\" because nothing writes it. Decide deliberately whether that belongs here.\n\nNOTE store.rs is the second most contended file in this backlog — keep the diff to the one mutator.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3160,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
     }
   ]
 }
