@@ -321,6 +321,59 @@ mod tests {
         );
     }
 
+    /// Mirror the production decode seam for a 200: `decode_2xx` is
+    /// `Ok(resp.json::<GuildMember>().await?)`, so a body that fails to deserialize leaves
+    /// as `Err` and one that succeeds arrives as `Ok(Some(..))`. Deserializing here rather
+    /// than hand-building a `GuildMember` is the point — the bug lived in the derive.
+    fn lookup_from_200_body(body: &str) -> anyhow::Result<Option<GuildMember>> {
+        Ok(Some(serde_json::from_str::<GuildMember>(body)?))
+    }
+
+    #[test]
+    fn absent_roles_field_on_a_200_does_not_demote() {
+        // T-185 shipped `RoleSnapshot` to stop a transport failure from erasing roles, but
+        // left `#[serde(default)]` on `GuildMember::roles` — so a gateway or proxy serving a
+        // JSON error envelope with a 200 status still deserialized to `roles: []`, became
+        // Authoritative(vec![]), and sent sync_roles off to DELETE every stored role. Same
+        // permanent damage as the original bug, through a different door. An absent field is
+        // not an answer about this user's roles, and must reach the Unavailable branch.
+        let snap = classify_member_lookup(
+            "42",
+            lookup_from_200_body(r#"{"code":0,"message":"502 Bad Gateway"}"#),
+        );
+        assert!(
+            snap.ids_to_persist().is_none(),
+            "a 200 whose body omits `roles` must not be read as an authoritative empty role list"
+        );
+    }
+
+    #[test]
+    fn explicitly_empty_roles_array_still_demotes() {
+        // The other half of the contract, and the reason this is a serde fix rather than a
+        // "treat empty as unavailable" fix: a guild member who genuinely holds no roles gets
+        // `"roles": []` from Discord. That IS an answer, so it must still write — and the
+        // resulting demotion to enlisted is correct, not a regression.
+        let snap = classify_member_lookup("42", lookup_from_200_body(r#"{"nick":"B","roles":[]}"#));
+        assert!(
+            matches!(snap.ids_to_persist(), Some(ids) if ids.is_empty()),
+            "an explicit `roles: []` is a real answer and must still sync to no roles"
+        );
+    }
+
+    #[test]
+    fn populated_roles_on_a_200_are_authoritative() {
+        // Guard the happy path against an over-broad fix: tightening `roles` must not make
+        // ordinary logins fall through to Unavailable and freeze everyone's role forever.
+        let snap = classify_member_lookup(
+            "42",
+            lookup_from_200_body(r#"{"nick":null,"roles":["1517285898817896559"]}"#),
+        );
+        assert_eq!(
+            snap.ids_to_persist().expect("authoritative"),
+            ["1517285898817896559"]
+        );
+    }
+
     #[test]
     fn blank_guild_id_is_not_configured() {
         // A blank id must never reach Discord: the resulting 404 would read as Ok(None)
