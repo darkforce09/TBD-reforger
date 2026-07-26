@@ -478,9 +478,17 @@ async fn admin_approvals_cms_field() {
     .await;
     assert_eq!(st, StatusCode::CREATED, "announce: {a}");
     let aid = a["id"].as_str().unwrap().to_string();
+    // T-239: CMS stores announcement body as authored plain text (SPA text-node escape).
+    // Pre-T-239 ammonia stripped <script> / entity-escaped bare < — that double-escaped in Leptos.
+    const AUTHORED: &str = "<b>hi</b><script>x</script>";
+    assert_eq!(
+        a["body"].as_str().unwrap(),
+        AUTHORED,
+        "T-239: body must be plain-text identity (not ammonia-sanitized)"
+    );
     assert!(
-        !a["body"].as_str().unwrap().contains("<script>"),
-        "body sanitized"
+        !a["body"].as_str().unwrap().contains("&lt;"),
+        "T-239: body must not be entity-escaped"
     );
     // Visible on the public feed while published.
     let (st, _) = call(
