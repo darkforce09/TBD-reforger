@@ -100,6 +100,61 @@ async fn call_ct(
     )
 }
 
+/// Find one mission anywhere in the `GET /api/v1/approvals` queue, walking **every** page.
+///
+/// **Do not shrink this back to "is it on page 1" (T-399).** `handlers/approvals.rs:99-105`
+/// serves the queue `ORDER BY COALESCE(m.updated_at, m.created_at, '0001-01-01') ASC` — *oldest
+/// first* — and nothing anywhere ever removes a `pending_approval` mission from the shared gate
+/// database: `tests/missions.rs:963/1138/1156` each leave one behind on every run,
+/// `tests/null_tolerance.rs:77` leaves one with both timestamps NULL (which the sentinel sorts to
+/// the very *front*), and a failure of this assertion leaves this test's own row pending too, so
+/// the ratchet feeds itself. The queue therefore only ever grows, while the row a test just
+/// submitted is always the *newest* — i.e. on the **last** page. The moment residue passes one
+/// page a page-1 assertion fails forever, on every branch, for everyone. Measured on
+/// `tbd_gate_it` 2026-07-26: 24 pending rows, 19 from one suite, 4 of them this test's own
+/// self-inflicted leftovers.
+///
+/// Walking the paged set is the only one of the three candidate fixes that survives a database
+/// that is **already** dirty. Filtering would need a query parameter `PageParams` does not have
+/// (adding API surface for a test's benefit), and self-cleanup can only retire the row this run
+/// wrote — it cannot retire the residue already there without deleting rows a concurrently-gating
+/// sibling worktree is mid-assertion on.
+async fn find_in_approvals(app: &Router, tok: &str, mission_id: &str) -> Option<Value> {
+    // `PageParams::bounds()` (`handlers/mod.rs:43`) silently falls back to the default 20 for any
+    // limit above 100, so 100 is the largest page actually honoured — asking for more would
+    // quietly make this walk five times as many pages.
+    const PAGE: usize = 100;
+    let mut offset = 0usize;
+    loop {
+        let (st, body) = call(
+            app,
+            "GET",
+            &format!("/api/v1/approvals?limit={PAGE}&offset={offset}"),
+            tok,
+            None,
+        )
+        .await;
+        assert_eq!(st, StatusCode::OK, "approvals at offset {offset}: {body}");
+        let rows = body["data"]
+            .as_array()
+            .unwrap_or_else(|| panic!("approvals page has no `data` array: {body}"));
+        if let Some(row) = rows.iter().find(|r| r["mission_id"] == mission_id) {
+            return Some(row.clone());
+        }
+        // A short page is the end of the queue. A full one means there may be more.
+        if rows.len() < PAGE {
+            return None;
+        }
+        offset += rows.len();
+        // Non-termination here would mean LIMIT stopped being applied, which is a defect in its
+        // own right — fail loudly instead of spinning.
+        assert!(
+            offset < 100_000,
+            "approvals paging never terminated (offset {offset}) — is LIMIT being applied?"
+        );
+    }
+}
+
 /// T-317 — a ban must never erase the reason a previous admin recorded.
 ///
 /// The regression this pins is specifically a **re-ban**: the target starts already banned
@@ -372,15 +427,19 @@ async fn admin_approvals_cms_field() {
     )
     .await;
     assert_eq!(st, StatusCode::OK);
-    let (st, appr) = call(&app, "GET", "/api/v1/approvals", &t, None).await;
-    assert_eq!(st, StatusCode::OK);
-    assert!(
-        appr["data"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|r| r["mission_id"] == mid.as_str())
+    // The queue is oldest-first and never pruned, so the row just submitted is on the LAST page,
+    // never necessarily the first — see `find_in_approvals` (T-399).
+    let appr = find_in_approvals(&app, &t, &mid)
+        .await
+        .unwrap_or_else(|| panic!("submitted mission {mid} is absent from the approvals queue"));
+    // Assert the projection, not just the id: these three come from three different places in
+    // the query — the base table, the `LEFT JOIN`, and the `COALESCE` chain T-330 added.
+    assert_eq!(appr["title"], "Approve Me", "approval row: {appr}");
+    assert_eq!(
+        appr["author_id"], "000000000000000001",
+        "approval row: {appr}"
     );
+    assert_eq!(appr["author_name"], "Dev Operator", "approval row: {appr}");
     let (st, r) = call(
         &app,
         "POST",
