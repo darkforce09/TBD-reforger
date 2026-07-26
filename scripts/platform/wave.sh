@@ -78,6 +78,11 @@ GATE_TIMEOUT="${TBD_GATE_TIMEOUT:-1200}"
 # had real coverage; the hole was specific to the gate. Third-order instance of this run's signature
 # defect: reporting success on code never examined.
 GATE_DB="${TBD_GATE_DB:-postgres://tbd:tbd@localhost:5434/tbd_gate_it?sslmode=disable}"
+# The gate's PRIVATE trunk working set. Named here rather than buried in the sh -c string at the
+# call site, because gate_trunk_build asserts against them and the whole T-396 cure is that these
+# two are never the paths `trunk serve` owns. See gate_trunk_build for the measurement.
+GATE_TRUNK_TARGET="${TBD_GATE_TRUNK_TARGET:-$MAIN_ROOT/target-gate-trunk}"
+GATE_TRUNK_DIST="${TBD_GATE_TRUNK_DIST:-$MAIN_ROOT/dist-gate-frontend}"
 if command -v distrobox-host-exec >/dev/null 2>&1; then
   hostrun() { distrobox-host-exec timeout "$GATE_TIMEOUT" \
                 env "CARGO_TARGET_DIR=$CARGO_TARGET_DIR" "TEST_DATABASE_URL=${TEST_DATABASE_URL:-}" \
@@ -390,6 +395,91 @@ gate_test_api() {
   return 0
 }
 
+# `trunk build --release`, ISOLATED FROM THE OPERATOR'S DEV SERVER — read before simplifying.
+#
+# `make leptos` is `trunk serve --release`: the same binary, running the same pipeline, over the
+# same crate, continuously, for hours. Two trunks over one working tree collide, and the collision
+# reads exactly like a code defect — the worst failure shape there is, because an unattended fix
+# agent burns its whole retry budget on working code.
+#
+# MEASURED 2026-07-26 against the pinned trunk 0.21.14, two release builds started together:
+#   shared dist + shared CARGO_TARGET_DIR   COLLIDED IN ALL 5 TRIALS — 4 lost by the gate, 1 by the
+#                                           dev server, every one of them
+#                                             "running wasm-opt / error copying (optimized) wasm
+#                                              file to dist dir / No such file or directory (os
+#                                              error 2)"
+#                                           which is the reported symptom byte for byte
+#   private --dist only                     15/15 clean. The ticket records this as a disproven
+#                                           dead end; it did not reproduce here. Do not read that
+#                                           as safe — $CARGO_TARGET_DIR/wasm-opt/<profile>/
+#                                           website-frontend_bg.wasm is still one path two writers
+#                                           share, and the adversarial verifier lost a build there.
+#                                           A window that is merely narrow is the exact thing that
+#                                           costs an unattended agent its retry budget.
+#   private --dist AND CARGO_TARGET_DIR     15/15 clean, then 10 consecutive gate builds clean with
+#                                           `trunk serve --release` live on :3000 throughout. This
+#                                           one is not luck: after both flags there is no path both
+#                                           writers can name.
+#
+# THE WHOLE TRUNK WORKING SET, enumerated from 0.21.14 rather than assumed:
+#   <dist>/.stage                              staging — trunk removes and recreates this at the
+#                                              START of every build and deletes it at the end,
+#                                              which is what "error writing JS loader file to stage
+#                                              dir / No such file or directory" was
+#   <dist>/*                                   the applied distribution
+#   $CARGO_TARGET_DIR/wasm32-unknown-unknown/  cargo output
+#   $CARGO_TARGET_DIR/wasm-bindgen/<profile>/  bindgen staging
+#   $CARGO_TARGET_DIR/wasm-opt/<profile>/      wasm-opt staging   <- the one --dist does NOT move
+# There is no staging env var to set. `TRUNK_STAGING_DIR` exists in the binary only as a variable
+# trunk EXPORTS to build hooks, never one it reads; staging is `<final dist>/.stage`, so `--dist` is
+# what isolates it. `--dist` plus `CARGO_TARGET_DIR` is therefore the COMPLETE set — nothing else is
+# written outside the read-only tool cache in ~/.cache/trunk. That completeness is the argument, not
+# the trial count: a private dist alone left one shared writable path and so could only ever be
+# lucky, while both flags together leave none, which is why this is a cure and not a mitigation.
+# The operator's dev server stays up and serving on :3000 throughout — nothing has to be killed
+# before an unattended run, and the preflight `trunk serve` warning (preflight.sh:149-157) is now
+# describing a hazard the gate no longer has.
+#
+# CORRECTION, measured: the comment this replaces claimed the gate provokes the race itself, because
+# touch_changed bumps mtime on ~18 frontend files "which is exactly what trunk serve watches".
+# FALSE for 0.21.14 — touching 18 real .rs files whose CONTENT was unchanged produced no rebuild at
+# all, twice over; only a content change wakes the watcher. Deleting touch_changed would therefore
+# not have cured anything: the operator's own edit or a merge wakes a multi-minute rebuild, and the
+# gate can arrive at any point inside it.
+gate_trunk_build() {
+  local fdir="$ROOT/apps/website/frontend" t0 hit
+  # Refuse to build UN-ISOLATED rather than race. Once either private path is collapsed onto a
+  # shared one, every trunk failure past this line is an environment race wearing a compile error's
+  # clothes, and the agent reading it has no way to tell.
+  if [ "$GATE_TRUNK_TARGET" = "$CARGO_TARGET_DIR" ] || [ "$GATE_TRUNK_DIST" = "$fdir/dist" ]; then
+    echo "trunk: gate build paths are not private — refusing to race the operator's dev server."
+    echo "        target=$GATE_TRUNK_TARGET"
+    echo "        dist=$GATE_TRUNK_DIST"
+    return 1
+  fi
+  t0="$(date +%s)"
+  # `return $?`, not `return 1`: hostrun applies the timeout host-side and run() reports 124 as
+  # "FAIL (TIMEOUT)" rather than a build failure. Flattening it here would relabel the single most
+  # expensive step's timeout as a code error — the same category mistake this whole function is about.
+  hostrun sh -c "cd '$fdir' && CARGO_TARGET_DIR='$GATE_TRUNK_TARGET' trunk build --release --dist '$GATE_TRUNK_DIST'" \
+    || return $?
+  # NON-VACUITY. Exit 0 only says trunk was happy; it does not say trunk HONOURED either flag. A
+  # Trunk.toml key, a config-precedence change on upgrade, or one dropped quote in the sh -c above
+  # would put the output back into the shared paths and the isolation would be gone SILENTLY — the
+  # gate would keep printing PASS right up until the day it raced again. So prove it every run:
+  # both private paths must have taken a write from THIS build.
+  hit="$(find "$GATE_TRUNK_DIST" -name '*_bg.wasm' -newermt "@$((t0 - 5))" 2>/dev/null | head -1)"
+  [ -n "$hit" ] || {
+    echo "trunk: reported success but $GATE_TRUNK_DIST holds no wasm from this run."
+    echo "        --dist was not honoured — the gate is writing into a dist the dev server owns."
+    return 1; }
+  hit="$(find "$GATE_TRUNK_TARGET/wasm-opt" -name '*.wasm' -newermt "@$((t0 - 5))" 2>/dev/null | head -1)"
+  [ -n "$hit" ] || {
+    echo "trunk: reported success but $GATE_TRUNK_TARGET/wasm-opt holds no wasm from this run."
+    echo "        CARGO_TARGET_DIR was not honoured — wasm-opt staging is shared with the dev server."
+    return 1; }
+}
+
 # Refuse a gate whose change set is EMPTY.
 #
 # Resolvability is not non-vacuity, and the first version of this guard only checked the former.
@@ -415,6 +505,95 @@ refuse_empty_range() {
   return 2
 }
 
+# ── GATE SERIALISATION ───────────────────────────────────────────────────────────────────────────
+#
+# TWO GATES AT ONCE REPORT ON EACH OTHER'S CODE. Two independent mechanisms, one root cause: every
+# gate in every worktree writes to the same shared paths.
+#
+#   ARTIFACT CLOBBERING. The per-step private target dirs used below (target-gate-api, -frontend,
+#   -mapengine, -trunk) are private per STEP but SHARED ACROSS WORKTREES — same package + same
+#   version = same artifact hash = clobbering. T-334's agent watched
+#   target-gate-api/debug/deps/events-* be overwritten mid-session by a sibling worktree's build
+#   and found main's literals inside a binary its own gate had just produced, with ps confirming a
+#   concurrent gate_test_api from another tree. So "N passed" was not its own code. The header on
+#   gate_test_api says this hazard is fixed; it is fixed against the SHARED target dir, not against
+#   another worktree using the same PRIVATE one.
+#
+#   SHARED GATE DATABASE. ensure_gate_db hands every slice the same tbd_gate_it, while
+#   tests/registry_compat.rs:38-60 DELETEs and re-imports two FIXED modpack UUIDs. Re-measured here
+#   2026-07-26, two copies of one binary against tbd_gate_it: one panicked at registry_compat.rs:511
+#   with left (0, 5) / right (16, 7) while the other passed. Run alone it always passes.
+#
+# Both are FALSE-RED, which is the most expensive failure shape this program has: the honest
+# response to a red gate is to go hunting for a bug in your own diff, and an unattended fix agent
+# will spend its whole retry budget doing exactly that to working code.
+#
+# THE LOCK COVERS THE WHOLE GATE, not only the steps that touch shared state. Three reasons:
+#   1. A verdict is a claim about ONE tree at ONE moment. Per-step locking still lets a sibling's
+#      build land between our steps, so "GATE: PASS" would describe a tree that changed underneath
+#      it — a smaller version of the same lie.
+#   2. touch_changed runs ONCE, at the top, and its entire job is to invalidate cargo's fingerprints
+#      so the following steps compile THIS slice. A sibling gate building the same package between
+#      our touch and our test re-freshens that fingerprint against ITS source, and then our step
+#      runs the resulting binary. Only holding across steps closes that window.
+#   3. Every step added later is inside it by default. A per-step lock is a rule the next author has
+#      to remember; this is one they would have to deliberately remove.
+# The cost is wall clock and nothing else, and that trade is not close.
+#
+# NOT per-worktree CARGO_TARGET_DIR: that fights correction 1 at the top of this file (a cold
+# per-tree target is ~44 GB, the repo's own is 52 GB) and exhausts the disk by the third slice.
+#
+# The lock lives under the MAIN repo's target/ — the one directory every worktree already agrees on
+# (correction 1), gitignored at /target/. flock releases when the fd closes, i.e. on process exit,
+# so a killed or timed-out gate cannot wedge the queue: there is no stale lock to clear by hand.
+GATE_LOCK="${TBD_GATE_LOCK:-$MAIN_ROOT/target/.tbd-gate.lock}"
+GATE_LOCK_POLL="${TBD_GATE_LOCK_POLL:-30}"     # heartbeat interval while blocked
+GATE_LOCK_MAX="${TBD_GATE_LOCK_MAX:-3600}"     # give up (REFUSE, never run unserialised) after this
+
+# A gate that blocks silently for minutes is indistinguishable from a hung one, and this program
+# runs unattended — so the wait announces itself, names the holder, and heartbeats until it clears.
+take_gate_lock() {
+  local what="$1" waited=0
+  mkdir -p "$(dirname "$GATE_LOCK")" 2>/dev/null || true
+  # Probe in a SUBSHELL. `exec 9>>file` with a trailing `2>/dev/null` would redirect this shell's
+  # stderr permanently, and a failed bare-redirection `exec` can take the shell down with it.
+  if ! command -v flock >/dev/null 2>&1 || ! ( : >>"$GATE_LOCK" ) 2>/dev/null; then
+    echo "gate: WARNING — cannot lock ($GATE_LOCK): this gate is NOT serialised."
+    echo "        If another worktree gates at the same time, both verdicts are unreliable."
+    return 0
+  fi
+  exec 9>>"$GATE_LOCK"
+  if ! flock -n 9; then
+    # The holder writes its note just AFTER taking the lock, so losing the race by microseconds
+    # reads it empty. Give it one second rather than printing "unknown" at the reader.
+    local holder; holder="$(cat "$GATE_LOCK.holder" 2>/dev/null)"
+    [ -n "$holder" ] || { sleep 1; holder="$(cat "$GATE_LOCK.holder" 2>/dev/null)"; }
+    echo "gate: WAITING for the gate lock — this is serialisation, NOT a hang."
+    echo "        holder: ${holder:-not recorded yet}"
+    echo "        why:    the gate target dirs and the gate database are shared across worktrees,"
+    echo "                so two gates at once report on each other's artifacts."
+    while ! flock -w "$GATE_LOCK_POLL" 9; do
+      waited=$((waited + GATE_LOCK_POLL))
+      if [ "$waited" -ge "$GATE_LOCK_MAX" ]; then
+        # Refusing beats proceeding. An unserialised verdict is the thing this lock exists to
+        # prevent, so waiting out the clock must not degrade into producing one.
+        echo "gate: REFUSING — no lock after ${waited}s. Another gate is stuck; do not run two."
+        echo "        holder: $(cat "$GATE_LOCK.holder" 2>/dev/null || echo unknown)"
+        return 2
+      fi
+      printf '        …still waiting %dm%02ds — holder: %s\n' \
+        $((waited / 60)) $((waited % 60)) "$(cat "$GATE_LOCK.holder" 2>/dev/null || echo unknown)"
+    done
+    echo "gate: lock acquired after ~${waited}s."
+  fi
+  printf '%s  pid %s  %s  since %s\n' "$what" "$$" "$ROOT" "$(date -u +%FT%TZ)" \
+    > "$GATE_LOCK.holder" 2>/dev/null || true
+  # Clear the note on the way out, but only if it is still OURS — otherwise a finishing gate would
+  # wipe the note the gate that just took the lock behind it wrote, and the next waiter would be
+  # told "unknown". The lock itself is the fd; this file is only ever the human-readable half.
+  trap 'grep -q "pid $$ " "$GATE_LOCK.holder" 2>/dev/null && rm -f "$GATE_LOCK.holder"' EXIT
+}
+
 # Cheap gate — what a slice agent runs before reporting done. Target: ~10 s warm.
 gate_slice() {
   local tid="${1:-}"
@@ -422,6 +601,9 @@ gate_slice() {
   # gate_slice's helpers all default to `main...HEAD`, which is the slice's own diff when run
   # from its worktree and empty anywhere else. Check the range they will actually use.
   refuse_empty_range "main...HEAD" "Run this from the slice's WORKTREE, not from main." || return 2
+  # Even the cheap gate builds into the SHARED CARGO_TARGET_DIR (cargo check, clippy), which is
+  # exactly the dir T-193 and T-235 measured one worktree's artifacts appearing in another's.
+  take_gate_lock "slice ${tid:-?}" || return $?
   touch_changed
   local fail=0
   run() { local l="$1"; shift; printf "  %-24s " "$l"
@@ -473,6 +655,12 @@ cmd_gate() {
   # still gated an empty range. See refuse_empty_range.
   refuse_empty_range "$base..HEAD" \
     "Pick a base that actually precedes the work — e.g. the commit before this wave opened." || return 2
+  # Serialise against every other gate on this machine. The wave gate is the one that runs the
+  # test steps and the trunk build, so it is the one with the most shared mutable state to lose:
+  # three private-per-step target dirs that are shared per WORKTREE, one gate database, and one
+  # gate dist. Taken BEFORE touch_changed — the fingerprint invalidation and the steps that depend
+  # on it have to be inside the same critical section or the invalidation means nothing.
+  take_gate_lock "wave gate ${base:0:12}" || return $?
   echo "═══ platform wave gate (base ${base:0:12}) ═══"
   touch_changed "$base..HEAD"
   local fail=0
@@ -535,31 +723,10 @@ cmd_gate() {
   # The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
   # when the wave actually touched the frontend — measured across the WHOLE wave, not the last merge.
   if git diff --name-only "$base..HEAD" 2>/dev/null | grep -q '^apps/website/frontend/'; then
-    # Trunk gets a PRIVATE --dist, for the same reason the frontend tests get a private target dir.
-    # `make leptos` (trunk serve) holds apps/website/frontend/dist and rewrites it on every change.
-    # OBSERVED 2026-07-26: the wave gate failed with "error writing JS loader file to stage dir /
-    # No such file or directory" while PID 158382 held it, and the identical build passed seconds
-    # later. That is the worst failure shape there is — an ENVIRONMENT race that reads exactly like
-    # a code defect, so an unattended fix agent burns its whole retry budget on working code.
-    # Preflight warns about it, but warning is not enough for a run nobody is watching, and the
-    # operator's dev server is not ours to kill.
-    #
-    # Calling trunk directly instead of `make ci-local-leptos` also drops three steps this gate has
-    # already run above (fmt, clippy wasm32, test) — the build is the only part that was not covered.
-    # A private --dist was NOT ENOUGH, and the claim that it was is corrected here.
-    #
-    # `trunk build` also stages through FIXED paths under CARGO_TARGET_DIR:
-    #   target/wasm-bindgen/release/website-frontend_bg.wasm
-    #   target/wasm-opt/release/website-frontend_bg.wasm
-    # Both trunks — the gate's and the operator's `trunk serve --release` — pointed at the same
-    # CARGO_TARGET_DIR, so they collided there regardless of --dist. Worse, THIS GATE PROVOKES THE
-    # RACE ITSELF: cmd_gate calls touch_changed, which bumps mtime on ~18 frontend .rs files, which
-    # is exactly what trunk serve watches. So the gate wakes the rebuild it then loses to.
-    #
-    # OBSERVED by the adversarial verifier 2026-07-26: `error copying (optimized) wasm file to dist
-    # dir / No such file or directory (os error 2)`, with dist/ mtime inside the gate's own window —
-    # then the identical command alone succeeded in 7.5 s. A private CARGO_TARGET_DIR is the fix.
-    run "trunk build"    hostrun sh -c "cd '$ROOT/apps/website/frontend' && CARGO_TARGET_DIR='$MAIN_ROOT/target-gate-trunk' trunk build --release --dist '$MAIN_ROOT/dist-gate-frontend'"
+    # Isolated from `make leptos`, and it proves the isolation held. See gate_trunk_build — the
+    # measurement, the enumerated trunk working set, and why the operator's dev server no longer
+    # has to be killed before an unattended run, all live on that function.
+    run "trunk build"    gate_trunk_build
   else
     printf "  %-24s SKIP (frontend untouched this wave)\n" "trunk build"
   fi
