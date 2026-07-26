@@ -1085,11 +1085,27 @@ pub async fn get_orbat(
             .into_iter()
             .collect();
 
-    let mut order: Vec<String> = Vec::new();
-    let mut groups: HashMap<String, OrbatSquadDto> = HashMap::new();
+    // ══ GROUPED BY (FACTION, SQUAD), NOT SQUAD (T-324) ═════════════════════════════════════
+    // Keying on the squad name alone silently merges two factions that field a squad by the same
+    // name. Measured on such an ORBAT: `GET .../orbat` returned ONE card labelled
+    // `faction: "BLUFOR"`, `total: 4`, holding BLUFOR's pair *and* OPFOR's, with `number` running
+    // 1, 2, 1, 2 — and OPFOR absent from the response entirely, so its seats could not be seen or
+    // picked at all. `order` deduped the same way (the closure runs once per key), so the second
+    // faction had no card to be rendered into.
+    //
+    // Reachable only once `idx_orbat_slot` covers `faction`: today it is unique on
+    // `(event_mission_id, squad, slot_index)`, so attaching two same-named squads fails on
+    // duplicate key before this code can be wrong. Fixed here ahead of that index so the widening
+    // cannot turn a visible 500 into an invisible wrong-army bug.
+    //
+    // The reservation key stays the squad NAME — `orbat_reservations` has no faction column, so
+    // both factions' cards correctly show the same holder. See [`squad_reserved_by`].
+    let mut order: Vec<(String, String)> = Vec::new();
+    let mut groups: HashMap<(String, String), OrbatSquadDto> = HashMap::new();
     for s in &slots {
-        let g = groups.entry(s.squad.clone()).or_insert_with(|| {
-            order.push(s.squad.clone());
+        let key = (s.faction.clone(), s.squad.clone());
+        let g = groups.entry(key).or_insert_with(|| {
+            order.push((s.faction.clone(), s.squad.clone()));
             let (rb, rbn) = match reserved_by.get(&s.squad) {
                 Some(who) => (who.clone(), names.get(who).cloned().unwrap_or_default()),
                 None => (String::new(), String::new()),
@@ -1127,12 +1143,89 @@ pub async fn get_orbat(
     }
     let out: Vec<OrbatSquadDto> = order
         .into_iter()
-        .filter_map(|sq| groups.remove(&sq))
+        .filter_map(|key| groups.remove(&key))
         .collect();
     Ok(Json(json!({ "data": out })))
 }
 
 // --- Registration (G7b) ---
+
+/// Release every seat `who` holds in this event-mission except `keep`, and report how many were
+/// freed. **The only statement in this file that writes `orbat_slots.assigned_to = NULL.**
+///
+/// ══ ONE SEAT PER USER PER OPERATION — WHY THIS IS A FUNCTION (T-324) ═══════════════════
+/// `event_registrations.slot_id` and `orbat_slots.assigned_to` are a denormalised duplicate of
+/// one fact ("which seat is this person in") with no constraint tying them together, so every
+/// writer of one has to remember the other. Both claim paths forgot: [`register_for_event_mission`]
+/// and [`assign_slot`] each wrote the new seat, repointed the registration at it, and left the
+/// previous seat still naming the occupant. Two seats, one registration, and a capacity display
+/// reading `assigned_to` that stays wrong until someone withdraws.
+///
+/// Making the release a named primitive rather than two inline copies is the point. There is now
+/// one place the SQL lives, one thing to call before writing a claim, and one docstring to read.
+/// It does not make the invariant structural — see the note on [`assign_slot`] — but it removes
+/// the failure mode where two handlers drift apart because only one of them was patched.
+///
+/// `keep: None` releases everything, which is what withdrawal wants. `IS DISTINCT FROM` (not
+/// `<>`) is what makes that work: `id <> NULL` is NULL for every row, so a `<>` form would
+/// silently release nothing on exactly the path that needs to release all of it.
+///
+/// Both bounds are load-bearing, and are the ones T-318 established for withdrawal:
+///   * `assigned_to = $2` — only seats naming this user. It cannot strip a claim someone else
+///     holds, whatever a registration's `slot_id` has drifted onto.
+///   * `event_mission_id = $1` — only this operation. Without it, taking a seat in one
+///     operation would unseat the user from every other event they are signed up for.
+async fn release_other_seats(
+    tx: &mut sqlx::PgConnection,
+    em_id: Uuid,
+    who: &str,
+    keep: Option<Uuid>,
+) -> Result<u64, sqlx::Error> {
+    Ok(sqlx::query(
+        "UPDATE orbat_slots SET assigned_to = NULL, assigned_at = NULL \
+         WHERE event_mission_id = $1 AND assigned_to = $2 AND id IS DISTINCT FROM $3",
+    )
+    .bind(em_id)
+    .bind(who)
+    .bind(keep)
+    .execute(tx)
+    .await?
+    .rows_affected())
+}
+
+/// Who holds the reservation on `squad`, if anyone.
+///
+/// ══ NAME-SCOPED, NOT FACTION-SCOPED — AND THAT IS A SCHEMA LIMIT (T-324) ═══════════════
+/// `orbat_reservations` has **no faction column** (`0001_initial_schema.sql:403-409`; its unique
+/// index is `(event_mission_id, squad)`), so a hold on "Alpha 1-1" covers every faction fielding
+/// a squad by that name. Today `idx_orbat_slot` is unique on `(event_mission_id, squad,
+/// slot_index)` and hides this: two factions cannot both field an "Alpha 1-1" in one operation
+/// without a duplicate-key failure on attach. When that index widens to include `faction`, the
+/// collision becomes legal and this lookup starts answering for the wrong army — an OPFOR leader
+/// cannot reserve their own "Alpha 1-1" (they collide with BLUFOR's), and a BLUFOR hold rejects
+/// OPFOR claims with "squad is reserved by a leader".
+///
+/// That cannot be fixed here. There is no faction recorded on a reservation to compare against,
+/// so a `faction` argument would have nothing to filter on; the fix is a migration plus these
+/// call sites in one commit, and it is a separate slice. What this function does is make that a
+/// **one-place** change: the two gates below share this lookup instead of each carrying their own
+/// copy of the SQL. Do not write anything that assumes reservations are faction-aware.
+async fn squad_reserved_by<'e, E>(
+    ex: E,
+    em_id: Uuid,
+    squad: &str,
+) -> Result<Option<String>, ApiError>
+where
+    E: sqlx::Executor<'e, Database = Postgres>,
+{
+    Ok(sqlx::query_scalar(
+        "SELECT reserved_by FROM orbat_reservations WHERE event_mission_id = $1 AND squad = $2",
+    )
+    .bind(em_id)
+    .bind(squad)
+    .fetch_optional(ex)
+    .await?)
+}
 
 /// The registration body.
 ///
@@ -1170,6 +1263,12 @@ pub struct RegisterBody {
 ///     cannot be undone by the sweeper being slow, wedged, or not deployed.
 ///   * moving the read into the transaction also closes the old check-then-claim gap where
 ///     an admin could cancel an event between the guard and the slot write.
+///
+/// ══ ONE SEAT PER CALLER ════════════════════════════════════════════════════════════════
+/// A caller holds at most one `orbat_slots` row per event-mission, and it is the row their
+/// `event_registrations.slot_id` names. Claiming a seat releases whatever seat the caller held
+/// here first, in the same transaction — see the block above the claim (T-324). No waitlist
+/// promotion happens on this path; the reasoning is next to the branch.
 ///
 /// @route POST /api/v1/event-missions/:emid/register
 pub async fn register_for_event_mission(
@@ -1234,13 +1333,65 @@ pub async fn register_for_event_mission(
     .fetch_one(&mut *tx)
     .await?;
 
+    // The seat this request asks for, resolved BEFORE anything is written so that a
+    // syntactically impossible id is still a plain 404 and not a release-then-fail.
+    let want: Option<Uuid> = if body.slot_id.is_empty() {
+        None
+    } else {
+        match Uuid::parse_str(&body.slot_id) {
+            Ok(sid) => Some(sid),
+            Err(_) => return Err(ApiError::not_found("slot not found")),
+        }
+    };
+
+    // ══ ONE SEAT PER CALLER PER OPERATION — RECONCILED HERE, UNDER THE LOCK (T-324) ═══════
+    // Registering used to be claim-only: it wrote the new seat and left the old one claimed.
+    // Two *entirely valid* requests — claim slot0, then claim slot1 — therefore left the caller
+    // holding two seats while `event_registrations.slot_id` named exactly one. T-318 closed the
+    // malformed-body route into that state; this is the larger one, because it needs no mistake
+    // at all. Measured before this call existed: both seats `assigned_to` the caller, one
+    // registration row, and `GET /events/:id` reporting `filled: 2, registered: 1` on a 2-slot
+    // ORBAT — an operation that reads FULL with one person signed up.
+    //
+    // Placement is the whole fix, not the SQL. It sits INSIDE the transaction that already holds
+    // `SELECT ... FOR UPDATE` on the mission row a few statements above, between the capacity
+    // read and the conditional claim. Releasing outside that lock — a second request, or even a
+    // second statement after `commit` — would swap one wrong answer for a race: another caller
+    // could take the seat in the gap and then lose it to our release, or read the ORBAT while the
+    // caller momentarily held zero seats. Inside, the release and the claim are one atomic move.
+    //
+    // On the bench branch `want` is NULL and this releases everything, which is right: that
+    // branch nulls the registration's `slot_id` regardless, so leaving `assigned_to` set is
+    // precisely the T-318 orphan shape and the caller would have to withdraw entirely to unstick
+    // a seat they never meant to keep.
+    //
+    // Order is release-then-claim, and it must stay that way if a partial unique index on
+    // `(event_mission_id, assigned_to)` ever lands: Postgres enforces a unique index per row as
+    // it is written, not at end of statement, so claim-then-release would hit the violation on
+    // the claim and turn a valid seat move into a 500. Verified against that index, both orders,
+    // in a scratch database. Excluding `want` rather than releasing everything also keeps the
+    // idempotent own-seat re-claim a single write on one row.
+    release_other_seats(&mut tx, em.id, me, want).await?;
+
     let mut reg_state = RegistrationState::Registered;
     let mut slot_id: Option<Uuid> = None;
 
-    if !body.slot_id.is_empty() {
-        let Ok(sid) = Uuid::parse_str(&body.slot_id) else {
-            return Err(ApiError::not_found("slot not found"));
-        };
+    // ══ NO WAITLIST PROMOTION ON THIS PATH, ON PURPOSE ════════════════════════════════════
+    // Freeing a seat looks like it should promote whoever is next, and here it must not.
+    // Capacity in this handler is counted in *registrations* against the ORBAT slot count
+    // (`registered` above), never in occupied seats — so a promotion is owed exactly when the
+    // registered head-count drops below capacity. Registering can never do that: the caller
+    // keeps their registration row in every branch of this function (the upsert below only ever
+    // inserts or updates it), so the head-count is unchanged or one higher, never lower. Moving
+    // from slot0 to slot1 is one person still occupying one place in the operation; the released
+    // seat was already theirs and was already counted. Promoting for it would seat someone extra
+    // against a place that never came free — an over-fill.
+    // Even the bench branch cannot owe one: it only reaches `Waitlisted` when
+    // `registered >= capacity`, so the caller stepping out of the registered set leaves it still
+    // at or above capacity. This is the same reasoning T-318 used to skip promotion when
+    // withdraw releases an orphan (no registration row → never counted → nothing to promote),
+    // and deliberately the same answer.
+    if let Some(sid) = want {
         let slot: Option<OrbatSlot> =
             sqlx::query_as("SELECT id, event_mission_id, faction, squad, COALESCE(callsign, '') AS callsign, role, COALESCE(loadout, '') AS loadout, COALESCE(tag, '') AS tag, slot_index, assigned_to, assigned_at FROM orbat_slots WHERE id = $1 AND event_mission_id = $2")
                 .bind(sid)
@@ -1253,15 +1404,13 @@ pub async fn register_for_event_mission(
         if slot.assigned_to.as_deref().is_some_and(|a| a != me) {
             return Err(ApiError::conflict("slot already taken"));
         }
-        // A reserved squad is held for its leader (or an admin).
+        // A reserved squad is held for its leader (or an admin). This gate and the one in
+        // [`can_manage_squad`] are deliberately NOT the same predicate — here an *unreserved*
+        // squad is claimable by anyone, there it is assignable only by an admin — so they share
+        // the lookup ([`squad_reserved_by`], which documents the faction limit) and not the
+        // decision. Fixing one and missing the other is the trap; there is one query now.
         if !is_admin {
-            let res: Option<String> = sqlx::query_scalar(
-                "SELECT reserved_by FROM orbat_reservations WHERE event_mission_id = $1 AND squad = $2",
-            )
-            .bind(em.id)
-            .bind(&slot.squad)
-            .fetch_optional(&mut *tx)
-            .await?;
+            let res = squad_reserved_by(&mut *tx, em.id, &slot.squad).await?;
             if let Some(rb) = res
                 && rb != *me
             {
@@ -1307,6 +1456,9 @@ pub async fn register_for_event_mission(
 
 /// `DELETE /api/v1/event-missions/:emid/register` — withdraw + promote waitlist.
 ///
+/// Takes the same `FOR UPDATE` lock on the mission row that [`register_for_event_mission`]
+/// does — see the note at the top of the transaction.
+///
 /// @route DELETE /api/v1/event-missions/:emid/register
 pub async fn withdraw_from_event_mission(
     State(state): State<AppState>,
@@ -1317,6 +1469,25 @@ pub async fn withdraw_from_event_mission(
     let me = &user.discord_id;
 
     let mut tx = state.pool.begin().await?;
+    // ══ THE SAME LOCK REGISTER TAKES — WITHDRAW WAS THE UNGUARDED HALF (T-324) ════════════
+    // Register serialises on this row precisely because the capacity/waitlist decision is
+    // check-then-write. Withdraw does the *other* half of that same decision (it deletes a
+    // registration and promotes off the waitlist) and took no lock at all, so register's lock
+    // only ever excluded other registers. Two concrete losses, both reachable with valid
+    // requests:
+    //   * two withdrawals at once read the same "oldest waitlisted" row and both promote it —
+    //     two seats come free, one person moves up, and the second promotion is simply lost.
+    //   * a register that lands on `Waitlisted` because the operation was full, concurrent with
+    //     a withdrawal that scans for a waitlisted row before that INSERT commits, finds none:
+    //     the seat frees, nobody is promoted, and the new waitlister sits behind a vacancy
+    //     until someone else withdraws.
+    // Both under-fill rather than over-fill, which is why they are invisible rather than loud.
+    // Locking here makes register and withdraw one queue per operation. It is also the same row
+    // in the same order in both handlers, so there is no lock-ordering cycle to deadlock on.
+    sqlx::query("SELECT id FROM event_missions WHERE id = $1 FOR UPDATE")
+        .bind(em.id)
+        .fetch_one(&mut *tx)
+        .await?;
     // `slot_id` is deliberately NOT selected any more — see the release below.
     let reg: Option<(Uuid, RegistrationState)> = sqlx::query_as(
         "SELECT id, state FROM event_registrations WHERE event_mission_id = $1 AND discord_id = $2",
@@ -1333,25 +1504,12 @@ pub async fn withdraw_from_event_mission(
     // it skipped. `assigned_to` is the seat claim itself; it is the only column that has to be
     // true for the seat to read as occupied, so it is the one to key off.
     //
-    // This is a broader delete than the old one, so both bounds are load-bearing:
-    //   * `assigned_to = $2` — only seats that name the caller. It is definitionally impossible to
-    //     free a seat the caller does not hold, and unlike the old `WHERE id = $1` it can no
-    //     longer strip someone *else's* claim when a registration's `slot_id` has drifted onto a
-    //     seat that has since been reassigned.
-    //   * `event_mission_id = $1` — only this operation. Without it, withdrawing from one mission
-    //     would unseat the caller from every other event they are signed up for. The old form had
-    //     no event-mission bound at all and leaned entirely on `slot_id` being trustworthy.
-    // Together they are a subset of the old behaviour on healthy rows and a superset only on the
-    // orphans, which is the whole point.
-    let released = sqlx::query(
-        "UPDATE orbat_slots SET assigned_to = NULL, assigned_at = NULL \
-         WHERE event_mission_id = $1 AND assigned_to = $2",
-    )
-    .bind(em.id)
-    .bind(me)
-    .execute(&mut *tx)
-    .await?
-    .rows_affected();
+    // It is a broader delete than the old one but a bounded one — see [`release_other_seats`] for
+    // why `assigned_to` + `event_mission_id` are the two bounds that keep it from reaching another
+    // user's claim or another operation's. On healthy rows it is a subset of the old behaviour and
+    // a superset only on the orphans, which is the whole point. `keep: None` because a withdrawal
+    // gives up everything: the caller is leaving, not moving.
+    let released = release_other_seats(&mut tx, em.id, me, None).await?;
 
     let Some((reg_id, reg_state)) = reg else {
         // Seats orphaned before this fix ended up here: the no-op withdraw still deleted the
@@ -1393,6 +1551,11 @@ pub async fn withdraw_from_event_mission(
 
 // --- Slot assignment (leader) ---
 
+/// Admin, or the leader holding this squad. Note this is stricter than the gate in
+/// [`register_for_event_mission`]: an *unreserved* squad is freely claimable there and NOT
+/// manageable here, so the two share [`squad_reserved_by`] but not the decision. The reservation
+/// lookup is name-scoped, not faction-scoped — that limit is the schema's and is documented on
+/// [`squad_reserved_by`].
 async fn can_manage_squad(
     pool: &PgPool,
     is_admin: bool,
@@ -1403,15 +1566,7 @@ async fn can_manage_squad(
     if is_admin {
         return true;
     }
-    let res: Option<String> = sqlx::query_scalar(
-        "SELECT reserved_by FROM orbat_reservations WHERE event_mission_id = $1 AND squad = $2",
-    )
-    .bind(em_id)
-    .bind(squad)
-    .fetch_optional(pool)
-    .await
-    .ok()
-    .flatten();
+    let res = squad_reserved_by(pool, em_id, squad).await.ok().flatten();
     res.as_deref() == Some(me)
 }
 
@@ -1470,6 +1625,25 @@ pub async fn assign_slot(
     }
 
     let mut tx = state.pool.begin().await?;
+    // ══ A LEADER ASSIGNMENT IS A SEAT MOVE TOO (T-324) ════════════════════════════════════
+    // The same defect register had, reached by a different door: the claim below writes the new
+    // seat, the upsert under it repoints the registration at that seat, and any seat the assignee
+    // already held in this operation stayed `assigned_to` them — one person, two seats, one
+    // registration row. A leader filling a squad from the member directory is the likeliest way
+    // to hit it, because the directory does not show that the person is already seated elsewhere.
+    //
+    // Confirmed reachable, not inferred: a test drives PUT .../slots/:id/assign against a user
+    // already holding another seat in the same operation and asserts they end up with one.
+    //
+    // The mission-row lock is new here too. Release-then-claim is a check-then-write pair, and
+    // register serialises on this row for exactly that reason; without it a leader assignment and
+    // a self-registration can interleave between the release and the claim. Same row, same order
+    // as the other two handlers, so there is no lock-ordering cycle.
+    sqlx::query("SELECT id FROM event_missions WHERE id = $1 FOR UPDATE")
+        .bind(em.id)
+        .fetch_one(&mut *tx)
+        .await?;
+    release_other_seats(&mut tx, em.id, &input.discord_id, Some(slot_id)).await?;
     sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
         .bind(&input.discord_id)
         .bind(slot_id)
