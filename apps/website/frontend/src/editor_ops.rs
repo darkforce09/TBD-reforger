@@ -1520,17 +1520,56 @@ pub fn orbat_add_vehicle(squad_id: String, resource_name: String) -> Option<Stri
 }
 
 /// T-180.8 — inverse of Apply: build a FactionDoc from the live side graph (Save / Save as).
+///
+/// **T-373 — what comes back is a PARTIAL, not a document.** Two `faction-library.schema.json`
+/// fields have no representation anywhere in the mission graph, so this can only ever emit `None`
+/// for them, no matter how the operator authored the library entry:
+///
+/// - **`emblem`** — the ORBAT has no emblem concept at all. Nothing in `MissionDocCore` stores one,
+///   so there is nothing here to read it back out of.
+/// - **vehicle `label`** — a mission vehicle row is `{id, resourceName, position, squadId}` and
+///   nothing else (`map-engine-core` `doc/store.rs::add_vehicle`), and `apply_faction_library`
+///   throws the library's label away on the way IN —
+///   `let _ = v.label; // label is UI-only; resourceName is the graph pin`
+///   (`crates/map-engine-core/src/doc/apply_faction.rs:358`).
+///
+/// That matters because `PUT /factions/:id` is a whole-document **replace**
+/// (`apps/website/api/src/handlers/factions.rs::update_faction`) and [`FactionDoc`]'s
+/// `skip_serializing_if = "Option::is_none"` **omits** an absent key rather than nulling it. PUT
+/// this straight back and the operator's emblem and every authored vehicle label are deleted from
+/// the library, silently, on every save. That was T-373.
+///
+/// Everything else here is faithful and may be trusted as authored state: `role`, `tag`,
+/// `character` and `loadout` all live on the slot, Apply writes them there
+/// (`apply_faction.rs` `update_slot_loadout`), and the Arsenal edits them — so a role that comes
+/// back with no loadout genuinely has no loadout, it is not a gap in the derivation.
+///
+/// **Callers that CREATE (`Save as` → POST) may use this as-is** — a brand-new faction has no
+/// emblem and no labels to lose. **Callers that REPLACE (`Save` → PUT) must merge over the stored
+/// document first:** [`crate::orbat_manager::merge_faction_doc_from_side`].
+///
+/// `None` when there is no live doc, or when the doc's own JSON will not parse — see
+/// [`faction_doc_from_side_core`].
 pub fn faction_doc_from_side(side: &str) -> Option<FactionDoc> {
     OPS_CTX.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        Some(faction_doc_from_side_core(core, side))
+        faction_doc_from_side_core(core, side)
     })
 }
 
-fn faction_doc_from_side_core(core: &MissionDocCore, side: &str) -> FactionDoc {
+/// `None` when `slots_json` / `small_maps_json` will not parse.
+///
+/// **T-373 — a parse failure is not an empty side.** These two early-outs used to return
+/// `FactionDoc { side, name, ..Default::default() }`, i.e. a doc with `roles: []` and
+/// `vehicles: []` — byte-identical to what a side that genuinely holds no squads produces. Handed
+/// to the PUT that replaces the whole library document, that turned "the mission's JSON is
+/// malformed" into "delete every role and vehicle in this template", and handed to `Save as` it
+/// created an empty faction and reported success. A distinguishable `None` lets the caller say so
+/// instead of writing.
+fn faction_doc_from_side_core(core: &MissionDocCore, side: &str) -> Option<FactionDoc> {
     let factions = faction_rows(core);
     let squads = squad_rows(core);
     let faction = factions.iter().find(|f| f.key == side);
@@ -1540,18 +1579,10 @@ fn faction_doc_from_side_core(core: &MissionDocCore, side: &str) -> FactionDoc {
         .unwrap_or_else(|| side.to_string());
     let squad_ids: Vec<String> = faction.map(|f| f.squad_ids.clone()).unwrap_or_default();
     let Ok(slots_root) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) else {
-        return FactionDoc {
-            side: side.into(),
-            name,
-            ..Default::default()
-        };
+        return None;
     };
     let Ok(small) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) else {
-        return FactionDoc {
-            side: side.into(),
-            name,
-            ..Default::default()
-        };
+        return None;
     };
     let mut roles = Vec::new();
     let mut vehicles = Vec::new();
@@ -1592,17 +1623,21 @@ fn faction_doc_from_side_core(core: &MissionDocCore, side: &str) -> FactionDoc {
                     .and_then(|r| r.as_str())
                     .unwrap_or_default()
                     .to_string(),
+                // T-373 — structurally inexpressible, not an oversight: the graph row this reads
+                // (`vehiclesById[vid]`) has no label field to read. See the fn doc.
                 label: None,
             });
         }
     }
-    FactionDoc {
+    Some(FactionDoc {
         side: side.into(),
         name,
+        // T-373 — likewise inexpressible. `merge_faction_doc_from_side` carries the stored one
+        // over; do NOT PUT this partial as a replacement body.
         emblem: None,
         roles,
         vehicles,
-    }
+    })
 }
 
 /// One slot's map position out of a parsed `slots_json`. `None` when the id is stale (the slot was
