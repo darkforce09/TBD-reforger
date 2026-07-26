@@ -120,8 +120,31 @@ else nope "wave plan" "slice-collisions.py failed"; fi
 #     and an unattended fix agent will burn its whole budget chasing it. Know before you start.
 if (exec 3<>/dev/tcp/127.0.0.1/5434) 2>/dev/null; then ok "postgres :5434" "up"
 else soft "postgres :5434" "down — API integration tests will skip (make db-up on the HOST)"; fi
-if (exec 3<>/dev/tcp/127.0.0.1/8080) 2>/dev/null; then ok "api :8080" "up"
-else soft "api :8080" "down — editor smokes would report gate-red for an env reason"; fi
+# A TCP CONNECT IS NOT A HEALTH CHECK, AND "UP" IS NOT "CURRENT".
+# This used to be `exec 3<>/dev/tcp/127.0.0.1/8080` and nothing more, which reports "up" for any
+# process holding the port — including one serving a binary six hours stale. OBSERVED 2026-07-26:
+# PID 34618 started 08:51 and T-234 landed 14:27, so the dev API had none of T-234's code. T-389
+# spent a full browser round trip "reproducing" a bug that was already fixed, and only caught it by
+# building its own API on another port. A stale API is worse than a dead one: dead fails loudly,
+# stale returns confident wrong answers that read as real defects.
+# So: probe the real route (/healthz, NOT /api/v1/healthz — that 404s), and compare the process
+# start time against the last commit touching the API's own crates.
+api_code="$(curl -s -o /dev/null -w '%{http_code}' -m 4 http://127.0.0.1:8080/healthz 2>/dev/null)"
+if [ "$api_code" = "200" ]; then
+  api_pid="$(hostrun ss -ltnp 2>/dev/null | grep ':8080' | grep -o 'pid=[0-9]*' | head -1 | cut -d= -f2)"
+  started="$(hostrun stat -c %Y /proc/"${api_pid:-0}" 2>/dev/null || echo 0)"
+  newest="$(git log -1 --format=%ct -- apps/website/api crates/map-engine-core 2>/dev/null || echo 0)"
+  if [ "${started:-0}" -gt 0 ] && [ "$newest" -gt "$started" ]; then
+    soft "api :8080" "healthy but STALE — running since $(hostrun date -d "@$started" +%H:%M 2>/dev/null), \
+API code changed $(hostrun date -d "@$newest" +%H:%M 2>/dev/null). Restart it or verifications lie."
+  else
+    ok "api :8080" "healthz 200, binary current"
+  fi
+elif [ -n "$api_code" ] && [ "$api_code" != "000" ]; then
+  soft "api :8080" "listening but /healthz returned $api_code — wedged or mid-restart"
+else
+  soft "api :8080" "down — editor smokes would report gate-red for an env reason"
+fi
 
 # 11b. A running `trunk serve` (make leptos) races the gate's `trunk build --release` over the same
 #      apps/website/frontend/dist. OBSERVED 2026-07-26: the wave gate failed with "error writing JS
