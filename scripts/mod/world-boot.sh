@@ -383,7 +383,12 @@ MISSION_ID=""
 # `/compiled` GET 500s — the trap is what deletes it; without that, every failed run would leave
 # another orphan draft in the library.
 PIDFILE="$RUN_DIR/server.pid"
-SEEDED_UUID=""
+
+# THE FIXTURE'S TITLE, and the only handle cleanup needs. Interpolated into the seed body below
+# so the two can never drift: a stale copy here would silently disarm the sweep, and the only
+# symptom would be orphan drafts piling up in the operator's library with nothing reporting it.
+FIXTURE_TITLE="T-186 compiled-boot fixture"
+
 kill_run() {
   local pgid
   pgid="$(cat "$PIDFILE" 2>/dev/null)" || return 0
@@ -395,14 +400,51 @@ kill_run() {
   done
   hostrun kill -9 -- "-$pgid" >/dev/null 2>&1 || true
 }
+
+# Delete every mission row carrying the fixture title.
+#
+# Sweeping on the TITLE rather than on a uuid this process recorded is what makes the cleanup
+# total, and it is not a stylistic preference — a uuid guard cannot cover three real cases:
+#   * `create_mission` (handlers/missions.rs) COMMITS its transaction before it serialises the
+#     response, so a `-m 30` timeout or a dropped socket after the commit leaves a live row whose
+#     id this script never learned. The POST's own failure path then exits with nothing to delete.
+#   * a 201 whose body carries no `id` — same shape, row committed, id unknown here.
+#   * `kill -9`, which skips traps entirely and cannot be made to clean up after itself at all.
+# The title sweep covers all three, and because it is not scoped to this run it SELF-HEALS rows
+# left behind by earlier ones.
+#
+# It cannot touch an operator's mission. The title is harness-generated, and the DELETE is
+# authorised as the dev-login user, which owns nothing else (`can_edit` in handlers/missions.rs is
+# author-or-admin). `--compiled=<uuid>` never mints that token, so on that lane this is a no-op —
+# an existing row the operator names is never a candidate for deletion.
+#
+# Soft delete, same as the SPA's own: `deleted_at` is stamped and `/ingest/missions` filters on
+# `deleted_at IS NULL`, so "swept" means invisible to the next run, not physically gone.
+sweep_fixture_missions() {
+  [ -n "${SVC_TOKEN:-}" ] && [ -n "${DEV_ACCESS_TOKEN:-}" ] || return 0
+  local listing id
+  listing="$RUN_DIR/sweep.json"
+  curl -sS -o "$listing" -m 10 -H "X-Service-Token: $SVC_TOKEN" \
+    "$API_BASE/api/v1/ingest/missions" >/dev/null 2>&1 || return 0
+  # `{"missions":[{"id","name",...}],"count"}` — the same envelope the reachability probe hits.
+  for id in $(python3 -c "import json,sys
+d = json.load(open(sys.argv[1]))
+print('\n'.join(m['id'] for m in d.get('missions', []) if m.get('name') == sys.argv[2]))" \
+    "$listing" "$FIXTURE_TITLE" 2>/dev/null); do
+    curl -sS -o /dev/null -m 10 -X DELETE "$API_BASE/api/v1/missions/$id" \
+      -H "Authorization: Bearer $DEV_ACCESS_TOKEN" >/dev/null 2>&1 || true
+  done
+}
+
+# Idempotent: the signal traps below call this and then `exit`, which re-enters it through the
+# EXIT trap. Without the guard that second pass would re-run the whole sweep (another list + N
+# deletes) on the way out of a Ctrl-C.
+CLEANED=0
 cleanup() {
+  [ "$CLEANED" -eq 0 ] || return 0
+  CLEANED=1
   kill_run
-  # Only ever deletes a mission THIS run created (`--compiled=<uuid>` sets no SEEDED_UUID), so an
-  # operator's own row can never be caught by it. Soft delete, same as the SPA's own delete.
-  if [ -n "$SEEDED_UUID" ] && [ -n "${DEV_ACCESS_TOKEN:-}" ]; then
-    curl -sS -o /dev/null -m 10 -X DELETE "$API_BASE/api/v1/missions/$SEEDED_UUID" \
-      -H "Authorization: Bearer $DEV_ACCESS_TOKEN" 2>/dev/null || true
-  fi
+  sweep_fixture_missions   # must precede the rm — it writes its listing into RUN_DIR
   if [ "$KEEP_LOGS" -eq 1 ]; then
     echo "run dir kept: $RUN_DIR"
   else
@@ -410,6 +452,23 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
+# EXIT alone leaves the interrupt path to bash's wait-and-cooperative-exit heuristic, and that
+# heuristic is CONDITIONAL: a non-interactive shell dies of a Ctrl-C only when the foreground
+# child it happened to be waiting on was itself killed by that same SIGINT.
+#
+# Measured at a real pty on bash 5.2.15 (a synthetic `kill -INT -- -PGID` from another shell is
+# not the same delivery path and will mislead you): with EXIT only, one Ctrl-C in the poll loop
+# below DID stop the script and its EXIT trap DID run. So this is not a leak in the common case.
+# It holds by luck rather than by construction, though — any foreground command that absorbs
+# SIGINT and returns 0 leaves this shell looping with the row already seeded — and the process
+# died OF the signal, so the caller saw "terminated by signal 2" rather than a status it could
+# branch on.
+#
+# An explicit trap removes both. 128+signo is the shell's own convention for "died on this
+# signal", so 130/143 still read as a signal death while staying distinguishable from this
+# script's own 1 / 2 / 3. cleanup is idempotent, so the `exit` re-entering it via EXIT is a no-op.
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
 
 # ── --compiled: feed an API-COMPILED document to the real parser (T-186) ────────────────────
 # Everything above boots HAND-WRITTEN goldens, and the goldens are strictly RICHER than anything
@@ -429,17 +488,18 @@ trap cleanup EXIT
 # compiler can produce — one faction holding slots, which is what a freshly-authored editor
 # mission looks like and is exactly the shape T-181.46 died on.
 #
-# FAILURE DISCIPLINE (the whole point of the three helpers below): an env failure reported as a
+# FAILURE DISCIPLINE (the whole point of the helpers below): an env failure reported as a
 # code failure sends the next agent chasing a bug that does not exist. `api_env_fail` = the stack
-# is not up / the token is wrong; `api_doc_fail` = the API refused to produce a document, which is
-# a compiler or contract defect. curl's own exit status is the discriminator — a transport failure
-# never yields an HTTP status, so the two can never be conflated.
+# is not up / the token is wrong / the row is not there; `api_doc_fail` = the API read the
+# document and REFUSED it, which is a compiler or contract defect. curl's own exit status is one
+# discriminator — a transport failure never yields an HTTP status — but it is not the only one,
+# because plenty of ENVIRONMENT failures do come back as a clean HTTP status. See `api_http_fail`.
 api_env_fail() {
   echo
   echo "COMPILED BOOT: ENV FAIL — $1"
   echo "  This is the HARNESS's environment. The mod was never started, so this says NOTHING"
   echo "  about the mod or the compiler — do not read it as a code failure."
-  echo "  Bring the stack up and re-run:  make db-up && make api   (API expected at $API_BASE)"
+  echo "  ${2:-Bring the stack up and re-run:  make db-up && make api   (API expected at $API_BASE)}"
   exit 3
 }
 api_doc_fail() {
@@ -450,6 +510,30 @@ api_doc_fail() {
   echo "  'compiled mission failed schema validation' (validated_compiled_body in"
   echo "  apps/website/api/src/handlers/missions.rs), a 409 is 'no placed slots'."
   exit 1
+}
+# Route a non-success HTTP status to whichever of the two above is TRUE for it. Sending everything
+# non-2xx to `api_doc_fail` — which asserts outright that "re-running will not fix it" — is worse
+# than merely imprecise: an unattended fix agent handed that verdict for a stopped Postgres will
+# spend its entire retry budget auditing a compiler that is working. Two environment failures
+# reach here with a perfectly clean HTTP status:
+#   * 5xx — the API could not serve the request at all. A down or unmigrated database surfaces as
+#     an sqlx error, which the ApiError type renders as a 500.
+#   * 404 — nothing at that id. `--compiled=<bad-uuid>` lands here, and no amount of staring at
+#     flatten.rs will produce the row.
+# Everything else stays on the compiler verdict, because 400 (payload rejected), 409 ('no placed
+# slots') and 422 all mean the API looked at the document and said no — exactly what this lane
+# exists to catch. A 500 out of `/compiled` is the ambiguous one: it is usually the schema
+# validation `api_doc_fail` describes, but it is indistinguishable from a DB fault at this layer,
+# and the API log (which `api_env_fail` does not send you to) is where that gets settled.
+api_http_fail() {
+  local code="$1" what="$2" doc_msg="$3"
+  case "$code" in
+    404) api_env_fail "$what -> HTTP 404 — nothing at that id/route on $API_BASE" \
+                      "Check the mission id you passed and that the API is the one you think it is." ;;
+    5??) api_env_fail "$what -> HTTP $code — the API could not serve the request. A stopped or unmigrated Postgres surfaces here as a 500; the API log says which." \
+                      "Check the API log first, then:  make db-up && make api   (API expected at $API_BASE)" ;;
+    *)   api_doc_fail "$doc_msg" ;;
+  esac
 }
 
 # The API's SERVICE_TOKEN. `apps/website/api/.env` is gitignored, so it does NOT exist in a slice
@@ -511,9 +595,14 @@ if [ "$COMPILED" -eq 1 ]; then
     #   * slot 2 carries a SlotLoadoutV2 -> the compiled `slot.loadout {gear,cargo}` block is
     #     exercised. The ResourceNames are copied from golden-missions/slot-loadout-coverage.json,
     #     which boots clean today, so an equip error here means the COMPILE broke, not the fixture.
-    cat >"$RUN_DIR/seed.json" <<'JSON'
+    # LANDMINE: this heredoc is UNQUOTED so `$FIXTURE_TITLE` interpolates — the title cleanup
+    # sweeps on and the title this POSTs are then provably the same string. The cost is that a
+    # literal `$`, backtick or backslash added to the fixture below would be expanded by bash;
+    # there are none today (Enfusion ResourceNames are `{GUID}Path/…`, and `{}` is inert in a
+    # heredoc). Escape any you add, or the seed body silently changes shape.
+    cat >"$RUN_DIR/seed.json" <<JSON
 {
-  "title": "T-186 compiled-boot fixture",
+  "title": "$FIXTURE_TITLE",
   "terrain": "everon",
   "game_mode": "pvp",
   "weather": "clear",
@@ -579,11 +668,14 @@ JSON
     if [ "$seed_code" != "201" ]; then
       echo "  POST /api/v1/missions -> HTTP $seed_code"
       head -c 600 "$RUN_DIR/seed-resp.json"; echo
-      api_doc_fail "the API rejected the editor payload this harness seeds (HTTP $seed_code)"
+      api_http_fail "$seed_code" "POST /api/v1/missions" \
+        "the API rejected the editor payload this harness seeds (HTTP $seed_code)"
     fi
     COMPILED_UUID="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get('id',''))" "$RUN_DIR/seed-resp.json")"
+    # Both exits above this line, and this one, can fire with the row ALREADY COMMITTED — which is
+    # why cleanup sweeps on the title and not on an id recorded here. Do not "optimise" that back
+    # into a uuid guard.
     [ -n "$COMPILED_UUID" ] || api_doc_fail "POST /api/v1/missions 201 but returned no mission id"
-    SEEDED_UUID="$COMPILED_UUID"   # arms the cleanup trap
     echo "    seeded mission $COMPILED_UUID"
   fi
 
@@ -597,7 +689,8 @@ JSON
   if [ "$comp_code" != "200" ]; then
     echo "  GET /api/v1/missions/$COMPILED_UUID/compiled -> HTTP $comp_code"
     head -c 1200 "$RUN_DIR/compiled.json"; echo
-    api_doc_fail "GET /compiled -> HTTP $comp_code (expected 200)"
+    api_http_fail "$comp_code" "GET /api/v1/missions/$COMPILED_UUID/compiled" \
+      "GET /compiled -> HTTP $comp_code (expected 200)"
   fi
 
   # Hand the fetched bytes to the SAME staging path `--mission=` uses, byte-for-byte. Copying
