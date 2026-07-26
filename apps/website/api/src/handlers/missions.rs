@@ -666,19 +666,31 @@ pub async fn get_armory(
 
 /// One row of the replacement armory.
 ///
-/// **`item_name` is deliberately required — do not add `#[serde(default)]` to it (T-315).**
-/// `faction`/`category`/`icon`/`sort_order` keep their defaults on purpose: those are grouping
-/// and presentation hints, and an absent one degrades a row without making it a lie. The name is
-/// the only field that makes the row *mean* anything — a row with `item_name: ""` renders in the
-/// faction dossier as a blank line the author cannot identify, cannot select and cannot delete
-/// except by replacing the whole armory again.
+/// **`item_name` and `faction` are deliberately required — do not add `#[serde(default)]` to
+/// either (T-315, T-346).** `category`/`icon`/`sort_order` keep their defaults on purpose: those
+/// are presentation hints, matched by nothing, and an absent one degrades a row without making it
+/// a lie. A row with `item_name: ""` renders in the faction dossier as a blank line the author
+/// cannot identify, cannot select and cannot delete except by replacing the whole armory again.
 ///
 /// Measured on the pre-fix binary: `{"items":[{}]}` answered **200** and left exactly that —
 /// four real rows deleted, one nameless row inserted. That is the same mistake as `{}` one level
 /// down, so fixing only the outer field would have left a trivial bypass of this very fix.
+///
+/// **T-346 — `faction` was grouped with the presentation hints above, and that was wrong.** It is
+/// not a hint, it is the **join key** of the Event Hub dossier. [`get_event`] groups the armory by
+/// it (`events.rs:796`) and the SPA then matches those groups against the mission's faction list
+/// by *exact string equality* (`frontend/event_hub.rs:415`, `.find(|f| &f.faction == faction)`).
+/// That list is built from a **different table** — `orbat_slots.faction` (`events.rs:894`) — so a
+/// `faction` here that does not match one of those byte-for-byte renders a dossier card with **no
+/// items at all**.
+///
+/// Measured on the pre-fix binary, against a mission whose ORBAT declares `USA`:
+/// `{"items":[{"item_name":"M4A1"}]}` answered **200**, stored `faction: ""`, and the Event Hub's
+/// USA card rendered **0** items — the author sees success and their own value echoed back, the
+/// players see an empty armory. The `#[serde(default)]` made that reachable with **no whitespace
+/// anywhere in the request**, which is why trimming alone would not have closed it.
 #[derive(Debug, Deserialize)]
 pub struct ArmoryItemInput {
-    #[serde(default)]
     faction: String,
     #[serde(default)]
     category: String,
@@ -713,7 +725,8 @@ pub struct SetArmoryInput {
 /// Wholesale means the first statement in the transaction is an unconditional DELETE, so every
 /// way this body can be wrong is a way to lose the armory. `{"items":[]}` clears it deliberately
 /// and answers 200; a missing `items`, a blank `item_name`, a missing body, the wrong
-/// `Content-Type` and malformed JSON all answer 400 with the rows untouched (T-315).
+/// `Content-Type` and malformed JSON all answer 400 with the rows untouched (T-315) — as do a
+/// missing, blank or whitespace-padded `faction`, because it is the Event Hub's join key (T-346).
 ///
 /// @route PUT /api/v1/missions/:id/armory
 pub async fn set_armory(
@@ -730,26 +743,42 @@ pub async fn set_armory(
     // `Content-Type` and malformed JSON into an empty armory and writes it. This handler already
     // had the guard; `items` losing `#[serde(default)]` above is what finally makes `{}` reach it.
     //
-    // The message names both required fields because both now fail here: `{}` misses `items`, and
-    // `{"items":[{}]}` misses an `item_name`. Naming only the outer one sends the author of the
-    // second body looking for a field their request plainly has.
+    // The message names every required field because all of them now fail here: `{}` misses
+    // `items`, and `{"items":[{}]}` misses both a `faction` and an `item_name`. Naming only the
+    // outer one sends the author of the second body looking for a field their request plainly has.
     let Json(input) = body.map_err(|_| {
-        ApiError::bad_request("items is required, and every item needs an item_name")
+        ApiError::bad_request("items is required, and every item needs a faction and an item_name")
     })?;
     // Validate every item BEFORE opening the transaction. The DELETE is the first statement in
     // it, so validating inside the loop would mean the armory is already gone by the time the
     // bad row is found — correct only because the transaction rolls back, and needlessly
-    // load-bearing on that. A blank name is the same lie as no name, so `trim` decides both the
-    // rejection and the stored value; the two have to agree or `" "` is rejected while `" M4 "`
-    // is stored with its padding.
-    if let Some(bad) = input
-        .items
-        .iter()
-        .position(|i| i.item_name.trim().is_empty())
-    {
-        return Err(ApiError::bad_request(format!(
-            "items[{bad}].item_name is required"
-        )));
+    // load-bearing on that.
+    //
+    // `item_name` is a label, so a blank one is the same lie as no name and `trim` decides both
+    // the rejection and the stored value; the two have to agree or `" "` is rejected while
+    // `" M4 "` is stored with its padding.
+    //
+    // `faction` is a join key, so it is validated but **never rewritten** — see the note on
+    // [`ArmoryItemInput`] and on its `bind` below.
+    for (i, it) in input.items.iter().enumerate() {
+        if it.item_name.trim().is_empty() {
+            return Err(ApiError::bad_request(format!(
+                "items[{i}].item_name is required"
+            )));
+        }
+        if it.faction.trim().is_empty() {
+            return Err(ApiError::bad_request(format!(
+                "items[{i}].faction is required"
+            )));
+        }
+        // Refused, not silently canonicalised. `"  USA  "` and `"USA"` are different factions to
+        // every reader of this column, and this handler is not the one that gets to decide they
+        // are the same — see the `bind` below for why trimming here would move the bug.
+        if it.faction != it.faction.trim() {
+            return Err(ApiError::bad_request(format!(
+                "items[{i}].faction must not have leading or trailing whitespace"
+            )));
+        }
     }
 
     let mut tx = state.pool.begin().await?;
@@ -763,6 +792,20 @@ pub async fn set_armory(
              VALUES ($1, $2, $3, $4, $5, $6, $7)",
         )
         .bind(m.id)
+        // **Verbatim, and it must stay verbatim (T-346).** The other side of this join,
+        // `orbat_slots.faction`, is written with no normalisation at all: `events.rs:391` binds
+        // `OrbatSquadTemplate.faction`, which is itself `#[serde(default)]` and untrimmed at
+        // `crates/map-engine-core/src/mission/orbat.rs:23-25`, straight from the attach request.
+        // Trimming here would therefore make the two sites *disagree* on a padded value instead of
+        // agreeing. Measured on the pre-fix binary: an ORBAT declaring `"  USA  "` plus an armory
+        // row `"  USA  "` renders correctly **today** (1 item on the card), and a unilateral trim
+        // turns that into 0 — moving T-346's bug rather than fixing it, which is exactly the trap
+        // T-343 flagged at `events.rs:1735` and `events.rs:1923`.
+        //
+        // The guard above is agreement-preserving under *either* hypothesis about the other side:
+        // only a value already equal to its trimmed form is storable, and for such a value
+        // verbatim and trimmed are the same bytes. Canonicalising a padded value here is not a
+        // fix, it *is* the disagreement.
         .bind(&it.faction)
         .bind(&it.category)
         .bind(it.item_name.trim())
