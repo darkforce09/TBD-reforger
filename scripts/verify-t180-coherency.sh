@@ -10,43 +10,130 @@ export PATH="${HOME}/.cargo/bin:${PATH}"
 fail() { echo "verify-t180 FAIL: $*" >&2; exit 1; }
 ok() { echo "verify-t180 OK: $*"; }
 
+# ── How a static check reports, and why it is not a bare `if rg` (T-216) ──────
+#
+# The three bans below used to read `if rg -n PAT FILE >/dev/null 2>&1; then fail; fi`.
+# That form reports OK for three different outcomes and can only tell one of them apart:
+#
+#   exit 0    match found            -> ban violated        -> correctly FAILED
+#   exit 1    no match               -> ban holds           -> correctly passed
+#   exit 2    TARGET FILE MISSING    -> check never ran     -> printed OK
+#   exit 127  SEARCH TOOL ABSENT     -> check never ran     -> printed OK
+#
+# The last two are this program's signature defect — a tool reporting success over an
+# input it never examined — living inside the script written to catch it.
+#
+# MEASURED 2026-07-26: `rg` is present in the dev container and ABSENT on the host, and
+# cargo only runs on the host (glibc 2.36 vs 2.39, E0463). So every host run of this gate
+# printed three OK lines for bans that had not executed a single comparison. Renaming
+# `slots_gpu.rs` would have produced the same false green by the other route.
+#
+# Two changes, and both are needed — one alone still leaves a hole.
+#
+# 1. `grep -E` replaces `rg`, because grep exists on BOTH sides of that bridge. This is a
+#    dependency REMOVED rather than a dependency asserted: a hard `command -v rg || fail`
+#    preflight would have been honest, but it would also have made this gate unrunnable in
+#    the only environment where its cargo half works. The patterns are unchanged and mean
+#    the same thing in ERE — `\(`, `\[` and `|` are identical in both engines — and every
+#    call names explicit files, so ripgrep's recursion and gitignore defaults were never
+#    in play.
+# 2. The exit status is READ instead of collapsed to a boolean, and the target files are
+#    checked for existence first. Anything the helpers cannot examine is a FAILURE. A
+#    check that did not run must never be reported as a check that passed.
+
+# `ban <message> [-i] <pattern> <file>...` — the pattern must NOT appear in any file.
+ban() {
+  local msg="$1"; shift
+  local flags=(-E)
+  if [ "$1" = "-i" ]; then flags+=(-i); shift; fi
+  local pat="$1"; shift
+  local f
+  for f in "$@"; do
+    [ -f "$f" ] || fail "$msg — target file missing: $f. The ban could not run, and a \
+moved or deleted file must not read as a clean result."
+  done
+  local status=0
+  grep "${flags[@]}" -- "$pat" "$@" >/dev/null 2>&1 || status=$?
+  case "$status" in
+    0) fail "$msg" ;;
+    1) : ;; # no match — the ban holds, and we know it holds because the search ran
+    *) fail "$msg — grep exited $status (tool absent or bad pattern). Refusing to report \
+OK on a check that did not execute." ;;
+  esac
+}
+
+# `require <message> <pattern> <file>` — the pattern MUST appear.
+#
+# The `... || fail` form this replaces was already correct on the fail-closed question:
+# `||` fires on EVERY non-zero status, so an absent tool or a moved file failed loudly
+# rather than passing. It is kept as a helper only to separate the two causes — "the pin
+# is genuinely gone" and "the check could not run" send a reader to different places, and
+# the old single message sent everyone to the first one.
+require() {
+  local msg="$1" pat="$2" file="$3"
+  [ -f "$file" ] || fail "$msg — target file missing: $file. The pin could not be checked."
+  local status=0
+  grep -E -- "$pat" "$file" >/dev/null 2>&1 || status=$?
+  case "$status" in
+    0) : ;;
+    1) fail "$msg" ;;
+    *) fail "$msg — grep exited $status (tool absent or bad pattern). Refusing to report \
+OK on a check that did not execute." ;;
+  esac
+}
+
 # ── Static bans ──────────────────────────────────────────────────────────────
-if rg -n 'ensure_default_squad' apps/website/frontend/src/editor_ops.rs >/dev/null 2>&1; then
-  fail "ensure_default_squad still present in editor_ops.rs"
-fi
+ban "ensure_default_squad still present in editor_ops.rs" \
+  'ensure_default_squad' apps/website/frontend/src/editor_ops.rs
 ok "no ensure_default_squad on place path"
 
-if rg -n 'loadout: String::new\(\)' crates/map-engine-core/src/mission/orbat.rs >/dev/null 2>&1; then
-  fail "orbat.rs still hardcodes loadout: String::new()"
-fi
+ban "orbat.rs still hardcodes loadout: String::new()" \
+  'loadout: String::new\(\)' crates/map-engine-core/src/mission/orbat.rs
 ok "no loadout String::new() hardcode in derive"
 
-if rg -ni 'standardization|IFAK|Grenade Complement' \
+ban "Standardization / IFAK / Grenade Complement UI strings found (L8 omit)" \
+  -i 'standardization|IFAK|Grenade Complement' \
   apps/website/frontend/src/orbat_manager.rs \
-  apps/website/frontend/src/eden_chrome.rs >/dev/null 2>&1; then
-  fail "Standardization / IFAK / Grenade Complement UI strings found (L8 omit)"
-fi
+  apps/website/frontend/src/eden_chrome.rs
 ok "no Standardization UI strings"
 
-rg -n 'SIDE_BLUFOR_RGBA: \[u8; 4\] = \[173, 198, 255, 255\]' \
-  crates/map-engine-core/src/slots_gpu.rs >/dev/null \
-  || fail "SIDE_BLUFOR_RGBA pin missing"
-rg -n 'SIDE_OPFOR_RGBA: \[u8; 4\] = \[248, 113, 113, 255\]' \
-  crates/map-engine-core/src/slots_gpu.rs >/dev/null \
-  || fail "SIDE_OPFOR_RGBA pin missing"
-rg -n 'SIDE_INDFOR_RGBA: \[u8; 4\] = \[34, 197, 94, 255\]' \
-  crates/map-engine-core/src/slots_gpu.rs >/dev/null \
-  || fail "SIDE_INDFOR_RGBA pin missing"
+require "SIDE_BLUFOR_RGBA pin missing" \
+  'SIDE_BLUFOR_RGBA: \[u8; 4\] = \[173, 198, 255, 255\]' \
+  crates/map-engine-core/src/slots_gpu.rs
+require "SIDE_OPFOR_RGBA pin missing" \
+  'SIDE_OPFOR_RGBA: \[u8; 4\] = \[248, 113, 113, 255\]' \
+  crates/map-engine-core/src/slots_gpu.rs
+require "SIDE_INDFOR_RGBA pin missing" \
+  'SIDE_INDFOR_RGBA: \[u8; 4\] = \[34, 197, 94, 255\]' \
+  crates/map-engine-core/src/slots_gpu.rs
 ok "RGBA side pins present"
 
 # ── A / B / H — doc feature ──────────────────────────────────────────────────
-cargo test -p map-engine-core --features doc --lib place_ -- --quiet
-cargo test -p map-engine-core --features doc --lib set_leader_exclusive -- --quiet
-cargo test -p map-engine-core --features doc --lib empty_squad_garbage_collected -- --quiet
-cargo test -p map-engine-core --features doc --lib move_slot_bidirectional -- --quiet
-cargo test -p map-engine-core --features doc --lib leader_invariant_holds -- --quiet
-cargo test -p map-engine-core --features doc --lib attach_vehicle_roundtrip -- --quiet
-cargo test -p map-engine-core --features doc --lib apply_faction_ -- --quiet
+#
+# `doc mission`, not `doc` alone (T-216). `doc/store.rs`'s own tests call
+# `crate::mission::compile::compile_payload` (store.rs:2589, 2601, 2909, 2932 — the
+# hydrate/compile round-trips T-344 added), and `mission` is a separate feature gate at
+# `lib.rs:23`. So `--features doc` cannot COMPILE the lib test target:
+#
+#   error[E0433]: cannot find `mission` in `crate`   (x4)
+#   error: could not compile `map-engine-core` (lib test) due to 4 previous errors
+#
+# `set -euo pipefail` means that killed the script on the FIRST of these seven lines, so
+# every section below — the tint/links lane, the derive gates, the compile boundary and
+# the entire website-frontend block — had not run since T-344. Reproduced on main at
+# 33a7aa85, so it predates this slice and is not caused by it.
+#
+# Fixed HERE rather than by gating those four tests in `doc/store.rs`, which is another
+# slice's file in this wave. Adding `mission` cannot weaken the gate: it is strictly more
+# code compiled, the selectors are unchanged, and the seven lines now share one test
+# binary with the `mission` section below instead of building a second feature set.
+cargo test -p map-engine-core --features "doc mission" --lib place_ -- --quiet
+cargo test -p map-engine-core --features "doc mission" --lib set_leader_exclusive -- --quiet
+cargo test -p map-engine-core --features "doc mission" --lib empty_squad_garbage_collected -- --quiet
+cargo test -p map-engine-core --features "doc mission" --lib move_slot_bidirectional -- --quiet
+cargo test -p map-engine-core --features "doc mission" --lib leader_invariant_holds -- --quiet
+cargo test -p map-engine-core --features "doc mission" --lib attach_vehicle_roundtrip -- --quiet
+cargo test -p map-engine-core --features "doc mission" --lib apply_faction_ -- --quiet
 ok "doc-feature place/mutator/apply gates"
 
 # ── C / D / G / vehicle pack ─────────────────────────────────────────────────
