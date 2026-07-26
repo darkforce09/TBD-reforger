@@ -12,7 +12,6 @@
 #![allow(dead_code)] // read_warm is exercised via the `__missionPersist` smoke bridge, not Rust callers yet.
 
 use serde::{Deserialize, Serialize};
-use std::cell::Cell;
 
 /// sessionStorage key — identical to the React `SESSION_KEY`. Singleton (one record; last write
 /// across missions wins), exactly as `editorSession.ts`.
@@ -80,13 +79,6 @@ pub fn clear() {
 /// solely so [`purge_legacy_markers`] can still recognise the residue.
 const ADOPTED_KEY_PREFIX: &str = "tbd-editor-adopted:";
 
-thread_local! {
-    /// One scan per page load. [`mark_adopted`] still has eight call sites and the hydrate paths hit
-    /// several per mission open; the residue is gone after the first, so every later call would
-    /// re-scan the whole of `localStorage` to find nothing.
-    static MARKERS_PURGED: Cell<bool> = const { Cell::new(false) };
-}
-
 /// Erase every `tbd-editor-adopted:*` key written before T-352.
 ///
 /// Two passes, because `Storage::key(i)` is index-addressed and `remove_item` renumbers everything
@@ -102,10 +94,13 @@ thread_local! {
 /// construction. *Keeping* it is not: a `<missionId>` sitting under a global key is precisely the
 /// cross-account disclosure T-221 and T-338 spent two slices closing, and it would otherwise persist
 /// on every browser that ever opened the editor.
+///
+/// **Deliberately unguarded** — no once-per-page-load latch. `localStorage` is shared across tabs, so
+/// during a deploy rollover a tab still running pre-T-352 wasm can write *fresh* residue at any
+/// moment; a latched purge would run once, before that write, and never look again. Re-scanning is
+/// affordable because every [`mark_adopted`] call site is one-shot per hydrate decision or per Save
+/// (never a loop), so this is a prefix scan of a few dozen keys a handful of times per mission open.
 fn purge_legacy_markers() {
-    if MARKERS_PURGED.with(|done| done.replace(true)) {
-        return;
-    }
     let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) else {
         return;
     };
