@@ -15,6 +15,7 @@ use crate::db::refresh_leaderboard;
 use crate::error::ApiError;
 use crate::middleware::ServiceAuth;
 use crate::models::{AuditSeverity, MissionOutcome, ServerStatus, TerrainType};
+use crate::realtime::publish_server_status;
 use crate::services::text::is_http_url;
 use crate::services::write_audit;
 use crate::state::AppState;
@@ -237,7 +238,8 @@ pub async fn ingest_server_status(
         .await;
     }
 
-    // Fan out to SSE subscribers (the exact struct Go marshals).
+    // Fan out to SSE subscribers (same helper the T-272 scheduled republisher uses —
+    // one payload shape for ingest and poller).
     let status = ServerStatus {
         server_id,
         is_online: eff.is_online,
@@ -250,9 +252,7 @@ pub async fn ingest_server_status(
         ingame_weather: eff.ingame_weather,
         updated_at: now,
     };
-    if let Ok(payload) = serde_json::to_vec(&status) {
-        state.hub.publish(&format!("server:{server_id}"), payload);
-    }
+    publish_server_status(&state.hub, &status);
 
     Ok(Json(json!({ "ok": true })))
 }
