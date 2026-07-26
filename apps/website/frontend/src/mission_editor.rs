@@ -271,7 +271,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                 spawn_local({
                     async move {
                         match crate::client::api_get::<crate::dto::RegistryResponse>(
-                            auth, "/registry",
+                            auth,
+                            "/registry",
                         )
                         .await
                         {
@@ -280,9 +281,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 registry_items.set(Some(r.data.clone()));
                                 catalog.set(CatalogState::Ready(build_catalog_tree(&r.data)));
                                 // T-215 — the Vehicles tab, off the same rows.
-                                vehicle_catalog.set(CatalogState::Ready(
-                                    build_vehicle_catalog_tree(&r.data),
-                                ));
+                                vehicle_catalog
+                                    .set(CatalogState::Ready(build_vehicle_catalog_tree(&r.data)));
                             }
                             Err(_) => {
                                 catalog.set(CatalogState::Failed);
@@ -294,8 +294,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             } else if let Some(items) = registry_session::cached_registry() {
                 registry_items.set(Some(items.clone()));
                 catalog.set(CatalogState::Ready(build_catalog_tree(&items)));
-                vehicle_catalog
-                    .set(CatalogState::Ready(build_vehicle_catalog_tree(&items)));
+                vehicle_catalog.set(CatalogState::Ready(build_vehicle_catalog_tree(&items)));
             }
         }
 
