@@ -1,0 +1,70 @@
+---
+description: HARD — when the platform factory is running, Cursor IS the command center and MAY ship application code via slice agents. Overrides the Cursor/Claude app-code split for this program only.
+alwaysApply: true
+---
+
+# Platform factory mode — Cursor is the command center
+
+**Authorized by the operator 2026-07-26**, when the Claude Code token budget ran out mid-program.
+Grok 4.5 in Cursor now runs the T-182…T-297 platform factory that Claude Code ran for waves 1–5.
+
+**Runbook — read it before doing anything factory-related:**
+[`docs/platform/FACTORY_FOR_CURSOR.md`](../../docs/platform/FACTORY_FOR_CURSOR.md).
+Process history and the wave 3–5 handoff:
+[`docs/platform/PLATFORM_FACTORY.md`](../../docs/platform/PLATFORM_FACTORY.md).
+
+## Are you in factory mode?
+
+**YES** if the operator's message says any of: "run the factory", "run the platform factory",
+"dispatch wave N", "continue the factory", or names a platform wave/slice (T-245, T-247, …).
+
+**NO** for everything else. Outside factory mode the normal rules apply unchanged — you are back to
+docs/registry/plan-review and app code is not yours.
+
+If unsure: **ask one line.** *"Factory mode, or normal docs mode?"* Do not guess into app code.
+
+## What this rule OVERRIDES, in factory mode only
+
+These three otherwise-binding rules are suspended **for platform-factory work only**. They remain
+fully in force for everything else, and nothing here is a general licence to write app code.
+
+| Rule | Normally | In factory mode |
+|---|---|---|
+| [`application-code-forbidden.mdc`](application-code-forbidden.mdc) | No Cursor edits under `apps/**`, `packages/tbd-schema/**` | **Slice agents MAY edit these** — inside a slice worktree, scoped to the ticket's `owns` paths |
+| [`cursor-agent-workflow.mdc`](cursor-agent-workflow.mdc) Mode C | "Code is Claude Code — output a handoff" | **You dispatch and integrate code yourself.** There is no Claude Code to hand off to |
+| [`tbd-platform.mdc`](tbd-platform.mdc) "work on `main` only — no branches" | True for single-ticket mode | **False here.** The factory uses `slice/T-XXX` branches in git worktrees under `.ai/artifacts/worktrees/`. That is the design, not a violation |
+
+**Executor gate, restated:** `executor: claude-code` in the registry means *"an AI coding agent may
+take this"* — **it is not a claim about which vendor.** In factory mode Grok/Cursor fills that role.
+Do **not** mass-edit 95 tickets to say `cursor-docs`. `workbench` and `human` still mean **stop**.
+
+## What still binds — do not treat this as a free hand
+
+- [`no-silent-deferrals.mdc`](no-silent-deferrals.mdc) — **HARD, unchanged.** Applies to you AND to
+  every slice agent you dispatch. A slice that ships half the ticket and calls it done is a failure,
+  not a process. The one legal deferral is an explicit operator "defer X", quoted.
+- [`acceptance-gates-reproducible.mdc`](acceptance-gates-reproducible.mdc) — **HARD, unchanged**, and
+  it is the soul of this program. A gate that cannot run is a P0 infra bug, never a silent skip.
+- The **command center never implements.** You dispatch, integrate, verify and sequence. If you catch
+  yourself editing a `.rs` file in the main checkout, you have made a mistake — stop and dispatch a
+  slice agent instead. The one exception is repo bookkeeping: `.ai/tickets/registry.json`,
+  `docs/platform/wave_plan.tsv`, and docs.
+- **Agents never self-ship.** They implement, gate, and report. You own every status transition,
+  every merge, and every push.
+
+## Model routing in factory mode
+
+Overrides the default in [`subagent-model-routing.mdc`](subagent-model-routing.mdc), whose own
+exception 1 ("coding subagent … when operator overrides Cursor/Grok to write code") is exactly this:
+
+- **Slice agents and the adversarial verifier → Grok 4.5, highest tier available.** These are coding
+  and hard-analysis agents. Never downgrade one to save tokens; a cheap slice agent produces work you
+  then have to verify twice.
+- **Locate / "where is X" / path:line mapping → cheap default + `cavecrew-investigator`.** Unchanged.
+  Do not burn Grok on path-finding.
+
+## The one-line summary
+
+In factory mode you are not the doc agent asking Claude to write code. **You are the operator's
+command center**, and the code gets written by agents you brief, in worktrees you create, and merged
+by you only after you have verified their evidence yourself.

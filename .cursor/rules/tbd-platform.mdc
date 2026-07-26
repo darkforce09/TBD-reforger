@@ -17,3 +17,9 @@ alwaysApply: true
 - **Claude Code:** application code only for slices with `executor: claude-code` (via `./scripts/ticket run`).
 - **Executor gate:** stop if active slice is `workbench`, `human`, or `ci` — wait for human completion.
 - Git: commit directly to `main` only; tag commits `T-0xx`; end with `Co-Authored-By` trailer.
+- **PLATFORM FACTORY MODE (2026-07-26) overrides the three lines above.** When the operator says "run
+  the factory" / "dispatch wave N", **Cursor owns application code** via slice agents, work happens on
+  `slice/T-XXX` branches in worktrees (the "`main` only, no branches" line above does **not** apply to
+  the factory), and `executor: claude-code` means "any AI coding agent may take this" — Grok now fills
+  that role. See [`platform-factory-mode.mdc`](platform-factory-mode.mdc) and
+  [`docs/platform/FACTORY_FOR_CURSOR.md`](docs/platform/FACTORY_FOR_CURSOR.md).

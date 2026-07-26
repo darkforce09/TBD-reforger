@@ -64,6 +64,18 @@ You babble; that's fine. **Classify intent** from the message — never require 
 
 **Default response:** Code is **Claude Code** — output handoff or say `./scripts/ticket run`. Do not patch `.rs`/`.c` under `apps/website/{api,frontend}/` or `apps/mod/` unless user **clearly** overrides: *"Cursor, you write the code"*.
 
+### Mode F — Platform factory (Cursor IS the code owner)
+
+**Added 2026-07-26 — this SUPERSEDES Mode C for platform-factory work.** If the operator says "run
+the factory" / "dispatch wave N" / "continue the factory", or names a platform wave or ticket
+(T-245, T-247, …), you are in **factory mode**. There is no Claude Code to hand off to — its token
+budget ran out mid-program. You dispatch slice agents into git worktrees, integrate, gate, run an
+adversarial verifier, triage, and push.
+
+Read [`platform-factory-mode.mdc`](platform-factory-mode.mdc), then the runbook
+[`docs/platform/FACTORY_FOR_CURSOR.md`](../../docs/platform/FACTORY_FOR_CURSOR.md). Do **not** infer
+factory mode from a vague "implement this" — ask one line if it is not explicit.
+
 ## Danger patterns — still over-interpret carefully
 
 | Vague user vibe | Safe default |

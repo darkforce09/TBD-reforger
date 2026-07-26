@@ -31,6 +31,18 @@ sites are real vs mock — saves a 150k-token re-derivation).
 ticket summary or a code comment. If it is in neither, it was not recorded and you should re-derive
 it rather than trust a recollection.
 
+## OPERATOR CHANGE — 2026-07-26: Cursor + Grok 4.5 now runs this factory
+
+Claude Code's token budget ran out after wave 5. **The command center is now Grok 4.5 in Cursor.**
+
+> **If you are Grok/Cursor, read [`FACTORY_FOR_CURSOR.md`](FACTORY_FOR_CURSOR.md) instead of this
+> file.** It is the same process written as a literal procedure — exact commands, checklists, and
+> decision tables rather than the judgement calls this document assumes. This file remains the
+> *why*, and the handoff below is still authoritative on what happened; that file is the *how*.
+
+The Cursor rule that switches modes and suspends the normal "Cursor may not write app code" gate is
+[`.cursor/rules/platform-factory-mode.mdc`](../../.cursor/rules/platform-factory-mode.mdc).
+
 ## WHERE THE RUN LEFT OFF — 2026-07-26, waves 3-5, PAUSED
 
 Read this before dispatching. Everything below is either not derivable from the tickets, or is

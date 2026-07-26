@@ -87,7 +87,14 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 
 **Agent split (2026-06):** **Cursor (Composer 2.5)** owns all documentation writes and sync. **Claude Code** reads specs and ships code only — return verify output to Cursor for doc updates. See [`agent_execution.md`](docs/specs/Mission_Creator_Architecture/agent_execution.md) §Agent roles and [`docs/website/AGENT_COMMIT_CHECKLIST.md`](docs/website/AGENT_COMMIT_CHECKLIST.md).
 
+> **SUPERSEDED FOR THE PLATFORM FACTORY (2026-07-26).** Claude Code's budget ran out after wave 5, so
+> **Cursor + Grok 4.5 now runs the T-182…T-297 platform factory and owns application code there**, via
+> slice agents in `slice/T-XXX` worktrees. The 2026-06 split above still governs all *other* work.
+> Runbook: [`docs/platform/FACTORY_FOR_CURSOR.md`](docs/platform/FACTORY_FOR_CURSOR.md) · mode switch:
+> [`.cursor/rules/platform-factory-mode.mdc`](.cursor/rules/platform-factory-mode.mdc).
+
 **CRITICAL — Executor gate:** Agents may **ONLY** execute ticket slices where `executor` is `claude-code` (Claude Code) or `cursor-docs` (Cursor documentation pass). If the active slice has `executor: workbench`, `human`, or `ci`, the agent **must stop** and wait for human completion. Do not edit `apps/mod/tbd-framework` Enfusion scripts unless the slice explicitly assigns `claude-code` to a mod script path. `./scripts/ticket run` skips non-`claude-code` rows automatically.
+**In platform-factory mode, `executor: claude-code` means "any AI coding agent may take this" — it is not a vendor claim,** and Grok now fills that role. Do **not** mass-edit the 95 open platform tickets to `cursor-docs`. `workbench` and `human` still mean stop.
 
 **Before every T-0xx commit, check what changed:**
 

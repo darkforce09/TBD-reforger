@@ -6,6 +6,13 @@ alwaysApply: false
 
 # Application code — Claude Code only
 
+> **EXCEPTION — PLATFORM FACTORY MODE (2026-07-26).** If the operator has put you in platform-factory
+> mode, this entire rule is **suspended for factory work**: slice agents you dispatch DO edit
+> `apps/**` and `packages/tbd-schema/**`, inside a slice worktree, scoped to the ticket's `owns`
+> paths. See [`platform-factory-mode.mdc`](platform-factory-mode.mdc). Outside factory mode this rule
+> applies unchanged. **There is no Claude Code to hand off to any more** — in factory mode, do not
+> write a handoff artifact and stop; dispatch a slice agent.
+
 **Default: DO NOT EDIT these files in Cursor.**
 
 Application code is shipped by **Claude Code** on `executor: claude-code` slices via `./scripts/ticket run` (work lands on **`main`** — no `ticket/T-0xx` branches).
