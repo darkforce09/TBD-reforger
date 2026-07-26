@@ -9228,14 +9228,15 @@
       "impact": [
         "data-loss"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3131,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 0
+      "priority": 0,
+      "shipped_at": "62a804e4"
     },
     {
       "id": "T-316",
@@ -9269,14 +9270,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3133,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 1
+      "priority": 1,
+      "shipped_at": "62a804e4"
     },
     {
       "id": "T-318",
@@ -9352,6 +9354,46 @@
       ],
       "status": "idea",
       "order": 3137,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-322",
+      "title": "`make api` builds into the shared target dir, and a slice rebuild kills the running dev API",
+      "summary": "OBSERVED LIVE 2026-07-26 08:28:10, not theorised. The operator's dev API on :8080 died mid-wave. No agent bound or killed it — every one of the eight was on its own high port, verified. What happened is that `make api` runs `cargo run --bin api` into the SHARED CARGO_TARGET_DIR, so the running process's executable is `target/debug/api`; a slice agent then built the same binary into the same path, and overwriting a running ELF in place kills the process. The binary's mtime (08:28:10) matches the death exactly.\n\nThis is a sharper form of T-300. T-300 says the shared target can SERVE unmerged code from `make api`; this says it can also DESTROY the operator's running server, at a moment nobody is watching, in a way that looks like the dev environment randomly falling over.\n\nWorkaround already in place: the dev API now runs from a stable copy at /var/tmp/tbd-api-dev/api, built from clean main into its own target dir, so no agent can touch it. That is a hand-placed band-aid and will be undone the next time anyone runs `make api`.\n\nReal fix: give the dev API its own CARGO_TARGET_DIR in the Makefile target, the same way the wave gate already does for frontend tests (target-gate-frontend) and for trunk (dist-gate-frontend). Confirm the operator's `make api` workflow is unchanged from their side.",
+      "program": "platform",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3138,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-323",
+      "title": "Admin ban button sends `{}` and now 400s — the ban UI is broken on main",
+      "summary": "CAUSED BY T-317, which landed at 62a804e4 and correctly made `reason` required on POST /admin/users/:id/ban. The frontend was not updated in the same wave because it is a different file with a different owner.\n\napps/website/frontend/src/personnel.rs:342-378 prompts \"Ban reason (optional):\" and DELIBERATELY sends `serde_json::json!({})` when the operator leaves it empty. That path now returns 400 and the UI shows a flat \"Ban failed\" with no explanation. A normal ban WITH a reason still works — `api_post_ok` uses gloo-net `.json()`, which sets the Content-Type header — so this is the empty-reason path only.\n\nThe backend is right and should not be reverted: an unexplained ban is exactly what T-317 set out to stop. The UI is what is stale. Make the reason required client-side too: change the prompt copy off \"(optional)\", reject or re-prompt on empty rather than posting `{}`, and surface the server's actual error message instead of a flat \"Ban failed\" — the 400 body already carries a usable one.\n\nFound and reported by the T-317 agent, which correctly refused to edit a file it did not own.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3139,
       "stream": "web-platform",
       "targets": [
         "website"
