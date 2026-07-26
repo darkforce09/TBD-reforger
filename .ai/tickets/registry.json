@@ -9465,14 +9465,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3142,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 1
+      "priority": 1,
+      "shipped_at": "5538efce"
     },
     {
       "id": "T-327",
@@ -9545,19 +9546,20 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3146,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 2
+      "priority": 2,
+      "shipped_at": "5538efce"
     },
     {
       "id": "T-331",
       "title": "content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained",
-      "summary": "FOUND by T-228 while constraining role_played; blocking two thirds of that work and not in its owned directory.\n\n`seeds/content_golden.sql:358-369` inserts literal NULL into `matches.aar_replay_url` (2 rows) and `matches.winning_faction` (1 row), under ON CONFLICT (id) DO UPDATE SET ... = EXCLUDED.... **That seed is where the operator's live NULLs came from.** T-228 measured both branches on a pg_dump copy rather than arguing them:\n  - WITH the NOT NULL constraint: `psql < seeds/content_golden.sql` fails `ERROR: null value in column \"aar_replay_url\" ... violates not-null constraint`, exit 3, failing row rf-match-20260704-01.\n  - WITHOUT it: the backfill clears the NULLs, then re-running the seed puts all three back. A backfill-only migration is self-defeating.\n\nSo three `NULL` -> `''` edits at seeds/content_golden.sql:358-369 must land in the SAME commit as the constraint. The exact DDL is already recorded as a comment block at the foot of migrations/0009_role_played_not_null.sql so it does not need re-deriving.\n\n`''` destroys no meaning here and that was checked, not assumed: the mod omits winning_faction from the payload entirely when there is no winner (TBD_ResultsReporter.c:18,546), `outcome` carries pending/failure/aborted, and telemetry.rs:519 already writes COALESCE($8, '') on create — `''` is the canonical no-winner on the only write path that exists.\n\nNOT urgent: `make seed` (Makefile:25-26) does NOT apply content_golden.sql — it is a manual operator tool, so this is not CI-red today. It would make the golden DB un-rebuildable once the constraint lands. Do NOT touch match_player_stats.command_win, which T-228 checked and left alone: NULL there is a real third state (not a command slot / not adjudicated), distinct from false, and already Option<bool> on both sides.\n\nSCOPE WIDENED 2026-07-26 by T-324, which found a SECOND fixture bug in the same file and corrected my diagnosis of it.\n\nseeds/content_golden.sql:623 and :650 hand-INSERT user 000000000000000005 onto BLUFOR/Alpha#1 AND OPFOR/Recon#1 (fixture UUIDs 00000000-0000-4000-5000-0000000000{05,15}) — one user, two seats. I had told T-324 this row came from the assign_slot handler. IT CANNOT HAVE: assign_slot upserts the registration (slot_id = EXCLUDED.slot_id), so it would have repointed the row at OPFOR, and the registration names the EARLIER seat. Neither handler can produce this shape. It is hand-written fixture data.\n\nWHY THIS MATTERS BEYOND TIDINESS: it means T-228's partial unique index on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL is NOT blocked by production data — it is blocked by this one seed file. T-324 verified the index against every handler path in a scratch DB (register move, bench, idempotent re-claim, assign, withdraw promotion, race-loser 409, reservation 409) and its fix COMPOSES with it. It also proved the ordering is what makes it compose: release-then-claim commits cleanly, claim-then-release raises 23505.\n\nSo fixing these two seed rows converts the double-seat invariant from handler DISCIPLINE into a STRUCTURAL guarantee. That is the real prize here.\n\nONE BLOCKER when the index lands: tests/events.rs:540 seeds the legacy two-seat state that T-318's recovery regression needs, and a partial unique index cannot be DEFERRABLE. Either drop the index around that seed or retire the assertion — decide deliberately, it is testing a real recovery path.",
+      "summary": "FOUND by T-228 while constraining role_played; blocking two thirds of that work and not in its owned directory.\n\n`seeds/content_golden.sql:358-369` inserts literal NULL into `matches.aar_replay_url` (2 rows) and `matches.winning_faction` (1 row), under ON CONFLICT (id) DO UPDATE SET ... = EXCLUDED.... **That seed is where the operator's live NULLs came from.** T-228 measured both branches on a pg_dump copy rather than arguing them:\n  - WITH the NOT NULL constraint: `psql < seeds/content_golden.sql` fails `ERROR: null value in column \"aar_replay_url\" ... violates not-null constraint`, exit 3, failing row rf-match-20260704-01.\n  - WITHOUT it: the backfill clears the NULLs, then re-running the seed puts all three back. A backfill-only migration is self-defeating.\n\nSo three `NULL` -> `''` edits at seeds/content_golden.sql:358-369 must land in the SAME commit as the constraint. The exact DDL is already recorded as a comment block at the foot of migrations/0009_role_played_not_null.sql so it does not need re-deriving.\n\n`''` destroys no meaning here and that was checked, not assumed: the mod omits winning_faction from the payload entirely when there is no winner (TBD_ResultsReporter.c:18,546), `outcome` carries pending/failure/aborted, and telemetry.rs:519 already writes COALESCE($8, '') on create — `''` is the canonical no-winner on the only write path that exists.\n\nNOT urgent: `make seed` (Makefile:25-26) does NOT apply content_golden.sql — it is a manual operator tool, so this is not CI-red today. It would make the golden DB un-rebuildable once the constraint lands. Do NOT touch match_player_stats.command_win, which T-228 checked and left alone: NULL there is a real third state (not a command slot / not adjudicated), distinct from false, and already Option<bool> on both sides.\n\nSCOPE WIDENED 2026-07-26 by T-324, which found a SECOND fixture bug in the same file and corrected my diagnosis of it.\n\nseeds/content_golden.sql:623 and :650 hand-INSERT user 000000000000000005 onto BLUFOR/Alpha#1 AND OPFOR/Recon#1 (fixture UUIDs 00000000-0000-4000-5000-0000000000{05,15}) — one user, two seats. I had told T-324 this row came from the assign_slot handler. IT CANNOT HAVE: assign_slot upserts the registration (slot_id = EXCLUDED.slot_id), so it would have repointed the row at OPFOR, and the registration names the EARLIER seat. Neither handler can produce this shape. It is hand-written fixture data.\n\nWHY THIS MATTERS BEYOND TIDINESS: it means T-228's partial unique index on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL is NOT blocked by production data — it is blocked by this one seed file. T-324 verified the index against every handler path in a scratch DB (register move, bench, idempotent re-claim, assign, withdraw promotion, race-loser 409, reservation 409) and its fix COMPOSES with it. It also proved the ordering is what makes it compose: release-then-claim commits cleanly, claim-then-release raises 23505.\n\nSo fixing these two seed rows converts the double-seat invariant from handler DISCIPLINE into a STRUCTURAL guarantee. That is the real prize here.\n\nONE BLOCKER when the index lands: tests/events.rs:540 seeds the legacy two-seat state that T-318's recovery regression needs, and a partial unique index cannot be DEFERRABLE. Either drop the index around that seed or retire the assertion — decide deliberately, it is testing a real recovery path.\n\nTHIRD SCOPE ITEM, from T-330: `missions.created_at` AND `missions.updated_at` are `timestamp with time zone` with NO NOT NULL and NO DEFAULT (0001_initial_schema.sql:374-375). That is structurally unlike 0003_registry_compat.sql:14 and 0006_user_factions.sql:13, which are both `DEFAULT now() NOT NULL`. So ANY hand-written INSERT that omits either column stores NULL — and CLAUDE.md documents `psql` as an ops path, so hand-written INSERTs are expected.\n\nT-330 hit this concretely: a two-argument COALESCE(updated_at, created_at) would STILL have 500'd, because created_at can be NULL too. It needed a three-link chain terminating in the Go zero time. The durable fix is `SET DEFAULT now()` + `SET NOT NULL` on both columns after a backfill — the same conclusion T-325 reached for the text columns, in the same directory, so do them together.",
       "program": "platform",
       "surfaces": [
         "DATA"
@@ -9676,6 +9678,26 @@
       ],
       "executor": "claude-code",
       "priority": 3
+    },
+    {
+      "id": "T-337",
+      "title": "Approving or rejecting a mission never touches updated_at",
+      "summary": "FOUND by T-330 in its own file, and deliberately NOT shipped there because it is a write-semantics change rather than the read fix that ticket was for. Confirmed live, not inferred: approving a mission whose updated_at was NULL left it NULL.\n\nhandlers/approvals.rs:105 (approve) and :170 (reject) both UPDATE the mission's status without setting `updated_at`. Every sibling write does — handlers/missions.rs:392 and :543 both set `updated_at = now()`.\n\nConsequences: the approvals queue orders by that timestamp (T-330 made the ORDER BY match the displayed value), so a mission's position never reflects that it was actioned; and any consumer using updated_at for cache invalidation or sync will not see an approval at all. It is also the reason a NULL can persist through a state transition that plainly modified the row.\n\nSmall fix, but decide one thing deliberately: whether `updated_at` should also move on a REJECT, or whether rejection wants its own timestamp column. T-313 (the author can never read why their mission was rejected) is adjacent and may want the same row touched.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3153,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }
