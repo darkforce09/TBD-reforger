@@ -54,6 +54,7 @@
 0	T-320	Editor gate harness wedges on /missions/:id/edit — every browser leg is unverifiable	tools/tbd-tools/src/doctor.rs; tools/tbd-tools/src/smokes.rs; docs/website/EDITOR_GATE_RUNBOOK.md
 0	T-202	Emit briefings[] — unlocks briefing prose and all map markers	crates/map-engine-core/src/mission/flatten.rs; apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c; apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c
 0	T-214	Briefing text editor — situation, mission, execution, per faction	crates/map-engine-core/src/mission/compile.rs
+1	T-355	An unparseable event_id silently becomes NULL and skips the attendance write	apps/website/api/src/handlers/telemetry.rs
 1	T-353	Four SPA gaps T-232 could not reach from its own files	apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/router.rs; apps/website/frontend/src/datefmt.rs
 1	T-354	Chrome's stderr pipe must be drained or CDP deadlocks with no error anywhere	docs/website/EDITOR_GATE_RUNBOOK.md; tools/tbd-tools/src/cdp.rs
 1	T-352	tbd-editor-adopted marker is unscoped per-account editor state	apps/website/frontend/src/editor_session.rs

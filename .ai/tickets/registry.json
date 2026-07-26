@@ -9892,7 +9892,7 @@
     {
       "id": "T-347",
       "title": "A whitespace source_match_id becomes a live dedupe key and destroys match history",
-      "summary": "FOUND by T-343's sweep. The worst mechanism in the whole family.\n\nhandlers/telemetry.rs:476 guards with `!s.is_empty()`; :515 binds the RAW Option into a UNIQUE index. So:\n  `\"   \"` passes the guard and becomes a LIVE DEDUPE KEY. Every later distinct match collapses onto match #1 — rosters overwritten, scorelines destroyed rather than summed, total_deployments stuck at 1 — and the endpoint returns 200 every single time.\n  `Some(\"\")` makes the two halves disagree, raising 23505, which is a PERMANENT 500 for that sender.\n\nThis is a service-token endpoint, so a game-server bug or a retry does it silently with no human in the loop. It is the same class T-316 fixed for the counters, on the identity column instead.\n\nNote T-316 deliberately left `source_match_id` optional (\"it creates, it doesn't corrupt\") — that judgement was right about the ABSENT case and this is the PRESENT-BUT-BLANK case, which does corrupt. Fix the guard and the bind together so they cannot disagree.\n\n══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══\nT-343 found these and they bind on any ticket in this family:\n  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.\n  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.\nTrimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
+      "summary": "FOUND by T-343's sweep. The worst mechanism in the whole family.\n\nhandlers/telemetry.rs:476 guards with `!s.is_empty()`; :515 binds the RAW Option into a UNIQUE index. So:\n  `\"   \"` passes the guard and becomes a LIVE DEDUPE KEY. Every later distinct match collapses onto match #1 — rosters overwritten, scorelines destroyed rather than summed, total_deployments stuck at 1 — and the endpoint returns 200 every single time.\n  `Some(\"\")` makes the two halves disagree, raising 23505, which is a PERMANENT 500 for that sender.\n\nThis is a service-token endpoint, so a game-server bug or a retry does it silently with no human in the loop. It is the same class T-316 fixed for the counters, on the identity column instead.\n\nNote T-316 deliberately left `source_match_id` optional (\"it creates, it doesn't corrupt\") — that judgement was right about the ABSENT case and this is the PRESENT-BUT-BLANK case, which does corrupt. Fix the guard and the bind together so they cannot disagree.\n\n══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══\nT-343 found these and they bind on any ticket in this family:\n  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.\n  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.\nTrimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.\n\nSHIPPED 2026-07-26 with the collapse demonstrated on real rows, not described.\n\nThree genuinely different matches posted with source_match_id \"   \": 1 row instead of 3, carrying outcome from #3, winning_faction from #2 sitting under #3's AAR link, started_at from #1 only (bound on create, so #2's and #3's start times were simply dropped), player A's line reading 0/1 with 17/3 and 2/9 GONE rather than summed, a roster of A+B+C that never existed, users.total_deployments 1 instead of 3 — and HTTP 200 all three times.\nSome(\"\"): POST #1 200 inserting '', then POSTs #2-#4 all 500. Permanent, SQLSTATE 23505 on idx_matches_source_match_id.\nThe leaderboard MV carried it — refresh_leaderboard is awaited in-request, so immediately after ingest #3 player A read kills=0 missions_played=1 against a true 19/3, and B and C each read a match they had been reattributed into.\n\nA THIRD FACE THE TICKET DID NOT NAME: \"m-x\" and \"  m-x  \" were TWO SEPARATE match rows pre-fix. That is why trimming only the guard would have been its own bug — it would have merged rows that were already distinct in the table.\n\nTHE FIX IS STRUCTURAL, not a patch: source_match_key resolves the key ONCE before the transaction, and upsert_match no longer reads m.source_match_id at all. The halves cannot drift because there is only one of them. Blank is a 400, not normalised to None — on an endpoint with no human in the loop, absorbing a broken id field is the same objection T-316 raised against GREATEST.\n\nT-316 HELD, all re-verified by running: absent still creates (a UNIQUE btree treats NULLs as distinct, so 'it creates, it doesn't corrupt' is intact), full retry idempotent, downward correction 17->4 lands, outcome:\"pending\" accepted, partial heartbeat merges. T-316's own two tests pass unchanged.\n\nTRIM SAFETY CHECKED AGAINST THE T-343 HAZARD: matches.source_match_id has exactly one writer and one lookup-by-value, both now this function's return value, and a repo-wide sweep confirms nothing compares against it — deployments.rs:134 and models::Match only carry it outward, and the mod's TBD_ResultsReporter.c:533 only sends it. Unlike orbat_reservations.squad there is no second site to disagree with. Live blast radius measured read-only on the operator's DB: 3 matches, 0 blank, 0 padded — no migration exposure.\n\nFOUND AND FIXED IN PASSING: parse_uuid_opt did NOT trim while server_id's path did, so a padded event_id failed the parse, fell out as None, and the attendance UPDATE was silently skipped on a 200.",
       "program": "platform",
       "surfaces": [
         "API",
@@ -9901,14 +9901,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3163,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 0
+      "priority": 0,
+      "shipped_at": "57f9c7ca"
     },
     {
       "id": "T-348",
@@ -10050,6 +10051,26 @@
       ],
       "executor": "claude-code",
       "priority": 1
+    },
+    {
+      "id": "T-355",
+      "title": "An unparseable event_id silently becomes NULL and skips the attendance write on a 200",
+      "summary": "FOUND by T-347, which fixed the whitespace half and deliberately left this because it is a per-call-site decision rather than one line.\n\nhandlers/telemetry.rs:44 — `parse_uuid_opt` turns an UNPARSEABLE non-empty `event_id` or `mission_id` into `None`. The handler then skips the attendance UPDATE entirely and returns 200. So a game server sending a malformed id gets a success response while nobody's attendance is recorded, and there is no signal anywhere that it happened.\n\nT-347 already fixed the adjacent whitespace case (a PADDED id failed the parse the same way; it now trims first). What remains is genuinely-malformed input, and it should almost certainly be a 400 — an id the sender clearly meant to supply and got wrong is not the same as an absent one.\n\nWHY IT IS NOT A ONE-LINER: `current_match_id` shares the same helper and has a DOCUMENTED three-state contract (absent keeps / \"\" clears / uuid sets), which T-316 established deliberately to stop a pure COALESCE pinning the live row to a finished match forever. So the helper cannot simply start rejecting — the decision has to be made per call site. Read T-316's reasoning before changing anything.\n\nAlso worth recording, from T-347's read of the mod side: TBD_ResultsReporter.c:596 `BuildSourceMatchId` always appends `@<utc>#<tick>`, so the SHIPPING mod cannot send a wholly blank id. The blank and malformed paths are reachable by any other sender — including the hand-replay that the reporter's own log at :503 instructs an admin to perform.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3171,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }
