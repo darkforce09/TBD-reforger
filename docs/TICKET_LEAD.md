@@ -9,9 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-267** (2850) — CMS announcements can be created but never edited, deleted or re-pushed [ready] — content.rs makes exactly one API call and discards the returned id, so re-clicking Publish duplicates. PATCH, DELETE, uploads and push-discord are all orphaned. The SOP category never hits the API at all — it toasts success with no network call. Five markdown tools toast mock.
-- **T-268** (2860) — Personnel — Issue Warning is a mock over a working endpoint, and there is no unban [ready] — personnel.rs:379-382 toasts 'Warning issued (mock)' while POST /admin/users/{id}/warnings exists and works. DELETE ban (unban) has no control at all, so a ban is irreversible from the UI. Sort and Filter are stubs and the Deployments dossier stat is hardcoded.
-- **T-271** (2890) — Modpack CRUD plus workshop-id columns [ready] — /modpacks is get-only and the handler contains no DML; the only INSERT is the offline registry importer. modpack_mods has name, is_key_dependency and sort_order but no workshop_id, mod_guid or version, so it structurally cannot express a Reforger game.mods[] entry. The frontend page is fully mock and its Save writes to an in-memory map while toasting success.
 
 ## Next queued (top 10)
 

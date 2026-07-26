@@ -971,6 +971,21 @@ Cure: extract wiki INSERT seed (or include content_golden wiki section) into see
 Repro: change Load more to replace the vec; cargo test -p website-frontend audit::tests still PASS.
 
 Cure: include_str! / source guard (T-264 style) that on_load_more uses merge_audit_page + audit_logs_path(Some(before)).
+- **T-446** (deferred) — CMS hero image upload needs web-sys FormData features [FE] — Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.
+
+Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
+
+Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url.
+- **T-447** (deferred) — CMS content page still seeds from mock_docs; no GET list [FE, BE] — Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.
+
+Repro: Publish announcement; reload /content → mock seed only.
+
+Cure: add list route if missing + FE LocalResource GET /cms/announcements.
+- **T-448** (deferred) — Personnel dossier Deployments stat has no API field [FE, BE] — Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.
+
+Repro: Personnel dossier → Deployments always —.
+
+Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

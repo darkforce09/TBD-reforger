@@ -8321,7 +8321,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2850,
       "stream": "web-platform",
       "targets": [
@@ -8340,7 +8340,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2860,
       "stream": "web-platform",
       "targets": [
@@ -8397,7 +8397,7 @@
       "impact": [
         "platform-server"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2890,
       "stream": "web-platform",
       "targets": [
@@ -11932,6 +11932,68 @@
       ],
       "status": "deferred",
       "order": 3284,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-446",
+      "title": "CMS hero image upload needs web-sys FormData features",
+      "summary": "Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.\n\nRepro: CMS Content → hero upload → error toast; /cms/uploads never called.\n\nCure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url.",
+      "program": "platform",
+      "surfaces": [
+        "FE"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3285,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-447",
+      "title": "CMS content page still seeds from mock_docs; no GET list",
+      "summary": "Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.\n\nRepro: Publish announcement; reload /content → mock seed only.\n\nCure: add list route if missing + FE LocalResource GET /cms/announcements.",
+      "program": "platform",
+      "surfaces": [
+        "FE",
+        "BE"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3286,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-448",
+      "title": "Personnel dossier Deployments stat has no API field",
+      "summary": "Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.\n\nRepro: Personnel dossier → Deployments always —.\n\nCure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.",
+      "program": "platform",
+      "surfaces": [
+        "FE",
+        "BE"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3287,
       "stream": "web-platform",
       "targets": [
         "website"
