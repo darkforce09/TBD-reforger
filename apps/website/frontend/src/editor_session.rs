@@ -9,13 +9,53 @@
 //! Scope: the warm-session half of `editorSession.ts`. The separate localStorage "adopted-server"
 //! marker (`tbd-editor-adopted:*`, the T-130.5 conflict path) was ported at T-159.26 and **removed
 //! again at T-352** — see [`mark_adopted`]. Whole module is `wasm32`-gated in `main.rs`.
+//!
+//! **T-352 — neither key was account-scoped, and they needed opposite fixes.** Both held per-account
+//! editor state under a global key, the class of bug T-221 and T-338 spent two slices closing for the
+//! IndexedDB records and the snapshot cache. What separates them is whether anything *reads* them:
+//!
+//!   * `tbd-editor-adopted:<id>` (localStorage) had **no reader at all** — T-223 replaced the marker
+//!     test with a content comparison and left only the writes. Scoping it would have implied a reader
+//!     exists and invited someone to add one, so the storage is gone; [`mark_adopted`] now only cleans
+//!     up the residue earlier builds wrote.
+//!   * `tbd-editor-session` (sessionStorage) **is** read, by [`read_warm`] through the
+//!     `__missionPersist.warm()` bridge, so deleting it would break a live reader. It is scoped
+//!     instead — see [`session_key`].
 #![allow(dead_code)] // read_warm is exercised via the `__missionPersist` smoke bridge, not Rust callers yet.
 
 use serde::{Deserialize, Serialize};
 
-/// sessionStorage key — identical to the React `SESSION_KEY`. Singleton (one record; last write
-/// across missions wins), exactly as `editorSession.ts`.
+/// The **logical** sessionStorage key — the React `SESSION_KEY`. Singleton (one record; last write
+/// across missions wins), exactly as `editorSession.ts`. No longer a physical key (T-352 — see
+/// [`session_key`]); kept as the scoped suffix, and to recognise what a pre-T-352 build left behind.
 const SESSION_KEY: &str = "tbd-editor-session";
+
+/// The physical sessionStorage key for the signed-in account — `u{len}:{owner}|{logical}`, the scheme
+/// T-221 established for the IndexedDB records and T-338 extended to the snapshot RAM cache.
+///
+/// **Why this one is scoped rather than deleted (T-352).** The record holds
+/// `{missionId, readyAt, slotCount, currentSemver}` — per-account editor state — under a global key.
+/// `sessionStorage` is scoped to the *tab*, not to the session, so it outlives a client-side sign-out:
+/// A opens the editor, signs out, B signs in **in that same tab**, and A's mission id and object count
+/// are still on record. Unlike the `tbd-editor-adopted:*` marker removed below, this one genuinely **is**
+/// read — [`read_warm`], via `yrs_persist`'s `__missionPersist.warm()` bridge — so deleting it would
+/// break a live reader. Scope it instead.
+///
+/// The length prefix is not decoration: it makes `(owner, logical) → key` **injective** for arbitrary
+/// owner bytes. A plain `{owner}|{logical}` join collides the moment an id contains the separator, and a
+/// `discord_id` is whatever the backend sends, not a shape this module gets to assume. The format is
+/// restated here rather than shared because `yrs_persist::scoped_key` is private;
+/// [`crate::yrs_persist::owner_token`] is `pub` (T-338) and is the one token every per-account cache has
+/// to agree on.
+///
+/// Scoping alone closes the hole — B resolves a different physical key and cannot even name A's record —
+/// so no sign-out purge is needed, which keeps this clear of the T-338 ordering trap (a token resolved
+/// *after* `clear_session` is `anon`, i.e. the wrong owner at exactly the wrong moment). Every caller
+/// goes through this module's three functions, so nothing outside it changed.
+fn session_key() -> String {
+    let owner = crate::yrs_persist::owner_token();
+    format!("u{}:{owner}|{SESSION_KEY}", owner.len())
+}
 
 /// 24h in ms — the React `TTL_MS = 24 * 60 * 60 * 1000`.
 const TTL_MS: f64 = 24.0 * 60.0 * 60.0 * 1000.0;
@@ -45,7 +85,12 @@ pub fn mark_ready(mission_id: &str, slot_count: u32, current_semver: Option<Stri
         web_sys::window().and_then(|w| w.session_storage().ok().flatten()),
         serde_json::to_string(&session),
     ) {
-        let _ = storage.set_item(SESSION_KEY, &json);
+        let _ = storage.set_item(&session_key(), &json);
+        // Drop the pre-T-352 unscoped record while we are here. `read_warm` reads the scoped key now,
+        // so the old one is unreachable — but leaving it would park A's missionId/slotCount in a tab
+        // B may already be using, which is the whole point of scoping. Same reasoning as
+        // `purge_legacy_markers`, one storage down.
+        let _ = storage.remove_item(SESSION_KEY);
     }
 }
 
@@ -55,7 +100,7 @@ pub fn mark_ready(mission_id: &str, slot_count: u32, current_semver: Option<Stri
 #[must_use]
 pub fn read_warm(mission_id: &str) -> Option<EditorSession> {
     let storage = web_sys::window()?.session_storage().ok()??;
-    let json = storage.get_item(SESSION_KEY).ok()??;
+    let json = storage.get_item(&session_key()).ok()??;
     let session: EditorSession = serde_json::from_str(&json).ok()?;
     if session.mission_id != mission_id {
         return None;
@@ -69,7 +114,8 @@ pub fn read_warm(mission_id: &str) -> Option<EditorSession> {
 /// Clear the warm marker (React `clearEditorSession`). Silent no-op on failure.
 pub fn clear() {
     if let Some(storage) = web_sys::window().and_then(|w| w.session_storage().ok().flatten()) {
-        let _ = storage.remove_item(SESSION_KEY);
+        let _ = storage.remove_item(&session_key());
+        let _ = storage.remove_item(SESSION_KEY); // and the pre-T-352 unscoped record
     }
 }
 
