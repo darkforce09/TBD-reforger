@@ -85,6 +85,16 @@ else soft "postgres :5434" "down — API integration tests will skip (make db-up
 if (exec 3<>/dev/tcp/127.0.0.1/8080) 2>/dev/null; then ok "api :8080" "up"
 else soft "api :8080" "down — editor smokes would report gate-red for an env reason"; fi
 
+# 11b. A running `trunk serve` (make leptos) races the gate's `trunk build --release` over the same
+#      apps/website/frontend/dist. OBSERVED 2026-07-26: the wave gate failed with "error writing JS
+#      loader file to stage dir / No such file or directory" while PID 158382 held it; the identical
+#      build passed seconds later. This is the worst failure shape there is — an ENVIRONMENT race
+#      that reads exactly like a code defect, so an unattended fix agent burns its whole retry budget
+#      on working code. Catch it at t=0.
+ts=$(pgrep -f "trunk serve" 2>/dev/null | wc -l)
+[ "$ts" -eq 0 ] && ok "trunk serve" "not running" \
+  || soft "trunk serve" "$ts running — races the gate's trunk build over dist/; stop it before an unattended run"
+
 # 11. Stray chrome starves the editor gates (doctor.rs:166-172 refuses to run with any alive).
 # `pgrep -fc` prints 0 AND exits 1 when there is no match, so a `|| echo 0` fallback yields "0\n0"
 # and the arithmetic test below blows up. Count lines instead.
