@@ -159,6 +159,7 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
 ///   * anything **not** listed is a hard failure (that is the enumeration doing its job), and
 ///   * [`BASELINE_CAP`] stops the list growing silently, which is the only way a tolerance list
 ///     can quietly become the false confidence this suite exists to prevent.
+///
 /// Stale entries are printed to stderr on every run — prune them when you see them.
 ///
 /// Keyed by file, not `file:line`, so an unrelated edit above the defect does not break it.
@@ -1068,7 +1069,7 @@ fn every_get_route_is_swept_or_skipped_with_a_reason() {
     let stale: Vec<&&str> = swept
         .iter()
         .chain(skipped.iter())
-        .filter(|r| !registered.contains(&r.to_string()))
+        .filter(|r| !registered.contains(**r))
         .collect();
     assert!(
         stale.is_empty(),
