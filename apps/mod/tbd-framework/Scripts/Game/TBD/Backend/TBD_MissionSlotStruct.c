@@ -52,6 +52,8 @@ class TBD_MissionSlotStruct
 	//! Sentinel for "y absent from JSON". JsonLoadContext leaves a missing key at the
 	//! field initializer, and no real ASL height approaches -1e6 m, so the initializer
 	//! doubles as the presence flag (standard JSON cannot carry NaN/Infinity).
+	//! Golden: `golden-missions/slot-y-absent-and-present.json` (T-249) — one slot omits y,
+	//! one authors it; schema gate refuses if that fixture is missing or one-sided.
 	static const float Y_ABSENT = -1000000;
 
 	string id;            //!< Human-readable label: {faction}:{groupCallsign}:{role}:{index} — DERIVED each compile.

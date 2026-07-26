@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "1.2",
+  "meta": {
+    "id": "msn_slot_y_pin",
+    "name": "Slot Y Absent and Present",
+    "author": "T-249",
+    "terrain": "everon",
+    "templateId": "attack_defend_v1",
+    "playerRange": [2, 4]
+  },
+  "environment": {
+    "dateTime": "1989-06-14T06:00:00Z",
+    "weatherPreset": "clear",
+    "windDirDeg": 0
+  },
+  "factions": [
+    {
+      "key": "blufor",
+      "displayName": "US Army",
+      "presetId": "preset:us_army_82nd",
+      "tickets": 0,
+      "color": "#2b6cb0"
+    },
+    {
+      "key": "opfor",
+      "displayName": "Soviet VDV",
+      "presetId": "preset:sov_vdv",
+      "tickets": 0,
+      "color": "#c53030"
+    }
+  ],
+  "orbat": {
+    "blufor": {
+      "groups": [
+        {
+          "callsign": "Alpha",
+          "type": "rifle_squad",
+          "roles": [
+            { "slot": "SL", "kit": "kit:us_sl", "count": 1, "radio": [] },
+            { "slot": "RFL", "kit": "kit:us_rifleman", "count": 1, "radio": [] }
+          ]
+        }
+      ]
+    },
+    "opfor": {
+      "groups": [
+        {
+          "callsign": "Grom",
+          "type": "rifle_squad",
+          "roles": [
+            { "slot": "SL", "kit": "kit:sov_sl", "count": 1, "radio": [] }
+          ]
+        }
+      ]
+    }
+  },
+  "zones": [
+    {
+      "id": "sp_blufor",
+      "type": "spawn",
+      "label": "",
+      "faction": "blufor",
+      "shape": { "circle": { "x": 4880.0, "z": 7770.0, "r": 110 } },
+      "rules": {}
+    },
+    {
+      "id": "sp_opfor",
+      "type": "spawn",
+      "label": "",
+      "faction": "opfor",
+      "shape": { "circle": { "x": 5184.0, "z": 7988.0, "r": 110 } },
+      "rules": {}
+    }
+  ],
+  "flow": {
+    "timeLimitSeconds": 3600
+  },
+  "winConditions": {
+    "mode": "attrition",
+    "endOn": ["time_limit"]
+  },
+  "slots": [
+    {
+      "id": "blufor:Alpha:SL:0",
+      "uid": "slot_y_absent",
+      "faction": "blufor",
+      "groupCallsign": "Alpha",
+      "role": "SL",
+      "kit": "kit:us_sl",
+      "x": 4870.0,
+      "z": 7760.0,
+      "headingDeg": 45
+    },
+    {
+      "id": "blufor:Alpha:RFL:0",
+      "uid": "slot_y_present",
+      "faction": "blufor",
+      "groupCallsign": "Alpha",
+      "role": "RFL",
+      "kit": "kit:us_rifleman",
+      "x": 4890.0,
+      "z": 7780.0,
+      "y": 136.0,
+      "headingDeg": 90
+    }
+  ]
+}
