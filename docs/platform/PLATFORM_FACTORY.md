@@ -6,6 +6,89 @@ infra). The mod program has its own: [`../mod/SLICE_WORKFLOW.md`](../mod/SLICE_W
 
 Do not start this program until **T-181 is finished**. Operator instruction.
 
+---
+
+## COLD START — a fresh command-center session, first five minutes
+
+The command center is **deliberately a short-lived chat**. Once a session has been compacted a
+couple of times, every turn pays to re-read a large context before doing any work, and compaction
+drops precision nobody chose to drop. Start a new chat and read state from the repo instead — the
+repo has always been the source of truth, which is what makes this cheap.
+
+```bash
+bash scripts/platform/preflight.sh          # must print PASS; fix BLOCKs before anything else
+bash scripts/platform/wave.sh status        # what is shipped, in flight, ready
+python3 scripts/platform/slice-collisions.py --repack
+python3 scripts/platform/slice-collisions.py   # the dispatch set, + any UNPLANNED warning
+```
+
+State lives in: [`wave_plan.tsv`](wave_plan.tsv) (what runs together) · `.ai/tickets/registry.json`
+(every ticket's full history — **the summaries are the handoff**, read the ones you are dispatching)
+· this file (process) · [`frontend_data_provenance.md`](frontend_data_provenance.md) (which render
+sites are real vs mock — saves a 150k-token re-derivation).
+
+**Do not** try to reconstruct a previous session's reasoning. If a decision mattered, it is in a
+ticket summary or a code comment. If it is in neither, it was not recorded and you should re-derive
+it rather than trust a recollection.
+
+## THE SIGNATURE DEFECT — what to be suspicious of
+
+Across the 2026-07-26 run, **seven independent instances** of one pattern were found, and it caused
+more wasted work than every code bug combined:
+
+> **A tool reports success over an input it never actually examined.**
+
+Every instance looked like a green check:
+
+| instance | what it silently did not examine |
+|---|---|
+| gate ran the DB suite with no database | 30 tests printed `skip:` and it printed PASS |
+| clippy step was feature-blind | 7,377 LOC behind `--features world` never linted |
+| browser assertions computed "not null/false/0/empty" | every probe returns an object, so **all** passed |
+| shared `CARGO_TARGET_DIR` served stale/foreign binaries | a test's "126 passed" was not its own code |
+| `wave.sh land T-204` discarded its argument | landed 4 slices, 2 whose agents had not reported |
+| `assert_golden` under `#[serde(flatten)]` | a deleted field is re-emitted, JSON byte-identical (T-394) |
+| `slice-collisions.py --repack` | 36% of open tickets had no plan row and were never candidates |
+| preflight's `:8080` check was a TCP connect | reported a **six-hour-stale binary** as "up" |
+
+**The lesson that generalises:** a passing check is worth nothing until you know *what it looked at*.
+Prove non-vacuity by perturbation — break the thing deliberately and confirm the check goes red.
+T-204 did this unprompted (restored the hardcode, watched its own new tests fail) and it is the
+single most valuable habit in this program. **Demand it in every slice brief.**
+
+## Agent reports are evidence, not testimony
+
+Agents are reliable about code they touched and **unreliable about bookkeeping**. On 2026-07-26,
+**three separate agents claimed to have filed a follow-up ticket and none had** — including a P0
+that broke all production telemetry. Others contradicted the command center's own framing ten times,
+and were right most of them.
+
+So: **verify every claim of the form "I filed / a sibling fixed / this already works" against the
+repo before acting on it.** Grep the registry for the finding. Check `git log` for the sibling fix.
+It costs one tool call and it has caught something every single time it was done.
+
+Corollary: when an agent contradicts *you*, assume it looked and you remembered. Verify, then
+record the correction in the ticket and tell the operator plainly.
+
+## Known traps that cost real hours
+
+- **`slice-worktree.sh` subcommand is `new`, not `create`.** `create` prints usage and exits 2.
+- **`git push` fails** — the pre-push hook needs git-lfs, absent from the container PATH. Always
+  `bash scripts/platform/wave.sh push`.
+- **The operator's dev API on `:8080` goes stale.** A running process keeps its old inode when cargo
+  re-links, so a fresh binary on disk does not mean fresh code serving. Preflight now compares
+  process start time to the last API commit. A stale API is worse than a dead one — dead fails
+  loudly, stale returns confident wrong answers that read as genuine defects.
+- **`trunk serve` on `:3000` races the gate's `trunk build`** over the same `dist/`. Already caused
+  one gate-red that read exactly like a code fault. Stop it before an unattended run.
+- **Agents must never `git stash`** — it deletes LFS pointer files.
+- **Orphan agent processes and target dirs leak.** A dead agent's API was found still listening 53
+  minutes later; ~116 GB of orphan target dirs once filled the disk and two gate steps failed with
+  "No space left on device", which reads as a build error. `wave.sh reclaim`.
+- **`distrobox-host-exec` does not forward env** — pass it explicitly via an `env` whitelist.
+- **A rate-limited subagent reports `<status>completed</status>`.** Treat the reset string as a
+  FAILURE or you will mark dead agents as done.
+
 ## The shape
 
 Identical to T-181. The main chat is the **command center**: it never implements, it dispatches,
