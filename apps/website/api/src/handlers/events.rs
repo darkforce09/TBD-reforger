@@ -828,11 +828,58 @@ pub async fn get_event(
 
     let mut missions = Vec::with_capacity(ems.len());
     for em in ems {
-        let Some((title, terrain, game_mode, briefing, thumbnail_url)): Option<(String, crate::models::TerrainType, crate::models::GameMode, String, String)> =
-            sqlx::query_as("SELECT title, terrain, game_mode, briefing, thumbnail_url FROM missions WHERE id = $1 AND deleted_at IS NULL")
-                .bind(em.mission_id)
-                .fetch_optional(&state.pool)
-                .await?
+        // Two of these five columns are nullable and three are not, so the `COALESCE`s are
+        // per-column and not a blanket wrap (T-340). Checked against `information_schema`, not
+        // against what the DDL looks like: `title` is NOT NULL, and `terrain`/`game_mode` are
+        // NOT NULL enums that could not be coalesced to `''` even if they were — a `COALESCE`
+        // on any of the three would assert a nullability the schema does not have. `briefing`
+        // and `thumbnail_url` are `is_nullable = YES` with **no DEFAULT**, decoded positionally
+        // into a tuple of plain `String`s, and either one NULL took the whole Event Hub down:
+        // *"error occurred while decoding column 3: unexpected null; try decoding as an
+        // `Option`"* for `briefing`, the same at *column 4* for `thumbnail_url`. Positional, so
+        // the message names an index rather than a column — which is part of why this survived
+        // two edits to this file (T-324, and reported again by T-325 then T-329).
+        //
+        // Not latent: `seeds/mock_data.sql:25` omits `thumbnail_url` from its INSERT column
+        // list, so all four seeded missions carry NULL there. Measured end-to-end on a clean
+        // database with nothing but that seed applied — create an event, attach a seeded
+        // mission, `GET /api/v1/events/{id}` → **500**. A developer takes the Event Hub down by
+        // seeding, with no reason to suspect this query.
+        //
+        // `''` is the whole fallback for both, and deliberately not a sentinel standing in for a
+        // fact. `EventMissionDossier` carries `skip_serializing_if = "String::is_empty"` on both
+        // fields, so `''` **omits the key** — on the wire it is absence, not a value, which is
+        // exactly the true statement ("this mission has no briefing" / "no thumbnail"). That is
+        // why neither needs the sibling-column chain T-330 used for `approvals.rs`: there,
+        // `DateTime<Utc>` has no absent encoding, so a real sibling (`created_at`) beat a
+        // sentinel. Here the type already has one. The nearby sibling candidates are also both
+        // wrong on their own terms — `events.briefing` and `events.banner_image_url` belong to
+        // the *container*, are already served at the top level of this same response, and
+        // substituting them would report the event's briefing as the mission's and paint every
+        // mission on an event with the same banner. The thumbnail case is the worse of the two:
+        // a confidently-wrong image is less recoverable than a missing one, because omitting the
+        // key is precisely what lets the client render its own "no thumbnail" placeholder.
+        //
+        // Consistent with every other read of these columns (`handlers/mod.rs:79`,
+        // `handlers/missions.rs:121`, `dashboard.rs:52`, `deployments.rs:181`), and with the
+        // write side: `PATCH /missions/:id` binds `briefing`/`thumbnail_url` straight from the
+        // request, so the API itself already stores `''`. NULL and `''` were always one
+        // observable state; this only makes the read agree. `Option` is NOT the fix — see
+        // `models::telemetry::Match` (T-325) for the recorded rejection.
+        let Some((title, terrain, game_mode, briefing, thumbnail_url)): Option<(
+            String,
+            crate::models::TerrainType,
+            crate::models::GameMode,
+            String,
+            String,
+        )> = sqlx::query_as(
+            "SELECT title, terrain, game_mode, COALESCE(briefing, '') AS briefing, \
+                 COALESCE(thumbnail_url, '') AS thumbnail_url \
+                 FROM missions WHERE id = $1 AND deleted_at IS NULL",
+        )
+        .bind(em.mission_id)
+        .fetch_optional(&state.pool)
+        .await?
         else {
             continue;
         };
