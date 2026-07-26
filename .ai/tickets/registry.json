@@ -7611,7 +7611,7 @@
     {
       "id": "T-231",
       "title": "Identity linking last mile",
-      "summary": "Identity linking last mile. CORRECTED 2026-07-26: T-181.35 landed AND was driven end-to-end against the live backend (be31ac7b) — code minted, POSTed from the mod, users.arma_id written, code consumed, audit row created, replay 404'd, match_player_stats.discord_id populated, total_deployments 0->1. Three genuinely open items remain: (a) the attendance UPDATE needs a non-empty event_id resolving to a registration; (b) the link code is typed in PUBLIC chat and cannot be suppressed — needs an in-game UI field; (c) match_player_stats rows with a NULL discord_id are never backfilled after a later link.",
+      "summary": "Identity linking last mile. CORRECTED 2026-07-26: T-181.35 landed AND was driven end-to-end against the live backend (be31ac7b) — code minted, POSTed from the mod, users.arma_id written, code consumed, audit row created, replay 404'd, match_player_stats.discord_id populated, total_deployments 0->1. Three genuinely open items remain: (a) the attendance UPDATE needs a non-empty event_id resolving to a registration; (b) the link code is typed in PUBLIC chat and cannot be suppressed — needs an in-game UI field; (c) match_player_stats rows with a NULL discord_id are never backfilled after a later link.\n\nSPLIT AND CLOSED 2026-07-26. The agent verified all three narrowed items against live code rather than trusting the ticket:\n  (a) attendance event_id — ALREADY DONE end to end. TBD_ResultsReporter.c:534 sends top-level event_id; telemetry.rs:362-363 now REJECTS a blank source_event_id with 400, so the empty-key dedupe collapse the ticket feared is impossible; telemetry.rs:414-421 runs the attendance UPDATE.\n  (b) chat visibility — split to T-327. Unfixable in script and already maximally mitigated.\n  (c) backfill — split to T-326. Entirely website-side, genuinely open.\nWhat shipped here is the contract comment at TBD_IdentityLink.c:458-471, which after T-319 said the opposite of the truth and would have talked the next person into reintroducing the bug.",
       "program": "platform",
       "surfaces": [
         "DATA"
@@ -7619,14 +7619,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2490,
       "stream": "web-platform",
       "targets": [
         "mod",
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "f44b602a"
     },
     {
       "id": "T-232",
@@ -9445,6 +9446,47 @@
         "website"
       ],
       "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-326",
+      "title": "Matches played before an identity link never backfill, so deployments undercount",
+      "summary": "SPLIT FROM T-231 (c). VERIFIED by the T-231 agent: there is NO `UPDATE match_player_stats` anywhere in apps/website/api/ — zero hits across the crate.\n\ntelemetry.rs:376-381 resolves `discord_id` at INGEST time. So every match a player played before linking their identity keeps `discord_id = NULL` forever. `recompute_user_stats` (telemetry.rs:530-534) counts only non-NULL rows, so those matches never reach `total_deployments` — a player who links after three ops shows zero deployments and their service record is permanently short.\n\nThis is not a corruption bug, it is a missing step: nothing ever goes back and claims the historical rows once the link exists. Fix is one statement in the existing confirm transaction in `handlers/me.rs` — UPDATE match_player_stats SET discord_id = ... WHERE arma_id = ... AND discord_id IS NULL — followed by a recompute. Do it inside the transaction that consumes the link code, so a failure cannot half-link.\n\nCheck whether attendance/leaderboard rows need the same treatment, and whether unlinking (if that exists) should reverse it.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3142,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-327",
+      "title": "`#tbd link` code is visible in chat before TBD can suppress it",
+      "summary": "SPLIT FROM T-231 (b). The agent verified the load-bearing claim AT THE CALL SITE rather than trusting the header: TBD_AdminCommands.c:30-46 calls `super.OnNewMessage(...)` at line 32, BEFORE `TBD_IdentityLink.TryHandleChat(...)` at line 45. The message is already distributed by the time TBD sees it, so returning true suppresses NOTHING. There is no script-side fix.\n\nExisting mitigations are correct and complete for a chat surface and should NOT be redone: the usage text warns, every failure path emits NewCodeAdvice(), success consumes the code in the same transaction so a leaked code is single-use and already spent, and the code is never logged (the HTTP_CODE_NULL branch deliberately drops the body because GetData() returns the REQUEST on transport failure).\n\nThe real fix is an in-game UI field instead of a chat line, which is blocked on `resourceDatabase.rdb` regeneration — the same blocker TBD_AdminScreen carries (TBD_AdminCommands.c:23-25). OPERATOR/WORKBENCH ONLY.",
+      "program": "platform",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3143,
+      "stream": "web-platform",
+      "targets": [
+        "mod"
+      ],
+      "executor": "workbench",
       "priority": 2
     }
   ]
