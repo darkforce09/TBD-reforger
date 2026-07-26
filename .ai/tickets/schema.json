@@ -1,8 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "TBD Ticket Registry",
+  "description": "JSON Schema for .ai/tickets/registry.json. Regenerated from the live registry shape (T-273).",
   "type": "object",
   "required": ["next_id", "tickets"],
+  "additionalProperties": false,
   "properties": {
     "next_id": { "type": "integer", "minimum": 1 },
     "tickets": {
@@ -11,9 +13,14 @@
     }
   },
   "$defs": {
+    "ticketId": {
+      "type": "string",
+      "pattern": "^T-[0-9]{3}(\\.[0-9]+)*$",
+      "description": "Parent ids (T-068, T-441) and dotted slice ids (T-068.15, T-181.3.1)."
+    },
     "program": {
       "type": "string",
-      "enum": ["eden", "scale", "platform", "backend", "infra"]
+      "enum": ["eden", "scale", "platform", "Platform", "backend", "infra"]
     },
     "stream": {
       "type": "string",
@@ -37,24 +44,134 @@
     },
     "status": {
       "type": "string",
-      "enum": ["idea", "queued", "ready", "running", "review", "shipped", "deferred", "cancelled"]
+      "enum": [
+        "idea",
+        "queued",
+        "ready",
+        "running",
+        "review",
+        "shipped",
+        "deferred",
+        "cancelled"
+      ]
     },
     "surface": {
       "type": "string",
       "enum": [
-        "LEFT", "RIGHT", "MAP", "TOP", "BOTTOM", "ATTR", "DATA", "SHELL",
-        "ORBAT", "MRK", "VEH", "PLACE", "XFORM", "CONN", "COMP"
+        "LEFT",
+        "RIGHT",
+        "MAP",
+        "TOP",
+        "BOTTOM",
+        "ATTR",
+        "DATA",
+        "SHELL",
+        "ORBAT",
+        "MRK",
+        "VEH",
+        "PLACE",
+        "XFORM",
+        "CONN",
+        "COMP",
+        "API",
+        "ARS",
+        "BE",
+        "CI",
+        "EDITOR",
+        "FE",
+        "FRONTEND",
+        "INFRA",
+        "MOD",
+        "OPS",
+        "REG",
+        "SCHEMA",
+        "UI",
+        "tests"
       ]
     },
     "impact": {
       "type": "string",
-      "enum": ["ui", "state", "api", "schema", "compiler", "persistence", "perf"]
+      "enum": [
+        "ui",
+        "state",
+        "api",
+        "schema",
+        "compiler",
+        "persistence",
+        "perf",
+        "admin",
+        "arsenal",
+        "auth",
+        "ci",
+        "cms",
+        "contract",
+        "data",
+        "data-loss",
+        "data-pipeline",
+        "deps",
+        "discord",
+        "docs",
+        "dx",
+        "e2e",
+        "events",
+        "frontend",
+        "infra",
+        "mc-authoring",
+        "mc-collab",
+        "mc-integrity",
+        "mc-settings",
+        "mission-authoring",
+        "mission-creator",
+        "mod",
+        "platform-lifecycle",
+        "platform-pages",
+        "platform-server",
+        "registry-hygiene",
+        "security",
+        "telemetry",
+        "tests",
+        "website"
+      ]
+    },
+    "stringList": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "ticketIdList": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ticketId" }
+    },
+    "sliceEntry": {
+      "type": "object",
+      "required": ["targets", "executor", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "targets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/target" },
+          "minItems": 1
+        },
+        "executor": { "$ref": "#/$defs/executor" },
+        "status": { "$ref": "#/$defs/status" },
+        "shipped_at": { "type": "string", "minLength": 1 },
+        "notes": { "type": "string" },
+        "spec": { "type": "string" }
+      }
     },
     "ticket": {
       "type": "object",
-      "required": ["id", "title", "summary", "program", "surfaces", "impact", "status"],
+      "required": [
+        "id",
+        "title",
+        "summary",
+        "program",
+        "surfaces",
+        "impact",
+        "status"
+      ],
+      "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "pattern": "^T-[0-9]{3}$" },
+        "id": { "$ref": "#/$defs/ticketId" },
         "title": { "type": "string", "minLength": 1 },
         "summary": { "type": "string", "minLength": 1 },
         "program": { "$ref": "#/$defs/program" },
@@ -64,7 +181,7 @@
           "minItems": 1
         },
         "surface_detail": { "type": "string" },
-        "route": { "type": "string" },
+        "route": { "type": ["string", "null"] },
         "impact": {
           "type": "array",
           "items": { "$ref": "#/$defs/impact" },
@@ -72,33 +189,28 @@
         },
         "status": { "$ref": "#/$defs/status" },
         "order": { "type": "integer" },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
         "spec": { "type": "string" },
         "branch": { "type": "string" },
-        "slices": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "active_slice": { "type": "string" },
-        "depends_on": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "unblocks": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
+        "slices": { "$ref": "#/$defs/ticketIdList" },
+        "active_slice": { "type": ["string", "null"] },
+        "depends_on": { "$ref": "#/$defs/ticketIdList" },
+        "unblocks": { "$ref": "#/$defs/ticketIdList" },
         "implements": {
-          "type": "array",
-          "items": { "type": "string" }
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/stringList" }
+          ]
         },
         "user_story": { "type": "string" },
-        "acceptance": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
+        "acceptance": { "$ref": "#/$defs/stringList" },
         "assignee": { "type": "string" },
         "milestone": { "type": "string" },
-        "parallel_ok": { "type": "boolean" },
+        "parallel_ok": { "type": ["boolean", "null"] },
         "conflict_surfaces": {
           "type": "array",
           "items": { "$ref": "#/$defs/surface" }
@@ -110,24 +222,14 @@
           "minItems": 1
         },
         "executor": { "$ref": "#/$defs/executor" },
+        "shipped_at": { "type": "string", "minLength": 1 },
+        "notes": { "type": "string" },
         "slice_plan": {
           "type": "object",
-          "additionalProperties": {
-            "type": "object",
-            "properties": {
-              "targets": {
-                "type": "array",
-                "items": { "$ref": "#/$defs/target" },
-                "minItems": 1
-              },
-              "executor": { "$ref": "#/$defs/executor" }
-            },
-            "required": ["targets", "executor"],
-            "additionalProperties": false
-          }
+          "propertyNames": { "$ref": "#/$defs/ticketId" },
+          "additionalProperties": { "$ref": "#/$defs/sliceEntry" }
         }
-      },
-      "additionalProperties": false
+      }
     }
   }
 }
