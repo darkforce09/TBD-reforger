@@ -118,6 +118,7 @@
 0	T-344	One doc mutator to author per-faction briefing prose	crates/map-engine-core/src/doc/store.rs
 0	T-204	Emit mission flow and winConditions instead of hardcoding them	crates/map-engine-core/src/mission/flatten.rs
 0	T-229	Match ingest silently drops unlinked players and never backfills	apps/website/api/src/handlers/telemetry.rs
+1	T-396	Cure the trunk serve / gate race instead of killing the dev server	scripts/platform/wave.sh
 1	T-393	T-316 requires five player fields the mod never sends: all production ingest 400s	apps/website/api/src/handlers/telemetry.rs; apps/website/api/tests/telemetry.rs
 1	T-392	An empty authored briefing renders as PLACEHOLDER_LORE	apps/website/frontend/src/event_hub.rs
 1	T-394	assert_golden cannot detect a dropped field under #[serde(flatten)]	apps/website/frontend/src/dto.rs
