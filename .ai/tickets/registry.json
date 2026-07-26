@@ -7080,7 +7080,7 @@
     {
       "id": "T-204",
       "title": "Emit mission flow and winConditions instead of hardcoding them",
-      "summary": "Emit mission flow instead of hardcoding it. RE-SCOPED 2026-07-26 to compiler-only: T-181.38 made the MOD parse and honour the flow block, so the consumer is ready and waiting. flatten.rs:682-688 still hardcodes briefing_seconds=600, safe_start_seconds=300, time_limit_seconds=5400, jip=until_safestart_end. timeLimitSeconds is the operator's mission duration. NOTE: the winConditions half of the original title is already handled by T-181.46 — do not touch endOn.",
+      "summary": "Emit mission flow instead of hardcoding it. RE-SCOPED 2026-07-26 to compiler-only: T-181.38 made the MOD parse and honour the flow block, so the consumer is ready and waiting. flatten.rs:682-688 still hardcodes briefing_seconds=600, safe_start_seconds=300, time_limit_seconds=5400, jip=until_safestart_end. timeLimitSeconds is the operator's mission duration. NOTE: the winConditions half of the original title is already handled by T-181.46 — do not touch endOn. HANDOFF FROM T-224 (shipped 2026-07-26): the UI half is done. Mission Settings now authors timeLimitSeconds, jip, safeStartSeconds and briefingSeconds into meta.environment under those exact key names — deliberately meta.environment and not a meta.flow sibling, because compile_payload builds the saved version from exactly meta.terrain + meta.environment and hydrate restores exactly those two, so a sibling would be dropped on Save and gone on reload. ModFlow in flatten.rs still splices in 600/300/5400/'until_safestart_end' and never reads the payload, so TODAY an authored duration is stored, saved, reloaded and displayed back correctly and the compiled document still says 5400. This ticket is now purely: read those four keys off the saved payload's top-level environment instead of hardcoding.",
       "program": "eden",
       "surfaces": [
         "DATA"
@@ -7482,13 +7482,14 @@
       "impact": [
         "mc-settings"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2420,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "dde40f91"
     },
     {
       "id": "T-225",
