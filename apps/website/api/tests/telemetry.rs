@@ -716,3 +716,217 @@ async fn a_blank_source_match_id_cannot_become_a_dedupe_key() {
 
     clean(pool.clone()).await;
 }
+
+/// T-369 — a *corrected* re-POST must land, and attendance must follow it.
+///
+/// `upsert_match`'s re-ingest branch omitted `event_id`, `mission_id`, `terrain` and
+/// `started_at` from the UPDATE and returned the *stored* `event_id`, so a first POST that
+/// carried a `source_match_id` but no `event_id`, followed by a corrected re-POST carrying the
+/// right one, marked nobody's attendance — forever — on two 200s. That is the opposite of what
+/// T-316 decided for the sibling fields (`ended_at` / `winning_faction` / `aar_replay_url`,
+/// where a *present* field wins), so all seven now read the same way.
+///
+/// The three POSTs below are the whole argument: create without the event, correct it, then
+/// retry partially. Keep them under the strict limiter's burst (1/s, burst 10).
+#[tokio::test]
+async fn a_corrected_reingest_lands_the_event_and_marks_attendance() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA: &str = "t369-arma-correct";
+    const DISCORD: &str = "000000000000369001";
+    const SRC: &str = "m-t369-correct";
+    const EV: &str = "e-t369";
+    const STARTED: &str = "2026-07-26T18:00:00Z";
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T369', 't369', '', $2, '[TBD] T369', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(DISCORD)
+    .bind(ARMA)
+    .execute(&pool)
+    .await
+    .unwrap();
+    // Same reasoning as the T-316 / T-347 tests: `matches` does not cascade to
+    // `match_player_stats`, and `leaderboard_totals` sums every row for a discord_id, so a
+    // second run would double-count. Clear the stats first and keep this test's ids to itself.
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+            .bind(SRC)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM event_registrations WHERE discord_id = $1")
+            .bind(DISCORD)
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    // A scheduled op the player is registered for. `start_time` is in the past so
+    // `recompute_user_stats`' `past_registered` denominator is non-zero and `attendance_rate`
+    // is actually measurable rather than the 0.0 fallback.
+    let mission_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO missions (title, author_id, terrain, game_mode, max_players, status, created_at, updated_at) \
+         VALUES ('T369 Op', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
+    )
+    .bind(DISCORD)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let event_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO events (name_override, start_time, status, created_by, created_at, updated_at) \
+         VALUES ('T369 Event', now() - interval '2 hours', 'open', $1, now(), now()) RETURNING id",
+    )
+    .bind(DISCORD)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let event_mission_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO event_missions (event_id, mission_id, start_time, created_at, updated_at) \
+         VALUES ($1, $2, now() - interval '2 hours', now(), now()) RETURNING id",
+    )
+    .bind(event_id)
+    .bind(mission_id)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO event_registrations (event_mission_id, discord_id, state) VALUES ($1, $2, 'registered')",
+    )
+    .bind(event_mission_id)
+    .bind(DISCORD)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let post = |b: String| {
+        let app = app.clone();
+        async move {
+            call(
+                &app,
+                "POST",
+                "/api/v1/ingest/match-results",
+                None,
+                Some(SVC),
+                Some(&b),
+            )
+            .await
+        }
+    };
+    let players = format!(
+        r#""players":[{{"arma_id":"{ARMA}","role_played":"SL","kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true,"source_event_id":"{EV}"}}]"#
+    );
+    // The four fields the UPDATE used to drop, read back as they are actually stored.
+    type Provenance = (Option<Uuid>, Option<Uuid>, Option<String>, String);
+    let read_match = |pool: PgPool| async move {
+        sqlx::query_as::<_, Provenance>(
+            "SELECT event_id, mission_id, terrain::text, \
+             to_char(started_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') \
+             FROM matches WHERE source_match_id = $1",
+        )
+        .bind(SRC)
+        .fetch_one(&pool)
+        .await
+        .unwrap()
+    };
+    let read_state = |pool: PgPool| async move {
+        sqlx::query_scalar::<_, String>(
+            "SELECT state::text FROM event_registrations WHERE discord_id = $1",
+        )
+        .bind(DISCORD)
+        .fetch_one(&pool)
+        .await
+        .unwrap()
+    };
+    let read_user = |pool: PgPool| async move {
+        sqlx::query_as::<_, (i64, f64)>(
+            "SELECT total_deployments, attendance_rate::float8 FROM users WHERE discord_id = $1",
+        )
+        .bind(DISCORD)
+        .fetch_one(&pool)
+        .await
+        .unwrap()
+    };
+
+    // (1) The first POST: a real dedupe key, but the sender forgot the event entirely. This is
+    // an honest 200 — there is no event to attribute the op to yet.
+    let (st, first) = post(format!(
+        r#"{{"match":{{"source_match_id":"{SRC}","outcome":"pending"}},{players}}}"#
+    ))
+    .await;
+    assert_eq!(st, StatusCode::OK, "first ingest: {first}");
+    let created = read_match(pool.clone()).await;
+    assert_eq!(
+        (created.0, created.1, created.2.clone()),
+        (None, None, None),
+        "no event/mission/terrain on the first POST"
+    );
+    assert_eq!(
+        read_state(pool.clone()).await,
+        "registered",
+        "nothing to attribute yet"
+    );
+
+    // (2) The correction: same key, now carrying the event, the mission, the terrain and the
+    // real start time. Pre-fix this returned 200 and changed none of them, so
+    // `if let Some(eid) = event_id` saw `None` and the attendance UPDATE never ran.
+    let (st, corrected) = post(format!(
+        r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA","event_id":"{event_id}","mission_id":"{mission_id}","terrain":"everon","started_at":"{STARTED}","ended_at":"2026-07-26T20:14:00Z"}},{players}}}"#
+    ))
+    .await;
+    assert_eq!(st, StatusCode::OK, "corrected ingest: {corrected}");
+    assert_eq!(
+        corrected["match_id"], first["match_id"],
+        "still the same match — the dedupe key did its job"
+    );
+    let after = read_match(pool.clone()).await;
+    assert_eq!(
+        after,
+        (
+            Some(event_id),
+            Some(mission_id),
+            Some("everon".to_string()),
+            STARTED.to_string()
+        ),
+        "the corrected provenance landed"
+    );
+    assert_eq!(
+        read_state(pool.clone()).await,
+        "attended",
+        "THE TICKET: the corrected event_id must reach the attendance UPDATE"
+    );
+    // A row set but derived numbers left short would be half a fix: `recompute_user_stats`
+    // runs after the commit and re-counts `state = 'attended'` over past registrations.
+    assert_eq!(
+        read_user(pool.clone()).await,
+        (1, 100.0),
+        "attendance_rate follows the corrected row"
+    );
+
+    // (3) T-316's direction, unbroken: a partial retry must not null any of the four back out,
+    // and must not stamp `started_at` with `now()` — the create path's `unwrap_or_else(Utc::now)`
+    // must never reach the UPDATE.
+    let (st, retry) = post(format!(
+        r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success"}},{players}}}"#
+    ))
+    .await;
+    assert_eq!(st, StatusCode::OK, "partial retry: {retry}");
+    assert_eq!(
+        read_match(pool.clone()).await,
+        after,
+        "an omitted field still keeps the stored value (T-316)"
+    );
+    assert_eq!(read_state(pool.clone()).await, "attended", "still attended");
+
+    clean(pool.clone()).await;
+}

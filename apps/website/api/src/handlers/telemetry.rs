@@ -321,8 +321,10 @@ fn source_match_key(raw: &Option<String>) -> Result<Option<&str>, ApiError> {
 /// Requiring `outcome` costs a sender nothing — a match that genuinely has not finished can
 /// still say `"pending"` out loud. What it removes is the *silent* pending.
 ///
-/// The other three are `Option` rather than required, because unlike `outcome` they each
-/// have a legitimate absence and the destructive part was only ever the overwrite:
+/// **Every other field is `Option`, and all of them read the same way on the re-ingest path:
+/// absent keeps what is stored, present wins.** That is one rule, not seven, and `upsert_match`
+/// implements it with one `COALESCE` per column. Unlike `outcome` they each have a legitimate
+/// absence, and the destructive part was only ever the overwrite:
 /// - `winning_faction` — a `failure`/`aborted`/`pending` match has no winner, so demanding
 ///   one would be a lie. Absent keeps whatever is stored; an explicit `""` clears it, which
 ///   is the re-adjudication path.
@@ -331,6 +333,19 @@ fn source_match_key(raw: &Option<String>) -> Result<Option<&str>, ApiError> {
 ///   this to `""` meant the next result POST tore the link back off.
 /// - `ended_at` — not named in the ticket, but it sits in the same `UPDATE` and was nulled
 ///   by the same partial body, so it gets the same treatment.
+/// - `event_id`, `mission_id`, `terrain`, `started_at` — **T-369.** These were absent from the
+///   `UPDATE` altogether, so a correction to any of them was discarded instead of applied, and
+///   `event_id` in particular decides whether attendance is marked at all. They are optional for
+///   the same reason as the three above (a match need not belong to a scheduled op), but "may be
+///   omitted" was silently implemented as "may never be changed". Read the `UPDATE` in
+///   `upsert_match` for the measured consequence and why this was an oversight rather than a
+///   decision.
+///
+/// Note what this rule does **not** claim: none of these is three-stated. A blank `event_id` /
+/// `mission_id` / `terrain` reads as absent (keeps), not as a clear. Only `ServerStatusInput`'s
+/// `current_match_id` is three-stated, because a live server genuinely has to stop pointing at a
+/// finished match; a stored match has no equivalent "un-assign the event" story, and inventing
+/// one here would be a contract nobody has asked for.
 #[derive(Debug, Deserialize)]
 pub struct MatchInput {
     /// Absent = no source id, create a fresh match; a value = the dedupe key. Blank is neither,
@@ -536,7 +551,6 @@ async fn upsert_match(
     outcome: MissionOutcome,
     source_match_id: Option<&str>,
 ) -> Result<(Uuid, Option<Uuid>), ApiError> {
-    let started = m.started_at.unwrap_or_else(Utc::now);
     let event_id = parse_uuid_opt(&m.event_id);
     let mission_id = parse_uuid_opt(&m.mission_id);
     // Terrain stays optional, but a non-empty value we don't recognise is a typo, not a
@@ -553,34 +567,77 @@ async fn upsert_match(
     };
 
     if let Some(src) = source_match_id {
-        let existing: Option<(Uuid, Option<Uuid>)> =
-            sqlx::query_as("SELECT id, event_id FROM matches WHERE source_match_id = $1")
+        let existing: Option<(Uuid,)> =
+            sqlx::query_as("SELECT id FROM matches WHERE source_match_id = $1")
                 .bind(src)
                 .fetch_optional(&mut *tx)
                 .await?;
-        if let Some((id, ev)) = existing {
+        if let Some((id,)) = existing {
             // `COALESCE($n, <column>)` — a bare column name on the right of a SET reads the
             // pre-update row, so an omitted field keeps what is already there instead of
             // overwriting it with a decoded default. `outcome` is bound unconditionally
             // because it is required on the way in.
-            sqlx::query(
+            //
+            // **All seven optional fields read the same way, and the four leading ones are
+            // T-369.** They used to be missing from this statement entirely, so a *present*
+            // value was silently discarded rather than applied — the exact opposite of the rule
+            // T-316 wrote for their siblings ("only the overwrite was ever the bug"). That
+            // asymmetry was never a decision: the four-column list is a verbatim carry-over of
+            // the Go `Updates(map[string]any{...})` this file was ported from, which called them
+            // "mutable result fields"; T-316 changed what the four columns in the list *mean*
+            // and never revisited which columns were in it. It documented five of `MatchInput`'s
+            // nine fields by name and these four are precisely the ones it never mentions.
+            //
+            // The consequence was not cosmetic. A first POST carrying a `source_match_id` but no
+            // `event_id`, then a corrected re-POST carrying the right one, marked **nobody's**
+            // attendance, forever, on two 200s — measured: `event_id` and `mission_id` still
+            // NULL, `terrain` still NULL, `started_at` still the first POST's `now()`, and
+            // `event_registrations.state` still `registered` with `attendance_rate` 0.0.
+            // Silently absorbing a correction on an endpoint with no human in the loop is the
+            // same objection T-316 raised when it rejected `GREATEST` for the counters.
+            //
+            // `started_at` binds `m.started_at`, **never** the create path's
+            // `unwrap_or_else(Utc::now)` — that default is a value the sender did not send, so
+            // COALESCE-ing it here would stamp every partial retry with the retry's own clock.
+            // The default is therefore computed at the INSERT and cannot reach this statement.
+            //
+            // `RETURNING event_id` is load-bearing, not tidiness: the caller decides whether to
+            // mark attendance from this value, so it must be the **merged** one. Returning the
+            // pre-update column is the other half of why the correction did nothing, and letting
+            // Postgres compute the merge means Rust cannot disagree with the SQL about it.
+            let merged: (Option<Uuid>,) = sqlx::query_as(
                 "UPDATE matches SET \
-                  ended_at = COALESCE($1, ended_at), \
-                  outcome = $2, \
-                  winning_faction = COALESCE($3, winning_faction), \
-                  aar_replay_url = COALESCE($4, aar_replay_url) \
-                 WHERE id = $5",
+                  event_id = COALESCE($1, event_id), \
+                  mission_id = COALESCE($2, mission_id), \
+                  terrain = COALESCE($3, terrain), \
+                  started_at = COALESCE($4, started_at), \
+                  ended_at = COALESCE($5, ended_at), \
+                  outcome = $6, \
+                  winning_faction = COALESCE($7, winning_faction), \
+                  aar_replay_url = COALESCE($8, aar_replay_url) \
+                 WHERE id = $9 \
+                 RETURNING event_id",
             )
+            .bind(event_id)
+            .bind(mission_id)
+            .bind(terrain)
+            .bind(m.started_at)
             .bind(m.ended_at)
             .bind(outcome)
             .bind(m.winning_faction.as_deref())
             .bind(m.aar_replay_url.as_deref())
             .bind(id)
-            .execute(&mut *tx)
+            .fetch_one(&mut *tx)
             .await?;
-            return Ok((id, ev));
+            return Ok((id, merged.0));
         }
     }
+
+    // `started_at` is NOT NULL, so a create with no `started_at` has to invent one. This lives
+    // here rather than at the top of the function on purpose (T-369): it is a create-only
+    // fallback, and the moment it is in scope beside the UPDATE above, binding it there instead
+    // of `m.started_at` looks correct and silently re-times every partial retry.
+    let started = m.started_at.unwrap_or_else(Utc::now);
 
     // On create, an absent winner/AAR still stores `''` rather than NULL — `models::Match`
     // decodes both as a non-optional `String`, so a NULL would break the read path.
