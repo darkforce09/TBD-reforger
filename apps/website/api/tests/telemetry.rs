@@ -1652,3 +1652,217 @@ async fn absent_counters_are_not_a_write_on_reingest() {
 
     clean(pool.clone()).await;
 }
+
+/// T-230 — attendance marks only the *played* event_mission, not every mission on the event.
+///
+/// Pre-fix the ingest ran:
+///   UPDATE event_registrations SET state = 'attended'
+///    WHERE event_mission_id IN (SELECT id FROM event_missions WHERE event_id = $1)
+/// which flipped registrations on missions that were never played. `decorate_events` /
+/// the dashboard count only `registered`/`waitlisted`, so the unplayed mission's roster
+/// collapsed to zero the moment a sibling op completed.
+///
+/// RED: restore the `WHERE event_id = $1` subquery (drop the `matches` JOIN on
+/// `mission_id`) and both registrations below become `attended` — this test fails.
+#[tokio::test]
+async fn attendance_marks_only_the_played_event_mission() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA: &str = "t230-arma-scope";
+    const DISCORD: &str = "000000000000230001";
+    const SRC: &str = "m-t230-scope";
+    const EV: &str = "e-t230";
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T230', 't230', '', $2, '[TBD] T230', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(DISCORD)
+    .bind(ARMA)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+            .bind(SRC)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM event_registrations WHERE discord_id = $1")
+            .bind(DISCORD)
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    let mission_played: Uuid = sqlx::query_scalar(
+        "INSERT INTO missions (title, author_id, terrain, game_mode, max_players, status, created_at, updated_at) \
+         VALUES ('T230 Played', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
+    )
+    .bind(DISCORD)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let mission_other: Uuid = sqlx::query_scalar(
+        "INSERT INTO missions (title, author_id, terrain, game_mode, max_players, status, created_at, updated_at) \
+         VALUES ('T230 Other', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
+    )
+    .bind(DISCORD)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let event_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO events (name_override, start_time, status, created_by, created_at, updated_at) \
+         VALUES ('T230 Multi-mission', now() - interval '2 hours', 'open', $1, now(), now()) RETURNING id",
+    )
+    .bind(DISCORD)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let em_played: Uuid = sqlx::query_scalar(
+        "INSERT INTO event_missions (event_id, mission_id, start_time, created_at, updated_at) \
+         VALUES ($1, $2, now() - interval '2 hours', now(), now()) RETURNING id",
+    )
+    .bind(event_id)
+    .bind(mission_played)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let em_other: Uuid = sqlx::query_scalar(
+        "INSERT INTO event_missions (event_id, mission_id, start_time, created_at, updated_at) \
+         VALUES ($1, $2, now() - interval '1 hour', now(), now()) RETURNING id",
+    )
+    .bind(event_id)
+    .bind(mission_other)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    for em in [em_played, em_other] {
+        sqlx::query(
+            "INSERT INTO event_registrations (event_mission_id, discord_id, state) \
+             VALUES ($1, $2, 'registered')",
+        )
+        .bind(em)
+        .bind(DISCORD)
+        .execute(&pool)
+        .await
+        .unwrap();
+    }
+
+    let body = format!(
+        r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA","event_id":"{event_id}","mission_id":"{mission_played}","terrain":"everon","ended_at":"2026-07-26T20:14:00Z"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":5,"deaths":1,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false}}}}]}}"#
+    );
+    let (st, r) = call(
+        &app,
+        "POST",
+        "/api/v1/ingest/match-results",
+        None,
+        Some(SVC),
+        Some(&body),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "ingest: {r}");
+
+    let state_played: String = sqlx::query_scalar(
+        "SELECT state::text FROM event_registrations WHERE event_mission_id = $1 AND discord_id = $2",
+    )
+    .bind(em_played)
+    .bind(DISCORD)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let state_other: String = sqlx::query_scalar(
+        "SELECT state::text FROM event_registrations WHERE event_mission_id = $1 AND discord_id = $2",
+    )
+    .bind(em_other)
+    .bind(DISCORD)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        state_played, "attended",
+        "THE TICKET: the played mission's registration must flip to attended"
+    );
+    assert_eq!(
+        state_other, "registered",
+        "THE TICKET / RED: the unplayed sibling must stay registered — pre-fix both were attended"
+    );
+
+    // The roster-collapse side effect: decorate/dashboard only count registered|waitlisted.
+    // After a scoped mark, the unplayed mission still contributes one registered seat.
+    let em_ids = vec![em_played, em_other];
+    let still_registered: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM event_registrations \
+         WHERE event_mission_id = ANY($1) AND state::text IN ('registered', 'waitlisted')",
+    )
+    .bind(&em_ids)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        still_registered, 1,
+        "unplayed mission keeps the event's registered count non-zero"
+    );
+
+    // Event-only ingest (no mission_id) must not invent "mark every mission" either.
+    const SRC2: &str = "m-t230-event-only";
+    sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+        .bind(SRC2)
+        .execute(&pool)
+        .await
+        .unwrap();
+    // Reset the played reg so a wrong all-event write would be visible on both rows.
+    sqlx::query("UPDATE event_registrations SET state = 'registered' WHERE discord_id = $1")
+        .bind(DISCORD)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let body2 = format!(
+        r#"{{"match":{{"source_match_id":"{SRC2}","outcome":"success","event_id":"{event_id}"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":1,"deaths":0,"team_kills":0,"longest_kill_m":0,"vehicles_destroyed":0,"is_command":false}}}}]}}"#
+    );
+    let (st, r) = call(
+        &app,
+        "POST",
+        "/api/v1/ingest/match-results",
+        None,
+        Some(SVC),
+        Some(&body2),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "event-only ingest: {r}");
+    let both: Vec<(Uuid, String)> = sqlx::query_as(
+        "SELECT event_mission_id, state::text FROM event_registrations \
+         WHERE discord_id = $1 ORDER BY event_mission_id",
+    )
+    .bind(DISCORD)
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert!(
+        both.iter().all(|(_, s)| s == "registered"),
+        "event-only ingest must not mark attendance without a mission_id; got {both:?}"
+    );
+
+    clean(pool.clone()).await;
+    sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+        .bind(ARMA)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let srcs = vec![SRC, SRC2];
+    sqlx::query("DELETE FROM matches WHERE source_match_id = ANY($1)")
+        .bind(&srcs)
+        .execute(&pool)
+        .await
+        .unwrap();
+}

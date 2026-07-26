@@ -646,7 +646,10 @@ pub async fn ingest_match_results(
     }
 
     let mut tx = state.pool.begin().await?;
-    let (match_id, event_id) = upsert_match(&mut tx, &m, outcome, source_match_id).await?;
+    // `event_id` from upsert is no longer the attendance key (T-230): the UPDATE below joins
+    // the *merged* match row so both `event_id` and `mission_id` must be present. Keeping the
+    // binding would warn unused once the old `if let Some(eid)` gate is gone.
+    let (match_id, _) = upsert_match(&mut tx, &m, outcome, source_match_id).await?;
 
     let mut resolved: Vec<String> = Vec::new();
     // T-229. `unlinked_rows` counts player *lines* with no owner so it sums with the linked
@@ -751,16 +754,34 @@ pub async fn ingest_match_results(
         }
     }
 
-    // Mark attendance for scheduled operations (resolve via the event's missions).
-    if let Some(eid) = event_id
-        && !resolved.is_empty()
-    {
+    // Mark attendance for the *played* event_mission only (T-230).
+    //
+    // Pre-fix this was:
+    //   UPDATE … WHERE event_mission_id IN (SELECT id FROM event_missions WHERE event_id = $1)
+    // which flipped every registration on the event — including missions that were never
+    // played. Side effects measured in the ticket: `decorate_events` and the dashboard count
+    // only `registered`/`waitlisted`, so a completed op's roster collapsed to zero; withdraw
+    // also stops promoting the waitlist once state is `attended` (`was_registered` is false).
+    //
+    // Scoped through the match row's `(event_id, mission_id)` pair — unique on
+    // `event_missions` (`idx_event_mission`). Both columns must be set on the match: an
+    // event-only ingest cannot know which mission was played, and inventing "mark them all"
+    // is the bug this closes. The JOIN reads the *merged* match after `upsert_match`'s
+    // COALESCE, so a corrected re-POST that lands `mission_id` (T-369) still marks attendance.
+    if !resolved.is_empty() {
         sqlx::query(
             "UPDATE event_registrations SET state = 'attended' \
-             WHERE event_mission_id IN (SELECT id FROM event_missions WHERE event_id = $1) \
-               AND discord_id = ANY($2)",
+             WHERE discord_id = ANY($2) \
+               AND event_mission_id IN ( \
+                 SELECT em.id FROM event_missions em \
+                 INNER JOIN matches m \
+                   ON m.event_id = em.event_id AND m.mission_id = em.mission_id \
+                 WHERE m.id = $1 \
+                   AND m.event_id IS NOT NULL \
+                   AND m.mission_id IS NOT NULL \
+               )",
         )
-        .bind(eid)
+        .bind(match_id)
         .bind(&resolved)
         .execute(&mut *tx)
         .await?;
@@ -932,10 +953,11 @@ async fn upsert_match(
             // COALESCE-ing it here would stamp every partial retry with the retry's own clock.
             // The default is therefore computed at the INSERT and cannot reach this statement.
             //
-            // `RETURNING event_id` is load-bearing, not tidiness: the caller decides whether to
-            // mark attendance from this value, so it must be the **merged** one. Returning the
-            // pre-update column is the other half of why the correction did nothing, and letting
-            // Postgres compute the merge means Rust cannot disagree with the SQL about it.
+            // `RETURNING event_id` still returns the **merged** value (T-369): a pre-update
+            // column was the other half of why a correction did nothing. Attendance itself now
+            // joins the match row (T-230) rather than binding this return, but the COALESCE
+            // write that lands `mission_id` here is what that JOIN reads — so the merge is
+            // still load-bearing, just one statement later.
             let merged: (Option<Uuid>,) = sqlx::query_as(
                 "UPDATE matches SET \
                   event_id = COALESCE($1, event_id), \
