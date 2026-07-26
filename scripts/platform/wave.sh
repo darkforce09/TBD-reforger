@@ -309,6 +309,15 @@ clippy_changed() {
         hostrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --quiet || return 1 ;;
       # Not gated by CI and red on clean main — checking them would fail every slice that touches them.
       tbd-tools|xtask) printf '(skipped %s: red on main, ungated by CI) ' "$c" ;;
+      # --features doc,mission is REQUIRED, for exactly the reason it is required for `cargo test`
+      # thirty lines below. lib.rs:16,23,32 gate the whole doc/mission/world modules behind features,
+      # so a featureless clippy COMPILES NONE OF THEM and reports success on code it never read.
+      # PROVED by perturbation 2026-07-26: a `format!("{}", "verify")` injected into flatten.rs:767 —
+      # the file this script's own comment calls the most contended in the backlog — gave
+      # `clippy (changed crates) PASS` / `SLICE GATE: PASS` without features, and
+      # `error: useless use of format!` with them. The adversarial verifier found this; the gate did not.
+      map-engine-core)
+        hostrun cargo clippy -p map-engine-core --features doc,mission --all-targets --quiet -- -D warnings || return 1 ;;
       *)
         hostrun cargo clippy -p "$c" --all-targets --quiet -- -D warnings || return 1 ;;
     esac
@@ -366,7 +375,9 @@ cmd_gate() {
   # slice merged, and nothing could ever land. ci.yml gates per-crate (:59 website-api, :91
   # map-engine, :112 website-frontend on wasm32) and this mirrors it.
   run "clippy api"       hostrun cargo clippy -p website-api --all-targets --quiet -- -D warnings
-  run "clippy map-engine" hostrun cargo clippy -p map-engine-core -p map-engine-render --all-targets --quiet -- -D warnings
+  # --features doc,mission for the same reason as the test step below: without them clippy compiles
+  # neither doc nor mission and passes on code it never read. Measured blind on flatten.rs.
+  run "clippy map-engine" hostrun cargo clippy -p map-engine-core --features doc,mission -p map-engine-render --all-targets --quiet -- -D warnings
   # NOTE: no `-D warnings` here, deliberately — ci.yml:113 runs frontend clippy WITHOUT it, so
   # warnings are advisory upstream and there are 25 of them on clean main. Adding -D here would make
   # the gate stricter than CI and red on arrival. The weakness is real but it is not this run's to
@@ -408,7 +419,20 @@ cmd_gate() {
     #
     # Calling trunk directly instead of `make ci-local-leptos` also drops three steps this gate has
     # already run above (fmt, clippy wasm32, test) — the build is the only part that was not covered.
-    run "trunk build"    hostrun sh -c "cd '$ROOT/apps/website/frontend' && trunk build --release --dist '$MAIN_ROOT/dist-gate-frontend'"
+    # A private --dist was NOT ENOUGH, and the claim that it was is corrected here.
+    #
+    # `trunk build` also stages through FIXED paths under CARGO_TARGET_DIR:
+    #   target/wasm-bindgen/release/website-frontend_bg.wasm
+    #   target/wasm-opt/release/website-frontend_bg.wasm
+    # Both trunks — the gate's and the operator's `trunk serve --release` — pointed at the same
+    # CARGO_TARGET_DIR, so they collided there regardless of --dist. Worse, THIS GATE PROVOKES THE
+    # RACE ITSELF: cmd_gate calls touch_changed, which bumps mtime on ~18 frontend .rs files, which
+    # is exactly what trunk serve watches. So the gate wakes the rebuild it then loses to.
+    #
+    # OBSERVED by the adversarial verifier 2026-07-26: `error copying (optimized) wasm file to dist
+    # dir / No such file or directory (os error 2)`, with dist/ mtime inside the gate's own window —
+    # then the identical command alone succeeded in 7.5 s. A private CARGO_TARGET_DIR is the fix.
+    run "trunk build"    hostrun sh -c "cd '$ROOT/apps/website/frontend' && CARGO_TARGET_DIR='$MAIN_ROOT/target-gate-trunk' trunk build --release --dist '$MAIN_ROOT/dist-gate-frontend'"
   else
     printf "  %-24s SKIP (frontend untouched this wave)\n" "trunk build"
   fi
