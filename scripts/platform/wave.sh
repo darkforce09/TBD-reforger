@@ -80,7 +80,8 @@ GATE_TIMEOUT="${TBD_GATE_TIMEOUT:-1200}"
 GATE_DB="${TBD_GATE_DB:-postgres://tbd:tbd@localhost:5434/tbd_gate_it?sslmode=disable}"
 if command -v distrobox-host-exec >/dev/null 2>&1; then
   hostrun() { distrobox-host-exec timeout "$GATE_TIMEOUT" \
-                env "CARGO_TARGET_DIR=$CARGO_TARGET_DIR" "TEST_DATABASE_URL=${TEST_DATABASE_URL:-}" "$@"; }
+                env "CARGO_TARGET_DIR=$CARGO_TARGET_DIR" "TEST_DATABASE_URL=${TEST_DATABASE_URL:-}" \
+                    "MIGRATE_TEST_DATABASE_URL=${MIGRATE_TEST_DATABASE_URL:-}" "$@"; }
 else
   hostrun() { timeout "$GATE_TIMEOUT" "$@"; }
 fi
@@ -95,6 +96,13 @@ ensure_gate_db() {
   if command -v distrobox-host-exec >/dev/null 2>&1; then psql="distrobox-host-exec $psql"; fi
   $psql "CREATE DATABASE tbd_gate_it;" >/dev/null 2>&1 || true   # already-exists is fine
   export TEST_DATABASE_URL="$GATE_DB"
+  # tests/db_migrate.rs takes a SECOND variable and its own database, because it exercises the
+  # migration chain from empty — it cannot share a DB the other suites have already migrated.
+  # Found only because gate_test_api refuses on any skip: with the first fix in, 28 of 30 skips
+  # cleared and these two remained, naming a variable nothing had mentioned.
+  $psql "DROP DATABASE IF EXISTS tbd_gate_migrate WITH (FORCE);" >/dev/null 2>&1 || true
+  $psql "CREATE DATABASE tbd_gate_migrate;" >/dev/null 2>&1 || true
+  export MIGRATE_TEST_DATABASE_URL="${MIGRATE_TEST_DATABASE_URL:-postgres://tbd:tbd@localhost:5434/tbd_gate_migrate?sslmode=disable}"
 }
 
 plan_rows() { grep -v '^#' "$PLAN" 2>/dev/null | grep -v '^wave[[:space:]]' | sed '/^\s*$/d'; }
