@@ -1,5 +1,5 @@
 {
-  "next_id": 306,
+  "next_id": 308,
   "tickets": [
     {
       "id": "T-001",
@@ -6889,13 +6889,14 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2120,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "716bb79d"
     },
     {
       "id": "T-195",
@@ -9025,6 +9026,44 @@
       "stream": "infra",
       "targets": [
         "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-306",
+      "title": "server_fps type mismatch silently blanks the whole Server Intel page",
+      "summary": "REPRODUCED by T-194 against a populated fixture, not inferred. models/telemetry.rs:102 serializes numeric(5,1) cast to float8; frontend/src/dto.rs:101 deserializes i64. A probe using the DTO verbatim: 'TBD Primary — Everon server_fps: 58.7 -> DROPPED (invalid type: floating point `58.7`, expected i64)'. Both read sites swallow the error — server_intel.rs:150 uses .ok() and sse.rs:80 uses `if let Ok(...)` — so against a COMPLETE, HEALTHY frame the page renders 0/0 players and '—' for uptime, FPS, time and weather, and the SSE stream reports connected while updating nothing. The whole page looks like a dead server. Fix the DTO to f64 (do not round the wire value). NOTE: the R-api golden gate CANNOT catch this — it types /servers as DataEnvelope<Value>, so the round-trip passes while the real DTO fails. Consider typing that fixture properly at the same time.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2306,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-307",
+      "title": "GET /events/:id 500s on a NULL mission briefing and takes the Event Hub down",
+      "summary": "Found by T-194 while seeding the content golden. The dossier lookup in handlers/events.rs get_event is the one mission query in that file that does not COALESCE the nullable briefing/thumbnail_url, so a NULL decodes into String and the whole endpoint fails: 'error occurred while decoding column 3: unexpected null'. That is the entire Event Hub, not one card. The API's own create path always writes '', so only seeded rows or hand-written SQL reach it — which is exactly what a fresh environment or a restored backup looks like. T-194's seed writes '' to match the API and documents the workaround at the point of use; the handler is still wrong.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2307,
+      "stream": "web-platform",
+      "targets": [
+        "website"
       ],
       "executor": "claude-code"
     }
