@@ -340,7 +340,9 @@ pub fn row_options(
 
 /* ───────────────────────────── validation ───────────────────────────── */
 
-#[derive(Clone, PartialEq)]
+// `Debug` (T-240): a fault is now a *refusal reason* a caller can propagate through a `Result`,
+// and `expect`/`unwrap_err` on that Result needs to be able to print what it refused on.
+#[derive(Clone, Debug, PartialEq)]
 pub struct RowError {
     pub key: &'static str,
     pub message: String,
