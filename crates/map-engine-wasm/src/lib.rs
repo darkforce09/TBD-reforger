@@ -753,20 +753,31 @@ pub fn dem_decode_png_to_meters(
 }
 
 // ---------------------------------------------------------------------------------------------
-// mission compiler (shared with the Axum backend)
+// mission compiler — DELETED at T-243. See below before re-adding one.
 // ---------------------------------------------------------------------------------------------
-
-/// Flatten the editor payload → canonical mod mission document JSON (mirrors the server's
-/// `GET /missions/:id/compiled`). `meta_json` = camelCase `MissionMeta`; `payload_json` = the
-/// stored `MissionPayload` the client already built. Same Rust code the backend runs.
-///
-/// # Errors
-/// Returns a JS error on parse failure or a compile error (e.g. no placed slots).
-#[wasm_bindgen]
-pub fn flatten_mod_document(meta_json: &[u8], payload_json: &[u8]) -> Result<Vec<u8>, JsError> {
-    map_engine_core::mission::flatten::flatten_mod_document_json(meta_json, payload_json)
-        .map_err(|e| JsError::new(&e))
-}
+//
+// `flatten_mod_document` lived here: a `#[wasm_bindgen]` wrapper over
+// `map_engine_core::mission::flatten::flatten_mod_document_json`, described as the client twin of
+// `GET /missions/:id/compiled`. It had **zero call sites for its whole life** and could not have
+// acquired one, because the boundary it exported across no longer exists:
+//
+//   * this crate is a `wasm-pack` shim "exposing map-engine-core to the TypeScript UI shell"
+//     (`Cargo.toml`), and the TypeScript UI shell was deleted at T-159.29.3 — there is not one
+//     `.ts`/`.tsx` file left in the repo outside `node_modules`;
+//   * **nothing depends on this crate.** It appears in no `[dependencies]` table anywhere; it is a
+//     bare workspace member that `make lint` fmt/clippys and nothing links;
+//   * the Leptos SPA that replaced the shell links `map-engine-core` **directly** and says so —
+//     `apps/website/frontend/Cargo.toml:89` ("instead of reaching it through the map-engine-wasm
+//     shim") and `mission_doc.rs:5` ("SAME wasm module — no `map-engine-wasm` JS shim, spec D2").
+//     That collapse was the point of T-159.15.
+//
+// So "wire it up" was not available: any caller would have had to re-introduce a dependency on
+// this shim that the codebase deliberately removed. The authoring gap the export was supposed to
+// close is real, and it is closed where a caller can actually reach —
+// `mission_commands::export_compiled_now` calls `flatten_mod_document_json` from the SPA, one
+// crate boundary and no wasm-bindgen surface away.
+//
+// Re-adding an export here only makes sense if a JS/TS consumer of this crate comes back.
 
 // ---------------------------------------------------------------------------------------------
 // spatial index (Phase 3 spike — the Rust replacement for the JS rbush)

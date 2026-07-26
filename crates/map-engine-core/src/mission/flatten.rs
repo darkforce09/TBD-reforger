@@ -1809,20 +1809,117 @@ pub fn flatten_to_mod_document(
     })
 }
 
-/// JSON-in / JSON-out flatten for the wasm client: `meta_json` (camelCase [`MissionMeta`]) + the
-/// stored version `payload` → the compiled mod-document JSON bytes. Keeps serde_json on the core
-/// side so the wasm shim stays dependency-thin.
+/// The four `weather_type` wire strings a compiled document may carry (T-243).
 ///
-/// These bytes are the editor's **Export** download and must satisfy `mission.schema.json` on
-/// their own, so [`ModMissionDocument::kit_substitutions`] does NOT appear in them — it is
-/// `#[serde(skip)]` and this function returns only the serialized document. A caller that wants
-/// the substitutions in the browser needs [`flatten_to_mod_document`] and a shim export of its
-/// own; adding a second key here would put a non-schema field in a file the mod loads.
+/// **This list is the API's `models::WeatherType` enum, and the coupling is held by a test rather
+/// than by the type system** — `map-engine-core` cannot name a `sqlx`/`axum` crate's enum, and the
+/// browser has no enum at all. `mission_compile::weather_preset_list_matches_the_row_enum` asserts
+/// this array equals `WeatherType::as_str()` over every variant, so adding a fifth weather to the
+/// row without adding it here is a test failure in the same commit — the `url_guard` pattern.
+///
+/// `""` is deliberately absent: `PATCH /missions/{id}` reads the empty string as "clear", but here
+/// an absent value must mean **not authored** so the mission row wins the fallback below.
+const WEATHER_PRESETS: [&str; 4] = ["clear", "overcast", "heavy_rain", "dense_fog"];
+
+/// Apply the **T-192 payload-first / row-second** precedence for `time`/`weather` to a
+/// row-derived [`MissionMeta`], in place.
+///
+/// ## Why this lives in core rather than in the API service (T-243)
+///
+/// The Mission Settings dialog and the top-strip scrubber author `meta.environment.{time,weather}`
+/// into the editor document, and `mission::compile::compile_payload` carries them out to the saved
+/// payload's top-level `environment`. Reading the mission ROW alone therefore hands the game server
+/// the values the mission was *created* with while the author is looking at the ones they set.
+///
+/// That precedence used to be a private helper inside `apps/website/api/src/services/
+/// mission_compile.rs`, which made it **unreachable from the browser**. The moment the editor grew
+/// a client-side preview of the server document ([`flatten_mod_document_json`], wired at T-243),
+/// that was a drift surface with the worst possible failure mode: the preview would silently show
+/// the row's stale time/weather and disagree with `/compiled` on exactly the field T-192 existed to
+/// fix — a confident wrong answer. One implementation, both callers, or the twin is a lie.
+///
+/// Idempotent: re-applying it to an already-resolved meta against the same payload is a no-op, so
+/// it is safe on both the API path (row → resolve → flatten) and the JSON path (resolved meta in,
+/// resolve again, flatten).
+pub fn apply_authored_environment(meta: &mut MissionMeta, payload: &[u8]) {
+    // The one key of the save payload this reads. Everything else deserializes through serde's
+    // ignored-any path, so a 140 MB slot payload (T-060 measured one at 141,574,630 bytes) costs
+    // one extra scan and **no** extra allocation — the flatten still does the one real parse.
+    #[derive(serde::Deserialize)]
+    struct PayloadEnvelope {
+        #[serde(default)]
+        environment: serde_json::Value,
+    }
+
+    let Ok(envelope) = serde_json::from_slice::<PayloadEnvelope>(payload) else {
+        return;
+    };
+    let env = envelope.environment;
+    if let Some(t) = env
+        .get("time")
+        .and_then(serde_json::Value::as_str)
+        .and_then(clock_hhmm)
+    {
+        meta.time_of_day = t;
+    }
+    if let Some(w) = env
+        .get("weather")
+        .and_then(serde_json::Value::as_str)
+        .filter(|w| WEATHER_PRESETS.contains(w))
+    {
+        meta.weather_preset = w.to_string();
+    }
+}
+
+/// `HH:MM` / `HH:MM:SS` → canonical `HH:MM`; anything else → `None`.
+///
+/// The `:SS` rung is not hypothetical: `missions.time_of_day` is a Postgres `time`, selected as
+/// `time_of_day::text`, so the hydrate puts `06:00:00` into the document and it comes straight back
+/// out here on the next save.
+///
+/// Validating at all is the load-bearing part. [`flatten_to_mod_document`] splices this value into
+/// `environment.dateTime` (`<anchor>T<hh:mm>:00Z`), which `mission.schema.json` types
+/// `format: date-time` — so an unchecked string out of the document would turn one bad edit into a
+/// 500 at `GET /missions/:id/compiled`, in front of a game server rather than the author.
+fn clock_hhmm(s: &str) -> Option<String> {
+    let mut parts = s.split(':');
+    let h: u32 = parts.next()?.parse().ok()?;
+    let m: u32 = parts.next()?.parse().ok()?;
+    if let Some(sec) = parts.next() {
+        let sec: u32 = sec.parse().ok()?;
+        if sec > 59 {
+            return None;
+        }
+    }
+    if parts.next().is_some() || h > 23 || m > 59 {
+        return None;
+    }
+    Some(format!("{h:02}:{m:02}"))
+}
+
+/// JSON-in / JSON-out flatten for the client: `meta_json` (camelCase [`MissionMeta`], built from
+/// the `GET /missions/:id` row) + the stored version `payload` → the compiled mod-document JSON
+/// bytes. Keeps serde_json on this side so the caller stays dependency-thin.
+///
+/// **This is the client twin of `GET /missions/:id/compiled`, and the twinning is the contract.**
+/// It applies [`apply_authored_environment`] before flattening for exactly the reason the API's
+/// `mission_compile::flatten_to_mod_document` does — the two now run the *same* precedence over the
+/// *same* payload bytes, so given the same mission row they emit byte-identical documents. That
+/// equality is pinned by `mission_compile::client_twin_is_byte_identical_to_the_compiled_route`,
+/// which is the only reason an author may trust what this returns (T-243).
+///
+/// These bytes are the editor's **server-truth Export** download and must satisfy
+/// `mission.schema.json` on their own, so [`ModMissionDocument::kit_substitutions`] does NOT appear
+/// in them — it is `#[serde(skip)]` and this function returns only the serialized document. A
+/// caller that wants the substitutions in the browser needs [`flatten_to_mod_document`] and an
+/// entry point of its own; adding a second key here would put a non-schema field in a file the mod
+/// loads.
 ///
 /// # Errors
 /// Returns a message on meta/payload parse failure or a compile error (e.g. no slots).
 pub fn flatten_mod_document_json(meta_json: &[u8], payload: &[u8]) -> Result<Vec<u8>, String> {
-    let meta: MissionMeta = serde_json::from_slice(meta_json).map_err(|e| e.to_string())?;
+    let mut meta: MissionMeta = serde_json::from_slice(meta_json).map_err(|e| e.to_string())?;
+    apply_authored_environment(&mut meta, payload);
     let doc = flatten_to_mod_document(&meta, payload).map_err(|e| e.to_string())?;
     serde_json::to_vec(&doc).map_err(|e| e.to_string())
 }
@@ -3617,5 +3714,92 @@ mod tests {
                 "environment {env} must still compile"
             );
         }
+    }
+
+    // ── T-243 — the shared time/weather precedence (moved here from the API service, which put
+    //    it out of the browser's reach; see `apply_authored_environment`). ─────────────────────
+
+    /// `time_of_day` round-trips through Postgres as `HH:MM:SS`, so that is what
+    /// `apply_row_meta` puts in the document and what the next save hands back here.
+    #[test]
+    fn clock_accepts_the_shapes_the_document_can_hold() {
+        assert_eq!(clock_hhmm("21:45").as_deref(), Some("21:45"));
+        assert_eq!(clock_hhmm("21:45:00").as_deref(), Some("21:45"));
+        assert_eq!(clock_hhmm("06:00:59").as_deref(), Some("06:00"));
+        assert_eq!(clock_hhmm("6:5").as_deref(), Some("06:05"));
+        assert_eq!(clock_hhmm("00:00").as_deref(), Some("00:00"));
+        assert_eq!(clock_hhmm("23:59").as_deref(), Some("23:59"));
+
+        for bad in [
+            "",
+            "24:00",
+            "12:60",
+            "12:00:60",
+            "12",
+            "12:00:00:00",
+            "-1:00",
+            " 12:00",
+            "noon",
+            "12:0a",
+        ] {
+            assert_eq!(clock_hhmm(bad), None, "{bad:?} must not reach dateTime");
+        }
+    }
+
+    /// The row's values survive anything the payload cannot supply — a legacy payload with no
+    /// `environment`, a non-object bag, wrong types, blank strings, an off-enum weather, an
+    /// out-of-range clock. `""` is the PATCH's alias for "clear"; here it must mean "not authored"
+    /// so the row wins, which is why it is on this list and not the accepting one.
+    #[test]
+    fn only_a_usable_authored_value_displaces_the_row() {
+        let row = || MissionMeta {
+            time_of_day: "05:30".into(),
+            weather_preset: "clear".into(),
+            ..MissionMeta::default()
+        };
+        let env_payload = |env: serde_json::Value| {
+            serde_json::to_vec(&serde_json::json!({ "environment": env })).unwrap()
+        };
+
+        for (name, env) in [
+            ("absent", serde_json::json!({})),
+            ("wrong types", serde_json::json!({"time": 2145, "weather": false})),
+            ("blank strings", serde_json::json!({"time": "", "weather": ""})),
+            (
+                "off-enum + junk",
+                serde_json::json!({"time": "half past four", "weather": "blizzard"}),
+            ),
+            (
+                "out-of-range clock",
+                serde_json::json!({"time": "24:00", "weather": "Clear"}),
+            ),
+            ("non-object bag", serde_json::json!("not an object")),
+            ("null bag", serde_json::Value::Null),
+        ] {
+            let mut meta = row();
+            apply_authored_environment(&mut meta, &env_payload(env));
+            assert_eq!(meta.time_of_day, "05:30", "{name}: expected the row's time");
+            assert_eq!(meta.weather_preset, "clear", "{name}: expected the row");
+        }
+
+        // Each field displaces independently — weather alone must not drag time along.
+        let mut meta = row();
+        apply_authored_environment(&mut meta, &env_payload(serde_json::json!({"weather": "overcast"})));
+        assert_eq!(meta.weather_preset, "overcast");
+        assert_eq!(meta.time_of_day, "05:30");
+
+        let mut meta = row();
+        apply_authored_environment(&mut meta, &env_payload(serde_json::json!({"time": "19:05"})));
+        assert_eq!(meta.time_of_day, "19:05");
+        assert_eq!(meta.weather_preset, "clear");
+
+        // Idempotent: the API path resolves then flattens; the JSON path resolves an
+        // already-resolved meta. Re-applying must not move anything.
+        let payload = env_payload(serde_json::json!({"time": "21:45", "weather": "dense_fog"}));
+        let mut meta = row();
+        apply_authored_environment(&mut meta, &payload);
+        let once = (meta.time_of_day.clone(), meta.weather_preset.clone());
+        apply_authored_environment(&mut meta, &payload);
+        assert_eq!((meta.time_of_day, meta.weather_preset), once);
     }
 }
