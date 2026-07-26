@@ -120,10 +120,40 @@ tree_state() {
 }
 has_work() { [ "$(git rev-list --count "main..slice/$1" 2>/dev/null || echo 0)" -gt 0 ]; }
 
+# How many tickets have shipped since the last adversarial verifier ran.
+#
+# WHY THIS IS A COUNTER AND NOT A HABIT: the verifier was specified as "one per wave" (rule 4), and
+# the run drifted from discrete waves into a continuous stream of individual agents. That did not just
+# change the vocabulary — it DELETED THE EVENT the verifier fires on, so it silently stopped running
+# and 27 tickets landed unverified before the operator noticed. A trigger that depends on remembering
+# a boundary that no longer exists is not a trigger.
+#
+# `.ai/artifacts/last-verified` holds the sha the last verifier examined. Debt is the count of
+# platform tickets marked shipped since. Nagging at 8, which is one wave's width.
+VERIFY_DEBT_NAG="${TBD_VERIFY_DEBT_NAG:-8}"
+verify_debt() {
+  local marker="$ROOT/.ai/artifacts/last-verified" base
+  [ -f "$marker" ] && base="$(head -1 "$marker" | tr -d '[:space:]')" || base=""
+  if [ -z "$base" ]; then echo "unknown (no .ai/artifacts/last-verified)"; return; fi
+  local n
+  n="$(git -C "$ROOT" log --oneline "$base..HEAD" 2>/dev/null \
+       | grep -ciE 'T-[0-9]+[,: ].*(shipped|ship)' || true)"
+  printf '%s since %s' "${n:-0}" "$(echo "$base" | cut -c1-8)"
+}
+
 cmd_status() {
   local w; w="$(current_wave)"
   echo "═══ platform program ═══"
   echo "plan:  $PLAN"
+  local vd; vd="$(verify_debt)"
+  printf 'verify: %s' "$vd"
+  case "$vd" in
+    unknown*) printf '  <- run an adversarial verifier and record the sha\n' ;;
+    *) local c; c="${vd%% *}"
+       if [ "${c:-0}" -ge "$VERIFY_DEBT_NAG" ] 2>/dev/null; then
+         printf '  <- OVERDUE, %s+ landings unverified (rule 4)\n' "$VERIFY_DEBT_NAG"
+       else printf '\n'; fi ;;
+  esac
   local total open
   total="$(plan_rows | awk -F'\t' '$1!="0"' | wc -l)"
   open=0
