@@ -84,7 +84,9 @@ cargo test -p map-engine-core --features mission --lib \
   the_compile_boundary_ledger_is_checked_against_the_contract -- --quiet
 cargo test -p map-engine-core --features mission --lib \
   a_compiled_slot_carries_exactly_these_keys -- --quiet
-ok "compile-boundary ledger + compiled-slot key set"
+cargo test -p map-engine-core --features mission --lib \
+  the_vehicle_row_still_has_the_shape_this_module_reads -- --quiet
+ok "compile-boundary ledger + compiled-slot key set + vehicle contract floor"
 
 # ── E / F / G / H / I — FE (bin crate) ────────────────────────────────────────
 cargo test -p website-frontend eden_side -- --quiet

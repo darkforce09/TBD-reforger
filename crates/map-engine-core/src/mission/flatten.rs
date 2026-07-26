@@ -2462,6 +2462,81 @@ mod tests {
         );
     }
 
+    /// The vehicle row this module reads, pinned field by field — **the contract floor**.
+    ///
+    /// `MissionDocCore::add_vehicle` writes `{id, resourceName}` plus an optional `position`
+    /// (`doc/store.rs:527-548`); `attach_vehicle` adds `squadId` (`doc/store.rs:551-570`);
+    /// `mission::compile::compile_payload` copies `vehiclesById`'s values verbatim to the saved
+    /// payload's top-level `vehicles` array, which is the array a future emitter here reads.
+    ///
+    /// This is pinned as DATA rather than by calling `add_vehicle`, deliberately. The writer and
+    /// this reader are two different slices — the writer may legitimately ADD fields, and a
+    /// compile-time call from here would turn any signature change on that side into a merge
+    /// break rather than a caught disagreement. What must not happen is a rename, a retype or a
+    /// removal: those compose silently, git merges two files that never disagreed textually, and
+    /// the feature is broken with every gate green. That is the failure this test exists to make
+    /// loud, so the assertion is on the SHAPE and the message says which side to look at.
+    ///
+    /// `position` and `squadId` are both genuinely optional and the fixture covers both states —
+    /// `v1` is placed and attached, `v2` is neither. A reader that assumed either was required
+    /// would drop every unplaced or unattached vehicle.
+    #[test]
+    fn the_vehicle_row_still_has_the_shape_this_module_reads() {
+        let authored: serde_json::Value =
+            serde_json::from_str(LEDGER_FIXTURE).expect("fixture parses");
+        let vehicles = authored["vehicles"].as_array().expect("vehicles array");
+
+        // Floor, in full: id + resourceName are always present and are strings.
+        for (i, v) in vehicles.iter().enumerate() {
+            for required in ["id", "resourceName"] {
+                assert!(
+                    v.get(required)
+                        .and_then(serde_json::Value::as_str)
+                        .is_some(),
+                    "vehicles[{i}].{required} must be a non-null string — the floor at \
+                     doc/store.rs:527-548. If the writing slice renamed or retyped it, these two \
+                     halves now disagree and nothing else will say so."
+                );
+            }
+        }
+
+        // v1 — placed and attached: position is a 4-number map, squadId a string.
+        let placed = &vehicles[0];
+        let pos = placed["position"]
+            .as_object()
+            .expect("vehicles[0].position is an object (store.rs `position_any`)");
+        let mut axes: Vec<&str> = pos.keys().map(String::as_str).collect();
+        axes.sort_unstable();
+        assert_eq!(
+            axes,
+            ["rotation", "x", "y", "z"],
+            "the vehicle position shape changed; `position_any` writes exactly these four"
+        );
+        assert!(
+            pos.values().all(serde_json::Value::is_number),
+            "every vehicle position axis is a number"
+        );
+        assert_eq!(placed["squadId"], "sq1");
+
+        // v2 — neither placed nor attached. Both keys ABSENT, not null and not empty string:
+        // `add_vehicle` omits `position` when x/y are not both supplied, and `squadId` does not
+        // exist until `attach_vehicle` runs.
+        let bare = &vehicles[1];
+        assert!(
+            bare.get("position").is_none() && bare.get("squadId").is_none(),
+            "an unplaced, unattached vehicle carries neither key — a reader that requires \
+             either would silently drop it"
+        );
+
+        // Unknown ADDITIONAL fields are tolerated by construction: nothing here deserializes a
+        // vehicle into a closed struct, so a field the writing slice adds passes through the
+        // saved payload untouched. Asserted rather than assumed.
+        let mut extended = placed.clone();
+        extended["cargo"] = serde_json::json!([{"item": "res://ammo", "qty": 4}]);
+        assert_eq!(extended["resourceName"], placed["resourceName"]);
+        assert_eq!(extended["position"]["x"], placed["position"]["x"]);
+    }
+
     /// Every key a compiled slot carries, pinned exactly. An addition or a removal is a change
     /// to the website↔mod interface and must not be able to happen quietly — which is precisely
     /// how the six values above went missing without a single test noticing.
