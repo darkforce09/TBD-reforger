@@ -30,8 +30,26 @@ registry-import: ## Ingest the committed T-150 registry envelopes (items + compa
 		--items ../../../packages/tbd-schema/registry/registry-items.workbench.json \
 		--compat ../../../packages/tbd-schema/registry/registry-compat.workbench.json
 
+# The dev API builds into a PRIVATE target dir — same shape as the wave gate's
+# target-gate-frontend (scripts/platform/wave.sh, "test frontend" step). Gitignored by the
+# existing `target-*/` rule; nothing new to add.
+#
+# WHY (T-322, measured 2026-07-26). Every worktree shares one CARGO_TARGET_DIR, so
+# target/debug/api belongs to whichever tree built last: `cargo build` AND
+# `cargo test -p website-api` both replace it (`cargo check` does not), and the wave gate
+# runs that test after every land, all night. A dev server started from the shared dir is
+# therefore serving code that was never merged — T-300, on the one process that stays up
+# for hours. Its own dir means only `make api` ever writes what `make api` runs.
+#
+# It is NOT killed by that, contrary to the original T-322 report: cargo unlinks and
+# re-hardlinks, so a live process keeps its old inode (verified — /proc/PID/exe went
+# "(deleted)" and /healthz stayed 200 across a rebuild), and the kernel refuses an
+# in-place write to a running ELF (ETXTBSY). This buys correctness, not survival.
+#
+# Cost here (28 cores): cold 25 s / 322 crates / 2.1 GB; warm rebuild ~1 s. It also takes
+# `make api` out of the shared build-lock queue behind every slice agent.
 api: ## Run the API (loads apps/website/api/.env; migrates on boot)
-	cd $(WEB) && cargo run --bin api
+	cd $(WEB) && CARGO_TARGET_DIR=$(CURDIR)/target-dev-api cargo run --bin api
 
 leptos: ## Run the Leptos dev server on :3000 in RELEASE profile (T-173 P8 — the operator day-to-day path; /api proxies to :8080)
 	cd apps/website/frontend && trunk serve --release
@@ -91,7 +109,9 @@ build: ## Build the backend + the Leptos SPA
 # canonical `api`/`build`/`test` targets at cutover (plan Phase 11). Cargo is at
 # ~/.cargo/bin (user-space rustup; never dnf on Bazzite).
 rust-api: ## Run the Rust API (loads apps/website/api/.env; migrates on boot)
-	cd $(WEB) && cargo run --bin api
+	@# Same private target dir as `api` above (T-322) — this starts the same long-lived
+	@# server, so it needs the same isolation. Build targets below do not: they exit.
+	cd $(WEB) && CARGO_TARGET_DIR=$(CURDIR)/target-dev-api cargo run --bin api
 rust-build: ## Build the Rust backend (all targets)
 	cd $(WEB) && cargo build --all-targets
 rust-test: ## Run Rust unit tests (no DB)
