@@ -7503,13 +7503,14 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2430,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "slice/T-225"
     },
     {
       "id": "T-226",
