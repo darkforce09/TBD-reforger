@@ -2032,6 +2032,90 @@ pub fn validate_all() -> Result<u8> {
         &read_json(&root.join("packages/map-assets/everon/objects/type-inventory.json"))?,
     );
 
+    println!("TBD_MissionValidator unconsumed-key warnings (T-250):");
+    {
+        let validator_c = root.join(
+            "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
+        );
+        let src = fs::read_to_string(&validator_c)
+            .with_context(|| format!("read {}", validator_c.display()))?;
+        let mut bad = Vec::new();
+        if !src.contains("CheckUnconsumedKeys(mission)") {
+            bad.push(
+                "CheckUnconsumedKeys is not wired from Run() — unconsumed keys would stay silent"
+                    .to_string(),
+            );
+        }
+        for key in [
+            "environment",
+            "settings",
+            "entities",
+            "layers",
+            "tickets",
+            "radio",
+        ] {
+            let marker = format!("T-250-UNCONSUMED-WARN: {key}");
+            if !src.contains(&marker) {
+                bad.push(format!("missing marker comment `{marker}`"));
+            }
+        }
+        for (subject, needle) in [
+            ("environment", "AddWarning(\"environment\","),
+            ("settings", "AddWarning(\"settings\","),
+            ("entities", "AddWarning(\"entities\","),
+            ("layers", "AddWarning(\"layers\","),
+            ("factions.tickets", "AddWarning(\"factions.tickets\","),
+            ("orbat.roles.radio", "AddWarning(\"orbat.roles.radio\","),
+        ] {
+            if !src.contains(needle) {
+                bad.push(format!(
+                    "missing AddWarning for `{subject}` — authors get no signal for that key"
+                ));
+            }
+        }
+        // `empty-warning-fields.json` is the deliberate all-keys-authored negative-control golden.
+        let neg = read_json(&sroot.join("golden-missions/empty-warning-fields.json"))?;
+        for key in [
+            "environment",
+            "settings",
+            "entities",
+            "layers",
+            "tickets",
+            "radio",
+        ] {
+            let present = match key {
+                "tickets" => neg["factions"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .any(|f| f.get("tickets").is_some()),
+                "radio" => neg["orbat"]
+                    .as_object()
+                    .into_iter()
+                    .flatten()
+                    .flat_map(|(_, fv)| fv["groups"].as_array().into_iter().flatten())
+                    .flat_map(|g| g["roles"].as_array().into_iter().flatten())
+                    .any(|r| r.get("radio").is_some()),
+                _ => neg.get(key).is_some(),
+            };
+            if !present {
+                bad.push(format!(
+                    "golden-missions/empty-warning-fields.json no longer authors `{key}` — \
+                     the runtime negative-control fixture drifted"
+                ));
+            }
+        }
+        if bad.is_empty() {
+            println!("  PASS  TBD_MissionValidator.c (6 unconsumed-key warnings wired)");
+        } else {
+            failures.set(failures.get() + 1);
+            println!("  FAIL  TBD_MissionValidator unconsumed-key warnings");
+            for b in &bad {
+                println!("        {b}");
+            }
+        }
+    }
+
     if failures.get() > 0 {
         eprintln!("\n{} validation failure(s).", failures.get());
         Ok(1)
