@@ -1,5 +1,5 @@
 {
-  "next_id": 299,
+  "next_id": 300,
   "tickets": [
     {
       "id": "T-001",
@@ -6705,13 +6705,14 @@
       "impact": [
         "discord"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2030,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "5ee9bab0"
     },
     {
       "id": "T-186",
@@ -6724,14 +6725,15 @@
       "impact": [
         "e2e"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2040,
       "stream": "mod-framework",
       "targets": [
         "mod",
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "9ceade54"
     },
     {
       "id": "T-187",
@@ -6744,13 +6746,14 @@
       "impact": [
         "e2e"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2050,
       "stream": "mod-framework",
       "targets": [
         "mod"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "02d95c7f"
     },
     {
       "id": "T-188",
@@ -6764,13 +6767,14 @@
       "impact": [
         "mc-authoring"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2060,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "6c822f87"
     },
     {
       "id": "T-189",
@@ -6783,13 +6787,14 @@
       "impact": [
         "mc-integrity"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2070,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "7a51fdda"
     },
     {
       "id": "T-190",
@@ -8876,6 +8881,26 @@
       "order": 2298,
       "stream": "infra",
       "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-299",
+      "title": "Every single-faction compile ships a phantom, unplayable opfor",
+      "summary": "Found by T-186's compiled->mod boot lane, the first time API compiler output was ever put in front of the real validator. flatten pads a stub opposing faction to satisfy the schema's >=2-factions rule (flatten.rs:583-598), and the validator correctly reports it: '[TBD][Validate] WARNING faction:opfor - declared but has no slots - nobody can play this side'. So every mission authored with one faction ships a side that appears in the briefing and the ORBAT and that no player can join. This is NOT the T-181.46 hard-reject (that was endOn, already fixed) - the document loads fine, it is just wrong. Decide whether the schema should permit a single faction, or whether the compiler should mark the stub as non-playable so the UI hides it.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2299,
+      "stream": "mission-creator",
+      "targets": [
+        "website",
         "root"
       ],
       "executor": "claude-code"
