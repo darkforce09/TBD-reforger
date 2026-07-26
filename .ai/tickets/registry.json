@@ -9999,7 +9999,7 @@
     {
       "id": "T-352",
       "title": "tbd-editor-adopted marker is the last unscoped per-account editor state",
-      "summary": "FOUND by T-338 while scoping the RAM cache; the last piece of per-account editor state still keyed globally. The `tbd-editor-adopted:<id>` localStorage marker in editor_session.rs is not account-scoped.\n\nNOT a data-loss path any more — T-223 stopped reading it — which is why T-338 left it rather than widening a security fix. But it is the same shape as the bug T-221 and T-338 spent two slices closing: per-account state under a global key. It should either be scoped with the same `u{len}:{owner}|{logical}` scheme, or deleted if nothing reads it at all.\n\nCheck the second option first. If T-223 removed the only reader, this is dead state being written for no one, and deleting it is better than scoping it.",
+      "summary": "FOUND by T-338 while scoping the RAM cache; the last piece of per-account editor state still keyed globally. The `tbd-editor-adopted:<id>` localStorage marker in editor_session.rs is not account-scoped.\n\nNOT a data-loss path any more — T-223 stopped reading it — which is why T-338 left it rather than widening a security fix. But it is the same shape as the bug T-221 and T-338 spent two slices closing: per-account state under a global key. It should either be scoped with the same `u{len}:{owner}|{logical}` scheme, or deleted if nothing reads it at all.\n\nCheck the second option first. If T-223 removed the only reader, this is dead state being written for no one, and deleting it is better than scoping it.\n\nSHIPPED 2026-07-26 as a DELETE, and it went past the ticket. Reader count: ZERO — read_adopted was the only occurrence of its own name anywhere in the repo. Eight writers.\n\nTHE PART THE TICKET MISSED: stopping the writes alone would NOT have closed the hole. Every browser that ever opened the editor keeps `tbd-editor-adopted:<missionId>` in localStorage, readable by whichever account signs in next — THAT residue is the leak. And worse, `mark_adopted(id, None)` used to CLEAR the key, so no-oping the function alone would have made existing residue PERMANENT. It added a purge instead, so the paths that used to create residue now erase it and no boot hook is needed.\n\nIt then REMOVED a once-per-page-load latch it had first written, because localStorage is shared across tabs: during a deploy rollover an old tab keeps writing fresh residue that a latched purge would never revisit. Phase 2 of its probe planted residue AFTER the first purge and confirmed a second hydrate cleared it — the exact case the latch would have missed.\n\nIt kept the mark_adopted signature deliberately (callers are in two files it did not own) and flagged the sequencing: do NOT delete the shim in the same release, or the purge never runs and the residue is stranded.\n\nBROWSER-VERIFIED WITH A NON-VACUITY PROOF: on main the planted SENTINEL is OVERWRITTEN to 0.1.0, which proves the writer was live on that exact hydrate path; on the fixed build localStorage ends empty. It also caught a build that silently produced an 8-BYTE wasm (ready:false, zero fetch hits) and now size-checks the artifact before probing.\n\nIt overrode T-221's warn-don't-delete guidance deliberately and argued why: with no reader, no behaviour can observe the absence, and the value was a server semver the server still holds — not authored content. That reasoning is in the code.",
       "program": "platform",
       "surfaces": [
         "FRONTEND"
@@ -10007,14 +10007,15 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3168,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "priority": 3
+      "priority": 3,
+      "shipped_at": "a499085e"
     },
     {
       "id": "T-353",
@@ -10122,7 +10123,7 @@
     {
       "id": "T-358",
       "title": "factions.rs defeats its own unique index, and both sweeps were structurally blind to it",
-      "summary": "THE MISSED INSTANCE. Seven shipped tickets and six filed ones (T-346..T-351) all enumerate this bug class, and NONE of them names apps/website/api/src/handlers/factions.rs.\n\nWHY BOTH SWEEPS MISSED IT, which is the interesting part: it is the ONLY handler in the crate that takes a raw `Json<Value>` body (:87, :114) and delegates all required-field and emptiness validation to JSON Schema. So it has ZERO #[serde(default)] — invisible to the T-218/T-315..T-319 sweep — and ZERO string is_empty() — invisible to T-343's 100-site enumeration. Its one is_empty() (:29) is on `details: Vec<String>`, so a mechanical pass saw the file, classified that site as benign, and emitted nothing. It also has zero trim(). A file can be swept twice and still be unexamined.\n\nTHE DEFECT: `name` is projected out at :37 with `as_str().unwrap_or_default().to_string()` — no trim, no emptiness check — and bound untrimmed into three places, one of which is a UNIQUE KEY:\n  :93-94 INSERT ... ON CONFLICT (owner_id, name) DO NOTHING\n  :121   SELECT id FROM user_factions WHERE owner_id = $1 AND name = $2 AND id <> $3  (clash check)\n  :140   UPDATE ... SET name = $2\nbacked by migrations/0006_user_factions.sql:16-17 CREATE UNIQUE INDEX idx_user_factions_owner_name.\n\nThe only server-side guard is \"minLength\": 1 at packages/tbd-schema/schema/faction-library.schema.json:17 — a LENGTH check, not a CONTENT check, with no pattern. Verified against the real schema: \"   \", a single tab, a single newline, and \"Soviet Army 1980s \" all validate. So POST with name \"\\t\" returns 201 with a faction whose entire display name is a tab; and POST \"USA\" then \"USA \" returns 201 TWICE — ON CONFLICT never fires because the byte strings differ, and the :121 clash check misses for the same reason, silently bypassing the 409 at :103.\n\nIT DEFEATS A GATE THAT ALREADY EXISTS: tests/factions.rs:136-145 case T4 asserts a duplicate name returns CONFLICT. One trailing space turns that assertion's subject into a 201. Exactly T-351's complaint about arma_id — the test only ever posts clean values, so nothing pins it.\n\nTHE FIRST-PARTY SPA IS THE DELIVERY VECTOR: frontend/src/faction_manager.rs:92 already has the CORRECT guard (`doc.name.trim().is_empty()`) but only CHECKS — :106 then serialises the UNTRIMMED name. Typing a trailing space passes the client guard and ships the padding. Same second defect T-343 called out for warn_user: the platform normalises the same operator text two different ways depending which side you ask.\n\nSEVERITY BOUND, checked rather than assumed — this is NOT T-346-class. The ORBAT/mission-doc faction key derives from `side`, not `name` (editor_ops.rs:1139-1145 `format!(\"faction-{side}\")` and :1536 `f.key == side`), and `side` is enum-constrained so padding is rejected there. orbat_manager.rs:228 selects library rows by UUID and only LABELS with name. The sole equality comparison on user_factions.name anywhere in the repo is factions.rs:121 itself. So there is no clobber and no cross-table join collapse. The harm is a defeated unique constraint, two palette rows whose labels render IDENTICALLY because HTML collapses whitespace (so the operator cannot tell them apart or know which one an edit hit), and a padded name propagating into the mission doc at orbat_manager.rs:319 and :377.\n\nFIX DIRECTION: the DO-NOT-NAIVELY-TRIM warning does NOT bind here — `name` has no other side to disagree with. But T-346's SHAPE argument does: a trim-only fix leaves name \"\\t\" reachable, because that is a content problem, not a padding problem. Both halves are needed — reject a name empty after trimming, AND reject one not equal to its trimmed form — or normalise at the single :37 projection point. Add the test that tests/factions.rs:136-145 is missing.",
+      "summary": "THE MISSED INSTANCE. Seven shipped tickets and six filed ones (T-346..T-351) all enumerate this bug class, and NONE of them names apps/website/api/src/handlers/factions.rs.\n\nWHY BOTH SWEEPS MISSED IT, which is the interesting part: it is the ONLY handler in the crate that takes a raw `Json<Value>` body (:87, :114) and delegates all required-field and emptiness validation to JSON Schema. So it has ZERO #[serde(default)] — invisible to the T-218/T-315..T-319 sweep — and ZERO string is_empty() — invisible to T-343's 100-site enumeration. Its one is_empty() (:29) is on `details: Vec<String>`, so a mechanical pass saw the file, classified that site as benign, and emitted nothing. It also has zero trim(). A file can be swept twice and still be unexamined.\n\nTHE DEFECT: `name` is projected out at :37 with `as_str().unwrap_or_default().to_string()` — no trim, no emptiness check — and bound untrimmed into three places, one of which is a UNIQUE KEY:\n  :93-94 INSERT ... ON CONFLICT (owner_id, name) DO NOTHING\n  :121   SELECT id FROM user_factions WHERE owner_id = $1 AND name = $2 AND id <> $3  (clash check)\n  :140   UPDATE ... SET name = $2\nbacked by migrations/0006_user_factions.sql:16-17 CREATE UNIQUE INDEX idx_user_factions_owner_name.\n\nThe only server-side guard is \"minLength\": 1 at packages/tbd-schema/schema/faction-library.schema.json:17 — a LENGTH check, not a CONTENT check, with no pattern. Verified against the real schema: \"   \", a single tab, a single newline, and \"Soviet Army 1980s \" all validate. So POST with name \"\\t\" returns 201 with a faction whose entire display name is a tab; and POST \"USA\" then \"USA \" returns 201 TWICE — ON CONFLICT never fires because the byte strings differ, and the :121 clash check misses for the same reason, silently bypassing the 409 at :103.\n\nIT DEFEATS A GATE THAT ALREADY EXISTS: tests/factions.rs:136-145 case T4 asserts a duplicate name returns CONFLICT. One trailing space turns that assertion's subject into a 201. Exactly T-351's complaint about arma_id — the test only ever posts clean values, so nothing pins it.\n\nTHE FIRST-PARTY SPA IS THE DELIVERY VECTOR: frontend/src/faction_manager.rs:92 already has the CORRECT guard (`doc.name.trim().is_empty()`) but only CHECKS — :106 then serialises the UNTRIMMED name. Typing a trailing space passes the client guard and ships the padding. Same second defect T-343 called out for warn_user: the platform normalises the same operator text two different ways depending which side you ask.\n\nSEVERITY BOUND, checked rather than assumed — this is NOT T-346-class. The ORBAT/mission-doc faction key derives from `side`, not `name` (editor_ops.rs:1139-1145 `format!(\"faction-{side}\")` and :1536 `f.key == side`), and `side` is enum-constrained so padding is rejected there. orbat_manager.rs:228 selects library rows by UUID and only LABELS with name. The sole equality comparison on user_factions.name anywhere in the repo is factions.rs:121 itself. So there is no clobber and no cross-table join collapse. The harm is a defeated unique constraint, two palette rows whose labels render IDENTICALLY because HTML collapses whitespace (so the operator cannot tell them apart or know which one an edit hit), and a padded name propagating into the mission doc at orbat_manager.rs:319 and :377.\n\nFIX DIRECTION: the DO-NOT-NAIVELY-TRIM warning does NOT bind here — `name` has no other side to disagree with. But T-346's SHAPE argument does: a trim-only fix leaves name \"\\t\" reachable, because that is a content problem, not a padding problem. Both halves are needed — reject a name empty after trimming, AND reject one not equal to its trimmed form — or normalise at the single :37 projection point. Add the test that tests/factions.rs:136-145 is missing.\n\nLOAD-BEARING FOR WHOEVER FIXES THIS, from the adversarial verifier: adopting the generated contract type closes only HALF. `TbdFactionLibraryEntryName` (contract/generated/faction_library.rs:1089-1100) rejects len < 1 but does NOT TRIM — \"\\t\" still passes. A fix that swaps in the generated type and stops there leaves the padding half open.\n\nAND THE MECHANISM THAT HID THIS IS STILL LIVE, which is the more general finding: contract/generated/mod.rs declares five modules under a blanket #[allow(clippy::all, dead_code)] and only two are referenced anywhere. faction_library.rs (1282 lines), mission_editor.rs and loadout.rs are DEAD. So for the two HTTP write paths that have a schema at all, a typed, serde-enforcing, CI-drift-gated projection ALREADY EXISTS and is bypassed in favour of the runtime jsonschema validator — which is exactly why factions.rs has zero #[serde(default)] for a grep to find. Consider whether adopting the generated types is the real fix for the whole class rather than patching this one handler.",
       "program": "platform",
       "surfaces": [
         "API"
@@ -10293,6 +10294,67 @@
       ],
       "status": "idea",
       "order": 3182,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-367",
+      "title": "T-202 turned a silently-ignored field into a permanent 500 on compile",
+      "summary": "REGRESSION INTRODUCED BY T-202, found by an independent audit of its emptiness claim.\n\nPre-T-202, `FactionIn` had three fields and no `briefing`, and there is no `deny_unknown_fields` in flatten.rs — so any `briefing` value on a faction row was silently IGNORED. Post-T-202 it is typed, and a non-object is a hard `CompileError::Parse`, which missions.rs:1073 maps to **HTTP 500 \"could not compile mission\"**. Measured:\n    \"briefing\": \"some string\"  -> invalid type: string, expected struct BriefingIn -> 500\n    \"briefing\": 3 / true        -> 500\n    situation: 5 / markers: \"OBJ\" / marker.x: \"5\"  -> 500\n    array / situation:null / unknown subkey          -> OK, briefings={\"blufor\":{}}\n\nWHY THIS IS REACHABLE AND NOT THEORETICAL: `\"briefing\": \"<string>\"` is EXACTLY the briefing-vs-briefings confusion T-214's own doc comment (compile.rs:150-161) says is one keystroke away — `briefing` (string, the library blurb) versus `briefings` (per-faction object). And mission-editor-payload.schema.json's $defs/editorFaction has NO additionalProperties:false, so the payload schema ACCEPTS it at save time. A client that writes the library blurb onto a faction row gets a mission that saves fine and then 500s on `/compiled` FOREVER — unrecoverable without editing the stored JSON by hand.\n\nLatent today (0 live rows carry the key, verified across 128 payloads and 39 faction rows) but reachable by one hand-crafted POST — the same audit established that `POST /missions/:id/versions` binds the payload verbatim and `/compiled` reads it straight into flatten_to_mod_document.\n\nFix direction: a mistyped `briefing` should be a 400 at SAVE time, not a 500 at compile time. Either tighten the payload schema (careful — T-357 measured that a naive tightening would have 400'd six real live missions) or make the compile path degrade rather than fail. Do not simply restore the silent-ignore behaviour; that hides the author's mistake, which is the bug T-348 argued against for cms status.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3183,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-368",
+      "title": "The mission armory cannot be set from the UI at all — the endpoint has no frontend caller",
+      "summary": "FOUND by the adversarial verifier while checking T-346's blast radius, and it reframes that ticket.\n`PUT /missions/:id/armory` has **ZERO frontend callers** — repo-wide the only callers are tests/missions.rs, tests/null_tolerance.rs and docs. Live `mission_armories` holds **zero rows**.\n\nSo T-346's fix is correct but its blast radius is the API surface, not the SPA, and its \"renders correctly today\" measurement was necessarily on synthetic data. More importantly: the faction armory — which the Event Hub dossier renders and the mod consumes — **cannot be authored by an operator at all.** That is the same dead-endpoint shape T-226 found for event editing and mission detach, and T-232 found for six render branches: the backend works and nothing calls it.\n\nWire it into the Mission Creator or the Event Hub. Note T-346 now requires `faction` and refuses a padded one, so whatever UI you add must send a clean faction key — read T-346's reasoning first, because the guard is deliberately agreement-preserving rather than normalising and the UI must not fight it.\n\nAlso from the same sweep: `POST /me/leave-requests` has no caller either (already in T-353).",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3184,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-369",
+      "title": "A corrected match re-POST silently skips attendance forever",
+      "summary": "FOUND by the adversarial verifier, and it contradicts T-316's own stated rule.\n\nOn the re-ingest branch, `upsert_match` (telemetry.rs:555-582) OMITS `event_id`, `mission_id`, `terrain` and `started_at` from the UPDATE and returns the STORED `ev`. So: a first POST carrying a `source_match_id` but no `event_id`, followed by a corrected re-POST carrying the right one, **silently skips attendance forever** — `if let Some(eid) = event_id` at :489 sees `None` because the stored row still has none.\n\nThat is the opposite of what T-316 decided for the sibling fields: for `ended_at`, `winning_faction` and `aar_replay_url` a PRESENT field wins; for these four it is discarded. T-316's per-struct reasoning was careful and deliberate, so this is very likely an oversight in the re-ingest branch rather than a decision — but read that reasoning before changing it, and if the asymmetry IS intentional, document it, because nothing currently says so.\n\nLow practical reach today (the mod re-sends an identical payload), which is why it is P2 rather than P1. But attendance is the thing operators actually check after an op, and a correction that silently does nothing is worse than one that errors.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3185,
       "stream": "web-platform",
       "targets": [
         "website"
