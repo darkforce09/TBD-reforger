@@ -6,6 +6,15 @@
 //!
 //! The UI (`arsenal.rs`) and the persisted `SlotLoadoutV2` shape (owned by `arsenal.rs`
 //! `picks_to_loadout`) sit on top of this — this module holds only the decisions.
+//!
+//! T-240 checked whether the blanket `allow` below is still earned, because while it is on, the
+//! compiler cannot tell anyone that a rule in here has no caller — which is how `cargo_capacity_errors`
+//! could have shipped unwired and silent. **It is still earned, by exactly three items in the
+//! shipping (wasm32) build:** `PRIMARY_SUB_REGIONS` (:185), `DollRegion::kind` (:412) and
+//! `DOLL_REGIONS` (:479) — the paper-doll region model, whose consumer went away. A native
+//! `cargo check` lists more, but those are consumers behind `cfg(target_arch = "wasm32")`, not
+//! real deadness. Remove the `allow` the moment those three find a caller or go; do not delete
+//! them to get there.
 #![allow(dead_code)]
 
 use std::collections::{BTreeMap, HashMap, HashSet};
