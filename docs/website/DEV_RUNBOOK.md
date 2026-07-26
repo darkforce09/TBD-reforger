@@ -115,9 +115,12 @@ The committed dev config mixes them: `FRONTEND_URL=http://127.0.0.1:3000` but
 and the cookie is stored for host `127.0.0.1`; Discord then returns you to `localhost:8080`, which
 never receives it, and **every login fails `invalid_state`**. Pick one host and use it everywhere:
 
-- **Browse the SPA at `http://localhost:3000`** — cookie host is `localhost` both ways, and the
-  committed `ALLOWED_ORIGINS` already lists it. Nothing else changes. *(Simplest.)*
-- Or set `FRONTEND_URL=http://localhost:3000` as well, so redirects stay on one host.
+- **Recommended:** set `FRONTEND_URL=http://localhost:3000` and browse the SPA at
+  `http://localhost:3000`. Everything — flow start, callback, final redirect — stays on host
+  `localhost`, and the committed `ALLOWED_ORIGINS` already lists that origin.
+- Browsing at `localhost:3000` while leaving `FRONTEND_URL` on `127.0.0.1` also *works* (the
+  cookie is only needed between login-start and callback), but you finish signed in on
+  `127.0.0.1:3000`, not the tab you started in — the session lands at `FRONTEND_URL`.
 - Or move everything to `127.0.0.1` — but then `DISCORD_REDIRECT_URL` **and** the portal entry
   must both become `http://127.0.0.1:8080/...`. `http://localhost` is the better-supported dev
   origin on Discord's side; prefer it.
