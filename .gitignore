@@ -39,3 +39,8 @@ apps/mod/.cursor/mcp.json
 # Per-slice gate target dir — see wave.sh "test frontend". Shared CARGO_TARGET_DIR let one
 # worktree run another's stale website_frontend test binary (proved by T-193 and T-195).
 target-gate-frontend/
+
+# Private per-slice/verify target dirs. Agents create these to defeat the shared
+# CARGO_TARGET_DIR serving stale cross-worktree binaries (T-193/T-195). They belong
+# to nobody and must never be committed.
+target-*/

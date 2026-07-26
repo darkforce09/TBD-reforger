@@ -6969,7 +6969,7 @@
       "impact": [
         "arsenal"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2160,
       "stream": "mission-creator",
       "targets": [
@@ -6977,7 +6977,8 @@
         "mod",
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "2070eecd"
     },
     {
       "id": "T-199",

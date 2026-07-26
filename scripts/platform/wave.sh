@@ -303,8 +303,10 @@ cmd_gate() {
   # --features mission is REQUIRED. The mission module is feature-gated, so a bare
   # `cargo test -p map-engine-core` runs 116 tests and silently skips 26 — every test in flatten.rs,
   # which is the most contended file in the backlog and the one T-182 inverted a pinning assertion
-  # in last wave. Measured 2026-07-26: bare 116, --features mission 142. Found by T-183's agent.
-  run "test map-engine"  hostrun cargo test -p map-engine-core --features mission -p map-engine-render --quiet
+  # in last wave. Measured 2026-07-26: bare 116, --features mission 142.
+  # AND `doc` compiles out too — T-217 measured mission-only skipping all 155 doc tests
+  # (apply_faction, store, undo). doc,mission gives 183. Both features are required.
+  run "test map-engine"  hostrun cargo test -p map-engine-core --features doc,mission -p map-engine-render --quiet
   # Frontend tests get a PRIVATE target dir. Two agents (T-193, T-195) independently proved that
   # with the shared CARGO_TARGET_DIR, `cargo test -p website-frontend` runs a stale
   # website_frontend-<hash> test binary built from ANOTHER worktree: T-193 saw 113 passing from a
