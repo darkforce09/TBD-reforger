@@ -364,16 +364,16 @@ cmd_prep() {
 # works if you already did the right thing is not a gate.
 #
 # THE DISTINCTION: a path being LISTED here does not mean it EXISTS. Deletions and renames appear in
-# both `git diff --name-only` and `git status --porcelain`, and the file they name is gone. Every
-# caller then does `[ -f "$f" ] || continue`, so a range whose Rust files were ALL deleted or renamed
-# passed refuse_empty_range (the list is non-empty), skipped every entry, and returned 0.
-# MEASURED 2026-07-26 on a synthetic all-deletions range: `fmt (changed)` returned 0 with rustfmt
-# invoked ZERO times, and touch_changed invalidated no fingerprint — which is the only thing it
-# exists to do, and the thing that makes every cargo step below trustworthy.
+# both `git diff --name-only` and `git status --porcelain`, and the file they name is gone.
 #
-# So the callers now count LISTED against PRESENT and refuse when nothing was examined.
-# "Examined nothing" is not "examined everything and it was fine" — that equation is this
-# program's signature defect and it does not get a pass for being one `[ -f ]` deep.
+# Callers handle absence differently (T-409 corrected T-406's over-refuse):
+#   * fmt_changed — deletion-only is a named SKIP (nothing left to format).
+#   * touch_changed — touches the owning crate's Cargo.toml (or include! consumers) so cargo
+#     fingerprints still invalidate; refuses only when nothing at all can be touched.
+#   * clippy_changed — resolves the crate from the path (or include! consumers for orphan
+#     fragments like apps/website/shared/*.rs); refuses only when zero crates resolve.
+# The signature-defect refuse that remains is "listed Rust changes, examined NOTHING" — not
+# "listed deletions, rustfmt had no file to open".
 #
 # (`git status --porcelain` renders a staged rename as `R  old -> new`, so the sed leaves one
 # arrow-joined pseudo-path in the list. `[ -f ]` drops it and `git diff --name-only` lists the real
