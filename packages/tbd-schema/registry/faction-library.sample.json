@@ -4,7 +4,8 @@
   "roles": [
     {
       "role": "Squad Leader",
-      "character": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+      "tag": "SL",
+      "character": "{5436629450D8387A}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et",
       "loadout": {
         "version": 2,
         "wear": {
@@ -38,13 +39,17 @@
     {
       "role": "Rifleman",
       "tag": "AT",
-      "character": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"
+      "character": "{1C78331E156A3D65}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AT.et"
     }
   ],
   "vehicles": [
     {
       "vehicle": "{259EE7B78C51B624}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et",
       "label": "UAZ-469"
+    },
+    {
+      "vehicle": "{C012BB3488BEA0C2}Prefabs/Vehicles/Wheeled/BTR70/BTR70.et",
+      "label": "BTR-70"
     }
   ]
 }
