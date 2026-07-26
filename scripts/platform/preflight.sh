@@ -146,15 +146,29 @@ else
   soft "api :8080" "down — editor smokes would report gate-red for an env reason"
 fi
 
-# 11b. A running `trunk serve` (make leptos) races the gate's `trunk build --release` over the same
-#      apps/website/frontend/dist. OBSERVED 2026-07-26: the wave gate failed with "error writing JS
-#      loader file to stage dir / No such file or directory" while PID 158382 held it; the identical
-#      build passed seconds later. This is the worst failure shape there is — an ENVIRONMENT race
-#      that reads exactly like a code defect, so an unattended fix agent burns its whole retry budget
-#      on working code. Catch it at t=0.
+# 11b. A running `trunk serve` (make leptos) USED TO race the gate's `trunk build --release` over the
+#      same apps/website/frontend/dist. OBSERVED 2026-07-26: the wave gate failed with "error writing
+#      JS loader file to stage dir / No such file or directory" while a trunk serve held it, and the
+#      identical build passed seconds later — an ENVIRONMENT race that reads exactly like a code
+#      defect. The mitigation was to kill the operator's dev server before every unattended run.
+#
+#      CURED BY T-396 (7362d1dc). The gate now builds into a private --dist AND a private
+#      CARGO_TARGET_DIR, which together are trunk's complete write set (there is no staging env var —
+#      TRUNK_STAGING_DIR is exported to build hooks, never read, verified against the 0.21.14 binary).
+#      Private --dist ALONE was the previously-recorded dead end, because it left
+#      $CARGO_TARGET_DIR/wasm-opt/... shared. gate_trunk_build now also refuses to build if either
+#      private path has collapsed onto one the dev server owns, and proves after each build that both
+#      took a write — because exit 0 says trunk was happy, not that trunk honoured the flags.
+#      Measured: 5/5 collisions before, 15/15 clean after, plus 10/10 gate builds with trunk serve
+#      live on :3000 answering 200 throughout.
+#
+#      So this is now INFORMATIONAL. Do NOT tell anyone to stop their dev server: that instruction is
+#      what made the ritual survive, and taking :3000 down is user-hostile. If the gate's trunk step
+#      ever fails with a staging error again, THAT is the signal the isolation regressed — and
+#      gate_trunk_build's own guards should have caught it first.
 ts=$(pgrep -f "trunk serve" 2>/dev/null | wc -l)
 [ "$ts" -eq 0 ] && ok "trunk serve" "not running" \
-  || soft "trunk serve" "$ts running — races the gate's trunk build over dist/; stop it before an unattended run"
+  || ok "trunk serve" "$ts running — fine since T-396; the gate builds into private dist + target"
 
 # 11. Stray chrome starves the editor gates (doctor.rs:166-172 refuses to run with any alive).
 # `pgrep -fc` prints 0 AND exits 1 when there is no match, so a `|| echo 0` fallback yields "0\n0"

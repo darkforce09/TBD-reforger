@@ -127,7 +127,7 @@
 1	T-241	Declare zones[].rules properties in the schema	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c
 1	T-243	Wire or delete the unused wasm flatten binding	crates/map-engine-wasm/src/lib.rs
 1	T-215	Vehicle placement on the map with position and cargo	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_chrome.rs; crates/map-engine-core/src/doc/store.rs
-2	T-391	Live javascript: XSS via aar_replay_url, and zero URL validation in the API	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/services/text.rs
+1	T-391	Live javascript: XSS via aar_replay_url, and zero URL validation in the API	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/services/text.rs
 2	T-236	server_fps type mismatch would silently drop every live frame	apps/website/api/src/models/telemetry.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/sse.rs; apps/website/frontend/src/server_intel.rs
 2	T-216	flatten drops leaderSlotId, tag, callsign, rank, stance and all vehicles	crates/map-engine-core/src/mission/flatten.rs
 2	T-244	No vehicle lane in the map-object catalogue	packages/tbd-schema/rules/prefab-classify.json
