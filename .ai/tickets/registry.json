@@ -7310,7 +7310,7 @@
       "impact": [
         "mc-authoring"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2330,
       "stream": "mission-creator",
       "targets": [
@@ -7330,7 +7330,7 @@
       "impact": [
         "mc-authoring"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2340,
       "stream": "mission-creator",
       "targets": [
@@ -7833,7 +7833,7 @@
     {
       "id": "T-242",
       "title": "Add vehicle and entity inventory to the entity schema",
-      "summary": "$defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) with no inventory model. The editor's vehicle row is {id,resourceName,position,squadId} (store.rs:527-548), also with no cargo. Vehicle inventory has no representation on any of the three surfaces.",
+      "summary": "== STALE IN PART, corrected 2026-07-26 by the command center after T-215 (wave 5) contradicted it and was right ==\nTHIS TICKET'S PREMISE IS OUT OF DATE. It claims `$defs/entity` is {alias,x,z,headingDeg,faction} with NO INVENTORY MODEL. On main today it is {alias, x, z, headingDeg, faction, INVENTORY}, and `$defs/entityInventory` exists ([{item,qty}], no container key -- 'the container IS the entity'). T-198 landed it in commit 2070eecdd, 'vehicle and crate inventory gets a home on $defs/entity'.\nCONSEQUENCE: T-215 needed no schema change for vehicle cargo and did it, emitting $defs/entityInventory verbatim. Re-scope what remains of this ticket against the CURRENT schema before dispatching it. The command center briefed T-215 off this stale summary and was corrected by the agent -- do not repeat that.\nWHAT IS STILL OPEN AND WAS NOT INVALIDATED: see T-216's schema deltas ($defs/slot needs tag/callsign/rank/stance, $defs/group needs leaderSlotId, the document root needs a vehicles $def) -- those are DIFFERENT objects and remain closed.\n\n== ORIGINAL SUMMARY BELOW ==\n$defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) with no inventory model. The editor's vehicle row is {id,resourceName,position,squadId} (store.rs:527-548), also with no cargo. Vehicle inventory has no representation on any of the three surfaces.",
       "program": "eden",
       "surfaces": [
         "DATA"
@@ -7879,7 +7879,7 @@
       "impact": [
         "data-pipeline"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2620,
       "stream": "mission-creator",
       "targets": [
@@ -11203,7 +11203,7 @@
     {
       "id": "T-410",
       "title": "Residual ORDER BY ASC ratchets in the integration suites, and the dashboard next_event coverage hole",
-      "summary": "Found by T-399's agent while fixing the approvals ratchet, measured against the live tbd_gate_it -- not inferred. T-399 fixed ONE instance; these are the rest of the class. The one-line rule: ASC ordering over a never-pruned table is the poison. (Inversion worth recording: handlers/audit.rs:65 orders id DESC, so residue pushes OLD rows off the page and never new ones -- missions.rs:1067 is safe by construction because of it.)\n\n1. apps/website/api/tests/missions.rs:151 -- GET /api/v1/missions .any(id). handlers/missions.rs:266 is ORDER BY updated_at DESC LIMIT 20, and updated_at is NULLABLE WITH NO DEFAULT, so Postgres sorts NULLS FIRST on DESC. Ratchets at 20 missions with NULL updated_at. MEASURED 2 today ('Null Op'), and they ARE rows 1-2 of page 1 right now. Held at 2 only because null_tolerance.rs's boot() wipes its own rows. 845 live missions and growing.\n2. apps/website/api/tests/missions.rs:249 -- ?scope=bookmarked, same handler, same ordering. Ratchets at 20 bookmarks for user 000000000000000001. Accumulates only when the test fails before its DELETE .../bookmark -- SELF-REINFORCING, identical shape to T-399.\n3. apps/website/api/tests/dashboard_reads.rs:83-85 -- ALREADY FIRED AND PAPERED OVER. The comment reads 'next_event key is always present (null-safe); its value depends on shared-DB state'. Someone hit handlers/dashboard.rs:54's global ORDER BY start_time ASC LIMIT 1 and WEAKENED THE ASSERTION to key-presence rather than scoping it. Threshold is 1: any residue event with an earlier start_time wins. 558 events live. The dashboard's 'next operation' is effectively untested -- this is a genuine coverage hole, not just test hygiene, and is the highest-value item here.\n4. handlers/events.rs:837/850 -- GET /api/v1/events default scope is ORDER BY e.start_time ASC LIMIT 20 OFFSET 0, exactly the approvals shape, over a table at 558 rows most sharing hardcoded fixture start_times. Already past 20. No test asserts against this list today, so it is a LOADED GUN, not a fired one: the first 'my event is in GET /api/v1/events' assertion anyone writes is red on arrival.\n5. apps/website/api/tests/admin_field.rs:335 -- GET /admin/users?q=Target%20Z then .find(discord_id); handlers/admin.rs:87 ORDER BY username ASC LIMIT 20. Measured 1 match, unreachable because the fixture upserts a fixed id. Same construction, benign -- listed for completeness, no action.\n6. apps/website/api/tests/registry_compat.rs:312/353/383/582 -- exact len() == 10604/529/1857. DIFFERENT MECHANISM (fixed-UUID DELETE-and-reimport race, already documented at scripts/platform/wave.sh:522-525), listed so the two are not conflated.\n\nTHE PATTERN TO PROPAGATE: misc_integration.rs:258-274's boot_servers(tag) deletes only 'T235 {tag}%' and comments why a blanket DELETE FROM servers would break telemetry.rs and admin_field.rs. factions.rs:18 is residue-proof but does an UNSCOPED DELETE FROM user_factions, which would wipe a concurrent sibling's rows -- misc_integration's tag-scoped version is the better model.\n\nREPRO (the live one): psql -d tbd_gate_it -c \\\"SELECT count(*) FROM missions WHERE updated_at IS NULL AND deleted_at IS NULL\\\" -- at 20 this reds missions.rs:151 permanently.",
+      "summary": "Found by T-399's agent while fixing the approvals ratchet, measured against the live tbd_gate_it -- not inferred. T-399 fixed ONE instance; these are the rest of the class. The one-line rule: ASC ordering over a never-pruned table is the poison. (Inversion worth recording: handlers/audit.rs:65 orders id DESC, so residue pushes OLD rows off the page and never new ones -- missions.rs:1067 is safe by construction because of it.)\n\n1. apps/website/api/tests/missions.rs:151 -- GET /api/v1/missions .any(id). handlers/missions.rs:266 is ORDER BY updated_at DESC LIMIT 20, and updated_at is NULLABLE WITH NO DEFAULT, so Postgres sorts NULLS FIRST on DESC. Ratchets at 20 missions with NULL updated_at. MEASURED 2 today ('Null Op'), and they ARE rows 1-2 of page 1 right now. Held at 2 only because null_tolerance.rs's boot() wipes its own rows. 845 live missions and growing.\n2. apps/website/api/tests/missions.rs:249 -- ?scope=bookmarked, same handler, same ordering. Ratchets at 20 bookmarks for user 000000000000000001. Accumulates only when the test fails before its DELETE .../bookmark -- SELF-REINFORCING, identical shape to T-399.\n3. apps/website/api/tests/dashboard_reads.rs:83-85 -- ALREADY FIRED AND PAPERED OVER. The comment reads 'next_event key is always present (null-safe); its value depends on shared-DB state'. Someone hit handlers/dashboard.rs:54's global ORDER BY start_time ASC LIMIT 1 and WEAKENED THE ASSERTION to key-presence rather than scoping it. Threshold is 1: any residue event with an earlier start_time wins. 558 events live. The dashboard's 'next operation' is effectively untested -- this is a genuine coverage hole, not just test hygiene, and is the highest-value item here.\n4. handlers/events.rs:837/850 -- GET /api/v1/events default scope is ORDER BY e.start_time ASC LIMIT 20 OFFSET 0, exactly the approvals shape, over a table at 558 rows most sharing hardcoded fixture start_times. Already past 20. No test asserts against this list today, so it is a LOADED GUN, not a fired one: the first 'my event is in GET /api/v1/events' assertion anyone writes is red on arrival.\n5. apps/website/api/tests/admin_field.rs:335 -- GET /admin/users?q=Target%20Z then .find(discord_id); handlers/admin.rs:87 ORDER BY username ASC LIMIT 20. Measured 1 match, unreachable because the fixture upserts a fixed id. Same construction, benign -- listed for completeness, no action.\n6. apps/website/api/tests/registry_compat.rs:312/353/383/582 -- exact len() == 10604/529/1857. DIFFERENT MECHANISM (fixed-UUID DELETE-and-reimport race, already documented at scripts/platform/wave.sh:522-525), listed so the two are not conflated.\n\nTHE PATTERN TO PROPAGATE: misc_integration.rs:258-274's boot_servers(tag) deletes only 'T235 {tag}%' and comments why a blanket DELETE FROM servers would break telemetry.rs and admin_field.rs. factions.rs:18 is residue-proof but does an UNSCOPED DELETE FROM user_factions, which would wipe a concurrent sibling's rows -- misc_integration's tag-scoped version is the better model.\n\nREPRO (the live one): psql -d tbd_gate_it -c \\\"SELECT count(*) FROM missions WHERE updated_at IS NULL AND deleted_at IS NULL\\\" -- at 20 this reds missions.rs:151 permanently.\n\n== ADDED 2026-07-26 (wave 5): a THIRD instance, and it is the one that actually reds the wave gate ==\napps/website/api/tests/missions.rs:1002 `mission_submit_is_the_only_door_into_the_approvals_queue` reads page 1 of a limit:20 GET /approvals. MEASURED on tbd_gate_it during wave 5: total 26 -- the test's own mission is on page 2.\n  test api  FAIL\n    panicked at apps/website/api/tests/missions.rs:1002\n    submitted mission missing from GET /approvals: {... \"limit\":20,\"offset\":0,\"total\":26}\nT-399's sweep caught missions.rs:151 and :249 but MISSED this one. Every wave gate on this machine is red against the shared DB until the residue clears or the test paginates; waves 3, 4 and 5 all passed only because the command center pointed TBD_GATE_DB at a fresh cold database each time. That workaround is exactly why T-411 (per-wave DB names) matters.",
       "program": "platform",
       "surfaces": [
         "API",
@@ -11403,6 +11403,127 @@
       ],
       "executor": "claude-code",
       "priority": 2
+    },
+    {
+      "id": "T-420",
+      "title": "The wave gate validates no schema — 11 green steps over a schema change it never examined",
+      "summary": "BLOCKER by the standing rule: a gate that reports success on code it never examined. Found 2026-07-26 during wave 5 when T-244's slice turned `xtask schema map-object-enums` RED and NOTHING in the gate noticed.\n\nMEASURED: `grep -c 'xtask schema' scripts/platform/wave.sh` -> 0. cmd_gate's eleven steps are cargo check, wasm32 (frontend), fmt (changed), clippy api/map-engine/frontend, test api/map-engine/frontend, trunk build, ticket registry. Not one validates a schema.\n\nCONSEQUENCE, already realised twice:\n  - Wave 4's gate printed GATE: PASS 11/11 on a wave whose HEADLINE DELIVERABLE was T-241's mission.schema.json change. The only evidence that schema is valid is that T-241's agent ran `xtask schema validate` itself and said so. That is testimony, not gate evidence -- and PLATFORM_FACTORY.md's own rule is that agent reports are evidence, not testimony.\n  - T-244 (wave 5) added a `vehicle` kind and would have merged with `make schema-validate` RED. Its slice gate passed because its diff is 0 .rs files, so fmt and clippy are change-scoped and examined nothing. It caught this only because the agent ran the schema gates by hand.\n\nTHE OBVIOUS FIX IS ITSELF VACUOUS -- this is the trap, do not fall into it. On T-244's branch `xtask schema validate` PASSED while `xtask schema map-object-enums` FAILED. So adding only `xtask schema validate` would install something that LOOKS like a schema gate and would NOT have caught the very defect that motivated it. The step must cover the sub-gates that actually fail.\n\nCONSTRAINT that makes this non-trivial: at least one schema sub-gate is red on main today for unrelated reasons. `xtask schema height-labels` fails with 'PNG decode: Invalid PNG signature' because the DEM asset is an LFS pointer and git-lfs is absent from the container PATH. Adding a step that is already red would red every future wave -- which is precisely T-409's failure mode (guards that refuse legitimate work). So the slice must determine which sub-gates are BOTH meaningful AND currently green, add those, and record why each excluded one is excluded.\n\nNOT THIS TICKET: T-409 covers wave.sh's false-red hard-fails from T-406. Same file, different defect. Sequence them; do not merge the two.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "shipped",
+      "order": 3250,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-421",
+      "title": "BLOCKER: the wave gate's cargo check and clippy can PASS on source they never compiled",
+      "summary": "THE ALWAYS-BLOCKER CLASS, and the most serious finding of the 2026-07-26 run. Found by wave 5's adversarial verifier after TWO slice agents independently measured the same mechanism.\n\n`scripts/platform/wave.sh:517` asserts: 'cargo check/clippy do not need one because they emit no binary to run.' THAT REASONING IS WRONG. The exposure is not about RUNNING a binary. Cargo's freshness test is mtime-based over a `.fingerprint` directory that IS SHARED ACROSS WORKTREES, so a check step can return a verdict about a file it never opened.\n\nREPRO A -- same tree, mtime alone:\n  export CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target\n  cp -p crates/map-engine-core/src/slot_line.rs /tmp/sl.orig\n  printf '\\nTHIS IS NOT RUST AND CANNOT COMPILE ###\\n' >> crates/map-engine-core/src/slot_line.rs\n  touch -r /tmp/sl.orig crates/map-engine-core/src/slot_line.rs     # keep the ORIGINAL mtime\n  cargo check --workspace --quiet ; echo $?    # -> 0    PASS over unparseable Rust\n  touch crates/map-engine-core/src/slot_line.rs                     # identical bytes, mtime=now\n  cargo check --workspace --quiet ; echo $?    # -> 101  \"reserved multi-hash token is forbidden\"\nThe gate's own clippy line returned rc=0 over that same unparseable file.\n\nREPRO B -- cross-worktree, the real mechanism, no artificial dating. Added a const to the T-215 worktree's slot_line.rs, built it into the shared dir, then from main:\n  main: cargo check -p map-engine-core --features doc,mission,world  ->  Finished in 0.06s (zero work)\n  main: grep -c TBD_FOREIGN_MARKER_W5 crates/map-engine-core/src/    ->  0  (main cannot produce it)\n        grep -ac TBD_FOREIGN_MARKER_W5 target/debug/deps/libmap_engine_core-*.rmeta -> 1\nMain's cargo check stood on a sibling's rmeta.\n\nWHAT LIMITS IT (the partial defence is real, do not remove it): `touch_changed` (wave.sh:416-433) touches .rs files in $base..HEAD union `git status --porcelain`, so wave-range and dirty files ARE rebuilt. Crates with NO touched .rs file are not. In wave 5's own 12/12 run the range touched only map-engine-core, website-frontend and xtask -- `website-api` and every other workspace crate's cargo check verdict rested on artifacts of unidentified provenance.\n\nTHE SAME MECHANISM, MEASURED TWICE MORE THIS WAVE:\n  - T-420: `cargo run -q -p xtask` executed a binary its own tree cannot produce. `grep -ac vehicleClass target/debug/xtask` -> 2 while its own `xtask/src/schema_gates.rs` -> 0. `cargo build -p xtask` said 'Finished in 0.09s'. The clobber is ONE-DIRECTIONAL: whichever tree has older mtimes silently inherits the other's tool.\n  - T-244: after `git checkout` restored a perturbed file, cargo did NOT rebuild and the gate reported the PERTURBED verdict while `git status` said the tree matched HEAD. This one is worse than it looks because it undermines the program's core habit -- every perturbation loop is break/see-red/restore/see-green, and the GREEN half can be stale too.\n\nThis is the third and fourth measured instance of T-193/T-195 clobbering.\n\nFIX DIRECTION, consistent with what already exists: the repo ALREADY gives private target dirs to the expensive steps -- `target-gate-api` (8.3G), `target-gate-frontend` (1.8G), and T-420's new `target-gate-schema` (1.9G). `cargo check --workspace` and the three clippy steps are the ones still on the shared dir. Give them the same treatment, or force a full-workspace touch before the check steps. Weigh disk and cold-build cost against a gate whose verdict cannot be trusted. NOTE T-420's `gate_schema` stamp is NOT a complete model to copy -- see T-422.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "ready",
+      "order": 3260,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-422",
+      "title": "gate_schema shipped with three defects: a wrongly-excluded green gate, a silently-narrowing tripwire, and an incomplete stamp",
+      "summary": "Wave 5's T-420 added the first schema step the wave gate has ever had -- a genuinely good change, proven end-to-end by the verifier. It also shipped three defects, two of them the same family the step exists to prevent.\n\n1. MAJOR -- `wave.sh:715-725` excludes `height-labels` recording `OUT height-labels rc=1  RED ON MAIN, and not because of any slice`, diagnosing a 133-byte LFS pointer DEM. THE MEASUREMENT WAS TAKEN IN ITS OWN WORKTREE, NOT ON MAIN.\n     main:   packages/map-assets/everon/dem/everon-dem-16bit.png -> 71,911,548 bytes, magic \\x89PNG\n     T-420 worktree: same path -> 133 bytes, Jul 26 20:57 (an LFS pointer)\n     from main: `cargo run -q -p xtask -- schema height-labels`     -> rc=0  'verify-height-labels: OK'\n     from main: `cargo run -q -p xtask -- schema terrain-alignment` -> rc=0  maxDeltaM=0.204\n   So the wave gate now permanently skips a GREEN gate, and the remediation comment ('put git-lfs on PATH, make lfs-dem') sends the next maintainer after a problem that does not exist on main. NUANCE THAT MUST SURVIVE THE FIX: the concern IS real for `gate_slice`, which calls `gate_schema` from a worktree where the DEM genuinely is a pointer. The correct shape is probably per-context inclusion, not a flat exclusion list.\n\n2. MAJOR -- `wave.sh:747-756`, the drift tripwire SILENTLY NARROWS. It refuses on an EMPTY parse (that half is well-behaved and fails closed with an actionable message) but does not notice a PARTIAL one. Measured against the real Makefile, with `make -n` confirming GNU make still runs all nine:\n     blank line inside the recipe          -> tripwire sees 3 of 9   (make runs 9)\n     `# comment` at column 0 in the recipe -> tripwire sees 3 of 9   (make runs 9)\n     `... schema \\` + continuation line    -> tripwire sees 8 of 9   (make runs 9)\n   A tenth sub-gate added after a blank line is invisible to the tripwire and the gate keeps printing PASS over whatever it checks -- exactly the rot the tripwire exists to catch. The guard tests for zero when it should compare the SET.\n   MINOR, same parse: `$(XTASK) schema validate`, `--package xtask`, or renaming the target yield the empty set -> hard refuse -> every future wave red. Fails closed, so this half is acceptable.\n\n3. MINOR -- the `GATE_SCHEMA_TARGET` content stamp (`wave.sh:785-787`) hashes only `xtask/src/**.rs` + `xtask/Cargo.toml` + `Cargo.lock`, but `xtask/Cargo.toml` depends on `tbd-tools` and `map-engine-core` BY PATH. Measured: the T-215 and T-216 worktrees compute the SAME stamp (1509000383434579) while their `map-engine-core` differs, and `GATE_SCHEMA_TARGET` is `$MAIN_ROOT/target-gate-schema` for every tree -- so two slice gates can share that dir without the stamp noticing. Needs both trees to run gate_schema and the schema gates lean on map-engine-core only lightly, hence MINOR. Do not copy this stamp as a model for T-421.\n\n4. From T-420, unfixed: `.github/workflows/ci.yml:133,135` runs only `schema validate` + `citations` while `make schema-validate` runs nine. CI HAS THE SAME HOLE THIS TICKET'S PARENT CLOSED -- it would not have caught T-244 either. T-420 deliberately mirrored `make ci-local-schema` rather than ci.yml and said so.\n\nCONFIRMED SOUND, do not re-audit: the verifier reverted map-object-enums.schema.json on merged main and ran the FULL wave gate -- `schema FAIL`, `GATE: FAIL`, 9 sub-gates run, non-vacuous end to end. `GATE_SCHEMA_GATES` covers exactly `make schema-validate`'s nine minus the one declared exclusion; NO sub-gate was quietly dropped. The Makefile parse also survives @-prefixed recipes, `$(CARGO) run`, and tab-indented comments.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3261,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-423",
+      "title": "T-216's contract-floor test cannot detect the failure its own doc comment says it exists to detect",
+      "summary": "Two MINORs from wave 5's adversarial verifier, both in `crates/map-engine-core/src/mission/flatten.rs`.\n\n1. `flatten.rs:2465-2537`, `the_vehicle_row_still_has_the_shape_this_module_reads`. Its doc comment says: 'What must not happen is a rename, a retype or a removal: those compose silently... That is the failure this test exists to make loud.' PROVEN SILENT:\n     sed -i '551s/\\\"resourceName\\\"/\\\"resourceNameRENAMED\\\"/' crates/map-engine-core/src/doc/store.rs   # inside add_vehicle\n     cargo test -p map-engine-core --features doc,mission -p map-engine-render -- the_vehicle_row_still_has_the_shape_this_module_reads\n     # ... ok\n   It reads LEDGER_FIXTURE, a hand-written constant, so it can only detect T-216 disagreeing with ITSELF -- never the writer renaming the floor, which is the stated purpose. STAYS MINOR because the gate step as a whole does go red on that rename: `doc::store::tests::attach_vehicle_roundtrip` and `doc::apply_faction::tests::apply_faction_vehicles` fail (377 passed / 2 failed). The protection exists; it is not where the ticket says it is. Fix is to drive the fixture from `add_vehicle` output rather than a literal -- noting T-216's own reason for not calling it directly (a signature change would become a merge break rather than a caught disagreement), so the answer is probably a serialised round trip, not a direct call.\n\n2. `flatten.rs:2530-2536` -- the tolerance assertion is a TAUTOLOGY. It clones the fixture row into a serde_json::Value, inserts `cargo`, then asserts two OTHER keys are unchanged. No module code runs; it cannot fail. The comment says 'Asserted rather than assumed.' It is assumed.\n   The CLAIM is nonetheless TRUE for a stronger reason than the test gives, established by the verifier: `EditorPayload` (flatten.rs:591-605) is {editor, environment} and `EditorGraph` (:607-613) is {factions, squads, slots} -- THERE IS NO `vehicles` FIELD ANYWHERE IN THE READER, and `scan_editor_payload_types` is a plain `serde_json::from_slice::<EditorPayload>` with no deny_unknown_fields. So T-215's `factionId`/`cargo[]` extras cannot produce a save-time 400, and a map-placed vehicle with no `squadId` cannot be dropped by a reader that never deserialises a vehicle row at all.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3262,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-424",
+      "title": "cargo test --lib <selector> exits 0 when the selector matches zero tests, so 25 pinned checks can silently empty",
+      "summary": "Found by T-216 during wave 5 while restoring `scripts/verify-t180-coherency.sh`, and independently replicated by the wave's adversarial verifier.\n\n  cargo test -p map-engine-core --lib --features doc,mission -- zzz_no_such_test_exists_anywhere\n  # test result: ok. 0 passed; 254 filtered out          rc=0\n\n`verify-t180-coherency.sh` pins 25 such selector invocations. A typo'd or RENAMED test name prints `verify-t180 OK` having run nothing, with no guard anywhere. Same family as everything else this weekend: a check reporting success over an input it never examined.\n\nMEASURED CURRENT STATE: `grep -c 'test result: ok\\. 0 passed'` across a full run -> 0, so all 25 selectors match at least one test TODAY. Nothing holds that. A rename of any pinned test silently empties its check and the script still prints ALL PASS.\n\nCURE: a wrapper asserting `passed >= 1` per line. T-216 judged it a third structural change to that file and deliberately left it -- correctly, it belongs here.\n\nCONTEXT: this is the third gate-integrity defect found in that one script this wave. The other two are FIXED and shipped in wave 5 -- `--features doc` not enabling `mission` (the script had not compiled since T-344, so sections C/D/G/I and the whole frontend block never ran), and three static bans in `if rg ...; then fail; fi` form that printed OK when `rg` was absent from the host. Both now green: `verify-t180: ALL PASS`, rc=0, end to end, verified independently.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3263,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-425",
+      "title": "T-215's vehicle placement: the alias table flatten needs, and four authoring gaps it disclosed",
+      "summary": "Residue of wave 5's T-215, which shipped real vehicle map placement (position, faction, cargo) with a proven save/reload round trip. All of the below is disclosed by the agent or the verifier, none of it is a regression.\n\n1. BLOCKS THE EMISSION PATH -- there is no ResourceName -> `veh:` alias table. `$defs/entity.alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$`, a REGISTRY ALIAS, not a ResourceName. `kit-aliases.json` maps characters to `kit:` only; the sole `veh:m151_mg` in the repo is hardcoded in two sample files. Flatten cannot emit a valid `entity.alias` for T-215's rows until a table mirroring kit-aliases.json's shape exists. Mapping ResourceName->alias without one would drop every vehicle but m151_mg, or substitute a different one -- the T-200 silent-substitution defect with a vehicle instead of a rifleman.\n\n2. THE FLATTEN DELTA, worked out and ready to use: `cargo[]` -> `entity.inventory` byte-identical, no transform (T-215 emitted `$defs/entityInventory` verbatim). `faction` <- `factionId` stripped of the `faction-` prefix and lowercased, falling back to `squadId -> squad.factionId`. `entity.faction` is optional, so a squad-less vehicle is schema-valid without it.\n\n3. STALE PROSE in `mission.schema.json` (T-242's file, left alone): the top-level `entities` description still asserts 'the editor's vehicle row is {id, resourceName, position, squadId} ... with nowhere to author contents'. As of T-215 there is somewhere.\n\n4. PLACED VEHICLES ARE NOT SELECTABLE OR DRAGGABLE. They render (`vehicle_xy_flat` -> `vehicles_bind`) but are off the slot SoA, so pick/marquee/drag skip them. Position is authored at drop and edited only by delete-and-replace; rotation stays 0.0 because the Placed row has no heading field. Deliberate -- putting them in the slot selection would read 'SEL 1' with nothing highlighted, since that selection is the slot SoA.\n\n5. NOT VERIFIED LIVE, and it should be. Neither T-215 (its worktree could not be served -- :3000 runs from the main checkout) nor the wave verifier (browser tooling unavailable: `list_connected_browsers` returned empty on four attempts) placed a vehicle in a browser. What IS established: the served bundle is post-merge (dist rebuilt 21:17 vs merge 21:16:32) and contains `vehiclesById` x5, `factionId` x3, `cargo` x14. UNVERIFIED: that a vehicle can be placed, that it persists across reload, that cargo authoring works, and T-215's four claims in item 4. A browser pass is cheap and would close it.\n\nCONFIRMED SOUND, do not re-audit: T-215's design call that a map-placed vehicle carries NO squadId is correct and the verifier proved why. Attaching would have hit `place_orbat.rs:157-161`, where `is_open_for_placement` counts a squad holding ANY vehicle as authored -- so attaching closes the side's current squad and the next character placement mints a fresh one, silently splitting the fireteam being built around it. That is the T-321 one-squad-per-click defect.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3264,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
     }
   ]
 }

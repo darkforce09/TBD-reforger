@@ -130,7 +130,7 @@
 1	T-391	Live javascript: XSS via aar_replay_url, and zero URL validation in the API	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/services/text.rs
 2	T-236	server_fps type mismatch would silently drop every live frame	apps/website/api/src/models/telemetry.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/sse.rs; apps/website/frontend/src/server_intel.rs
 2	T-216	flatten drops leaderSlotId, tag, callsign, rank, stance and all vehicles	crates/map-engine-core/src/mission/flatten.rs
-2	T-244	No vehicle lane in the map-object catalogue	packages/tbd-schema/rules/prefab-classify.json
+2	T-244	No vehicle lane in the map-object catalogue	packages/tbd-schema/schema/map-object-enums.schema.json; packages/tbd-schema/rules/prefab-classify.json
 2	T-245	Registry fetch is unpaginated — about 7MB on every editor open	apps/website/frontend/src/mission_editor.rs
 2	T-247	POST /admin/roles/sync has no UI and no scheduler	apps/website/frontend/src/personnel.rs
 2	T-248	oauth_state cookie survives the two early-return error paths	apps/website/api/src/handlers/oauth.rs
@@ -218,3 +218,9 @@
 4	T-417	Compiled-export artifact re-sorts keys; 401 misdiagnosed as no-server-row	apps/website/frontend/src/mission_commands.rs
 4	T-418	map-engine-wasm is dead as a whole crate; compile_export briefing is a dead key	crates/map-engine-wasm/src/lib.rs; apps/website/frontend/src/mission_hydrate.rs
 4	T-419	Six mod comments assert the zones schema is open after T-241 closed it	apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c
+5	T-420	Wave gate validates no schema	scripts/platform/wave.sh
+6	T-421	Wave gate cargo check/clippy pass on source never compiled	scripts/platform/wave.sh
+6	T-422	gate_schema: wrongly-excluded green gate, narrowing tripwire, incomplete stamp	scripts/platform/wave.sh
+6	T-423	T-216 contract-floor test cannot detect a floor rename	crates/map-engine-core/src/mission/flatten.rs
+6	T-424	cargo test selectors matching zero tests exit 0	scripts/verify-t180-coherency.sh
+6	T-425	Vehicle alias table plus T-215 authoring gaps	apps/website/frontend/src/eden_chrome.rs; packages/tbd-schema/registry/kit-aliases.json
