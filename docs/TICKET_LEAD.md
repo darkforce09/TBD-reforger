@@ -9,6 +9,9 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-220** (2380) — Five more silent round-trip losses [ready] — schemaVersion is regenerated as literal 1 so a stored 2 downgrades; map.bounds is recomputed and other map.* keys dropped; array order is not preserved (preserve_order is on in xtask/tools but not in map-engine-core, frontend or api); position sub-keys die on first edit; copy/paste strips unknown slot fields. A hydrate-then-compile property test catches all of them.
+- **T-246** (2640) — push-discord skips the published check [ready] — cms.rs:268-289 force-pushes any announcement — unlike the create and patch paths it does not verify status is published, so a draft or archived post can be broadcast to the guild. It is unreachable from the SPA today, which is the only thing hiding it.
+- **T-256** (2740) — Faction library is empty on every fresh install [ready] — faction-library.sample.json is one faction, two roles, one vehicle, and both roles point at the same prefab. It is a schema fixture. There is no seed and no import path, so Load Predefined ORBAT has zero entries until someone hand-builds one.
 
 ## Next queued (top 10)
 
