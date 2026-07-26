@@ -7898,7 +7898,7 @@
       "impact": [
         "data-pipeline"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2630,
       "stream": "mission-creator",
       "targets": [
@@ -7936,7 +7936,7 @@
       "impact": [
         "discord"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2650,
       "stream": "web-platform",
       "targets": [
@@ -7955,7 +7955,7 @@
       "impact": [
         "discord"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2660,
       "stream": "web-platform",
       "targets": [

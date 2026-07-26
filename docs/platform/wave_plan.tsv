@@ -133,7 +133,7 @@
 2	T-244	No vehicle lane in the map-object catalogue	packages/tbd-schema/schema/map-object-enums.schema.json; packages/tbd-schema/rules/prefab-classify.json
 2	T-245	Registry fetch is unpaginated — about 7MB on every editor open	apps/website/frontend/src/mission_editor.rs
 2	T-247	POST /admin/roles/sync has no UI and no scheduler	apps/website/frontend/src/personnel.rs
-2	T-248	oauth_state cookie survives the two early-return error paths	apps/website/api/src/handlers/oauth.rs
+2	T-248	oauth_state cookie survives the two early-return error paths	apps/website/api/src/handlers/oauth.rs; apps/website/api/src/config.rs
 2	T-219	The editor silently deletes any top-level key it does not understand	crates/map-engine-core/src/doc/store.rs; crates/map-engine-core/src/mission/compile.rs
 3	T-239	Unticketed XSS hardening item from the Go purge	apps/website/api/src/services/text.rs; apps/website/api/src/handlers/cms.rs
 3	T-230	Attendance marks every mission in the event and breaks the roster counters	apps/website/api/src/handlers/telemetry.rs
