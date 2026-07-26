@@ -12,6 +12,12 @@
 //! `ListDetailItem` rows drive a `selected` id, and the detail pane is the reading view
 //! (tag + PINNED chip, headline, byline, body prose).
 //!
+//! **T-239 body contract — plain text, one escape at render:** `body` is authored markdown-ish
+//! plain text. CMS stores it **without** ammonia. This page renders paragraphs as Leptos **text**
+//! nodes (`{p.to_string()}`), which HTML-escape once. Do **not** switch this to `inner_html`
+//! without a real HTML sanitizer on the write path — that is the only coherent alternative to
+//! the text contract, and inventing both escapes is what produced live `a &lt; b` on screen.
+//!
 //! Selection is deliberately **not** auto-advanced to the first row (unlike `events.rs`, whose
 //! surface spec asks for it): this is the Apple-Mail port, where the resting state is "nothing
 //! opened yet", and it keeps the empty-DB golden's `SplitPaneEmpty` as the honest zero-selection
@@ -66,18 +72,28 @@ fn preview_text(p: &Value) -> String {
     body.split("\n\n").next().unwrap_or_default().to_string()
 }
 
-/// Announcement bodies are authored as markdown. Rendering it is `wiki.rs`'s `render_markdown`,
-/// which is private to that module (T-232 does not own it) — so the reader splits on blank lines
-/// and lets `whitespace-pre-line` keep single newlines, the same treatment `event_hub.rs` gives a
-/// briefing. Inline `**bold**` / backticks therefore show as written; see the report's follow-up.
-fn body_paragraphs(body: &str) -> impl IntoView + use<> {
+/// Split an announcement body into non-empty paragraphs (blank-line separated). Pure so the
+/// T-239 text-contract pin can assert bare `<` / `&` survive into the strings Leptos will
+/// text-escape once — never pre-escaped as `&lt;` / `&amp;`.
+fn body_paragraph_texts(body: &str) -> Vec<String> {
     body.split("\n\n")
         .map(str::trim)
         .filter(|p| !p.is_empty())
+        .map(|p| p.to_string())
+        .collect()
+}
+
+/// Announcement bodies are authored as markdown-ish plain text (T-239). Full markdown rendering
+/// lives in `wiki.rs`'s private `render_markdown` — this reader splits on blank lines and lets
+/// `whitespace-pre-line` keep single newlines, the same treatment `event_hub.rs` gives a briefing.
+/// Inline `**bold**` / backticks therefore show as written. Each paragraph is a **text** node.
+fn body_paragraphs(body: &str) -> impl IntoView + use<> {
+    body_paragraph_texts(body)
+        .into_iter()
         .map(|p| {
             view! {
                 <p class="whitespace-pre-line text-sm leading-relaxed text-on-surface-variant">
-                    {p.to_string()}
+                    {p}
                 </p>
             }
         })
@@ -300,5 +316,33 @@ fn reader(p: &Value) -> impl IntoView + use<> {
                 })}
             <div class="flex flex-col gap-4">{body_paragraphs(&body)}</div>
         </article>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    /// T-239: the strings fed to Leptos text nodes must still contain bare `<` / `&`.
+    /// RED: pretreat with HTML-escaping before split — this fails on `&lt;`.
+    #[test]
+    fn body_paragraphs_preserve_bare_angle_brackets() {
+        let authored = "Damage: a < b & c > d\n\nSecond paragraph.";
+        let paras = body_paragraph_texts(authored);
+        assert_eq!(paras.len(), 2);
+        assert_eq!(paras[0], "Damage: a < b & c > d");
+        assert!(!paras[0].contains("&lt;"));
+        assert!(!paras[0].contains("&amp;"));
+    }
+
+    #[test]
+    fn preview_prefers_snippet_but_falls_back_to_body_without_entities() {
+        let with_snip = json!({"snippet": "teaser < ok", "body": "ignored"});
+        assert_eq!(preview_text(&with_snip), "teaser < ok");
+
+        let from_body = json!({"snippet": "", "body": "a < b\n\nmore"});
+        assert_eq!(preview_text(&from_body), "a < b");
+        assert!(!preview_text(&from_body).contains("&lt;"));
     }
 }
