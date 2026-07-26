@@ -139,6 +139,12 @@ pub fn save_now(
                 // signal so a later Export/adopt uses it.
                 crate::mission_history::set_dirty(false);
                 crate::editor_session::mark_adopted(&mission_id, Some(&semver));
+                // T-191 fix — expire the conflict backup pair. This 201 is the one moment those
+                // whole-document IDB records stop being anybody's last copy, and nothing else ever
+                // deleted them: they accumulated one doc per mission ever conflicted, forever, while
+                // `__missionBackup.has()` kept offering a weeks-old document that a restore would
+                // swap over current work. Rationale in `mission_hydrate::clear_local_backups`.
+                crate::mission_hydrate::clear_local_backups(&mission_id);
                 if let Some(sig) = semver_signal() {
                     sig.set(Some(semver.clone()));
                 }

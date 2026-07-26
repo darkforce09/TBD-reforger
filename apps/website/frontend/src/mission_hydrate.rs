@@ -25,6 +25,22 @@
 //! no local work to lose, and a step there would make the user's first Ctrl+Z resurrect the 8 seed
 //! slots.
 //!
+//! **T-191 fix pass — the recovery lever was itself a one-way door.** Two defects the first pass
+//! shipped, both in the restore half:
+//!
+//!   * [`restore_local_backup`] swapped in a fresh core and re-armed the persist over the plain
+//!     `<id>` record. That dropped the old core (and with it the adopt's undo step — a fresh core's
+//!     stack is empty, so `can_undo()` was false the instant a restore landed) and then overwrote
+//!     the only remaining copy of the document it had just replaced. A user who restored and was
+//!     wrong about it had nothing left: this ticket's own title, one level down. The two snapshot
+//!     slots are now a **pair** ([`Snapshot`]) — every swap writes what it displaces into the other
+//!     slot, so restore and un-restore are exact inverses and neither record is ever consumed.
+//!   * Nothing ever expired `<id>::pre-adopt`, and [`restore_local_backup`] took a `mission_id` on
+//!     trust while sourcing the document to overwrite from a never-cleared `HISTORY_CTX` — so a call
+//!     carrying mission A's id while mission B was open wrote A's whole document into B. Now
+//!     [`clear_local_backups`] expires the records on a successful Save, and every restore refuses
+//!     (loudly) unless it is the live editor's own mission ([`live_editor_is`]).
+//!
 //! **Known gap, owned elsewhere:** the conflict modal itself (`mission_editor.rs`) still offers two
 //! buttons with no diff and no change count, so the user still chooses blind — this slice only makes
 //! the wrong choice survivable.
@@ -34,6 +50,7 @@
 #![cfg(target_arch = "wasm32")]
 
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -76,8 +93,10 @@ pub async fn hydrate_from_server(
 ) {
     // T-191 — the recovery bridge is registered on every editor boot, not only when a conflict
     // fires: after a reload the in-memory snapshot is gone and the IDB record is the only copy, and
-    // that reload is exactly when someone reaches for it.
-    register_mission_backup(id.clone());
+    // that reload is exactly when someone reaches for it. It also re-binds the live-editor identity
+    // every boot (`doc` is the very `Rc` `on_load` handed `mission_history::set_ctx`), which is what
+    // makes the cross-mission refusal in `restore_snapshot` exact rather than best-effort.
+    register_mission_backup(id.clone(), &doc);
     if !is_uuid(&id) {
         return;
     }
@@ -142,9 +161,9 @@ pub async fn hydrate_from_server(
 /// payload, adopt it, and mark clean. Clears the conflict signal.
 ///
 /// T-191: this is the only adopt that runs over *live local work*, so it is the only one that takes
-/// a [`snapshot_local_before_adopt`] and the only one that runs [`Adopt::Undoable`]. Both happen
-/// before the conflict signal is cleared, so a failure to encode cannot leave the dialog gone AND the
-/// work unrecoverable.
+/// a [`snapshot_local`] and the only one that runs [`Adopt::Undoable`]. Both happen before the
+/// conflict signal is cleared, so a failure to encode cannot leave the dialog gone AND the work
+/// unrecoverable.
 pub fn resolve_conflict_server(
     id: String,
     conflict: RwSignal<Option<crate::mission_editor::ConflictInfo>>,
@@ -153,9 +172,16 @@ pub fn resolve_conflict_server(
         conflict.get_untracked(),
         crate::mission_history::doc_handle(),
     ) {
+        // A new adopt opens a new restore cycle, so the counterpart slot — which holds whatever
+        // document the PREVIOUS restore displaced — is now stale: `undoRestore()` would put a server
+        // version from a cycle ago over current work. Drop it before the new pair is written. Safe
+        // to delete and only this: `pre-restore` always holds an *adopted server* document, which is
+        // one refetch away; `pre-adopt` is local work that exists nowhere else and is never dropped
+        // here.
+        forget_snapshot(&id, Snapshot::PreRestore);
         // Capture the WHOLE local document before `hydrate` clears it. Synchronous encode (so the
         // bytes are pre-mutation by construction), deferred IDB write, own record key.
-        let saved = snapshot_local_before_adopt(&doc, &id);
+        let saved = snapshot_local(&doc, &id, Snapshot::PreAdopt);
         // The payload carries its own map.terrain; the compile drops the title, so leave the
         // existing title untouched (row meta isn't refetched here).
         adopt_payload(&doc, &c.payload_json, &RowMeta::default(), Adopt::Undoable);
@@ -286,39 +312,162 @@ fn opt(s: &str) -> Option<String> {
     (!s.is_empty()).then(|| s.to_string())
 }
 
-/* ─────────────────── T-191 — pre-adopt local backup + restore ─────────────────── */
+/* ─────────── T-191 — pre-adopt / pre-restore local backup + restore ─────────── */
 
-/// IndexedDB record key for the pre-adopt snapshot. Same DB/store as the live doc
-/// (`tbd-mission-yrs` / `doc-state`, out-of-line keys) but a **suffixed** key, which is the whole
-/// point: the debounced editor persist re-arms on the adopt and rewrites the plain mission id a few
-/// seconds later, and that write must not be able to reach this record. A mission id is a UUID
-/// (`is_uuid`), so the suffix can never collide with a real one.
-fn backup_key(mission_id: &str) -> String {
-    format!("{mission_id}::pre-adopt")
+/// Which destructive whole-document replacement a snapshot is the escape hatch from.
+///
+/// Both records live in the same IndexedDB DB/store as the live doc (`tbd-mission-yrs` /
+/// `doc-state`, out-of-line keys) but under a **suffixed** key, which is the whole point: the
+/// debounced editor persist re-arms on every swap and rewrites the plain mission id a few seconds
+/// later, and that write must not be able to reach either record. A mission id is a UUID
+/// (`is_uuid`), so neither suffix can collide with a real one.
+///
+/// The two are a **pair, not a stack.** Every swap in [`restore_snapshot`] writes the document it
+/// displaces into the *other* slot ([`Snapshot::counterpart`]), so restore and un-restore are exact
+/// inverses: the door swings both ways however many times it is pushed, and neither record is ever
+/// consumed by reading it. This is what the first T-191 pass was missing — it built the escape hatch
+/// for the adopt and then made the escape hatch itself a one-way door.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Snapshot {
+    /// The local work, captured before the conflict adopt replaces it with the server payload.
+    /// Local work exists nowhere else, so this is the record that actually matters — it is never
+    /// deleted except by an explicit Save ([`clear_local_backups`]).
+    PreAdopt,
+    /// The adopted (server) document, captured before a restore replaces it with [`Self::PreAdopt`].
+    ///
+    /// Cheap to lose relative to its counterpart — a server version is always one refetch away —
+    /// which is why this is the slot [`resolve_conflict_server`] is allowed to invalidate when a new
+    /// conflict opens a new restore cycle.
+    PreRestore,
 }
 
-/// The in-memory half of the snapshot — an instant, IDB-independent restore for the session that
-/// took the adopt. Keyed by mission id so navigating to another mission can't restore the wrong doc.
+impl Snapshot {
+    /// The IDB key suffix. Distinct literals rather than a derived name: these strings are the
+    /// on-disk contract for records that are read back after a reload.
+    fn suffix(self) -> &'static str {
+        match self {
+            Self::PreAdopt => "::pre-adopt",
+            Self::PreRestore => "::pre-restore",
+        }
+    }
+
+    /// Human-readable name for the refusal message / warnings.
+    fn label(self) -> &'static str {
+        match self {
+            Self::PreAdopt => "pre-adopt",
+            Self::PreRestore => "pre-restore",
+        }
+    }
+
+    /// The slot a restore of `self` must write its displaced document into — i.e. the source slot of
+    /// the inverse verb. `PreAdopt ⇄ PreRestore`.
+    fn counterpart(self) -> Self {
+        match self {
+            Self::PreAdopt => Self::PreRestore,
+            Self::PreRestore => Self::PreAdopt,
+        }
+    }
+}
+
+/// IndexedDB record key for one snapshot slot of one mission.
+fn backup_key(mission_id: &str, kind: Snapshot) -> String {
+    format!("{mission_id}{}", kind.suffix())
+}
+
+/// The in-memory half of a snapshot — an instant, IDB-independent restore for the session that took
+/// the swap. Keyed by mission id **and** kind: by mission so navigating to another mission can't
+/// restore the wrong doc, by kind so the two slots of the pair can't shadow each other.
 struct LocalBackup {
     mission_id: String,
+    kind: Snapshot,
     bytes: Vec<u8>,
 }
 
-thread_local! {
-    static LOCAL_BACKUP: RefCell<Option<LocalBackup>> = const { RefCell::new(None) };
+/// The editor mount this module's recovery surface is bound to: the mission id, plus the very
+/// `DocHandle` `mission_editor::on_load` built for it (the same `Rc` it hands
+/// `mission_history::set_ctx`). Re-registered on every boot by [`register_mission_backup`] — see
+/// [`live_editor_is`] for what the pair proves and why the id alone is not enough.
+struct LiveEditor {
+    mission_id: String,
+    doc: DocHandle,
 }
 
-/// Capture the whole local document **before** a destructive adopt.
+thread_local! {
+    static LOCAL_BACKUPS: RefCell<Vec<LocalBackup>> = const { RefCell::new(Vec::new()) };
+    static LIVE_EDITOR: RefCell<Option<LiveEditor>> = const { RefCell::new(None) };
+}
+
+/// Write (replacing) the in-memory copy of one slot.
+fn remember(mission_id: &str, kind: Snapshot, bytes: Vec<u8>) {
+    LOCAL_BACKUPS.with(|b| {
+        let mut slots = b.borrow_mut();
+        slots.retain(|s| s.mission_id != mission_id || s.kind != kind);
+        slots.push(LocalBackup {
+            mission_id: mission_id.to_string(),
+            kind,
+            bytes,
+        });
+    });
+}
+
+/// Read the in-memory copy of one slot, if this session took it.
+fn recall(mission_id: &str, kind: Snapshot) -> Option<Vec<u8>> {
+    LOCAL_BACKUPS.with(|b| {
+        b.borrow()
+            .iter()
+            .find(|s| s.mission_id == mission_id && s.kind == kind)
+            .map(|s| s.bytes.clone())
+    })
+}
+
+/// Drop one slot, in memory and on disk. In-memory first and synchronously, so [`has_snapshot`]
+/// tells the truth on the very next line; the IDB delete is deferred and best-effort (a failed
+/// delete leaves a stale record — the pre-existing behaviour, not a new failure mode).
+fn forget_snapshot(mission_id: &str, kind: Snapshot) {
+    LOCAL_BACKUPS.with(|b| {
+        b.borrow_mut()
+            .retain(|s| s.mission_id != mission_id || s.kind != kind);
+    });
+    let key = backup_key(mission_id, kind);
+    spawn_local(async move {
+        if let Err(e) = crate::yrs_persist::clear_state(&key).await {
+            web_sys::console::warn_1(&JsValue::from_str(&format!(
+                "[t191] backup clear failed for {key}: {e:?}"
+            )));
+        }
+    });
+}
+
+/// Expire **every** snapshot on record for `mission_id` — the expiry these records never had.
+///
+/// Called from `mission_commands::save_now` on a 201, which is the one moment the snapshots stop
+/// being anybody's last copy: the document in front of the user is now an immutable server version,
+/// and a server version is one refetch away. Before this, nothing deleted `<id>::pre-adopt` at all
+/// (grep-verified) — it accumulated one whole-document copy per mission ever conflicted, forever,
+/// and `window.__missionBackup.has()` kept answering `true` for a document from weeks ago that a
+/// restore would then swap over good current work.
+///
+/// **The accepted cost:** if the user adopted the server version, kept working on it, and saved,
+/// their pre-conflict local work is only in `pre-adopt` and this drops it. That is the deliberate
+/// reading of a Save — an explicit act that names one document as the one — and the alternative
+/// (never expire) is both the unbounded-growth defect and a live hazard, because the older the
+/// record gets the more likely restoring it is the destructive move.
+pub fn clear_local_backups(mission_id: &str) {
+    forget_snapshot(mission_id, Snapshot::PreAdopt);
+    forget_snapshot(mission_id, Snapshot::PreRestore);
+}
+
+/// Capture the whole live document **before** a destructive whole-document replacement.
 ///
 /// `encode_state()` is the same v1 update stream the persist layer stores and the boot seam replays
 /// (`mission_editor` step 1), so a snapshot is restorable by exactly the path the editor already
 /// proves on every warm reload — no new serialization format, no new trust.
 ///
-/// The encode is synchronous and runs before any mutation, so the bytes are pre-adopt by
+/// The encode is synchronous and runs before any mutation, so the bytes are pre-swap by
 /// construction; only the IDB write is deferred. Returns the slot count captured, or `None` when
 /// there was nothing to write (an empty blob would only replace a good record with a bad one — the
 /// `yrs_persist::run_save` rule).
-fn snapshot_local_before_adopt(doc: &DocHandle, mission_id: &str) -> Option<usize> {
+fn snapshot_local(doc: &DocHandle, mission_id: &str, kind: Snapshot) -> Option<usize> {
     let (bytes, slots) = {
         let guard = doc.borrow();
         let core = guard.as_ref()?;
@@ -327,55 +476,109 @@ fn snapshot_local_before_adopt(doc: &DocHandle, mission_id: &str) -> Option<usiz
     if bytes.is_empty() {
         return None;
     }
-    LOCAL_BACKUP.with(|b| {
-        *b.borrow_mut() = Some(LocalBackup {
-            mission_id: mission_id.to_string(),
-            bytes: bytes.clone(),
-        });
-    });
-    let key = backup_key(mission_id);
+    remember(mission_id, kind, bytes.clone());
+    let key = backup_key(mission_id, kind);
     spawn_local(async move {
         if let Err(e) = crate::yrs_persist::save_state(&key, &bytes).await {
-            // Non-fatal: the in-memory copy and the undo step are both still standing.
+            // Non-fatal: the in-memory copy (and, for a pre-adopt, the undo step) still stands.
             web_sys::console::warn_1(&JsValue::from_str(&format!(
-                "[t191] pre-adopt backup save failed: {e:?}"
+                "[t191] backup save failed for {key}: {e:?}"
             )));
         }
     });
     Some(slots)
 }
 
-/// Is a pre-adopt snapshot on record for `mission_id`? Checks the in-session copy first, then IDB
+/// Is a snapshot of `kind` on record for `mission_id`? Checks the in-session copy first, then IDB
 /// (the copy that outlives a reload).
-async fn has_local_backup(mission_id: &str) -> bool {
-    let in_memory = LOCAL_BACKUP.with(|b| {
-        b.borrow()
-            .as_ref()
-            .is_some_and(|s| s.mission_id == mission_id)
-    });
-    if in_memory {
+async fn has_snapshot(mission_id: &str, kind: Snapshot) -> bool {
+    if recall(mission_id, kind).is_some() {
         return true;
     }
-    crate::yrs_persist::load_state(&backup_key(mission_id))
+    crate::yrs_persist::load_state(&backup_key(mission_id, kind))
         .await
         .is_some_and(|b| !b.is_empty())
 }
 
-/// Restore the pre-adopt snapshot over the live document — the "I did not mean that" lever. Prefers
-/// the in-session copy, falls back to the IDB record. `true` when the document was replaced.
+/// Bind the recovery surface to the editor mount that is booting. Called from
+/// [`register_mission_backup`], i.e. once per editor boot, with the `DocHandle` `on_load` created
+/// for this mission — so the pair is the live editor by construction, never a stale capture.
+fn set_live_editor(mission_id: &str, doc: &DocHandle) {
+    LIVE_EDITOR.with(|e| {
+        *e.borrow_mut() = Some(LiveEditor {
+            mission_id: mission_id.to_string(),
+            doc: doc.clone(),
+        });
+    });
+}
+
+/// Is `mission_id` the mission the live editor is showing — and is the document
+/// `mission_history::doc_handle()` resolves the one that mission booted with?
+///
+/// Both halves are load-bearing. [`restore_snapshot`] is not handed a document: it is handed an id,
+/// and it asks `HISTORY_CTX` for somewhere to put the bytes. `HISTORY_CTX` follows the LIVE editor
+/// and is never cleared, so before this guard a call carrying mission A's id while mission B was
+/// open wrote A's entire document into B's `Rc` — and B's own debounced persist then committed it
+/// under B's key. Silent, total data loss on a mission the user never even conflicted on.
+///
+///   * The **id** check catches the stale caller (a `.forget()`'d closure from a previous mount, or
+///     the in-product "Undo this" button this slice's surface is a placeholder for).
+///   * The **`Rc::ptr_eq`** check catches the window the id alone cannot see: between
+///     `mission_history::set_ctx(B)` (synchronous in `on_load`) and this module's re-registration
+///     for B (an IDB round-trip later, inside the boot task), the id still reads `A` while the ctx
+///     doc is already B's — exactly the case that must be refused. A fresh `DocHandle` per mount
+///     makes pointer identity the exact test; the in-place `*doc.borrow_mut() = …` swaps that the
+///     IDB restore and this module perform do not disturb it.
+fn live_editor_is(mission_id: &str) -> bool {
+    let Some(ctx_doc) = crate::mission_history::doc_handle() else {
+        return false;
+    };
+    LIVE_EDITOR.with(|e| {
+        e.borrow()
+            .as_ref()
+            .is_some_and(|live| live.mission_id == mission_id && Rc::ptr_eq(&live.doc, &ctx_doc))
+    })
+}
+
+/// Restore the pre-adopt snapshot over the live document — the "I did not mean that" lever for the
+/// conflict adopt. Prefers the in-session copy, falls back to the IDB record. `true` when the
+/// document was replaced.
 ///
 /// The snapshot is **not** consumed: after a restore the server version is still one refetch away,
-/// while the local work exists nowhere else, so the safer record to keep is this one.
+/// while the local work exists nowhere else, so the safer record to keep is this one. What the
+/// restore displaces is written to `<id>::pre-restore` first — see [`restore_snapshot`].
 pub async fn restore_local_backup(mission_id: String) -> bool {
-    let cached = LOCAL_BACKUP.with(|b| {
-        b.borrow()
-            .as_ref()
-            .filter(|s| s.mission_id == mission_id)
-            .map(|s| s.bytes.clone())
-    });
-    let bytes = match cached {
+    restore_snapshot(mission_id, Snapshot::PreAdopt).await
+}
+
+/// Undo a [`restore_local_backup`]: put back the (server) document that restore displaced.
+///
+/// The inverse verb, and the reason a restore is now as reversible as the adopt it recovers from.
+/// It is a true inverse, not a rollback — it snapshots the document *it* displaces into
+/// `<id>::pre-adopt` on the way through, so a user who restores, edits for an hour and then changes
+/// their mind again does not lose the hour.
+pub async fn undo_local_restore(mission_id: String) -> bool {
+    restore_snapshot(mission_id, Snapshot::PreRestore).await
+}
+
+/// The shared body of both restore verbs: refuse unless this is the live editor's own mission, swap
+/// the requested snapshot in as a fresh core, and bank whatever that swap displaced in the
+/// counterpart slot.
+async fn restore_snapshot(mission_id: String, want: Snapshot) -> bool {
+    // The mismatch says so, loudly, on both channels — a silent `false` here is indistinguishable
+    // from "no backup on record", and the whole defect was that this path failed quietly.
+    if !live_editor_is(&mission_id) {
+        let msg = format!(
+            "Did not restore: the {} backup belongs to mission {mission_id}, which is not the mission that is open. Open that mission and try again.",
+            want.label()
+        );
+        web_sys::console::error_1(&JsValue::from_str(&format!("[t191] {msg}")));
+        notify(&msg);
+        return false;
+    }
+    let bytes = match recall(&mission_id, want) {
         Some(b) => b,
-        None => crate::yrs_persist::load_state(&backup_key(&mission_id))
+        None => crate::yrs_persist::load_state(&backup_key(&mission_id, want))
             .await
             .unwrap_or_default(),
     };
@@ -386,8 +589,8 @@ pub async fn restore_local_backup(mission_id: String) -> bool {
         return false;
     };
     // Rebuild as a FRESH core and swap, exactly like the boot IDB restore. Applying the update over
-    // the adopted doc would MERGE the two states — yrs is a CRDT, and replaying an old update can
-    // never delete the rows the adopt inserted — which is the one thing a restore must not do.
+    // the live doc would MERGE the two states — yrs is a CRDT, and replaying an old update can
+    // never delete the rows the live state inserted — which is the one thing a restore must not do.
     let fresh = MissionDocCore::new();
     fresh.set_origin_init(true);
     let ok = fresh.apply_update(&bytes).is_ok();
@@ -395,21 +598,44 @@ pub async fn restore_local_backup(mission_id: String) -> bool {
     if !ok {
         return false;
     }
+    // T-191 fix — bank what this swap is about to destroy BEFORE destroying it. The first pass went
+    // straight from here to the swap below, which drops the previous core (and with it the adopt's
+    // undo step: a fresh core's stack is empty, so `can_undo()` is false the moment a restore lands)
+    // and then lets `schedule_edit_persist` overwrite the plain `<id>` record — the last remaining
+    // copy. A restore the user did not mean left them nothing.
+    //
+    // Placed after the `apply_update` check rather than literally first so a corrupt blob costs
+    // nothing; the encode is still pre-swap by construction, because `fresh` is a separate core and
+    // nothing has touched `doc` yet.
+    let displaced = snapshot_local(&doc, &mission_id, want.counterpart());
     *doc.borrow_mut() = Some(fresh);
     // The local doc no longer derives from the server semver we adopted, so drop the marker or the
     // next cold boot would silently trust local against the wrong version.
     crate::editor_session::mark_adopted(&mission_id, None);
     // Wholesale document swap: rebind glyphs/HUD/docks (`after_local_edit` would be wrong — it
     // rebinds from a doc it assumes was edited in place), then mark dirty and re-arm the persist so
-    // the restored document becomes the local record rather than the adopted one.
+    // the restored document becomes the local record rather than the displaced one.
     crate::mission_history::rebind_engine_from_doc();
     crate::mission_history::set_dirty(true);
     crate::yrs_persist::schedule_edit_persist(doc, &mission_id);
-    notify("Restored your local copy. The server version is unchanged — reopen the mission to load it again.");
+    // Name the way back, for the same reason the adopt names Ctrl/Cmd+Z: a recovery nobody knows
+    // about is not a recovery.
+    let banked = match displaced {
+        Some(n) => format!(" ({n} objects)"),
+        None => String::new(),
+    };
+    notify(&match want {
+        Snapshot::PreAdopt => format!(
+            "Restored your local copy. The server version it replaced{banked} was backed up — run window.__missionBackup.undoRestore() to put it back."
+        ),
+        Snapshot::PreRestore => format!(
+            "Put the server version back. The local copy it replaced{banked} was backed up — run window.__missionBackup.restore() to return to it."
+        ),
+    });
     true
 }
 
-/// Toast without `expect_context`. [`restore_local_backup`] can be driven from a JS bridge closure,
+/// Toast without `expect_context`. [`restore_snapshot`] can be driven from a JS bridge closure,
 /// which has no reactive Owner, and `use_toasts()` would panic there — a panic in the middle of a
 /// recovery being the worst possible time for one.
 fn notify(msg: &str) {
@@ -418,17 +644,21 @@ fn notify(msg: &str) {
     }
 }
 
-/// Install `window.__missionBackup` — the recovery surface for the pre-adopt snapshot, and the peer
-/// of `__missionDoc` / `__missionPersist` / `__editorHistory` (a `js_sys::Object` of `.forget()`'d
-/// closures). Two Promise-returning verbs:
-///   * `has()`     → bool — is a pre-adopt snapshot on record for this mission?
-///   * `restore()` → bool — swap it back over the live document.
+/// Install `window.__missionBackup` — the recovery surface for the snapshot pair, and the peer of
+/// `__missionDoc` / `__missionPersist` / `__editorHistory` (a `js_sys::Object` of `.forget()`'d
+/// closures). Four Promise-returning verbs, two symmetric halves:
+///   * `has()`           → bool — is a pre-adopt snapshot on record for this mission?
+///   * `restore()`       → bool — swap it back over the live document.
+///   * `hasUndoRestore()`→ bool — is the document a restore displaced still on record?
+///   * `undoRestore()`   → bool — swap *that* back; the exact inverse of `restore()`.
 ///
 /// Unlike its read-only peers this one mutates, on purpose: a backup nobody can restore is not a
 /// backup. It is also the only surface this slice can offer — the conflict modal lives in
-/// `mission_editor.rs`, which another slice owns this wave, so the in-product "Undo this" button is
-/// a follow-up that can call [`restore_local_backup`] directly.
-fn register_mission_backup(mission_id: String) {
+/// `mission_editor.rs`, which another slice owns, so the in-product buttons are a follow-up that can
+/// call [`restore_local_backup`] / [`undo_local_restore`] directly. Both refuse a mission that is
+/// not the live one, so that follow-up cannot reintroduce the cross-mission write.
+fn register_mission_backup(mission_id: String, doc: &DocHandle) {
+    set_live_editor(&mission_id, doc);
     let obj = js_sys::Object::new();
 
     let has_fn = {
@@ -436,25 +666,61 @@ fn register_mission_backup(mission_id: String) {
         Closure::wrap(Box::new(move || -> JsValue {
             let id = id.clone();
             wasm_bindgen_futures::future_to_promise(async move {
-                Ok(JsValue::from_bool(has_local_backup(&id).await))
+                Ok(JsValue::from_bool(
+                    has_snapshot(&id, Snapshot::PreAdopt).await,
+                ))
             })
             .into()
         }) as Box<dyn FnMut() -> JsValue>)
     };
-    let restore_fn = Closure::wrap(Box::new(move || -> JsValue {
+    let restore_fn = {
+        let id = mission_id.clone();
+        Closure::wrap(Box::new(move || -> JsValue {
+            let id = id.clone();
+            wasm_bindgen_futures::future_to_promise(async move {
+                Ok(JsValue::from_bool(restore_local_backup(id).await))
+            })
+            .into()
+        }) as Box<dyn FnMut() -> JsValue>)
+    };
+    let has_undo_fn = {
+        let id = mission_id.clone();
+        Closure::wrap(Box::new(move || -> JsValue {
+            let id = id.clone();
+            wasm_bindgen_futures::future_to_promise(async move {
+                Ok(JsValue::from_bool(
+                    has_snapshot(&id, Snapshot::PreRestore).await,
+                ))
+            })
+            .into()
+        }) as Box<dyn FnMut() -> JsValue>)
+    };
+    let undo_restore_fn = Closure::wrap(Box::new(move || -> JsValue {
         let id = mission_id.clone();
         wasm_bindgen_futures::future_to_promise(async move {
-            Ok(JsValue::from_bool(restore_local_backup(id).await))
+            Ok(JsValue::from_bool(undo_local_restore(id).await))
         })
         .into()
     }) as Box<dyn FnMut() -> JsValue>);
 
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("has"), has_fn.as_ref());
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("restore"), restore_fn.as_ref());
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("hasUndoRestore"),
+        has_undo_fn.as_ref(),
+    );
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("undoRestore"),
+        undo_restore_fn.as_ref(),
+    );
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__missionBackup"), &obj);
     }
     // Read across the page lifetime; leak like every other editor bridge.
     has_fn.forget();
     restore_fn.forget();
+    has_undo_fn.forget();
+    undo_restore_fn.forget();
 }
