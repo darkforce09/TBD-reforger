@@ -664,13 +664,24 @@ pub async fn get_armory(
     Ok(Json(json!({ "data": items })))
 }
 
+/// One row of the replacement armory.
+///
+/// **`item_name` is deliberately required — do not add `#[serde(default)]` to it (T-315).**
+/// `faction`/`category`/`icon`/`sort_order` keep their defaults on purpose: those are grouping
+/// and presentation hints, and an absent one degrades a row without making it a lie. The name is
+/// the only field that makes the row *mean* anything — a row with `item_name: ""` renders in the
+/// faction dossier as a blank line the author cannot identify, cannot select and cannot delete
+/// except by replacing the whole armory again.
+///
+/// Measured on the pre-fix binary: `{"items":[{}]}` answered **200** and left exactly that —
+/// four real rows deleted, one nameless row inserted. That is the same mistake as `{}` one level
+/// down, so fixing only the outer field would have left a trivial bypass of this very fix.
 #[derive(Debug, Deserialize)]
 pub struct ArmoryItemInput {
     #[serde(default)]
     faction: String,
     #[serde(default)]
     category: String,
-    #[serde(default)]
     item_name: String,
     quantity: Option<i64>,
     #[serde(default)]
@@ -678,13 +689,31 @@ pub struct ArmoryItemInput {
     #[serde(default)]
     sort_order: i64,
 }
+
+/// The armory replacement body.
+///
+/// **`items` is deliberately required — do not add `#[serde(default)]` to it (T-315).**
+/// This is the fourth instance of one shape (T-185 roles, T-218 rejection reason, and this):
+/// a defaulted field does not decode as "no data", it decodes as an affirmative *empty* value
+/// and is then handed to a destructive write. Here the write is
+/// `DELETE FROM mission_armories WHERE mission_id = $1`, run unconditionally before the inserts,
+/// so `{}` deleted every armory row for the mission, inserted nothing, and answered **200** —
+/// silent, total and unrecoverable, since the armory is not versioned with the mission.
+///
+/// An empty armory is still a legitimate request; it just has to be *stated*. `{"items":[]}`
+/// means "clear the armory" and still succeeds. `{}` means the caller never mentioned the
+/// armory at all, and now fails to decode, which the handler maps to 400.
 #[derive(Debug, Deserialize)]
 pub struct SetArmoryInput {
-    #[serde(default)]
     items: Vec<ArmoryItemInput>,
 }
 
 /// `PUT /api/v1/missions/:id/armory` — replace the armory wholesale (author/admin).
+///
+/// Wholesale means the first statement in the transaction is an unconditional DELETE, so every
+/// way this body can be wrong is a way to lose the armory. `{"items":[]}` clears it deliberately
+/// and answers 200; a missing `items`, a blank `item_name`, a missing body, the wrong
+/// `Content-Type` and malformed JSON all answer 400 with the rows untouched (T-315).
 ///
 /// @route PUT /api/v1/missions/:id/armory
 pub async fn set_armory(
@@ -697,7 +726,31 @@ pub async fn set_armory(
     if !can_edit(&user, &m) {
         return Err(ApiError::forbidden("not your mission"));
     }
-    let Json(input) = body.map_err(|_| ApiError::bad_request("invalid body"))?;
+    // `map_err`, not `.ok().unwrap_or_default()` — the latter collapses a missing body, a wrong
+    // `Content-Type` and malformed JSON into an empty armory and writes it. This handler already
+    // had the guard; `items` losing `#[serde(default)]` above is what finally makes `{}` reach it.
+    //
+    // The message names both required fields because both now fail here: `{}` misses `items`, and
+    // `{"items":[{}]}` misses an `item_name`. Naming only the outer one sends the author of the
+    // second body looking for a field their request plainly has.
+    let Json(input) = body.map_err(|_| {
+        ApiError::bad_request("items is required, and every item needs an item_name")
+    })?;
+    // Validate every item BEFORE opening the transaction. The DELETE is the first statement in
+    // it, so validating inside the loop would mean the armory is already gone by the time the
+    // bad row is found — correct only because the transaction rolls back, and needlessly
+    // load-bearing on that. A blank name is the same lie as no name, so `trim` decides both the
+    // rejection and the stored value; the two have to agree or `" "` is rejected while `" M4 "`
+    // is stored with its padding.
+    if let Some(bad) = input
+        .items
+        .iter()
+        .position(|i| i.item_name.trim().is_empty())
+    {
+        return Err(ApiError::bad_request(format!(
+            "items[{bad}].item_name is required"
+        )));
+    }
 
     let mut tx = state.pool.begin().await?;
     sqlx::query("DELETE FROM mission_armories WHERE mission_id = $1")
@@ -712,7 +765,7 @@ pub async fn set_armory(
         .bind(m.id)
         .bind(&it.faction)
         .bind(&it.category)
-        .bind(&it.item_name)
+        .bind(it.item_name.trim())
         .bind(it.quantity)
         .bind(&it.icon)
         .bind(it.sort_order)
