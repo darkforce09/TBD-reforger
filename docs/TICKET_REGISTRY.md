@@ -2203,7 +2203,7 @@ THE SAME MECHANISM, MEASURED TWICE MORE THIS WAVE:
 This is the third and fourth measured instance of T-193/T-195 clobbering.
 
 FIX DIRECTION, consistent with what already exists: the repo ALREADY gives private target dirs to the expensive steps -- `target-gate-api` (8.3G), `target-gate-frontend` (1.8G), and T-420's new `target-gate-schema` (1.9G). `cargo check --workspace` and the three clippy steps are the ones still on the shared dir. Give them the same treatment, or force a full-workspace touch before the check steps. Weigh disk and cold-build cost against a gate whose verdict cannot be trusted. NOTE T-420's `gate_schema` stamp is NOT a complete model to copy -- see T-422. |
-| T-422 | 3261 | deferred | platform | gate_schema shipped with three defects: a wrongly-excluded green gate, a silently-narrowing tripwire, and an incomplete stamp | Wave 5's T-420 added the first schema step the wave gate has ever had -- a genuinely good change, proven end-to-end by the verifier. It also shipped three defects, two of them the same family the step exists to prevent.
+| T-422 | 3261 | shipped | platform | gate_schema shipped with three defects: a wrongly-excluded green gate, a silently-narrowing tripwire, and an incomplete stamp | Wave 5's T-420 added the first schema step the wave gate has ever had -- a genuinely good change, proven end-to-end by the verifier. It also shipped three defects, two of them the same family the step exists to prevent.
 
 1. MAJOR -- `wave.sh:715-725` excludes `height-labels` recording `OUT height-labels rc=1  RED ON MAIN, and not because of any slice`, diagnosing a 133-byte LFS pointer DEM. THE MEASUREMENT WAS TAKEN IN ITS OWN WORKTREE, NOT ON MAIN.
      main:   packages/map-assets/everon/dem/everon-dem-16bit.png -> 71,911,548 bytes, magic \x89PNG
@@ -2304,6 +2304,11 @@ Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage 
 Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
 
 Cure: delete it or replace with a non-vacuous pin (handler/IT only). |
+| T-434 | 3273 | deferred | platform | CI schema job still only validate+citations while make schema-validate runs nine | Residual from T-420/T-422. Wave gate now runs the full schema-validate set (incl. per-context height-labels). .github/workflows/ci.yml schema job still only `xtask schema validate` + citations — same hole T-420 documented.
+
+Repro: compare ci.yml schema job vs Makefile schema-validate recipe / GATE_SCHEMA_VALIDATE_GATES in wave.sh.
+
+Cure: align CI with make schema-validate (or document intentional narrowing with a tripwire). |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

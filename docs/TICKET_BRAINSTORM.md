@@ -879,30 +879,6 @@ Comment-only edit, zero behavioural risk.
 ALSO IN THE SAME FILES: TBD_MissionLoader.c:88 documents graceSeconds as 'number >= 0' but the code at :389 also rejects > MAX_GRACE_SECONDS. The header omits the ceiling. T-275-adjacent.
 
 RECORDED DECISION so it is not re-litigated: T-241 deliberately did NOT encode conditional `required` for holdSeconds and targetAlias, though both are effectively mandatory (without them the objective goes inert with an operator-facing reason). Reason: it is a different defect from T-241's, and conditional requires are the shape most likely to collide with T-201/T-211/T-212. Both keys carry the requirement in prose instead. The command center endorsed this. Enforce it when a consumer actually needs it, not before.
-- **T-422** (deferred) — gate_schema shipped with three defects: a wrongly-excluded green gate, a silently-narrowing tripwire, and an incomplete stamp [INFRA] — Wave 5's T-420 added the first schema step the wave gate has ever had -- a genuinely good change, proven end-to-end by the verifier. It also shipped three defects, two of them the same family the step exists to prevent.
-
-1. MAJOR -- `wave.sh:715-725` excludes `height-labels` recording `OUT height-labels rc=1  RED ON MAIN, and not because of any slice`, diagnosing a 133-byte LFS pointer DEM. THE MEASUREMENT WAS TAKEN IN ITS OWN WORKTREE, NOT ON MAIN.
-     main:   packages/map-assets/everon/dem/everon-dem-16bit.png -> 71,911,548 bytes, magic \x89PNG
-     T-420 worktree: same path -> 133 bytes, Jul 26 20:57 (an LFS pointer)
-     from main: `cargo run -q -p xtask -- schema height-labels`     -> rc=0  'verify-height-labels: OK'
-     from main: `cargo run -q -p xtask -- schema terrain-alignment` -> rc=0  maxDeltaM=0.204
-   So the wave gate now permanently skips a GREEN gate, and the remediation comment ('put git-lfs on PATH, make lfs-dem') sends the next maintainer after a problem that does not exist on main. NUANCE THAT MUST SURVIVE THE FIX: the concern IS real for `gate_slice`, which calls `gate_schema` from a worktree where the DEM genuinely is a pointer. The correct shape is probably per-context inclusion, not a flat exclusion list.
-
-2. MAJOR -- `wave.sh:747-756`, the drift tripwire SILENTLY NARROWS. It refuses on an EMPTY parse (that half is well-behaved and fails closed with an actionable message) but does not notice a PARTIAL one. Measured against the real Makefile, with `make -n` confirming GNU make still runs all nine:
-     blank line inside the recipe          -> tripwire sees 3 of 9   (make runs 9)
-     `# comment` at column 0 in the recipe -> tripwire sees 3 of 9   (make runs 9)
-     `... schema \` + continuation line    -> tripwire sees 8 of 9   (make runs 9)
-   A tenth sub-gate added after a blank line is invisible to the tripwire and the gate keeps printing PASS over whatever it checks -- exactly the rot the tripwire exists to catch. The guard tests for zero when it should compare the SET.
-   MINOR, same parse: `$(XTASK) schema validate`, `--package xtask`, or renaming the target yield the empty set -> hard refuse -> every future wave red. Fails closed, so this half is acceptable.
-
-3. MINOR -- the `GATE_SCHEMA_TARGET` content stamp (`wave.sh:785-787`) hashes only `xtask/src/**.rs` + `xtask/Cargo.toml` + `Cargo.lock`, but `xtask/Cargo.toml` depends on `tbd-tools` and `map-engine-core` BY PATH. Measured: the T-215 and T-216 worktrees compute the SAME stamp (1509000383434579) while their `map-engine-core` differs, and `GATE_SCHEMA_TARGET` is `$MAIN_ROOT/target-gate-schema` for every tree -- so two slice gates can share that dir without the stamp noticing. Needs both trees to run gate_schema and the schema gates lean on map-engine-core only lightly, hence MINOR. Do not copy this stamp as a model for T-421.
-
-4. From T-420, unfixed: `.github/workflows/ci.yml:133,135` runs only `schema validate` + `citations` while `make schema-validate` runs nine. CI HAS THE SAME HOLE THIS TICKET'S PARENT CLOSED -- it would not have caught T-244 either. T-420 deliberately mirrored `make ci-local-schema` rather than ci.yml and said so.
-
-CONFIRMED SOUND, do not re-audit: the verifier reverted map-object-enums.schema.json on merged main and ran the FULL wave gate -- `schema FAIL`, `GATE: FAIL`, 9 sub-gates run, non-vacuous end to end. `GATE_SCHEMA_GATES` covers exactly `make schema-validate`'s nine minus the one declared exclusion; NO sub-gate was quietly dropped. The Makefile parse also survives @-prefixed recipes, `$(CARGO) run`, and tab-indented comments.
-
-== MITIGATED IN PART 2026-07-26 by T-421, which landed after this was filed ==
-T-421's `touch_workspace` touches `xtask/src`, so `gate_schema` now genuinely rebuilds xtask every run (measured 0.11s -> 1.52s). CONSEQUENCE: defect 3 (the incomplete content stamp) can no longer hand the gate a FOREIGN xtask binary -- the mtime path it depended on is closed. The stamp is still incomplete and should still be fixed, but it is no longer the live hazard it was when filed. Defects 1 (height-labels wrongly excluded, green on main) and 2 (the silently-narrowing Makefile tripwire) are UNCHANGED and remain the reason to dispatch this.
 - **T-423** (deferred) — T-216's contract-floor test cannot detect the failure its own doc comment says it exists to detect [DATA] — Two MINORs from wave 5's adversarial verifier, both in `crates/map-engine-core/src/mission/flatten.rs`.
 
 1. `flatten.rs:2465-2537`, `the_vehicle_row_still_has_the_shape_this_module_reads`. Its doc comment says: 'What must not happen is a rename, a retype or a removal: those compose silently... That is the failure this test exists to make loud.' PROVEN SILENT:
@@ -980,6 +956,11 @@ Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage 
 Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
 
 Cure: delete it or replace with a non-vacuous pin (handler/IT only).
+- **T-434** (deferred) — CI schema job still only validate+citations while make schema-validate runs nine [INFRA, CI] — Residual from T-420/T-422. Wave gate now runs the full schema-validate set (incl. per-context height-labels). .github/workflows/ci.yml schema job still only `xtask schema validate` + citations — same hole T-420 documented.
+
+Repro: compare ci.yml schema job vs Makefile schema-validate recipe / GATE_SCHEMA_VALIDATE_GATES in wave.sh.
+
+Cure: align CI with make schema-validate (or document intentional narrowing with a tripwire).
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
