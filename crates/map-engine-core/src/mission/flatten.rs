@@ -14,6 +14,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use serde::Serialize;
 
 use crate::mission::kit::load_kit_aliases;
+use crate::mission::wire_safety::is_wire_unsafe;
 
 // ---- output document types (camelCase — the game-server contract) ----
 
@@ -253,6 +254,221 @@ pub struct ModWinConditions {
     pub end_on: Vec<String>,
 }
 
+// ---- T-200: the kit substitutions this compile made ----
+
+/// One character the author placed that `kit-aliases.json` has no row for, and the faction
+/// default the compile used instead.
+///
+/// Deduped on `(asset_id, faction)` and not on the asset alone: the same prefab placed on two
+/// sides resolves to two DIFFERENT faction defaults, so those are two distinct substitutions and
+/// collapsing them would hide one of them behind the other's kit.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KitSubstitution {
+    /// The full Enfusion ResourceName the author placed — verbatim, because it is exactly the
+    /// string a new `kit-aliases.json` row has to carry to make this stop happening.
+    pub asset_id: String,
+    /// The slugged faction key whose default was used.
+    pub faction: String,
+    /// The `kit:` alias that reached `slots[].kit` and `orbat.*.groups[].roles[].kit` instead.
+    pub kit: String,
+    /// Derived id (`faction:callsign:role:occurrence`) of the FIRST slot that hit this pair —
+    /// the same string the compiled document carries in `slots[].id`, so a reader holding the
+    /// document can find the seat this is talking about.
+    pub example_slot_id: String,
+    /// That slot's editor id, as carried to `slots[].uid`. Kept alongside `example_slot_id`
+    /// because the derived id shifts under role renames/reorders/deletes and this one does not.
+    pub example_slot_uid: String,
+    /// How many slots in this compile resolved through this same pair.
+    pub occurrences: usize,
+}
+
+/// Distinct `(assetId, faction)` pairs named before the report stops listing them. The same 20 as
+/// [`crate::mission::wire_safety::MAX_REPORTED`] and the `/compiled` handler's finding cap,
+/// because these lines land in the same places those do. Nothing is lost to the cap:
+/// [`KitSubstitutionReport::slots`] counts EVERY substituted slot, so the tail line can say
+/// exactly how many the list does not name.
+const MAX_REPORTED_SUBSTITUTIONS: usize = 20;
+
+/// What [`flatten_to_mod_document`] silently swallowed before T-200.
+///
+/// ── Why this is a report and not an error ────────────────────────────────────────────────────
+/// **342 of the 354 `kind: "character"` rows** in `packages/tbd-schema/registry/
+/// registry-items.workbench.json` have no `kit-aliases.json` row (measured 2026-07-26; 12 aliases,
+/// 8 of them pre-T-183). The palette offers all 354. So the substitution is not a rare defect to
+/// fail on — it is what happens to almost every character an author can place, and rejecting it
+/// would make the editor's own asset browser mostly unusable. The compile is also not *wrong* to
+/// substitute: `mission.schema.json` requires `slots[].kit` to match `^kit:[a-z0-9_]+$`, and the
+/// faction default is the only value on hand that does. What was wrong is that nobody was told.
+///
+/// ── Why it does not ride the wire ───────────────────────────────────────────────────────────
+/// `mission.schema.json` sets top-level `additionalProperties: false`, and
+/// `validated_compiled_body` (`apps/website/api/src/handlers/missions.rs`) holds the SERIALIZED
+/// document to that schema before serving it and answers **500** on any finding. A new top-level
+/// key would therefore turn every `GET /missions/:id/compiled` into a 500 — so this rides the
+/// returned Rust value with `#[serde(skip)]` instead, and the served bytes are byte-identical to
+/// what they were before this ticket. Pinned by `substitutions_never_reach_the_compiled_wire`.
+///
+/// ── Why it hangs off the document rather than a second entry point ──────────────────────────
+/// `flatten_to_mod_document`'s signature is the spine of three consumers (`/compiled`, the event
+/// ORBAT derivation in `handlers/events.rs`, and the wasm client via
+/// [`flatten_mod_document_json`]). A `-> Result<(Doc, Report), _>` would have changed all of them
+/// and every test that calls it; a parallel `flatten_to_mod_document_with_report` would be a
+/// second entry point to keep in step with the first. Riding the value that already comes back
+/// means every existing caller ALREADY holds this — surfacing it is `doc.kit_substitutions` at
+/// the call site, with no signature to renegotiate.
+#[derive(Debug, Clone, Default)]
+pub struct KitSubstitutionReport {
+    rows: Vec<KitSubstitution>,
+    slots: usize,
+}
+
+impl KitSubstitutionReport {
+    /// True when every placed character resolved to its own kit.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.slots == 0
+    }
+
+    /// Every slot that got a faction default in place of its own kit — uncapped and NOT deduped,
+    /// so this is the number of seats that will spawn as somebody else.
+    #[must_use]
+    pub fn slots(&self) -> usize {
+        self.slots
+    }
+
+    /// The named substitutions, at most [`MAX_REPORTED_SUBSTITUTIONS`] of them.
+    #[must_use]
+    pub fn rows(&self) -> &[KitSubstitution] {
+        &self.rows
+    }
+
+    /// One readable line per substitution, for a log line or an editor dialog — the shape
+    /// `wire_safety::scan_editor_payload` returns, so a caller can render both the same way.
+    ///
+    /// Each line answers the three questions the silence left open: WHICH seat, WHAT was placed,
+    /// and WHAT it became. The remedy (`kit-aliases.json` + `apps/mod/tbd-framework/Data/
+    /// registry.json`, both sides or the T-181.36 gate fails closed) is not repeated on every
+    /// line — it belongs in this module's docs, not twenty times in an operator's face.
+    #[must_use]
+    pub fn details(&self) -> Vec<String> {
+        let mut out: Vec<String> = self
+            .rows
+            .iter()
+            .map(|r| {
+                let more = if r.occurrences > 1 {
+                    format!(" (and {} more slot(s) on this side)", r.occurrences - 1)
+                } else {
+                    String::new()
+                };
+                format!(
+                    "{}: \"{}\" has no kit-aliases.json row — compiled as the {} default \"{}\", \
+                     so this seat spawns a different character than the one placed{}",
+                    r.example_slot_id,
+                    escape_resource_name(&r.asset_id),
+                    r.faction,
+                    r.kit,
+                    more,
+                )
+            })
+            .collect();
+
+        // Deliberately counted in SLOTS, not in distinct assets. Naming distinct assets past the
+        // cap would mean remembering every key that did not make the list — which is the one
+        // allocation `SubstitutionAcc::record` exists to avoid on a 367k-slot mission. Slots is
+        // both cheap and the number that matters: it is how many seats are affected.
+        let unnamed = self.slots - self.rows.iter().map(|r| r.occurrences).sum::<usize>();
+        if unnamed > 0 {
+            out.push(format!(
+                "+ {unnamed} further slot(s) were substituted under assets not named above"
+            ));
+        }
+        out
+    }
+}
+
+/// Accumulator for [`KitSubstitutionReport`], filled during the one existing slot walk.
+///
+/// A linear scan of `rows` rather than a `HashMap`, because `rows` is capped at
+/// [`MAX_REPORTED_SUBSTITUTIONS`]: 20 `&str` comparisons that almost always fail inside the first
+/// two bytes (the `{GUID}` prefix leads the ResourceName) beat allocating the two owned Strings a
+/// `HashMap<(String, String), _>` lookup would need on EVERY substituted slot. That matters here
+/// and not in `wire_safety`, because with 342 of 354 characters unaliased this is not the
+/// exceptional path today — it is the common one.
+#[derive(Default)]
+struct SubstitutionAcc {
+    rows: Vec<KitSubstitution>,
+    slots: usize,
+}
+
+impl SubstitutionAcc {
+    /// `slot_id` is a closure so the derived id is only formatted for the first slot of a new
+    /// pair — the 300,000th slot carrying an unaliased asset costs one bounded scan and nothing
+    /// else.
+    fn record(
+        &mut self,
+        asset_id: &str,
+        faction: &str,
+        kit: &str,
+        slot_uid: &str,
+        slot_id: impl FnOnce() -> String,
+    ) {
+        self.slots += 1;
+        if let Some(row) = self
+            .rows
+            .iter_mut()
+            .find(|r| r.asset_id == asset_id && r.faction == faction)
+        {
+            row.occurrences += 1;
+            return;
+        }
+        if self.rows.len() >= MAX_REPORTED_SUBSTITUTIONS {
+            return;
+        }
+        self.rows.push(KitSubstitution {
+            asset_id: asset_id.to_string(),
+            faction: faction.to_string(),
+            kit: kit.to_string(),
+            example_slot_id: slot_id(),
+            example_slot_uid: slot_uid.to_string(),
+            occurrences: 1,
+        });
+    }
+
+    fn finish(self) -> KitSubstitutionReport {
+        KitSubstitutionReport {
+            rows: self.rows,
+            slots: self.slots,
+        }
+    }
+}
+
+/// Render a ResourceName into a line a human reads.
+///
+/// `assetId` is the one authored string the compile never copies into the document, so nothing
+/// holds it to `mission.schema.json#/$defs/wireSafeString` and `wire_safety::scan_editor_payload`
+/// does not scan it — a TAB in an imported payload arrives here intact and would silently shift
+/// the columns of whatever log line this lands in.
+///
+/// Deliberately NOT `wire_safety::quote_value`: that elides at 60 characters and a vanilla
+/// character ResourceName is ~84 (`{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/
+/// Character_US_Rifleman.et`), so the elision would cut off the character name — the one part of
+/// the string the reader is looking for. Nothing is truncated here; control characters are
+/// escaped, and the definition of "control" is `wire_safety`'s, not a second copy of it.
+fn escape_resource_name(s: &str) -> String {
+    if !s.bytes().any(is_wire_unsafe) {
+        return s.to_string();
+    }
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        if (c as u32) < 0x80 && is_wire_unsafe(c as u8) {
+            out.push_str(&format!("\\u{{{:02x}}}", c as u32));
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
 /// The full compiled document served to the game server.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -272,6 +488,13 @@ pub struct ModMissionDocument {
     pub zones: Vec<ModZone>,
     pub flow: ModFlow,
     pub win_conditions: ModWinConditions,
+    /// T-200 — **not part of the document.** `#[serde(skip)]`, so the served JSON is byte-identical
+    /// to what it was before this field existed; the schema's top-level
+    /// `additionalProperties: false` would 500 the whole `/compiled` route otherwise. This is what
+    /// the compile SUBSTITUTED on its way to producing the document above — see
+    /// [`KitSubstitutionReport`] for why it hangs here rather than on a second entry point.
+    #[serde(skip)]
+    pub kit_substitutions: KitSubstitutionReport,
 }
 
 /// Compile failure — mirrors `ErrNoSlots` + a payload-parse error.
@@ -698,6 +921,7 @@ pub fn flatten_to_mod_document(
     let mut centroids: HashMap<String, (f64, f64, i64)> = HashMap::new();
     let mut centroid_order: Vec<String> = Vec::new();
     let mut radio_sources: Vec<RadioNetSource> = Vec::new();
+    let mut substitutions = SubstitutionAcc::default();
     let mut any_y = false;
 
     for f in &ed.factions {
@@ -736,9 +960,33 @@ pub fn flatten_to_mod_document(
                 let occurrence = *role_counters.get(role).unwrap_or(&0);
                 role_counters.insert(role, occurrence + 1);
 
-                let kit = aliases
-                    .kit_for_resource(&sl.asset_id)
-                    .map_or_else(|| default_kit.to_string(), String::from);
+                // T-200 — the substitution that used to happen in silence. `map_or_else` here read
+                // as a tidy default; what it actually did was throw away the author's choice of
+                // character and tell nobody. It still substitutes (see `KitSubstitutionReport` for
+                // why erroring is not an option with 342 of 354 characters unaliased) — it just
+                // records what it substituted.
+                //
+                // An EMPTY `assetId` is deliberately not recorded. A slot with no asset expressed
+                // no preference: ORBAT templates and the `+` button both mint slots that way, and
+                // for those the faction default is the correct answer, not a swap. Reporting them
+                // would bury the real finding under one line per templated seat. This is the same
+                // rule `wire_safety` applies to a blank callsign — a value the compile would have
+                // substituted anyway is not a finding.
+                let kit = match aliases.kit_for_resource(&sl.asset_id) {
+                    Some(alias) => alias.to_string(),
+                    None => {
+                        if !sl.asset_id.is_empty() {
+                            substitutions.record(
+                                &sl.asset_id,
+                                &faction_key,
+                                default_kit,
+                                &sl.id,
+                                || format!("{faction_key}:{callsign}:{role}:{occurrence}"),
+                            );
+                        }
+                        default_kit.to_string()
+                    }
+                };
 
                 if let Some(&idx) = role_index.get(role) {
                     roles[idx].count += 1;
@@ -941,12 +1189,19 @@ pub fn flatten_to_mod_document(
             // triggered this.
             end_on,
         },
+        kit_substitutions: substitutions.finish(),
     })
 }
 
 /// JSON-in / JSON-out flatten for the wasm client: `meta_json` (camelCase [`MissionMeta`]) + the
 /// stored version `payload` → the compiled mod-document JSON bytes. Keeps serde_json on the core
 /// side so the wasm shim stays dependency-thin.
+///
+/// These bytes are the editor's **Export** download and must satisfy `mission.schema.json` on
+/// their own, so [`ModMissionDocument::kit_substitutions`] does NOT appear in them — it is
+/// `#[serde(skip)]` and this function returns only the serialized document. A caller that wants
+/// the substitutions in the browser needs [`flatten_to_mod_document`] and a shim export of its
+/// own; adding a second key here would put a non-schema field in a file the mod loads.
 ///
 /// # Errors
 /// Returns a message on meta/payload parse failure or a compile error (e.g. no slots).
@@ -1359,5 +1614,284 @@ mod tests {
         assert_eq!(nets[0].label, "N".repeat(MOD_MAX_LABEL_CHARS));
         // An unnamed faction falls back to its key, so the label is never a bare " Command".
         assert_eq!(nets[1].label, "opfor Command");
+    }
+
+    // ── T-200 kit substitutions ──────────────────────────────────────────────────────────
+    //
+    // The three ResourceNames below are REAL rows of
+    // `packages/tbd-schema/registry/registry-items.workbench.json` — two of the 342 characters
+    // the palette offers and `kit-aliases.json` has no row for, and one of the 12 it does. Real
+    // ones on purpose: a made-up GUID would prove the code reports SOMETHING, not that it reports
+    // the case an author actually hits. Placing a sniper and spawning a rifleman is the harm.
+
+    const US_SNIPER: &str =
+        "{0F6689B491641155}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sniper.et";
+    const USSR_MEDIC: &str =
+        "{AB9726163EC1BD81}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Medic.et";
+    const US_RIFLEMAN_ALIASED: &str =
+        "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et";
+
+    /// `(faction key, faction name, squad callsign, [assetId per slot])` — one squad per faction,
+    /// one slot per assetId, all role `RFL`, so the derived slot id of the nth slot of faction i
+    /// is `<key>:<callsign>:RFL:<n>`.
+    fn payload_with_assets(factions: &[(&str, &str, &str, &[&str])]) -> Vec<u8> {
+        let (mut fs, mut squads, mut slots) = (Vec::new(), Vec::new(), Vec::new());
+        for (fi, (key, name, callsign, assets)) in factions.iter().enumerate() {
+            let squad_id = format!("f{fi}sq");
+            let slot_ids: Vec<String> = (0..assets.len()).map(|i| format!("f{fi}s{i}")).collect();
+            for (i, asset) in assets.iter().enumerate() {
+                slots.push(serde_json::json!({
+                    "id": slot_ids[i], "index": i as i64, "role": "RFL", "assetId": asset,
+                    "position": {"x": 1.0, "y": 2.0, "z": 0.0, "rotation": 0.0}
+                }));
+            }
+            squads.push(
+                serde_json::json!({"id": squad_id, "callsign": callsign, "slotIds": slot_ids}),
+            );
+            fs.push(serde_json::json!({"key": key, "name": name, "squadIds": [squad_id]}));
+        }
+        serde_json::to_vec(
+            &serde_json::json!({"editor": {"factions": fs, "squads": squads, "slots": slots}}),
+        )
+        .expect("fixture serializes")
+    }
+
+    /// The whole point of the ticket: the substitution still happens (it must — see
+    /// `KitSubstitutionReport`), but it is now on the record with enough detail to act on.
+    #[test]
+    fn unaliased_character_is_recorded_not_swallowed() {
+        let payload = payload_with_assets(&[
+            (
+                "BLUFOR",
+                "US Army",
+                "Alpha",
+                &[US_SNIPER, US_RIFLEMAN_ALIASED, US_SNIPER],
+            ),
+            ("OPFOR", "Soviet VDV", "Grom", &[USSR_MEDIC]),
+        ]);
+        let doc = flatten_to_mod_document(&meta(), &payload).expect("compiles");
+
+        // BEHAVIOUR IS UNCHANGED — this is a report, not a repair. The sniper and the medic still
+        // compile to their faction's generic rifleman, because that is the only value on hand that
+        // satisfies `mission.schema.json`'s `^kit:[a-z0-9_]+$` and the alias table has no row.
+        let kits: Vec<&str> = doc.slots.iter().map(|s| s.kit.as_str()).collect();
+        assert_eq!(
+            kits,
+            [
+                "kit:us_rifleman",
+                "kit:us_rifleman",
+                "kit:us_rifleman",
+                "kit:sov_rifleman"
+            ]
+        );
+
+        let rep = &doc.kit_substitutions;
+        assert!(!rep.is_empty());
+        // Three seats will spawn as somebody else; the aliased rifleman is not one of them.
+        assert_eq!(rep.slots(), 3);
+        assert_eq!(rep.rows().len(), 2, "{:?}", rep.rows());
+
+        let sniper = &rep.rows()[0];
+        assert_eq!(sniper.asset_id, US_SNIPER);
+        assert_eq!(sniper.faction, "blufor");
+        assert_eq!(sniper.kit, "kit:us_rifleman");
+        // The FIRST slot that hit the pair, named the two ways the document names a slot: the
+        // derived id a reader can grep the compiled JSON for, and the editor uid that survives a
+        // role rename. The third slot carries the same asset and only bumps the count.
+        assert_eq!(sniper.example_slot_id, "blufor:Alpha:RFL:0");
+        assert_eq!(sniper.example_slot_uid, "f0s0");
+        assert_eq!(sniper.occurrences, 2);
+
+        let medic = &rep.rows()[1];
+        assert_eq!(
+            (
+                medic.asset_id.as_str(),
+                medic.faction.as_str(),
+                medic.kit.as_str(),
+                medic.occurrences
+            ),
+            (USSR_MEDIC, "opfor", "kit:sov_rifleman", 1)
+        );
+
+        // The rendered line has to carry all three answers, or it is a warning that tells an
+        // operator something happened without telling them what.
+        let lines = rep.details();
+        assert_eq!(lines.len(), 2, "{lines:?}");
+        assert!(lines[0].starts_with("blufor:Alpha:RFL:0:"), "{lines:?}");
+        assert!(lines[0].contains("Character_US_Sniper.et"), "{lines:?}");
+        assert!(lines[0].contains("kit:us_rifleman"), "{lines:?}");
+        assert!(lines[0].contains("and 1 more slot(s)"), "{lines:?}");
+        // No tail line while every substituted slot is accounted for by a named row.
+        assert!(
+            !lines.iter().any(|l| l.starts_with('+')),
+            "nothing was dropped: {lines:?}"
+        );
+    }
+
+    /// A slot with no `assetId` expressed no preference, so the faction default is the answer and
+    /// not a swap. This is the assertion that keeps the report readable: ORBAT templates and the
+    /// `+` button both mint slots with no asset, and reporting those would bury the real findings
+    /// under one line per templated seat.
+    #[test]
+    fn a_slot_that_named_no_character_is_not_a_substitution() {
+        // The locked fixture: s1/s4 carry aliased assets, s2/s3 carry none at all. Nothing to say.
+        let doc = flatten_to_mod_document(&meta(), FIXTURE.as_bytes()).expect("compiles");
+        assert!(
+            doc.kit_substitutions.is_empty(),
+            "{:?}",
+            doc.kit_substitutions.rows()
+        );
+        assert!(doc.kit_substitutions.details().is_empty());
+        // …and those nameless slots did still take the faction default, which is the behaviour
+        // that makes them uninteresting rather than unreported.
+        assert_eq!(doc.slots[1].kit, "kit:us_rifleman");
+
+        // An explicitly EMPTY assetId is the same case as an absent one.
+        let payload = payload_with_assets(&[("BLUFOR", "US Army", "Alpha", &["", US_SNIPER])]);
+        let doc = flatten_to_mod_document(&meta(), &payload).expect("compiles");
+        assert_eq!(doc.kit_substitutions.slots(), 1, "only the sniper counts");
+        assert_eq!(
+            doc.kit_substitutions.rows()[0].example_slot_id,
+            "blufor:Alpha:RFL:1"
+        );
+    }
+
+    /// The `/compiled` contract. `mission.schema.json` sets top-level
+    /// `additionalProperties: false` and `validated_compiled_body` answers **500** on any finding,
+    /// so a report that reached the wire would not degrade the endpoint — it would break it
+    /// outright, on every mission. `#[serde(skip)]` is what stops that, and a `#[serde(skip)]` is
+    /// one keystroke from a `#[serde(rename)]`, so it is pinned here rather than trusted.
+    #[test]
+    fn substitutions_never_reach_the_compiled_wire() {
+        let payload = payload_with_assets(&[
+            ("BLUFOR", "US Army", "Alpha", &[US_SNIPER]),
+            ("OPFOR", "Soviet VDV", "Grom", &[USSR_MEDIC]),
+        ]);
+        let doc = flatten_to_mod_document(&meta(), &payload).expect("compiles");
+        assert!(!doc.kit_substitutions.is_empty(), "fixture must substitute");
+
+        let wire = serde_json::to_value(&doc).unwrap();
+        // `serde_json::Map` is ordered by key here (no `preserve_order` feature), so this is a SET
+        // assertion — which is the right shape anyway: the mod binds this block by field NAME
+        // through `JsonLoadContext` and emission order means nothing to it. What matters is that
+        // the membership is exactly the schema's `properties`.
+        let keys: Vec<&str> = wire
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        assert_eq!(
+            keys,
+            [
+                "environment",
+                "factions",
+                "flow",
+                "meta",
+                "orbat",
+                "radioPlan",
+                "schemaVersion",
+                "slots",
+                "winConditions",
+                "zones"
+            ],
+            "top-level key set is the document contract — nothing new may appear here"
+        );
+
+        // Nothing anywhere in the body, at any depth, under either casing.
+        let text = serde_json::to_string(&doc).unwrap();
+        assert!(!text.contains("ubstitution"), "report leaked into the wire");
+        // And the placed ResourceName is still absent from the compiled document — which is
+        // exactly why this substitution was undetectable downstream: the document keeps no trace
+        // of what the author asked for, only of what it decided.
+        assert!(!text.contains("Character_US_Sniper"), "{text}");
+    }
+
+    /// Dedup is on the PAIR, not the asset. The same prefab dropped on two sides resolves to two
+    /// different faction defaults, so collapsing them onto one row would report one side's
+    /// substitution and hide the other's behind a kit that was never used for it.
+    #[test]
+    fn the_same_character_on_two_sides_is_two_substitutions() {
+        let payload = payload_with_assets(&[
+            ("BLUFOR", "US Army", "Alpha", &[USSR_MEDIC]),
+            ("OPFOR", "Soviet VDV", "Grom", &[USSR_MEDIC]),
+        ]);
+        let doc = flatten_to_mod_document(&meta(), &payload).expect("compiles");
+        let rows = doc.kit_substitutions.rows();
+        assert_eq!(rows.len(), 2, "{rows:?}");
+        assert_eq!(
+            (rows[0].faction.as_str(), rows[0].kit.as_str()),
+            ("blufor", "kit:us_rifleman")
+        );
+        assert_eq!(
+            (rows[1].faction.as_str(), rows[1].kit.as_str()),
+            ("opfor", "kit:sov_rifleman")
+        );
+        assert!(rows.iter().all(|r| r.asset_id == USSR_MEDIC));
+    }
+
+    /// The two shapes that would make this report useless: a bulk paste of one unaliased asset
+    /// producing thousands of identical lines, and a mission wide enough to blow past the cap
+    /// reporting a number that no longer adds up.
+    #[test]
+    fn repeats_collapse_and_the_cap_keeps_the_count_honest() {
+        // 500 slots, one asset: exactly ONE row, with the count on it.
+        let bulk: Vec<&str> = std::iter::repeat_n(US_SNIPER, 500).collect();
+        let payload = payload_with_assets(&[("BLUFOR", "US Army", "Alpha", &bulk)]);
+        let rep = flatten_to_mod_document(&meta(), &payload)
+            .expect("compiles")
+            .kit_substitutions;
+        assert_eq!(rep.rows().len(), 1, "a bulk paste is one finding");
+        assert_eq!((rep.rows()[0].occurrences, rep.slots()), (500, 500));
+        assert_eq!(rep.details().len(), 1);
+
+        // MAX + 5 DISTINCT assets, one of them placed twice. The list stops at the cap; the slot
+        // count does not, and the tail line is the difference — so the total is still recoverable
+        // from what is printed.
+        let owned: Vec<String> = (0..MAX_REPORTED_SUBSTITUTIONS + 5)
+            .map(|i| format!("{{DEADBEEF{i:08X}}}Prefabs/Characters/Made/Up_{i}.et"))
+            .collect();
+        let mut many: Vec<&str> = owned.iter().map(String::as_str).collect();
+        many.push(owned[0].as_str());
+        let payload = payload_with_assets(&[("BLUFOR", "US Army", "Alpha", &many)]);
+        let rep = flatten_to_mod_document(&meta(), &payload)
+            .expect("compiles")
+            .kit_substitutions;
+        assert_eq!(rep.rows().len(), MAX_REPORTED_SUBSTITUTIONS);
+        assert_eq!(rep.slots(), MAX_REPORTED_SUBSTITUTIONS + 6);
+        // The repeat landed on a NAMED row, so it is carried by that row's count and not by the
+        // tail — the tail is exactly the 5 assets past the cap.
+        let lines = rep.details();
+        assert_eq!(lines.len(), MAX_REPORTED_SUBSTITUTIONS + 1);
+        assert!(
+            lines[MAX_REPORTED_SUBSTITUTIONS].starts_with("+ 5 further slot(s)"),
+            "{:?}",
+            lines[MAX_REPORTED_SUBSTITUTIONS]
+        );
+    }
+
+    /// `assetId` is the one authored string the compile never copies into the document, so
+    /// `wire_safety` does not scan it and a control character in an imported payload arrives here
+    /// intact. It must not be able to garble the line it lands in — and it must not cost the
+    /// reader the character name, which is why this is not `wire_safety::quote_value`.
+    #[test]
+    fn a_control_character_in_an_asset_id_is_escaped_but_nothing_is_truncated() {
+        assert_eq!(
+            escape_resource_name(US_SNIPER),
+            US_SNIPER,
+            "clean is verbatim"
+        );
+        // 84 chars — comfortably past quote_value's 60-char elision, and the name is at the end.
+        assert!(US_SNIPER.chars().count() > 60);
+
+        let dirty = format!("{US_SNIPER}\t");
+        let out = escape_resource_name(&dirty);
+        assert!(!out.contains('\t'), "{out}");
+        assert!(out.contains("\\u{09}"), "{out}");
+        assert!(
+            out.contains("Character_US_Sniper.et"),
+            "the name must survive: {out}"
+        );
+        assert!(!out.contains('…'), "nothing is elided: {out}");
     }
 }
