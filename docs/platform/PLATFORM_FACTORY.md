@@ -122,6 +122,22 @@ to the slice's own diff against `main`.
     audit citations — **zero directory-level claims remain**. Do not widen a row back to a
     directory to "make it fit"; re-run `--repack` instead.
 
+    **But `owns` only constrains what an agent is TOLD, not what it does.** In wave 1, T-182 was
+    widened to five files and edited seven — reaching into `TBD_SpawnManager.c` (a real bug: its
+    `HasAuthoredLoadout` gate would otherwise have routed launcher-only slots away from the loadout
+    path entirely) and `mission_compile.rs`, **which T-192 was editing in the same wave**. Both
+    landed and composed only because git happened to merge disjoint regions of the file. That was
+    luck. When an agent reports having touched a file outside its list, verify the composition by
+    hand before trusting the green gate.
+
+11. **Never land a slice until its agent has REPORTED.** `tree_state` answers "is the tree
+    committed and clean", which is not the same question as "is the agent finished". In wave 1
+    T-182 committed mid-run, `land` merged it and dropped the worktree, and the agent then found
+    its own tree deleted underneath it. The commit survived in the shared object store and nothing
+    was lost, but only because it had already committed — an amend in flight would have raced.
+    The command center holds the merge until the agent's report is in. This is a discipline rule,
+    not something the script enforces.
+
 ## The backlog
 
 **113 runnable tickets, T-182 → T-297**, all `idea` so this program cannot start itself while
