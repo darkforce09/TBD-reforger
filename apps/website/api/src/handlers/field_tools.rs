@@ -16,7 +16,7 @@ use crate::handlers::missions::build_mission_doc;
 use crate::handlers::{load_mission, username};
 use crate::middleware::{AdminUser, AuthUser};
 use crate::models::{AuditSeverity, FireMission, MissionStatus};
-use crate::services::{FireSolution, solve_fire_mission, write_audit};
+use crate::services::{FireSolution, SolveError, solve_fire_mission, write_audit};
 use crate::state::AppState;
 
 /// Staging dir for injected mission.json files (game-server bridge pickup).
@@ -98,6 +98,18 @@ pub struct SolveInput {
 /// misspelled weapon aimed beyond `DEFAULT_MORTAR`'s reach was answered "target out of range" —
 /// a range verdict for a tube the caller never named, about a target that may be well inside the
 /// range of the one they did.
+///
+/// **T-365 UPDATE — the two paragraphs above describe a substitution that no longer exists.**
+/// `solve_fire_mission` now returns `Result<FireSolution, SolveError>` with distinct
+/// `UnknownWeapon` / `OutOfRange` variants; the `None` arm and `DEFAULT_MORTAR` are gone, and the
+/// 400-before-422 ordering is now structural (an unknown weapon never reaches the charge loop, so
+/// no range verdict exists to report first). Consequently **`sol.weapon_system !=
+/// input.weapon_system` below can no longer be true** — the returned weapon is always the one
+/// asked for — so that guard is now unreachable belt-and-braces. It is left in place deliberately:
+/// T-365 owns `mortar.rs` only, and its brief was to leave this file's shipped behaviour provably
+/// untouched rather than simplify it in the same change. **Safe to delete in a follow-up**, along
+/// with the `Ok`/`Err` → `(sol, in_range)` adaptation below, collapsing this into a direct
+/// `match`. Nothing else here depends on the pair.
 fn solve_checked(input: &SolveInput) -> Result<FireSolution, ApiError> {
     if input.weapon_system.trim().is_empty() {
         return Err(ApiError::bad_request("weapon_system is required"));
@@ -110,13 +122,26 @@ fn solve_checked(input: &SolveInput) -> Result<FireSolution, ApiError> {
             "weapon_system must not have leading or trailing whitespace",
         ));
     }
-    let (sol, in_range) = solve_fire_mission(
+    // T-365 changed this call from `(FireSolution, bool)` to `Result<FireSolution, SolveError>`.
+    // Adapting straight back to the pair is deliberate: it keeps T-349's two guards below
+    // byte-for-byte as shipped, so this file's behaviour is provably unchanged by that signature
+    // change. `UnknownWeapon` carries the weapon verbatim, so the 400 body is the same string the
+    // comparison below would have produced. See the T-365 note in the doc comment.
+    let (sol, in_range) = match solve_fire_mission(
         &input.weapon_system,
         input.fp_x,
         input.fp_y,
         input.tgt_x,
         input.tgt_y,
-    );
+    ) {
+        Ok(sol) => (sol, true),
+        Err(SolveError::OutOfRange(sol)) => (sol, false),
+        Err(SolveError::UnknownWeapon(w)) => {
+            return Err(ApiError::bad_request(format!(
+                "unknown weapon_system '{w}'"
+            )));
+        }
+    };
     if sol.weapon_system != input.weapon_system {
         return Err(ApiError::bad_request(format!(
             "unknown weapon_system '{}'",
