@@ -7774,7 +7774,7 @@
     {
       "id": "T-239",
       "title": "Unticketed XSS hardening item from the Go purge",
-      "summary": "T-015 is used in commits but absent from the registry. The bluemonday sanitisation survived the Go purge as ammonia (services/text.rs:10-16, wired at cms.rs:109,194), and text.rs:6-9 records an open security item: the exact UGCPolicy-to-ammonia allowlist mapping plus a golden corpus and a no-XSS property test.",
+      "summary": "T-015 is used in commits but absent from the registry. The bluemonday sanitisation survived the Go purge as ammonia (services/text.rs:10-16, wired at cms.rs:109,194), and text.rs:6-9 records an open security item: the exact UGCPolicy-to-ammonia allowlist mapping plus a golden corpus and a no-XSS property test.\n\n== FULLY SWEPT 2026-07-26 by a paid-for subagent; the slice agent was cut for budget ==\n**THERE IS NO LIVE STORED-XSS VIA HTML BODY.** The frontend has EXACTLY ONE raw-HTML sink repo-wide — arsenal.rs:1392 `inner_html=r.shape` — and it is fed by a hardcoded &'static str const table. Repo-wide grep for inner_html|set_inner_html|insert_adjacent_html|outer_html|srcdoc returns that one line. index.html has no inline script, and the SPA is CSR-only so there is no SSR concatenation path. A verified negative, and it reframes this whole ticket.\n\nTWO THINGS THAT ARE REAL TODAY AND ARE IN THIS TICKET'S OWN FILES:\n  **The one field that IS sanitised renders as ESCAPED TEXT.** announcements.body is ammonia'd at cms.rs:140/:248 and rendered at frontend/announcements.rs:80 as `{p.to_string()}` in a <p> — a Leptos text node. So ammonia buys ZERO security there, and it actively CORRUPTS display: ammonia HTML-escapes bare `<` and `&`, then Leptos escapes again, so an author writing `a < b` sees the literal `a &lt; b` on screen. That double-escape is a live bug. Either stop sanitising a field that renders as text, or stop escaping a field that arrives as HTML — doing both is what breaks it.\n  `snippet` bypasses its own cap: snippet_from (cms.rs:54-60) returns the caller's value verbatim, so the 200-rune limit is skipped when supplied explicitly, and PATCH never recomputes it from the new sanitised body.\n\nSO THE ALLOWLIST WORK IS DEFENCE-IN-DEPTH, NOT A LIVE-BUG FIX — which frees it to be strict rather than permissive. The latent exposure is real though: the moment anything goes behind inner_html, announcements.body, events.briefing, missions.briefing and wiki_pages.body_md all become live at once, and render_markdown (wiki.rs:215) is the obvious future candidate since it builds Leptos nodes today but would be the natural place to add a raw-HTML fast path.\n\nNotable: **wiki_pages.body_md — the largest unsanitised text column in the schema — has NO frontend consumer at all** (wiki.rs renders the hardcoded MANUALS const and never fetches /wiki). Five more fields are write-only with zero readers: missions.rejection_reason, users.ban_reason, warnings.reason, fire_missions.fp_grid, fire_missions.target_grid.\n\nThe live vector is a URL scheme, not an HTML body — filed as T-391 (P0).\n\nNegative findings worth not re-investigating: no nickname/bio/pronouns column exists; telemetry ingests NO player display name, squad name, or chat text (only the engine GUID and role_played, confirmed against TBD_ResultsReporter.c:566-569) so the 'anyone who joins a server' attack does not exist; and handlers/servers.rs's write handlers are NOT registered in app.rs, which independently confirms T-235's handoff is still outstanding.",
       "program": "infra",
       "surfaces": [
         "REG"
@@ -10803,6 +10803,27 @@
       "executor": "claude-code",
       "priority": 0,
       "shipped_at": "c07ca278"
+    },
+    {
+      "id": "T-391",
+      "title": "Live javascript: XSS via aar_replay_url, and zero URL validation anywhere in the API",
+      "summary": "LIVE. Found by a paid-for subagent during the T-239 sweep (parent slice was cut for budget).\n\n`frontend/src/deployments.rs:471` (read at :447) binds `aar_replay_url` into an **`<a href>`**. The value is written by `handlers/telemetry.rs:659`/`:628` (decl :361) with **no validation of any kind**, so a `javascript:` URL **executes on click**. `rel=\"noreferrer\"` does not help.\n\n**There is zero URL validation in the entire API crate** — grep for `Url::parse|scheme()|starts_with(\"http|javascript:|sanitize_url` across apps/website/api/src returns NOTHING. So the fix is a shared URL guard, not a one-line patch on one field.\n\nTier: service-token, so it needs the game-server token — real but not anonymous. The `<img src>` siblings are weaker (browsers do not run javascript: in img src) but share the same absent guard: `announcements.thumbnail_url`, `events.banner_image_url`, `missions.thumbnail_url`, and `users.avatar_url` — that last one is **public-tier**, built by `format!`-interpolating a raw Discord avatar hash into a CDN URL with no character validation, so path/query/fragment injection is unguarded.\n\n`modpacks.workshop_url` reaches an `<a href>` at frontend/src/event_hub.rs:236 but has NO WRITER — registry_import.rs:82's INSERT omits the column. Latent sink, unpopulated column.\n\nFIX: validate scheme at the write boundary (allow http/https only), and reject at 400 rather than storing. Do it once in a shared helper — five columns and five sinks share this.\n\nALSO FOUND, same sweep, different mechanism: **CSV formula injection** at `handlers/audit.rs:111` and `:113`. The audit-log CSV export writes user-controlled text unescaped, so a value beginning `=`, `+`, `-` or `@` is a live formula in Excel/Sheets. That path escapes the Leptos-escaping argument entirely, as does the Discord webhook consumer at cms.rs:64.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3207,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
     }
   ]
 }
