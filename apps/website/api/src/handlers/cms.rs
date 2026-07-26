@@ -13,10 +13,39 @@ use crate::handlers::field_tools::UPLOAD_DIR;
 use crate::handlers::username;
 use crate::middleware::AdminUser;
 use crate::models::{Announcement, AnnouncementStatus, AnnouncementTag, AuditSeverity};
+use crate::services::text::is_http_url;
 use crate::services::{sanitize_html, snippet, write_audit};
 use crate::state::AppState;
 
 const MAX_UPLOAD_BYTES: usize = 5 << 20;
+
+/// `announcements.thumbnail_url`, validated at the write boundary. **T-405**, adopting T-391's
+/// guard on the second of the five URL columns that share its absent check.
+///
+/// The sink here is an `<img src>` (`frontend/src/announcements.rs`), which is weaker than the
+/// `<a href>` that made T-391 a live XSS — browsers do not execute `javascript:` in `img src`.
+/// The guard is the same anyway, for two reasons. Nothing had ever looked at this column, so
+/// `javascript:`, `data:text/html,…` and `file:///…` all stored cleanly. And "weaker sink" is a
+/// property of today's renderer, not of the column: the stored value is equally available to a CSS
+/// `url()`, the Discord webhook two functions below, a CSV export, or a page nobody has written
+/// yet — and every one of those would otherwise have to remember independently, forever.
+///
+/// **`""` passes**, exactly as at [`crate::handlers::telemetry::upsert_match`]. Absent-or-blank is
+/// this column's "no thumbnail", it carries no scheme and cannot execute, and 400-ing it would
+/// break a working shape to buy nothing. Trimmed first so the bytes validated are the bytes
+/// stored — the T-218 house pattern.
+///
+/// Shared by create and PATCH so the two cannot drift, which is the exact way `valid_tag`'s
+/// neighbours went wrong before (see [`valid_announcement_status`]).
+fn validated_thumbnail(raw: &str) -> Result<String, ApiError> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || is_http_url(trimmed) {
+        return Ok(trimmed.to_string());
+    }
+    Err(ApiError::bad_request(
+        "thumbnail_url must be an absolute http:// or https:// URL",
+    ))
+}
 
 fn valid_tag(s: &str) -> Option<AnnouncementTag> {
     match s {
@@ -135,6 +164,8 @@ pub async fn create_announcement(
     let Some(tag) = valid_tag(&input.tag) else {
         return Err(ApiError::bad_request("invalid tag"));
     };
+    // T-405 — see `validated_thumbnail`. Rejected before the INSERT, so a bad URL stores nothing.
+    let thumbnail_url = validated_thumbnail(&input.thumbnail_url)?;
     let author = &admin.0.discord_id;
     // Sanitize author-supplied HTML before persist (no stored XSS).
     let body_html = sanitize_html(&input.body);
@@ -161,7 +192,7 @@ pub async fn create_announcement(
     .bind(&body_html)
     .bind(&snip)
     .bind(tag)
-    .bind(&input.thumbnail_url)
+    .bind(&thumbnail_url)
     .bind(author)
     .bind(input.is_pinned)
     .bind(status)
@@ -238,6 +269,15 @@ pub async fn update_announcement(
             return Err(ApiError::bad_request(format!("{field} must not be blank")));
         }
     }
+    // **T-405.** Same window, same reason: validated up here so a rejected URL leaves the row
+    // untouched instead of applying the caller's other field edits and then 400-ing. PATCH is the
+    // back door that matters — the create path could be perfectly guarded and this one would still
+    // put `javascript:` in the column. `None` means "field absent", which is not an edit.
+    let thumbnail_url = input
+        .thumbnail_url
+        .as_deref()
+        .map(validated_thumbnail)
+        .transpose()?;
 
     let mut qb: sqlx::QueryBuilder<sqlx::Postgres> =
         sqlx::QueryBuilder::new("UPDATE announcements SET updated_at = now()");
@@ -256,7 +296,7 @@ pub async fn update_announcement(
         };
         qb.push(", tag = ").push_bind(tag);
     }
-    if let Some(u) = &input.thumbnail_url {
+    if let Some(u) = &thumbnail_url {
         qb.push(", thumbnail_url = ").push_bind(u.clone());
     }
     if let Some(p) = input.is_pinned {

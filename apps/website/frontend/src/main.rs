@@ -102,6 +102,10 @@ mod sse;
 // T-159.25 — sonner replacement: Toasts context + top-right viewport (renders no DOM while empty).
 mod toast;
 mod ui;
+// T-405 — the output-side `<a href>` scheme guard. Ungated: pure Rust, no web-sys, so the native
+// shell compiles it and `cargo test -p website-frontend` runs its conformance tests against the
+// shared case table — which is the thing that stops it drifting from the API's copy.
+mod url_guard;
 mod vehicles;
 mod wiki;
 // T-159.17 yrs IDB persist — IndexedDB (`idb` crate) + debounced writer; wasm32-only, gated like the

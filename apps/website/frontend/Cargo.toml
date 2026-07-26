@@ -18,6 +18,13 @@ serde_json = "1"
 map-engine-core = { path = "../../../crates/map-engine-core", default-features = false }
 gloo-net = "0.6"
 js-sys = "0.3"
+# T-405 — the `<a href>` scheme guard (`url_guard.rs`). Costs the bundle NOTHING: `url` is already
+# linked twice over via `leptos_router` and `leptos → leptos_server → server_fn`, and the workspace
+# lockfile pins the same 2.5.8 `website-api` builds against — which is the point. Both copies of
+# `is_http_url` call the SAME compiled `Url::parse`, so they agree by construction rather than by
+# discipline. Naming it here just makes the direct use honest. See `src/url_guard.rs` for why the
+# predicate is a port and not a shared crate.
+url = "2.5"
 wasm-bindgen = "0.2"
 web-sys = { version = "0.3", features = [
     "Window",
