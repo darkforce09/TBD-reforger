@@ -390,10 +390,38 @@ gate_test_api() {
   return 0
 }
 
+# Refuse a gate whose change set is EMPTY.
+#
+# Resolvability is not non-vacuity, and the first version of this guard only checked the former.
+# Found by wave 1's adversarial verifier, which got `GATE: PASS` out of both surviving holes:
+#   `gate HEAD`          -> `HEAD^{commit}` resolves, `HEAD..HEAD` is empty, every change-scoped
+#                           step PASSes without invoking hostrun even once.
+#   `gate --slice T-393` -> gate_slice never passed a base at all, so the helpers defaulted to
+#                           `main...HEAD` — correct inside a worktree, EMPTY when run on main,
+#                           and the ticket id argument is decorative so it cannot self-correct.
+# Both printed PASS having compiled nothing. Same signature defect, two more doorways.
+#
+# A slice legitimately has an empty *frontend* change set — that is what the per-step SKIPs are
+# for. What is never legitimate is the WHOLE range being empty, because then no change-scoped
+# step examined anything and the verdict describes nothing.
+refuse_empty_range() {
+  local range="$1" what="$2"
+  local n; n=$(git diff --name-only "$range" 2>/dev/null | wc -l)
+  [ "$n" -gt 0 ] && return 0
+  echo "gate: '$range' contains no changed files — refusing to run."
+  echo "        Every change-scoped step (wasm32, fmt, clippy, trunk) would report PASS/SKIP"
+  echo "        without reading a line, and the verdict would describe nothing."
+  echo "        $what"
+  return 2
+}
+
 # Cheap gate — what a slice agent runs before reporting done. Target: ~10 s warm.
 gate_slice() {
   local tid="${1:-}"
   echo "═══ slice gate ${tid} ═══"
+  # gate_slice's helpers all default to `main...HEAD`, which is the slice's own diff when run
+  # from its worktree and empty anywhere else. Check the range they will actually use.
+  refuse_empty_range "main...HEAD" "Run this from the slice's WORKTREE, not from main." || return 2
   touch_changed
   local fail=0
   run() { local l="$1"; shift; printf "  %-24s " "$l"
@@ -441,6 +469,10 @@ cmd_gate() {
     fi
     return 2
   fi
+  # Resolving is not the same as containing anything — `gate HEAD` cleared the check above and
+  # still gated an empty range. See refuse_empty_range.
+  refuse_empty_range "$base..HEAD" \
+    "Pick a base that actually precedes the work — e.g. the commit before this wave opened." || return 2
   echo "═══ platform wave gate (base ${base:0:12}) ═══"
   touch_changed "$base..HEAD"
   local fail=0
