@@ -15,6 +15,7 @@ use crate::db::refresh_leaderboard;
 use crate::error::ApiError;
 use crate::middleware::ServiceAuth;
 use crate::models::{AuditSeverity, MissionOutcome, ServerStatus, TerrainType};
+use crate::services::text::is_http_url;
 use crate::services::write_audit;
 use crate::state::AppState;
 
@@ -854,6 +855,48 @@ async fn upsert_match(
         Some(t) => Some(valid_terrain(t).ok_or_else(|| ApiError::bad_request("invalid terrain"))?),
     };
 
+    // **T-391 — the live XSS.** The SPA binds this column straight into an `<a href>`
+    // (`frontend/src/deployments.rs:471`, read at `:447`) and nothing on the way in had ever
+    // looked at it, so `javascript:alert(1)` stored cleanly and executed on click. The
+    // `rel="noreferrer"` already on that anchor is not a mitigation: it governs the `Referer`
+    // header, not what the scheme does. Neither is HTML escaping — a `javascript:` href is not a
+    // quote breakout, it is a well-formed attribute whose *content* runs.
+    //
+    // Validated **here** rather than in `ingest_match_results` because this function is the write
+    // boundary: it owns both statements that can put a value in the column, so a second caller
+    // added later cannot route around the check by construction.
+    //
+    // Rejected rather than stored-and-escaped-on-read — see `is_http_url` for why. Three input
+    // shapes, and the middle one is the reason this is not a one-liner:
+    //
+    // - **absent** → `None` → `COALESCE` keeps what is already stored. That is T-316's rule for
+    //   this field and it is unchanged: the replay is uploaded *after* the match, so the POST
+    //   carrying the result usually cannot name the link yet.
+    // - **blank** → `Some("")` → clears the link, exactly as it did before this guard existed
+    //   (`COALESCE('', col)` yields `''`, because `''` is not NULL). Preserved deliberately: an
+    //   empty string carries no scheme and cannot execute, so 400-ing it would break a working
+    //   shape to buy nothing. This is deliberately *not* `source_match_id`'s "blank is neither,
+    //   so it is a 400" — that field is a lookup key, where a blank silently collapses distinct
+    //   matches onto one row; this one is a nullable display value, where blank is the honest
+    //   way to say "no replay".
+    // - **anything else** → must be an `http`/`https` URL. Trimmed first (the T-218 house
+    //   pattern, same as `terrain` above) so the bytes validated are the bytes stored.
+    //
+    // The 400 does not echo the offending value back. The sender is a game server whose only
+    // channel is this string (`TBD_ResultsReporter.c` `OnSendError` logs the response body
+    // verbatim), and reflecting an attacker-chosen payload into that log buys nobody anything —
+    // the sender already knows what it sent.
+    let aar_replay_url: Option<&str> = match m.aar_replay_url.as_deref().map(str::trim) {
+        None => None,
+        Some("") => Some(""),
+        Some(u) if is_http_url(u) => Some(u),
+        Some(_) => {
+            return Err(ApiError::bad_request(
+                "aar_replay_url must be an absolute http:// or https:// URL",
+            ));
+        }
+    };
+
     if let Some(src) = source_match_id {
         let existing: Option<(Uuid,)> =
             sqlx::query_as("SELECT id FROM matches WHERE source_match_id = $1")
@@ -913,7 +956,7 @@ async fn upsert_match(
             .bind(m.ended_at)
             .bind(outcome)
             .bind(m.winning_faction.as_deref())
-            .bind(m.aar_replay_url.as_deref())
+            .bind(aar_replay_url)
             .bind(id)
             .fetch_one(&mut *tx)
             .await?;
@@ -944,7 +987,7 @@ async fn upsert_match(
     .bind(m.ended_at)
     .bind(outcome)
     .bind(m.winning_faction.as_deref())
-    .bind(m.aar_replay_url.as_deref())
+    .bind(aar_replay_url)
     .fetch_one(&mut *tx)
     .await?;
     Ok(row)
