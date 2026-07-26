@@ -2034,9 +2034,8 @@ pub fn validate_all() -> Result<u8> {
 
     println!("TBD_MissionValidator unconsumed-key warnings (T-250):");
     {
-        let validator_c = root.join(
-            "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
-        );
+        let validator_c =
+            root.join("apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c");
         let src = fs::read_to_string(&validator_c)
             .with_context(|| format!("read {}", validator_c.display()))?;
         let mut bad = Vec::new();
