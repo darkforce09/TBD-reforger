@@ -86,6 +86,13 @@ pub struct Event {
     pub created_by: String,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub match_id: Option<Uuid>,
+    /// Game server this operation is scheduled on (T-260). Nullable uuid — no FK in schema
+    /// (house style; see migration 0011). Absent on the wire when unset.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub server_id: Option<Uuid>,
+    /// Modpack this operation requires (T-260). Per-event, not the global `/modpacks/current`.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub modpack_id: Option<Uuid>,
     #[serde(with = "go_time")]
     pub created_at: DateTime<Utc>,
     #[serde(with = "go_time")]

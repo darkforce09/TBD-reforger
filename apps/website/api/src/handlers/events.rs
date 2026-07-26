@@ -9,7 +9,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Json, Response};
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Value, json};
 use sqlx::{AssertSqlSafe, PgPool, Postgres, QueryBuilder};
 use tokio::task::JoinHandle;
@@ -114,6 +114,7 @@ static EVENT_COLUMNS: LazyLock<String> = LazyLock::new(|| {
          COALESCE(e.briefing, '') AS briefing, \
          COALESCE(e.banner_image_url, '') AS banner_image_url, \
          {} AS status, e.registration_locked, e.max_slots, e.created_by, e.match_id, \
+         e.server_id, e.modpack_id, \
          COALESCE(e.created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
          COALESCE(e.updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at",
         &*EFFECTIVE_STATUS_SQL
@@ -188,6 +189,46 @@ fn check_name_override(n: &str) -> Result<(), ApiError> {
         return Err(ApiError::bad_request(
             "name_override must not be blank — send \"\" to clear it and fall back to the \
              mission's title",
+        ));
+    }
+    Ok(())
+}
+
+/// Distinguish "key absent" from `"key": null` on PATCH (T-260) — same contract as
+/// `handlers/servers.rs::present_option`. Absent = leave alone; explicit null = clear.
+fn present_option<'de, D, T>(d: D) -> Result<Option<Option<T>>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    Option::<T>::deserialize(d).map(Some)
+}
+
+/// Advisory existence check — `events.server_id` is a bare uuid (no FK; house style). An
+/// unknown id would otherwise store and leave the Hub with a dangling pointer the SPA cannot
+/// resolve. Same shape as `handlers/servers.rs::require_modpack`.
+async fn require_server(pool: &PgPool, id: Uuid) -> Result<(), ApiError> {
+    let found: Option<Uuid> = sqlx::query_scalar("SELECT id FROM servers WHERE id = $1")
+        .bind(id)
+        .fetch_optional(pool)
+        .await?;
+    if found.is_none() {
+        return Err(ApiError::bad_request(
+            "server_id does not name a known server",
+        ));
+    }
+    Ok(())
+}
+
+/// Advisory existence check for `events.modpack_id` — see [`require_server`].
+async fn require_event_modpack(pool: &PgPool, id: Uuid) -> Result<(), ApiError> {
+    let found: Option<Uuid> = sqlx::query_scalar("SELECT id FROM modpacks WHERE id = $1")
+        .bind(id)
+        .fetch_optional(pool)
+        .await?;
+    if found.is_none() {
+        return Err(ApiError::bad_request(
+            "modpack_id does not name a known modpack",
         ));
     }
     Ok(())
@@ -586,6 +627,12 @@ pub struct CreateEventInput {
     registration_locked: bool,
     #[serde(default)]
     status: String,
+    /// Optional — binds the operation to a game server (T-260).
+    #[serde(default)]
+    server_id: Option<Uuid>,
+    /// Optional — per-event modpack (T-260); not the global `/modpacks/current`.
+    #[serde(default)]
+    modpack_id: Option<Uuid>,
 }
 
 /// `POST /api/v1/events` — schedule an operation container (admin).
@@ -613,10 +660,16 @@ pub async fn create_event(
         ));
     }
     check_name_override(&input.name_override)?;
+    if let Some(sid) = input.server_id {
+        require_server(&state.pool, sid).await?;
+    }
+    if let Some(mid) = input.modpack_id {
+        require_event_modpack(&state.pool, mid).await?;
+    }
     let id: Uuid = sqlx::query_scalar(
         "INSERT INTO events (name_override, start_time, briefing, banner_image_url, status, \
-         registration_locked, max_slots, created_by, created_at, updated_at) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), now()) RETURNING id",
+         registration_locked, max_slots, created_by, server_id, modpack_id, created_at, updated_at) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now(), now()) RETURNING id",
     )
     .bind(&input.name_override)
     .bind(start_time)
@@ -626,6 +679,8 @@ pub async fn create_event(
     .bind(input.registration_locked)
     .bind(input.max_slots)
     .bind(&_a.0.discord_id)
+    .bind(input.server_id)
+    .bind(input.modpack_id)
     .fetch_one(&state.pool)
     .await?;
     // Read back rather than `RETURNING` the row: an event backfilled with a past
@@ -1135,6 +1190,12 @@ pub struct PatchEventInput {
     banner_image_url: Option<String>,
     registration_locked: Option<bool>,
     status: Option<String>,
+    /// `Some(None)` clears; `None` leaves alone (T-260). See [`present_option`].
+    #[serde(default, deserialize_with = "present_option")]
+    server_id: Option<Option<Uuid>>,
+    /// `Some(None)` clears; `None` leaves alone (T-260). See [`present_option`].
+    #[serde(default, deserialize_with = "present_option")]
+    modpack_id: Option<Option<Uuid>>,
 }
 
 /// `PATCH /api/v1/events/:id` — edit an event (admin).
@@ -1197,6 +1258,13 @@ pub async fn update_event(
     if let Some(n) = &input.name_override {
         check_name_override(n)?;
     }
+    // Existence checks before write — a bad id must not apply the rest of the PATCH.
+    if let Some(Some(sid)) = input.server_id {
+        require_server(&state.pool, sid).await?;
+    }
+    if let Some(Some(mid)) = input.modpack_id {
+        require_event_modpack(&state.pool, mid).await?;
+    }
 
     let mut qb: QueryBuilder<Postgres> = QueryBuilder::new("UPDATE events SET updated_at = now()");
     if let Some(t) = input.start_time {
@@ -1219,6 +1287,12 @@ pub async fn update_event(
     }
     if let Some(status) = requested {
         qb.push(", status = ").push_bind(status);
+    }
+    if let Some(sid) = input.server_id {
+        qb.push(", server_id = ").push_bind(sid);
+    }
+    if let Some(mid) = input.modpack_id {
+        qb.push(", modpack_id = ").push_bind(mid);
     }
     qb.push(" WHERE id = ").push_bind(ev.id);
     qb.build()
