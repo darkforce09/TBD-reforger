@@ -98,7 +98,12 @@ struct MenuItem {
 #[derive(Clone, Copy)]
 enum MenuAction {
     Save,
+    /// The editor SUPERSET envelope (`MissionExport`) — re-importable, not loadable by the mod.
     Export,
+    /// T-243 — the compiled mod document, the bytes `GET /missions/:id/compiled` serves a game
+    /// server. A separate action rather than a replacement for [`MenuAction::Export`]: the two
+    /// files answer different questions and both have a caller.
+    ExportCompiled,
     Undo,
     Redo,
     Settings,
@@ -115,6 +120,10 @@ const MENUS: [(&str, &[MenuItem]); 5] = [
             MenuItem {
                 label: "Export JSON",
                 action: Some(MenuAction::Export),
+            },
+            MenuItem {
+                label: "Export Compiled Mission…",
+                action: Some(MenuAction::ExportCompiled),
             },
         ],
     ),
@@ -849,6 +858,11 @@ pub fn TopCommandStrip(
     // T-192 — row mirror for the inline scrubber / weather select. Setup-time, not handler-time.
     #[cfg(target_arch = "wasm32")]
     let row_mirror = RowMirror::from_route();
+    // T-243 — where the server-truth Export reports its outcome. Resolved at setup for the same
+    // reason `row_mirror` is: `use_toasts()` is an `expect_context` and a DOM click handler has no
+    // reactive owner to resolve it through.
+    #[cfg(target_arch = "wasm32")]
+    let toasts = crate::toast::use_toasts();
     // T-181.44 — per-problem lines from a rejected Save (`details` from the 400). Local to the
     // strip because the Save dialog is the only place they are read; `save_status` stays a
     // one-liner because it also renders in the strip itself.
@@ -888,6 +902,10 @@ pub fn TopCommandStrip(
             MenuAction::Export => {
                 #[cfg(target_arch = "wasm32")]
                 crate::mission_commands::export_now(&save_semver.get_untracked());
+            }
+            MenuAction::ExportCompiled => {
+                #[cfg(target_arch = "wasm32")]
+                crate::mission_commands::export_compiled_now(toasts);
             }
             MenuAction::Undo => {
                 #[cfg(target_arch = "wasm32")]
@@ -1169,6 +1187,20 @@ pub fn TopCommandStrip(
                 }
             >
                 "Export JSON"
+            </button>
+            // T-243 — the compiled mod document (what `/compiled` serves a game server), beside the
+            // superset envelope above. `/compiled` is service-token-only, so this button is the
+            // only way an author can see these bytes at all.
+            <button
+                type="button"
+                title="Download the compiled mission document the game server receives"
+                class="rounded border border-outline-variant/40 px-3 py-1 text-xs font-medium text-on-surface"
+                on:click=move |_| {
+                    #[cfg(target_arch = "wasm32")]
+                    crate::mission_commands::export_compiled_now(toasts);
+                }
+            >
+                "Export Compiled"
             </button>
             <span class="min-w-24 font-mono text-xs text-on-surface-variant">
                 {move || save_status.get()}

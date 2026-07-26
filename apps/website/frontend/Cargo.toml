@@ -14,8 +14,13 @@ console_error_panic_hook = "0.1"
 futures = "0.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# T-180.7 — `format_slot_line` on native + wasm (wasm32 block below adds doc/mission/png/world).
-map-engine-core = { path = "../../../crates/map-engine-core", default-features = false }
+# T-180.7 — `format_slot_line` on native + wasm (wasm32 block below adds doc/png/world).
+# T-243 — `mission` is now on the NATIVE build too, not just wasm32. `MissionDetail::compiled_meta`
+# is the row half of the editor's server-truth Export, and a projection that only exists in the
+# wasm build is a projection `cargo test` cannot check; `compiled_meta_is_the_row_the_server_compiles_from`
+# runs it against the real captured `GET /missions/:id` golden. The feature is three optional deps
+# (serde / serde_json / thiserror) already in this crate's tree, so it costs the bundle nothing.
+map-engine-core = { path = "../../../crates/map-engine-core", default-features = false, features = ["mission"] }
 gloo-net = "0.6"
 js-sys = "0.3"
 # T-405 — the `<a href>` scheme guard (`url_guard.rs`). Costs the bundle NOTHING: `url` is already

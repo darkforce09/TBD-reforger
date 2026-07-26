@@ -750,6 +750,40 @@ pub struct MissionDetail {
     pub reviewed_at: Option<String>,
 }
 
+impl MissionDetail {
+    /// **T-243 — this row as the `MissionMeta` the shared mission compiler reads.**
+    ///
+    /// The one input the editor's server-truth Export cannot derive from the document. `/compiled`
+    /// builds `MissionMeta` from the mission ROW
+    /// (`services::mission_compile::flatten_to_mod_document`, the only reader of
+    /// `missions.author_id` / `max_players` on that path), so a preview that guessed them would be
+    /// a different document. This is the row half of the twin; the payload-first `time`/`weather`
+    /// precedence is applied downstream by
+    /// `map_engine_core::mission::flatten::apply_authored_environment`, which is why this copies
+    /// the row's values straight across and does not try to reconcile them here.
+    ///
+    /// **`author` is `author_id`, not `author_name`.** The server sends the Discord id (`m.author_id`)
+    /// and `author_name` is the display name beside it — the one field here a reasonable reading
+    /// gets wrong, and it would produce a document that looks right and is not the served one.
+    /// Pinned by `compiled_meta_is_the_row_the_server_compiles_from`.
+    ///
+    /// Every other field is a straight copy, checked by the compiler: this returns the struct rather
+    /// than a hand-built camelCase JSON object precisely so there is no key to mistype (see
+    /// `MissionMeta`'s note on why it is `Serialize`).
+    pub fn compiled_meta(&self) -> map_engine_core::mission::flatten::MissionMeta {
+        map_engine_core::mission::flatten::MissionMeta {
+            id: self.id.clone(),
+            title: self.title.clone(),
+            author: self.author_id.clone(),
+            terrain: self.terrain.clone(),
+            custom_terrain_name: self.custom_terrain_name.clone().unwrap_or_default(),
+            max_players: self.max_players,
+            time_of_day: self.time_of_day.clone(),
+            weather_preset: self.weather.clone(),
+        }
+    }
+}
+
 /// One armory row inside `armory_by_faction[].items[]` (T-159.25 faction dossiers). The flattened
 /// `extra` map preserves any wire fields beyond the rendered three, so the R-api canonical
 /// round-trip stays byte-exact whatever the backend adds.
@@ -1239,6 +1273,70 @@ pub(crate) mod r_api {
         );
         assert!(d.reviewed_by.is_some(), "and the reviewer");
         assert!(d.reviewed_at.is_some(), "and the review timestamp");
+    }
+    /// **T-243 — the row half of the editor's server-truth Export, against a REAL captured row.**
+    ///
+    /// `MissionDetail::compiled_meta` feeds `flatten_mod_document_json`, whose output is pinned
+    /// byte-identical to `GET /missions/:id/compiled` by
+    /// `website-api`'s `client_twin_is_byte_identical_to_the_compiled_route`. That test supplies its
+    /// own meta, so it proves the *compiler* agrees; this one proves the *editor* hands it the same
+    /// row the server would have read. Both halves or the preview is only half-checked.
+    ///
+    /// The golden is used rather than a hand-built struct on purpose: a literal fixture would be
+    /// written from the same misreading as the code it checks.
+    #[test]
+    fn compiled_meta_is_the_row_the_server_compiles_from() {
+        const G: &str = golden!("GET__missions__512d8658-7025-4a70-94e9-a1b44a7aa155.json");
+        let d: MissionDetail = serde_json::from_str(G).unwrap();
+        let meta = d.compiled_meta();
+
+        // `services::mission_compile::flatten_to_mod_document` reads `m.author_id`. The golden's
+        // two author fields differ, so picking `author_name` here fails rather than coinciding.
+        assert_ne!(
+            d.author_id, d.author_name,
+            "this golden can no longer tell author_id from author_name — recapture one that can",
+        );
+        assert_eq!(
+            meta.author, d.author_id,
+            "author is the Discord id, not the display name"
+        );
+
+        assert_eq!(meta.id, d.id);
+        assert_eq!(meta.title, d.title);
+        assert_eq!(meta.terrain, d.terrain);
+        assert_eq!(meta.max_players, d.max_players);
+        assert_eq!(meta.time_of_day, d.time_of_day);
+        assert_eq!(meta.weather_preset, d.weather);
+        assert_eq!(
+            meta.custom_terrain_name,
+            d.custom_terrain_name.clone().unwrap_or_default(),
+            "an absent custom terrain is the empty string the row column holds, not a literal null",
+        );
+
+        // Nothing load-bearing may be silently empty: an all-`Default` meta would satisfy several
+        // of the equalities above if the golden itself went blank.
+        assert!(!meta.id.is_empty() && !meta.title.is_empty() && !meta.terrain.is_empty());
+        assert!(
+            meta.max_players > 0,
+            "playerRange upper bound comes from here"
+        );
+
+        // And the wire round trip the wasm caller actually performs: serialize → the camelCase
+        // bytes `flatten_mod_document_json` parses → back. A rename on either side breaks this.
+        let json = serde_json::to_string(&meta).unwrap();
+        let back: map_engine_core::mission::flatten::MissionMeta =
+            serde_json::from_str(&json).unwrap();
+        assert_eq!(
+            back.max_players, meta.max_players,
+            "maxPlayers survives the round trip"
+        );
+        assert_eq!(
+            back.time_of_day, meta.time_of_day,
+            "timeOfDay survives the round trip"
+        );
+        assert_eq!(back.weather_preset, meta.weather_preset);
+        assert_eq!(back.custom_terrain_name, meta.custom_terrain_name);
+        assert_eq!(back.author, meta.author);
     }
     #[test]
     fn event_hub() {
