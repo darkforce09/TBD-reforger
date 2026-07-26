@@ -13,3 +13,27 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-258 — POST /versions is unaudited and does not bump updated_at
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-258`
+- **Targets:** website
+- **Summary:** No trail of who saved what. The mission library orders by updated_at and the approvals queue reports it as submitted_at, so both show stale ordering. editor_notes is write-only — typed, POSTed, never read back, not even on the DTO.
+
+## T-259 — The mod has no reader for the settings block
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-259`
+- **Targets:** mod
+- **Summary:** mission.schema.json:451-462 defines respawn, spectatorPolicy and nightVision. TBD_MissionDocumentStruct has no settings member and flatten has no settings field. The block appears only in the schema, the four hand-written goldens and one doc.
+
+## T-260 — Events carry no server or modpack
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-260`
+- **Targets:** website
+- **Summary:** Grep for server_id or modpack_id over events.rs and models/event.rs returns zero, and the events table has no such columns. The Event Hub modpack chip fetches the global /modpacks/current, so every event shows the same pack.
