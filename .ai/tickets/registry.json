@@ -7100,7 +7100,7 @@
     {
       "id": "T-205",
       "title": "Vehicle data has no seats, crew roles, cargo capacity or turret bindings",
-      "summary": "BLOCKED ON WORKBENCH (2026-07-26, refused by its slice agent with evidence). Two ticket claims were wrong: cargo capacity ALREADY EXISTS — max_weight_kg/max_volume_cm3/cargo_grid_w/cargo_grid_h on 211 of 218 vehicle rows, added by migrations/0007_registry_cargo.sql at T-068.15.1 — and vehicles carry 9 keys vs a helmet's 8, not an identical 14. Genuinely missing: seats, crew_roles, turret bindings. The 87 vehicle_weapon rows ARE the turrets but carry no parent field; the link exists only as a path prefix in resource_name, derivable but unmodelled. ORDER (step 2 is why this is blocked): (1) registry-items.schema.json $defs/item is additionalProperties:false with no per-kind branch, so it must open first; (2) TBD_RegistryItemsExportPlugin.c + TBD_RegistryScan.c — the ONLY place the real data exists, and a WORKBENCH plugin, so executor:workbench and not runnable unattended; (3) regenerate the workbench export; (4) new registry migration modelled on 0007; (5) models/registry.rs + contract/generated + registry_import.rs. DO NOT wire vehicles.rs to GET /vehicle-database: that table has no INSERT path anywhere in the repo, and the API returns 7 fields where the page renders 13 — wiring it would DROP short_desc, critical_directive, mobility, defense, capacity, armament and threats to render an empty list. That page is a wiki IFF table (T-263), not the editor's asset registry. OVERLAPS to dedupe before scheduling: T-242 (entity inventory), T-215 (placement/cargo), T-216 (flatten never reads vehiclesById at all, so authored vehicles are silently discarded), T-244 (no vehicle kind in the map-object catalogue), T-076.",
+      "summary": "BLOCKED ON WORKBENCH (2026-07-26, refused by its slice agent with evidence). Two ticket claims were wrong: cargo capacity ALREADY EXISTS — max_weight_kg/max_volume_cm3/cargo_grid_w/cargo_grid_h on 211 of 218 vehicle rows, added by migrations/0007_registry_cargo.sql at T-068.15.1 — and vehicles carry 9 keys vs a helmet's 8, not an identical 14. Genuinely missing: seats, crew_roles, turret bindings. The 87 vehicle_weapon rows ARE the turrets but carry no parent field; the link exists only as a path prefix in resource_name, derivable but unmodelled. ORDER (step 2 is why this is blocked): (1) registry-items.schema.json $defs/item is additionalProperties:false with no per-kind branch, so it must open first; (2) TBD_RegistryItemsExportPlugin.c + TBD_RegistryScan.c — the ONLY place the real data exists, and a WORKBENCH plugin, so executor:workbench and not runnable unattended; (3) regenerate the workbench export; (4) new registry migration modelled on 0007; (5) models/registry.rs + contract/generated + registry_import.rs. DO NOT wire vehicles.rs to GET /vehicle-database: that table has no INSERT path anywhere in the repo, and the API returns 7 fields where the page renders 13 — wiring it would DROP short_desc, critical_directive, mobility, defense, capacity, armament and threats to render an empty list. That page is a wiki IFF table (T-263), not the editor's asset registry. OVERLAPS to dedupe before scheduling: T-242 (entity inventory), T-215 (placement/cargo), T-216 (flatten never reads vehiclesById at all, so authored vehicles are silently discarded), T-244 (no vehicle kind in the map-object catalogue), T-076.\n\nBLOCKED ON WORKBENCH (2026-07-26). A slice agent took this and refused rather than guessing: the missing data is only obtainable from a Workbench export pass, which no agent can run. T-206's agent went further and proved the pak data IS obtainable, reproducing 323/323 rows exactly — so this is a data-acquisition task, not a code task. Executor flipped to `workbench` so it stops entering the dispatch set. Operator action required.",
       "program": "eden",
       "surfaces": [
         "REG"
@@ -7115,12 +7115,12 @@
         "root",
         "mod"
       ],
-      "executor": "claude-code"
+      "executor": "workbench"
     },
     {
       "id": "T-206",
       "title": "Item data is 78% empty",
-      "summary": "BLOCKED, but PROVEN OBTAINABLE (2026-07-26, refused by its slice agent with measured evidence). The paks are readable offline and the data is there: all 1,857 registry prefabs resolve to a pak entry, zero misses, across 222,536 entries / 19,422 .et prefabs. Obtainable WITHOUT Workbench: weight_kg/volume_cm3 (+423 fillable, 103/107 weapons), magazine capacity, calibre and ammo type (113/125 magazines, from MagazineComponent), weapon-mag compat (88/107), attachment slots (99/107), arsenal_type (373/1857 via the EntityCatalog configs). NOT obtainable: icon_url — paks carry .edds assets, a served URL needs extraction/transcoding/hosting, which is an asset pipeline. CORRECTNESS CONTROL: on chains where exactly one component class serializes ItemPhysAttributes the extractor reproduced the existing Workbench value 323/323 EXACTLY; it disagrees only on the 66 ambiguous chains, and there the export is wrong. BLOCKED ON: (1) registry-items.schema.json is additionalProperties:false with no properties for ammo type, calibre, magazine capacity or attachment slots — a schema slice must land first; (2) the extractor has no in-tree home (verify-no-python bans .py repo-wide) so writing 455 hand-computed numbers into a file labelled a Workbench export would be an unreproducible artifact and would pre-empt T-278, the paks->registry pipeline. ORDER: fix pak.rs offset -> fix ReadPhysAttrsPass (workbench) -> schema slice -> build the T-278 extractor in Rust and regenerate. The extraction logic is proven; it needs a home that is not /tmp.",
+      "summary": "BLOCKED, but PROVEN OBTAINABLE (2026-07-26, refused by its slice agent with measured evidence). The paks are readable offline and the data is there: all 1,857 registry prefabs resolve to a pak entry, zero misses, across 222,536 entries / 19,422 .et prefabs. Obtainable WITHOUT Workbench: weight_kg/volume_cm3 (+423 fillable, 103/107 weapons), magazine capacity, calibre and ammo type (113/125 magazines, from MagazineComponent), weapon-mag compat (88/107), attachment slots (99/107), arsenal_type (373/1857 via the EntityCatalog configs). NOT obtainable: icon_url — paks carry .edds assets, a served URL needs extraction/transcoding/hosting, which is an asset pipeline. CORRECTNESS CONTROL: on chains where exactly one component class serializes ItemPhysAttributes the extractor reproduced the existing Workbench value 323/323 EXACTLY; it disagrees only on the 66 ambiguous chains, and there the export is wrong. BLOCKED ON: (1) registry-items.schema.json is additionalProperties:false with no properties for ammo type, calibre, magazine capacity or attachment slots — a schema slice must land first; (2) the extractor has no in-tree home (verify-no-python bans .py repo-wide) so writing 455 hand-computed numbers into a file labelled a Workbench export would be an unreproducible artifact and would pre-empt T-278, the paks->registry pipeline. ORDER: fix pak.rs offset -> fix ReadPhysAttrsPass (workbench) -> schema slice -> build the T-278 extractor in Rust and regenerate. The extraction logic is proven; it needs a home that is not /tmp.\n\nBLOCKED ON WORKBENCH (2026-07-26). A slice agent took this and refused rather than guessing: the missing data is only obtainable from a Workbench export pass, which no agent can run. T-206's agent went further and proved the pak data IS obtainable, reproducing 323/323 rows exactly — so this is a data-acquisition task, not a code task. Executor flipped to `workbench` so it stops entering the dispatch set. Operator action required.",
       "program": "eden",
       "surfaces": [
         "REG"
@@ -7134,7 +7134,7 @@
       "targets": [
         "root"
       ],
-      "executor": "claude-code"
+      "executor": "workbench"
     },
     {
       "id": "T-207",
@@ -9090,13 +9090,14 @@
       "impact": [
         "mc-authoring"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2308,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "8d723aa9"
     },
     {
       "id": "T-309",
@@ -9337,6 +9338,26 @@
       ],
       "executor": "claude-code",
       "priority": 0
+    },
+    {
+      "id": "T-321",
+      "title": "Every map placement mints a fresh ORBAT squad, so the tree grows a squad per click",
+      "summary": "FOUND by T-308 while fixing Apply Template; reported, not touched (out of its owns). place_orbat.rs:52-55 mints a NEW squad on every single placement. That is why '>1 squad under a side' — which T-217's guard treats as authored structure worth refusing over — is actually the normal state after two clicks. T-308 worked around it by folding machine-minted squads (one slot, still on the default `Squad {n}` label, no callsign, no vehicles) into the apply target, which is correct as far as it goes but is a workaround.\n\nIf a placement instead appended to the side's current squad, or to an explicit active squad, the fold in orbat_apply_faction would be near-dead code and the ORBAT tree would stop growing a squad per click. Decide the model — implicit 'current squad' vs an explicit active-squad selection in the ORBAT panel — then make placement honour it. Keep T-308's fold as the compatibility path for documents already carrying per-click squads.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3137,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
     }
   ]
 }

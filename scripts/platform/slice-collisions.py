@@ -72,6 +72,27 @@ def shipped(tid, reg):
     return reg.get(tid, {}).get('status') in ('shipped', 'cancelled')
 
 
+def dispatchable(tid, reg):
+    """Can a slice AGENT take this ticket, or is a human the only one who can?
+
+    Two ways a ticket is undispatchable even though it is not shipped:
+
+      status `deferred`  — a slice agent already took it and refused with cause. T-205 and T-206
+                           are the live case: the missing vehicle/item data only exists behind a
+                           Workbench export pass. Re-dispatching burns a whole agent to re-derive
+                           the same refusal.
+      executor != claude-code — the D5 executor gate in CLAUDE.md. `workbench`, `human` and `ci`
+                           rows are operator work by definition.
+
+    Without this, `pack()` filtered on shipped/cancelled ALONE and kept offering both tickets at
+    the head of every dispatch set, where they would have consumed 2 of 8 slots per wave forever.
+    """
+    t = reg.get(tid, {})
+    if t.get('status') in ('shipped', 'cancelled', 'deferred', 'blocked'):
+        return False
+    return t.get('executor', 'claude-code') == 'claude-code'
+
+
 def collides(a, b):
     """Two tickets collide if any owned path overlaps — including prefix containment,
     so `apps/website/api/src/` collides with `apps/website/api/src/handlers/admin.rs`."""
@@ -113,8 +134,8 @@ def repack():
     """Rebuild the plan from the registry, re-packing every unshipped ticket by disjointness.
     Preserves each row's `owns` — only the wave numbers move."""
     reg = registry()
-    rows = [r for r in plan_rows() if not shipped(r['id'], reg)]
-    done = [r for r in plan_rows() if shipped(r['id'], reg)]
+    rows = [r for r in plan_rows() if dispatchable(r['id'], reg)]
+    done = [r for r in plan_rows() if not dispatchable(r['id'], reg)]
     waves, remaining, n = [], list(rows), 0
     # Seed `landed` with everything already shipped. Without this, a DEPS edge pointing at a shipped
     # ticket can never be satisfied — the dependency is filtered out of `rows` as done, so it never
@@ -162,7 +183,7 @@ def main():
         return repack()
 
     reg = registry()
-    rows = [r for r in plan_rows() if not shipped(r['id'], reg)]
+    rows = [r for r in plan_rows() if dispatchable(r['id'], reg)]
     by_id = {r['id']: r for r in rows}
 
     if '--check' in flags:
