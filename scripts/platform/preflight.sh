@@ -16,8 +16,16 @@ ok()    { printf "  \033[32m✓\033[0m %-34s %s\n" "$1" "${2:-}"; }
 nope()  { printf "  \033[31m✗ BLOCK\033[0m %-28s %s\n" "$1" "${2:-}"; block=$((block+1)); }
 soft()  { printf "  \033[33m! WARN \033[0m %-28s %s\n" "$1" "${2:-}"; warn=$((warn+1)); }
 
-if command -v distrobox-host-exec >/dev/null 2>&1; then hostrun() { distrobox-host-exec "$@"; }
-else hostrun() { "$@"; }; fi
+# Same host/container test as wave.sh (distrobox-host-exec:130). The binary exists on BOTH sides;
+# on the host it refuses with exit 126, so `command -v` alone false-BLOCKs cargo + ticket check.
+# Measured 2026-07-26: preflight printed "cargo unusable via the bridge" / "registry INVALID"
+# while `cargo --version` and `./scripts/ticket check` both passed natively on the host.
+in_container() { [ -f /run/.containerenv ] || [ -f /.dockerenv ] || [ -n "${container:-}" ]; }
+if command -v distrobox-host-exec >/dev/null 2>&1 && in_container; then
+  hostrun() { distrobox-host-exec "$@"; }
+else
+  hostrun() { "$@"; }
+fi
 
 echo "═══ platform factory preflight ═══"
 
