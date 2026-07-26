@@ -1149,9 +1149,14 @@ mod tests {
         let doc = MissionDocCore::new();
         layer(&doc);
         let a = place(&doc, "BLUFOR", 0, 1111.0, 2222.0);
+        // T-321 — placements now accumulate into the side's bottom squad, so a second click no
+        // longer mints a second squad. Closing the first one (a rename is authoring) is what makes
+        // the next placement mint the machine-minted squad this test is about; `squadIds[0]`'s own
+        // authoring never blocks, so Apply still runs.
+        doc.rename_squad(&side_squad_ids(&doc, "BLUFOR")[0], "Alpha");
         let b = place(&doc, "BLUFOR", 1, 3333.0, 4444.0);
         doc.update_slot_identity(&b, Some("A-2".into()), Some("Corporal".into()));
-        assert_eq!(side_squad_ids(&doc, "BLUFOR").len(), 2, "two squads minted");
+        assert_eq!(side_squad_ids(&doc, "BLUFOR").len(), 2, "two squads");
 
         let r = apply_faction_library(&doc, "BLUFOR", "lyr", &two_role_lib()).expect("apply");
         assert_eq!(r.roles_applied, 2);
@@ -1194,7 +1199,11 @@ mod tests {
         for i in 0..5 {
             place(&doc, "OPFOR", i, 1000.0 + 10.0 * i as f64, 2000.0);
         }
-        assert_eq!(side_squad_ids(&doc, "OPFOR").len(), 5);
+        // T-321 — five clicks are one five-man squad now, not five one-man squads. There is
+        // nothing to fold here any more: this is the plain surplus-slot trim on `squadIds[0]`.
+        // The per-click-squad shape the fold exists for lives on in documents saved before T-321;
+        // `a_legacy_per_click_document_still_folds` is the test that covers it.
+        assert_eq!(side_squad_ids(&doc, "OPFOR").len(), 1);
 
         apply_faction_library(&doc, "OPFOR", "lyr", &two_role_lib()).expect("first");
         assert_eq!(side_squad_ids(&doc, "OPFOR").len(), 1);
@@ -1210,6 +1219,53 @@ mod tests {
         assert_eq!(s["slot-placed-OPFOR-1"]["position"]["x"], 1010.0);
     }
 
+    /// **T-321 — the fold's primary justification, now that placement no longer produces this
+    /// shape.** Every mission saved before T-321 carries one squad per click, and those documents
+    /// are already in the wild. Rebuild that exact artifact the way T-180.1's
+    /// `place_character_under_side` wrote it — mint a squad, one slot, that slot as leader — and
+    /// Apply must still fold it, keeping every body's id, position, callsign and rank.
+    ///
+    /// If this test is ever deleted, the fold is dead code and can go with it.
+    #[test]
+    fn a_legacy_per_click_document_still_folds() {
+        /// T-180.1 `place_character_under_side`, verbatim: a fresh squad for every placement.
+        fn legacy_place(doc: &MissionDocCore, side: &str, n: u32, x: f64, y: f64) -> String {
+            let faction_id = format!("faction-{side}");
+            if small(doc)["factionsById"].get(&faction_id).is_none() {
+                doc.add_faction(&faction_id, side, side);
+            }
+            let squad_id = format!("squad-{side}-{n}");
+            let ordinal = faction_squad_ids(doc, &faction_id).len();
+            doc.add_squad(&squad_id, &faction_id, &format!("Squad {}", ordinal + 1), None);
+            let slot_id = format!("slot-legacy-{n}");
+            doc.add_slot(
+                &slot_id, &squad_id, "lyr", 0, "Rifleman", None, None, x, y, 0.0, 0.0,
+            );
+            doc.set_leader(&squad_id, &slot_id);
+            slot_id
+        }
+
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        let a = legacy_place(&doc, "OPFOR", 1, 1000.0, 2000.0);
+        let b = legacy_place(&doc, "OPFOR", 2, 1010.0, 2000.0);
+        legacy_place(&doc, "OPFOR", 3, 1020.0, 2000.0);
+        doc.update_slot_identity(&b, Some("A-2".into()), Some("Corporal".into()));
+        assert_eq!(side_squad_ids(&doc, "OPFOR").len(), 3, "pre-T-321 shape");
+
+        let r = apply_faction_library(&doc, "OPFOR", "lyr", &two_role_lib()).expect("apply");
+        assert_eq!(side_squad_ids(&doc, "OPFOR"), vec![r.squad_id.clone()], "folded to one");
+        assert_eq!(r.leader_slot_id, a);
+        assert_eq!(side_slot_count(&doc, "OPFOR"), 2);
+
+        let s = slots(&doc);
+        assert_eq!(s[&a]["position"]["x"], 1000.0, "id + position survived the fold");
+        assert_eq!(s[&b]["position"]["x"], 1010.0);
+        assert_eq!(s[&b]["callsign"], "A-2", "identity survived the fold");
+        assert_eq!(s[&b]["rank"], "Corporal");
+        assert_eq!(s[&a]["role"], "Squad Leader", "and took a library role");
+    }
+
     /// The narrowing must not become a licence to collapse anything. A placement squad the operator
     /// **renamed** is authoring the flat template cannot carry, so Apply still refuses — and still
     /// writes nothing.
@@ -1218,9 +1274,10 @@ mod tests {
         let doc = MissionDocCore::new();
         layer(&doc);
         place(&doc, "BLUFOR", 0, 1111.0, 2222.0);
+        doc.rename_squad(&side_squad_ids(&doc, "BLUFOR")[0], "Alpha"); // T-321: close squad 1
         place(&doc, "BLUFOR", 1, 3333.0, 4444.0);
         let second = side_squad_ids(&doc, "BLUFOR")[1].clone();
-        doc.rename_squad(&second, "Alpha");
+        doc.rename_squad(&second, "Bravo");
 
         let small_before = small(&doc);
         let slots_before = slots(&doc);
@@ -1230,12 +1287,12 @@ mod tests {
             ApplyFactionError::WouldCollapseSquads { blocking, .. } => {
                 assert_eq!(blocking.len(), 1);
                 assert_eq!(blocking[0].id, second);
-                assert_eq!(blocking[0].name, "Alpha");
+                assert_eq!(blocking[0].name, "Bravo");
                 assert_eq!(blocking[0].why, "renamed");
             }
             other => panic!("expected WouldCollapseSquads, got {other:?}"),
         }
-        assert!(err.to_string().contains("\"Alpha\" (renamed)"), "{err}");
+        assert!(err.to_string().contains("\"Bravo\" (renamed)"), "{err}");
         assert_eq!(small(&doc), small_before, "refusal writes nothing");
         assert_eq!(slots(&doc), slots_before, "refusal writes nothing");
     }
@@ -1247,6 +1304,7 @@ mod tests {
         let doc = MissionDocCore::new();
         layer(&doc);
         place(&doc, "INDFOR", 0, 1111.0, 2222.0);
+        doc.rename_squad(&side_squad_ids(&doc, "INDFOR")[0], "Alpha"); // T-321: close squad 1
         place(&doc, "INDFOR", 1, 3333.0, 4444.0);
         let second = side_squad_ids(&doc, "INDFOR")[1].clone();
         doc.add_vehicle("veh-hand", "{V}Truck.et", Some(1.0), Some(2.0), None, None);
