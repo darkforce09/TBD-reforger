@@ -20,7 +20,7 @@ pub use mission_compile::{
 pub use map_engine_core::mission::orbat::{
     OrbatSlotTemplate, OrbatSquadTemplate, parse_orbat_template,
 };
-pub use mortar::{FireSolution, solve_fire_mission};
+pub use mortar::{FireSolution, SolveError, solve_fire_mission};
 pub use registry_import::{ImportCounts, ImportError, ensure_modpack, import_compat, import_items};
 pub use role_sync::resync_all_roles;
 pub use text::{sanitize_html, snippet};
