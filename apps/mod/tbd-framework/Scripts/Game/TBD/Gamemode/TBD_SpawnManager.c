@@ -1110,6 +1110,15 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (!gear.primary.IsEmpty())  return true;
 		if (!gear.optic.IsEmpty())    return true;
 		if (!gear.magazine.IsEmpty()) return true;
+		// T-182 — the three weapon slots the compiler used to discard. This walk is a GATE, not a
+		// census: returning false here sends the body down RunKitWornAudit and the loadout is never
+		// applied at all. A slot that authors only a launcher (or only a throwable) is legal
+		// authoring, and without these three lines it would still spawn empty-handed even though
+		// every other layer now carries the item. The comment above is explicit that this walk and
+		// TBD_LoadoutApplication.CountGear must learn about a new gear field together.
+		if (!gear.launcher.IsEmpty())   return true;
+		if (!gear.handgun.IsEmpty())    return true;
+		if (!gear.throwable.IsEmpty())  return true;
 		if (!gear.uniform.IsEmpty())  return true;
 		if (!gear.vest.IsEmpty())     return true;
 		if (!gear.helmet.IsEmpty())   return true;

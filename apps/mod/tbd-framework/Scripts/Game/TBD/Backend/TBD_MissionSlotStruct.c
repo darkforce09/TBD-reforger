@@ -4,9 +4,17 @@
 //! @contract mission.schema.json#/$defs/slot (loadout.gear)
 class TBD_SlotGearStruct
 {
-	string primary;  //!< Primary weapon ResourceName.
-	string optic;    //!< Optic ResourceName. T-181.10 — mounted into the primary weapon's storage.
-	string magazine; //!< Magazine ResourceName. T-181.10 — loaded into the primary weapon's storage.
+	string primary;  //!< Primary weapon ResourceName — engine weapon slot 0 (slotType "primary").
+	string optic;    //!< Optic ResourceName. T-181.10 — mounted into the PRIMARY weapon's storage only.
+	string magazine; //!< Magazine ResourceName. T-181.10 — loaded into the PRIMARY weapon's storage only.
+	// T-182 — the other three authored weapon slots. The editor has always written all four
+	// (arsenal_rules.rs WEAPON_SLOTS); the compiler selected only slot 0 and dropped these three,
+	// so a player authored with an RPG spawned without it. Names are the EDITOR's own vocabulary
+	// so the compiled document reads the same words the Arsenal UI shows. None of the three carry
+	// optic/magazine sub-slots today — those ride the primary alone.
+	string launcher;  //!< Launcher ResourceName — engine weapon slot 1 (the second untyped long slot).
+	string handgun;   //!< Sidearm ResourceName — engine weapon slot 2 (slotType "secondary").
+	string throwable; //!< Throwable ResourceName — engine weapon slot 3 (slotType "grenade").
 	string uniform;  //!< Jacket/uniform ResourceName.
 	string vest;     //!< Vest ResourceName (armoredVest wins in the compiler).
 	string helmet;   //!< Head cover ResourceName.

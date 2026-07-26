@@ -57,7 +57,15 @@ class TBD_PendingEquip
 	typename areaType;                       // primary LoadoutAreaType for clothing
 	ref array<typename> candidateAreas = {}; // all areas this item may land in
 	ref map<typename, IEntity> incumbents;   // pre-equip worn garment per candidate area
-	IEntity oldWeapon;                       // pre-equip current weapon (weapon rows)
+	IEntity oldWeapon;                       // pre-equip occupant of THIS weapon slot (weapon rows)
+
+	// T-182 — weapon rows are SLOT-INDEXED. The engine's weapon slots 0 and 1 are both untyped
+	// long slots (a rifle and a launcher are equally legal in either), so "equip a weapon" without
+	// naming a slot lets the four authored weapons fight over one. These two fields are the target
+	// slot, captured at issue time and re-read at verify time so the check proves the item landed
+	// where the JSON asked rather than merely somewhere on the character.
+	int weaponSlotIndex = -1;                // engine weapon slot id; -1 on clothing rows
+	BaseInventoryStorageComponent weaponStorage; // the character's EquipedWeaponStorageComponent
 }
 
 //------------------------------------------------------------------------------------------------
@@ -256,9 +264,15 @@ class TBD_LoadoutApplication : Managed
 			return 0;
 
 		int n;
-		if (!gear.primary.IsEmpty())  n++;
-		if (!gear.optic.IsEmpty())    n++;
-		if (!gear.magazine.IsEmpty()) n++;
+		if (!gear.primary.IsEmpty())   n++;
+		if (!gear.optic.IsEmpty())     n++;
+		if (!gear.magazine.IsEmpty())  n++;
+		// T-182 — the three weapon slots the compiler used to discard. Counted here because this
+		// is the verdict's DENOMINATOR: omit them and a pass that failed to deliver a launcher
+		// would still report gear=N/N and call itself complete.
+		if (!gear.launcher.IsEmpty())  n++;
+		if (!gear.handgun.IsEmpty())   n++;
+		if (!gear.throwable.IsEmpty()) n++;
 		if (!gear.uniform.IsEmpty())  n++;
 		if (!gear.vest.IsEmpty())     n++;
 		if (!gear.helmet.IsEmpty())   n++;
@@ -295,7 +309,21 @@ class TBD_LoadoutApplication : Managed
 
 		if (gear)
 		{
-			IssueEquip("primary",  gear.primary,  true,  LoadoutAreaType); // areaType unused for weapon
+			// T-182 — WEAPONS ARE SLOT-INDEXED, NOT BLIND.
+			// The indices are the engine's own weapon slot ids and must stay byte-identical to the
+			// editor's arsenal_rules.rs WEAPON_SLOTS and loadout-export.schema.json #/weapons:
+			//   0 primary   (untyped long slot)   1 launcher (the SECOND untyped long slot)
+			//   2 handgun   (secondary/pistol)    3 throwable (grenade)
+			// Slots 0 and 1 accept the same items, so issuing these blind through EquipWeapon would
+			// let the rifle and the launcher contend for whichever slot happened to be in hand —
+			// vanilla's SCR_InventoryStorageManagerComponent.EquipWeapon picks its target from
+			// `GetCurrentSlot().GetWeaponSlotIndex()`, i.e. from the character's state rather than
+			// from the loadout. IssueEquip therefore names the slot outright (see its comment).
+			// areaType is unused on weapon rows.
+			IssueEquip("primary",   gear.primary,   true, LoadoutAreaType, 0);
+			IssueEquip("launcher",  gear.launcher,  true, LoadoutAreaType, 1);
+			IssueEquip("handgun",   gear.handgun,   true, LoadoutAreaType, 2);
+			IssueEquip("throwable", gear.throwable, true, LoadoutAreaType, 3);
 			IssueEquip("uniform",  gear.uniform,  false, LoadoutJacketArea);
 			IssueEquip("vest",     gear.vest,     false, LoadoutVestArea);
 			IssueEquip("helmet",   gear.helmet,   false, LoadoutHeadCoverArea);
@@ -337,7 +365,32 @@ class TBD_LoadoutApplication : Managed
 	//------------------------------------------------------------------------------------------------
 	//! Spawn the gear item and hand it to the real equip API; capture displaced
 	//! incumbents first (deterministic swap) and skip same-prefab re-equips.
-	protected void IssueEquip(string label, string resName, bool isWeapon, typename areaType)
+	//!
+	//! T-182 — WEAPON ROWS TAKE AN EXPLICIT ENGINE SLOT INDEX and are equipped through the
+	//! slot-indexed inventory calls, NOT through SCR_InventoryStorageManagerComponent.EquipWeapon.
+	//!
+	//! WHY, precisely. `EquipWeapon` resolves its target as
+	//! `EquipAny(charStorage.GetWeaponStorage(), item, GetCurrentSlot().GetWeaponSlotIndex())`, so
+	//! the destination comes from whatever the character is holding at that instant. Engine weapon
+	//! slots 0 and 1 are BOTH untyped long slots (loadout-export.schema.json #/weapons: "two
+	//! untyped primary slots ... two rifles legal"), so a rifle and a launcher issued blind in the
+	//! same frame both resolve to the same in-hand index and contend for one slot — the second one
+	//! replaces the first and the loadout silently loses a weapon. That is the failure this ticket
+	//! exists to stop, so the fix must not reintroduce it one layer down.
+	//!
+	//! Note `EquipAny` cannot express slot 0 even if we passed the index: its guard is
+	//! `preferred > 0`, so index 0 falls through to FindSuitableSlotForItem. The pair used here is
+	//! the one vanilla's own SCR_InventoryStorageManagerComponent.EquipItem uses for exactly this
+	//! job — CanInsertItemInStorage/TryInsertItemInStorage into a named slot, falling back to
+	//! CanReplaceItem/TryReplaceItem when that slot is already occupied (by a kit weapon). Both
+	//! take an explicit slotID including 0, and vanilla itself treats a WeaponSlotComponent's
+	//! GetWeaponSlotIndex() as an index into the weapon storage's slots, which is what makes the
+	//! editor's authored slotIndex directly usable here.
+	//!
+	//! A slot that does not exist on this character, or that will accept the item neither by
+	//! insert nor by replace, is a NAMED failure — never a silent drop and never a blind retry
+	//! somewhere else, because landing an RPG in the rifle slot is the bug, not the fix.
+	protected void IssueEquip(string label, string resName, bool isWeapon, typename areaType, int weaponSlotIndex = -1)
 	{
 		if (resName.IsEmpty())
 			return; // absent gear slot — kit garment (if any) is deliberately retained
@@ -355,22 +408,47 @@ class TBD_LoadoutApplication : Managed
 		pending.resName = resName;
 		pending.isWeapon = isWeapon;
 		pending.areaType = areaType;
+		pending.weaponSlotIndex = weaponSlotIndex;
 		pending.incumbents = new map<typename, IEntity>();
 
 		// --- capture incumbents / same-prefab short-circuit -------------------------------
 		if (isWeapon)
 		{
-			BaseWeaponManagerComponent weaponMgr = BaseWeaponManagerComponent.Cast(
-				m_Character.FindComponent(BaseWeaponManagerComponent));
-			if (weaponMgr)
+			SCR_CharacterInventoryStorageComponent weaponOwnerStorage = SCR_CharacterInventoryStorageComponent.Cast(
+				m_Character.FindComponent(SCR_CharacterInventoryStorageComponent));
+			if (!weaponOwnerStorage)
 			{
-				BaseWeaponComponent cur = weaponMgr.GetCurrentWeapon();
-				if (cur)
-					pending.oldWeapon = cur.GetOwner();
+				Fail(label, resName, "character has no SCR_CharacterInventoryStorageComponent");
+				return;
 			}
+
+			pending.weaponStorage = weaponOwnerStorage.GetWeaponStorage();
+			if (!pending.weaponStorage)
+			{
+				Fail(label, resName, "character has no equipped-weapon storage");
+				return;
+			}
+
+			int slotCount = pending.weaponStorage.GetSlotsCount();
+			if (weaponSlotIndex < 0 || weaponSlotIndex >= slotCount)
+			{
+				Fail(label, resName, string.Format(
+					"engine weapon slot %1 does not exist on this character (storage has %2 slot(s))",
+					weaponSlotIndex, slotCount));
+				return;
+			}
+
+			// The incumbent is THIS slot's occupant, not "the weapon in hand". Scoping it per slot
+			// is what lets four weapon rows run in one pass without each one claiming the same
+			// entity as its displaced incumbent and racing to delete it.
+			InventoryStorageSlot targetSlot = pending.weaponStorage.GetSlot(weaponSlotIndex);
+			if (targetSlot)
+				pending.oldWeapon = targetSlot.GetAttachedEntity();
+
 			if (pending.oldWeapon && PrefabOf(pending.oldWeapon) == resName)
 			{
-				Print(string.Format("%1 slot=%2 %3 swap-skipped (already worn) %4", m_sTag, m_sLabel, label, resName));
+				Print(string.Format("%1 slot=%2 %3 swap-skipped (already in weapon slot %4) %5",
+					m_sTag, m_sLabel, label, weaponSlotIndex, resName));
 				m_iGearApplied++;
 				return;
 			}
@@ -407,9 +485,29 @@ class TBD_LoadoutApplication : Managed
 		pending.item = item;
 
 		if (isWeapon)
-			mgr.EquipWeapon(item);
+		{
+			// Named slot first; replace only when that exact slot is already occupied. Never a
+			// blind fallback to "any suitable slot" — that is the contention this guards against.
+			if (mgr.CanInsertItemInStorage(item, pending.weaponStorage, weaponSlotIndex))
+			{
+				mgr.TryInsertItemInStorage(item, pending.weaponStorage, weaponSlotIndex);
+			}
+			else if (mgr.CanReplaceItem(item, pending.weaponStorage, weaponSlotIndex))
+			{
+				mgr.TryReplaceItem(item, pending.weaponStorage, weaponSlotIndex);
+			}
+			else
+			{
+				Fail(label, resName, string.Format(
+					"engine weapon slot %1 accepts this item neither by insert nor by replace", weaponSlotIndex));
+				SCR_EntityHelper.DeleteEntityAndChildren(item);
+				return;
+			}
+		}
 		else
+		{
 			mgr.EquipCloth(item);
+		}
 
 		m_aPending.Insert(pending);
 	}
@@ -493,7 +591,7 @@ class TBD_LoadoutApplication : Managed
 			TBD_PendingEquip p = m_aPending[i];
 			string detail;
 			typename foundArea;
-			bool worn = VerifyOne(charStorage, p, detail, foundArea);
+			bool worn = VerifyOne(charStorage, p, attempt, detail, foundArea);
 			if (!worn)
 				continue;
 
@@ -525,22 +623,36 @@ class TBD_LoadoutApplication : Managed
 	//------------------------------------------------------------------------------------------------
 	//! Worn check for one pending equip (same signals as T-068.5.1: current weapon /
 	//! GetClothFromArea across candidates / IsRootedOn fallback).
-	protected bool VerifyOne(SCR_CharacterInventoryStorageComponent charStorage, TBD_PendingEquip p, out string detail, out typename foundArea)
+	protected bool VerifyOne(SCR_CharacterInventoryStorageComponent charStorage, TBD_PendingEquip p, int attempt, out string detail, out typename foundArea)
 	{
 		if (p.isWeapon)
 		{
-			IEntity wornEnt;
-			BaseWeaponManagerComponent weaponMgr = BaseWeaponManagerComponent.Cast(
-				m_Character.FindComponent(BaseWeaponManagerComponent));
-			if (weaponMgr)
+			// T-182 — the ONLY clean weapon verify is "attached to the slot the JSON named".
+			// The old check asked GetCurrentWeapon(), which can only ever be true for ONE of four
+			// weapons, and then fell through to IsRootedOn — which is true for every weapon the
+			// character carries and therefore could not tell a correctly-slotted launcher from one
+			// that had displaced the rifle. Reading the slot answers the actual question.
+			if (p.weaponStorage && p.weaponSlotIndex >= 0)
 			{
-				BaseWeaponComponent weapon = weaponMgr.GetCurrentWeapon();
-				if (weapon)
-					wornEnt = weapon.GetOwner();
+				InventoryStorageSlot slot = p.weaponStorage.GetSlot(p.weaponSlotIndex);
+				if (slot && slot.GetAttachedEntity() == p.item)
+				{
+					detail = string.Format("engine weapon slot %1", p.weaponSlotIndex);
+					return true;
+				}
 			}
-			bool worn = (wornEnt && wornEnt == p.item) || IsRootedOn(p.item, m_Character);
-			detail = "weapon";
-			return worn;
+
+			// On the character but NOT in the requested slot. Only accepted on the final tick:
+			// before then the item may simply still be settling into the slot, and calling that
+			// degraded would be a false accusation on a pass that was about to succeed.
+			if (attempt >= VERIFY_MAX_ATTEMPTS && IsRootedOn(p.item, m_Character))
+			{
+				detail = string.Format("rooted on character but NOT in engine weapon slot %1", p.weaponSlotIndex);
+				Degrade(p.label, p.resName, detail);
+				return true;
+			}
+
+			return false;
 		}
 
 		if (!charStorage)
@@ -574,7 +686,24 @@ class TBD_LoadoutApplication : Managed
 			IEntity old = p.oldWeapon;
 			if (!old || old == p.item || IsOwnIssuedItem(old))
 				return;
-			Print(string.Format("%1 slot=%2 swapped area=weapon out=%3 in=%4", m_sTag, m_sLabel, PrefabOf(old), p.resName));
+
+			// T-182 — belt-and-braces, mirroring the clothing branch below: only delete once the
+			// engine really unseated this slot's occupant. `oldWeapon` is now scoped to ONE slot,
+			// so if it is still sitting there the equip landed elsewhere and deleting it would
+			// destroy a weapon the character is legitimately still carrying.
+			if (p.weaponStorage && p.weaponSlotIndex >= 0)
+			{
+				InventoryStorageSlot targetSlot = p.weaponStorage.GetSlot(p.weaponSlotIndex);
+				if (targetSlot && targetSlot.GetAttachedEntity() == old)
+				{
+					Print(string.Format("%1 slot=%2 swap-deferred (weapon slot %3 still holds %4)",
+						m_sTag, m_sLabel, p.weaponSlotIndex, PrefabOf(old)));
+					return;
+				}
+			}
+
+			Print(string.Format("%1 slot=%2 swapped area=weapon%3 out=%4 in=%5",
+				m_sTag, m_sLabel, p.weaponSlotIndex, PrefabOf(old), p.resName));
 			SCR_EntityHelper.DeleteEntityAndChildren(old);
 			return;
 		}

@@ -566,7 +566,7 @@ class TBD_MissionValidator
 	//!
 	//! ── The rule this function now follows ──────────────────────────────────────────────────────
 	//! GEAR PRESENCE IS UNOBSERVABLE. An absent `gear` key and an authored `gear: {}` both parse to
-	//! a non-null struct holding ten empty strings, and there is no scalar sentinel to hang a
+	//! a non-null struct holding thirteen empty strings, and there is no scalar sentinel to hang a
 	//! presence test on. So this never claims gear is "present" again — it COUNTS REFS, which is
 	//! the same content test `TBD_SpawnManager.HasAuthoredLoadout` settled on.
 	//!
@@ -575,7 +575,7 @@ class TBD_MissionValidator
 	//! gets no warning — that is the normal, legal shape of every loadout-less slot in every
 	//! mission. The website compiler cannot even emit an empty block: `mod_slot_loadout` in
 	//! `crates/map-engine-core/src/mission/flatten.rs` returns `None` when gear and cargo are both
-	//! empty, skips `gear` when all ten fields are empty, and skips `cargo` when the vec is empty.
+	//! empty, skips `gear` when all thirteen fields are empty, and skips `cargo` when the vec is empty.
 	//!
 	//! The one authored-but-empty case that IS provable is a `cargo` key that parsed to zero rows
 	//! while gear carries nothing: non-null `cargo` proves the block was authored, and nothing is in
@@ -638,12 +638,18 @@ class TBD_MissionValidator
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! How many of the ten fixed gear slots actually carry a ResourceName.
+	//! How many of the thirteen fixed gear slots actually carry a ResourceName.
 	//!
 	//! Null-safe and CONTENT-based on purpose: `gear` is a `ref <class>`, so it is non-null even on a
 	//! slot whose JSON never mentioned it (see CheckSlotLoadout). This count is the only thing that
 	//! separates an authored gear block from an allocated-empty one, so it is the only test callers
 	//! are allowed to use. The null guard is defence against a future caller, not a live case.
+	//!
+	//! T-182 — launcher/handgun/throwable joined the struct and MUST be counted here. A slot that
+	//! authors nothing but a throwable is a completely legal thing for a mission maker to do
+	//! ("kit handles the rest, give this one a smoke"), and if this walk does not know about the
+	//! three new fields such a block counts zero refs and reads as never-authored — the exact
+	//! silent discard T-182 exists to end, reappearing one layer up in the validator.
 	protected static int CountGearRefs(TBD_SlotGearStruct gear)
 	{
 		if (!gear)
@@ -656,6 +662,12 @@ class TBD_MissionValidator
 		if (!gear.optic.IsEmpty())
 			refs++;
 		if (!gear.magazine.IsEmpty())
+			refs++;
+		if (!gear.launcher.IsEmpty())
+			refs++;
+		if (!gear.handgun.IsEmpty())
+			refs++;
+		if (!gear.throwable.IsEmpty())
 			refs++;
 		if (!gear.uniform.IsEmpty())
 			refs++;
