@@ -1001,7 +1001,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		float z = slot.z;
 
 		// Spawn height policy (T-092.1): explicit JSON y wins, else live terrain
-		// surface; both get the measured capsule offset on top.
+		// surface; both get the measured capsule offset on top. Golden pin (T-249):
+		// `golden-missions/slot-y-absent-and-present.json` — slot_y_absent omits y,
+		// slot_y_present authors y=136.0 at (4890,7780) (within 2 m of measured surface).
 		float surfaceY = GetGame().GetWorld().GetSurfaceY(x, z);
 		float spawnY = surfaceY;
 		float delta = 0;

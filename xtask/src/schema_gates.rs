@@ -1484,6 +1484,58 @@ pub fn validate_all() -> Result<u8> {
         }
     }
 
+    // ── T-249 — slot-y golden pins schema 1.2 optional y + Y_ABSENT / HasJsonY path ───────────
+    // No other committed golden authors slots[].y, so deleting this file would leave the entire
+    // spawn-height branch (TBD_MissionSlotStruct.Y_ABSENT, HasJsonY(), TBD_SpawnManager spawn Y
+    // policy) unexercised in CI despite T-092.1 shipping it.
+    println!("slot-y golden (T-249):");
+    const SLOT_Y_GOLDEN: &str = "slot-y-absent-and-present.json";
+    {
+        let path = missions_dir.join(SLOT_Y_GOLDEN);
+        let mut bad: Vec<String> = Vec::new();
+        if !path.is_file() {
+            bad.push(format!(
+                "{SLOT_Y_GOLDEN} is missing — the only committed golden that exercises \
+                 slots[].y present vs absent (TBD_MissionSlotStruct.Y_ABSENT / HasJsonY)"
+            ));
+        } else {
+            let doc = read_json(&path)?;
+            if doc["schemaVersion"].as_str() != Some("1.2") {
+                bad.push("schemaVersion must be \"1.2\"".to_string());
+            }
+            let slots = doc["slots"].as_array().cloned().unwrap_or_default();
+            let mut with_y = 0usize;
+            let mut without_y = 0usize;
+            for (i, s) in slots.iter().enumerate() {
+                match s.get("y") {
+                    None => without_y += 1,
+                    Some(v) if v.is_number() => with_y += 1,
+                    Some(_) => bad.push(format!("/slots/{i}/y must be a number when present")),
+                }
+            }
+            if with_y == 0 {
+                bad.push(
+                    "need >=1 slot WITH explicit y (HasJsonY true / jsonY spawn path)".to_string(),
+                );
+            }
+            if without_y == 0 {
+                bad.push(
+                    "need >=1 slot WITHOUT y (Y_ABSENT sentinel / terrain-surface spawn path)"
+                        .to_string(),
+                );
+            }
+        }
+        if bad.is_empty() {
+            println!("  PASS  {SLOT_Y_GOLDEN}");
+        } else {
+            failures.set(failures.get() + 1);
+            println!("  FAIL  {SLOT_Y_GOLDEN}");
+            for b in &bad {
+                println!("        {b}");
+            }
+        }
+    }
+
     // ── T-181.36 — kit-aliases.json must mirror the registry it claims to be generated from ──
     // `packages/tbd-schema/registry/kit-aliases.json` is the INVERSE table (ResourceName -> alias)
     // that the mission-compile flatten uses, and its own header says it is generated from the mod
