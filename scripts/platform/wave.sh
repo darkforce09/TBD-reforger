@@ -108,6 +108,18 @@ GATE_DB="${TBD_GATE_DB:-postgres://tbd:tbd@localhost:5434/tbd_gate_it?sslmode=di
 # two are never the paths `trunk serve` owns. See gate_trunk_build for the measurement.
 GATE_TRUNK_TARGET="${TBD_GATE_TRUNK_TARGET:-$MAIN_ROOT/target-gate-trunk}"
 GATE_TRUNK_DIST="${TBD_GATE_TRUNK_DIST:-$MAIN_ROOT/dist-gate-frontend}"
+# The gate's PRIVATE dir for the ANALYSIS steps — cargo check (native + wasm32) and every clippy.
+# T-421. Half of a two-part cure; the other half is touch_workspace. Neither works alone and the
+# measurement for that is on touch_workspace. Read both before changing either.
+#
+# What this half buys: it bounds WHO CAN WRITE the artifacts these steps read. The shared dir is
+# written by every slice agent's ad-hoc `cargo check`, by `make api`, by `trunk serve` and by every
+# other worktree's gate. This dir is written by the gate alone, and take_gate_lock serialises those,
+# so while a gate holds the lock nothing else can put an artifact here. That is what makes a single
+# fingerprint invalidation at the top of the critical section hold for every step below it.
+# Measured 2026-07-26: 1.4 GB resident, 23.4 s cold, 0.19 s warm. Cold exactly once — only the gate
+# writes here, so there is no other process to evict it.
+GATE_CHECK_TARGET="${TBD_GATE_CHECK_TARGET:-$MAIN_ROOT/target-gate-check}"
 # `command -v distrobox-host-exec` IS TRUE ON THE HOST TOO — read before simplifying this back.
 #
 # The binary is installed on BOTH sides of the bridge: /usr/bin/distrobox-host-exec exists in the
@@ -145,6 +157,31 @@ else
   fi
   hostrun() { timeout "$GATE_TIMEOUT" "$@"; }
 fi
+
+# hostrun for the ANALYSIS steps — cargo check and clippy — into the gate's private dir (T-421).
+#
+# The second `env` wins over the one hostrun bakes in, which is the same idiom the test steps
+# already use (`hostrun env "CARGO_TARGET_DIR=$MAIN_ROOT/target-gate-api" cargo test ...`). It is a
+# named function rather than that idiom repeated seven times because the whole point is that NO
+# analysis step is left on the shared dir, and one name is auditable: `grep -n 'hostrun cargo'`
+# should find nothing in the gate steps.
+#
+# CARGO_INCREMENTAL=0, and NOT for the reason it first looks like. An earlier draft of this comment
+# justified it as "another mtime-keyed cache layered on top of the one that lied". That was wrong,
+# and getting a justification wrong in this file is the same class of error as the bug — so it is
+# corrected here rather than quietly dropped. Incremental state is CONTENT-keyed, not mtime-keyed,
+# so it is emphatically not the mechanism this ticket is about: MEASURED 2026-07-26, repro A goes
+# red with incremental left ON exactly as it does with it off. It is disabled because it is one more
+# cache standing between this tree's bytes and the verdict, and the whole subject here is a verdict
+# that came from a cache instead of from the source.
+#
+# THE PRICE IS RECORDED so the trade can be re-made knowingly rather than re-derived. With
+# touch_workspace in front of it, `cargo check --workspace` costs 0.17 s untouched, 1.09 s touched
+# with incremental ON, 6.05 s touched with it OFF — so this one setting is most of the difference
+# between a 4.5 s slice gate and a 9.0 s one. Both are inside the ~10 s this gate is written to, and
+# spending half that budget on having one less thing to trust is the right way round for the step
+# whose entire job is to be believed. Turn it back on if the budget ever gets tight; not for tidiness.
+checkrun() { hostrun env "CARGO_TARGET_DIR=$GATE_CHECK_TARGET" "CARGO_INCREMENTAL=0" "$@"; }
 
 # Bring up a gate-private test database, and REFUSE to call a skipped suite a pass.
 #
@@ -401,7 +438,12 @@ wasm_changed() {
   { git diff --name-only "$base" 2>/dev/null
     git status --porcelain 2>/dev/null | sed 's/^...//'
   } | grep -q '^apps/website/frontend/' || { echo "frontend untouched"; return 0; }
-  hostrun cargo check -p website-frontend --target wasm32-unknown-unknown --quiet
+  # checkrun, not hostrun: this IS a cargo check, so it carries the T-421 exposure verbatim. The
+  # ticket's fix direction names `cargo check --workspace` and the three clippy steps; this line is
+  # neither, and leaving it would have left a check step on the shared dir in the one file whose
+  # subject is check steps on the shared dir. Same dir as the rest — cargo namespaces by target
+  # triple, so wasm32 and native coexist without either evicting the other.
+  checkrun cargo check -p website-frontend --target wasm32-unknown-unknown --quiet
 }
 
 # Force cargo to actually recompile what this slice changed.
@@ -430,6 +472,85 @@ touch_changed() {
     echo "                 could run on a stale or foreign artifact and would not be able to tell."
     return 1
   fi
+  return 0
+}
+
+# T-421. The other half of the cure, and the half that actually makes the two repros red.
+#
+# WHAT WAS WRONG WITH THE OLD REASONING. The comment on gate_test_api used to say `cargo
+# check`/`clippy` need no private dir "because they emit no binary to run". The exposure was never
+# about running a binary. Cargo's freshness test is MTIME-BASED: a unit is fresh when no source file
+# is newer than its recorded output. So a check step can return a verdict about a file it never
+# opened, and both of the ticket's repros are that one sentence:
+#
+#   A. MEASURED 2026-07-26. Append `THIS IS NOT RUST AND CANNOT COMPILE ###` to
+#      crates/map-engine-core/src/slot_line.rs, then `touch -r` it back to its ORIGINAL mtime.
+#      `cargo check --workspace --quiet` -> rc 0. `touch` it (identical bytes) -> rc 101,
+#      "reserved multi-hash token is forbidden". The gate's own clippy line: same, 0 then 101.
+#   B. MEASURED 2026-07-26. A sibling worktree added a const and built into the shared dir. From a
+#      tree that does not contain that symbol, `cargo check -p map-engine-core --features
+#      doc,mission,world` reported `Finished in 0.06s`, and `--message-format=json` named
+#      libmap_engine_core-<hash>.rmeta as its own artifact — an rmeta that greps 1 for the foreign
+#      symbol while the tree greps 0. The check stood on another tree's work and said PASS.
+#
+# WHY THE PRIVATE DIR IS NOT ENOUGH, which is the thing to not re-derive wrongly. MEASURED
+# 2026-07-26 against a freshly built target-gate-check: repro A run in the PRIVATE dir still
+# returned rc 0. Of course it does — the mechanism is mtime, and a private dir changes only whose
+# artifacts are there, not how freshness is decided. A private dir alone cures neither repro; it is
+# the touch that does, and the private dir is what keeps the touch sufficient (see
+# GATE_CHECK_TARGET: it bounds the writers to serialised gates, so nothing can re-freshen a
+# fingerprint against another tree's source between our touch and our last step).
+#
+# WHY THE WHOLE WORKSPACE AND NOT JUST THE DIFF. touch_changed above already covers `$base..HEAD`
+# union `git status --porcelain`, and that defence is real — keep it. What it cannot cover is a
+# crate this slice did not touch but some OTHER tree did: wave 5's own 12/12 run touched only
+# map-engine-core, website-frontend and xtask, so website-api and every other member's verdict
+# rested on artifacts of unidentified provenance. Provenance is not a property of the diff, so the
+# invalidation cannot be scoped to the diff.
+#
+# THE COST, and why it is not the "full recheck every run" it sounds like. MEASURED 2026-07-26:
+# the touch invalidates 14 of 14 workspace units and 0 of 696 dependency units — the 609-crate dep
+# graph is what makes a cold build expensive and NONE of it is touched. `cargo check --workspace`
+# goes 0.19 s warm -> 1.09 s touched. Nine tenths of a second buys a verdict about this tree.
+touch_workspace() {
+  local d dirs f n=0 missing=""
+  # Members from the manifest rather than a hardcoded list: a list here rots exactly the way T-422
+  # records gate_schema's rotting, and the rot is silent — a member dropped from this list is a
+  # crate that goes back to being judged on someone else's artifacts.
+  dirs="$(sed -n '/^\[workspace\]/,/^\[[a-z]/p' Cargo.toml \
+          | sed -n '/^members *= *\[/,/\]/p' | grep -o '"[^"]*"' | tr -d '"')"
+  # Non-vacuity, first layer: a manifest reformat that parses to the empty set would "succeed" here
+  # and touch nothing, which is the same lie one level up.
+  if [ -z "$dirs" ]; then
+    echo "  touch_workspace: REFUSING — parsed ZERO workspace members out of Cargo.toml, so no"
+    echo "                   fingerprint was invalidated and every cargo step below could report on"
+    echo "                   another tree's artifacts. Fix the parse, or the manifest."
+    return 1
+  fi
+  for d in $dirs; do
+    [ -d "$d" ] || { missing="$missing $d"; continue; }
+    # -exec ... + over one find: 289 files in a single touch, not 289 processes.
+    find "$d" -name '*.rs' -type f -exec touch {} + 2>/dev/null
+    n=$((n + $(find "$d" -name '*.rs' -type f 2>/dev/null | wc -l)))
+  done
+  # A member named by the manifest but absent from disk means the parse and the tree disagree, and
+  # the crates behind the missing entries are precisely the ones that would keep a stale verdict.
+  if [ -n "$missing" ]; then
+    echo "  touch_workspace: REFUSING — Cargo.toml names workspace member(s) that are not on disk:"
+    echo "                  $missing"
+    echo "                   Their fingerprints were not invalidated, so a cargo step could still be"
+    echo "                   handed an artifact built from another worktree's source."
+    return 1
+  fi
+  # Non-vacuity, second layer. Members parsed, directories present, and still no .rs file found:
+  # nothing was invalidated and "examined nothing" is not "examined everything and it was fine".
+  if [ "$n" -eq 0 ]; then
+    echo "  touch_workspace: REFUSING — found ZERO .rs files under the workspace members, so cargo's"
+    echo "                   fingerprints are untouched and every check/clippy verdict below would be"
+    echo "                   about whatever was last built into $GATE_CHECK_TARGET."
+    return 1
+  fi
+  echo "touch_workspace: invalidated $n workspace .rs file(s) across $(printf '%s\n' "$dirs" | wc -l) member(s)"
   return 0
 }
 
@@ -481,7 +602,7 @@ clippy_changed() {
   for c in "${crates[@]}"; do
     case "$c" in
       website-frontend)
-        hostrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --quiet || return 1 ;;
+        checkrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --quiet || return 1 ;;
       # Not gated by CI and red on clean main — checking them would fail every slice that touches them.
       tbd-tools|xtask) printf '(skipped %s: red on main, ungated by CI) ' "$c" ;;
       # --features doc,mission is REQUIRED, for exactly the reason it is required for `cargo test`
@@ -492,9 +613,9 @@ clippy_changed() {
       # `clippy (changed crates) PASS` / `SLICE GATE: PASS` without features, and
       # `error: useless use of format!` with them. The adversarial verifier found this; the gate did not.
       map-engine-core)
-        hostrun cargo clippy -p map-engine-core --features doc,mission,world --all-targets --quiet -- -D warnings || return 1 ;;
+        checkrun cargo clippy -p map-engine-core --features doc,mission,world --all-targets --quiet -- -D warnings || return 1 ;;
       *)
-        hostrun cargo clippy -p "$c" --all-targets --quiet -- -D warnings || return 1 ;;
+        checkrun cargo clippy -p "$c" --all-targets --quiet -- -D warnings || return 1 ;;
     esac
   done
 }
@@ -513,8 +634,15 @@ clippy_changed() {
 # that never contained the test produces exactly that, and it was reverted.
 #
 # The frontend test step below has had a private dir since T-193 and T-195 each proved this
-# independently. The header of that step spells it out. This step never got the same treatment, and
-# `cargo check`/`clippy` do not need one because they emit no binary to run.
+# independently. The header of that step spells it out. This step never got the same treatment.
+#
+# THIS PARAGRAPH USED TO END: "and `cargo check`/`clippy` do not need one because they emit no
+# binary to run." THAT WAS WRONG, it was the whole of T-421, and it is corrected here rather than
+# deleted because it is a reasonable-sounding inference that someone will otherwise make again.
+# The exposure is not about RUNNING anything. Cargo decides freshness by MTIME, so a check step
+# returns a verdict about a file it never opened whenever the file's mtime does not exceed the
+# recorded output's — no execution required. Both repros are on touch_workspace, which is where the
+# cure lives; the analysis steps now go through checkrun into GATE_CHECK_TARGET.
 gate_test_api() {
   local out rc skips
   out="$(hostrun env "CARGO_TARGET_DIR=$MAIN_ROOT/target-gate-api" "CARGO_INCREMENTAL=0" \
@@ -870,13 +998,21 @@ refuse_empty_range() {
 # gate in every worktree writes to the same shared paths.
 #
 #   ARTIFACT CLOBBERING. The per-step private target dirs used below (target-gate-api, -frontend,
-#   -mapengine, -trunk) are private per STEP but SHARED ACROSS WORKTREES — same package + same
-#   version = same artifact hash = clobbering. T-334's agent watched
+#   -mapengine, -trunk, -schema, and T-421's -check) are private per STEP but SHARED ACROSS
+#   WORKTREES — same package + same version = same artifact hash = clobbering. T-334's agent watched
 #   target-gate-api/debug/deps/events-* be overwritten mid-session by a sibling worktree's build
 #   and found main's literals inside a binary its own gate had just produced, with ps confirming a
 #   concurrent gate_test_api from another tree. So "N passed" was not its own code. The header on
 #   gate_test_api says this hazard is fixed; it is fixed against the SHARED target dir, not against
 #   another worktree using the same PRIVATE one.
+#
+#   THAT RESIDUE IS WHY T-421 DID NOT STOP AT A PRIVATE DIR. Because these dirs are shared across
+#   worktrees, a private dir narrows WHO writes an artifact (to serialised gates) but never makes
+#   the artifact this tree's — gate-to-gate clobbering survives it, and MEASURED 2026-07-26 the
+#   mtime repro still returned rc 0 inside a private dir. The analysis steps therefore pair
+#   GATE_CHECK_TARGET with touch_workspace, and it is the pairing that is load-bearing: the lock
+#   bounds the writers, the touch makes every workspace unit recompile from THIS tree, and neither
+#   is sufficient alone. The test steps above still carry the residue; that is not this ticket.
 #
 #   SHARED GATE DATABASE. ensure_gate_db hands every slice the same tbd_gate_it, while
 #   tests/registry_compat.rs:38-60 DELETEs and re-imports two FIXED modpack UUIDs. Re-measured here
@@ -1047,9 +1183,13 @@ gate_slice() {
   # cargo fingerprints the steps below depend on, so "it invalidated nothing" has to be a red, not
   # a line of output nobody is looking at. See touch_changed.
   touch_changed || fail=1
+  # T-421. Inside the lock and before every cargo step, for the same reason touch_changed is: it
+  # invalidates the fingerprints those steps depend on. rc honoured — a run that invalidated nothing
+  # cannot go on to interpret what the steps below report. See touch_workspace.
+  touch_workspace || fail=1
   run() { local l="$1"; shift; printf "  %-24s " "$l"
     if out="$("$@" 2>&1)"; then echo PASS; else echo FAIL; printf '%s\n' "$out" | tail -15 | sed 's/^/      /'; fail=1; fi; }
-  run "cargo check"  hostrun cargo check --workspace --quiet
+  run "cargo check"  checkrun cargo check --workspace --quiet
   run "wasm32 (frontend)" wasm_changed
   run "fmt (changed)" fmt_changed
   run "clippy (changed crates)" clippy_changed
@@ -1110,6 +1250,11 @@ cmd_gate() {
   local fail=0
   # rc honoured, not discarded — see the same call in gate_slice.
   touch_changed "$base..HEAD" || fail=1
+  # T-421, same placement and same reason as in gate_slice — inside the lock, ahead of every cargo
+  # step. This is the one that mattered most here: wave 5's range touched three crates, so every
+  # OTHER workspace member's `cargo check` and `clippy` verdict rested on artifacts nothing in this
+  # file could attribute to a tree. See touch_workspace.
+  touch_workspace || fail=1
   # hostrun applies the timeout host-side; run() only has to report 124 distinctly from a real fail.
   run() {
     local l="$1"; shift
@@ -1119,7 +1264,7 @@ cmd_gate() {
     elif [ "$rc" -eq 124 ]; then echo "FAIL (TIMEOUT after ${GATE_TIMEOUT}s)"; fail=1
     else echo FAIL; printf '%s\n' "$out" | tail -15 | sed 's/^/      /'; fail=1; fi
   }
-  run "cargo check"      hostrun cargo check --workspace --quiet
+  run "cargo check"      checkrun cargo check --workspace --quiet
   run "wasm32 (frontend)" wasm_changed "$base..HEAD"
   run "fmt (changed)"    fmt_changed "$base..HEAD"
   # Clippy is scoped to the crates CI actually gates, NOT --workspace.
@@ -1129,15 +1274,15 @@ cmd_gate() {
   # fmt-gated; that drift is T-297). A workspace-wide gate would therefore be red before a single
   # slice merged, and nothing could ever land. ci.yml gates per-crate (:59 website-api, :91
   # map-engine, :112 website-frontend on wasm32) and this mirrors it.
-  run "clippy api"       hostrun cargo clippy -p website-api --all-targets --quiet -- -D warnings
+  run "clippy api"       checkrun cargo clippy -p website-api --all-targets --quiet -- -D warnings
   # --features doc,mission for the same reason as the test step below: without them clippy compiles
   # neither doc nor mission and passes on code it never read. Measured blind on flatten.rs.
-  run "clippy map-engine" hostrun cargo clippy -p map-engine-core --features doc,mission,world -p map-engine-render --all-targets --quiet -- -D warnings
+  run "clippy map-engine" checkrun cargo clippy -p map-engine-core --features doc,mission,world -p map-engine-render --all-targets --quiet -- -D warnings
   # NOTE: no `-D warnings` here, deliberately — ci.yml:113 runs frontend clippy WITHOUT it, so
   # warnings are advisory upstream and there are 25 of them on clean main. Adding -D here would make
   # the gate stricter than CI and red on arrival. The weakness is real but it is not this run's to
   # fix; filed separately.
-  run "clippy frontend"  hostrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --quiet
+  run "clippy frontend"  checkrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --quiet
   # Scoped to CI's crates for the same reason clippy is: `cargo test --workspace` pulls in
   # tools/tbd-tools, which CI never tests and which has a FAILING test on clean main
   # (density::tests::corner_partition_identity — pre-existing, filed as its own ticket). A gate that
