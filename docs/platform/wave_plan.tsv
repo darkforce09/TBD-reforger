@@ -196,3 +196,14 @@
 10	T-297	cargo fmt --all is ungated — 12 files drifted	tools/tbd-tools/src/lib.rs; xtask/src/cmds.rs; Makefile
 10	T-213	Marker placement	apps/website/frontend/src/eden_chrome.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-core/src/mission/compile.rs
 11	T-290	Resolve nine dead-output fields flatten emits that the mod never reads	crates/map-engine-core/src/mission/flatten.rs
+2	T-405	Complete the URL guard: frontend sink, backfill, and the four remaining writers	apps/website/frontend/src/deployments.rs; apps/website/api/src/handlers/cms.rs; apps/website/api/src/handlers/oauth.rs; apps/website/api/src/services/discord.rs
+2	T-406	wave.sh residual hardening — the gate's remaining ways to be wrong about coverage	scripts/platform/wave.sh
+2	T-399	admin_field approvals assertion is a ratchet past 20 pending_approval rows	apps/website/api/tests/admin_field.rs
+3	T-397	Absent telemetry counters materialise as 0 on first INSERT; leaderboard sums it	apps/website/api/src/handlers/telemetry.rs
+3	T-400	Integration-test shared-fixture isolation — the 17 suites T-334 did not cover	apps/website/api/tests/identity_link.rs; apps/website/api/tests/factions.rs; apps/website/api/tests/telemetry.rs; apps/website/api/tests/common/mod.rs
+3	T-403	Golden corpus has vacuous fixtures — ArmoryFaction/ArmoryItem have zero coverage	apps/website/frontend/src/dto.rs
+4	T-402	T-393 follow-ups: tripwire gaps and the unpinned terrain value space	apps/website/api/src/handlers/telemetry.rs
+4	T-407	Fabricated stats still render beside real ones on /me/deployments	apps/website/frontend/src/deployments.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/mission_overview.rs
+4	T-401	git-lfs absent makes wave.sh change detection silently half-dead	scripts/platform/wave.sh
+5	T-408	CSV formula injection in the audit export, and a PATCH tier that outlives its role	apps/website/api/src/handlers/audit.rs; apps/website/api/src/handlers/missions.rs
+5	T-404	Doc/comment hygiene: in-code statements that are now false	apps/website/api/tests/common/mod.rs; apps/website/api/src/handlers/deployments.rs; docs/platform/frontend_data_provenance.md
