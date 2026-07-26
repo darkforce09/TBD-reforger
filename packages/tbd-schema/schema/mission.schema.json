@@ -386,10 +386,99 @@
         },
         "faction": { "$ref": "#/$defs/factionKey" },
         "shape": { "$ref": "#/$defs/shape" },
-        "rules": {
-          "type": "object",
-          "description": "Zone-type specific rules (capture timer, grace seconds, points, penalty).",
-          "additionalProperties": true
+        "rules": { "$ref": "#/$defs/zoneRules" }
+      }
+    },
+    "zoneRules": {
+      "type": "object",
+      "description": "Zone-type specific rules. OPTIONAL as a whole — a zone that authors no `rules` runs entirely on the defaults named per key below.\n\nWHY THIS IS A CLOSED VOCABULARY (T-241). Both readers are TYPED: Enfusion's `JsonLoadContext` maps JSON keys onto named class fields, so a key the class does not declare is INVISIBLE to it — not rejected, not logged, simply absent. `TBD_ZoneRegistry.ResolveRules` then reports \"no rule this build understands was readable\", which is true of both \"authored nothing\" and \"authored `graceSecconds`\", and a typed parser cannot tell those apart. That makes this schema the ONLY place a misspelled rule key can be caught, so `additionalProperties` is false and every key the mod reads is declared here. Adding a rule to the vocabulary is a field in the reader plus a property here.\n\nWHY THE VOCABULARY IS FLAT AND NOT NARROWED BY `zone.type`. Neither reader is type-conditional. `TBD_MissionZoneRulesStruct` (TBD_MissionLoader.c:93-105) is parsed for every zone and `TBD_ObjectiveRulesStruct` (TBD_ObjectiveRules.c:76-101) runs a second pass over every zone in the same document, so `captureSeconds` on a boundary zone parses and is ignored exactly as it is today. Narrowing per type here would declare a rule the runtime does not enforce; the per-key descriptions name the consuming zone type instead. `TBD_ZoneRegistry.ResolveRules` only SUPPRESSES its diagnostics for types it does not enforce (`report`), it does not reject the keys.\n\nWHY THERE ARE MINIMA BUT NO MAXIMA. Each minimum below is the reader's own error branch (`< 0` or `<= 0`), where an out-of-range value is discarded in favour of the default. The mod also applies sanity CEILINGS — `TBD_ZoneRegistry.MAX_GRACE_SECONDS` = 3600 and `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS` = 21600 — but those are runtime guards that warn and fall back rather than contract limits, and declaring mod-enforced limits is T-275's slice. They are deliberately NOT encoded here so the two cannot disagree.\n\nPRESENCE. Numeric and string keys carry an ABSENT sentinel (-1e6; -1 for the one integer, because `targetCount: 0` is meaningful) so a bad authored value is reported as an error instead of being mistaken for \"not authored\". BOOLS CANNOT — there is no third value — so for the four booleans \"absent\" and \"authored false\" are indistinguishable at runtime and always will be. Each bool's default is the value an author gets by writing nothing, so nothing is lost behaviourally.",
+      "additionalProperties": false,
+      "properties": {
+        "graceSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "default": 30,
+          "description": "PLAY AREA (`boundary`, `base_protection`). Seconds a player may remain in violation before `penalty` is applied. Read at TBD_MissionLoader.c:102, resolved at TBD_ZoneRegistry.c:387-397. Negative is rejected for the default."
+        },
+        "warnEverySeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 5,
+          "description": "PLAY AREA (`boundary`, `base_protection`). How often, in seconds, a player in violation is told. Read at TBD_MissionLoader.c:103, resolved at TBD_ZoneRegistry.c:401-413. Zero would mean \"warn every frame\", so the reader requires > 0."
+        },
+        "penalty": {
+          "type": "string",
+          "enum": ["none", "warn", "kill"],
+          "default": "warn",
+          "description": "PLAY AREA (`boundary`, `base_protection`). What happens once `graceSeconds` elapses. `none` tracks server-side and says nothing; `warn` tells the player and never acts; `kill` is TERMINAL under one life. Read at TBD_MissionLoader.c:104, matched against TBD_ZoneRegistry.PENALTY_* at :419-438 (enum TBD_EZonePenalty, TBD_Zone.c:36-41). A value outside this set resolves to `warn`, never `kill` — the mod refuses to guess toward ending a player's only life, and this enum is what stops a typo getting that far."
+        },
+        "captureSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 120,
+          "description": "`objective_capture`. Seconds of uninterrupted presence needed to take a NEUTRAL objective. Read at TBD_ObjectiveRules.c:85, resolved at TBD_ObjectiveRegistry.c:441-457. Absent DEFAULTS rather than going inert: an objective nobody chose the length of is playable, whereas an inert one takes the `all_objectives_captured` trigger with it and the round can no longer be won."
+        },
+        "neutralizeSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "description": "`objective_capture`. Seconds of presence needed to tear a HELD objective back to neutral. Read at TBD_ObjectiveRules.c:86, resolved at TBD_ObjectiveRegistry.c:462-472. Defaults to `captureSeconds` (a symmetric 1:1 rate), so there is no literal default to state here. `0` is legal and means instant — a single-stage capture."
+        },
+        "contestable": {
+          "type": "boolean",
+          "default": true,
+          "description": "`objective_capture`. Does an enemy inside stop the capture? True freezes progress while two sides are present; false resolves by weight of numbers and freezes only on an exact tie. Read at TBD_ObjectiveRules.c:97, resolved at TBD_ObjectiveRegistry.c:476; meaning fixed at TBD_Objective.c:262-299."
+        },
+        "onEmpty": {
+          "type": "string",
+          "enum": ["hold", "decay"],
+          "default": "hold",
+          "description": "`objective_capture`. What happens to partial progress when NOBODY is inside. `hold` keeps it; `decay` bleeds it back at `decayRate`. Read at TBD_ObjectiveRules.c:95, matched against TBD_ObjectiveRegistry.ON_EMPTY_* at :478-492. An unrecognised value resolves to `hold`."
+        },
+        "decayRate": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1,
+          "description": "`objective_capture`, and only meaningful with `onEmpty: \"decay\"`. Progress-seconds lost per real second while decaying — `1` bleeds at the rate it was earned. Read at TBD_ObjectiveRules.c:88, resolved at TBD_ObjectiveRegistry.c:495-506."
+        },
+        "holdSeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "`objective_hold_until`, and EFFECTIVELY REQUIRED there. Seconds the zone's `faction` must hold the ground. Read at TBD_ObjectiveRules.c:87, resolved at TBD_ObjectiveRegistry.c:539-550. There is deliberately NO default: a hold is the length of the round (`last-stand-at-montfort.json` authors 2700 s inside a 3000 s limit), so guessing it means guessing when the round ends and who won. An objective_hold_until with no readable `holdSeconds` goes INERT and reports why. Not declared `required` here because the readers do not reject the document — see the $def description on why this vocabulary is not narrowed by zone type."
+        },
+        "pauseOnEnemy": {
+          "type": "boolean",
+          "default": true,
+          "description": "`objective_hold_until`. An enemy inside PAUSES the hold clock. Read at TBD_ObjectiveRules.c:98, resolved at TBD_ObjectiveRegistry.c:553."
+        },
+        "resetOnEnemy": {
+          "type": "boolean",
+          "default": false,
+          "description": "`objective_hold_until`. An enemy inside RESETS the hold clock to zero. Read at TBD_ObjectiveRules.c:99, resolved at TBD_ObjectiveRegistry.c:554."
+        },
+        "requireHolderPresent": {
+          "type": "boolean",
+          "default": false,
+          "description": "`objective_hold_until`. The hold clock only runs while a friendly is inside. Read at TBD_ObjectiveRules.c:100, resolved at TBD_ObjectiveRegistry.c:555."
+        },
+        "targetAlias": {
+          "$ref": "#/$defs/alias",
+          "description": "`objective_destroy`, and EFFECTIVELY REQUIRED there. Registry alias of the thing that must be destroyed (e.g. \"comp:ammo_cache\"). Read at TBD_ObjectiveRules.c:94, resolved at TBD_ObjectiveRegistry.c:568-575; an objective_destroy with no readable alias goes INERT because there is nothing to watch. Constrained to the same `#/$defs/alias` form as `entity.alias` — it is resolved through the same framework registry. NOTE: on today's build nothing spawns mission `entities[]`, so a destroy objective finds no target and says so; that is a placement gap, not a schema one."
+        },
+        "targetCount": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "`objective_destroy`. How many matching targets must die. `0` (or absent) means ALL of them, which is why the reader's absent-sentinel for this key is -1 rather than 0. Read at TBD_ObjectiveRules.c:92, resolved at TBD_ObjectiveRegistry.c:577-588."
+        },
+        "points": {
+          "type": "number",
+          "minimum": 0,
+          "description": "EVERY objective type. Score carried and reported on completion. Read at TBD_ObjectiveRules.c:90, resolved at TBD_ObjectiveRegistry.c:399-410. No default is stated because no end trigger in this build consumes it — it is transported, not scored."
+        },
+        "announceEverySeconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "EVERY objective type. How often a player standing on the objective is told the progress. Read at TBD_ObjectiveRules.c:89, resolved at TBD_ObjectiveRegistry.c:412-423. No single default is stated because the default is per zone type: 15 s for `objective_capture` (DEFAULT_CAPTURE_ANNOUNCE_SECONDS) and 60 s for `objective_hold_until` (DEFAULT_HOLD_ANNOUNCE_SECONDS)."
         }
       }
     },
