@@ -182,6 +182,29 @@ pub fn read_env() -> MissionEnv {
         .unwrap_or_default()
 }
 
+/// One raw `meta.environment` key, exactly as the document holds it — `None` when it is unset.
+///
+/// **T-224 — why this exists next to [`read_env`].** `read_env` decodes into the fixed
+/// [`MissionEnv`] struct, so it can only ever see the keys that struct names. The mission-flow
+/// controls in `eden_chrome` author `briefingSeconds` / `safeStartSeconds` / `timeLimitSeconds` /
+/// `jip` into the same `meta.environment` bag and have to read their own values back on every
+/// dialog open, or a saved 45-minute mission reopens claiming the 90-minute default — the
+/// reverted-setting symptom T-192 exists to remove, on a different value.
+///
+/// Widening `MissionEnv` would have been the other option and is worse: it lives in `dto.rs`, whose
+/// types are pinned by the R-api golden round-trip tests against the **API** contract, and these
+/// keys are not part of it. A raw read keeps the bag's growth out of the wire types.
+pub fn read_env_value(key: &str) -> Option<serde_json::Value> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let root: serde_json::Value = serde_json::from_str(&core.small_maps_json()).ok()?;
+        root.get("meta")?.get("environment")?.get(key).cloned()
+    })
+}
+
 /// The doc's `meta.title` (empty when unset — the strip falls back to the route id). T-172 B9.
 pub fn read_title() -> String {
     OPS_CTX
