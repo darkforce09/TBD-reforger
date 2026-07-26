@@ -225,13 +225,24 @@ pub fn loadout_to_picks(loadout_json: Option<&str>) -> std::collections::HashMap
                     // (`loadout-export.schema.json`), not a primary-only sub-slot, so it is read
                     // for EVERY weapon row: a mod that ships `attachment_on_weapon` edges for a
                     // launcher round-trips without a second code path.
+                    //
+                    // T-199 — THIS IS WHERE THE SEPARATOR HAZARD LIVES, so this is where it dies.
+                    // `ATTACHMENT_SEP` is safe for anything the compat graph produced (its nodes
+                    // are pinned to a pattern that admits no control character), but this array is
+                    // untrusted JSON: `loadout-export.schema.json:83` types `attachments` as
+                    // `{"type":"string"}` items with no pattern, so a hand-edited or mod-authored
+                    // document may legally carry a value containing U+001F. Packing that value
+                    // would make it unpack as TWO attachments — a silent, invented pick. Such a
+                    // value cannot be a real registry node, so it is dropped here rather than
+                    // sanitized: the read path is the only door into the packed key, so no
+                    // downstream consumer (weight, validation, persist, export) can ever see one.
                     let atts: Vec<String> = wp
                         .get("attachments")
                         .and_then(|a| a.as_array())
                         .map(|a| {
                             a.iter()
                                 .filter_map(|v| v.as_str())
-                                .filter(|s| !s.is_empty())
+                                .filter(|s| !s.is_empty() && !s.contains(ATTACHMENT_SEP))
                                 .map(str::to_string)
                                 .collect()
                         })
@@ -324,6 +335,113 @@ pub fn picks_to_loadout(
         loadout["summary"] = serde_json::Value::String(summary);
     }
     Some(loadout.to_string())
+}
+
+/* ───────────── T-199 — the downloaded FILE (`loadout-export.schema.json`) ───────────── */
+
+/// Build the **exported document** — the bytes behind "Download loadout JSON".
+///
+/// THE BUG THIS REPLACES. The button used to hand the user [`picks_to_loadout`]'s output, i.e.
+/// the editor's own persisted `SlotLoadoutV2` dict (`mission.schema.json` `slot.loadout`). Those
+/// are two different contracts that merely look alike, and the doc field fails **both** `oneOf`
+/// branches of `loadout-export.schema.json`: it has no `loadoutVersion`, no `modpackId` and no
+/// `gear`, and it carries `version` + `summary` against `additionalProperties: false`. The one
+/// consumer of the file — `TBD_LoadoutEquipComponent` reading `$profile:TBD_LoadoutTest.json` —
+/// reads `loadoutVersion` off it and refuses anything it does not recognise, so the download
+/// produced a file that the only thing that reads it rejected on sight.
+///
+/// WHY v2, NOT v1. The v1 branch is `{loadoutVersion, modpackId, gear}` with
+/// `additionalProperties: false`, so choosing it would mean deleting the launcher, the sidearm,
+/// the throwable, pants/boots/gloves/backpack, attachments and every cargo row from the file —
+/// exactly the content T-182 widened the compiled gear block to carry. v2 is the branch written
+/// for this producer, and it keeps the derived legacy `gear` block for the v1-shaped reader.
+///
+/// The derived `gear` block uses the **locked** rule, kept byte-identical to the compiler's
+/// `mission/flatten.rs::mod_slot_loadout` so the file and the compiled mission describe the same
+/// soldier: `jacket`→uniform, `armoredVest` else `vest`→vest, `headCover`→helmet, and the weapon
+/// at `(slotIndex 0, slotType "primary")`→primary (+ its optic/magazine). `optic`/`magazine` ride
+/// the primary alone — deriving them when no primary is picked would describe a scope mounted on
+/// nothing.
+///
+/// `equipment` is omitted deliberately: it is optional in v2 and the Arsenal has no equipment
+/// rows yet (binoculars/wristwatch land with the equipment slice), so emitting an all-null block
+/// would claim authored state that does not exist. `wear` and `cargo` are always emitted, because
+/// "no cargo" and "this slot is bare" are things the file should say out loud; the doc field's
+/// key-presence subtleties are an anti-reseed marker for the editor, not part of this contract.
+pub fn picks_to_export(
+    picks: &std::collections::HashMap<String, String>,
+    cargo: &[rules::CargoRow],
+    modpack_id: &str,
+) -> String {
+    let pick = |k: &str| picks.get(k).filter(|s| !s.is_empty()).map(String::as_str);
+    // `#/$defs/slot` — a ResourceName or null. Never `""`: the schema's own vocabulary for
+    // "empty slot" is null, and the mod reader treats "" and absent identically anyway.
+    let slot = |k: &str| pick(k).map_or(serde_json::Value::Null, |s| serde_json::json!(s));
+
+    let mut wear = serde_json::Map::new();
+    for row in ROWS.iter().filter(|r| r.weapon.is_none()) {
+        wear.insert(row.key.to_string(), slot(row.key));
+    }
+
+    // `weapons[]` is slot-indexed, not positional: only picked rows appear, each naming the engine
+    // slot it belongs in. That pair — (slotIndex, slotType) — is what the T-182 reader matches on.
+    let mut weapons = Vec::new();
+    for row in ROWS.iter().filter(|r| r.weapon.is_some()) {
+        let Some(weapon) = pick(row.key) else {
+            continue;
+        };
+        let (slot_index, slot_type) = row.weapon.unwrap();
+        let mut obj = serde_json::json!({
+            "slotIndex": slot_index,
+            "slotType": slot_type,
+            "weapon": weapon,
+        });
+        if row.key == "primary" {
+            obj["optic"] = slot("optic");
+            obj["magazine"] = slot("magazine");
+        }
+        // Every weapon carries the key, empty or not: unlike the doc field there is no
+        // already-persisted byte shape to preserve here, and a uniform row is easier to read.
+        // `attachments_of` unpacks the packed picks key, so no value here can contain
+        // `ATTACHMENT_SEP` (see the guard in `loadout_to_picks`).
+        obj["attachments"] = serde_json::json!(attachments_of(picks, row.key));
+        weapons.push(obj);
+    }
+
+    let primary = pick("primary");
+    let doc = serde_json::json!({
+        "loadoutVersion": "2",
+        "modpackId": modpack_id,
+        "wear": wear,
+        "weapons": weapons,
+        "cargo": rules::cargo_rows_json(cargo),
+        "gear": {
+            "primary": slot("primary"),
+            "uniform": slot("jacket"),
+            "vest": pick("armoredVest").or_else(|| pick("vest"))
+                .map_or(serde_json::Value::Null, |s| serde_json::json!(s)),
+            "helmet": slot("headCover"),
+            "optic": if primary.is_some() { slot("optic") } else { serde_json::Value::Null },
+            "magazine": if primary.is_some() { slot("magazine") } else { serde_json::Value::Null },
+        },
+    });
+    // Pretty: the file's job is to be dropped into `$profile:` and read by a human debugging a
+    // spawn. `to_string_pretty` only fails on non-string map keys, which this document has none of.
+    serde_json::to_string_pretty(&doc).unwrap_or_else(|_| doc.to_string())
+}
+
+/// The modpack the picks were authored against — `modpackId` on the exported file.
+///
+/// Every registry row is scoped to one modpack (`GET /registry` filters by it), so the catalog the
+/// Arsenal was handed IS the answer; there is no second source to disagree with. An empty catalog
+/// yields `""`, which the schema permits (`{"type":"string"}`, no `minLength`) and which the mod
+/// reader turns into a named `modpackId … != expected` warning rather than a silent mismatch —
+/// the honest outcome when the registry fetch failed and we genuinely do not know.
+fn export_modpack_id(items: &[RegistryItem]) -> String {
+    items
+        .first()
+        .map(|it| it.modpack_id.clone())
+        .unwrap_or_default()
 }
 
 /// The Smart Arsenal tab — mounted in the Attributes modal (T-159.26 seam). `registry` is the flat
@@ -688,18 +806,20 @@ pub fn ArsenalTab(
                                 type="button"
                                 class="flex items-center gap-1.5 rounded-lg border border-outline-variant/40 px-3 py-1.5 text-label-sm font-medium text-on-surface transition-colors hover:bg-white/10"
                                 on:click=move |_| {
+                                    // T-199 — the FILE contract, not the doc field. `picks_to_export`
+                                    // writes `loadout-export.schema.json` v2; the old call wrote the
+                                    // editor's `SlotLoadoutV2` dict, which fails both `oneOf` branches
+                                    // and which the mod reader refuses. An empty Arsenal still exports:
+                                    // a bare-soldier document is valid and says so (all-null wear, no
+                                    // weapons), where the old "clear the field" `None` had to be papered
+                                    // over with a hand-written literal that was itself non-conforming.
                                     #[cfg(target_arch = "wasm32")]
                                     {
-                                        let map = picks.get_untracked();
-                                        let names: HashMap<String, String> = items
-                                            .get_value()
-                                            .iter()
-                                            .map(|it| (it.resource_name.clone(), it.display_name.clone()))
-                                            .collect();
-                                        let rows = cargo.get_untracked();
-                                        let rows = cargo_present.get_untracked().then_some(rows.as_slice());
-                                        let json = picks_to_loadout(&map, &names, rows)
-                                            .unwrap_or_else(|| "{\"version\":2,\"wear\":{},\"weapons\":[]}".to_string());
+                                        let json = picks_to_export(
+                                            &picks.get_untracked(),
+                                            &cargo.get_untracked(),
+                                            &export_modpack_id(&items.get_value()),
+                                        );
                                         let _ = crate::mission_commands::download_json("loadout-export.json", &json);
                                     }
                                 }
@@ -1553,5 +1673,306 @@ mod tests {
         assert_eq!(v["weapons"][0]["magazine"], "res://mag_stanag");
         // summary resolves display names of primary · optic · magazine (launcher absent).
         assert_eq!(v["summary"], "M16A2 · ACOG · STANAG 30rd");
+    }
+
+    /* ─────────────── T-199 — the exported FILE vs `loadout-export.schema.json` ─────────────── */
+
+    /// The repo's real `loadout-export.schema.json`, read at test time.
+    ///
+    /// Deliberately the FILE and not a transcription of it: the bug this ticket fixes was a writer
+    /// checked against somebody's reading of the schema, so a test that embeds its own copy of the
+    /// rules would reproduce the same failure mode one layer down. Reading it here means the day
+    /// the schema gains a required key or closes another object, this test goes red.
+    fn export_schema() -> serde_json::Value {
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../packages/tbd-schema/schema/loadout-export.schema.json");
+        serde_json::from_str(&std::fs::read_to_string(&p).expect("read loadout-export.schema.json"))
+            .expect("parse loadout-export.schema.json")
+    }
+
+    /// Resolve a local `{"$ref": "#/$defs/x"}` against the root schema (one hop is all this
+    /// schema uses).
+    fn deref<'a>(
+        root: &'a serde_json::Value,
+        node: &'a serde_json::Value,
+    ) -> &'a serde_json::Value {
+        match node.get("$ref").and_then(|r| r.as_str()) {
+            Some(r) => r
+                .trim_start_matches("#/")
+                .split('/')
+                .fold(root, |acc, seg| &acc[seg]),
+            None => node,
+        }
+    }
+
+    /// Assert `doc` satisfies `sub`'s `required` list and its `additionalProperties: false`
+    /// closure, recursing into `properties` that are objects with their own contract.
+    fn assert_object_contract(
+        root: &serde_json::Value,
+        sub: &serde_json::Value,
+        doc: &serde_json::Value,
+        label: &str,
+    ) {
+        let obj = doc
+            .as_object()
+            .unwrap_or_else(|| panic!("{label}: not an object"));
+        for req in sub["required"].as_array().into_iter().flatten() {
+            let k = req.as_str().unwrap();
+            assert!(obj.contains_key(k), "{label}: missing required key `{k}`");
+        }
+        if sub["additionalProperties"] == serde_json::Value::Bool(false) {
+            let props = sub["properties"].as_object();
+            for k in obj.keys() {
+                assert!(
+                    props.is_some_and(|p| p.contains_key(k)),
+                    "{label}: key `{k}` is not in the schema and additionalProperties is false"
+                );
+            }
+        }
+        for (k, spec) in sub["properties"].as_object().into_iter().flatten() {
+            let Some(v) = obj.get(k) else { continue };
+            // `const` is how this schema pins the version discriminator.
+            if let Some(c) = spec.get("const") {
+                assert_eq!(v, c, "{label}: `{k}` must be {c}");
+            }
+            // Recurse into every nested object that carries its own contract — `gear` reaches
+            // `#/$defs/gear` this way, through the schema's own pointer rather than a path we
+            // guessed.
+            let spec = deref(root, spec);
+            if spec.get("required").is_some() && v.is_object() {
+                assert_object_contract(root, spec, v, &format!("{label}/{k}"));
+            }
+        }
+    }
+
+    /// The full-kit picks a real author produces: all four weapon slots, every wear row, a
+    /// sticky optic/magazine and an attachment set.
+    fn full_picks() -> HashMap<String, String> {
+        let mut p = picks(&[
+            ("primary", "res://rifle_m16"),
+            ("launcher", "res://m72"),
+            ("handgun", "res://m9"),
+            ("throwable", "res://m67"),
+            ("optic", "res://acog"),
+            ("magazine", "res://mag_stanag"),
+            ("headCover", "res://helmet_pasgt"),
+            ("jacket", "res://bdu_blouse"),
+            ("pants", "res://bdu_pants"),
+            ("boots", "res://jungle_boots"),
+            ("vest", "res://chest_rig"),
+            ("armoredVest", "res://pasgt_vest"),
+            ("backpack", "res://alice_pack"),
+            ("handwear", "res://gloves"),
+        ]);
+        p.insert(
+            attachments_key("primary"),
+            pack_attachments(&["res://supp".into(), "res://grip".into()]),
+        );
+        p
+    }
+
+    #[test]
+    fn exported_file_satisfies_the_v2_branch_of_the_real_schema() {
+        let rows = vec![rules::CargoRow {
+            container: "vest".into(),
+            item: "res://mag_stanag".into(),
+            qty: 6,
+        }];
+        // Both ends of the range a real author hits: a fully kitted soldier, and the empty
+        // Arsenal that used to fall through to a hand-written literal.
+        let docs = [
+            (
+                "full kit",
+                picks_to_export(&full_picks(), &rows, "00000000-0000-4000-a000-000000000001"),
+            ),
+            ("empty arsenal", picks_to_export(&HashMap::new(), &[], "")),
+        ];
+        let schema = export_schema();
+        let v2 = schema["oneOf"]
+            .as_array()
+            .expect("oneOf")
+            .iter()
+            .find(|b| b["properties"]["loadoutVersion"]["const"] == "2")
+            .cloned()
+            .expect("a v2 branch");
+
+        for (label, raw) in &docs {
+            // The exact bytes the download button writes. `cargo test -p website-frontend
+            // exported_file -- --nocapture` re-dumps them for an external schema run.
+            println!("─── {label} ───\n{raw}");
+            let doc: serde_json::Value = serde_json::from_str(raw).expect("valid JSON");
+            assert_object_contract(&schema, &v2, &doc, label);
+
+            // wear keys must match the schema's own pattern (open map, mod-added areas allowed).
+            for k in doc["wear"].as_object().unwrap().keys() {
+                let mut c = k.chars();
+                assert!(
+                    c.next().is_some_and(|f| f.is_ascii_alphabetic())
+                        && c.all(|ch| ch.is_ascii_alphanumeric() || ch == '_')
+                        && k.len() <= 64,
+                    "{label}: wear key `{k}` fails the schema pattern"
+                );
+                assert!(
+                    doc["wear"][k].is_string() || doc["wear"][k].is_null(),
+                    "{label}: wear/{k} must be a ResourceName or null"
+                );
+            }
+            // Array items: each element against the schema's own `items` subschema. `gear` needs
+            // no line here — `assert_object_contract` already recursed into it.
+            let weapon_def = deref(&schema, &v2["properties"]["weapons"]["items"]);
+            for w in doc["weapons"].as_array().unwrap() {
+                assert_object_contract(&schema, weapon_def, w, &format!("{label}/weapons[]"));
+                assert!(!w["weapon"].as_str().unwrap().is_empty()); // minLength 1
+                assert!(w["slotIndex"].as_i64().unwrap() >= 0); // minimum 0
+            }
+            let cargo_def = deref(&schema, &v2["properties"]["cargo"]["items"]);
+            let containers = deref(&schema, &cargo_def["properties"]["container"])["enum"]
+                .as_array()
+                .expect("cargoContainer enum")
+                .clone();
+            for row in doc["cargo"].as_array().unwrap() {
+                assert_object_contract(&schema, cargo_def, row, &format!("{label}/cargo[]"));
+                assert!(
+                    containers.contains(&row["container"]),
+                    "{label}: cargo container `{}` is outside the closed vocabulary",
+                    row["container"]
+                );
+                assert!(row["qty"].as_i64().unwrap() >= 1); // minimum 1
+                assert!(!row["item"].as_str().unwrap().is_empty()); // minLength 1
+            }
+        }
+    }
+
+    #[test]
+    fn export_carries_all_four_weapon_slots_and_the_locked_gear_derivation() {
+        let raw = picks_to_export(&full_picks(), &[], "mp");
+        let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        // T-182's four slots, each naming its engine slot — the pairs `mod_slot_loadout` matches.
+        let slots: Vec<(i64, &str, &str)> = v["weapons"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|w| {
+                (
+                    w["slotIndex"].as_i64().unwrap(),
+                    w["slotType"].as_str().unwrap(),
+                    w["weapon"].as_str().unwrap(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            slots,
+            [
+                (0, "primary", "res://rifle_m16"),
+                (1, "primary", "res://m72"),
+                (2, "secondary", "res://m9"),
+                (3, "grenade", "res://m67"),
+            ]
+        );
+        assert_eq!(
+            v["weapons"][0]["attachments"],
+            serde_json::json!(["res://supp", "res://grip"])
+        );
+        // Derived gear: jacket→uniform, armoredVest beats vest, headCover→helmet, primary triple.
+        assert_eq!(v["gear"]["uniform"], "res://bdu_blouse");
+        assert_eq!(v["gear"]["vest"], "res://pasgt_vest");
+        assert_eq!(v["gear"]["helmet"], "res://helmet_pasgt");
+        assert_eq!(v["gear"]["primary"], "res://rifle_m16");
+        assert_eq!(v["gear"]["optic"], "res://acog");
+        assert_eq!(v["gear"]["magazine"], "res://mag_stanag");
+        // vest falls back when no armoredVest is worn (the compiler's own single-vest rule).
+        let mut p = full_picks();
+        p.remove("armoredVest");
+        let v: serde_json::Value = serde_json::from_str(&picks_to_export(&p, &[], "mp")).unwrap();
+        assert_eq!(v["gear"]["vest"], "res://chest_rig");
+    }
+
+    #[test]
+    fn an_empty_arsenal_still_exports_a_conforming_document() {
+        // `picks_to_loadout` returns None here (clear the doc field) — a FILE has no such option,
+        // and the literal the button used to fall back to was itself non-conforming.
+        let raw = picks_to_export(&HashMap::new(), &[], "mp");
+        let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        assert_eq!(v["loadoutVersion"], "2");
+        assert_eq!(v["modpackId"], "mp");
+        assert_eq!(v["weapons"], serde_json::json!([]));
+        assert_eq!(v["cargo"], serde_json::json!([]));
+        assert_eq!(v["wear"].as_object().unwrap().len(), 8);
+        assert!(v["wear"].as_object().unwrap().values().all(|x| x.is_null()));
+        // The four required gear keys exist and are honestly null — not omitted, not "".
+        for k in ["primary", "uniform", "vest", "helmet"] {
+            assert!(v["gear"][k].is_null(), "gear/{k}");
+        }
+        // Nothing from the doc-field shape leaks into the file.
+        for k in ["version", "summary", "equipment"] {
+            assert!(v.get(k).is_none(), "`{k}` must not be in the export");
+        }
+        // A sticky optic with no rifle describes nothing — the gear block says so.
+        let v: serde_json::Value = serde_json::from_str(&picks_to_export(
+            &picks(&[("optic", "res://acog")]),
+            &[],
+            "mp",
+        ))
+        .unwrap();
+        assert!(v["gear"]["optic"].is_null());
+    }
+
+    #[test]
+    fn a_separator_bearing_attachment_never_reaches_the_export() {
+        // `loadout-export.schema.json` types `attachments` items as unconstrained strings, so a
+        // hand-edited document may legally carry U+001F inside one. Packed, it would unpack as two
+        // picks and the export would then emit an attachment nobody chose.
+        let hostile = format!("res://supp{ATTACHMENT_SEP}res://invented");
+        let doc = serde_json::json!({
+            "version": 2,
+            "wear": {},
+            "weapons": [ { "slotIndex": 0, "slotType": "primary", "weapon": "res://rifle_m16",
+                           "attachments": [hostile, "res://grip"] } ],
+        })
+        .to_string();
+        let back = loadout_to_picks(Some(&doc));
+        assert_eq!(attachments_of(&back, "primary"), ["res://grip"]);
+        let v: serde_json::Value =
+            serde_json::from_str(&picks_to_export(&back, &[], "mp")).unwrap();
+        assert_eq!(
+            v["weapons"][0]["attachments"],
+            serde_json::json!(["res://grip"])
+        );
+        assert!(v["weapons"][0]["attachments"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|a| !a.as_str().unwrap().contains(ATTACHMENT_SEP)));
+    }
+
+    #[test]
+    fn the_modpack_id_comes_from_the_catalog_the_picks_were_made_against() {
+        assert_eq!(export_modpack_id(&[]), "");
+        let it = crate::dto::RegistryItem {
+            id: "1".into(),
+            modpack_id: "00000000-0000-4000-a000-000000000001".into(),
+            resource_name: "res://rifle_m16".into(),
+            display_name: "M16A2".into(),
+            category: "WEAPONS".into(),
+            icon_url: None,
+            kind: "gear_primary".into(),
+            r#abstract: None,
+            arsenal_type: None,
+            weight_kg: None,
+            volume_cm3: None,
+            max_weight_kg: None,
+            max_volume_cm3: None,
+            cargo_grid_w: None,
+            cargo_grid_h: None,
+            addon: None,
+            variant_of: None,
+            sort_order: 0,
+            created_at: String::new(),
+            updated_at: String::new(),
+        };
+        assert_eq!(
+            export_modpack_id(std::slice::from_ref(&it)),
+            "00000000-0000-4000-a000-000000000001"
+        );
     }
 }
