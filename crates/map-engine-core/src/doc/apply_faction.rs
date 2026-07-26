@@ -787,9 +787,11 @@ mod tests {
             root["vehiclesById"]["veh-OPFOR-apply-0"]["resourceName"],
             "{CCCC}UAZ.et"
         );
-        assert!(root["vehiclesById"]["veh-OPFOR-apply-0"]
-            .get("position")
-            .is_some());
+        assert!(
+            root["vehiclesById"]["veh-OPFOR-apply-0"]
+                .get("position")
+                .is_some()
+        );
         let xy = doc.vehicle_xy_flat();
         assert_eq!(xy.len(), 2);
     }
@@ -880,10 +882,12 @@ mod tests {
             1
         );
         // Old vehicles gone.
-        assert!(root["vehiclesById"]
-            .as_object()
-            .map(|m| m.is_empty())
-            .unwrap_or(true));
+        assert!(
+            root["vehiclesById"]
+                .as_object()
+                .map(|m| m.is_empty())
+                .unwrap_or(true)
+        );
     }
 
     #[test]
