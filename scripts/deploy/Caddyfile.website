@@ -1,0 +1,35 @@
+# T-251 — local reverse proxy for the Leptos SPA + Axum API on the home server.
+#
+# Install (example): copy to /etc/caddy/Caddyfile.website or
+# ~/.config/caddy/Caddyfile.website and point caddy at it:
+#   caddy run --config scripts/deploy/Caddyfile.website
+#
+# Cloudflare Tunnel should target http://127.0.0.1:3080 (see docs/website/HOME_SERVER.md
+# Phase E). Adjust root path if TBD_REMOTE_DIR differs from /home/sam/tbd/repo.
+#
+# COOP/COEP match Trunk.toml / gate serve — required for Mission Creator wasm
+# SharedArrayBuffer (crossOriginIsolated).
+
+:3080 {
+	# Mission Creator wasm / SharedArrayBuffer parity with `trunk serve`
+	header Cross-Origin-Opener-Policy same-origin
+	header Cross-Origin-Embedder-Policy credentialless
+
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /uploads/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /map-assets/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /healthz {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle {
+		root * /home/sam/tbd/repo/apps/website/frontend/dist
+		try_files {path} /index.html
+		file_server
+	}
+}

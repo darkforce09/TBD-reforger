@@ -1,0 +1,72 @@
+# T-251 — home-server / staging stack for the website.
+#
+# Always starts Postgres. The API container is optional (Compose profile `api`)
+# so you can run the release binary under user systemd instead (HOME_SERVER
+# Phase D) while still getting a managed DB.
+#
+# From repo root (or apps/website/):
+#   docker compose -f apps/website/docker-compose.staging.yml up -d
+#   docker compose -f apps/website/docker-compose.staging.yml --profile api up -d --build
+#   docker compose -f apps/website/docker-compose.staging.yml config   # validate
+#
+# Host Postgres port: TBD_POSTGRES_HOST_PORT (default 5432) — see
+# scripts/deploy/deploy.env.example. Local laptop stack remains
+# apps/website/api/docker-compose.yml on host 5434.
+#
+# SPA + COOP/COEP: scripts/deploy/Caddyfile.website (not this file).
+
+services:
+  postgres:
+    image: docker.io/library/postgres:18-alpine
+    container_name: tbd_staging_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tbd
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-CHANGE_ME}
+      POSTGRES_DB: tbd_reforger
+    ports:
+      # Bind loopback only — Cloudflare/Caddy sit in front; do not publish LAN-wide.
+      - "127.0.0.1:${TBD_POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      # Postgres 18+ images store data under a major-version subdir; mount the
+      # parent (docker-library/postgres#1259), same as local compose.
+      - tbd_staging_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tbd -d tbd_reforger"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Optional — enable with `--profile api`. Prefer host systemd + Caddy for the
+  # first home-server cutover (HOME_SERVER Phases D–E); this profile is the
+  # containerized alternative once the Dockerfile build is trusted on the box.
+  api:
+    profiles: ["api"]
+    build:
+      context: ../..
+      dockerfile: apps/website/Dockerfile
+    image: tbd-website-api:local
+    container_name: tbd_staging_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      PORT: "8080"
+      APP_ENV: ${APP_ENV:-production}
+      DATABASE_URL: postgres://tbd:${POSTGRES_PASSWORD:-CHANGE_ME}@postgres:5432/tbd_reforger?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-change-me-set-a-real-secret}
+      FRONTEND_URL: ${FRONTEND_URL:-https://tbd.icanteam.com}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://tbd.icanteam.com}
+      SERVICE_TOKEN: ${SERVICE_TOKEN:-}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+      DISCORD_REDIRECT_URL: ${DISCORD_REDIRECT_URL:-}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32}
+
+volumes:
+  tbd_staging_pgdata:
