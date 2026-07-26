@@ -30,6 +30,8 @@
 #   bash scripts/platform/wave.sh gate        # full wave gate on the current tree
 #   bash scripts/platform/wave.sh gate --slice T-190   # cheap per-slice gate
 #   bash scripts/platform/wave.sh land        # merge every ready slice (no barrier)
+#   bash scripts/platform/wave.sh reclaim     # /var/tmp agent caches (live slices spared)
+#   bash scripts/platform/wave.sh reclaim --gate-dirs  # opt-in: repo-root target-gate-* / dist-gate-*
 #   bash scripts/platform/wave.sh push        # push main
 set -uo pipefail
 
@@ -503,6 +505,51 @@ include_consumer_package_dirs() {
   done < <(grep -rl --include='*.rs' --exclude-dir=target "include!(" apps packages crates tools 2>/dev/null || true)
 }
 
+# Non-.rs files rustc embeds via include_str!/include_bytes! (T-426). grep, not rg.
+#
+# T-421's touch_workspace invalidated every workspace .rs mtime but not the JSON/WGSL/SQL paths
+# those macros pull in — same mtime-freshness hole, narrower blast radius. MEASURED 2026-07-27:
+# repro on packages/tbd-schema/schema/mission.schema.json with `touch -r` back to original mtime
+# after a byte change: `cargo check -p map-engine-core --features doc,mission,world` in
+# target-gate-check stayed rc 0 until the schema file itself was touched.
+#
+# Static paths are resolved from the including .rs file; concat!(env!("CARGO_MANIFEST_DIR"), "…")
+# is resolved from the owning package dir. Macro-expanded fixture trees (dto.rs golden tests) are
+# touched wholesale because their per-file paths are not statically enumerable.
+compiled_include_input_paths() {
+  local dirs d consumer flat manifest_dir rel suffix cand fixture_dir
+  dirs="$(sed -n '/^\[workspace\]/,/^\[[a-z]/p' Cargo.toml \
+          | sed -n '/^members *= *\[/,/\]/p' | grep -o '"[^"]*"' | tr -d '"')"
+  for d in $dirs; do
+    [ -d "$d" ] || continue
+    while IFS= read -r consumer; do
+      [ -f "$consumer" ] || continue
+      manifest_dir="$(owning_package_dir "$consumer" || true)"
+      [ -n "$manifest_dir" ] && manifest_dir="$(realpath -m "$manifest_dir")"
+      flat="$(tr '\n' ' ' < "$consumer")"
+      while IFS= read -r rel; do
+        [ -n "$rel" ] || continue
+        cand="$(cd "$(dirname "$consumer")" && realpath -m "$rel")"
+        [ -f "$cand" ] && printf '%s\n' "$cand"
+      done < <(printf '%s\n' "$flat" | grep -oE 'include_(str|bytes)!\(\s*"[^"]+"' 2>/dev/null \
+               | sed -E 's/include_(str|bytes)!\(\s*"([^"]+)".*/\2/' || true)
+      if printf '%s\n' "$flat" | grep -q 'concat!(env!("CARGO_MANIFEST_DIR")'; then
+        [ -n "$manifest_dir" ] || continue
+        while IFS= read -r suffix; do
+          [ -n "$suffix" ] || continue
+          cand="$(realpath -m "$manifest_dir/$suffix")"
+          [ -f "$cand" ] && printf '%s\n' "$cand"
+        done < <(printf '%s\n' "$flat" | grep -oE 'include_(str|bytes)!\(\s*concat!\(\s*env!\("CARGO_MANIFEST_DIR"\)\s*,\s*"[^"]+"' 2>/dev/null \
+                 | sed -E 's/.*"([^"]+)".*/\1/' || true)
+      fi
+      if printf '%s\n' "$flat" | grep -qF 'concat!("../tests/fixtures/api/"'; then
+        fixture_dir="$(cd "$(dirname "$consumer")" && realpath -m "../tests/fixtures/api")"
+        [ -d "$fixture_dir" ] && find "$fixture_dir" -type f 2>/dev/null
+      fi
+    done < <(find "$d" -name '*.rs' -type f 2>/dev/null)
+  done | sort -u
+}
+
 touch_changed() {
   local base="${1:-main...HEAD}" f listed=0 touched=0 d
   for f in $(changed_rs "$base"); do
@@ -579,7 +626,7 @@ touch_changed() {
 # graph is what makes a cold build expensive and NONE of it is touched. `cargo check --workspace`
 # goes 0.19 s warm -> 1.09 s touched. Nine tenths of a second buys a verdict about this tree.
 touch_workspace() {
-  local d dirs f n=0 missing=""
+  local d dirs f n=0 incl_n=0 missing="" incl_paths
   # Members from the manifest rather than a hardcoded list: a list here rots exactly the way T-422
   # records gate_schema's rotting, and the rot is silent — a member dropped from this list is a
   # crate that goes back to being judged on someone else's artifacts.
@@ -616,7 +663,15 @@ touch_workspace() {
     echo "                   about whatever was last built into $GATE_CHECK_TARGET."
     return 1
   fi
-  echo "touch_workspace: invalidated $n workspace .rs file(s) across $(printf '%s\n' "$dirs" | wc -l) member(s)"
+  incl_paths="$(compiled_include_input_paths)"
+  if [ -n "$incl_paths" ]; then
+    while IFS= read -r f; do
+      [ -f "$f" ] || continue
+      touch "$f"
+      incl_n=$((incl_n + 1))
+    done <<< "$incl_paths"
+  fi
+  echo "touch_workspace: invalidated $n workspace .rs file(s) and $incl_n include_str!/include_bytes! input(s) across $(printf '%s\n' "$dirs" | wc -l) member(s)"
   return 0
 }
 
@@ -1573,8 +1628,27 @@ cmd_wave_close() {
 # either forgot or were killed by a session limit before they could.
 #
 # Skips any dir belonging to a slice whose worktree still exists, so a live agent's cache survives.
+#
+# T-426: gate-private dirs (target-gate-*, dist-gate-*) live at MAIN_ROOT, not /var/tmp — ~15 GB
+# class, expensive to rebuild, warm is valuable (T-421 measured cold 23.4 s vs warm 9.3 s slice gate).
+# Default reclaim does NOT touch them; opt in with --gate-dirs. Optional --gate-dirs-older-than-days N
+# only removes gate dirs whose directory mtime is older than N days (age-based sweep without nuking
+# a cache that was used today).
 cmd_reclaim() {
-  local live="" w t freed=0 sz
+  local live="" w t freed=0 sz gate_dirs=0 gate_min_age_days=0 a
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --gate-dirs) gate_dirs=1 ;;
+      --gate-dirs-older-than-days)
+        gate_dirs=1
+        gate_min_age_days="${2:-0}"
+        shift ;;
+      *)
+        echo "reclaim: refusing unknown argument '$1' (expected --gate-dirs and/or --gate-dirs-older-than-days N)" >&2
+        return 2 ;;
+    esac
+    shift
+  done
   for w in $(git worktree list | tail -n +2 | awk '{print $1}'); do
     live="$live $(basename "$w" | tr 'A-Z' 'a-z' | tr -d '-')"
   done
@@ -1588,6 +1662,28 @@ cmd_reclaim() {
     sz="$(du -sm "$d" 2>/dev/null | cut -f1)"
     rm -rf "$d" 2>/dev/null && freed=$((freed + ${sz:-0})) && printf '  removed %-44s %s MB\n' "$d" "${sz:-?}"
   done
+  if [ "$gate_dirs" -eq 1 ]; then
+    echo "gate dirs (--gate-dirs${gate_min_age_days:+, min age ${gate_min_age_days}d}):"
+    for d in "$MAIN_ROOT"/target-gate-* "$MAIN_ROOT"/dist-gate-*; do
+      [ -e "$d" ] || continue
+      if [ "$gate_min_age_days" -gt 0 ]; then
+        local age_days=$(( ($(date +%s) - $(stat -c %Y "$d")) / 86400 ))
+        [ "$age_days" -lt "$gate_min_age_days" ] && {
+          printf '  spared (age %sd < %sd) %s\n' "$age_days" "$gate_min_age_days" "$d"
+          continue
+        }
+      fi
+      sz="$(du -sm "$d" 2>/dev/null | cut -f1)"
+      rm -rf "$d" 2>/dev/null && freed=$((freed + ${sz:-0})) && printf '  removed %-44s %s MB\n' "$d" "${sz:-?}"
+    done
+  else
+    local gate_sz=0 gd
+    for gd in "$MAIN_ROOT"/target-gate-* "$MAIN_ROOT"/dist-gate-*; do
+      [ -e "$gd" ] || continue
+      gate_sz=$((gate_sz + $(du -sm "$gd" 2>/dev/null | cut -f1)))
+    done
+    [ "$gate_sz" -gt 0 ] && echo "gate dirs at $MAIN_ROOT: ${gate_sz} MB not reclaimed (pass --gate-dirs to opt in)"
+  fi
   echo "reclaimed ${freed} MB — $(df -h "$ROOT" | tail -1 | awk '{print $4}') free"
 }
 
@@ -1738,7 +1834,7 @@ case "${1:-status}" in
   gate)   if [ "${2:-}" = "--slice" ]; then gate_slice "${3:-}"; else cmd_gate "${2:-}"; fi ;;
   wave)   if [ "${2:-}" = "--close" ]; then cmd_wave_close; else cmd_wave; fi ;;
   verified) cmd_verified "${2:-}" ;;
-  reclaim) cmd_reclaim ;;
+  reclaim) shift; cmd_reclaim "$@" ;;
   land)   shift; cmd_land "$@" ;;
   revert) cmd_revert "${2:-}" ;;
   push)   cmd_push ;;
