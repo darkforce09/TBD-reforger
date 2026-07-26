@@ -254,6 +254,67 @@ pub struct ModWinConditions {
     pub end_on: Vec<String>,
 }
 
+// ---- T-202: per-faction briefings (prose + map markers) ----
+
+/// One `briefing.markers[]` entry (`mission.schema.json#/$defs/marker`).
+///
+/// All four keys are in the schema's `required` and `additionalProperties` is `false`, so every
+/// field is serialised UNCONDITIONALLY — no `skip_serializing_if` anywhere in this struct. An
+/// emitter that omitted `label` because it happened to be empty would produce a document the
+/// `/compiled` route then rejects, and `""` is explicitly legal content
+/// (`golden-missions/empty-warning-fields.json` ships a marker with `icon` and `label` both empty).
+///
+/// `label` is deliberately NOT run through [`crate::mission::wire_safety`]. Markers do not ride a
+/// delimited wire: `TBD_MarkerController.TBD_RpcDo_Markers` takes
+/// `(array<int> xs, array<int> zs, array<string> icons, array<string> labels, …)` — four PARALLEL
+/// arrays with no delimiter at all, chosen for that reason (`TBD_MarkerData.c` header, "Why
+/// parallel arrays and not a delimited string"). Nothing in the five-file marker pipeline calls
+/// `Join`, `Split`, `Sanitise` or `FIELD_MARK`. The schema agrees: `marker.label` is a plain
+/// `{"type":"string"}`, NOT a `$ref` to `wireSafeString`, unlike the roster fields a TAB really
+/// does break (T-181.42). Sanitising here would rewrite a value the author typed for no gain.
+#[derive(Debug, Serialize)]
+pub struct ModMarker {
+    pub x: f64,
+    pub z: f64,
+    pub icon: String,
+    /// Capped at [`MOD_MAX_MARKER_LABEL_CHARS`] here so the mod never has to — the same reason
+    /// [`ModNet::label`] is capped: `TBD_MarkerService.CapLabel` truncates without telling anyone,
+    /// and the compiled document a human can read should already show the string the player sees.
+    pub label: String,
+}
+
+/// One `briefings` entry (`mission.schema.json#/$defs/briefing`), keyed by faction.
+///
+/// `briefing` declares NO `required`, so every field here is optional and an entry that carries
+/// nothing serialises to `{}` — which is not a degenerate case but a shape the fixtures already
+/// ship (`empty-warning-fields.json` gives `opfor` exactly `{}`) and which the mod treats as one
+/// of three legal empty states, all rendering zero paragraphs (`TBD_BriefingData.BuildOrders`).
+///
+/// The three prose fields are `Option<String>` rather than `String` so "the author wrote nothing"
+/// and "the author wrote an empty string" stay distinguishable in the emitted bytes. The mod
+/// collapses them (`AppendParagraphs` does a CONTENT test, not a presence test), but the compiled
+/// document is also read by humans and by the schema, and a key that is absent because nothing
+/// authored it should not look like a key somebody deliberately blanked.
+///
+/// Prose is deliberately NOT sanitised. `wireSafeString` explicitly EXCLUDES
+/// `briefing.situation`/`mission`/`execution` (`mission.schema.json` `$defs/wireSafeString`,
+/// final paragraph) because prose does not ride a delimited wire either: `TBD_BriefingService`
+/// ships it as three parallel `array<string>` RPC parameters, and the mod SPLITS on newlines to
+/// get display paragraphs (`AppendParagraphs` → `SplitLines`). An embedded newline is therefore
+/// legitimate authoring — a multi-paragraph situation report is the feature, not a hazard — and
+/// stripping it here would silently merge an author's paragraphs into one wall of text.
+#[derive(Debug, Default, Serialize)]
+pub struct ModBriefing {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub situation: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mission: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub execution: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub markers: Vec<ModMarker>,
+}
+
 // ---- T-200: the kit substitutions this compile made ----
 
 /// One character the author placed that `kit-aliases.json` has no row for, and the faction
@@ -488,6 +549,23 @@ pub struct ModMissionDocument {
     pub zones: Vec<ModZone>,
     pub flow: ModFlow,
     pub win_conditions: ModWinConditions,
+    /// T-202 — per-faction orders + map markers, keyed by the SAME slugged faction key as
+    /// [`Self::factions`]`[].key` and [`Self::orbat`]. Declared after `winConditions` to match the
+    /// schema's own property order, and a `BTreeMap` for the same reason `orbat` is one.
+    ///
+    /// **PASSED THROUGH, never derived.** Unlike `radioPlan` (T-203) there is no honest derivation
+    /// here: a radio net follows deterministically from the ORBAT, but orders are AUTHORED PROSE and
+    /// a marker is an authored decision about what a side is told. Synthesising either would put
+    /// words in the mission author's mouth and ship them to players as orders — the same reason
+    /// `TBD_MarkerIcons` refuses to invent a colour policy ("inventing a colour policy the operator
+    /// did not ask for would be a silent product decision").
+    ///
+    /// Empty → the key is omitted entirely, which is legal (`briefings` is not in the schema's
+    /// top-level `required`) and is `TBD_BriefingData.BuildOrders`' documented empty state #1. Today
+    /// it is ALWAYS empty, because no mutator writes `editor.factions[].briefing` yet — see
+    /// [`derive_briefings`] for exactly what this reads and where the authoring gap is.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub briefings: BTreeMap<String, ModBriefing>,
     /// T-200 — **not part of the document.** `#[serde(skip)]`, so the served JSON is byte-identical
     /// to what it was before this field existed; the schema's top-level
     /// `additionalProperties: false` would 500 the whole `/compiled` route otherwise. This is what
@@ -528,6 +606,17 @@ struct FactionIn {
     key: String,
     name: String,
     squad_ids: Vec<String>,
+    /// T-202 — this side's authored orders and markers, hanging on the FACTION ROW rather than in a
+    /// sibling map keyed by faction (T-214's shape, adopted here so the authoring and emitting halves
+    /// read the same object).
+    ///
+    /// The row is the better home for a reason that outlives the convenience: the compiled
+    /// `briefings` map is `additionalProperties`-open, so an entry naming a faction the author later
+    /// DELETED still validates, and the compile would ship orders for a side that no longer exists.
+    /// On the row that state is unrepresentable — delete the faction and its briefing goes with it.
+    ///
+    /// `Option` so "no briefing" and "an empty briefing" stay distinct; absent when unauthored.
+    briefing: Option<BriefingIn>,
 }
 
 #[derive(Debug, Default, Clone, serde::Deserialize)]
@@ -558,6 +647,42 @@ struct PositionIn {
     y: f64,
     z: f64,
     rotation: f64,
+}
+
+/// One authored `editor.factions[].briefing` (T-202). Mirrors `#/$defs/briefing`.
+///
+/// The three prose fields are `Option<String>` so an ABSENT key and an authored `""` stay
+/// distinguishable all the way through to the emitted bytes. Both are legal and the mod renders
+/// both as nothing, but they are different authorial acts and the compiled document should not
+/// claim the author blanked a field they never opened.
+///
+/// `markers` is on this object and NOT on a separate authoring surface, which is the one place this
+/// slice extends T-214's shape rather than merely consuming it — see [`derive_briefings`] §markers
+/// for the reasoning and the open question it raises.
+#[derive(Debug, Default, Clone, serde::Deserialize)]
+#[serde(default)]
+struct BriefingIn {
+    situation: Option<String>,
+    mission: Option<String>,
+    execution: Option<String>,
+    markers: Vec<MarkerIn>,
+}
+
+/// One authored `briefing.markers[]` row (T-202). Mirrors `#/$defs/marker`.
+///
+/// Every field defaults, so a row missing `icon` or `label` still deserialises and is emitted with
+/// the empty string rather than dropped. That direction is deliberate: `x`/`z` are the part a reader
+/// cannot reconstruct, an empty `icon`/`label` is schema-legal content the fixtures already ship,
+/// and `TBD_MarkerIcons.Resolve` handles an unknown or empty icon by drawing the fallback dot and
+/// logging once — never by losing the marker. Dropping the row instead would delete an authored
+/// position to avoid emitting an empty caption.
+#[derive(Debug, Default, Clone, serde::Deserialize)]
+#[serde(default)]
+struct MarkerIn {
+    x: f64,
+    z: f64,
+    icon: String,
+    label: String,
 }
 
 /// Mission-level metadata the flatten needs. The backend builds this from its `Mission` sqlx
@@ -606,6 +731,21 @@ const MOD_MAX_NETS: usize = 32;
 /// to anyone, so the truncation is done here instead, where the compiled document a human
 /// can read already shows the string the player will see.
 const MOD_MAX_LABEL_CHARS: usize = 48;
+
+/// `TBD_MarkerService.MAX_LABEL_CHARS` (`Markers/TBD_MarkerData.c:63`). A DIFFERENT consumer with
+/// a different budget from [`MOD_MAX_LABEL_CHARS`] — the radio plan's 48 is `TBD_RadioPlan`'s, this
+/// 64 is the marker wire's — so the two are deliberately separate constants rather than one shared
+/// number that would silently retune whichever mod class changed second.
+///
+/// Same rationale as the net label: `TBD_MarkerService.CapLabel` truncates without telling anyone,
+/// so the cut is made here where the compiled document already shows the caption the player sees.
+///
+/// Truncated on a CHAR boundary, not a byte one, matching [`cap_net_label`] and `meta.name`. The
+/// mod's own cut is by BYTES (`string.Length()` counts bytes on this engine — recorded landmine in
+/// `$defs/wireSafeString`), so on a multi-byte label the mod may shorten a little further. That is
+/// safe in the one direction that matters: both ends only ever SHORTEN a display string, and a
+/// char-boundary cut here cannot hand the mod invalid UTF-8.
+const MOD_MAX_MARKER_LABEL_CHARS: usize = 64;
 
 /// Bottom of `mission.schema.json#/$defs/net/freqMHz` (`minimum: 30`) and the base of the
 /// net frequency allocation. Deliberately the schema's own floor and not a number lifted
@@ -756,6 +896,125 @@ fn mod_slot_loadout(lo: &serde_json::Value) -> Option<ModSlotLoadout> {
         return None;
     }
     Some(ModSlotLoadout { gear, cargo })
+}
+
+/// T-202 — the `briefings` block: per-faction orders + map markers, the ONE thing two shipped mod
+/// subsystems read (`TBD_BriefingData.BuildOrders`, and the five-file marker pipeline through
+/// `TBD_MarkerService.Build`).
+///
+/// ## Where the authored side lives
+///
+/// Read from `editor.factions[].briefing` — the FACTION ROW — which is the shape T-214 writes. Two
+/// halves of one contract, so they read and write the same object rather than two invented ones.
+///
+/// The row beats a sibling `briefings` map on a point that outlives convenience: the compiled map is
+/// `additionalProperties`-open, so an entry naming a faction the author later DELETED still
+/// validates, and the compile would ship orders to a side that no longer exists. Hanging prose on
+/// the row makes that state unrepresentable.
+///
+/// ## The key is slugged, and that is load-bearing
+///
+/// The mod resolves a reader's orders with `GetBriefingForFaction(slot.faction)`, where
+/// `slot.faction` is the COMPILED slot's faction — i.e. [`slug_key`]'s output. So the map key must go
+/// through the same slug or the lookup misses and the side silently gets no orders, which is
+/// indistinguishable from "this mission authored none". `editor.factions[].key` is `BLUFOR` in every
+/// fixture in the tree, so the unslugged form would miss on every mission that has ever been saved.
+/// Slugging also guarantees `#/$defs/factionKey` (`^[a-z][a-z0-9_]*$`), which the raw string does not.
+///
+/// ## §markers — the one place this extends T-214's shape
+///
+/// T-214's faction-row `briefing` carries the three PROSE fields only. `briefing.markers` is the
+/// other half of this ticket (the five-file replicated marker pipeline reads nothing else), so it is
+/// read from the same per-faction object here.
+///
+/// That placement is not arbitrary: markers are SIDE-SCOPED INTELLIGENCE — `TBD_MarkerService.Build`
+/// resolves the reader's side server-side and only ever puts that side's rows in the arrays it sends,
+/// because `bridgehead-at-levie.json` gives blufor and opfor different orders at the SAME
+/// coordinates. Per-faction is the only correct scope, and the faction row is per-faction by
+/// construction. It also inherits the deleted-faction property above.
+///
+/// **This is the field to confirm against T-214's report before either half lands** — it is the sole
+/// respect in which the two shapes differ, and nothing authors it yet either way.
+///
+/// ## What is NOT done here, and why
+///
+/// **No sanitising, of prose or of labels.** Neither rides a delimited wire — see [`ModBriefing`]
+/// and [`ModMarker`] for the per-field evidence. This is the one authored-string family in the
+/// document that [`crate::mission::wire_safety`] deliberately does not cover, and the schema says so
+/// itself by not `$ref`-ing `wireSafeString` on any of the four fields.
+///
+/// **No filtering against the compiled factions.** A briefing authored for a side that ended up with
+/// no slots is kept. The mod simply never looks it up (map-lookup miss → legal empty state), whereas
+/// dropping it would silently delete authored prose — the "no silent repair" rule
+/// [`crate::mission::wire_safety`] states for exactly this class of value.
+///
+/// **No marker-count cap.** The mod caps at `TBD_MarkerService.MAX_MARKERS` (64) and WARNS with the
+/// authored total, which is a diagnostic aimed at the author; cutting the list here would suppress
+/// that warning and lose markers with nobody told. Contrast the LABEL cap, which only shortens a
+/// caption and is applied here so the compiled document shows what the player will read.
+///
+/// ## Today this returns an empty map on every payload in existence
+///
+/// Not a stub — the mapping below is complete and pinned by tests against a committed golden — but
+/// its INPUT is unauthored. `doc/store.rs` has no `set_faction_briefing` mutator yet (T-214 proved
+/// the read and hydrate halves round-trip a per-faction briefing with no `store.rs` change, but the
+/// writer is a separate outstanding handoff), and the editor's Markers tab is still the literal stub
+/// "Marker placement lands in T-069.". An empty map omits the key, so the compiled bytes stay
+/// byte-identical to the pre-T-202 document and no golden needs regenerating.
+///
+/// The emitter is the half that can land independently, and it is the half that was missing: once a
+/// mutator writes this object, both mod subsystems light up with no further compiler change.
+fn derive_briefings(factions: &[FactionIn]) -> BTreeMap<String, ModBriefing> {
+    let mut out: BTreeMap<String, ModBriefing> = BTreeMap::new();
+
+    for f in factions {
+        let Some(briefing) = f.briefing.as_ref() else {
+            continue; // this side authored no orders. Legal, and the common case.
+        };
+
+        // Two rows can slug onto one faction (`BLUFOR` and `blufor`), which the editor does not
+        // prevent. Merge rather than let document order decide which half of the author's orders
+        // survives — silently discarding authored prose is the failure mode `wire_safety`'s
+        // "no silent repair" rule exists to prevent.
+        let entry = out.entry(slug_key(&f.key, "faction")).or_default();
+
+        merge_prose(&mut entry.situation, briefing.situation.as_deref());
+        merge_prose(&mut entry.mission, briefing.mission.as_deref());
+        merge_prose(&mut entry.execution, briefing.execution.as_deref());
+
+        for m in &briefing.markers {
+            entry.markers.push(ModMarker {
+                x: m.x,
+                z: m.z,
+                icon: m.icon.clone(),
+                label: m.label.chars().take(MOD_MAX_MARKER_LABEL_CHARS).collect(),
+            });
+        }
+    }
+
+    out
+}
+
+/// Fold one authored prose field into a possibly-already-populated slot (the slug-collision case).
+///
+/// Joined with a blank line, because that is what the mod reads as a paragraph break
+/// (`TBD_BriefingData.AppendParagraphs` → `SplitLines`, dropping blank parts) — so a merge reads as
+/// two paragraphs rather than as two sentences run together.
+fn merge_prose(slot: &mut Option<String>, authored: Option<&str>) {
+    let Some(text) = authored else {
+        return;
+    };
+    match slot {
+        // Preserve an authored empty string as an authored empty string: `Some("")` is a different
+        // fact from `None`, and only a non-empty addition is worth a separator.
+        Some(existing) if !existing.is_empty() && !text.is_empty() => {
+            existing.push_str("\n\n");
+            existing.push_str(text);
+        }
+        Some(existing) if existing.is_empty() => *existing = text.to_string(),
+        Some(_) => {}
+        None => *slot = Some(text.to_string()),
+    }
 }
 
 /// One side's contribution to the radio plan, harvested from the ORBAT as it is built.
@@ -1189,6 +1448,7 @@ pub fn flatten_to_mod_document(
             // triggered this.
             end_on,
         },
+        briefings: derive_briefings(&ed.factions),
         kit_substitutions: substitutions.finish(),
     })
 }
@@ -2156,5 +2416,399 @@ mod tests {
             "the diff must point AT the dropped block, not somewhere downstream of it \
              (line {line}: {expected:?} vs {actual:?})"
         );
+    }
+
+    // ---- T-202: the briefings block ----
+
+    /// A hand-authored golden that carries a full two-sided `briefings` block. Pulled in at COMPILE
+    /// time so editing the fixture rebuilds these tests, matching [`COMPILER_SHAPED_GOLDEN`].
+    ///
+    /// This file is the reason these tests can prove schema-validity without a `jsonschema`
+    /// dev-dependency: `xtask`'s `make schema-validate` already validates every golden against
+    /// `mission.schema.json`, and `scripts/mod/world-boot.sh` already boots this one through the real
+    /// Enfusion parser. So reproducing its `briefings` block EXACTLY inherits both proofs.
+    const BRIDGEHEAD_GOLDEN: &str =
+        include_str!("../../../../packages/tbd-schema/golden-missions/bridgehead-at-levie.json");
+
+    /// The two-faction editor graph with an authored `briefing` hung on each named faction ROW —
+    /// T-214's shape (`editor.factions[].briefing`), which is what the emitter reads.
+    ///
+    /// Keys are matched through [`slug_key`], so `"blufor"` finds `FIXTURE`'s `"BLUFOR"` row; a key
+    /// matching no row appends one, so a test can author for a side the graph does not have.
+    fn payload_with_briefings(briefings: serde_json::Value) -> Vec<u8> {
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        let factions = p["editor"]["factions"]
+            .as_array_mut()
+            .expect("fixture has faction rows");
+
+        for (key, briefing) in briefings.as_object().expect("briefings is an object") {
+            let slug = slug_key(key, "faction");
+            match factions.iter_mut().find(|f| {
+                f.get("key")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|k| slug_key(k, "faction") == slug)
+            }) {
+                Some(row) => {
+                    row.as_object_mut()
+                        .expect("faction row is an object")
+                        .insert("briefing".to_string(), briefing.clone());
+                }
+                None => factions.push(serde_json::json!({
+                    "id": format!("f_{slug}"), "key": key, "name": key,
+                    "squadIds": [], "briefing": briefing,
+                })),
+            }
+        }
+
+        serde_json::to_vec(&p).expect("payload serialises")
+    }
+
+    /// Rewrite every number in a tree to its `f64` form, so a comparison is about VALUES and not
+    /// about how a JSON integer happened to be spelled.
+    ///
+    /// Needed because the hand-authored goldens write a whole-number coordinate as `5402` while the
+    /// compiler emits `5402.0` — its coordinate type is `f64` throughout (`slots[].x`, `zones[]`
+    /// circle centres, and now `marker.x`/`z`), and `serde_json` renders an integral `f64` with the
+    /// `.0`. Both are `{"type":"number"}` to the schema and both bind to `TBD_MissionMarkerStruct`'s
+    /// `float x` / `float z`, so the difference is presentational only. Keeping `f64` is the right
+    /// call rather than special-casing markers to integers: `marker.x`/`z` are `number`, not
+    /// `integer`, and a marker at a fractional coordinate is legal and would be silently moved.
+    fn numbers_as_f64(v: &serde_json::Value) -> serde_json::Value {
+        match v {
+            serde_json::Value::Number(n) => serde_json::json!(n.as_f64().unwrap_or(f64::NAN)),
+            serde_json::Value::Array(a) => {
+                serde_json::Value::Array(a.iter().map(numbers_as_f64).collect())
+            }
+            serde_json::Value::Object(o) => serde_json::Value::Object(
+                o.iter()
+                    .map(|(k, x)| (k.clone(), numbers_as_f64(x)))
+                    .collect(),
+            ),
+            other => other.clone(),
+        }
+    }
+
+    /// The compiled `briefings` block as a `serde_json::Value`, or `Null` when it was omitted.
+    fn compiled_briefings(payload: &[u8]) -> serde_json::Value {
+        let doc = flatten_to_mod_document(&meta(), payload).expect("compiles");
+        serde_json::to_value(&doc)
+            .expect("document serialises")
+            .get("briefings")
+            .cloned()
+            .unwrap_or(serde_json::Value::Null)
+    }
+
+    /// The no-churn property, and the reason the T-208 drift guard above stays green without
+    /// `compiler-shaped-two-faction.json` being regenerated for this ticket.
+    ///
+    /// Nothing authors a `briefings` block today, so the emitter must add NOTHING to the document.
+    /// An empty-but-present `{}` would be schema-legal and behave identically in the mod, and would
+    /// still be wrong here: it would change the compiled bytes of every mission on the platform to
+    /// carry a block with no information in it.
+    #[test]
+    fn briefings_is_omitted_entirely_when_nothing_authors_one() {
+        let doc = flatten_to_mod_document(&meta(), FIXTURE.as_bytes()).expect("compiles");
+        assert!(doc.briefings.is_empty());
+
+        let text = serde_json::to_string(&doc).expect("serialises");
+        assert!(
+            !text.contains("briefings"),
+            "an unauthored briefings block must not reach the bytes at all: {text}"
+        );
+
+        // An explicit `"briefing": null` on the row is the same as no key at all — `Option` +
+        // `#[serde(default)]`. This is the shape a UI that clears a briefing would most likely write.
+        assert_eq!(
+            compiled_briefings(&payload_with_briefings(
+                serde_json::json!({"BLUFOR": serde_json::Value::Null})
+            )),
+            serde_json::Value::Null
+        );
+
+        // But a briefing that is PRESENT and empty is a different fact, and it is emitted: the author
+        // opened this side's orders. `{}` is exactly `empty-warning-fields.json`'s `opfor` shape.
+        let out = compiled_briefings(&payload_with_briefings(serde_json::json!({"BLUFOR": {}})));
+        assert_eq!(out["blufor"], serde_json::json!({}));
+    }
+
+    /// The contract test. Feed the committed golden's OWN `briefings` block through the emitter and
+    /// require the output to be that block again, unchanged.
+    ///
+    /// This is the strongest statement available about the shape: `bridgehead-at-levie.json` is
+    /// schema-validated by `make schema-validate` and parsed by real Enfusion in
+    /// `scripts/mod/world-boot.sh`, so an emitter that reproduces it byte-for-byte emits a document
+    /// both gates already accept. It covers prose on both sides, per-side markers at the SAME
+    /// coordinates (the side-discipline case), and lowercase keys that survive slugging untouched.
+    #[test]
+    fn authored_briefings_reproduce_the_committed_golden_block() {
+        let golden: serde_json::Value =
+            serde_json::from_str(BRIDGEHEAD_GOLDEN).expect("golden parses");
+        let expected = golden
+            .get("briefings")
+            .expect("bridgehead-at-levie.json carries a briefings block")
+            .clone();
+
+        // Sanity: the fixture really is the rich two-sided case, not something that degenerated.
+        assert!(expected.get("blufor").is_some() && expected.get("opfor").is_some());
+
+        let actual = compiled_briefings(&payload_with_briefings(expected.clone()));
+        assert_eq!(
+            numbers_as_f64(&actual),
+            numbers_as_f64(&expected),
+            "the emitter must pass an authored briefings block through unchanged"
+        );
+
+        // The ONLY licensed difference is how a whole-number coordinate is spelled — the golden was
+        // typed by hand as `5402`, the compiler emits its `f64` as `5402.0`. Pinned explicitly so
+        // that `numbers_as_f64` above can never quietly paper over a real drift in some other field.
+        assert_eq!(
+            actual["blufor"]["markers"][0]["x"],
+            serde_json::json!(5402.0)
+        );
+        assert_eq!(
+            expected["blufor"]["markers"][0]["x"],
+            serde_json::json!(5402)
+        );
+        assert_eq!(
+            actual["blufor"]["markers"][0]["label"], expected["blufor"]["markers"][0]["label"],
+            "every non-numeric field must be EXACTLY equal, no normalisation"
+        );
+
+        // Key ORDER too, not just key set: the schema declares situation/mission/execution/markers
+        // and x/z/icon/label in that order, the goldens are written that way, and the compiled
+        // document is read by humans.
+        //
+        // Asserted on the REAL emitted bytes, not on a `serde_json::Value` round-trip:
+        // `Value::Object` is a `BTreeMap` without the `preserve_order` feature, so re-serialising a
+        // `Value` sorts keys alphabetically and would make this check pass on any order at all. The
+        // struct's own `Serialize` is what emits declaration order, so that is what gets tested.
+        let doc =
+            flatten_to_mod_document(&meta(), &payload_with_briefings(expected)).expect("compiles");
+        let bytes = serde_json::to_string_pretty(&doc).expect("serialises");
+        let block = &bytes[bytes.find("\"briefings\"").expect("briefings in the bytes")..];
+        for keys in [
+            ["situation", "mission", "execution", "markers"],
+            ["x", "z", "icon", "label"],
+        ] {
+            let mut last = 0;
+            for key in keys {
+                let at = block
+                    .find(&format!("\"{key}\""))
+                    .unwrap_or_else(|| panic!("{key} present in {block}"));
+                assert!(at > last, "{key} out of schema order in {block}");
+                last = at;
+            }
+        }
+    }
+
+    /// The load-bearing key property: the mod resolves orders with
+    /// `GetBriefingForFaction(slot.faction)`, so a briefings key that does not match the COMPILED
+    /// faction key is a side that silently receives nothing.
+    ///
+    /// `FIXTURE` authors `editor.factions[].key` as `BLUFOR`/`OPFOR` and the compiler slugs those to
+    /// `blufor`/`opfor`. An authored briefing keyed the way the author typed the faction must land on
+    /// the slugged key, or the block is decoration.
+    #[test]
+    fn briefing_keys_are_slugged_onto_the_faction_keys_the_mod_looks_up() {
+        let doc = flatten_to_mod_document(
+            &meta(),
+            &payload_with_briefings(serde_json::json!({
+                "BLUFOR": {"situation": "west bank"},
+                "OPFOR":  {"situation": "east bank"},
+            })),
+        )
+        .expect("compiles");
+
+        let keys: Vec<&str> = doc.briefings.keys().map(String::as_str).collect();
+        assert_eq!(keys, ["blufor", "opfor"]);
+
+        // The whole point: every briefings key is a key the mod will actually ask for.
+        let faction_keys: Vec<&str> = doc.factions.iter().map(|f| f.key.as_str()).collect();
+        for k in doc.briefings.keys() {
+            assert!(
+                faction_keys.contains(&k.as_str()),
+                "briefings key {k:?} matches no compiled faction {faction_keys:?} — \
+                 GetBriefingForFaction would miss and the side would get no orders"
+            );
+            assert!(
+                doc.orbat.contains_key(k),
+                "briefings key {k:?} is not an orbat key — the two must agree on faction identity"
+            );
+        }
+    }
+
+    /// Briefing prose is deliberately EXEMPT from the control-character ban
+    /// (`mission.schema.json#/$defs/wireSafeString`, final paragraph): it does not ride a delimited
+    /// wire — `TBD_BriefingService` ships it as parallel `array<string>` RPC parameters — and
+    /// `TBD_BriefingData.AppendParagraphs` SPLITS on newlines to build display paragraphs.
+    ///
+    /// So a multi-paragraph situation report is the feature. Stripping newlines here would merge an
+    /// author's paragraphs into one wall of text, and it would do it silently.
+    #[test]
+    fn prose_newlines_survive_because_briefing_prose_is_wire_exempt() {
+        let prose = "Soviet airborne hold the crossing.\n\nSecond paragraph.\nThird line.";
+        let out = compiled_briefings(&payload_with_briefings(serde_json::json!({
+            "blufor": {"situation": prose, "mission": "Seize it.", "execution": "Advance."},
+        })));
+
+        assert_eq!(
+            out["blufor"]["situation"].as_str().expect("string"),
+            prose,
+            "prose must reach the mod exactly as authored, newlines included"
+        );
+    }
+
+    /// The question the ticket asks explicitly: does `marker.label` ride a delimited wire?
+    ///
+    /// **It does not.** `TBD_MarkerController.TBD_RpcDo_Markers` takes
+    /// `(array<int> xs, array<int> zs, array<string> icons, array<string> labels, …)` — four PARALLEL
+    /// arrays, chosen precisely so that an empty or delimiter-bearing label means exactly one thing
+    /// (`TBD_MarkerData.c` header). Nothing in the five-file pipeline calls `Join`, `Split`,
+    /// `Sanitise` or `FIELD_MARK`, and the schema types `marker.label` as a plain string rather than
+    /// `$ref`-ing `wireSafeString`.
+    ///
+    /// So the T-181.42 roster treatment must NOT be applied: a TAB in a marker caption cannot shift a
+    /// column because there are no columns. Rewriting it would corrupt an authored caption to defend
+    /// against a hazard that does not exist on this lane.
+    #[test]
+    fn marker_labels_are_not_sanitised_because_markers_are_not_a_delimited_wire() {
+        // The exact shape that broke the roster wire, on the lane that has no wire to break.
+        let label = "AL\tPHA\nBRAVO";
+        let out = compiled_briefings(&payload_with_briefings(serde_json::json!({
+            "blufor": {"markers": [{"x": 1.0, "z": 2.0, "icon": "objective", "label": label}]},
+        })));
+
+        assert_eq!(
+            out["blufor"]["markers"][0]["label"].as_str().expect("str"),
+            label,
+            "a marker label must pass through verbatim — see this test's doc comment for why"
+        );
+    }
+
+    /// `#/$defs/marker` puts all four of `x`/`z`/`icon`/`label` in `required` AND sets
+    /// `additionalProperties: false`. So the emitter may neither drop a key nor add one, and an empty
+    /// string is CONTENT rather than absence — `golden-missions/empty-warning-fields.json` ships a
+    /// committed marker with `icon` and `label` both `""`, and `TBD_MarkerIcons.ReportUnknown` treats
+    /// that as information rather than as a mistake.
+    ///
+    /// An emitter that skipped `label` when it was empty would produce an invalid document, and the
+    /// failure would land as a 500 on `/compiled` rather than as anything the author could read.
+    #[test]
+    fn every_marker_key_is_emitted_even_when_empty() {
+        let out = compiled_briefings(&payload_with_briefings(serde_json::json!({
+            "blufor": {"markers": [{"x": 7615.0, "z": 4350.0, "icon": "", "label": ""}]},
+        })));
+
+        let marker = out["blufor"]["markers"][0]
+            .as_object()
+            .expect("marker object");
+        let mut keys: Vec<&str> = marker.keys().map(String::as_str).collect();
+        keys.sort_unstable();
+        assert_eq!(
+            keys,
+            ["icon", "label", "x", "z"],
+            "exactly the four required keys — no omissions (required) and no extras \
+             (additionalProperties: false)"
+        );
+        assert_eq!(marker["icon"], "");
+        assert_eq!(marker["label"], "");
+
+        // A briefing that carries only markers is legal: `briefing` declares no `required`, so the
+        // three prose keys are simply absent rather than emitted blank.
+        let entry = out["blufor"].as_object().expect("briefing object");
+        assert_eq!(
+            entry.keys().map(String::as_str).collect::<Vec<_>>(),
+            ["markers"]
+        );
+    }
+
+    /// The cap is applied in the compiler, not left to `TBD_MarkerService.CapLabel`, for the same
+    /// reason `net.label` is: the mod truncates without telling anyone, so the compiled document a
+    /// human reads should already show the caption the player will see.
+    ///
+    /// On a CHAR boundary — the mod's own cut is by bytes, so it may shorten a multi-byte caption
+    /// slightly further, but a char-boundary cut here can never hand it invalid UTF-8.
+    #[test]
+    fn marker_labels_are_capped_at_the_mods_budget() {
+        let long = "M".repeat(MOD_MAX_MARKER_LABEL_CHARS + 40);
+        let out = compiled_briefings(&payload_with_briefings(serde_json::json!({
+            "blufor": {"markers": [{"x": 1.0, "z": 2.0, "icon": "dot", "label": long}]},
+        })));
+        assert_eq!(
+            out["blufor"]["markers"][0]
+                .get("label")
+                .and_then(serde_json::Value::as_str)
+                .expect("str")
+                .chars()
+                .count(),
+            MOD_MAX_MARKER_LABEL_CHARS
+        );
+
+        // Multi-byte: the cut must land on a char boundary, never mid-sequence.
+        let wide = "Ω".repeat(MOD_MAX_MARKER_LABEL_CHARS + 5);
+        let out = compiled_briefings(&payload_with_briefings(serde_json::json!({
+            "blufor": {"markers": [{"x": 1.0, "z": 2.0, "icon": "dot", "label": wide}]},
+        })));
+        let got = out["blufor"]["markers"][0]["label"]
+            .as_str()
+            .expect("str")
+            .to_string();
+        assert_eq!(got.chars().count(), MOD_MAX_MARKER_LABEL_CHARS);
+        assert!(got.chars().all(|c| c == 'Ω'), "cut mid-sequence: {got:?}");
+    }
+
+    /// Two authored keys can slug onto one faction (`BLUFOR` and `blufor`). They are the same side as
+    /// far as the mod is concerned, so the emitter merges instead of letting document order decide
+    /// which half of the author's orders survives — silently discarding authored prose is the failure
+    /// mode `wire_safety`'s "no silent repair" rule exists to prevent.
+    ///
+    /// Prose joins on a BLANK LINE because that is what the mod reads as a paragraph break, so a
+    /// merge renders as two paragraphs rather than two sentences run together.
+    #[test]
+    fn slug_colliding_briefing_keys_merge_rather_than_overwrite() {
+        // Built by hand rather than through `payload_with_briefings`, which slug-matches and would
+        // collapse these two onto one row before the emitter ever saw the collision.
+        let mut p: serde_json::Value = serde_json::from_str(FIXTURE).expect("fixture parses");
+        p["editor"]["factions"] = serde_json::json!([
+            {"id": "f1", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"],
+             "briefing": {"situation": "first",
+                          "markers": [{"x": 1.0, "z": 1.0, "icon": "dot", "label": "A"}]}},
+            {"id": "f1b", "key": "blufor", "name": "US Army (dup)", "squadIds": [],
+             "briefing": {"situation": "second",
+                          "markers": [{"x": 2.0, "z": 2.0, "icon": "dot", "label": "B"}]}},
+        ]);
+        let out = compiled_briefings(&serde_json::to_vec(&p).expect("serialises"));
+
+        let blufor = &out["blufor"];
+        assert_eq!(blufor["situation"], "first\n\nsecond");
+        assert_eq!(blufor["markers"].as_array().expect("array").len(), 2);
+        assert_eq!(blufor["markers"][0]["label"], "A");
+        assert_eq!(blufor["markers"][1]["label"], "B");
+
+        // One merged side, not two colliding ones.
+        assert_eq!(out.as_object().expect("object").len(), 1);
+    }
+
+    /// An authored empty string and an absent key are different authorial acts, and the emitted bytes
+    /// must keep them apart. The mod collapses both to "render nothing" (`AppendParagraphs` does a
+    /// CONTENT test), but `empty-warning-fields.json` ships both shapes side by side on purpose —
+    /// `blufor` with three blank strings, `opfor` as `{}` — and a compiled document that turned one
+    /// into the other would misreport what the author did.
+    #[test]
+    fn authored_blank_prose_is_distinguishable_from_an_absent_key() {
+        let out = compiled_briefings(&payload_with_briefings(serde_json::json!({
+            "blufor": {"situation": "", "mission": "", "execution": ""},
+            "opfor": {},
+        })));
+
+        let blufor = out["blufor"].as_object().expect("object");
+        assert_eq!(blufor["situation"], "");
+        assert_eq!(blufor["mission"], "");
+        assert_eq!(blufor["execution"], "");
+
+        // `opfor` authored nothing at all → `{}`, exactly the golden's shape. Present as a KEY
+        // (the author named the side) but empty as a VALUE.
+        assert!(out.get("opfor").is_some());
+        assert_eq!(out["opfor"].as_object().expect("object").len(), 0);
     }
 }
