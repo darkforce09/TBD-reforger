@@ -609,22 +609,15 @@ class TBD_ObjectiveRegistry
 	//! which read exactly this. Compile-proven against this engine build with a failing negative
 	//! control (`DamageManagerComponent.ZZ_GetStateThatDoesNotExist` -> `Undefined function`).
 	//!
-	//! **The TARGET, however, does not exist yet, and this build cannot create it.**
-	//! `mission.schema.json` has a top-level `entities[]` array — `last-stand-at-montfort.json`
-	//! places `comp:ammo_cache` at exactly the destroy zone's centre — but
-	//! `TBD_MissionDocumentStruct` does not model `entities[]`, nothing anywhere in the mod spawns
-	//! them, and `comp:ammo_cache` is not in `Data/registry.json` at all. So on today's build a
-	//! destroy objective will find NOTHING in its zone and will say so.
+	//! **Targets come from the world query, not from inventing props.** T-254:
+	//! `TBD_MissionDocumentStruct` models `entities[]` and `TBD_MissionLoader.SpawnMissionEntities`
+	//! places every resolvable row after parse. `ArmDestroyTargets` then AABB-queries the zone for
+	//! the prefab resolved from `rules.targetAlias`. When that query returns zero, the inert
+	//! reason names the real cause — unresolved registry alias, no matching `entities[]` row,
+	//! authored position outside the zone, or spawn/query miss — never a "build does not spawn
+	//! entities[]" lie.
 	//!
-	//! That is reported as a first-class diagnostic rather than faked, because every alternative is
-	//! worse: "destroy whatever happens to be inside the circle" would make the objective mean
-	//! whatever trees and fences the terrain put there; a timer would not be a destroy objective at
-	//! all. When a mission-entities placement slice lands, this function starts finding real targets
-	//! with no change to anything below it.
-	//!
-	//! It does work TODAY for a target the terrain itself already contains, if a mission author
-	//! points `targetAlias` at a prefab that is genuinely placed in that zone — which is the one
-	//! honest use available before entity placement exists.
+	//! Terrain-placed prefabs still work when `targetAlias` matches something already in the zone.
 	static void ArmDestroyTargets(notnull TBD_Objective objective)
 	{
 		objective.m_bArmed = true;
@@ -647,7 +640,7 @@ class TBD_ObjectiveRegistry
 		if (objective.m_iTargetsFound == 0)
 		{
 			objective.m_bUsable = false;
-			objective.m_sInertReason = string.Format("no entity matching alias '%1' was found inside the zone at LIVE. This build does not spawn the mission document's `entities[]` (TBD_MissionDocumentStruct does not model them), so an authored destroy target is never placed in the world.", objective.m_sTargetAlias);
+			objective.m_sInertReason = DiagnoseEmptyDestroyTargets(objective);
 			TBD_Log.Warn(CH, string.Format("objective '%1' INERT: %2", objective.m_sId, objective.m_sInertReason));
 			RecountUsable();
 			return;
@@ -655,6 +648,43 @@ class TBD_ObjectiveRegistry
 
 		TBD_Log.Kv(CH, "armed", string.Format("id=%1 alias='%2' targets=%3 required=%4",
 			objective.m_sId, objective.m_sTargetAlias, objective.m_iTargetsFound, objective.RequiredKills()));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Why the zone AABB query found zero matches for an already-resolved `targetAlias`.
+	//! Distinguishes missing/skipped spawn vs out-of-zone authorship (T-437). Never claims the
+	//! build refuses to spawn `entities[]` — that path shipped at T-254.
+	protected static string DiagnoseEmptyDestroyTargets(notnull TBD_Objective objective)
+	{
+		string alias = objective.m_sTargetAlias;
+		array<ref TBD_MissionEntityStruct> entities = TBD_MissionLoader.GetEntities();
+
+		int authoredMatching = 0;
+		int authoredInsideZone = 0;
+		if (entities)
+		{
+			foreach (TBD_MissionEntityStruct ent : entities)
+			{
+				if (!ent || ent.alias != alias)
+					continue;
+
+				authoredMatching++;
+				if (objective.m_Zone && objective.m_Zone.Contains(ent.x, ent.z))
+					authoredInsideZone++;
+			}
+		}
+
+		if (authoredMatching == 0)
+		{
+			return string.Format("no entity matching alias '%1' was found inside the zone at LIVE. No `entities[]` row with that alias was authored (and no terrain prefab matched) — SpawnMissionEntities only places authored rows whose alias resolves in the registry.", alias);
+		}
+
+		if (authoredInsideZone == 0)
+		{
+			return string.Format("no entity matching alias '%1' was found inside the zone at LIVE. %2 `entities[]` row(s) with that alias were authored, but none sit inside this objective's zone (out-of-zone placement).", alias, authoredMatching);
+		}
+
+		return string.Format("no entity matching alias '%1' was found inside the zone at LIVE. %2 `entities[]` row(s) with that alias are authored inside the zone, so spawn likely skipped or failed for this alias — check `[TBD][Entities]` warnings (unknown registry alias / Resource.Load / SpawnEntityPrefab).", alias, authoredInsideZone);
 	}
 
 	//------------------------------------------------------------------------------------------------

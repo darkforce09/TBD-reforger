@@ -112,9 +112,11 @@ class TBD_ObjectiveZoneStruct
 }
 
 //------------------------------------------------------------------------------------------------
-//! The document root, declaring only `zones`. Every other top-level key (meta, factions, orbat,
-//! slots, entities, …) is simply not declared and is therefore ignored by the reader — which is
-//! the same mechanism that lets `TBD_MissionDocumentStruct` ignore `entities[]` today.
+//! The document root for the *objective-rules* second pass: declares only `zones`. Every other
+//! top-level key (meta, factions, orbat, slots, entities, …) is deliberately not declared here so
+//! this reader stays blind to them. That is NOT a claim about the primary loader —
+//! `TBD_MissionDocumentStruct` models `entities[]` (T-254) and `SpawnMissionEntities` places them;
+//! this struct only re-parses zone `rules.*` for objectives.
 class TBD_ObjectiveDocStruct
 {
 	ref array<ref TBD_ObjectiveZoneStruct> zones;

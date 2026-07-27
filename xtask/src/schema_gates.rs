@@ -2188,14 +2188,8 @@ pub fn validate_all() -> Result<u8> {
                     .to_string(),
             );
         }
-        for key in [
-            "environment",
-            "settings",
-            "entities",
-            "layers",
-            "tickets",
-            "radio",
-        ] {
+        // T-437 / T-254: `entities` is modeled + spawned — no longer an unconsumed-key warn.
+        for key in ["environment", "settings", "layers", "tickets", "radio"] {
             let marker = format!("T-250-UNCONSUMED-WARN: {key}");
             if !src.contains(&marker) {
                 bad.push(format!("missing marker comment `{marker}`"));
@@ -2204,7 +2198,6 @@ pub fn validate_all() -> Result<u8> {
         for (subject, needle) in [
             ("environment", "AddWarning(\"environment\","),
             ("settings", "AddWarning(\"settings\","),
-            ("entities", "AddWarning(\"entities\","),
             ("layers", "AddWarning(\"layers\","),
             ("factions.tickets", "AddWarning(\"factions.tickets\","),
             ("orbat.roles.radio", "AddWarning(\"orbat.roles.radio\","),
@@ -2215,7 +2208,23 @@ pub fn validate_all() -> Result<u8> {
                 ));
             }
         }
+        // Regression: the retired entities unconsumed lie must not return.
+        if src.contains("AddWarning(\"entities\",") {
+            bad.push(
+                "entities AddWarning must stay retired (T-254 spawns entities[]; T-437)"
+                    .to_string(),
+            );
+        }
+        if src.contains("does not spawn mission entities")
+            || src.contains("does not spawn the mission document")
+        {
+            bad.push(
+                "forbidden entities[]-never-spawn lie string still present in MissionValidator"
+                    .to_string(),
+            );
+        }
         // `empty-warning-fields.json` is the deliberate all-keys-authored negative-control golden.
+        // Still requires `entities` authored (valid mission key) even though it no longer warns.
         let neg = read_json(&sroot.join("golden-missions/empty-warning-fields.json"))?;
         for key in [
             "environment",
@@ -2248,7 +2257,9 @@ pub fn validate_all() -> Result<u8> {
             }
         }
         if bad.is_empty() {
-            println!("  PASS  TBD_MissionValidator.c (6 unconsumed-key warnings wired)");
+            println!(
+                "  PASS  TBD_MissionValidator.c (5 unconsumed-key warnings wired; entities retired T-254/T-437)"
+            );
         } else {
             failures.set(failures.get() + 1);
             println!("  FAIL  TBD_MissionValidator unconsumed-key warnings");
