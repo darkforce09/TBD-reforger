@@ -649,6 +649,10 @@ mod t412_servers_batch {
         assert_eq!(batch_queries(63, 1), 3);
         assert_eq!(n_plus_one_queries(63, true), 189);
         assert!(batch_queries(63, 1) < n_plus_one_queries(63, true));
-        assert_eq!(batch_queries(1000, 5), 3, "round-trips stay flat as N grows");
+        assert_eq!(
+            batch_queries(1000, 5),
+            3,
+            "round-trips stay flat as N grows"
+        );
     }
 }
