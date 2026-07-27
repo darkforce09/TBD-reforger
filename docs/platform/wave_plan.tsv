@@ -327,7 +327,7 @@
 46	T-526	W46 hotfix rustfmt mission_title_prefer after T-522	apps/website/frontend/src/mission_title_prefer.rs
 47	T-527	W47 hotfix rustfmt event_manager after T-332	apps/website/frontend/src/event_manager.rs
 47	T-528	W47 hotfix me.rs arma_linked whitespace after T-350	apps/website/api/src/handlers/me.rs; apps/website/api/tests/t528_me_whitespace_linked.rs
-51	T-529	events roster SQL whitespace arma_id no btrim	apps/website/api/src/handlers/events.rs; apps/website/api/tests
+51	T-529	events roster SQL whitespace arma_id no btrim	apps/website/api/src/handlers/events.rs; apps/website/api/tests/t529_roster_whitespace_arma.rs
 99	T-530	T-332 Class-R partly pins doc comments	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
 49	T-531	null_tolerance still lists deployments.* as KNOWN_OPEN after T-341	apps/website/api/tests/null_tolerance.rs
 99	T-532	No API route to re-point mission current_version_id after a bad version	apps/website/api/src/handlers/missions.rs; apps/website/api/src/app.rs
@@ -335,3 +335,5 @@
 99	T-534	IT suites still seed fixed arma_ids via shared seed_user	apps/website/api/tests/common/mod.rs; apps/website/api/tests
 50	T-535	T-385 live IT positive terrain join	apps/website/api/tests/misc_integration.rs
 51	T-536	touch_changed masks changed_rs porcelain failure	scripts/platform/wave.sh
+99	T-537	xtask empty/lossy write residuals outside T-383 owns	xtask/src/enf; tools/tbd-tools/src/world; tools/tbd-tools/src/map
+99	T-538	flatten-orbat-slots stdout path still drops loadout/uid	xtask/src/schema_gates.rs

@@ -10654,7 +10654,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3199,
       "stream": "web-platform",
       "targets": [
@@ -13761,7 +13761,7 @@
         "events",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3369,
       "stream": "web-platform",
       "targets": [
@@ -13912,8 +13912,53 @@
         "ci",
         "dx"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3376,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-537",
+      "title": "xtask empty/lossy write residuals outside T-383 owns (enf/world/map)",
+      "summary": "FOUND as T-383 residual (W51 CLEAN). Owns fixed cmds/sync/schema_gates; still open:\n- enf/apidoc.rs header-only TSV overwrite exits 0\n- world/aux.rs:1009/1022/1050, world/build.rs:664/958\n- map/labels.rs:455, map/sap.rs:1007\n\nSame shape: success path writing structurally empty/lossy content over committed files. Cure: refuse_empty_write (or equivalent) at each site. Repro: see T-383 summary.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA",
+        "SCHEMA"
+      ],
+      "impact": [
+        "dx",
+        "ci",
+        "data-pipeline"
+      ],
+      "status": "deferred",
+      "order": 3377,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-538",
+      "title": "flatten-orbat-slots stdout path still drops loadout/uid and stamps schemaVersion 1.1",
+      "summary": "FOUND by W51 adversarial verifier (CLEAN MINOR-NIT) after T-383.\n\nT-383 fixed `--in-place`. Non-`--in-place` stdout flatten still drops loadout/uid and force-stamps schemaVersion 1.1. Cure: same preserve/refuse rules on stdout path, or document stdout as lossy preview only with a loud warning + Class-R pin.\n\nRepro: run flatten-orbat-slots without --in-place on a golden with loadout/uid.",
+      "program": "platform",
+      "surfaces": [
+        "SCHEMA",
+        "CI"
+      ],
+      "impact": [
+        "schema",
+        "dx"
+      ],
+      "status": "deferred",
+      "order": 3378,
       "stream": "web-platform",
       "targets": [
         "website"

@@ -1654,7 +1654,7 @@ Note T-357 measured that a naive tightening of that schema would have 400'd six 
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-383 | 3199 | running | platform | Four tooling paths overwrite committed files with empty or wrong content | The tail of the tooling cluster (T-378 has the two worst). All the same shape: a success path writing structurally empty or silently-lossy content over something committed.
+| T-383 | 3199 | shipped | platform | Four tooling paths overwrite committed files with empty or wrong content | The tail of the tooling cluster (T-378 has the two worst). All the same shape: a success path writing structurally empty or silently-lossy content over something committed.
 
   xtask/src/cmds.rs:765-774 — `cmd_set_status` has no non-empty check and no enum, so `./scripts/ticket set-status T-090 ""` writes `"status": ""` over `"ready"`. The registry is the source of truth for the whole program.
   xtask/src/sync.rs:403 + registry.rs:133-138 — `inject_marker_block` collapses the ROADMAP marker block to a bare heading when `tickets` is missing or empty, and CLAUDE.md's 'Latest shipped' falls back to a HARDCODED WRONG `"T-066"`.
@@ -2661,7 +2661,7 @@ Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/m
 | T-526 | 3366 | shipped | platform | W46 hotfix: rustfmt mission_title_prefer.rs after T-522 | Wave 46 cold gate FAIL fmt after T-522/523 merge. apps/website/frontend/src/mission_title_prefer.rs fails rustfmt --check (split chain wrapping in adopt_payload_wires_prefer_helper). Cure: rustfmt that file only. Owns: apps/website/frontend/src/mission_title_prefer.rs. |
 | T-527 | 3367 | shipped | platform | W47 hotfix: rustfmt event_manager.rs imports after T-332 | Wave 47 cold gate FAIL fmt (changed). apps/website/frontend/src/event_manager.rs import order (badge_class/cn vs AdminGate) fails rustfmt --check after T-332 Attach Mission UI. Cure: rustfmt that file only. Owns: apps/website/frontend/src/event_manager.rs. |
 | T-528 | 3368 | shipped | platform | W47 hotfix: me.rs arma_linked still is_some() after T-350 | Wave 47 verifier P1/MAJOR vs T-350 ticket claim. T-350 fixed auth/oauth (+ leave reason) but title/summary name four linked sites including me.rs:87 and me.rs:170 which still use u.arma_id.is_some() — planted whitespace arma_id reports linked=true on GET /me and /me/link/status. Cure: use arma_id_is_linked (or same trim/nonempty helper) at both me.rs sites; Class-R/IT that RED on is_some()-only. Owns: apps/website/api/src/handlers/me.rs (and tests if needed). Do not touch events.rs roster (T-529). |
-| T-529 | 3369 | running | platform | events roster SQL still allows whitespace arma_id (no btrim) | Wave 47 verifier P2 residual from T-350. ingest_event_roster still uses u.arma_id <> '' without btrim; whitespace passes and can emit as seating key. Latent after 0016 scrub. Cure: btrim/nonempty predicate + trim seating key consistently with other arma_id sites. Owns: apps/website/api/src/handlers/events.rs (+ IT). Caution: T-343 one-sided-trim traps — read before changing. |
+| T-529 | 3369 | shipped | platform | events roster SQL still allows whitespace arma_id (no btrim) | Wave 47 verifier P2 residual from T-350. ingest_event_roster still uses u.arma_id <> '' without btrim; whitespace passes and can emit as seating key. Latent after 0016 scrub. Cure: btrim/nonempty predicate + trim seating key consistently with other arma_id sites. Owns: apps/website/api/src/handlers/events.rs (+ IT). Caution: T-343 one-sided-trim traps — read before changing. |
 | T-530 | 3370 | deferred | platform | T-332 Class-R partly pins doc comment strings | Wave 47 verifier P3/NIT. T-332 BE/FE Class-R partly asserts doc comment phrases (T-332 clear contract). Behavior covered by IT + stronger FE pins. Cure: pin live code paths only (body.insert / is_unique_violation / SQL), not comment prose. |
 | T-531 | 3371 | shipped | platform | null_tolerance still lists deployments.* as KNOWN_OPEN after T-341 | FOUND by W48 adversarial verifier (MINOR) after T-341 shipped.
 
@@ -2686,11 +2686,22 @@ Cure: migrate remaining suites to unique_arma / suite Mutex, or document denylis
 T-385 ships LEFT JOIN matches.terrain and Class-R/golden pins, but the only live IT path asserts terrain is null on create. A regression that always returns None (broken join / wrong column) stays green. Cure: seed a match with terrain + point server_statuses.current_match_id at it, then GET /servers and assert the row's terrain equals the seeded value (e.g. everon).
 
 Repro: delete LEFT JOIN from SERVER_STATUS_SELECT_* → golden/source pins may still pass if not re-run; HTTP create-null IT still passes. Need positive IT RED on join removal. |
-| T-536 | 3376 | running | platform | touch_changed still masks changed_rs porcelain failure as empty list | FOUND by W50 adversarial verifier (MINOR-NIT) after T-492.
+| T-536 | 3376 | shipped | platform | touch_changed still masks changed_rs porcelain failure as empty list | FOUND by W50 adversarial verifier (MINOR-NIT) after T-492.
 
 fmt_changed/clippy_changed now propagate changed_rs rc. touch_changed still does `for f in $(changed_rs …)` and can return 0 with listed=0 when porcelain fails. Same mask class.
 
 Cure: `files=$(changed_rs) \|\| return $?` (or equivalent) in touch_changed. |
+| T-537 | 3377 | deferred | platform | xtask empty/lossy write residuals outside T-383 owns (enf/world/map) | FOUND as T-383 residual (W51 CLEAN). Owns fixed cmds/sync/schema_gates; still open:
+- enf/apidoc.rs header-only TSV overwrite exits 0
+- world/aux.rs:1009/1022/1050, world/build.rs:664/958
+- map/labels.rs:455, map/sap.rs:1007
+
+Same shape: success path writing structurally empty/lossy content over committed files. Cure: refuse_empty_write (or equivalent) at each site. Repro: see T-383 summary. |
+| T-538 | 3378 | deferred | platform | flatten-orbat-slots stdout path still drops loadout/uid and stamps schemaVersion 1.1 | FOUND by W51 adversarial verifier (CLEAN MINOR-NIT) after T-383.
+
+T-383 fixed `--in-place`. Non-`--in-place` stdout flatten still drops loadout/uid and force-stamps schemaVersion 1.1. Cure: same preserve/refuse rules on stdout path, or document stdout as lossy preview only with a loud warning + Class-R pin.
+
+Repro: run flatten-orbat-slots without --in-place on a golden with loadout/uid. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
