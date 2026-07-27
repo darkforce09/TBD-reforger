@@ -160,6 +160,11 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
             "/missions/{id}/versions/{vid}",
             get(handlers::missions::get_version),
         )
+        // T-532 — re-point current_version_id at a prior mission_versions row (rollback tip).
+        .route(
+            "/missions/{id}/versions/{vid}/set-current",
+            post(handlers::missions::set_current_version),
+        )
         .route(
             "/missions/{id}/armory",
             get(handlers::missions::get_armory).put(handlers::missions::set_armory),

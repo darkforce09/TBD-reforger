@@ -80,9 +80,10 @@ fn payload_title_for_row_mirror(payload_str: &str) -> Option<String> {
 /// `mission-editor-payload.schema.json` has no top-level `required` / `minProperties`, so `{}`
 /// passes [`validate_payload`] (pinned in `contract/validate.rs`). `create_mission` deliberately
 /// stores that stub as `0.1.0`. Promoting the same shape (or any object with no editor graph and
-/// no placed content) through [`create_version`] moves `current_version_id` with **no API rollback**
-/// — `/compiled` 409s (`CompileError::NoSlots`), orbat attach materialises zero slots, ingest
-/// roster omits the mission. Prior version rows survive in DB only.
+/// no placed content) through [`create_version`] used to move `current_version_id` with no recovery
+/// path — `/compiled` 409s (`CompileError::NoSlots`), orbat attach materialises zero slots, ingest
+/// roster omits the mission. Prior version rows survive in DB; **T-532** adds
+/// [`set_current_version`] so an author/admin can re-point the tip at a prior row.
 ///
 /// "Empty" here is measured against the same surfaces that break:
 /// - `editor.slots` array (flatten / `ingest_list_missions` `jsonb_array_length` census)
@@ -994,8 +995,9 @@ pub async fn create_version(
     }
     let payload_str = payload.get();
     validate_payload(&state.pool, payload_str).await?;
-    // **T-382.** Schema accepts `{}`; promoting it to `current_version_id` is unrecoverable via
-    // API (no re-point route). Reject vacuous payloads here — not via schema `minItems` (T-357).
+    // **T-382.** Schema accepts `{}`; promoting it to `current_version_id` breaks `/compiled`.
+    // Reject vacuous payloads here — not via schema `minItems` (T-357). Tip rollback is T-532
+    // [`set_current_version`] for already-broken / unwanted tips that still land.
     reject_vacuous_version_payload(payload_str)?;
 
     let version: Result<MissionVersion, sqlx::Error> = sqlx::query_as(
@@ -1099,6 +1101,80 @@ pub async fn get_version(
             .await?;
     v.map(Json)
         .ok_or_else(|| ApiError::not_found("version not found"))
+}
+
+/// `POST /api/v1/missions/:id/versions/:vid/set-current` — re-point `missions.current_version_id`
+/// at an existing `mission_versions` row for this mission (**T-532**).
+///
+/// T-382 rejects *new* vacuous tips at [`create_version`]. Already-broken rows and any future
+/// non-vacuous-but-unwanted tip still need an API path — before this handler the only recovery
+/// was `psql UPDATE missions SET current_version_id = …`. Does **not** delete version rows;
+/// only moves the tip pointer (same writer shape as [`create_version`]'s UPDATE).
+///
+/// Authz matches other mutators: [`MissionMakerUser`] + [`can_edit`] (author or admin). Target
+/// `vid` must belong to this mission (`WHERE id = $1 AND mission_id = $2`) — a foreign version
+/// id is 404, not a silent cross-mission re-point.
+///
+/// @route POST /api/v1/missions/:id/versions/:vid/set-current
+pub async fn set_current_version(
+    State(state): State<AppState>,
+    maker: MissionMakerUser,
+    Path((id, vid)): Path<(String, String)>,
+) -> Result<Json<Mission>, ApiError> {
+    let user = &maker.0;
+    let m = load(&state.pool, &id).await?;
+    if !can_edit(user, &m) {
+        return Err(ApiError::forbidden("not your mission"));
+    }
+    let Ok(vid) = Uuid::parse_str(&vid) else {
+        return Err(ApiError::bad_request("invalid version id"));
+    };
+    // Belonging check first — never UPDATE `current_version_id` to a row we have not proven is
+    // this mission's. `get_version` uses the same predicate; keep them in lockstep.
+    let target: Option<(Uuid, String)> =
+        sqlx::query_as("SELECT id, semver FROM mission_versions WHERE id = $1 AND mission_id = $2")
+            .bind(vid)
+            .bind(m.id)
+            .fetch_optional(&state.pool)
+            .await?;
+    let Some((version_id, semver)) = target else {
+        return Err(ApiError::not_found("version not found"));
+    };
+    // Same clock bump as create_version — library `ORDER BY updated_at DESC` and approvals'
+    // `submitted_at` projection must see the re-point.
+    sqlx::query("UPDATE missions SET current_version_id = $1, updated_at = now() WHERE id = $2")
+        .bind(version_id)
+        .bind(m.id)
+        .execute(&state.pool)
+        .await?;
+
+    let actor = &user.discord_id;
+    let actor_name = username(&state.pool, actor).await;
+    let message = if *actor == m.author_id {
+        format!(
+            "{actor_name} set current version of mission '{}' to {semver}",
+            m.title
+        )
+    } else {
+        let author_name = username(&state.pool, &m.author_id).await;
+        format!(
+            "{actor_name} set current version of {author_name}'s mission '{}' to {semver}",
+            m.title
+        )
+    };
+    write_audit(
+        &state.pool,
+        AuditSeverity::Info,
+        Some(actor),
+        &actor_name,
+        "mission.version.set_current",
+        &message,
+        "mission",
+        &m.id.to_string(),
+    )
+    .await;
+
+    Ok(Json(load(&state.pool, &id).await?))
 }
 
 // --- armory + bookmarks ---
@@ -1871,10 +1947,10 @@ mod tests {
         );
     }
 
-    /// T-497 Class-R: DELETE / submit / create_version / set_armory must require
-    /// `MissionMakerUser`, same tier as T-408 PATCH — demotion revokes all mutators.
+    /// T-497 Class-R: DELETE / submit / create_version / set_armory / set_current_version must
+    /// require `MissionMakerUser`, same tier as T-408 PATCH — demotion revokes all mutators.
     ///
-    /// RED: change any of the four extractors back to `user: AuthUser` — this pin fails.
+    /// RED: change any of the extractors back to `user: AuthUser` — this pin fails.
     #[test]
     fn mission_mutators_require_mission_maker_tier() {
         const SRC: &str = include_str!("missions.rs");
@@ -1887,6 +1963,7 @@ mod tests {
             "submit_mission",
             "create_version",
             "set_armory",
+            "set_current_version",
         ] {
             let marker = format!("pub async fn {name}(");
             let start = production
@@ -2369,5 +2446,49 @@ mod tests {
             err.message
         );
         assert!(reject_vacuous_version_payload(r#"{"editor":{"slots":[]}}"#).is_ok());
+    }
+
+    /// T-532 Class-R: `set_current_version` must gate on `can_edit`, validate the target version
+    /// belongs to the mission (`mission_id = $2`), and UPDATE `current_version_id` (+ `updated_at`).
+    ///
+    /// RED: drop `can_edit` / the `AND mission_id` predicate / the UPDATE — this pin fails.
+    /// HTTP IT preferred in `tests/missions.rs` (out of T-532 owns) — this source pin is the
+    /// in-owns Class-R stand-in the ticket allows.
+    #[test]
+    fn set_current_version_repaints_tip_with_belonging_check() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        let body = production
+            .split("pub async fn set_current_version(")
+            .nth(1)
+            .and_then(|s| s.split("// --- armory + bookmarks ---").next())
+            .expect("set_current_version body");
+        assert!(
+            body.contains("can_edit(user, &m)"),
+            "set_current_version must require can_edit (author or admin)"
+        );
+        assert!(
+            body.contains("WHERE id = $1 AND mission_id = $2"),
+            "set_current_version must refuse versions that do not belong to the mission"
+        );
+        assert!(
+            body.contains("current_version_id = $1") && body.contains("updated_at = now()"),
+            "set_current_version must UPDATE current_version_id and bump updated_at"
+        );
+        assert!(
+            body.contains("mission.version.set_current"),
+            "set_current_version must write an audit action distinct from create_version"
+        );
+        // Route registration lives in app.rs (T-532 owns) — pin the path string here so a
+        // handler without a route cannot Class-R green.
+        const APP: &str = include_str!("../app.rs");
+        assert!(
+            APP.contains("/missions/{id}/versions/{vid}/set-current")
+                && APP.contains("set_current_version"),
+            "app.rs must register POST …/versions/{{vid}}/set-current → set_current_version"
+        );
     }
 }
