@@ -3,21 +3,26 @@
 //! (70%) of users + a fixed dossier pane (30%).
 //!
 //! T-159.25: fully interactive — live search (`?q=`), row selection, and the dossier with the
-//! LIVE role editor (PATCH /admin/users/:discordId) and ban (POST …/ban, reason via the same
-//! window.prompt React uses).
+//! LIVE role editor (PATCH /admin/users/:discordId) and ban (POST …/ban).
 //!
 //! T-323: the ban reason is **required**. T-317 made the backend reject a missing or
 //! whitespace-only `reason` — before that fix a re-ban with no reason silently erased both the
 //! previous reason and `banned_at`. This page was the stale half of that change: it advertised
-//! the reason as optional and posted `{}` when the operator left it blank, which now 400s. The
-//! prompt no longer lies, a blank answer is refused here without a request, and a server-side
-//! 400 is shown verbatim instead of a flat "Ban failed".
+//! the reason as optional and posted `{}` when the operator left it blank, which now 400s. A
+//! blank answer is refused here without a request, and a server-side 400 is shown verbatim
+//! instead of a flat "Ban failed".
+//!
+//! T-342: ban + warning reasons use a real `Dialog` (not `window.prompt`). Native prompts cannot
+//! be intercepted by the browser gate (`web_sys` bypasses JS overrides; CDP blocks the
+//! renderer). Confirm stays disabled until the reason is non-empty — the required-reason rule
+//! is inline, not a toast after the fact. Role PATCH errors use `api_error_message` the same
+//! way ban/unban/warn already do.
 //!
 //! T-247: Personnel is the SPA caller for `POST /admin/roles/sync` (was curl-only). The header
 //! "Sync Roles" control posts that path, toasts the `updated` count, and refetches the roster.
 //!
 //! T-268: Issue Warning posts `POST /admin/users/:discordId/warnings` with the same required-
-//! reason prompt as ban (the prior mock success toast is gone). When `is_banned`, the dossier
+//! reason Dialog as ban (the prior mock success toast is gone). When `is_banned`, the dossier
 //! shows **Unban** → `DELETE …/ban` instead of a dead "Personnel Banned" label. Header Sort /
 //! Filter cycle client-side modes over the loaded page (roster API has no sort/filter query).
 //!
@@ -25,7 +30,7 @@
 //! `users.total_deployments`) — integer string, including `0` (no em-dash placeholder).
 #![allow(dead_code)]
 use crate::dto::{AdminUserRow, Paginated};
-use crate::ui::{cn, AdminGate, MaterialIcon};
+use crate::ui::{cn, AdminGate, Dialog, MaterialIcon};
 use leptos::prelude::*;
 
 /// Badge variant="success" class (ui/badge.tsx cn(), text-label-sm twMerge-dropped).
@@ -491,21 +496,22 @@ fn roster_row(u: AdminUserRow, selected_id: RwSignal<Option<String>>) -> impl In
     }
 }
 
-/// What the client does with whatever `window.prompt` handed back for a **required reason**
-/// (ban **or** warning — both endpoints reject blank/whitespace the same way).
+/// What the client does with a **required reason** field (ban **or** warning — both endpoints
+/// reject blank/whitespace the same way).
 ///
-/// T-323 — the three outcomes are genuinely different and must not collapse into one. Cancel is
-/// an abandoned action; OK-with-blank is an attempted write that is missing its reason; anything
-/// else is a reason to send. Split out as a plain function because the caller is a wasm-only
-/// closure behind a `window.prompt`, which no test can drive — this way the decision itself is
-/// pinned by host-side unit tests.
+/// T-323 — the three outcomes are genuinely different and must not collapse into one. Cancel /
+/// dismiss is an abandoned action; blank/whitespace is an attempted write missing its reason;
+/// anything else is a reason to send. Split out as a plain function so host-side unit tests pin
+/// the decision (T-342: the Dialog confirm stays disabled while empty, so the UI never toasts a
+/// Reject — `classify_ban_reason` is still the shared trim/empty gate on submit).
 #[derive(Debug, PartialEq, Eq)]
 enum BanReason {
-    /// `prompt` → `null` (Cancel): the operator backed out. No request, no toast.
+    /// Dialog Cancel / dismiss: the operator backed out. No request, no toast.
     Abort,
-    /// OK with a blank or whitespace-only answer. Refuse locally: posting `{}` is exactly the
-    /// 400 this ticket fixes, and substituting a placeholder ("No reason given") to satisfy the
-    /// validator would reintroduce the unexplained ban T-317 exists to stop.
+    /// Blank or whitespace-only answer. Refuse locally: posting `{}` is exactly the 400 T-317
+    /// rejects, and substituting a placeholder ("No reason given") would reintroduce the
+    /// unexplained ban that ticket exists to stop. The Dialog disables Confirm while empty so
+    /// this branch is defensive, not the operator-facing path.
     Reject,
     /// A real reason, trimmed. The server stores `reason.trim()` and rejects whitespace-only, so
     /// trimming here keeps client and server from disagreeing about what counts as empty.
@@ -526,9 +532,14 @@ fn classify_ban_reason(answer: Option<&str>) -> BanReason {
     }
 }
 
+/// True when the Dialog Confirm may fire — non-empty after trim (mirrors `BanReason::Send`).
+fn reason_confirm_enabled(reason: &str) -> bool {
+    matches!(classify_ban_reason(Some(reason)), BanReason::Send(_))
+}
+
 /// The right-pane dossier (admin.tsx `PersonnelDossier`): profile header, service telemetry, the
 /// inline role editor (live PATCH), Issue Warning (live POST …/warnings), Ban (live POST …/ban),
-/// and Unban when banned (live DELETE …/ban).
+/// and Unban when banned (live DELETE …/ban). Ban/warn reasons open a `Dialog` (T-342).
 fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
     let store = expect_context::<crate::auth::AuthStore>();
     #[cfg(not(target_arch = "wasm32"))]
@@ -554,6 +565,11 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
     let ban_busy = RwSignal::new(false);
     let warn_busy = RwSignal::new(false);
     let warnings = RwSignal::new(u.warnings);
+    // T-342 — Dialog reason fields (never window.prompt).
+    let ban_open = RwSignal::new(false);
+    let ban_reason = RwSignal::new(String::new());
+    let warn_open = RwSignal::new(false);
+    let warn_reason = RwSignal::new(String::new());
 
     let on_role_change = move |ev: leptos::ev::Event| {
         let next = event_target_value(&ev);
@@ -574,8 +590,11 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                         toasts.success("Role updated");
                         refetch.run(());
                     }
-                    Err(_) => {
-                        toasts.error("Failed to update role");
+                    Err(e) => {
+                        toasts.error(crate::client::api_error_message(
+                            &e,
+                            "Failed to update role",
+                        ));
                         role.set(prev_role.get_value());
                     }
                 }
@@ -584,25 +603,22 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
     };
 
     let on_ban = move |_| {
+        if banned.get_untracked() || ban_busy.get_untracked() {
+            return;
+        }
+        ban_reason.set(String::new());
+        ban_open.set(true);
+    };
+
+    let on_confirm_ban = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
             if banned.get_untracked() || ban_busy.get_untracked() {
                 return;
             }
-            let Some(win) = web_sys::window() else {
-                return;
-            };
             let toasts = crate::toast::use_toasts();
-            // `Err` is a prompt the browser refused to show — same silent abort as Cancel.
-            let Ok(answer) = win.prompt_with_message("Ban reason (required):") else {
-                return;
-            };
-            let reason = match classify_ban_reason(answer.as_deref()) {
-                BanReason::Abort => return,
-                BanReason::Reject => {
-                    toasts.error("Ban reason is required");
-                    return;
-                }
+            let reason = match classify_ban_reason(Some(ban_reason.get_untracked().as_str())) {
+                BanReason::Abort | BanReason::Reject => return,
                 BanReason::Send(reason) => reason,
             };
             ban_busy.set(true);
@@ -613,6 +629,8 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                     Ok(()) => {
                         toasts.success("Personnel banned");
                         banned.set(true);
+                        ban_open.set(false);
+                        ban_reason.set(String::new());
                         refetch.run(());
                     }
                     // The 400 body says exactly what is wrong; a flat "Ban failed" threw that
@@ -621,6 +639,10 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                 }
                 ban_busy.set(false);
             });
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = (store, ban_busy, ban_open, ban_reason, banned, refetch);
         }
     };
 
@@ -648,24 +670,22 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
     };
 
     let on_warn = move |_| {
+        if warn_busy.get_untracked() {
+            return;
+        }
+        warn_reason.set(String::new());
+        warn_open.set(true);
+    };
+
+    let on_confirm_warn = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
             if warn_busy.get_untracked() {
                 return;
             }
-            let Some(win) = web_sys::window() else {
-                return;
-            };
             let toasts = crate::toast::use_toasts();
-            let Ok(answer) = win.prompt_with_message("Warning reason (required):") else {
-                return;
-            };
-            let reason = match classify_ban_reason(answer.as_deref()) {
-                BanReason::Abort => return,
-                BanReason::Reject => {
-                    toasts.error("Warning reason is required");
-                    return;
-                }
+            let reason = match classify_ban_reason(Some(warn_reason.get_untracked().as_str())) {
+                BanReason::Abort | BanReason::Reject => return,
                 BanReason::Send(reason) => reason,
             };
             warn_busy.set(true);
@@ -676,12 +696,18 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                     Ok(()) => {
                         toasts.success("Warning issued");
                         warnings.update(|n| *n = n.saturating_add(1));
+                        warn_open.set(false);
+                        warn_reason.set(String::new());
                         refetch.run(());
                     }
                     Err(e) => toasts.error(crate::client::api_error_message(&e, "Warning failed")),
                 }
                 warn_busy.set(false);
             });
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = (store, warn_busy, warn_open, warn_reason, warnings, refetch);
         }
     };
 
@@ -745,6 +771,7 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                     type="button"
                     on:click=on_warn
                     prop:disabled=move || warn_busy.get()
+                    data-testid="personnel-warn"
                     class="flex items-center justify-center gap-2 rounded-lg border border-tactical-yellow/30 py-2.5 text-label-md text-tactical-yellow transition hover:bg-tactical-yellow/10 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                     <MaterialIcon name="warning" class="text-[18px]" />
@@ -782,6 +809,96 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                     }
                 }}
             </div>
+
+            // T-342 — ban reason Dialog (driveable by the browser gate; no window.prompt).
+            <Dialog
+                open=ban_open
+                title="Ban personnel?"
+                description="A reason is required. This action is recorded on the roster."
+            >
+                <label class="mb-1 block text-label-sm text-on-surface-variant uppercase" for="personnel-ban-reason">
+                    "Ban reason"
+                </label>
+                <textarea
+                    id="personnel-ban-reason"
+                    data-testid="personnel-ban-reason"
+                    aria-label="Ban reason (required)"
+                    prop:value=move || ban_reason.get()
+                    on:input=move |ev| ban_reason.set(event_target_value(&ev))
+                    placeholder="Reason (required)"
+                    rows="4"
+                    class=INPUT_CLASS
+                ></textarea>
+                <div class="mt-5 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        data-testid="personnel-ban-cancel"
+                        on:click=move |_| {
+                            ban_open.set(false);
+                            ban_reason.set(String::new());
+                        }
+                        class="rounded-md border border-outline-variant/40 px-3 py-1.5 text-label-md text-on-surface-variant transition-colors hover:bg-white/5"
+                    >
+                        "Cancel"
+                    </button>
+                    <button
+                        type="button"
+                        data-testid="personnel-ban-confirm"
+                        on:click=on_confirm_ban
+                        prop:disabled=move || {
+                            ban_busy.get() || !reason_confirm_enabled(&ban_reason.get())
+                        }
+                        class="rounded-md bg-error-alert/20 px-3 py-1.5 text-label-md text-error-alert transition-colors hover:bg-error-alert/30 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        {move || if ban_busy.get() { "Banning…" } else { "Ban personnel" }}
+                    </button>
+                </div>
+            </Dialog>
+
+            // T-342 — warning reason Dialog (same required-reason contract as ban).
+            <Dialog
+                open=warn_open
+                title="Issue warning?"
+                description="A reason is required. The warning count on this dossier updates after a successful POST."
+            >
+                <label class="mb-1 block text-label-sm text-on-surface-variant uppercase" for="personnel-warn-reason">
+                    "Warning reason"
+                </label>
+                <textarea
+                    id="personnel-warn-reason"
+                    data-testid="personnel-warn-reason"
+                    aria-label="Warning reason (required)"
+                    prop:value=move || warn_reason.get()
+                    on:input=move |ev| warn_reason.set(event_target_value(&ev))
+                    placeholder="Reason (required)"
+                    rows="4"
+                    class=INPUT_CLASS
+                ></textarea>
+                <div class="mt-5 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        data-testid="personnel-warn-cancel"
+                        on:click=move |_| {
+                            warn_open.set(false);
+                            warn_reason.set(String::new());
+                        }
+                        class="rounded-md border border-outline-variant/40 px-3 py-1.5 text-label-md text-on-surface-variant transition-colors hover:bg-white/5"
+                    >
+                        "Cancel"
+                    </button>
+                    <button
+                        type="button"
+                        data-testid="personnel-warn-confirm"
+                        on:click=on_confirm_warn
+                        prop:disabled=move || {
+                            warn_busy.get() || !reason_confirm_enabled(&warn_reason.get())
+                        }
+                        class="rounded-md border border-tactical-yellow/40 bg-tactical-yellow/15 px-3 py-1.5 text-label-md text-tactical-yellow transition-colors hover:bg-tactical-yellow/25 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        {move || if warn_busy.get() { "Issuing…" } else { "Issue warning" }}
+                    </button>
+                </div>
+            </Dialog>
         </div>
     }
 }
@@ -810,11 +927,18 @@ fn stat_reactive(
 mod tests {
     use super::{
         admin_user_ban_path, admin_user_warnings_path, apply_roster_filter, apply_roster_sort,
-        classify_ban_reason, roles_sync_success_message, roles_sync_updated_count, BanReason,
-        FilterMode, SortMode, ADMIN_ROLES_SYNC_PATH,
+        classify_ban_reason, reason_confirm_enabled, roles_sync_success_message,
+        roles_sync_updated_count, BanReason, FilterMode, SortMode, ADMIN_ROLES_SYNC_PATH,
     };
     use crate::dto::AdminUserRow;
     use crate::nav::Role;
+
+    fn production_src() -> &'static str {
+        include_str!("personnel.rs")
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source before tests module")
+    }
 
     fn row(
         discord_id: &str,
@@ -858,11 +982,7 @@ mod tests {
         // `if u.total_deployments == 0 { "—" } else { u.total_deployments.to_string() }`
         // still contained the bind needle and false-greened. Require the exact live call
         // (no conditional) and forbid any em-dash between Deployments and the next sibling.
-        const SRC: &str = include_str!("personnel.rs");
-        let production = SRC
-            .split("#[cfg(test)]")
-            .next()
-            .expect("production source before tests module");
+        let production = production_src();
 
         // Exact live bind — assembled so this test's own source cannot satisfy it.
         let exact = format!(
@@ -935,25 +1055,73 @@ mod tests {
     fn issue_warning_is_not_a_mock_toast() {
         // T-268 defect: Issue Warning toasted a fake success while POST …/warnings worked.
         // Forbidden / required phrases assembled so include_str cannot false-green off this test.
-        const SRC: &str = include_str!("personnel.rs");
+        let production = production_src();
         let mock_toast = format!("{}{}", "Warning issued ", "(mock)");
         let real_toast = format!("{}{}", "toasts.success(", r#""Warning issued")"#);
         assert!(
-            !SRC.contains(&mock_toast),
+            !production.contains(&mock_toast),
             "Issue Warning must not toast a mock success (perturbation: reintroduce the mock toast)"
         );
         assert!(
-            SRC.contains("admin_user_warnings_path")
-                && SRC.contains(&format!("{}{}", "api_post_ok", "(store, &path, body)")),
+            production.contains("admin_user_warnings_path")
+                && production.contains(&format!("{}{}", "api_post_ok", "(store, &path, body)")),
             "Issue Warning must POST via admin_user_warnings_path + api_post_ok"
         );
         assert!(
-            SRC.contains("Warning reason (required):"),
-            "warning prompt must require a reason (mirror ban)"
+            production.contains("personnel-warn-reason")
+                && production.contains("personnel-warn-confirm"),
+            "warning reason must be collected via a driveable Dialog (T-342)"
         );
         assert!(
-            SRC.contains(&real_toast),
+            production.contains(&real_toast),
             "success toast after a real POST must say Warning issued"
+        );
+    }
+
+    #[test]
+    fn ban_and_warn_use_dialog_not_window_prompt() {
+        // T-342: native prompt blocks CDP; Dialog + testids are the gate-driveable path.
+        // Module docs may name the retired path; pin the live call sites only.
+        let production = production_src();
+        assert!(
+            !production.contains("prompt_with_message")
+                && !production.contains("win.prompt")
+                && !production.contains("Prompt::"),
+            "personnel must not call web_sys prompt APIs"
+        );
+        for needle in [
+            "data-testid=\"personnel-ban-reason\"",
+            "data-testid=\"personnel-ban-confirm\"",
+            "data-testid=\"personnel-warn-reason\"",
+            "data-testid=\"personnel-warn-confirm\"",
+            "reason_confirm_enabled",
+        ] {
+            assert!(
+                production.contains(needle),
+                "missing Dialog drive surface: {needle}"
+            );
+        }
+        assert!(
+            production.contains("<Dialog")
+                && production.contains("title=\"Ban personnel?\"")
+                && production.contains("title=\"Issue warning?\""),
+            "ban and warn must each open a Dialog"
+        );
+    }
+
+    #[test]
+    fn role_patch_surfaces_api_error_message() {
+        // T-342 fold-in: role editor used to discard the server body with a flat string.
+        let production = production_src();
+        let flat = format!("{}{}", r#"toasts.error("Failed to update role")"#, "");
+        assert!(
+            !production.contains(&flat),
+            "role PATCH must not toast a flat Failed to update role (discarded server message)"
+        );
+        assert!(
+            production.contains("api_error_message")
+                && production.contains("Failed to update role"),
+            "role PATCH Err must use api_error_message(..., \"Failed to update role\")"
         );
     }
 
@@ -961,36 +1129,36 @@ mod tests {
     fn unban_control_deletes_ban_when_banned() {
         // T-268: bans were irreversible from the SPA. Needles assembled so include_str cannot
         // false-green off this assert's own string literals.
-        const SRC: &str = include_str!("personnel.rs");
+        let production = production_src();
         let delete_call = format!("{}{}", "api_delete", "(store, &path)");
         let unban_label = format!("{}{}", "Unban ", "Personnel");
         let unban_testid = format!("{}{}", "personnel-", "unban");
         assert!(
-            SRC.contains(&delete_call),
+            production.contains(&delete_call),
             "Unban must DELETE via api_delete (perturbation: drop api_delete call)"
         );
         assert!(
-            SRC.contains("admin_user_ban_path") && SRC.contains(&unban_label),
+            production.contains("admin_user_ban_path") && production.contains(&unban_label),
             "banned dossier must expose Unban Personnel on the ban path"
         );
         assert!(
-            SRC.contains(&unban_testid),
+            production.contains(&unban_testid),
             "unban control needs a stable testid"
         );
     }
 
     #[test]
     fn sort_and_filter_are_not_toast_stubs() {
-        const SRC: &str = include_str!("personnel.rs");
+        let production = production_src();
         // Assemble so the assert literals cannot false-green the include_str scan.
         let sort_stub = format!("{}{}", "Sort options ", "coming soon");
         let filter_stub = format!("{}{}", "Filter options ", "coming soon");
         assert!(
-            !SRC.contains(&sort_stub) && !SRC.contains(&filter_stub),
+            !production.contains(&sort_stub) && !production.contains(&filter_stub),
             "Sort/Filter must not toast stub copy"
         );
         assert!(
-            SRC.contains("apply_roster_sort") && SRC.contains("apply_roster_filter"),
+            production.contains("apply_roster_sort") && production.contains("apply_roster_filter"),
             "header Sort/Filter must drive apply_roster_sort / apply_roster_filter"
         );
     }
@@ -1023,7 +1191,7 @@ mod tests {
 
     #[test]
     fn cancel_aborts_and_sends_nothing() {
-        // `window.prompt` → None. Abort carries no toast: the operator chose not to ban.
+        // Dialog Cancel / dismiss → None. Abort carries no toast: the operator chose not to ban.
         assert_eq!(classify_ban_reason(None), BanReason::Abort);
     }
 
@@ -1031,19 +1199,22 @@ mod tests {
     fn ok_with_blank_is_refused_before_any_request() {
         // The T-323 break: this branch used to POST `{}`, which T-317 correctly answers with
         // 400 "reason is required". Reject means the client never makes the request at all.
+        // T-342: Dialog Confirm is disabled while empty (see reason_confirm_enabled).
         assert_eq!(classify_ban_reason(Some("")), BanReason::Reject);
+        assert!(!reason_confirm_enabled(""));
     }
 
     #[test]
     fn whitespace_only_is_refused_too() {
         // The server rejects a whitespace-only reason. Agreeing here keeps the operator from
-        // seeing a 400 for input that looked non-empty in the prompt.
+        // seeing a 400 for input that looked non-empty in the field.
         for blank in ["   ", "\t", "\n", " \t\n "] {
             assert_eq!(
                 classify_ban_reason(Some(blank)),
                 BanReason::Reject,
                 "{blank:?}"
             );
+            assert!(!reason_confirm_enabled(blank), "{blank:?}");
         }
     }
 
@@ -1058,6 +1229,7 @@ mod tests {
             classify_ban_reason(Some("Repeated TK after warning")),
             BanReason::Send("Repeated TK after warning".to_string())
         );
+        assert!(reason_confirm_enabled("  Repeated TK after warning  "));
     }
 
     #[test]
