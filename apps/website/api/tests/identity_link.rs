@@ -54,8 +54,14 @@ async fn setup() -> Option<(Router, AppState, PgPool)> {
         .await
         .unwrap_or_else(|e| panic!("identity_link release arma: {e}"));
 
-    common::seed_user(&pool, ACTOR, "Identity Link Actor", "identity-link-seed-400001", "admin")
-        .await;
+    common::seed_user(
+        &pool,
+        ACTOR,
+        "Identity Link Actor",
+        "identity-link-seed-400001",
+        "admin",
+    )
+    .await;
     // Start the link flow unlinked: seed_user wrote a placeholder arma_id (UNIQUE-safe);
     // clear it for THIS actor only.
     sqlx::query(
@@ -108,15 +114,13 @@ fn t400_actor_is_not_shared_dev_login_user() {
     let src = include_str!("identity_link.rs");
     // Ban the pre-fix shared-row alias without matching this assertion's own prose.
     assert!(
-        !src.lines().any(|l| l.trim_start().starts_with("const DEV_ID")),
+        !src.lines()
+            .any(|l| l.trim_start().starts_with("const DEV_ID")),
         "identity_link must not reintroduce a shared-snowflake const alias"
     );
     // Pre-fix swallowed cleanup nulled the shared row via bind $3. Needle is split so this
     // assert's own source does not contain the forbidden SQL as one literal.
-    let forbidden = concat!(
-        "UPDATE users SET arma_id = NULL WHERE ",
-        "discord_id = $3"
-    );
+    let forbidden = concat!("UPDATE users SET arma_id = NULL WHERE ", "discord_id = $3");
     assert!(
         !src.contains(forbidden),
         "must not null arma_id via the old shared-row cleanup bind"

@@ -36,15 +36,31 @@ async fn setup() -> Option<(Router, PgPool, String, String)> {
 
     // Owner-scoped wipe only — never `DELETE FROM user_factions` bare.
     sqlx::query("DELETE FROM user_factions WHERE owner_id = ANY($1)")
-        .bind(vec![MAKER.to_string(), ENLISTED.to_string(), GHOST.to_string()])
+        .bind(vec![
+            MAKER.to_string(),
+            ENLISTED.to_string(),
+            GHOST.to_string(),
+        ])
         .execute(&pool)
         .await
         .expect("clean suite-owned factions");
 
-    common::seed_user(&pool, MAKER, "Factions Maker", "factions-arma-400011", "mission_maker")
-        .await;
-    common::seed_user(&pool, ENLISTED, "Factions Enlisted", "factions-arma-400012", "enlisted")
-        .await;
+    common::seed_user(
+        &pool,
+        MAKER,
+        "Factions Maker",
+        "factions-arma-400011",
+        "mission_maker",
+    )
+    .await;
+    common::seed_user(
+        &pool,
+        ENLISTED,
+        "Factions Enlisted",
+        "factions-arma-400012",
+        "enlisted",
+    )
+    .await;
 
     let state = AppState::new(pool.clone(), Config::for_tests(url, "factions-secret"));
     let app = app::router(state.clone());
@@ -180,12 +196,11 @@ async fn faction_library_crud_gates() {
     .execute(&pool)
     .await
     .unwrap();
-    let ghost: (uuid::Uuid,) =
-        sqlx::query_as("SELECT id FROM user_factions WHERE owner_id = $1")
-            .bind(GHOST)
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let ghost: (uuid::Uuid,) = sqlx::query_as("SELECT id FROM user_factions WHERE owner_id = $1")
+        .bind(GHOST)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     let (s, _) = req(
         &app,
         Method::GET,
