@@ -84,8 +84,6 @@ pub struct Event {
     pub registration_locked: bool,
     pub max_slots: i64,
     pub created_by: String,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub match_id: Option<Uuid>,
     /// Game server this operation is scheduled on (T-260). Nullable uuid — no FK in schema
     /// (house style; see migration 0011). Absent on the wire when unset.
     #[serde(skip_serializing_if = "Option::is_none", default)]

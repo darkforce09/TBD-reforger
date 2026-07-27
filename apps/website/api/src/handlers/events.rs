@@ -58,8 +58,9 @@ use crate::state::AppState;
 //                  and freezing a roster are editorial acts, not consequences of time).
 //
 // Ending is deliberately NOT hung off results ingest. That path exists but currently
-// resolves nobody (T-229/T-230) and `events.match_id` is written by nothing (T-284), so
-// binding completion to it would ship a transition that never fires.
+// resolves nobody (T-229/T-230). The event↔match link is `matches.event_id` (T-284 dropped
+// the dead `events.match_id` column), so binding completion to a reverse pointer that
+// nothing wrote would ship a transition that never fires.
 
 /// SQL scalar — the instant a still-`live` operation is considered over. Requires the
 /// `events` row to be aliased `e`.
@@ -113,7 +114,7 @@ static EVENT_COLUMNS: LazyLock<String> = LazyLock::new(|| {
         "e.id, COALESCE(e.name_override, '') AS name_override, e.start_time, \
          COALESCE(e.briefing, '') AS briefing, \
          COALESCE(e.banner_image_url, '') AS banner_image_url, \
-         {} AS status, e.registration_locked, e.max_slots, e.created_by, e.match_id, \
+         {} AS status, e.registration_locked, e.max_slots, e.created_by, \
          e.server_id, e.modpack_id, \
          COALESCE(e.created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
          COALESCE(e.updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at",
