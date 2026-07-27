@@ -556,6 +556,96 @@ async fn servers_crud_full_lifecycle() {
         .ok();
 }
 
+/// T-535 / T-385 — **positive** live IT: `GET /servers.terrain` comes from the match JOIN.
+///
+/// Class-R — what absence makes this RED:
+/// - Removing `LEFT JOIN matches m ON m.id = ss.current_match_id` (or `m.terrain AS terrain`)
+///   from `SERVER_STATUS_SELECT_*` while hard-coding `terrain: None` / `NULL AS terrain`
+///   → row still lists, but `terrain` stays JSON `null` despite a live `current_match_id`.
+/// - Keeping only the create-path null assert (T-385) → that stays green either way.
+///
+/// Seed: match with `terrain = everon` + `server_statuses.current_match_id` → assert the list
+/// JSON the Server Intel page reads equals `"everon"`.
+#[tokio::test]
+async fn servers_list_terrain_from_current_match_join() {
+    let Some((app, pool, state)) = boot_servers("TerrainJoin").await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = token(&state, "admin");
+    const SRC: &str = "t535-terrain-join";
+
+    // Parallel-safe: wipe any leftover match from a prior crash (matches has no cascade from
+    // servers, and boot_servers only cleans statuses/servers by T235 name prefix).
+    sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+        .bind(SRC)
+        .execute(&pool)
+        .await
+        .expect("clean prior T-535 match");
+
+    let (st, created) = req(
+        &app,
+        Method::POST,
+        "/api/v1/servers",
+        Some(&admin),
+        Some(json!({
+            "name": "T235 TerrainJoin Alpha",
+            "ip": "10.53.5.1",
+            "port": 5351
+        })),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "POST /servers: {created}");
+    let id = created["id"].as_str().expect("created id").to_string();
+    assert!(
+        created.get("terrain").is_some_and(|t| t.is_null()),
+        "precondition: fresh create still has terrain null before status+match seed"
+    );
+
+    let match_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO matches (source_match_id, terrain, started_at, outcome, created_at) \
+         VALUES ($1, 'everon', now(), 'success', now()) RETURNING id",
+    )
+    .bind(SRC)
+    .fetch_one(&pool)
+    .await
+    .expect("seed match with terrain=everon");
+
+    let server_uuid = Uuid::parse_str(&id).expect("server uuid");
+    sqlx::query(
+        "INSERT INTO server_statuses \
+         (server_id, is_online, player_count, max_players, server_fps, uptime_seconds, \
+          current_match_id, ingame_time, ingame_weather, updated_at) \
+         VALUES ($1, true, 12, 64, 55.0, 900, $2, '06:42', 'overcast', now())",
+    )
+    .bind(server_uuid)
+    .bind(match_id)
+    .execute(&pool)
+    .await
+    .expect("wire server_statuses.current_match_id → match");
+
+    // Assert on the list endpoint the Server Intel page reads — not create, not a unit pin.
+    let row = list_row(&app, &admin, &id)
+        .await
+        .expect("seeded server must appear on GET /servers");
+    assert_eq!(
+        row["terrain"], "everon",
+        "T-535: GET /servers.terrain must equal seeded matches.terrain via \
+         LEFT JOIN on current_match_id — got {row}"
+    );
+    assert_eq!(
+        row["status"]["current_match_id"],
+        match_id.to_string(),
+        "status must surface the wired current_match_id: {row}"
+    );
+
+    sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+        .bind(SRC)
+        .execute(&pool)
+        .await
+        .ok();
+}
+
 /// The writes are admin-only; the reads stay member-tier. Asserted against the tier the handler's
 /// own extractor enforces, so this holds however `app.rs` registers the routes.
 #[tokio::test]
