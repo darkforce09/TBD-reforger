@@ -1851,3 +1851,176 @@ async fn t496_library_bookmark_lookup_survives_page1_overflow() {
         .await
         .expect("soft-delete T-496 fillers");
 }
+
+/// T-544 HTTP IT — `POST /missions/:id/versions/:vid/set-current` re-points the tip.
+///
+/// T-532 shipped the handler + in-handler Class-R only. This is the live HTTP layer: create two
+/// non-vacuous versions (0.1.0 is the seed), leave the tip on the newer, then set-current to the
+/// older and assert `current_version_id` + `/compiled` serve the older payload.
+///
+/// Perturbation RED: drop the UPDATE in `set_current_version` → tip stays on 0.3.0 and compiled
+/// still returns BRAVO / RIFLEMAN.
+#[tokio::test]
+async fn set_current_version_repaints_tip_over_http() {
+    let Some((app, tok)) = app_and_token("mission_maker").await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let t = Some(tok.as_str());
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let title = format!("T544-SetCurrent-{stamp}");
+    let (st, b) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        t,
+        None,
+        Some(&format!(
+            r#"{{"title":"{title}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
+    let mid = json(&b)["id"].as_str().unwrap().to_string();
+    let versions = format!("/api/v1/missions/{mid}/versions");
+    let compiled = format!("/api/v1/missions/{mid}/compiled");
+
+    // Older tip candidate — ALPHA / SL. Distinct from the newer BRAVO / RIFLEMAN so compiled
+    // proves which version the tip actually points at (not just that some version exists).
+    let older = r#"{"semver":"0.2.0","payload":{"editor":{
+        "factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}],
+        "squads":[{"id":"sq1","factionId":"f1","callsign":"ALPHA","slotIds":["s1"]}],
+        "slots":[{"id":"s1","squadId":"sq1","index":0,"role":"SL",
+            "position":{"x":4839.2,"y":6620.8,"z":0,"rotation":270}}],
+        "editorLayers":[]}}}"#;
+    let (st, b) = call(&app, "POST", &versions, t, None, Some(older)).await;
+    assert_eq!(
+        st,
+        StatusCode::CREATED,
+        "older version: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let older_vid = json(&b)["id"].as_str().unwrap().to_string();
+
+    let newer = r#"{"semver":"0.3.0","payload":{"editor":{
+        "factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}],
+        "squads":[{"id":"sq1","factionId":"f1","callsign":"BRAVO","slotIds":["s2"]}],
+        "slots":[{"id":"s2","squadId":"sq1","index":0,"role":"RIFLEMAN",
+            "position":{"x":4900.0,"y":6700.0,"z":0,"rotation":90}}],
+        "editorLayers":[]}}}"#;
+    let (st, b) = call(&app, "POST", &versions, t, None, Some(newer)).await;
+    assert_eq!(
+        st,
+        StatusCode::CREATED,
+        "newer version: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let newer_vid = json(&b)["id"].as_str().unwrap().to_string();
+    assert_ne!(older_vid, newer_vid, "two distinct version rows required");
+
+    // create_version advances the tip — confirm before set-current so a no-op handler cannot hide.
+    let (st, b) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/missions/{mid}"),
+        t,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
+    let before = json(&b);
+    assert_eq!(
+        before["current_version_id"].as_str(),
+        Some(newer_vid.as_str()),
+        "tip must sit on 0.3.0 before set-current: {before}"
+    );
+    assert_eq!(before["current_version"]["semver"], "0.3.0");
+
+    let (st, b) = call(
+        &app,
+        "GET",
+        &compiled,
+        None,
+        Some("test-service-token"),
+        None,
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "compiled at newer tip: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let tip_new = json(&b);
+    assert_eq!(tip_new["slots"][0]["groupCallsign"], "BRAVO");
+    assert_eq!(tip_new["slots"][0]["role"], "RIFLEMAN");
+
+    let (st, b) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/missions/{mid}/versions/{older_vid}/set-current"),
+        t,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "set-current: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let after = json(&b);
+    assert_eq!(
+        after["current_version_id"].as_str(),
+        Some(older_vid.as_str()),
+        "set-current response must re-point current_version_id to the older row: {after}"
+    );
+
+    let (st, b) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/missions/{mid}"),
+        t,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
+    let get = json(&b);
+    assert_eq!(
+        get["current_version_id"].as_str(),
+        Some(older_vid.as_str()),
+        "GET must show tip on older version after set-current: {get}"
+    );
+    assert_eq!(get["current_version"]["semver"], "0.2.0");
+    assert_eq!(
+        get["current_version"]["id"].as_str(),
+        Some(older_vid.as_str())
+    );
+
+    // Cheap compiled pin: mod path must serve the older payload, not the abandoned tip.
+    let (st, b) = call(
+        &app,
+        "GET",
+        &compiled,
+        None,
+        Some("test-service-token"),
+        None,
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "compiled after set-current: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let tip_old = json(&b);
+    assert_eq!(tip_old["slots"][0]["uid"], "s1");
+    assert_eq!(tip_old["slots"][0]["groupCallsign"], "ALPHA");
+    assert_eq!(tip_old["slots"][0]["role"], "SL");
+}
