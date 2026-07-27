@@ -1,4 +1,8 @@
 //! Admin + approvals + CMS + field-tools. Skips without `TEST_DATABASE_URL`.
+//!
+//! Dev-login minting goes through [`common::dev_login_token`] (T-469) so a non-302 or
+//! missing `Location` reports status + body + suite instead of
+//! `no entry found for key "location"`.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -9,6 +13,8 @@ use tower::ServiceExt;
 use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db};
+
+mod common;
 
 const TARGET: &str = "000000000000000009";
 
@@ -24,24 +30,7 @@ async fn boot() -> Option<(Router, PgPool)> {
 }
 
 async fn admin_token(app: &Router) -> String {
-    let resp = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri("/api/v1/auth/dev-login?role=admin")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    let loc = resp.headers()[header::LOCATION].to_str().unwrap();
-    loc.split_once('#')
-        .unwrap()
-        .1
-        .split('&')
-        .find_map(|p| p.strip_prefix("access_token="))
-        .unwrap()
-        .to_string()
+    common::dev_login_token(app, "admin_field", "admin").await
 }
 
 async fn call(
