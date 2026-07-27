@@ -71,7 +71,7 @@
 0	T-386	render-check's exit code cannot fail a probe — every browser assertion has been decorative	tools/tbd-tools/src/smokes.rs
 0	T-387	render-check hard-codes api_proxy None, so no probe can reach a real session	tools/tbd-tools/src/smokes.rs; tools/tbd-tools/src/bin/gate.rs
 0	T-388	The adoption-residue purge is not guaranteed on a first editor open	apps/website/frontend/src/editor_session.rs
-50	T-385	Join matches.terrain into /servers so the theater readout can come back	apps/website/api/src/handlers/servers.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/server_intel.rs; apps/website/frontend/tests/fixtures/api/GET__servers.json; apps/website/api/tests/misc_integration.rs
+50	T-385	Join matches.terrain into /servers so the theater readout can come back	apps/website/api/src/handlers/servers.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/server_intel.rs; apps/website/frontend/tests/fixtures/api/GET__servers.json; apps/website/api/tests/misc_integration.rs; apps/website/frontend/src/server_control.rs
 0	T-372	POST /admin/roles/sync demotes every admin who never completed a Discord login	apps/website/api/src/services/role_sync.rs
 0	T-375	An authored mission title is dropped by Save and overwritten by the stale row on reload	crates/map-engine-core/src/mission/compile.rs
 0	T-376	The registry importer NULLs ten populated columns from a partial envelope	apps/website/api/src/services/registry_import.rs
