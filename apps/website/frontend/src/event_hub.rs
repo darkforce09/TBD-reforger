@@ -23,7 +23,7 @@
 #![allow(dead_code)]
 use crate::datefmt::{countdown_label, format_local_datetime};
 use crate::dto::{DataEnvelope, EventHub, EventMissionDossier, Member, ModpackDto, OrbatSquad};
-use crate::nav::Role;
+use crate::nav::{has_min_role_authed, Role};
 use crate::ui::{cn, AuthGate, MaterialIcon, DEFAULT_AVATAR};
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
@@ -626,8 +626,12 @@ fn selector_shell(
             .into_iter()
             .collect(),
     );
-    let is_leader = store.has_min_role(Role::Leader);
-    let is_admin = store.has_min_role(Role::Admin);
+    // T-454 — reactive + authed: browse-mode `has_min_role(None)=>true` must NOT drive
+    // reserve / release / assign affordances.
+    let is_leader =
+        Memo::new(move |_| has_min_role_authed(store.user.get().map(|u| u.role), Role::Leader));
+    let is_admin =
+        Memo::new(move |_| has_min_role_authed(store.user.get().map(|u| u.role), Role::Admin));
     // Non-Copy captures ride StoredValues so every closure below (used repeatedly inside reactive
     // renders) stays Copy.
     let me = StoredValue::new(store.user.get_untracked().map(|u| u.discord_id));
@@ -847,8 +851,8 @@ fn selector_shell(
                                         emid_assign.clone(),
                                         sq,
                                         me.get_value(),
-                                        is_leader,
-                                        is_admin,
+                                        is_leader.get(),
+                                        is_admin.get(),
                                         my_state.get_value(),
                                         selected_slot,
                                         assigning,
@@ -880,8 +884,8 @@ fn selector_shell(
                                 my_state.get_value(),
                                 asq,
                                 me.get_value(),
-                                is_leader,
-                                is_admin,
+                                is_leader.get(),
+                                is_admin.get(),
                             )
                         }}
                     </div>
@@ -905,8 +909,8 @@ fn selector_shell(
                             let (_, _, self_register) = squad_flags(
                                 asq.as_ref(),
                                 me.get_value(),
-                                is_leader,
-                                is_admin,
+                                is_leader.get(),
+                                is_admin.get(),
                             );
                             (my_state.get_value().is_none() && self_register)
                                 .then(|| {
@@ -1632,5 +1636,31 @@ mod tests {
                  The Event Hub may only render what the dossier serves — see T-392."
             );
         }
+    }
+
+    /// T-454 Class-R — ORBAT reserve/release/assign must not use browse-mode
+    /// `has_min_role(None)=>true`.
+    #[test]
+    fn orbat_affordances_use_authed_reactive_role() {
+        const SRC: &str = include_str!("event_hub.rs");
+        assert!(
+            SRC.contains("has_min_role_authed"),
+            "event_hub role gates must use has_min_role_authed (not browse-mode None=>true)"
+        );
+        assert!(
+            SRC.contains("Memo::new(move |_|")
+                && SRC.contains(
+                    "has_min_role_authed(store.user.get().map(|u| u.role), Role::Leader)"
+                )
+                && SRC
+                    .contains("has_min_role_authed(store.user.get().map(|u| u.role), Role::Admin)"),
+            "is_leader/is_admin must be Memos that re-read AuthStore.user after bootstrap"
+        );
+        let one_shot_leader = format!("store.has_min_role({}::Leader)", "Role");
+        let one_shot_admin = format!("store.has_min_role({}::Admin)", "Role");
+        assert!(
+            !SRC.contains(&one_shot_leader) && !SRC.contains(&one_shot_admin),
+            "one-shot store.has_min_role freezes pre-bootstrap None as leader/admin"
+        );
     }
 }
