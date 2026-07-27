@@ -87,7 +87,7 @@
 0	T-384	Re-pointing a match to another event leaves the first event marked attended	apps/website/api/src/handlers/telemetry.rs
 0	T-362	XDG_CACHE_HOME silently disables T-320's fontconfig fix, and this container sets it	tools/tbd-tools/src/doctor.rs
 0	T-363	PATCH /missions/:id title has no guard at all, and semver is never validated	apps/website/api/src/handlers/missions.rs
-0	T-360	DashboardResponse.server_status is the third read of one payload and still Option<Value>	apps/website/frontend/src/dashboard.rs
+0	T-360	DashboardResponse.server_status is the third read of one payload and still Option<Value>	apps/website/frontend/src/dashboard.rs; apps/website/frontend/src/dto.rs
 0	T-361	The gate cannot browser-test any SSE page — its proxy awaits the whole body	tools/tbd-tools/src/smokes.rs
 0	T-358	factions.rs defeats its own unique index, and both sweeps were structurally blind to it	apps/website/api/src/handlers/factions.rs; apps/website/api/tests/factions.rs
 0	T-356	The other side of the armory join has the identical defect, still open	crates/map-engine-core/src/mission/orbat.rs; apps/website/api/src/handlers/events.rs
