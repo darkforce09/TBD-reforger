@@ -365,6 +365,17 @@ fn library_header(
     }
 }
 
+/// Featured-card briefing emptiness. Whitespace-only is not authored content (same rule as
+/// `mission_overview::tactical_briefing_text` / `event_hub::briefing_text` — T-494 residual → T-548).
+const FEATURED_BRIEFING_FALLBACK: &str = "Command has flagged this operation as the priority deployment. Review the dossier for objectives, ORBAT, and the armory loadout before committing forces to the field.";
+
+fn featured_briefing_text(briefing: Option<&str>) -> String {
+    match briefing {
+        Some(b) if !b.trim().is_empty() => b.to_string(),
+        _ => FEATURED_BRIEFING_FALLBACK.into(),
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn body(
     missions: Vec<MissionCard>,
@@ -385,14 +396,7 @@ fn body(
             {featured
                 .map(|f| {
                     let art = mission_art_url(f.thumbnail_url.as_deref());
-                    let brief = f
-                        .briefing
-                        .clone()
-                        .filter(|b| !b.is_empty())
-                        .unwrap_or_else(|| {
-                            "Command has flagged this operation as the priority deployment. Review the dossier for objectives, ORBAT, and the armory loadout before committing forces to the field."
-                                .into()
-                        });
+                    let brief = featured_briefing_text(f.briefing.as_deref());
                     let fid = f.id.clone();
                     view! {
                         <section class="relative mb-8 flex min-h-[320px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/30 lg:flex-row">
@@ -1357,11 +1361,56 @@ fn dossier_sheet_body(
 #[cfg(test)]
 mod tests {
     use super::{
-        author_avatar_img_src, bookmark_api_path, card_is_bookmarked, mission_art_url,
-        PLACEHOLDER_ART,
+        author_avatar_img_src, bookmark_api_path, card_is_bookmarked, featured_briefing_text,
+        mission_art_url, FEATURED_BRIEFING_FALLBACK, PLACEHOLDER_ART,
     };
     use crate::dto::MissionCard;
     use serde_json::json;
+
+    /// T-548 — whitespace-only featured briefings take the cinematic fallback (trim-aware,
+    /// same rule as mission_overview / event_hub after T-494).
+    #[test]
+    fn featured_briefing_trims_whitespace_only_to_fallback() {
+        for cleared in [None, Some(""), Some("   \n\n  "), Some("\t")] {
+            assert_eq!(
+                featured_briefing_text(cleared),
+                FEATURED_BRIEFING_FALLBACK,
+                "whitespace-only briefing must take the featured fallback ({cleared:?})"
+            );
+        }
+        let authored = "Hold the ridge.\n\nSecond wave at H+20.";
+        assert_eq!(featured_briefing_text(Some(authored)), authored);
+        // Leading/trailing space alone is not emptiness — only all-whitespace is.
+        assert_eq!(featured_briefing_text(Some(" Hold. ")), " Hold. ");
+    }
+
+    /// T-548 Class-R source ratchet — ban the pre-T-548 `!b.is_empty()` filter (no trim) that
+    /// left whitespace-only briefings on the featured hero. Pin the trim-aware helper arm.
+    #[test]
+    fn featured_briefing_source_ratchet_requires_trim() {
+        const SRC: &str = include_str!("missions.rs");
+        assert!(
+            SRC.contains("featured_briefing_text(f.briefing.as_deref())"),
+            "featured hero must route briefing through featured_briefing_text"
+        );
+        // concat! so this test body does not match itself.
+        let old_filter = concat!(".filter(|b| !b.", "is_empty())");
+        assert!(
+            !SRC.contains(old_filter),
+            "is_empty-only briefing filter must not return — whitespace-only briefings \
+             would keep the empty string on the featured hero instead of the fallback"
+        );
+        let old_arm = concat!("Some(b) if !b.", "is_empty()");
+        assert!(
+            !SRC.contains(old_arm),
+            "match-arm !b.is_empty() without trim must not return on featured briefing paths"
+        );
+        let trim_arm = concat!("Some(b) if !b.trim().", "is_empty()");
+        assert!(
+            SRC.contains(trim_arm),
+            "featured_briefing_text must keep the trim-aware match arm"
+        );
+    }
 
     /// T-286 Class-R — New Mission must not use browse-mode `has_min_role(None)=>true`.
     /// Source guard goes red if the one-shot store role read returns or the authed helper /
