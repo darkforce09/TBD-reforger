@@ -2687,18 +2687,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "map-engine-wasm"
-version = "0.1.0"
-dependencies = [
- "js-sys",
- "map-engine-core",
- "map-engine-render",
- "serde",
- "serde_json",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "maplit"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

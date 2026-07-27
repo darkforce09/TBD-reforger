@@ -408,14 +408,16 @@ fn same_authored_content(a: &serde_json::Value, b: &serde_json::Value) -> bool {
     AUTHORED_KEYS.iter().all(|k| a.get(*k) == b.get(*k))
 }
 
-/// Mission-row fields from `GET /missions/:id` (title/terrain/time/weather) — the `apply_row_meta`
-/// input.
+/// Mission-row fields from `GET /missions/:id` (title/terrain/time/weather/briefing) — the
+/// `apply_row_meta` input. `briefing` is the library blurb STRING (`missions.briefing`), not the
+/// per-faction briefing object (T-418).
 #[derive(Default)]
 struct RowMeta {
     title: String,
     terrain: String,
     time_of_day: String,
     weather: String,
+    briefing: String,
 }
 impl RowMeta {
     fn from(d: &MissionDetail) -> Self {
@@ -424,10 +426,11 @@ impl RowMeta {
             terrain: d.terrain.clone(),
             time_of_day: d.time_of_day.clone(),
             weather: d.weather.clone(),
+            briefing: d.briefing.clone().unwrap_or_default(),
         }
     }
     fn is_empty(&self) -> bool {
-        self.title.is_empty() && self.terrain.is_empty()
+        self.title.is_empty() && self.terrain.is_empty() && self.briefing.is_empty()
     }
 }
 
@@ -483,6 +486,7 @@ fn adopt_payload(doc: &DocHandle, payload_json: &str, row: &RowMeta, mode: Adopt
                 &row.terrain,
                 opt(&row.time_of_day),
                 opt(&row.weather),
+                opt(&row.briefing),
             );
         }
         core.set_origin_init(false);
@@ -505,6 +509,7 @@ fn apply_row(doc: &DocHandle, row: &RowMeta) {
             &row.terrain,
             opt(&row.time_of_day),
             opt(&row.weather),
+            opt(&row.briefing),
         );
         core.set_origin_init(false);
     }

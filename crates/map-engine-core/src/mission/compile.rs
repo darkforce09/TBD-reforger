@@ -305,12 +305,11 @@ pub fn compile_payload(small_maps_json: &str, slots_json: &str, include_orbat: b
 /// Until T-214 this field was the literal `""`. It now reads `meta.briefing`, which is the
 /// established channel for row fields the envelope needs — `title`, `terrain` and `environment`
 /// all arrive the same way, threaded by `MissionDocCore::apply_row_meta` from the same
-/// `GET /missions/:id` row that carries `briefing`. `apply_row_meta` does **not** thread it yet, so
-/// the key is absent and this still resolves to `""`: today's output is byte-identical to the
-/// hardcode, and the field becomes correct the moment the doc side lands. Note the mirror is not
-/// exact — `build_mission_doc` omits the key when empty (`skip_serializing_if`) while this always
-/// emits it. That divergence predates T-214 and is left alone deliberately rather than changed
-/// under an unrelated ticket.
+/// `GET /missions/:id` row that carries `briefing`. T-418 wired `apply_row_meta` + hydrate
+/// `RowMeta` so a non-blank row briefing lands in `meta` and this field is no longer permanently
+/// empty. Note the mirror is not exact — `build_mission_doc` omits the key when empty
+/// (`skip_serializing_if`) while this always emits it. That divergence predates T-214 and is left
+/// alone deliberately rather than changed under an unrelated ticket.
 #[must_use]
 pub fn compile_export(
     payload: &Value,
