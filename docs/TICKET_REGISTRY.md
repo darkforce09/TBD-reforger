@@ -2420,7 +2420,7 @@ Cure: switch action gates to `has_min_role_authed` + reactive Memo where afforda
 Repro: break a required field; ticket check RED; ticket add still inserts a row.
 
 Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force). |
-| T-456 | 3295 | ready | platform | OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES | Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB via x-tbd-missionFileMaxBytes + validate_mission_document + profile LoadFromProfileFile, but OnBackendFetchSuccess → ParseMissionJson does not re-check body size. A compromised/stale API path could still hand the mod an oversized JSON.
+| T-456 | 3295 | shipped | platform | OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES | Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB via x-tbd-missionFileMaxBytes + validate_mission_document + profile LoadFromProfileFile, but OnBackendFetchSuccess → ParseMissionJson does not re-check body size. A compromised/stale API path could still hand the mod an oversized JSON.
 
 Repro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.
 
@@ -2433,18 +2433,26 @@ Repro T-287: comment out server_intel on_cleanup registration but leave the stri
 Repro T-454: keep Memo+has_min_role_authed unused; drive is_admin via has_min_role → admin_affordance Class-R PASSes while Edit uses None=>true.
 
 Cure: strip // comments (or require a non-comment production line) for the on_cleanup pin; bind wiki/modpacks/event_hub pins to the is_admin/is_leader Memo assignment used at .get() call sites and ban free has_min_role( in those files' production sections. |
-| T-458 | 3297 | ready | platform | AdminGate still uses browse-mode has_min_role | Residual from T-454 / wave 21 adversarial NIT. wiki/modpacks/event_hub action gates now use has_min_role_authed, but ui.rs AdminGate still calls auth.has_min_role(Role::Admin) (browse-mode None=>true via auth.rs).
+| T-458 | 3297 | shipped | platform | AdminGate still uses browse-mode has_min_role | Residual from T-454 / wave 21 adversarial NIT. wiki/modpacks/event_hub action gates now use has_min_role_authed, but ui.rs AdminGate still calls auth.has_min_role(Role::Admin) (browse-mode None=>true via auth.rs).
 
 Mitigation today: AdminGate is nested under AuthGate, which only renders children when is_authenticated() (user is Some), so guests cannot flash admin UI via None=>true.
 
 Repro: read apps/website/frontend/src/ui.rs:244-264 and auth.rs has_min_role.
 
 Cure: switch AdminGate to has_min_role_authed (or equivalent None=>false) while keeping the reactive move \|\| auth path. |
-| T-459 | 3298 | ready | platform | ticket advance-slice mutates without schema check preflight | Residual from T-455 / wave 21 adversarial NIT. cmd_add/cmd_remove (and set-status/mark-ready/reorder/ship) now call require_check_ok before write, but cmd_advance_slice still save_registry + sync with no preflight while check is red.
+| T-459 | 3298 | shipped | platform | ticket advance-slice mutates without schema check preflight | Residual from T-455 / wave 21 adversarial NIT. cmd_add/cmd_remove (and set-status/mark-ready/reorder/ship) now call require_check_ok before write, but cmd_advance_slice still save_registry + sync with no preflight while check is red.
 
 Repro: red in-memory registry → cmd_advance_slice still writes active_slice.
 
 Cure: call require_check_ok(root, registry, &format!("advance-slice {id}")) before mutate, with a Class-R/unit test mirroring add_refuses_invalid. |
+| T-460 | 3299 | shipped | platform | Class-R pins for T-456/T-458 are false-green | Residual from wave 22 adversarial. Live T-456/T-458 behavior holds, but Class-R pins accept stubs:
+(1) verify-t456-mission-rest-size-gate.sh treats a // comment containing MISSION_FILE_MAX_BYTES as the pre-ParseMissionJson size check, and only requires the IsMissionBodyWithinCap signature (return true; still greens).
+(2) ui.rs AdminGate Class-R requires has_min_role_authed(auth.user.get()…) somewhere, not on the live if — dead pin + if true still greens (W21 T-454 class).
+
+Repro T-456: move size if after ParseMissionJson but leave T-456 comment with MISSION_FILE_MAX_BYTES before parse → verify exits 0; or replace helper body with return true → PASS.
+Repro T-458: let _dead = has_min_role_authed(...); if true { children } → Class-R PASS.
+
+Cure: strip // comments before order assert; require non-comment IsMissionBodyWithinCap( before ParseMissionJson(; pin helper body to Length() <= MISSION_FILE_MAX_BYTES. Bind AdminGate Class-R to if has_min_role_authed(auth.user.get().map(\|u\| u.role), Role::Admin). |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

@@ -258,3 +258,4 @@
 99	T-457	Class-R pins for T-287/T-454 are false-green	apps/website/frontend/src/sse.rs; apps/website/frontend/src/wiki.rs; apps/website/frontend/src/modpacks.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/server_intel.rs
 99	T-458	AdminGate still uses browse-mode has_min_role	apps/website/frontend/src/ui.rs; apps/website/frontend/src/auth.rs
 99	T-459	ticket advance-slice mutates without schema check preflight	xtask/src/cmds.rs; xtask/src/check.rs
+99	T-460	Class-R pins for T-456/T-458 are false-green	scripts/mod/verify-t456-mission-rest-size-gate.sh; apps/website/frontend/src/ui.rs; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
