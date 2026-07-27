@@ -1930,7 +1930,7 @@ Practical consequences today:
  - PLATFORM_FACTORY.md already records that plain `git push` fails for this reason (hence wave.sh push); add/status/diff are the same family and are not recorded.
 
 TWO FIXES, do both: install git-lfs (the real answer, and it also un-breaks push), and stop swallowing the error at wave.sh:283 and in fmt_changed so a dead working-tree probe is loud instead of empty. The second matters even with lfs installed — any future git failure there is currently indistinguishable from "nothing changed". |
-| T-402 | 3218 | deferred | platform | T-393 follow-ups: legacy-counter tripwire gaps and the unpinned terrain value space | Three MINOR findings against the shipped T-393 contract split, from wave 1's adversarial verifier. None affects the shipping mod; all are cheap. Grouped because they are one file and one sitting.
+| T-402 | 3218 | running | platform | T-393 follow-ups: legacy-counter tripwire gaps and the unpinned terrain value space | Three MINOR findings against the shipped T-393 contract split, from wave 1's adversarial verifier. None affects the shipping mod; all are cheap. Grouped because they are one file and one sitting.
 
 1. command_win is missing from the legacy tripwire and the comment is false. handlers/telemetry.rs:483-508 lists kills/team_kills/longest_kill_m/vehicles_destroyed/is_command. SEVEN fields moved into the counters object; deaths is excluded deliberately and correctly (including it would 400 every production report, since the mod emits deaths at top level), but command_win is excluded SILENTLY while the comment asserts "Nothing else that moved is tolerated." Harmless in practice — a genuine pre-split sender carries the other five and trips anyway — but the comment states something untrue about the code beneath it.
 
@@ -2081,7 +2081,7 @@ Related: T-410 is the catalogue of ratchets this mechanism will keep producing. 
 2. handlers/servers.rs:99 (list_servers) -- no LIMIT, so misc_integration.rs:333's .find(id) is safe, but it calls server_intel() IN A LOOP, one round trip per row, over a monotonically growing table. MEASURED 63 rows. Runtime creep rather than a correctness fault, flagged because it degrades on the same curve as everything else in T-410.
 
 Note the asymmetry with T-410: those are tests that will fail. These are endpoints that will silently under-serve and never fail anything. |
-| T-413 | 3234 | deferred | platform | Adopt the URL guard at the four remaining writers, and cover the deployments sink wiring | The deliberate residue of T-405, which was scoped in wave 3 to the P0 half (the live javascript: sink at deployments.rs plus the 0010 backfill) and the two highest-exposure writers. These are the rest, all <img src> -- weaker than an <a href> because browsers do not execute javascript: in img src, but the guard is absent identically.
+| T-413 | 3234 | running | platform | Adopt the URL guard at the four remaining writers, and cover the deployments sink wiring | The deliberate residue of T-405, which was scoped in wave 3 to the P0 half (the live javascript: sink at deployments.rs plus the 0010 backfill) and the two highest-exposure writers. These are the rest, all <img src> -- weaker than an <a href> because browsers do not execute javascript: in img src, but the guard is absent identically.
 
 REMAINING WRITERS (T-405 shipped cms.rs and oauth.rs; these are untouched):
   events.banner_image_url   -- handlers/events.rs:624 create, :1215 update -- admin tier -- render at frontend/src/events.rs:346
@@ -2112,7 +2112,7 @@ RESULT: the operator gets a body in the field missing kit they authored, with a 
 FIX: consume IsComplete, or pre-check with the Can* family. Either closes it. Until then, EVERY client-side refusal (T-240's export gate included) is a heuristic over an export the mod never reads back -- the website's CargoBudget derives from Workbench export-time data (TBD_RegistryScan.c:896-909, cells = Ceil(maxVolume/50), hardcoded grid w=4) which the mod NEVER READS.
 
 NOT AN ISSUE, do not re-derive (two paid subagent runs already answered it): recursion is NOT REACHABLE. CargoRow is three scalars (container, item, qty) with no id/parent/path so a tree is not expressible even in principle (arsenal_rules.rs:586); mission.schema.json cargoContainer is a flat 4-token enum; additionalProperties:false rejects a children/parentId key outright. |
-| T-416 | 3241 | deferred | platform | Cargo capacity belongs in wire_safety.rs, server-side, covering save and compile in one place | Recommendation from T-240's agent, endorsed by the command center, deliberately NOT built in wave 4 because it crosses files T-240 did not own.
+| T-416 | 3241 | running | platform | Cargo capacity belongs in wire_safety.rs, server-side, covering save and compile in one place | Recommendation from T-240's agent, endorsed by the command center, deliberately NOT built in wave 4 because it crosses files T-240 did not own.
 
 T-240 shipped the rule (arsenal_rules.rs:810 cargo_capacity_errors) and wired it to the Arsenal's loadout export (arsenal.rs:477 try_export). That is the only authoring-time refusal point the client HAS -- see the two structural findings in T-417. It is not the right home.
 
