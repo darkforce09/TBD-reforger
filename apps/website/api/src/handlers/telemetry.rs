@@ -751,7 +751,11 @@ pub async fn ingest_match_results(
     // `event_id` from upsert is no longer the attendance key (T-230): the UPDATE below joins
     // the *merged* match row so both `event_id` and `mission_id` must be present. Keeping the
     // binding would warn unused once the old `if let Some(eid)` gate is gone.
-    let (match_id, _) = upsert_match(&mut tx, &m, outcome, source_match_id).await?;
+    //
+    // `retract_from` is T-384: when a re-POST moves this match off a fully attributed
+    // `(event_id, mission_id)` pair, attendance on that prior event_mission must be undone
+    // for these players (unless another match still attributes them there).
+    let (match_id, retract_from) = upsert_match(&mut tx, &m, outcome, source_match_id).await?;
 
     let mut resolved: Vec<String> = Vec::new();
     // T-229. `unlinked_rows` counts player *lines* with no owner so it sums with the linked
@@ -880,7 +884,41 @@ pub async fn ingest_match_results(
     // event-only ingest cannot know which mission was played, and inventing "mark them all"
     // is the bug this closes. The JOIN reads the *merged* match after `upsert_match`'s
     // COALESCE, so a corrected re-POST that lands `mission_id` (T-369) still marks attendance.
+    //
+    // **T-384 — retract before set on re-point.** T-369 made EV1→EV2 reachable: the SET below
+    // marks EV2 attended but never undid EV1, so `attendance_rate` inflated to 100% with two
+    // past registrations both `attended`. There is still no `match_id` on
+    // `event_registrations` (a migration would be required to store provenance), so the write
+    // is made reversible by attributing through live match rows: retract the prior pair for
+    // these players only when no *other* match still points at that pair with a linked
+    // `match_player_stats` row for them. Restoring `registered` (not inventing waitlisted)
+    // matches the normal path into `attended`.
     if !resolved.is_empty() {
+        if let Some((old_event, old_mission)) = retract_from {
+            sqlx::query(
+                "UPDATE event_registrations er SET state = 'registered' \
+                 WHERE er.discord_id = ANY($1) \
+                   AND er.state::text = 'attended' \
+                   AND er.event_mission_id IN ( \
+                     SELECT em.id FROM event_missions em \
+                     WHERE em.event_id = $2 AND em.mission_id = $3 \
+                   ) \
+                   AND NOT EXISTS ( \
+                     SELECT 1 FROM matches m \
+                     INNER JOIN match_player_stats mps \
+                       ON mps.match_id = m.id AND mps.discord_id = er.discord_id \
+                     WHERE m.id <> $4 \
+                       AND m.event_id = $2 \
+                       AND m.mission_id = $3 \
+                   )",
+            )
+            .bind(&resolved)
+            .bind(old_event)
+            .bind(old_mission)
+            .bind(match_id)
+            .execute(&mut *tx)
+            .await?;
+        }
         sqlx::query(
             "UPDATE event_registrations SET state = 'attended' \
              WHERE discord_id = ANY($2) \
@@ -962,7 +1000,12 @@ pub async fn ingest_match_results(
 }
 
 /// Find a match by source_match_id (updating mutable fields) or create one. Returns
-/// `(id, event_id)`.
+/// `(id, retract_from)`.
+///
+/// `retract_from` (T-384) is `Some((event_id, mission_id))` when this was a re-ingest that
+/// *moved* the match off a previously fully attributed event_mission pair. The caller uses it
+/// to undo attendance that would otherwise stick on the old pair. Create and no-op merges
+/// return `None`.
 ///
 /// `source_match_id` arrives **already normalized** from `source_match_key` and is the only form
 /// this function may use — it deliberately does not read `m.source_match_id`, because the lookup
@@ -972,7 +1015,7 @@ async fn upsert_match(
     m: &MatchInput,
     outcome: MissionOutcome,
     source_match_id: Option<&str>,
-) -> Result<(Uuid, Option<Uuid>), ApiError> {
+) -> Result<(Uuid, Option<(Uuid, Uuid)>), ApiError> {
     let event_id = parse_uuid_opt_strict("event_id", &m.event_id)?;
     let mission_id = parse_uuid_opt_strict("mission_id", &m.mission_id)?;
     // Terrain stays optional. Known pins (`everon`/`arland`/`custom`) map to the enum;
@@ -1023,12 +1066,13 @@ async fn upsert_match(
     };
 
     if let Some(src) = source_match_id {
-        let existing: Option<(Uuid,)> =
-            sqlx::query_as("SELECT id FROM matches WHERE source_match_id = $1")
-                .bind(src)
-                .fetch_optional(&mut *tx)
-                .await?;
-        if let Some((id,)) = existing {
+        let existing: Option<(Uuid, Option<Uuid>, Option<Uuid>)> = sqlx::query_as(
+            "SELECT id, event_id, mission_id FROM matches WHERE source_match_id = $1",
+        )
+        .bind(src)
+        .fetch_optional(&mut *tx)
+        .await?;
+        if let Some((id, prior_event, prior_mission)) = existing {
             // `COALESCE($n, <column>)` — a bare column name on the right of a SET reads the
             // pre-update row, so an omitted field keeps what is already there instead of
             // overwriting it with a decoded default. `outcome` is bound unconditionally
@@ -1057,12 +1101,14 @@ async fn upsert_match(
             // COALESCE-ing it here would stamp every partial retry with the retry's own clock.
             // The default is therefore computed at the INSERT and cannot reach this statement.
             //
-            // `RETURNING event_id` still returns the **merged** value (T-369): a pre-update
+            // `RETURNING event_id, mission_id` returns the **merged** pair (T-369): a pre-update
             // column was the other half of why a correction did nothing. Attendance itself now
             // joins the match row (T-230) rather than binding this return, but the COALESCE
             // write that lands `mission_id` here is what that JOIN reads — so the merge is
-            // still load-bearing, just one statement later.
-            let merged: (Option<Uuid>,) = sqlx::query_as(
+            // still load-bearing, just one statement later. Comparing the merged pair to the
+            // pre-update pair yields T-384's `retract_from` (only when the prior pair was
+            // fully attributed — the SET path never marks on a half-null match).
+            let merged: (Option<Uuid>, Option<Uuid>) = sqlx::query_as(
                 "UPDATE matches SET \
                   event_id = COALESCE($1, event_id), \
                   mission_id = COALESCE($2, mission_id), \
@@ -1073,7 +1119,7 @@ async fn upsert_match(
                   winning_faction = COALESCE($7, winning_faction), \
                   aar_replay_url = COALESCE($8, aar_replay_url) \
                  WHERE id = $9 \
-                 RETURNING event_id",
+                 RETURNING event_id, mission_id",
             )
             .bind(event_id)
             .bind(mission_id)
@@ -1086,7 +1132,13 @@ async fn upsert_match(
             .bind(id)
             .fetch_one(&mut *tx)
             .await?;
-            return Ok((id, merged.0));
+            let retract_from = match (prior_event, prior_mission) {
+                (Some(old_e), Some(old_m)) if merged != (Some(old_e), Some(old_m)) => {
+                    Some((old_e, old_m))
+                }
+                _ => None,
+            };
+            return Ok((id, retract_from));
         }
     }
 
@@ -1116,7 +1168,8 @@ async fn upsert_match(
     .bind(aar_replay_url)
     .fetch_one(&mut *tx)
     .await?;
-    Ok(row)
+    // Create has no prior pair to retract from (T-384).
+    Ok((row.0, None))
 }
 
 /// Refresh a user's denormalized deployment + attendance metrics.
@@ -1536,6 +1589,77 @@ mod tests {
             2,
             "ingest_match_results must call require_role_played(&p.role_played) twice \
              (pre-tx roster guard + UPSERT bind); helper-only tests do not cover this"
+        );
+    }
+
+    /// Class-R (T-384): re-point must retract prior event_mission attendance before the SET.
+    /// A SET-only path false-greens every "marks EV2" assert while leaving EV1 attended.
+    /// Full IT lives in `tests/telemetry.rs` (out of this slice's owns) — this pin fails if the
+    /// retract UPDATE / NOT EXISTS attribution guard / `retract_from` plumbing is deleted.
+    #[test]
+    fn ingest_match_results_retracts_prior_attendance_on_repoint() {
+        const SRC: &str = include_str!("telemetry.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("telemetry.rs must have a #[cfg(test)] module");
+        let start = production
+            .find("pub async fn ingest_match_results")
+            .expect("ingest_match_results handler must exist");
+        let after = &production[start..];
+        let end = after[1..]
+            .find("\nasync fn ")
+            .map(|i| i + 1)
+            .unwrap_or(after.len());
+        let handler = strip_rust_comments(&after[..end]);
+        let collapsed: String = handler.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(
+            collapsed.contains("let (match_id, retract_from) = upsert_match("),
+            "ingest must capture upsert_match's retract_from (T-384)"
+        );
+        assert!(
+            collapsed.contains("if let Some((old_event, old_mission)) = retract_from"),
+            "ingest must act on retract_from before the attended SET"
+        );
+        assert!(
+            collapsed.contains("UPDATE event_registrations er SET state = 'registered'"),
+            "re-point must retract prior attendance to registered"
+        );
+        assert!(
+            collapsed.contains(
+                "AND NOT EXISTS ( \\ SELECT 1 FROM matches m \\ INNER JOIN match_player_stats mps"
+            ),
+            "retract must keep attendance when another match still attributes the player"
+        );
+        assert!(
+            collapsed.contains("WHERE m.id <> $4 \\ AND m.event_id = $2 \\ AND m.mission_id = $3"),
+            "NOT EXISTS must exclude this match and key the prior (event_id, mission_id) pair"
+        );
+
+        let up_start = production
+            .find("async fn upsert_match")
+            .expect("upsert_match must exist");
+        let up_after = &production[up_start..];
+        let up_end = up_after[1..]
+            .find("\nasync fn ")
+            .or_else(|| up_after[1..].find("\npub(super) async fn "))
+            .map(|i| i + 1)
+            .unwrap_or(up_after.len());
+        let up = strip_rust_comments(&up_after[..up_end]);
+        let up_collapsed: String = up.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(
+            up_collapsed.contains(
+                "SELECT id, event_id, mission_id FROM matches WHERE source_match_id = $1"
+            ),
+            "re-ingest must read the prior (event_id, mission_id) before COALESCE UPDATE"
+        );
+        assert!(
+            up_collapsed.contains("RETURNING event_id, mission_id"),
+            "re-ingest must RETURN the merged pair so retract_from can detect a move"
+        );
+        assert!(
+            up_collapsed.contains("Ok((row.0, None))"),
+            "create path must return no retract_from"
         );
     }
 }
