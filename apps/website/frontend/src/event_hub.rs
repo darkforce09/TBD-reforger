@@ -1209,17 +1209,75 @@ fn squad_pane(
                                 </span>
                                 <span class="shrink-0">
                                     {if taken {
-                                        view! {
-                                            <span class="flex items-center gap-2 text-on-surface-variant">
-                                                <img
-                                                    src=DEFAULT_AVATAR
-                                                    alt=""
-                                                    class="h-6 w-6 rounded-full"
-                                                />
-                                                {assigned_label}
-                                            </span>
+                                        // T-284: leader/admin who can_manage gets a Clear control
+                                        // → DELETE …/slots/:id/assign (same auth as Assign).
+                                        if can_manage {
+                                            let sid_clear = slot_id_assign.clone();
+                                            let emid_clear = emid.clone();
+                                            view! {
+                                                <span class="flex items-center gap-2 text-on-surface-variant">
+                                                    <img
+                                                        src=DEFAULT_AVATAR
+                                                        alt=""
+                                                        class="h-6 w-6 rounded-full"
+                                                    />
+                                                    {assigned_label}
+                                                    <button
+                                                        type="button"
+                                                        on:click=move |ev| {
+                                                            ev.stop_propagation();
+                                                            #[cfg(target_arch = "wasm32")]
+                                                            {
+                                                                let toasts = crate::toast::use_toasts();
+                                                                let path = format!(
+                                                                    "/event-missions/{}/slots/{}/assign",
+                                                                    emid_clear,
+                                                                    sid_clear
+                                                                );
+                                                                leptos::task::spawn_local(async move {
+                                                                    match crate::client::api_delete(
+                                                                        store, &path,
+                                                                    )
+                                                                    .await
+                                                                    {
+                                                                        Ok(()) => {
+                                                                            toasts.success(
+                                                                                "Slot cleared",
+                                                                            );
+                                                                            changed.run(());
+                                                                        }
+                                                                        Err(e) => toasts.error(
+                                                                            crate::client::api_error_message(
+                                                                                &e,
+                                                                                "Could not clear slot",
+                                                                            ),
+                                                                        ),
+                                                                    }
+                                                                });
+                                                            }
+                                                            #[cfg(not(target_arch = "wasm32"))]
+                                                            let _ = (&emid_clear, &sid_clear);
+                                                        }
+                                                        class="rounded-lg border border-border-subtle px-3 py-1 text-xs text-error"
+                                                    >
+                                                        "Clear"
+                                                    </button>
+                                                </span>
+                                            }
+                                                .into_any()
+                                        } else {
+                                            view! {
+                                                <span class="flex items-center gap-2 text-on-surface-variant">
+                                                    <img
+                                                        src=DEFAULT_AVATAR
+                                                        alt=""
+                                                        class="h-6 w-6 rounded-full"
+                                                    />
+                                                    {assigned_label}
+                                                </span>
+                                            }
+                                                .into_any()
                                         }
-                                            .into_any()
                                     } else if can_manage {
                                         let sid = slot_id_assign.clone();
                                         view! {

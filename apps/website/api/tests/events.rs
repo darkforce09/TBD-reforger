@@ -1909,3 +1909,194 @@ async fn event_server_and_modpack_binding() {
             .expect("read columns");
     assert_eq!(nulls, (None, None), "cleared row must store NULL,NULL");
 }
+
+/// T-284 — `DELETE …/slots/:id/assign` frees a claimed seat for leader/admin, and the dead
+/// `events.match_id` column is gone (link is `matches.event_id`).
+///
+/// Pre-fix: the handler existed and was routed, but nothing in the SPA called it, and every
+/// Event SELECT still projected a forever-NULL `match_id`. This test is the API half of that
+/// cure — assign → clear → both `orbat_slots.assigned_to` and `event_registrations.slot_id`
+/// are null, enlisted without a reserve is forbidden, and `information_schema` shows no
+/// `events.match_id`.
+#[tokio::test]
+async fn clear_slot_frees_assignment_and_events_have_no_match_id() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = token(&app, "admin").await;
+    let leader = token(&app, "leader").await;
+    let enl = token(&app, "enlisted").await;
+    common::seed_user(&pool, OTHER, "Other", &arma(OTHER), "enlisted").await;
+
+    let (st, m) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        &admin,
+        Some(
+            r#"{"title":"T284 Clear","terrain":"everon","game_mode":"pve_coop","max_players":16}"#,
+        ),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "mission: {m}");
+    let mission_id = m["id"].as_str().unwrap().to_string();
+
+    let (st, e) = call(
+        &app,
+        "POST",
+        "/api/v1/events",
+        &admin,
+        Some(r#"{"start_time":"2027-07-01T00:00:00Z","name_override":"T284 Op"}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "event: {e}");
+    let event_id = e["id"].as_str().unwrap().to_string();
+    // Wire must not carry the dropped column (absent, not null).
+    assert!(
+        e.get("match_id").is_none(),
+        "create response must omit match_id: {e}"
+    );
+
+    let attach = format!(
+        r#"{{"mission_id":"{mission_id}","start_time":"2027-07-01T00:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"Alpha","slots":[{{"role":"SL"}},{{"role":"RTO"}}]}}]}}"#
+    );
+    let (st, em) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/events/{event_id}/missions"),
+        &admin,
+        Some(&attach),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "attach: {em}");
+    let emid = em["id"].as_str().unwrap().to_string();
+
+    let (st, orbat) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/event-missions/{emid}/orbat"),
+        &admin,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    let slot0 = orbat["data"][0]["slots"][0]["id"]
+        .as_str()
+        .unwrap()
+        .to_string();
+
+    // Admin fills the seat (same path the SPA Assign picker uses).
+    let (st, a) = call(
+        &app,
+        "PUT",
+        &format!("/api/v1/event-missions/{emid}/slots/{slot0}/assign"),
+        &admin,
+        Some(&format!(r#"{{"discord_id":"{OTHER}"}}"#)),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "assign: {a}");
+    let held: Option<String> =
+        sqlx::query_scalar("SELECT assigned_to FROM orbat_slots WHERE id = $1::uuid")
+            .bind(&slot0)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(held.as_deref(), Some(OTHER));
+    let reg_slot: Option<uuid::Uuid> = sqlx::query_scalar(
+        "SELECT slot_id FROM event_registrations WHERE event_mission_id = $1::uuid AND discord_id = $2",
+    )
+    .bind(&emid)
+    .bind(OTHER)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        reg_slot.map(|u| u.to_string()).as_deref(),
+        Some(slot0.as_str())
+    );
+
+    // Enlisted never reaches the handler — LeaderUser extractor rejects first
+    // (same gate as assign_slot / reserve).
+    let (st, r) = call(
+        &app,
+        "DELETE",
+        &format!("/api/v1/event-missions/{emid}/slots/{slot0}/assign"),
+        &enl,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::FORBIDDEN, "enlisted clear must 403: {r}");
+    assert_eq!(r["error"], "insufficient role", "enlisted message: {r}");
+
+    // Leader without a squad reserve cannot clear (same can_manage_squad gate as assign).
+    let (st, r) = call(
+        &app,
+        "DELETE",
+        &format!("/api/v1/event-missions/{emid}/slots/{slot0}/assign"),
+        &leader,
+        None,
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::FORBIDDEN,
+        "unreserved leader clear must 403: {r}"
+    );
+    assert_eq!(
+        r["error"], "reserve this squad to manage its slots",
+        "forbidden message: {r}"
+    );
+
+    // Admin clears — both sides of the seat invariant go null.
+    let (st, c) = call(
+        &app,
+        "DELETE",
+        &format!("/api/v1/event-missions/{emid}/slots/{slot0}/assign"),
+        &admin,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "clear: {c}");
+    assert_eq!(c["cleared"], true);
+    let held: Option<String> =
+        sqlx::query_scalar("SELECT assigned_to FROM orbat_slots WHERE id = $1::uuid")
+            .bind(&slot0)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(held, None, "clear_slot must null assigned_to");
+    let reg_slot: Option<uuid::Uuid> = sqlx::query_scalar(
+        "SELECT slot_id FROM event_registrations WHERE event_mission_id = $1::uuid AND discord_id = $2",
+    )
+    .bind(&emid)
+    .bind(OTHER)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(reg_slot, None, "clear_slot must null registration.slot_id");
+
+    // Migration 0013: column gone. A SELECT that still named it would 500 on FromRow.
+    let still_there: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM information_schema.columns \
+         WHERE table_schema = 'public' AND table_name = 'events' AND column_name = 'match_id'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(still_there, 0, "events.match_id must be dropped");
+
+    let (st, get) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/events/{event_id}"),
+        &admin,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK);
+    assert!(
+        get.get("match_id").is_none(),
+        "GET event must omit match_id: {get}"
+    );
+}
