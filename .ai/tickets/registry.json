@@ -8378,7 +8378,7 @@
       "impact": [
         "platform-server"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2880,
       "stream": "web-platform",
       "targets": [
@@ -8416,7 +8416,7 @@
       "impact": [
         "platform-server"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2900,
       "stream": "web-platform",
       "targets": [
@@ -8435,7 +8435,7 @@
       "impact": [
         "registry-hygiene"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2910,
       "stream": "infra",
       "targets": [
@@ -11997,6 +11997,26 @@
       "stream": "web-platform",
       "targets": [
         "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-449",
+      "title": "Wire ./scripts/ticket check to .ai/tickets/schema.json",
+      "summary": "Residual from T-273 / wave 15 adversarial NIT (also T-237 territory). Regenerated schema validates 423 tickets via python jsonschema, but xtask/src/check.rs never loads .ai/tickets/schema.json — wave gate ticket registry PASS does not examine the schema file.\n\nRepro: break schema.json required fields; ./scripts/ticket check still OK; python jsonschema fails.\n\nCure: load Draft 2020-12 schema in ticket check (or make verify-ticket-schema target + wave gate step).",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3288,
+      "stream": "web-platform",
+      "targets": [
+        "root"
       ],
       "executor": "claude-code",
       "priority": 2

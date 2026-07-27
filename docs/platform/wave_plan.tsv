@@ -165,7 +165,7 @@
 6	T-270	Wire the Server Control page — ten dead controls	apps/website/frontend/src/server_control.rs
 6	T-222	CLIENT_ID is hardcoded to 1 for every peer	crates/map-engine-core/src/doc/store.rs
 6	T-271	Modpack CRUD plus workshop-id columns	apps/website/api/src/handlers/modpacks.rs; apps/website/api/migrations; apps/website/api/src/models/content.rs; apps/website/api/src/app.rs; apps/website/api/tests/modpacks_crud.rs; apps/website/frontend/src/modpacks.rs
-6	T-272	Server-status producer — close the SSE loop	apps/website/api/src/realtime.rs; apps/website/frontend/src/sse.rs; apps/website/api/src/bin/api.rs; apps/website/api/src/handlers/telemetry.rs
+6	T-272	Server-status producer — close the SSE loop	apps/website/api/src/realtime.rs; apps/website/frontend/src/sse.rs; apps/website/api/src/bin/api.rs; apps/website/api/src/handlers/telemetry.rs; apps/website/api/.env.example
 6	T-273	schema.json is a month stale and would now reject nearly every ticket	.ai/tickets/schema.json
 6	T-274	Record the untracked spawn-determinism program	scripts/mod/tbd-spawn-determinism.sh
 6	T-275	Declare mod-enforced limits in the schema	apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c; apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c
@@ -247,3 +247,4 @@
 99	T-446	CMS hero image upload needs web-sys FormData features	apps/website/frontend/Cargo.toml; apps/website/frontend/src/client.rs; apps/website/frontend/src/content.rs
 99	T-447	CMS content page still seeds from mock_docs; no GET /cms/announcements list	apps/website/frontend/src/content.rs; apps/website/api/src/handlers/cms.rs; apps/website/api/src/app.rs
 99	T-448	Personnel dossier Deployments stat has no API field (hardcoded em-dash)	apps/website/api/src/handlers/admin.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/personnel.rs
+99	T-449	Wire ./scripts/ticket check to .ai/tickets/schema.json	xtask/src/check.rs; .ai/tickets/schema.json; scripts/ticket

@@ -983,6 +983,11 @@ Cure: add list route if missing + FE LocalResource GET /cms/announcements.
 Repro: Personnel dossier → Deployments always —.
 
 Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.
+- **T-449** (deferred) — Wire ./scripts/ticket check to .ai/tickets/schema.json [INFRA] — Residual from T-273 / wave 15 adversarial NIT (also T-237 territory). Regenerated schema validates 423 tickets via python jsonschema, but xtask/src/check.rs never loads .ai/tickets/schema.json — wave gate ticket registry PASS does not examine the schema file.
+
+Repro: break schema.json required fields; ./scripts/ticket check still OK; python jsonschema fails.
+
+Cure: load Draft 2020-12 schema in ticket check (or make verify-ticket-schema target + wave gate step).
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
