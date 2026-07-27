@@ -533,7 +533,7 @@ pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
     // (including Draft 2020-12 .ai/tickets/schema.json). Check runs first so a
     // red registry never gets a status write + sync.
     let _ = require_ticket(registry, id);
-    require_check_ok(root, registry, &format!("ship {id}"));
+    require_check_ok(root, registry, &format!("ship {id}"))?;
 
     let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
     if let Some(obj) = t.as_object_mut() {
@@ -552,6 +552,9 @@ pub fn cmd_mark_ready(
     id: &str,
     spec_arg: Option<&str>,
 ) -> Result<()> {
+    // T-451: refuse ready promotion when the registry fails ticket check.
+    let _ = require_ticket(registry, id);
+    require_check_ok(root, registry, &format!("mark-ready {id}"))?;
     {
         let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
         if let Some(s) = spec_arg {
@@ -641,6 +644,10 @@ pub fn cmd_remove(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
 }
 
 pub fn cmd_reorder(root: &Path, registry: &mut Value, id: &str, after: &str) -> Result<()> {
+    // T-451: reorder may flip idea→queued; refuse when check is red.
+    let _ = require_ticket(registry, id);
+    require_check_ok(root, registry, &format!("reorder {id}"))?;
+
     let anchor_order = {
         let anchor = ticket_by_id(registry, after);
         match anchor {
@@ -766,6 +773,12 @@ pub fn cmd_ready_ids(
 }
 
 pub fn cmd_set_status(root: &Path, registry: &mut Value, id: &str, status: &str) -> Result<()> {
+    // T-451: refuse status writes when the registry fails ticket check
+    // (same bar as ship/done — T-237). No silent escape hatch; a red registry
+    // must be fixed before any status mutator may write.
+    let _ = require_ticket(registry, id);
+    require_check_ok(root, registry, &format!("set-status {id}"))?;
+
     let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
     if let Some(obj) = t.as_object_mut() {
         obj.insert("status".into(), json!(status));
@@ -999,4 +1012,92 @@ fn run_one(root: &Path, registry: &Value, id: &str, dry_run: bool) -> Result<()>
         "[{id}] run: invoke Claude Code manually / ticket pipeline (xtask run is scaffolding)"
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::check::require_check_ok;
+    use crate::registry::load_registry;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    fn worktree_root() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("xtask parent = repo/worktree root")
+            .to_path_buf()
+    }
+
+    /// Break a required enum so schema check goes red (in-memory only).
+    fn red_registry(root: &Path) -> Value {
+        let mut registry = load_registry(root).expect("load tip registry");
+        registry
+            .get_mut("tickets")
+            .and_then(|t| t.as_array_mut())
+            .expect("tickets")
+            .first_mut()
+            .expect("ticket")
+            .as_object_mut()
+            .expect("obj")
+            .insert("status".into(), json!("not-a-real-status"));
+        registry
+    }
+
+    #[test]
+    fn set_status_refuses_invalid_registry_without_write() {
+        let root = worktree_root();
+        let registry_path = root.join(".ai/tickets/registry.json");
+        let before = fs::read_to_string(&registry_path).expect("read registry before");
+        let mut registry = red_registry(&root);
+
+        // Preflight must fail before any mutator body runs — if this Err is missing,
+        // cmd_set_status would save_registry over the live tip (see T-451 perturbation).
+        let preflight = require_check_ok(&root, &registry, "set-status T-001");
+        assert!(
+            preflight.is_err(),
+            "preflight must be red before calling cmd_set_status"
+        );
+
+        let err = cmd_set_status(&root, &mut registry, "T-001", "shipped")
+            .expect_err("set-status must refuse a schema-red registry");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing set-status T-001"),
+            "expected refuse message, got: {msg}"
+        );
+        assert!(
+            msg.contains("ticket check failed"),
+            "expected check-failed note, got: {msg}"
+        );
+
+        let after = fs::read_to_string(&registry_path).expect("read registry after");
+        assert_eq!(
+            before, after,
+            "set-status must not write registry.json when check is red"
+        );
+    }
+
+    #[test]
+    fn mark_ready_refuses_invalid_registry() {
+        let root = worktree_root();
+        let mut registry = red_registry(&root);
+        let err = cmd_mark_ready(&root, &mut registry, "T-001", None)
+            .expect_err("mark-ready must refuse a schema-red registry");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing mark-ready T-001"),
+            "expected refuse message, got: {msg}"
+        );
+    }
+
+    #[test]
+    fn require_check_ok_err_matches_set_status_gate() {
+        // Same gate surface ship/set-status/mark-ready share (T-237 / T-451).
+        let root = worktree_root();
+        let registry = red_registry(&root);
+        let err = require_check_ok(&root, &registry, "set-status T-001")
+            .expect_err("red registry must fail require_check_ok");
+        assert!(format!("{err:#}").contains("refusing set-status T-001"));
+    }
 }
