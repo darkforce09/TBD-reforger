@@ -2121,14 +2121,14 @@ Once this lands, T-240's frontend block becomes a nicety on top rather than the 
 5. STRUCTURAL, from T-240's agent -- cargo authored into a container with NO GARMENT WORN is undeliverable and BOTH ENDS ARE QUIET. arsenal.rs:895-902 renders the group labelled 'no garment worn' with a total and no limit; over() is false so nothing tints. T-240's rule deliberately stays silent (never invent capacity) and says so at arsenal_rules.rs:800-808. The mod already detects exactly this -- TBD_LoadoutEquipHelper.c:1105-1106 Degrades with 'this slot's kit wears no %1 -- mission/kit authoring mismatch' -- so the engine knows and the author never hears it. REPRO: clear the vest row, add a magazine to the vest cargo container, export.
 
 CONFIRMED NON-ISSUE, do not investigate: the verifier noted the dev API 404s on /api/v1/health. That route never existed -- app.rs:297 registers /healthz, which returns 200 and is what preflight uses. |
-| T-418 | 3243 | running | platform | map-engine-wasm is dead as a whole crate, and compile_export's briefing is a dead key | Two independent dead-surface findings from wave 4, both larger than the tickets that surfaced them.
+| T-418 | 3243 | shipped | platform | map-engine-wasm is dead as a whole crate, and compile_export's briefing is a dead key | Two independent dead-surface findings from wave 4, both larger than the tickets that surfaced them.
 
 1. THE WHOLE map-engine-wasm CRATE IS DEAD, not just the binding T-243 deleted. `cargo tree -p map-engine-wasm --invert --depth 1` returns only itself -- zero reverse dependencies, and it appears in no [dependencies] table anywhere. Its Cargo.toml describes it as 'a shim exposing map-engine-core to the TypeScript UI shell', and that shell was DELETED at T-159.29.3: there are ZERO .ts/.tsx files outside node_modules and no map_engine_wasm* artifact is ever produced -- it is never wasm-packed. The Leptos SPA links map-engine-core DIRECTLY and says why (frontend/Cargo.toml:89 'instead of reaching it through the map-engine-wasm shim'; mission_doc.rs:5 'no map-engine-wasm JS shim, spec D2') -- that collapse was the point of T-159.15.
    Its entire remaining surface (DemGrid, SeaBandResult, HillshadeResult, TbddResult, DecodedDem, SlotIndex, WorldStore, RenderEngine, ...) exports to a JS boundary that no longer exists, and it costs a fmt+clippy pass on every `make lint`. T-243 deleted only what its ticket named.
    DECIDE: delete the crate, or document why it is kept (a planned future JS consumer is a legitimate answer -- an undocumented one is not).
 
 2. compile_export's envelope `briefing` always resolves to \"\". T-214 wired it to read meta.briefing, but apply_row_meta never threads it: mission_hydrate.rs:403-424's RowMeta carries only title/terrain/time/weather, so the key is absent and the field is dead. Pre-existing and already documented as such at compile.rs:164-172. REPRO: export any mission whose row has a briefing; the downloaded envelope's briefing is empty. |
-| T-419 | 3244 | running | platform | Six mod comments now assert the schema is open, and four tickets will read them as the contract | Filed by wave 4's T-241 agent, which correctly reported rather than fixed (the mod .c files were in its owns but changing mod prose was out of its scope).
+| T-419 | 3244 | shipped | platform | Six mod comments now assert the schema is open, and four tickets will read them as the contract | Filed by wave 4's T-241 agent, which correctly reported rather than fixed (the mod .c files were in its owns but changing mod prose was out of its scope).
 
 T-241 closed zones[].rules to a 16-key vocabulary with additionalProperties:false. Six comments in the mod now assert the opposite -- that the vocabulary is open and additive:
   apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c:71, :72, :87
@@ -2659,7 +2659,7 @@ Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/m
 | T-527 | 3367 | shipped | platform | W47 hotfix: rustfmt event_manager.rs imports after T-332 | Wave 47 cold gate FAIL fmt (changed). apps/website/frontend/src/event_manager.rs import order (badge_class/cn vs AdminGate) fails rustfmt --check after T-332 Attach Mission UI. Cure: rustfmt that file only. Owns: apps/website/frontend/src/event_manager.rs. |
 | T-528 | 3368 | shipped | platform | W47 hotfix: me.rs arma_linked still is_some() after T-350 | Wave 47 verifier P1/MAJOR vs T-350 ticket claim. T-350 fixed auth/oauth (+ leave reason) but title/summary name four linked sites including me.rs:87 and me.rs:170 which still use u.arma_id.is_some() — planted whitespace arma_id reports linked=true on GET /me and /me/link/status. Cure: use arma_id_is_linked (or same trim/nonempty helper) at both me.rs sites; Class-R/IT that RED on is_some()-only. Owns: apps/website/api/src/handlers/me.rs (and tests if needed). Do not touch events.rs roster (T-529). |
 | T-529 | 3369 | shipped | platform | events roster SQL still allows whitespace arma_id (no btrim) | Wave 47 verifier P2 residual from T-350. ingest_event_roster still uses u.arma_id <> '' without btrim; whitespace passes and can emit as seating key. Latent after 0016 scrub. Cure: btrim/nonempty predicate + trim seating key consistently with other arma_id sites. Owns: apps/website/api/src/handlers/events.rs (+ IT). Caution: T-343 one-sided-trim traps — read before changing. |
-| T-530 | 3370 | running | platform | T-332 Class-R partly pins doc comment strings | Wave 47 verifier P3/NIT. T-332 BE/FE Class-R partly asserts doc comment phrases (T-332 clear contract). Behavior covered by IT + stronger FE pins. Cure: pin live code paths only (body.insert / is_unique_violation / SQL), not comment prose. |
+| T-530 | 3370 | shipped | platform | T-332 Class-R partly pins doc comment strings | Wave 47 verifier P3/NIT. T-332 BE/FE Class-R partly asserts doc comment phrases (T-332 clear contract). Behavior covered by IT + stronger FE pins. Cure: pin live code paths only (body.insert / is_unique_violation / SQL), not comment prose. |
 | T-531 | 3371 | shipped | platform | null_tolerance still lists deployments.* as KNOWN_OPEN after T-341 | FOUND by W48 adversarial verifier (MINOR) after T-341 shipped.
 
 `apps/website/api/tests/null_tolerance.rs` still has `KNOWN_OPEN` entry `("src/handlers/deployments.rs", "*", "T-341 — open")` and `BASELINE_CAP=1`, while deployments.rs no longer has bare `event_registrations.*`. Comments still claim "BASELINE_CAP is now 0" / "T-341 takes this to 0".
@@ -2779,6 +2779,26 @@ content_golden.sql comments fixed. Migration 0015 comments still claim tests/eve
 Cure: update 0015 comment block to historical past-tense or point at 0017.
 
 Repro: rg 'two-seat\|deferred' apps/website/api/migrations/0015* |
+| T-553 | 3393 | deferred | platform | TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual) | FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.
+
+T-419 closed open-schema lore in TBD_ObjectiveRules.c + TBD_MissionLoader.c, but TBD_ZoneRegistry.c:39 still says:
+  //! `rules.penalty` vocabulary. Additive under the schema's `additionalProperties: true`.
+
+Live pin: packages/tbd-schema/schema/mission.schema.json $defs.zoneRules.additionalProperties = false.
+
+Repro:
+  rg -n 'additionalProperties: true' apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
+  # expect hit at line 39; schema says false. |
+| T-554 | 3394 | deferred | platform | T-418 FE hydrate→briefing wire has no Class-R pin (core only) | FOUND by W62 adversarial verifier (DIRTY MINOR) after T-418.
+
+mission_hydrate.rs threads MissionDetail.briefing into apply_row_meta via opt(&row.briefing). Core Class-R t418_apply_row_meta_threads_briefing_into_meta covers apply_row_meta/compile_export, not the FE call site.
+
+Mutation probe: replace both opt(&row.briefing) with None → cargo test -p website-frontend briefing\|hydrate still PASS.
+
+Repro:
+  # Temporarily return None for briefing in mission_hydrate RowMeta construction;
+  # website-frontend tests that mention briefing/hydrate still green;
+  # only map-engine-core Class-R fails if apply_row_meta itself is gutted. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

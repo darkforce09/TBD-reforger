@@ -11375,7 +11375,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3243,
       "stream": "web-platform",
       "targets": [
@@ -11395,7 +11395,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3244,
       "stream": "web-platform",
       "targets": [
@@ -13783,7 +13783,7 @@
       "impact": [
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3370,
       "stream": "web-platform",
       "targets": [
@@ -14269,6 +14269,49 @@
       ],
       "status": "shipped",
       "order": 3392,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-553",
+      "title": "TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual)",
+      "summary": "FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.\n\nT-419 closed open-schema lore in TBD_ObjectiveRules.c + TBD_MissionLoader.c, but TBD_ZoneRegistry.c:39 still says:\n  //! `rules.penalty` vocabulary. Additive under the schema's `additionalProperties: true`.\n\nLive pin: packages/tbd-schema/schema/mission.schema.json $defs.zoneRules.additionalProperties = false.\n\nRepro:\n  rg -n 'additionalProperties: true' apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c\n  # expect hit at line 39; schema says false.",
+      "program": "platform",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "docs",
+        "mod"
+      ],
+      "status": "deferred",
+      "order": 3393,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "mod"
+      ]
+    },
+    {
+      "id": "T-554",
+      "title": "T-418 FE hydrate\u2192briefing wire has no Class-R pin (core only)",
+      "summary": "FOUND by W62 adversarial verifier (DIRTY MINOR) after T-418.\n\nmission_hydrate.rs threads MissionDetail.briefing into apply_row_meta via opt(&row.briefing). Core Class-R t418_apply_row_meta_threads_briefing_into_meta covers apply_row_meta/compile_export, not the FE call site.\n\nMutation probe: replace both opt(&row.briefing) with None \u2192 cargo test -p website-frontend briefing|hydrate still PASS.\n\nRepro:\n  # Temporarily return None for briefing in mission_hydrate RowMeta construction;\n  # website-frontend tests that mention briefing/hydrate still green;\n  # only map-engine-core Class-R fails if apply_row_meta itself is gutted.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "mission-authoring"
+      ],
+      "status": "deferred",
+      "order": 3394,
       "executor": "claude-code",
       "priority": 2,
       "stream": "web-platform",
