@@ -1,7 +1,7 @@
 //! CMS — announcements CRUD + Discord push + image upload. Rust port of `handlers/cms.go`.
 
 use axum::extract::rejection::JsonRejection;
-use axum::extract::{Multipart, Path, State};
+use axum::extract::{Multipart, Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::Json;
 use serde::Deserialize;
@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::error::ApiError;
 use crate::handlers::field_tools::UPLOAD_DIR;
-use crate::handlers::username;
+use crate::handlers::{PageParams, username};
 use crate::middleware::AdminUser;
 use crate::models::{Announcement, AnnouncementStatus, AnnouncementTag, AuditSeverity};
 use crate::services::text::{cap_runes, is_http_url};
@@ -143,6 +143,39 @@ pub struct AnnouncementInput {
     status: String,
     #[serde(default)]
     push_to_discord: bool,
+}
+
+/// `GET /api/v1/cms/announcements` — admin CMS master list (drafts + published).
+///
+/// Public `GET /announcements` is published-only; the Content Manager needs drafts too.
+/// Archived rows (soft-delete via DELETE) are omitted so the editor matches post-archive UI.
+/// Envelope matches the platform list shape `{data,total,limit,offset}`.
+///
+/// @route GET /api/v1/cms/announcements
+pub async fn list_cms_announcements(
+    State(state): State<AppState>,
+    _a: AdminUser,
+    Query(page): Query<PageParams>,
+) -> Result<Json<Value>, ApiError> {
+    let (limit, offset) = page.bounds();
+    let total: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM announcements \
+         WHERE deleted_at IS NULL AND status IN ('draft', 'published')",
+    )
+    .fetch_one(&state.pool)
+    .await?;
+    let items: Vec<Announcement> = sqlx::query_as(concat!(
+        "SELECT id, title, body, COALESCE(snippet, '') AS snippet, tag, COALESCE(thumbnail_url, '') AS thumbnail_url, author_id, status, is_pinned, pushed_to_discord, COALESCE(discord_message_id, '') AS discord_message_id, published_at, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM announcements ",
+        "WHERE deleted_at IS NULL AND status IN ('draft', 'published') ",
+        "ORDER BY is_pinned DESC, updated_at DESC LIMIT $1 OFFSET $2"
+    ))
+    .bind(limit)
+    .bind(offset)
+    .fetch_all(&state.pool)
+    .await?;
+    Ok(Json(
+        json!({ "data": items, "total": total, "limit": limit, "offset": offset }),
+    ))
 }
 
 /// `POST /api/v1/cms/announcements` — create draft/published (+ optional push).
@@ -456,11 +489,14 @@ fn ext_lower(filename: &str) -> String {
 /// Load one announcement by id (no soft-delete filter — matches Go's `First` on a
 /// model without `DeletedAt`… announcements are archived, not soft-deleted here).
 async fn reload(state: &AppState, id: Uuid) -> Result<Option<Announcement>, ApiError> {
-    sqlx::query_as("SELECT id, title, body, COALESCE(snippet, '') AS snippet, tag, COALESCE(thumbnail_url, '') AS thumbnail_url, author_id, status, is_pinned, pushed_to_discord, COALESCE(discord_message_id, '') AS discord_message_id, published_at, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM announcements WHERE id = $1 AND deleted_at IS NULL")
-        .bind(id)
-        .fetch_optional(&state.pool)
-        .await
-        .map_err(ApiError::from)
+    sqlx::query_as(concat!(
+        "SELECT id, title, body, COALESCE(snippet, '') AS snippet, tag, COALESCE(thumbnail_url, '') AS thumbnail_url, author_id, status, is_pinned, pushed_to_discord, COALESCE(discord_message_id, '') AS discord_message_id, published_at, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM announcements ",
+        "WHERE id = $1 AND deleted_at IS NULL"
+    ))
+    .bind(id)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(ApiError::from)
 }
 
 #[cfg(test)]
@@ -493,5 +529,30 @@ mod tests {
         let derived = snippet_from("", "a < b & c");
         assert_eq!(derived, "a < b & c");
         assert!(!derived.contains("&lt;"));
+    }
+
+    /// T-447 Class-R — CMS list handler must exist and filter drafts+published (not published-only).
+    #[test]
+    fn list_cms_announcements_is_drafts_plus_published_not_public_feed() {
+        const SRC: &str = include_str!("cms.rs");
+        let prod = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("cms.rs must have a #[cfg(test)] module");
+        assert!(
+            prod.contains("pub async fn list_cms_announcements"),
+            "CMS GET list handler must exist (perturbation: remove list_cms_announcements)"
+        );
+        assert!(
+            prod.contains("status IN ('draft', 'published')"),
+            "CMS list must include drafts (perturbation: published-only like public feed)"
+        );
+        const APP: &str = include_str!("../app.rs");
+        assert!(
+            APP.contains(
+                "get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement)"
+            ),
+            "app.rs must MethodRouter GET+POST /cms/announcements"
+        );
     }
 }

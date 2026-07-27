@@ -8,10 +8,15 @@
 //! Markdown toolbar inserts real markers into the body (no mock success toasts). Hero image upload
 //! needs multipart/`FormData` (web-sys features outside this file's owns) — honest error, not a
 //! fake success toast.
+//!
+//! T-447: master list boots from `GET /cms/announcements` (admin drafts+published), not
+//! `mock_docs()`. Local New drafts still prepend into the RwSignal until first Publish.
 #![allow(dead_code)]
+use crate::dto::Paginated;
 use crate::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
 use crate::ui::MaterialIcon;
 use leptos::prelude::*;
+use serde_json::Value;
 
 #[derive(Clone, PartialEq)]
 struct Doc {
@@ -25,35 +30,6 @@ struct Doc {
 
 const BADGE_SUCCESS: &str = "inline-flex items-center gap-1 rounded border px-2 py-0.5 uppercase whitespace-nowrap border-success/30 bg-success/15 text-success";
 const BADGE_WARNING: &str = "inline-flex items-center gap-1 rounded border px-2 py-0.5 uppercase whitespace-nowrap border-tactical-yellow/30 bg-tactical-yellow/10 text-tactical-yellow";
-
-fn mock_docs() -> Vec<Doc> {
-    vec![
-        Doc {
-            id: "d1".into(),
-            title: "Operation Blue Storm Briefing".into(),
-            category: "announcement".into(),
-            published: true,
-            date: "2026-06-18".into(),
-            body: "All units, Operation Blue Storm kicks off Saturday at 1900Z. BLUFOR will stage at the southern airfield...\n\nReview your ORBAT assignments and ensure your modpack is current.".into(),
-        },
-        Doc {
-            id: "d2".into(),
-            title: "SOP: Armor Tactics".into(),
-            category: "sop".into(),
-            published: true,
-            date: "2026-06-12".into(),
-            body: "# Armor Doctrine\n\nNever advance armor without infantry support. Maintain hull-down positions where possible and...".into(),
-        },
-        Doc {
-            id: "d3".into(),
-            title: "Modpack v2.4.1 Changelog".into(),
-            category: "modpack".into(),
-            published: false,
-            date: "2026-06-20".into(),
-            body: "Draft notes for the upcoming modpack bump:\n- Added RHS Status Quo\n- Removed deprecated optics pack".into(),
-        },
-    ]
-}
 
 const CATEGORY_OPTIONS: &[(&str, &str)] = &[
     ("announcement", "Announcement"),
@@ -70,6 +46,15 @@ const MD_TOOLS: &[(&str, &str)] = &[
     ("image", "Image"),
 ];
 
+fn vstr(v: &Value, k: &str) -> String {
+    v.get(k).and_then(Value::as_str).unwrap_or_default().into()
+}
+
+/// `GET /api/v1/cms/announcements` — admin CMS list (drafts + published).
+fn announcement_list_path() -> &'static str {
+    "/cms/announcements?limit=100"
+}
+
 /// Create path — `POST /api/v1/cms/announcements`.
 fn announcement_create_path() -> &'static str {
     "/cms/announcements"
@@ -85,8 +70,8 @@ fn announcement_push_path(id: &str) -> String {
     format!("/cms/announcements/{id}/push-discord")
 }
 
-/// Server-minted announcement ids are UUIDs (36 chars with hyphens). Local mock / new-post ids
-/// (`d1`, `new-…`) are not — those still POST on first Publish.
+/// Server-minted announcement ids are UUIDs (36 chars with hyphens). Local New-post ids
+/// (`new-…`) are not — those still POST on first Publish.
 fn is_server_id(id: &str) -> bool {
     let b = id.as_bytes();
     b.len() == 36 && b[8] == b'-' && b[13] == b'-' && b[18] == b'-' && b[23] == b'-'
@@ -105,6 +90,54 @@ fn category_tag(category: &str) -> Option<&'static str> {
         "important" => Some("important"),
         _ => None,
     }
+}
+
+/// Inverse of [`category_tag`] for list hydrate. Wire `update` → `announcement` (SOP is
+/// indistinguishable on the wire).
+fn tag_category(tag: &str) -> String {
+    match tag {
+        "event" => "event".into(),
+        "modpack_update" => "modpack".into(),
+        "important" => "important".into(),
+        _ => "announcement".into(),
+    }
+}
+
+/// YYYY-MM-DD from an RFC3339 / Go-time ISO string (list meta column).
+fn date_ymd(iso: &str) -> String {
+    if iso.len() >= 10 {
+        iso[..10].to_string()
+    } else {
+        String::new()
+    }
+}
+
+/// Map one CMS announcement JSON row → editor `Doc`.
+fn doc_from_announcement(v: &Value) -> Option<Doc> {
+    let id = vstr(v, "id");
+    if id.is_empty() {
+        return None;
+    }
+    let status = vstr(v, "status");
+    let published = status == "published";
+    let published_at = vstr(v, "published_at");
+    let created_at = vstr(v, "created_at");
+    let updated_at = vstr(v, "updated_at");
+    let date_src = if !published_at.is_empty() {
+        published_at
+    } else if !updated_at.is_empty() {
+        updated_at
+    } else {
+        created_at
+    };
+    Some(Doc {
+        id,
+        title: vstr(v, "title"),
+        category: tag_category(&vstr(v, "tag")),
+        published,
+        date: date_ymd(&date_src),
+        body: vstr(v, "body"),
+    })
 }
 
 /// Insert a real markdown snippet for a toolbar tool (no toast — the body change is the feedback).
@@ -141,11 +174,45 @@ pub fn ContentManagerPage() -> impl IntoView {
     let store = expect_context::<crate::auth::AuthStore>();
     #[cfg(not(target_arch = "wasm32"))]
     let _ = &store;
-    let docs = RwSignal::new(mock_docs());
-    let selected_id = RwSignal::new(Some("d1".to_string()));
-    // The editor re-keys on selection: bump forces a rebuild seeded from the newly selected doc.
+    // Mutable working set: seeded once from the CMS list Resource, then New/Publish/Delete mutate.
+    let docs = RwSignal::new(Vec::<Doc>::new());
+    let selected_id = RwSignal::new(None::<String>);
+    let list_seeded = RwSignal::new(false);
     let publish_busy = RwSignal::new(false);
     let delete_busy = RwSignal::new(false);
+
+    let list_res = LocalResource::new(move || async move {
+        #[cfg(target_arch = "wasm32")]
+        {
+            crate::client::api_get::<Paginated<Value>>(store, announcement_list_path())
+                .await
+                .ok()
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = store;
+            None::<Paginated<Value>>
+        }
+    });
+
+    // One-shot hydrate — do not overwrite local New drafts / publish edits on later reads.
+    Effect::new(move |_| {
+        if list_seeded.get() {
+            return;
+        }
+        let Some(opt) = list_res.get() else {
+            return;
+        };
+        list_seeded.set(true);
+        let Some(page) = opt else {
+            return;
+        };
+        let mapped: Vec<Doc> = page.data.iter().filter_map(doc_from_announcement).collect();
+        if selected_id.get_untracked().is_none() {
+            selected_id.set(mapped.first().map(|d| d.id.clone()));
+        }
+        docs.set(mapped);
+    });
 
     let new_post = move |_| {
         #[cfg(target_arch = "wasm32")]
@@ -169,96 +236,119 @@ pub fn ContentManagerPage() -> impl IntoView {
             <div class="relative h-full w-full overflow-hidden">
                 <div class="bg-topo-map bg-grid-overlay absolute inset-0 z-0"></div>
                 <div class="relative z-10 flex h-full w-full bg-surface-glass backdrop-blur-xl">
-                    <SplitPane
-                        transparent=true
-                        master_width="20rem"
-                        master_header=view! {
-                            <>
-                                <h1 class="text-label-md font-semibold tracking-wide text-on-surface uppercase">
-                                    "Comms Broadcaster"
-                                </h1>
-                                <button
-                                    type="button"
-                                    on:click=new_post
-                                    class="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-label-sm text-on-surface transition hover:bg-white/5"
-                                >
-                                    <MaterialIcon name="add" class="text-[18px]" />
-                                    "New"
-                                </button>
-                            </>
+                    <Suspense fallback=move || {
+                        view! {
+                            <p class="p-6 text-on-surface-variant">"Loading…"</p>
                         }
-                            .into_any()
-                        master=view! {
-                            {move || {
-                                let sel = selected_id.get();
-                                docs.get()
-                                    .into_iter()
-                                    .map(|d| {
-                                        let (badge, label) = if d.published {
-                                            (BADGE_SUCCESS, "Published")
-                                        } else {
-                                            (BADGE_WARNING, "Draft")
-                                        };
-                                        let active = sel.as_deref() == Some(d.id.as_str());
-                                        let id_click = d.id.clone();
-                                        let title = if d.title.is_empty() {
-                                            "Untitled Post".to_string()
-                                        } else {
-                                            d.title.clone()
-                                        };
-                                        view! {
-                                            <ListDetailItem
-                                                active=active
-                                                on_click=Callback::new(move |()| {
-                                                    selected_id.set(Some(id_click.clone()))
-                                                })
-                                                meta=view! { {d.date.clone()} }.into_any()
-                                                title=view! { {title} }.into_any()
-                                                trailing=view! { <span class=badge>{label}</span> }
-                                                    .into_any()
-                                            />
-                                        }
-                                    })
-                                    .collect_view()
-                            }}
-                        }
-                            .into_any()
-                        detail=view! {
-                            {move || {
-                                let sel = selected_id.get();
-                                let doc = docs
-                                    .get()
-                                    .into_iter()
-                                    .find(|d| Some(&d.id) == sel.as_ref());
-                                match doc {
-                                    Some(d) => {
-                                        editor(
-                                            d,
-                                            docs,
-                                            selected_id,
-                                            publish_busy,
-                                            delete_busy,
-                                            store,
-                                        )
-                                            .into_any()
+                    }>
+                        {move || {
+                            // Touch the resource so Suspense waits for the first fetch.
+                            let _ = list_res.get();
+                            view! {
+                                <SplitPane
+                                    transparent=true
+                                    master_width="20rem"
+                                    master_header=view! {
+                                        <>
+                                            <h1 class="text-label-md font-semibold tracking-wide text-on-surface uppercase">
+                                                "Comms Broadcaster"
+                                            </h1>
+                                            <button
+                                                type="button"
+                                                on:click=new_post
+                                                class="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-label-sm text-on-surface transition hover:bg-white/5"
+                                            >
+                                                <MaterialIcon name="add" class="text-[18px]" />
+                                                "New"
+                                            </button>
+                                        </>
                                     }
-                                    None => {
-                                        view! {
-                                            <SplitPaneEmpty
-                                                icon=view! {
-                                                    <MaterialIcon name="edit_note" class="text-4xl" />
+                                        .into_any()
+                                    master=view! {
+                                        {move || {
+                                            let sel = selected_id.get();
+                                            let rows = docs.get();
+                                            if rows.is_empty() {
+                                                return view! {
+                                                    <p class="px-1 py-4 text-label-md text-on-surface-variant">
+                                                        "No announcements yet."
+                                                    </p>
                                                 }
-                                                    .into_any()
-                                                message="Select a post or create a new one."
-                                            />
-                                        }
-                                            .into_any()
+                                                    .into_any();
+                                            }
+                                            rows
+                                                .into_iter()
+                                                .map(|d| {
+                                                    let (badge, label) = if d.published {
+                                                        (BADGE_SUCCESS, "Published")
+                                                    } else {
+                                                        (BADGE_WARNING, "Draft")
+                                                    };
+                                                    let active = sel.as_deref() == Some(d.id.as_str());
+                                                    let id_click = d.id.clone();
+                                                    let title = if d.title.is_empty() {
+                                                        "Untitled Post".to_string()
+                                                    } else {
+                                                        d.title.clone()
+                                                    };
+                                                    view! {
+                                                        <ListDetailItem
+                                                            active=active
+                                                            on_click=Callback::new(move |()| {
+                                                                selected_id.set(Some(id_click.clone()))
+                                                            })
+                                                            meta=view! { {d.date.clone()} }.into_any()
+                                                            title=view! { {title} }.into_any()
+                                                            trailing=view! { <span class=badge>{label}</span> }
+                                                                .into_any()
+                                                        />
+                                                    }
+                                                })
+                                                .collect_view()
+                                                .into_any()
+                                        }}
                                     }
-                                }
-                            }}
-                        }
-                            .into_any()
-                    />
+                                        .into_any()
+                                    detail=view! {
+                                        {move || {
+                                            let sel = selected_id.get();
+                                            let doc = docs
+                                                .get()
+                                                .into_iter()
+                                                .find(|d| Some(&d.id) == sel.as_ref());
+                                            match doc {
+                                                Some(d) => {
+                                                    editor(
+                                                        d,
+                                                        docs,
+                                                        selected_id,
+                                                        publish_busy,
+                                                        delete_busy,
+                                                        store,
+                                                    )
+                                                        .into_any()
+                                                }
+                                                None => {
+                                                    view! {
+                                                        <SplitPaneEmpty
+                                                            icon=view! {
+                                                                <MaterialIcon name="edit_note" class="text-4xl" />
+                                                            }
+                                                                .into_any()
+                                                            message="Select a post or create a new one."
+                                                        />
+                                                    }
+                                                        .into_any()
+                                                }
+                                            }
+                                        }}
+                                    }
+                                        .into_any()
+                                />
+                            }
+                                .into_any()
+                        }}
+                    </Suspense>
                 </div>
             </div>
         </crate::ui::AdminGate>
@@ -447,7 +537,7 @@ fn editor(
                     delete_busy.set(false);
                 });
             } else {
-                // Local-only draft / mock row — drop from the list; nothing to hit on the API.
+                // Local-only New draft — drop from the list; nothing to hit on the API.
                 docs.update(|list| list.retain(|d| d.id != id));
                 selected_id.set(None);
                 toasts.success("Draft discarded");
@@ -599,9 +689,11 @@ fn switch(checked: RwSignal<bool>) -> impl IntoView {
 #[cfg(test)]
 mod tests {
     use super::{
-        announcement_create_path, announcement_id_path, announcement_push_path, apply_md_tool,
-        category_tag, is_server_id,
+        announcement_create_path, announcement_id_path, announcement_list_path,
+        announcement_push_path, apply_md_tool, category_tag, date_ymd, doc_from_announcement,
+        is_server_id, tag_category,
     };
+    use serde_json::json;
 
     /// T-267 Class-R — every UI category (incl. SOP) must resolve to a live `announcement_tag`.
     #[test]
@@ -627,7 +719,36 @@ mod tests {
     }
 
     #[test]
+    fn tag_category_round_trips_live_tags() {
+        assert_eq!(tag_category("update"), "announcement");
+        assert_eq!(tag_category("event"), "event");
+        assert_eq!(tag_category("modpack_update"), "modpack");
+        assert_eq!(tag_category("important"), "important");
+    }
+
+    #[test]
+    fn doc_from_announcement_maps_status_and_dates() {
+        let row = json!({
+            "id": "44fa4c17-5bd5-4c6b-b02d-4ccd52af6910",
+            "title": "Live row",
+            "body": "hello",
+            "tag": "modpack_update",
+            "status": "published",
+            "published_at": "2026-07-27T12:00:00Z",
+            "created_at": "2026-07-01T00:00:00Z",
+            "updated_at": "2026-07-27T12:00:00Z",
+        });
+        let doc = doc_from_announcement(&row).expect("row maps");
+        assert_eq!(doc.id, "44fa4c17-5bd5-4c6b-b02d-4ccd52af6910");
+        assert_eq!(doc.category, "modpack");
+        assert!(doc.published);
+        assert_eq!(doc.date, "2026-07-27");
+        assert_eq!(date_ymd("2026-06-18T00:00:00Z"), "2026-06-18");
+    }
+
+    #[test]
     fn cms_paths_match_axum_routes() {
+        assert_eq!(announcement_list_path(), "/cms/announcements?limit=100");
         assert_eq!(announcement_create_path(), "/cms/announcements");
         assert_eq!(
             announcement_id_path("44fa4c17-5bd5-4c6b-b02d-4ccd52af6910"),
@@ -641,7 +762,12 @@ mod tests {
             include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../api/src/app.rs"));
         assert!(
             APP_RS.contains(r#""/cms/announcements""#),
-            "app.rs must register POST /cms/announcements"
+            "app.rs must register /cms/announcements"
+        );
+        // T-447 Class-R — GET must share the POST route (was POST-only → 405 on list).
+        assert!(
+            APP_RS.contains("get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement)"),
+            "app.rs must register GET+POST on /cms/announcements (perturbation: post-only)"
         );
         assert!(
             APP_RS.contains(r#""/cms/announcements/{id}""#),
@@ -654,6 +780,37 @@ mod tests {
         assert!(
             APP_RS.contains(r#""/cms/uploads""#),
             "app.rs must still register POST /cms/uploads (orphan until multipart client)"
+        );
+    }
+
+    /// T-447 Class-R — boot must be LocalResource GET, not sole `mock_docs()` seed.
+    #[test]
+    fn content_boots_from_cms_list_not_mock_docs() {
+        const SRC: &str = include_str!("content.rs");
+        let prod = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("content.rs must have a #[cfg(test)] module");
+        assert!(
+            !prod.contains("fn mock_docs()"),
+            "mock_docs must be gone from production (perturbation: restore mock seed helper)"
+        );
+        assert!(
+            !prod.contains("RwSignal::new(mock_docs())"),
+            "must not boot the master list from mock_docs alone"
+        );
+        assert!(
+            prod.contains("announcement_list_path"),
+            "list path helper must exist"
+        );
+        assert!(
+            prod.contains("LocalResource::new")
+                && prod.contains("api_get::<Paginated<Value>>(store, announcement_list_path())"),
+            "boot must LocalResource api_get the CMS list (perturbation: drop Resource)"
+        );
+        assert!(
+            prod.contains("doc_from_announcement"),
+            "DTO→Doc mapping must exist"
         );
     }
 
