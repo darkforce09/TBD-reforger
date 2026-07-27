@@ -144,7 +144,7 @@ pub fn MortarCalculatorPage() -> impl IntoView {
                                         <dl class="mt-3 space-y-2 font-mono text-sm">
                                             <div class="flex justify-between">
                                                 <dt class="text-on-surface-variant">"Distance"</dt>
-                                                <dd>{locale_int(s.distance_m)} " m"</dd>
+                                                <dd>{locale_int(s.distance_m as f64)} " m"</dd>
                                             </div>
                                             <div class="flex justify-between">
                                                 <dt class="text-on-surface-variant">"Azimuth"</dt>
