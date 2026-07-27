@@ -975,6 +975,285 @@ gate_db_migrate_claim_body() {
   return 0
 }
 
+# T-555 — THE POPULATED-DATABASE MIGRATION STEP. Read this header before changing anything below.
+#
+# ── WHAT WAS WRONG, AND WHY NO GATE COULD SEE IT ─────────────────────────────────────────────────
+#
+# `ensure_gate_db` force-drops `tbd_gate_migrate` at the start of EVERY run. So `db_migrate` could
+# only ever run the migration chain FORWARD FROM EMPTY. Two whole classes of defect are invisible
+# from there, because both need a database that already contains something:
+#
+#   1. EDITING AN ALREADY-APPLIED MIGRATION. sqlx checksums the WHOLE FILE (sha384) and stores it in
+#      `_sqlx_migrations`. Change so much as one comment character and every database that already
+#      ran that file refuses to boot: `migration N was previously applied but has been modified`.
+#      From empty there is nothing to compare against, so the checksum matches BY CONSTRUCTION.
+#   2. DDL THAT CANNOT SURVIVE REAL ROWS. `CREATE UNIQUE INDEX` on a column pair that already has a
+#      duplicate; `SET NOT NULL` on a column that already has a NULL. From empty there are no rows,
+#      so the DDL applies BY CONSTRUCTION.
+#
+# Both landed. a843905f (T-331) retouched an applied 0009 — comment-only, SQL byte-identical — and
+# killed every existing database. 0017 (T-511) created a unique index over a duplicate seat the
+# pre-T-331 seed had already inserted, and its own header asserted the row had been cleared; T-331
+# had fixed the SEED FILE, which does nothing to data already seeded. EVERY WAVE GATE SINCE T-331
+# WAS GREEN OVER BOTH — including, on deploy, staging and production. Not a test that examined
+# nothing: a whole category, backward compatibility, that the gate architecture excluded by design.
+#
+# ── THE CURE: A DATABASE THAT IS NEVER DROPPED ───────────────────────────────────────────────────
+#
+# `tbd_gate_migrate_persist` survives across runs. There is no DROP DATABASE in this function and
+# there must never be one — the persistence IS the test. Each run:
+#
+#   AUDIT   every migration `_sqlx_migrations` says was applied is re-hashed on disk and compared.
+#           A drifted checksum is the exact failure a real boot would hit, caught before landing.
+#   APPLY   only the migrations this database has not seen, against the rows it is already carrying.
+#   SEED    re-applies seeds/content_golden.sql so the database stays POPULATED for the next wave.
+#           An empty persist DB would make step APPLY vacuous again, which is the whole defect.
+#
+# ── TWO MODES, AND WHY THE SLICE GATE DOES NOT COMMIT ────────────────────────────────────────────
+#
+#   audit    (gate_slice) read-only audit, then each pending migration is executed inside an
+#            explicit transaction that is ROLLED BACK. A unique-index violation is raised while the
+#            index is being BUILT, inside that transaction, so the rollback costs nothing in
+#            detection — measured against the real defect, which reproduces identically either way.
+#            A slice must NOT advance the shared database: slices get abandoned, and a persist DB
+#            carrying a migration that never reached main would fail every later run with
+#            "applied version has no file on disk" — a self-inflicted red nobody could act on.
+#   advance  (cmd_gate, on merged main) the same audit, then pending migrations are COMMITTED and
+#            recorded. Only merged history advances the database, so its state is always some
+#            prefix of main.
+#
+# ── CHECKSUM PARITY IS MEASURED, NOT ASSUMED ─────────────────────────────────────────────────────
+#
+# sqlx's checksum is sha384 over the raw file bytes. That is not taken on faith from the source:
+# 2026-07-27, all 17 on-disk migrations were hashed with `sha384sum` and compared against the
+# `_sqlx_migrations.checksum` values sqlx ITSELF wrote into the operator's dev database. 16 of 17
+# matched byte-for-byte. The seventeenth was migration 9 — the defect, not a parity failure — and
+# the pre-a843905f bytes hash to exactly the value sqlx had recorded. If a future sqlx changes the
+# algorithm this step goes red on everything at once, which is the correct way to find that out.
+#
+# The applier below is psql, not sqlx. The one behavioural difference is statement framing: sqlx
+# sends a migration as ONE multi-statement simple query, psql `-f` sends them individually. Both
+# run inside ONE transaction per migration — the property migrations actually depend on — and the
+# bookkeeping INSERT is inside that same transaction, so a migration is never recorded as applied
+# unless it applied. A DDL failure is a DDL failure under either framing.
+#
+# ── ANTI-VACUITY ─────────────────────────────────────────────────────────────────────────────────
+#
+# This step exists because a check reported success over an input it never examined, so it is not
+# permitted to do that itself. Every one of these is a FAIL, never a skip:
+#   * sha384sum or psql missing / the database unreachable  (tool absent must fail closed)
+#   * zero migration files found
+#   * an applied version with no matching file on disk
+#   * a migration recorded with success = false
+#   * THE POPULATION FLOOR — after seeding, the tables migrations actually constrain must contain
+#     rows, INCLUDING at least one CLAIMED orbat seat. An empty database passes any DDL, so a
+#     persist DB that lost its data would turn this step back into the thing it replaced.
+# The step also prints what it looked at — audited / pending / applied counts and the row floor —
+# because a verdict you cannot attribute to an input is not evidence.
+gate_db_migrate_persist() {
+  local mode="${1:-audit}"
+  local db="${TBD_GATE_MIGRATE_PERSIST_DB:-tbd_gate_migrate_persist}"
+  local migdir="${TBD_GATE_MIGRATION_DIR:-$ROOT/apps/website/api/migrations}"
+  local seed="${TBD_GATE_MIGRATE_SEED:-$ROOT/apps/website/api/seeds/content_golden.sql}"
+  local label="db_migrate persist"
+
+  case "$mode" in audit|advance) ;; *)
+    echo "$label: FAIL — unknown mode '$mode' (want audit|advance)"; return 1 ;;
+  esac
+  if ! [[ "$db" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+    echo "$label: FAIL — database name '$db' is not a safe SQL identifier."; return 1
+  fi
+  # Tool-absent fails closed. A missing hasher would otherwise make every checksum compare equal to
+  # the empty string and the audit would agree with itself over nothing.
+  command -v sha384sum >/dev/null 2>&1 || {
+    echo "$label: FAIL — sha384sum not on PATH; the checksum audit cannot run."; return 1; }
+
+  local px=(podman exec tbd_reforger_db psql -U tbd)
+  [ "$HOST_BRIDGE" = 1 ] && px=(distrobox-host-exec "${px[@]}")
+  q()     { "${px[@]}" -d "$db"    -qtA -v ON_ERROR_STOP=1 -c "$1"; }
+  admin() { "${px[@]}" -d postgres -qtA -v ON_ERROR_STOP=1 -c "$1"; }
+
+  # `advance` writes to a database every other gate on this machine shares. Same invariant
+  # ensure_gate_db asserts, and for the same reason — assert it rather than assume it.
+  if [ "$mode" = advance ] && [ "${GATE_LOCK_HELD:-0}" != 1 ] && [ "${GATE_UNSERIALISED:-0}" != 1 ]; then
+    echo "$label: FAIL — advance mutates the shared persist DB and the gate lock is NOT held."
+    return 1
+  fi
+
+  # ── the migration set on disk ──────────────────────────────────────────────────────────────────
+  local files=() f
+  while IFS= read -r f; do [ -n "$f" ] && files+=("$f"); done < <(ls -1 "$migdir"/*.sql 2>/dev/null | sort)
+  if [ "${#files[@]}" -eq 0 ]; then
+    echo "$label: FAIL — no migrations found under $migdir. Nothing would be examined."; return 1
+  fi
+
+  if ! admin "SELECT 1;" >/dev/null 2>&1; then
+    echo "$label: FAIL — cannot reach Postgres (podman exec tbd_reforger_db). Is \`make db-up\` running?"
+    echo "        This is a FAIL and not a skip on purpose: a migration audit that silently"
+    echo "        examined no database is the defect this step was built to end."
+    return 1
+  fi
+  admin "CREATE DATABASE ${db};" >/dev/null 2>&1 || true   # already-exists is fine; never dropped
+  q "CREATE TABLE IF NOT EXISTS _sqlx_migrations (
+       version bigint PRIMARY KEY, description text NOT NULL,
+       installed_on timestamptz NOT NULL DEFAULT now(), success boolean NOT NULL,
+       checksum bytea NOT NULL, execution_time bigint NOT NULL);" >/dev/null 2>&1 || {
+    echo "$label: FAIL — could not open or initialise ${db}."; return 1; }
+
+  local ver desc sum applied_sum ok_n=0 pending=() drift=() missing=() failed=()
+  mig_ver()  { basename "$1" | sed 's/^0*\([0-9][0-9]*\)_.*/\1/'; }
+  mig_desc() { basename "$1" .sql | sed 's/^[0-9][0-9]*_//; s/_/ /g'; }
+
+  # ── BOOTSTRAP ─────────────────────────────────────────────────────────────────────────────────
+  # A brand-new persist DB has nothing to audit and nothing to apply against, so bootstrapping it
+  # forward-from-empty would reproduce exactly the hole this step closes. Bootstrap therefore stops
+  # ONE SHORT of the newest migration and seeds there, so even the first ever run applies the newest
+  # file against populated data. Every later run is the steady state and needs no such trick.
+  local have_any; have_any=$(q "SELECT count(*) FROM _sqlx_migrations;" 2>/dev/null | tr -d '[:space:]')
+  if [ "${have_any:-0}" = 0 ]; then
+    echo "  bootstrapping ${db}: applying ${#files[@]} migration(s) minus the newest, then seeding"
+    local i last=$(( ${#files[@]} - 1 ))
+    for ((i = 0; i < last; i++)); do
+      persist_apply_one "$db" "${files[$i]}" commit || {
+        echo "$label: FAIL — bootstrap could not apply $(basename "${files[$i]}")."; return 1; }
+    done
+    persist_seed "$db" "$seed" || return 1
+  fi
+
+  # ── AUDIT: every applied migration re-hashed against disk ─────────────────────────────────────
+  local rows row
+  # `success` is spelled out rather than concatenated raw: `boolean || text` renders as
+  # `true`/`false`, not the `t`/`f` psql prints for a bare boolean column, and comparing against the
+  # wrong one flags EVERY migration as partially-applied. Caught by this step's own perturbation run.
+  rows=$(q "SELECT version || '|' || (CASE WHEN success THEN 'ok' ELSE 'bad' END)
+                   || '|' || encode(checksum,'hex') FROM _sqlx_migrations ORDER BY version;")
+  while IFS='|' read -r ver row applied_sum; do
+    [ -z "$ver" ] && continue
+    f=""
+    local cand; for cand in "${files[@]}"; do [ "$(mig_ver "$cand")" = "$ver" ] && { f="$cand"; break; }; done
+    if [ -z "$f" ]; then missing+=("$ver"); continue; fi
+    [ "$row" = "ok" ] || failed+=("$ver")
+    sum=$(sha384sum < "$f" | cut -d' ' -f1)
+    if [ "$sum" != "$applied_sum" ]; then
+      drift+=("$ver|$(basename "$f")|$applied_sum|$sum")
+    else
+      ok_n=$((ok_n + 1))
+    fi
+  done <<< "$rows"
+
+  local applied_versions; applied_versions=$(q "SELECT string_agg(version::text, ' ') FROM _sqlx_migrations;")
+  for f in "${files[@]}"; do
+    ver=$(mig_ver "$f")
+    grep -qw -- "$ver" <<< " $applied_versions " || pending+=("$f")
+  done
+
+  local bad=0
+  if [ "${#drift[@]}" -gt 0 ]; then
+    bad=1
+    echo "$label: FAIL — ${#drift[@]} ALREADY-APPLIED migration(s) were MODIFIED on disk."
+    echo "        Every existing database — dev, staging, production — will refuse to boot with"
+    echo "        \`migration N was previously applied but has been modified\` (sqlx VersionMismatch)."
+    for row in "${drift[@]}"; do
+      IFS='|' read -r ver f applied_sum sum <<< "$row"
+      echo "        - migration $ver  $f"
+      echo "            applied: $applied_sum"
+      echo "            on disk: $sum"
+    done
+    echo "        An applied migration is IMMUTABLE — sqlx hashes the whole file, so a comment-only"
+    echo "        edit is as fatal as a DDL one. Restore the original bytes and put the new prose in"
+    echo "        the migration that has not shipped yet, or in a new one."
+  fi
+  if [ "${#missing[@]}" -gt 0 ]; then
+    bad=1
+    echo "$label: FAIL — applied migration(s) with NO file on disk: ${missing[*]}"
+    echo "        Either a migration was deleted/renamed after shipping (real databases can never"
+    echo "        reach the new chain), or this persist DB was advanced by something that never"
+    echo "        merged. Recover with: DROP DATABASE ${db}; the next gate rebuilds it."
+  fi
+  if [ "${#failed[@]}" -gt 0 ]; then
+    bad=1
+    echo "$label: FAIL — migration(s) recorded with success=false: ${failed[*]} (partially applied)."
+  fi
+  [ "$bad" -ne 0 ] && return 1
+
+  # ── APPLY the pending migrations against the rows this database already carries ───────────────
+  local applied_n=0 finish=rollback
+  [ "$mode" = advance ] && finish=commit
+  for f in "${pending[@]}"; do
+    persist_apply_one "$db" "$f" "$finish" || {
+      echo "$label: FAIL — $(basename "$f") does not apply to a POPULATED database."
+      echo "        It applies to an empty one, which is why every gate before this step was green."
+      echo "        Neutralise the offending rows FIRST, in the same migration, then constrain —"
+      echo "        see 0010_backfill_aar_replay_url_scheme.sql (T-405) for the established shape."
+      return 1; }
+    applied_n=$((applied_n + 1))
+  done
+
+  # Re-seed so the NEXT wave still meets real rows. Only in advance mode: audit rolled its pending
+  # migrations back, so the schema it would seed against is not the one that will persist.
+  [ "$mode" = advance ] && { persist_seed "$db" "$seed" || return 1; }
+
+  # ── THE POPULATION FLOOR — the guard that stops this step going hollow ────────────────────────
+  local floor
+  floor=$(q "SELECT (SELECT count(*) FROM orbat_slots WHERE assigned_to IS NOT NULL) || ' ' ||
+                    (SELECT count(*) FROM matches) || ' ' ||
+                    (SELECT count(*) FROM match_player_stats);" 2>/dev/null)
+  local seats rows_m rows_s; read -r seats rows_m rows_s <<< "$floor"
+  if [ "${seats:-0}" -lt 1 ] || [ "${rows_m:-0}" -lt 1 ] || [ "${rows_s:-0}" -lt 1 ]; then
+    echo "$label: FAIL — ${db} is not populated (claimed seats=${seats:-?} matches=${rows_m:-?} stats=${rows_s:-?})."
+    echo "        Every DDL check above passed over an empty table, which proves nothing. That is"
+    echo "        precisely the failure this step exists to prevent, so it is a red, not a pass."
+    return 1
+  fi
+
+  echo "$label: OK [$mode] — audited ${ok_n} applied migration(s) against disk, ${applied_n} pending"
+  echo "        applied to a populated ${db} (claimed seats=${seats} matches=${rows_m} stats=${rows_s})."
+  return 0
+}
+
+# Stdin -> psql on <db>. Explicit rather than inherited: bash's dynamic scoping would let the
+# helpers below read the caller's locals, and a helper whose database depends on who called it is
+# exactly the kind of thing that quietly runs against the wrong one.
+persist_feed() {
+  local db="$1"
+  if [ "$HOST_BRIDGE" = 1 ]; then
+    distrobox-host-exec podman exec -i tbd_reforger_db psql -U tbd -d "$db" -q -v ON_ERROR_STOP=1 -f -
+  else
+    podman exec -i tbd_reforger_db psql -U tbd -d "$db" -q -v ON_ERROR_STOP=1 -f -
+  fi
+}
+
+# One migration, one transaction — the migration body AND its `_sqlx_migrations` row together, so a
+# migration can never be recorded as applied unless it applied. `rollback` runs the identical
+# transaction and throws it away: used by the slice gate, which must detect without advancing.
+persist_apply_one() {
+  local db="$1" f="$2" finish="$3" ver desc sum
+  ver=$(basename "$f" | sed 's/^0*\([0-9][0-9]*\)_.*/\1/')
+  desc=$(basename "$f" .sql | sed 's/^[0-9][0-9]*_//; s/_/ /g')
+  sum=$(sha384sum < "$f" | cut -d' ' -f1)
+  { echo "BEGIN;"
+    cat "$f"
+    echo
+    echo "INSERT INTO _sqlx_migrations (version, description, success, checksum, execution_time)"
+    echo "VALUES (${ver}, '${desc}', true, decode('${sum}','hex'), 0);"
+    if [ "$finish" = commit ]; then echo "COMMIT;"; else echo "ROLLBACK;"; fi
+  } | persist_feed "$db"
+}
+
+persist_seed() {
+  local db="$1" seed="$2" out rc
+  [ -f "$seed" ] || { echo "db_migrate persist: FAIL — seed not found: $seed"; return 1; }
+  out=$(persist_feed "$db" < "$seed" 2>&1); rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "db_migrate persist: FAIL — the committed seed no longer loads into the migrated schema."
+    echo "        A migration that makes seeds/content_golden.sql unloadable breaks every fresh"
+    echo "        environment, and leaves this persist DB unpopulated for the next wave."
+    printf '%s\n' "$out" | tail -8 | sed 's/^/        /'
+    return 1
+  fi
+  return 0
+}
+
 # `trunk build --release`, ISOLATED FROM THE OPERATOR'S DEV SERVER — read before simplifying.
 #
 # `make leptos` is `trunk serve --release`: the same binary, running the same pipeline, over the
@@ -1599,6 +1878,13 @@ gate_slice() {
   # T-515. Class-R on 0016 claim UPDATE body — db_migrate.rs is schema-count-only;
   # a hollow claim migration stays green. Unconditional (wave.sh-only slices must hit it).
   run "db_migrate claim body" gate_db_migrate_claim_body
+  # T-555. The populated-database step, in AUDIT mode: checksum-audits every already-applied
+  # migration and dry-runs the pending ones against real rows, without advancing the shared DB.
+  # It belongs in the CHEAP gate specifically because a843905f — the edit to an already-applied
+  # migration that killed every existing database — landed through a slice gate. Unconditional and
+  # not change-scoped: a slice that touches no migration can still be the one that has to notice a
+  # sibling's drift, and this step is psql-only (~1 s), not a cargo step.
+  run "db_migrate persist" gate_db_migrate_persist audit
   # T-462. Shell Class-R near schema: verify scripts that exist but were never
   # invoked by the cold gate (wave 24 adversarial — T-439 unwired; T-444 pin absent).
   # T-463. Same pattern for T-438 deploy-staging compose path + T-456 REST size gate
@@ -1712,6 +1998,13 @@ cmd_gate() {
   # T-515. Adjacent to migrate DB prep: Class-R pins 0016 claim UPDATE body on disk.
   # schema-count db_migrate.rs cannot see a hollow claim (REFRESH kept, UPDATE dropped).
   run "db_migrate claim body" gate_db_migrate_claim_body
+  # T-555. ADVANCE mode — the wave gate is the only caller allowed to move the persist DB forward,
+  # because only merged main is history that will not be abandoned. Deliberately placed AFTER
+  # ensure_gate_db (which owns the throwaway forward-from-empty DB) and BEFORE `test api`: this is
+  # the step that answers "will the databases that already exist survive this wave", and the
+  # forward-from-empty run that db_migrate.rs performs cannot answer it. Under the gate lock, which
+  # gate_db_migrate_persist asserts for itself before writing.
+  run "db_migrate persist" gate_db_migrate_persist advance
   run "test api"         gate_test_api
   # --features mission is REQUIRED. The mission module is feature-gated, so a bare
   # `cargo test -p map-engine-core` runs 116 tests and silently skips 26 — every test in flatten.rs,
@@ -2056,7 +2349,21 @@ cmd_push() {
 case "${1:-status}" in
   status) cmd_status ;;
   prep)   cmd_prep ;;
-  gate)   if [ "${2:-}" = "--slice" ]; then gate_slice "${3:-}"; else cmd_gate "${2:-}"; fi ;;
+  # `--migrate-persist [audit|advance]` runs the T-555 populated-database step alone. It is how the
+  # step was proven to go red on the real defects and green on the fix, and it is what to reach for
+  # when a gate reports migration drift and you want the detail without a full gate run.
+  gate)   case "${2:-}" in
+            --slice)           gate_slice "${3:-}" ;;
+            # `advance` writes the shared persist DB, so it takes the same lock the wave gate holds
+            # when it calls this. GATE_LOCK_HELD is deliberately not settable from the environment
+            # (it is reset at load, below), so there is no way to skip this by exporting a variable.
+            --migrate-persist)
+              if [ "${3:-audit}" = advance ]; then
+                take_gate_lock "migrate-persist advance" || exit $?
+              fi
+              gate_db_migrate_persist "${3:-audit}" ;;
+            *)                 cmd_gate "${2:-}" ;;
+          esac ;;
   wave)   if [ "${2:-}" = "--close" ]; then cmd_wave_close; else cmd_wave; fi ;;
   verified) cmd_verified "${2:-}" ;;
   reclaim) shift; cmd_reclaim "$@" ;;
