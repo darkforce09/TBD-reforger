@@ -687,6 +687,11 @@ pub fn cmd_reorder(root: &Path, registry: &mut Value, id: &str, after: &str) -> 
 }
 
 pub fn cmd_advance_slice(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
+    // T-459: refuse advance when the registry fails ticket check (same bar as
+    // add/remove/set-status/mark-ready/reorder/ship — T-455 / T-451 / T-237).
+    // Check runs first so a red registry never gets an active_slice write + sync.
+    require_check_ok(root, registry, &format!("advance-slice {id}"))?;
+
     let (slices, active) = {
         let t = require_ticket(registry, id);
         let slices: Vec<String> = t
@@ -1188,9 +1193,47 @@ mod tests {
     }
 
     #[test]
+    fn advance_slice_refuses_invalid_registry_without_write() {
+        // T-459: advance-slice must share the add/remove preflight — red registry
+        // never mutates active_slice in-memory or on disk.
+        let root = worktree_root();
+        let registry_path = root.join(".ai/tickets/registry.json");
+        let before = fs::read_to_string(&registry_path).expect("read registry before");
+        let mut registry = red_registry(&root);
+
+        let active_before =
+            opt_str(require_ticket(&registry, "T-090"), "active_slice").map(|s| s.to_string());
+
+        let err = cmd_advance_slice(&root, &mut registry, "T-090")
+            .expect_err("advance-slice must refuse a schema-red registry");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing advance-slice T-090"),
+            "expected refuse message, got: {msg}"
+        );
+        assert!(
+            msg.contains("ticket check failed"),
+            "expected check-failed note, got: {msg}"
+        );
+
+        let active_after =
+            opt_str(require_ticket(&registry, "T-090"), "active_slice").map(|s| s.to_string());
+        assert_eq!(
+            active_before, active_after,
+            "advance-slice must not mutate active_slice in-memory when check is red"
+        );
+
+        let after = fs::read_to_string(&registry_path).expect("read registry after");
+        assert_eq!(
+            before, after,
+            "advance-slice must not write registry.json when check is red"
+        );
+    }
+
+    #[test]
     fn require_check_ok_err_matches_set_status_gate() {
-        // Same gate surface ship/set-status/mark-ready/add/remove share
-        // (T-237 / T-451 / T-455).
+        // Same gate surface ship/set-status/mark-ready/add/remove/advance-slice share
+        // (T-237 / T-451 / T-455 / T-459).
         let root = worktree_root();
         let registry = red_registry(&root);
         let err = require_check_ok(&root, &registry, "set-status T-001")
