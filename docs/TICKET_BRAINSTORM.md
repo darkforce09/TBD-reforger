@@ -912,13 +912,6 @@ Cure: delete it or replace with a non-vacuous pin (handler/IT only).
 Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.
 
 Cure: unit test with terrain=arland expecting 4096² ring.
-- **T-437** (deferred) — Destroy-target inert diagnostics still claim entities[] never spawn [MOD, SCHEMA] — Residual from T-254 / wave 9 adversarial MAJOR M1. After T-254, TBD_MissionDocumentStruct models entities[] and SpawnMissionEntities runs on parse, but operator-facing inert strings still blame a build that does not spawn/model entities.
-
-Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c:647 (also banners/comments at :609-620, TBD_ObjectivesComponent.c:694-697, TBD_ObjectiveRules.c:115-117, packages/tbd-schema/schema/mission.schema.json:465).
-
-Repro: author a destroy objective whose alias fails for zone/timing/registry reasons; inertReason still says the build does not spawn entities[] — misdiagnoses live failures.
-
-Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs out-of-zone; update schema prose.
 - **T-440** (deferred) — Cold/schema gates never apply make seed / faction_library.sql [INFRA, CI] — Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
 
 Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.
@@ -936,19 +929,6 @@ Cure: enable FormData/File features, wire multipart api helper, POST /cms/upload
 Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
 
 Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin.
-- **T-470** (deferred) — T-466 Class-R order-blind / unreachable error UI false-green [FE, tests] — Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:
-(1) list_seeded.set(true) before match / outside Ok → PASS
-(2) also seed in Err → PASS (Retry then permanent empty)
-(3) error UI unreachable (.filter(|_| false)) with needles still in source → PASS
-
-Repro: move list_seeded.set(true) before Ok arm → Class-R still green.
-
-Cure: order-sensitive / structural pins (seed only inside Ok arm AST or window); pin Retry reachable (not filtered out); RED→GREEN on verifier perturbations.
-- **T-471** (deferred) — T-468 tripwire accepts hollow Makefile ci-local-schema recipe [INFRA, CI, tests] — Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
-
-Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.
-
-Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

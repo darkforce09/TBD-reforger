@@ -9,6 +9,26 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-437** (3276) — Destroy-target inert diagnostics still claim entities[] never spawn [ready] — Residual from T-254 / wave 9 adversarial MAJOR M1. After T-254, TBD_MissionDocumentStruct models entities[] and SpawnMissionEntities runs on parse, but operator-facing inert strings still blame a build that does not spawn/model entities.
+
+Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c:647 (also banners/comments at :609-620, TBD_ObjectivesComponent.c:694-697, TBD_ObjectiveRules.c:115-117, packages/tbd-schema/schema/mission.schema.json:465).
+
+Repro: author a destroy objective whose alias fails for zone/timing/registry reasons; inertReason still says the build does not spawn entities[] — misdiagnoses live failures.
+
+Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs out-of-zone; update schema prose.
+- **T-470** (3309) — T-466 Class-R order-blind / unreachable error UI false-green [ready] — Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:
+(1) list_seeded.set(true) before match / outside Ok → PASS
+(2) also seed in Err → PASS (Retry then permanent empty)
+(3) error UI unreachable (.filter(|_| false)) with needles still in source → PASS
+
+Repro: move list_seeded.set(true) before Ok arm → Class-R still green.
+
+Cure: order-sensitive / structural pins (seed only inside Ok arm AST or window); pin Retry reachable (not filtered out); RED→GREEN on verifier perturbations.
+- **T-471** (3310) — T-468 tripwire accepts hollow Makefile ci-local-schema recipe [ready] — Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
+
+Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.
+
+Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe.
 
 ## Next queued (top 10)
 

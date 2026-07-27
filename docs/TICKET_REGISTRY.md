@@ -2319,7 +2319,7 @@ Cure: unit test with terrain=arland expecting 4096² ring. |
 Repro before fix: DEPLOY_ENV with TBD_REMOTE_DIR=/tmp/not-tbd-at-all → --dry-run rc=0.
 
 Cure: fail-closed prefix check under /home/sam/tbd/ + case-insensitive prairielearn refuse. |
-| T-437 | 3276 | deferred | platform | Destroy-target inert diagnostics still claim entities[] never spawn | Residual from T-254 / wave 9 adversarial MAJOR M1. After T-254, TBD_MissionDocumentStruct models entities[] and SpawnMissionEntities runs on parse, but operator-facing inert strings still blame a build that does not spawn/model entities.
+| T-437 | 3276 | ready | platform | Destroy-target inert diagnostics still claim entities[] never spawn | Residual from T-254 / wave 9 adversarial MAJOR M1. After T-254, TBD_MissionDocumentStruct models entities[] and SpawnMissionEntities runs on parse, but operator-facing inert strings still blame a build that does not spawn/model entities.
 
 Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c:647 (also banners/comments at :609-620, TBD_ObjectivesComponent.c:694-697, TBD_ObjectiveRules.c:115-117, packages/tbd-schema/schema/mission.schema.json:465).
 
@@ -2507,7 +2507,7 @@ Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-sche
 Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
 
 Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic. |
-| T-470 | 3309 | deferred | platform | T-466 Class-R order-blind / unreachable error UI false-green | Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:
+| T-470 | 3309 | ready | platform | T-466 Class-R order-blind / unreachable error UI false-green | Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:
 (1) list_seeded.set(true) before match / outside Ok → PASS
 (2) also seed in Err → PASS (Retry then permanent empty)
 (3) error UI unreachable (.filter(\|_\| false)) with needles still in source → PASS
@@ -2515,7 +2515,7 @@ Cure: assert status+LOCATION with actionable message; fail soft instead of Index
 Repro: move list_seeded.set(true) before Ok arm → Class-R still green.
 
 Cure: order-sensitive / structural pins (seed only inside Ok arm AST or window); pin Retry reachable (not filtered out); RED→GREEN on verifier perturbations. |
-| T-471 | 3310 | deferred | platform | T-468 tripwire accepts hollow Makefile ci-local-schema recipe | Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
+| T-471 | 3310 | ready | platform | T-468 tripwire accepts hollow Makefile ci-local-schema recipe | Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
 
 Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.
 
