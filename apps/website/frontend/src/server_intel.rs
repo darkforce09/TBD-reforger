@@ -8,19 +8,10 @@
 //! "No servers configured." golden. Server rows stay `Value`-read (the row shape carries more than
 //! the page renders); the SSE frame is the typed `ServerStatusDto`.
 //!
-//! **T-359 — the `Value`-read row is where this file's one silent defect lived, and the cost is
-//! worth naming.** `dto.rs::ServerRowDto` is an exact, R-api-pinned description of a `/servers` row
-//! (T-306 typed it and its golden together), and it has no `terrain` field because the backend has
-//! no such column. But this page is the *only* reader of `/servers` and it reads
-//! `DataEnvelope<Value>`, so `ServerRowDto`'s two references in the whole crate are its own
-//! definition and its own test. A DTO that only its own golden reads proves the wire, not the page —
-//! the mirror of the rule T-306 wrote for `Value`-typed goldens. The `v_*` helpers then finish the
-//! job: each ends in `unwrap_or_default()`, so a key the backend never sends is indistinguishable
-//! from one it sends empty, and `terrain` rendered a placeholder for a month rather than failing
-//! anything. Adopting `DataEnvelope<ServerRowDto>` here would make that class of bug a compile
-//! error; it is not done in this slice because `status` must keep its tolerant two-branch parse
-//! below (a typed row makes one unparseable status fail the whole envelope and take the page with
-//! it), which needs a change in `dto.rs` — not this file's to make.
+//! **T-359 / T-385 — theater readout.** T-359 removed a phantom `terrain` read that always fell
+//! through to "Theater Unknown" because `/servers` had no such key. T-385 landed the
+//! `matches.terrain` LEFT JOIN on the route and the golden; the panel reads `terrain` again and
+//! only labels a theater when the key carries a non-empty string (no permanent placeholder).
 #![allow(dead_code)]
 use crate::dto::{DataEnvelope, ServerStatusDto};
 use crate::ui::{cn, AuthGate, MaterialIcon};
@@ -211,33 +202,21 @@ fn server_panel(s: Value, live_sig: RwSignal<Option<ServerStatusDto>>) -> impl I
     let row_status = StoredValue::new(row_status);
     let live = move || live_sig.get().or_else(|| row_status.get_value());
     let modpack = s.get("required_modpack").cloned().filter(|m| !m.is_null());
-    // No theater *name* is rendered here, because `/servers` does not carry one.
-    //
-    // T-359 — this was `v_str(&s, "terrain")` behind a `"Theater Unknown"` fallback, and the
-    // fallback was not the edge case, it was the only case. `servers` has six columns —
-    // `id, name, ip, port, required_modpack_id, is_active` (`information_schema`, measured) — and
-    // `terrain` is not one of them, so `handlers/servers.rs::server_intel` never had it to serve
-    // and no response ever carried the key. `v_str` collapses an absent key to `""`, the
-    // `is_empty()` branch turned `""` into product copy, and so every server rendered
-    // "Theater Unknown" on every load. That is worse than rendering nothing: a permanent
-    // placeholder claims the field exists and went missing, when nothing was ever asked for.
-    //
-    // The theater is real data — it is just not on this row. `matches.terrain` holds it and
-    // `server_statuses.current_match_id` is the key to it; both exist today and the seeded primary
-    // joins cleanly (`TBD Primary — Everon` → match `…f000-…0003` → `everon`). What is missing is
-    // a **route**: the only `matches` endpoint is `POST /api/v1/ingest/match-results`, so the SPA
-    // holds the foreign key with no way to dereference it. The fix is one `LEFT JOIN` in
-    // `handlers/servers.rs::server_intel` surfacing `terrain` on `ServerIntelDto`, then the field
-    // on `dto.rs::ServerRowDto` and a recaptured `/servers` golden. No migration and no ingest
-    // change: the game server already sends terrain, on `MatchInput` (`handlers/telemetry.rs:341`),
-    // and storing it on `servers` would be the wrong shape anyway — a server's theater belongs to
-    // the match running on it, and rotates with it, while `servers` is static config.
-    //
-    // Do **not** pre-declare `terrain` on the DTO ahead of that route. An `Option<String>` with
-    // `skip_serializing_if` round-trips absent → `None` → absent, so the R-api gate would stay
-    // green over a field the backend never sends — the same "the gate asserts nothing" defect
-    // T-306 deleted the `#[serde(flatten)] extra` catch-all to prevent. The field arrives together
-    // with its golden, or not at all; `mod t359` below is the tripwire for the day it does.
+    // T-385 — theater name from the join-sourced `terrain` key. Absent/null/empty means no live
+    // match theater (honest absence). Do not invent a permanent placeholder label when the key is
+    // empty — that was the T-359 defect.
+    let terrain_name = {
+        let t = v_str(&s, "terrain");
+        if t.is_empty() {
+            None
+        } else {
+            Some(t.to_string())
+        }
+    };
+    let theater_alt = terrain_name
+        .as_ref()
+        .map(|n| format!("{n} terrain"))
+        .unwrap_or_else(|| "Theater of operations".into());
 
     let copy_address = move |_| {
         #[cfg(target_arch = "wasm32")]
@@ -378,28 +357,28 @@ fn server_panel(s: Value, live_sig: RwSignal<Option<ServerStatusDto>>) -> impl I
                     </span>
                     <a href="/events" class="block focus:outline-none">
                         <div class="group relative aspect-[21/9] w-full cursor-pointer overflow-hidden rounded-lg border border-white/10 transition-all duration-300 hover:ring-2 hover:ring-primary hover:ring-offset-2 hover:ring-offset-background">
-                            // `THEATER_IMAGE` is one hardcoded const shared by every server and
-                            // every terrain, so the alt text describes the decoration rather than
-                            // naming a theater it cannot know (matching `dashboard.rs`'s
-                            // `alt="Operation theater"`). It previously read
-                            // "Theater Unknown terrain", repeating the placeholder to screen
-                            // readers.
                             <img
-                                alt="Theater of operations"
+                                alt=theater_alt.clone()
                                 src=THEATER_IMAGE
                                 class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                             />
                             <div class="absolute inset-0 bg-gradient-to-t from-surface-container-highest/90 via-surface-container-highest/20 to-transparent"></div>
                             <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                                 <div>
-                                    // The mission line is the one fact this column actually has,
-                                    // and it is honest in both states: a live `current_match_id`
-                                    // names the running match, and its absence is a true statement
-                                    // ("No Active Mission"), not a stand-in for data that failed to
-                                    // arrive. The theater-name span that used to sit above it is
-                                    // gone with the phantom `terrain` read; the `mt-0.5` went with
-                                    // it, since this span no longer follows anything.
-                                    <span class="block text-label-sm text-primary">
+                                    {terrain_name.clone().map(|name| {
+                                        view! {
+                                            <span class="block text-label-md text-on-surface">
+                                                {name}
+                                            </span>
+                                        }
+                                    })}
+                                    <span class=move || {
+                                        if terrain_name.is_some() {
+                                            "mt-0.5 block text-label-sm text-primary".to_string()
+                                        } else {
+                                            "block text-label-sm text-primary".to_string()
+                                        }
+                                    }>
                                         {move || {
                                             live()
                                                 .and_then(|l| l.current_match_id)
@@ -515,32 +494,69 @@ fn env_row(
 }
 
 #[cfg(test)]
-mod t359 {
-    /// The committed `/servers` golden must carry **no** `terrain` key on any row.
+mod t385 {
+    /// Class-R flip of T-359's assert-absent tripwire: the committed `/servers` golden **must**
+    /// carry `terrain` from the match join. Primary (current_match_id set) pins `"everon"`;
+    /// unmatched rows pin explicit JSON `null` (same encoding as `status`).
     ///
-    /// An assert-absent test, deliberately. It pins the measured fact the theater-name removal
-    /// rests on, and — more usefully — it is the tripwire for whoever lands the backend join: the
-    /// day `handlers/servers.rs::server_intel` surfaces `terrain` and this golden is recaptured,
-    /// this test fails and the message says to put the readout back. Without it the next agent
-    /// either re-derives the whole investigation, or adds the field to the DTO and leaves the panel
-    /// silent — which is how a fix for "renders a placeholder" becomes "renders nothing, forever".
-    ///
-    /// It reads the same fixture corpus as the R-api gate (`dto.rs` `const FX`), so it moves with
-    /// the goldens rather than duplicating a copy of the wire.
+    /// Removing the key, or softening it to Option+skip ahead of a live value, makes this RED —
+    /// which is the whole point.
     #[test]
-    fn servers_golden_carries_no_terrain() {
+    fn servers_golden_carries_terrain_from_match_join() {
         const GOLDEN: &str = include_str!("../tests/fixtures/api/GET__servers.json");
         let v: serde_json::Value = serde_json::from_str(GOLDEN).expect("golden parses");
         let rows = v["data"].as_array().expect("golden has a `data` array");
-        // An empty corpus would pass the loop below while proving nothing.
         assert!(!rows.is_empty(), "golden must carry rows to assert against");
+
+        let primary = &rows[0];
+        assert_eq!(
+            primary.get("terrain").and_then(|t| t.as_str()),
+            Some("everon"),
+            "primary server (current_match_id → matches.terrain) must carry terrain \"everon\""
+        );
+
         for (i, r) in rows.iter().enumerate() {
             assert!(
-                r.get("terrain").is_none(),
-                "GET /servers row {i} now carries `terrain` — the backend join has landed. Restore \
-                 the theater-name readout in `server_panel` (see the T-359 note there), type it \
-                 through `dto.rs::ServerRowDto`, and delete this test."
+                r.as_object().expect("row object").contains_key("terrain"),
+                "GET /servers row {i} must carry an explicit `terrain` key (string or null) — \
+                 T-385 Class-R. Do not drop it or hide it behind skip_serializing_if."
             );
         }
+
+        // Unmatched rows: explicit null, not absent.
+        assert!(
+            rows[1].get("terrain").is_some_and(|t| t.is_null()),
+            "secondary (no current_match_id) must serialize terrain as null"
+        );
+        assert!(
+            rows[2].get("terrain").is_some_and(|t| t.is_null()),
+            "staging (no status) must serialize terrain as null"
+        );
+    }
+
+    /// Panel source must read `terrain` again — deleting the readout without removing the route
+    /// field recreates the "wire proves nothing about the page" hole T-359 documented.
+    #[test]
+    fn server_panel_reads_terrain_key() {
+        const SRC: &str = include_str!("server_intel.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source before tests");
+        let panel = production
+            .split("fn server_panel")
+            .nth(1)
+            .expect("server_panel fn")
+            .split("\nfn ")
+            .next()
+            .expect("panel body");
+        assert!(
+            panel.contains("v_str(&s, \"terrain\")"),
+            "server_panel must read the terrain key restored by T-385"
+        );
+        assert!(
+            !panel.contains("Theater Unknown"),
+            "do not restore the T-359 permanent placeholder inside server_panel"
+        );
     }
 }

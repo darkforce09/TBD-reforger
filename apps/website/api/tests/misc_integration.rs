@@ -374,9 +374,9 @@ async fn servers_crud_full_lifecycle() {
         "absent, not null — matches `GET /servers` and dto.rs::ServerRowDto"
     );
     assert!(
-        created.get("terrain").is_none(),
-        "the row must not grow a `terrain` key — T-359's tripwire and T-385's handoff both \
-         depend on it being absent, and T-235 does not touch server_intel()'s query"
+        created.get("terrain").is_some_and(|t| t.is_null()),
+        "T-385: fresh create has no current_match — terrain is explicit JSON null \
+         (same encoding as status), never omitted via skip_serializing_if"
     );
 
     // ── LIST — the row the SPA renders ───────────────────────────────────────────
@@ -797,9 +797,10 @@ async fn servers_write_validation_rejects_at_the_boundary() {
 /// somebody pastes the two `.route(...)` entries from that function's doc comment into
 /// `app::api_routes`, this test fails and the message says what to delete.
 ///
-/// Same contract as T-359's `servers_golden_carries_no_terrain`, and for the same reason: without
-/// it the merge shim outlives its purpose as a permanent second route table that nobody remembers
-/// is there, and the next reader cannot tell whether the handoff was ever applied.
+/// Same contract as T-385's flipped `servers_golden_carries_terrain_from_match_join` (was T-359's
+/// assert-absent tripwire), and for the same reason: without it the merge shim outlives its purpose
+/// as a permanent second route table that nobody remembers is there, and the next reader cannot tell
+/// whether the handoff was ever applied.
 #[tokio::test]
 async fn servers_crud_registration_pending_in_app_rs() {
     let Some(url) = std::env::var("TEST_DATABASE_URL").ok() else {

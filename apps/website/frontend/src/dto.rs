@@ -277,12 +277,17 @@ fn is_power_of_ten(n: u64) -> bool {
 }
 
 /// One `GET /servers` row — the backend `handlers::servers::ServerIntelDto`: a flattened `Server`
-/// plus its live `status` and required modpack.
+/// plus its live `status`, required modpack, and join-sourced theater (`matches.terrain`).
 ///
 /// **`status` is deliberately NOT `skip_serializing_if`.** The backend field is a plain
 /// `Option<ServerStatus>`, so a server with no telemetry row serializes as an explicit
 /// `"status": null` — which the third row of the committed golden carries. Omitting it here would
 /// break the canonical byte-equality. `required_modpack` *is* skipped, matching the backend.
+///
+/// **`terrain` is the same contract as `status` (T-385).** Explicit `null` when the server has no
+/// current match — never `Option` + `skip_serializing_if`. That encoding would round-trip
+/// absent→None→absent and keep this gate green over a field the route never sends (the T-306 /
+/// T-359 hazard). The golden carries `"terrain":"everon"` on the primary (joined) row.
 ///
 /// No `#[serde(flatten)] extra` catch-all, on purpose: a catch-all re-emits fields the struct does
 /// not know about, so the round-trip would still pass the day the backend grows a field — the exact
@@ -302,6 +307,8 @@ pub struct ServerRowDto {
     pub status: Option<ServerStatusDto>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub required_modpack: Option<ModpackDto>,
+    /// Theater from `matches.terrain` via `current_match_id` — JSON `null` when unmatched.
+    pub terrain: Option<String>,
 }
 
 /// One approvals-queue row — mirrors `types/api` `ApprovalRow` (`GET /approvals`).
