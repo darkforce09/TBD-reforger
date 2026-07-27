@@ -47,14 +47,37 @@ pub async fn get_dashboard(
     let pool = &state.pool;
 
     // Next upcoming operation.
+    //
+    // Prefer an event the caller themselves created when one is upcoming (T-410). The
+    // global `ORDER BY start_time ASC LIMIT 1` alone is a ratchet on never-pruned gate
+    // DBs: any residue row with an earlier start_time steals the slot, which is why
+    // `dashboard_reads` was weakened to key-presence. Prefer-mine keeps the community
+    // fallback for users who have never created an event (enlisted browsing the home
+    // bento) while letting an admin/mission_maker fixture win deterministically.
     let next_event: Option<EventSummary> = {
-        let ev: Option<Event> = sqlx::query_as(
-            "SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, server_id, modpack_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE start_time > now() \
-             AND status::text IN ('scheduled', 'open', 'live') AND deleted_at IS NULL \
-             ORDER BY start_time ASC LIMIT 1",
-        )
-        .fetch_optional(pool)
-        .await?;
+        let ev: Option<Event> = {
+            let mine: Option<Event> = sqlx::query_as(
+                "SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, server_id, modpack_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE start_time > now() \
+                 AND status::text IN ('scheduled', 'open', 'live') AND deleted_at IS NULL \
+                 AND created_by = $1 \
+                 ORDER BY start_time ASC LIMIT 1",
+            )
+            .bind(me)
+            .fetch_optional(pool)
+            .await?;
+            match mine {
+                Some(ev) => Some(ev),
+                None => {
+                    sqlx::query_as(
+                        "SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, server_id, modpack_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE start_time > now() \
+                         AND status::text IN ('scheduled', 'open', 'live') AND deleted_at IS NULL \
+                         ORDER BY start_time ASC LIMIT 1",
+                    )
+                    .fetch_optional(pool)
+                    .await?
+                }
+            }
+        };
         match ev {
             Some(ev) => {
                 let em: Option<EventMission> = sqlx::query_as(

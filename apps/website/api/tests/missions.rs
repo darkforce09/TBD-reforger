@@ -74,6 +74,79 @@ fn json(bytes: &[u8]) -> Value {
     serde_json::from_slice(bytes).unwrap_or(Value::Null)
 }
 
+/// Walk a `{data,total,limit,offset}` missions list until `id` appears or the pages end.
+///
+/// **Do not shrink this back to "is it on page 1" (T-410).** `list_missions` is
+/// `ORDER BY updated_at DESC LIMIT 20`, and `updated_at` is nullable with no default —
+/// Postgres sorts NULLS FIRST on DESC. Residue missions with NULL `updated_at` occupy
+/// page 1 forever; a freshly created row is not guaranteed to be on it. Same shape as
+/// the T-399 approvals ratchet (`admin_field::find_in_approvals`).
+async fn find_id_in_missions_list(app: &Router, bearer: &str, uri_base: &str, id: &str) -> bool {
+    const PAGE: usize = 100;
+    const MAX_OFFSET: usize = 1_000;
+    let mut offset = 0usize;
+    let sep = if uri_base.contains('?') { '&' } else { '?' };
+    loop {
+        let uri = format!("{uri_base}{sep}limit={PAGE}&offset={offset}");
+        let (st, b) = call(app, "GET", &uri, Some(bearer), None, None).await;
+        assert_eq!(
+            st,
+            StatusCode::OK,
+            "missions list at offset {offset}: {}",
+            String::from_utf8_lossy(&b)
+        );
+        let body = json(&b);
+        let rows = body["data"]
+            .as_array()
+            .unwrap_or_else(|| panic!("{uri} missing data: {body}"));
+        if rows.iter().any(|r| r["id"].as_str() == Some(id)) {
+            return true;
+        }
+        if rows.len() < PAGE {
+            return false;
+        }
+        offset += rows.len();
+        assert!(
+            offset < MAX_OFFSET,
+            "{uri_base} paging never terminated (offset {offset}) — is LIMIT being applied?"
+        );
+    }
+}
+
+/// Walk `GET /approvals` pages until `mission_id` appears. Twin of
+/// `admin_field::find_in_approvals` (T-399); the submit-path test in this file still
+/// asserted page 1 only and reds shared gate DBs once residue passes 20 (T-410).
+async fn find_in_approvals(app: &Router, admin: &str, mission_id: &str) -> Option<Value> {
+    const PAGE: usize = 100;
+    const MAX_OFFSET: usize = 1_000;
+    let mut offset = 0usize;
+    loop {
+        let uri = format!("/api/v1/approvals?limit={PAGE}&offset={offset}");
+        let (st, b) = call(app, "GET", &uri, Some(admin), None, None).await;
+        assert_eq!(
+            st,
+            StatusCode::OK,
+            "approvals at offset {offset}: {}",
+            String::from_utf8_lossy(&b)
+        );
+        let body = json(&b);
+        let rows = body["data"]
+            .as_array()
+            .unwrap_or_else(|| panic!("approvals page has no `data` array: {body}"));
+        if let Some(row) = rows.iter().find(|r| r["mission_id"] == mission_id) {
+            return Some(row.clone());
+        }
+        if rows.len() < PAGE {
+            return None;
+        }
+        offset += rows.len();
+        assert!(
+            offset < MAX_OFFSET,
+            "approvals paging never terminated (offset {offset}) — is LIMIT being applied?"
+        );
+    }
+}
+
 /// `call` with the `Content-Type` under the caller's control, and a body that can be sent
 /// without one at all (`ct: None`). `call` always pairs a body with `application/json`, which
 /// is exactly the header a fat-fingered client gets wrong, so the T-315 cases below cannot be
@@ -145,18 +218,16 @@ async fn mission_lifecycle_and_compiled() {
     assert_eq!(d["bookmarked"], false);
     assert_eq!(d["current_version"]["semver"], "0.1.0");
 
-    // Library list envelope.
+    // Library list envelope — paginate; page-1 `.any(id)` ratchets on NULL updated_at (T-410).
     let (st, b) = call(&app, "GET", "/api/v1/missions", t, None, None).await;
     assert_eq!(st, StatusCode::OK);
     let list = json(&b);
-    assert!(
-        list["data"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|c| c["id"] == id.as_str())
-    );
     assert!(list["total"].is_number());
+    assert!(
+        find_id_in_missions_list(&app, tok.as_str(), "/api/v1/missions", &id).await,
+        "created mission missing from GET /missions (paginated): total={}",
+        list["total"]
+    );
 
     // Patch title.
     let (st, b) = call(
@@ -237,21 +308,11 @@ async fn mission_lifecycle_and_compiled() {
     .await;
     assert_eq!(st, StatusCode::OK);
     assert_eq!(json(&b)["bookmarked"], true);
-    let (_, b) = call(
-        &app,
-        "GET",
-        "/api/v1/missions?scope=bookmarked",
-        t,
-        None,
-        None,
-    )
-    .await;
+    // Bookmarked scope — same ORDER BY / LIMIT ratchet as the global list (T-410).
     assert!(
-        json(&b)["data"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|c| c["id"] == id.as_str())
+        find_id_in_missions_list(&app, tok.as_str(), "/api/v1/missions?scope=bookmarked", &id)
+            .await,
+        "bookmarked mission missing from GET /missions?scope=bookmarked (paginated)"
     );
     let (st, b) = call(
         &app,
@@ -990,20 +1051,11 @@ async fn mission_submit_is_the_only_door_into_the_approvals_queue() {
     let (st, _) = call(&app, "GET", "/api/v1/approvals", Some(&maker), None, None).await;
     assert_eq!(st, StatusCode::FORBIDDEN, "queue must be admin-only");
 
-    let (st, b) = call(&app, "GET", "/api/v1/approvals", Some(&admin), None, None).await;
-    assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
-    let row = json(&b)["data"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|r| r["mission_id"] == mid.as_str())
-        .cloned()
-        .unwrap_or_else(|| {
-            panic!(
-                "submitted mission missing from GET /approvals: {}",
-                json(&b)
-            )
-        });
+    // Paginate the queue — page-1 LIMIT 20 reds once residue > 20 (measured total 26 on
+    // tbd_gate_it during wave 5; T-399 missed this site, T-410 closes it).
+    let row = find_in_approvals(&app, &admin, &mid)
+        .await
+        .unwrap_or_else(|| panic!("submitted mission missing from GET /approvals (paginated)"));
     assert_eq!(row["title"], title.as_str());
     assert!(
         row["submitted_at"]
