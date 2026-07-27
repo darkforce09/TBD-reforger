@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use serde_json::{Value, json};
 use std::fs;
 use std::path::Path;
@@ -8,7 +8,19 @@ use crate::check::require_check_ok;
 use crate::gap::test_gap_analysis_round_trip;
 use crate::prompt::extract_prompt;
 use crate::registry::*;
-use crate::sync::{cmd_sync, generate_queue_json};
+use crate::sync::{cmd_sync, generate_queue_json, refuse_empty_write};
+
+/// Ticket status enum — mirrors `.ai/tickets/schema.json` `$defs.status` (T-383).
+const VALID_TICKET_STATUSES: &[&str] = &[
+    "idea",
+    "queued",
+    "ready",
+    "running",
+    "review",
+    "shipped",
+    "deferred",
+    "cancelled",
+];
 
 pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
     let t = require_ticket(registry, id);
@@ -789,6 +801,21 @@ pub fn cmd_ready_ids(
 }
 
 pub fn cmd_set_status(root: &Path, registry: &mut Value, id: &str, status: &str) -> Result<()> {
+    // T-383: reject empty / invalid status before any write — never stamp `""` over registry.
+    let status = status.trim();
+    refuse_empty_write(
+        &format!("set-status {id}"),
+        status.is_empty(),
+        "status must be non-empty (refusing to write \"\" over registry)",
+    )?;
+    if !VALID_TICKET_STATUSES.contains(&status) {
+        bail!(
+            "refusing set-status {id}: invalid status `{status}` \
+             (expected one of: {})",
+            VALID_TICKET_STATUSES.join(", ")
+        );
+    }
+
     // T-451: refuse status writes when the registry fails ticket check
     // (same bar as ship/done — T-237). No silent escape hatch; a red registry
     // must be fixed before any status mutator may write.
@@ -1058,6 +1085,62 @@ mod tests {
             .expect("obj")
             .insert("status".into(), json!("not-a-real-status"));
         registry
+    }
+
+    #[test]
+    fn set_status_refuses_empty_without_write() {
+        // T-383 Class-R: empty status must not overwrite a live registry field.
+        let root = worktree_root();
+        let registry_path = root.join(".ai/tickets/registry.json");
+        let before = fs::read_to_string(&registry_path).expect("read registry before");
+        let mut registry = load_registry(&root).expect("load tip registry");
+        let status_before = opt_str(require_ticket(&registry, "T-001"), "status")
+            .unwrap_or("")
+            .to_string();
+
+        let err = cmd_set_status(&root, &mut registry, "T-001", "")
+            .expect_err("set-status must refuse empty status");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing empty write") || msg.contains("non-empty"),
+            "expected empty refuse, got: {msg}"
+        );
+
+        let status_after = opt_str(require_ticket(&registry, "T-001"), "status")
+            .unwrap_or("")
+            .to_string();
+        assert_eq!(
+            status_before, status_after,
+            "empty set-status must not mutate in-memory status"
+        );
+        let after = fs::read_to_string(&registry_path).expect("read registry after");
+        assert_eq!(
+            before, after,
+            "empty set-status must not write registry.json"
+        );
+    }
+
+    #[test]
+    fn set_status_refuses_invalid_enum_without_write() {
+        // T-383 Class-R: invalid enum must not overwrite a live registry field.
+        let root = worktree_root();
+        let registry_path = root.join(".ai/tickets/registry.json");
+        let before = fs::read_to_string(&registry_path).expect("read registry before");
+        let mut registry = load_registry(&root).expect("load tip registry");
+
+        let err = cmd_set_status(&root, &mut registry, "T-001", "not-a-real-status")
+            .expect_err("set-status must refuse invalid enum");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("invalid status") && msg.contains("not-a-real-status"),
+            "expected invalid-enum refuse, got: {msg}"
+        );
+
+        let after = fs::read_to_string(&registry_path).expect("read registry after");
+        assert_eq!(
+            before, after,
+            "invalid set-status must not write registry.json"
+        );
     }
 
     #[test]

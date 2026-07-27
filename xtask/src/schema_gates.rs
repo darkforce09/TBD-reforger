@@ -14,10 +14,11 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use serde_json::Value;
 
 use crate::root::find_repo_root as repo_root;
+use crate::sync::refuse_empty_write;
 
 fn read_json(p: &Path) -> Result<Value> {
     let raw = fs::read_to_string(p).with_context(|| format!("read {}", p.display()))?;
@@ -1139,6 +1140,28 @@ pub fn t090_specs() -> Result<u8> {
 pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
     let file = PathBuf::from(path);
     let mut mission = read_json(&file)?;
+    let prior_schema = mission.get("schemaVersion").cloned();
+    let prior_slots: Vec<Value> = mission
+        .get("slots")
+        .and_then(|s| s.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let prior_by_id: BTreeMap<String, Value> = prior_slots
+        .iter()
+        .filter_map(|s| {
+            s.get("id")
+                .and_then(|i| i.as_str())
+                .map(|id| (id.to_string(), s.clone()))
+        })
+        .collect();
+    let prior_loadout_n = prior_slots
+        .iter()
+        .filter(|s| s.get("loadout").is_some())
+        .count();
+    let prior_uid_n = prior_slots
+        .iter()
+        .filter(|s| s.get("uid").is_some())
+        .count();
 
     let mut anchors: BTreeMap<String, (f64, f64)> = BTreeMap::new();
     for zone in mission["zones"].as_array().into_iter().flatten() {
@@ -1176,8 +1199,12 @@ pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
                     let z = anchor.1 + angle.sin() * radius;
                     let heading =
                         (((anchor.0 - x).atan2(anchor.1 - z).to_degrees()) + 360.0) % 360.0;
-                    slots.push(serde_json::json!({
-                        "id": format!("{faction_key}:{callsign}:{}:{i}", role["slot"].as_str().unwrap_or_default()),
+                    let id = format!(
+                        "{faction_key}:{callsign}:{}:{i}",
+                        role["slot"].as_str().unwrap_or_default()
+                    );
+                    let mut slot = serde_json::json!({
+                        "id": id,
                         "faction": faction_key,
                         "groupCallsign": callsign,
                         "role": role["slot"],
@@ -1185,15 +1212,59 @@ pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
                         "x": (x * 10.0).round() / 10.0,
                         "z": (z * 10.0).round() / 10.0,
                         "headingDeg": heading.round(),
-                    }));
+                    });
+                    // T-383: preserve optional schema keys from prior slots / role (loadout, uid).
+                    // Prefer role-authored values; fall back to matching prior slot by id.
+                    let prior = prior_by_id.get(slot["id"].as_str().unwrap_or(""));
+                    if let Some(uid) = role.get("uid").filter(|v| !v.is_null()) {
+                        slot["uid"] = uid.clone();
+                    } else if let Some(uid) = prior.and_then(|p| p.get("uid")) {
+                        slot["uid"] = uid.clone();
+                    }
+                    if let Some(loadout) = role.get("loadout").filter(|v| !v.is_null()) {
+                        slot["loadout"] = loadout.clone();
+                    } else if let Some(loadout) = prior.and_then(|p| p.get("loadout")) {
+                        slot["loadout"] = loadout.clone();
+                    }
+                    if let Some(y) = prior.and_then(|p| p.get("y")) {
+                        slot["y"] = y.clone();
+                    }
+                    slots.push(slot);
                     slot_index += 1;
                 }
             }
         }
     }
 
-    mission["schemaVersion"] = Value::String("1.1".into());
     let n = slots.len();
+    let new_loadout_n = slots.iter().filter(|s| s.get("loadout").is_some()).count();
+    let new_uid_n = slots.iter().filter(|s| s.get("uid").is_some()).count();
+
+    if in_place {
+        // T-383: refuse empty / lossy in-place overwrite of committed goldens.
+        refuse_empty_write(
+            &format!("flatten-orbat-slots --in-place {}", file.display()),
+            n == 0 && !prior_slots.is_empty(),
+            "would write empty slots[] over a non-empty committed slots array",
+        )?;
+        if new_loadout_n < prior_loadout_n || new_uid_n < prior_uid_n {
+            bail!(
+                "refusing empty write (flatten-orbat-slots --in-place {}): \
+                 would drop loadout ({prior_loadout_n}→{new_loadout_n}) or \
+                 uid ({prior_uid_n}→{new_uid_n}) from committed slots",
+                file.display()
+            );
+        }
+        // Preserve deliberate schemaVersion (e.g. 1.0 last-stand fixture) — never force-stamp 1.1.
+        if prior_schema.is_none() {
+            mission["schemaVersion"] = Value::String("1.1".into());
+        }
+        // else: leave schemaVersion untouched
+    } else {
+        // stdout transform: emit the 1.1 flattened shape (tool default).
+        mission["schemaVersion"] = Value::String("1.1".into());
+    }
+
     mission["slots"] = Value::Array(slots);
     let out = serde_json::to_string_pretty(&mission)? + "\n";
     if in_place {
@@ -2538,5 +2609,124 @@ pub fn map_glyphs() -> Result<u8> {
             eprintln!("  {e}");
         }
         Ok(1)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::io::Write;
+
+    fn write_temp_mission(name: &str, value: &Value) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("t383-flatten-{}", std::process::id()));
+        fs::create_dir_all(&dir).expect("tmpdir");
+        let path = dir.join(name);
+        let mut f = fs::File::create(&path).expect("create");
+        f.write_all(serde_json::to_string_pretty(value).unwrap().as_bytes())
+            .unwrap();
+        f.write_all(b"\n").unwrap();
+        path
+    }
+
+    /// Minimal mission with orbat that produces one slot id matching a prior slot.
+    fn mission_with_prior_loadout_uid() -> Value {
+        json!({
+            "schemaVersion": "1.1",
+            "meta": {"title": "t383"},
+            "factions": [],
+            "orbat": {
+                "blufor": {
+                    "groups": [{
+                        "callsign": "Ranger",
+                        "roles": [{"slot": "SL", "kit": "kit:us_sl", "count": 1}]
+                    }]
+                }
+            },
+            "zones": [],
+            "flow": {},
+            "winConditions": {},
+            "slots": [{
+                "id": "blufor:Ranger:SL:0",
+                "uid": "keep-me",
+                "faction": "blufor",
+                "groupCallsign": "Ranger",
+                "role": "SL",
+                "kit": "kit:us_sl",
+                "x": 0.0,
+                "z": 0.0,
+                "headingDeg": 0.0,
+                "loadout": {"gear": {"primary": "Rifle.et"}}
+            }]
+        })
+    }
+
+    #[test]
+    fn flatten_in_place_preserves_loadout_uid_and_schema() {
+        let path = write_temp_mission("preserve.json", &mission_with_prior_loadout_uid());
+        let before = fs::read_to_string(&path).unwrap();
+        flatten_orbat_slots(path.to_str().unwrap(), true).expect("in-place must succeed");
+        let after: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(after["schemaVersion"], "1.1");
+        let slot = &after["slots"][0];
+        assert_eq!(slot["uid"], "keep-me");
+        assert_eq!(slot["loadout"]["gear"]["primary"], "Rifle.et");
+        // Must have rewritten (coordinates change) but not dropped fields.
+        assert_ne!(before, fs::read_to_string(&path).unwrap());
+    }
+
+    #[test]
+    fn flatten_in_place_preserves_schema_version_1_0() {
+        let mut m = mission_with_prior_loadout_uid();
+        m["schemaVersion"] = json!("1.0");
+        // 1.0 fixture has no slots requirement — clear slots so preserve path is schema-only.
+        m["slots"] = json!([]);
+        let path = write_temp_mission("sv10.json", &m);
+        flatten_orbat_slots(path.to_str().unwrap(), true).expect("ok");
+        let after: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(
+            after["schemaVersion"], "1.0",
+            "in-place must not force-stamp schemaVersion 1.1 over deliberate 1.0"
+        );
+        assert!(after["slots"].as_array().unwrap().len() >= 1);
+    }
+
+    #[test]
+    fn flatten_in_place_refuses_lossy_loadout_drop() {
+        // Prior slot id does NOT match what flatten will emit → loadout/uid would be dropped.
+        let mut m = mission_with_prior_loadout_uid();
+        m["slots"][0]["id"] = json!("blufor:Other:SL:0");
+        let path = write_temp_mission("lossy.json", &m);
+        let before = fs::read_to_string(&path).unwrap();
+        let err = flatten_orbat_slots(path.to_str().unwrap(), true)
+            .expect_err("must refuse lossy in-place");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing empty write")
+                && (msg.contains("loadout") || msg.contains("uid")),
+            "expected lossy refuse, got: {msg}"
+        );
+        assert_eq!(
+            before,
+            fs::read_to_string(&path).unwrap(),
+            "lossy refuse must not overwrite the file"
+        );
+    }
+
+    #[test]
+    fn flatten_in_place_refuses_empty_slots_overwrite() {
+        // Orbat empty → 0 slots, but prior had slots → refuse.
+        let mut m = mission_with_prior_loadout_uid();
+        m["orbat"] = json!({});
+        let path = write_temp_mission("empty-slots.json", &m);
+        let before = fs::read_to_string(&path).unwrap();
+        let err = flatten_orbat_slots(path.to_str().unwrap(), true)
+            .expect_err("must refuse empty overwrite");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing empty write") && msg.contains("empty slots"),
+            "expected empty-slots refuse, got: {msg}"
+        );
+        assert_eq!(before, fs::read_to_string(&path).unwrap());
     }
 }

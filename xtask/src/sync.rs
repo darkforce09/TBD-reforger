@@ -9,6 +9,15 @@ use crate::gap::sync_gap_analysis_ticket_column;
 use crate::registry::*;
 use crate::root::gap_analysis_path;
 
+/// T-383 — shared refuse-empty-write guard (lives under owns so cmds/schema_gates can call it).
+/// A success path must not overwrite committed content with structurally empty / vacuous output.
+pub fn refuse_empty_write(context: &str, empty: bool, detail: &str) -> Result<()> {
+    if empty {
+        bail!("refusing empty write ({context}): {detail}");
+    }
+    Ok(())
+}
+
 pub fn cmd_sync(root: &Path, registry: &Value) -> Result<()> {
     fs::create_dir_all(root.join("docs"))?;
 
@@ -396,25 +405,53 @@ fn inject_marker_block(path: &Path, start: &str, end: &str, inner: &str) -> Resu
     if !text.contains(start) || !text.contains(end) {
         bail!("Missing markers in {}: {} / {}", path.display(), start, end);
     }
+    let inner_r = inner.trim_end();
+    // T-383: never collapse a marker to whitespace / bare heading with no body lines.
+    refuse_empty_write(
+        &format!("marker {}", path.display()),
+        marker_inner_is_vacuous(inner_r),
+        "inner block is structurally empty (would collapse committed marker content)",
+    )?;
     let (before, rest) = text.split_once(start).unwrap();
     let (_, after) = rest.split_once(end).unwrap();
-    let inner_r = inner.trim_end();
     let new_text = format!("{before}{start}\n{inner_r}\n{end}{after}");
     fs::write(path, new_text)?;
     Ok(())
 }
 
+/// Vacuous = blank, or only a markdown heading + blank lines (no bullet / bold body).
+fn marker_inner_is_vacuous(inner: &str) -> bool {
+    let substantive: Vec<&str> = inner
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .filter(|l| !(l.starts_with('#') && !l.contains("**")))
+        .collect();
+    substantive.is_empty()
+}
+
 fn inject_status_block(root: &Path, registry: &Value) -> Result<()> {
     let all = tickets(registry);
+    refuse_empty_write(
+        "CLAUDE.md status block",
+        all.is_empty(),
+        "registry.tickets missing or empty — refusing status sync (no T-066 fallback)",
+    )?;
     let mut shipped: Vec<&Value> = all
         .iter()
         .filter(|t| opt_str(t, "status") == Some("shipped"))
         .collect();
     shipped.sort_by(|a, b| order_or(b, 9999).cmp(&order_or(a, 9999)));
-    let latest = shipped
-        .first()
-        .map(|t| str_field(t, "id"))
-        .unwrap_or_else(|| "T-066".into());
+    // T-383: never invent a hardcoded "T-066" — refuse when nothing is shipped.
+    let latest = match shipped.first() {
+        Some(t) => str_field(t, "id"),
+        None => {
+            bail!(
+                "refusing empty write (CLAUDE.md status block): no shipped tickets — \
+                 refusing hardcoded T-066 fallback"
+            );
+        }
+    };
 
     let mut lines = vec![format!("**Latest shipped:** **{latest}**"), "".into()];
 
@@ -469,11 +506,13 @@ fn inject_status_block(root: &Path, registry: &Value) -> Result<()> {
 }
 
 fn inject_next_block(root: &Path, registry: &Value) -> Result<()> {
-    let mut lines = vec![
-        "### Recommended next work (auto-generated)".into(),
-        "".into(),
-    ];
-    let mut open_t: Vec<&Value> = tickets(registry)
+    let all = tickets(registry);
+    refuse_empty_write(
+        "ROADMAP next block",
+        all.is_empty(),
+        "registry.tickets missing or empty — would collapse ROADMAP marker to bare heading",
+    )?;
+    let mut open_t: Vec<&Value> = all
         .iter()
         .filter(|t| {
             matches!(
@@ -483,6 +522,16 @@ fn inject_next_block(root: &Path, registry: &Value) -> Result<()> {
         })
         .collect();
     open_t.sort_by_key(|t| (order_or(t, 9999), str_field(t, "id")));
+    // T-383: bare "### Recommended next work" with zero bullets is a vacuous overwrite.
+    refuse_empty_write(
+        "ROADMAP next block",
+        open_t.is_empty(),
+        "no ready/queued/running/review tickets — refusing bare-heading collapse",
+    )?;
+    let mut lines = vec![
+        "### Recommended next work (auto-generated)".into(),
+        "".into(),
+    ];
     for t in open_t.into_iter().take(10) {
         lines.push(format!(
             "- **{}** — {} ({})",
@@ -497,4 +546,78 @@ fn inject_next_block(root: &Path, registry: &Value) -> Result<()> {
         NEXT_MARKER_END,
         &lines.join("\n"),
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    #[test]
+    fn refuse_empty_write_reds_on_empty() {
+        let err = refuse_empty_write("probe", true, "structurally empty").expect_err("must refuse");
+        let msg = format!("{err:#}");
+        assert!(msg.contains("refusing empty write (probe)"), "{msg}");
+        assert!(msg.contains("structurally empty"), "{msg}");
+    }
+
+    #[test]
+    fn refuse_empty_write_ok_when_nonempty() {
+        refuse_empty_write("probe", false, "unused").expect("non-empty must pass");
+    }
+
+    #[test]
+    fn marker_inner_vacuous_detects_bare_heading() {
+        assert!(marker_inner_is_vacuous(""));
+        assert!(marker_inner_is_vacuous(
+            "### Recommended next work (auto-generated)\n\n"
+        ));
+        assert!(!marker_inner_is_vacuous(
+            "### Recommended next work (auto-generated)\n\n- **T-090** — map (ready)\n"
+        ));
+        assert!(!marker_inner_is_vacuous(
+            "**Latest shipped:** **T-535**\n\n**ACTIVE NOW:** **T-090** — Map\n"
+        ));
+    }
+
+    #[test]
+    fn inject_status_refuses_empty_tickets_no_t066() {
+        let registry = json!({"tickets": []});
+        let err = inject_status_block(&PathBuf::from("/tmp"), &registry)
+            .expect_err("empty tickets must refuse");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing empty write") && msg.contains("T-066"),
+            "expected T-066 refuse, got: {msg}"
+        );
+    }
+
+    #[test]
+    fn inject_next_refuses_empty_tickets_bare_heading() {
+        let registry = json!({"tickets": []});
+        let err = inject_next_block(&PathBuf::from("/tmp"), &registry)
+            .expect_err("empty tickets must refuse ROADMAP collapse");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing empty write") && msg.contains("ROADMAP"),
+            "expected ROADMAP refuse, got: {msg}"
+        );
+    }
+
+    #[test]
+    fn inject_status_refuses_no_shipped_no_t066_fallback() {
+        let registry = json!({
+            "tickets": [{
+                "id": "T-999",
+                "title": "open",
+                "status": "ready",
+                "order": 1
+            }]
+        });
+        let err = inject_status_block(&PathBuf::from("/tmp"), &registry)
+            .expect_err("no shipped must refuse T-066");
+        let msg = format!("{err:#}");
+        assert!(msg.contains("T-066") || msg.contains("no shipped"), "{msg}");
+    }
 }
