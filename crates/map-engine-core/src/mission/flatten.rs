@@ -1581,13 +1581,11 @@ fn derive_flow(env: &serde_json::Value) -> ModFlow {
 /// reads is the plan the server actually runs.
 ///
 /// ── `range` ─────────────────────────────────────────────────────────────────────────
-/// The schema advertises `short | long | any`, but only `long` does anything today:
-/// `TBD_RadioService.LongRangeFlag` (`TBD_RadioService.c:214-220`) returns 1 for `"long"`
-/// and 0 for everything else, so `short`, `any` and absent are one behaviour — pick the
-/// handheld. Command nets are therefore marked `long` (the one value that changes what the
-/// tuner does: it asks for the backpack set) and squad nets omit `range` entirely rather
-/// than say `"short"`, which would look like a distinction the mod does not make. If the
-/// mod ever starts honouring `short`, this is the line to revisit — not a comment to soften.
+/// Schema enum is `short | long` (default `short`, T-292). Enfusion has two radio gadget
+/// classes; `TBD_RadioService.LongRangeFlag` returns 1 for `"long"` (backpack) and 0 for
+/// `"short"` / absent (handheld). Command nets are marked `long`; squad nets omit `range`
+/// (schema default `short` — same flag-0 handheld path). The retired value `any` was never
+/// a third wire behaviour and is rejected by `mission.schema.json`.
 ///
 /// ── Every net is side-scoped ────────────────────────────────────────────────────────
 /// `faction` is always set. The schema makes it optional and the mod reads an empty faction
@@ -3277,10 +3275,9 @@ mod tests {
         // band, so every net would be rejected and the plan would arrive empty.
         assert_eq!(nets[0]["freqMHz"], 30.0);
         assert!(nets[0].get("freqMhz").is_none());
-        // `range` is present ONLY where it does something. `TBD_RadioService.LongRangeFlag`
-        // (TBD_RadioService.c:214-220) returns 1 for "long" and 0 for everything else, so
-        // "short" and "any" are the same behaviour as absent — the squad nets do not claim a
-        // distinction the mod does not make.
+        // `range` is present ONLY where it asks for the backpack. `LongRangeFlag` returns 1
+        // for "long" and 0 for "short"/absent (T-292: schema is short|long, no `any`) — squad
+        // nets omit the field rather than write "short" for the same flag-0 handheld path.
         assert_eq!(nets[0]["range"], "long");
         assert!(nets[2].get("range").is_none() && nets[3].get("range").is_none());
 
