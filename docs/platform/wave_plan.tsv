@@ -309,3 +309,5 @@
 43	T-508	W43 hotfix aar_replay_url_backfill vs NOT NULL	apps/website/api/tests/aar_replay_url_backfill.rs; apps/website/api/migrations/0010_backfill_aar_replay_url_scheme.sql
 43	T-509	W43 hotfix CREATE empty weather → Clear	apps/website/api/src/handlers/missions.rs
 43	T-510	W43 hotfix null_tolerance vs missions timestamp NOT NULL	apps/website/api/tests/null_tolerance.rs
+99	T-511	orbat_slots assigned_to partial unique + events.rs two-seat	apps/website/api/migrations; apps/website/api/tests/events.rs
+99	T-512	HTTP IT blank weather PATCH + CREATE omit Clear	apps/website/api/tests/missions.rs

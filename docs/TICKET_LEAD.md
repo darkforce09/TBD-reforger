@@ -5,68 +5,6 @@
 
 ## Running / Review
 
-- **T-331** (3147) — content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained [running] — FOUND by T-228 while constraining role_played; blocking two thirds of that work and not in its owned directory.
-
-`seeds/content_golden.sql:358-369` inserts literal NULL into `matches.aar_replay_url` (2 rows) and `matches.winning_faction` (1 row), under ON CONFLICT (id) DO UPDATE SET ... = EXCLUDED.... **That seed is where the operator's live NULLs came from.** T-228 measured both branches on a pg_dump copy rather than arguing them:
-  - WITH the NOT NULL constraint: `psql < seeds/content_golden.sql` fails `ERROR: null value in column "aar_replay_url" ... violates not-null constraint`, exit 3, failing row rf-match-20260704-01.
-  - WITHOUT it: the backfill clears the NULLs, then re-running the seed puts all three back. A backfill-only migration is self-defeating.
-
-So three `NULL` -> `''` edits at seeds/content_golden.sql:358-369 must land in the SAME commit as the constraint. The exact DDL is already recorded as a comment block at the foot of migrations/0009_role_played_not_null.sql so it does not need re-deriving.
-
-`''` destroys no meaning here and that was checked, not assumed: the mod omits winning_faction from the payload entirely when there is no winner (TBD_ResultsReporter.c:18,546), `outcome` carries pending/failure/aborted, and telemetry.rs:519 already writes COALESCE($8, '') on create — `''` is the canonical no-winner on the only write path that exists.
-
-NOT urgent: `make seed` (Makefile:25-26) does NOT apply content_golden.sql — it is a manual operator tool, so this is not CI-red today. It would make the golden DB un-rebuildable once the constraint lands. Do NOT touch match_player_stats.command_win, which T-228 checked and left alone: NULL there is a real third state (not a command slot / not adjudicated), distinct from false, and already Option<bool> on both sides.
-
-SCOPE WIDENED 2026-07-26 by T-324, which found a SECOND fixture bug in the same file and corrected my diagnosis of it.
-
-seeds/content_golden.sql:623 and :650 hand-INSERT user 000000000000000005 onto BLUFOR/Alpha#1 AND OPFOR/Recon#1 (fixture UUIDs 00000000-0000-4000-5000-0000000000{05,15}) — one user, two seats. I had told T-324 this row came from the assign_slot handler. IT CANNOT HAVE: assign_slot upserts the registration (slot_id = EXCLUDED.slot_id), so it would have repointed the row at OPFOR, and the registration names the EARLIER seat. Neither handler can produce this shape. It is hand-written fixture data.
-
-WHY THIS MATTERS BEYOND TIDINESS: it means T-228's partial unique index on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL is NOT blocked by production data — it is blocked by this one seed file. T-324 verified the index against every handler path in a scratch DB (register move, bench, idempotent re-claim, assign, withdraw promotion, race-loser 409, reservation 409) and its fix COMPOSES with it. It also proved the ordering is what makes it compose: release-then-claim commits cleanly, claim-then-release raises 23505.
-
-So fixing these two seed rows converts the double-seat invariant from handler DISCIPLINE into a STRUCTURAL guarantee. That is the real prize here.
-
-ONE BLOCKER when the index lands: tests/events.rs:540 seeds the legacy two-seat state that T-318's recovery regression needs, and a partial unique index cannot be DEFERRABLE. Either drop the index around that seed or retire the assertion — decide deliberately, it is testing a real recovery path.
-
-THIRD SCOPE ITEM, from T-330: `missions.created_at` AND `missions.updated_at` are `timestamp with time zone` with NO NOT NULL and NO DEFAULT (0001_initial_schema.sql:374-375). That is structurally unlike 0003_registry_compat.sql:14 and 0006_user_factions.sql:13, which are both `DEFAULT now() NOT NULL`. So ANY hand-written INSERT that omits either column stores NULL — and CLAUDE.md documents `psql` as an ops path, so hand-written INSERTs are expected.
-
-T-330 hit this concretely: a two-argument COALESCE(updated_at, created_at) would STILL have 500'd, because created_at can be NULL too. It needed a three-link chain terminating in the Go zero time. The durable fix is `SET DEFAULT now()` + `SET NOT NULL` on both columns after a backfill — the same conclusion T-325 reached for the text columns, in the same directory, so do them together.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-356** (3172) — The other side of the armory join has the identical defect, still open [running] — FOUND by T-346 while proving why it must NOT trim. This is the mirror image of T-346, on the other side of the same join, and it produces the same user-visible empty dossier card from the opposite direction.
-
-`crates/map-engine-core/src/mission/orbat.rs:23-25` — OrbatSquadTemplate.faction is #[serde(default)] and untrimmed. `apps/website/api/src/handlers/events.rs:391` binds it straight into orbat_slots.faction with no normalisation. So attaching a mission with no `faction` key stores `""`, and a padded one stores the padding.
-
-WHY THIS MATTERS MORE THAN IT LOOKS: T-346 deliberately chose require-and-refuse over trimming precisely BECAUSE this side does not normalise — ORBAT "  USA  " plus armory "  USA  " renders correctly today, and a one-sided trim would have broken it. Fixing this side makes the whole join consistent and only then is normalising either side safe. Until then both sides must keep storing bytes verbatim.
-
-So: apply the SAME shape T-346 used — require the field, refuse a value that differs from its trimmed form, store verbatim. Do NOT trim one side. If you decide to normalise both sides together, that is a defensible larger change, but it needs a migration for the live rows (orbat_slots holds 18 rows today) and it must land as one commit.
-
-Read T-346's work on main first; it is the reference implementation and its test pins the over-rejection direction too.
-
-NEW ASYMMETRY SINCE T-346, flagged by T-357 rather than buried: T-346 now REJECTS a whitespace-only ARMORY faction (`it.faction.trim().is_empty()` -> 400) while the ORBAT side still ACCEPTS one. So a whitespace-only ORBAT faction is now PERMANENTLY UNMATCHABLE — no armory row can legally be created that would join to it. That is an additional argument for require-and-refuse on this side, which would reject "\t" symmetrically.
-
-Also from T-357, which ran the real pipeline: a TAB-only editor key DOES validate and DOES land verbatim in orbat_slots.faction — but `slug_key` neutralises it to the `faction` fallback on the COMPILED path, so there is no wire hazard downstream. The damage is confined to the DB column and the join, which is exactly this ticket.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-377** (3193) — PATCH and the compiler hold opposite meanings for an empty weather string [running] — TWO HALVES OF ONE T-192 FIX DISAGREEING, and the only defence is client-side.
-
-handlers/missions.rs:48-56 — `valid_weather` maps `"" | "clear"` to `WeatherType::Clear`. So PATCH /missions/:id with `{"weather": ""}` **silently rewrites a stored `dense_fog` to `clear` and answers 200.**
-
-services/mission_compile.rs:127-136 does the opposite, deliberately, and says so at :126: `weather_preset("")` returns None so that 'an absent value must fall through to the row, not overwrite it.' And :32-36 documents that the editor MIRRORS meta.environment.weather to the row through this exact PATCH. So the compiler treats "" as 'not authored, keep the row' and the PATCH treats it as 'set clear'.
-
-**The defence is in the client, not the server:** frontend/src/eden_chrome.rs:706-710 guards with `if value.is_empty() || !is_mission_row_id(&id) { return; }`. Any direct API caller — curl, the mod, a future client — reaches the hole.
-
-Fix: drop "" from valid_weather's clear arm so both halves agree that blank means not-authored. Same handler, also unguarded and worth the same pass: `title` (:393-395, and create at :296 DOES reject empty, so the two disagree), `custom_terrain_name`, `briefing`, `thumbnail_url` (:430-435 — defensible for the last two). And `time_of_day: ""` binds `''::time`, a Postgres cast error, so it 500s rather than blanking — already relayed to T-367.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-508** (3348) — W43 hotfix: aar_replay_url_backfill IT vs T-331 NOT NULL [running] — Wave 43 cold gate FAIL. T-331 migration 0015 SET NOT NULL on matches.aar_replay_url (canonical empty is ''). tests/aar_replay_url_backfill.rs still plants NULL and expects migration 0010 to SET NULL for scrubbed rows — INSERT fails 23502. Cure: align 0010 scrub target to '' (same canonical empty as T-331/telemetry COALESCE), rewrite the IT plant/assert for NOT NULL (prove NULL insert rejected; scrubbed rows become '' not NULL; kept '' still kept). Do not weaken 0015. Perturbation RED required.
-- **T-509** (3349) — W43 hotfix: CREATE omitted weather must still default Clear after T-377 [running] — Wave 43 re-gate FAIL after T-508. T-377 dropped "" from valid_weather clear arm so PATCH {"weather":""} no longer rewrites dense_fog→clear. CreateMissionInput.weather is #[serde(default)] String — omitted weather becomes "" → create_mission 400 invalid weather. Cold evidence: admin_field.rs:413 unwrap None on POST /missions without weather. Cure: CREATE treats empty as Clear (canonical new-mission default); PATCH still rejects "". Do not restore ""|clear in valid_weather. Class-R + IT pin. Perturbation RED required.
-- **T-510** (3350) — W43 hotfix: null_tolerance approvals NULL timestamp plant vs T-331 NOT NULL [running] — Wave 43 re-gate FAIL after T-509. T-331 0015 SET NOT NULL on missions.created_at/updated_at. tests/null_tolerance.rs approvals_queue_reports_an_honest_submitted_at_over_null_timestamps still INSERTs NULL timestamps to discriminate COALESCE(updated_at, created_at, sentinel) — seed fails 23502 on created_at. Cure: rewrite the test for the post-0015 world — pin that NULL created_at/updated_at inserts are rejected (23502); retire or replace the both-NULL / updated_at-NULL discriminator rows (those states can no longer exist in production). Keep COALESCE Class-R on the query source if still useful with non-null data. Do not weaken 0015.
 
 ## Ready
 
