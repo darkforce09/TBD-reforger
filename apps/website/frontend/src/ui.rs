@@ -309,8 +309,9 @@ mod tests {
         s.split_whitespace().collect::<Vec<_>>().join(" ")
     }
 
-    /// T-458 Class-R — AdminGate must not use browse-mode `has_min_role(None)=>true`.
-    /// Requires `has_min_role_authed` on the production path; bans the browse-mode one-shot.
+    /// T-458 / T-460 Class-R — AdminGate must not use browse-mode `has_min_role(None)=>true`.
+    /// Binds to the live `if` condition (same spirit as T-457 wiki Memo bind): a dead
+    /// `has_min_role_authed(...)` pin beside `if true` must FAIL. Bans browse-mode one-shot.
     #[test]
     fn admin_gate_uses_authed_reactive_role() {
         const SRC: &str = include_str!("ui.rs");
@@ -319,10 +320,11 @@ mod tests {
             .next()
             .expect("tests module marker");
         let code = collapse_ws(&strip_rust_comments(production));
+        // T-460: require the live `if` — presence of the helper call alone is false-green.
         assert!(
-            code.contains("has_min_role_authed(auth.user.get().map(|u| u.role), Role::Admin)"),
-            "AdminGate must gate via has_min_role_authed + reactive auth.user.get() \
-             (browse-mode None=>true is a fail)"
+            code.contains("if has_min_role_authed(auth.user.get().map(|u| u.role), Role::Admin)"),
+            "AdminGate must gate via `if has_min_role_authed(auth.user.get()…, Role::Admin)` \
+             (dead pin + if true is a fail; browse-mode None=>true is a fail)"
         );
         // Mask the authed helper so a free `has_min_role(` / one-shot store call stands out.
         let masked = code.replace("has_min_role_authed", "HAS_MIN_ROLE_AUTHED");
