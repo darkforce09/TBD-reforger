@@ -2227,7 +2227,7 @@ CONFIRMED SOUND, do not re-audit: the verifier reverted map-object-enums.schema.
 
 == MITIGATED IN PART 2026-07-26 by T-421, which landed after this was filed ==
 T-421's `touch_workspace` touches `xtask/src`, so `gate_schema` now genuinely rebuilds xtask every run (measured 0.11s -> 1.52s). CONSEQUENCE: defect 3 (the incomplete content stamp) can no longer hand the gate a FOREIGN xtask binary -- the mtime path it depended on is closed. The stamp is still incomplete and should still be fixed, but it is no longer the live hazard it was when filed. Defects 1 (height-labels wrongly excluded, green on main) and 2 (the silently-narrowing Makefile tripwire) are UNCHANGED and remain the reason to dispatch this. |
-| T-423 | 3262 | ready | platform | T-216's contract-floor test cannot detect the failure its own doc comment says it exists to detect | Two MINORs from wave 5's adversarial verifier, both in `crates/map-engine-core/src/mission/flatten.rs`.
+| T-423 | 3262 | shipped | platform | T-216's contract-floor test cannot detect the failure its own doc comment says it exists to detect | Two MINORs from wave 5's adversarial verifier, both in `crates/map-engine-core/src/mission/flatten.rs`.
 
 1. `flatten.rs:2465-2537`, `the_vehicle_row_still_has_the_shape_this_module_reads`. Its doc comment says: 'What must not happen is a rename, a retype or a removal: those compose silently... That is the failure this test exists to make loud.' PROVEN SILENT:
      sed -i '551s/\"resourceName\"/\"resourceNameRENAMED\"/' crates/map-engine-core/src/doc/store.rs   # inside add_vehicle
@@ -2237,7 +2237,7 @@ T-421's `touch_workspace` touches `xtask/src`, so `gate_schema` now genuinely re
 
 2. `flatten.rs:2530-2536` -- the tolerance assertion is a TAUTOLOGY. It clones the fixture row into a serde_json::Value, inserts `cargo`, then asserts two OTHER keys are unchanged. No module code runs; it cannot fail. The comment says 'Asserted rather than assumed.' It is assumed.
    The CLAIM is nonetheless TRUE for a stronger reason than the test gives, established by the verifier: `EditorPayload` (flatten.rs:591-605) is {editor, environment} and `EditorGraph` (:607-613) is {factions, squads, slots} -- THERE IS NO `vehicles` FIELD ANYWHERE IN THE READER, and `scan_editor_payload_types` is a plain `serde_json::from_slice::<EditorPayload>` with no deny_unknown_fields. So T-215's `factionId`/`cargo[]` extras cannot produce a save-time 400, and a map-placed vehicle with no `squadId` cannot be dropped by a reader that never deserialises a vehicle row at all. |
-| T-424 | 3263 | ready | platform | cargo test --lib <selector> exits 0 when the selector matches zero tests, so 25 pinned checks can silently empty | Found by T-216 during wave 5 while restoring `scripts/verify-t180-coherency.sh`, and independently replicated by the wave's adversarial verifier.
+| T-424 | 3263 | shipped | platform | cargo test --lib <selector> exits 0 when the selector matches zero tests, so 25 pinned checks can silently empty | Found by T-216 during wave 5 while restoring `scripts/verify-t180-coherency.sh`, and independently replicated by the wave's adversarial verifier.
 
   cargo test -p map-engine-core --lib --features doc,mission -- zzz_no_such_test_exists_anywhere
   # test result: ok. 0 passed; 254 filtered out          rc=0
@@ -2573,7 +2573,7 @@ Cure: strip SQL comments before name pin; require live INSERT INTO user_factions
 Repro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.
 
 Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; assert no shared snowflake collision across parallel tests. |
-| T-480 | 3319 | ready | platform | Harden oauth_state clear IT to exact OAUTH_STATE_CLEAR equality | Wave 30 adversarial verifier (T-429): assert_oauth_state_cleared in apps/website/api/tests/oauth_redirect.rs uses contains("Path=/") / contains("Max-Age=0") soft checks, not equality to OAUTH_STATE_CLEAR (handlers/oauth.rs). A clear cookie with Path=/api or Max-Age=00 still passes.
+| T-480 | 3319 | shipped | platform | Harden oauth_state clear IT to exact OAUTH_STATE_CLEAR equality | Wave 30 adversarial verifier (T-429): assert_oauth_state_cleared in apps/website/api/tests/oauth_redirect.rs uses contains("Path=/") / contains("Max-Age=0") soft checks, not equality to OAUTH_STATE_CLEAR (handlers/oauth.rs). A clear cookie with Path=/api or Max-Age=00 still passes.
 
 Repro: python3 -c 'c="oauth_state=; Path=/api; Max-Age=0; HttpOnly"; print(c.startswith("oauth_state=") and "Max-Age=0" in c and "Path=/" in c and "HttpOnly" in c)' → True while Path diverges from OAUTH_STATE_CLEAR.
 
@@ -2583,7 +2583,7 @@ Cure: assert Set-Cookie equals OAUTH_STATE_CLEAR (or parse and require Path=/ ex
 Repro: set discord_client_id=" " + env=production → validate() Ok.
 
 Cure: trim (or reject if trim empty) before the Missing check; Class-R pin. |
-| T-482 | 3321 | ready | platform | T-423 gated vehicle-floor test behind doc; verify-t180 pin still mission-only | Wave 31 adversarial BLOCKER. T-423 moved the_vehicle_row_still_has_the_shape_this_module_reads onto MissionDocCore behind #[cfg(feature = "doc")] in flatten.rs, but scripts/verify-t180-coherency.sh:213-214 still pins it with --features mission only. cargo_test_pin (T-424) correctly FAILs: 0 tests passed. make verify-t180 is red on tip. Cold wave gate still PASS because it runs cargo test with doc,mission.
+| T-482 | 3321 | shipped | platform | T-423 gated vehicle-floor test behind doc; verify-t180 pin still mission-only | Wave 31 adversarial BLOCKER. T-423 moved the_vehicle_row_still_has_the_shape_this_module_reads onto MissionDocCore behind #[cfg(feature = "doc")] in flatten.rs, but scripts/verify-t180-coherency.sh:213-214 still pins it with --features mission only. cargo_test_pin (T-424) correctly FAILs: 0 tests passed. make verify-t180 is red on tip. Cold wave gate still PASS because it runs cargo test with doc,mission.
 
 Repro:
   cargo test -p map-engine-core --features mission --lib the_vehicle_row_still_has_the_shape_this_module_reads -- --quiet
@@ -2591,6 +2591,11 @@ Repro:
   # with --features "doc,mission" → 1 passed
 
 Cure: change that verify-t180 pin to --features "doc mission" (same as place_/attach_vehicle pins), OR ungated cfg so mission alone compiles the test. Prefer script feature align — keep Class-R on writer round-trip. |
+| T-483 | 3322 | deferred | platform | Harden oauth.rs unit clears_oauth_state to exact OAUTH_STATE_CLEAR | Wave 31 residual from T-480. IT assert_oauth_state_cleared is byte-equality to OAUTH_STATE_CLEAR, but unit helper clears_oauth_state in apps/website/api/src/handlers/oauth.rs (~449) still soft-contains oauth_state=/Max-Age=0/HttpOnly with no Path=/ pin. Path=/api clear cookie still greens the unit helper.
+
+Repro: soft check accepts 'oauth_state=; Path=/api; Max-Age=0; HttpOnly'.
+
+Cure: assert equality to OAUTH_STATE_CLEAR (or require Path=/ exact) in the unit helper. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

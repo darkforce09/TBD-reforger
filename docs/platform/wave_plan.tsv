@@ -281,3 +281,4 @@
 99	T-480	Harden oauth_state clear IT to exact OAUTH_STATE_CLEAR	apps/website/api/tests/oauth_redirect.rs; apps/website/api/src/handlers/oauth.rs
 99	T-481	Reject whitespace-only DISCORD_CLIENT_ID in Config::validate	apps/website/api/src/config.rs
 99	T-482	T-423 vehicle-floor pin needs doc+mission features	scripts/verify-t180-coherency.sh
+99	T-483	Harden oauth unit clears_oauth_state to OAUTH_STATE_CLEAR	apps/website/api/src/handlers/oauth.rs

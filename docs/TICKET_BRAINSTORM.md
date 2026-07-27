@@ -879,6 +879,11 @@ Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; as
 Repro: set discord_client_id=" " + env=production → validate() Ok.
 
 Cure: trim (or reject if trim empty) before the Missing check; Class-R pin.
+- **T-483** (deferred) — Harden oauth.rs unit clears_oauth_state to exact OAUTH_STATE_CLEAR [API, tests] — Wave 31 residual from T-480. IT assert_oauth_state_cleared is byte-equality to OAUTH_STATE_CLEAR, but unit helper clears_oauth_state in apps/website/api/src/handlers/oauth.rs (~449) still soft-contains oauth_state=/Max-Age=0/HttpOnly with no Path=/ pin. Path=/api clear cookie still greens the unit helper.
+
+Repro: soft check accepts 'oauth_state=; Path=/api; Max-Age=0; HttpOnly'.
+
+Cure: assert equality to OAUTH_STATE_CLEAR (or require Path=/ exact) in the unit helper.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
