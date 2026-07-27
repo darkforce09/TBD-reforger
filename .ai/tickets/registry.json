@@ -11046,7 +11046,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3218,
       "stream": "web-platform",
       "targets": [
@@ -11273,7 +11273,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3234,
       "stream": "web-platform",
       "targets": [
@@ -11334,7 +11334,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3241,
       "stream": "web-platform",
       "targets": [
@@ -13100,6 +13100,50 @@
       ],
       "status": "deferred",
       "order": 3334,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-500",
+      "title": "mission_compile does not run cargo wire_safety (Save-only refuse)",
+      "summary": "Wave 39 adversarial residual (CLEAN). T-416 wires Save Version via load_cargo_phys_catalog + validate_mission_editor_payload_with_catalog. Production mission_compile.rs does not call scan_cargo_capacity \u2014 pre-existing over-capacity versions can still compile until re-saved. Cure: pass CargoPhysCatalog into the compile gate (same table as Save) or document compile-as-trust-saved with a Class-R that compile path mentions the Save refuse.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "api",
+        "mission-creator",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3340,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-501",
+      "title": "Community-terrain soft-fail has no match-ingest HTTP IT",
+      "summary": "Wave 39 residual from T-402. parse_terrain_opt + unit Class-R pin unknown terrain \u2192 None. No IT proves POST match ingest with terrain kolguyev/anizay returns 200 and stores NULL terrain. Cure: apps/website/api/tests/telemetry.rs case on cold DB.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "CI"
+      ],
+      "impact": [
+        "tests",
+        "telemetry"
+      ],
+      "status": "deferred",
+      "order": 3341,
       "stream": "web-platform",
       "targets": [
         "website"

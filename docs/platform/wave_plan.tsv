@@ -298,3 +298,5 @@
 99	T-497	mission mutators still AuthUser+can_edit	apps/website/api/src/handlers/missions.rs
 99	T-498	Discord webhook title not formula-safe	apps/website/api/src/services/webhook.rs; apps/website/api/src/handlers/cms.rs
 99	T-499	admin_field roles/sync demotes all users in IT	apps/website/api/tests/admin_field.rs
+99	T-500	mission_compile skips cargo wire_safety	apps/website/api/src/services/mission_compile.rs
+99	T-501	community-terrain soft-fail HTTP IT	apps/website/api/tests/telemetry.rs
