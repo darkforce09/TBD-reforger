@@ -101,6 +101,12 @@ fn ServerIntelInner() -> impl IntoView {
     let subscribed = RwSignal::new(false);
     #[cfg(not(target_arch = "wasm32"))]
     let _ = (connected, sse_error, subscribed);
+    // T-287 — abort the SSE fetch on route-leave. `AbortController` is `!Send`, so cleanup is the
+    // zero-capture `abort_server_status_stream` that reaches the thread_local in `sse.rs` (same
+    // pattern as T-189's unload guard). Must register on the *page* owner, not inside the Suspense
+    // reactive fragment — a fragment re-run would abort a still-mounted stream.
+    #[cfg(target_arch = "wasm32")]
+    on_cleanup(crate::sse::abort_server_status_stream);
 
     view! {
         <Suspense fallback=move || {
