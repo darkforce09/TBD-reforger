@@ -2319,7 +2319,7 @@ Cure: unit test with terrain=arland expecting 4096² ring. |
 Repro before fix: DEPLOY_ENV with TBD_REMOTE_DIR=/tmp/not-tbd-at-all → --dry-run rc=0.
 
 Cure: fail-closed prefix check under /home/sam/tbd/ + case-insensitive prairielearn refuse. |
-| T-437 | 3276 | ready | platform | Destroy-target inert diagnostics still claim entities[] never spawn | Residual from T-254 / wave 9 adversarial MAJOR M1. After T-254, TBD_MissionDocumentStruct models entities[] and SpawnMissionEntities runs on parse, but operator-facing inert strings still blame a build that does not spawn/model entities.
+| T-437 | 3276 | shipped | platform | Destroy-target inert diagnostics still claim entities[] never spawn | Residual from T-254 / wave 9 adversarial MAJOR M1. After T-254, TBD_MissionDocumentStruct models entities[] and SpawnMissionEntities runs on parse, but operator-facing inert strings still blame a build that does not spawn/model entities.
 
 Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c:647 (also banners/comments at :609-620, TBD_ObjectivesComponent.c:694-697, TBD_ObjectiveRules.c:115-117, packages/tbd-schema/schema/mission.schema.json:465).
 
@@ -2507,7 +2507,7 @@ Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-sche
 Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
 
 Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic. |
-| T-470 | 3309 | ready | platform | T-466 Class-R order-blind / unreachable error UI false-green | Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:
+| T-470 | 3309 | shipped | platform | T-466 Class-R order-blind / unreachable error UI false-green | Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:
 (1) list_seeded.set(true) before match / outside Ok → PASS
 (2) also seed in Err → PASS (Retry then permanent empty)
 (3) error UI unreachable (.filter(\|_\| false)) with needles still in source → PASS
@@ -2515,17 +2515,17 @@ Cure: assert status+LOCATION with actionable message; fail soft instead of Index
 Repro: move list_seeded.set(true) before Ok arm → Class-R still green.
 
 Cure: order-sensitive / structural pins (seed only inside Ok arm AST or window); pin Retry reachable (not filtered out); RED→GREEN on verifier perturbations. |
-| T-471 | 3310 | ready | platform | T-468 tripwire accepts hollow Makefile ci-local-schema recipe | Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
+| T-471 | 3310 | shipped | platform | T-468 tripwire accepts hollow Makefile ci-local-schema recipe | Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
 
 Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.
 
 Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe. |
-| T-472 | 3311 | ready | platform | T-471 verify-t468 still greens echo/@true/#fake Makefile recipes | Residual from wave 27 adversarial BLOCKER. verify-t468 recipe pin uses `^\t.*(?:\$\(MAKE\)\|make)\s+schema-validate\b` — matches `@echo "$(MAKE) schema-validate"`, `schema-validate-fake`, `@true # $(MAKE) schema-validate`.
+| T-472 | 3311 | shipped | platform | T-471 verify-t468 still greens echo/@true/#fake Makefile recipes | Residual from wave 27 adversarial BLOCKER. verify-t468 recipe pin uses `^\t.*(?:\$\(MAKE\)\|make)\s+schema-validate\b` — matches `@echo "$(MAKE) schema-validate"`, `schema-validate-fake`, `@true # $(MAKE) schema-validate`.
 
 Repro: hollow echo of make lines / -fake targets / comment-only → tripwire PASS.
 
 Cure: require real recipe invocations (tab + optional @ + $(MAKE)\|make + exact target, no echo, ignore # comments); RED→GREEN on verifier recipes. |
-| T-473 | 3312 | ready | platform | T-470 Class-R still greens spaced/indirect Err seed + if-false Retry | Residual from wave 27 adversarial BLOCKER/MAJOR. Class-R pins exact `list_seeded.set(true)` only:
+| T-473 | 3312 | shipped | platform | T-470 Class-R still greens spaced/indirect Err seed + if-false Retry | Residual from wave 27 adversarial BLOCKER/MAJOR. Class-R pins exact `list_seeded.set(true)` only:
 (1) early `list_seeded.set( true )` + keep Ok set → PASS
 (2) Err `set( true )` / `set((true))` / `set(seed)` → PASS
 (3) wrap Retry UI in `if false { … }` (no filter) → PASS
@@ -2533,7 +2533,7 @@ Cure: require real recipe invocations (tab + optional @ + $(MAKE)\|make + exact 
 Repro: spaced set( true ) before match → Class-R green.
 
 Cure: normalize whitespace for seed pin; forbid any list_seeded.set outside Ok arm; ban if false / unreachable Retry; RED→GREEN on verifier perturbations. |
-| T-474 | 3313 | ready | platform | T-437 verify-t437 presence-only; paraphrased lies still PASS | Residual from wave 27 adversarial BLOCKER. verify-t437 forbids exact historical lie strings and requires DiagnoseEmptyDestroyTargets / out-of-zone as substrings — comment-only pins and paraphrased lies (`entities[] are never placed…`) still PASS; collapsed DiagnoseEmpty returns leave comment needles green.
+| T-474 | 3313 | shipped | platform | T-437 verify-t437 presence-only; paraphrased lies still PASS | Residual from wave 27 adversarial BLOCKER. verify-t437 forbids exact historical lie strings and requires DiagnoseEmptyDestroyTargets / out-of-zone as substrings — comment-only pins and paraphrased lies (`entities[] are never placed…`) still PASS; collapsed DiagnoseEmpty returns leave comment needles green.
 
 Repro: paraphrase lie or comment-only DiagnoseEmptyDestroyTargets → verify PASS.
 
