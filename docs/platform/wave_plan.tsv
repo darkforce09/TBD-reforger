@@ -218,8 +218,8 @@
 53	T-415	Mod never checks it delivered the authored loadout; IsComplete has zero callers	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c
 4	T-416	Cargo capacity belongs in wire_safety.rs, covering save and compile	crates/map-engine-core/src/mission/wire_safety.rs; apps/website/api/src/contract/validate.rs; apps/website/api/src/handlers/missions.rs
 4	T-417	Compiled-export artifact re-sorts keys; 401 misdiagnosed as no-server-row	apps/website/frontend/src/mission_commands.rs; apps/website/frontend/src/main.rs
-4	T-418	map-engine-wasm is dead as a whole crate; compile_export briefing is a dead key	crates/map-engine-wasm/src/lib.rs; apps/website/frontend/src/mission_hydrate.rs
-4	T-419	Six mod comments assert the zones schema is open after T-241 closed it	apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c
+62	T-418	map-engine-wasm is dead as a whole crate; compile_export briefing is a dead key	crates/map-engine-wasm/src/lib.rs; apps/website/frontend/src/mission_hydrate.rs
+62	T-419	Six mod comments assert the zones schema is open after T-241 closed it	apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c
 5	T-420	Wave gate validates no schema	scripts/platform/wave.sh
 6	T-421	Wave gate cargo check/clippy pass on source never compiled	scripts/platform/wave.sh
 6	T-422	gate_schema: wrongly-excluded green gate, narrowing tripwire, incomplete stamp	scripts/platform/wave.sh
@@ -328,7 +328,7 @@
 47	T-527	W47 hotfix rustfmt event_manager after T-332	apps/website/frontend/src/event_manager.rs
 47	T-528	W47 hotfix me.rs arma_linked whitespace after T-350	apps/website/api/src/handlers/me.rs; apps/website/api/tests/t528_me_whitespace_linked.rs
 51	T-529	events roster SQL whitespace arma_id no btrim	apps/website/api/src/handlers/events.rs; apps/website/api/tests/t529_roster_whitespace_arma.rs
-99	T-530	T-332 Class-R partly pins doc comments	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
+62	T-530	T-332 Class-R partly pins doc comments	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
 49	T-531	null_tolerance still lists deployments.* as KNOWN_OPEN after T-341	apps/website/api/tests/null_tolerance.rs
 54	T-532	No API route to re-point mission current_version_id after a bad version	apps/website/api/src/handlers/missions.rs; apps/website/api/src/app.rs
 99	T-533	T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400	apps/website/api/tests/telemetry.rs; apps/website/api/src/handlers/telemetry.rs
