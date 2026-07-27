@@ -45,8 +45,9 @@ fn valid_terrain(s: &str) -> Option<TerrainType> {
 /// schema constrains terrain to `^[a-z][a-z0-9_]*$` (`packages/tbd-schema/schema/mission.schema.json`),
 /// so community missions legitimately carry names outside `everon|arland|custom`. Rejecting
 /// the whole match-results POST for that was the "production ingest 400s" failure mode for
-/// those senders. Mirrors `parse_uuid_opt`: an unparseable optional field degrades rather
-/// than rejecting the request. Known pins still map; Class-R in `tests` locks both halves.
+/// those senders. Soft-fails like `parse_uuid_opt` (heartbeat three-state), **not** like
+/// `parse_uuid_opt_strict` (match event/mission ids — T-355). Known pins still map; Class-R
+/// in `tests` locks both halves.
 fn parse_terrain_opt(s: &Option<String>) -> Option<TerrainType> {
     s.as_deref()
         .map(str::trim)
@@ -54,20 +55,43 @@ fn parse_terrain_opt(s: &Option<String>) -> Option<TerrainType> {
         .and_then(valid_terrain)
 }
 
-/// `""` (and now `"   "`) means "none"; anything else must parse as a uuid.
+/// Soft UUID parse for **three-state** optional fields (`current_match_id`).
+///
+/// `""` / `"   "` → `None` (clear when the field is present). Valid uuid → `Some`.
+/// **Unparseable non-empty also → `None`** — that is intentional for `current_match_id`
+/// only: the heartbeat contract is absent=keep / present-empty=clear / uuid=set, and a
+/// garbage present value clears rather than 400ing the whole heartbeat (T-316). Do **not**
+/// use this helper for `event_id` / `mission_id`; those must reject via
+/// [`parse_uuid_opt_strict`] (T-355).
 ///
 /// The `trim` is T-347. `server_id` has always been trimmed before `Uuid::parse_str`
-/// (`ingest_server_status` below), and these three were not, so one uuid path in this file
-/// accepted a padded id and three silently discarded it: `" <uuid> "` failed the parse and fell
-/// out as `None`, which for `event_id` means the match is stored with no event and
-/// `ingest_match_results` marks nobody's attendance — 200, no row, nothing to see. Trimming
-/// makes all four agree and makes `"   "` mean exactly what `""` already means, which is the
-/// convention `current_match_id` documents.
+/// (`ingest_server_status` below), and these optional ids were not, so a padded uuid failed
+/// the parse and fell out as `None`.
 fn parse_uuid_opt(s: &Option<String>) -> Option<Uuid> {
     s.as_deref()
         .map(str::trim)
         .filter(|v| !v.is_empty())
         .and_then(|v| Uuid::parse_str(v).ok())
+}
+
+/// Strict UUID parse for match `event_id` / `mission_id` (T-355).
+///
+/// Absent / blank (after trim) → `Ok(None)` — still means "keep / omit", not a clear
+/// (`MatchInput` is not three-stated for these fields). Valid uuid → `Ok(Some)`.
+/// **Unparseable non-empty → `Err(400)`** — previously `parse_uuid_opt` turned junk into
+/// `None`, the match stored with no event/mission, attendance UPDATE skipped, and the
+/// handler returned 200. A malformed id from the game server must not look like success.
+fn parse_uuid_opt_strict(
+    field: &'static str,
+    s: &Option<String>,
+) -> Result<Option<Uuid>, ApiError> {
+    match s.as_deref().map(str::trim) {
+        None | Some("") => Ok(None),
+        Some(v) => match Uuid::parse_str(v) {
+            Ok(u) => Ok(Some(u)),
+            Err(_) => Err(ApiError::bad_request(format!("invalid {field}"))),
+        },
+    }
 }
 
 // --- server status ---
@@ -385,6 +409,9 @@ fn require_role_played(raw: &str) -> Result<&str, ApiError> {
 /// `current_match_id` is three-stated, because a live server genuinely has to stop pointing at a
 /// finished match; a stored match has no equivalent "un-assign the event" story, and inventing
 /// one here would be a contract nobody has asked for.
+///
+/// **T-355 — unparseable non-empty `event_id` / `mission_id` is a 400**, not a silent `None`.
+/// Blank still keeps; only genuine garbage rejects. `current_match_id` keeps the soft helper.
 #[derive(Debug, Deserialize)]
 pub struct MatchInput {
     /// Absent = no source id, create a fresh match; a value = the dedupe key. Blank is neither,
@@ -926,8 +953,8 @@ async fn upsert_match(
     outcome: MissionOutcome,
     source_match_id: Option<&str>,
 ) -> Result<(Uuid, Option<Uuid>), ApiError> {
-    let event_id = parse_uuid_opt(&m.event_id);
-    let mission_id = parse_uuid_opt(&m.mission_id);
+    let event_id = parse_uuid_opt_strict("event_id", &m.event_id)?;
+    let mission_id = parse_uuid_opt_strict("mission_id", &m.mission_id)?;
     // Terrain stays optional. Known pins (`everon`/`arland`/`custom`) map to the enum;
     // anything else soft-fails to NULL (T-402) — see `parse_terrain_opt`. This used to 400
     // the whole report for community terrain names that the mission schema otherwise allows.
@@ -1235,6 +1262,116 @@ mod tests {
             "Squad Leader"
         );
         assert_eq!(require_role_played("Rifleman").unwrap(), "Rifleman");
+    }
+
+    /// Class-R (T-355): malformed non-empty event_id / mission_id → 400 (not silent None).
+    #[test]
+    fn malformed_event_or_mission_id_is_bad_request() {
+        for field in ["event_id", "mission_id"] {
+            for junk in ["not-a-uuid", "123", "garb age", "0", "{bad}"] {
+                let err = parse_uuid_opt_strict(field, &Some(junk.into()))
+                    .expect_err("unparseable non-empty must 400");
+                assert_eq!(err.status, StatusCode::BAD_REQUEST);
+                assert!(
+                    err.message.contains(field),
+                    "message must name {field}: {:?}",
+                    err.message
+                );
+            }
+        }
+    }
+
+    /// Class-R (T-355): absent / blank / valid still Ok — blank keeps (not three-state clear).
+    #[test]
+    fn event_mission_id_absent_blank_valid_ok() {
+        let id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
+        assert_eq!(parse_uuid_opt_strict("event_id", &None).unwrap(), None);
+        assert_eq!(
+            parse_uuid_opt_strict("event_id", &Some("".into())).unwrap(),
+            None
+        );
+        assert_eq!(
+            parse_uuid_opt_strict("mission_id", &Some("   ".into())).unwrap(),
+            None
+        );
+        assert_eq!(
+            parse_uuid_opt_strict(
+                "event_id",
+                &Some("550e8400-e29b-41d4-a716-446655440000".into())
+            )
+            .unwrap(),
+            Some(id)
+        );
+        assert_eq!(
+            parse_uuid_opt_strict(
+                "mission_id",
+                &Some("  550e8400-e29b-41d4-a716-446655440000  ".into())
+            )
+            .unwrap(),
+            Some(id)
+        );
+    }
+
+    /// Class-R (T-355 / T-316): `current_match_id` keeps soft three-state via `parse_uuid_opt`.
+    /// Absent → None (caller treats as keep); "" / whitespace → None (clear); uuid → Some;
+    /// unparseable present → None (clear, **not** 400 — do not tighten this helper globally).
+    #[test]
+    fn current_match_id_three_state_soft_parse() {
+        let id = Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap();
+        assert_eq!(parse_uuid_opt(&None), None);
+        assert_eq!(parse_uuid_opt(&Some("".into())), None);
+        assert_eq!(parse_uuid_opt(&Some("   ".into())), None);
+        assert_eq!(
+            parse_uuid_opt(&Some("550e8400-e29b-41d4-a716-446655440000".into())),
+            Some(id)
+        );
+        assert_eq!(
+            parse_uuid_opt(&Some("  550e8400-e29b-41d4-a716-446655440000  ".into())),
+            Some(id)
+        );
+        // Soft degrade — same as blank clear when `set_match_id` is true at the call site.
+        assert_eq!(parse_uuid_opt(&Some("not-a-uuid".into())), None);
+        assert_eq!(parse_uuid_opt(&Some("123".into())), None);
+    }
+
+    /// Class-R (T-355): upsert_match must call the strict helper for both fields. Helper-only
+    /// tests stay green if call sites regress to `parse_uuid_opt`; this pin fails that.
+    #[test]
+    fn upsert_match_uses_strict_uuid_for_event_and_mission() {
+        const SRC: &str = include_str!("telemetry.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("telemetry.rs must have a #[cfg(test)] module");
+        let start = production
+            .find("async fn upsert_match")
+            .expect("upsert_match must exist");
+        let after = &production[start..];
+        let end = after[1..]
+            .find("\nasync fn ")
+            .or_else(|| after[1..].find("\npub(super) async fn "))
+            .map(|i| i + 1)
+            .unwrap_or(after.len());
+        let body = strip_rust_comments(&after[..end]);
+        let collapsed: String = body.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(
+            collapsed.contains(r#"parse_uuid_opt_strict("event_id", &m.event_id)?"#),
+            "upsert_match must reject unparseable event_id via parse_uuid_opt_strict"
+        );
+        assert!(
+            collapsed.contains(r#"parse_uuid_opt_strict("mission_id", &m.mission_id)?"#),
+            "upsert_match must reject unparseable mission_id via parse_uuid_opt_strict"
+        );
+        // Soft helper must remain the current_match_id path (ingest_server_status), not
+        // silently replaced at the match upsert sites.
+        assert!(
+            !collapsed.contains("parse_uuid_opt(&m.event_id)"),
+            "event_id must not use soft parse_uuid_opt"
+        );
+        assert!(
+            !collapsed.contains("parse_uuid_opt(&m.mission_id)"),
+            "mission_id must not use soft parse_uuid_opt"
+        );
     }
 
     /// Class-R (T-506 / T-513): both `ingest_match_results` sites must invoke
