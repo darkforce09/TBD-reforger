@@ -11232,7 +11232,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3232,
       "stream": "web-platform",
       "targets": [
@@ -11516,7 +11516,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3264,
       "stream": "web-platform",
       "targets": [
@@ -11558,7 +11558,7 @@
         "mission-creator",
         "perf"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3266,
       "stream": "web-platform",
       "targets": [
