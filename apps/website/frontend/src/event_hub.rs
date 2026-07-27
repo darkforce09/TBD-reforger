@@ -1749,10 +1749,7 @@ mod tests {
         // ignores id (e.g. `.next()` / `|_| true`). Pin the live id-match predicate.
         // format! keeps the pin bindable without a single literal that a bulk edit of
         // the production find line can rewrite in lockstep (same shape as the ORBAT pins).
-        let by_id_find = format!(
-            "into_iter().find(|{}| {}.modpack.id == id)",
-            "mp", "mp"
-        );
+        let by_id_find = format!("into_iter().find(|{}| {}.modpack.id == id)", "mp", "mp");
         assert!(
             code.contains(&by_id_find),
             "ById path must select via into_iter().find(|mp| mp.modpack.id == id) \
