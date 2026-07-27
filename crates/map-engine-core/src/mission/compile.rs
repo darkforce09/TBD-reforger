@@ -31,8 +31,9 @@ pub fn terrain_bounds(terrain: &str) -> [f64; 4] {
     }
 }
 
-/// Top-level keys [`compile_payload`] itself authors (and `orbat` on the Export path).
-/// Everything else is a T-219 passthrough candidate, carried through the doc as
+/// Top-level keys [`compile_payload`] itself authors (and `orbat` on the Export path), plus the
+/// reserved `payloadExtras` side-channel name (T-432 / T-219 — never park or re-emit that key
+/// onto the wire). Everything else is a T-219 passthrough candidate, carried through the doc as
 /// `payloadExtras` (see `MissionDocCore::hydrate` / `small_maps_json`). Keep in lockstep with
 /// `is_known_editor_payload_top_level` in `doc/store.rs`.
 pub const KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS: &[&str] = &[
@@ -46,6 +47,8 @@ pub const KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS: &[&str] = &[
     "markers",
     "editor",
     "orbat",
+    // T-432 — reserved compile side-channel name; not a wire key and not a passthrough candidate.
+    "payloadExtras",
 ];
 
 #[must_use]
@@ -238,7 +241,8 @@ pub fn compile_payload(small_maps_json: &str, slots_json: &str, include_orbat: b
 
     // T-219 — re-emit unknown top-level keys that hydrate parked in `payloadExtras`. Never
     // overwrite a key this function already authored (schemaVersion / map / editor / …), and never
-    // promote the side-channel name itself onto the wire payload.
+    // promote the side-channel name itself onto the wire payload (T-432: `payloadExtras` is in
+    // `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS` so the known-key skip below enforces that claim).
     if let Some(extras) = small.get("payloadExtras").and_then(Value::as_object)
         && let Some(obj) = payload.as_object_mut()
     {
@@ -791,6 +795,44 @@ mod tests {
         assert_eq!(s["spectatorPolicy"], "free");
         assert_eq!(s["nightVision"], false);
         assert!(p.get("payloadExtras").is_none());
+    }
+
+    /// T-432 — Class R: the side-channel name `payloadExtras` is reserved. If a stale / hostile
+    /// `small_maps` parks a nested key literally named `payloadExtras`, compile must **not**
+    /// promote that name onto the wire (T-219 already claimed this; make it true). Unrelated
+    /// parked keys still re-emit. Nested reserved contents are dropped (reserved-key collision),
+    /// not renamed.
+    #[test]
+    fn payload_extras_key_name_never_promoted_onto_wire() {
+        let small = json!({
+            "meta": { "terrain": "everon" },
+            "factionsById": {},
+            "squadsById": {},
+            "loadoutsById": {},
+            "itemsById": {},
+            "objectivesById": {},
+            "vehiclesById": {},
+            "entitiesById": {},
+            "markersById": {},
+            "editorLayersById": {},
+            "payloadExtras": {
+                "payloadExtras": { "nested": true },
+                "serverMigrationToken": "keep-me"
+            }
+        })
+        .to_string();
+
+        let p = compile_payload(&small, "{}", false);
+        assert!(
+            p.get("payloadExtras").is_none(),
+            "side-channel name must never become a wire key; got {:?}",
+            p.get("payloadExtras")
+        );
+        assert_eq!(
+            p["serverMigrationToken"],
+            json!("keep-me"),
+            "unrelated parked keys must still re-emit"
+        );
     }
 
     /// T-220 — authored `schemaVersion` on meta survives compile (not forced back to literal 1).
