@@ -2810,16 +2810,61 @@ mod t356_orbat_faction_join_key {
 
 #[cfg(test)]
 mod t332_patch_clear_and_reattach {
-    /// Class-R: empty-string clear for briefing/banner is documented on the input, and
-    /// duplicate attach maps the unique index to 409 (not an unmapped 500).
+    /// Class-R (T-332 / T-530): empty-string clear for briefing/banner is a *live* PATCH
+    /// writer shape — not a doc-comment phrase — and duplicate attach maps the unique
+    /// index to 409 (not an unmapped 500).
+    ///
+    /// T-530: prior pins asserted `T-332` / `**Clearing briefing / banner**` comment
+    /// prose. Comment-only edits stayed green. Cure: pin `Option<String>` fields,
+    /// `qb.push` SQL writers, `validated_banner_image_url` empty-ok, and
+    /// `is_unique_violation` — after stripping `//` / `/* */` so a bait comment cannot
+    /// false-green a deleted live path.
+    fn strip_rust_comments(src: &str) -> String {
+        let bytes = src.as_bytes();
+        let mut out = String::with_capacity(src.len());
+        let mut i = 0;
+        while i < bytes.len() {
+            if i + 1 < bytes.len() && bytes[i] == b'/' && bytes[i + 1] == b'/' {
+                i += 2;
+                while i < bytes.len() && bytes[i] != b'\n' {
+                    i += 1;
+                }
+                continue;
+            }
+            if i + 1 < bytes.len() && bytes[i] == b'/' && bytes[i + 1] == b'*' {
+                i += 2;
+                while i + 1 < bytes.len() && !(bytes[i] == b'*' && bytes[i + 1] == b'/') {
+                    i += 1;
+                }
+                if i + 1 < bytes.len() {
+                    i += 2;
+                } else {
+                    i = bytes.len();
+                }
+                continue;
+            }
+            out.push(char::from(bytes[i]));
+            i += 1;
+        }
+        out
+    }
+
+    fn collapse_ws(s: &str) -> String {
+        s.split_whitespace().collect::<Vec<_>>().join(" ")
+    }
+
     #[test]
-    fn patch_documents_empty_string_clear_and_attach_maps_unique() {
+    fn patch_empty_string_clear_writers_and_attach_maps_unique() {
         const SRC: &str = include_str!("events.rs");
         let production = SRC
             .split("#[cfg(test)]")
             .next()
             .expect("production source before tests module");
+        let code = collapse_ws(&strip_rust_comments(production));
 
+        // Shape: key absent = leave alone; `""` = clear. That requires plain
+        // `Option<String>` (not `present_option` / `Option<Option<_>>`) so JSON `""`
+        // deserializes to `Some("")` and reaches the SQL writer.
         let patch = production
             .split("pub struct PatchEventInput")
             .nth(1)
@@ -2827,16 +2872,43 @@ mod t332_patch_clear_and_reattach {
             .split("pub async fn update_event")
             .next()
             .expect("struct body");
+        let patch_code = collapse_ws(&strip_rust_comments(patch));
         assert!(
-            patch.contains("T-332") && patch.contains("\"\""),
-            "PatchEventInput must document T-332 empty-string clear for briefing/banner"
+            patch_code.contains("briefing: Option<String>")
+                && patch_code.contains("banner_image_url: Option<String>"),
+            "PatchEventInput briefing/banner must be Option<String> so \"\" clears \
+             (perturbation: present_option / Option<Option<_>> / drop fields)"
         );
-        // Doc comment sits *above* `pub async fn update_event`, so pin it on production text
-        // that includes that heading — not the function body alone.
         assert!(
-            production.contains("**Clearing briefing / banner (T-332).**")
-                && production.contains("an empty string is the clear signal"),
-            "update_event docs must name the empty-string clear contract"
+            !patch_code.contains("briefing: Option<Option")
+                && !patch_code.contains("banner_image_url: Option<Option"),
+            "briefing/banner must not use present_option Option<Option<_>> \
+             (perturbation: treat null as clear like server_id)"
+        );
+
+        // Live UPDATE writers — empty Some(\"\") must still push the column.
+        assert!(
+            code.contains("if let Some(b) = &input.briefing")
+                && code.contains("qb.push(\", briefing = \").push_bind(b.clone())"),
+            "update_event must WRITE briefing when the key is present (incl. \"\") \
+             (perturbation: drop the briefing qb.push arm)"
+        );
+        assert!(
+            code.contains("qb.push(\", banner_image_url = \").push_bind(u.clone())"),
+            "update_event must WRITE banner_image_url when the key is present (incl. \"\") \
+             (perturbation: drop the banner qb.push arm)"
+        );
+        // Banner clear path goes through the validator — empty must be Ok, not 400.
+        assert!(
+            code.contains("fn validated_banner_image_url")
+                && code.contains("trimmed.is_empty() || is_http_url(trimmed)"),
+            "validated_banner_image_url must accept empty (clear) or http(s) \
+             (perturbation: refuse empty → \"\" clear 400s)"
+        );
+        assert!(
+            code.contains(".map(validated_banner_image_url)"),
+            "PATCH must route banner_image_url through validated_banner_image_url \
+             (perturbation: write raw / skip validator)"
         );
 
         let add = production
@@ -2846,8 +2918,10 @@ mod t332_patch_clear_and_reattach {
             .split("\npub async fn ")
             .next()
             .expect("handler body");
+        let add_code = collapse_ws(&strip_rust_comments(add));
         assert!(
-            add.contains("is_unique_violation") && add.contains("already attached to this event"),
+            add_code.contains("is_unique_violation")
+                && add_code.contains("already attached to this event"),
             "add_event_mission must map idx_event_mission unique violations to a 409 \
              (perturbation: drop is_unique_violation arm → 500 on duplicate attach)"
         );
