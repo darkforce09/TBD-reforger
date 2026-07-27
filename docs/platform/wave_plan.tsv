@@ -340,3 +340,4 @@
 52	T-539	T-538 Class-R must pin stdout flatten entrypoint	xtask/src/schema_gates.rs
 99	T-540	T-384 Class-R only — no IT for attendance retract on re-point	apps/website/api/tests/telemetry.rs; apps/website/api/src/handlers/telemetry.rs
 99	T-541	SpawnManager never calls IsComplete after T-415	apps/mod/tbd-framework/Scripts/Game/TBD; apps/website/frontend/src/arsenal_rules.rs
+54	T-542	T-381 incomplete — wire require_test_database_url into every IT binary	apps/website/api/tests

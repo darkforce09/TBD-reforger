@@ -2717,6 +2717,13 @@ Repro: rg retract_from apps/website/api — no IT exercises the path. |
 Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
 
 Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync. |
+| T-542 | 3382 | running | platform | T-381 incomplete — wire require_test_database_url into every IT binary | FOUND by W54 adversarial verifier (DIRTY MAJOR) after T-381.
+
+T-381 added common::require_test_database_url and wired it into factions.rs + identity_link.rs only. Ticket intent was refuse the *whole* suite against live `tbd_reforger`. 22 other IT binaries still raw-read env::var("TEST_DATABASE_URL") and will mutate the live DB under parallel cargo test while those two panic.
+
+Cure: replace every IT setup's raw TEST_DATABASE_URL read with common::require_test_database_url() (or assert_test_database_url after a required read). Add Class-R in common that fails if any tests/*.rs still contains env::var("TEST_DATABASE_URL") outside common/mod.rs itself.
+
+Repro: rg 'env::var\("TEST_DATABASE_URL"\)' apps/website/api/tests — 22 hits outside common. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

@@ -30,6 +30,13 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 - **T-532** (3372) — No API route to re-point mission current_version_id after a bad version [running] — FOUND as T-382 residual (W48). T-382 closed the *new* hole: vacuous `payload:{}` is rejected at create_version write time. Already-broken rows (and any future non-vacuous but unwanted tip) still cannot be re-pointed via API — only `psql` UPDATE of `missions.current_version_id`.
 
 Needs a rollback / re-point handler in missions.rs **and** route registration in `app.rs` (out of T-382 owns). Repro: after a good version then a bad tip that somehow lands, there is no PATCH/POST to restore the prior version id; `/compiled` stays 409 NoSlots.
+- **T-542** (3382) — T-381 incomplete — wire require_test_database_url into every IT binary [running] — FOUND by W54 adversarial verifier (DIRTY MAJOR) after T-381.
+
+T-381 added common::require_test_database_url and wired it into factions.rs + identity_link.rs only. Ticket intent was refuse the *whole* suite against live `tbd_reforger`. 22 other IT binaries still raw-read env::var("TEST_DATABASE_URL") and will mutate the live DB under parallel cargo test while those two panic.
+
+Cure: replace every IT setup's raw TEST_DATABASE_URL read with common::require_test_database_url() (or assert_test_database_url after a required read). Add Class-R in common that fails if any tests/*.rs still contains env::var("TEST_DATABASE_URL") outside common/mod.rs itself.
+
+Repro: rg 'env::var\("TEST_DATABASE_URL"\)' apps/website/api/tests — 22 hits outside common.
 
 ## Ready
 
