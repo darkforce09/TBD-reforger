@@ -292,7 +292,7 @@
 99	T-491	T-425 mixed drag two undo txns + untested pick/marquee	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; crates/map-engine-core/src/doc/store.rs
 50	T-492	fmt_changed/clippy_changed ignore changed_rs rc	scripts/platform/wave.sh
 99	T-493	T-397 Class-R blind to COALESCE(deaths,0)	apps/website/api/tests/telemetry.rs; apps/website/api/migrations/0014_nullable_match_player_stat_counters.sql
-99	T-494	trim source-ratchet + schedule briefing trim	apps/website/frontend/src/mission_overview.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/events.rs
+56	T-494	trim source-ratchet + schedule briefing trim	apps/website/frontend/src/mission_overview.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/events.rs
 99	T-495	members IT offset exercise	apps/website/api/tests/events.rs
 52	T-496	T-410 library/bookmark Class-R residue-dependent	apps/website/api/tests/missions.rs
 53	T-497	mission mutators still AuthUser+can_edit	apps/website/api/src/handlers/missions.rs
@@ -342,7 +342,7 @@
 99	T-541	SpawnManager never calls IsComplete after T-415	apps/mod/tbd-framework/Scripts/Game/TBD; apps/website/frontend/src/arsenal_rules.rs
 54	T-542	T-381 incomplete — wire require_test_database_url into every IT binary	apps/website/api/tests
 55	T-543	mcpd-bin.sh still echoes shared target/debug/mcpd path	scripts/mod/lib/mcpd-bin.sh; scripts/mod/mcp-call-selftest.sh
-99	T-544	T-532 Class-R only — no HTTP IT for set-current	apps/website/api/tests/missions.rs; apps/website/api/src/handlers/missions.rs
-99	T-545	mcp-daemon.sh comment still claims mcpd-bin ignores CARGO_TARGET_DIR	scripts/mod/mcp-daemon.sh
+56	T-544	T-532 Class-R only — no HTTP IT for set-current	apps/website/api/tests/missions.rs; apps/website/api/src/handlers/missions.rs
+56	T-545	mcp-daemon.sh comment still claims mcpd-bin ignores CARGO_TARGET_DIR	scripts/mod/mcp-daemon.sh
 99	T-546	T-498 Class-R only — no HTTP IT for Discord formula-title sanitize	apps/website/api/tests; apps/website/api/src/services/webhook.rs
 99	T-547	datefmt format_uptime doc overclaims server-control sharing	apps/website/frontend/src/datefmt.rs; apps/website/frontend/src/server_control.rs

@@ -12993,7 +12993,7 @@
         "tests",
         "frontend"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3333,
       "stream": "web-platform",
       "targets": [
@@ -14091,7 +14091,7 @@
         "tests",
         "mission-authoring"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3384,
       "executor": "claude-code",
       "priority": 2,
@@ -14113,7 +14113,7 @@
         "docs",
         "dx"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3385,
       "executor": "claude-code",
       "priority": 2,
@@ -14151,7 +14151,7 @@
       "program": "platform",
       "surfaces": [
         "FRONTEND",
-        "docs"
+        "FE"
       ],
       "impact": [
         "docs",
