@@ -11,6 +11,10 @@
 //!
 //! T-447: master list boots from `GET /cms/announcements` (admin drafts+published), not
 //! `mock_docs()`. Local New drafts still prepend into the RwSignal until first Publish.
+//!
+//! T-466: list LocalResource keeps `Result` (no `.ok()`). Failed GET surfaces an actionable
+//! error + Retry in the master pane; `list_seeded` is set only on Ok so an error never looks
+//! like a permanent empty catalog.
 #![allow(dead_code)]
 use crate::dto::Paginated;
 use crate::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
@@ -178,41 +182,59 @@ pub fn ContentManagerPage() -> impl IntoView {
     let docs = RwSignal::new(Vec::<Doc>::new());
     let selected_id = RwSignal::new(None::<String>);
     let list_seeded = RwSignal::new(false);
+    let list_error = RwSignal::new(None::<String>);
     let publish_busy = RwSignal::new(false);
     let delete_busy = RwSignal::new(false);
 
+    // Keep Result — `.ok()` would collapse Err into None and the hydrate Effect would treat it
+    // like a successful empty page (T-466).
     let list_res = LocalResource::new(move || async move {
         #[cfg(target_arch = "wasm32")]
         {
-            crate::client::api_get::<Paginated<Value>>(store, announcement_list_path())
-                .await
-                .ok()
+            crate::client::api_get::<Paginated<Value>>(store, announcement_list_path()).await
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
             let _ = store;
-            None::<Paginated<Value>>
+            Err::<Paginated<Value>, crate::client::ApiErr>((
+                0,
+                Some("CMS list unavailable off wasm".into()),
+            ))
         }
     });
 
     // One-shot hydrate — do not overwrite local New drafts / publish edits on later reads.
+    // Success-only: `list_seeded` stays false on Err so Retry can re-fetch and re-enter this Effect.
     Effect::new(move |_| {
         if list_seeded.get() {
             return;
         }
-        let Some(opt) = list_res.get() else {
+        let Some(result) = list_res.get() else {
             return;
         };
-        list_seeded.set(true);
-        let Some(page) = opt else {
-            return;
-        };
-        let mapped: Vec<Doc> = page.data.iter().filter_map(doc_from_announcement).collect();
-        if selected_id.get_untracked().is_none() {
-            selected_id.set(mapped.first().map(|d| d.id.clone()));
+        match result {
+            Ok(page) => {
+                list_error.set(None);
+                list_seeded.set(true);
+                let mapped: Vec<Doc> = page.data.iter().filter_map(doc_from_announcement).collect();
+                if selected_id.get_untracked().is_none() {
+                    selected_id.set(mapped.first().map(|d| d.id.clone()));
+                }
+                docs.set(mapped);
+            }
+            Err(e) => {
+                list_error.set(Some(crate::client::api_error_message(
+                    &e,
+                    "Failed to load announcements",
+                )));
+            }
         }
-        docs.set(mapped);
     });
+
+    let retry_list = move |_| {
+        list_error.set(None);
+        list_res.refetch();
+    };
 
     let new_post = move |_| {
         #[cfg(target_arch = "wasm32")]
@@ -266,6 +288,27 @@ pub fn ContentManagerPage() -> impl IntoView {
                                         .into_any()
                                     master=view! {
                                         {move || {
+                                            if let Some(err) = list_error.get() {
+                                                return view! {
+                                                    <div class="flex flex-col gap-3 px-1 py-4">
+                                                        <p
+                                                            class="text-label-md text-error"
+                                                            data-testid="content-list-error"
+                                                        >
+                                                            {err}
+                                                        </p>
+                                                        <button
+                                                            type="button"
+                                                            data-testid="content-list-retry"
+                                                            on:click=retry_list
+                                                            class="self-start rounded-full border border-white/10 px-3 py-1.5 text-label-sm text-on-surface transition hover:bg-white/5"
+                                                        >
+                                                            "Retry"
+                                                        </button>
+                                                    </div>
+                                                }
+                                                    .into_any();
+                                            }
                                             let sel = selected_id.get();
                                             let rows = docs.get();
                                             if rows.is_empty() {
@@ -826,6 +869,71 @@ mod tests {
         assert!(
             prod.contains(&set_docs),
             "hydrate Effect must `{set_docs}` (perturbation: hardcoded docs.set / drop apply)"
+        );
+    }
+
+    /// T-466 Class-R — list fetch must keep `Result` (no `.ok()`), seed only on Ok, and surface
+    /// an actionable error + Retry. RED: restore `.ok()` + `list_seeded.set(true)` before the
+    /// None/Err check → empty "No announcements yet" forever with no retry.
+    #[test]
+    fn content_list_error_does_not_seed_as_empty_success() {
+        const SRC: &str = include_str!("content.rs");
+        let prod = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("content.rs must have a #[cfg(test)] module");
+
+        // List Resource must not collapse Err→None (perturbation: restore `.await.ok()`).
+        let list_get = "api_get::<Paginated<Value>>(store, announcement_list_path())";
+        let list_region = prod
+            .split("LocalResource::new")
+            .nth(1)
+            .and_then(|s| s.split("Effect::new").next())
+            .expect("LocalResource block before Effect");
+        assert!(
+            list_region.contains(list_get),
+            "list LocalResource must call {list_get}"
+        );
+        assert!(
+            !list_region.contains(".ok()"),
+            "list LocalResource must not .ok() the GET (perturbation: Err→None empty success)"
+        );
+
+        // Success-only seed: list_seeded.set(true) must live inside the Ok arm, not before a
+        // None/Err early-return (the pre-T-466 "seed on None" pattern).
+        let seed = "list_seeded.set(true)";
+        assert!(
+            prod.contains(seed),
+            "success path must still set list_seeded"
+        );
+        assert!(
+            !prod.contains("list_seeded.set(true);\n        let Some(page) = opt else"),
+            "must not seed then early-return on None (perturbation: restore seed-on-None)"
+        );
+        assert!(
+            prod.contains("Ok(page)") && prod.contains(seed),
+            "list_seeded must be gated on Ok(page) (perturbation: seed outside Ok)"
+        );
+        // Ok arm must still apply mapped docs (success path pin).
+        let set_docs = format!("{}{}", "docs.set(", "mapped)");
+        assert!(prod.contains(&set_docs), "Ok hydrate must `{set_docs}`");
+
+        // Error UX — actionable message + Retry that refetches (not silent empty catalog).
+        assert!(
+            prod.contains("Failed to load announcements")
+                && prod.contains("list_error")
+                && prod.contains("content-list-error"),
+            "master pane must surface list_error (perturbation: drop error UI)"
+        );
+        assert!(
+            prod.contains("\"Retry\"")
+                && prod.contains("content-list-retry")
+                && prod.contains("list_res.refetch()"),
+            "Retry must refetch the list Resource (perturbation: error with no retry)"
+        );
+        assert!(
+            prod.contains("\"No announcements yet.\""),
+            "empty success copy must remain for true zero-row Ok responses"
         );
     }
 
