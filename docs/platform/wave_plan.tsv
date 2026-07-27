@@ -287,3 +287,4 @@
 99	T-486	Tripwire hollow make verify-t468 recipe body	Makefile; scripts/mod/verify-t468-ci-schema-parity.sh
 99	T-487	Seed DELETE orphan Squad Leader placeholder	apps/website/api/seeds/discord_roles.sql
 99	T-488	Document ROLE_RESYNC_INTERVAL_SECS in .env.example	apps/website/api/.env.example
+99	T-489	Break T-486 circular verify-t468 self-pin (direct bash CI)	Makefile; .github/workflows/ci.yml; scripts/mod/verify-t468-ci-schema-parity.sh; apps/website/api/.env.example

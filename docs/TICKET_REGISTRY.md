@@ -2606,19 +2606,27 @@ Cure: trim().is_empty() (or reject trim-empty) for both; Class-R pins. |
 Repro: recipe `verify-t438:\n\t@true` → make verify-t438 rc=0; bash verify-t468 → FAIL.
 
 Cure: add Makefile verify-t468 (or fold pin into ci-local + ci.yml) so hollow recipes fail without waiting for wave.sh gate. |
-| T-486 | 3325 | ready | platform | Tripwire hollow make verify-t468 recipe body (self-pin) | Wave 33 verifier NIT (T-485). verify-t468 pins t438/t456 recipe bodies but not its own. Hollow `verify-t468:\n\t@true` greens make verify-t468 / ci-local / ci.yml step; wave.sh cold gate still runs the bash script directly so cold gate stays honest.
+| T-486 | 3325 | shipped | platform | Tripwire hollow make verify-t468 recipe body (self-pin) | Wave 33 verifier NIT (T-485). verify-t468 pins t438/t456 recipe bodies but not its own. Hollow `verify-t468:\n\t@true` greens make verify-t468 / ci-local / ci.yml step; wave.sh cold gate still runs the bash script directly so cold gate stays honest.
 
 Repro: replace verify-t468 recipe with @true → make verify-t468 rc=0.
 
 Cure: extend verify-t468 (or sibling) to assert Makefile verify-t468 recipe invokes the real script. |
-| T-487 | 3326 | ready | platform | Seed DELETE for orphan Discord Squad Leader placeholder snowflake | Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.
+| T-487 | 3326 | shipped | platform | Seed DELETE for orphan Discord Squad Leader placeholder snowflake | Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.
 
 Repro: DB with placeholder row; make seed; SELECT still returns the row.
 
 Cure: add DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000' (or equivalent) to discord_roles.sql before INSERT. |
-| T-488 | 3327 | ready | platform | Document ROLE_RESYNC_INTERVAL_SECS in .env.example | Wave 33 residual (T-428). api.rs arms role resync via ROLE_RESYNC_INTERVAL_SECS (default 24h) but apps/website/api/.env.example only documents SERVER_STATUS_PUBLISH_INTERVAL_SECS and LEADERBOARD_REFRESH_INTERVAL_SECS.
+| T-488 | 3327 | shipped | platform | Document ROLE_RESYNC_INTERVAL_SECS in .env.example | Wave 33 residual (T-428). api.rs arms role resync via ROLE_RESYNC_INTERVAL_SECS (default 24h) but apps/website/api/.env.example only documents SERVER_STATUS_PUBLISH_INTERVAL_SECS and LEADERBOARD_REFRESH_INTERVAL_SECS.
 
 Cure: add commented ROLE_RESYNC_INTERVAL_SECS=86400 next to sibling interval knobs. |
+| T-489 | 3328 | shipped | platform | Break T-486 circular verify-t468 self-pin (CI/ci-local via direct bash) | Wave 34 adversarial MAJOR. T-486 added verify-t468 to bash_pins inside scripts/mod/verify-t468-ci-schema-parity.sh, but ci.yml and Makefile ci-local invoke `make verify-t468`. Hollow `verify-t468:\n\t@true` (or `@true # bash …`) greens make / CI / ci-local because the tripwire never runs; only direct bash (wave.sh cold gate) FAILs.
+
+Repro:
+  # mutate Makefile verify-t468 recipe to @true
+  make verify-t468   # rc=0 (false green)
+  bash scripts/mod/verify-t468-ci-schema-parity.sh  # FAIL pin
+
+Cure: ci.yml step + Makefile ci-local must invoke `bash scripts/mod/verify-t468-ci-schema-parity.sh` directly (not $(MAKE) verify-t468). Keep Makefile target for humans. Update comments on circularity. Also fix .env.example attribution: ROLE_RESYNC comment says T-488 but feature is T-428 (verifier MINOR). |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

@@ -195,9 +195,8 @@ curl -X POST http://localhost:8080/api/v1/admin/roles/sync \
   -H "Authorization: Bearer $ADMIN_JWT"
 ```
 
-If a dirty DB still has the old placeholder row, delete it manually
-(`DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000';`) — re-`make seed`
-does not remove orphans.
+If a dirty DB still has the old placeholder row, re-`make seed` clears it (T-487:
+`DELETE` of `1517290000000000000` before INSERT). Manual delete is still fine.
 
 `resolve_role` returns enlisted for an empty snapshot, so a user who is genuinely in no mapped
 role stays enlisted by design — that is not the same failure as an unmapped snowflake.
