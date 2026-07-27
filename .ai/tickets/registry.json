@@ -13725,6 +13725,72 @@
       ],
       "executor": "claude-code",
       "priority": 0
+    },
+    {
+      "id": "T-528",
+      "title": "W47 hotfix: me.rs arma_linked still is_some() after T-350",
+      "summary": "Wave 47 verifier P1/MAJOR vs T-350 ticket claim. T-350 fixed auth/oauth (+ leave reason) but title/summary name four linked sites including me.rs:87 and me.rs:170 which still use u.arma_id.is_some() \u2014 planted whitespace arma_id reports linked=true on GET /me and /me/link/status. Cure: use arma_id_is_linked (or same trim/nonempty helper) at both me.rs sites; Class-R/IT that RED on is_some()-only. Owns: apps/website/api/src/handlers/me.rs (and tests if needed). Do not touch events.rs roster (T-529).",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "auth",
+        "api",
+        "tests"
+      ],
+      "status": "running",
+      "order": 3368,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-529",
+      "title": "events roster SQL still allows whitespace arma_id (no btrim)",
+      "summary": "Wave 47 verifier P2 residual from T-350. ingest_event_roster still uses u.arma_id <> '' without btrim; whitespace passes and can emit as seating key. Latent after 0016 scrub. Cure: btrim/nonempty predicate + trim seating key consistently with other arma_id sites. Owns: apps/website/api/src/handlers/events.rs (+ IT). Caution: T-343 one-sided-trim traps \u2014 read before changing.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "api",
+        "events",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3369,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-530",
+      "title": "T-332 Class-R partly pins doc comment strings",
+      "summary": "Wave 47 verifier P3/NIT. T-332 BE/FE Class-R partly asserts doc comment phrases (T-332 clear contract). Behavior covered by IT + stronger FE pins. Cure: pin live code paths only (body.insert / is_unique_violation / SQL), not comment prose.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "FE",
+        "tests"
+      ],
+      "impact": [
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3370,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }

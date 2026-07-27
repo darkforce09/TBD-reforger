@@ -326,3 +326,6 @@
 99	T-525	content_golden obsolete two-seat comments after T-511	apps/website/api/seeds/content_golden.sql
 46	T-526	W46 hotfix rustfmt mission_title_prefer after T-522	apps/website/frontend/src/mission_title_prefer.rs
 47	T-527	W47 hotfix rustfmt event_manager after T-332	apps/website/frontend/src/event_manager.rs
+47	T-528	W47 hotfix me.rs arma_linked whitespace after T-350	apps/website/api/src/handlers/me.rs
+99	T-529	events roster SQL whitespace arma_id no btrim	apps/website/api/src/handlers/events.rs
+99	T-530	T-332 Class-R partly pins doc comments	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
