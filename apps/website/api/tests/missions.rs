@@ -1358,3 +1358,174 @@ async fn create_version_bumps_updated_at_and_writes_audit() {
         saves[0]
     );
 }
+
+/// T-512 HTTP IT — T-509 CREATE contract: omitted or `""` weather → 201 + `clear`.
+///
+/// Class-R in `handlers/missions.rs` pins the handler source; this is the live HTTP layer
+/// `admin_field` already exercises incidentally (POST without weather). Explicit pin so a
+/// regression that 400s omitted weather cannot hide behind Class-R alone.
+///
+/// RED (assert-flip): expect `weather == "dense_fog"` on the omit path — fails while production
+/// still defaults to Clear.
+#[tokio::test]
+async fn create_mission_omitted_or_blank_weather_defaults_to_clear() {
+    let Some((app, tok)) = app_and_token("mission_maker").await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let t = Some(tok.as_str());
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+
+    // Omit weather entirely (`#[serde(default)]` → `""` → Clear).
+    let title_omit = format!("T512-Create-Omit-{stamp}");
+    let (st, b) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        t,
+        None,
+        Some(&format!(
+            r#"{{"title":"{title_omit}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+        )),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CREATED,
+        "CREATE omit weather: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let omit = json(&b);
+    assert_eq!(
+        omit["weather"], "clear",
+        "omitted weather must default to clear (T-509): {omit}"
+    );
+
+    // Explicit empty string is the same serde/default path and must also land Clear.
+    let title_blank = format!("T512-Create-Blank-{stamp}");
+    let (st, b) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        t,
+        None,
+        Some(&format!(
+            r#"{{"title":"{title_blank}","terrain":"everon","game_mode":"pve_coop","weather":"","max_players":16}}"#
+        )),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CREATED,
+        "CREATE weather=\"\": {}",
+        String::from_utf8_lossy(&b)
+    );
+    let blank = json(&b);
+    assert_eq!(
+        blank["weather"], "clear",
+        "blank weather on CREATE must default to clear (T-509): {blank}"
+    );
+}
+
+/// T-512 HTTP IT — T-377 PATCH contract: after `dense_fog`, `{"weather":""}` → 400 and row stays.
+///
+/// Pre-T-377 `valid_weather` mapped `""` → Clear, so this PATCH answered 200 and rewrote the row.
+/// Class-R covers the helper; this IT covers the wire + persistence.
+///
+/// RED (assert-flip): expect `StatusCode::OK` on the blank PATCH — fails while production 400s.
+#[tokio::test]
+async fn patch_blank_weather_rejects_and_preserves_dense_fog() {
+    let Some((app, pool, maker, _)) = app_pool_and_tokens().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let title = format!("T512-Patch-Blank-{stamp}");
+
+    let (st, b) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        Some(&maker),
+        None,
+        Some(&format!(
+            r#"{{"title":"{title}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
+    let mid = json(&b)["id"].as_str().unwrap().to_string();
+
+    let (st, b) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/missions/{mid}"),
+        Some(&maker),
+        None,
+        Some(r#"{"weather":"dense_fog"}"#),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "set dense_fog: {}",
+        String::from_utf8_lossy(&b)
+    );
+    assert_eq!(json(&b)["weather"], "dense_fog");
+
+    let (st, b) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/missions/{mid}"),
+        Some(&maker),
+        None,
+        Some(r#"{"weather":""}"#),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::BAD_REQUEST,
+        "blank weather PATCH must 400 (T-377): {}",
+        String::from_utf8_lossy(&b)
+    );
+    assert_eq!(
+        json(&b)["error"],
+        "invalid weather",
+        "blank weather error body: {}",
+        String::from_utf8_lossy(&b)
+    );
+
+    let stored: String =
+        sqlx::query_scalar("SELECT weather::text FROM missions WHERE id = $1::uuid")
+            .bind(&mid)
+            .fetch_one(&pool)
+            .await
+            .expect("weather after rejected blank PATCH");
+    assert_eq!(
+        stored, "dense_fog",
+        "rejected blank PATCH must leave dense_fog untouched"
+    );
+
+    let (st, b) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/missions/{mid}"),
+        Some(&maker),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
+    assert_eq!(
+        json(&b)["weather"],
+        "dense_fog",
+        "GET must still serve dense_fog after blank PATCH reject: {}",
+        String::from_utf8_lossy(&b)
+    );
+}
