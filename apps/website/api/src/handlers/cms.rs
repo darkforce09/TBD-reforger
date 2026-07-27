@@ -531,7 +531,13 @@ mod tests {
         assert!(!derived.contains("&lt;"));
     }
 
-    /// T-447 Class-R — CMS list handler must exist and filter drafts+published (not published-only).
+    /// T-447 / T-465 Class-R — CMS list must be AdminUser-gated and filter drafts+published
+    /// on both the count and list SQL (not published-only; not a bait comment).
+    ///
+    /// RED perturbations (Wave 25 verifier):
+    /// - B1: leave `status IN ('draft', 'published')` in a comment + published-only SQL → FAIL
+    ///   (filter must sit in both `query_scalar` and `query_as` windows; count == 2).
+    /// - M1: drop `_a: AdminUser` from `list_cms_announcements` → FAIL (handler-slice pin).
     #[test]
     fn list_cms_announcements_is_drafts_plus_published_not_public_feed() {
         const SRC: &str = include_str!("cms.rs");
@@ -539,14 +545,52 @@ mod tests {
             .split("#[cfg(test)]")
             .next()
             .expect("cms.rs must have a #[cfg(test)] module");
-        assert!(
-            prod.contains("pub async fn list_cms_announcements"),
-            "CMS GET list handler must exist (perturbation: remove list_cms_announcements)"
+
+        let start = prod.find("pub async fn list_cms_announcements").expect(
+            "CMS GET list handler must exist (perturbation: remove list_cms_announcements)",
         );
+        let after = &prod[start..];
+        // Next sibling `pub async fn` ends the handler (create_announcement follows today).
+        let end = after[1..]
+            .find("\npub async fn ")
+            .map(|i| i + 1)
+            .unwrap_or(after.len());
+        let handler = &after[..end];
+
+        // M1 — AdminUser on THIS handler (sibling extractors elsewhere must not satisfy).
+        let admin_pin = format!("{}{}", "_a: ", "AdminUser");
         assert!(
-            prod.contains("status IN ('draft', 'published')"),
-            "CMS list must include drafts (perturbation: published-only like public feed)"
+            handler.contains(&admin_pin),
+            "list_cms_announcements must take `{admin_pin}` (perturbation: remove AdminUser)"
         );
+
+        // B1 — drafts+published filter on both count (`query_scalar`) and list (`query_as`).
+        // Assembled so a free-floating bait comment / this test's source cannot false-green.
+        let filter = format!("{}{}", "status IN ('draft', ", "'published')");
+        assert_eq!(
+            handler.matches(&filter).count(),
+            2,
+            "count + list SQL must each use `{filter}` (bait comment alone / published-only FAIL)"
+        );
+
+        let qs = handler
+            .find("query_scalar")
+            .expect("list_cms_announcements must use query_scalar for total");
+        let qs_win = &handler[qs..handler.len().min(qs + 280)];
+        assert!(
+            qs_win.contains(&filter),
+            "count query_scalar window must contain `{filter}`"
+        );
+
+        let qa = handler
+            .find("query_as")
+            .expect("list_cms_announcements must use query_as for rows");
+        let qa_win = &handler[qa..handler.len().min(qa + 520)];
+        assert!(
+            qa_win.contains(&filter),
+            "list query_as window must contain `{filter}`"
+        );
+
         const APP: &str = include_str!("../app.rs");
         assert!(
             APP.contains(

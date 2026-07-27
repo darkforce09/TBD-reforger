@@ -783,7 +783,11 @@ mod tests {
         );
     }
 
-    /// T-447 Class-R — boot must be LocalResource GET, not sole `mock_docs()` seed.
+    /// T-447 / T-465 Class-R — boot must LocalResource GET the CMS list **and** the hydrate
+    /// Effect must apply mapped page data into `docs` (not ignore `opt` / hardcode).
+    ///
+    /// RED perturbation (Wave 25 verifier B2): keep LocalResource/api_get + `doc_from_announcement`
+    /// but Effect does `docs.set(hardcoded)` / never reads `opt` → FAIL (missing map + set needles).
     #[test]
     fn content_boots_from_cms_list_not_mock_docs() {
         const SRC: &str = include_str!("content.rs");
@@ -808,9 +812,20 @@ mod tests {
                 && prod.contains("api_get::<Paginated<Value>>(store, announcement_list_path())"),
             "boot must LocalResource api_get the CMS list (perturbation: drop Resource)"
         );
+        // B2 — Effect must map `page.data` and write it into `docs`. Needles assembled so
+        // this test's source / a free `doc_from_announcement` mention cannot false-green.
+        let map_page = format!(
+            "{}{}",
+            "page.data.iter().filter_map(", "doc_from_announcement)"
+        );
+        let set_docs = format!("{}{}", "docs.set(", "mapped)");
         assert!(
-            prod.contains("doc_from_announcement"),
-            "DTO→Doc mapping must exist"
+            prod.contains(&map_page),
+            "hydrate Effect must `{map_page}` (perturbation: ignore opt / skip mapping)"
+        );
+        assert!(
+            prod.contains(&set_docs),
+            "hydrate Effect must `{set_docs}` (perturbation: hardcoded docs.set / drop apply)"
         );
     }
 
