@@ -453,9 +453,7 @@ mod tests {
                     wrong.push(format!("  dropped a legitimate avatar {input:?}"));
                 }
             } else if got != DEFAULT_AVATAR {
-                wrong.push(format!(
-                    "  kept a non-http avatar {input:?} (got {got:?})"
-                ));
+                wrong.push(format!("  kept a non-http avatar {input:?} (got {got:?})"));
             }
         }
         assert!(

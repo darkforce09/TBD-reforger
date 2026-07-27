@@ -112,7 +112,11 @@ async fn patch_refuses_a_non_http_thumbnail_and_leaves_the_stored_value_alone() 
         json!({"thumbnail_url": GOOD}),
     )
     .await;
-    assert_eq!(status, StatusCode::OK, "seed PATCH of good thumbnail failed");
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "seed PATCH of good thumbnail failed"
+    );
 
     for bad in REJECTED {
         let (status, body) = send(
@@ -134,13 +138,12 @@ async fn patch_refuses_a_non_http_thumbnail_and_leaves_the_stored_value_alone() 
             "PATCH rejected {bad:?} for the wrong reason: {msg:?}"
         );
 
-        let stored: String = sqlx::query_scalar(
-            "SELECT COALESCE(thumbnail_url, '') FROM missions WHERE id = $1",
-        )
-        .bind(uuid::Uuid::parse_str(&id).unwrap())
-        .fetch_one(&pool)
-        .await
-        .expect("re-read");
+        let stored: String =
+            sqlx::query_scalar("SELECT COALESCE(thumbnail_url, '') FROM missions WHERE id = $1")
+                .bind(uuid::Uuid::parse_str(&id).unwrap())
+                .fetch_one(&pool)
+                .await
+                .expect("re-read");
         assert_eq!(
             stored, GOOD,
             "PATCH overwrote the stored thumbnail with {bad:?} despite 400-ing"
@@ -169,12 +172,11 @@ async fn patch_rejection_leaves_every_other_field_untouched() {
     let id = seed_mission(&app, &token).await;
     let mid = uuid::Uuid::parse_str(&id).unwrap();
 
-    let original_title: String =
-        sqlx::query_scalar("SELECT title FROM missions WHERE id = $1")
-            .bind(mid)
-            .fetch_one(&pool)
-            .await
-            .expect("title");
+    let original_title: String = sqlx::query_scalar("SELECT title FROM missions WHERE id = $1")
+        .bind(mid)
+        .fetch_one(&pool)
+        .await
+        .expect("title");
 
     let (status, _) = send(
         &app,

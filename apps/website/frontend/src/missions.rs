@@ -1491,9 +1491,7 @@ mod tests {
                     wrong.push(format!("  dropped a legitimate thumb {input:?}"));
                 }
             } else if got != PLACEHOLDER_ART {
-                wrong.push(format!(
-                    "  kept a non-http thumb {input:?} (got {got:?})"
-                ));
+                wrong.push(format!("  kept a non-http thumb {input:?} (got {got:?})"));
             }
         }
         assert!(
