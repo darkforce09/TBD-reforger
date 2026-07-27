@@ -18,10 +18,11 @@
 --    DEFAULT now() + NOT NULL.
 --
 -- 3) Partial unique on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to
---    IS NOT NULL is NOT created here. The golden double-seat that blocked it is fixed
---    in content_golden.sql, but tests/events.rs:540 still seeds legacy two-seat state
---    for the T-318 recovery path, and a partial unique cannot be DEFERRABLE. Landing
---    the index requires a deliberate events.rs change outside this slice's owns.
+--    IS NOT NULL was deferred here at T-331: content_golden double-seat was already
+--    fixed, but tests/events.rs still seeded legacy two-seat state for T-318 recovery,
+--    and a partial unique cannot be DEFERRABLE. That index landed later in
+--    0017_orbat_slots_assigned_partial_unique.sql (T-511), which also retired the
+--    two-seat seed.
 
 UPDATE matches SET winning_faction = '' WHERE winning_faction IS NULL;
 UPDATE matches SET aar_replay_url = '' WHERE aar_replay_url IS NULL;
