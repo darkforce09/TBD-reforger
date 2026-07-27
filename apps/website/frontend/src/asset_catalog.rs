@@ -28,7 +28,43 @@
 //! Pure + native-testable on purpose: no `web_sys`, no signals. The view layer is `eden_chrome`.
 #![allow(dead_code)]
 
+use std::collections::HashSet;
+use std::sync::OnceLock;
+
 use crate::dto::RegistryItem;
+
+/// Mod spawn registry (`apps/mod/tbd-framework/Data/registry.json`) — T-439 pins Objects
+/// palette leaves to aliases this file actually resolves. Included at compile time so the
+/// wasm palette cannot offer a synthesised `prop:`/`comp:` the mod would warn-skip.
+const MOD_SPAWN_REGISTRY_JSON: &str =
+    include_str!("../../../../apps/mod/tbd-framework/Data/registry.json");
+
+/// `prop:` / `comp:` aliases present in the mod spawn registry (T-439).
+#[must_use]
+fn mod_object_aliases() -> &'static HashSet<String> {
+    static ALIASES: OnceLock<HashSet<String>> = OnceLock::new();
+    ALIASES.get_or_init(|| {
+        let v: serde_json::Value =
+            serde_json::from_str(MOD_SPAWN_REGISTRY_JSON).expect("mod registry.json parses");
+        let mut set = HashSet::new();
+        if let Some(entries) = v.get("entries").and_then(|e| e.as_array()) {
+            for e in entries {
+                if let Some(alias) = e.get("alias").and_then(|a| a.as_str()) {
+                    if alias.starts_with("prop:") || alias.starts_with("comp:") {
+                        set.insert(alias.to_string());
+                    }
+                }
+            }
+        }
+        set
+    })
+}
+
+/// True when a crate/other row's derived alias exists in the mod spawn registry (T-439).
+#[must_use]
+pub fn object_alias_registered(resource_name: &str, display_name: &str) -> bool {
+    mod_object_aliases().contains(&derive_object_alias(resource_name, display_name))
+}
 
 /// Eden chip sides the Factions palette may filter on (T-180.5 — no CIV chip).
 const EDEN_SIDES: &[&str] = &["BLUFOR", "OPFOR", "INDFOR"];
@@ -248,14 +284,19 @@ const OBJECT_OPEN_DEPTH: usize = 2;
 /// T-254 — Objects palette: non-character, non-vehicle registry rows that belong on
 /// `entities[]` (`crate` / placeable `other`). Whole category path kept as folders (like
 /// vehicles). `abstract` rows excluded.
+///
+/// T-439 — only leaves whose [`derive_object_alias`] exists in mod `Data/registry.json`
+/// (`prop:` / `comp:`). Unregistered kinds are dropped from the palette so SpawnMissionEntities
+/// never warn-skips a leaf the author was offered.
 #[must_use]
 pub fn build_object_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
     let mut roots: Vec<CatalogNode> = Vec::new();
 
-    for item in items
-        .iter()
-        .filter(|i| is_object_kind(&i.kind) && i.r#abstract != Some(true))
-    {
+    for item in items.iter().filter(|i| {
+        is_object_kind(&i.kind)
+            && i.r#abstract != Some(true)
+            && object_alias_registered(&i.resource_name, &i.display_name)
+    }) {
         let segs: Vec<&str> = item.category.split('/').filter(|s| !s.is_empty()).collect();
 
         let mut cur = &mut roots;
@@ -302,6 +343,11 @@ pub fn build_object_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
 ///
 /// Prefer a known mod-registry reverse hit (`comp:checkpoint_small`); otherwise synthesise
 /// `prop:<slug>` / `comp:<slug>` from the display name (Composition path → `comp:`).
+///
+/// T-439 — synthesis alone is not enough for spawn: [`build_object_catalog_tree`] only offers
+/// leaves whose alias is present in mod `Data/registry.json`, and
+/// `scripts/mod/verify-t439-objects-registry-aliases.sh` pins every workbench Objects-eligible
+/// kind to a matching registry row (guid == resource_name).
 #[must_use]
 pub fn derive_object_alias(resource_name: &str, display_name: &str) -> String {
     const KNOWN: &[(&str, &str)] = &[(
@@ -717,25 +763,36 @@ mod tests {
 
     fn object_items() -> Vec<RegistryItem> {
         let mut v = golden_items();
+        // Registered in mod Data/registry.json (T-439) — must reach Objects leaves.
         v.push(object_row(
-            "{FA}Prefabs/Props/Military/AmmoBox.et",
-            "Ammo Crate 5.56",
-            "ArmaReforger/Props/Military",
+            "{7007B975BEC018D9}Prefabs/Props/Military/AmmoBoxes/AmmoBox_50cal_100rnd.et",
+            "AmmoBox 50cal 100rnd",
+            "ArmaReforger/Props/Military/AmmoBoxes",
             "crate",
             false,
         ));
+        // Abstract — excluded regardless of registry.
         v.push(object_row(
-            "{FB}Prefabs/Props/Military/AmmoBox_base.et",
-            "Ammo Crate base",
-            "ArmaReforger/Props/Military",
+            "{7007B975BEC018D9}Prefabs/Props/Military/AmmoBoxes/AmmoBox_50cal_100rnd_base.et",
+            "AmmoBox 50cal base",
+            "ArmaReforger/Props/Military/AmmoBoxes",
             "crate",
             true,
         ));
+        // Registered composition-path crate.
         v.push(object_row(
-            "{FC}Prefabs/Items/Demining/MineFlag.et",
-            "Mine Flag",
-            "ArmaReforger/Items/Demining",
-            "other",
+            "{3568138FF7A659A1}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/AmmoBoxArsenal_Equipment_US_Apparel.et",
+            "AmmoBoxArsenal Equipment US Apparel",
+            "ArmaReforger/Compositions/Misc/CustomEntities/InteractionPoints",
+            "crate",
+            false,
+        ));
+        // Synthesises prop:unregistered_test_crate — NOT in mod registry → dropped (T-439).
+        v.push(object_row(
+            "{DEADBEEFDEADBEEF}Prefabs/Props/Military/Unregistered.et",
+            "Unregistered Test Crate",
+            "ArmaReforger/Props/Military",
+            "crate",
             false,
         ));
         v
@@ -757,8 +814,11 @@ mod tests {
         found.sort();
         assert_eq!(
             found,
-            vec!["Ammo Crate 5.56".to_string(), "Mine Flag".to_string()],
-            "abstract crates and character/gear rows must not reach Objects leaves"
+            vec![
+                "AmmoBox 50cal 100rnd".to_string(),
+                "AmmoBoxArsenal Equipment US Apparel".to_string(),
+            ],
+            "abstract crates, unregistered aliases, and character/gear rows must not reach Objects leaves"
         );
         assert!(
             !tree.iter().any(|n| n.label == "NATO"),
@@ -785,6 +845,40 @@ mod tests {
                 "Checkpoint Small"
             ),
             "comp:checkpoint_small"
+        );
+    }
+
+    /// T-439 Class-R: mod spawn registry must expose the Objects alias set the palette filters on.
+    #[test]
+    fn t439_mod_registry_exposes_prop_and_comp_aliases() {
+        let aliases = mod_object_aliases();
+        let prop = aliases.iter().filter(|a| a.starts_with("prop:")).count();
+        let comp = aliases.iter().filter(|a| a.starts_with("comp:")).count();
+        assert!(
+            prop >= 289,
+            "expected ≥289 prop: rows in mod registry, got {prop}"
+        );
+        assert!(
+            comp >= 45,
+            "expected ≥45 comp: rows in mod registry (incl. checkpoint_small), got {comp}"
+        );
+        assert!(
+            aliases.contains("comp:checkpoint_small"),
+            "POC comp:checkpoint_small must remain registered"
+        );
+        assert!(
+            object_alias_registered(
+                "{7007B975BEC018D9}Prefabs/Props/Military/AmmoBoxes/AmmoBox_50cal_100rnd.et",
+                "AmmoBox 50cal 100rnd"
+            ),
+            "workbench crate must resolve to a registered prop: alias"
+        );
+        assert!(
+            !object_alias_registered(
+                "{DEADBEEFDEADBEEF}Prefabs/Props/Military/Unregistered.et",
+                "Unregistered Test Crate"
+            ),
+            "unregistered synthesised alias must not pass the palette gate"
         );
     }
 }
