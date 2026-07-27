@@ -54,9 +54,12 @@ class TBD_ObjectiveRegistry
 	static const float DEFAULT_CAPTURE_ANNOUNCE_SECONDS = 15.0;
 	static const float DEFAULT_HOLD_ANNOUNCE_SECONDS = 60.0;
 
-	//! Sanity ceiling on an authored duration. Not a schema rule — a guard against a typo
-	//! (`captureSeconds: 12000`) producing an objective nobody can take inside a 90-minute event.
-	//! Deliberately generous: `last-stand-at-montfort.json` legitimately authors `holdSeconds: 2700`.
+	//! Sanity ceiling on an authored duration. Pinned in schema as `maximum` 21600 on
+	//! `captureSeconds` / `neutralizeSeconds` / `holdSeconds` (T-275 / mission.schema.json).
+	//! Guard against a typo (`captureSeconds: 12000`) producing an objective nobody can take
+	//! inside a 90-minute event. Deliberately generous: `last-stand-at-montfort.json`
+	//! legitimately authors `holdSeconds: 2700`. Schema rejects over-ceiling values upstream;
+	//! this remains the runtime fallback / inert path if a document reaches us out of band.
 	static const float MAX_DURATION_SECONDS = 21600.0;
 
 	//! Vertical extent of the destroy-target world query, in metres either side of sea level.

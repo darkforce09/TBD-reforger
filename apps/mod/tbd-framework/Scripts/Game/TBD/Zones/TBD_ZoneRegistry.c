@@ -47,8 +47,10 @@ class TBD_ZoneRegistry
 	static const float DEFAULT_GRACE_SECONDS = 30.0;
 	static const float DEFAULT_WARN_EVERY_SECONDS = 5.0;
 
-	//! Sanity ceiling on an authored grace. Not a schema rule — a guard against a typo
-	//! (`graceSeconds: 30000`) silently disabling enforcement for the whole round.
+	//! Sanity ceiling on an authored grace. Pinned in schema as `zoneRules.graceSeconds.maximum`
+	//! = 3600 (T-275 / mission.schema.json). Guard against a typo (`graceSeconds: 30000`)
+	//! silently disabling enforcement for the whole round — schema rejects it upstream; this
+	//! remains the runtime fallback if a document somehow reaches us out of band.
 	static const float MAX_GRACE_SECONDS = 3600.0;
 
 	protected static ref array<ref TBD_Zone> s_aZones;

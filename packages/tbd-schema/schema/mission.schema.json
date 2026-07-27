@@ -306,6 +306,8 @@
         "nets": {
           "type": "array",
           "minItems": 1,
+          "maxItems": 32,
+          "description": "T-275: `maxItems` 32 pins `TBD_RadioPlan.MAX_NETS` (TBD_RadioPlan.c:91). The mod truncates to the first 32 valid nets and warns — without this, a document can validate and still drop authored channels.",
           "items": { "$ref": "#/$defs/net" }
         }
       }
@@ -316,7 +318,12 @@
       "additionalProperties": false,
       "properties": {
         "id": { "$ref": "#/$defs/netId" },
-        "label": { "type": "string", "minLength": 1 },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 48,
+          "description": "T-275: `maxLength` 48 pins `TBD_RadioPlan.MAX_LABEL_CHARS` (TBD_RadioPlan.c:94). The mod truncates over-long labels via CapLabel — without this, a document can validate and still show a shortened channel name."
+        },
         "freqMHz": { "type": "number", "minimum": 30, "maximum": 512 },
         "faction": { "$ref": "#/$defs/factionKey" },
         "range": {
@@ -391,14 +398,15 @@
     },
     "zoneRules": {
       "type": "object",
-      "description": "Zone-type specific rules. OPTIONAL as a whole — a zone that authors no `rules` runs entirely on the defaults named per key below.\n\nWHY THIS IS A CLOSED VOCABULARY (T-241). Both readers are TYPED: Enfusion's `JsonLoadContext` maps JSON keys onto named class fields, so a key the class does not declare is INVISIBLE to it — not rejected, not logged, simply absent. `TBD_ZoneRegistry.ResolveRules` then reports \"no rule this build understands was readable\", which is true of both \"authored nothing\" and \"authored `graceSecconds`\", and a typed parser cannot tell those apart. That makes this schema the ONLY place a misspelled rule key can be caught, so `additionalProperties` is false and every key the mod reads is declared here. Adding a rule to the vocabulary is a field in the reader plus a property here.\n\nWHY THE VOCABULARY IS FLAT AND NOT NARROWED BY `zone.type`. Neither reader is type-conditional. `TBD_MissionZoneRulesStruct` (TBD_MissionLoader.c:93-105) is parsed for every zone and `TBD_ObjectiveRulesStruct` (TBD_ObjectiveRules.c:76-101) runs a second pass over every zone in the same document, so `captureSeconds` on a boundary zone parses and is ignored exactly as it is today. Narrowing per type here would declare a rule the runtime does not enforce; the per-key descriptions name the consuming zone type instead. `TBD_ZoneRegistry.ResolveRules` only SUPPRESSES its diagnostics for types it does not enforce (`report`), it does not reject the keys.\n\nWHY THERE ARE MINIMA BUT NO MAXIMA. Each minimum below is the reader's own error branch (`< 0` or `<= 0`), where an out-of-range value is discarded in favour of the default. The mod also applies sanity CEILINGS — `TBD_ZoneRegistry.MAX_GRACE_SECONDS` = 3600 and `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS` = 21600 — but those are runtime guards that warn and fall back rather than contract limits, and declaring mod-enforced limits is T-275's slice. They are deliberately NOT encoded here so the two cannot disagree.\n\nPRESENCE. Numeric and string keys carry an ABSENT sentinel (-1e6; -1 for the one integer, because `targetCount: 0` is meaningful) so a bad authored value is reported as an error instead of being mistaken for \"not authored\". BOOLS CANNOT — there is no third value — so for the four booleans \"absent\" and \"authored false\" are indistinguishable at runtime and always will be. Each bool's default is the value an author gets by writing nothing, so nothing is lost behaviourally.",
+      "description": "Zone-type specific rules. OPTIONAL as a whole — a zone that authors no `rules` runs entirely on the defaults named per key below.\n\nWHY THIS IS A CLOSED VOCABULARY (T-241). Both readers are TYPED: Enfusion's `JsonLoadContext` maps JSON keys onto named class fields, so a key the class does not declare is INVISIBLE to it — not rejected, not logged, simply absent. `TBD_ZoneRegistry.ResolveRules` then reports \"no rule this build understands was readable\", which is true of both \"authored nothing\" and \"authored `graceSecconds`\", and a typed parser cannot tell those apart. That makes this schema the ONLY place a misspelled rule key can be caught, so `additionalProperties` is false and every key the mod reads is declared here. Adding a rule to the vocabulary is a field in the reader plus a property here.\n\nWHY THE VOCABULARY IS FLAT AND NOT NARROWED BY `zone.type`. Neither reader is type-conditional. `TBD_MissionZoneRulesStruct` (TBD_MissionLoader.c:93-105) is parsed for every zone and `TBD_ObjectiveRulesStruct` (TBD_ObjectiveRules.c:76-101) runs a second pass over every zone in the same document, so `captureSeconds` on a boundary zone parses and is ignored exactly as it is today. Narrowing per type here would declare a rule the runtime does not enforce; the per-key descriptions name the consuming zone type instead. `TBD_ZoneRegistry.ResolveRules` only SUPPRESSES its diagnostics for types it does not enforce (`report`), it does not reject the keys.\n\nWHY THERE ARE MINIMA AND MAXIMA. Each minimum below is the reader's own error branch (`< 0` or `<= 0`), where an out-of-range value is discarded in favour of the default. Each maximum pins the matching mod sanity CEILING (T-275): `graceSeconds` ≤ `TBD_ZoneRegistry.MAX_GRACE_SECONDS` (3600); `captureSeconds` / `neutralizeSeconds` / `holdSeconds` ≤ `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS` (21600). Those ceilings used to be runtime-only (warn + fall back / inert); encoding them here means a document cannot validate and still be clamped.\n\nPRESENCE. Numeric and string keys carry an ABSENT sentinel (-1e6; -1 for the one integer, because `targetCount: 0` is meaningful) so a bad authored value is reported as an error instead of being mistaken for \"not authored\". BOOLS CANNOT — there is no third value — so for the four booleans \"absent\" and \"authored false\" are indistinguishable at runtime and always will be. Each bool's default is the value an author gets by writing nothing, so nothing is lost behaviourally.",
       "additionalProperties": false,
       "properties": {
         "graceSeconds": {
           "type": "number",
           "minimum": 0,
+          "maximum": 3600,
           "default": 30,
-          "description": "PLAY AREA (`boundary`, `base_protection`). Seconds a player may remain in violation before `penalty` is applied. Read at TBD_MissionLoader.c:102, resolved at TBD_ZoneRegistry.c:387-397. Negative is rejected for the default."
+          "description": "PLAY AREA (`boundary`, `base_protection`). Seconds a player may remain in violation before `penalty` is applied. Read at TBD_MissionLoader.c:102, resolved at TBD_ZoneRegistry.c:387-397. Negative is rejected for the default. T-275: `maximum` 3600 pins `TBD_ZoneRegistry.MAX_GRACE_SECONDS` (TBD_ZoneRegistry.c:52) — above that the mod warns and falls back to 30 s."
         },
         "warnEverySeconds": {
           "type": "number",
@@ -415,13 +423,15 @@
         "captureSeconds": {
           "type": "number",
           "exclusiveMinimum": 0,
+          "maximum": 21600,
           "default": 120,
-          "description": "`objective_capture`. Seconds of uninterrupted presence needed to take a NEUTRAL objective. Read at TBD_ObjectiveRules.c:85, resolved at TBD_ObjectiveRegistry.c:441-457. Absent DEFAULTS rather than going inert: an objective nobody chose the length of is playable, whereas an inert one takes the `all_objectives_captured` trigger with it and the round can no longer be won."
+          "description": "`objective_capture`. Seconds of uninterrupted presence needed to take a NEUTRAL objective. Read at TBD_ObjectiveRules.c:85, resolved at TBD_ObjectiveRegistry.c:441-457. Absent DEFAULTS rather than going inert: an objective nobody chose the length of is playable, whereas an inert one takes the `all_objectives_captured` trigger with it and the round can no longer be won. T-275: `maximum` 21600 pins `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS` (TBD_ObjectiveRegistry.c:60)."
         },
         "neutralizeSeconds": {
           "type": "number",
           "minimum": 0,
-          "description": "`objective_capture`. Seconds of presence needed to tear a HELD objective back to neutral. Read at TBD_ObjectiveRules.c:86, resolved at TBD_ObjectiveRegistry.c:462-472. Defaults to `captureSeconds` (a symmetric 1:1 rate), so there is no literal default to state here. `0` is legal and means instant — a single-stage capture."
+          "maximum": 21600,
+          "description": "`objective_capture`. Seconds of presence needed to tear a HELD objective back to neutral. Read at TBD_ObjectiveRules.c:86, resolved at TBD_ObjectiveRegistry.c:462-472. Defaults to `captureSeconds` (a symmetric 1:1 rate), so there is no literal default to state here. `0` is legal and means instant — a single-stage capture. T-275: `maximum` 21600 pins `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS` (TBD_ObjectiveRegistry.c:60)."
         },
         "contestable": {
           "type": "boolean",
@@ -443,7 +453,8 @@
         "holdSeconds": {
           "type": "number",
           "exclusiveMinimum": 0,
-          "description": "`objective_hold_until`, and EFFECTIVELY REQUIRED there. Seconds the zone's `faction` must hold the ground. Read at TBD_ObjectiveRules.c:87, resolved at TBD_ObjectiveRegistry.c:539-550. There is deliberately NO default: a hold is the length of the round (`last-stand-at-montfort.json` authors 2700 s inside a 3000 s limit), so guessing it means guessing when the round ends and who won. An objective_hold_until with no readable `holdSeconds` goes INERT and reports why. Not declared `required` here because the readers do not reject the document — see the $def description on why this vocabulary is not narrowed by zone type."
+          "maximum": 21600,
+          "description": "`objective_hold_until`, and EFFECTIVELY REQUIRED there. Seconds the zone's `faction` must hold the ground. Read at TBD_ObjectiveRules.c:87, resolved at TBD_ObjectiveRegistry.c:539-550. There is deliberately NO default: a hold is the length of the round (`last-stand-at-montfort.json` authors 2700 s inside a 3000 s limit), so guessing it means guessing when the round ends and who won. An objective_hold_until with no readable `holdSeconds` goes INERT and reports why. Not declared `required` here because the readers do not reject the document — see the $def description on why this vocabulary is not narrowed by zone type. T-275: `maximum` 21600 pins `TBD_ObjectiveRegistry.MAX_DURATION_SECONDS` (TBD_ObjectiveRegistry.c:60) — above that the mod marks the objective inert."
         },
         "pauseOnEnemy": {
           "type": "boolean",
