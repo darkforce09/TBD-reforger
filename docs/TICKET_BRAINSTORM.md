@@ -843,28 +843,6 @@ Comment-only edit, zero behavioural risk.
 ALSO IN THE SAME FILES: TBD_MissionLoader.c:88 documents graceSeconds as 'number >= 0' but the code at :389 also rejects > MAX_GRACE_SECONDS. The header omits the ceiling. T-275-adjacent.
 
 RECORDED DECISION so it is not re-litigated: T-241 deliberately did NOT encode conditional `required` for holdSeconds and targetAlias, though both are effectively mandatory (without them the objective goes inert with an operator-facing reason). Reason: it is a different defect from T-241's, and conditional requires are the shape most likely to collide with T-201/T-211/T-212. Both keys carry the requirement in prose instead. The command center endorsed this. Enforce it when a consumer actually needs it, not before.
-- **T-423** (deferred) — T-216's contract-floor test cannot detect the failure its own doc comment says it exists to detect [DATA] — Two MINORs from wave 5's adversarial verifier, both in `crates/map-engine-core/src/mission/flatten.rs`.
-
-1. `flatten.rs:2465-2537`, `the_vehicle_row_still_has_the_shape_this_module_reads`. Its doc comment says: 'What must not happen is a rename, a retype or a removal: those compose silently... That is the failure this test exists to make loud.' PROVEN SILENT:
-     sed -i '551s/\"resourceName\"/\"resourceNameRENAMED\"/' crates/map-engine-core/src/doc/store.rs   # inside add_vehicle
-     cargo test -p map-engine-core --features doc,mission -p map-engine-render -- the_vehicle_row_still_has_the_shape_this_module_reads
-     # ... ok
-   It reads LEDGER_FIXTURE, a hand-written constant, so it can only detect T-216 disagreeing with ITSELF -- never the writer renaming the floor, which is the stated purpose. STAYS MINOR because the gate step as a whole does go red on that rename: `doc::store::tests::attach_vehicle_roundtrip` and `doc::apply_faction::tests::apply_faction_vehicles` fail (377 passed / 2 failed). The protection exists; it is not where the ticket says it is. Fix is to drive the fixture from `add_vehicle` output rather than a literal -- noting T-216's own reason for not calling it directly (a signature change would become a merge break rather than a caught disagreement), so the answer is probably a serialised round trip, not a direct call.
-
-2. `flatten.rs:2530-2536` -- the tolerance assertion is a TAUTOLOGY. It clones the fixture row into a serde_json::Value, inserts `cargo`, then asserts two OTHER keys are unchanged. No module code runs; it cannot fail. The comment says 'Asserted rather than assumed.' It is assumed.
-   The CLAIM is nonetheless TRUE for a stronger reason than the test gives, established by the verifier: `EditorPayload` (flatten.rs:591-605) is {editor, environment} and `EditorGraph` (:607-613) is {factions, squads, slots} -- THERE IS NO `vehicles` FIELD ANYWHERE IN THE READER, and `scan_editor_payload_types` is a plain `serde_json::from_slice::<EditorPayload>` with no deny_unknown_fields. So T-215's `factionId`/`cargo[]` extras cannot produce a save-time 400, and a map-placed vehicle with no `squadId` cannot be dropped by a reader that never deserialises a vehicle row at all.
-- **T-424** (deferred) — cargo test --lib <selector> exits 0 when the selector matches zero tests, so 25 pinned checks can silently empty [INFRA] — Found by T-216 during wave 5 while restoring `scripts/verify-t180-coherency.sh`, and independently replicated by the wave's adversarial verifier.
-
-  cargo test -p map-engine-core --lib --features doc,mission -- zzz_no_such_test_exists_anywhere
-  # test result: ok. 0 passed; 254 filtered out          rc=0
-
-`verify-t180-coherency.sh` pins 25 such selector invocations. A typo'd or RENAMED test name prints `verify-t180 OK` having run nothing, with no guard anywhere. Same family as everything else this weekend: a check reporting success over an input it never examined.
-
-MEASURED CURRENT STATE: `grep -c 'test result: ok\. 0 passed'` across a full run -> 0, so all 25 selectors match at least one test TODAY. Nothing holds that. A rename of any pinned test silently empties its check and the script still prints ALL PASS.
-
-CURE: a wrapper asserting `passed >= 1` per line. T-216 judged it a third structural change to that file and deliberately left it -- correctly, it belongs here.
-
-CONTEXT: this is the third gate-integrity defect found in that one script this wave. The other two are FIXED and shipped in wave 5 -- `--features doc` not enabling `mission` (the script had not compiled since T-344, so sections C/D/G/I and the whole frontend block never ran), and three static bans in `if rg ...; then fail; fi` form that printed OK when `rg` was absent from the host. Both now green: `verify-t180: ALL PASS`, rc=0, end to end, verified independently.
 - **T-425** (deferred) — T-215's vehicle placement: the alias table flatten needs, and four authoring gaps it disclosed [FRONTEND, DATA] — Residue of wave 5's T-215, which shipped real vehicle map placement (position, faction, cargo) with a proven save/reload round trip. All of the below is disclosed by the agent or the verifier, none of it is a regression.
 
 1. BLOCKS THE EMISSION PATH -- there is no ResourceName -> `veh:` alias table. `$defs/entity.alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$`, a REGISTRY ALIAS, not a ResourceName. `kit-aliases.json` maps characters to `kit:` only; the sole `veh:m151_mg` in the repo is hardcoded in two sample files. Flatten cannot emit a valid `entity.alias` for T-215's rows until a table mirroring kit-aliases.json's shape exists. Mapping ResourceName->alias without one would drop every vehicle but m151_mg, or substitute a different one -- the T-200 silent-substitution defect with a vehicle instead of a rifleman.
@@ -896,11 +874,6 @@ Cure: extend verify-t468-style (or sibling) tripwire to assert Makefile verify-t
 Repro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.
 
 Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; assert no shared snowflake collision across parallel tests.
-- **T-480** (deferred) — Harden oauth_state clear IT to exact OAUTH_STATE_CLEAR equality [API, tests] — Wave 30 adversarial verifier (T-429): assert_oauth_state_cleared in apps/website/api/tests/oauth_redirect.rs uses contains("Path=/") / contains("Max-Age=0") soft checks, not equality to OAUTH_STATE_CLEAR (handlers/oauth.rs). A clear cookie with Path=/api or Max-Age=00 still passes.
-
-Repro: python3 -c 'c="oauth_state=; Path=/api; Max-Age=0; HttpOnly"; print(c.startswith("oauth_state=") and "Max-Age=0" in c and "Path=/" in c and "HttpOnly" in c)' → True while Path diverges from OAUTH_STATE_CLEAR.
-
-Cure: assert Set-Cookie equals OAUTH_STATE_CLEAR (or parse and require Path=/ exact).
 - **T-481** (deferred) — Reject whitespace-only DISCORD_CLIENT_ID in Config::validate [API] — Wave 30 adversarial verifier (T-430): production validate guards discord_client_id.is_empty() only (config.rs). A whitespace-only id (" ") with APP_ENV=production validates Ok and is not treated as oauth_unconfigured. Same pattern as prior secret/redirect whitespace nits.
 
 Repro: set discord_client_id=" " + env=production → validate() Ok.
