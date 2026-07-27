@@ -809,6 +809,12 @@ fn route_sweep(s: &Seed) -> Vec<(&'static str, String, bool)> {
             format!("/api/v1/announcements/{a}"),
             false,
         ),
+        // T-447 admin CMS master list (drafts + published); public feed is `/announcements` above.
+        (
+            "/cms/announcements",
+            "/api/v1/cms/announcements".into(),
+            false,
+        ),
         ("/approvals", "/api/v1/approvals".into(), false),
         ("/admin/users", "/api/v1/admin/users".into(), false),
         (
