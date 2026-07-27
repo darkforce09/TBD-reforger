@@ -1688,6 +1688,10 @@ pub struct VehicleRow {
     /// ORBAT-added vehicle was in before this ticket, and still is when added from the ORBAT
     /// Manager without a drop.
     pub xy: Option<(f64, f64)>,
+    /// Authored heading (degrees). `None` when unplaced; `Some(0.0)` is a real authored zero.
+    pub rotation: Option<f64>,
+    /// Elevation when placed; `None` when unplaced.
+    pub z: Option<f64>,
     /// `faction-{SIDE}` when the vehicle was map-placed; empty when it only has a squad.
     pub faction_id: String,
     /// Empty when the vehicle is not attached to a squad (every map-placed vehicle).
@@ -1728,6 +1732,8 @@ pub fn vehicle_rows() -> Vec<VehicleRow> {
                     id: id.clone(),
                     resource_name: s("resourceName"),
                     xy: pos.and_then(|p| Some((p.get("x")?.as_f64()?, p.get("y")?.as_f64()?))),
+                    rotation: pos.and_then(|p| p.get("rotation")?.as_f64()),
+                    z: pos.and_then(|p| p.get("z")?.as_f64()),
                     faction_id: s("factionId"),
                     squad_id: s("squadId"),
                     cargo: v
@@ -1774,6 +1780,81 @@ pub fn set_vehicle_cargo(vehicle_id: String, rows: Vec<VehicleCargoRow>) -> bool
         crate::mission_history::after_local_edit();
     }
     did
+}
+
+/// T-425 — placed vehicle positions for map pick/marquee (`id`, world x, world y).
+#[must_use]
+pub fn vehicle_points() -> Vec<(String, f64, f64)> {
+    vehicle_rows()
+        .into_iter()
+        .filter_map(|v| v.xy.map(|(x, y)| (v.id, x, y)))
+        .collect()
+}
+
+/// T-425 — author a vehicle's heading (degrees). Preserves x/y/z. No-op if missing/unplaced.
+pub fn set_vehicle_heading(vehicle_id: String, heading_deg: f64) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) else {
+            return false;
+        };
+        let Some(v) = root.get("vehiclesById").and_then(|m| m.get(&vehicle_id)) else {
+            return false;
+        };
+        let Some(pos) = v.get("position") else {
+            return false;
+        };
+        let (Some(x), Some(y)) = (
+            pos.get("x").and_then(|n| n.as_f64()),
+            pos.get("y").and_then(|n| n.as_f64()),
+        ) else {
+            return false;
+        };
+        let z = pos.get("z").and_then(|n| n.as_f64()).unwrap_or(0.0);
+        core.set_vehicle_position(&vehicle_id, x, y, z, heading_deg);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// T-425 — drag-release commit for placed vehicles (shared world delta). Rotation preserved.
+pub fn move_vehicles(ids: Vec<String>, dx: f64, dy: f64) -> bool {
+    if ids.is_empty() || (dx == 0.0 && dy == 0.0) {
+        return false;
+    }
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.move_vehicles(&ids, dx, dy);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// T-425 — true when `id` is a `vehiclesById` key (used by the select/drag gesture to route
+/// commits away from the slot SoA `move_entities` path).
+#[must_use]
+pub fn is_vehicle_id(id: &str) -> bool {
+    vehicle_rows().iter().any(|v| v.id == id)
 }
 
 /// T-215 — delete a placed vehicle (the map palette can create them, so something must be able to

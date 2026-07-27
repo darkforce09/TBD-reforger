@@ -768,6 +768,43 @@ impl MissionDocCore {
         out
     }
 
+    /// T-425 — overwrite a placed vehicle's `position` (x/y/z/rotation). No-op when the id is
+    /// missing. Creates `position` if the vehicle was previously unplaced (ORBAT-only).
+    ///
+    /// Does **not** attach a squad — map placement keeps `squadId` absent (T-321 / place_orbat).
+    pub fn set_vehicle_position(&self, vehicle_id: &str, x: f64, y: f64, z: f64, rotation: f64) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id) {
+            let existing = read_position_map(&txn, &v);
+            v.insert(
+                &mut txn,
+                "position",
+                position_any_merged(existing, x, y, z, rotation),
+            );
+        }
+    }
+
+    /// T-425 — move placed vehicles by a shared world delta (drag release). Vehicles whose id is
+    /// missing or that still have no `position` are skipped. Rotation is preserved.
+    pub fn move_vehicles(&self, ids: &[String], dx: f64, dy: f64) {
+        let mut txn = self.begin();
+        for id in ids {
+            let Some(Out::YMap(v)) = self.vehicles.get(&txn, id) else {
+                continue;
+            };
+            if v.get(&txn, "position").is_none() {
+                continue;
+            }
+            let (px, py, pz, prot) = read_position(&txn, &v);
+            let existing = read_position_map(&txn, &v);
+            v.insert(
+                &mut txn,
+                "position",
+                position_any_merged(existing, px + dx, py + dy, pz, prot),
+            );
+        }
+    }
+
     /// Overwrite a slot's `position` (mirrors `slot.set('position', {...})`).
     /// T-220 — merges into any existing position map so unknown sub-keys survive the edit.
     pub fn set_slot_position(&self, id: &str, x: f64, y: f64, z: f64, rotation: f64) {

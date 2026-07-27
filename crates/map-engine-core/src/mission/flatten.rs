@@ -19,10 +19,10 @@ use crate::mission::wire_safety::is_wire_unsafe;
 
 // ---- output document types (camelCase — the game-server contract) ----
 
-/// One `entities[]` entry (`mission.schema.json#/$defs/entity`) — T-254.
+/// One `entities[]` entry (`mission.schema.json#/$defs/entity`) — T-254 / T-425.
 ///
-/// Editor rows carry `id` / `resourceName` / nested `position`; this struct is the SCHEMA shape
-/// only (`alias`/`x`/`z` required). Extra editor keys are dropped here so
+/// Editor rows carry `id` / `resourceName` / nested `position` / `cargo`; this struct is the SCHEMA
+/// shape only (`alias`/`x`/`z` required). Extra editor keys are dropped here so
 /// `additionalProperties: false` on `$defs/entity` cannot 500 `/compiled`.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,6 +34,17 @@ pub struct ModEntity {
     pub heading_deg: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub faction: Option<String>,
+    /// T-425 — vehicle/crate contents (`$defs/entityInventory`). Byte-identical to editor
+    /// `vehicles[].cargo` / entity inventory rows; omitted when empty.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub inventory: Vec<ModEntityInventory>,
+}
+
+/// One `$defs/entityInventory` row — `{item, qty}` only (no `container` key).
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ModEntityInventory {
+    pub item: String,
+    pub qty: i64,
 }
 
 /// One flattened `slots[]` entry.
@@ -647,6 +658,9 @@ struct EditorPayload {
     zones: Vec<ZoneIn>,
     /// T-254 — top-level `entities` array from `compile_payload` (`entitiesById` values).
     entities: Vec<EntityIn>,
+    /// T-215 / T-425 — top-level `vehicles` array from `compile_payload` (`vehiclesById` values).
+    /// Flattened into schema `$defs/entity` rows (alias/x/z/headingDeg/faction/inventory).
+    vehicles: Vec<VehicleIn>,
     /// T-259 — top-level `settings` object (`mission.schema.json#/$defs/settings`).
     ///
     /// `Option` so "key absent" (`None`) stays distinct from `"settings": {}` (`Some` empty). The
@@ -690,6 +704,9 @@ struct EditorGraph {
 #[derive(Debug, Default, serde::Deserialize)]
 #[serde(rename_all = "camelCase", default)]
 struct FactionIn {
+    /// Editor faction row id (`factionsById` key) — needed so `squad.factionId` can resolve to
+    /// this row's `key` when a vehicle has no own `factionId` (T-425).
+    id: String,
     key: String,
     name: String,
     squad_ids: Vec<String>,
@@ -710,6 +727,8 @@ struct FactionIn {
 #[serde(rename_all = "camelCase", default)]
 struct SquadIn {
     id: String,
+    /// Editor faction row id this squad belongs to (`faction-{SIDE}` or a minted `f…` id).
+    faction_id: String,
     callsign: String,
     name: String,
     slot_ids: Vec<String>,
@@ -747,6 +766,32 @@ struct EntityIn {
     resource_name: String,
     position: Option<PositionIn>,
     faction: String,
+}
+
+/// One authored payload `vehicles[]` row (T-215) — `vehiclesById` value shape before schema
+/// projection onto `$defs/entity` (T-425).
+#[derive(Debug, Default, serde::Deserialize)]
+#[serde(default)]
+struct VehicleIn {
+    id: String,
+    #[serde(rename = "resourceName")]
+    resource_name: String,
+    position: Option<PositionIn>,
+    /// Map-placed side marker (`faction-BLUFOR`). Optional — squad-attached vehicles may omit it.
+    #[serde(rename = "factionId")]
+    faction_id: String,
+    /// ORBAT attachment. Optional — map-placed vehicles deliberately omit it (T-321 / place_orbat).
+    #[serde(rename = "squadId")]
+    squad_id: String,
+    /// `$defs/entityInventory` rows verbatim — become `entity.inventory` with no transform.
+    cargo: Vec<EntityInventoryIn>,
+}
+
+#[derive(Debug, Default, Clone, serde::Deserialize)]
+#[serde(default)]
+struct EntityInventoryIn {
+    item: String,
+    qty: i64,
 }
 
 /// One authored `editor.factions[].briefing` (T-202). Mirrors `#/$defs/briefing`.
@@ -1667,9 +1712,90 @@ fn derive_entities(rows: &[EntityIn]) -> Vec<ModEntity> {
             } else {
                 Some(faction.to_string())
             },
+            inventory: Vec::new(),
         });
     }
     out
+}
+
+/// T-425 — strip a leading `faction-` prefix (case-insensitive) and lowercase via [`slug_key`].
+///
+/// Map-placed vehicles store `factionId = "faction-BLUFOR"`; the schema wants `factionKey`
+/// `"blufor"`. Empty input → `None` (entity.faction is optional).
+fn faction_key_from_faction_id(raw: &str) -> Option<String> {
+    let t = raw.trim();
+    if t.is_empty() {
+        return None;
+    }
+    let lower = t.to_ascii_lowercase();
+    let stripped = lower.strip_prefix("faction-").unwrap_or(t);
+    let key = slug_key(stripped, "");
+    if key.is_empty() { None } else { Some(key) }
+}
+
+/// T-425 — project editor `vehicles[]` onto schema `$defs/entity` rows.
+///
+/// * `alias` ← kit-aliases `vehicles` table (ResourceName → `veh:…`). Missing alias on a
+///   **placed** vehicle is [`CompileError::Parse`] naming the vehicle — never silent
+///   drop/substitute (T-200 class). Kept as `Parse` (not a new variant) so API match arms on
+///   `CompileError` stay exhaustive without widening owns into `handlers/missions.rs`.
+/// * Unplaced vehicles (no `position`) are skipped (no honest x/z).
+/// * `cargo[]` → `inventory` byte-identical (`item`/`qty`).
+/// * `faction` ← `factionId` strip `faction-` + lowercase, else squad → faction row key.
+fn derive_vehicles_as_entities(
+    vehicles: &[VehicleIn],
+    squads: &[SquadIn],
+    factions: &[FactionIn],
+    aliases: &crate::mission::kit::KitAliases,
+) -> Result<Vec<ModEntity>, CompileError> {
+    let squads_by_id: HashMap<&str, &SquadIn> = squads.iter().map(|s| (s.id.as_str(), s)).collect();
+    let factions_by_id: HashMap<&str, &FactionIn> =
+        factions.iter().map(|f| (f.id.as_str(), f)).collect();
+
+    let mut out = Vec::new();
+    for v in vehicles {
+        let Some(pos) = v.position.as_ref() else {
+            continue; // ORBAT-only / unplaced — nothing to put on the wire
+        };
+        let Some(alias) = aliases.vehicle_for_resource(v.resource_name.trim()) else {
+            return Err(CompileError::Parse(format!(
+                "vehicle {}: resourceName {} has no veh: alias in kit-aliases.json \
+                 (T-425 — refuse silent drop/substitute)",
+                v.id, v.resource_name
+            )));
+        };
+
+        let faction = faction_key_from_faction_id(&v.faction_id).or_else(|| {
+            let sq = squads_by_id.get(v.squad_id.trim())?;
+            if let Some(f) = factions_by_id.get(sq.faction_id.as_str()) {
+                let key = slug_key(&f.key, "");
+                if key.is_empty() { None } else { Some(key) }
+            } else {
+                // squad.factionId may itself be `faction-BLUFOR` (ensure_side_faction shape).
+                faction_key_from_faction_id(&sq.faction_id)
+            }
+        });
+
+        let inventory: Vec<ModEntityInventory> = v
+            .cargo
+            .iter()
+            .filter(|r| !r.item.trim().is_empty() && r.qty >= 1)
+            .map(|r| ModEntityInventory {
+                item: r.item.clone(),
+                qty: r.qty,
+            })
+            .collect();
+
+        out.push(ModEntity {
+            alias: alias.to_string(),
+            x: pos.x,
+            z: pos.y,
+            heading_deg: Some(normalize_heading(pos.rotation)),
+            faction,
+            inventory,
+        });
+    }
+    Ok(out)
 }
 
 /// T-259 — project an authored top-level `settings` object onto `$defs/settings`.
@@ -2068,6 +2194,14 @@ pub fn flatten_to_mod_document(
         environment.date_time = format!("{COMPILE_DATE_ANCHOR}T{t}:00Z");
     }
 
+    let mut entities = derive_entities(&parsed.entities);
+    entities.extend(derive_vehicles_as_entities(
+        &parsed.vehicles,
+        &ed.squads,
+        &ed.factions,
+        aliases,
+    )?);
+
     Ok(ModMissionDocument {
         schema_version,
         meta,
@@ -2075,7 +2209,7 @@ pub fn flatten_to_mod_document(
         factions,
         orbat,
         slots: doc_slots,
-        entities: derive_entities(&parsed.entities),
+        entities,
         radio_plan: derive_radio_plan(&radio_sources),
         zones,
         flow: derive_flow(&parsed.environment),
@@ -2594,7 +2728,10 @@ mod tests {
                 },
             },
             LedgerRow {
-                what: "vehicle resourceName (the whole roster)",
+                // T-425: the vehicle REACHES the wire as entities[].alias — but the authored
+                // ResourceName itself still must not appear (schema wants a veh: alias). Pin that
+                // the raw key stays blocked; the alias emission is asserted after the ledger loop.
+                what: "vehicle resourceName key (must not leak — alias is the wire form)",
                 authored_at: "/vehicles/0/resourceName",
                 value: "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
                 fate: Fate::Blocked {
@@ -2719,11 +2856,13 @@ mod tests {
             "the per-slot callsign reached the wire under some other key"
         );
 
-        // Vehicles: neither their own block nor the already-declared `entities` array, which is
-        // the obvious-looking landing spot and does not fit. `$defs/entity` is closed and names
-        // a registry ALIAS, not a ResourceName — machine-checked so nobody has to take the
-        // header's word for it.
-        assert!(wire.get("vehicles").is_none() && wire.get("entities").is_none());
+        // Vehicles (T-425): ride `entities[]` as `$defs/entity` (alias/x/z/headingDeg/faction/
+        // inventory). The top-level `vehicles` key is editor-payload only — not on the compiled
+        // wire. `$defs/entity` stays closed and names a registry ALIAS, not a ResourceName.
+        assert!(wire.get("vehicles").is_none());
+        assert_eq!(wire["entities"][0]["alias"], "veh:m151_mg");
+        assert_eq!(wire["entities"][0]["headingDeg"], 45.0);
+        assert_eq!(wire["entities"][0]["faction"], "blufor");
         let entity = &schema["$defs"]["entity"];
         assert_eq!(
             entity["additionalProperties"],
@@ -2732,13 +2871,69 @@ mod tests {
         for absent in ["resourceName", "squadId", "id", "position"] {
             assert!(
                 entity["properties"].get(absent).is_none(),
-                "$defs/entity now declares {absent:?} — re-examine whether the vehicle roster \
-                 can ride `entities` after all"
+                "$defs/entity must not declare editor-only key {absent:?}"
             );
         }
         assert_eq!(
             schema["$defs"]["alias"]["pattern"],
             "^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$"
+        );
+    }
+
+    /// T-425 — placed vehicles flatten to `$defs/entity` with alias/inventory/faction.
+    #[test]
+    fn placed_vehicles_flatten_to_entity_rows_with_alias_inventory_faction() {
+        // Happy path: LEDGER_FIXTURE's placed M151 (resource aliased, squad → BLUFOR).
+        let doc = flatten_to_mod_document(&meta(), LEDGER_FIXTURE.as_bytes()).expect("compiles");
+        let veh: Vec<_> = doc
+            .entities
+            .iter()
+            .filter(|e| e.alias.starts_with("veh:"))
+            .collect();
+        assert_eq!(
+            veh.len(),
+            1,
+            "only the placed aliased vehicle reaches the wire"
+        );
+        let e = veh[0];
+        assert_eq!(e.alias, "veh:m151_mg");
+        assert!((e.x - 100.5).abs() < 1e-9);
+        assert!((e.z - 200.5).abs() < 1e-9, "editor y → mod z");
+        assert_eq!(e.heading_deg, Some(45.0));
+        assert_eq!(e.faction.as_deref(), Some("blufor"));
+
+        // cargo → inventory: extend the fixture with cargo on v1.
+        let mut p: serde_json::Value =
+            serde_json::from_str(LEDGER_FIXTURE).expect("fixture parses");
+        p["vehicles"][0]["cargo"] = serde_json::json!([{ "item": "res://ammo", "qty": 4 }]);
+        p["vehicles"][0]["factionId"] = serde_json::json!("faction-BLUFOR");
+        let doc2 = flatten_to_mod_document(&meta(), p.to_string().as_bytes())
+            .expect("compiles with cargo");
+        let e2 = doc2
+            .entities
+            .iter()
+            .find(|e| e.alias == "veh:m151_mg")
+            .expect("m151 entity");
+        assert_eq!(
+            e2.inventory,
+            vec![ModEntityInventory {
+                item: "res://ammo".into(),
+                qty: 4
+            }]
+        );
+        assert_eq!(e2.faction.as_deref(), Some("blufor"));
+
+        // Placed + unknown alias → hard error (no silent drop/substitute).
+        p["vehicles"] = serde_json::json!([{
+            "id": "v-bad",
+            "resourceName": "{ABCDEF0123456789}Prefabs/Vehicles/Wheeled/UAZ/UAZ469.et",
+            "position": { "x": 1.0, "y": 2.0, "z": 0.0, "rotation": 0.0 }
+        }]);
+        let err = flatten_to_mod_document(&meta(), p.to_string().as_bytes())
+            .expect_err("unknown alias must fail");
+        assert!(
+            matches!(err, CompileError::Parse(ref m) if m.contains("no veh: alias")),
+            "got {err:?}"
         );
     }
 
@@ -3047,6 +3242,7 @@ mod tests {
         assert_eq!(
             top,
             [
+                "entities",
                 "environment",
                 "factions",
                 "flow",
@@ -3058,7 +3254,7 @@ mod tests {
                 "winConditions",
                 "zones",
             ],
-            "the compiled document's top-level shape changed"
+            "the compiled document's top-level shape changed — T-425 emits vehicles as entities[]"
         );
     }
 

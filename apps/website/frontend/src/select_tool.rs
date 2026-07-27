@@ -147,6 +147,87 @@ pub fn pick(cam: &OrthoCamera, soa: &SlotSoa, px: f64, py: f64) -> Option<String
     box_nearest(&idx, soa, qx, qy, r).map(|h| soa.ids[h as usize].clone())
 }
 
+/// T-425 — nearest placed vehicle id under a screen pixel, or `None`.
+///
+/// Vehicles are off the slot SoA (`vehicle_xy_flat` / `vehicles_bind`), so the slot [`pick`] path
+/// never sees them. `points` is `(id, world_x, world_y)` from [`crate::editor_ops::vehicle_points`].
+#[must_use]
+pub fn pick_vehicle(
+    cam: &OrthoCamera,
+    points: &[(String, f64, f64)],
+    px: f64,
+    py: f64,
+) -> Option<String> {
+    if points.is_empty() {
+        return None;
+    }
+    let c = cam.unproject_xy(px, py);
+    let (qx, qy) = (c[0], c[1]);
+    if !qx.is_finite() || !qy.is_finite() {
+        return None;
+    }
+    let r = world_pick_radius(cam, px, py, PICK_RADIUS_PX);
+    let r2 = r * r;
+    let mut best: Option<(f64, &str)> = None;
+    for (id, x, y) in points {
+        let dx = x - qx;
+        let dy = y - qy;
+        let d2 = dx * dx + dy * dy;
+        if d2 > r2 {
+            continue;
+        }
+        if best.is_none_or(|(bd, _)| d2 < bd) {
+            best = Some((d2, id.as_str()));
+        }
+    }
+    best.map(|(_, id)| id.to_string())
+}
+
+/// T-425 — pick slot or vehicle; when both are in range, the closer world-distance wins.
+#[must_use]
+pub fn pick_slot_or_vehicle(
+    cam: &OrthoCamera,
+    soa: &SlotSoa,
+    vehicle_points: &[(String, f64, f64)],
+    px: f64,
+    py: f64,
+) -> Option<String> {
+    let slot = pick(cam, soa, px, py);
+    let veh = pick_vehicle(cam, vehicle_points, px, py);
+    match (slot, veh) {
+        (None, v) => v,
+        (s, None) => s,
+        (Some(s), Some(v)) => {
+            let c = cam.unproject_xy(px, py);
+            let (qx, qy) = (c[0], c[1]);
+            let slot_d2 = soa
+                .ids
+                .iter()
+                .position(|id| *id == s)
+                .map(|i| {
+                    let dx = f64::from(soa.xs[i]) - qx;
+                    let dy = f64::from(soa.ys[i]) - qy;
+                    dx * dx + dy * dy
+                })
+                .unwrap_or(f64::INFINITY);
+            let veh_d2 = vehicle_points
+                .iter()
+                .find(|(id, _, _)| *id == v)
+                .map(|(_, x, y)| {
+                    let dx = x - qx;
+                    let dy = y - qy;
+                    dx * dx + dy * dy
+                })
+                .unwrap_or(f64::INFINITY);
+            if veh_d2 < slot_d2 {
+                Some(v)
+            } else {
+                Some(s)
+            }
+        }
+    }
+}
+
 /// Apply a click to the selection set, matching React `useSelectTool` onPointerUp `pending-left`:
 ///   * hit + additive (Ctrl/Cmd) → **toggle** (remove if present, else add; empties to none)
 ///   * hit + plain               → **replace** with `[id]`
@@ -226,6 +307,56 @@ pub fn marquee_ids(
         .into_iter()
         .map(|h| soa.ids[h as usize].clone())
         .collect()
+}
+
+/// T-425 — vehicle ids inside the marquee world AABB (same corners as [`marquee_ids`]).
+#[must_use]
+pub fn marquee_vehicle_ids(
+    cam: &OrthoCamera,
+    points: &[(String, f64, f64)],
+    start_wx: f64,
+    start_wy: f64,
+    end_px: f64,
+    end_py: f64,
+) -> Vec<String> {
+    if points.is_empty() {
+        return Vec::new();
+    }
+    let e = cam.unproject_xy(end_px, end_py);
+    let (ewx, ewy) = (e[0], e[1]);
+    if !ewx.is_finite() || !ewy.is_finite() || !start_wx.is_finite() || !start_wy.is_finite() {
+        return Vec::new();
+    }
+    let (min_x, max_x) = (start_wx.min(ewx), start_wx.max(ewx));
+    let (min_y, max_y) = (start_wy.min(ewy), start_wy.max(ewy));
+    points
+        .iter()
+        .filter(|(_, x, y)| *x >= min_x && *x <= max_x && *y >= min_y && *y <= max_y)
+        .map(|(id, _, _)| id.clone())
+        .collect()
+}
+
+/// T-425 — marquee over slots **and** placed vehicles (vehicles appended after slots).
+#[must_use]
+pub fn marquee_ids_with_vehicles(
+    cam: &OrthoCamera,
+    soa: &SlotSoa,
+    vehicle_points: &[(String, f64, f64)],
+    start_wx: f64,
+    start_wy: f64,
+    end_px: f64,
+    end_py: f64,
+) -> Vec<String> {
+    let mut ids = marquee_ids(cam, soa, start_wx, start_wy, end_px, end_py);
+    ids.extend(marquee_vehicle_ids(
+        cam,
+        vehicle_points,
+        start_wx,
+        start_wy,
+        end_px,
+        end_py,
+    ));
+    ids
 }
 
 /// Class-S self-check for the marquee (S3 parity, peer of [`pick_selfcheck`]): `PointIndex::pick_rect`

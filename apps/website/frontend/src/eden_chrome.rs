@@ -2027,6 +2027,7 @@ fn placed_vehicles_panel(
                 || "not placed".to_string(),
                 |(x, y)| format!("{x:.1}, {y:.1}"),
             );
+            let heading = v.rotation;
             let cargo = v.cargo.clone();
             let n_cargo = cargo.len();
 
@@ -2077,6 +2078,36 @@ fn placed_vehicles_panel(
             if !open {
                 return head.into_any();
             }
+
+            // T-425 — heading authoring. Placed vehicles defaulted to rotation 0.0 at drop; this
+            // field is how the operator sets a real heading without delete-and-replace.
+            let heading_row = if let Some(h) = heading {
+                let id_h = vid.clone();
+                view! {
+                    <div class="flex items-center gap-1.5 py-0.5 pl-7 pr-1.5">
+                        <span class="shrink-0 text-label-sm text-on-surface-variant">"Heading°"</span>
+                        <input
+                            type="number"
+                            min="0"
+                            max="360"
+                            step="1"
+                            aria-label="Vehicle heading degrees"
+                            class="w-16 shrink-0 rounded border border-outline-variant/40 bg-surface-container-lowest/60 px-1 py-0.5 text-right font-mono text-label-sm tabular-nums text-on-surface outline-none focus:border-primary/60"
+                            prop:value=format!("{h:.0}")
+                            on:change=move |ev| {
+                                let Ok(raw) = event_target_value(&ev).trim().parse::<f64>() else {
+                                    return;
+                                };
+                                let deg = ((raw % 360.0) + 360.0) % 360.0;
+                                crate::editor_ops::set_vehicle_heading(id_h.clone(), deg);
+                            }
+                        />
+                    </div>
+                }
+                .into_any()
+            } else {
+                ().into_any()
+            };
 
             let rows_for_edit = cargo.clone();
             let id_add = vid.clone();
@@ -2131,6 +2162,7 @@ fn placed_vehicles_panel(
             let base_add = rows_for_edit;
             view! {
                 {head}
+                {heading_row}
                 {editor}
                 <div class="py-0.5 pl-7 pr-1.5">
                     <select
