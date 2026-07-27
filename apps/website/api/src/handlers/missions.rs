@@ -2452,8 +2452,7 @@ mod tests {
     /// belongs to the mission (`mission_id = $2`), and UPDATE `current_version_id` (+ `updated_at`).
     ///
     /// RED: drop `can_edit` / the `AND mission_id` predicate / the UPDATE — this pin fails.
-    /// HTTP IT preferred in `tests/missions.rs` (out of T-532 owns) — this source pin is the
-    /// in-owns Class-R stand-in the ticket allows.
+    /// Live HTTP IT: `set_current_version_repaints_tip_over_http` in `tests/missions.rs` (T-544).
     #[test]
     fn set_current_version_repaints_tip_with_belonging_check() {
         const SRC: &str = include_str!("missions.rs");
