@@ -96,8 +96,9 @@ mod split_pane;
 // T-173 P6 — per-user world-layer visibility prefs + basemap view (localStorage). Pure/native-
 // tested; the wasm host applies them to the residency + engine each settle.
 mod world_layer_prefs;
-// T-159.25 SSE consumer (useServerTelemetry port) — web-sys fetch/reader, wasm32-only.
-#[cfg(target_arch = "wasm32")]
+// T-159.25 SSE consumer (useServerTelemetry port). Transport body is wasm32-gated inside the
+// module; the module itself stays ungated so native `cargo test` can run the T-287 Class-R
+// abort/teardown source guard (`include_str!("sse.rs")` — same reason dto.rs owns the decode).
 mod sse;
 // T-159.25 — sonner replacement: Toasts context + top-right viewport (renders no DOM while empty).
 mod toast;

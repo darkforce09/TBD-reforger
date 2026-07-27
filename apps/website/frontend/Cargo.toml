@@ -77,6 +77,10 @@ web-sys = { version = "0.3", features = [
     "Response",
     "ReadableStream",
     "ReadableStreamDefaultReader",
+    # T-287 — abort the SSE fetch on SPA route-leave (AbortController parked in thread_local;
+    # on_cleanup calls the Send zero-capture abort_server_status_stream).
+    "AbortController",
+    "AbortSignal",
     # T-159.25 Server Intel copy-address (navigator.clipboard.writeText).
     "Navigator",
     "Clipboard",

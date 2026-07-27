@@ -18,10 +18,14 @@
 //! Measured 2026-07-27: initial-snapshot + DTO decode are sound (R-api `LIVE_SSE_FRAME` pin).
 //! The pre-T-272 defect was zero *producers* after connect, not a client decode bug.
 //!
-//! Lifetime: like the editor's engine host, the stream is NOT torn down on SPA nav (leptos
-//! `on_cleanup` is Send-bound, and the `AbortController` handle is `!Send`) — the connection ends
-//! when the tab closes or the server drops it. One page = one stream; navigation leaks at most one
-//! idle reader, the documented editor-host tradeoff.
+//! # Lifetime (T-287)
+//!
+//! The fetch is aborted on SPA route-leave / component dispose. `AbortController` is `!Send`, so
+//! it cannot live inside Leptos `on_cleanup` (which is `Send + Sync`-bound). Same workaround as
+//! T-189's unload guard in `mission_history.rs`: park the controller in a `thread_local`, and
+//! register the zero-capture [`abort_server_status_stream`] under the page's `on_cleanup` (see
+//! `server_intel.rs`). Wasm is single-threaded, so the cleanup always runs on the thread that
+//! installed the controller. Result: one page = one live stream; navigation tears it down.
 //!
 //! **T-306 — a rejected frame is audited, not swallowed.** The parse used to be
 //! `if let Ok(json) = serde_json::from_str::<ServerStatusDto>(..)`, so a frame the DTO could not
@@ -33,18 +37,55 @@
 //! propagating or dropping in silence.
 //!
 //! The decode itself lives in [`crate::dto`] ([`decode_server_status_frame`]), not here, and that
-//! placement is deliberate: **this module is `#[cfg(target_arch = "wasm32")]` in `main.rs`, so a
-//! `#[cfg(test)] mod` in this file would never be compiled, let alone run, by `cargo test`.** A
-//! frame-decoding policy nobody can test is how the original defect stayed invisible, so the pure
-//! half sits in the natively-compiled wire-contract module beside the golden that pins it, and this
-//! file keeps only the `web_sys` transport.
+//! placement is deliberate: **the wasm transport body is `#[cfg(target_arch = "wasm32")]`, so a
+//! `#[cfg(test)]` that only lived behind that gate would never be compiled by native `cargo test`.**
+//! The Class-R source guard below is therefore ungated (it `include_str!`s this file), and the pure
+//! decode half sits in the natively-compiled wire-contract module beside the golden that pins it.
+
+/// Contract name of the Send+Sync teardown entry point. Class-R / source guards pin this literal
+/// so a future edit cannot rename the cleanup fn without updating the proof.
+#[allow(dead_code)] // read by `class_r_sse_abort_teardown_exists`; not a runtime path
+pub const SSE_ABORT_CLEANUP_FN: &str = "abort_server_status_stream";
+
+#[cfg(target_arch = "wasm32")]
+use std::cell::RefCell;
+
+#[cfg(target_arch = "wasm32")]
 use crate::auth::AuthStore;
+#[cfg(target_arch = "wasm32")]
 use crate::dto::{decode_server_status_frame, ServerStatusDto, SseFrame};
+#[cfg(target_arch = "wasm32")]
 use leptos::prelude::*;
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::JsCast;
 
+#[cfg(target_arch = "wasm32")]
+thread_local! {
+    /// Live `AbortController` for the Server Intel SSE fetch. Parked here instead of inside
+    /// `on_cleanup` because the controller is `!Send` while cleanup is `Send + Sync`-bound.
+    /// Reached only via [`abort_server_status_stream`] (a zero-capture fn item).
+    static SSE_ABORT: RefCell<Option<web_sys::AbortController>> = const { RefCell::new(None) };
+}
+
+/// Abort the live `/servers/:id/status/stream` fetch, if any. Zero-capture (plain `fn` item:
+/// `Send + Sync + 'static`) so it is `on_cleanup`-compatible. Idempotent.
+///
+/// Callers: `ServerIntelInner`'s `on_cleanup` (route-leave), and [`stream_server_status`] before
+/// arming a replacement controller (re-subscribe / remount).
+pub fn abort_server_status_stream() {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let taken = SSE_ABORT.with(|c| c.borrow_mut().take());
+        if let Some(ctrl) = taken {
+            ctrl.abort();
+        }
+    }
+}
+
 /// Subscribe to `/servers/:id/status/stream`; the latest status/connected/error land in the given
-/// signals (the React hook's return triple).
+/// signals (the React hook's return triple). Pairs with [`abort_server_status_stream`] under the
+/// host page's `on_cleanup`.
+#[cfg(target_arch = "wasm32")]
 pub fn stream_server_status(
     store: AuthStore,
     server_id: String,
@@ -52,6 +93,16 @@ pub fn stream_server_status(
     connected: RwSignal<bool>,
     error: RwSignal<Option<String>>,
 ) {
+    // Replace any prior controller (remount / re-subscribe) before arming a new one.
+    abort_server_status_stream();
+
+    let Ok(controller) = web_sys::AbortController::new() else {
+        error.set(Some("SSE abort controller failed".into()));
+        return;
+    };
+    let signal = controller.signal();
+    SSE_ABORT.with(|c| *c.borrow_mut() = Some(controller));
+
     leptos::task::spawn_local(async move {
         let Some(token) = store.access_token.get_untracked() else {
             return;
@@ -65,15 +116,21 @@ pub fn stream_server_status(
             let init = web_sys::RequestInit::new();
             init.set_method("GET");
             init.set_headers(&headers);
+            // T-287 — abort signal: route-leave calls [`abort_server_status_stream`], which
+            // rejects this fetch / errors the body reader so the loop exits.
+            init.set_signal(Some(&signal));
             let req =
                 web_sys::Request::new_with_str_and_init(&url, &init).map_err(|_| "request")?;
             let win = web_sys::window().ok_or("window")?;
             let resp: web_sys::Response =
                 wasm_bindgen_futures::JsFuture::from(win.fetch_with_request(&req))
                     .await
-                    .map_err(|_| "fetch")?
+                    .map_err(|_| if signal.aborted() { "aborted" } else { "fetch" })?
                     .dyn_into()
                     .map_err(|_| "response")?;
+            if signal.aborted() {
+                return Err("aborted");
+            }
             if !resp.ok() {
                 return Err("SSE connection failed");
             }
@@ -83,9 +140,12 @@ pub fn stream_server_status(
             error.set(None);
             let mut buf: Vec<u8> = Vec::new();
             loop {
+                if signal.aborted() {
+                    return Err("aborted");
+                }
                 let chunk = wasm_bindgen_futures::JsFuture::from(reader.read())
                     .await
-                    .map_err(|_| "read")?;
+                    .map_err(|_| if signal.aborted() { "aborted" } else { "read" })?;
                 let done = js_sys::Reflect::get(&chunk, &"done".into())
                     .ok()
                     .and_then(|v| v.as_bool())
@@ -131,9 +191,75 @@ pub fn stream_server_status(
             }
             Ok(())
         };
-        if let Err(e) = run.await {
-            error.set(Some(e.to_string()));
-            connected.set(false);
+        match run.await {
+            Err("aborted") => {
+                // Route-leave / remount — not a user-visible failure.
+                connected.set(false);
+            }
+            Err(e) => {
+                error.set(Some(e.to_string()));
+                connected.set(false);
+            }
+            Ok(()) => {
+                connected.set(false);
+            }
         }
+        // Leave the TLS slot alone on natural EOF/error: a later `stream_server_status` or
+        // `abort_server_status_stream` `take()`s it. Clearing here races a remount that already
+        // parked a newer controller under the same slot.
     });
+}
+
+#[cfg(test)]
+mod tests {
+    /// T-287 Class-R — the SSE fetch must abort on dispose; a comment-only "fixed" is a fail.
+    #[test]
+    fn class_r_sse_abort_teardown_exists() {
+        const SRC: &str = include_str!("sse.rs");
+        const INTEL: &str = include_str!("server_intel.rs");
+        // Exclude this tests module from the negative asserts — the banned phrases appear in the
+        // assert! messages themselves and would false-red the guard. Split on the mod marker, not
+        // a bare `#[cfg(test)]` (that substring also appears in the module docs above).
+        let production = SRC
+            .split("mod tests {")
+            .next()
+            .expect("tests module marker");
+
+        assert_eq!(
+            super::SSE_ABORT_CLEANUP_FN,
+            "abort_server_status_stream",
+            "cleanup fn name pin drifted from the const"
+        );
+        // Native no-op call — proves the Send+Sync seam is reachable outside wasm.
+        super::abort_server_status_stream();
+        assert!(
+            production.contains("AbortController"),
+            "sse.rs must create an AbortController for the fetch"
+        );
+        assert!(
+            production.contains("init.set_signal(Some(&signal))"),
+            "RequestInit must wire the AbortController signal via init.set_signal(Some(&signal))"
+        );
+        assert!(
+            production.contains("fn abort_server_status_stream"),
+            "zero-capture abort entry point must exist for on_cleanup"
+        );
+        assert!(
+            production.contains("SSE_ABORT"),
+            "AbortController must be parked in a thread_local (Send workaround)"
+        );
+        assert!(
+            !production.contains("NOT torn down on SPA nav"),
+            "stale leak documentation must not remain after T-287"
+        );
+        assert!(
+            !production.contains("navigation leaks at most one"),
+            "stale leak documentation must not remain after T-287"
+        );
+        assert!(
+            INTEL.contains("on_cleanup(crate::sse::abort_server_status_stream)")
+                || INTEL.contains("on_cleanup(abort_server_status_stream)"),
+            "ServerIntelInner must register abort_server_status_stream under on_cleanup"
+        );
+    }
 }
