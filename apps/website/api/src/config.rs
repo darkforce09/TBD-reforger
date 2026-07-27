@@ -1,9 +1,10 @@
 //! Runtime configuration from environment — Rust port of `internal/config`.
 //!
 //! 16 env vars; `DATABASE_URL` and `JWT_SECRET` are always required (hard-fail).
-//! In non-development, `DISCORD_CLIENT_SECRET` and `DISCORD_REDIRECT_URL` are also
-//! required (T-248) so a blank secret cannot surface as `discord_unreachable`.
-//! A `.env` file is loaded if present but optional.
+//! In non-development, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, and
+//! `DISCORD_REDIRECT_URL` are also required (T-248 / T-430) so blank OAuth
+//! creds cannot load config and later surface as `oauth_unconfigured` /
+//! `discord_unreachable`. A `.env` file is loaded if present but optional.
 
 use std::env;
 
@@ -62,7 +63,8 @@ pub enum ConfigError {
 impl Config {
     /// Read configuration from the environment, applying dev defaults. Loads a
     /// `.env` if present. Hard-fails if `DATABASE_URL` or `JWT_SECRET` is empty;
-    /// in production also hard-fails on blank Discord secret/redirect (T-248).
+    /// in production also hard-fails on blank Discord client id/secret/redirect
+    /// (T-248 / T-430).
     pub fn load() -> Result<Self, ConfigError> {
         // best-effort: .env is optional; real config comes from the environment.
         let _ = dotenvy::dotenv();
@@ -104,10 +106,14 @@ impl Config {
         if self.jwt_secret.is_empty() {
             return Err(ConfigError::Missing("JWT_SECRET"));
         }
-        // Production: a blank secret/redirect used to reach Discord exchange and
-        // surface as `discord_unreachable` — misconfig disguised as an outage (T-248).
+        // Production: blank Discord OAuth fields used to load config and later
+        // surface as `oauth_unconfigured` / `discord_unreachable` — misconfig
+        // disguised as an outage (T-248 secret/redirect; T-430 client id).
         // Development keeps blank Discord so `Config::for_tests` and dev-login work.
         if !self.is_development() {
+            if self.discord_client_id.is_empty() {
+                return Err(ConfigError::Missing("DISCORD_CLIENT_ID"));
+            }
             if self.discord_client_secret.is_empty() {
                 return Err(ConfigError::Missing("DISCORD_CLIENT_SECRET"));
             }
@@ -188,9 +194,20 @@ mod tests {
     fn production_base() -> Config {
         let mut cfg = Config::for_tests("postgres://x/x", "jwt-secret");
         cfg.env = "production".into();
+        cfg.discord_client_id = "client-id".into();
         cfg.discord_client_secret = "secret".into();
         cfg.discord_redirect_url = "https://example.com/callback".into();
         cfg
+    }
+
+    #[test]
+    fn production_rejects_blank_discord_client_id() {
+        let mut cfg = production_base();
+        cfg.discord_client_id.clear();
+        match cfg.validate() {
+            Err(ConfigError::Missing("DISCORD_CLIENT_ID")) => {}
+            other => panic!("expected Missing(DISCORD_CLIENT_ID), got {other:?}"),
+        }
     }
 
     #[test]
@@ -219,6 +236,7 @@ mod tests {
         // for dev-login; only production fails closed.
         let cfg = Config::for_tests("postgres://x/x", "jwt-secret");
         assert!(cfg.is_development());
+        assert!(cfg.discord_client_id.is_empty());
         assert!(cfg.discord_client_secret.is_empty());
         assert!(cfg.discord_redirect_url.is_empty());
         cfg.validate().expect("development blank Discord must load");
@@ -228,6 +246,6 @@ mod tests {
     fn production_with_discord_creds_loads() {
         production_base()
             .validate()
-            .expect("production with Discord secret+redirect must load");
+            .expect("production with Discord client id+secret+redirect must load");
     }
 }
