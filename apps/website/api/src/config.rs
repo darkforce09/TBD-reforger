@@ -111,16 +111,16 @@ impl Config {
         // disguised as an outage (T-248 secret/redirect; T-430 client id).
         // Development keeps blank Discord so `Config::for_tests` and dev-login work.
         if !self.is_development() {
-            // T-481 — trim before Missing: `" "` is not empty to `is_empty()` but is
-            // not a configured Discord client id (same class as prior secret/redirect
-            // whitespace nits). Reject trim-empty; do not store a trimmed value.
+            // T-481 / T-484 — trim before Missing: `" "` is not empty to `is_empty()`
+            // but is not a configured Discord OAuth value. Reject trim-empty for
+            // client id, secret, and redirect; do not store a trimmed value.
             if self.discord_client_id.trim().is_empty() {
                 return Err(ConfigError::Missing("DISCORD_CLIENT_ID"));
             }
-            if self.discord_client_secret.is_empty() {
+            if self.discord_client_secret.trim().is_empty() {
                 return Err(ConfigError::Missing("DISCORD_CLIENT_SECRET"));
             }
-            if self.discord_redirect_url.is_empty() {
+            if self.discord_redirect_url.trim().is_empty() {
                 return Err(ConfigError::Missing("DISCORD_REDIRECT_URL"));
             }
         }
@@ -243,6 +243,25 @@ mod tests {
         }
     }
 
+    /// T-484 Class-R — production must reject whitespace-only `DISCORD_CLIENT_SECRET`.
+    /// Pre-fix: `is_empty()` only → `" "` validates Ok (same disguise class as
+    /// pre-T-481 client id).
+    #[test]
+    fn production_rejects_whitespace_only_discord_client_secret() {
+        let mut cfg = production_base();
+        cfg.discord_client_secret = " ".into();
+        match cfg.validate() {
+            Err(ConfigError::Missing("DISCORD_CLIENT_SECRET")) => {}
+            other => panic!("expected Missing(DISCORD_CLIENT_SECRET), got {other:?}"),
+        }
+        cfg = production_base();
+        cfg.discord_client_secret = "\t  \n".into();
+        match cfg.validate() {
+            Err(ConfigError::Missing("DISCORD_CLIENT_SECRET")) => {}
+            other => panic!("expected Missing(DISCORD_CLIENT_SECRET) for mixed ws, got {other:?}"),
+        }
+    }
+
     #[test]
     fn production_rejects_blank_discord_redirect_url() {
         let mut cfg = production_base();
@@ -250,6 +269,25 @@ mod tests {
         match cfg.validate() {
             Err(ConfigError::Missing("DISCORD_REDIRECT_URL")) => {}
             other => panic!("expected Missing(DISCORD_REDIRECT_URL), got {other:?}"),
+        }
+    }
+
+    /// T-484 Class-R — production must reject whitespace-only `DISCORD_REDIRECT_URL`.
+    /// Pre-fix: `is_empty()` only → `" "` validates Ok (same disguise class as
+    /// pre-T-481 client id).
+    #[test]
+    fn production_rejects_whitespace_only_discord_redirect_url() {
+        let mut cfg = production_base();
+        cfg.discord_redirect_url = " ".into();
+        match cfg.validate() {
+            Err(ConfigError::Missing("DISCORD_REDIRECT_URL")) => {}
+            other => panic!("expected Missing(DISCORD_REDIRECT_URL), got {other:?}"),
+        }
+        cfg = production_base();
+        cfg.discord_redirect_url = "\t  \n".into();
+        match cfg.validate() {
+            Err(ConfigError::Missing("DISCORD_REDIRECT_URL")) => {}
+            other => panic!("expected Missing(DISCORD_REDIRECT_URL) for mixed ws, got {other:?}"),
         }
     }
 
