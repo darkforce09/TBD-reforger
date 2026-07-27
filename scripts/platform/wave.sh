@@ -104,13 +104,18 @@ GATE_TIMEOUT="${TBD_GATE_TIMEOUT:-1200}"
 # invisible to the gate that cleared their slices. ci.yml:66 and Makefile:123 both set the var, so CI
 # had real coverage; the hole was specific to the gate. Third-order instance of this run's signature
 # defect: reporting success on code never examined.
-# Gate IT database (T-411). Default is per-wave — NOT the forever-dirty shared `tbd_gate_it`.
+# Gate IT database (T-411 + T-490). Default is per-wave — NOT the forever-dirty shared `tbd_gate_it`.
 # Residue used to ratchet forever on one DB (approvals page-1 ASC, missions NULL updated_at, …);
 # a timed/periodic wipe would make that intermittent (false-red / flake shape). Per-wave names
 # make a wave's verdict reproducible after the fact and shrink the concurrent-writer blast radius.
 # Escape hatches (unchanged): TEST_DATABASE_URL skips ensure entirely; TBD_GATE_DB pins a full URL
-# (create-if-missing that name, no wave prune). Wave number defaults to current_wave(); override
-# with TBD_GATE_WAVE when you need a specific w<N> without waiting on the plan.
+# (create-if-missing that name, no wave prune).
+#
+# Wave number resolution (T-490): TBD_GATE_WAVE wins; else the committed packing counter at
+# docs/platform/factory_pack_wave (command center bumps on promote); else current_wave() /
+# plan-max-when-done. current_wave() alone is WRONG for factory packing: it is the lowest plan
+# wave with any non-shipped/cancelled ticket, so a deferred Wave-3 pin keeps the default DB at
+# tbd_gate_w3 forever and residue isolation never advances with packing waves.
 # The gate's PRIVATE trunk working set. Named here rather than buried in the sh -c string at the
 # call site, because gate_trunk_build asserts against them and the whole T-396 cure is that these
 # two are never the paths `trunk serve` owns. See gate_trunk_build for the measurement.
@@ -196,18 +201,33 @@ checkrun() { hostrun env "CARGO_TARGET_DIR=$GATE_CHECK_TARGET" "CARGO_INCREMENTA
 # Its own DB, not the Makefile's `rust_it`: slice agents run `make test-it` concurrently, and that
 # target DROPs and recreates rust_it, so sharing it would make the gate race them.
 #
-# T-411: the IT database is per-wave (`tbd_gate_w<N>`), create-if-missing, with DBs older than the
-# last two waves dropped under the gate lock. NOT a per-run name (that leaks a DB every kill) and
-# NOT a timed wipe (that turns a permanent ratchet into an intermittent flake).
+# T-411 / T-490: the IT database is per-wave (`tbd_gate_w<N>`), create-if-missing, with DBs older
+# than the last two waves dropped under the gate lock. NOT a per-run name (that leaks a DB every
+# kill) and NOT a timed wipe (that turns a permanent ratchet into an intermittent flake).
+#
+# T-490: do NOT derive N from current_wave() when a packing counter exists. current_wave() is the
+# lowest plan wave with any deferred/open ticket — a Wave-3 deferral pins tbd_gate_w3 forever while
+# the factory is packing Wave 35. Prefer docs/platform/factory_pack_wave (positive integer, bumped
+# on promote) so residue isolation tracks packing progress.
 gate_wave_number() {
-  local w
+  local w pack_file pack
   if [ -n "${TBD_GATE_WAVE:-}" ]; then
     w="$TBD_GATE_WAVE"
   else
-    w="$(current_wave)"
-    if [ "$w" = "done" ]; then
-      # All plan tickets shipped — pin to the highest wave number still in the plan.
-      w="$(plan_rows | awk -F'\t' '$1 ~ /^[0-9]+$/ {print $1}' | sort -n | tail -1)"
+    pack_file="$ROOT/docs/platform/factory_pack_wave"
+    if [ -f "$pack_file" ]; then
+      # Single integer, optional trailing whitespace/newline. Reject empty, zero, non-numeric.
+      pack="$(tr -d '[:space:]' < "$pack_file" 2>/dev/null || true)"
+      if [[ "$pack" =~ ^[1-9][0-9]*$ ]]; then
+        w="$pack"
+      fi
+    fi
+    if [ -z "${w:-}" ]; then
+      w="$(current_wave)"
+      if [ "$w" = "done" ]; then
+        # All plan tickets shipped — pin to the highest wave number still in the plan.
+        w="$(plan_rows | awk -F'\t' '$1 ~ /^[0-9]+$/ {print $1}' | sort -n | tail -1)"
+      fi
     fi
   fi
   [[ "$w" =~ ^[0-9]+$ ]] || { echo "gate: cannot derive numeric wave for gate DB (got '${w:-<empty>}')" >&2; return 2; }
