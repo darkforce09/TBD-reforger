@@ -87,7 +87,7 @@ pub async fn get_dashboard(
                 .fetch_optional(pool)
                 .await?;
                 let mt = match &em {
-                    Some(em) => mission_title_terrain(pool, em.mission_id).await,
+                    Some(em) => mission_title_terrain(pool, em.mission_id).await?,
                     None => None,
                 };
                 let registered: i64 = sqlx::query_scalar(
@@ -164,7 +164,7 @@ pub async fn get_dashboard(
                 .unwrap_or_default();
                 let name = if ev_name.is_empty() {
                     mission_title_terrain(pool, mission_id)
-                        .await
+                        .await?
                         .map(|(t, _)| t)
                         .unwrap_or_default()
                 } else {

@@ -119,16 +119,19 @@ struct CombatTotals {
 }
 
 /// Fetch a mission's (title, terrain) for enrichment (avoids the full-row time cast).
+///
+/// **T-341 — errors must not look like success.** A missing mission is `Ok(None)`. A decode or
+/// SQL failure is `Err` and must propagate to the caller — never map a failed query into a silent
+/// empty title/terrain via Option-collapse. The pre-fix path made a broken query
+/// indistinguishable from "no mission".
 pub(crate) async fn mission_title_terrain(
     pool: &sqlx::PgPool,
     id: Uuid,
-) -> Option<(String, TerrainType)> {
+) -> Result<Option<(String, TerrainType)>, sqlx::Error> {
     sqlx::query_as("SELECT title, terrain FROM missions WHERE id = $1 AND deleted_at IS NULL")
         .bind(id)
         .fetch_optional(pool)
         .await
-        .ok()
-        .flatten()
 }
 
 /// `GET /api/v1/me/deployments` — service record: stats, upcoming, history.
@@ -144,8 +147,16 @@ pub async fn get_my_deployments(
     };
 
     // Upcoming: my registrations on future missions within events.
+    //
+    // Explicit columns (T-341) — never a bare star on event_registrations. That shape is the
+    // same class that 500'd `/dashboard` (T-329): today's only nullable column (`slot_id`)
+    // happens to map to `Option<Uuid>`, so the bug is latent. Spell the list so the next
+    // nullable column cannot land a silent 500.
     let regs: Vec<EventRegistration> = sqlx::query_as(
-        "SELECT event_registrations.* FROM event_registrations \
+        "SELECT event_registrations.id, event_registrations.event_mission_id, \
+         event_registrations.discord_id, event_registrations.slot_id, event_registrations.state, \
+         event_registrations.registered_at \
+         FROM event_registrations \
          JOIN event_missions ON event_missions.id = event_registrations.event_mission_id \
          JOIN events ON events.id = event_missions.event_id \
          WHERE event_registrations.discord_id = $1 AND event_missions.start_time > now() \
@@ -164,7 +175,7 @@ pub async fn get_my_deployments(
         let Some(ev) = load_event(&state.pool, em.event_id).await? else {
             continue;
         };
-        let mt = mission_title_terrain(&state.pool, em.mission_id).await;
+        let mt = mission_title_terrain(&state.pool, em.mission_id).await?;
         let name = if ev.name_override.is_empty() {
             mt.as_ref().map(|(t, _)| t.clone()).unwrap_or_default()
         } else {
@@ -210,7 +221,7 @@ pub async fn get_my_deployments(
             Some(mm) => {
                 let op = match mm.mission_id {
                     Some(mid) => mission_title_terrain(&state.pool, mid)
-                        .await
+                        .await?
                         .map(|(t, _)| t)
                         .unwrap_or_default(),
                     None => String::new(),
