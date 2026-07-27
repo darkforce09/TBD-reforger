@@ -292,7 +292,7 @@ verify-t180: ## T-180.10 Class-R coherency gate (ORBAT + Eden locks A–I)
 verify-t438: ## T-438/T-461 deploy-staging compose path (website/, not api/)
 	@bash scripts/mod/verify-t438-deploy-staging-compose-path.sh
 
-verify-t440: ## T-440 Makefile seed: must apply seeds/faction_library.sql + starter row pin
+verify-t440: ## T-440/T-478 faction library seed: live INSERT + `< seeds/…` redirect + wave dual-path
 	@bash scripts/mod/verify-t440-faction-library-seed.sh
 
 verify-t456: ## T-456/T-460 mission REST body size gate before ParseMissionJson

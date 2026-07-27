@@ -1407,6 +1407,8 @@ gate_slice() {
   # T-463. Same pattern for T-438 deploy-staging compose path + T-456 REST size gate
   # (wave 25 — scripts existed, cold gate never executed them).
   # T-468. Tripwire: ci.yml schema job must stay on `make ci-local-schema`.
+  # T-478. verify-t440 pins both this gate_slice run and cmd_gate (comment-strip +
+  # redirect recipe + dual-path); deleting either run must FAIL the verify script.
   run "T-439 objects aliases" bash "$ROOT/scripts/mod/verify-t439-objects-registry-aliases.sh"
   run "T-444 wiki seed"       bash "$ROOT/scripts/mod/verify-t444-wiki-seed.sh"
   run "T-440 faction library seed" bash "$ROOT/scripts/mod/verify-t440-faction-library-seed.sh"
@@ -1551,6 +1553,7 @@ cmd_gate() {
   # schema/ticket so a deleted wiki seed line or Objects guid mismatch cannot stay cargo-green.
   # T-463. Same pattern for T-438 deploy-staging compose path + T-456 REST size gate.
   # T-468. Tripwire: ci.yml schema job must stay on `make ci-local-schema`.
+  # T-478. Cold-path twin of the gate_slice T-440 run — verify-t440 requires both.
   run "T-439 objects aliases" bash "$ROOT/scripts/mod/verify-t439-objects-registry-aliases.sh"
   run "T-444 wiki seed"       bash "$ROOT/scripts/mod/verify-t444-wiki-seed.sh"
   run "T-440 faction library seed" bash "$ROOT/scripts/mod/verify-t440-faction-library-seed.sh"
