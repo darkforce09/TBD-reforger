@@ -979,6 +979,90 @@ mod tests {
         s.chars().filter(|c| !c.is_whitespace()).collect()
     }
 
+    /// T-475 — strip TOML `#` comments and `//` line comments (string-aware) so a commented
+    /// feature line (`# "FormData",`) cannot satisfy Cargo feature pins.
+    fn strip_toml_comments(src: &str) -> String {
+        let mut out = String::with_capacity(src.len());
+        let mut chars = src.chars().peekable();
+        let mut in_string = false;
+        while let Some(c) = chars.next() {
+            if in_string {
+                out.push(c);
+                if c == '\\' {
+                    if let Some(n) = chars.next() {
+                        out.push(n);
+                    }
+                    continue;
+                }
+                if c == '"' {
+                    in_string = false;
+                }
+                continue;
+            }
+            if c == '"' {
+                in_string = true;
+                out.push(c);
+                continue;
+            }
+            if c == '/' && matches!(chars.peek(), Some('/')) {
+                chars.next();
+                while let Some(n) = chars.next() {
+                    if n == '\n' {
+                        out.push('\n');
+                        break;
+                    }
+                }
+                continue;
+            }
+            if c == '#' {
+                while let Some(n) = chars.next() {
+                    if n == '\n' {
+                        out.push('\n');
+                        break;
+                    }
+                }
+                continue;
+            }
+            out.push(c);
+        }
+        out
+    }
+
+    /// Strip `//` and `/* */` so comment-only needles cannot satisfy live-call pins.
+    fn strip_rust_comments(src: &str) -> String {
+        let mut out = String::with_capacity(src.len());
+        let mut chars = src.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c == '/' {
+                match chars.peek() {
+                    Some('/') => {
+                        chars.next();
+                        while let Some(n) = chars.next() {
+                            if n == '\n' {
+                                out.push('\n');
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+                    Some('*') => {
+                        chars.next();
+                        while let Some(n) = chars.next() {
+                            if n == '*' && matches!(chars.peek(), Some('/')) {
+                                chars.next();
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+                    _ => {}
+                }
+            }
+            out.push(c);
+        }
+        out
+    }
+
     /// Count every `list_seeded.set(` call — any arg form, whitespace-insensitive.
     fn count_list_seeded_sets(s: &str) -> usize {
         strip_ws(s).matches("list_seeded.set(").count()
@@ -1208,9 +1292,13 @@ mod tests {
         );
     }
 
-    /// T-446 Class-R — multipart hero path is wired end-to-end in owns files (Cargo features +
-    /// client helper + content handler). A regression that drops FormData/File or the helper
-    /// FAILS even if content.rs still looks "honest".
+    /// T-446 / T-475 Class-R — multipart hero path is wired end-to-end in owns files (Cargo
+    /// features + client helper + content handler). A regression that drops FormData/File or the
+    /// helper FAILS even if content.rs still looks "honest".
+    ///
+    /// T-475: Cargo feature pins run on comment-stripped TOML (commenting `# "FormData",` must
+    /// FAIL). Hero Ok path must live-call `absolute_cms_upload_url(&raw)` (not comment-only) so
+    /// Publish keeps T-405 absolute http(s) thumbnails.
     #[test]
     fn hero_multipart_upload_is_wired_not_stubbed() {
         const CARGO: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"));
@@ -1220,18 +1308,21 @@ mod tests {
             .split("#[cfg(test)]")
             .next()
             .expect("content.rs must have a #[cfg(test)] module");
+        let prod_code = strip_rust_comments(prod);
+        let cargo_live = strip_toml_comments(CARGO);
         let client_prod = CLIENT
             .split("#[cfg(test)]")
             .next()
             .expect("client.rs must have a #[cfg(test)] module");
 
         assert!(
-            CARGO.contains("\"FormData\"") && CARGO.contains("\"File\""),
-            "Cargo.toml must enable web-sys FormData + File (perturbation: drop features)"
+            cargo_live.contains("\"FormData\"") && cargo_live.contains("\"File\""),
+            "Cargo.toml must enable web-sys FormData + File (perturbation: comment-out / drop features)"
         );
         assert!(
-            CARGO.contains("\"FileList\""),
-            "Cargo.toml must enable FileList for HtmlInputElement::files()"
+            cargo_live.contains("\"FileList\""),
+            "Cargo.toml must enable FileList for HtmlInputElement::files() \
+             (perturbation: comment-out / drop FileList)"
         );
         assert!(
             client_prod.contains("pub async fn api_upload_file<")
@@ -1252,6 +1343,18 @@ mod tests {
         assert!(
             prod.contains("api_error_message") && prod.contains("Hero upload failed"),
             "handle_hero must toast the real API error on Err"
+        );
+        // T-475 hole 2 — absolute URL for T-405 validated_thumbnail (non-comment).
+        // Definition needle (`fn absolute_cms_upload_url`) ≠ call needle (`…(&raw)`): a bare
+        // `absolute_cms_upload_url(` would false-green on the fn signature alone.
+        assert!(
+            prod_code.contains("fn absolute_cms_upload_url"),
+            "prod must define absolute_cms_upload_url (perturbation: comment-only / delete helper)"
+        );
+        assert!(
+            prod_code.contains("absolute_cms_upload_url(&raw)"),
+            "hero Ok path must live-call absolute_cms_upload_url(&raw) \
+             (perturbation: let url = raw; / comment-only call)"
         );
     }
 
