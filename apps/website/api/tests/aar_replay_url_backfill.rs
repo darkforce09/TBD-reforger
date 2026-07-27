@@ -3,7 +3,15 @@
 //!
 //! T-391 closed the write boundary; it could do nothing about rows already in the table, and
 //! `frontend/src/deployments.rs` binds `matches.aar_replay_url` into an `<a href>`. Migration
-//! `0010_backfill_aar_replay_url_scheme.sql` quarantines and NULLs the offenders.
+//! `0010_backfill_aar_replay_url_scheme.sql` quarantines and scrubs the offenders.
+//!
+//! **T-508 / T-331 alignment:** migration `0015_matches_empty_text_missions_timestamps.sql` made
+//! `matches.aar_replay_url` `DEFAULT '' NOT NULL`. Canonical empty is `''` (telemetry COALESCE,
+//! seed writes). A successful NULL plant is illegal; scrubbed rows must land as `''`, not NULL.
+//! sqlx embeds 0010 with a SHA-384 checksum — editing the applied file breaks `db::migrate` on
+//! every DB that already ran version 10 — so this test re-executes the real file via
+//! `include_str!` after substituting the historical `SET … = NULL` scrub for the T-331-canonical
+//! `SET … = ''` (see [`migration_for_post_0015_rerun`]).
 //!
 //! Two things are proven here, and the first is the reason this file exists rather than a comment:
 //!
@@ -15,16 +23,17 @@
 //!      already pinned to) and fails if the disagreement set is anything other than the documented
 //!      one. A new divergence in either direction names itself.
 //!   2. **The migration actually moves rows.** Planted rows, the real migration file executed
-//!      verbatim via `include_str!`, then the table re-read. Executing the file rather than a
-//!      re-typed copy of its statements is deliberate: a test that runs its own paraphrase of a
-//!      migration proves the paraphrase, which is the one thing nobody ships.
+//!      (T-331-adapted scrub) via `include_str!`, then the table re-read. Executing the file rather
+//!      than a re-typed copy of its statements is deliberate: a test that runs its own paraphrase
+//!      of a migration proves the paraphrase, which is the one thing nobody ships.
 //!
 //! Running the file a second time is also the idempotency check, and it is free — that is what
 //! `ON CONFLICT DO NOTHING` plus a self-clearing `WHERE` buys.
 //!
-//! Skips without `TEST_DATABASE_URL` — and a skip is a **failure to have tested**, not a pass.
+//! `TEST_DATABASE_URL` (or `TBD_GATE_DB`) is **required**. A missing URL is a hard failure — never
+//! a silent pass-via-skip. The gate supplies the URL via `ensure_gate_db`.
 
-use sqlx::{PgPool, Row};
+use sqlx::{AssertSqlSafe, PgPool, Row};
 use uuid::Uuid;
 use website_api::db;
 use website_api::services::text::is_http_url;
@@ -34,8 +43,27 @@ use website_api::services::text::is_http_url;
 include!("../../shared/is_http_url_cases.rs");
 
 /// The migration, executed verbatim rather than paraphrased. If someone edits the file, this test
-/// runs the edit.
+/// runs the edit — except for the one T-508 substitution documented on
+/// [`migration_for_post_0015_rerun`].
 const MIGRATION: &str = include_str!("../migrations/0010_backfill_aar_replay_url_scheme.sql");
+
+/// Historical 0010 scrub line. Frozen in the migration file (sqlx checksum); illegal after T-331
+/// / 0015 made the column `NOT NULL`.
+const HISTORICAL_NULL_SCRUB: &str = "SET aar_replay_url = NULL";
+
+/// T-331-canonical scrub: empty string matches 0015 backfill + telemetry `COALESCE(..., '')`.
+const CANONICAL_EMPTY_SCRUB: &str =
+    "SET aar_replay_url = '' /* T-508: T-331 NOT NULL; '' is canonical */";
+
+/// Re-run body for post-0015 databases: real 0010 file with the scrub line adapted so
+/// `include_str!` execution does not violate the NOT NULL constraint.
+fn migration_for_post_0015_rerun() -> String {
+    assert!(
+        MIGRATION.contains(HISTORICAL_NULL_SCRUB),
+        "0010 no longer contains `{HISTORICAL_NULL_SCRUB}` — update the T-508 substitution pin"
+    );
+    MIGRATION.replace(HISTORICAL_NULL_SCRUB, CANONICAL_EMPTY_SCRUB)
+}
 
 /// The complete, deliberate disagreement between `looks_like_http_url` (SQL) and `is_http_url`
 /// (Rust) over the shared corpus — every input the SQL keeps and the Rust guard refuses.
@@ -46,7 +74,7 @@ const MIGRATION: &str = include_str!("../migrations/0010_backfill_aar_replay_url
 /// only part that can, and on the scheme the two predicates are exactly equivalent.
 ///
 /// **This list must never gain an entry in the other direction.** SQL rejecting something Rust
-/// accepts would mean the backfill NULLs a legitimate replay link, and the test below checks for
+/// accepts would mean the backfill scrubs a legitimate replay link, and the test below checks for
 /// that separately and loudly.
 const SQL_KEEPS_RUST_REJECTS: &[&str] = &["http://@", "https://a@"];
 
@@ -58,11 +86,16 @@ fn unstorable(s: &str) -> bool {
     s.contains('\0')
 }
 
-async fn boot() -> Option<PgPool> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+async fn boot() -> PgPool {
+    let url = std::env::var("TEST_DATABASE_URL")
+        .or_else(|_| std::env::var("TBD_GATE_DB"))
+        .expect(
+            "TEST_DATABASE_URL (or TBD_GATE_DB) required — a missing DB URL is a FAIL, not a skip; \
+             the gate's ensure_gate_db exports TEST_DATABASE_URL from TBD_GATE_DB",
+        );
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
-    Some(pool)
+    pool
 }
 
 /// One test rather than several, on purpose: every part of this shares one database table, and
@@ -70,10 +103,7 @@ async fn boot() -> Option<PgPool> {
 /// race on `matches`.
 #[tokio::test]
 async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
-    let Some(pool) = boot().await else {
-        eprintln!("skip: TEST_DATABASE_URL unset");
-        return;
-    };
+    let pool = boot().await;
 
     // ── 1. Postgres genuinely cannot hold a NUL ──────────────────────────────────────────────
     // The migration header claims this is why three shared cases are unreachable. Claims about
@@ -117,11 +147,11 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
     );
 
     // The direction that would DESTROY DATA. There is no acceptable entry here: a row the Rust
-    // guard would have accepted is a legitimate replay link, and NULLing it is the one failure
+    // guard would have accepted is a legitimate replay link, and scrubbing it is the one failure
     // mode this migration was told to avoid.
     assert!(
         sql_rejects_rust_keeps.is_empty(),
-        "migration 0010 would NULL {} value(s) that `is_http_url` ACCEPTS — this destroys \
+        "migration 0010 would scrub {} value(s) that `is_http_url` ACCEPTS — this destroys \
          legitimate replay links and the migration must not ship in this state:\n  {}",
         sql_rejects_rust_keeps.len(),
         sql_rejects_rust_keeps.join("\n  ")
@@ -142,10 +172,28 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
         .await
         .expect("clear prior run");
 
-    // One row per storable case, plus the two sentinels the backfill must not touch.
-    // `source_match_id` is uniquely indexed, so every row gets its own `<tag>-<n>`; the shared
-    // `tag` prefix is what the cleanup and the counting queries match on.
-    let mut planted: Vec<(Uuid, Option<&str>, bool)> = Vec::new(); // (id, value, expect_kept)
+    // T-331 / 0015 pin: NULL is illegal on aar_replay_url (23502). Do not plant NULL successfully.
+    let null_plant = sqlx::query(
+        "INSERT INTO matches (source_match_id, started_at, outcome, aar_replay_url) \
+         VALUES ($1, now(), 'pending', NULL)",
+    )
+    .bind(format!("{tag}-null"))
+    .execute(&pool)
+    .await;
+    let null_err = null_plant.expect_err(
+        "T-331 pin: INSERT NULL into matches.aar_replay_url must fail after 0015 NOT NULL",
+    );
+    let null_err_text = format!("{null_err:?}");
+    assert!(
+        null_err_text.contains("23502"),
+        "expected Postgres 23502 not-null violation planting NULL aar_replay_url, got: {null_err_text}"
+    );
+
+    // One row per storable case. `source_match_id` is uniquely indexed, so every row gets its own
+    // `<tag>-<n>`; the shared `tag` prefix is what the cleanup and the counting queries match on.
+    // `''` is the "no replay uploaded yet" sentinel and is excluded by the WHERE clause, so it
+    // survives regardless of what the predicate says about it.
+    let mut planted: Vec<(Uuid, &str, bool)> = Vec::new(); // (id, value, expect_kept)
     for (n, (input, _)) in IS_HTTP_URL_CASES.iter().enumerate() {
         if unstorable(input) {
             continue;
@@ -156,8 +204,6 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
             .fetch_one(&pool)
             .await
             .unwrap();
-        // `''` is the "no replay uploaded yet" sentinel and is excluded by the WHERE clause, so it
-        // survives regardless of what the predicate says about it.
         let expect_kept = input.is_empty() || sql_says;
         let id: Uuid = sqlx::query_scalar(
             "INSERT INTO matches (source_match_id, started_at, outcome, aar_replay_url) \
@@ -168,18 +214,8 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
         .fetch_one(&pool)
         .await
         .expect("plant row");
-        planted.push((id, Some(*input), expect_kept));
+        planted.push((id, *input, expect_kept));
     }
-    // A row that is already NULL must stay NULL and must not be quarantined.
-    let null_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO matches (source_match_id, started_at, outcome, aar_replay_url) \
-         VALUES ($1, now(), 'pending', NULL) RETURNING id",
-    )
-    .bind(format!("{tag}-null"))
-    .fetch_one(&pool)
-    .await
-    .expect("plant null row");
-    planted.push((null_id, None, true));
 
     let bad_count = planted.iter().filter(|(_, _, kept)| !kept).count();
     assert!(
@@ -188,11 +224,19 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
          prove this migration does anything"
     );
 
-    // Run the REAL migration file.
-    sqlx::raw_sql(MIGRATION)
+    // Empty sentinel must be among the planted kept rows.
+    assert!(
+        planted.iter().any(|(_, v, kept)| *kept && v.is_empty()),
+        "empty-string sentinel row missing from planted set — cannot pin that '' is kept"
+    );
+
+    // Run the REAL migration file (T-331-adapted scrub — see migration_for_post_0015_rerun).
+    // AssertSqlSafe: body is include_str!(0010) with one audited scrub-line substitution; no user input.
+    let migration = AssertSqlSafe(migration_for_post_0015_rerun());
+    sqlx::raw_sql(migration)
         .execute(&pool)
         .await
-        .expect("run migration 0010");
+        .expect("run migration 0010 (T-508 post-0015 scrub)");
 
     let mut wrong = Vec::new();
     for (id, original, expect_kept) in &planted {
@@ -201,7 +245,9 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
             .fetch_one(&pool)
             .await
             .expect("re-read");
-        let now: Option<String> = row.get(0);
+        // After 0015 the column is NOT NULL; sqlx still surfaces text as Option in some binds,
+        // but the live value must be non-null. Prefer the owned String and treat missing as bug.
+        let now: String = row.get(0);
         let quarantined: Option<String> = sqlx::query_scalar(
             "SELECT original_value FROM url_quarantine \
              WHERE table_name = 'matches' AND column_name = 'aar_replay_url' AND row_id = $1",
@@ -212,7 +258,7 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
         .expect("read quarantine");
 
         if *expect_kept {
-            if now.as_deref() != *original {
+            if now.as_str() != *original {
                 wrong.push(format!(
                     "  KEPT-ROW ALTERED {original:?} -> {now:?} (the backfill destroyed a value \
                      the guard accepts)"
@@ -222,12 +268,14 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
                 wrong.push(format!("  KEPT-ROW QUARANTINED {original:?}"));
             }
         } else {
-            if now.is_some() {
+            // T-331 canonical empty after scrub — not NULL.
+            if now.as_str() != "" {
                 wrong.push(format!(
-                    "  STILL LIVE {original:?} -> {now:?} (a stored payload survived the backfill)"
+                    "  STILL LIVE {original:?} -> {now:?} (a stored payload survived the backfill; \
+                     expected Some(\"\") / empty string)"
                 ));
             }
-            if quarantined.as_deref() != *original {
+            if quarantined.as_deref() != Some(*original) {
                 wrong.push(format!(
                     "  NOT RECOVERABLE {original:?}: quarantine holds {quarantined:?} — the value \
                      was destroyed rather than quarantined"
@@ -253,7 +301,7 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
     .await
     .unwrap();
 
-    sqlx::raw_sql(MIGRATION)
+    sqlx::raw_sql(AssertSqlSafe(migration_for_post_0015_rerun()))
         .execute(&pool)
         .await
         .expect("re-run migration 0010");
@@ -273,13 +321,13 @@ async fn backfill_matches_the_rust_guard_and_actually_moves_rows() {
     assert_eq!(
         quarantine_before as usize, bad_count,
         "quarantine holds {quarantine_before} rows but {bad_count} were scrubbed — the copy and \
-         the NULL-out disagree, so some payload was destroyed without being captured"
+         the empty-out disagree, so some payload was destroyed without being captured"
     );
 
     // And a second run over a table with nothing left to fix must still be a clean no-op, which is
     // the "safe on a DB with zero bad rows" claim in the migration header.
     let still_live: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM matches WHERE source_match_id LIKE $1 AND aar_replay_url IS NOT NULL \
+        "SELECT count(*) FROM matches WHERE source_match_id LIKE $1 \
          AND aar_replay_url <> '' AND NOT public.looks_like_http_url(aar_replay_url)",
     )
     .bind(format!("{tag}-%"))
