@@ -1745,6 +1745,16 @@ mod tests {
             code.contains("\"/modpacks/current\""),
             "null/absent modpack_id must still fall back to /modpacks/current"
         );
+        // T-462 / Wave 24 adversarial MINOR: list fetch alone is false-green if find
+        // ignores id (e.g. `.next()` / `|_| true`). Pin the live id-match predicate.
+        // format! keeps the pin bindable without a single literal that a bulk edit of
+        // the production find line can rewrite in lockstep (same shape as the ORBAT pins).
+        let by_id_find = format!("into_iter().find(|{}| {}.modpack.id == id)", "mp", "mp");
+        assert!(
+            code.contains(&by_id_find),
+            "ById path must select via into_iter().find(|mp| mp.modpack.id == id) \
+             (list+first / always-true find is a fail)"
+        );
     }
 
     /// T-454 / T-457 Class-R — ORBAT reserve/release/assign must not use browse-mode
