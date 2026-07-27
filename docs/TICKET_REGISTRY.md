@@ -1184,7 +1184,7 @@ IMPLEMENTATION CARE WORTH KEEPING: drain uses read_until(b'\n') + lossy decode, 
 VERIFIED INDEPENDENTLY from the command center after merge: `gate doctor: OK — 0 warning(s)` with liveness green.
 
 It also determined this does NOT explain T-338's top-level-document wedge: that wedged four CONSECUTIVE times, while this gap is scheduling roulette that passed 4 of 6 pre-fix, and document topology has no path to stderr volume. Worth re-running T-338's repro now, since recent_output() would show what chrome said. |
-| T-355 | 3171 | running | platform | An unparseable event_id silently becomes NULL and skips the attendance write on a 200 | FOUND by T-347, which fixed the whitespace half and deliberately left this because it is a per-call-site decision rather than one line.
+| T-355 | 3171 | shipped | platform | An unparseable event_id silently becomes NULL and skips the attendance write on a 200 | FOUND by T-347, which fixed the whitespace half and deliberately left this because it is a per-call-site decision rather than one line.
 
 handlers/telemetry.rs:44 — `parse_uuid_opt` turns an UNPARSEABLE non-empty `event_id` or `mission_id` into `None`. The handler then skips the attendance UPDATE entirely and returns 200. So a game server sending a malformed id gets a success response while nobody's attendance is recorded, and there is no signal anywhere that it happened.
 
@@ -2552,7 +2552,7 @@ Cure: harden Class-R — strip SQL `--`/`/* */` comments before pins; require a 
 Repro: comment-only starter name or echo-path recipe → verify-t440 PASS.
 
 Cure: strip SQL comments before name pin; require live INSERT INTO user_factions (or measured table) with name column value; require recipe line that actually redirects/applies the file to psql (same shape as verify-t444 if tighter); pin wave.sh both gate paths invoke the script. RED→GREEN on verifier perturbations. |
-| T-479 | 3318 | running | platform | Flaky events IT: event_orbat_registration_and_race duplicate arma_id | Observed wave 29 cold re-gate FAIL once on fresh tbd_wave29b_cold: event_orbat_registration_and_race panicked in common/mod.rs:217 seed_user with duplicate key idx_users_arma_id (events-arma-000000000000334002). Immediate re-gate on fresh tbd_wave29c_cold PASS (33/40/13). Not caused by T-431/477 product SQL (attendance backfill). Likely parallel seed race or leftover arma_id uniqueness collision in events IT fixtures.
+| T-479 | 3318 | shipped | platform | Flaky events IT: event_orbat_registration_and_race duplicate arma_id | Observed wave 29 cold re-gate FAIL once on fresh tbd_wave29b_cold: event_orbat_registration_and_race panicked in common/mod.rs:217 seed_user with duplicate key idx_users_arma_id (events-arma-000000000000334002). Immediate re-gate on fresh tbd_wave29c_cold PASS (33/40/13). Not caused by T-431/477 product SQL (attendance backfill). Likely parallel seed race or leftover arma_id uniqueness collision in events IT fixtures.
 
 Repro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.
 
@@ -2663,7 +2663,7 @@ Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/m
 | T-528 | 3368 | shipped | platform | W47 hotfix: me.rs arma_linked still is_some() after T-350 | Wave 47 verifier P1/MAJOR vs T-350 ticket claim. T-350 fixed auth/oauth (+ leave reason) but title/summary name four linked sites including me.rs:87 and me.rs:170 which still use u.arma_id.is_some() — planted whitespace arma_id reports linked=true on GET /me and /me/link/status. Cure: use arma_id_is_linked (or same trim/nonempty helper) at both me.rs sites; Class-R/IT that RED on is_some()-only. Owns: apps/website/api/src/handlers/me.rs (and tests if needed). Do not touch events.rs roster (T-529). |
 | T-529 | 3369 | deferred | platform | events roster SQL still allows whitespace arma_id (no btrim) | Wave 47 verifier P2 residual from T-350. ingest_event_roster still uses u.arma_id <> '' without btrim; whitespace passes and can emit as seating key. Latent after 0016 scrub. Cure: btrim/nonempty predicate + trim seating key consistently with other arma_id sites. Owns: apps/website/api/src/handlers/events.rs (+ IT). Caution: T-343 one-sided-trim traps — read before changing. |
 | T-530 | 3370 | deferred | platform | T-332 Class-R partly pins doc comment strings | Wave 47 verifier P3/NIT. T-332 BE/FE Class-R partly asserts doc comment phrases (T-332 clear contract). Behavior covered by IT + stronger FE pins. Cure: pin live code paths only (body.insert / is_unique_violation / SQL), not comment prose. |
-| T-531 | 3371 | running | platform | null_tolerance still lists deployments.* as KNOWN_OPEN after T-341 | FOUND by W48 adversarial verifier (MINOR) after T-341 shipped.
+| T-531 | 3371 | shipped | platform | null_tolerance still lists deployments.* as KNOWN_OPEN after T-341 | FOUND by W48 adversarial verifier (MINOR) after T-341 shipped.
 
 `apps/website/api/tests/null_tolerance.rs` still has `KNOWN_OPEN` entry `("src/handlers/deployments.rs", "*", "T-341 — open")` and `BASELINE_CAP=1`, while deployments.rs no longer has bare `event_registrations.*`. Comments still claim "BASELINE_CAP is now 0" / "T-341 takes this to 0".
 
@@ -2671,6 +2671,16 @@ The stale path is `eprintln!` only today (not a hard fail); cold gate PASS saw i
 | T-532 | 3372 | deferred | platform | No API route to re-point mission current_version_id after a bad version | FOUND as T-382 residual (W48). T-382 closed the *new* hole: vacuous `payload:{}` is rejected at create_version write time. Already-broken rows (and any future non-vacuous but unwanted tip) still cannot be re-pointed via API — only `psql` UPDATE of `missions.current_version_id`.
 
 Needs a rollback / re-point handler in missions.rs **and** route registration in `app.rs` (out of T-382 owns). Repro: after a good version then a bad tip that somehow lands, there is no PATCH/POST to restore the prior version id; `/compiled` stays 409 NoSlots. |
+| T-533 | 3373 | deferred | platform | T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400 | FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-355.
+
+upsert_match uses parse_uuid_opt_strict and unit/source pins prove junk → BadRequest, but no integration test POSTs a malformed event_id/mission_id through the live route and asserts HTTP 400. RED if the handler call sites are deleted while unit helper tests remain: today the source pin covers that; an HTTP IT would close the residual.
+
+Repro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note absence of IT asserting status 400 on junk ids. |
+| T-534 | 3374 | deferred | platform | IT suites still seed fixed arma_ids via shared seed_user (cross-binary race residual) | FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-479.
+
+T-479 fixed the events suite (unique_arma + DB_LOCK + release foreign holders). Other ITs (identity_link, factions, t350, t528, …) still pass fixed arma_id strings into shared common::seed_user. Cross-binary parallel cargo test can still trip idx_users_arma_id (admin_field flake class). Not caused by T-479 release of events armas.
+
+Cure: migrate remaining suites to unique_arma / suite Mutex, or document denylist of fixed strings. Repro: rg 'seed_user\(' apps/website/api/tests \| rg -v unique_arma. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

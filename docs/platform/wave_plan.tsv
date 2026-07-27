@@ -331,3 +331,5 @@
 99	T-530	T-332 Class-R partly pins doc comments	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
 49	T-531	null_tolerance still lists deployments.* as KNOWN_OPEN after T-341	apps/website/api/tests/null_tolerance.rs
 99	T-532	No API route to re-point mission current_version_id after a bad version	apps/website/api/src/handlers/missions.rs; apps/website/api/src/app.rs
+99	T-533	T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400	apps/website/api/tests/telemetry.rs; apps/website/api/src/handlers/telemetry.rs
+99	T-534	IT suites still seed fixed arma_ids via shared seed_user	apps/website/api/tests/common/mod.rs; apps/website/api/tests

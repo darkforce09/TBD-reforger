@@ -10077,7 +10077,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3171,
       "stream": "web-platform",
       "targets": [
@@ -12674,7 +12674,7 @@
         "website",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3318,
       "stream": "web-platform",
       "targets": [
@@ -13804,7 +13804,7 @@
       "impact": [
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3371,
       "stream": "web-platform",
       "targets": [
@@ -13827,6 +13827,49 @@
       ],
       "status": "deferred",
       "order": 3372,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-533",
+      "title": "T-355 Class-R only \u2014 no HTTP IT for junk event_id/mission_id 400",
+      "summary": "FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-355.\n\nupsert_match uses parse_uuid_opt_strict and unit/source pins prove junk \u2192 BadRequest, but no integration test POSTs a malformed event_id/mission_id through the live route and asserts HTTP 400. RED if the handler call sites are deleted while unit helper tests remain: today the source pin covers that; an HTTP IT would close the residual.\n\nRepro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note absence of IT asserting status 400 on junk ids.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "telemetry",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3373,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-534",
+      "title": "IT suites still seed fixed arma_ids via shared seed_user (cross-binary race residual)",
+      "summary": "FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-479.\n\nT-479 fixed the events suite (unique_arma + DB_LOCK + release foreign holders). Other ITs (identity_link, factions, t350, t528, \u2026) still pass fixed arma_id strings into shared common::seed_user. Cross-binary parallel cargo test can still trip idx_users_arma_id (admin_field flake class). Not caused by T-479 release of events armas.\n\nCure: migrate remaining suites to unique_arma / suite Mutex, or document denylist of fixed strings. Repro: rg 'seed_user\\(' apps/website/api/tests | rg -v unique_arma.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3374,
       "stream": "web-platform",
       "targets": [
         "website"
