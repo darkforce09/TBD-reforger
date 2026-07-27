@@ -268,3 +268,5 @@
 99	T-467	verify-t438/t456 still unwired from Makefile/CI	Makefile; .github/workflows/ci.yml; scripts/mod/verify-t438-deploy-staging-compose-path.sh; scripts/mod/verify-t456-mission-rest-size-gate.sh
 99	T-468	No tripwire ci.yml schema stays on ci-local-schema	.github/workflows/ci.yml; scripts/platform/wave.sh
 99	T-469	admin_field panics on missing LOCATION from dev-login	apps/website/api/tests/admin_field.rs
+99	T-470	T-466 Class-R order-blind false-green	apps/website/frontend/src/content.rs
+99	T-471	T-468 tripwire accepts hollow Makefile ci-local-schema	scripts/mod/verify-t468-ci-schema-parity.sh; Makefile

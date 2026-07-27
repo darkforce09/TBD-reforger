@@ -936,6 +936,19 @@ Cure: enable FormData/File features, wire multipart api helper, POST /cms/upload
 Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
 
 Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin.
+- **T-470** (deferred) — T-466 Class-R order-blind / unreachable error UI false-green [FE, tests] — Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:
+(1) list_seeded.set(true) before match / outside Ok → PASS
+(2) also seed in Err → PASS (Retry then permanent empty)
+(3) error UI unreachable (.filter(|_| false)) with needles still in source → PASS
+
+Repro: move list_seeded.set(true) before Ok arm → Class-R still green.
+
+Cure: order-sensitive / structural pins (seed only inside Ok arm AST or window); pin Retry reachable (not filtered out); RED→GREEN on verifier perturbations.
+- **T-471** (deferred) — T-468 tripwire accepts hollow Makefile ci-local-schema recipe [INFRA, CI, tests] — Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
+
+Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.
+
+Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

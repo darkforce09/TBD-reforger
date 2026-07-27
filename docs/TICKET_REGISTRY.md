@@ -2487,7 +2487,7 @@ Cure: add `/cms/announcements` to route_sweep() (admin list; drafts+published) w
 Repro: published-only SQL + bait comment → Class-R PASS; Effect docs.set(mock) → Class-R PASS.
 
 Cure: (A) IT POST draft then GET /cms/announcements must include it + public feed must not; non-admin GET → 401. (B) Harden Class-R: pin AdminUser on list handler; pin Effect docs.set(mapped) / filter_map(doc_from_announcement) chain so ignoring hydrate fails. RED→GREEN on verifier perturbations. |
-| T-466 | 3305 | ready | platform | CMS Content list fails closed to empty with no retry | Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.
+| T-466 | 3305 | shipped | platform | CMS Content list fails closed to empty with no retry | Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.
 
 Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.
 
@@ -2497,16 +2497,29 @@ Cure: surface error + retry; do not set list_seeded on Err. |
 Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
 
 Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin. |
-| T-468 | 3307 | ready | platform | No tripwire that ci.yml schema job stays on make ci-local-schema | Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.
+| T-468 | 3307 | shipped | platform | No tripwire that ci.yml schema job stays on make ci-local-schema | Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.
 
 Repro: change ci.yml schema step back to cargo run … schema validate only → CI green locally for enums hole until map-object-enums RED is noticed elsewhere.
 
 Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set. |
-| T-469 | 3308 | ready | platform | admin_field admin_token panics on missing LOCATION from dev-login | Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
+| T-469 | 3308 | shipped | platform | admin_field admin_token panics on missing LOCATION from dev-login | Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
 
 Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
 
 Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic. |
+| T-470 | 3309 | deferred | platform | T-466 Class-R order-blind / unreachable error UI false-green | Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:
+(1) list_seeded.set(true) before match / outside Ok → PASS
+(2) also seed in Err → PASS (Retry then permanent empty)
+(3) error UI unreachable (.filter(\|_\| false)) with needles still in source → PASS
+
+Repro: move list_seeded.set(true) before Ok arm → Class-R still green.
+
+Cure: order-sensitive / structural pins (seed only inside Ok arm AST or window); pin Retry reachable (not filtered out); RED→GREEN on verifier perturbations. |
+| T-471 | 3310 | deferred | platform | T-468 tripwire accepts hollow Makefile ci-local-schema recipe | Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
+
+Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.
+
+Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

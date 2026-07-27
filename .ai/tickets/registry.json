@@ -12384,7 +12384,7 @@
       "impact": [
         "website"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3305,
       "stream": "web-platform",
       "targets": [
@@ -12429,7 +12429,7 @@
         "infra",
         "tests"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3307,
       "stream": "web-platform",
       "targets": [
@@ -12450,7 +12450,7 @@
       "impact": [
         "tests"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3308,
       "stream": "web-platform",
       "targets": [
@@ -12458,6 +12458,51 @@
       ],
       "executor": "claude-code",
       "priority": 3
+    },
+    {
+      "id": "T-470",
+      "title": "T-466 Class-R order-blind / unreachable error UI false-green",
+      "summary": "Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:\n(1) list_seeded.set(true) before match / outside Ok \u2192 PASS\n(2) also seed in Err \u2192 PASS (Retry then permanent empty)\n(3) error UI unreachable (.filter(|_| false)) with needles still in source \u2192 PASS\n\nRepro: move list_seeded.set(true) before Ok arm \u2192 Class-R still green.\n\nCure: order-sensitive / structural pins (seed only inside Ok arm AST or window); pin Retry reachable (not filtered out); RED\u2192GREEN on verifier perturbations.",
+      "program": "platform",
+      "surfaces": [
+        "FE",
+        "tests"
+      ],
+      "impact": [
+        "website",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3309,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-471",
+      "title": "T-468 tripwire accepts hollow Makefile ci-local-schema recipe",
+      "summary": "Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name \u2014 not that the recipe still invokes schema-validate + verify-citations.\n\nRepro: replace ci-local-schema recipe with `echo hollow-only` \u2192 tripwire PASS; CI green while map-object-enums unrun.\n\nCure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED\u2192GREEN on hollow recipe.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA",
+        "CI",
+        "tests"
+      ],
+      "impact": [
+        "infra",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3310,
+      "stream": "web-platform",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }

@@ -9,21 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-466** (3305) — CMS Content list fails closed to empty with no retry [ready] — Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.
-
-Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.
-
-Cure: surface error + retry; do not set list_seeded on Err.
-- **T-468** (3307) — No tripwire that ci.yml schema job stays on make ci-local-schema [ready] — Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.
-
-Repro: change ci.yml schema step back to cargo run … schema validate only → CI green locally for enums hole until map-object-enums RED is noticed elsewhere.
-
-Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set.
-- **T-469** (3308) — admin_field admin_token panics on missing LOCATION from dev-login [ready] — Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
-
-Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
-
-Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic.
 
 ## Next queued (top 10)
 
