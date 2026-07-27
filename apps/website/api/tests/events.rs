@@ -529,20 +529,28 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
     // not who is allowed to call it or what it reports when there is nothing to do.
     assert_eq!(withdraw(&emid).await, StatusCode::NOT_FOUND);
 
-    // Multi-seat cleanup. When T-318 was written, `register` itself could put the caller in this
-    // state — claim slot0, claim slot1, hold both — and this block asserted `held == 2` as a
-    // known defect. T-324 closed that door (see `register_moves_the_caller_s_seat`), so the only
-    // remaining source is rows minted before the fix. Those still exist in the wild, so the
-    // recovery path stays under test: the state is now seeded directly rather than provoked, and
-    // withdraw must still free *every* seat the caller holds, not just the one their registration
-    // names.
+    // T-511: multi-seat seed retired. A partial unique on
+    // (event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL makes the
+    // legacy two-seat shape unreachable (and the index cannot be DEFERRABLE).
+    // T-318 recovery intent remains in Part 2 above — orphan seats freed via
+    // `assigned_to`, not `slot_id`. Prove the structural guard: a second seat
+    // for the same occupant must raise unique_violation (SQLSTATE 23505).
     assert_eq!(register(&emid, Some(&claim)).await, StatusCode::OK);
-    sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
+    assert_eq!(seat(&slot0).await.as_deref(), Some(DEV_USER), "one seat held");
+    let dup = sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
         .bind(DEV_USER)
         .bind(slot1.parse::<uuid::Uuid>().unwrap())
         .execute(&pool)
-        .await
-        .unwrap();
+        .await;
+    let err = dup.expect_err("second seat for same assigned_to must fail under idx_orbat_slots_em_assigned");
+    let db = err
+        .as_database_error()
+        .expect("sqlx DatabaseError for unique_violation");
+    assert_eq!(
+        db.code().as_deref(),
+        Some("23505"),
+        "SQLSTATE unique_violation, got {db:?}"
+    );
     let held: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM orbat_slots WHERE event_mission_id = $1 AND assigned_to = $2",
     )
@@ -551,7 +559,7 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(held, 2, "legacy two-seat state seeded");
+    assert_eq!(held, 1, "partial unique keeps a single occupant seat");
     assert_eq!(withdraw(&emid).await, StatusCode::OK);
     let held: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM orbat_slots WHERE event_mission_id = $1 AND assigned_to = $2",
@@ -563,7 +571,7 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
     .unwrap();
     assert_eq!(
         held, 0,
-        "withdraw must free every seat the caller holds here"
+        "withdraw still frees the seat the caller holds here"
     );
 }
 
