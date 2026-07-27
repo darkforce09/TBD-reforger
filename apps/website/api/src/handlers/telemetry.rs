@@ -94,6 +94,23 @@ fn parse_uuid_opt_strict(
     }
 }
 
+/// Two-state COALESCE string for T-316 keep/clear fields (`ingame_time`, `ingame_weather`,
+/// `winning_faction`).
+///
+/// SQL `COALESCE($n, <stored>)` keys on Rust `None` → SQL NULL → keep. An explicit `""` is
+/// intentional clear (`COALESCE('', col)` yields `''` because `''` is not NULL). **T-364:**
+/// without collapsing whitespace, `Some("   ")` is non-NULL, so COALESCE admits a third state
+/// that is neither keep nor clear. Trim first; blank → `Some("")` (clear); non-blank → trimmed
+/// set. `None` stays `None` (keep). Do **not** turn blank into `None` — that would break the
+/// deliberate clear path.
+fn coalesce_str(s: &Option<String>) -> Option<&str> {
+    match s.as_deref().map(str::trim) {
+        None => None,
+        Some("") => Some(""),
+        Some(v) => Some(v),
+    }
+}
+
 // --- server status ---
 
 /// A live-status heartbeat.
@@ -130,7 +147,9 @@ pub struct ServerStatusInput {
     uptime_seconds: Option<i64>,
     /// Absent = leave the current match alone; `""` = clear it; a uuid = set it.
     current_match_id: Option<String>,
+    /// Absent = keep; `""` / whitespace = clear; otherwise set (trimmed). See [`coalesce_str`].
     ingame_time: Option<String>,
+    /// Absent = keep; `""` / whitespace = clear; otherwise set (trimmed). See [`coalesce_str`].
     ingame_weather: Option<String>,
 }
 
@@ -234,8 +253,8 @@ pub async fn ingest_server_status(
     .bind(input.server_fps)
     .bind(input.uptime_seconds)
     .bind(match_id)
-    .bind(input.ingame_time.as_deref())
-    .bind(input.ingame_weather.as_deref())
+    .bind(coalesce_str(&input.ingame_time))
+    .bind(coalesce_str(&input.ingame_weather))
     .bind(set_match_id)
     .bind(now)
     .fetch_one(&state.pool)
@@ -390,7 +409,8 @@ fn require_role_played(raw: &str) -> Result<&str, ApiError> {
 /// absence, and the destructive part was only ever the overwrite:
 /// - `winning_faction` — a `failure`/`aborted`/`pending` match has no winner, so demanding
 ///   one would be a lie. Absent keeps whatever is stored; an explicit `""` clears it, which
-///   is the re-adjudication path.
+///   is the re-adjudication path. Whitespace-only is the same clear (`coalesce_str`, T-364) —
+///   `Some("   ")` must not land as a third COALESCE state.
 /// - `aar_replay_url` — the replay is uploaded *after* the match, so the POST that carries
 ///   the result usually cannot know the link yet and a later pass attaches it. Defaulting
 ///   this to `""` meant the next result POST tore the link back off.
@@ -1061,7 +1081,7 @@ async fn upsert_match(
             .bind(m.started_at)
             .bind(m.ended_at)
             .bind(outcome)
-            .bind(m.winning_faction.as_deref())
+            .bind(coalesce_str(&m.winning_faction))
             .bind(aar_replay_url)
             .bind(id)
             .fetch_one(&mut *tx)
@@ -1092,7 +1112,7 @@ async fn upsert_match(
     .bind(started)
     .bind(m.ended_at)
     .bind(outcome)
-    .bind(m.winning_faction.as_deref())
+    .bind(coalesce_str(&m.winning_faction))
     .bind(aar_replay_url)
     .fetch_one(&mut *tx)
     .await?;
@@ -1332,6 +1352,87 @@ mod tests {
         // Soft degrade — same as blank clear when `set_match_id` is true at the call site.
         assert_eq!(parse_uuid_opt(&Some("not-a-uuid".into())), None);
         assert_eq!(parse_uuid_opt(&Some("123".into())), None);
+    }
+
+    /// Class-R (T-364): COALESCE keep/clear is two-state. Whitespace must clear as `""`,
+    /// never bind as a third non-NULL value. `None` stays keep — do not collapse blank to
+    /// `None` (that would break the deliberate `""` clear T-316 designed).
+    #[test]
+    fn coalesce_str_two_state_no_whitespace_third() {
+        assert_eq!(coalesce_str(&None), None);
+        assert_eq!(coalesce_str(&Some(String::new())), Some(""));
+        for blank in ["", "   ", "\t", "\n", " \t\n "] {
+            assert_eq!(
+                coalesce_str(&Some(blank.into())),
+                Some(""),
+                "whitespace {blank:?} must clear, not land as a third COALESCE state"
+            );
+        }
+        assert_eq!(coalesce_str(&Some("  BLUFOR  ".into())), Some("BLUFOR"));
+        assert_eq!(coalesce_str(&Some("Clear".into())), Some("Clear"));
+        // Perturbation RED: collapsing blank → None would make this fail the clear pin.
+        assert_ne!(coalesce_str(&Some("   ".into())), None);
+    }
+
+    /// Class-R (T-364): call sites must use `coalesce_str`, not raw `as_deref()` — otherwise
+    /// helper-only tests stay green while COALESCE still admits `Some("   ")`.
+    #[test]
+    fn coalesce_str_bound_at_heartbeat_and_match_writes() {
+        const SRC: &str = include_str!("telemetry.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("telemetry.rs must have a #[cfg(test)] module");
+
+        let hb_start = production
+            .find("pub async fn ingest_server_status")
+            .expect("ingest_server_status must exist");
+        let hb_after = &production[hb_start..];
+        let hb_end = hb_after[1..]
+            .find("\npub async fn ")
+            .map(|i| i + 1)
+            .unwrap_or(hb_after.len());
+        let hb = strip_rust_comments(&hb_after[..hb_end]);
+        let hb_collapsed: String = hb.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(
+            hb_collapsed.contains("coalesce_str(&input.ingame_time)"),
+            "heartbeat must bind coalesce_str(&input.ingame_time) (perturbation: as_deref)"
+        );
+        assert!(
+            hb_collapsed.contains("coalesce_str(&input.ingame_weather)"),
+            "heartbeat must bind coalesce_str(&input.ingame_weather) (perturbation: as_deref)"
+        );
+        assert!(
+            !hb_collapsed.contains("input.ingame_time.as_deref()"),
+            "ingame_time must not bind raw as_deref — that reopens the whitespace third state"
+        );
+        assert!(
+            !hb_collapsed.contains("input.ingame_weather.as_deref()"),
+            "ingame_weather must not bind raw as_deref — that reopens the whitespace third state"
+        );
+
+        let up_start = production
+            .find("async fn upsert_match")
+            .expect("upsert_match must exist");
+        let up_after = &production[up_start..];
+        let up_end = up_after[1..]
+            .find("\nasync fn ")
+            .or_else(|| up_after[1..].find("\npub(super) async fn "))
+            .map(|i| i + 1)
+            .unwrap_or(up_after.len());
+        let up = strip_rust_comments(&up_after[..up_end]);
+        let up_collapsed: String = up.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert_eq!(
+            up_collapsed
+                .matches("coalesce_str(&m.winning_faction)")
+                .count(),
+            2,
+            "UPDATE + INSERT must each bind coalesce_str(&m.winning_faction) (T-364)"
+        );
+        assert!(
+            !up_collapsed.contains("m.winning_faction.as_deref()"),
+            "winning_faction must not bind raw as_deref — COALESCE third-state regression"
+        );
     }
 
     /// Class-R (T-355): upsert_match must call the strict helper for both fields. Helper-only
