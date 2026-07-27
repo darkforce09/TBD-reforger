@@ -13705,6 +13705,26 @@
       ],
       "executor": "claude-code",
       "priority": 0
+    },
+    {
+      "id": "T-527",
+      "title": "W47 hotfix: rustfmt event_manager.rs imports after T-332",
+      "summary": "Wave 47 cold gate FAIL fmt (changed). apps/website/frontend/src/event_manager.rs import order (badge_class/cn vs AdminGate) fails rustfmt --check after T-332 Attach Mission UI. Cure: rustfmt that file only. Owns: apps/website/frontend/src/event_manager.rs.",
+      "program": "platform",
+      "surfaces": [
+        "FE"
+      ],
+      "impact": [
+        "frontend"
+      ],
+      "status": "running",
+      "order": 3367,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
     }
   ]
 }
