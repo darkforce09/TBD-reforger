@@ -215,7 +215,7 @@
 3	T-412	GET /members cannot return member 21; list_servers is N+1	apps/website/api/src/handlers/events.rs; apps/website/api/src/handlers/servers.rs
 3	T-413	Adopt the URL guard at the remaining writers and render sites	apps/website/api/src/handlers/missions.rs; apps/website/api/src/handlers/events.rs; apps/website/frontend/src/leaderboards.rs; apps/website/frontend/src/layout.rs; apps/website/frontend/src/settings.rs; apps/website/frontend/src/announcements.rs; apps/website/frontend/src/events.rs; apps/website/frontend/src/missions.rs; apps/website/frontend/src/event_hub.rs; apps/website/api/tests/events_url_guard.rs; apps/website/api/tests/missions_url_guard.rs
 3	T-414	approvals ordering has no unique tiebreaker	apps/website/api/src/handlers/approvals.rs; apps/website/api/tests/admin_field.rs
-53	T-415	Mod never checks it delivered the authored loadout; IsComplete has zero callers	apps/mod/tbd-framework/Scripts/Game/TBD/Loadout/TBD_LoadoutEquipHelper.c
+53	T-415	Mod never checks it delivered the authored loadout; IsComplete has zero callers	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c
 4	T-416	Cargo capacity belongs in wire_safety.rs, covering save and compile	crates/map-engine-core/src/mission/wire_safety.rs; apps/website/api/src/contract/validate.rs; apps/website/api/src/handlers/missions.rs
 4	T-417	Compiled-export artifact re-sorts keys; 401 misdiagnosed as no-server-row	apps/website/frontend/src/mission_commands.rs; apps/website/frontend/src/main.rs
 4	T-418	map-engine-wasm is dead as a whole crate; compile_export briefing is a dead key	crates/map-engine-wasm/src/lib.rs; apps/website/frontend/src/mission_hydrate.rs
@@ -338,3 +338,5 @@
 99	T-537	xtask empty/lossy write residuals outside T-383 owns	xtask/src/enf; tools/tbd-tools/src/world; tools/tbd-tools/src/map
 52	T-538	flatten-orbat-slots stdout path still drops loadout/uid	xtask/src/schema_gates.rs
 52	T-539	T-538 Class-R must pin stdout flatten entrypoint	xtask/src/schema_gates.rs
+99	T-540	T-384 Class-R only — no IT for attendance retract on re-point	apps/website/api/tests/telemetry.rs; apps/website/api/src/handlers/telemetry.rs
+99	T-541	SpawnManager never calls IsComplete after T-415	apps/mod/tbd-framework/Scripts/Game/TBD; apps/website/frontend/src/arsenal_rules.rs

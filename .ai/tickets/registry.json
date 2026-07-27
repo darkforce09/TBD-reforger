@@ -10675,7 +10675,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3200,
       "stream": "web-platform",
       "targets": [
@@ -11313,7 +11313,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3240,
       "stream": "web-platform",
       "targets": [
@@ -13056,7 +13056,7 @@
         "security",
         "api"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3332,
       "stream": "web-platform",
       "targets": [
@@ -13988,6 +13988,51 @@
       ],
       "executor": "claude-code",
       "priority": 1
+    },
+    {
+      "id": "T-540",
+      "title": "T-384 Class-R only \u2014 no IT for attendance retract on match re-point",
+      "summary": "FOUND by W53 adversarial verifier (CLEAN MINOR-NIT) after T-384.\n\ningest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1\u2192EV2 and asserts EV1 returns to registered while EV2 is attended.\n\nRepro: rg retract_from apps/website/api \u2014 no IT exercises the path.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "telemetry",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3380,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-541",
+      "title": "SpawnManager never calls IsComplete after T-415 helper consume",
+      "summary": "FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete \u2014 spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.\n\nAlso: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.\n\nOwns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync.",
+      "program": "platform",
+      "surfaces": [
+        "MOD",
+        "FE"
+      ],
+      "impact": [
+        "mod",
+        "arsenal"
+      ],
+      "status": "deferred",
+      "order": 3381,
+      "stream": "web-platform",
+      "targets": [
+        "mod",
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }
