@@ -210,7 +210,10 @@ cargo_test_pin -p map-engine-core --features mission --lib \
   the_compile_boundary_ledger_is_checked_against_the_contract -- --quiet
 cargo_test_pin -p map-engine-core --features mission --lib \
   a_compiled_slot_carries_exactly_these_keys -- --quiet
-cargo_test_pin -p map-engine-core --features mission --lib \
+# T-482: vehicle-floor test lives behind #[cfg(feature = "doc")] (MissionDocCore
+# writer round-trip in flatten.rs). mission-only → 0 tests → cargo_test_pin FAIL.
+# Align with place_/attach_vehicle pins above (doc mission), not weaken the pin.
+cargo_test_pin -p map-engine-core --features "doc mission" --lib \
   the_vehicle_row_still_has_the_shape_this_module_reads -- --quiet
 ok "compile-boundary ledger + compiled-slot key set + vehicle contract floor"
 
