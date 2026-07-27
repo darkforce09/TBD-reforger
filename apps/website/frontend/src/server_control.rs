@@ -843,6 +843,7 @@ mod t270 {
             is_active: false,
             status: None,
             required_modpack: None,
+            terrain: None,
         };
         let mut active = inactive.clone();
         active.id = "b".into();

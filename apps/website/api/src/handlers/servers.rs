@@ -28,6 +28,7 @@ use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::Json;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{Value, json};
 use sqlx::PgPool;
@@ -37,7 +38,7 @@ use crate::error::ApiError;
 use crate::handlers::modpacks::{ModpackDto, load_modpack};
 use crate::handlers::username;
 use crate::middleware::{AdminUser, AuthUser};
-use crate::models::{AuditSeverity, Modpack, ModpackMod, Server, ServerStatus};
+use crate::models::{AuditSeverity, Modpack, ModpackMod, Server, ServerStatus, TerrainType};
 use crate::services::write_audit;
 use crate::state::AppState;
 
@@ -59,7 +60,12 @@ macro_rules! server_cols {
     };
 }
 
-/// Full Server Intel card: server config + live status + required modpack.
+/// Full Server Intel card: server config + live status + required modpack + theater.
+///
+/// **`terrain` is join-sourced, not a `servers` column** (T-385 / T-359 handoff). It comes from
+/// `matches.terrain` keyed by `server_statuses.current_match_id`. Explicit `null` when there is no
+/// live match — same encoding as `status`, never `skip_serializing_if` (an Option+skip field would
+/// round-trip absent→None→absent and keep the R-api gate green over a fictional key).
 #[derive(Debug, Serialize)]
 pub struct ServerIntelDto {
     #[serde(flatten)]
@@ -67,27 +73,78 @@ pub struct ServerIntelDto {
     pub status: Option<ServerStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required_modpack: Option<ModpackDto>,
+    /// Theater of the current match (`matches.terrain`), or JSON `null` when unmatched.
+    pub terrain: Option<TerrainType>,
 }
 
-/// Shared SELECT projection for `server_statuses` (single-row + batched list paths).
-/// Must stay `'static` string literals — sqlx 0.9 `SqlSafeStr` rejects `format!`.
-const SERVER_STATUS_SELECT_ONE: &str = "SELECT server_id, is_online, player_count, max_players, \
-     server_fps::float8 AS server_fps, uptime_seconds, current_match_id, \
-     COALESCE(ingame_time, '') AS ingame_time, COALESCE(ingame_weather, '') AS ingame_weather, \
-     COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
-     FROM server_statuses WHERE server_id = $1";
-const SERVER_STATUS_SELECT_ANY: &str = "SELECT server_id, is_online, player_count, max_players, \
-     server_fps::float8 AS server_fps, uptime_seconds, current_match_id, \
-     COALESCE(ingame_time, '') AS ingame_time, COALESCE(ingame_weather, '') AS ingame_weather, \
-     COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
-     FROM server_statuses WHERE server_id = ANY($1)";
+/// Status row plus optional match theater — one LEFT JOIN, both list and single-card paths.
+#[derive(Debug, Clone, sqlx::FromRow)]
+struct StatusWithTerrain {
+    server_id: Uuid,
+    is_online: bool,
+    player_count: i64,
+    max_players: i64,
+    server_fps: f64,
+    uptime_seconds: i64,
+    current_match_id: Option<Uuid>,
+    ingame_time: String,
+    ingame_weather: String,
+    updated_at: DateTime<Utc>,
+    terrain: Option<TerrainType>,
+}
 
-/// Compose a server with its status + required modpack (single-card path).
+impl StatusWithTerrain {
+    fn into_parts(self) -> (ServerStatus, Option<TerrainType>) {
+        (
+            ServerStatus {
+                server_id: self.server_id,
+                is_online: self.is_online,
+                player_count: self.player_count,
+                max_players: self.max_players,
+                server_fps: self.server_fps,
+                uptime_seconds: self.uptime_seconds,
+                current_match_id: self.current_match_id,
+                ingame_time: self.ingame_time,
+                ingame_weather: self.ingame_weather,
+                updated_at: self.updated_at,
+            },
+            self.terrain,
+        )
+    }
+}
+
+/// Shared SELECT: `server_statuses` LEFT JOIN `matches` for theater (T-385).
+/// Must stay `'static` string literals — sqlx 0.9 `SqlSafeStr` rejects `format!`.
+const SERVER_STATUS_SELECT_ONE: &str = "SELECT ss.server_id, ss.is_online, ss.player_count, \
+     ss.max_players, ss.server_fps::float8 AS server_fps, ss.uptime_seconds, ss.current_match_id, \
+     COALESCE(ss.ingame_time, '') AS ingame_time, COALESCE(ss.ingame_weather, '') AS ingame_weather, \
+     COALESCE(ss.updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at, \
+     m.terrain AS terrain \
+     FROM server_statuses ss \
+     LEFT JOIN matches m ON m.id = ss.current_match_id \
+     WHERE ss.server_id = $1";
+const SERVER_STATUS_SELECT_ANY: &str = "SELECT ss.server_id, ss.is_online, ss.player_count, \
+     ss.max_players, ss.server_fps::float8 AS server_fps, ss.uptime_seconds, ss.current_match_id, \
+     COALESCE(ss.ingame_time, '') AS ingame_time, COALESCE(ss.ingame_weather, '') AS ingame_weather, \
+     COALESCE(ss.updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at, \
+     m.terrain AS terrain \
+     FROM server_statuses ss \
+     LEFT JOIN matches m ON m.id = ss.current_match_id \
+     WHERE ss.server_id = ANY($1)";
+
+/// Compose a server with its status + required modpack + match theater (single-card path).
 async fn server_intel(pool: &PgPool, server: Server) -> sqlx::Result<ServerIntelDto> {
-    let status: Option<ServerStatus> = sqlx::query_as(SERVER_STATUS_SELECT_ONE)
+    let joined: Option<StatusWithTerrain> = sqlx::query_as(SERVER_STATUS_SELECT_ONE)
         .bind(server.id)
         .fetch_optional(pool)
         .await?;
+    let (status, terrain) = match joined {
+        Some(row) => {
+            let (status, terrain) = row.into_parts();
+            (Some(status), terrain)
+        }
+        None => (None, None),
+    };
     let required_modpack = match server.required_modpack_id {
         Some(id) => load_modpack(pool, id).await.ok().flatten(),
         None => None,
@@ -96,6 +153,7 @@ async fn server_intel(pool: &PgPool, server: Server) -> sqlx::Result<ServerIntel
         server,
         status,
         required_modpack,
+        terrain,
     })
 }
 
@@ -115,12 +173,15 @@ async fn servers_intel_batch(
     }
 
     let ids: Vec<Uuid> = servers.iter().map(|s| s.id).collect();
-    let statuses: Vec<ServerStatus> = sqlx::query_as(SERVER_STATUS_SELECT_ANY)
+    let statuses: Vec<StatusWithTerrain> = sqlx::query_as(SERVER_STATUS_SELECT_ANY)
         .bind(&ids)
         .fetch_all(pool)
         .await?;
-    let status_by_id: HashMap<Uuid, ServerStatus> =
-        statuses.into_iter().map(|s| (s.server_id, s)).collect();
+    let mut status_by_id: HashMap<Uuid, (ServerStatus, Option<TerrainType>)> = HashMap::new();
+    for row in statuses {
+        let server_id = row.server_id;
+        status_by_id.insert(server_id, row.into_parts());
+    }
 
     let mp_ids: Vec<Uuid> = servers
         .iter()
@@ -170,11 +231,15 @@ async fn servers_intel_batch(
                     mods: mods.clone(),
                 })
             });
-            let status = status_by_id.get(&server.id).cloned();
+            let (status, terrain) = match status_by_id.remove(&server.id) {
+                Some((status, terrain)) => (Some(status), terrain),
+                None => (None, None),
+            };
             ServerIntelDto {
                 server,
                 status,
                 required_modpack,
+                terrain,
             }
         })
         .collect())
@@ -361,10 +426,8 @@ fn body_error(e: JsonRejection) -> ApiError {
 /// `POST /api/v1/servers` — register a game server (admin).
 ///
 /// Returns **201** carrying the same [`ServerIntelDto`] shape `GET /servers` serves, so an admin
-/// form can drop the created row straight into the list it already renders. That is also why this
-/// adds no field to the wire: `dto.rs::ServerRowDto` and its golden describe exactly these eight
-/// keys and need no recapture (T-306), and the row still carries no `terrain`, so T-359's tripwire
-/// (`server_intel.rs::servers_golden_carries_no_terrain`) stays green.
+/// form can drop the created row straight into the list it already renders. A freshly created
+/// server has no `server_statuses` row, so `status` and `terrain` are both JSON `null` (T-385).
 ///
 /// @route POST /api/v1/servers
 pub async fn create_server(
@@ -623,12 +686,38 @@ mod t412_servers_batch {
             "batch path must prefetch statuses with ANY($1)"
         );
         assert!(
+            production.contains("LEFT JOIN matches m ON m.id = ss.current_match_id"),
+            "T-385: status prefetch must LEFT JOIN matches for terrain"
+        );
+        assert!(
             batch.contains("FROM modpacks WHERE id = ANY($1)"),
             "batch path must prefetch modpacks with ANY($1)"
         );
         assert!(
             batch.contains("FROM modpack_mods WHERE modpack_id = ANY($1)"),
             "batch path must prefetch modpack_mods with ANY($1)"
+        );
+    }
+
+    /// Class-R: production source must join `matches.terrain` — removing the join is a ship fail.
+    #[test]
+    fn server_intel_joins_matches_terrain() {
+        const SRC: &str = include_str!("servers.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source before tests module");
+        assert!(
+            production.contains("LEFT JOIN matches m ON m.id = ss.current_match_id"),
+            "server_intel / batch must LEFT JOIN matches on current_match_id"
+        );
+        assert!(
+            production.contains("m.terrain AS terrain"),
+            "join must project matches.terrain"
+        );
+        assert!(
+            production.contains("pub terrain: Option<TerrainType>"),
+            "ServerIntelDto must expose terrain"
         );
     }
 
