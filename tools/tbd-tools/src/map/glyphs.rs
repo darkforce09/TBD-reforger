@@ -115,6 +115,15 @@ pub fn build_glyph_atlas() -> Result<u8> {
         h: height as usize,
         data: canvas,
     })?;
+    // T-537: validate BEFORE write — used to write then fail, leaving a corrupt atlas.
+    if webp.len() < 12 || &webp[0..4] != b"RIFF" || &webp[8..12] != b"WEBP" {
+        return Ok(fail("emitted atlas is not a RIFF/WEBP file"));
+    }
+    super::refuse_empty_write(
+        "build-glyph-atlas webp",
+        webp.is_empty() || icons.is_empty(),
+        "empty webp or zero icons — refusing overwrite of world-glyphs atlas",
+    )?;
     std::fs::write(&webp_path, &webp)?;
 
     let mapping = json!({
@@ -132,9 +141,6 @@ pub fn build_glyph_atlas() -> Result<u8> {
         serde_json::to_string_pretty(&mapping)? + "\n",
     )?;
 
-    if webp.len() < 12 || &webp[0..4] != b"RIFF" || &webp[8..12] != b"WEBP" {
-        return Ok(fail("emitted atlas is not a RIFF/WEBP file"));
-    }
     println!(
         "build-glyph-atlas: OK — {} glyphs → {width}×{height} atlas ({:.1} KB) @ {}",
         keys.len(),
