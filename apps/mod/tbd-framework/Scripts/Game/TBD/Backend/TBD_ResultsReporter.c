@@ -20,19 +20,21 @@
 //! "not measured" where a `0` would claim "measured, and it was none". A zero you can defend beats
 //! a statistic you cannot.
 //!
-//! ══ ⚠ ATTENDANCE IS INERT UNTIL T-181.35 LANDS ═════════════════════════════════════════════
-//! The endpoint marks attendance, recomputes user stats and refreshes the leaderboard — but all
-//! three hang off `SELECT discord_id FROM users WHERE arma_id = $1`
-//! (`apps/website/api/src/handlers/telemetry.rs:238`), and `users.arma_id` is written by exactly
-//! two things: the dev seed, and `POST /api/v1/ingest/link-confirm` — the game server confirming a
-//! player's link code — **which this mod does not implement**. There is no `#tbd link` command.
+//! ══ IDENTITY LINKING (T-181.35 SHIPPED) ════════════════════════════════════════════════════
+//! The endpoint marks attendance, recomputes user stats and refreshes the leaderboard — all three
+//! hang off `SELECT discord_id FROM users WHERE arma_id = $1`
+//! (`apps/website/api/src/handlers/telemetry.rs:238`). `users.arma_id` is written by the dev seed
+//! and by `POST /api/v1/ingest/link-confirm` (service-token). The mod **does** implement that
+//! confirm path: `TBD_IdentityLink` exposes `#tbd link <code>` (also `#tbd link status`), and
+//! `TBD_MissionLoader.ParseMissionJson` calls `TBD_IdentityLink.Arm()` next to this reporter's
+//! `Arm()`.
 //!
-//! So in production no player has an `arma_id`, this POST returns 200 with a `match_id`, the match
-//! and per-player rows are written, and attendance / stats / leaderboard all silently do NOTHING.
-//! That is filed as T-181.35 and is not this slice's to fix. What IS this slice's job is to make
-//! the no-op visible: `LogIdentityCensus` prints, once per round, how many players resolved to a
-//! durable identity versus not, and says out loud that a resolved identity is still not a LINKED
-//! one. See `TBD_PlayerIdentity` for the shared accessor T-181.35 must reuse verbatim.
+//! What stays true: an ENGINE-resolved identity is still not a LINKED one. Players who never run
+//! `#tbd link <code>` have no `users.arma_id`, so this POST can still return 200 with a
+//! `match_id` while attendance / stats / leaderboard match nobody for those rows.
+//! `LogIdentityCensus` prints, once per round, durable vs synthetic vs unresolved counts so that
+//! gap stays visible. Both halves MUST use `TBD_PlayerIdentity.GetArmaId` — byte-identical ids
+//! or the join matches nobody forever with no error.
 //!
 //! ══ FAILURE BEHAVIOUR ══════════════════════════════════════════════════════════════════════
 //! The round must end correctly whether or not the backend is reachable. Everything here is
@@ -395,10 +397,10 @@ class TBD_ResultsReporter
 	//------------------------------------------------------------------------------------------------
 	//! Say plainly, once per round, whether this POST can possibly do anything.
 	//!
-	//! "Resolved" here means the ENGINE gave us an identity — NOT that the backend knows it. Until
-	//! T-181.35 ships `#tbd link`, nothing ever writes `users.arma_id` in production, so even a
-	//! fully durable census resolves to zero users. Saying so every round is the difference between
-	//! a visible no-op and a silent one.
+	//! "Resolved" here means the ENGINE gave us an identity — NOT that the backend has
+	//! `users.arma_id` for them. Linking is `TBD_IdentityLink` (`#tbd link <code>`, armed by
+	//! MissionLoader). Unlinked durable ids still resolve to zero users on the join. Saying so
+	//! every round is the difference between a visible no-op and a silent one.
 	protected static void LogIdentityCensus(int durable, int synthetic, int unresolved, int unslotted)
 	{
 		TBD_Log.Kv(CH_RESULTS, "identities", string.Format(
@@ -420,7 +422,7 @@ class TBD_ResultsReporter
 		}
 
 		TBD_Log.Event(CH_RESULTS,
-			"NOTE: attendance, user-stat recompute and leaderboard refresh stay INERT until T-181.35 lands. The backend joins on users.arma_id, which only POST /api/v1/ingest/link-confirm writes, and this mod does not implement it yet — so the POST will succeed and match nobody.");
+			"NOTE: attendance / user-stat recompute / leaderboard refresh only hit players with users.arma_id set. Link via `#tbd link <code>` (TBD_IdentityLink, Arm()'d by MissionLoader → POST /api/v1/ingest/link-confirm). An engine-resolved identity without that link still matches nobody.");
 	}
 
 	//------------------------------------------------------------------------------------
