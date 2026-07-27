@@ -316,3 +316,5 @@
 99	T-515	Cold gate hollow for SQL-only claim migrations	scripts/platform/wave.sh
 45	T-516	W45 hotfix identity_link arma_id seed race	apps/website/api/tests/identity_link.rs
 45	T-517	W45 hotfix PAD_ACTOR vs telemetry discord collision	apps/website/api/tests/identity_link.rs
+99	T-518	T-517 Class-R one-sided denylist not bound to telemetry PLAYER_DISCORD	apps/website/api/tests/identity_link.rs; apps/website/api/tests/telemetry.rs
+99	T-519	R-api fixture goldens Member RegistryCompat FireSolution	apps/website/frontend/tests/fixtures/api/; apps/website/frontend/src/dto.rs

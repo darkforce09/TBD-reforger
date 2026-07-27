@@ -9986,7 +9986,7 @@
     {
       "id": "T-351",
       "title": "Nothing pins the arma_id trim, and legacy whitespace rows are still in the tables",
-      "summary": "TWO STRUCTURAL GAPS T-343 identified. These are why this bug class keeps coming back.\n\n1. **No test anywhere pins the arma_id trim.** tests/identity_link.rs only ever posts \"steam-xyz\". So T-326's fix and T-316's binding are held in place by COMMENTS, NOT GATES \u2014 the next refactor can undo either silently, and the symptom (an account that reads as linked while being invisible to every match ingest) is invisible until someone notices their stats are missing. Add a test that posts a padded arma_id and asserts both the stored value and that the ingest resolver finds it.\n\n2. **No btrim migration exists**, so legacy whitespace rows predating T-326/T-317 are still in the tables. Every read-path fix in T-350 is a workaround for data that could simply be normalised. Count the affected rows on a pg_dump copy FIRST and report the number \u2014 T-228 established that discipline and it is what stopped a migration that would have made the API refuse to boot.\n\nDo these together: the migration cleans the past, the test protects the future.\n\n\u2550\u2550 DO NOT NAIVELY TRIM \u2014 two sites where a one-sided trim CREATES the catastrophe \u2550\u2550\nT-343 found these and they bind on any ticket in this family:\n  events.rs:1735 \u2014 orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.\n  events.rs:1923 \u2014 must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.\nTrimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se \u2014 it was a DISAGREEMENT between two sites. Check both halves before changing either.\n\n== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==\nRecording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is \u2014 knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.\nThis is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong \u2014 only not now.",
+      "summary": "Padded arma_id trim pinned in identity_link IT (T-351). Live padded rows were 0; btrim of users.arma_id already shipped in migration 0016 (T-335) \u2014 no new mig in this slice. T-516/T-517 fixed parallel-suite races on this IT. Original ask covered.",
       "program": "platform",
       "surfaces": [
         "API",
@@ -9995,7 +9995,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3167,
       "stream": "web-platform",
       "targets": [
@@ -10181,7 +10181,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3176,
       "stream": "web-platform",
       "targets": [
@@ -13387,7 +13387,7 @@
         "website",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3352,
       "stream": "web-platform",
       "targets": [
@@ -13498,7 +13498,7 @@
         "website",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3357,
       "stream": "web-platform",
       "targets": [
@@ -13506,6 +13506,50 @@
       ],
       "executor": "claude-code",
       "priority": 0
+    },
+    {
+      "id": "T-518",
+      "title": "T-517 Class-R denylists old telemetry id only (not live PLAYER_DISCORD)",
+      "summary": "Wave 45 verifier MINOR. identity_link.rs Class-R assert_ne!(PAD_ACTOR, \"000000000000400003\") REDs if PAD returns to 400003, but stays green if telemetry PLAYER_DISCORD moves onto live PAD (\u2026400013) \u2014 pin is a hardcoded denylist, not bound to telemetry.rs. Original shared-discord_id failure class can return one-sided. Cure: include_str!/parse PLAYER_DISCORD from telemetry.rs in the Class-R test, or assert_ne against a shared test const both suites import. Repro: set PLAYER_DISCORD to 000000000000400013 in tests/telemetry.rs; cargo test -p website-api --test identity_link t400_actor_is_not_shared_dev_login_user -- --exact \u2192 ok (false green); restore after.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "website",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3358,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-519",
+      "title": "R-api fixture goldens for Member / RegistryCompat / FireSolution",
+      "summary": "Wave 45 residual (T-360 NIT). DashboardResponse.server_status is typed Option<ServerStatusDto> end-to-end; dto::r_api::dashboard green. Remaining typed DTOs Member, RegistryCompatResponse, FireSolution still lack fixtures under apps/website/frontend/tests/fixtures/api/ (ls | rg -i 'member|compat|fire|solve' \u2192 empty). Owns when filed: apps/website/frontend/tests/fixtures/api/ + matching dto.rs R-api modules. Outside T-360 owns at ship time.",
+      "program": "platform",
+      "surfaces": [
+        "FE",
+        "tests"
+      ],
+      "impact": [
+        "website",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3359,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }
