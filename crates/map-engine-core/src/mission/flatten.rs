@@ -2867,47 +2867,97 @@ mod tests {
 
     /// The vehicle row this module reads, pinned field by field — **the contract floor**.
     ///
-    /// `MissionDocCore::add_vehicle` writes `{id, resourceName}` plus an optional `position`
-    /// (`doc/store.rs:527-548`); `attach_vehicle` adds `squadId` (`doc/store.rs:551-570`);
+    /// `MissionDocCore::add_vehicle` writes `{id, resourceName}` plus an optional `position`;
+    /// `attach_vehicle` adds `squadId`; `set_vehicle_cargo` adds `cargo[]`;
     /// `mission::compile::compile_payload` copies `vehiclesById`'s values verbatim to the saved
-    /// payload's top-level `vehicles` array, which is the array a future emitter here reads.
+    /// payload's top-level `vehicles` array — the array a future emitter here reads.
     ///
-    /// This is pinned as DATA rather than by calling `add_vehicle`, deliberately. The writer and
-    /// this reader are two different slices — the writer may legitimately ADD fields, and a
-    /// compile-time call from here would turn any signature change on that side into a merge
-    /// break rather than a caught disagreement. What must not happen is a rename, a retype or a
-    /// removal: those compose silently, git merges two files that never disagreed textually, and
-    /// the feature is broken with every gate green. That is the failure this test exists to make
-    /// loud, so the assertion is on the SHAPE and the message says which side to look at.
+    /// **T-423:** the fixture is driven from live `add_vehicle` / `attach_vehicle` /
+    /// `set_vehicle_cargo` output, then round-tripped through JSON (`to_vec` → `from_slice`) so
+    /// assertions hit serde keys, not Rust types. A hand-written `LEDGER_FIXTURE` vehicles array
+    /// (pre-T-423) could only catch this module disagreeing with itself — renaming the
+    /// `"resourceName"` string inside `add_vehicle` left this test green. Calling the writer
+    /// for *bytes*, then asserting on the serialized shape, is what makes a floor rename loud
+    /// here without turning a writer *signature* change into the only failure mode (that stays
+    /// a compile error at the call site; the key rename is the silent class this test owns).
     ///
     /// `position` and `squadId` are both genuinely optional and the fixture covers both states —
     /// `v1` is placed and attached, `v2` is neither. A reader that assumed either was required
     /// would drop every unplaced or unattached vehicle.
+    #[cfg(feature = "doc")]
+    fn vehicles_from_writer_json_roundtrip() -> serde_json::Value {
+        use crate::doc::MissionDocCore;
+        use crate::mission::compile::compile_payload;
+
+        let doc = MissionDocCore::new();
+        doc.add_faction("f1", "BLUFOR", "US Army");
+        doc.add_squad("sq1", "f1", "Alpha 1-1", Some("Alpha".into()));
+        doc.add_vehicle(
+            "v1",
+            "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
+            Some(100.5),
+            Some(200.5),
+            Some(3.0),
+            Some(45.0),
+        );
+        doc.attach_vehicle("sq1", "v1");
+        doc.set_vehicle_cargo("v1", &[("res://ammo".into(), 4)]);
+        doc.add_vehicle(
+            "v2",
+            "{ABCDEF0123456789}Prefabs/Vehicles/Wheeled/UAZ/UAZ469.et",
+            None,
+            None,
+            None,
+            None,
+        );
+        // Writer → compile_payload → JSON bytes → Value. Asserting on this Value is what fails
+        // when `add_vehicle` renames a floor key; a typed field access would not.
+        let payload = compile_payload(&doc.small_maps_json(), &doc.slots_json(), false);
+        let bytes = serde_json::to_vec(&payload).expect("payload serializes");
+        serde_json::from_slice(&bytes).expect("payload deserializes")
+    }
+
+    #[cfg(feature = "doc")]
     #[test]
     fn the_vehicle_row_still_has_the_shape_this_module_reads() {
-        let authored: serde_json::Value =
-            serde_json::from_str(LEDGER_FIXTURE).expect("fixture parses");
-        let vehicles = authored["vehicles"].as_array().expect("vehicles array");
+        let authored = vehicles_from_writer_json_roundtrip();
+        let vehicles = authored["vehicles"]
+            .as_array()
+            .expect("compile_payload must emit a vehicles array from add_vehicle output");
+        assert_eq!(
+            vehicles.len(),
+            2,
+            "writer authored two vehicles (placed+attached v1, bare v2)"
+        );
 
-        // Floor, in full: id + resourceName are always present and are strings.
-        for (i, v) in vehicles.iter().enumerate() {
+        let by_id = |id: &str| -> &serde_json::Value {
+            vehicles
+                .iter()
+                .find(|v| v.get("id").and_then(serde_json::Value::as_str) == Some(id))
+                .unwrap_or_else(|| panic!("missing vehicle id={id} in writer round-trip"))
+        };
+
+        // Floor, in full: id + resourceName are always present and are strings — checked on the
+        // writer's serialized output, not a hand-copied literal.
+        for id in ["v1", "v2"] {
+            let v = by_id(id);
             for required in ["id", "resourceName"] {
                 assert!(
                     v.get(required)
                         .and_then(serde_json::Value::as_str)
                         .is_some(),
-                    "vehicles[{i}].{required} must be a non-null string — the floor at \
-                     doc/store.rs:527-548. If the writing slice renamed or retyped it, these two \
+                    "vehicles[{id}].{required} must be a non-null string — the floor \
+                     add_vehicle writes. If the writing slice renamed or retyped it, these two \
                      halves now disagree and nothing else will say so."
                 );
             }
         }
 
         // v1 — placed and attached: position is a 4-number map, squadId a string.
-        let placed = &vehicles[0];
+        let placed = by_id("v1");
         let pos = placed["position"]
             .as_object()
-            .expect("vehicles[0].position is an object (store.rs `position_any`)");
+            .expect("vehicles[v1].position is an object (store.rs `position_any`)");
         let mut axes: Vec<&str> = pos.keys().map(String::as_str).collect();
         axes.sort_unstable();
         assert_eq!(
@@ -2924,20 +2974,35 @@ mod tests {
         // v2 — neither placed nor attached. Both keys ABSENT, not null and not empty string:
         // `add_vehicle` omits `position` when x/y are not both supplied, and `squadId` does not
         // exist until `attach_vehicle` runs.
-        let bare = &vehicles[1];
+        let bare = by_id("v2");
         assert!(
             bare.get("position").is_none() && bare.get("squadId").is_none(),
             "an unplaced, unattached vehicle carries neither key — a reader that requires \
              either would silently drop it"
         );
 
-        // Unknown ADDITIONAL fields are tolerated by construction: nothing here deserializes a
-        // vehicle into a closed struct, so a field the writing slice adds passes through the
-        // saved payload untouched. Asserted rather than assumed.
-        let mut extended = placed.clone();
-        extended["cargo"] = serde_json::json!([{"item": "res://ammo", "qty": 4}]);
-        assert_eq!(extended["resourceName"], placed["resourceName"]);
-        assert_eq!(extended["position"]["x"], placed["position"]["x"]);
+        // Unknown ADDITIONAL fields are tolerated: `set_vehicle_cargo` writes `cargo`, and
+        // `compile_payload` must keep it on the saved row beside the floor keys. Pre-T-423 this
+        // was a tautology (clone → insert cargo locally → assert other keys unchanged — no
+        // module code ran). Now the writer + compile path must actually emit cargo or this fails.
+        let cargo = placed
+            .get("cargo")
+            .and_then(serde_json::Value::as_array)
+            .expect("set_vehicle_cargo + compile_payload must preserve vehicles[].cargo");
+        assert_eq!(cargo.len(), 1, "one cargo row authored");
+        assert_eq!(cargo[0]["item"], "res://ammo");
+        assert_eq!(cargo[0]["qty"], 4);
+        assert!(
+            placed
+                .get("resourceName")
+                .and_then(serde_json::Value::as_str)
+                .is_some(),
+            "floor resourceName must survive beside the cargo extra"
+        );
+        assert!(
+            placed.get("position").and_then(|p| p.get("x")).is_some(),
+            "floor position.x must survive beside the cargo extra"
+        );
     }
 
     /// Every key a compiled slot carries, pinned exactly. An addition or a removal is a change
