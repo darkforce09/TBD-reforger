@@ -5,26 +5,6 @@
 
 ## Running / Review
 
-- **T-364** (3180) — COALESCE-on-None admits a third state, and a body-only PATCH leaves the snippet stale [running] — Two narrow findings from T-348, both precise about mechanism rather than pattern-matched.
-
-1. **telemetry.rs:488-498 and :511, :522-523.** The mechanism here is NOT `is_empty()` — it is SQL COALESCE-on-NULL keyed on Rust `None`, and per the doc comment at :259-263 an explicit `""` clear is INTENTIONAL. So the defect is narrower than the family it looks like: `Some("   ")` is non-NULL, so COALESCE admits a THIRD state that is neither keep nor clear. Fix it without breaking the deliberate two-state contract T-316 designed — read that reasoning first; T-316 chose COALESCE for heartbeats specifically because a partial heartbeat is honest.
-
-2. **cms.rs — `snippet` goes stale after a body-only PATCH.** Create derives it via `snippet_from`; PATCH only writes it when explicitly supplied. So the list view keeps the OLD snippet under a NEW body — a preview that contradicts the article. Either derive it on PATCH whenever `body` changes, or stop storing it and derive on read. Deriving on write is probably right (the list view should not pay for it), but say which and why.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-496** (3331) — T-410 library/bookmark page-1 Class-R weak without NULL updated_at residue [running] — Wave 38 adversarial NIT. find_in_approvals page-1-only RED on tbd_gate_it (26 pending). Disabling prefer-mine RED on dashboard. But find_id_in_missions_list→page-1 limit=20 stayed GREEN on mission_lifecycle_and_compiled because only 2 NULL updated_at rows — DESC puts fresh missions on page 1. Cure: Class-R that forces >20 NULL-updated_at residue (or source ratchet that the helper always paginates) so library/bookmark pins fail without relying on shared-DB residue.
-- **T-538** (3378) — flatten-orbat-slots stdout path still drops loadout/uid and stamps schemaVersion 1.1 [running] — FOUND by W51 adversarial verifier (CLEAN MINOR-NIT) after T-383.
-
-T-383 fixed `--in-place`. Non-`--in-place` stdout flatten still drops loadout/uid and force-stamps schemaVersion 1.1. Cure: same preserve/refuse rules on stdout path, or document stdout as lossy preview only with a loud warning + Class-R pin.
-
-Repro: run flatten-orbat-slots without --in-place on a golden with loadout/uid.
-- **T-539** (3379) — T-538 Class-R pins apply_* not stdout flatten_orbat_slots entrypoint [running] — FOUND by W52 adversarial verifier (MAJOR) after T-538.
-
-Stdout schema/preserve Class-R calls `apply_flatten_orbat_slots` directly, not `flatten_orbat_slots(..., false)`. A post-apply stdout-only `mission["schemaVersion"] = "1.1"` stamp (exact pre-T-538 bug shape) keeps all `flatten_stdout_*` tests GREEN. Production path is shared/correct today; pin does not cover the CLI entrypoint claim.
-
-Cure: Class-R must exercise stdout entrypoint (or source-pin that stdout path cannot reassign schemaVersion after apply). Repro: add stamp after apply in flatten_orbat_slots false branch → current tests stay green.
 
 ## Ready
 

@@ -10262,7 +10262,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3180,
       "stream": "web-platform",
       "targets": [
@@ -13035,7 +13035,7 @@
       "impact": [
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3331,
       "stream": "web-platform",
       "targets": [
@@ -13957,7 +13957,7 @@
         "schema",
         "dx"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3378,
       "stream": "web-platform",
       "targets": [
@@ -13980,7 +13980,7 @@
         "tests",
         "dx"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3379,
       "stream": "web-platform",
       "targets": [
