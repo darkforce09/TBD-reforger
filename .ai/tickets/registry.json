@@ -10492,7 +10492,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3191,
       "stream": "web-platform",
       "targets": [
@@ -10513,7 +10513,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3192,
       "stream": "web-platform",
       "targets": [
@@ -10553,7 +10553,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3194,
       "stream": "web-platform",
       "targets": [
@@ -13216,6 +13216,30 @@
       ],
       "executor": "claude-code",
       "priority": 2
+    },
+    {
+      "id": "T-505",
+      "title": "Hydrate/row-mirror still stomps authored title after T-375 compile emit",
+      "summary": "Wave 41 residual (CLEAN). T-375 emits non-blank trimmed meta.title on compile_payload. hydrate/apply_row_meta still does not load payload title into meta; create_version does not PATCH missions.title. Reload can overwrite authored title with stale row. Cure: adopt_payload/apply_row_meta prefer payload title (trim-aware) and/or mirror title to row on Save with non-blank guard.",
+      "program": "platform",
+      "surfaces": [
+        "EDITOR",
+        "API",
+        "DATA"
+      ],
+      "impact": [
+        "mission-creator",
+        "api",
+        "frontend"
+      ],
+      "status": "deferred",
+      "order": 3345,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
     }
   ]
 }
