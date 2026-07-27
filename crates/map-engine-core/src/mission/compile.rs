@@ -40,6 +40,10 @@ pub const KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS: &[&str] = &[
     "schemaVersion",
     "map",
     "environment",
+    // T-505 / T-524 — hydrate loads top-level `title` into meta (T-375 wire emit). Must match
+    // `is_known_editor_payload_top_level` in `doc/store.rs` (duplicated there so `doc` does not
+    // depend on `mission`).
+    "title",
     "loadouts",
     "objectives",
     "vehicles",
@@ -240,9 +244,10 @@ pub fn compile_payload(small_maps_json: &str, slots_json: &str, include_orbat: b
 
     // T-375 — emit authored `meta.title` onto the wire payload. Save used to drop it (export
     // already carried it via [`compile_export`]), so reload's `apply_row_meta` could only see the
-    // stale mission-row title. Blank / whitespace-only is omitted (non-blank guard spirit). Not
-    // added to `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS`: hydrate does not yet load `title` into
-    // `meta` (store.rs), so listing it as "known" would drop it instead of parking it.
+    // stale mission-row title. Blank / whitespace-only is omitted (non-blank guard spirit).
+    // T-505 — hydrate loads this top-level key into `meta`; it is listed in
+    // `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS` (T-524 lockstep with `doc/store.rs`) so it is not
+    // parked/re-emitted via `payloadExtras`.
     if let Some(title) = meta_title_nonblank(&meta)
         && let Some(obj) = payload.as_object_mut()
     {
@@ -1022,5 +1027,51 @@ mod tests {
         let padded = json!({ "meta": { "title": "  Op Red Dawn  " } }).to_string();
         let p = compile_payload(&padded, "{}", false);
         assert_eq!(p["title"], json!("Op Red Dawn"));
+    }
+
+    // ── T-524 known-keys / hydrate-title lockstep ───────────────────────────────────────────────
+
+    /// T-524 Class R — after T-505, `title` is a first-class hydrate key in `doc/store.rs`.
+    /// It MUST stay in `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS` here or the two lists drift and
+    /// compile would re-emit a parked extras title while store refuses to park it.
+    #[test]
+    fn title_is_known_editor_payload_top_level_key() {
+        assert!(
+            is_known_editor_payload_top_level("title"),
+            "T-524 — `title` missing from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS; lockstep with store.rs broken"
+        );
+        assert!(
+            KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS.contains(&"title"),
+            "T-524 — const list must include `title` (helper alone is not enough)"
+        );
+    }
+
+    /// T-524 — `title` parked in `payloadExtras` must NOT be promoted onto the wire (known-key
+    /// skip). Authored `meta.title` still emits via the T-375 path.
+    #[test]
+    fn title_in_payload_extras_is_not_re_emitted() {
+        let small = json!({
+            "meta": { "terrain": "everon" },
+            "payloadExtras": {
+                "title": "Should Not Leak From Extras",
+                "serverMigrationToken": "keep-me"
+            }
+        })
+        .to_string();
+        let p = compile_payload(&small, "{}", false);
+        assert!(
+            p.get("title").is_none(),
+            "known-key title in extras must not reach the wire; got {:?}",
+            p.get("title")
+        );
+        assert_eq!(p["serverMigrationToken"], json!("keep-me"));
+
+        let with_meta = json!({
+            "meta": { "title": "Authored", "terrain": "everon" },
+            "payloadExtras": { "title": "Extras Must Lose" }
+        })
+        .to_string();
+        let p2 = compile_payload(&with_meta, "{}", false);
+        assert_eq!(p2["title"], json!("Authored"));
     }
 }
