@@ -13306,6 +13306,28 @@
       ],
       "executor": "claude-code",
       "priority": 0
+    },
+    {
+      "id": "T-509",
+      "title": "W43 hotfix: CREATE omitted weather must still default Clear after T-377",
+      "summary": "Wave 43 re-gate FAIL after T-508. T-377 dropped \"\" from valid_weather clear arm so PATCH {\"weather\":\"\"} no longer rewrites dense_fog\u2192clear. CreateMissionInput.weather is #[serde(default)] String \u2014 omitted weather becomes \"\" \u2192 create_mission 400 invalid weather. Cold evidence: admin_field.rs:413 unwrap None on POST /missions without weather. Cure: CREATE treats empty as Clear (canonical new-mission default); PATCH still rejects \"\". Do not restore \"\"|clear in valid_weather. Class-R + IT pin. Perturbation RED required.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "website",
+        "tests"
+      ],
+      "status": "running",
+      "order": 3349,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
     }
   ]
 }
