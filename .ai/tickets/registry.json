@@ -13542,7 +13542,7 @@
         "website",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3359,
       "stream": "web-platform",
       "targets": [
@@ -13653,7 +13653,7 @@
         "compiler",
         "docs"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3364,
       "stream": "web-platform",
       "targets": [
@@ -14201,8 +14201,30 @@
         "api",
         "mission-authoring"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3389,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-550",
+      "title": "Events roster still compiles with empty CargoPhysCatalog (T-549 residual)",
+      "summary": "FOUND by W59 adversarial verifier (CLEAN MINOR outside owns) after T-549.\n\nGET /missions/:id/compiled now loads load_cargo_phys_catalog. Events roster in handlers/events.rs still calls no-arg flatten_to_mod_document (empty catalog), so pre-T-416 over-capacity payloads can still compile on that path.\n\nCure: same wire as T-549 \u2014 load catalog \u2192 flatten_to_mod_document_with_catalog.\n\nRepro: rg flatten_to_mod_document apps/website/api/src/handlers/events.rs",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "BE"
+      ],
+      "impact": [
+        "api",
+        "events"
+      ],
+      "status": "deferred",
+      "order": 3390,
       "executor": "claude-code",
       "priority": 2,
       "stream": "web-platform",
