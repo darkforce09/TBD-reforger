@@ -248,8 +248,10 @@
 99	T-447	CMS content page still seeds from mock_docs; no GET /cms/announcements list	apps/website/frontend/src/content.rs; apps/website/api/src/handlers/cms.rs; apps/website/api/src/app.rs
 99	T-448	Personnel dossier Deployments stat has no API field (hardcoded em-dash)	apps/website/api/src/handlers/admin.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/personnel.rs
 99	T-449	Wire ./scripts/ticket check to .ai/tickets/schema.json	xtask/src/check.rs; .ai/tickets/schema.json; scripts/ticket
-99	T-450	Pin MISSION_FILE_MAX_BYTES (8MB) in mission schema	packages/tbd-schema/schema/mission.schema.json; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
+99	T-450	Pin MISSION_FILE_MAX_BYTES (8MB) in mission schema	packages/tbd-schema/schema/mission.schema.json; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c; apps/website/api/src/contract/validate.rs; xtask/src/schema_gates.rs
 99	T-451	ticket set-status mutates without schema check preflight	xtask/src/cmds.rs; xtask/src/check.rs
 99	T-452	TBD_PlayerIdentity still claims link unimplemented after T-181.35	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c; scripts/mod/verify-t452-player-identity-link-comments.sh
 99	T-453	CI rust-backend fmt still misses workspace cargo fmt --all	.github/workflows/ci.yml; scripts/platform/wave.sh; Makefile
 99	T-454	wiki/modpacks/event_hub still one-shot has_min_role (browse-mode None=>true)	apps/website/frontend/src/wiki.rs; apps/website/frontend/src/modpacks.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/nav.rs
+99	T-455	ticket add/remove mutate without schema check preflight	xtask/src/cmds.rs; xtask/src/check.rs
+99	T-456	OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c

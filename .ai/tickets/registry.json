@@ -12034,7 +12034,7 @@
         "mod",
         "mission-creator"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3289,
       "stream": "web-platform",
       "targets": [
@@ -12055,7 +12055,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3290,
       "stream": "web-platform",
       "targets": [
@@ -12096,7 +12096,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3292,
       "stream": "web-platform",
       "targets": [
@@ -12121,6 +12121,46 @@
       "stream": "web-platform",
       "targets": [
         "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-455",
+      "title": "ticket add/remove mutate without schema check preflight",
+      "summary": "Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.\n\nRepro: break a required field; ticket check RED; ticket add still inserts a row.\n\nCure: gate add/remove through require_check_ok (or document intentional escape hatch + --force).",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3294,
+      "stream": "web-platform",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-456",
+      "title": "OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES",
+      "summary": "Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB via x-tbd-missionFileMaxBytes + validate_mission_document + profile LoadFromProfileFile, but OnBackendFetchSuccess \u2192 ParseMissionJson does not re-check body size. A compromised/stale API path could still hand the mod an oversized JSON.\n\nRepro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.\n\nCure: apply the same MISSION_FILE_MAX_BYTES check on the REST success path before ParseMissionJson.",
+      "program": "platform",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "mod"
+      ],
+      "status": "deferred",
+      "order": 3295,
+      "stream": "web-platform",
+      "targets": [
+        "mod"
       ],
       "executor": "claude-code",
       "priority": 2

@@ -977,6 +977,16 @@ Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.
 Repro: rg 'has_min_role\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs — still browse-mode helper.
 
 Cure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role.
+- **T-455** (deferred) — ticket add/remove mutate without schema check preflight [INFRA] — Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.
+
+Repro: break a required field; ticket check RED; ticket add still inserts a row.
+
+Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force).
+- **T-456** (deferred) — OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES [MOD] — Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB via x-tbd-missionFileMaxBytes + validate_mission_document + profile LoadFromProfileFile, but OnBackendFetchSuccess → ParseMissionJson does not re-check body size. A compromised/stale API path could still hand the mod an oversized JSON.
+
+Repro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.
+
+Cure: apply the same MISSION_FILE_MAX_BYTES check on the REST success path before ParseMissionJson.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
