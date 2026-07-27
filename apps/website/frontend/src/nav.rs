@@ -38,9 +38,21 @@ impl Role {
 }
 
 /// Browse mode: unauthenticated users (`None`) see all nav (mirrors lib/roles.ts `hasMinRole`).
+/// **Sidebar / chrome only.** Do not use this for action affordances (New Mission, admin tools) —
+/// guests and pre-bootstrap `None` would flash as authorized. Use [`has_min_role_authed`] instead.
 pub fn has_min_role(user: Option<Role>, min: Role) -> bool {
     match user {
         None => true,
+        Some(r) => r.rank() >= min.rank(),
+    }
+}
+
+/// Action / affordance gate: `None` (guest or not-yet-bootstrapped) never meets a role.
+/// T-286 — Mission Library `is_maker` and sibling action checks must use this, not browse-mode
+/// [`has_min_role`], so a pre-bootstrap `None` cannot flash maker UI and freeze wrong.
+pub fn has_min_role_authed(user: Option<Role>, min: Role) -> bool {
+    match user {
+        None => false,
         Some(r) => r.rank() >= min.rank(),
     }
 }
@@ -194,3 +206,31 @@ pub static NAVIGATION: &[NavSection] = &[
         ],
     },
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::{has_min_role, has_min_role_authed, Role};
+
+    #[test]
+    fn browse_mode_none_sees_all_nav() {
+        // Intentional: unauthenticated browse-mode keeps every nav item visible.
+        assert!(has_min_role(None, Role::Admin));
+        assert!(has_min_role(None, Role::MissionMaker));
+    }
+
+    #[test]
+    fn action_gate_none_is_never_authorized() {
+        // T-286 — pre-bootstrap / guest must not satisfy maker (or any) action affordances.
+        assert!(!has_min_role_authed(None, Role::MissionMaker));
+        assert!(!has_min_role_authed(None, Role::Enlisted));
+        assert!(has_min_role_authed(
+            Some(Role::MissionMaker),
+            Role::MissionMaker
+        ));
+        assert!(has_min_role_authed(Some(Role::Admin), Role::MissionMaker));
+        assert!(!has_min_role_authed(
+            Some(Role::Enlisted),
+            Role::MissionMaker
+        ));
+    }
+}

@@ -9,6 +9,7 @@
 use leptos::prelude::*;
 
 use crate::dto::{FactionDoc, FactionRole, FactionVehicle, RegistryItem, FACTION_SIDES};
+use crate::ui::Dialog;
 
 const CTRL: &str = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
 const BTN: &str =
@@ -39,6 +40,8 @@ pub fn FactionManagerDialog(
     });
     let editing_id = RwSignal::new(None::<String>); // None = new (POST); Some = existing (PUT)
     let status = RwSignal::new(String::new()); // inline error/notice
+                                               // T-286 — sibling pages (missions / event_manager) confirm before destructive delete.
+    let confirm_delete_open = RwSignal::new(false);
 
     #[cfg(target_arch = "wasm32")]
     let auth = expect_context::<crate::auth::AuthStore>();
@@ -151,6 +154,7 @@ pub fn FactionManagerDialog(
                     ..Default::default()
                 });
                 editing_id.set(None);
+                confirm_delete_open.set(false);
                 if let Ok(r) =
                     crate::client::api_get::<crate::dto::FactionListResponse>(auth, "/factions")
                         .await
@@ -159,6 +163,8 @@ pub fn FactionManagerDialog(
                 }
             });
         }
+        #[cfg(not(target_arch = "wasm32"))]
+        confirm_delete_open.set(false);
     };
 
     move || {
@@ -277,7 +283,8 @@ pub fn FactionManagerDialog(
                             <button type="button" aria-label="Save faction" on:click=save
                                 class=format!("{BTN} bg-primary text-on-primary hover:bg-primary/90")>"Save"</button>
                             {move || editing_id.get().map(|_| view! {
-                                <button type="button" aria-label="Delete faction" on:click=delete
+                                <button type="button" aria-label="Delete faction"
+                                    on:click=move |_| confirm_delete_open.set(true)
                                     class=format!("{BTN} bg-error/15 text-error hover:bg-error/25")>"Delete"</button>
                             })}
                             <span class="text-label-sm normal-case text-on-surface-variant">{move || status.get()}</span>
@@ -285,6 +292,55 @@ pub fn FactionManagerDialog(
                     </div>
                 </div>
             </div>
+            // T-286 — Aegis confirm before DELETE /factions/:id (matches missions / event_manager).
+            <Dialog
+                open=confirm_delete_open
+                title="Delete this faction?"
+                description="The faction template is removed from your library. This cannot be undone."
+            >
+                <div class="flex justify-end gap-2">
+                    <button
+                        type="button"
+                        on:click=move |_| confirm_delete_open.set(false)
+                        class="rounded-md border border-outline-variant/40 px-3 py-1.5 text-label-md text-on-surface-variant transition-colors hover:bg-white/5"
+                    >
+                        "Cancel"
+                    </button>
+                    <button
+                        type="button"
+                        on:click=delete
+                        class="rounded-md bg-error-alert/20 px-3 py-1.5 text-label-md text-error-alert transition-colors hover:bg-error-alert/30"
+                    >
+                        "Delete faction"
+                    </button>
+                </div>
+            </Dialog>
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    /// T-286 Class-R — Delete must open an Aegis confirm, not fire api_delete on the first click.
+    #[test]
+    fn delete_requires_aegis_confirm_dialog() {
+        const SRC: &str = include_str!("faction_manager.rs");
+        assert!(
+            SRC.contains("confirm_delete_open"),
+            "faction delete must gate on a confirm_delete_open signal"
+        );
+        assert!(
+            SRC.contains("Delete this faction?"),
+            "confirm Dialog title must be present"
+        );
+        assert!(
+            SRC.contains("on:click=move |_| confirm_delete_open.set(true)"),
+            "Delete button must open the confirm dialog, not call api_delete directly"
+        );
+        // The Delete toolbar button must not wire `on:click=delete` (that runs the DELETE).
+        assert!(
+            !SRC.contains("aria-label=\"Delete faction\" on:click=delete"),
+            "toolbar Delete must not invoke api_delete without confirmation"
+        );
     }
 }

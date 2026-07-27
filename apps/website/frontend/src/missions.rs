@@ -9,7 +9,7 @@
 #![allow(dead_code)]
 use crate::create_mission_dialog::CreateMissionDialog;
 use crate::dto::{MissionCard, MissionDetail, Paginated};
-use crate::nav::Role;
+use crate::nav::{has_min_role_authed, Role};
 use crate::ui::{badge_class, AuthGate, MaterialIcon, Sheet};
 use leptos::prelude::*;
 
@@ -107,8 +107,11 @@ fn missions_query(scope: &str, q: &str, terrain: &str, mode: &str, players: &str
 #[component]
 pub fn MissionLibraryPage() -> impl IntoView {
     let store = expect_context::<crate::auth::AuthStore>();
-    // isMaker: admin (and guest browse-mode) both satisfy mission_maker → the New Mission affordances.
-    let is_maker = store.has_min_role(Role::MissionMaker);
+    // T-286 — reactive + authed: browse-mode `has_min_role(None)=>true` must NOT drive New Mission.
+    // Pre-bootstrap `None` (or a guest) is false; after session lands the Memo re-reads the role.
+    let is_maker = Memo::new(move |_| {
+        has_min_role_authed(store.user.get().map(|u| u.role), Role::MissionMaker)
+    });
     let scope_idx = RwSignal::new(0usize);
     let q = RwSignal::new(String::new());
     let terrain = RwSignal::new(String::new());
@@ -186,7 +189,7 @@ pub fn MissionLibraryPage() -> impl IntoView {
     #[cfg(target_arch = "wasm32")]
     {
         let handle = window_event_listener(leptos::ev::keydown, move |ev| {
-            if !is_maker || create_open.get_untracked() {
+            if !is_maker.get_untracked() || create_open.get_untracked() {
                 return;
             }
             if ev.key().to_lowercase() != "n" || !(ev.meta_key() || ev.ctrl_key()) {
@@ -235,7 +238,7 @@ pub fn MissionLibraryPage() -> impl IntoView {
                                             let no_filters = q.get().is_empty()
                                                 && terrain.get().is_empty() && mode.get().is_empty()
                                                 && players.get().is_empty();
-                                            let show_empty_cta = is_maker
+                                            let show_empty_cta = is_maker.get()
                                                 && SCOPES[scope_idx.get().min(2)].1 == "mine"
                                                 && page.data.is_empty() && no_filters;
                                             body(
@@ -290,9 +293,9 @@ pub fn MissionLibraryPage() -> impl IntoView {
 }
 
 fn library_header(
-    is_maker: bool,
+    is_maker: Memo<bool>,
     scope_idx: RwSignal<usize>,
-    open_create: impl Fn() + Copy + 'static,
+    open_create: impl Fn() + Copy + Send + 'static,
 ) -> impl IntoView {
     view! {
         <header class="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -328,8 +331,8 @@ fn library_header(
                         .collect_view()}
                 </div>
             </div>
-            {is_maker
-                .then(|| {
+            {move || {
+                is_maker.get().then(|| {
                     view! {
                         <button
                             type="button"
@@ -341,7 +344,8 @@ fn library_header(
                             "New Mission"
                         </button>
                     }
-                })}
+                })
+            }}
         </header>
     }
 }
@@ -743,8 +747,12 @@ fn MissionDossierSheet(
     let comments_open = RwSignal::new(false);
     let invite_open = RwSignal::new(false);
     let confirm_delete_open = RwSignal::new(false);
-    let is_maker = store.has_min_role(Role::MissionMaker);
-    let is_admin = store.has_min_role(Role::Admin);
+    // T-286 — same reactive + authed gate as the library header (not browse-mode None=>true).
+    let is_maker = Memo::new(move |_| {
+        has_min_role_authed(store.user.get().map(|u| u.role), Role::MissionMaker)
+    });
+    let is_admin =
+        Memo::new(move |_| has_min_role_authed(store.user.get().map(|u| u.role), Role::Admin));
     let me = StoredValue::new(store.user.get_untracked().map(|u| u.discord_id));
     // T-173 P5 — hold the heavy dossier DOM until the sheet's 300 ms slide finishes, so a fast
     // local fetch can't land a large subtree mount mid-animation (the fetch itself starts
@@ -778,7 +786,7 @@ fn MissionDossierSheet(
                             // CTA and the collaboration row. `/missions/:id/edit` really is
                             // `auth: "mission_maker"` (`router.rs:88`), so promising it to a
                             // non-maker would just bounce them off a role gate.
-                            let can_edit = is_maker && (is_owner || is_admin);
+                            let can_edit = is_maker.get() && (is_owner || is_admin.get());
                             // T-389 — `can_manage` gates the LIFECYCLE (submit / archive / delete)
                             // and the rejection feedback, and it deliberately drops `is_maker` to
                             // match the API exactly: `submit_mission`, `update_mission` and
@@ -796,7 +804,7 @@ fn MissionDossierSheet(
                             // needs to read it would have been the one person who could not. That
                             // is the feedback loop this ticket exists to close, so the gate moves
                             // with it rather than being left as a matching trap.
-                            let can_manage = is_owner || is_admin;
+                            let can_manage = is_owner || is_admin.get();
                             dossier_sheet_body(
                                     m,
                                     id_sv,
@@ -1348,6 +1356,32 @@ mod tests {
     use super::{bookmark_api_path, card_is_bookmarked};
     use crate::dto::MissionCard;
     use serde_json::json;
+
+    /// T-286 Class-R — New Mission must not use browse-mode `has_min_role(None)=>true`.
+    /// Source guard goes red if the one-shot store role read returns or the authed helper /
+    /// Memo wiring is dropped.
+    #[test]
+    fn maker_affordance_uses_authed_reactive_role() {
+        const SRC: &str = include_str!("missions.rs");
+        assert!(
+            SRC.contains("has_min_role_authed"),
+            "Mission Library maker gate must use has_min_role_authed (not browse-mode None=>true)"
+        );
+        assert!(
+            SRC.contains("Memo::new(move |_|")
+                && SRC.contains(
+                    "has_min_role_authed(store.user.get().map(|u| u.role), Role::MissionMaker)"
+                ),
+            "is_maker must be a Memo that re-reads AuthStore.user after bootstrap"
+        );
+        // The old one-shot browse-mode path must stay gone. Split the needle so this assert's
+        // own source text cannot false-red the include_str scan.
+        let one_shot = format!("store.has_min_role({}::MissionMaker)", "Role");
+        assert!(
+            !SRC.contains(&one_shot),
+            "one-shot store.has_min_role(MissionMaker) freezes pre-bootstrap None as maker"
+        );
+    }
 
     /// T-264 Class-R — the Bookmarked tab is dead unless this file both *renders* a control and
     /// *calls* POST/DELETE `/missions/{id}/bookmark`. Source guards go red under perturbation

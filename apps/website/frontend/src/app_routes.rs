@@ -1,8 +1,8 @@
 //! leptos_router `<Routes>` — the render side of the route contract in router.rs. Every route
-//! currently renders [`PageStub`]; the real page components replace it at T-159.8+. The "*"
-//! catch-all (NotFoundPage) is the `<Routes fallback>`. The chrome (Sidebar/TopNav) lives in
-//! AppLayout OUTSIDE `<Routes>`, so it persists across navigation — `<Routes>` swaps only `<main>`.
-//! The path list mirrors router.rs `ROUTES` (the S-routes gate's source of truth).
+//! mounts its real page component (T-159.8+). The "*" catch-all (NotFoundPage) is the
+//! `<Routes fallback>`. The chrome (Sidebar/TopNav) lives in AppLayout OUTSIDE `<Routes>`, so it
+//! persists across navigation — `<Routes>` swaps only `<main>`. The path list mirrors router.rs
+//! `ROUTES` (the S-routes gate's source of truth).
 use crate::announcements::AnnouncementsPage;
 use crate::approvals::MissionApprovalsPage;
 use crate::audit::AuditLogsPage;
@@ -18,31 +18,10 @@ use crate::personnel::PersonnelRosterPage;
 use crate::server_control::ServerControlPage;
 use crate::server_intel::ServerIntelPage;
 use crate::settings::SettingsPage;
-use crate::ui::AuthGate;
 use crate::vehicles::VehicleDatabasePage;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
 use leptos_router::path;
-
-/// Placeholder for a not-yet-ported page. Sits inside `<main>`, which the chrome V-gate excludes,
-/// so its content doesn't affect shell parity.
-#[component]
-fn PageStub() -> impl IntoView {
-    view! { <div class="p-6 text-on-surface-variant">"(page)"</div> }
-}
-
-// Dashboard route → crate::dashboard::DashboardPage (AuthGate → /dashboard Resource → hero-bento).
-
-/// Generic AuthGate-wrapped API page: a guest sees the sign-in CTA (the state the V gate checks);
-/// the real page content + data replace PageStub as each page is ported (T-159.9+).
-#[component]
-fn ApiPage() -> impl IntoView {
-    view! {
-        <AuthGate>
-            <PageStub />
-        </AuthGate>
-    }
-}
 
 /// Login page (auth.tsx) — rendered bare (no chrome). A guest sees the sign-in card; the button
 /// starts the real Discord OAuth flow (full-page redirect — the API 302s to Discord and lands
