@@ -108,6 +108,45 @@ require "SIDE_INDFOR_RGBA pin missing" \
   crates/map-engine-core/src/slots_gpu.rs
 ok "RGBA side pins present"
 
+# ── cargo_test_pin — selector must match ≥1 test (T-424) ─────────────────────
+#
+# `cargo test --lib <selector>` exits 0 when the filter matches NOTHING:
+#
+#   test result: ok. 0 passed; 0 failed; … N filtered out     rc=0
+#
+# Measured 2026-07-27:
+#   cargo test -p map-engine-core --lib --features doc,mission -- \
+#     zzz_no_such_test_exists_anywhere
+#   # → 0 passed; 277 filtered out; rc=0
+#
+# Every selector below used to be a bare `cargo test`. A typo or rename of a pinned
+# test name therefore printed verify-t180 OK having run zero assertions — the same
+# signature defect as the T-216 `if rg` bans: success reported over an input never
+# examined. This wrapper parses every `test result: … N passed` line cargo prints
+# for the invocation, sums N, and FAILS when the sum is 0 (or when no result line
+# appears at all). cargo's own non-zero exit (compile error / failed test) still
+# fails first.
+cargo_test_pin() {
+  local out status=0 passed
+  out="$(cargo test "$@" 2>&1)" || status=$?
+  printf '%s\n' "$out"
+  if [ "$status" -ne 0 ]; then
+    fail "cargo test $* exited $status"
+  fi
+  # sed+awk (not grep) so pipefail cannot abort before we classify: no result line
+  # and "0 passed" are different failures and both must be loud.
+  local nlines
+  nlines="$(printf '%s\n' "$out" | sed -n 's/.*test result:.* \([0-9][0-9]*\) passed.*/\1/p' | wc -l)"
+  nlines="${nlines// /}"
+  if [ "$nlines" -lt 1 ]; then
+    fail "cargo test $* — no 'test result: N passed' line. Refusing to report OK on a check that did not execute."
+  fi
+  passed="$(printf '%s\n' "$out" | sed -n 's/.*test result:.* \([0-9][0-9]*\) passed.*/\1/p' | awk '{s += $1} END {print s+0}')"
+  if [ "$passed" -lt 1 ]; then
+    fail "cargo test $* — 0 tests passed (selector matched nothing). A renamed/typo'd pin must not silently empty."
+  fi
+}
+
 # ── A / B / H — doc feature ──────────────────────────────────────────────────
 #
 # `doc mission`, not `doc` alone (T-216). `doc/store.rs`'s own tests call
@@ -127,28 +166,28 @@ ok "RGBA side pins present"
 # slice's file in this wave. Adding `mission` cannot weaken the gate: it is strictly more
 # code compiled, the selectors are unchanged, and the seven lines now share one test
 # binary with the `mission` section below instead of building a second feature set.
-cargo test -p map-engine-core --features "doc mission" --lib place_ -- --quiet
-cargo test -p map-engine-core --features "doc mission" --lib set_leader_exclusive -- --quiet
-cargo test -p map-engine-core --features "doc mission" --lib empty_squad_garbage_collected -- --quiet
-cargo test -p map-engine-core --features "doc mission" --lib move_slot_bidirectional -- --quiet
-cargo test -p map-engine-core --features "doc mission" --lib leader_invariant_holds -- --quiet
-cargo test -p map-engine-core --features "doc mission" --lib attach_vehicle_roundtrip -- --quiet
-cargo test -p map-engine-core --features "doc mission" --lib apply_faction_ -- --quiet
+cargo_test_pin -p map-engine-core --features "doc mission" --lib place_ -- --quiet
+cargo_test_pin -p map-engine-core --features "doc mission" --lib set_leader_exclusive -- --quiet
+cargo_test_pin -p map-engine-core --features "doc mission" --lib empty_squad_garbage_collected -- --quiet
+cargo_test_pin -p map-engine-core --features "doc mission" --lib move_slot_bidirectional -- --quiet
+cargo_test_pin -p map-engine-core --features "doc mission" --lib leader_invariant_holds -- --quiet
+cargo_test_pin -p map-engine-core --features "doc mission" --lib attach_vehicle_roundtrip -- --quiet
+cargo_test_pin -p map-engine-core --features "doc mission" --lib apply_faction_ -- --quiet
 ok "doc-feature place/mutator/apply gates"
 
 # ── C / D / G / vehicle pack ─────────────────────────────────────────────────
-cargo test -p map-engine-core --lib side_tint_three_distinct -- --quiet
-cargo test -p map-engine-core --lib squad_link_ -- --quiet
-cargo test -p map-engine-core --lib format_slot_line -- --quiet
-cargo test -p map-engine-core --lib pack_vehicle_instances -- --quiet
-cargo test -p map-engine-render --lib mission_vehicles -- --quiet
+cargo_test_pin -p map-engine-core --lib side_tint_three_distinct -- --quiet
+cargo_test_pin -p map-engine-core --lib squad_link_ -- --quiet
+cargo_test_pin -p map-engine-core --lib format_slot_line -- --quiet
+cargo_test_pin -p map-engine-core --lib pack_vehicle_instances -- --quiet
+cargo_test_pin -p map-engine-render --lib mission_vehicles -- --quiet
 ok "tint / links / slot_line / vehicles lane"
 
 # ── I — mission feature derive / compile ─────────────────────────────────────
-cargo test -p map-engine-core --features mission --lib derive_fills_loadout -- --quiet
-cargo test -p map-engine-core --features mission --lib derive_empty_loadout -- --quiet
-cargo test -p map-engine-core --features mission --lib derives_from_editor_sorted -- --quiet
-cargo test -p map-engine-core --features mission --lib compile_export_orbat_loadout -- --quiet
+cargo_test_pin -p map-engine-core --features mission --lib derive_fills_loadout -- --quiet
+cargo_test_pin -p map-engine-core --features mission --lib derive_empty_loadout -- --quiet
+cargo_test_pin -p map-engine-core --features mission --lib derives_from_editor_sorted -- --quiet
+cargo_test_pin -p map-engine-core --features mission --lib compile_export_orbat_loadout -- --quiet
 ok "derive/compile loadout gates"
 
 # ── T-216 — THE COMPILE BOUNDARY. Read this before trimming the list above. ───
@@ -167,21 +206,21 @@ ok "derive/compile loadout gates"
 # (T-242), the row for the newly-legal key turns red and the dead feature becomes visible
 # work instead of staying quietly dead. The second pins the compiled slot's key set, so
 # nothing can be added to or removed from the website<->mod interface in silence.
-cargo test -p map-engine-core --features mission --lib \
+cargo_test_pin -p map-engine-core --features mission --lib \
   the_compile_boundary_ledger_is_checked_against_the_contract -- --quiet
-cargo test -p map-engine-core --features mission --lib \
+cargo_test_pin -p map-engine-core --features mission --lib \
   a_compiled_slot_carries_exactly_these_keys -- --quiet
-cargo test -p map-engine-core --features mission --lib \
+cargo_test_pin -p map-engine-core --features mission --lib \
   the_vehicle_row_still_has_the_shape_this_module_reads -- --quiet
 ok "compile-boundary ledger + compiled-slot key set + vehicle contract floor"
 
 # ── E / F / G / H / I — FE (bin crate) ────────────────────────────────────────
-cargo test -p website-frontend eden_side -- --quiet
-cargo test -p website-frontend apply_eden -- --quiet
-cargo test -p website-frontend objects_chip -- --quiet
-cargo test -p website-frontend open_arsenal -- --quiet
-cargo test -p website-frontend g1_dialog -- --quiet
-cargo test -p website-frontend orbat_ -- --quiet
+cargo_test_pin -p website-frontend eden_side -- --quiet
+cargo_test_pin -p website-frontend apply_eden -- --quiet
+cargo_test_pin -p website-frontend objects_chip -- --quiet
+cargo_test_pin -p website-frontend open_arsenal -- --quiet
+cargo_test_pin -p website-frontend g1_dialog -- --quiet
+cargo_test_pin -p website-frontend orbat_ -- --quiet
 ok "website-frontend Eden/ORBAT gates"
 
 echo "verify-t180: ALL PASS"
