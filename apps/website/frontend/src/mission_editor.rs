@@ -1064,7 +1064,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                             let _ = container.set_pointer_capture(ev.pointer_id());
                             let sw = p.cam.unproject_xy(p.start_x, p.start_y);
                             let hit = doc.borrow().as_ref().and_then(|c| {
-                                st::pick(&p.cam, &c.materialize(), p.start_x, p.start_y)
+                                st::pick_slot_or_vehicle(
+                                    &p.cam,
+                                    &c.materialize(),
+                                    &crate::editor_ops::vehicle_points(),
+                                    p.start_x,
+                                    p.start_y,
+                                )
                             });
                             match hit {
                                 Some(id) => {
@@ -1075,7 +1081,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     if !cur.iter().any(|s| *s == id) {
                                         *selection.borrow_mut() = ids.clone();
                                         if let Some(e) = engine.borrow_mut().as_mut() {
-                                            e.set_selection(ids.clone());
+                                            // Slot tint only — vehicle glyphs have no selection lane.
+                                            let slot_ids: Vec<String> = ids
+                                                .iter()
+                                                .filter(|i| !crate::editor_ops::is_vehicle_id(i))
+                                                .cloned()
+                                                .collect();
+                                            e.set_selection(slot_ids);
                                         }
                                     }
                                     LG::Move {
@@ -1110,7 +1122,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                         } => {
                             let (dx, dy) = st::drag_delta(&cam, start_wx, start_wy, px, py);
                             if let Some(e) = engine.borrow_mut().as_mut() {
-                                e.set_drag(ids.clone(), dx as f32, dy as f32);
+                                // T-425 — slot drag overlay is SoA-keyed; vehicle ids would be a
+                                // no-op/wrong overlay, so only feed slot ids into set_drag.
+                                let slot_ids: Vec<String> = ids
+                                    .iter()
+                                    .filter(|i| !crate::editor_ops::is_vehicle_id(i))
+                                    .cloned()
+                                    .collect();
+                                if !slot_ids.is_empty() {
+                                    e.set_drag(slot_ids, dx as f32, dy as f32);
+                                }
                             }
                             LG::Move {
                                 ids,
@@ -1238,7 +1259,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                             if moved < st::DRAG_THRESHOLD_PX {
                                 let additive = ev.ctrl_key() || ev.meta_key();
                                 let hit = doc.borrow().as_ref().and_then(|c| {
-                                    st::pick(&p.cam, &c.materialize(), p.start_x, p.start_y)
+                                    st::pick_slot_or_vehicle(
+                                        &p.cam,
+                                        &c.materialize(),
+                                        &crate::editor_ops::vehicle_points(),
+                                        p.start_x,
+                                        p.start_y,
+                                    )
                                 });
                                 {
                                     let mut sel = selection.borrow_mut();
@@ -1246,7 +1273,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 }
                                 let ids = selection.borrow().clone();
                                 if let Some(e) = engine.borrow_mut().as_mut() {
-                                    e.set_selection(ids); // tint lane
+                                    let slot_ids: Vec<String> = ids
+                                        .iter()
+                                        .filter(|i| !crate::editor_ops::is_vehicle_id(i))
+                                        .cloned()
+                                        .collect();
+                                    e.set_selection(slot_ids); // tint lane (slots only)
                                 }
                                 // T-159.21 — SEL readout only: a click changes the selection, not the
                                 // document (no rebind / persist / undo step / tree rebuild).
@@ -1261,21 +1293,25 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 let _ = container.release_pointer_capture(ev.pointer_id());
                             }
                             if dx != 0.0 || dy != 0.0 {
-                                // `move_entities(&self)` opens a mut txn; the borrow is scoped so it
-                                // drops before `after_local_edit`'s read txn. `zs = 0` is the
-                                // DEM-not-ready byte-parity case (React `terrainZ` on flat map).
-                                {
+                                // Split slot vs vehicle ids — vehicles are off the slot SoA
+                                // (`move_entities` would no-op them; T-425 `move_vehicles` owns them).
+                                let (veh_ids, slot_ids): (Vec<String>, Vec<String>) = ids
+                                    .iter()
+                                    .cloned()
+                                    .partition(|id| crate::editor_ops::is_vehicle_id(id));
+                                if !slot_ids.is_empty() {
                                     let guard = doc.borrow();
                                     let Some(core) = guard.as_ref() else {
                                         return;
                                     };
-                                    core.move_entities(ids.clone(), dx, dy, vec![0.0; ids.len()]);
+                                    let n = slot_ids.len();
+                                    core.move_entities(slot_ids, dx, dy, vec![0.0; n]);
                                 }
-                                // T-159.21 — the rebind/persist tail moved to `mission_history` so
-                                // undo/redo run the exact same sequence. Equivalent to the inline
-                                // T-159.19 code it replaces: it rebinds from the selection, which at
-                                // a Move commit IS `ids` (see `after_doc_change`'s docs).
-                                crate::mission_history::after_local_edit();
+                                if !veh_ids.is_empty() {
+                                    let _ = crate::editor_ops::move_vehicles(veh_ids, dx, dy);
+                                } else {
+                                    crate::mission_history::after_local_edit();
+                                }
                             } else if let Some(e) = engine.borrow_mut().as_mut() {
                                 e.set_drag(Vec::new(), 0.0, 0.0); // no move → just clear the overlay
                             }
@@ -1298,9 +1334,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     .borrow()
                                     .as_ref()
                                     .map(|c| {
-                                        st::marquee_ids(
+                                        st::marquee_ids_with_vehicles(
                                             &cam,
                                             &c.materialize(),
+                                            &crate::editor_ops::vehicle_points(),
                                             start_wx,
                                             start_wy,
                                             up_x,
@@ -1310,7 +1347,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     .unwrap_or_default();
                                 *selection.borrow_mut() = ids.clone();
                                 if let Some(e) = engine.borrow_mut().as_mut() {
-                                    e.set_selection(ids);
+                                    let slot_ids: Vec<String> = ids
+                                        .iter()
+                                        .filter(|i| !crate::editor_ops::is_vehicle_id(i))
+                                        .cloned()
+                                        .collect();
+                                    e.set_selection(slot_ids);
                                 }
                                 // T-159.21 — SEL readout only (selection change, not a doc edit).
                                 crate::mission_history::refresh_selection();

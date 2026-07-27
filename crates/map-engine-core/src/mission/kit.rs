@@ -28,15 +28,19 @@ struct FactionDefault {
 #[derive(Debug, Deserialize)]
 struct KitAliasesRaw {
     kits: Vec<KitEntry>,
+    /// T-425 — ResourceName → `veh:` alias rows (same `{alias,resourceName}` shape as `kits`).
+    #[serde(default)]
+    vehicles: Vec<KitEntry>,
     #[serde(rename = "factionDefaults")]
     faction_defaults: HashMap<String, FactionDefault>,
     #[serde(rename = "fallbackFaction")]
     fallback_faction: String,
 }
 
-/// Parsed kit-aliases: the `resourceName → kit:` alias map + per-faction fallbacks.
+/// Parsed kit-aliases: the `resourceName → kit:` / `veh:` maps + per-faction fallbacks.
 pub struct KitAliases {
     resource_to_kit: HashMap<String, String>,
+    resource_to_vehicle: HashMap<String, String>,
     faction_defaults: HashMap<String, FactionDefault>,
     fallback_faction: String,
 }
@@ -46,6 +50,16 @@ impl KitAliases {
     /// `None` means the caller should fall back to the faction default kit.
     pub fn kit_for_resource(&self, resource_name: &str) -> Option<&str> {
         self.resource_to_kit.get(resource_name).map(String::as_str)
+    }
+
+    /// T-425 — resolve a vehicle `resourceName` to its `veh:` alias.
+    ///
+    /// `None` means the resource is **not** in the table. Callers must not substitute a different
+    /// vehicle (T-200 class) — fail the compile or skip an unplaced row; never invent an alias.
+    pub fn vehicle_for_resource(&self, resource_name: &str) -> Option<&str> {
+        self.resource_to_vehicle
+            .get(resource_name)
+            .map(String::as_str)
     }
 
     /// Fallback `(kit, preset)` aliases for a (lowercased) faction key, falling back
@@ -74,8 +88,14 @@ pub fn load_kit_aliases() -> &'static KitAliases {
             .into_iter()
             .map(|k| (k.resource_name, k.alias))
             .collect();
+        let resource_to_vehicle = raw
+            .vehicles
+            .into_iter()
+            .map(|k| (k.resource_name, k.alias))
+            .collect();
         KitAliases {
             resource_to_kit,
+            resource_to_vehicle,
             faction_defaults: raw.faction_defaults,
             fallback_faction: raw.fallback_faction,
         }
@@ -109,6 +129,24 @@ mod tests {
             k.faction_default("mystery"),
             ("kit:us_rifleman", "preset:us_army_82nd")
         );
+    }
+
+    /// T-425 — `vehicles` is the ResourceName → `veh:` table. The canonical M151 MG alias is
+    /// preserved; an unknown ResourceName returns `None` (caller must not substitute).
+    #[test]
+    fn resolves_known_vehicles_and_refuses_unknown() {
+        let k = load_kit_aliases();
+        assert_eq!(
+            k.vehicle_for_resource(
+                "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et"
+            ),
+            Some("veh:m151_mg")
+        );
+        assert_eq!(
+            k.vehicle_for_resource("{259EE7B78C51B624}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et"),
+            Some("veh:uaz469")
+        );
+        assert_eq!(k.vehicle_for_resource("unknown-vehicle-prefab.et"), None);
     }
 
     /// T-183 — `fallbackFaction` is the guard for a genuinely UNKNOWN faction key (the

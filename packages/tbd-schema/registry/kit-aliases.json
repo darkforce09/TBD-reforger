@@ -1,5 +1,5 @@
 {
-  "$comment": "ResourceName -> kit: alias mapping for the mission compile flatten (T-092.2). Derived from the kit:/preset: entries of the mod alias spawn registry (apps/mod/tbd-framework/Data/registry.json) — that registry maps alias -> prefab ResourceName for spawn; this file is its inverse plus per-faction fallbacks. Consumed by the frontend flatten (flattenModDocument.ts) and the Go flatten (internal/services/mission_compile.go via the schema-codegen copy). Editor slots whose assetId has no kit row here flatten to their faction's default kit (with a warning) so the compiled document always satisfies mission.schema.json's kit pattern. T-183: factionDefaults MUST carry a row for every faction key TBD_SpawnManager.EngineFactionKey maps (blufor/opfor/indfor/civ). A missing row is not an error — KitAliases::faction_default silently returns fallbackFaction (blufor), so an INDFOR slot compiled to kit:us_rifleman and the mod then spawned a US body while forcing engine faction FIA. fallbackFaction stays as the guard for a genuinely unknown key; it must not be load-bearing for a key the mod knows.",
+  "$comment": "ResourceName -> kit:/veh: alias mapping for the mission compile flatten (T-092.2 / T-425). `kits` is derived from the kit:/preset: entries of the mod alias spawn registry (apps/mod/tbd-framework/Data/registry.json) \u2014 that registry maps alias -> prefab ResourceName for spawn; this file is its inverse plus per-faction fallbacks. `vehicles` is the ResourceName -> veh: table for map-placed / ORBAT vehicles (T-425): every registry-items.workbench.json kind==vehicle row, with the canonical veh:m151_mg alias preserved for M151A2_M2HB. Consumed by map-engine-core mission flatten. Editor slots whose assetId has no kit row here flatten to their faction's default kit (with a warning); placed vehicles whose resourceName has no vehicles row FAIL the compile (no silent drop/substitute \u2014 T-200 class).",
   "generatedFrom": "apps/mod/tbd-framework/Data/registry.json",
   "kits": [
     {
@@ -52,10 +52,896 @@
     }
   ],
   "factionDefaults": {
-    "blufor": { "kit": "kit:us_rifleman", "preset": "preset:us_army_82nd" },
-    "opfor": { "kit": "kit:sov_rifleman", "preset": "preset:sov_vdv" },
-    "indfor": { "kit": "kit:fia_rifleman", "preset": "preset:fia" },
-    "civ": { "kit": "kit:civ_generic", "preset": "preset:civ" }
+    "blufor": {
+      "kit": "kit:us_rifleman",
+      "preset": "preset:us_army_82nd"
+    },
+    "opfor": {
+      "kit": "kit:sov_rifleman",
+      "preset": "preset:sov_vdv"
+    },
+    "indfor": {
+      "kit": "kit:fia_rifleman",
+      "preset": "preset:fia"
+    },
+    "civ": {
+      "kit": "kit:civ_generic",
+      "preset": "preset:civ"
+    }
   },
-  "fallbackFaction": "blufor"
+  "fallbackFaction": "blufor",
+  "vehicles": [
+    {
+      "alias": "veh:uh1h_armed_sharknose",
+      "resourceName": "{00BC1E407D536A34}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_sharkNose.et"
+    },
+    {
+      "alias": "veh:m997_maxi_ambulance",
+      "resourceName": "{00C9BBE426F7D459}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance.et"
+    },
+    {
+      "alias": "veh:uaz452_cargo",
+      "resourceName": "{01F65EFB8D767A91}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo.et"
+    },
+    {
+      "alias": "veh:cinematic_flying_mi8",
+      "resourceName": "{039615384D5685B3}Prefabs/MP/CombatOps/Vehicles/Cinematic_Flying_Mi8.et"
+    },
+    {
+      "alias": "veh:humr_base",
+      "resourceName": "{0403FB7965F89864}Prefabs/Vehicles/Wheeled/M998/Humr_base.et"
+    },
+    {
+      "alias": "veh:m923a1_transport_covered_merdc",
+      "resourceName": "{04BDACC0BB83284E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered_MERDC.et"
+    },
+    {
+      "alias": "veh:trackedvehicle_base",
+      "resourceName": "{0608D8FA71FD3433}Prefabs/Vehicles/Core/TrackedVehicle_Base.et"
+    },
+    {
+      "alias": "veh:ural4320_engineer_fia",
+      "resourceName": "{076B33106723D087}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_engineer_FIA.et"
+    },
+    {
+      "alias": "veh:uaz469_pkm",
+      "resourceName": "{0B4DEA8078B78A9B}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_PKM.et"
+    },
+    {
+      "alias": "veh:lav25",
+      "resourceName": "{0FBF8F010F81A4E5}Prefabs/Vehicles/Wheeled/LAV25/LAV25.et"
+    },
+    {
+      "alias": "veh:s1203_transport_red",
+      "resourceName": "{11A28C90DB40318D}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_red.et"
+    },
+    {
+      "alias": "veh:uaz452_ambulance_base",
+      "resourceName": "{1247D68D2A76907D}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_ambulance_base.et"
+    },
+    {
+      "alias": "veh:s105_randomized",
+      "resourceName": "{128253A267BE9424}Prefabs/Vehicles/Wheeled/S105/S105_randomized.et"
+    },
+    {
+      "alias": "veh:uh1h_armed_gunship_empty",
+      "resourceName": "{137DCF41459A89BE}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_empty.et"
+    },
+    {
+      "alias": "veh:ural4320_transport_civ_forest",
+      "resourceName": "{1449105FD658EDFB}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_CIV_forest.et"
+    },
+    {
+      "alias": "veh:m923a1_merdc",
+      "resourceName": "{14FD2616BAB3157D}Prefabs/Vehicles/Wheeled/M923A1/M923A1_MERDC.et"
+    },
+    {
+      "alias": "veh:uaz469_uncovered",
+      "resourceName": "{16A674FE31B0921C}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered.et"
+    },
+    {
+      "alias": "veh:ural4320_transport",
+      "resourceName": "{16C1F16C9B053801}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport.et"
+    },
+    {
+      "alias": "veh:ural4320_fia_transport",
+      "resourceName": "{16E32C3ABEAFC2C6}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_FIA_transport.et"
+    },
+    {
+      "alias": "veh:uaz469_uncovered_civ_randomized",
+      "resourceName": "{1B0D46B41C50873D}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_Randomized.et"
+    },
+    {
+      "alias": "veh:lav25_base",
+      "resourceName": "{1B8EB269EECA2DF9}Prefabs/Vehicles/Wheeled/LAV25/LAV25_base.et"
+    },
+    {
+      "alias": "veh:ural4320_command",
+      "resourceName": "{1BABF6B33DA0AEB6}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_command.et"
+    },
+    {
+      "alias": "veh:btr70_base",
+      "resourceName": "{1C5FE7B7FF49BB8D}Prefabs/Vehicles/Wheeled/BTR70/BTR70_Base.et"
+    },
+    {
+      "alias": "veh:uaz452_cargo_civ_blue",
+      "resourceName": "{1D96D899FA313A08}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_blue.et"
+    },
+    {
+      "alias": "veh:uaz452_transport_civ_base",
+      "resourceName": "{1F514A6916B34568}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_base.et"
+    },
+    {
+      "alias": "veh:wheeled_car_base",
+      "resourceName": "{1F9BB80C3EC3C891}Prefabs/Vehicles/Core/Wheeled_Car_Base.et"
+    },
+    {
+      "alias": "veh:uaz452_transport",
+      "resourceName": "{1FBB492E86002BF5}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport.et"
+    },
+    {
+      "alias": "veh:m923a1_arsenal",
+      "resourceName": "{1FF144F8A209239D}Prefabs/Vehicles/Wheeled/M923A1/M923A1_arsenal.et"
+    },
+    {
+      "alias": "veh:m923a1_engineer_merdc_filled",
+      "resourceName": "{2013579FE0B109F3}Prefabs/Vehicles/Wheeled/M923A1/M923A1_engineer_MERDC_filled.et"
+    },
+    {
+      "alias": "veh:sp01_uaz469_ussr",
+      "resourceName": "{208FEE0BF258449B}Prefabs/Scenarios/SP01/SP01_UAZ469_USSR.et"
+    },
+    {
+      "alias": "veh:mi8mt_armed_base",
+      "resourceName": "{20C37D5090E4E0E6}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed_base.et"
+    },
+    {
+      "alias": "veh:uh1h_armed_gunship_he",
+      "resourceName": "{21E9A875C0A3C409}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HE.et"
+    },
+    {
+      "alias": "veh:campaignradiotruckwest",
+      "resourceName": "{229D3C08949B42F0}Prefabs/MP/Campaign/Assets/CampaignRadioTruckWest.et"
+    },
+    {
+      "alias": "veh:uaz469_pkm_fia",
+      "resourceName": "{22B327C6752EC4D4}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_PKM_FIA.et"
+    },
+    {
+      "alias": "veh:tutorial_mobilehq",
+      "resourceName": "{23569E8ACA6C4481}Prefabs/Scenarios/Tutorial/Tutorial_MobileHQ.et"
+    },
+    {
+      "alias": "veh:s1203_transport_white",
+      "resourceName": "{23B8C20ACAEC164B}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_white.et"
+    },
+    {
+      "alias": "veh:brdm2",
+      "resourceName": "{254289B9C09904AB}Prefabs/Vehicles/Wheeled/BRDM2/BRDM2.et"
+    },
+    {
+      "alias": "veh:m998_uncovered_base",
+      "resourceName": "{256CF92D598E7163}Prefabs/Vehicles/Wheeled/M998/M998_uncovered_base.et"
+    },
+    {
+      "alias": "veh:uaz469",
+      "resourceName": "{259EE7B78C51B624}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469.et"
+    },
+    {
+      "alias": "veh:m923a1_tanker_merdc",
+      "resourceName": "{26013123314183EA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_tanker_MERDC.et"
+    },
+    {
+      "alias": "veh:uaz469_uncovered_civ_base",
+      "resourceName": "{26AF1879FBDA37EB}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_base.et"
+    },
+    {
+      "alias": "veh:uaz469_uncovered_civ_brown",
+      "resourceName": "{270F23D61238ABC7}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_brown.et"
+    },
+    {
+      "alias": "veh:m1025_merdc",
+      "resourceName": "{27E2E58E734A80EC}Prefabs/Vehicles/Wheeled/M998/M1025_MERDC.et"
+    },
+    {
+      "alias": "veh:s1203_cargo_brown",
+      "resourceName": "{2A66E3B8B0C61D87}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_brown.et"
+    },
+    {
+      "alias": "veh:m923a1_tanker",
+      "resourceName": "{2BE1F8B9299B67C1}Prefabs/Vehicles/Wheeled/M923A1/M923A1_tanker.et"
+    },
+    {
+      "alias": "veh:m923a1_engineer",
+      "resourceName": "{2D74C39A650A3030}Prefabs/Vehicles/Wheeled/M923A1/M923A1_engineer.et"
+    },
+    {
+      "alias": "veh:uh1h_armed_gunship_hedp_sharknose",
+      "resourceName": "{3133602B406D131C}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP_sharkNose.et"
+    },
+    {
+      "alias": "veh:s105_lightgreen",
+      "resourceName": "{321016E0F9361A22}Prefabs/Vehicles/Wheeled/S105/S105_lightgreen.et"
+    },
+    {
+      "alias": "veh:ural4320_arsenal",
+      "resourceName": "{32E77EC32ED2B6D1}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_Arsenal.et"
+    },
+    {
+      "alias": "veh:ural4320_ammo",
+      "resourceName": "{3336BE330C4F355B}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ammo.et"
+    },
+    {
+      "alias": "veh:m1025_base",
+      "resourceName": "{33AB44A084BAA0CD}Prefabs/Vehicles/Wheeled/M998/M1025_base.et"
+    },
+    {
+      "alias": "veh:ural4320_tanker_civ_base",
+      "resourceName": "{33BC05D02006BE44}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_base.et"
+    },
+    {
+      "alias": "veh:ural4320_repair_fia",
+      "resourceName": "{34178E3A92776DA6}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_repair_FIA.et"
+    },
+    {
+      "alias": "veh:uh1h_armed_gunship_he_sharknose",
+      "resourceName": "{350492BE6F09A847}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HE_sharkNose.et"
+    },
+    {
+      "alias": "veh:mi8mt_unarmed_civ_base",
+      "resourceName": "{366EA0B41474A7F8}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_unarmed_civ_base.et"
+    },
+    {
+      "alias": "veh:m923a1_command",
+      "resourceName": "{36BDCC88B17B3BFA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_command.et"
+    },
+    {
+      "alias": "veh:m923a1_engineer_merdc",
+      "resourceName": "{37A9871AD4CC9610}Prefabs/Vehicles/Wheeled/M923A1/M923A1_engineer_MERDC.et"
+    },
+    {
+      "alias": "veh:m923a1_command_merdc",
+      "resourceName": "{38186F12F27A61C6}Prefabs/Vehicles/Wheeled/M923A1/M923A1_command_MERDC.et"
+    },
+    {
+      "alias": "veh:m997_maxi_ambulance_merdc",
+      "resourceName": "{3B1EB924602C7A07}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance_MERDC.et"
+    },
+    {
+      "alias": "veh:mi8mt_armed_gunship_he",
+      "resourceName": "{3C6B3ED0C3AC30D5}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed_gunship_HE.et"
+    },
+    {
+      "alias": "veh:m1025_armed_m2hb",
+      "resourceName": "{3EA6F47D95867114}Prefabs/Vehicles/Wheeled/M998/M1025_armed_M2HB.et"
+    },
+    {
+      "alias": "veh:m923a1_transport_merdc",
+      "resourceName": "{3F2AA823B6C65E1E}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_MERDC.et"
+    },
+    {
+      "alias": "veh:ural4320_ammo_fia",
+      "resourceName": "{3F5D19AC3C7E20DC}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_ammo_FIA.et"
+    },
+    {
+      "alias": "veh:vehicle_base",
+      "resourceName": "{4085446E2B406849}Prefabs/Vehicles/Core/Vehicle_Base.et"
+    },
+    {
+      "alias": "veh:cinematic_flying_uh1",
+      "resourceName": "{41609B3289F9ECC4}Prefabs/MP/CombatOps/Vehicles/Cinematic_Flying_UH1.et"
+    },
+    {
+      "alias": "veh:m1025_armed_m2hb_conflict",
+      "resourceName": "{428B2BC55F1628E0}Prefabs/Vehicles/Wheeled/Conflict_Variants/M1025_armed_M2HB_Conflict.et"
+    },
+    {
+      "alias": "veh:uaz452_ambulance",
+      "resourceName": "{43C4AF1EEBD001CE}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_ambulance.et"
+    },
+    {
+      "alias": "veh:brdm2_fia",
+      "resourceName": "{442939C9617DF228}Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_FIA.et"
+    },
+    {
+      "alias": "veh:ural4320",
+      "resourceName": "{4597626AF36C0858}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320.et"
+    },
+    {
+      "alias": "veh:m151a2_transport",
+      "resourceName": "{47D94E1193A88497}Prefabs/Vehicles/Wheeled/M151A2/M151A2_transport.et"
+    },
+    {
+      "alias": "veh:m923a1_transport_covered_closed",
+      "resourceName": "{48A6D4372444B85A}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered_closed.et"
+    },
+    {
+      "alias": "veh:s1203_transport_randomized",
+      "resourceName": "{49C909AFD66E90A1}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_randomized.et"
+    },
+    {
+      "alias": "veh:ural4320_tanker_civ_orange",
+      "resourceName": "{4A59DAEFE645E8A0}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_orange.et"
+    },
+    {
+      "alias": "veh:m1025",
+      "resourceName": "{4A71F755A4513227}Prefabs/Vehicles/Wheeled/M998/M1025.et"
+    },
+    {
+      "alias": "veh:s1203_base",
+      "resourceName": "{4AE9D080927D3CB9}Prefabs/Vehicles/Wheeled/S1203/S1203_base.et"
+    },
+    {
+      "alias": "veh:m998_base",
+      "resourceName": "{4B05A6D73A56A5ED}Prefabs/Vehicles/Wheeled/M998/M998_base.et"
+    },
+    {
+      "alias": "veh:ural4320_transport_covered_civ_base",
+      "resourceName": "{4BFB3CA9E83385D2}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_CIV_base.et"
+    },
+    {
+      "alias": "veh:s1203_transport_yellow",
+      "resourceName": "{4C79EB5FADB89B7A}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_yellow.et"
+    },
+    {
+      "alias": "veh:ural4320_tanker",
+      "resourceName": "{4C81D7ED8F8C0D87}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker.et"
+    },
+    {
+      "alias": "veh:uaz469_covered_civ_jzd",
+      "resourceName": "{5070B3749C7782D8}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_JZD.et"
+    },
+    {
+      "alias": "veh:m151a2_m2hb_merdc",
+      "resourceName": "{5168FEA3054D6D15}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB_MERDC.et"
+    },
+    {
+      "alias": "veh:brdm2_base",
+      "resourceName": "{532B5F3CF8496E59}Prefabs/Vehicles/Wheeled/BRDM2/BRDM2_base.et"
+    },
+    {
+      "alias": "veh:s1203_transport_beige",
+      "resourceName": "{543799AC5C52989C}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_beige.et"
+    },
+    {
+      "alias": "veh:wheeled_apc_base",
+      "resourceName": "{543A50BF3A42AD47}Prefabs/Vehicles/Core/Wheeled_APC_Base.et"
+    },
+    {
+      "alias": "veh:s105_beige",
+      "resourceName": "{54C3CC22DEBD57BE}Prefabs/Vehicles/Wheeled/S105/S105_beige.et"
+    },
+    {
+      "alias": "veh:s105_rally",
+      "resourceName": "{5555DCAFADB8CE2A}Prefabs/Vehicles/Wheeled/S105/S105_rally.et"
+    },
+    {
+      "alias": "veh:m998_uncovered",
+      "resourceName": "{5674FAEB9AB7BDD0}Prefabs/Vehicles/Wheeled/M998/M998_uncovered.et"
+    },
+    {
+      "alias": "veh:s1203_cargo_randomized",
+      "resourceName": "{5729759DD092B0F7}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_randomized.et"
+    },
+    {
+      "alias": "veh:uaz469_covered_civ_randomized",
+      "resourceName": "{57A441224AC02CF3}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_Randomized.et"
+    },
+    {
+      "alias": "veh:lav25_conflict",
+      "resourceName": "{590E677BBCD1D26E}Prefabs/Vehicles/Wheeled/Conflict_Variants/LAV25_Conflict.et"
+    },
+    {
+      "alias": "veh:uaz469_uncovered_civ_red",
+      "resourceName": "{599DFCA424399DBF}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_red.et"
+    },
+    {
+      "alias": "veh:uaz452_cargo_ussr_vai",
+      "resourceName": "{5B8446E5EA3372D7}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_USSR_VAI.et"
+    },
+    {
+      "alias": "veh:ural4320_dst",
+      "resourceName": "{5CC7129E1D07A6EC}Prefabs/Vehicles/Wheeled/Ural4320/Dst/Ural4320_dst.et"
+    },
+    {
+      "alias": "veh:uaz452_cargo_fia",
+      "resourceName": "{5F5AAFE8465D9D62}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_FIA.et"
+    },
+    {
+      "alias": "veh:wheeled_base",
+      "resourceName": "{62F416029692CE40}Prefabs/Vehicles/Core/Wheeled_Base.et"
+    },
+    {
+      "alias": "veh:s105_white",
+      "resourceName": "{63880E311299A016}Prefabs/Vehicles/Wheeled/S105/S105_white.et"
+    },
+    {
+      "alias": "veh:ural4320_transport_covered_civ_orange",
+      "resourceName": "{66241E0CEDFCEDFF}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_CIV_orange.et"
+    },
+    {
+      "alias": "veh:s1203_cargo_blue",
+      "resourceName": "{6AF3A89263D26CD8}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_blue.et"
+    },
+    {
+      "alias": "veh:m998_uncovered_merdc",
+      "resourceName": "{6B24D5AFD884D64C}Prefabs/Vehicles/Wheeled/M998/M998_uncovered_MERDC.et"
+    },
+    {
+      "alias": "veh:sp01_mi8mt_unarmed_transport",
+      "resourceName": "{6BDF7D3E72D31F29}Prefabs/Scenarios/SP01/SP01_Mi8MT_unarmed_transport.et"
+    },
+    {
+      "alias": "veh:ural4320_fia_transport_covered_closed",
+      "resourceName": "{6C9E196676394DE2}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_FIA_transport_covered_closed.et"
+    },
+    {
+      "alias": "veh:m998_covered_base",
+      "resourceName": "{6DC12F2E2E9F2525}Prefabs/Vehicles/Wheeled/M998/M998_covered_base.et"
+    },
+    {
+      "alias": "veh:s1203_cargo_red",
+      "resourceName": "{6E485048122CEEEE}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_red.et"
+    },
+    {
+      "alias": "veh:ural4320_engineer",
+      "resourceName": "{6E9142CD2471741C}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_engineer.et"
+    },
+    {
+      "alias": "veh:uh1h",
+      "resourceName": "{70BAEEFC2D3FEE64}Prefabs/Vehicles/Helicopters/UH1H/UH1H.et"
+    },
+    {
+      "alias": "veh:m998_covered_long_merdc",
+      "resourceName": "{751AFEEA19DDFB04}Prefabs/Vehicles/Wheeled/M998/M998_covered_long_MERDC.et"
+    },
+    {
+      "alias": "veh:uaz469_covered_civ_base",
+      "resourceName": "{7524FB186D534ACA}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_base.et"
+    },
+    {
+      "alias": "veh:uaz452_cargo_civ_randomized",
+      "resourceName": "{767D49C35F87DC1A}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_randomized.et"
+    },
+    {
+      "alias": "veh:uaz452_transport_civ_grey",
+      "resourceName": "{780FA841BFE4077F}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_grey.et"
+    },
+    {
+      "alias": "veh:uh1h_civ_livery_v1",
+      "resourceName": "{7A29940A71EF5F5C}Prefabs/Vehicles/Helicopters/UH1H/UH1H_civ_livery_v1.et"
+    },
+    {
+      "alias": "veh:mi8mt_armed",
+      "resourceName": "{7BD282AF716ED639}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed.et"
+    },
+    {
+      "alias": "veh:s105_darkred",
+      "resourceName": "{8000A0F649FB4B0D}Prefabs/Vehicles/Wheeled/S105/S105_darkred.et"
+    },
+    {
+      "alias": "veh:ural4320_dst_wheels",
+      "resourceName": "{814A9ACC176D096F}Prefabs/Vehicles/Wheeled/Ural4320/Dst/Ural4320_dst_wheels.et"
+    },
+    {
+      "alias": "veh:mi8mt_unarmed_civ_red",
+      "resourceName": "{8175FCADFA2FB904}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_unarmed_civ_red.et"
+    },
+    {
+      "alias": "veh:m923a1_transport_covered",
+      "resourceName": "{81FDAD5EB644CC3D}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered.et"
+    },
+    {
+      "alias": "veh:uaz452_cargo_base",
+      "resourceName": "{82125D77729753BA}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_base.et"
+    },
+    {
+      "alias": "veh:s105_red",
+      "resourceName": "{85F0BD6AF0F42D6D}Prefabs/Vehicles/Wheeled/S105/S105_red.et"
+    },
+    {
+      "alias": "veh:m151a2_merdc",
+      "resourceName": "{86D830868F026D54}Prefabs/Vehicles/Wheeled/M151A2/M151A2_MERDC.et"
+    },
+    {
+      "alias": "veh:uaz469_covered_civ_teal",
+      "resourceName": "{870EB660433857D3}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_teal.et"
+    },
+    {
+      "alias": "veh:s105_lightblue",
+      "resourceName": "{8EB38BBD860DA06E}Prefabs/Vehicles/Wheeled/S105/S105_lightblue.et"
+    },
+    {
+      "alias": "veh:m923a1_ammo",
+      "resourceName": "{92264FF932676C13}Prefabs/Vehicles/Wheeled/M923A1/M923A1_ammo.et"
+    },
+    {
+      "alias": "veh:uaz452_transport_base",
+      "resourceName": "{92AA1080824A3F7E}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_base.et"
+    },
+    {
+      "alias": "veh:m151a2_transport_merdc",
+      "resourceName": "{94DE32169691AC34}Prefabs/Vehicles/Wheeled/M151A2/M151A2_transport_MERDC.et"
+    },
+    {
+      "alias": "veh:mi8mt_armed_gunship_empty",
+      "resourceName": "{98225ED6D5F724D7}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed_gunship_empty.et"
+    },
+    {
+      "alias": "veh:uaz452_base",
+      "resourceName": "{988A61BA68420AFE}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_base.et"
+    },
+    {
+      "alias": "veh:uaz469_base",
+      "resourceName": "{99F1610551D54D17}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_base.et"
+    },
+    {
+      "alias": "veh:m923a1",
+      "resourceName": "{9A0D72816DFFDB7F}Prefabs/Vehicles/Wheeled/M923A1/M923A1.et"
+    },
+    {
+      "alias": "veh:m998_covered_long",
+      "resourceName": "{9B1BF9644E0378D6}Prefabs/Vehicles/Wheeled/M998/M998_covered_long.et"
+    },
+    {
+      "alias": "veh:uaz469_uncovered_civ_blue",
+      "resourceName": "{9B3A89DD33FF0483}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_blue.et"
+    },
+    {
+      "alias": "veh:s105_darkblue",
+      "resourceName": "{9C3269FB43F989A3}Prefabs/Vehicles/Wheeled/S105/S105_darkblue.et"
+    },
+    {
+      "alias": "veh:campaignmobileassemblywest",
+      "resourceName": "{9CB496688A3BCC3E}Prefabs/MP/Campaign/Assets/CampaignMobileAssemblyWest.et"
+    },
+    {
+      "alias": "veh:ural4320_transport_covered_closed",
+      "resourceName": "{9DD4FD3527CB46C8}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_closed.et"
+    },
+    {
+      "alias": "veh:uaz452_cargo_civ_base",
+      "resourceName": "{A003493D32140960}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_base.et"
+    },
+    {
+      "alias": "veh:m923a1_repair",
+      "resourceName": "{A042ACE5C2B13206}Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair.et"
+    },
+    {
+      "alias": "veh:uaz452_ambulance_ussr_vai",
+      "resourceName": "{A0B58E7DDF51D486}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_ambulance_USSR_VAI.et"
+    },
+    {
+      "alias": "veh:s105_darkbrown",
+      "resourceName": "{A1CD41DFE0C93CAD}Prefabs/Vehicles/Wheeled/S105/S105_darkbrown.et"
+    },
+    {
+      "alias": "veh:uaz452_transport_civ_blue",
+      "resourceName": "{A2C4DBCDDE967600}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_blue.et"
+    },
+    {
+      "alias": "veh:ural4320_transport_civ_base",
+      "resourceName": "{A2E23CB8DDCFE82E}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_CIV_base.et"
+    },
+    {
+      "alias": "veh:uaz452_cargo_civ_orange",
+      "resourceName": "{A2E8114A16D3F822}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_orange.et"
+    },
+    {
+      "alias": "veh:m923a1_transport_merdc_filled",
+      "resourceName": "{A3786C5C8687F004}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_MERDC_filled.et"
+    },
+    {
+      "alias": "veh:uaz469_covered_civ_red",
+      "resourceName": "{A4D16A62B432451A}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_red.et"
+    },
+    {
+      "alias": "veh:ural4320_repair",
+      "resourceName": "{A5647958579A4149}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_repair.et"
+    },
+    {
+      "alias": "veh:lav25_merdc_conflict",
+      "resourceName": "{A6AD5417A030CC67}Prefabs/Vehicles/Wheeled/Conflict_Variants/LAV25_MERDC_Conflict.et"
+    },
+    {
+      "alias": "veh:s105_yellow",
+      "resourceName": "{A6B0D2923262E755}Prefabs/Vehicles/Wheeled/S105/S105_yellow.et"
+    },
+    {
+      "alias": "veh:mi8mt_unarmed_civ_blue",
+      "resourceName": "{AB9ED3A33EE1B630}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_unarmed_civ_blue.et"
+    },
+    {
+      "alias": "veh:s1203_transport_brown",
+      "resourceName": "{ACED839A6C5BE657}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_brown.et"
+    },
+    {
+      "alias": "veh:s105_green",
+      "resourceName": "{AD80FB47D868C775}Prefabs/Vehicles/Wheeled/S105/S105_green.et"
+    },
+    {
+      "alias": "veh:m998_covered_merdc",
+      "resourceName": "{AF0578D66D51946B}Prefabs/Vehicles/Wheeled/M998/M998_covered_MERDC.et"
+    },
+    {
+      "alias": "veh:mi8_base",
+      "resourceName": "{AFF6067A5CE8A852}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8_base.et"
+    },
+    {
+      "alias": "veh:mi8mt_base",
+      "resourceName": "{AFF6067A5CE8A853}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_base.et"
+    },
+    {
+      "alias": "veh:m1025_armed_m2hb_merdc_conflict",
+      "resourceName": "{B0DB416052438E48}Prefabs/Vehicles/Wheeled/Conflict_Variants/M1025_armed_M2HB_MERDC_Conflict.et"
+    },
+    {
+      "alias": "veh:m1025_armed_base",
+      "resourceName": "{B120CDDBEF8DB007}Prefabs/Vehicles/Wheeled/M998/M1025_armed_base.et"
+    },
+    {
+      "alias": "veh:m997_maxi_ambulance_base",
+      "resourceName": "{B1C4A3DA3987202E}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance_base.et"
+    },
+    {
+      "alias": "veh:uaz469_covered_civ_vak",
+      "resourceName": "{B2CC137FE424B129}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_VAK.et"
+    },
+    {
+      "alias": "veh:ural4320_engineer_filled",
+      "resourceName": "{B36056D3A35C1DED}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_engineer_filled.et"
+    },
+    {
+      "alias": "veh:ural4320_tanker_civ_pohona",
+      "resourceName": "{B3C8EC88E7782C78}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_pohona.et"
+    },
+    {
+      "alias": "veh:btr70_fia",
+      "resourceName": "{B47110AA1A806556}Prefabs/Vehicles/Wheeled/BTR70/BTR70_FIA.et"
+    },
+    {
+      "alias": "veh:ural4320_arsenal_fia",
+      "resourceName": "{B4A106DB440071C8}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_Arsenal_FIA.et"
+    },
+    {
+      "alias": "veh:m998_covered",
+      "resourceName": "{B55C6990A6A9411B}Prefabs/Vehicles/Wheeled/M998/M998_covered.et"
+    },
+    {
+      "alias": "veh:mi8mt_unarmed_base",
+      "resourceName": "{B6B8C164FD6377EA}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_unarmed_base.et"
+    },
+    {
+      "alias": "veh:uaz469_covered_civ_forest",
+      "resourceName": "{B6D330E7E40FE7DD}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_forest.et"
+    },
+    {
+      "alias": "veh:ural4320_fia_transport_covered",
+      "resourceName": "{B70E6D12A8EC2410}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_FIA_transport_covered.et"
+    },
+    {
+      "alias": "veh:lav25_merdc",
+      "resourceName": "{B7A8BAA37CB0AC2B}Prefabs/Vehicles/Wheeled/LAV25/LAV25_MERDC.et"
+    },
+    {
+      "alias": "veh:ural4320_transport_filled",
+      "resourceName": "{B845B8B82C76BA68}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_filled.et"
+    },
+    {
+      "alias": "veh:uaz452_transport_civ_orange",
+      "resourceName": "{BB84BDE1707A38EB}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_orange.et"
+    },
+    {
+      "alias": "veh:btr70_conflict",
+      "resourceName": "{BD75A18920BD1278}Prefabs/Vehicles/Wheeled/Conflict_Variants/BTR70_Conflict.et"
+    },
+    {
+      "alias": "veh:uaz452_transport_fia",
+      "resourceName": "{BDE16A6AE9942D44}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_FIA.et"
+    },
+    {
+      "alias": "veh:uh1h_armed_gunship_empty_sharknose",
+      "resourceName": "{BDE43262FC05B4D7}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_empty_sharkNose.et"
+    },
+    {
+      "alias": "veh:uaz469_covered_civ_pts",
+      "resourceName": "{BDFB2377B6B4ABBB}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_PTS.et"
+    },
+    {
+      "alias": "veh:btr70",
+      "resourceName": "{C012BB3488BEA0C2}Prefabs/Vehicles/Wheeled/BTR70/BTR70.et"
+    },
+    {
+      "alias": "veh:uaz452_cargo_civ_grey",
+      "resourceName": "{C75DAB159B434B77}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_grey.et"
+    },
+    {
+      "alias": "veh:uaz452_transport_civ_randomized",
+      "resourceName": "{C7CE8044B5E301F5}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_CIV_randomized.et"
+    },
+    {
+      "alias": "veh:m923a1_repair_merdc",
+      "resourceName": "{C8656AECF5DF41D9}Prefabs/Vehicles/Wheeled/M923A1/M923A1_repair_MERDC.et"
+    },
+    {
+      "alias": "veh:uaz469_covered_civ_blue",
+      "resourceName": "{C8B16ABCA57679A2}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_blue.et"
+    },
+    {
+      "alias": "veh:campaignradiotruckeast",
+      "resourceName": "{CA75B7173C19B734}Prefabs/MP/Campaign/Assets/CampaignRadioTruckEast.et"
+    },
+    {
+      "alias": "veh:uh1h_armed_gunship_hedp",
+      "resourceName": "{CB4D4CF7E887B2D0}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed_gunship_HEDP.et"
+    },
+    {
+      "alias": "veh:sp02_gunship",
+      "resourceName": "{CB6215B3B44EA463}Prefabs/Vehicles/Helicopters/UH1H/SP02_GUNSHIP.et"
+    },
+    {
+      "alias": "veh:helicopter_base",
+      "resourceName": "{CBD8C2393BE87581}Prefabs/Vehicles/Core/Helicopter_Base.et"
+    },
+    {
+      "alias": "veh:uh1h_base",
+      "resourceName": "{D03C0F6044DB5208}Prefabs/Vehicles/Helicopters/UH1H/UH1H_base.et"
+    },
+    {
+      "alias": "veh:s1203_cargo_beige",
+      "resourceName": "{D2BCF98E80CF634C}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_beige.et"
+    },
+    {
+      "alias": "veh:uaz469_uncovered_civ_teal",
+      "resourceName": "{D4855501D5B12AF2}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered_CIV_teal.et"
+    },
+    {
+      "alias": "veh:s1203_transport_base",
+      "resourceName": "{D7663936ABF75FB0}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_base.et"
+    },
+    {
+      "alias": "veh:s1203_cargo_base",
+      "resourceName": "{D7663936ABF75FB1}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_base.et"
+    },
+    {
+      "alias": "veh:uaz469_covered_civ_brown",
+      "resourceName": "{D7C51A961BF675B2}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_brown.et"
+    },
+    {
+      "alias": "veh:ural4320_transport_covered",
+      "resourceName": "{D9B91FAB817A6033}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered.et"
+    },
+    {
+      "alias": "veh:s105_base",
+      "resourceName": "{DA79E34823120087}Prefabs/Vehicles/Wheeled/S105/S105_base.et"
+    },
+    {
+      "alias": "veh:mi8mt_armed_gunship_hedp",
+      "resourceName": "{DBEC63C9DEE4358C}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_armed_gunship_HEDP.et"
+    },
+    {
+      "alias": "veh:ural4320_fia_tanker",
+      "resourceName": "{DC1C2350CF665F9E}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_FIA_tanker.et"
+    },
+    {
+      "alias": "veh:m923a1_transport_covered_closed_merdc",
+      "resourceName": "{DC21E543DF39D2C0}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport_covered_closed_MERDC.et"
+    },
+    {
+      "alias": "veh:ural4320_tanker_civ_randomized",
+      "resourceName": "{DCAF0585D17B917A}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker_CIV_randomized.et"
+    },
+    {
+      "alias": "veh:m1025_armed_m2hb_merdc",
+      "resourceName": "{DD774A8FD0989A78}Prefabs/Vehicles/Wheeled/M998/M1025_armed_M2HB_MERDC.et"
+    },
+    {
+      "alias": "veh:uh1h_armed",
+      "resourceName": "{DDDD9B51F1234DF3}Prefabs/Vehicles/Helicopters/UH1H/UH1H_armed.et"
+    },
+    {
+      "alias": "veh:mi8mt_unarmed_transport",
+      "resourceName": "{DF5CCB7C0FF049F4}Prefabs/Vehicles/Helicopters/Mi8MT/Mi8MT_unarmed_transport.et"
+    },
+    {
+      "alias": "veh:m151a2_tutorial_broken",
+      "resourceName": "{DFEF8B56FD51248D}Prefabs/Vehicles/Wheeled/M151A2/M151A2_Tutorial_Broken.et"
+    },
+    {
+      "alias": "veh:wheeled_truck_base",
+      "resourceName": "{E03D5609EEA6E03D}Prefabs/Vehicles/Core/Wheeled_Truck_Base.et"
+    },
+    {
+      "alias": "veh:campaignmobileassemblyeast",
+      "resourceName": "{E171C9F443958371}Prefabs/MP/Campaign/Assets/CampaignMobileAssemblyEast.et"
+    },
+    {
+      "alias": "veh:uaz469_fia_uncovered",
+      "resourceName": "{E28501E93F8EFDC0}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_FIA_uncovered.et"
+    },
+    {
+      "alias": "veh:s1203_cargo_yellow",
+      "resourceName": "{E3AD3E9E60F2E061}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_yellow.et"
+    },
+    {
+      "alias": "veh:uaz452_transport_ussr_vai",
+      "resourceName": "{E4D645B1CE943EDF}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_transport_USSR_VAI.et"
+    },
+    {
+      "alias": "veh:s1203_cargo_white",
+      "resourceName": "{E5F73B9D4CEB94E4}Prefabs/Vehicles/Wheeled/S1203/S1203_cargo_white.et"
+    },
+    {
+      "alias": "veh:ural4320_fia_command",
+      "resourceName": "{E6AEC014D162D686}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_FIA_command.et"
+    },
+    {
+      "alias": "veh:uaz469_uk59_fia",
+      "resourceName": "{E72D78E7F45532EC}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_UK59_FIA.et"
+    },
+    {
+      "alias": "veh:m923a1_arsenal_merdc",
+      "resourceName": "{EA4819E0745DFAEA}Prefabs/Vehicles/Wheeled/M923A1/M923A1_arsenal_MERDC.et"
+    },
+    {
+      "alias": "veh:m997_maxi_ambulance_merdc2_tutorial",
+      "resourceName": "{EB581271433CE0E9}Prefabs/Vehicles/Wheeled/M998/M997_maxi_ambulance_MERDC2_Tutorial.et"
+    },
+    {
+      "alias": "veh:m923a1_ammo_merdc",
+      "resourceName": "{EC657C9B3C73E192}Prefabs/Vehicles/Wheeled/M923A1/M923A1_ammo_MERDC.et"
+    },
+    {
+      "alias": "veh:ural4320_transport_civ_randomized",
+      "resourceName": "{EEAC3A94929A2B55}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_CIV_randomized.et"
+    },
+    {
+      "alias": "veh:uh1h_sharknose",
+      "resourceName": "{EEE291940A9DA42A}Prefabs/Vehicles/Helicopters/UH1H/UH1H_sharkNose.et"
+    },
+    {
+      "alias": "veh:uh1h_civ_base",
+      "resourceName": "{EF4E5000BC4F6791}Prefabs/Vehicles/Helicopters/UH1H/UH1H_civ_base.et"
+    },
+    {
+      "alias": "veh:uaz452_ambulance_fia",
+      "resourceName": "{F0EC3EFF70B174B0}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_ambulance_FIA.et"
+    },
+    {
+      "alias": "veh:m923a1_transport",
+      "resourceName": "{F1FBD0972FA5FE09}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport.et"
+    },
+    {
+      "alias": "veh:tutorial_engineering_truck",
+      "resourceName": "{F54F833E747C1B77}Prefabs/Vehicles/Wheeled/M923A1/Tutorial_Engineering_Truck.et"
+    },
+    {
+      "alias": "veh:m151a2",
+      "resourceName": "{F649585ABB3706C4}Prefabs/Vehicles/Wheeled/M151A2/M151A2.et"
+    },
+    {
+      "alias": "veh:ural4320_transport_covered_civ_blue",
+      "resourceName": "{F66EAD0D2016B6BA}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_CIV_blue.et"
+    },
+    {
+      "alias": "veh:m151_mg",
+      "resourceName": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et"
+    },
+    {
+      "alias": "veh:s1203_transport_blue",
+      "resourceName": "{F77C41245A580FD1}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_blue.et"
+    },
+    {
+      "alias": "veh:brdm2_conflict",
+      "resourceName": "{F7B9B434FCFF00B3}Prefabs/Vehicles/Wheeled/Conflict_Variants/BRDM2_Conflict.et"
+    },
+    {
+      "alias": "veh:uaz469_fia",
+      "resourceName": "{F7E9AA0C813EABDA}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_FIA.et"
+    },
+    {
+      "alias": "veh:ural4320_transport_covered_civ_jzd",
+      "resourceName": "{FB219B49A448A8EA}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_transport_covered_CIV_JZD.et"
+    }
+  ]
 }
