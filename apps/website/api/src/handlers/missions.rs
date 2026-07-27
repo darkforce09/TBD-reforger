@@ -142,7 +142,7 @@ fn semver_build(s: &str) -> bool {
         .all(|id| !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-'))
 }
 
-// --- enum validators (mirror Go valid*; empty weather → clear) ---
+// --- enum validators (mirror Go valid*) ---
 
 fn valid_terrain(s: &str) -> Option<TerrainType> {
     match s {
@@ -160,13 +160,18 @@ fn valid_game_mode(s: &str) -> Option<GameMode> {
         _ => None,
     }
 }
-/// Weather enum for CREATE / PATCH. Blank is **not** Clear.
+/// Weather enum parse for CREATE / PATCH. Blank is **not** Clear.
 ///
 /// **T-377.** `"" | "clear"` used to coerce blank → `Clear`, so PATCH `{"weather":""}` silently
 /// rewrote a stored `dense_fog` to `clear` and answered 200. The compile/flatten path
 /// (`flatten::apply_authored_environment` / `WEATHER_PRESETS`) treats `""` as not-authored and
-/// keeps the row — the two halves disagreed. Dropping `""` from the clear arm makes both sides
-/// reject blank the same way: CREATE/PATCH → 400 `invalid weather`; compile → fall through to row.
+/// keeps the row — the two halves disagreed. Dropping `""` from the clear arm keeps PATCH
+/// rejecting blank (400 `invalid weather`) and compile falling through to the row.
+///
+/// **T-509.** CREATE is different: `CreateMissionInput.weather` is `#[serde(default)] String`, so
+/// an omitted JSON field deserializes as `""`. `create_mission` defaults that empty to
+/// `WeatherType::Clear` **before** calling this helper — the new-mission canonical default. This
+/// function itself must still return `None` for `""` so PATCH never silently rewrites.
 fn valid_weather(s: &str) -> Option<WeatherType> {
     match s {
         "clear" => Some(WeatherType::Clear),
@@ -483,8 +488,17 @@ pub async fn create_mission(
     let Some(mode) = valid_game_mode(&input.game_mode) else {
         return Err(ApiError::bad_request("invalid game_mode"));
     };
-    let Some(weather) = valid_weather(&input.weather) else {
-        return Err(ApiError::bad_request("invalid weather"));
+    // **T-509.** Omitted/empty weather → Clear (canonical new-mission default). `#[serde(default)]`
+    // turns a missing JSON field into `""`; feeding that to `valid_weather` after T-377 yields
+    // `None` → 400 `invalid weather` and cold-breaks `admin_field` (POST without weather). Explicit
+    // non-empty invalid strings still 400. PATCH keeps rejecting `""` via `valid_weather` alone.
+    let weather = if input.weather.is_empty() {
+        WeatherType::Clear
+    } else {
+        let Some(weather) = valid_weather(&input.weather) else {
+            return Err(ApiError::bad_request("invalid weather"));
+        };
+        weather
     };
     if input.max_players < 1 || input.max_players > 256 {
         return Err(ApiError::bad_request(
@@ -1974,11 +1988,10 @@ mod tests {
             helper.contains("\"clear\" => Some(WeatherType::Clear)"),
             "valid_weather must still accept the clear enum string"
         );
-        // Both writers must still go through valid_weather (create + PATCH).
+        // CREATE validates non-empty weather via valid_weather; empty is defaulted separately (T-509).
         assert!(
-            production.contains("valid_weather(&input.weather)")
-                || production.contains("let Some(weather) = valid_weather(&input.weather)"),
-            "create_mission must validate weather via valid_weather"
+            production.contains("valid_weather(&input.weather)"),
+            "create_mission must validate non-empty weather via valid_weather"
         );
         let update = production
             .split("pub async fn update_mission(")
@@ -1988,6 +2001,69 @@ mod tests {
         assert!(
             update.contains("valid_weather(w)"),
             "update_mission must validate weather via valid_weather"
+        );
+    }
+
+    /// T-509 Class-R: CREATE omitted/empty weather → `WeatherType::Clear` at the handler site.
+    ///
+    /// `CreateMissionInput.weather` is `#[serde(default)]`, so a missing JSON field is `""`.
+    /// After T-377, `valid_weather("")` is `None` — without this default, POST without weather
+    /// 400s and cold-breaks `admin_field` (unwrap on None id).
+    ///
+    /// RED: delete the `input.weather.is_empty() { WeatherType::Clear }` arm — this pin fails.
+    #[test]
+    fn create_mission_empty_weather_defaults_to_clear() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        let create = production
+            .split("pub async fn create_mission(")
+            .nth(1)
+            .and_then(|s| s.split("pub async fn").next())
+            .expect("create_mission body");
+        assert!(
+            create.contains("input.weather.is_empty()"),
+            "create_mission must treat empty/omitted weather as the Clear default (T-509); got:\n{create}"
+        );
+        assert!(
+            create.contains("WeatherType::Clear"),
+            "create_mission empty-weather arm must bind WeatherType::Clear"
+        );
+        // Must still refuse explicit garbage (not only default empty).
+        assert!(
+            create.contains("invalid weather"),
+            "create_mission must still 400 on explicit invalid weather strings"
+        );
+    }
+
+    /// T-509 Class-R: PATCH blank weather stays rejected — no empty→Clear on update.
+    ///
+    /// RED: add `if w.is_empty() { WeatherType::Clear }` in update_mission — this pin fails.
+    #[test]
+    fn update_mission_has_no_empty_weather_clear_default() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        let update = production
+            .split("pub async fn update_mission(")
+            .nth(1)
+            .and_then(|s| s.split("pub async fn").next())
+            .expect("update_mission body");
+        assert!(
+            update.contains("valid_weather(w)"),
+            "update_mission must still validate via valid_weather"
+        );
+        assert!(
+            !update.contains("WeatherType::Clear"),
+            "update_mission must not default blank weather to Clear (T-377 PATCH contract); got:\n{update}"
+        );
+        assert!(
+            !update.contains("w.is_empty()"),
+            "update_mission must not special-case empty weather as Clear"
         );
     }
 }
