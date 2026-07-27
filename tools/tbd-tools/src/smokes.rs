@@ -3441,7 +3441,10 @@ mod assert_js_ok_tests {
     #[test]
     fn pass_false_object_fails() {
         let v = json!({"pass": false, "failed": ["W1_reached_editor", "THROWN"]});
-        assert!(!assert_js_ok(&v), "pre-T-386 truthiness treated this as pass");
+        assert!(
+            !assert_js_ok(&v),
+            "pre-T-386 truthiness treated this as pass"
+        );
         assert_eq!(to_code(assert_js_ok(&v)), 1);
     }
 
