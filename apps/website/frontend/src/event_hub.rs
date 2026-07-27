@@ -1,6 +1,6 @@
 //! Event Hub (/events/:id) — ported from pages/events.tsx `EventHubPage` + `EventHubView` +
 //! `MissionDossier` + the shared `OrbatSelector`. `<AuthGate>` → `useEvent(id)` → `GET /events/:id`
-//! → a topo-glass hero (name, T-MINUS countdown, datetime, TS3 + current-modpack link) + per-mission
+//! → a topo-glass hero (name, T-MINUS countdown, datetime, TS3 + event-bound modpack link) + per-mission
 //! dossiers (the mission's briefing, faction dossiers, inline ORBAT selector).
 //!
 //! T-159.25: the FULL interactive surface is live — my_state badge, faction dossiers
@@ -177,19 +177,51 @@ fn hub_shell(ev: EventHub, on_change: Callback<()>) -> impl IntoView {
     }
 }
 
+/// T-442 — Hub chip fetch target. Event-bound `modpack_id` wins; `/modpacks/current` only
+/// when null/absent/blank. `ById` is resolved via `GET /modpacks` + select (no public
+/// GET-by-id route; list is the equivalent).
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum HubModpackFetch {
+    ById(String),
+    Current,
+}
+
+fn hub_modpack_fetch(modpack_id: Option<&str>) -> HubModpackFetch {
+    match modpack_id.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(id) => HubModpackFetch::ById(id.to_string()),
+        None => HubModpackFetch::Current,
+    }
+}
+
 fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl IntoView {
     let store = expect_context::<crate::auth::AuthStore>();
-    let modpack = LocalResource::new(move || async move {
-        #[cfg(target_arch = "wasm32")]
-        {
-            crate::client::api_get::<ModpackDto>(store, "/modpacks/current")
-                .await
-                .ok()
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            let _ = store;
-            None::<ModpackDto>
+    let event_modpack_id = ev.modpack_id.clone();
+    let modpack = LocalResource::new(move || {
+        let event_modpack_id = event_modpack_id.clone();
+        async move {
+            #[cfg(target_arch = "wasm32")]
+            {
+                match hub_modpack_fetch(event_modpack_id.as_deref()) {
+                    HubModpackFetch::ById(id) => {
+                        match crate::client::api_get::<DataEnvelope<ModpackDto>>(store, "/modpacks")
+                            .await
+                        {
+                            Ok(env) => env.data.into_iter().find(|mp| mp.modpack.id == id),
+                            Err(_) => None,
+                        }
+                    }
+                    HubModpackFetch::Current => {
+                        crate::client::api_get::<ModpackDto>(store, "/modpacks/current")
+                            .await
+                            .ok()
+                    }
+                }
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                let _ = (store, event_modpack_id);
+                None::<ModpackDto>
+            }
         }
     });
     let name = ev
@@ -1675,6 +1707,44 @@ mod tests {
 
     fn collapse_ws(s: &str) -> String {
         s.split_whitespace().collect::<Vec<_>>().join(" ")
+    }
+
+    /// T-442 Class-R — Hub chip must prefer `event.modpack_id` when set; unconditional-only
+    /// `GET /modpacks/current` as the sole fetch is the pre-fix defect.
+    #[test]
+    fn hub_chip_prefers_event_modpack_id() {
+        assert_eq!(
+            hub_modpack_fetch(Some("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee")),
+            HubModpackFetch::ById("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee".into())
+        );
+        assert_eq!(hub_modpack_fetch(None), HubModpackFetch::Current);
+        assert_eq!(hub_modpack_fetch(Some("")), HubModpackFetch::Current);
+        assert_eq!(hub_modpack_fetch(Some("  \t")), HubModpackFetch::Current);
+
+        const SRC: &str = include_str!("event_hub.rs");
+        let production = SRC
+            .split("mod tests {")
+            .next()
+            .expect("tests module marker");
+        let code = collapse_ws(&strip_rust_comments(production));
+        assert!(
+            code.contains("hub_modpack_fetch(event_modpack_id.as_deref())"),
+            "Hub chip must route the event's modpack_id through hub_modpack_fetch"
+        );
+        assert!(
+            code.contains("HubModpackFetch::ById") && code.contains("HubModpackFetch::Current"),
+            "both ById (event modpack) and Current (fallback) arms must exist in production"
+        );
+        // Ban pre-T-442 defect: the only modpack URL in the chip path is /modpacks/current.
+        // ById uses the list envelope (GET /modpacks) — not a substring of /modpacks/current.
+        assert!(
+            code.contains("api_get::<DataEnvelope<ModpackDto>>(store, \"/modpacks\")"),
+            "event-bound path must hit GET /modpacks (list equivalent of /modpacks/:id)"
+        );
+        assert!(
+            code.contains("\"/modpacks/current\""),
+            "null/absent modpack_id must still fall back to /modpacks/current"
+        );
     }
 
     /// T-454 / T-457 Class-R — ORBAT reserve/release/assign must not use browse-mode

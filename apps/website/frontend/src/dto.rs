@@ -885,6 +885,9 @@ pub struct EventMissionDossier {
 /// `GET /events/:id` → the Event Hub (backend `eventHub`): the event container + nested mission
 /// dossiers. `created_at`/`created_by`/`updated_at` are on the wire (not in the hand TS type) so they
 /// must be modeled for the R-api round-trip; the empty optionals round-trip absent.
+///
+/// `server_id` / `modpack_id` (T-260 / migration 0011) are omitted when unset — Hub chip prefers
+/// `modpack_id` over global `/modpacks/current` (T-442).
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct EventHub {
@@ -903,6 +906,12 @@ pub struct EventHub {
     pub briefing: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub banner_image_url: Option<String>,
+    /// Game server this operation is scheduled on (T-260). Absent when unset.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server_id: Option<String>,
+    /// Modpack this operation requires (T-260). Absent when unset — Hub falls back to current.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub modpack_id: Option<String>,
 }
 
 /// The doc's terrain + environment fields, for the Mission Settings dialog. Pure data (no wasm
