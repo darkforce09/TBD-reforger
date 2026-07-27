@@ -13232,7 +13232,7 @@
         "api",
         "frontend"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3345,
       "stream": "web-platform",
       "targets": [
@@ -13365,7 +13365,7 @@
         "website",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3351,
       "stream": "web-platform",
       "targets": [
@@ -13454,7 +13454,7 @@
         "infra",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3355,
       "stream": "web-platform",
       "targets": [
@@ -13607,7 +13607,7 @@
         "tests",
         "mission-creator"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3362,
       "stream": "web-platform",
       "targets": [
@@ -13630,7 +13630,7 @@
         "ci",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3363,
       "stream": "web-platform",
       "targets": [
@@ -13697,7 +13697,7 @@
         "frontend",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3366,
       "stream": "web-platform",
       "targets": [
