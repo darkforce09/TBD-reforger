@@ -1267,7 +1267,11 @@ fn apply_flatten_orbat_slots(mission: &mut Value, context: &str) -> Result<usize
     Ok(n)
 }
 
-pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
+/// CLI body shared by `--in-place` and stdout: read → apply → return mission.
+///
+/// No post-apply `schemaVersion` mutation lives here or in [`flatten_orbat_slots`] —
+/// preserve/default stamping is solely inside [`apply_flatten_orbat_slots`] (T-538/T-539).
+fn flatten_orbat_slots_mission(path: &str, in_place: bool) -> Result<(PathBuf, Value, usize)> {
     let file = PathBuf::from(path);
     let mut mission = read_json(&file)?;
     let context = if in_place {
@@ -1276,14 +1280,57 @@ pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
         format!("flatten-orbat-slots (stdout) {}", file.display())
     };
     let n = apply_flatten_orbat_slots(&mut mission, &context)?;
+    Ok((file, mission, n))
+}
+
+pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
+    let (file, mission, n) = flatten_orbat_slots_mission(path, in_place)?;
     let out = serde_json::to_string_pretty(&mission)? + "\n";
     if in_place {
         fs::write(&file, out)?;
         println!("Wrote {n} slots to {}", file.display());
     } else {
+        // T-539: tests may capture this exact stdout emission (not apply_* alone).
+        #[cfg(test)]
+        {
+            let captured = flatten_stdout_capture_buf(|buf| {
+                if let Some(b) = buf.as_mut() {
+                    b.push_str(&out);
+                    true
+                } else {
+                    false
+                }
+            });
+            if captured {
+                return Ok(0);
+            }
+        }
         print!("{out}");
     }
     Ok(0)
+}
+
+#[cfg(test)]
+thread_local! {
+    /// When `Some`, stdout flatten writes here instead of `print!` so Class-R can pin
+    /// `flatten_orbat_slots(..., false)` without forking the process.
+    static FLATTEN_STDOUT_CAPTURE: std::cell::RefCell<Option<String>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+fn flatten_stdout_capture_buf<R>(f: impl FnOnce(&mut Option<String>) -> R) -> R {
+    FLATTEN_STDOUT_CAPTURE.with(|c| f(&mut c.borrow_mut()))
+}
+
+/// Run the real stdout CLI entrypoint (`in_place=false`) and parse emitted JSON.
+#[cfg(test)]
+fn flatten_stdout_json(path: &str) -> Result<Value> {
+    flatten_stdout_capture_buf(|b| *b = Some(String::new()));
+    let run = flatten_orbat_slots(path, false);
+    let buf = flatten_stdout_capture_buf(|b| b.take().unwrap_or_default());
+    run?;
+    Ok(serde_json::from_str(&buf)?)
 }
 
 /* ────────────────── kit alias ↔ spawn registry cross-reference (T-181.34/.36) ────────────────── */
@@ -2740,17 +2787,29 @@ mod tests {
         assert_eq!(before, fs::read_to_string(&path).unwrap());
     }
 
-    // ─── T-538: stdout path shares preserve/refuse (not a silent lossy preview) ───
+    // ─── T-538 / T-539: stdout path shares preserve/refuse (not a silent lossy preview) ───
+    //
+    // T-539 MAJOR: preserve Class-R must pin `flatten_orbat_slots(..., false)` (stdout
+    // entrypoint), NOT `apply_flatten_orbat_slots` alone. A post-apply stdout-only
+    // `mission["schemaVersion"] = "1.1"` stamp must RED these pins.
 
     #[test]
     fn flatten_stdout_preserves_loadout_uid_and_schema() {
-        let mut m = mission_with_prior_loadout_uid();
-        apply_flatten_orbat_slots(&mut m, "flatten-orbat-slots (stdout) probe")
-            .expect("stdout transform must succeed");
+        let path = write_temp_mission("stdout-preserve.json", &mission_with_prior_loadout_uid());
+        let m =
+            flatten_stdout_json(path.to_str().unwrap()).expect("stdout entrypoint must succeed");
         assert_eq!(m["schemaVersion"], "1.1");
         let slot = &m["slots"][0];
         assert_eq!(slot["uid"], "keep-me");
         assert_eq!(slot["loadout"]["gear"]["primary"], "Rifle.et");
+        // File untouched on stdout path.
+        let on_disk: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(on_disk["slots"][0]["uid"], "keep-me");
+        assert_eq!(
+            on_disk["slots"][0]["x"],
+            mission_with_prior_loadout_uid()["slots"][0]["x"],
+            "stdout must not rewrite the input file"
+        );
     }
 
     #[test]
@@ -2758,12 +2817,74 @@ mod tests {
         let mut m = mission_with_prior_loadout_uid();
         m["schemaVersion"] = json!("1.0");
         m["slots"] = json!([]);
-        apply_flatten_orbat_slots(&mut m, "flatten-orbat-slots (stdout) probe").expect("ok");
+        let path = write_temp_mission("stdout-sv10.json", &m);
+        let after =
+            flatten_stdout_json(path.to_str().unwrap()).expect("stdout entrypoint must succeed");
         assert_eq!(
-            m["schemaVersion"], "1.0",
-            "stdout must not force-stamp schemaVersion 1.1 over deliberate 1.0"
+            after["schemaVersion"], "1.0",
+            "stdout entrypoint must not force-stamp schemaVersion 1.1 over deliberate 1.0"
         );
-        assert!(m["slots"].as_array().unwrap().len() >= 1);
+        assert!(after["slots"].as_array().unwrap().len() >= 1);
+    }
+
+    /// Defense-in-depth: apply-level still covered, but must not be the only stdout pin (T-539).
+    #[test]
+    fn flatten_apply_preserves_schema_version_1_0_defense() {
+        let mut m = mission_with_prior_loadout_uid();
+        m["schemaVersion"] = json!("1.0");
+        m["slots"] = json!([]);
+        apply_flatten_orbat_slots(&mut m, "flatten-orbat-slots (stdout) probe").expect("ok");
+        assert_eq!(m["schemaVersion"], "1.0");
+    }
+
+    /// Source ratchet: `flatten_orbat_slots` / mission body must not reassign schemaVersion
+    /// after `apply_flatten_orbat_slots` (exact pre-T-538 bug shape on the stdout branch).
+    #[test]
+    fn flatten_orbat_slots_no_post_apply_schema_reassign_source_ratchet() {
+        let src_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/schema_gates.rs");
+        let src = fs::read_to_string(&src_path).expect("read schema_gates.rs");
+
+        // Public CLI entrypoint: no schemaVersion token at all (I/O only after mission helper).
+        let pub_start = src
+            .find("pub fn flatten_orbat_slots(")
+            .expect("pub flatten_orbat_slots");
+        let pub_rest = &src[pub_start..];
+        let pub_end = pub_rest[1..]
+            .find("\n#[cfg(test)]")
+            .or_else(|| pub_rest[1..].find("\npub fn "))
+            .or_else(|| pub_rest[1..].find("\n/* "))
+            .expect("end of pub flatten_orbat_slots")
+            + 1;
+        let pub_fn = &pub_rest[..pub_end];
+        assert!(
+            !pub_fn.contains("schemaVersion"),
+            "T-539: pub flatten_orbat_slots must not mention schemaVersion \
+             (post-apply stamp belongs nowhere on the CLI entrypoint)"
+        );
+        assert!(
+            pub_fn.contains("flatten_orbat_slots_mission"),
+            "T-539: pub flatten_orbat_slots must delegate to flatten_orbat_slots_mission"
+        );
+
+        // Mission helper: after the apply call, no further schemaVersion assignment.
+        let body_start = src
+            .find("fn flatten_orbat_slots_mission(")
+            .expect("flatten_orbat_slots_mission");
+        let body_rest = &src[body_start..];
+        let body_end = body_rest[1..]
+            .find("\npub fn flatten_orbat_slots(")
+            .expect("end of mission helper")
+            + 1;
+        let body_fn = &body_rest[..body_end];
+        let apply_at = body_fn
+            .find("apply_flatten_orbat_slots")
+            .expect("mission helper calls apply");
+        let after_apply = &body_fn[apply_at + "apply_flatten_orbat_slots".len()..];
+        assert!(
+            !after_apply.contains("schemaVersion"),
+            "T-539: flatten_orbat_slots_mission must not reassign schemaVersion after apply \
+             (stdout-only stamp is the pre-T-538 / T-539 defect)"
+        );
     }
 
     #[test]
