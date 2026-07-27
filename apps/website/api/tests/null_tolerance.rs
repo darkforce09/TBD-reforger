@@ -173,39 +173,26 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
 /// Keyed by file, not `file:line`, so an unrelated edit above the defect does not break it.
 /// Do not add entries for files you own. Fix those.
 const KNOWN_OPEN: &[(&str, &str, &str)] = &[
-    // T-340 pruned the two `src/handlers/events.rs` entries (`briefing`, `thumbnail_url`) that
-    // stood here: the Event Hub's mission-dossier read now coalesces both, so the scan no longer
-    // finds them and a tolerance entry would be indistinguishable from no fix on the next run.
-    // UNFILED (found by T-329): `SELECT event_registrations.*` — the same bare-`*` shape as the
-    // T-329 dashboard bug, in the file the ticket held up as the correct example. Benign *today*
-    // only because `event_registrations`' one nullable column (`slot_id`) happens to map to an
-    // `Option<Uuid>` field; one nullable column added to that table makes it the live bug.
-    // `SELECT event_registrations.*` at deployments.rs:76 — the identical bare-`*` shape that made
-    // dashboard.rs 500 in production, sitting in the very file every other read site was told to
-    // copy. Benign only because `slot_id` HAPPENS to be Option<Uuid> today; the next nullable column
-    // on that table makes it a live 500 with no warning. Filed as T-341 (was "unfiled" when T-329
-    // wrote this line).
-    ("src/handlers/deployments.rs", "*", "T-341 — open"),
     // EMPTY, and that is the point. Every entry this list ever held has been fixed rather than
     // tolerated: T-329 (dashboard.rs bare `*`), T-330 (approvals.rs updated_at), T-340
-    // (events.rs briefing + thumbnail_url). The last two were pruned at merge by the command
-    // center, because each slice's own base predated the sibling fix that made its entry inert.
-    // BASELINE_CAP is now 0, so the next entry cannot be added without raising it in a diff.
+    // (events.rs briefing + thumbnail_url), T-341 (deployments.rs bare `event_registrations.*`).
+    // T-531 pruned the last inert T-341 tolerance row once the scan stopped finding it.
+    // BASELINE_CAP is 0, so the next entry cannot be added without raising it in a diff.
 ];
 
 /// Ceiling on [`KNOWN_OPEN`] + [`KNOWN_OPEN_ROUTES`]. The teeth behind a tolerance list: entries
 /// can go inert harmlessly, but nobody can add one without raising this number deliberately, in a
 /// diff a reviewer sees.
 ///
-/// **One, as of the T-340 merge**, down from six. The only surviving entry is T-341
-/// (`deployments.rs` bare `*`); the rest were fixed rather than tolerated — T-329 (dashboard bare
-/// `*`), T-330 (approvals `updated_at`), T-340 (events `briefing` + `thumbnail_url`), the last two
-/// pruned at merge because each slice's own base predated the sibling fix that made its entry inert.
+/// **Zero, as of T-531** (after T-341 closed the last open defect). Down from six → one (T-340
+/// merge left only the T-341 `deployments.rs` bare `*` row) → **0** once T-341 shipped and T-531
+/// pruned the stale tolerance. The rest were fixed rather than tolerated — T-329 (dashboard bare
+/// `*`), T-330 (approvals `updated_at`), T-340 (events `briefing` + `thumbnail_url`).
 ///
-/// Leaving the cap at 6 would have been five slots of silent slack in the one suite whose whole
-/// purpose is to stop this bug class hiding — which is exactly the failure mode T-329 documented
-/// when it found the previous version passing vacuously. **T-341 takes this to 0.**
-const BASELINE_CAP: usize = 1;
+/// Leaving the cap above 0 would re-open silent slack in the one suite whose whole purpose is to
+/// stop this bug class hiding — which is exactly the failure mode T-329 documented when it found
+/// the previous version passing vacuously.
+const BASELINE_CAP: usize = 0;
 
 /// Routes that 5xx under the NULL blast because of a defect owned by **another ticket** — the
 /// behavioural mirror of [`KNOWN_OPEN`], with the same shrinking-baseline semantics: each entry
@@ -1048,10 +1035,17 @@ async fn approvals_queue_reports_an_honest_submitted_at_over_null_timestamps() {
 /// silently escape this file. No database needed.
 #[test]
 fn every_get_route_is_swept_or_skipped_with_a_reason() {
-    // The teeth behind the tolerance lists: they may go inert, but they may not grow unnoticed.
+    // T-531 Class-R pins: after T-341 closed the last defect, both the tolerance list and its
+    // ceiling stay at zero. Re-adding an entry *or* bumping the cap without a deliberate ticket
+    // must RED. With BASELINE_CAP pinned at 0, `baseline <= BASELINE_CAP` is identical to
+    // `baseline == 0` (and clippy::absurd_extreme_comparisons denies the `<=` form).
+    assert_eq!(
+        BASELINE_CAP, 0,
+        "T-531: BASELINE_CAP must remain 0 — raising it re-opens silent tolerance slack"
+    );
     let baseline = KNOWN_OPEN.len() + KNOWN_OPEN_ROUTES.len();
-    assert!(
-        baseline <= BASELINE_CAP,
+    assert_eq!(
+        baseline, BASELINE_CAP,
         "KNOWN_OPEN + KNOWN_OPEN_ROUTES hold {baseline} entries, over BASELINE_CAP of \
          {BASELINE_CAP}. Fix the defect, or raise the cap deliberately so a reviewer sees it."
     );
