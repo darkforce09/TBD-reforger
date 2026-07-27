@@ -11232,7 +11232,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3232,
       "stream": "web-platform",
       "targets": [
@@ -11516,7 +11516,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3264,
       "stream": "web-platform",
       "targets": [
@@ -11558,7 +11558,7 @@
         "mission-creator",
         "perf"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3266,
       "stream": "web-platform",
       "targets": [
@@ -12893,6 +12893,49 @@
       ],
       "executor": "claude-code",
       "priority": 1
+    },
+    {
+      "id": "T-490",
+      "title": "T-411 gate DB wave stuck on plan wave 3 while deferred tickets remain",
+      "summary": "Wave 35 adversarial MAJOR. gate_wave_number() falls back to current_wave() = lowest plan wave with any ticket status not in {shipped,cancelled}. Wave 3 still has deferred T-397/400/403/410/412–414 (+ was T-411), so default IT DB is permanently tbd_gate_w3 for every gate until those clear. Factory packing waves (30–35) do not advance N. Residue isolation fails on the default path; only TBD_GATE_WAVE / TBD_GATE_DB escape (cold gates used tbd_wave35_cold). Prune keep N/N-1 is correct when N advances.\n\nRepro:\n  unset TBD_GATE_DB TBD_GATE_WAVE TEST_DATABASE_URL\n  bash -c 'source scripts/platform/wave.sh; gate_wave_number'  # or invoke ensure_gate_db path\n  # observes 3 forever while wave-3 deferreds exist\n\nCure: do not key default N solely on current_wave() while deferred residue can pin an old plan wave. Prefer (1) TBD_GATE_WAVE, (2) committed packing counter docs/platform/factory_pack_wave (integer; command center bumps on promote), (3) only then current_wave(). Seed factory_pack_wave to 35. Keep prune last-two + operator URL overrides.",
+      "program": "platform",
+      "surfaces": [
+        "CI",
+        "INFRA"
+      ],
+      "impact": [
+        "infra",
+        "tests"
+      ],
+      "status": "shipped",
+      "order": 3329,
+      "stream": "web-platform",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-491",
+      "title": "T-425 mixed slot+vehicle drag commits two undo txns; pick/marquee untested",
+      "summary": "Wave 35 adversarial MAJOR (deferred). mission_editor Move commit calls move_entities(slots) then move_vehicles(vehs) — each its own yrs txn — so one mixed gesture needs two Ctrl+Z. New pick_slot_or_vehicle / marquee_* helpers have no unit tests (only flatten/kit Class-R). Vehicle drag also skips GPU set_drag preview (slots only).\n\nRepro: select one slot + one vehicle, drag, undo once — only one kind moves back.\n\nCure: single atomic move for mixed selection (one txn) + Class-R tests on pick/marquee helpers; optional vehicle drag preview.",
+      "program": "platform",
+      "surfaces": [
+        "tests"
+      ],
+      "impact": [
+        "website",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3330,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }

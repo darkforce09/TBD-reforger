@@ -2065,7 +2065,7 @@ apps/website/api/tests/missions.rs:1002 `mission_submit_is_the_only_door_into_th
     panicked at apps/website/api/tests/missions.rs:1002
     submitted mission missing from GET /approvals: {... "limit":20,"offset":0,"total":26}
 T-399's sweep caught missions.rs:151 and :249 but MISSED this one. Every wave gate on this machine is red against the shared DB until the residue clears or the test paginates; waves 3, 4 and 5 all passed only because the command center pointed TBD_GATE_DB at a fresh cold database each time. That workaround is exactly why T-411 (per-wave DB names) matters. |
-| T-411 | 3232 | ready | platform | Nothing resets the gate database -- per-wave DB names, not a periodic reset | T-399 fixed one ratchet; this is the mechanism that guarantees the class recurs. ensure_gate_db (scripts/platform/wave.sh:~93-105 pre-T-406) deliberately never drops tbd_gate_it for speed, so every suite's residue accumulates forever. T-406 was dispatched over that same file in wave 3 and EXPLICITLY DID NOT add a reset -- it scoped finding 6 down to asserting the flock invariant instead, and said so. So this is unowned and unreconciled by design, not by oversight.
+| T-411 | 3232 | shipped | platform | Nothing resets the gate database -- per-wave DB names, not a periodic reset | T-399 fixed one ratchet; this is the mechanism that guarantees the class recurs. ensure_gate_db (scripts/platform/wave.sh:~93-105 pre-T-406) deliberately never drops tbd_gate_it for speed, so every suite's residue accumulates forever. T-406 was dispatched over that same file in wave 3 and EXPLICITLY DID NOT add a reset -- it scoped finding 6 down to asserting the flock invariant instead, and said so. So this is unowned and unreconciled by design, not by oversight.
 
 RECOMMENDATION from T-399's agent, whose reasoning the command center endorses: per-wave database NAMES, not a periodic reset.
   A periodic reset is a SCHEDULED fix to an UNSCHEDULED problem. It makes the ratchet intermittent instead of permanent, which is strictly WORSE for diagnosis -- a suite that fails only on runs 21-40 of a cycle reads exactly like a flake, and this program's most expensive failure mode is a false-red that sends an agent hunting through its own diff. It also cannot be reasoned about at the moment a gate goes red, because 'how dirty is it right now' is not knowable from the verdict.
@@ -2249,7 +2249,7 @@ MEASURED CURRENT STATE: `grep -c 'test result: ok\. 0 passed'` across a full run
 CURE: a wrapper asserting `passed >= 1` per line. T-216 judged it a third structural change to that file and deliberately left it -- correctly, it belongs here.
 
 CONTEXT: this is the third gate-integrity defect found in that one script this wave. The other two are FIXED and shipped in wave 5 -- `--features doc` not enabling `mission` (the script had not compiled since T-344, so sections C/D/G/I and the whole frontend block never ran), and three static bans in `if rg ...; then fail; fi` form that printed OK when `rg` was absent from the host. Both now green: `verify-t180: ALL PASS`, rc=0, end to end, verified independently. |
-| T-425 | 3264 | ready | platform | T-215's vehicle placement: the alias table flatten needs, and four authoring gaps it disclosed | Residue of wave 5's T-215, which shipped real vehicle map placement (position, faction, cargo) with a proven save/reload round trip. All of the below is disclosed by the agent or the verifier, none of it is a regression.
+| T-425 | 3264 | shipped | platform | T-215's vehicle placement: the alias table flatten needs, and four authoring gaps it disclosed | Residue of wave 5's T-215, which shipped real vehicle map placement (position, faction, cargo) with a proven save/reload round trip. All of the below is disclosed by the agent or the verifier, none of it is a regression.
 
 1. BLOCKS THE EMISSION PATH -- there is no ResourceName -> `veh:` alias table. `$defs/entity.alias` is `^(kit\|comp\|veh\|preset\|layer\|prop\|item):[a-z0-9_]+$`, a REGISTRY ALIAS, not a ResourceName. `kit-aliases.json` maps characters to `kit:` only; the sole `veh:m151_mg` in the repo is hardcoded in two sample files. Flatten cannot emit a valid `entity.alias` for T-215's rows until a table mirroring kit-aliases.json's shape exists. Mapping ResourceName->alias without one would drop every vehicle but m151_mg, or substitute a different one -- the T-200 silent-substitution defect with a vehicle instead of a rifleman.
 
@@ -2275,7 +2275,7 @@ CONFIRMED SOUND, do not re-audit: T-215's design call that a map-placed vehicle 
      target-gate-check     3.0 GB   (new, T-421, after --all-targets clippy)
    Disk is at 91% (93 GB free) and the private-dir pattern is now the established answer to artifact isolation, so this set will keep growing. `reclaim` reporting '0 MB reclaimed' while 15 GB of gate caches sit at the repo root is itself a mild instance of the house defect -- a tool reporting completeness over a set it never looked at.
    Deliberate design tension to resolve rather than paper over: these dirs are EXPENSIVE TO REBUILD and being warm is the entire reason they are affordable (T-421 measured cold 23.4s vs warm 9.3s for the slice gate). So the answer is probably an explicit `reclaim --gate-dirs` opt-in, or an age-based sweep, NOT adding them to the default sweep. |
-| T-427 | 3266 | ready | platform | Paginate or slim GET /registry and /registry/compat for editor first open | Follow-on from T-245 (wave 6). T-245 session-caches registry+compat so editor REMOUNTS skip the ~7MB dual fetch, but the first SPA open in a session still GETs both unpaginated endpoints and walks all compat edges for cargo_defaults_by_character.
+| T-427 | 3266 | shipped | platform | Paginate or slim GET /registry and /registry/compat for editor first open | Follow-on from T-245 (wave 6). T-245 session-caches registry+compat so editor REMOUNTS skip the ~7MB dual fetch, but the first SPA open in a session still GETs both unpaginated endpoints and walks all compat edges for cargo_defaults_by_character.
 
 Repro: cold-load /missions/:id/edit; Network shows full GET /api/v1/registry and /api/v1/registry/compat (~1.8k items / ~20k edges). Remount within the same wasm session does not re-fetch (covered by t245_registry_session).
 
@@ -2627,6 +2627,19 @@ Repro:
   bash scripts/mod/verify-t468-ci-schema-parity.sh  # FAIL pin
 
 Cure: ci.yml step + Makefile ci-local must invoke `bash scripts/mod/verify-t468-ci-schema-parity.sh` directly (not $(MAKE) verify-t468). Keep Makefile target for humans. Update comments on circularity. Also fix .env.example attribution: ROLE_RESYNC comment says T-488 but feature is T-428 (verifier MINOR). |
+| T-490 | 3329 | shipped | platform | T-411 gate DB wave stuck on plan wave 3 while deferred tickets remain | Wave 35 adversarial MAJOR. gate_wave_number() falls back to current_wave() = lowest plan wave with any ticket status not in {shipped,cancelled}. Wave 3 still has deferred T-397/400/403/410/412–414 (+ was T-411), so default IT DB is permanently tbd_gate_w3 for every gate until those clear. Factory packing waves (30–35) do not advance N. Residue isolation fails on the default path; only TBD_GATE_WAVE / TBD_GATE_DB escape (cold gates used tbd_wave35_cold). Prune keep N/N-1 is correct when N advances.
+
+Repro:
+  unset TBD_GATE_DB TBD_GATE_WAVE TEST_DATABASE_URL
+  bash -c 'source scripts/platform/wave.sh; gate_wave_number'  # or invoke ensure_gate_db path
+  # observes 3 forever while wave-3 deferreds exist
+
+Cure: do not key default N solely on current_wave() while deferred residue can pin an old plan wave. Prefer (1) TBD_GATE_WAVE, (2) committed packing counter docs/platform/factory_pack_wave (integer; command center bumps on promote), (3) only then current_wave(). Seed factory_pack_wave to 35. Keep prune last-two + operator URL overrides. |
+| T-491 | 3330 | deferred | platform | T-425 mixed slot+vehicle drag commits two undo txns; pick/marquee untested | Wave 35 adversarial MAJOR (deferred). mission_editor Move commit calls move_entities(slots) then move_vehicles(vehs) — each its own yrs txn — so one mixed gesture needs two Ctrl+Z. New pick_slot_or_vehicle / marquee_* helpers have no unit tests (only flatten/kit Class-R). Vehicle drag also skips GPU set_drag preview (slots only).
+
+Repro: select one slot + one vehicle, drag, undo once — only one kind moves back.
+
+Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/marquee helpers; optional vehicle drag preview. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

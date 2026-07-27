@@ -225,7 +225,7 @@
 6	T-422	gate_schema: wrongly-excluded green gate, narrowing tripwire, incomplete stamp	scripts/platform/wave.sh
 6	T-423	T-216 contract-floor test cannot detect a floor rename	crates/map-engine-core/src/mission/flatten.rs
 6	T-424	cargo test selectors matching zero tests exit 0	scripts/verify-t180-coherency.sh
-6	T-425	Vehicle alias table plus T-215 authoring gaps	apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/select_tool.rs; packages/tbd-schema/registry/kit-aliases.json; crates/map-engine-core/src/mission/flatten.rs
+6	T-425	Vehicle alias table plus T-215 authoring gaps	apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/mission_editor.rs; packages/tbd-schema/registry/kit-aliases.json; crates/map-engine-core/src/mission/flatten.rs; crates/map-engine-core/src/mission/kit.rs; crates/map-engine-core/src/doc/store.rs
 6	T-426	Gate isolation residue: include_str inputs and unreclaimable gate dirs	scripts/platform/wave.sh
 99	T-427	Paginate or slim GET /registry and /registry/compat for editor first open	apps/website/api/src/handlers/registry.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/dto.rs
 99	T-428	Schedule Discord role resync; replace placeholder leader snowflake in seed	apps/website/api/src/services/role_sync.rs; apps/website/api/seeds/discord_roles.sql; apps/website/api/src/bin/api.rs
@@ -288,3 +288,5 @@
 99	T-487	Seed DELETE orphan Squad Leader placeholder	apps/website/api/seeds/discord_roles.sql
 99	T-488	Document ROLE_RESYNC_INTERVAL_SECS in .env.example	apps/website/api/.env.example
 99	T-489	Break T-486 circular verify-t468 self-pin (direct bash CI)	Makefile; .github/workflows/ci.yml; scripts/mod/verify-t468-ci-schema-parity.sh; apps/website/api/.env.example
+99	T-490	T-411 sticky gate DB on plan wave 3	scripts/platform/wave.sh; docs/platform/factory_pack_wave
+99	T-491	T-425 mixed drag two undo txns + untested pick/marquee	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; crates/map-engine-core/src/doc/store.rs
