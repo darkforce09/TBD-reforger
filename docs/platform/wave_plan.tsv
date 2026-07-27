@@ -93,7 +93,7 @@
 0	T-356	The other side of the armory join has the identical defect, still open	crates/map-engine-core/src/mission/orbat.rs; apps/website/api/src/handlers/events.rs
 0	T-353	Four SPA gaps T-232 could not reach from its own files	apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/router.rs; apps/website/frontend/src/datefmt.rs
 0	T-364	COALESCE-on-None admits a third state, and a body-only PATCH leaves the snippet stale	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/handlers/cms.rs
-47	T-350	Four sites report an identity as linked when it is whitespace	apps/website/api/src/handlers/auth.rs; apps/website/api/src/handlers/oauth.rs; apps/website/api/src/handlers/deployments.rs
+47	T-350	Four sites report an identity as linked when it is whitespace	apps/website/api/src/handlers/auth.rs; apps/website/api/src/handlers/oauth.rs; apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/t350_whitespace_linked.rs
 0	T-351	Nothing pins the arma_id trim, and legacy whitespace rows are still in the tables	apps/website/api/tests/identity_link.rs; apps/website/api/migrations
 0	T-342	Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt	apps/website/frontend/src/personnel.rs
 0	T-339	Two gate-harness gaps T-320 could not reach from its own files	tools/tbd-tools/src/cdp.rs; tools/tbd-tools/src/bin/gate.rs; tools/tbd-tools/src/vsuite.rs
@@ -101,7 +101,7 @@
 0	T-355	An unparseable event_id silently becomes NULL and skips the attendance write	apps/website/api/src/handlers/telemetry.rs
 0	T-341	deployments.rs has a bare SELECT * and swallows decode errors, in the file held up as the good example	apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/dashboard_reads.rs
 0	T-335	One-off backfill for players who linked before T-326 shipped	apps/website/api/migrations
-47	T-332	PATCH /events/:id cannot clear a briefing or banner, and a mission cannot be re-attached	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
+47	T-332	PATCH /events/:id cannot clear a briefing or banner, and a mission cannot be re-attached	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs; apps/website/api/tests/events.rs
 0	T-333	Dialog installs a window-level Escape listener per instance, so Esc closes stacked dialogs	apps/website/frontend/src/ui.rs
 0	T-328	mcpd runs long-lived from the shared target dir	scripts/mod/mcp-daemon.sh
 0	T-336	recompute_user_stats belongs in services/, not private to the telemetry handler	apps/website/api/src/services; apps/website/api/src/handlers/telemetry.rs
@@ -326,6 +326,6 @@
 99	T-525	content_golden obsolete two-seat comments after T-511	apps/website/api/seeds/content_golden.sql
 46	T-526	W46 hotfix rustfmt mission_title_prefer after T-522	apps/website/frontend/src/mission_title_prefer.rs
 47	T-527	W47 hotfix rustfmt event_manager after T-332	apps/website/frontend/src/event_manager.rs
-47	T-528	W47 hotfix me.rs arma_linked whitespace after T-350	apps/website/api/src/handlers/me.rs
+47	T-528	W47 hotfix me.rs arma_linked whitespace after T-350	apps/website/api/src/handlers/me.rs; apps/website/api/tests/t528_me_whitespace_linked.rs
 99	T-529	events roster SQL whitespace arma_id no btrim	apps/website/api/src/handlers/events.rs
 99	T-530	T-332 Class-R partly pins doc comments	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
