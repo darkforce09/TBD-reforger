@@ -236,6 +236,20 @@ gate_wave_number() {
 
 # Drop tbd_gate_w* databases older than the last two waves (keep N and N-1). Only names matching
 # ^tbd_gate_w[0-9]+$ — never tbd_gate_it, tbd_gate_migrate, or operator TBD_GATE_DB names.
+#
+# T-534: the wave DB is no longer the only thing to reap. `cargo test -p website-api` now gives
+# each test BINARY its own database, derived as <base>_<suite>_it by
+# apps/website/api/tests/common/mod.rs (per_binary_database_name) — so one gate run against
+# tbd_gate_w60 also leaves tbd_gate_w60_admin_field_it, …_events_it, … 25 of them, measured.
+# They are dropped and recreated on every run, so they do not grow per run — but without this
+# they would accumulate 25 per WAVE forever, because the old `^tbd_gate_w[0-9]+$` pattern
+# matched none of them. The wave number is now parsed out of the leading segment so a derived
+# name is reaped with the wave it belongs to, on exactly the same keep-N-and-N-1 policy.
+#
+# The pattern is still anchored and still cannot name tbd_gate_it, tbd_gate_migrate or an
+# operator TBD_GATE_DB: it requires tbd_gate_w<digits> followed by end-of-name OR by a
+# _<suite>_it tail. Widening it further would put a DROP in reach of names this function was
+# never meant to touch — the header above is the contract, keep it narrow.
 prune_old_gate_wave_dbs() {
   local wave="$1"
   local keep_min=$((wave > 0 ? wave - 1 : 0))
@@ -246,13 +260,14 @@ prune_old_gate_wave_dbs() {
   local name n
   while IFS= read -r name; do
     [ -z "$name" ] && continue
-    n="${name#tbd_gate_w}"
-    [[ "$n" =~ ^[0-9]+$ ]] || continue
+    # tbd_gate_w60 -> 60; tbd_gate_w60_admin_field_it -> 60. Anything else is skipped.
+    [[ "$name" =~ ^tbd_gate_w([0-9]+)(_[a-z0-9_]+_it)?$ ]] || continue
+    n="${BASH_REMATCH[1]}"
     if [ "$n" -lt "$keep_min" ]; then
       echo "gate: dropping stale wave DB $name (current wave $wave; keeping w${keep_min}+)"
       $drop "DROP DATABASE IF EXISTS ${name} WITH (FORCE);" >/dev/null 2>&1 || true
     fi
-  done < <($list "SELECT datname FROM pg_database WHERE datname ~ '^tbd_gate_w[0-9]+$';" 2>/dev/null || true)
+  done < <($list "SELECT datname FROM pg_database WHERE datname ~ '^tbd_gate_w[0-9]+(_[a-z0-9_]+_it)?$';" 2>/dev/null || true)
 }
 
 ensure_gate_db() {

@@ -11,12 +11,16 @@
 //!
 //! # Why it exists
 //!
-//! `cargo test -p website-api` builds 22 test binaries against **one** database
-//! (`tbd_gate_it` under the wave gate). They run concurrently, share a schema with no
-//! foreign keys, and — until this file — every one of them hand-rolled its own dev-login
-//! extractor: 9 copy-pasted `async fn token`/`dev_login`/`admin_token` plus 4 inline
-//! copies across 18 files, no `mod` declarations, no `[dev-dependencies]`, no `[[test]]`
-//! section in `Cargo.toml`.
+//! `cargo test -p website-api` builds ~29 test binaries. Until this file, every one of them
+//! hand-rolled its own dev-login extractor: 9 copy-pasted
+//! `async fn token`/`dev_login`/`admin_token` plus 4 inline copies across 18 files, no `mod`
+//! declarations, no `[dev-dependencies]`, no `[[test]]` section in `Cargo.toml`.
+//!
+//! **Corrected at T-534, measured:** this header used to say those binaries "run
+//! concurrently" against one database. Cargo runs test TARGETS one at a time — a run that
+//! fails mid-suite stops after the failing binary, and the per-target output blocks never
+//! interleave. What *is* concurrent is the tests **inside** one binary. And they no longer
+//! share a database at all: [`require_test_database_url`] gives each binary its own.
 //!
 //! The cost of that duplication is not the duplication. It is that **every copy read the
 //! `Location` header through `HeaderMap`'s `Index` impl**, which panics with
