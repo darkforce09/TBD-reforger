@@ -12608,7 +12608,7 @@
         "infra",
         "tests"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3315,
       "stream": "web-platform",
       "targets": [
@@ -12716,7 +12716,7 @@
       "impact": [
         "website"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3320,
       "stream": "web-platform",
       "targets": [
@@ -12759,8 +12759,50 @@
         "website",
         "tests"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3322,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-484",
+      "title": "Reject whitespace-only DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL",
+      "summary": "Wave 32 verifier residual (T-481 shipped client_id trim). Production validate still uses bare is_empty() for discord_client_secret and discord_redirect_url (config.rs ~120-125). Whitespace-only secret/redirect validates Ok — same disguise class as pre-T-481 client id.\n\nRepro: env=production, secret=\" \" or redirect=\" \" → validate() Ok.\n\nCure: trim().is_empty() (or reject trim-empty) for both; Class-R pins.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3323,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-485",
+      "title": "Wire verify-t468 into Makefile / ci-local / CI so hollow t438/t456 recipes fail outside cold gate",
+      "summary": "Wave 32 verifier NIT (T-476). Tripwire lives in verify-t468-ci-schema-parity.sh and runs in wave.sh cold gate, but hollow `@true` verify-t438 still greens `make verify-t438` and GitHub mod-gates-hosted (ci.yml runs make verify-t438 only). Not in Makefile target, ci-local, or CI as a step that catches hollow recipes outside cold gate.\n\nRepro: recipe `verify-t438:\\n\\t@true` → make verify-t438 rc=0; bash verify-t468 → FAIL.\n\nCure: add Makefile verify-t468 (or fold pin into ci-local + ci.yml) so hollow recipes fail without waiting for wave.sh gate.",
+      "program": "platform",
+      "surfaces": [
+        "CI",
+        "INFRA"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3324,
       "stream": "web-platform",
       "targets": [
         "website"

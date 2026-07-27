@@ -2545,7 +2545,7 @@ Cure: structural pins (live fn body must contain distinct return arms / out-of-z
 Repro: `# "FormData",` in Cargo.toml → hero_multipart_upload_is_wired_not_stubbed PASS; `let url = raw;` → content::tests PASS.
 
 Cure: strip // and # comments (and TOML string-safe comment lines) before Cargo FormData/File/FileList pins; require live prod call absolute_cms_upload_url(…) on the upload Ok path (not comment-only). RED→GREEN on both verifier perturbations. |
-| T-476 | 3315 | ready | platform | verify-t438/t456 Makefile recipes lack hollow-body tripwire | NIT from wave 28 adversarial. T-467 wired real bash recipes into Makefile + ci-local + ci.yml, but there is no T-471/T-472-style recipe-body tripwire — a future hollow `@true` / `echo PASS` / `#fake` recipe would green until noticed.
+| T-476 | 3315 | shipped | platform | verify-t438/t456 Makefile recipes lack hollow-body tripwire | NIT from wave 28 adversarial. T-467 wired real bash recipes into Makefile + ci-local + ci.yml, but there is no T-471/T-472-style recipe-body tripwire — a future hollow `@true` / `echo PASS` / `#fake` recipe would green until noticed.
 
 Repro (hypothetical): replace verify-t438 recipe with `@true` → make verify-t438 PASS while script never runs.
 
@@ -2578,7 +2578,7 @@ Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; as
 Repro: python3 -c 'c="oauth_state=; Path=/api; Max-Age=0; HttpOnly"; print(c.startswith("oauth_state=") and "Max-Age=0" in c and "Path=/" in c and "HttpOnly" in c)' → True while Path diverges from OAUTH_STATE_CLEAR.
 
 Cure: assert Set-Cookie equals OAUTH_STATE_CLEAR (or parse and require Path=/ exact). |
-| T-481 | 3320 | ready | platform | Reject whitespace-only DISCORD_CLIENT_ID in Config::validate | Wave 30 adversarial verifier (T-430): production validate guards discord_client_id.is_empty() only (config.rs). A whitespace-only id (" ") with APP_ENV=production validates Ok and is not treated as oauth_unconfigured. Same pattern as prior secret/redirect whitespace nits.
+| T-481 | 3320 | shipped | platform | Reject whitespace-only DISCORD_CLIENT_ID in Config::validate | Wave 30 adversarial verifier (T-430): production validate guards discord_client_id.is_empty() only (config.rs). A whitespace-only id (" ") with APP_ENV=production validates Ok and is not treated as oauth_unconfigured. Same pattern as prior secret/redirect whitespace nits.
 
 Repro: set discord_client_id=" " + env=production → validate() Ok.
 
@@ -2591,11 +2591,21 @@ Repro:
   # with --features "doc,mission" → 1 passed
 
 Cure: change that verify-t180 pin to --features "doc mission" (same as place_/attach_vehicle pins), OR ungated cfg so mission alone compiles the test. Prefer script feature align — keep Class-R on writer round-trip. |
-| T-483 | 3322 | ready | platform | Harden oauth.rs unit clears_oauth_state to exact OAUTH_STATE_CLEAR | Wave 31 residual from T-480. IT assert_oauth_state_cleared is byte-equality to OAUTH_STATE_CLEAR, but unit helper clears_oauth_state in apps/website/api/src/handlers/oauth.rs (~449) still soft-contains oauth_state=/Max-Age=0/HttpOnly with no Path=/ pin. Path=/api clear cookie still greens the unit helper.
+| T-483 | 3322 | shipped | platform | Harden oauth.rs unit clears_oauth_state to exact OAUTH_STATE_CLEAR | Wave 31 residual from T-480. IT assert_oauth_state_cleared is byte-equality to OAUTH_STATE_CLEAR, but unit helper clears_oauth_state in apps/website/api/src/handlers/oauth.rs (~449) still soft-contains oauth_state=/Max-Age=0/HttpOnly with no Path=/ pin. Path=/api clear cookie still greens the unit helper.
 
 Repro: soft check accepts 'oauth_state=; Path=/api; Max-Age=0; HttpOnly'.
 
 Cure: assert equality to OAUTH_STATE_CLEAR (or require Path=/ exact) in the unit helper. |
+| T-484 | 3323 | deferred | platform | Reject whitespace-only DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL | Wave 32 verifier residual (T-481 shipped client_id trim). Production validate still uses bare is_empty() for discord_client_secret and discord_redirect_url (config.rs ~120-125). Whitespace-only secret/redirect validates Ok — same disguise class as pre-T-481 client id.
+
+Repro: env=production, secret=" " or redirect=" " → validate() Ok.
+
+Cure: trim().is_empty() (or reject trim-empty) for both; Class-R pins. |
+| T-485 | 3324 | deferred | platform | Wire verify-t468 into Makefile / ci-local / CI so hollow t438/t456 recipes fail outside cold gate | Wave 32 verifier NIT (T-476). Tripwire lives in verify-t468-ci-schema-parity.sh and runs in wave.sh cold gate, but hollow `@true` verify-t438 still greens `make verify-t438` and GitHub mod-gates-hosted (ci.yml runs make verify-t438 only). Not in Makefile target, ci-local, or CI as a step that catches hollow recipes outside cold gate.
+
+Repro: recipe `verify-t438:\n\t@true` → make verify-t438 rc=0; bash verify-t468 → FAIL.
+
+Cure: add Makefile verify-t468 (or fold pin into ci-local + ci.yml) so hollow recipes fail without waiting for wave.sh gate. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

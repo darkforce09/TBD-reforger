@@ -869,6 +869,16 @@ Repro: grep apps/website/api and scripts for a timer/cron calling resync_all_rol
 Repro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.
 
 Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; assert no shared snowflake collision across parallel tests.
+- **T-484** (deferred) — Reject whitespace-only DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL [API, tests] — Wave 32 verifier residual (T-481 shipped client_id trim). Production validate still uses bare is_empty() for discord_client_secret and discord_redirect_url (config.rs ~120-125). Whitespace-only secret/redirect validates Ok — same disguise class as pre-T-481 client id.
+
+Repro: env=production, secret=" " or redirect=" " → validate() Ok.
+
+Cure: trim().is_empty() (or reject trim-empty) for both; Class-R pins.
+- **T-485** (deferred) — Wire verify-t468 into Makefile / ci-local / CI so hollow t438/t456 recipes fail outside cold gate [CI, INFRA] — Wave 32 verifier NIT (T-476). Tripwire lives in verify-t468-ci-schema-parity.sh and runs in wave.sh cold gate, but hollow `@true` verify-t438 still greens `make verify-t438` and GitHub mod-gates-hosted (ci.yml runs make verify-t438 only). Not in Makefile target, ci-local, or CI as a step that catches hollow recipes outside cold gate.
+
+Repro: recipe `verify-t438:\n\t@true` → make verify-t438 rc=0; bash verify-t468 → FAIL.
+
+Cure: add Makefile verify-t468 (or fold pin into ci-local + ci.yml) so hollow recipes fail without waiting for wave.sh gate.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
