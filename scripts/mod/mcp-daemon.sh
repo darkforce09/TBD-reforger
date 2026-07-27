@@ -34,7 +34,18 @@ start() {
   export MCP_SOCK="$SOCK"
   # T-165.7: the broker is the Rust `mcpd` (tools/tbd-tools); build cached, exec direct so
   # the pkill/argv patterns see the real binary (no node/cargo wrapper in between).
-  local mcpd_bin; mcpd_bin="$("$SCRIPT_DIR/lib/mcpd-bin.sh")" || { echo "mcp-daemon: mcpd build failed" >&2; return 1; }
+  #
+  # T-328: private CARGO_TARGET_DIR — same class as T-322 `make api` / target-dev-api.
+  # Shared target lets wave-gate `cargo test` rewrite target/debug/mcpd while a 4h-lived
+  # daemon keeps the old inode (stale/unmerged bits). Private dir = only mcp-daemon writes
+  # what mcp-daemon runs. Gitignored by existing `target-*/`. mcpd-bin.sh echoes
+  # $ROOT/target/debug/mcpd (ignores CARGO_TARGET_DIR) — resolve from our private dir.
+  local repo_root; repo_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
+  local mcpd_target="${MCPD_CARGO_TARGET_DIR:-$repo_root/target-dev-mcpd}"
+  CARGO_TARGET_DIR="$mcpd_target" "$SCRIPT_DIR/lib/mcpd-bin.sh" >/dev/null \
+    || { echo "mcp-daemon: mcpd build failed" >&2; return 1; }
+  local mcpd_bin="$mcpd_target/debug/mcpd"
+  [ -x "$mcpd_bin" ] || { echo "mcp-daemon: mcpd binary missing at $mcpd_bin" >&2; return 1; }
   setsid "$mcpd_bin" --socket "$SOCK" --pidfile "$PIDFILE" >"$LOG" 2>&1 &
   local i=0
   while [ "$i" -lt 120 ]; do          # up to 60 s (first start pays the one-time index load)
