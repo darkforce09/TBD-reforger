@@ -80,7 +80,7 @@
 0	T-379	role_played accepts a blank and replaces a populated scoreline	apps/website/api/src/handlers/telemetry.rs
 0	T-381	The integration suite can point at the live database, and one delete is unscoped	apps/website/api/tests/factions.rs
 48	T-382	Empty-but-valid payload becomes current_version_id with no rollback route	apps/website/api/src/handlers/missions.rs
-0	T-383	Four tooling paths overwrite committed files with empty or wrong content	xtask/src/cmds.rs; xtask/src/sync.rs; xtask/src/schema_gates.rs
+51	T-383	Four tooling paths overwrite committed files with empty or wrong content	xtask/src/cmds.rs; xtask/src/sync.rs; xtask/src/schema_gates.rs
 48	T-371	display_name() selects on an untrimmed is_empty, so a whitespace Discord name is stored verbatim	apps/website/api/src/services/discord.rs; apps/website/api/src/handlers/admin.rs
 0	T-370	Remove the 8 dead mark_adopted call sites — move the purge first	apps/website/frontend/src/mission_hydrate.rs
 0	T-368	The mission armory cannot be set from the UI at all — the endpoint has no frontend caller	apps/website/frontend/src/mission_overview.rs
@@ -327,11 +327,11 @@
 46	T-526	W46 hotfix rustfmt mission_title_prefer after T-522	apps/website/frontend/src/mission_title_prefer.rs
 47	T-527	W47 hotfix rustfmt event_manager after T-332	apps/website/frontend/src/event_manager.rs
 47	T-528	W47 hotfix me.rs arma_linked whitespace after T-350	apps/website/api/src/handlers/me.rs; apps/website/api/tests/t528_me_whitespace_linked.rs
-99	T-529	events roster SQL whitespace arma_id no btrim	apps/website/api/src/handlers/events.rs
+51	T-529	events roster SQL whitespace arma_id no btrim	apps/website/api/src/handlers/events.rs
 99	T-530	T-332 Class-R partly pins doc comments	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
 49	T-531	null_tolerance still lists deployments.* as KNOWN_OPEN after T-341	apps/website/api/tests/null_tolerance.rs
 99	T-532	No API route to re-point mission current_version_id after a bad version	apps/website/api/src/handlers/missions.rs; apps/website/api/src/app.rs
 99	T-533	T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400	apps/website/api/tests/telemetry.rs; apps/website/api/src/handlers/telemetry.rs
 99	T-534	IT suites still seed fixed arma_ids via shared seed_user	apps/website/api/tests/common/mod.rs; apps/website/api/tests
 50	T-535	T-385 live IT positive terrain join	apps/website/api/tests/misc_integration.rs
-99	T-536	touch_changed masks changed_rs porcelain failure	scripts/platform/wave.sh
+51	T-536	touch_changed masks changed_rs porcelain failure	scripts/platform/wave.sh

@@ -5,6 +5,25 @@
 
 ## Running / Review
 
+- **T-383** (3199) — Four tooling paths overwrite committed files with empty or wrong content [running] — The tail of the tooling cluster (T-378 has the two worst). All the same shape: a success path writing structurally empty or silently-lossy content over something committed.
+
+  xtask/src/cmds.rs:765-774 — `cmd_set_status` has no non-empty check and no enum, so `./scripts/ticket set-status T-090 ""` writes `"status": ""` over `"ready"`. The registry is the source of truth for the whole program.
+  xtask/src/sync.rs:403 + registry.rs:133-138 — `inject_marker_block` collapses the ROADMAP marker block to a bare heading when `tickets` is missing or empty, and CLAUDE.md's 'Latest shipped' falls back to a HARDCODED WRONG `"T-066"`.
+  xtask/src/schema_gates.rs:1174-1195 — `flatten-orbat-slots --in-place` emits 8 of the schema's 11 slot keys, silently dropping `loadout` and `uid` from 3 of 5 committed goldens, and force-stamps `schemaVersion = "1.1"` over the deliberate 1.0 fixture.
+  enf/apidoc.rs:168 — header-only TSV overwrite that exits 0.
+  Also: world/aux.rs:1009/1022/1050, world/build.rs:664/958, map/labels.rs:455, map/sap.rs:1007.
+
+None is urgent alone; together they are why a golden or a registry field can go wrong with nothing red. A shared 'refuse to write structurally empty output' helper would close most of them.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+- **T-529** (3369) — events roster SQL still allows whitespace arma_id (no btrim) [running] — Wave 47 verifier P2 residual from T-350. ingest_event_roster still uses u.arma_id <> '' without btrim; whitespace passes and can emit as seating key. Latent after 0016 scrub. Cure: btrim/nonempty predicate + trim seating key consistently with other arma_id sites. Owns: apps/website/api/src/handlers/events.rs (+ IT). Caution: T-343 one-sided-trim traps — read before changing.
+- **T-536** (3376) — touch_changed still masks changed_rs porcelain failure as empty list [running] — FOUND by W50 adversarial verifier (MINOR-NIT) after T-492.
+
+fmt_changed/clippy_changed now propagate changed_rs rc. touch_changed still does `for f in $(changed_rs …)` and can return 0 with listed=0 when porcelain fails. Same mask class.
+
+Cure: `files=$(changed_rs) || return $?` (or equivalent) in touch_changed.
 
 ## Ready
 
