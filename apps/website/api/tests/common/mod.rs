@@ -62,10 +62,7 @@ pub fn database_name_from_url(database_url: &str) -> Option<String> {
         return None;
     }
     // Percent-decoding is unnecessary for our ASCII test DB names; reject weirdness.
-    if !name
-        .bytes()
-        .all(|b| b.is_ascii_alphanumeric() || b == b'_')
-    {
+    if !name.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_') {
         return None;
     }
     Some(name.to_string())
