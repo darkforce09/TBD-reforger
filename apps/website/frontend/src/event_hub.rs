@@ -344,11 +344,11 @@ fn meta_badge(label: &'static str, value: String) -> impl IntoView {
 /// default, and writing one into authored data destroys the author's intent permanently. This
 /// only decides what to *show*; nothing here writes.
 ///
-/// The affordance string is `mission_overview.rs:894`'s verbatim — the sibling mission-dossier
-/// renderer, and the precedent the ticket named — rather than a new one invented for this page.
-/// The `trim()` is `approvals.rs:389`'s ("The author submitted no briefing."), which is the
-/// stricter of the two in-repo precedents: a briefing of `"\n\n "` is not authored content, and
-/// rendering it verbatim leaves a "Mission Briefing" heading over blank space.
+/// The affordance string is `mission_overview::tactical_briefing_text`'s verbatim — the sibling
+/// mission-dossier renderer — rather than a new one invented for this page. The `trim()` matches
+/// `approvals.rs:389` ("The author submitted no briefing."): a briefing of `"\n\n "` is not
+/// authored content, and rendering it verbatim leaves a briefing heading over blank space.
+/// T-407 aligned mission_overview to the same trim rule.
 fn briefing_text(briefing: Option<&str>) -> String {
     match briefing {
         Some(b) if !b.trim().is_empty() => b.to_string(),
