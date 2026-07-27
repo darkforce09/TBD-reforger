@@ -1,8 +1,8 @@
 # Cargo workspace root. Members: the website app (Axum API + Leptos SPA nested under
-# apps/website/ since T-171), the shared map-engine compute/render crates + wasm shim,
-# and the repo tooling (xtask gates/codegen, tbd-tools gate harness + asset pipelines).
-# `map-engine-wasm` is built for wasm32 via wasm-pack; it also compiles for native so
-# `cargo build --workspace` stays green.
+# apps/website/ since T-171), the shared map-engine compute/render crates, and the repo
+# tooling (xtask gates/codegen, tbd-tools gate harness + asset pipelines).
+# T-418: `map-engine-wasm` retired — zero reverse deps after the T-159.29.3 React deletion;
+# the Leptos SPA links `map-engine-core` / `map-engine-render` directly.
 [workspace]
 resolver = "3"
 members = [
@@ -10,7 +10,6 @@ members = [
     "apps/website/frontend",
     "crates/map-engine-core",
     "crates/map-engine-render",
-    "crates/map-engine-wasm",
     "xtask",
     "tools/tbd-tools",
 ]

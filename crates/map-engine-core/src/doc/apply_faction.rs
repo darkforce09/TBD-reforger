@@ -1068,7 +1068,7 @@ mod tests {
     fn apply_anchors_on_the_docs_own_terrain() {
         let doc = MissionDocCore::new();
         layer(&doc);
-        doc.apply_row_meta("", "arland", None, None);
+        doc.apply_row_meta("", "arland", None, None, None);
         apply_faction_library(&doc, "OPFOR", "lyr", &two_role_lib()).expect("apply");
 
         let s = slots(&doc);
@@ -1091,7 +1091,7 @@ mod tests {
             let doc = MissionDocCore::new();
             layer(&doc);
             if !terrain.is_empty() {
-                doc.apply_row_meta("", terrain, None, None);
+                doc.apply_row_meta("", terrain, None, None, None);
             }
             apply_faction_library(&doc, "BLUFOR", "lyr", &two_role_lib()).expect("apply");
             let s = slots(&doc);

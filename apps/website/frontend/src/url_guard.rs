@@ -33,7 +33,7 @@
 //!     the map engine's compute core — geometry, the mission compiler, the CRDT document
 //!     model — so a browser-scheme allowlist filed there is a thing no one auditing web
 //!     security would think to look for. And it has four consumers beyond these two
-//!     (`map-engine-render`, `map-engine-wasm`, `tools/tbd-tools`, `xtask`), all of which
+//!     (`map-engine-render`, `tools/tbd-tools`, `xtask`), all of which
 //!     would inherit a `url`/`idna` dependency for a function about HTML attributes.
 //!   * A NEW shared crate, existing only to hold one 12-line predicate. A crate is a permanent
 //!     unit of ownership, review and build cost; this does not earn one. If a third or fourth

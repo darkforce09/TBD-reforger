@@ -1263,12 +1263,18 @@ impl MissionDocCore {
     /// Callers that also hydrate a compiled payload (T-375 emits top-level `title`) must prefer the
     /// payload title over a stale row — see `mission_hydrate::adopt_payload`. This mutator writes
     /// whatever non-blank title it is given.
+    ///
+    /// `briefing` is the mission **row** library blurb (`missions.briefing` STRING) — not the
+    /// per-faction `factionsById[].briefing` object. T-418 threads it so `compile_export` can emit
+    /// a real envelope `briefing` instead of permanently `""`. Whitespace-only is not authored
+    /// content (same trim rule as title / featured briefing).
     pub fn apply_row_meta(
         &self,
         title: &str,
         terrain: &str,
         time_of_day: Option<String>,
         weather: Option<String>,
+        briefing: Option<String>,
     ) {
         let mut txn = self.begin();
         let title = title.trim();
@@ -1288,6 +1294,12 @@ impl MissionDocCore {
             }
             self.meta
                 .insert(&mut txn, "environment", Any::Map(Arc::new(env)));
+        }
+        if let Some(b) = briefing {
+            let b = b.trim();
+            if !b.is_empty() {
+                self.meta.insert(&mut txn, "briefing", b);
+            }
         }
     }
 
@@ -3158,7 +3170,7 @@ mod tests {
             .map(str::trim)
             .filter(|s| !s.is_empty())
             .unwrap_or("Stale Library Title");
-        doc.apply_row_meta(preferred, "everon", None, None);
+        doc.apply_row_meta(preferred, "everon", None, None, None);
         assert_eq!(
             small_maps(&doc)["meta"]["title"],
             "Authored Bridgehead",
@@ -3194,11 +3206,36 @@ mod tests {
             small_maps(&doc)["meta"].get("title").is_none(),
             "whitespace-only payload title must clear sticky meta.title, not keep Preexisting"
         );
-        doc.apply_row_meta("  Row Title  ", "everon", None, None);
+        doc.apply_row_meta("  Row Title  ", "everon", None, None, None);
         assert_eq!(
             small_maps(&doc)["meta"]["title"],
             "Row Title",
             "apply_row_meta must trim and accept a real row title when payload title is blank"
+        );
+    }
+
+    /// T-418 — row library blurb lands in `meta.briefing` so `compile_export` is not permanently "".
+    #[test]
+    fn t418_apply_row_meta_threads_briefing_into_meta() {
+        let doc = MissionDocCore::new();
+        doc.apply_row_meta(
+            "Op",
+            "everon",
+            None,
+            None,
+            Some("  Hold the bridge.\nWait for extract.  ".into()),
+        );
+        assert_eq!(
+            small_maps(&doc)["meta"]["briefing"],
+            "Hold the bridge.\nWait for extract.",
+            "non-blank row briefing must trim and land in meta.briefing"
+        );
+        // Whitespace-only is not authored — leave the key absent (compile_export → "").
+        let empty = MissionDocCore::new();
+        empty.apply_row_meta("Op", "everon", None, None, Some("   \n\t  ".into()));
+        assert!(
+            small_maps(&empty)["meta"].get("briefing").is_none(),
+            "whitespace-only briefing must not invent meta.briefing"
         );
     }
 

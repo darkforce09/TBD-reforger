@@ -218,7 +218,7 @@
 53	T-415	Mod never checks it delivered the authored loadout; IsComplete has zero callers	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c
 4	T-416	Cargo capacity belongs in wire_safety.rs, covering save and compile	crates/map-engine-core/src/mission/wire_safety.rs; apps/website/api/src/contract/validate.rs; apps/website/api/src/handlers/missions.rs
 4	T-417	Compiled-export artifact re-sorts keys; 401 misdiagnosed as no-server-row	apps/website/frontend/src/mission_commands.rs; apps/website/frontend/src/main.rs
-62	T-418	map-engine-wasm is dead as a whole crate; compile_export briefing is a dead key	crates/map-engine-wasm/src/lib.rs; apps/website/frontend/src/mission_hydrate.rs
+62	T-418	map-engine-wasm is dead as a whole crate; compile_export briefing is a dead key	crates/map-engine-wasm/; Cargo.toml; Makefile; crates/map-engine-render/Cargo.toml; crates/map-engine-core/src/doc/store.rs; crates/map-engine-core/src/doc/apply_faction.rs; crates/map-engine-core/src/mission/compile.rs; apps/website/frontend/src/mission_hydrate.rs; apps/website/frontend/src/url_guard.rs; Cargo.lock
 62	T-419	Six mod comments assert the zones schema is open after T-241 closed it	apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c
 5	T-420	Wave gate validates no schema	scripts/platform/wave.sh
 6	T-421	Wave gate cargo check/clippy pass on source never compiled	scripts/platform/wave.sh

@@ -151,9 +151,9 @@ test: ## Run backend unit tests
 test-it: ## Run backend integration tests against the local DB (needs `make db-up`)
 	$(MAKE) rust-test-it
 
-wasm-ci: ## Fmt + clippy + test the map-engine core/wasm/render crates (T-145/T-151)
-	cargo fmt --check -p map-engine-core -p map-engine-wasm -p map-engine-render
-	cargo clippy -p map-engine-core -p map-engine-wasm --all-targets --all-features -- -D warnings
+wasm-ci: ## Fmt + clippy + test the map-engine core/render crates (T-145/T-151; T-418 dropped map-engine-wasm)
+	cargo fmt --check -p map-engine-core -p map-engine-render
+	cargo clippy -p map-engine-core --all-targets --all-features -- -D warnings
 	cargo clippy -p map-engine-render --target wasm32-unknown-unknown -- -D warnings
 	cargo test -p map-engine-core --all-features
 	cargo test -p map-engine-render
