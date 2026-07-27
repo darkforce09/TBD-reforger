@@ -120,22 +120,31 @@ jobs:
         working-directory: apps/website/frontend
         run: trunk build --release
 
-  # --- schema: golden-mission validate (TEST-3) + @contract citation integrity ---
-  # T-165.2: both steps are Rust (xtask) — no Node in this job at all.
+  # --- schema: full make schema-validate set + citations (T-434) ---
+  # Class-R parity: this job MUST match `make schema-validate` + `make verify-citations`
+  # (i.e. `make ci-local-schema`). Sub-gate SET = GATE_SCHEMA_VALIDATE_GATES in
+  # scripts/platform/wave.sh, same order as the Makefile recipe:
+  #   validate map-object-golden map-glyphs height-labels map-object-enums
+  #   type-inventory t090-specs n6 n10  (+ citations)
+  # Pre-T-434 hole: only `schema validate` + `citations` — would not have caught T-244
+  # (map-object-enums RED while validate stayed GREEN). Do not narrow back to validate-only.
+  # T-165.2: all steps are Rust (xtask) — no Node in this job.
+  # height-labels needs the Everon DEM (LFS, ~72 MB); pull ONLY that object (same pattern
+  # as the map-engine job — a full `lfs: true` checkout would drag the 206 MB sat bundle).
   schema:
     name: schema + citations
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+      - name: fetch LFS fixture for height-labels (Everon DEM only)
+        run: git lfs pull --include packages/map-assets/everon/dem/everon-dem-16bit.png
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0" # T-177 — pin (matches root rust-toolchain.toml / gate-env.json)
       - uses: Swatinem/rust-cache@v2
-      - name: validate contracts (TEST-3, xtask)
-        run: cargo run -q -p xtask -- schema validate
-      - name: verify @contract citations (xtask)
-        run: cargo run -q -p xtask -- schema citations
+      - name: schema-validate + citations (make ci-local-schema)
+        run: make ci-local-schema
 
   # --- editorconfig: FMT-2 whitespace gate across the whole repo (root .editorconfig) ---
   # Dedicated job (mirrors `make verify-editorconfig`): the checker is a Go binary and runs
