@@ -91,10 +91,10 @@ async fn call_ct(
 
 /// Find one mission anywhere in the `GET /api/v1/approvals` queue, walking **every** page.
 ///
-/// **Do not shrink this back to "is it on page 1" (T-399).** `handlers/approvals.rs:99-105`
-/// serves the queue `ORDER BY COALESCE(m.updated_at, m.created_at, '0001-01-01') ASC` — *oldest
-/// first* — and nothing anywhere ever removes a `pending_approval` mission from the shared gate
-/// database: `tests/missions.rs:963/1138/1156` each leave one behind on every run,
+/// **Do not shrink this back to "is it on page 1" (T-399).** `handlers/approvals.rs` serves the
+/// queue `ORDER BY COALESCE(...) ASC, m.id ASC` — *oldest first*, unique-tied (T-414) — and
+/// nothing anywhere ever removes a `pending_approval` mission from the shared gate database:
+/// `tests/missions.rs:963/1138/1156` each leave one behind on every run,
 /// `tests/null_tolerance.rs:77` leaves one with both timestamps NULL (which the sentinel sorts to
 /// the very *front*), and a failure of this assertion leaves this test's own row pending too, so
 /// the ratchet feeds itself. The queue therefore only ever grows, while the row a test just
@@ -113,6 +113,10 @@ async fn find_in_approvals(app: &Router, tok: &str, mission_id: &str) -> Option<
     // limit above 100, so 100 is the largest page actually honoured — asking for more would
     // quietly make this walk five times as many pages.
     const PAGE: usize = 100;
+    // Cap at 10 full pages (T-414). The prior `100_000` guard was correct but allowed 1000 HTTP
+    // round trips before failing when LIMIT stopped being applied; 1000 rows still dwarfs any
+    // realistic gate-DB residue (~24 measured) while diagnosing in seconds instead of minutes.
+    const MAX_OFFSET: usize = 1_000;
     let mut offset = 0usize;
     loop {
         let (st, body) = call(
@@ -138,7 +142,7 @@ async fn find_in_approvals(app: &Router, tok: &str, mission_id: &str) -> Option<
         // Non-termination here would mean LIMIT stopped being applied, which is a defect in its
         // own right — fail loudly instead of spinning.
         assert!(
-            offset < 100_000,
+            offset < MAX_OFFSET,
             "approvals paging never terminated (offset {offset}) — is LIMIT being applied?"
         );
     }

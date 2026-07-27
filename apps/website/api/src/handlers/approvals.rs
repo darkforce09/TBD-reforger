@@ -50,6 +50,20 @@ struct ApprovalRow {
     submitted_at: DateTime<Utc>,
 }
 
+/// List-queue SQL for `GET /api/v1/approvals`.
+///
+/// Kept as a named const so the unique-order contract (T-414 trailing `, m.id ASC`) is
+/// unit-testable without standing up Postgres. The COALESCE commentary below the handler
+/// still owns *why* each fallback exists.
+const LIST_APPROVALS_SQL: &str = "SELECT m.id, m.title, m.terrain, m.author_id, \
+         COALESCE(u.username, '') AS author_name, \
+         COALESCE(m.updated_at, m.created_at, '0001-01-01 00:00:00+00'::timestamptz) AS submitted_at \
+         FROM missions m LEFT JOIN users u ON u.discord_id = m.author_id \
+         WHERE m.status = 'pending_approval' AND m.deleted_at IS NULL \
+         ORDER BY COALESCE(m.updated_at, m.created_at, '0001-01-01 00:00:00+00'::timestamptz) ASC, \
+         m.id ASC \
+         LIMIT $1 OFFSET $2";
+
 /// `GET /api/v1/approvals` — missions awaiting review.
 ///
 /// @route GET /api/v1/approvals
@@ -96,18 +110,15 @@ pub async fn list_approvals(
     // and payload are byte-identical to before for all normal data; it only decides where the
     // previously-undecodable rows land (with the sentinel: oldest-first, i.e. surfaced for a
     // human, rather than Postgres's default NULLS LAST burying them past the last page).
-    let raw: Vec<ApprovalRaw> = sqlx::query_as(
-        "SELECT m.id, m.title, m.terrain, m.author_id, COALESCE(u.username, '') AS author_name, \
-         COALESCE(m.updated_at, m.created_at, '0001-01-01 00:00:00+00'::timestamptz) AS submitted_at \
-         FROM missions m LEFT JOIN users u ON u.discord_id = m.author_id \
-         WHERE m.status = 'pending_approval' AND m.deleted_at IS NULL \
-         ORDER BY COALESCE(m.updated_at, m.created_at, '0001-01-01 00:00:00+00'::timestamptz) ASC \
-         LIMIT $1 OFFSET $2",
-    )
-    .bind(limit)
-    .bind(offset)
-    .fetch_all(&state.pool)
-    .await?;
+    //
+    // Trailing `, m.id ASC` is the unique tiebreaker (T-414). Without it, rows that share the
+    // same COALESCE key — including the null_tolerance sentinel cluster — have no total order,
+    // so LIMIT/OFFSET paging can duplicate or skip a row across successive requests.
+    let raw: Vec<ApprovalRaw> = sqlx::query_as(LIST_APPROVALS_SQL)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&state.pool)
+        .await?;
     let rows: Vec<ApprovalRow> = raw
         .into_iter()
         .map(|r| ApprovalRow {
@@ -236,4 +247,28 @@ pub async fn reject_mission(
     Ok(Json(load_mission(&state.pool, m.id).await?.ok_or_else(
         || ApiError::internal("could not load mission"),
     )?))
+}
+
+#[cfg(test)]
+mod t414_order_tiebreaker {
+    use super::LIST_APPROVALS_SQL;
+
+    /// T-414 — LIMIT/OFFSET over tied COALESCE keys needs a unique trailing key.
+    #[test]
+    fn list_approvals_sql_orders_by_id_after_submitted_at() {
+        let order_idx = LIST_APPROVALS_SQL
+            .find("ORDER BY")
+            .expect("LIST_APPROVALS_SQL must ORDER BY");
+        let order = &LIST_APPROVALS_SQL[order_idx..];
+        assert!(
+            order.contains("ASC,") && order.contains("m.id ASC"),
+            "approvals queue ORDER BY must end with unique `, m.id ASC` tiebreaker; got: {order}"
+        );
+        // Guard against a regression that puts id first or drops the timestamp key.
+        assert!(
+            order.find("COALESCE").expect("COALESCE in ORDER BY")
+                < order.find("m.id ASC").expect("m.id ASC in ORDER BY"),
+            "m.id ASC must trail the COALESCE submitted_at key, not replace it"
+        );
+    }
 }
