@@ -13906,7 +13906,7 @@
       "summary": "FOUND by W50 adversarial verifier (MINOR-NIT) after T-492.\n\nfmt_changed/clippy_changed now propagate changed_rs rc. touch_changed still does `for f in $(changed_rs \u2026)` and can return 0 with listed=0 when porcelain fails. Same mask class.\n\nCure: `files=$(changed_rs) || return $?` (or equivalent) in touch_changed.",
       "program": "platform",
       "surfaces": [
-        "infra"
+        "CI"
       ],
       "impact": [
         "ci",
