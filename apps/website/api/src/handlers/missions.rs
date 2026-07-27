@@ -951,11 +951,13 @@ pub async fn create_version(
         .execute(&state.pool)
         .await?;
     } else {
-        sqlx::query("UPDATE missions SET current_version_id = $1, updated_at = now() WHERE id = $2")
-            .bind(version.id)
-            .bind(m.id)
-            .execute(&state.pool)
-            .await?;
+        sqlx::query(
+            "UPDATE missions SET current_version_id = $1, updated_at = now() WHERE id = $2",
+        )
+        .bind(version.id)
+        .bind(m.id)
+        .execute(&state.pool)
+        .await?;
     }
     // Mirror `mission.submit` / `mission.approve`: the audit row is the only durable
     // "who saved what, when" record. The version row itself has `created_by`, but nothing
