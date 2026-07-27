@@ -931,6 +931,26 @@ Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts s
 Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
 
 Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url.
+- **T-466** (deferred) — CMS Content list fails closed to empty with no retry [FE] — Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.
+
+Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.
+
+Cure: surface error + retry; do not set list_seeded on Err.
+- **T-467** (deferred) — verify-t438/t456 still unwired from Makefile/CI siblings [INFRA, CI] — Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 (T-463), but Makefile/CI have no sibling targets (same shape as pre-T-452 for other verifies).
+
+Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
+
+Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin.
+- **T-468** (deferred) — No tripwire that ci.yml schema job stays on make ci-local-schema [INFRA, CI, tests] — Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.
+
+Repro: change ci.yml schema step back to cargo run … schema validate only → CI green locally for enums hole until map-object-enums RED is noticed elsewhere.
+
+Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set.
+- **T-469** (deferred) — admin_field admin_token panics on missing LOCATION from dev-login [BE, tests] — Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
+
+Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
+
+Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

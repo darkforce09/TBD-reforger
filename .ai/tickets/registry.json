@@ -11704,7 +11704,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3273,
       "stream": "web-platform",
       "targets": [
@@ -11971,7 +11971,7 @@
       "impact": [
         "website"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3286,
       "stream": "web-platform",
       "targets": [
@@ -12319,7 +12319,7 @@
         "infra",
         "tests"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3302,
       "stream": "web-platform",
       "targets": [
@@ -12341,7 +12341,7 @@
         "website",
         "tests"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3303,
       "stream": "web-platform",
       "targets": [
@@ -12364,7 +12364,7 @@
         "website",
         "tests"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3304,
       "stream": "web-platform",
       "targets": [
@@ -12372,6 +12372,92 @@
       ],
       "executor": "claude-code",
       "priority": 1
+    },
+    {
+      "id": "T-466",
+      "title": "CMS Content list fails closed to empty with no retry",
+      "summary": "Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET \u2192 empty 'No announcements yet', list_seeded=true, no retry.\n\nRepro: force GET /cms/announcements 500/network fail \u2192 UI looks like zero announcements forever.\n\nCure: surface error + retry; do not set list_seeded on Err.",
+      "program": "platform",
+      "surfaces": [
+        "FE"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3305,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
+    },
+    {
+      "id": "T-467",
+      "title": "verify-t438/t456 still unwired from Makefile/CI siblings",
+      "summary": "Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 (T-463), but Makefile/CI have no sibling targets (same shape as pre-T-452 for other verifies).\n\nRepro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.\n\nCure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA",
+        "CI"
+      ],
+      "impact": [
+        "infra",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3306,
+      "stream": "web-platform",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code",
+      "priority": 3
+    },
+    {
+      "id": "T-468",
+      "title": "No tripwire that ci.yml schema job stays on make ci-local-schema",
+      "summary": "Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.\n\nRepro: change ci.yml schema step back to cargo run \u2026 schema validate only \u2192 CI green locally for enums hole until map-object-enums RED is noticed elsewhere.\n\nCure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA",
+        "CI",
+        "tests"
+      ],
+      "impact": [
+        "infra",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3307,
+      "stream": "web-platform",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code",
+      "priority": 3
+    },
+    {
+      "id": "T-469",
+      "title": "admin_field admin_token panics on missing LOCATION from dev-login",
+      "summary": "Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option \u2014 one gate run panicked 'no entry found for key location'; re-run PASS.\n\nRepro: intermittent when APP_ENV/dev-login does not 302 (or header absent).\n\nCure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic.",
+      "program": "platform",
+      "surfaces": [
+        "BE",
+        "tests"
+      ],
+      "impact": [
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3308,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
     }
   ]
 }

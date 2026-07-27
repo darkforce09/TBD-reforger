@@ -264,3 +264,7 @@
 99	T-463	verify-t438/t456 shell gates still unwired from wave cold gate	scripts/platform/wave.sh; scripts/mod/verify-t438-deploy-staging-compose-path.sh; scripts/mod/verify-t456-mission-rest-size-gate.sh
 99	T-464	Null-tolerance sweep for GET /cms/announcements	apps/website/api/tests/null_tolerance.rs; apps/website/api/src/handlers/cms.rs
 99	T-465	T-447 Class-R false-green draft filter + Content hydrate	apps/website/api/src/handlers/cms.rs; apps/website/api/tests/; apps/website/frontend/src/content.rs
+99	T-466	CMS Content list fails closed to empty with no retry	apps/website/frontend/src/content.rs
+99	T-467	verify-t438/t456 still unwired from Makefile/CI	Makefile; .github/workflows/ci.yml; scripts/mod/verify-t438-deploy-staging-compose-path.sh; scripts/mod/verify-t456-mission-rest-size-gate.sh
+99	T-468	No tripwire ci.yml schema stays on ci-local-schema	.github/workflows/ci.yml; scripts/platform/wave.sh
+99	T-469	admin_field panics on missing LOCATION from dev-login	apps/website/api/tests/admin_field.rs

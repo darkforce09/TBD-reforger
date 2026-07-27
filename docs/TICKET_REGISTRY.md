@@ -2304,7 +2304,7 @@ Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage 
 Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
 
 Cure: delete it or replace with a non-vacuous pin (handler/IT only). |
-| T-434 | 3273 | ready | platform | CI schema job still only validate+citations while make schema-validate runs nine | Residual from T-420/T-422. Wave gate now runs the full schema-validate set (incl. per-context height-labels). .github/workflows/ci.yml schema job still only `xtask schema validate` + citations — same hole T-420 documented.
+| T-434 | 3273 | shipped | platform | CI schema job still only validate+citations while make schema-validate runs nine | Residual from T-420/T-422. Wave gate now runs the full schema-validate set (incl. per-context height-labels). .github/workflows/ci.yml schema job still only `xtask schema validate` + citations — same hole T-420 documented.
 
 Repro: compare ci.yml schema job vs Makefile schema-validate recipe / GATE_SCHEMA_VALIDATE_GATES in wave.sh.
 
@@ -2373,7 +2373,7 @@ Cure: include_str! / source guard (T-264 style) that on_load_more uses merge_aud
 Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
 
 Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url. |
-| T-447 | 3286 | ready | platform | CMS content page still seeds from mock_docs; no GET list | Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.
+| T-447 | 3286 | shipped | platform | CMS content page still seeds from mock_docs; no GET list | Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.
 
 Repro: Publish announcement; reload /content → mock seed only.
 
@@ -2469,17 +2469,17 @@ Cure: strip comments; require good compose path on both dry-run and live lines; 
 Repro: remove wiki_pages.sql from Makefile seed → cold gate still PASS; corrupt a prop guid in mod registry → cargo green while verify-t439 would FAIL if run.
 
 Cure: Class-R/source guard that seed: recipe references seeds/wiki_pages.sql (optional seed↔content_golden wiki body hash); wire bash scripts/mod/verify-t439-….sh into wave.sh gate or an existing make verify target that cold gate runs; tighten event_hub Class-R to require the list+find id predicate. |
-| T-463 | 3302 | ready | platform | verify-t438/t456 shell gates still unwired from wave cold gate | Residual from T-462 / wave 24. wave.sh now runs verify-t439 and verify-t444 after schema, but scripts/mod/verify-t438-deploy-staging-compose-path.sh and verify-t456-mission-rest-size-gate.sh remain agent-local only — cold gate never executes them.
+| T-463 | 3302 | shipped | platform | verify-t438/t456 shell gates still unwired from wave cold gate | Residual from T-462 / wave 24. wave.sh now runs verify-t439 and verify-t444 after schema, but scripts/mod/verify-t438-deploy-staging-compose-path.sh and verify-t456-mission-rest-size-gate.sh remain agent-local only — cold gate never executes them.
 
 Repro: corrupt deploy-staging compose path or strip REST size check → wave.sh gate still PASS until those scripts are invoked manually.
 
 Cure: wire both into wave.sh gate_slice + cmd_gate next to the T-439/T-444 steps (same pattern). |
-| T-464 | 3303 | ready | platform | Null-tolerance sweep for GET /cms/announcements | Residual from T-447 / wave 25 cold gate. Admin GET /cms/announcements is registered but null_tolerance every_get_route_is_swept_or_skipped_with_a_reason fails: path neither in route_sweep() nor ROUTE_SWEEP_SKIP.
+| T-464 | 3303 | shipped | platform | Null-tolerance sweep for GET /cms/announcements | Residual from T-447 / wave 25 cold gate. Admin GET /cms/announcements is registered but null_tolerance every_get_route_is_swept_or_skipped_with_a_reason fails: path neither in route_sweep() nor ROUTE_SWEEP_SKIP.
 
 Repro: after T-447 merge, `wave.sh gate` → test api FAIL — `GET routes … neither swept …: ["/cms/announcements"]`.
 
 Cure: add `/cms/announcements` to route_sweep() (admin list; drafts+published) with Seed auth as other admin GETs; prove RED→GREEN. Do not skip unless sweep is impossible. |
-| T-465 | 3304 | ready | platform | T-447 Class-R false-green: draft filter + Content hydrate unexamined | Residual from wave 25 adversarial. Live T-447 behavior holds (SQL drafts+published, AdminUser, LocalResource hydrate), but Class-R pins are false-green:
+| T-465 | 3304 | shipped | platform | T-447 Class-R false-green: draft filter + Content hydrate unexamined | Residual from wave 25 adversarial. Live T-447 behavior holds (SQL drafts+published, AdminUser, LocalResource hydrate), but Class-R pins are false-green:
 (1) list_cms_announcements_is_drafts_plus_published_not_public_feed greends if status IN ('draft', 'published') appears anywhere in prod (incl. bait comment) while live SQL is published-only.
 (2) content_boots_from_cms_list_not_mock_docs greends if LocalResource+api_get strings remain while Effect ignores opt and docs.set(hardcoded mock).
 (3) AdminUser extractor not pinned; no IT asserts GET /cms/announcements returns a draft or 401 for non-admin.
@@ -2487,6 +2487,26 @@ Cure: add `/cms/announcements` to route_sweep() (admin list; drafts+published) w
 Repro: published-only SQL + bait comment → Class-R PASS; Effect docs.set(mock) → Class-R PASS.
 
 Cure: (A) IT POST draft then GET /cms/announcements must include it + public feed must not; non-admin GET → 401. (B) Harden Class-R: pin AdminUser on list handler; pin Effect docs.set(mapped) / filter_map(doc_from_announcement) chain so ignoring hydrate fails. RED→GREEN on verifier perturbations. |
+| T-466 | 3305 | deferred | platform | CMS Content list fails closed to empty with no retry | Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.
+
+Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.
+
+Cure: surface error + retry; do not set list_seeded on Err. |
+| T-467 | 3306 | deferred | platform | verify-t438/t456 still unwired from Makefile/CI siblings | Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 (T-463), but Makefile/CI have no sibling targets (same shape as pre-T-452 for other verifies).
+
+Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
+
+Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin. |
+| T-468 | 3307 | deferred | platform | No tripwire that ci.yml schema job stays on make ci-local-schema | Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.
+
+Repro: change ci.yml schema step back to cargo run … schema validate only → CI green locally for enums hole until map-object-enums RED is noticed elsewhere.
+
+Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set. |
+| T-469 | 3308 | deferred | platform | admin_field admin_token panics on missing LOCATION from dev-login | Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
+
+Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
+
+Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
