@@ -12993,7 +12993,7 @@
         "tests",
         "frontend"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3333,
       "stream": "web-platform",
       "targets": [
@@ -14091,7 +14091,7 @@
         "tests",
         "mission-authoring"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3384,
       "executor": "claude-code",
       "priority": 2,
@@ -14113,7 +14113,7 @@
         "docs",
         "dx"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3385,
       "executor": "claude-code",
       "priority": 2,
@@ -14159,6 +14159,28 @@
       ],
       "status": "deferred",
       "order": 3387,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-548",
+      "title": "missions.rs featured-card briefing still uses !b.is_empty() without trim",
+      "summary": "FOUND by W56 adversarial verifier (CLEAN residual, outside T-494 owns) after T-494.\n\nmission_overview / event_hub / schedule (events.rs) now trim-ratchet briefing emptiness. Library hero featured card in apps/website/frontend/src/missions.rs still uses .filter(|b| !b.is_empty()) without trim.\n\nRepro: rg 'filter\\(\\|b\\| !b\\.is_empty\\(\\)\\)' apps/website/frontend/src/missions.rs",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "FE"
+      ],
+      "impact": [
+        "frontend",
+        "ui"
+      ],
+      "status": "deferred",
+      "order": 3388,
       "executor": "claude-code",
       "priority": 2,
       "stream": "web-platform",

@@ -5,17 +5,6 @@
 
 ## Running / Review
 
-- **T-494** (3333) — mission_overview trim source-ratchet still allows !b.is_empty() match arm [running] — Wave 37 adversarial NIT on T-407. dossier_body_uses_trim_aware_briefing_helper only bans .filter(|b| !b.is_empty()); a match-arm !b.is_empty() stayed GREEN while the behavioral trim test went RED. Also residual from T-407 report: schedule events.rs briefing still uses (!briefing.is_empty()) without trim (out of T-407 owns). Cure: widen source ratchet to ban non-trim empty checks on briefing paths; align schedule card trim with event_hub/mission_overview.
-- **T-544** (3384) — T-532 Class-R only — no HTTP IT for set-current version re-point [running] — FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-532.
-
-POST /missions/:id/versions/:vid/set-current is covered by in-handler Class-R source pins only. Cure: HTTP IT in tests/missions.rs that creates two versions, calls set-current to the older, asserts current_version_id + /compiled behavior.
-
-Repro: rg set_current_version apps/website/api/tests — no hit.
-- **T-545** (3385) — mcp-daemon.sh comment still claims mcpd-bin ignores CARGO_TARGET_DIR [running] — FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-543.
-
-Runtime is correct (T-328/T-543). Residual: scripts/mod/mcp-daemon.sh comment still says mcpd-bin ignores CARGO_TARGET_DIR. Cure: update the comment to match live honor of CARGO_TARGET_DIR.
-
-Repro: rg 'ignores CARGO_TARGET_DIR' scripts/mod/
 
 ## Ready
 
