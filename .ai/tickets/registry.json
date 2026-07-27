@@ -13164,7 +13164,7 @@
         "tests",
         "security"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3342,
       "stream": "web-platform",
       "targets": [
@@ -13675,7 +13675,7 @@
         "docs",
         "data"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3365,
       "stream": "web-platform",
       "targets": [
@@ -14223,8 +14223,52 @@
         "api",
         "events"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3390,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-551",
+      "title": "T-550 Class-R only \u2014 no HTTP IT for events roster over-capacity omit",
+      "summary": "FOUND by W60 adversarial verifier (CLEAN MINOR) after T-550.\n\ningest_event_roster loads cargo phys catalog and omits over-capacity missions from roster seating. Coverage is Class-R source pin only; no tests/events.rs IT.\n\nCure: IT that seeds an over-capacity tip and asserts roster omit / error path.\n\nRepro: rg flatten_to_mod_document_with_catalog apps/website/api/tests/events.rs \u2014 no hit.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "events"
+      ],
+      "status": "deferred",
+      "order": 3391,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-552",
+      "title": "0015 migration comment still narrates deferred two-seat (pre-0017 lore)",
+      "summary": "FOUND by W60 adversarial verifier (CLEAN MINOR outside T-525 owns) after T-525.\n\ncontent_golden.sql comments fixed. Migration 0015 comments still claim tests/events.rs seeds legacy two-seat / index deferred \u2014 obsolete after 0017 + T-511.\n\nCure: update 0015 comment block to historical past-tense or point at 0017.\n\nRepro: rg 'two-seat|deferred' apps/website/api/migrations/0015*",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "SCHEMA"
+      ],
+      "impact": [
+        "docs",
+        "schema"
+      ],
+      "status": "deferred",
+      "order": 3392,
       "executor": "claude-code",
       "priority": 2,
       "stream": "web-platform",

@@ -5,15 +5,6 @@
 
 ## Running / Review
 
-- **T-502** (3342) — POST /admin/roles/sync IT does not prove empty-snapshot admin survives [running] — Wave 40 residual from T-372. Class-R pins resync_ids_from_snapshot empty→None. Existing roles/sync IT only asserts 200. Cure: cold IT — promote admin with zero user_discord_roles, POST sync, assert role still admin.
-- **T-525** (3365) — content_golden.sql obsolete two-seat / index-deferred comments after T-511 [running] — Wave 46 verifier NIT. apps/website/api/seeds/content_golden.sql ~655–656 still says orbat assigned partial unique deferred / events.rs still seeds two-seat — obsolete after 0017 + T-511 seed retirement. Cure: update seed comments to match live index.
-- **T-550** (3390) — Events roster still compiles with empty CargoPhysCatalog (T-549 residual) [running] — FOUND by W59 adversarial verifier (CLEAN MINOR outside owns) after T-549.
-
-GET /missions/:id/compiled now loads load_cargo_phys_catalog. Events roster in handlers/events.rs still calls no-arg flatten_to_mod_document (empty catalog), so pre-T-416 over-capacity payloads can still compile on that path.
-
-Cure: same wire as T-549 — load catalog → flatten_to_mod_document_with_catalog.
-
-Repro: rg flatten_to_mod_document apps/website/api/src/handlers/events.rs
 
 ## Ready
 
