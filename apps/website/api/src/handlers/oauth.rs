@@ -446,10 +446,12 @@ mod tests {
             .collect()
     }
 
+    /// T-483 — exact equality to `OAUTH_STATE_CLEAR`. Soft
+    /// `contains("oauth_state=")/Max-Age=0/HttpOnly` greened `Path=/api`.
     fn clears_oauth_state(resp: &Response) -> bool {
-        set_cookie_values(resp).iter().any(|c| {
-            c.contains("oauth_state=") && c.contains("Max-Age=0") && c.contains("HttpOnly")
-        })
+        set_cookie_values(resp)
+            .iter()
+            .any(|c| c.as_str() == OAUTH_STATE_CLEAR)
     }
 
     /// T-248 — `missing_code` must clear the CSRF cookie. Before the fix the early
