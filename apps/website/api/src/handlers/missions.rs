@@ -25,10 +25,27 @@ use crate::models::{
     AuditSeverity, GameMode, Mission, MissionArmory, MissionStatus, MissionVersion, TerrainType,
     WeatherType,
 };
+use crate::services::text::is_http_url;
 use crate::services::{
     CompileError, ModMissionDocument, flatten_to_mod_document, mission_terrain_key, write_audit,
 };
 use crate::state::AppState;
+
+/// `missions.thumbnail_url`, validated at the write boundary. **T-413**, adopting T-405 /
+/// T-391's `is_http_url`.
+///
+/// Create hardcodes `thumbnail_url` to `''` and does not accept a body field — PATCH is the only
+/// HTTP writer. The sink is an `<img src>` (`frontend/src/missions.rs`); same absent-guard class
+/// as announcements before T-405.
+fn validated_thumbnail_url(raw: &str) -> Result<String, ApiError> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || is_http_url(trimmed) {
+        return Ok(trimmed.to_string());
+    }
+    Err(ApiError::bad_request(
+        "thumbnail_url must be an absolute http:// or https:// URL",
+    ))
+}
 
 // --- enum validators (mirror Go valid*; empty weather → clear) ---
 
@@ -465,6 +482,14 @@ pub async fn update_mission(
     }
     let Json(input) = body.map_err(|_| ApiError::bad_request("invalid body"))?;
 
+    // **T-413.** Validated before the query builder so a rejected URL leaves every other field
+    // untouched — PATCH is the only HTTP writer for this column (create hardcodes `''`).
+    let thumbnail_url = input
+        .thumbnail_url
+        .as_deref()
+        .map(validated_thumbnail_url)
+        .transpose()?;
+
     let mut qb = QueryBuilder::new("UPDATE missions SET updated_at = now()");
     if let Some(t) = &input.title {
         qb.push(", title = ").push_bind(t.clone());
@@ -514,7 +539,7 @@ pub async fn update_mission(
     if let Some(b) = &input.briefing {
         qb.push(", briefing = ").push_bind(b.clone());
     }
-    if let Some(t) = &input.thumbnail_url {
+    if let Some(t) = &thumbnail_url {
         qb.push(", thumbnail_url = ").push_bind(t.clone());
     }
     if let Some(target) = &input.status {

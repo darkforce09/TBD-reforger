@@ -23,10 +23,27 @@ use crate::models::{
     AuditSeverity, Event, EventMission, EventStatus, MissionArmory, OrbatReservation, OrbatSlot,
     RegistrationState,
 };
+use crate::services::text::is_http_url;
 use crate::services::{
     OrbatSquadTemplate, flatten_to_mod_document, parse_orbat_template, write_audit,
 };
 use crate::state::AppState;
+
+/// `events.banner_image_url`, validated at the write boundary. **T-413**, adopting T-405 /
+/// T-391's `is_http_url` on the remaining writer that still lacked it.
+///
+/// The sink is an `<img src>` (`frontend/src/events.rs`), weaker than an `<a href>` — browsers
+/// do not execute `javascript:` in `img src` — but the guard was absent identically. Shared by
+/// create and PATCH so the two cannot drift.
+fn validated_banner_image_url(raw: &str) -> Result<String, ApiError> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || is_http_url(trimmed) {
+        return Ok(trimmed.to_string());
+    }
+    Err(ApiError::bad_request(
+        "banner_image_url must be an absolute http:// or https:// URL",
+    ))
+}
 
 // ══ EVENT LIFECYCLE STATE MACHINE (T-225) ══════════════════════════════════════════════
 //
@@ -661,6 +678,8 @@ pub async fn create_event(
         ));
     }
     check_name_override(&input.name_override)?;
+    // T-413 — see `validated_banner_image_url`. Rejected before the INSERT, so a bad URL stores nothing.
+    let banner_image_url = validated_banner_image_url(&input.banner_image_url)?;
     if let Some(sid) = input.server_id {
         require_server(&state.pool, sid).await?;
     }
@@ -675,7 +694,7 @@ pub async fn create_event(
     .bind(&input.name_override)
     .bind(start_time)
     .bind(&input.briefing)
-    .bind(&input.banner_image_url)
+    .bind(&banner_image_url)
     .bind(status)
     .bind(input.registration_locked)
     .bind(input.max_slots)
@@ -1266,6 +1285,13 @@ pub async fn update_event(
     if let Some(Some(mid)) = input.modpack_id {
         require_event_modpack(&state.pool, mid).await?;
     }
+    // **T-413.** Validated up here so a rejected URL leaves the row untouched instead of applying
+    // the caller's other field edits and then 400-ing. `None` means "field absent".
+    let banner_image_url = input
+        .banner_image_url
+        .as_deref()
+        .map(validated_banner_image_url)
+        .transpose()?;
 
     let mut qb: QueryBuilder<Postgres> = QueryBuilder::new("UPDATE events SET updated_at = now()");
     if let Some(t) = input.start_time {
@@ -1280,7 +1306,7 @@ pub async fn update_event(
     if let Some(b) = &input.briefing {
         qb.push(", briefing = ").push_bind(b.clone());
     }
-    if let Some(u) = &input.banner_image_url {
+    if let Some(u) = &banner_image_url {
         qb.push(", banner_image_url = ").push_bind(u.clone());
     }
     if let Some(l) = input.registration_locked {
