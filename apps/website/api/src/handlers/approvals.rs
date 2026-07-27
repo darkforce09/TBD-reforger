@@ -149,6 +149,15 @@ async fn load_pending(state: &AppState, id: &str) -> Result<Mission, ApiError> {
     Ok(m)
 }
 
+/// Approve UPDATE — named const so T-337's `updated_at = now()` pin is unit-testable.
+///
+/// Sibling status writes (`submit_mission`, `create_version`, PATCH) all bump `updated_at`.
+/// Approve/reject were the outliers: the queue's `ORDER BY` / `submitted_at` projection and
+/// any cache keyed on `updated_at` never saw the review action, and a NULL `updated_at`
+/// survived a real state change. Always bump — same contract as every other status write.
+const APPROVE_MISSION_SQL: &str = "UPDATE missions SET status = 'live', reviewed_by = $1, \
+         reviewed_at = now(), updated_at = now() WHERE id = $2";
+
 /// `POST /api/v1/approvals/:id/approve` — promote to the live library.
 ///
 /// @route POST /api/v1/approvals/:id/approve
@@ -159,13 +168,11 @@ pub async fn approve_mission(
 ) -> Result<Json<Mission>, ApiError> {
     let m = load_pending(&state, &id).await?;
     let reviewer = &admin.0.discord_id;
-    sqlx::query(
-        "UPDATE missions SET status = 'live', reviewed_by = $1, reviewed_at = now() WHERE id = $2",
-    )
-    .bind(reviewer)
-    .bind(m.id)
-    .execute(&state.pool)
-    .await?;
+    sqlx::query(APPROVE_MISSION_SQL)
+        .bind(reviewer)
+        .bind(m.id)
+        .execute(&state.pool)
+        .await?;
     let reviewer_name = username(&state.pool, reviewer).await;
     write_audit(
         &state.pool,
@@ -201,6 +208,12 @@ pub struct RejectInput {
     reason: String,
 }
 
+/// Reject UPDATE — named const so T-337's `updated_at = now()` pin is unit-testable.
+///
+/// Same always-bump decision as [`APPROVE_MISSION_SQL`]: review actions are status writes.
+const REJECT_MISSION_SQL: &str = "UPDATE missions SET status = 'rejected', rejection_reason = $1, \
+         reviewed_by = $2, reviewed_at = now(), updated_at = now() WHERE id = $3";
+
 /// `POST /api/v1/approvals/:id/reject` — return to the author.
 ///
 /// @route POST /api/v1/approvals/:id/reject
@@ -224,14 +237,12 @@ pub async fn reject_mission(
         return Err(ApiError::bad_request("reason is required"));
     }
     let reviewer = &admin.0.discord_id;
-    sqlx::query(
-        "UPDATE missions SET status = 'rejected', rejection_reason = $1, reviewed_by = $2, reviewed_at = now() WHERE id = $3",
-    )
-    .bind(reason)
-    .bind(reviewer)
-    .bind(m.id)
-    .execute(&state.pool)
-    .await?;
+    sqlx::query(REJECT_MISSION_SQL)
+        .bind(reason)
+        .bind(reviewer)
+        .bind(m.id)
+        .execute(&state.pool)
+        .await?;
     let reviewer_name = username(&state.pool, reviewer).await;
     write_audit(
         &state.pool,
@@ -269,6 +280,26 @@ mod t414_order_tiebreaker {
             order.find("COALESCE").expect("COALESCE in ORDER BY")
                 < order.find("m.id ASC").expect("m.id ASC in ORDER BY"),
             "m.id ASC must trail the COALESCE submitted_at key, not replace it"
+        );
+    }
+}
+
+#[cfg(test)]
+mod t337_updated_at_bump {
+    use super::{APPROVE_MISSION_SQL, REJECT_MISSION_SQL};
+
+    /// T-337 — approve/reject must bump `missions.updated_at`, matching sibling status writes.
+    ///
+    /// Perturbation RED: strip `updated_at = now()` from either const → this test fails.
+    #[test]
+    fn approve_and_reject_sql_bump_updated_at() {
+        assert!(
+            APPROVE_MISSION_SQL.contains("updated_at = now()"),
+            "approve UPDATE must set updated_at = now(); got: {APPROVE_MISSION_SQL}"
+        );
+        assert!(
+            REJECT_MISSION_SQL.contains("updated_at = now()"),
+            "reject UPDATE must set updated_at = now(); got: {REJECT_MISSION_SQL}"
         );
     }
 }
