@@ -38,8 +38,8 @@ start() {
   # T-328: private CARGO_TARGET_DIR — same class as T-322 `make api` / target-dev-api.
   # Shared target lets wave-gate `cargo test` rewrite target/debug/mcpd while a 4h-lived
   # daemon keeps the old inode (stale/unmerged bits). Private dir = only mcp-daemon writes
-  # what mcp-daemon runs. Gitignored by existing `target-*/`. mcpd-bin.sh echoes
-  # $ROOT/target/debug/mcpd (ignores CARGO_TARGET_DIR) — resolve from our private dir.
+  # what mcp-daemon runs. Gitignored by existing `target-*/`. T-543: mcpd-bin.sh honors
+  # CARGO_TARGET_DIR — export the private dir so build+echo land under mcpd_target.
   local repo_root; repo_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
   local mcpd_target="${MCPD_CARGO_TARGET_DIR:-$repo_root/target-dev-mcpd}"
   CARGO_TARGET_DIR="$mcpd_target" "$SCRIPT_DIR/lib/mcpd-bin.sh" >/dev/null \
