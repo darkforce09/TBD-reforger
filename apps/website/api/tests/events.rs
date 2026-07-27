@@ -2371,7 +2371,14 @@ async fn members_list_honours_offset_pagination() {
     for i in 0..N {
         let discord_id = format!("000000000000495{i:03}");
         let username = format!("{PREFIX}{i:02}");
-        common::seed_user(&pool, &discord_id, &username, &arma(&discord_id), "enlisted").await;
+        common::seed_user(
+            &pool,
+            &discord_id,
+            &username,
+            &arma(&discord_id),
+            "enlisted",
+        )
+        .await;
     }
 
     let leader = token(&app, "leader").await;
@@ -2390,7 +2397,10 @@ async fn members_list_honours_offset_pagination() {
         .as_array()
         .unwrap_or_else(|| panic!("page0 missing data array: {page0}"));
     assert_eq!(data0.len(), 20, "default first page size: {page0}");
-    assert_eq!(page0["total"], N as i64, "filtered total must be seeded N: {page0}");
+    assert_eq!(
+        page0["total"], N as i64,
+        "filtered total must be seeded N: {page0}"
+    );
     assert_eq!(page0["limit"], 20, "envelope limit: {page0}");
     assert_eq!(page0["offset"], 0, "envelope offset: {page0}");
     let names0: Vec<&str> = data0
