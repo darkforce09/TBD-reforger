@@ -42,11 +42,134 @@ use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
 use sqlx::PgPool;
 use tower::ServiceExt;
+use url::Url;
 use uuid::Uuid;
 use website_api::state::AppState;
 
 /// Process-local counter for [`unique_arma`]. Starts at 1 so a mint never looks like a bare prefix.
 static ARMA_SEQ: AtomicU64 = AtomicU64::new(1);
+
+// ───────────────────────────── T-381 DB target guard ─────────────────────────────
+
+/// Extract the PostgreSQL database name from a connection URL's path.
+///
+/// `postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable` → `Some("rust_it")`.
+/// Empty path, unparseable URL, or a multi-segment path → `None`.
+pub fn database_name_from_url(database_url: &str) -> Option<String> {
+    let parsed = Url::parse(database_url).ok()?;
+    let name = parsed.path().trim_start_matches('/');
+    if name.is_empty() || name.contains('/') {
+        return None;
+    }
+    // Percent-decoding is unnecessary for our ASCII test DB names; reject weirdness.
+    if !name
+        .bytes()
+        .all(|b| b.is_ascii_alphanumeric() || b == b'_')
+    {
+        return None;
+    }
+    Some(name.to_string())
+}
+
+/// Whether `name` is a dedicated integration / gate / probe database — never the live
+/// `tbd_reforger` dev DB.
+///
+/// Measured allow-list (Makefile + `scripts/platform/wave.sh` + operator cold DBs):
+/// - `rust_it` — `make test-it` (Makefile DROP/CREATE)
+/// - `tbd_gate*` — wave gate (`tbd_gate_w<N>`, `tbd_gate_it`, `tbd_gate_migrate`, …)
+/// - `*_cold` — operator `TBD_GATE_DB` cold DBs (`tbd_wave6_cold`, `tbd_t399_cold`, …)
+/// - `*_it` / `*_probe` — agent throwaways that already follow the ticket convention
+///
+/// Anything else (notably `tbd_reforger`) is refused so an exported
+/// `TEST_DATABASE_URL=…/tbd_reforger` cannot wipe the live database.
+pub fn is_safe_test_database_name(name: &str) -> bool {
+    if name.is_empty() || name == "tbd_reforger" {
+        return false;
+    }
+    name == "rust_it"
+        || name.starts_with("tbd_gate")
+        || name.ends_with("_cold")
+        || name.ends_with("_it")
+        || name.ends_with("_probe")
+}
+
+/// Fail loud if `database_url` does not point at a safe test database name.
+///
+/// Call this immediately after reading `TEST_DATABASE_URL` (and before connect /
+/// migrate / any DELETE). Unset URL is the caller's skip path — this only runs when
+/// a URL is present.
+pub fn assert_test_database_url(database_url: &str) {
+    let name = database_name_from_url(database_url).unwrap_or_else(|| {
+        panic!(
+            "\n\
+             ───────────────────────────────────────────────────────────────────────\n\
+             TEST_DATABASE_URL is set but its database name could not be parsed.\n\
+             \n  \
+             url: {database_url}\n\
+             \n  \
+             Expected a postgres URL whose path is a single ASCII name, e.g.\n  \
+             postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable\n\
+             ───────────────────────────────────────────────────────────────────────"
+        )
+    });
+    if !is_safe_test_database_name(&name) {
+        panic!(
+            "\n\
+             ───────────────────────────────────────────────────────────────────────\n\
+             TEST_DATABASE_URL refuses to target database `{name}` (T-381).\n\
+             \n  \
+             url: {database_url}\n\
+             \n  \
+             Allowed names: rust_it, tbd_gate*, *_cold, *_it, *_probe.\n  \
+             The live dev database `tbd_reforger` is never allowed — pointing the\n  \
+             integration suite at it would wipe production-like rows.\n  \
+             Fix: `make test-it` (creates rust_it), or export a URL whose path\n  \
+             matches the allow-list (wave gate uses tbd_gate_w<N> / *_cold).\n\
+             ───────────────────────────────────────────────────────────────────────"
+        );
+    }
+}
+
+/// Read `TEST_DATABASE_URL`: `None` when unset (suite skip); panics when set to an
+/// unsafe database name.
+pub fn require_test_database_url() -> Option<String> {
+    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    assert_test_database_url(&url);
+    Some(url)
+}
+
+/// Class-R: the allow/deny table for [`is_safe_test_database_name`] (T-381).
+///
+/// Runs inside every binary that `mod common;` — duplicate execution is fine; the
+/// pins are pure and cheap.
+#[test]
+fn t381_test_database_name_guard() {
+    // Makefile + wave gate + operator cold.
+    assert!(is_safe_test_database_name("rust_it"));
+    assert!(is_safe_test_database_name("tbd_gate_it"));
+    assert!(is_safe_test_database_name("tbd_gate_w54"));
+    assert!(is_safe_test_database_name("tbd_gate_migrate"));
+    assert!(is_safe_test_database_name("tbd_wave6_cold"));
+    assert!(is_safe_test_database_name("tbd_t399_cold"));
+    assert!(is_safe_test_database_name("tbd_t350_probe"));
+    assert!(is_safe_test_database_name("tbd_t230_it"));
+    // Live / garbage must refuse.
+    assert!(!is_safe_test_database_name("tbd_reforger"));
+    assert!(!is_safe_test_database_name("postgres"));
+    assert!(!is_safe_test_database_name(""));
+    assert!(!is_safe_test_database_name("production"));
+    // URL parse: path → name.
+    assert_eq!(
+        database_name_from_url("postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable")
+            .as_deref(),
+        Some("rust_it")
+    );
+    assert_eq!(
+        database_name_from_url("postgres://tbd:tbd@localhost:5434/tbd_reforger?sslmode=disable")
+            .as_deref(),
+        Some("tbd_reforger")
+    );
+}
 
 /// The single identity `GET /auth/dev-login` mints for **every** role
 /// (`src/handlers/dev.rs:14`). It is shared by every suite that calls dev-login, and each
