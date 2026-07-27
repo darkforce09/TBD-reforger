@@ -976,6 +976,18 @@ Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.
 Repro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.
 
 Cure: apply the same MISSION_FILE_MAX_BYTES check on the REST success path before ParseMissionJson.
+- **T-458** (deferred) — AdminGate still uses browse-mode has_min_role [FE] — Residual from T-454 / wave 21 adversarial NIT. wiki/modpacks/event_hub action gates now use has_min_role_authed, but ui.rs AdminGate still calls auth.has_min_role(Role::Admin) (browse-mode None=>true via auth.rs).
+
+Mitigation today: AdminGate is nested under AuthGate, which only renders children when is_authenticated() (user is Some), so guests cannot flash admin UI via None=>true.
+
+Repro: read apps/website/frontend/src/ui.rs:244-264 and auth.rs has_min_role.
+
+Cure: switch AdminGate to has_min_role_authed (or equivalent None=>false) while keeping the reactive move || auth path.
+- **T-459** (deferred) — ticket advance-slice mutates without schema check preflight [INFRA] — Residual from T-455 / wave 21 adversarial NIT. cmd_add/cmd_remove (and set-status/mark-ready/reorder/ship) now call require_check_ok before write, but cmd_advance_slice still save_registry + sync with no preflight while check is red.
+
+Repro: red in-memory registry → cmd_advance_slice still writes active_slice.
+
+Cure: call require_check_ok(root, registry, &format!("advance-slice {id}")) before mutate, with a Class-R/unit test mirroring add_refuses_invalid.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

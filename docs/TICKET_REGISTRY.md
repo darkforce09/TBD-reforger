@@ -528,7 +528,7 @@ $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) wit
 | T-284 | 3020 | shipped | platform | events.match_id is dead weight and clear_slot is unreachable | events.match_id is selected in every event query and never written by any insert or update — the real link runs the other way via matches.event_id. Separately, clear_slot has no frontend caller, so an admin can never free a claimed slot. |
 | T-285 | 3030 | idea | platform | Field tools — solutions never persist and inject writes to a dead directory | POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads. |
 | T-286 | 3040 | shipped | platform | Dead scaffolding and a non-reactive role read | PageStub and ApiPage are defined and routed nowhere. missions.rs:87 is a one-shot non-reactive role read evaluated before AuthGate resolves; combined with nav.rs:41-46 returning true for None, a not-yet-bootstrapped session yields is_maker=true and never corrects. faction_manager.rs deletes with no confirmation dialog, unlike every sibling page. |
-| T-287 | 3050 | ready | platform | SSE reader leaks one connection per SPA navigation | Self-documented at sse.rs:8-12: the stream is never torn down on route change because Leptos on_cleanup is Send-bound and AbortController is not. Harmless today only because the stream never emits. |
+| T-287 | 3050 | shipped | platform | SSE reader leaks one connection per SPA navigation | Self-documented at sse.rs:8-12: the stream is never torn down on route change because Leptos on_cleanup is Send-bound and AbortController is not. Harmless today only because the stream never emits. |
 | T-288 | 3060 | idea | platform | Modpack to server-config renderer and push | The database modpack concept and the server's actual mod list are unconnected universes. deploy-staging.sh:258-260 hardcodes a single mod from an env var and never reads the modpacks table. |
 | T-289 | 3070 | idea | platform | Server-host deploy agent for start, stop and status | The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive. |
 | T-290 | 3080 | idea | eden | Resolve nine dead-output fields flatten emits that the mod never reads | meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only). Either add mod readers or annotate them non-consumed so the next audit does not re-derive this. |
@@ -2410,12 +2410,12 @@ Cure: rewrite the stale header to match IdentityLink (same honesty bar as T-296)
 Repro: format-break tools/tbd-tools/src/lib.rs; local rust-fmt RED; push and watch CI rust-backend still GREEN if only api fmt runs.
 
 Cure: root/workspace fmt step in ci.yml (or drop working-directory for fmt); refresh wave.sh comment. |
-| T-454 | 3293 | ready | platform | wiki/modpacks/event_hub still one-shot has_min_role | Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive `has_min_role_authed` (None=>false). wiki.rs / modpacks.rs / event_hub.rs still one-shot `store.has_min_role` (browse-mode None=>true). Behind AuthGate today so Mission-Library freeze is not reproduced, but the pattern debt remains.
+| T-454 | 3293 | shipped | platform | wiki/modpacks/event_hub still one-shot has_min_role | Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive `has_min_role_authed` (None=>false). wiki.rs / modpacks.rs / event_hub.rs still one-shot `store.has_min_role` (browse-mode None=>true). Behind AuthGate today so Mission-Library freeze is not reproduced, but the pattern debt remains.
 
 Repro: rg 'has_min_role\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs — still browse-mode helper.
 
 Cure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role. |
-| T-455 | 3294 | ready | platform | ticket add/remove mutate without schema check preflight | Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.
+| T-455 | 3294 | shipped | platform | ticket add/remove mutate without schema check preflight | Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.
 
 Repro: break a required field; ticket check RED; ticket add still inserts a row.
 
@@ -2425,6 +2425,26 @@ Cure: gate add/remove through require_check_ok (or document intentional escape h
 Repro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.
 
 Cure: apply the same MISSION_FILE_MAX_BYTES check on the REST success path before ParseMissionJson. |
+| T-457 | 3296 | shipped | platform | Class-R pins for T-287/T-454 are false-green | Residual from wave 21 adversarial MAJOR. Live T-287/T-454 behavior holds, but Class-R source guards accept stubs:
+(1) sse.rs INTEL contains-check matches a commented-out on_cleanup(abort_server_status_stream);
+(2) wiki/modpacks/event_hub Class-R accept a dead Memo + live browse-mode has_min_role while only banning store.has_min_role(Role::…).
+
+Repro T-287: comment out server_intel on_cleanup registration but leave the string in a // comment → class_r_sse_abort PASSes while abort is dead.
+Repro T-454: keep Memo+has_min_role_authed unused; drive is_admin via has_min_role → admin_affordance Class-R PASSes while Edit uses None=>true.
+
+Cure: strip // comments (or require a non-comment production line) for the on_cleanup pin; bind wiki/modpacks/event_hub pins to the is_admin/is_leader Memo assignment used at .get() call sites and ban free has_min_role( in those files' production sections. |
+| T-458 | 3297 | deferred | platform | AdminGate still uses browse-mode has_min_role | Residual from T-454 / wave 21 adversarial NIT. wiki/modpacks/event_hub action gates now use has_min_role_authed, but ui.rs AdminGate still calls auth.has_min_role(Role::Admin) (browse-mode None=>true via auth.rs).
+
+Mitigation today: AdminGate is nested under AuthGate, which only renders children when is_authenticated() (user is Some), so guests cannot flash admin UI via None=>true.
+
+Repro: read apps/website/frontend/src/ui.rs:244-264 and auth.rs has_min_role.
+
+Cure: switch AdminGate to has_min_role_authed (or equivalent None=>false) while keeping the reactive move \|\| auth path. |
+| T-459 | 3298 | deferred | platform | ticket advance-slice mutates without schema check preflight | Residual from T-455 / wave 21 adversarial NIT. cmd_add/cmd_remove (and set-status/mark-ready/reorder/ship) now call require_check_ok before write, but cmd_advance_slice still save_registry + sync with no preflight while check is red.
+
+Repro: red in-memory registry → cmd_advance_slice still writes active_slice.
+
+Cure: call require_check_ok(root, registry, &format!("advance-slice {id}")) before mutate, with a Class-R/unit test mirroring add_refuses_invalid. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

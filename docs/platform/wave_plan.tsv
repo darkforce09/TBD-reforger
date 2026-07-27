@@ -182,7 +182,7 @@
 8	T-284	events.match_id is dead weight and clear_slot is unreachable	apps/website/api/src/handlers/events.rs; apps/website/api/src/models/event.rs; apps/website/api/migrations/0013_drop_events_match_id.sql; apps/website/api/src/handlers/dashboard.rs; apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/events.rs; apps/website/api/tests/null_tolerance.rs; apps/website/frontend/src/event_hub.rs
 8	T-257	Markers and objectives will be non-undoable the day they land	crates/map-engine-core/src/doc/store.rs
 8	T-285	Field tools — solutions never persist and inject writes to a dead directory	apps/website/frontend/src/mortar.rs
-8	T-287	SSE reader leaks one connection per SPA navigation	apps/website/frontend/src/sse.rs
+8	T-287	SSE reader leaks one connection per SPA navigation	apps/website/frontend/src/sse.rs; apps/website/frontend/src/server_intel.rs; apps/website/frontend/src/main.rs; apps/website/frontend/Cargo.toml
 8	T-238	Add ticket check to CI	.github/workflows/ci.yml
 8	T-281	apps/mod README falsely claims the compile route does not exist	apps/mod/tbd-framework/README.md; apps/website/api/src/app.rs; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
 9	T-288	Modpack to server-config renderer and push	scripts/mod/deploy-staging.sh
@@ -255,3 +255,6 @@
 99	T-454	wiki/modpacks/event_hub still one-shot has_min_role (browse-mode None=>true)	apps/website/frontend/src/wiki.rs; apps/website/frontend/src/modpacks.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/nav.rs
 99	T-455	ticket add/remove mutate without schema check preflight	xtask/src/cmds.rs; xtask/src/check.rs
 99	T-456	OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
+99	T-457	Class-R pins for T-287/T-454 are false-green	apps/website/frontend/src/sse.rs; apps/website/frontend/src/wiki.rs; apps/website/frontend/src/modpacks.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/server_intel.rs
+99	T-458	AdminGate still uses browse-mode has_min_role	apps/website/frontend/src/ui.rs; apps/website/frontend/src/auth.rs
+99	T-459	ticket advance-slice mutates without schema check preflight	xtask/src/cmds.rs; xtask/src/check.rs
