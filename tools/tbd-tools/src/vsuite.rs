@@ -402,6 +402,8 @@ pub async fn run(args: &VSuiteArgs) -> Result<u8> {
         all.iter().filter(|r| r.slug == args.only).collect()
     };
 
+    // T-339 — fonts: `cdp::launch` pins gate-owned `XDG_CACHE_HOME` on the chromium child
+    // (T-362 `.env`); `gate` main also calls `ensure_gate_font_cache` before tokio (T-354).
     let mut browser = cdp::launch(9341, &[]).await?;
     let result = run_modes(&browser, &gold, args, &selected).await;
     browser.kill();

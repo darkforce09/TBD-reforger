@@ -85,6 +85,10 @@ enum Cmd {
         port: u16,
         #[arg(long, default_value_t = 9337)]
         debug_port: u16,
+        /// Proxy `/api` to a live backend (T-339). Default in `render_check` is
+        /// `http://127.0.0.1:8080` when omitted — required for `--seed-auth` to fully hydrate.
+        #[arg(long)]
+        api_proxy: Option<String>,
     },
     /// Static SPA server with COOP/COEP (serve.mjs CLI port)
     Serve {
@@ -100,6 +104,11 @@ enum Cmd {
 }
 
 fn main() -> ExitCode {
+    // T-339 / T-354 — pin the gate font cache in the single-threaded prologue, before any
+    // tokio task exists. `cdp::launch` also sets `XDG_CACHE_HOME` on the chromium child
+    // (T-362); this covers doctor inherit-path probes (`check_fonts`) that deliberately do not
+    // force their own env.
+    doctor::ensure_gate_font_cache();
     let cli = Cli::parse();
     let rt = tokio::runtime::Runtime::new().expect("tokio runtime");
     let result: anyhow::Result<u8> = rt.block_on(async {
@@ -131,6 +140,7 @@ fn main() -> ExitCode {
                 seed_auth,
                 port,
                 debug_port,
+                api_proxy,
             } => {
                 smokes::render_check(&smokes::RenderCheckArgs {
                     dir,
@@ -140,6 +150,7 @@ fn main() -> ExitCode {
                     seed_auth,
                     port,
                     debug_port,
+                    api_proxy,
                 })
                 .await
             }

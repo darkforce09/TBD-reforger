@@ -231,6 +231,13 @@ pub async fn launch(debug_port: u16, extra_args: &[String]) -> Result<Browser> {
     let chromium = find_chromium().ok_or_else(|| {
         anyhow!("cdp: no chromium (set CHROME_HEADLESS_SHELL or install playwright)")
     })?;
+    // T-339 — every CDP caller (smokes Harness, vsuite, doctor liveness) gets the gate-owned
+    // fontconfig cache. Pin `XDG_CACHE_HOME` on the *child* Command (T-362) rather than relying
+    // on process-wide `set_var` after tokio is running: that closes vsuite's separate-chromium
+    // gap and avoids relocating an `unsafe` env write into a multi-threaded window (T-354).
+    let font_cache = crate::doctor::gate_font_cache_dir();
+    std::fs::create_dir_all(font_cache)
+        .with_context(|| format!("create gate font cache {}", font_cache.display()))?;
     // Unique profile dir per launch (harness pid + debug port — no Date/rand, deterministic
     // within a run). Removed first in case a crashed prior run left a stale copy with a lock.
     let user_data_dir =
@@ -255,6 +262,7 @@ pub async fn launch(debug_port: u16, extra_args: &[String]) -> Result<Browser> {
     args.extend(extra_args.iter().cloned());
     let mut child = Command::new(&chromium)
         .args(&args)
+        .env("XDG_CACHE_HOME", font_cache)
         // Own process group (leader pid == child pid) so shutdown can signal the whole chrome
         // tree — renderer/gpu children included — without touching the harness (T-166).
         .process_group(0)
