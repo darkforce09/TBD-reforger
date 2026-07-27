@@ -616,10 +616,7 @@ async fn admin_approvals_cms_field() {
 /// or call-site restore disappear.
 #[test]
 fn t499_roles_sync_is_suite_scoped_snapshot_restore() {
-    let src = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/tests/admin_field.rs"
-    ));
+    let src = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/admin_field.rs"));
     assert!(
         src.contains("common::require_test_database_url"),
         "admin_field boot must call common::require_test_database_url (T-381/T-542)"
