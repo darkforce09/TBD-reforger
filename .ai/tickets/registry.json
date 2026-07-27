@@ -9745,7 +9745,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3155,
       "stream": "web-platform",
       "targets": [
@@ -10727,8 +10727,8 @@
     },
     {
       "id": "T-387",
-      "title": "render-check hard-codes api_proxy None, so no probe can reach a real session",
-      "summary": "Confirmed independently by a third agent, which had to patch and rebuild the binary to get a real session and then restored both files byte-exact.\n\nsmokes.rs:3090 hard-codes `api_proxy: None` for render-check. T-339 already records the consequence for `--seed-auth` (the session is left HALF-hydrated: `user` set from localStorage but `/me` fails so `access_token` stays None, `is_authenticated()` is false, and authenticated surfaces silently render SIGNED OUT). This ticket is the fix itself: thread `--api-proxy` through `bin/gate.rs` -> `RenderCheckArgs` so a probe can point at a real API.\n\nT-361 is the sibling and should probably land with it: `gate serve`'s proxy does `upstream.bytes().await`, so it cannot proxy an SSE stream at all.\n\nAlso fold in, same file: **dev-login cannot produce two distinct accounts.** handlers/dev.rs:14 binds `DEV_USER_ID = \"000000000000000001\"` unconditionally for every role, so `?role=admin` and `?role=mission_maker` both return `sub: 000000000000000001`. Since `owner_token()` keys on `discord_id`, any cross-account probe built on the role parameter is VACUOUS \u2014 it tests one account twice. Every honest cross-account probe tonight had to forge a `tbd-auth` blob instead. Either give dev-login a per-role synthetic id, or document that forging is the supported method; leaving it implicit has already cost two agents a wasted arm.\n\n== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==\nRecording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is \u2014 knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.\nThis is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong \u2014 only not now.",
+      "title": "render-check / gate residual after T-339: dev-login single Discord id (not api_proxy)",
+      "summary": "NARROWED after W61 (T-339 shipped). The original api_proxy:None render-check hole is CLOSED by T-339 (CLI --api-proxy + default :8080).\n\nRemaining from the original T-387 write-up (do not re-litigate api_proxy):\n- Dev-login / probe path still folds multiple roles onto a single Discord id in ways that half-hydrate or collide sessions (see original T-387 notes + T-361 SSE proxy sibling if overlapping).\n\nMeasure live gate/smokes/dev-login before implementing; owns stay tools gate/smokes unless evidence moves the residual.\n\n== DEFERRED \u2014 residual after T-339 ==",
       "program": "platform",
       "surfaces": [
         "CI"
@@ -14245,7 +14245,7 @@
         "tests",
         "events"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3391,
       "executor": "claude-code",
       "priority": 2,
@@ -14267,7 +14267,7 @@
         "docs",
         "schema"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3392,
       "executor": "claude-code",
       "priority": 2,

@@ -816,7 +816,7 @@ TWO CORRECTIONS. First, in T-338's favour: the first verifier called its '30 ass
 Second, against T-338: its claim that 'the RAM copies were DESTROYED, not hidden' is UNREPRODUCIBLE, and the RAM half of the purge is effectively dead code. The editor route is Chromeless (layout.rs:36), so it renders no user menu, and both routes into the editor are deliberate full page loads — so the instance that runs `clear_session` never populated LOCAL_BACKUPS, and `forget_owner` can only ever drop 0. Measured: on an authenticated `/`, `typeof window.__missionBackup === "undefined"`, and `any_href_into_editor: false` across all 18 same-origin hrefs. Not a leak — the SCOPING closes the same-page-load hole and the IDB purge removes the disk residue — but the claim as worded is fully explained by the IDB purge alone, and no probe artifact backing it exists.
 
 It also answered the runbook's open question: T-338's top-level-editor wedge does NOT reproduce on the drained build (T-354). `T1_top_level_editor_booted: true` at /missions/smoke/edit top-level. |
-| T-339 | 3155 | running | platform | Two gate-harness gaps T-320 could not reach from its own files | Both found and diagnosed by T-320, both left because the files were outside its ownership. Neither is red today; both are one small change.
+| T-339 | 3155 | shipped | platform | Two gate-harness gaps T-320 could not reach from its own files | Both found and diagnosed by T-320, both left because the files were outside its ownership. Neither is red today; both are one small change.
 
 1. **`vsuite.rs:366` launches its own chromium** and therefore does NOT get T-320's `ensure_gate_font_cache()`. It is green only because it renders ordinary routes, which survive a zero-font environment — the mission editor is the one route that reaches a per-character fallback and aborts. Moving `ensure_gate_font_cache()` into `cdp::launch` closes it for EVERY caller in one line. `cdp.rs` was not T-320's file. Do this one first; it is the durable form of the fix.
 
@@ -1712,17 +1712,14 @@ Note the comment two lines above says 'The raw value is echoed in the verdict so
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-387 | 3203 | deferred | platform | render-check hard-codes api_proxy None, so no probe can reach a real session | Confirmed independently by a third agent, which had to patch and rebuild the binary to get a real session and then restored both files byte-exact.
+| T-387 | 3203 | deferred | platform | render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) | NARROWED after W61 (T-339 shipped). The original api_proxy:None render-check hole is CLOSED by T-339 (CLI --api-proxy + default :8080).
 
-smokes.rs:3090 hard-codes `api_proxy: None` for render-check. T-339 already records the consequence for `--seed-auth` (the session is left HALF-hydrated: `user` set from localStorage but `/me` fails so `access_token` stays None, `is_authenticated()` is false, and authenticated surfaces silently render SIGNED OUT). This ticket is the fix itself: thread `--api-proxy` through `bin/gate.rs` -> `RenderCheckArgs` so a probe can point at a real API.
+Remaining from the original T-387 write-up (do not re-litigate api_proxy):
+- Dev-login / probe path still folds multiple roles onto a single Discord id in ways that half-hydrate or collide sessions (see original T-387 notes + T-361 SSE proxy sibling if overlapping).
 
-T-361 is the sibling and should probably land with it: `gate serve`'s proxy does `upstream.bytes().await`, so it cannot proxy an SSE stream at all.
+Measure live gate/smokes/dev-login before implementing; owns stay tools gate/smokes unless evidence moves the residual.
 
-Also fold in, same file: **dev-login cannot produce two distinct accounts.** handlers/dev.rs:14 binds `DEV_USER_ID = "000000000000000001"` unconditionally for every role, so `?role=admin` and `?role=mission_maker` both return `sub: 000000000000000001`. Since `owner_token()` keys on `discord_id`, any cross-account probe built on the role parameter is VACUOUS — it tests one account twice. Every honest cross-account probe tonight had to forge a `tbd-auth` blob instead. Either give dev-login a per-role synthetic id, or document that forging is the supported method; leaving it implicit has already cost two agents a wasted arm.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
+== DEFERRED — residual after T-339 == |
 | T-388 | 3204 | deferred | platform | The adoption-residue purge is not guaranteed on a first editor open | MINOR, from the behavioural probe of T-352. Its residue purge (`editor_session.rs:149 purge_legacy_markers`) is reachable ONLY via `mark_adopted`, and three paths reach the editor without calling it:
   mission_hydrate.rs:181-190 — the `is_empty && loaded_from_idb` branch calls `apply_row` and no `mark_adopted`;
   `Local::Diverged` (:236) defers to conflict resolution;
@@ -2768,14 +2765,14 @@ GET /missions/:id/compiled now loads load_cargo_phys_catalog. Events roster in h
 Cure: same wire as T-549 — load catalog → flatten_to_mod_document_with_catalog.
 
 Repro: rg flatten_to_mod_document apps/website/api/src/handlers/events.rs |
-| T-551 | 3391 | running | platform | T-550 Class-R only — no HTTP IT for events roster over-capacity omit | FOUND by W60 adversarial verifier (CLEAN MINOR) after T-550.
+| T-551 | 3391 | shipped | platform | T-550 Class-R only — no HTTP IT for events roster over-capacity omit | FOUND by W60 adversarial verifier (CLEAN MINOR) after T-550.
 
 ingest_event_roster loads cargo phys catalog and omits over-capacity missions from roster seating. Coverage is Class-R source pin only; no tests/events.rs IT.
 
 Cure: IT that seeds an over-capacity tip and asserts roster omit / error path.
 
 Repro: rg flatten_to_mod_document_with_catalog apps/website/api/tests/events.rs — no hit. |
-| T-552 | 3392 | running | platform | 0015 migration comment still narrates deferred two-seat (pre-0017 lore) | FOUND by W60 adversarial verifier (CLEAN MINOR outside T-525 owns) after T-525.
+| T-552 | 3392 | shipped | platform | 0015 migration comment still narrates deferred two-seat (pre-0017 lore) | FOUND by W60 adversarial verifier (CLEAN MINOR outside T-525 owns) after T-525.
 
 content_golden.sql comments fixed. Migration 0015 comments still claim tests/events.rs seeds legacy two-seat / index deferred — obsolete after 0017 + T-511.
 
