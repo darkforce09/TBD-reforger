@@ -11,6 +11,7 @@ use crate::create_mission_dialog::CreateMissionDialog;
 use crate::dto::{MissionCard, MissionDetail, Paginated};
 use crate::nav::{has_min_role_authed, Role};
 use crate::ui::{badge_class, AuthGate, MaterialIcon, Sheet};
+use crate::url_guard;
 use leptos::prelude::*;
 
 const SELECT_CLASS: &str = "rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
@@ -22,6 +23,20 @@ const SCOPES: [(&str, &str); 3] = [
 ];
 // Cinematic fallback art so cards/hero never render as empty grey blocks (missions.tsx).
 const PLACEHOLDER_ART: &str = "https://lh3.googleusercontent.com/aida/AP1WRLtxuwSoyDyCrRuQu8gTHWuSmoOWZq8e7gw0bSjjZCmteU96TomvCGHto-cuqHYV_0gxNUjw_Lx2SWgiEl2W3vEi6aVH84DpTky5lG8-FKDJOzH96TrwAJwGJwE3DSwSN1gRC7miWds0X7kNvMAZRBgQPu_5g2iX9RtJ3WYUlgHbfVLYcmV7TaHPUvhZHvvvKenG2B3S2CRER15d2kdG5YNFbtFwtwgzEIeYG2jP4GubWd7SMO0bADPFFA";
+
+/// Mission card / hero / dossier art `src`. **T-413** — http(s) thumbnails only; otherwise the
+/// cinematic placeholder (itself a legitimate https URL).
+fn mission_art_url(stored: Option<&str>) -> String {
+    stored
+        .filter(|u| url_guard::is_http_url(u))
+        .unwrap_or(PLACEHOLDER_ART)
+        .to_string()
+}
+
+/// Author avatar on a mission card. Empty / non-http → no `<img>` (initials path).
+fn author_avatar_img_src(url: &str) -> Option<&str> {
+    url_guard::is_http_url(url).then_some(url)
+}
 
 fn terrain_label(t: &str) -> String {
     if t.is_empty() {
@@ -369,11 +384,7 @@ fn body(
             // Featured Operation — cinematic hero ("LIVE OPERATION" is presentational).
             {featured
                 .map(|f| {
-                    let art = f
-                        .thumbnail_url
-                        .clone()
-                        .filter(|u| !u.is_empty())
-                        .unwrap_or_else(|| PLACEHOLDER_ART.into());
+                    let art = mission_art_url(f.thumbnail_url.as_deref());
                     let brief = f
                         .briefing
                         .clone()
@@ -526,11 +537,7 @@ fn mission_card(
     changed: Callback<()>,
 ) -> impl IntoView {
     let store = expect_context::<crate::auth::AuthStore>();
-    let art = m
-        .thumbnail_url
-        .clone()
-        .filter(|u| !u.is_empty())
-        .unwrap_or_else(|| PLACEHOLDER_ART.into());
+    let art = mission_art_url(m.thumbnail_url.as_deref());
     // T-389 — the returned-mission line. `rejection_reason` is the only channel by which an author
     // ever learns why a mission came back (`handlers/approvals.rs:217` is its sole writer), and
     // `GET /approvals` is admin-tier, so the author cannot go and look. Shown here rather than only
@@ -556,7 +563,7 @@ fn mission_card(
         .next()
         .map(|c| c.to_uppercase().to_string())
         .unwrap_or_else(|| "?".into());
-    let has_avatar = !m.author_avatar.is_empty();
+    let author_avatar = author_avatar_img_src(&m.author_avatar).map(str::to_string);
     let mid = m.id.clone();
     let mid_bm = m.id.clone();
     // T-264 — optimistic latch so the star flips before the list refetch lands (and so the
@@ -634,10 +641,10 @@ fn mission_card(
                 </div>
                 <div class="p-4">
                     <div class="mb-3 flex items-center gap-2">
-                        {if has_avatar {
+                        {if let Some(src) = author_avatar.clone() {
                             view! {
                                 <img
-                                    src=m.author_avatar.clone()
+                                    src=src
                                     alt=""
                                     class="h-6 w-6 rounded-full object-cover"
                                 />
@@ -858,11 +865,7 @@ fn dossier_sheet_body(
     // These feed only the wasm-gated mutation closures.
     #[cfg(not(target_arch = "wasm32"))]
     let _ = (&store, id_sv, &changed);
-    let art = m
-        .thumbnail_url
-        .clone()
-        .filter(|u| !u.is_empty())
-        .unwrap_or_else(|| PLACEHOLDER_ART.into());
+    let art = mission_art_url(m.thumbnail_url.as_deref());
     let is_archived = m.status == "archived";
     let status_busy = RwSignal::new(false);
     let delete_busy = RwSignal::new(false);
@@ -1353,7 +1356,10 @@ fn dossier_sheet_body(
 
 #[cfg(test)]
 mod tests {
-    use super::{bookmark_api_path, card_is_bookmarked};
+    use super::{
+        author_avatar_img_src, bookmark_api_path, card_is_bookmarked, mission_art_url,
+        PLACEHOLDER_ART,
+    };
     use crate::dto::MissionCard;
     use serde_json::json;
 
@@ -1470,6 +1476,51 @@ mod tests {
         assert!(
             on.extra.get("bookmarked").and_then(|v| v.as_bool()) == Some(true),
             "bookmarked must remain on the extra catch-all for MissionCard (dto owns naming)"
+        );
+    }
+
+    include!("../../shared/is_http_url_cases.rs");
+
+    #[test]
+    fn mission_art_falls_back_for_non_http_thumbnails() {
+        let mut wrong = Vec::new();
+        for (input, ok) in IS_HTTP_URL_CASES {
+            let got = mission_art_url(Some(input));
+            if *ok {
+                if got != *input {
+                    wrong.push(format!("  dropped a legitimate thumb {input:?}"));
+                }
+            } else if got != PLACEHOLDER_ART {
+                wrong.push(format!("  kept a non-http thumb {input:?} (got {got:?})"));
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "mission art sink wrong on {} of {} cases:\n{}",
+            wrong.len(),
+            IS_HTTP_URL_CASES.len(),
+            wrong.join("\n")
+        );
+        assert_eq!(mission_art_url(None), PLACEHOLDER_ART);
+        assert_eq!(mission_art_url(Some("")), PLACEHOLDER_ART);
+    }
+
+    #[test]
+    fn author_avatar_emits_src_only_for_http_urls() {
+        let mut wrong = Vec::new();
+        for (input, should_img) in IS_HTTP_URL_CASES {
+            match (author_avatar_img_src(input), should_img) {
+                (Some(_), false) => wrong.push(format!("  RENDERED AN IMG FOR {input:?}")),
+                (None, true) => wrong.push(format!("  refused a legitimate avatar {input:?}")),
+                _ => {}
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "mission author avatar sink wrong on {} of {} cases:\n{}",
+            wrong.len(),
+            IS_HTTP_URL_CASES.len(),
+            wrong.join("\n")
         );
     }
 }

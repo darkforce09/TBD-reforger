@@ -17,7 +17,10 @@ use uuid::Uuid;
 
 use map_engine_core::mission::flatten::scan_editor_payload_types;
 
-use crate::contract::{validate_mission_document, validate_mission_editor_payload};
+use map_engine_core::mission::wire_safety::{CargoPhys, CargoPhysCatalog};
+
+use crate::contract::validate::validate_mission_editor_payload_with_catalog;
+use crate::contract::validate_mission_document;
 use crate::error::ApiError;
 use crate::handlers::{is_unique_violation, load_mission, username};
 use crate::middleware::{AuthUser, MissionMakerUser, ServiceAuth};
@@ -25,10 +28,27 @@ use crate::models::{
     AuditSeverity, GameMode, Mission, MissionArmory, MissionStatus, MissionVersion, TerrainType,
     WeatherType,
 };
+use crate::services::text::is_http_url;
 use crate::services::{
     CompileError, ModMissionDocument, flatten_to_mod_document, mission_terrain_key, write_audit,
 };
 use crate::state::AppState;
+
+/// `missions.thumbnail_url`, validated at the write boundary. **T-413**, adopting T-405 /
+/// T-391's `is_http_url`.
+///
+/// Create hardcodes `thumbnail_url` to `''` and does not accept a body field — PATCH is the only
+/// HTTP writer. The sink is an `<img src>` (`frontend/src/missions.rs`); same absent-guard class
+/// as announcements before T-405.
+fn validated_thumbnail_url(raw: &str) -> Result<String, ApiError> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || is_http_url(trimmed) {
+        return Ok(trimmed.to_string());
+    }
+    Err(ApiError::bad_request(
+        "thumbnail_url must be an absolute http:// or https:// URL",
+    ))
+}
 
 // --- enum validators (mirror Go valid*; empty weather → clear) ---
 
@@ -387,7 +407,7 @@ pub async fn create_mission(
     };
     let payload_str = input.payload.as_ref().map_or("{}", |p| p.get()).to_string();
 
-    validate_payload(&payload_str)?;
+    validate_payload(&state.pool, &payload_str).await?;
 
     let author = &maker.0.discord_id;
     let mut tx = state.pool.begin().await?;
@@ -465,6 +485,14 @@ pub async fn update_mission(
     }
     let Json(input) = body.map_err(|_| ApiError::bad_request("invalid body"))?;
 
+    // **T-413.** Validated before the query builder so a rejected URL leaves every other field
+    // untouched — PATCH is the only HTTP writer for this column (create hardcodes `''`).
+    let thumbnail_url = input
+        .thumbnail_url
+        .as_deref()
+        .map(validated_thumbnail_url)
+        .transpose()?;
+
     let mut qb = QueryBuilder::new("UPDATE missions SET updated_at = now()");
     if let Some(t) = &input.title {
         qb.push(", title = ").push_bind(t.clone());
@@ -514,7 +542,7 @@ pub async fn update_mission(
     if let Some(b) = &input.briefing {
         qb.push(", briefing = ").push_bind(b.clone());
     }
-    if let Some(t) = &input.thumbnail_url {
+    if let Some(t) = &thumbnail_url {
         qb.push(", thumbnail_url = ").push_bind(t.clone());
     }
     if let Some(target) = &input.status {
@@ -746,7 +774,7 @@ pub async fn create_version(
         return Err(ApiError::bad_request("semver and payload are required"));
     };
     let payload_str = payload.get();
-    validate_payload(payload_str)?;
+    validate_payload(&state.pool, payload_str).await?;
 
     let version: Result<MissionVersion, sqlx::Error> = sqlx::query_as(
         "INSERT INTO mission_versions (mission_id, semver, json_payload, editor_notes, created_by, created_at) \
@@ -1403,14 +1431,57 @@ async fn load(pool: &PgPool, id: &str) -> Result<Mission, ApiError> {
         .ok_or_else(|| ApiError::not_found("mission not found"))
 }
 
+/// Phys attrs for the T-416 cargo-capacity walk — only columns `scan_cargo_capacity` needs.
+#[derive(sqlx::FromRow)]
+struct CargoPhysRow {
+    resource_name: String,
+    display_name: String,
+    weight_kg: Option<f64>,
+    volume_cm3: Option<f64>,
+    max_weight_kg: Option<f64>,
+    max_volume_cm3: Option<f64>,
+}
+
+/// Load `CargoPhysCatalog` from the **current** modpack's `registry_items`.
+///
+/// T-416: core has no registry; Save supplies the table. Missing weights / maxima stay `None`
+/// (never invent — same silence as an empty catalog). No current modpack / empty table → empty
+/// catalog → cargo walk is a no-op.
+async fn load_cargo_phys_catalog(pool: &PgPool) -> Result<CargoPhysCatalog, ApiError> {
+    let rows: Vec<CargoPhysRow> = sqlx::query_as(
+        "SELECT ri.resource_name, ri.display_name, \
+                ri.weight_kg, ri.volume_cm3, ri.max_weight_kg, ri.max_volume_cm3 \
+         FROM registry_items ri \
+         INNER JOIN modpacks m ON m.id = ri.modpack_id \
+         WHERE m.is_current = true",
+    )
+    .fetch_all(pool)
+    .await?;
+    let mut catalog = CargoPhysCatalog::with_capacity(rows.len());
+    for r in rows {
+        catalog.insert(
+            r.resource_name,
+            CargoPhys {
+                display_name: r.display_name,
+                weight_kg: r.weight_kg,
+                volume_cm3: r.volume_cm3,
+                max_weight_kg: r.max_weight_kg,
+                max_volume_cm3: r.max_volume_cm3,
+            },
+        );
+    }
+    Ok(catalog)
+}
+
 /// Validate a payload string against the editor schema (400 + details / 500).
 ///
 /// This is the COMPLETE write boundary for `mission_versions.json_payload`: the two `INSERT`s in
 /// this file (`create_mission`, `create_version`) are the only ones in the crate, and both go
-/// through here. Two independent passes feed one `details` array, so the wire shape is unchanged:
+/// through here. Independent passes feed one `details` array, so the wire shape is unchanged:
 ///
-/// * **`validate_mission_editor_payload`** — `mission-editor-payload.schema.json`, plus the
-///   T-181.44 `wire_safety` walk it already carries.
+/// * **`validate_mission_editor_payload_with_catalog`** — `mission-editor-payload.schema.json`,
+///   plus the T-181.44 `wire_safety` walk and the T-416 cargo-capacity walk (catalog from
+///   [`load_cargo_phys_catalog`]).
 /// * **`scan_editor_payload_types`** (T-367) — the mission compiler's OWN deserialiser, run here so
 ///   a shape it cannot read is a **400 at save**, in front of the author, instead of a **500 at
 ///   `GET /missions/:id/compiled`** in front of a game server that supplied nothing but an id. That
@@ -1420,8 +1491,18 @@ async fn load(pool: &PgPool, id: &str) -> Result<Mission, ApiError> {
 ///
 /// The type pass reports nothing when the bytes are not JSON at all; the schema pass owns that
 /// message ("payload is not valid JSON") and a second copy of it would be noise.
-fn validate_payload(payload: &str) -> Result<(), ApiError> {
-    let mut details = validate_mission_editor_payload(payload.as_bytes())
+async fn validate_payload(pool: &PgPool, payload: &str) -> Result<(), ApiError> {
+    let catalog = load_cargo_phys_catalog(pool).await?;
+    validate_payload_with_catalog(payload, &catalog)
+}
+
+/// Sync half of [`validate_payload`] — schema + wire_safety + cargo + type scan. Unit-testable
+/// without a pool: pass an inline [`CargoPhysCatalog`].
+fn validate_payload_with_catalog(
+    payload: &str,
+    catalog: &CargoPhysCatalog,
+) -> Result<(), ApiError> {
+    let mut details = validate_mission_editor_payload_with_catalog(payload.as_bytes(), catalog)
         .map_err(|_| ApiError::internal("payload validation unavailable"))?;
     details.extend(scan_editor_payload_types(payload.as_bytes()));
     if details.is_empty() {
@@ -1544,5 +1625,102 @@ mod tests {
             !sig.contains("user: AuthUser"),
             "update_mission must not take bare AuthUser (that is the demotion-survives-edit bug); got:\n{sig}"
         );
+    }
+
+    /// T-416 — Save refuses over-capacity cargo when the caller supplies phys attrs. Empty
+    /// catalog stays silent (never invent). Mirrors the FE T-240 numbers: 4×60 cm³ into a
+    /// 200 cm³ vest.
+    #[test]
+    fn over_capacity_cargo_is_refused_at_save_with_catalog() {
+        let mut catalog = CargoPhysCatalog::new();
+        catalog.insert(
+            "mag".into(),
+            CargoPhys {
+                display_name: "Mag".into(),
+                weight_kg: Some(0.5),
+                volume_cm3: Some(60.0),
+                ..CargoPhys::default()
+            },
+        );
+        catalog.insert(
+            "vest_rn".into(),
+            CargoPhys {
+                display_name: "Plate Carrier".into(),
+                max_weight_kg: Some(5.0),
+                max_volume_cm3: Some(200.0),
+                ..CargoPhys::default()
+            },
+        );
+        let bad = r#"{"schemaVersion":1,"editor":{"factions":[],"squads":[],"editorLayers":[],
+            "slots":[{"id":"s1","role":"RFL","loadout":{"version":2,
+              "wear":{"vest":"vest_rn"},"weapons":[],
+              "cargo":[{"container":"vest","item":"mag","qty":4}]}}]}}"#;
+        let err = validate_payload_with_catalog(bad, &catalog).expect_err("must refuse");
+        assert_eq!(err.status, StatusCode::BAD_REQUEST);
+        let details = err
+            .details
+            .as_ref()
+            .and_then(|d| d.as_array())
+            .expect("details");
+        assert!(
+            details.iter().any(|d| {
+                d.as_str()
+                    .is_some_and(|s| s.contains("240 / 200 cm³") && s.contains("Plate Carrier"))
+            }),
+            "Save details must name the over-capacity finding: {details:?}"
+        );
+
+        let ok = r#"{"schemaVersion":1,"editor":{"factions":[],"squads":[],"editorLayers":[],
+            "slots":[{"id":"s1","role":"RFL","loadout":{"version":2,
+              "wear":{"vest":"vest_rn"},"weapons":[],
+              "cargo":[{"container":"vest","item":"mag","qty":3}]}}]}}"#;
+        assert!(
+            validate_payload_with_catalog(ok, &catalog).is_ok(),
+            "under-capacity must save"
+        );
+        assert!(
+            validate_payload_with_catalog(bad, &CargoPhysCatalog::new()).is_ok(),
+            "empty catalog must not invent a limit"
+        );
+    }
+
+    /// T-416 Class-R pin: the live Save boundary must call the catalogued validator, not the
+    /// empty-catalog shortcut. RED: swap `validate_mission_editor_payload_with_catalog` back to
+    /// `validate_mission_editor_payload` in `validate_payload_with_catalog`.
+    #[test]
+    fn save_payload_validation_uses_the_cargo_catalog_entry() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        assert!(
+            production.contains("load_cargo_phys_catalog"),
+            "Save must load registry phys into the catalog"
+        );
+        let helper = production
+            .split("fn validate_payload_with_catalog(")
+            .nth(1)
+            .expect("validate_payload_with_catalog must exist");
+        assert!(
+            helper.contains("validate_mission_editor_payload_with_catalog"),
+            "Save helper must call the catalogued validator"
+        );
+        let stripped = helper.replace("validate_mission_editor_payload_with_catalog", "");
+        assert!(
+            !stripped.contains("validate_mission_editor_payload("),
+            "validate_payload_with_catalog must not fall back to the empty-catalog entry"
+        );
+    }
+
+    /// T-413 residual pin — thumbnail write guard must stay. Do not regress while wiring T-416.
+    #[test]
+    fn thumbnail_url_write_guard_still_present() {
+        const SRC: &str = include_str!("missions.rs");
+        assert!(SRC.contains("fn validated_thumbnail_url("));
+        assert!(SRC.contains("thumbnail_url must be an absolute http:// or https:// URL"));
+        assert!(validated_thumbnail_url("javascript:alert(1)").is_err());
+        assert!(validated_thumbnail_url("https://cdn.example/t.jpg").is_ok());
+        assert_eq!(validated_thumbnail_url("").unwrap(), "");
     }
 }

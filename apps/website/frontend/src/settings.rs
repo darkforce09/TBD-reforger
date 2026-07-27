@@ -10,7 +10,19 @@
 #![allow(dead_code)]
 use crate::dto::{LinkStatus, MeResponse};
 use crate::ui::{AuthGate, MaterialIcon, PageHeader, DEFAULT_AVATAR};
+use crate::url_guard;
 use leptos::prelude::*;
+
+/// Settings profile avatar `src`. **T-413** — stored `users.avatar_url` must be http(s);
+/// otherwise the local SVG placeholder (itself a `data:` URL, deliberately not run through
+/// the allowlist).
+fn safe_avatar_url(stored: &str) -> String {
+    if url_guard::is_http_url(stored) {
+        stored.to_string()
+    } else {
+        DEFAULT_AVATAR.to_string()
+    }
+}
 
 /// Badge (variant="primary") class from ui/badge.tsx. React's `cn` (tailwind-merge) DROPS the base
 /// `text-label-sm`: twMerge reads it + the variant's `text-primary` as colliding `text-*` utilities
@@ -151,11 +163,7 @@ fn body(
     on_unlink: impl Fn(leptos::ev::MouseEvent) + Copy + 'static,
 ) -> impl IntoView {
     let user = me.user;
-    let avatar = if user.avatar_url.is_empty() {
-        DEFAULT_AVATAR.to_string()
-    } else {
-        user.avatar_url.clone()
-    };
+    let avatar = safe_avatar_url(&user.avatar_url);
     let linked = link.as_ref().map(|l| l.linked).unwrap_or(false);
     let pending = link.as_ref().and_then(|l| l.pending_code).unwrap_or(false);
     let status_class = if linked {
@@ -285,5 +293,36 @@ fn body(
                 </div>
             </div>
         </div>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::safe_avatar_url;
+    use crate::ui::DEFAULT_AVATAR;
+
+    include!("../../shared/is_http_url_cases.rs");
+
+    #[test]
+    fn profile_avatar_src_only_keeps_http_urls() {
+        let mut wrong = Vec::new();
+        for (input, ok) in IS_HTTP_URL_CASES {
+            let got = safe_avatar_url(input);
+            if *ok {
+                if got != *input {
+                    wrong.push(format!("  dropped a legitimate avatar {input:?}"));
+                }
+            } else if got != DEFAULT_AVATAR {
+                wrong.push(format!("  kept a non-http avatar {input:?} (got {got:?})"));
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "settings avatar sink wrong on {} of {} cases:\n{}",
+            wrong.len(),
+            IS_HTTP_URL_CASES.len(),
+            wrong.join("\n")
+        );
+        assert_eq!(safe_avatar_url(""), DEFAULT_AVATAR);
     }
 }

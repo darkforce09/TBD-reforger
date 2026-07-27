@@ -27,6 +27,7 @@
 #![allow(dead_code)]
 use crate::dto::Leaderboard;
 use crate::ui::{cn, MaterialIcon, PageHeader, Sheet};
+use crate::url_guard;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -184,19 +185,31 @@ fn initials(name: &str) -> String {
     }
 }
 
-/// The operator's Discord avatar, or their initials when the row has none. The handler `COALESCE`s
-/// a missing `users.avatar_url` to `""` — the mock never did, so `<img src="">` (a broken-image
-/// glyph on every such row) only became reachable once real rows started rendering.
+/// The operator's Discord avatar, or their initials when the row has none / a non-http URL.
+///
+/// The handler `COALESCE`s a missing `users.avatar_url` to `""` — the mock never did, so
+/// `<img src="">` (a broken-image glyph on every such row) only became reachable once real rows
+/// started rendering. **T-413** also refuses non-`http(s)` values here: the oauth writer is
+/// guarded (T-405), but this sink still sees every historical / psql / future-writer value.
 fn avatar(url: &str, username: &str, class: &str) -> impl IntoView {
-    if url.is_empty() {
-        let c = cn(&[
-            "flex items-center justify-center bg-gradient-to-br from-primary/40 to-tertiary/30 font-semibold text-on-surface",
-            class,
-        ]);
-        view! { <span class=c>{initials(username)}</span> }.into_any()
-    } else {
-        view! { <img src=url.to_string() alt="" class=class.to_string() /> }.into_any()
+    match avatar_img_src(url) {
+        None => {
+            let c = cn(&[
+                "flex items-center justify-center bg-gradient-to-br from-primary/40 to-tertiary/30 font-semibold text-on-surface",
+                class,
+            ]);
+            view! { <span class=c>{initials(username)}</span> }.into_any()
+        }
+        Some(src) => {
+            view! { <img src=src.to_string() alt="" class=class.to_string() /> }.into_any()
+        }
     }
+}
+
+/// Whether the leaderboard avatar cell would emit an `<img src>` for `url`. **T-413.**
+/// Extracted so the sink can be tested without rendering (CSR-only crate).
+fn avatar_img_src(url: &str) -> Option<&str> {
+    url_guard::is_http_url(url).then_some(url)
 }
 
 #[component]
@@ -600,6 +613,30 @@ mod tests {
         assert_eq!(initials("Reaper"), "R");
         assert_eq!(initials("a b c"), "AB");
         assert_eq!(initials(""), "?");
+    }
+
+    // Shared adversarial corpus — same table both `is_http_url` implementations pin to.
+    // If a future edit reverts this cell to `!url.is_empty()`, every `false` row starts
+    // emitting an `<img src>` again and this names the payload.
+    include!("../../shared/is_http_url_cases.rs");
+
+    #[test]
+    fn avatar_img_emits_src_only_for_http_urls() {
+        let mut wrong = Vec::new();
+        for (input, should_img) in IS_HTTP_URL_CASES {
+            match (avatar_img_src(input), should_img) {
+                (Some(_), false) => wrong.push(format!("  RENDERED AN IMG FOR {input:?}")),
+                (None, true) => wrong.push(format!("  refused a legitimate avatar {input:?}")),
+                _ => {}
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "the leaderboard avatar sink is wrong on {} of {} cases:\n{}",
+            wrong.len(),
+            IS_HTTP_URL_CASES.len(),
+            wrong.join("\n")
+        );
     }
 }
 

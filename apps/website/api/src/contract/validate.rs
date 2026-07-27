@@ -12,7 +12,7 @@
 use std::sync::OnceLock;
 
 use jsonschema::Validator;
-use map_engine_core::mission::wire_safety;
+use map_engine_core::mission::wire_safety::{self, CargoPhysCatalog};
 use serde_json::Value;
 
 const EDITOR_SCHEMA: &str =
@@ -44,20 +44,18 @@ fn run(
     raw: &[u8],
     bad_json: &str,
 ) -> Result<Vec<String>, ContractError> {
-    run_with(cell, schema_src, raw, bad_json, |_| Vec::new())
+    run_parsed(cell, schema_src, raw, bad_json, |_instance| Vec::new())
 }
 
-/// [`run`] plus a code-side pass over the SAME parsed instance. `extra` exists for rules that are
-/// true of the document but deliberately not expressed in its schema — see
-/// [`validate_mission_editor_payload`]. It reuses the parse rather than taking `&[u8]`, because
-/// re-parsing a save payload (hundreds of MB at editor scale) to run a second check would cost
-/// orders of magnitude more than the check.
-fn run_with(
+/// Schema pass plus a code-side walk over the SAME parsed instance. Reuses the parse rather than
+/// taking `&[u8]`, because re-parsing a save payload (hundreds of MB at editor scale) to run a
+/// second check would cost orders of magnitude more than the check.
+fn run_parsed(
     cell: &'static OnceLock<Result<Validator, String>>,
     schema_src: &str,
     raw: &[u8],
     bad_json: &str,
-    extra: fn(&Value) -> Vec<String>,
+    extra: impl FnOnce(&Value) -> Vec<String>,
 ) -> Result<Vec<String>, ContractError> {
     let compiled = cell.get_or_init(|| compile(schema_src));
     let validator = compiled
@@ -83,22 +81,37 @@ fn run_with(
 /// Validate a raw mission-version payload against `mission-editor-payload.schema.json`
 /// (the write-side editor superset). Used by CreateMission + CreateVersion.
 ///
-/// Two passes, one parse. The schema pass leaves `editor.slots[]` unconstrained on purpose so it
-/// stays O(1) on missions with hundreds of thousands of slots; the second pass
-/// ([`wire_safety::scan_editor_payload`], T-181.44) covers the one rule that omission lets through —
-/// a control character in an authored callsign / role, which compiles into a `wireSafeString` field
-/// and is then rejected at `GET /missions/:id/compiled`, hours later, in front of the wrong human.
-/// Its findings join the same `details` array, so callers and the wire shape are unchanged.
+/// Two code-side passes after the schema, one parse:
+/// * [`wire_safety::scan_editor_payload`] (T-181.44) — control characters in authored strings;
+/// * [`wire_safety::scan_cargo_capacity`] (T-416) — over-capacity cargo when a phys catalog is
+///   supplied via [`validate_mission_editor_payload_with_catalog`]. This entry point passes an
+///   **empty** catalog so existing callers keep their signature; without phys attrs the cargo
+///   walk is a no-op (never invent capacity). Wire Save/compile refusal by loading
+///   `registry_items` into a [`CargoPhysCatalog`] and calling the `_with_catalog` variant.
 ///
 /// @contract mission-editor-payload.schema.json#/ + mission.schema.json#/$defs/wireSafeString
 pub fn validate_mission_editor_payload(raw: &[u8]) -> Result<Vec<String>, ContractError> {
+    validate_mission_editor_payload_with_catalog(raw, &CargoPhysCatalog::new())
+}
+
+/// T-416 — same as [`validate_mission_editor_payload`], but the cargo-capacity walk uses `catalog`
+/// (`resource_name →` weight/volume/garment maxima). Build it from `registry_items`; do not put the
+/// registry inside `map-engine-core` (see `wire_safety` module header).
+pub fn validate_mission_editor_payload_with_catalog(
+    raw: &[u8],
+    catalog: &CargoPhysCatalog,
+) -> Result<Vec<String>, ContractError> {
     static V: OnceLock<Result<Validator, String>> = OnceLock::new();
-    run_with(
+    run_parsed(
         &V,
         EDITOR_SCHEMA,
         raw,
         "payload is not valid JSON",
-        wire_safety::scan_editor_payload,
+        |instance| {
+            let mut d = wire_safety::scan_editor_payload(instance);
+            d.extend(wire_safety::scan_cargo_capacity(instance, catalog));
+            d
+        },
     )
 }
 
@@ -161,6 +174,7 @@ pub fn validate_registry_compat_envelope(raw: &[u8]) -> Result<Vec<String>, Cont
 #[cfg(test)]
 mod tests {
     use super::*;
+    use map_engine_core::mission::wire_safety::CargoPhys;
 
     #[test]
     fn editor_schema_compiles_and_accepts_minimal_payload() {
@@ -201,6 +215,64 @@ mod tests {
             validate_mission_editor_payload(ok)
                 .expect("compiles")
                 .is_empty()
+        );
+    }
+
+    /// T-416 — over-capacity cargo joins the same `details` channel as wire-safety, when the
+    /// caller supplies a phys catalog. Without a catalog the walk is silent (never invent).
+    #[test]
+    fn over_capacity_cargo_is_a_save_time_finding_with_catalog() {
+        let mut catalog = CargoPhysCatalog::new();
+        catalog.insert(
+            "mag".into(),
+            CargoPhys {
+                display_name: "Mag".into(),
+                weight_kg: Some(0.5),
+                volume_cm3: Some(60.0),
+                ..CargoPhys::default()
+            },
+        );
+        catalog.insert(
+            "vest_rn".into(),
+            CargoPhys {
+                display_name: "Plate Carrier".into(),
+                max_weight_kg: Some(5.0),
+                max_volume_cm3: Some(200.0),
+                ..CargoPhys::default()
+            },
+        );
+        // 4 × 60 = 240 > 200 cm³.
+        let bad = br#"{"schemaVersion":1,"editor":{"factions":[],"squads":[],"editorLayers":[],
+            "slots":[{"id":"s1","role":"RFL","loadout":{"version":2,
+              "wear":{"vest":"vest_rn"},"weapons":[],
+              "cargo":[{"container":"vest","item":"mag","qty":4}]}}]}}"#;
+        let details =
+            validate_mission_editor_payload_with_catalog(bad, &catalog).expect("compiles");
+        assert_eq!(details.len(), 1, "{details:?}");
+        assert!(
+            details[0].starts_with("/editor/slots/0/loadout/wear/vest:"),
+            "{details:?}"
+        );
+        assert!(details[0].contains("240 / 200 cm³"), "{details:?}");
+
+        // One magazine fewer: under capacity → clean.
+        let ok = br#"{"schemaVersion":1,"editor":{"factions":[],"squads":[],"editorLayers":[],
+            "slots":[{"id":"s1","role":"RFL","loadout":{"version":2,
+              "wear":{"vest":"vest_rn"},"weapons":[],
+              "cargo":[{"container":"vest","item":"mag","qty":3}]}}]}}"#;
+        assert!(
+            validate_mission_editor_payload_with_catalog(ok, &catalog)
+                .expect("compiles")
+                .is_empty(),
+            "under-capacity must stay clean"
+        );
+
+        // Same over-capacity bytes, empty catalog → silent (signature-compatible entry point).
+        assert!(
+            validate_mission_editor_payload(bad)
+                .expect("compiles")
+                .is_empty(),
+            "empty catalog must not invent a limit"
         );
     }
 
