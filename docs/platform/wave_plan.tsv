@@ -294,3 +294,7 @@
 99	T-493	T-397 Class-R blind to COALESCE(deaths,0)	apps/website/api/tests/telemetry.rs; apps/website/api/migrations/0014_nullable_match_player_stat_counters.sql
 99	T-494	trim source-ratchet + schedule briefing trim	apps/website/frontend/src/mission_overview.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/events.rs
 99	T-495	members IT offset exercise	apps/website/api/tests/events.rs
+99	T-496	T-410 library/bookmark Class-R residue-dependent	apps/website/api/tests/missions.rs
+99	T-497	mission mutators still AuthUser+can_edit	apps/website/api/src/handlers/missions.rs
+99	T-498	Discord webhook title not formula-safe	apps/website/api/src/services/webhook.rs; apps/website/api/src/handlers/cms.rs
+99	T-499	admin_field roles/sync demotes all users in IT	apps/website/api/tests/admin_field.rs

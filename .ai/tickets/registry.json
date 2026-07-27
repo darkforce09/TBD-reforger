@@ -11006,7 +11006,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3216,
       "stream": "web-platform",
       "targets": [
@@ -11171,7 +11171,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3224,
       "stream": "web-platform",
       "targets": [
@@ -11212,7 +11212,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3231,
       "stream": "web-platform",
       "targets": [
@@ -13006,6 +13006,90 @@
       "id": "T-495",
       "title": "GET /members IT still only asserts data is_array (no offset exercise)",
       "summary": "Wave 37 residual from T-412. Handler Class-R pins limit/offset + envelope. apps/website/api/tests/events.rs:~275 still only assert!(mem[\"data\"].is_array()). Cure: seed >20 members on a cold IT DB and assert offset=20 returns member 21 / envelope total.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "CI"
+      ],
+      "impact": [
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3334,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-496",
+      "title": "T-410 library/bookmark page-1 Class-R weak without NULL updated_at residue",
+      "summary": "Wave 38 adversarial NIT. find_in_approvals page-1-only RED on tbd_gate_it (26 pending). Disabling prefer-mine RED on dashboard. But find_id_in_missions_list\u2192page-1 limit=20 stayed GREEN on mission_lifecycle_and_compiled because only 2 NULL updated_at rows \u2014 DESC puts fresh missions on page 1. Cure: Class-R that forces >20 NULL-updated_at residue (or source ratchet that the helper always paginates) so library/bookmark pins fail without relying on shared-DB residue.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "CI"
+      ],
+      "impact": [
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3331,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-497",
+      "title": "Mission mutators still AuthUser+can_edit after T-408 PATCH tier fix",
+      "summary": "Wave 38 residual from T-408. update_mission now MissionMakerUser. Still AuthUser+can_edit only: delete_mission, submit_mission, create_version, set_armory in handlers/missions.rs. Demotion still leaves those paths open. Cure: same MissionMakerUser tier (or deliberate ownership-outlives-role Class-R per path).",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "security",
+        "api"
+      ],
+      "status": "deferred",
+      "order": 3332,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-498",
+      "title": "Discord webhook title not CSV/formula-safe (sibling of T-408)",
+      "summary": "Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord \u2014 user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "security",
+        "api"
+      ],
+      "status": "deferred",
+      "order": 3333,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-499",
+      "title": "admin_field roles/sync still demotes all users in shared IT DB",
+      "summary": "Wave 38 residual from T-400. identity_link/factions/telemetry isolated. admin_field.rs POST /admin/roles/sync still loops every users row and demotes anyone without user_discord_roles \u2014 fires inside the suite against shared rows. Cure: scope sync to fixture actors or skip in IT / use private actors for asserts.",
       "program": "platform",
       "surfaces": [
         "API",
