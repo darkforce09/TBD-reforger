@@ -625,7 +625,7 @@ Check whether attendance/leaderboard rows need the same treatment, and whether u
 Existing mitigations are correct and complete for a chat surface and should NOT be redone: the usage text warns, every failure path emits NewCodeAdvice(), success consumes the code in the same transaction so a leaked code is single-use and already spent, and the code is never logged (the HTTP_CODE_NULL branch deliberately drops the body because GetData() returns the REQUEST on transport failure).
 
 The real fix is an in-game UI field instead of a chat line, which is blocked on `resourceDatabase.rdb` regeneration — the same blocker TBD_AdminScreen carries (TBD_AdminCommands.c:23-25). OPERATOR/WORKBENCH ONLY. |
-| T-328 | 3144 | running | platform | mcpd runs long-lived from the shared target dir, so it can serve unmerged code | FOUND by T-322 while isolating `make api`; flagged not fixed, different owner.
+| T-328 | 3144 | shipped | platform | mcpd runs long-lived from the shared target dir, so it can serve unmerged code | FOUND by T-322 while isolating `make api`; flagged not fixed, different owner.
 
 `mcpd` (scripts/mod/mcp-daemon.sh) is the second long-lived process running out of the shared CARGO_TARGET_DIR, with a 4h max-life. It carries the same correctness exposure `make api` just had: the wave gate's `cargo test -p website-api` rewrites binaries in that tree after every land, so a daemon started before a land keeps running one tree's code while the repo has moved on.
 
@@ -1632,7 +1632,7 @@ TWO FACTUAL ERRORS IN WHAT I RELAYED:
   Identity is WEAKER on one path: adopt_payload calls core.hydrate() IN PLACE, no swap, so core identity is unchanged across a hydrate. The agent was careful not to overstate this — it is not a loss hole, because whenever there is a good local record to lose, load_state returned it and the swap DOES occur — but it means identity is a PROXY for the thing while restore_settled IS the thing.
 
 IT ALSO RE-MEASURED NON-SUBSUMPTION ON MERGED MAIN rather than resting on the inference, rebuilding the probe on top of T-374 and confirming its presence by the runtime strings in the wasm. With blob_has_content fully live the race STILL clobbers: 7 slots persisted with the gate forced open, 2008 with it live. And it credited T-374's argument against a shrink rule as sharper than its own, which had only the legitimate-mass-deletion half and not the fixture-is-a-growth half. |
-| T-381 | 3197 | running | platform | The integration suite can point at the live database, and one delete is unscoped | All 20 files in apps/website/api/tests/ early-return unless TEST_DATABASE_URL is set, and Makefile:121-123 points it at a dedicated `rust_it`. But **nothing validates the target database name**, so an exported `TEST_DATABASE_URL=.../tbd_reforger` runs the whole suite against the live dev DB.
+| T-381 | 3197 | shipped | platform | The integration suite can point at the live database, and one delete is unscoped | All 20 files in apps/website/api/tests/ early-return unless TEST_DATABASE_URL is set, and Makefile:121-123 points it at a dedicated `rust_it`. But **nothing validates the target database name**, so an exported `TEST_DATABASE_URL=.../tbd_reforger` runs the whole suite against the live dev DB.
 
 The one unscoped destructive statement: tests/factions.rs:18 — `DELETE FROM user_factions` with **no WHERE**. Wipes the table. Every other suite scopes to test-owned rows. Also tests/identity_link.rs:26 — `UPDATE users SET arma_id = NULL WHERE discord_id = $3` against the shared dev operator row.
 
@@ -2668,7 +2668,7 @@ Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/m
 `apps/website/api/tests/null_tolerance.rs` still has `KNOWN_OPEN` entry `("src/handlers/deployments.rs", "*", "T-341 — open")` and `BASELINE_CAP=1`, while deployments.rs no longer has bare `event_registrations.*`. Comments still claim "BASELINE_CAP is now 0" / "T-341 takes this to 0".
 
 The stale path is `eprintln!` only today (not a hard fail); cold gate PASS saw it. Prune the entry, set `BASELINE_CAP=0`, fix the lying comments. Repro: `rg 'T-341 — open\|BASELINE_CAP' apps/website/api/tests/null_tolerance.rs`. |
-| T-532 | 3372 | running | platform | No API route to re-point mission current_version_id after a bad version | FOUND as T-382 residual (W48). T-382 closed the *new* hole: vacuous `payload:{}` is rejected at create_version write time. Already-broken rows (and any future non-vacuous but unwanted tip) still cannot be re-pointed via API — only `psql` UPDATE of `missions.current_version_id`.
+| T-532 | 3372 | shipped | platform | No API route to re-point mission current_version_id after a bad version | FOUND as T-382 residual (W48). T-382 closed the *new* hole: vacuous `payload:{}` is rejected at create_version write time. Already-broken rows (and any future non-vacuous but unwanted tip) still cannot be re-pointed via API — only `psql` UPDATE of `missions.current_version_id`.
 
 Needs a rollback / re-point handler in missions.rs **and** route registration in `app.rs` (out of T-382 owns). Repro: after a good version then a bad tip that somehow lands, there is no PATCH/POST to restore the prior version id; `/compiled` stays 409 NoSlots. |
 | T-533 | 3373 | deferred | platform | T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400 | FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-355.
@@ -2717,13 +2717,23 @@ Repro: rg retract_from apps/website/api — no IT exercises the path. |
 Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
 
 Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync. |
-| T-542 | 3382 | running | platform | T-381 incomplete — wire require_test_database_url into every IT binary | FOUND by W54 adversarial verifier (DIRTY MAJOR) after T-381.
+| T-542 | 3382 | shipped | platform | T-381 incomplete — wire require_test_database_url into every IT binary | FOUND by W54 adversarial verifier (DIRTY MAJOR) after T-381.
 
 T-381 added common::require_test_database_url and wired it into factions.rs + identity_link.rs only. Ticket intent was refuse the *whole* suite against live `tbd_reforger`. 22 other IT binaries still raw-read env::var("TEST_DATABASE_URL") and will mutate the live DB under parallel cargo test while those two panic.
 
 Cure: replace every IT setup's raw TEST_DATABASE_URL read with common::require_test_database_url() (or assert_test_database_url after a required read). Add Class-R in common that fails if any tests/*.rs still contains env::var("TEST_DATABASE_URL") outside common/mod.rs itself.
 
 Repro: rg 'env::var\("TEST_DATABASE_URL"\)' apps/website/api/tests — 22 hits outside common. |
+| T-543 | 3383 | deferred | platform | mcpd-bin.sh still echoes shared target/debug/mcpd path | FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-328.
+
+mcp-daemon.sh correctly builds/execs from target-dev-mcpd and discards mcpd-bin.sh stdout. Residual footgun: scripts/mod/lib/mcpd-bin.sh still hardcodes echo $ROOT/target/debug/mcpd; mcp-call-selftest.sh still consumes that echo. Cure: honor CARGO_TARGET_DIR in mcpd-bin.sh echo path.
+
+Repro: rg 'target/debug/mcpd' scripts/mod/ |
+| T-544 | 3384 | deferred | platform | T-532 Class-R only — no HTTP IT for set-current version re-point | FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-532.
+
+POST /missions/:id/versions/:vid/set-current is covered by in-handler Class-R source pins only. Cure: HTTP IT in tests/missions.rs that creates two versions, calls set-current to the older, asserts current_version_id + /compiled behavior.
+
+Repro: rg set_current_version apps/website/api/tests — no hit. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

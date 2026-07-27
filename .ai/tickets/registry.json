@@ -9519,7 +9519,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3144,
       "stream": "web-platform",
       "targets": [
@@ -10614,7 +10614,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3197,
       "stream": "web-platform",
       "targets": [
@@ -13825,7 +13825,7 @@
         "api",
         "mission-authoring"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3372,
       "stream": "web-platform",
       "targets": [
@@ -14047,10 +14047,54 @@
         "tests",
         "infra"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3382,
       "executor": "claude-code",
       "priority": 1,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-543",
+      "title": "mcpd-bin.sh still echoes shared target/debug/mcpd path",
+      "summary": "FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-328.\n\nmcp-daemon.sh correctly builds/execs from target-dev-mcpd and discards mcpd-bin.sh stdout. Residual footgun: scripts/mod/lib/mcpd-bin.sh still hardcodes echo $ROOT/target/debug/mcpd; mcp-call-selftest.sh still consumes that echo. Cure: honor CARGO_TARGET_DIR in mcpd-bin.sh echo path.\n\nRepro: rg 'target/debug/mcpd' scripts/mod/",
+      "program": "platform",
+      "surfaces": [
+        "INFRA",
+        "MOD"
+      ],
+      "impact": [
+        "infra",
+        "dx"
+      ],
+      "status": "deferred",
+      "order": 3383,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-544",
+      "title": "T-532 Class-R only \u2014 no HTTP IT for set-current version re-point",
+      "summary": "FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-532.\n\nPOST /missions/:id/versions/:vid/set-current is covered by in-handler Class-R source pins only. Cure: HTTP IT in tests/missions.rs that creates two versions, calls set-current to the older, asserts current_version_id + /compiled behavior.\n\nRepro: rg set_current_version apps/website/api/tests \u2014 no hit.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "mission-authoring"
+      ],
+      "status": "deferred",
+      "order": 3384,
+      "executor": "claude-code",
+      "priority": 2,
       "stream": "web-platform",
       "targets": [
         "website"
