@@ -15,12 +15,24 @@
 -- The role IDs below are specific to the TBD Discord guild (DISCORD_GUILD_ID in
 -- .env). For a different guild, replace them with that guild's role snowflakes.
 -- Idempotent: re-running updates name/mapped_role/priority in place.
+--
+-- Squad Leader / leader (priority 30): NOT seeded. The previous row used the
+-- placeholder snowflake 1517290000000000000 (T-247 / T-428). No real guild role
+-- id is committed in-repo (see docs/website/DEV_RUNBOOK.md §5). After a login,
+-- read snowflakes from user_discord_roles and INSERT the real mapping:
+--
+--   INSERT INTO discord_roles (discord_role_id, name, mapped_role, priority)
+--   VALUES ('<real-squad-leader-snowflake>', 'Squad Leader', 'leader', 30)
+--   ON CONFLICT (discord_role_id) DO UPDATE
+--     SET name = EXCLUDED.name,
+--         mapped_role = EXCLUDED.mapped_role,
+--         priority = EXCLUDED.priority;
+--
+-- Then POST /api/v1/admin/roles/sync (or wait for the T-428 nightly resync).
 
 INSERT INTO discord_roles (discord_role_id, name, mapped_role, priority) VALUES
   ('1517285898817896559', 'Command Staff', 'admin',         100),
   ('1517286228851032115', 'Mission Maker', 'mission_maker',  50),
-  -- Example squad-leader mapping; replace the snowflake with the real guild role id.
-  ('1517290000000000000', 'Squad Leader',  'leader',         30),
   ('1517293152195711036', 'Player',        'enlisted',       10)
 ON CONFLICT (discord_role_id) DO UPDATE
   SET name        = EXCLUDED.name,

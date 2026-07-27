@@ -55,6 +55,13 @@ async fn main() -> anyhow::Result<()> {
     );
     let _server_status =
         realtime::start_server_status_publisher(state.pool.clone(), state.hub.clone(), ss_interval);
+    // T-428: scheduled Discord → web role resync — immediate + interval (env
+    // `ROLE_RESYNC_INTERVAL_SECS`, default 24h / nightly). Safety net when admins
+    // remap `discord_roles` without curling POST /admin/roles/sync; OAuth login
+    // still syncs in-request.
+    let role_interval = services::role_sync::role_resync_interval();
+    tracing::info!(secs = role_interval.as_secs(), "discord role resync armed");
+    let _role_resync = services::role_sync::start_role_resync(state.pool.clone(), role_interval);
     let app = app::router(state);
 
     let addr = format!("0.0.0.0:{port}");
