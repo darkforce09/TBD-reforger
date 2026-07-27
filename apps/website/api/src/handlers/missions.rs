@@ -441,17 +441,26 @@ pub struct PatchMissionInput {
     status: Option<String>,
 }
 
-/// `PATCH /api/v1/missions/:id` — edit metadata (author/admin).
+/// `PATCH /api/v1/missions/:id` — edit metadata (mission_maker+ author, or admin).
+///
+/// **T-408 authz decision:** ownership does **not** outlive the role. `create_mission` already
+/// requires [`MissionMakerUser`]; PATCH used to take a plain [`AuthUser`] and gate only on
+/// [`can_edit`] (author-or-admin). That meant a demotion to `enlisted` left the former author able
+/// to keep editing (including `thumbnail_url`). Safer default: the role that grants create is
+/// still required to edit. Admins pass the extractor (`role_rank(admin) >= mission_maker`) and
+/// still clear [`can_edit`] via the admin branch. Ownership-outlives-role is **not** the product
+/// rule — demotion revokes edit.
 ///
 /// @route PATCH /api/v1/missions/:id
 pub async fn update_mission(
     State(state): State<AppState>,
-    user: AuthUser,
+    maker: MissionMakerUser,
     Path(id): Path<String>,
     body: Result<Json<PatchMissionInput>, JsonRejection>,
 ) -> Result<Json<Mission>, ApiError> {
+    let user = &maker.0;
     let m = load(&state.pool, &id).await?;
-    if !can_edit(&user, &m) {
+    if !can_edit(user, &m) {
         return Err(ApiError::forbidden("not your mission"));
     }
     let Json(input) = body.map_err(|_| ApiError::bad_request("invalid body"))?;
@@ -1503,5 +1512,37 @@ mod tests {
     fn an_accepted_time_of_day_is_returned_verbatim() {
         assert_eq!(valid_time_of_day("6:00"), Some("6:00"));
         assert_eq!(valid_time_of_day("06:00:00"), Some("06:00:00"));
+    }
+
+    /// T-408 Class-R: PATCH must require `MissionMakerUser`, same tier as create — demotion
+    /// revokes edit. Ownership-outlives-role was the pre-fix omission and is deliberately
+    /// rejected.
+    ///
+    /// RED: change `update_mission`'s extractor back to `user: AuthUser` — this pin fails.
+    #[test]
+    fn update_mission_requires_mission_maker_tier() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        // Isolate the update_mission signature so a MissionMakerUser on create alone cannot
+        // false-green this pin. Cut at the `) ->` return arrow, not the first `)` (State(state)).
+        let start = production
+            .find("pub async fn update_mission(")
+            .expect("update_mission must exist in production source");
+        let after = &production[start..];
+        let end = after
+            .find(") ->")
+            .expect("update_mission must have a `) ->` return arrow");
+        let sig = &after[..=end];
+        assert!(
+            sig.contains("maker: MissionMakerUser"),
+            "update_mission must take MissionMakerUser (role still required to edit); got:\n{sig}"
+        );
+        assert!(
+            !sig.contains("user: AuthUser"),
+            "update_mission must not take bare AuthUser (that is the demotion-survives-edit bug); got:\n{sig}"
+        );
     }
 }
