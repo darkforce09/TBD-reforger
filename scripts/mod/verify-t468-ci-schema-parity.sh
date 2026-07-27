@@ -2,6 +2,10 @@
 # T-468 — CI schema job must stay on `make ci-local-schema` (full gate set).
 # T-471 — Makefile `ci-local-schema` recipe must still invoke schema-validate +
 #         verify-citations (hollow `echo`-only recipe must FAIL).
+# T-472 — Recipe pin must be a real Make goal line, not a substring / echo /
+#         comment smuggle: after stripping `#…` comments, require
+#         tab + optional `@` + `$(MAKE)`|`make` + exact target
+#         (`schema-validate` / `verify-citations`) as the recipe goal.
 #
 # T-434 aligned `.github/workflows/ci.yml` to `make ci-local-schema` so CI runs
 # the full schema-validate set (incl. map-object-enums) + citations. Without a
@@ -9,6 +13,9 @@
 # + citations only and the map-object-enums hole returns while CI stays green.
 # Wave-26 adversarial: target-name-only pin still PASS'd a hollow recipe —
 # T-471 closes that hole by inspecting the recipe body.
+# Wave-27 adversarial: T-471's `^\t.*(?:\$(MAKE)|make)\s+pin\b` still PASS'd
+# `@echo "$(MAKE) schema-validate"`, `schema-validate-fake` (`\b` after hyphen),
+# and `@true # $(MAKE) schema-validate` — T-472 tightens to exact recipe goals.
 #
 # Gate: bash scripts/mod/verify-t468-ci-schema-parity.sh
 # (No Makefile sibling — same shape as verify-t438 / verify-t456.)
@@ -188,38 +195,97 @@ else:
                 recipe_lines.append(line)
             # blank / # lines between recipe lines stay inside the target block
 
-        live = [
-            ln
-            for ln in recipe_lines
-            if not re.match(r"^\t\s*#", ln) and ln.strip() not in ("", "\t")
-        ]
+        def strip_recipe_hash_comment(line: str) -> str:
+            """Strip `#…` from a tab recipe line outside single/double quotes."""
+            if not line.startswith("\t"):
+                return line
+            out = ["\t"]
+            i = 1
+            n = len(line)
+            in_squote = False
+            in_dquote = False
+            while i < n:
+                c = line[i]
+                if in_squote:
+                    out.append(c)
+                    if c == "'" and not (i + 1 < n and line[i + 1] == "'"):
+                        in_squote = False
+                    elif c == "'" and i + 1 < n and line[i + 1] == "'":
+                        out.append(line[i + 1])
+                        i += 2
+                        continue
+                    i += 1
+                    continue
+                if in_dquote:
+                    out.append(c)
+                    if c == "\\" and i + 1 < n:
+                        out.append(line[i + 1])
+                        i += 2
+                        continue
+                    if c == '"':
+                        in_dquote = False
+                    i += 1
+                    continue
+                if c == "'":
+                    in_squote = True
+                    out.append(c)
+                    i += 1
+                    continue
+                if c == '"':
+                    in_dquote = True
+                    out.append(c)
+                    i += 1
+                    continue
+                if c == "#":
+                    break
+                out.append(c)
+                i += 1
+            return "".join(out).rstrip()
+
+        # Strip trailing/full-line `#` comments, then drop blank / comment-only lines.
+        live = []
+        for ln in recipe_lines:
+            cleaned = strip_recipe_hash_comment(ln)
+            if re.match(r"^\t\s*$", cleaned) or cleaned == "\t":
+                continue
+            live.append(cleaned)
         if not live:
             print("FAIL: Makefile `ci-local-schema:` has no tab-indented recipe body")
             print("      hollow target names still green CI — require schema-validate + verify-citations")
             fail = 1
         else:
-            body = "\n".join(live)
             # Live contract (Makefile ~399–401): $(MAKE) schema-validate + $(MAKE) verify-citations.
-            # Accept $(MAKE)/make invocations; reject echo-only / renamed stubs.
+            # T-472: real Make recipe goal only —
+            #   ^\t @? ($(MAKE)|make) <exact-target> (whitespace|EOL)
+            # Rejects: @echo "$(MAKE) …", schema-validate-fake, @true after # strip.
             need = ("schema-validate", "verify-citations")
-            missing = []
-            for pin in need:
-                if not re.search(
-                    rf"(?m)^\t.*(?:\$\(MAKE\)|make)\s+{re.escape(pin)}\b",
-                    body,
-                ):
-                    missing.append(pin)
+            # Exact goal line: optional @silence, then make/$(MAKE), then goal
+            # token(s). Token equality (not \b substring) rejects -fake suffixes;
+            # requiring the line to *start* with make/$(MAKE) rejects echo/printf/true.
+            goal_line_re = re.compile(r"^\t@?(?:\$\(MAKE\)|make)\s+(.+)$")
+            invoked = set()
+            for ln in live:
+                m = goal_line_re.match(ln)
+                if not m:
+                    continue
+                for tok in m.group(1).split():
+                    # Skip make flags (-C, -j, …); goals are bare target names.
+                    if tok.startswith("-"):
+                        continue
+                    invoked.add(tok)
+            missing = [pin for pin in need if pin not in invoked]
             if missing:
                 print(
                     "FAIL: Makefile `ci-local-schema:` recipe must invoke: "
                     + ", ".join(missing)
                 )
-                print("      found recipe lines:")
+                print("      found recipe lines (comments stripped):")
                 for ln in live:
                     print(f"        {ln!r}")
                 print(
-                    "      T-471: target name alone is hollow — recipe must call "
-                    "schema-validate + verify-citations (full gate set)."
+                    "      T-472: require tab + optional @ + $(MAKE)|make + exact "
+                    "target schema-validate / verify-citations (not echo/true, "
+                    "not -fake suffix, not # comment smuggle)."
                 )
                 fail = 1
 
