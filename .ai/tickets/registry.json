@@ -10139,7 +10139,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3174,
       "stream": "web-platform",
       "targets": [
@@ -10242,7 +10242,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3179,
       "stream": "web-platform",
       "targets": [
@@ -10573,7 +10573,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3195,
       "stream": "web-platform",
       "targets": [
