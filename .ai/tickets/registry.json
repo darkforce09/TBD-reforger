@@ -13179,8 +13179,8 @@
       "summary": "Wave 40 residual from T-417. arsenal.rs persist_cargo\u2192set_loadout on every cargo mutation; export gate is the only client refusal. Cure: either add explicit Save UX or document intentional auto-persist with Class-R.",
       "program": "platform",
       "surfaces": [
-        "FE",
-        "MC"
+        "ATTR",
+        "DATA"
       ],
       "impact": [
         "mission-creator",
@@ -13201,8 +13201,8 @@
       "summary": "Wave 40 residual from T-417. arsenal UI shows 'no garment worn' with total and no limit; arsenal_rules deliberate silence; mod TBD_LoadoutEquipHelper already degrades. Author never hears undeliverable cargo. Cure: authoring-time warning/refuse when cargo targets unworn container.",
       "program": "platform",
       "surfaces": [
-        "FE",
-        "MC"
+        "ATTR",
+        "DATA"
       ],
       "impact": [
         "mission-creator",
