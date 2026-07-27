@@ -169,7 +169,7 @@
 6	T-273	schema.json is a month stale and would now reject nearly every ticket	.ai/tickets/schema.json
 6	T-274	Record the untracked spawn-determinism program	scripts/mod/tbd-spawn-determinism.sh; Makefile; docs/mod
 6	T-275	Declare mod-enforced limits in the schema	apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c; apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c; packages/tbd-schema/schema/mission.schema.json
-7	T-276	Close the marker.icon vocabulary	apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerIcons.c
+7	T-276	Close the marker.icon vocabulary	apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerIcons.c; packages/tbd-schema/schema/mission.schema.json
 7	T-277	27.4% of the shipped map catalogue is unclassified	packages/tbd-schema/rules/prefab-classify.json
 7	T-190	Two browser tabs on one mission silently clobber each other	apps/website/frontend/src/yrs_persist.rs
 7	T-242	Add vehicle and entity inventory to the entity schema	crates/map-engine-core/src/doc/store.rs

@@ -8492,7 +8492,7 @@
       "impact": [
         "contract"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2940,
       "stream": "mission-creator",
       "targets": [
@@ -8588,7 +8588,7 @@
       "impact": [
         "infra"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2990,
       "stream": "infra",
       "targets": [
@@ -8873,7 +8873,7 @@
       "impact": [
         "registry-hygiene"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2296,
       "stream": "infra",
       "targets": [
