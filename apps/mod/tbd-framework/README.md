@@ -20,7 +20,7 @@ See `Tbd_framework/REFERENCE-ONLY.md` (gitignored reference copy — present onl
 ## Features (current)
 
 - Backend config from `$profile:TBD_BackendConfig.json`
-- Mission loader: REST `GET /api/missions/{id}/compiled` (**T-092 — route not in current backend; always falls through today**) → `$profile:missions/{id}.json` fallback
+- Mission loader: REST `GET /api/v1/missions/{id}/compiled` (service-token / `X-Service-Token`; handler `get_compiled_mission` at `apps/website/api/src/app.rs` + `handlers/missions.rs`, T-092.2) → `$profile:missions/{id}.json` fallback on REST failure
 - Registry alias resolution (`TBD_Registry.c`)
 - **Per-slot spawn:** `TBD_SpawnManager` + modded `SCR_MenuSpawnLogic` from mission `slots[]` (schema 1.1) — **kit aliases** + round-robin/roster assign; **no in-game slot picker yet** (**T-068.13** production LOBBY UI, after **T-092.2**)
 - **Player loadout on spawn:** **T-068.12** — per-slot compiled loadout → `EquipCloth`/`EquipWeapon` on **human player** (not test NPC)
