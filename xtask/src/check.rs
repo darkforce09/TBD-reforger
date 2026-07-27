@@ -280,21 +280,24 @@ pub fn cmd_check(root: &Path, registry: &serde_json::Value, strict: bool) -> Res
     Ok(())
 }
 
-/// Fail-fast helper for commands that must not mutate the registry when check is red
-/// (notably `ticket ship` — T-237).
-pub fn require_check_ok(root: &Path, registry: &Value, context: &str) {
+/// Schema + structural preflight shared by mutators that write ticket status
+/// (`ship`/`done` — T-237; `set-status`/`mark-ready` — T-451).
+///
+/// Returns `Ok(())` when `check` is green; `Err` with a refuse message when red.
+/// Callers must not mutate the registry on `Err`. Prefer this over `process::exit`
+/// so unit tests can assert refusal without killing the test process.
+pub fn require_check_ok(root: &Path, registry: &Value, context: &str) -> Result<()> {
     let errors = check(root, registry, false);
     if errors.is_empty() {
-        return;
+        return Ok(());
     }
     for e in &errors {
         eprintln!("ERROR: {e}");
     }
-    eprintln!(
+    anyhow::bail!(
         "refusing {context}: ticket check failed ({} error(s))",
         errors.len()
-    );
-    std::process::exit(1);
+    )
 }
 
 #[cfg(test)]
@@ -395,11 +398,21 @@ mod tests {
         let errs = check(&root, &registry, false);
         assert!(
             !errs.is_empty(),
-            "invalid status must fail check (ship preflight relies on this)"
+            "invalid status must fail check (ship/set-status preflight relies on this)"
         );
         assert!(
             errs.iter().any(|e| e.contains("schema")),
             "expected schema error for bogus status: {errs:?}"
+        );
+        let refuse = require_check_ok(&root, &registry, "set-status T-001");
+        assert!(
+            refuse.is_err(),
+            "require_check_ok must Err on red registry (T-451)"
+        );
+        let msg = format!("{:#}", refuse.unwrap_err());
+        assert!(
+            msg.contains("refusing set-status T-001"),
+            "refuse message missing: {msg}"
         );
     }
 }
