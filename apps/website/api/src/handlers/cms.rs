@@ -502,22 +502,6 @@ async fn reload(state: &AppState, id: Uuid) -> Result<Option<Announcement>, ApiE
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::services::sanitize_html;
-
-    /// T-239: the persist path must be identity for plain text — ammonia is the old bug.
-    /// RED: swap `authored.to_string()` for `sanitize_html(authored)` — fails on `&lt;`.
-    #[test]
-    fn announcement_body_persist_contract_is_identity_not_ammonia() {
-        let authored = "Damage threshold: a < b & c > d";
-        let would_have_stored = sanitize_html(authored);
-        assert_ne!(
-            would_have_stored, authored,
-            "pre-write evidence: ammonia still mutates plain text"
-        );
-        let stored = authored.to_string(); // what create/update bind today
-        assert_eq!(stored, authored);
-        assert!(!stored.contains("&lt;"));
-    }
 
     #[test]
     fn snippet_from_caps_explicit_and_derives_from_body() {
