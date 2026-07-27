@@ -13583,7 +13583,7 @@
       "impact": [
         "website"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3361,
       "stream": "web-platform",
       "targets": [
@@ -13591,6 +13591,90 @@
       ],
       "executor": "claude-code",
       "priority": 0
+    },
+    {
+      "id": "T-522",
+      "title": "W46 hotfix: T-505 prefer-payload Class-R must run on native CI",
+      "summary": "Wave 46 verifier MAJOR. mission_hydrate::t505_tests / adopt_payload prefer-payload Class-R live under #[cfg(target_arch = \"wasm32\")] (main.rs). Native cargo test -p website-frontend (cold gate) runs 0 t505 tests \u2014 prefer\u2192&row.title regression stays green. Cure: move prefer-payload Class-R to a path that executes in cold/CI (native unit in map-engine-core store, or ungated tests module, or wasm32 gate job that actually runs these). Perturbation: prefer\u2192row.title must RED under the same command the cold gate uses. Owns: apps/website/frontend/src/mission_hydrate.rs and/or apps/website/frontend/src/main.rs; may touch crates/map-engine-core/src/doc/store.rs if pin moves there.",
+      "program": "platform",
+      "surfaces": [
+        "FE",
+        "tests"
+      ],
+      "impact": [
+        "infra",
+        "tests"
+      ],
+      "status": "running",
+      "order": 3362,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-523",
+      "title": "W46 hotfix: T-515 db_migrate claim body must strip SQL comments",
+      "summary": "Wave 46 verifier MAJOR. gate_db_migrate_claim_body in scripts/platform/wave.sh uses grep -qF (comment-blind). Hollow bait with the three claim needles only inside -- line comments PASSes while live UPDATE is gone \u2014 same failure class as T-513/514. Cure: strip SQL line/block comments (or otherwise refuse comment-only matches) before needle search. Perturbation: TBD_GATE_MIGRATION_0016=/tmp/bait with needles only in comments \u2192 FAIL; real 0016 \u2192 PASS. Owns: scripts/platform/wave.sh only.",
+      "program": "platform",
+      "surfaces": [
+        "CI",
+        "INFRA"
+      ],
+      "impact": [
+        "infra",
+        "tests"
+      ],
+      "status": "running",
+      "order": 3363,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-524",
+      "title": "T-505 compile.rs KNOWN keys / hydrate-title comment lockstep",
+      "summary": "Wave 46 verifier NIT. After T-505, store.rs loads payload title and lists title as known, but crates/map-engine-core/src/mission/compile.rs still omits title from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS and retains stale T-375 comment that hydrate does not load title. Cure: add title to known keys + fix comment.",
+      "program": "platform",
+      "surfaces": [
+        "ENG"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3364,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-525",
+      "title": "content_golden.sql obsolete two-seat / index-deferred comments after T-511",
+      "summary": "Wave 46 verifier NIT. apps/website/api/seeds/content_golden.sql ~655\u2013656 still says orbat assigned partial unique deferred / events.rs still seeds two-seat \u2014 obsolete after 0017 + T-511 seed retirement. Cure: update seed comments to match live index.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3365,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }

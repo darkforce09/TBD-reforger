@@ -320,3 +320,7 @@
 99	T-519	R-api fixture goldens Member RegistryCompat FireSolution	apps/website/frontend/tests/fixtures/api/; apps/website/frontend/src/dto.rs
 46	T-520	W46 hotfix rustfmt events.rs after T-511	apps/website/api/tests/events.rs
 46	T-521	W46 hotfix rustfmt missions.rs after T-505	apps/website/api/src/handlers/missions.rs
+46	T-522	W46 hotfix: T-505 prefer-payload Class-R must run on native CI	apps/website/frontend/src/mission_hydrate.rs; apps/website/frontend/src/main.rs
+46	T-523	W46 hotfix: T-515 db_migrate claim body must strip SQL comments	scripts/platform/wave.sh
+99	T-524	T-505 compile.rs title known-keys lockstep	crates/map-engine-core/src/mission/compile.rs
+99	T-525	content_golden obsolete two-seat comments after T-511	apps/website/api/seeds/content_golden.sql
