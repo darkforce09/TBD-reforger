@@ -1404,8 +1404,12 @@ gate_slice() {
   run "schema"       gate_schema
   # T-462. Shell Class-R near schema: verify scripts that exist but were never
   # invoked by the cold gate (wave 24 adversarial — T-439 unwired; T-444 pin absent).
+  # T-463. Same pattern for T-438 deploy-staging compose path + T-456 REST size gate
+  # (wave 25 — scripts existed, cold gate never executed them).
   run "T-439 objects aliases" bash "$ROOT/scripts/mod/verify-t439-objects-registry-aliases.sh"
   run "T-444 wiki seed"       bash "$ROOT/scripts/mod/verify-t444-wiki-seed.sh"
+  run "T-438 deploy-staging"  bash "$ROOT/scripts/mod/verify-t438-deploy-staging-compose-path.sh"
+  run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "SLICE GATE"; return 1; }
   gate_verdict PASS "SLICE GATE"
@@ -1541,8 +1545,11 @@ cmd_gate() {
   run "ticket registry"  hostrun ./scripts/ticket check
   # T-462. Same shell Class-R as gate_slice — fail-fast actionable scripts next to
   # schema/ticket so a deleted wiki seed line or Objects guid mismatch cannot stay cargo-green.
+  # T-463. Same pattern for T-438 deploy-staging compose path + T-456 REST size gate.
   run "T-439 objects aliases" bash "$ROOT/scripts/mod/verify-t439-objects-registry-aliases.sh"
   run "T-444 wiki seed"       bash "$ROOT/scripts/mod/verify-t444-wiki-seed.sh"
+  run "T-438 deploy-staging"  bash "$ROOT/scripts/mod/verify-t438-deploy-staging-compose-path.sh"
+  run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "GATE"; return 1; }
   gate_verdict PASS "GATE"
