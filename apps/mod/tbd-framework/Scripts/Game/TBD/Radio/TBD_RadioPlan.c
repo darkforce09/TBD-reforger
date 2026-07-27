@@ -1,27 +1,18 @@
-//! T-181.40 — the mission document's `radioPlan.nets[]`, parsed and validated.
+//! T-181.40 / T-293 — the mission document's `radioPlan.nets[]`, validated from the loader parse.
 //!
-//! ── Why this parses the RAW json instead of adding a field to the mission struct ────────────
-//! `TBD_MissionDocumentStruct` (Backend/TBD_MissionLoader.c) declares no `radioPlan` member, so
-//! the block is dropped on the floor by the main parse — exactly like `flow`, and for the same
-//! reason: nothing had asked for it yet. The clean fix is one additive `ref` field on that struct,
-//! but `Backend/**` belongs to another slice this wave, so this file does the equivalent thing
-//! entirely inside `Radio/**`:
-//!
-//!   `TBD_MissionLoader.GetRawJson()` keeps the exact document text that produced the loaded
-//!   mission, and `JsonLoadContext` maps JSON keys onto NAMED class properties and ignores every
-//!   key it does not recognise. A projection class that declares ONLY `radioPlan` therefore reads
-//!   the same document and sees the same bytes the loader saw — no second fetch, no divergence.
-//!
-//! The additive lines for the canonical route are reported to the command center rather than
-//! written here; when they land, `EnsureParsed` collapses to reading `doc.radioPlan` and this
-//! second pass can be deleted without any caller changing.
+//! ── Canonical field path (T-293) ────────────────────────────────────────────────────────────
+//! `TBD_MissionDocumentStruct.radioPlan` (Backend/TBD_MissionLoader.c) is filled by the ONE
+//! `JsonLoadContext` pass in `TBD_MissionLoader`. `EnsureParsed` reads that field — it does NOT
+//! re-bind the raw document text through a projection. A second pass would only re-bind the same
+//! bytes the loader already consumed, with two ways to drift and a lying comment claiming the
+//! field was missing.
 //!
 //! ── PRESENCE IS NOT CONTENT (the landmine this file is built around) ────────────────────────
 //! `JsonLoadContext` ALLOCATES a nested `ref <class>` field even when the JSON key is ABSENT.
 //! Measured on a live boot against `golden-missions/bridgehead-at-levie.json`: an unauthored
-//! `shape.circle` came back non-null with `x=0 z=0 r=0`. So `if (projection.radioPlan)` is ALWAYS
-//! true and proves nothing, and a mission with no radio plan would otherwise arrive as a plan
-//! containing garbage.
+//! `shape.circle` came back non-null with `x=0 z=0 r=0`. So `if (doc.radioPlan)` is ALWAYS
+//! true after a successful load and proves nothing, and a mission with no radio plan would
+//! otherwise arrive as a plan containing garbage.
 //!
 //! Every test in this file is therefore a CONTENT test:
 //!   * the plan exists iff `nets.Count() > 0` (a container count, not a null check);
@@ -59,22 +50,15 @@ class TBD_MissionNetStruct
 	string range;
 }
 
-//! The `radioPlan` block itself.
+//! The `radioPlan` block itself. Declared here; owned as a field on `TBD_MissionDocumentStruct`.
 //! @contract mission.schema.json#/$defs/radioPlan
 class TBD_MissionRadioPlanStruct
 {
 	ref array<ref TBD_MissionNetStruct> nets;
 }
 
-//! A projection of the mission document that declares ONLY the key this slice needs.
-//! `JsonLoadContext` ignores unknown keys, so this reads the full document and yields the one
-//! block — see the header for why this exists instead of a field on `TBD_MissionDocumentStruct`.
-class TBD_RadioPlanProjection
-{
-	ref TBD_MissionRadioPlanStruct radioPlan;
-}
-
-//! Parsed, validated, cached radio plan for the currently loaded mission.
+//! Validated, cached radio plan for the currently loaded mission.
+//! Source of nets: `TBD_MissionLoader.GetMission().radioPlan` (already parsed) — T-293.
 class TBD_RadioPlan
 {
 	//! Greppable channel for everything this slice logs: `grep '\[TBD\]\[Radio\]' console.log`.
@@ -203,11 +187,9 @@ class TBD_RadioPlan
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Parse once per loaded mission.
+	//! Validate once per loaded mission, from the already-parsed document field.
 	//!
-	//! Gated on `TBD_MissionLoader.IsValid()`, not merely on a non-empty raw string: the loader
-	//! assigns `s_RawJson` BEFORE it parses, so a document that failed to parse or failed
-	//! validation still leaves text behind. Serving frequencies out of a mission the validator
+	//! Gated on `TBD_MissionLoader.IsValid()`: serving frequencies out of a mission the validator
 	//! rejected would be exactly the kind of quiet half-load this program keeps getting bitten by.
 	protected static void EnsureParsed()
 	{
@@ -231,52 +213,29 @@ class TBD_RadioPlan
 		s_sParsedMissionId = doc.meta.id;
 		s_bParsed = true;
 
-		Parse(TBD_MissionLoader.GetRawJson(), doc.meta.id);
+		// T-293 Class-R pin: canonical path is doc.radioPlan — never a raw-JSON second pass.
+		AcceptFromDoc(doc.radioPlan, doc.meta.id);
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! The parse itself. Fills `s_aNets`; every rejection is reported once, at load, with the
-	//! reason — a mission whose radio plan is silently half-ignored is worse than one that says so.
-	protected static void Parse(string raw, string missionId)
+	//! Content-validate nets from the loader's `radioPlan` field. Fills `s_aNets`; every rejection
+	//! is reported once, at load, with the reason — a mission whose radio plan is silently
+	//! half-ignored is worse than one that says so.
+	protected static void AcceptFromDoc(TBD_MissionRadioPlanStruct plan, string missionId)
 	{
-		if (raw.IsEmpty())
-		{
-			TBD_Log.Warn(CH_RADIO, string.Format(
-				"mission '%1' is loaded but its raw document is empty — no radio plan can be read.", missionId));
-			return;
-		}
-
-		JsonLoadContext ctx = new JsonLoadContext();
-		if (!ctx.LoadFromString(raw))
-		{
-			// The loader already parsed this same text successfully, so reaching here means the
-			// two passes disagree — worth saying out loud rather than returning an empty plan.
-			TBD_Log.Warn(CH_RADIO, string.Format(
-				"mission '%1' re-parse for radioPlan failed even though the loader accepted the document.", missionId));
-			return;
-		}
-
-		TBD_RadioPlanProjection projection = new TBD_RadioPlanProjection();
-		if (!ctx.ReadValue("", projection))
-		{
-			TBD_Log.Warn(CH_RADIO, string.Format(
-				"mission '%1' radioPlan projection did not bind.", missionId));
-			return;
-		}
-
-		// NOT `if (projection.radioPlan)`. That is ALWAYS true — JsonLoadContext allocates a nested
-		// `ref` field whether or not the JSON key was present. The container COUNT is the only
-		// reliable presence test, and an absent `radioPlan` is LEGAL: `radioPlan` is not in the
-		// schema's top-level `required` list, and `golden-missions/empty-warning-fields.json`
+		// NOT `if (plan)`. That is ALWAYS true after a successful loader parse — JsonLoadContext
+		// allocates a nested `ref` field whether or not the JSON key was present. The container
+		// COUNT is the only reliable presence test, and an absent `radioPlan` is LEGAL: `radioPlan`
+		// is not in the schema's top-level `required` list, and `golden-missions/empty-warning-fields.json`
 		// authors none. Behave as before: no nets, no complaint.
-		if (!projection.radioPlan || !projection.radioPlan.nets || projection.radioPlan.nets.IsEmpty())
+		if (!plan || !plan.nets || plan.nets.IsEmpty())
 		{
 			TBD_Log.Kv(CH_RADIO, "plan",
 				string.Format("mission=%1 nets=0 (mission authored no radioPlan — legal)", missionId));
 			return;
 		}
 
-		array<ref TBD_MissionNetStruct> authored = projection.radioPlan.nets;
+		array<ref TBD_MissionNetStruct> authored = plan.nets;
 		int total = authored.Count();
 		int rejected = 0;
 
