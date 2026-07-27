@@ -1,7 +1,7 @@
 //! Arma identity-link flow — port of the link half of `identity_integration_test.go`.
 //! Skips unless `TEST_DATABASE_URL` points at a migrated DB.
 //!
-//! # Fixture ownership (T-400)
+//! # Fixture ownership (T-400) + DB target guard (T-381)
 //!
 //! Pre-fix this suite authenticated as the shared `dev-login` snowflake
 //! ([`common::DEV_LOGIN_USER`]), nulled that row's `arma_id` (errors swallowed by `let _`),
@@ -10,6 +10,8 @@
 //! shared id — so a concurrent `cargo test -p website-api` interleaved this setup ahead of
 //! auth_refresh and failed. Actors here now live in the T-400 private range and are minted
 //! via [`common::access_token`] (writes nothing on the shared row).
+//! T-381: [`common::require_test_database_url`] refuses `tbd_reforger` before any UPDATE/DELETE;
+//! cleanup stays scoped to suite-owned discord_id / arma_id values (never the shared row).
 //!
 //! # Intra-suite seed race (T-516)
 //!
@@ -59,7 +61,8 @@ const SEED_ARMA_PAD: &str = "identity-link-seed-400013";
 const SVC: &str = "test-service-token";
 
 async fn setup() -> Option<(Router, AppState, PgPool)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    // T-381: unset → skip; set-but-live-DB → panic before connect/UPDATE/DELETE.
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
 
@@ -187,6 +190,10 @@ fn t400_actor_is_not_shared_dev_login_user() {
     assert!(
         !src.contains(forbidden),
         "must not null arma_id via the old shared-row cleanup bind"
+    );
+    assert!(
+        src.contains("require_test_database_url"),
+        "identity_link setup must call common::require_test_database_url (T-381)"
     );
 }
 

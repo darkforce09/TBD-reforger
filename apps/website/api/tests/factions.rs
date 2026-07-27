@@ -1,7 +1,7 @@
 //! T-153 faction library CRUD gates: schema-validated writes, owner scoping, uniqueness,
 //! role tier. Skips unless `TEST_DATABASE_URL` points at a migrated DB (make db-up).
 //!
-//! # Fixture ownership (T-400)
+//! # Fixture ownership (T-400) + DB target guard (T-381)
 //!
 //! Pre-fix `setup` ran `DELETE FROM user_factions` with **no WHERE** (the only unscoped
 //! destructive statement in the IT corpus) and then `dev-login` as `mission_maker` followed
@@ -9,6 +9,7 @@
 //! wiped `null_tolerance`'s faction rows and made `misc_integration`'s `GET /me` role==admin
 //! assert fail under concurrent `cargo test -p website-api`. Actors and deletes are now
 //! owner-scoped; tokens come from [`common::access_token`] (no shared-row role rewrite).
+//! T-381: [`common::require_test_database_url`] refuses `tbd_reforger` before any DELETE.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -30,11 +31,12 @@ const ENLISTED: &str = "000000000000400012";
 const GHOST: &str = "000000000000400099";
 
 async fn setup() -> Option<(Router, PgPool, String, String)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    // T-381: unset → skip; set-but-live-DB → panic before connect/DELETE.
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
 
-    // Owner-scoped wipe only — never `DELETE FROM user_factions` bare.
+    // Owner-scoped wipe only — never `DELETE FROM user_factions` bare (T-381 / T-400).
     sqlx::query("DELETE FROM user_factions WHERE owner_id = ANY($1)")
         .bind(vec![
             MAKER.to_string(),
@@ -106,7 +108,7 @@ fn golden_doc() -> Value {
     serde_json::from_slice(&raw).unwrap()
 }
 
-/// Class-R: the unscoped wipe must not return; deletes stay owner-scoped (T-400).
+/// Class-R: the unscoped wipe must not return; deletes stay owner-scoped (T-400 / T-381).
 #[test]
 fn t400_factions_delete_is_owner_scoped() {
     let src = include_str!("factions.rs");
@@ -118,6 +120,10 @@ fn t400_factions_delete_is_owner_scoped() {
     assert!(
         !src.contains("sqlx::query(\"DELETE FROM user_factions\")"),
         "unscoped DELETE FROM user_factions must not return (T-400)"
+    );
+    assert!(
+        src.contains("require_test_database_url"),
+        "factions setup must call common::require_test_database_url (T-381)"
     );
     assert_ne!(MAKER, common::DEV_LOGIN_USER);
     assert_ne!(ENLISTED, common::DEV_LOGIN_USER);
