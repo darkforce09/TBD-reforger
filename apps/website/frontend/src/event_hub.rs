@@ -1664,11 +1664,45 @@ mod tests {
         assert!(
             SRC.contains("briefing_text(ev.briefing.as_deref())"),
             "event_hub hero must render EventHub.briefing via briefing_text — \
-             schedule cards already show it; the hub must too (T-407)"
+             schedule detail routes through this same helper (T-407/T-494)"
         );
         assert!(
             SRC.contains("operation_briefing"),
             "operation_briefing binding must remain on the hub hero"
+        );
+    }
+
+    /// T-494 — source ratchet for [`briefing_text`]: ban non-trim emptiness on briefing paths
+    /// (filter *and* match-arm). Same failure mode as `mission_overview`'s dossier ratchet.
+    #[test]
+    fn briefing_text_source_ratchet_requires_trim() {
+        const SRC: &str = include_str!("event_hub.rs");
+        assert!(
+            SRC.contains("briefing_text(m.briefing.as_deref())"),
+            "mission dossier must route briefing through briefing_text"
+        );
+        // concat! so this test body does not match itself.
+        let old_filter = concat!(".filter(|b| !b.", "is_empty())");
+        assert!(
+            !SRC.contains(old_filter),
+            "is_empty-only briefing filter must not return — whitespace-only briefings \
+             would blank the dossier Briefing section again"
+        );
+        let old_arm = concat!("Some(b) if !b.", "is_empty()");
+        assert!(
+            !SRC.contains(old_arm),
+            "match-arm !b.is_empty() without trim must not return on briefing paths"
+        );
+        let trim_arm = concat!("Some(b) if !b.trim().", "is_empty()");
+        assert!(
+            SRC.contains(trim_arm),
+            "briefing_text must keep the trim-aware match arm"
+        );
+        // Pre-T-353 schedule shape that used to live in events.rs hub_detail.
+        let old_then = concat!("(!briefing.", "is_empty())");
+        assert!(
+            !SRC.contains(old_then),
+            "non-trim briefing.then emptiness guard must not return on hub briefing paths"
         );
     }
 

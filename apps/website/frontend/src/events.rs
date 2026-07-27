@@ -309,3 +309,45 @@ fn op_card(
         </button>
     }
 }
+
+/// T-494 — schedule briefing emptiness. T-353 deleted the local `hub_detail` that gated on a
+/// non-trim briefing emptiness check and routed the detail through `event_hub_view`, which
+/// already uses the trim-aware `briefing_text` helper. These Class-R pins keep that alignment:
+/// a future rewrite cannot reintroduce a non-trim briefing empty-check on this page while the
+/// hub/mission_overview helpers stay trim-aware.
+#[cfg(test)]
+mod tests {
+    /// Schedule detail must keep going through `event_hub_view` (trim-aware briefing), and must
+    /// not revive the pre-T-353 non-trim briefing emptiness guard.
+    #[test]
+    fn schedule_briefing_empty_check_stays_trim_aligned() {
+        const SRC: &str = include_str!("events.rs");
+        assert!(
+            SRC.contains("event_hub_view(ev, on_change)"),
+            "schedule detail must render via event_hub_view so operation/mission briefing \
+             emptiness stays trim-aware (same rule as event_hub / mission_overview)"
+        );
+        // concat! so this test body does not match itself.
+        let old_then = concat!("(!briefing.", "is_empty())");
+        assert!(
+            !SRC.contains(old_then),
+            "pre-T-353 non-trim briefing guard must not return on the schedule page — \
+             whitespace-only briefings would show an empty Briefing section again"
+        );
+        let old_bare = concat!("!briefing.", "is_empty()");
+        assert!(
+            !SRC.contains(old_bare),
+            "any bare briefing.is_empty without trim must not return on the schedule page"
+        );
+        let old_filter = concat!(".filter(|b| !b.", "is_empty())");
+        assert!(
+            !SRC.contains(old_filter),
+            "is_empty-only briefing filter must not return on the schedule page"
+        );
+        let old_arm = concat!("Some(b) if !b.", "is_empty()");
+        assert!(
+            !SRC.contains(old_arm),
+            "match-arm without trim must not return on the schedule page"
+        );
+    }
+}

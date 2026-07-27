@@ -1243,6 +1243,10 @@ mod tests {
     }
 
     /// Guard against reverting to the pre-T-407 emptiness check (is_empty without trim).
+    ///
+    /// **T-494** — the filter-only ratchet stayed GREEN while a match-arm `!b.is_empty()`
+    /// (no `trim`) made the behavioral trim test go RED. Ban both shapes, and pin the
+    /// trim-aware arm so a rewrite cannot drop `trim` unnoticed.
     #[test]
     fn dossier_body_uses_trim_aware_briefing_helper() {
         const SRC: &str = include_str!("mission_overview.rs");
@@ -1251,11 +1255,22 @@ mod tests {
             "dossier_body must route briefing through tactical_briefing_text"
         );
         // concat! so this test body does not match itself.
-        let old = concat!(".filter(|b| !b.", "is_empty())");
+        let old_filter = concat!(".filter(|b| !b.", "is_empty())");
         assert!(
-            !SRC.contains(old),
+            !SRC.contains(old_filter),
             "the pre-T-407 is_empty-only filter must not return — whitespace-only \
              briefings would blank the Tactical Briefing section again"
+        );
+        let old_arm = concat!("Some(b) if !b.", "is_empty()");
+        assert!(
+            !SRC.contains(old_arm),
+            "match-arm !b.is_empty() without trim must not return on briefing paths — \
+             whitespace-only briefings would blank the Tactical Briefing section again"
+        );
+        let trim_arm = concat!("Some(b) if !b.trim().", "is_empty()");
+        assert!(
+            SRC.contains(trim_arm),
+            "tactical_briefing_text must keep the trim-aware match arm"
         );
     }
 }
