@@ -86,3 +86,30 @@ pub fn countdown_label(iso: &str) -> String {
     let plural = if val == 1 { "" } else { "s" };
     format!("{val} {unit}{plural}").to_uppercase()
 }
+
+/// lib/format.ts `formatUptime` — HH:MM:SS zero-padded. Shared by dashboard / server-intel /
+/// server-control (T-353) so displayed uptime cannot drift across panels.
+pub fn format_uptime(seconds: i64) -> String {
+    let h = seconds / 3600;
+    let m = (seconds % 3600) / 60;
+    let s = seconds % 60;
+    format!("{h:02}:{m:02}:{s:02}")
+}
+
+/// `YYYY-MM-DD HH:MM:SS` in the browser's zone — fixed-width log-stream stamp (audit).
+/// `format_local_datetime` is the human-prose form; a terminal wants columns.
+pub fn log_stamp(iso: &str) -> String {
+    let d = parse(iso);
+    if d.get_time().is_nan() {
+        return "--------- --:--:--".into();
+    }
+    format!(
+        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+        d.get_full_year(),
+        d.get_month() + 1,
+        d.get_date(),
+        d.get_hours(),
+        d.get_minutes(),
+        d.get_seconds()
+    )
+}

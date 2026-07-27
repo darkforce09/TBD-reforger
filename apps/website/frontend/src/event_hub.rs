@@ -203,7 +203,9 @@ fn hub_modpack_fetch(modpack_id: Option<&str>) -> HubModpackFetch {
     }
 }
 
-fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl IntoView {
+/// Shared hub body — standalone `/events/:id` shell and the `/events` schedule detail column
+/// (T-353). Callers own chrome (back link, scroll shell) and the `on_change` refetch.
+pub(crate) fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl IntoView {
     let store = expect_context::<crate::auth::AuthStore>();
     let event_modpack_id = ev.modpack_id.clone();
     let modpack = LocalResource::new(move || {
