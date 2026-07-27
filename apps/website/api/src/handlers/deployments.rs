@@ -300,13 +300,19 @@ fn go_zero() -> DateTime<Utc> {
 
 // --- Leave of Absence ---
 
+/// LOA create body.
+///
+/// **`reason` is deliberately required — do not add `#[serde(default)]` to it (T-350).**
+/// Fourth instance of the T-218 / T-317 / T-343 shape: a defaulted `reason` turns `{}` or
+/// a missing key into an affirmative empty string that lands in `leave_requests.reason`.
+/// Dates keep `#[serde(default)]` so the existing empty-string date guard still owns that
+/// half; reason follows the ban/reject/warn contract instead.
 #[derive(Debug, Deserialize)]
 pub struct CreateLeaveInput {
     #[serde(default)]
     starts_on: String,
     #[serde(default)]
     ends_on: String,
-    #[serde(default)]
     reason: String,
 }
 
@@ -319,9 +325,15 @@ pub async fn submit_leave(
     body: Result<Json<CreateLeaveInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<LeaveRequest>), ApiError> {
     let Json(input) =
-        body.map_err(|_| ApiError::bad_request("starts_on and ends_on are required"))?;
+        body.map_err(|_| ApiError::bad_request("starts_on, ends_on and reason are required"))?;
     if input.starts_on.is_empty() || input.ends_on.is_empty() {
         return Err(ApiError::bad_request("starts_on and ends_on are required"));
+    }
+    // Whitespace-only is the same lie as no reason (T-218 house pattern). Trim once; store
+    // the trimmed form so the column and any future audit line cannot disagree.
+    let reason = input.reason.trim();
+    if reason.is_empty() {
+        return Err(ApiError::bad_request("reason is required"));
     }
     let (Ok(start), Ok(end)) = (
         NaiveDate::parse_from_str(&input.starts_on, "%Y-%m-%d"),
@@ -342,7 +354,7 @@ pub async fn submit_leave(
     .bind(&user.discord_id)
     .bind(start)
     .bind(end)
-    .bind(&input.reason)
+    .bind(reason)
     .fetch_one(&state.pool)
     .await?;
     Ok((StatusCode::CREATED, Json(loa)))
