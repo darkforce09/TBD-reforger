@@ -361,12 +361,14 @@ VALUES
   ('00000000-0000-4000-f000-000000000002', 'rf-match-20260704-01', NULL,
    '00000000-0000-4000-c000-000000000001', 'arland',
    '2026-07-04 19:00:00+00', '2026-07-04 22:12:00+00', 'failure', 'OPFOR',
-   NULL, '2026-07-04 22:12:40+00'),
+   '', '2026-07-04 22:12:40+00'),
   -- Still running: no ended_at, outcome pending, no replay. This is the match id
   -- the primary server reports as current_match_id in §3.
+  -- '' (not NULL) for winning_faction / aar_replay_url — T-331 / 0009 comment: same
+  -- canonical empty as telemetry.rs COALESCE($8, '') so NOT NULL can land.
   ('00000000-0000-4000-f000-000000000003', 'rf-match-20260726-01', NULL,
    '512d8658-7025-4a70-94e9-a1b44a7aa155', 'everon',
-   '2026-07-26 04:32:00+00', NULL, 'pending', NULL, NULL, '2026-07-26 04:32:10+00')
+   '2026-07-26 04:32:00+00', NULL, 'pending', '', '', '2026-07-26 04:32:10+00')
 ON CONFLICT (id) DO UPDATE SET
     source_match_id = EXCLUDED.source_match_id, event_id = EXCLUDED.event_id,
     mission_id = EXCLUDED.mission_id, terrain = EXCLUDED.terrain,
@@ -647,9 +649,14 @@ VALUES
   -- entries and the ORBAT selector has to render a faction split at all.
   ('00000000-0000-4000-5000-000000000014', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    'OPFOR', 'Recon', 'GHOST', 'Team Leader', 'AK-74 + Optic', 'TL', 0, NULL, NULL),
+  -- T-331: was double-seated with BLUFOR/Alpha#1 (:623) on the same discord_id
+  -- 000000000000000005. Registration §9 names the earlier seat (:685 → …0005).
+  -- Clear this seat so a partial unique on (event_mission_id, assigned_to)
+  -- WHERE assigned_to IS NOT NULL can land (index itself deferred — events.rs:540
+  -- still seeds legacy two-seat for T-318 recovery; that file is outside this slice).
   ('00000000-0000-4000-5000-000000000015', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    'OPFOR', 'Recon', 'GHOST', 'Designated Marksman', 'SVD', 'DMR', 1,
-   '000000000000000005', '2026-07-18 11:22:03+00'),
+   NULL, NULL),
   ('00000000-0000-4000-5000-000000000016', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    'OPFOR', 'Recon', 'GHOST', 'Scout', 'AKS-74U', NULL, 2, NULL, NULL)
 ON CONFLICT (id) DO UPDATE SET
