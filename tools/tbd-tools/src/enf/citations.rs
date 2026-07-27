@@ -101,8 +101,8 @@ pub fn verify(docs_root: &Path, index_dir: &Path) -> Result<CiteReport> {
             if p.extension().and_then(|s| s.to_str()) != Some("md") {
                 continue;
             }
-            let text = std::fs::read_to_string(&p)
-                .with_context(|| format!("reading {}", p.display()))?;
+            let text =
+                std::fs::read_to_string(&p).with_context(|| format!("reading {}", p.display()))?;
             let rel = p.to_string_lossy().to_string();
             let cites = extract(&text, &rel);
             if !cites.is_empty() {
@@ -142,7 +142,10 @@ mod tests {
 
     #[test]
     fn extracts_markers() {
-        let c = extract("claim is `X` @idx crf#UpdateSlotPlayerID here\n@idx api#SCR_BaseGameMode", "d.md");
+        let c = extract(
+            "claim is `X` @idx crf#UpdateSlotPlayerID here\n@idx api#SCR_BaseGameMode",
+            "d.md",
+        );
         assert_eq!(c.len(), 2);
         assert_eq!(c[0].lane, "crf");
         assert_eq!(c[0].symbol, "UpdateSlotPlayerID");

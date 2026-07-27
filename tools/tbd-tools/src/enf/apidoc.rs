@@ -49,7 +49,9 @@ fn text_of(s: &str) -> String {
 fn parse_index(html: &str) -> Vec<(String, String, String)> {
     let mut out = Vec::new();
     for row in html.split("<tr ").skip(1) {
-        let Some(h0) = row.find("href=\"") else { continue };
+        let Some(h0) = row.find("href=\"") else {
+            continue;
+        };
         let rest = &row[h0 + 6..];
         let Some(h1) = rest.find('"') else { continue };
         let doc = &rest[..h1];
@@ -59,7 +61,9 @@ fn parse_index(html: &str) -> Vec<(String, String, String)> {
         // Anchor text is the class name.
         let Some(a0) = rest.find('>') else { continue };
         let after = &rest[a0 + 1..];
-        let Some(a1) = after.find("</a>") else { continue };
+        let Some(a1) = after.find("</a>") else {
+            continue;
+        };
         let name = text_of(&after[..a1]);
         if name.is_empty() || name.contains(' ') {
             continue;
@@ -87,15 +91,23 @@ fn parse_members(html: &str) -> Vec<String> {
     for chunk in html.split("memItemLeft").skip(1) {
         // Split lands *inside* the <td ...> tag, so skip to the end of that tag first —
         // otherwise the remaining attributes (align=/valign=) leak into the signature text.
-        let Some(l_open) = chunk.find('>') else { continue };
+        let Some(l_open) = chunk.find('>') else {
+            continue;
+        };
         let chunk = &chunk[l_open + 1..];
-        let Some(l_end) = chunk.find("</td>") else { continue };
+        let Some(l_end) = chunk.find("</td>") else {
+            continue;
+        };
         let ret = text_of(&chunk[..l_end]);
-        let Some(r0) = chunk.find("memItemRight") else { continue };
+        let Some(r0) = chunk.find("memItemRight") else {
+            continue;
+        };
         let r = &chunk[r0..];
         let Some(r_open) = r.find('>') else { continue };
         let r = &r[r_open + 1..];
-        let Some(r_end) = r.find("</td>") else { continue };
+        let Some(r_end) = r.find("</td>") else {
+            continue;
+        };
         let sig = text_of(&r[..r_end]);
         if sig.is_empty() {
             continue;
@@ -155,7 +167,7 @@ pub fn build(src: &Path, out: &Path) -> Result<ApiStats> {
                 .replace("__", "\u{1}")
                 .replace('_', "_")
                 .replace('\u{1}', "_");
-                        for sig in parse_members(&html) {
+            for sig in parse_members(&html) {
                 let _ = writeln!(members_tsv, "{class}\t{sig}");
                 members += 1;
             }
