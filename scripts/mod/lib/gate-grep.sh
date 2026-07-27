@@ -171,6 +171,19 @@ gate_probe_str() {
 	_gate_status_str "$1" "$2"
 }
 
+# gate_probe_file [-F] [-i] "<pattern>" <file>... — echo grep's RAW exit status.
+#
+# The file twin of gate_probe_str, for callers whose failure message has to carry run
+# context a generic helper cannot know (per-run log assertions, loop counters). Status 2
+# covers "target file missing" here rather than a separate stat, because for a runtime
+# log the two questions collapse: a log the gate could not read is a run it did not
+# examine either way. Anything above 1 is a check that did not execute.
+gate_probe_file() {
+	_gate_flags "$@"
+	shift $(($# - _GATE_SHIFT))
+	_gate_status_file "$@"
+}
+
 gate_ban_str() {
 	local msg="$1"
 	shift
