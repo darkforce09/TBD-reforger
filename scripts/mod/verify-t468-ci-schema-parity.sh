@@ -22,12 +22,17 @@
 # Wave-28 adversarial: T-467 wired real bash recipes for verify-t438/t456, but
 # without a recipe-body pin a future `@true` / `echo PASS` still greened make —
 # T-476 closes that hole (same spirit as T-471/T-472).
+# Wave-32 adversarial: tripwire lived only in wave.sh cold gate — hollow
+# `@true` verify-t438 still greened `make verify-t438` + GitHub mod-gates-hosted
+# (ci.yml ran make verify-t438 only). T-485 wires this script into Makefile /
+# ci-local / ci.yml so hollow recipes fail outside cold gate.
 #
-# Gate: bash scripts/mod/verify-t468-ci-schema-parity.sh
-# Makefile sibling: verify-t438 / verify-t456 recipe comments (T-476 pin).
+# Gate: make verify-t468
+#   (or: bash scripts/mod/verify-t468-ci-schema-parity.sh)
+# Wired into ci-local + ci.yml mod-gates-hosted via `make verify-t468` (T-485).
 #
-# OWNS: scripts/mod/verify-t468-ci-schema-parity.sh (+ Makefile recipe comment);
-# Wire: wave.sh gate_slice / cmd_gate.
+# OWNS: scripts/mod/verify-t468-ci-schema-parity.sh; Makefile; .github/workflows/ci.yml
+# Wire: make verify-t468 / ci-local / ci.yml mod-gates-hosted + wave.sh gate_slice / cmd_gate.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
