@@ -2518,12 +2518,19 @@ pub async fn ingest_event_roster(
         // column the conditional-claim guard reads. Driving off it therefore covers
         // leader-assigned and self-registered seats alike, and cannot serve a waitlisted
         // player a seat they never got.
+        //
+        // T-529 — filter AND emit via `btrim(u.arma_id)`. `u.arma_id <> ''` alone lets a
+        // whitespace-only legacy row through and emits `" "` as a seating key the mod can
+        // never resolve (link-confirm + telemetry both trim; T-350 `arma_id_is_linked`
+        // treats whitespace as unlinked). Selecting `btrim(...)` keeps the filter and the
+        // map key the same expression — no Rust-side one-sided trim (T-343).
         let claims: Vec<(String, i64, String)> = sqlx::query_as(
-            "SELECT os.squad, os.slot_index, u.arma_id \
+            "SELECT os.squad, os.slot_index, btrim(u.arma_id) \
              FROM orbat_slots os \
              JOIN users u ON u.discord_id = os.assigned_to \
              WHERE os.event_mission_id = $1 AND os.assigned_to IS NOT NULL \
-               AND u.arma_id IS NOT NULL AND u.arma_id <> '' AND u.deleted_at IS NULL",
+               AND u.arma_id IS NOT NULL AND btrim(u.arma_id) <> '' \
+               AND u.deleted_at IS NULL",
         )
         .bind(em.id)
         .fetch_all(&state.pool)
@@ -2746,6 +2753,46 @@ mod t332_patch_clear_and_reattach {
             add.contains("is_unique_violation") && add.contains("already attached to this event"),
             "add_event_mission must map idx_event_mission unique violations to a 409 \
              (perturbation: drop is_unique_violation arm → 500 on duplicate attach)"
+        );
+    }
+}
+
+#[cfg(test)]
+mod t529_roster_arma_id_btrim {
+    /// Class-R: `ingest_event_roster` must filter AND emit via `btrim(u.arma_id)`.
+    ///
+    /// Perturbation RED: restore `SELECT … u.arma_id` + `u.arma_id <> ''` → asserts fail.
+    #[test]
+    fn ingest_event_roster_btrims_arma_id_filter_and_select() {
+        const SRC: &str = include_str!("events.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source before tests module");
+        let handler = production
+            .split("pub async fn ingest_event_roster")
+            .nth(1)
+            .expect("ingest_event_roster")
+            .split("\npub async fn ")
+            .next()
+            .expect("handler body until next pub async fn");
+        let collapsed: String = handler.split_whitespace().collect::<Vec<_>>().join(" ");
+
+        assert!(
+            collapsed.contains("btrim(u.arma_id)"),
+            "roster must btrim(u.arma_id) — whitespace-only rows must not seat"
+        );
+        assert!(
+            collapsed.contains("btrim(u.arma_id) <> ''"),
+            "roster WHERE must use btrim nonempty, not raw <> ''"
+        );
+        assert!(
+            !collapsed.contains("SELECT os.squad, os.slot_index, u.arma_id"),
+            "roster must SELECT btrim(u.arma_id), not raw u.arma_id (emit seating key trimmed)"
+        );
+        assert!(
+            !collapsed.contains("AND u.arma_id <> ''"),
+            "roster must not keep the untrimmed <> '' guard (T-529)"
         );
     }
 }
