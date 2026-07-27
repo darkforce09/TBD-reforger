@@ -322,9 +322,12 @@ pub async fn update_announcement(
     if let Some(t) = &input.title {
         qb.push(", title = ").push_bind(t.clone());
     }
-    // T-239: store body as authored plain text (see create_announcement). When body changes and
-    // the caller did not send a new snippet, recompute the preview so the list teaser cannot
-    // contradict the article (pre-T-239 left the old snippet in place on body-only PATCH).
+    // T-239 / T-364: store body as authored plain text (see create_announcement). When body
+    // changes and the caller did not send a new snippet, **recompute the preview on write** so
+    // the list teaser cannot contradict the article. Derive-on-write (not on read): the CMS
+    // list path is a cheap SELECT over many rows and should not pay `snippet()` per row; the
+    // stored column is the list contract. Pre-T-239 / pre-T-364 left the old snippet in place
+    // on body-only PATCH.
     if let Some(b) = &input.body {
         qb.push(", body = ").push_bind(b.clone());
         if input.snippet.is_none() {
@@ -513,6 +516,54 @@ mod tests {
         let derived = snippet_from("", "a < b & c");
         assert_eq!(derived, "a < b & c");
         assert!(!derived.contains("&lt;"));
+    }
+
+    /// Class-R (T-364): body-only PATCH must rederive `snippet` on write. Without this, the
+    /// list view keeps the OLD teaser under a NEW body. Explicit `snippet` in the same PATCH
+    /// still wins (no auto-overwrite of a caller-supplied teaser).
+    ///
+    /// RED perturbations:
+    /// - drop the `input.snippet.is_none()` + `snippet_from("", b)` arm → FAIL
+    /// - move rederive to a read-time SELECT only → FAIL (handler must write the column)
+    #[test]
+    fn body_only_patch_rederives_snippet_on_write() {
+        const SRC: &str = include_str!("cms.rs");
+        let prod = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("cms.rs must have a #[cfg(test)] module");
+
+        let start = prod
+            .find("pub async fn update_announcement")
+            .expect("update_announcement must exist");
+        let after = &prod[start..];
+        let end = after[1..]
+            .find("\npub async fn ")
+            .map(|i| i + 1)
+            .unwrap_or(after.len());
+        let handler = &after[..end];
+
+        assert!(
+            handler.contains("if input.snippet.is_none()"),
+            "body-only PATCH must gate rederive on snippet absence (perturbation: always skip)"
+        );
+        assert!(
+            handler.contains("snippet_from(\"\", b)"),
+            "body-only PATCH must call snippet_from(\"\", b) to derive on write"
+        );
+        // Assembled so a bait comment cannot satisfy — the bind must sit next to the body arm.
+        let body_arm = handler
+            .find("if let Some(b) = &input.body")
+            .expect("PATCH must bind body via if let Some(b)");
+        let body_win = &handler[body_arm..handler.len().min(body_arm + 420)];
+        assert!(
+            body_win.contains("snippet_from"),
+            "snippet rederive must live inside the body-present arm (not a distant comment)"
+        );
+        assert!(
+            body_win.contains("snippet = "),
+            "rederive must SET snippet on write (list must not recompute per row)"
+        );
     }
 
     /// T-447 / T-465 Class-R — CMS list must be AdminUser-gated and filter drafts+published
