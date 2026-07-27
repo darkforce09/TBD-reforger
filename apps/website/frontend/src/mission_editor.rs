@@ -24,13 +24,15 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
-/// T-245 — SPA-session cache for the editor's unpaginated `/registry` + `/registry/compat`
-/// payloads (~7MB class). Survives `MissionEditorPage` remounts inside one SPA session so
-/// leaving `/missions/:id/edit` and coming back does **not** re-issue both full GETs or
-/// re-walk all compat edges for `cargo_defaults_by_character`.
+/// T-245 — SPA-session cache for the editor's `/registry` + `/registry/compat` payloads.
+/// Survives `MissionEditorPage` remounts inside one SPA session so leaving
+/// `/missions/:id/edit` and coming back does **not** re-issue the cold fetches or rebuild
+/// the Arsenal compat feed / cargo seed map.
 ///
-/// True API pagination would need handler/DTO changes outside this file's owns list; this
-/// is the fix that fits `mission_editor.rs` alone. First open in a session still pays once.
+/// **T-427** moved the cold path off the unbounded dual dump: registry is assembled from
+/// `?limit=` pages, Arsenal edges come from a filtered `edge_type=` list, and cargo seeds
+/// come from `?view=cargo_defaults` (server-aggregated — no client walk of ~16k cargo edges).
+/// This cache still stores the *assembled* result so remounts stay free.
 mod registry_session {
     use std::cell::RefCell;
     use std::collections::HashMap;
@@ -88,6 +90,84 @@ mod registry_session {
         REGISTRY.with(|c| *c.borrow_mut() = None);
         COMPAT.with(|c| *c.borrow_mut() = None);
     }
+}
+
+/// T-427 — page size for cold `GET /registry?limit=` (matches API `REGISTRY_PAGE_MAX`).
+#[cfg(target_arch = "wasm32")]
+const REGISTRY_COLD_PAGE: i64 = 500;
+
+/// T-427 — Arsenal-needed compat families for the cold CompatGraph (excludes the ~16k
+/// `character_default_cargo` dump and unused default-loadout/weapon families).
+#[cfg(target_arch = "wasm32")]
+const EDITOR_COMPAT_EDGE_TYPES: &str = "optic_on_weapon,mag_in_weapon,attachment_on_weapon";
+
+/// Assemble the flat catalog via bounded pages (T-427). Never hits the unpaginated dump.
+#[cfg(target_arch = "wasm32")]
+async fn fetch_registry_pages(
+    auth: crate::auth::AuthStore,
+) -> Result<Vec<crate::dto::RegistryItem>, crate::client::ApiErr> {
+    use crate::dto::{RegistryItem, RegistryResponse};
+
+    let mut all: Vec<RegistryItem> = Vec::new();
+    let mut offset: i64 = 0;
+    loop {
+        let path = format!("/registry?limit={REGISTRY_COLD_PAGE}&offset={offset}");
+        let page: RegistryResponse = crate::client::api_get(auth, &path).await?;
+        let n = page.data.len() as i64;
+        let total = page.total.unwrap_or(offset + n);
+        all.extend(page.data);
+        offset += n;
+        if n == 0 || offset >= total {
+            break;
+        }
+        // Safety: never spin if the server ignores pagination and returns the full set.
+        if n > REGISTRY_COLD_PAGE {
+            break;
+        }
+    }
+    Ok(all)
+}
+
+/// Cold compat path (T-427): Arsenal edge families + server-aggregated cargo defaults.
+/// Does **not** GET unfiltered `/registry/compat` and does **not** walk raw cargo edges client-side.
+#[cfg(target_arch = "wasm32")]
+async fn fetch_compat_cold(
+    auth: crate::auth::AuthStore,
+) -> Result<
+    (
+        crate::arsenal_rules::CompatFeed,
+        std::collections::HashMap<String, Vec<crate::arsenal_rules::CargoRow>>,
+    ),
+    crate::client::ApiErr,
+> {
+    use crate::arsenal_rules::{CargoRow, CompatFeed, CompatGraph, CompatStatus};
+    use crate::dto::{RegistryCargoDefaultsResponse, RegistryCompatResponse};
+    use std::collections::HashMap;
+
+    let edges_path = format!("/registry/compat?edge_type={EDITOR_COMPAT_EDGE_TYPES}");
+    let edges: RegistryCompatResponse = crate::client::api_get(auth, &edges_path).await?;
+    let cargo_resp: RegistryCargoDefaultsResponse =
+        crate::client::api_get(auth, "/registry/compat?view=cargo_defaults").await?;
+
+    let mut cargo: HashMap<String, Vec<CargoRow>> = HashMap::new();
+    for (character, rows) in cargo_resp.data {
+        cargo.insert(
+            character,
+            rows.into_iter()
+                .map(|r| CargoRow {
+                    container: r.container,
+                    item: r.item,
+                    qty: r.qty,
+                })
+                .collect(),
+        );
+    }
+
+    let feed = CompatFeed {
+        status: CompatStatus::Ready,
+        graph: CompatGraph::from_edges(&edges.data),
+    };
+    Ok((feed, cargo))
 }
 
 /// Round CSS px → device-pixel backing size (≥1), matching the React oracle's `deviceSize`.
@@ -274,27 +354,25 @@ pub fn MissionEditorPage() -> impl IntoView {
         // wgpu never comes up. `kind == "character"` rows only — `build_catalog_tree` is the
         // T-068.3 `buildCatalogTree` port (T-255: filtered by `active_side` in the Effect above).
         //
-        // T-245 — gate the unpaginated GET on the SPA-session cache. Remounts apply the cached
+        // T-245 — gate the network path on the SPA-session cache. Remounts apply the cached
         // rows synchronously (no network, no second tree rebuild from a fresh download).
+        //
+        // T-427 — cold path pages `GET /registry?limit=500&offset=…` until `total` is covered
+        // (never the unbounded single-shot dump). Page size matches the API `REGISTRY_PAGE_MAX`.
         {
             use crate::asset_catalog::{build_vehicle_catalog_tree, CatalogState};
             if registry_session::must_fetch_registry() {
                 spawn_local({
                     async move {
-                        match crate::client::api_get::<crate::dto::RegistryResponse>(
-                            auth,
-                            "/registry",
-                        )
-                        .await
-                        {
-                            Ok(r) => {
-                                registry_session::store_registry(r.data.clone());
-                                registry_items.set(Some(r.data.clone()));
+                        match fetch_registry_pages(auth).await {
+                            Ok(items) => {
+                                registry_session::store_registry(items.clone());
+                                registry_items.set(Some(items.clone()));
                                 // T-255 — character `catalog` Ready tree is owned by the
                                 // active_side Effect (rebuilds on chip flip).
                                 // T-215 — the Vehicles tab, off the same rows.
                                 vehicle_catalog
-                                    .set(CatalogState::Ready(build_vehicle_catalog_tree(&r.data)));
+                                    .set(CatalogState::Ready(build_vehicle_catalog_tree(&items)));
                             }
                             Err(_) => {
                                 catalog.set(CatalogState::Failed);
@@ -312,29 +390,18 @@ pub fn MissionEditorPage() -> impl IntoView {
         // T-167 — compat edge feed for the Smart Arsenal (optic/magazine rows + validation). Own
         // fetch so a compat outage degrades the Arsenal to dumb dropdowns without touching /registry.
         //
-        // T-245 — same session gate: a remount reuses the cached CompatFeed + cargo seed map and
-        // skips the ~20k-edge GET + `cargo_defaults_by_character` walk.
+        // T-245 — same session gate: a remount reuses the cached CompatFeed + cargo seed map.
+        //
+        // T-427 — cold path no longer GETs the unfiltered ~20k-edge dump. Two bounded requests:
+        //   1. Arsenal edge families only (`optic_on_weapon,mag_in_weapon,attachment_on_weapon`)
+        //   2. `?view=cargo_defaults` aggregated cargo seed map (server-side collapse)
         {
             use crate::arsenal_rules::{CompatFeed, CompatGraph, CompatStatus};
             if registry_session::must_fetch_compat() {
                 spawn_local({
                     async move {
-                        match crate::client::api_get::<crate::dto::RegistryCompatResponse>(
-                            auth,
-                            "/registry/compat",
-                        )
-                        .await
-                        {
-                            Ok(r) => {
-                                // T-068.15.2 — the CompatGraph drops evidence/qty, so the
-                                // character → default-cargo seed map is built from the raw
-                                // rows here and handed to the editor_ops seed hooks.
-                                let cargo =
-                                    crate::arsenal_rules::cargo_defaults_by_character(&r.data);
-                                let feed = CompatFeed {
-                                    status: CompatStatus::Ready,
-                                    graph: CompatGraph::from_edges(&r.data),
-                                };
+                        match fetch_compat_cold(auth).await {
+                            Ok((feed, cargo)) => {
                                 registry_session::store_compat(feed.clone(), cargo.clone());
                                 crate::editor_ops::set_cargo_defaults(cargo);
                                 compat.set(feed);
@@ -1869,7 +1936,7 @@ mod t245_registry_session {
         }
     }
 
-    /// Cold session → both unpaginated GETs are still required (first open pays once).
+    /// Cold session → both network paths are still required (first open pays once).
     #[test]
     fn cold_session_must_fetch_both() {
         registry_session::clear_for_test();
@@ -1884,7 +1951,7 @@ mod t245_registry_session {
     }
 
     /// After a successful fetch is stored, a remount must NOT plan another network round-trip
-    /// — this is the load-bearing T-245 contract (no ~7MB re-pay on every editor open).
+    /// — this is the load-bearing T-245 contract (no re-pay on every editor open).
     #[test]
     fn warm_session_skips_both_unpaginated_fetches() {
         registry_session::clear_for_test();
@@ -1914,7 +1981,7 @@ mod t245_registry_session {
         );
     }
 
-    /// Mount source must consult the session gate before calling `api_get` for either path.
+    /// Mount source must consult the session gate before calling the cold fetch helpers.
     /// Guards against a future "helpful" revert to the always-spawn_local dual fetch.
     #[test]
     fn mount_source_gates_unpaginated_fetches_on_session_cache() {
@@ -1934,6 +2001,98 @@ mod t245_registry_session {
         assert!(
             src.contains("registry_session::store_compat"),
             "successful /registry/compat response must populate the session cache"
+        );
+    }
+}
+
+/// T-427 — cold path must not depend on the unbounded dual dump.
+#[cfg(test)]
+mod t427_cold_registry_path {
+    /// Source guard: cold open pages registry with limit+offset and never calls the bare dump.
+    #[test]
+    fn cold_registry_uses_paginated_path_not_unbounded_dump() {
+        let src = include_str!("mission_editor.rs");
+        assert!(
+            src.contains("fetch_registry_pages"),
+            "cold registry must go through the paginated helper"
+        );
+        assert!(
+            src.contains("/registry?limit={REGISTRY_COLD_PAGE}&offset={offset}"),
+            "cold registry URL must carry limit+offset"
+        );
+        // Bare dump path as an api_get literal — the only remaining "/registry" forms are
+        // query-bearing (`?limit=` / `?view=` / `?edge_type=`).
+        assert!(
+            !src.contains("api_get(auth, \"/registry\")"),
+            "must not api_get bare registry dump"
+        );
+    }
+
+    /// Source guard: cold compat uses filtered Arsenal edges + cargo_defaults view.
+    #[test]
+    fn cold_compat_uses_filtered_edges_and_cargo_defaults_view() {
+        let src = include_str!("mission_editor.rs");
+        assert!(
+            src.contains("fetch_compat_cold"),
+            "cold compat must go through the narrow helper"
+        );
+        assert!(
+            src.contains("optic_on_weapon,mag_in_weapon,attachment_on_weapon"),
+            "Arsenal edge_type filter must be pinned"
+        );
+        assert!(
+            src.contains("/registry/compat?view=cargo_defaults"),
+            "cargo seeds must come from the aggregated view"
+        );
+        let walk_fn = format!("{}{}", "cargo_defaults_by_character", "(&");
+        assert!(
+            !src.contains(&walk_fn),
+            "client must not walk raw cargo edges on cold open"
+        );
+        assert!(
+            !src.contains("api_get(auth, \"/registry/compat\")"),
+            "must not api_get bare compat dump"
+        );
+    }
+
+    /// DTO: paginated envelope + cargo_defaults view round-trip.
+    #[test]
+    fn dto_paginated_registry_and_cargo_defaults_round_trip() {
+        let page = serde_json::json!({
+            "data": [],
+            "etag": "W/\"x\"",
+            "modpack_id": "00000000-0000-0000-0000-000000000001",
+            "modpack_version": "1",
+            "total": 1857,
+            "limit": 500,
+            "offset": 0
+        });
+        let r: crate::dto::RegistryResponse = serde_json::from_value(page).unwrap();
+        assert_eq!(r.total, Some(1857));
+        assert_eq!(r.limit, Some(500));
+        assert_eq!(r.offset, Some(0));
+
+        let cargo = serde_json::json!({
+            "view": "cargo_defaults",
+            "data": {
+                "char_a": [{"container": "vest", "item": "mag", "qty": 2}]
+            },
+            "etag": "W/\"y\"",
+            "modpack_id": "00000000-0000-0000-0000-000000000001",
+            "modpack_version": "1",
+            "source_edge_count": 16223
+        });
+        let c: crate::dto::RegistryCargoDefaultsResponse = serde_json::from_value(cargo).unwrap();
+        assert_eq!(c.view, "cargo_defaults");
+        assert_eq!(c.source_edge_count, Some(16223));
+        let rows = c.data.get("char_a").unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].container, "vest");
+        assert_eq!(rows[0].qty, 2);
+        // Slim proof: aggregated row count << raw edge count advertised by the server.
+        assert!(
+            (rows.len() as i64) < c.source_edge_count.unwrap(),
+            "cargo_defaults view must be smaller than the raw edge walk"
         );
     }
 }

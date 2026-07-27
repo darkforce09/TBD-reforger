@@ -606,6 +606,9 @@ pub struct RegistryItem {
 
 /// `GET /registry` — the asset catalog + its cache identity (weak ETag). Items typed at T-159.22, so
 /// `registry_envelope()` now proves the row field-set too, not just the envelope.
+///
+/// **T-427:** when the client passes `?limit=`/`?offset=`, the handler also returns
+/// `total`/`limit`/`offset`. Omitting them keeps the legacy unpaginated envelope (golden-compatible).
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct RegistryResponse {
@@ -613,6 +616,13 @@ pub struct RegistryResponse {
     pub etag: String,
     pub modpack_id: String,
     pub modpack_version: String,
+    /// Present only on paginated responses (`?limit=`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offset: Option<i64>,
 }
 
 /// One compat edge — a generic `(from_node, to_node, edge_type)` graph row. Optic/magazine
@@ -642,6 +652,9 @@ fn default_edge_qty() -> i64 {
 }
 
 /// `GET /registry/compat` — the compat edge list + cache identity (mirrors `RegistryResponse`).
+///
+/// **T-427:** optional `total`/`limit`/`offset` when `?limit=` is set. For the editor cold path,
+/// prefer a filtered `edge_type=` list (Arsenal families only) over the unfiltered dump.
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct RegistryCompatResponse {
@@ -649,6 +662,39 @@ pub struct RegistryCompatResponse {
     pub etag: String,
     pub modpack_id: String,
     pub modpack_version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offset: Option<i64>,
+}
+
+/// One aggregated cargo seed row from `GET /registry/compat?view=cargo_defaults` (T-427).
+/// Shape matches `arsenal_rules::CargoRow` so the editor can install the map without re-walking
+/// the ~16k raw `character_default_cargo` edges.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct RegistryCargoDefaultRow {
+    pub container: String,
+    pub item: String,
+    pub qty: i64,
+}
+
+/// `GET /registry/compat?view=cargo_defaults` — slim per-character cargo seed map (T-427).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct RegistryCargoDefaultsResponse {
+    /// Echo of the requested view (`"cargo_defaults"`).
+    pub view: String,
+    /// `character resource_name` → aggregated cargo rows.
+    pub data: std::collections::HashMap<String, Vec<RegistryCargoDefaultRow>>,
+    pub etag: String,
+    pub modpack_id: String,
+    pub modpack_version: String,
+    /// Raw `character_default_cargo` edge count before aggregation (server collapsed the walk).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_edge_count: Option<i64>,
 }
 
 /// One role template inside a faction doc (character + optional loadout).
