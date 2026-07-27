@@ -185,14 +185,7 @@ async fn faction_library_crud_gates() {
     // accepts "Soviet Army 1980s "; pre-fix that bypassed UNIQUE (owner_id, name) and T4.
     let mut padded = golden_doc();
     padded["name"] = json!("Soviet Army 1980s ");
-    let (s, body) = req(
-        &app,
-        Method::POST,
-        "/api/v1/factions",
-        &maker,
-        Some(padded),
-    )
-    .await;
+    let (s, body) = req(&app, Method::POST, "/api/v1/factions", &maker, Some(padded)).await;
     assert_eq!(s, StatusCode::BAD_REQUEST, "{body}");
     assert!(
         body["error"]
@@ -205,14 +198,7 @@ async fn faction_library_crud_gates() {
     // T4c — whitespace-only name validates schema minLength:1 but must be rejected (T-358).
     let mut blank = golden_doc();
     blank["name"] = json!("\t");
-    let (s, body) = req(
-        &app,
-        Method::POST,
-        "/api/v1/factions",
-        &maker,
-        Some(blank),
-    )
-    .await;
+    let (s, body) = req(&app, Method::POST, "/api/v1/factions", &maker, Some(blank)).await;
     assert_eq!(s, StatusCode::BAD_REQUEST, "{body}");
     assert!(
         body["error"]
