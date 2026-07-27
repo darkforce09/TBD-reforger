@@ -87,8 +87,9 @@ pub fn countdown_label(iso: &str) -> String {
     format!("{val} {unit}{plural}").to_uppercase()
 }
 
-/// lib/format.ts `formatUptime` — HH:MM:SS zero-padded. Shared by dashboard / server-intel /
-/// server-control (T-353) so displayed uptime cannot drift across panels.
+/// lib/format.ts `formatUptime` — HH:MM:SS zero-padded. Shared by dashboard / server-intel
+/// (T-353) so those panels cannot drift. Server Control keeps its own day/hour/minute form
+/// (`Nd HHh MMm` / `HHh MMm`) — not this helper (T-547).
 pub fn format_uptime(seconds: i64) -> String {
     let h = seconds / 3600;
     let m = (seconds % 3600) / 60;
