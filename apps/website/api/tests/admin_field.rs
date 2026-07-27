@@ -11,6 +11,14 @@
 //! remapped/demoted. On the shared gate DB that rewrites sibling suites' actors.
 //! Suite-scoped snapshot → call → restore keeps the endpoint covered without leaving
 //! demotions behind.
+//!
+//! # T-502 — empty-snapshot admin must survive sync
+//!
+//! Class-R unit pins prove `resync_ids_from_snapshot([]) → None`, but the existing
+//! roles/sync IT only asserted HTTP 200. A cold IT promotes an admin who holds
+//! **zero** `user_discord_roles`, POSTs sync, and asserts the web role stays
+//! `admin` — the T-372 lockout path that unit tests alone cannot catch at the
+//! route. Still wrapped in T-499 snapshot → restore so sibling suites stay intact.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -608,6 +616,111 @@ async fn admin_approvals_cms_field() {
     assert_eq!(saved["fire_mission"]["distance_m"], 1000);
 }
 
+/// T-502 — cold IT: an admin with zero `user_discord_roles` must survive
+/// `POST /admin/roles/sync`.
+///
+/// Pre-T-372, `resync_all_roles` treated an empty stored snowflake list as
+/// `Authoritative([])` → `resolve_role` → enlisted, demoting every hand-promoted
+/// or seed admin who never OAuth'd. Unit Class-R pins `resync_ids_from_snapshot`
+/// empty→None; this IT proves the HTTP path leaves the web role alone.
+///
+/// Isolation: T-499 snapshot → sync → restore still wraps the call so users with
+/// real snowflakes are not left remapped for sibling binaries on the shared gate DB.
+#[tokio::test]
+async fn empty_snapshot_admin_survives_roles_sync() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let t = admin_token(&app).await;
+    // Private fixture — ticket-scoped snowflake, never the shared dev-login admin.
+    const COLD_ADMIN: &str = "000000000000000502";
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, \
+         arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T502 Cold Admin', 't502cold', '', NULL, '', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET role = 'enlisted', is_banned = false, ban_reason = ''",
+    )
+    .bind(COLD_ADMIN)
+    .execute(&pool)
+    .await
+    .expect("T-502: insert cold admin fixture");
+
+    // Guarantee the T-372 empty-snapshot precondition — no leftover OAuth rows.
+    sqlx::query("DELETE FROM user_discord_roles WHERE discord_id = $1")
+        .bind(COLD_ADMIN)
+        .execute(&pool)
+        .await
+        .expect("T-502: clear user_discord_roles for cold admin");
+
+    // Promote via PATCH (writes `users.role` only — never touches user_discord_roles).
+    let (st, promoted) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/admin/users/{COLD_ADMIN}"),
+        &t,
+        Some(r#"{"role":"admin"}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "T-502: promote cold admin: {promoted}");
+    assert_eq!(promoted["role"], "admin", "T-502: PATCH must yield admin");
+
+    let snowflake_count: i64 =
+        sqlx::query_scalar("SELECT COUNT(*)::bigint FROM user_discord_roles WHERE discord_id = $1")
+            .bind(COLD_ADMIN)
+            .fetch_one(&pool)
+            .await
+            .expect("T-502: count user_discord_roles before sync");
+    assert_eq!(
+        snowflake_count, 0,
+        "T-502: cold admin must hold zero user_discord_roles before sync (empty snapshot)"
+    );
+
+    // T-499 isolation: sync still walks every user; restore sibling tiers afterward.
+    let role_snap = snapshot_user_roles(&pool).await;
+    let (st, sync_body) = call(&app, "POST", "/api/v1/admin/roles/sync", &t, None).await;
+    assert_eq!(st, StatusCode::OK, "T-502: roles/sync: {sync_body}");
+
+    let role_after: String = sqlx::query_scalar(
+        "SELECT role::text FROM users WHERE discord_id = $1 AND deleted_at IS NULL",
+    )
+    .bind(COLD_ADMIN)
+    .fetch_one(&pool)
+    .await
+    .expect("T-502: read cold admin role after sync");
+    assert_eq!(
+        role_after, "admin",
+        "T-502: empty-snapshot admin must survive roles/sync (got {role_after})"
+    );
+
+    let snowflake_after: i64 =
+        sqlx::query_scalar("SELECT COUNT(*)::bigint FROM user_discord_roles WHERE discord_id = $1")
+            .bind(COLD_ADMIN)
+            .fetch_one(&pool)
+            .await
+            .expect("T-502: count user_discord_roles after sync");
+    assert_eq!(
+        snowflake_after, 0,
+        "T-502: sync must not invent snowflakes for an empty-snapshot user"
+    );
+
+    restore_user_roles(&pool, &role_snap).await;
+    assert_roles_match_snapshot(&pool, &role_snap).await;
+
+    // Leave nothing behind for the shared gate DB.
+    sqlx::query("DELETE FROM audit_logs WHERE target_id = $1")
+        .bind(COLD_ADMIN)
+        .execute(&pool)
+        .await
+        .expect("T-502: cleanup audit_logs");
+    sqlx::query("DELETE FROM users WHERE discord_id = $1")
+        .bind(COLD_ADMIN)
+        .execute(&pool)
+        .await
+        .expect("T-502: cleanup cold admin fixture");
+}
+
 /// Class-R (T-499): `admin_approvals_cms_field` must keep roles/sync behind snapshot/restore.
 ///
 /// A bare `POST /admin/roles/sync` on the shared gate DB remaps every user with stored
@@ -646,5 +759,52 @@ fn t499_roles_sync_is_suite_scoped_snapshot_restore() {
     assert!(
         snap < sync && sync < restore,
         "T-499: expected snapshot → roles/sync → restore order (snap={snap} sync={sync} restore={restore})"
+    );
+}
+
+/// Class-R (T-502): cold empty-snapshot admin IT must remain in this binary.
+///
+/// Unit Class-R already pins `resync_ids_from_snapshot([]) → None`. Dropping this
+/// IT would leave the HTTP path covered only by a 200 assert — the T-372 lockout
+/// regresses silently at the route.
+#[test]
+fn t502_empty_snapshot_admin_survive_it_present() {
+    let src = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/admin_field.rs"));
+    assert!(
+        src.contains("fn empty_snapshot_admin_survives_roles_sync"),
+        "T-502: cold IT empty_snapshot_admin_survives_roles_sync missing"
+    );
+    assert!(
+        src.contains("common::require_test_database_url"),
+        "T-502: boot must use common::require_test_database_url"
+    );
+    assert!(
+        src.contains("DELETE FROM user_discord_roles WHERE discord_id"),
+        "T-502: cold IT must force zero user_discord_roles before sync"
+    );
+    assert!(
+        src.contains(r#""T-502: empty-snapshot admin must survive roles/sync"#)
+            || src.contains("empty-snapshot admin must survive roles/sync"),
+        "T-502: post-sync admin role assert missing"
+    );
+    // Cold IT must keep T-499 isolation — snapshot before its sync, restore after.
+    let cold_fn = src
+        .find("fn empty_snapshot_admin_survives_roles_sync")
+        .expect("T-502: cold IT fn missing");
+    let cold_snap = src[cold_fn..]
+        .find("let role_snap = snapshot_user_roles")
+        .map(|i| cold_fn + i)
+        .expect("T-502: cold IT must snapshot before sync (T-499 isolation)");
+    let cold_sync = src[cold_fn..]
+        .find(r#"call(&app, "POST", "/api/v1/admin/roles/sync""#)
+        .map(|i| cold_fn + i)
+        .expect("T-502: cold IT must POST roles/sync");
+    let cold_restore = src[cold_fn..]
+        .find("restore_user_roles(&pool, &role_snap)")
+        .map(|i| cold_fn + i)
+        .expect("T-502: cold IT must restore after sync (T-499 isolation)");
+    assert!(
+        cold_snap < cold_sync && cold_sync < cold_restore,
+        "T-502: expected snapshot → roles/sync → restore in cold IT (snap={cold_snap} sync={cold_sync} restore={cold_restore})"
     );
 }
