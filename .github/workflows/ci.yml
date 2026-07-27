@@ -128,6 +128,8 @@ jobs:
   #   type-inventory t090-specs n6 n10  (+ citations)
   # Pre-T-434 hole: only `schema validate` + `citations` — would not have caught T-244
   # (map-object-enums RED while validate stayed GREEN). Do not narrow back to validate-only.
+  # T-468 tripwire: scripts/mod/verify-t468-ci-schema-parity.sh asserts this job's `run:`
+  # stays `make ci-local-schema` (wired into wave.sh gate_slice + cmd_gate).
   # T-165.2: all steps are Rust (xtask) — no Node in this job.
   # height-labels needs the Everon DEM (LFS, ~72 MB); pull ONLY that object (same pattern
   # as the map-engine job — a full `lfs: true` checkout would drag the 206 MB sat bundle).
