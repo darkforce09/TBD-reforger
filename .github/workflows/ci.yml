@@ -51,8 +51,11 @@ jobs:
           toolchain: "1.95.0"
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - name: fmt (FMT-1 analog)
-        run: cargo fmt --check
+      # T-453: workspace --all (matches `make rust-fmt` / T-297). Job default cwd is
+      # apps/website/api — override so xtask/tbd-tools drift cannot slip past CI.
+      - name: fmt (FMT-1 analog — workspace --all)
+        working-directory: .
+        run: cargo fmt --all --check
       - name: clippy (GO-2..8 analog)
         env:
           SQLX_OFFLINE: "true"

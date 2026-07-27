@@ -387,17 +387,16 @@ changed_rs() {
   } | grep '\.rs$' | sort -u || true
 }
 
-# Format ONLY the files this slice changed against main.
+# Format-check ONLY the files this slice changed against main.
 #
-# `cargo fmt --all --check` is deliberately NOT used: 32 files are already unformatted on main
-# (mostly tools/tbd-tools/src/bin/enf.rs, written during T-181 and never formatted), so a
-# workspace-wide check would be red on day one for every agent — the precise anti-pattern that
-# made verify-no-python worthless. Scope it to the diff and the gate stays honest.
-# The edition is NOT fixed across this workspace: apps/website/api is edition 2024, most other
-# crates are 2021, and the two style editions sort a mixed-case brace import differently. Hardcoding
-# --edition 2021 made every slice touching an edition-2024 file fail a gate it did not cause — main's
-# own `use axum::http::{HeaderMap, HeaderValue, StatusCode, header};` already fails the 2021 form.
-# Resolve each file's edition from the nearest Cargo.toml above it.
+# Workspace-wide `cargo fmt --all --check` is the local/CI FMT-1 gate (`make rust-fmt` /
+# `.github/workflows/ci.yml` website-api; T-297 cleaned the tree, T-453 aligned CI). The wave
+# gate stays diff-scoped so a slice only fails on files it touched — not a substitute for CI
+# `--all`. Edition is NOT fixed across this workspace: apps/website/api is edition 2024, most
+# other crates are 2021, and the two style editions sort a mixed-case brace import differently.
+# Hardcoding --edition 2021 made every slice touching an edition-2024 file fail a gate it did
+# not cause — main's own `use axum::http::{HeaderMap, HeaderValue, StatusCode, header};` already
+# fails the 2021 form. Resolve each file's edition from the nearest Cargo.toml above it.
 file_edition() {
   local d; d="$(dirname "$1")"
   while [ "$d" != "." ] && [ "$d" != "/" ]; do
