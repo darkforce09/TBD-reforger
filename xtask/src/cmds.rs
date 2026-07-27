@@ -606,6 +606,11 @@ pub fn cmd_add(
     impact: &str,
     summary: &str,
 ) -> Result<()> {
+    // T-455: refuse insert when the registry fails ticket check (same bar as
+    // set-status/mark-ready/reorder/ship — T-451 / T-237). Check runs first so a
+    // red registry never gets a next_id bump + row write + sync.
+    require_check_ok(root, registry, "add")?;
+
     let next_id = registry
         .get("next_id")
         .and_then(|n| n.as_u64())
@@ -631,6 +636,12 @@ pub fn cmd_add(
 }
 
 pub fn cmd_remove(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
+    // T-455: refuse delete when the registry fails ticket check (same bar as
+    // add / set-status — T-451). Check runs first so a red registry never loses
+    // a row on disk.
+    let _ = require_ticket(registry, id);
+    require_check_ok(root, registry, &format!("remove {id}"))?;
+
     let before = tickets(registry).len();
     let list = tickets_mut(registry)?;
     list.retain(|t| opt_str(t, "id") != Some(id));
@@ -1092,8 +1103,94 @@ mod tests {
     }
 
     #[test]
+    fn add_refuses_invalid_registry_without_write() {
+        let root = worktree_root();
+        let registry_path = root.join(".ai/tickets/registry.json");
+        let before = fs::read_to_string(&registry_path).expect("read registry before");
+        let mut registry = red_registry(&root);
+        let next_before = registry
+            .get("next_id")
+            .and_then(|n| n.as_u64())
+            .expect("next_id");
+        let tickets_before = tickets(&registry).len();
+
+        let err = cmd_add(
+            &root,
+            &mut registry,
+            "should-not-land",
+            "platform",
+            "xtask",
+            "ops",
+            "",
+        )
+        .expect_err("add must refuse a schema-red registry");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing add"),
+            "expected refuse message, got: {msg}"
+        );
+        assert!(
+            msg.contains("ticket check failed"),
+            "expected check-failed note, got: {msg}"
+        );
+
+        let next_after = registry
+            .get("next_id")
+            .and_then(|n| n.as_u64())
+            .expect("next_id");
+        assert_eq!(
+            next_before, next_after,
+            "add must not bump next_id when check is red"
+        );
+        assert_eq!(
+            tickets_before,
+            tickets(&registry).len(),
+            "add must not push a row in-memory when check is red"
+        );
+
+        let after = fs::read_to_string(&registry_path).expect("read registry after");
+        assert_eq!(
+            before, after,
+            "add must not write registry.json when check is red"
+        );
+    }
+
+    #[test]
+    fn remove_refuses_invalid_registry_without_write() {
+        let root = worktree_root();
+        let registry_path = root.join(".ai/tickets/registry.json");
+        let before = fs::read_to_string(&registry_path).expect("read registry before");
+        let mut registry = red_registry(&root);
+        let tickets_before = tickets(&registry).len();
+
+        let err = cmd_remove(&root, &mut registry, "T-001")
+            .expect_err("remove must refuse a schema-red registry");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing remove T-001"),
+            "expected refuse message, got: {msg}"
+        );
+        assert!(
+            msg.contains("ticket check failed"),
+            "expected check-failed note, got: {msg}"
+        );
+        assert_eq!(
+            tickets_before,
+            tickets(&registry).len(),
+            "remove must not drop a row in-memory when check is red"
+        );
+
+        let after = fs::read_to_string(&registry_path).expect("read registry after");
+        assert_eq!(
+            before, after,
+            "remove must not write registry.json when check is red"
+        );
+    }
+
+    #[test]
     fn require_check_ok_err_matches_set_status_gate() {
-        // Same gate surface ship/set-status/mark-ready share (T-237 / T-451).
+        // Same gate surface ship/set-status/mark-ready/add/remove share
+        // (T-237 / T-451 / T-455).
         let root = worktree_root();
         let registry = red_registry(&root);
         let err = require_check_ok(&root, &registry, "set-status T-001")
