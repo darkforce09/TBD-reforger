@@ -1501,13 +1501,12 @@ async fn patch_blank_weather_rejects_and_preserves_dense_fog() {
         String::from_utf8_lossy(&b)
     );
 
-    let stored: String = sqlx::query_scalar(
-        "SELECT weather::text FROM missions WHERE id = $1::uuid",
-    )
-    .bind(&mid)
-    .fetch_one(&pool)
-    .await
-    .expect("weather after rejected blank PATCH");
+    let stored: String =
+        sqlx::query_scalar("SELECT weather::text FROM missions WHERE id = $1::uuid")
+            .bind(&mid)
+            .fetch_one(&pool)
+            .await
+            .expect("weather after rejected blank PATCH");
     assert_eq!(
         stored, "dense_fog",
         "rejected blank PATCH must leave dense_fog untouched"
@@ -1524,7 +1523,8 @@ async fn patch_blank_weather_rejects_and_preserves_dense_fog() {
     .await;
     assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
     assert_eq!(
-        json(&b)["weather"], "dense_fog",
+        json(&b)["weather"],
+        "dense_fog",
         "GET must still serve dense_fog after blank PATCH reject: {}",
         String::from_utf8_lossy(&b)
     );
