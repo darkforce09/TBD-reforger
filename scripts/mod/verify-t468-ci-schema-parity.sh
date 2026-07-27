@@ -10,9 +10,14 @@
 #         `verify-t456:` — recipes must invoke the real bash scripts
 #         (not `@true` / `echo PASS` / `#fake` comment smuggle).
 # T-486 — Self-pin: Makefile `verify-t468:` must also invoke this script
-#         (hollow `verify-t468:\n\t@true` greened make / ci-local / ci.yml
-#         while wave.sh cold gate still ran bash directly — tripwire missed
-#         its own recipe body).
+#         (hollow `verify-t468:\n\t@true` greened make while wave.sh cold gate
+#         still ran bash directly — tripwire missed its own recipe body).
+# T-489 — Circularity fix: the self-pin only works when this script is invoked
+#         *without* depending on the Makefile `verify-t468` target being intact.
+#         If ci-local / ci.yml call `$(MAKE) verify-t468` / `make verify-t468`,
+#         a hollow `@true` recipe returns rc=0 and the tripwire never runs.
+#         CI / ci-local / wave.sh therefore use direct bash; `make verify-t468`
+#         remains a human convenience that still calls this script.
 #
 # T-434 aligned `.github/workflows/ci.yml` to `make ci-local-schema` so CI runs
 # the full schema-validate set (incl. map-object-enums) + citations. Without a
@@ -32,13 +37,17 @@
 # ci-local / ci.yml so hollow recipes fail outside cold gate.
 # Wave-33 adversarial: T-476 pins t438/t456 but not verify-t468 itself —
 # hollow `@true` verify-t468 greened make / ci-local / ci.yml; T-486 self-pins.
+# Wave-34 adversarial: T-486 self-pin is circular when CI/ci-local go through
+# `make verify-t468` — T-489 switches those callers to direct bash.
 #
-# Gate: make verify-t468
-#   (or: bash scripts/mod/verify-t468-ci-schema-parity.sh)
-# Wired into ci-local + ci.yml mod-gates-hosted via `make verify-t468` (T-485).
+# Gate (CI / ci-local / wave — authoritative):
+#   bash scripts/mod/verify-t468-ci-schema-parity.sh
+# Human convenience (not used by CI — hollow target residual):
+#   make verify-t468
 #
 # OWNS: scripts/mod/verify-t468-ci-schema-parity.sh; Makefile; .github/workflows/ci.yml
-# Wire: make verify-t468 / ci-local / ci.yml mod-gates-hosted + wave.sh gate_slice / cmd_gate.
+# Wire: direct bash in ci-local + ci.yml mod-gates-hosted + wave.sh gate_slice /
+#       cmd_gate; `make verify-t468` for humans only (T-489).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -315,8 +324,11 @@ else:
     # Pre-T-476 hole: `verify-t438:\n\t@true` still greened `make verify-t438`
     # while the Class-R script never ran (wave-28 adversarial).
     # T-486: also self-pin verify-t468 — hollow `verify-t468:\n\t@true` greened
-    # make / ci-local / ci.yml while cold gate still ran this script directly
-    # (wave-33 adversarial). Same exact-goal regex; cold gate / direct bash FAIL.
+    # make while cold gate still ran this script directly (wave-33 adversarial).
+    # T-489: self-pin is circular if CI/ci-local call `make verify-t468` — those
+    # callers use direct bash so a hollow make target cannot green CI. Residual:
+    # `make verify-t468` itself still rc=0 when hollowed (inherent; noted).
+    # Same exact-goal regex; direct bash / wave cold gate FAIL on hollow body.
     # Exact recipe goal (T-472 spirit):
     #   ^\t @? bash <exact-script-path> (whitespace|EOL)
     # Rejects: @true, echo PASS, echo "bash …", @true # bash …, path-fake suffix.

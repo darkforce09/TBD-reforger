@@ -207,5 +207,7 @@ jobs:
       - name: T-456 mission REST size gate (make verify-t456)
         run: make verify-t456
       # T-485: T-468 tripwire (hollow verify-t438/t456 recipes + ci-local-schema pin).
-      - name: T-468 CI schema parity + hollow recipe tripwire (make verify-t468)
-        run: make verify-t468
+      # T-489: invoke script via direct bash — hollow `make verify-t468` (`@true`)
+      # must not green CI (self-pin only runs when the script itself executes).
+      - name: T-468 CI schema parity + hollow recipe tripwire (direct bash, T-489)
+        run: bash scripts/mod/verify-t468-ci-schema-parity.sh
