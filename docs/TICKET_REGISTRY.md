@@ -2520,6 +2520,24 @@ Cure: order-sensitive / structural pins (seed only inside Ok arm AST or window);
 Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.
 
 Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe. |
+| T-472 | 3311 | ready | platform | T-471 verify-t468 still greens echo/@true/#fake Makefile recipes | Residual from wave 27 adversarial BLOCKER. verify-t468 recipe pin uses `^\t.*(?:\$\(MAKE\)\|make)\s+schema-validate\b` — matches `@echo "$(MAKE) schema-validate"`, `schema-validate-fake`, `@true # $(MAKE) schema-validate`.
+
+Repro: hollow echo of make lines / -fake targets / comment-only → tripwire PASS.
+
+Cure: require real recipe invocations (tab + optional @ + $(MAKE)\|make + exact target, no echo, ignore # comments); RED→GREEN on verifier recipes. |
+| T-473 | 3312 | ready | platform | T-470 Class-R still greens spaced/indirect Err seed + if-false Retry | Residual from wave 27 adversarial BLOCKER/MAJOR. Class-R pins exact `list_seeded.set(true)` only:
+(1) early `list_seeded.set( true )` + keep Ok set → PASS
+(2) Err `set( true )` / `set((true))` / `set(seed)` → PASS
+(3) wrap Retry UI in `if false { … }` (no filter) → PASS
+
+Repro: spaced set( true ) before match → Class-R green.
+
+Cure: normalize whitespace for seed pin; forbid any list_seeded.set outside Ok arm; ban if false / unreachable Retry; RED→GREEN on verifier perturbations. |
+| T-474 | 3313 | ready | platform | T-437 verify-t437 presence-only; paraphrased lies still PASS | Residual from wave 27 adversarial BLOCKER. verify-t437 forbids exact historical lie strings and requires DiagnoseEmptyDestroyTargets / out-of-zone as substrings — comment-only pins and paraphrased lies (`entities[] are never placed…`) still PASS; collapsed DiagnoseEmpty returns leave comment needles green.
+
+Repro: paraphrase lie or comment-only DiagnoseEmptyDestroyTargets → verify PASS.
+
+Cure: structural pins (live fn body must contain distinct return arms / out-of-zone string in executable path not only comments); broaden forbidden lie paraphrases; RED→GREEN on verifier perturbations. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
