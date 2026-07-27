@@ -117,19 +117,14 @@ ssh sam@192.168.0.140 'mkdir -p /home/sam/tbd/{repo,profile,addons-staging,websi
 
 ---
 
-## Honest gaps (as of 2026-07-10)
+## Honest gaps (as of 2026-07-27)
 
-The **game** staging path assumes `apps/website/docker-compose.staging.yml`, but that file is **not in the repo today**. Local compose only starts Postgres (`apps/website/docker-compose.yml`). The API is Rust (`apps/website`, `cargo run --bin api`); it serves `/api/v1` + `/uploads` but **does not** serve the SPA `frontend/dist` yet.
-
-Until Claude Code / a follow-up slice adds compose + static hosting, use this doc’s **manual phase** (Postgres Docker + release `api` binary + Caddy/nginx for SPA + Cloudflare). Mark each checkbox when you ship the automation.
+`apps/website/docker-compose.staging.yml` **exists** (T-251). Game deploy (`scripts/mod/deploy-staging.sh`) and website deploy (`scripts/deploy/deploy-website.sh`) both compose from that path (T-438). Local laptop compose remains `apps/website/docker-compose.yml` (Postgres on 5434). Remaining gaps below are still manual until SPA static hosting + COOP/COEP are one-button.
 
 | Gap | Needed for “one command” website host |
 |-----|----------------------------------------|
-| `docker-compose.staging.yml` (or `website.yml`) | Postgres + optional API container |
-| Dockerfile for API (Rust) | Reproducible server image |
-| Serve SPA from API **or** Caddy/nginx | `/` → `index.html`, `/api` → Axum |
+| Serve SPA from API **or** Caddy/nginx | `/` → `index.html`, `/api` → Axum (`scripts/deploy/Caddyfile.website` exists; wire still manual) |
 | COOP/COEP headers on SPA | Same as Vite (`same-origin` + `credentialless`) — required for map wasm / SAB |
-| `deploy-website.sh` | Rsync + build + restart (game `deploy-staging.sh` is game-focused) |
 
 ---
 
@@ -390,7 +385,7 @@ systemctl --user restart tbd-website-api.service
 # Caddy picks up new dist automatically (static files)
 ```
 
-When `docker-compose.staging.yml` + `deploy-website.sh` exist, replace this section with those commands and keep the verification table.
+Website one-button path: `bash scripts/deploy/deploy-website.sh` (compose file + script both exist; see that script’s header). Keep the verification table above for manual checks.
 
 ---
 
@@ -406,12 +401,12 @@ When `docker-compose.staging.yml` + `deploy-website.sh` exist, replace this sect
 
 ---
 
-## Suggested next code slice (Claude Code — not this doc)
+## Suggested next code slice (not this doc)
 
-1. Add `apps/website/docker-compose.staging.yml` (postgres + optional api).
-2. Add `Dockerfile` for release `api`.
-3. Nest `ServeDir` for `frontend/dist` + SPA fallback + COOP/COEP in Axum **or** ship Caddyfile in `scripts/deploy/`.
-4. Add `scripts/website/deploy-website.sh` (rsync + remote build/restart), refuse any `prairielearn` path.
-5. Ticket/registry entry when you want this tracked as `T-xxx`.
+Shipped already: `apps/website/docker-compose.staging.yml` (T-251), `scripts/deploy/deploy-website.sh`, `scripts/deploy/Caddyfile.website`. Remaining:
 
-Until those land, **Phases A–F above are enough to get the website reachable** on the home server using the same SSH + Cloudflare pattern as PrairieLearn.
+1. Wire Caddy/SPA + COOP/COEP as the default one-button host path (or Axum `ServeDir` + SPA fallback).
+2. Optional Dockerfile for release `api` if you prefer container API over host systemd.
+3. Ticket/registry entry only if you want residual SPA hosting tracked as `T-xxx`.
+
+Until SPA static hosting is one-button, **Phases A–F above are enough to get the website reachable** on the home server using the same SSH + Cloudflare pattern as PrairieLearn.

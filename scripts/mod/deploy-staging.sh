@@ -178,10 +178,12 @@ EOF
 fi
 
 echo "==> docker compose (API + Postgres)"
+# T-438: compose file lives at apps/website/docker-compose.staging.yml (T-251),
+# not under apps/website/api/. Match scripts/deploy/deploy-website.sh.
 if [ "$DRY_RUN" -eq 1 ]; then
-  echo "[dry-run] docker compose -f docker-compose.staging.yml up -d --build"
+  echo "[dry-run] cd \$TBD_REMOTE_DIR && docker compose -f apps/website/docker-compose.staging.yml up -d --build"
 else
-  ssh_cmd "cd '$TBD_REMOTE_DIR/apps/website/api' && docker compose -f docker-compose.staging.yml up -d --build"
+  ssh_cmd "cd '$TBD_REMOTE_DIR' && docker compose -f apps/website/docker-compose.staging.yml up -d --build"
 fi
 
 # V2–V4 hit the game-server REST routes (/api/missions/:id/compiled, /api/game/.../roster).
