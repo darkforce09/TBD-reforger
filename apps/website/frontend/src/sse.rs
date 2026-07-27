@@ -212,6 +212,42 @@ pub fn stream_server_status(
 
 #[cfg(test)]
 mod tests {
+    /// Strip `//` line comments and `/* … */` block comments so Class-R `contains` cannot
+    /// green on a commented-out registration (T-457 / Wave 21 adversarial).
+    fn strip_rust_comments(src: &str) -> String {
+        let mut out = String::with_capacity(src.len());
+        let mut chars = src.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c == '/' {
+                match chars.peek() {
+                    Some('/') => {
+                        chars.next();
+                        while let Some(n) = chars.next() {
+                            if n == '\n' {
+                                out.push('\n');
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+                    Some('*') => {
+                        chars.next();
+                        while let Some(n) = chars.next() {
+                            if n == '*' && matches!(chars.peek(), Some('/')) {
+                                chars.next();
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+                    _ => {}
+                }
+            }
+            out.push(c);
+        }
+        out
+    }
+
     /// T-287 Class-R — the SSE fetch must abort on dispose; a comment-only "fixed" is a fail.
     #[test]
     fn class_r_sse_abort_teardown_exists() {
@@ -224,6 +260,9 @@ mod tests {
             .split("mod tests {")
             .next()
             .expect("tests module marker");
+        // T-457 — INTEL pin must ignore `//` / block comments so commenting out the live
+        // `on_cleanup(...abort_server_status_stream)` while leaving the string in a comment REDS.
+        let intel_code = strip_rust_comments(INTEL);
 
         assert_eq!(
             super::SSE_ABORT_CLEANUP_FN,
@@ -257,9 +296,10 @@ mod tests {
             "stale leak documentation must not remain after T-287"
         );
         assert!(
-            INTEL.contains("on_cleanup(crate::sse::abort_server_status_stream)")
-                || INTEL.contains("on_cleanup(abort_server_status_stream)"),
-            "ServerIntelInner must register abort_server_status_stream under on_cleanup"
+            intel_code.contains("on_cleanup(crate::sse::abort_server_status_stream)")
+                || intel_code.contains("on_cleanup(abort_server_status_stream)"),
+            "ServerIntelInner must register abort_server_status_stream under on_cleanup \
+             (live production line — comment-only string is not enough)"
         );
     }
 }
