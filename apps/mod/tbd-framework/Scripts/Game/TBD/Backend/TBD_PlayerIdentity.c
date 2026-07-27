@@ -6,19 +6,27 @@
 //!
 //!   * `POST /api/v1/ingest/link-confirm` (`apps/website/api/src/handlers/me.rs:160-205`) is the
 //!     GAME SERVER confirming a player's link code. It is the ONLY thing besides the dev seed that
-//!     ever writes `users.arma_id`. **The mod does not implement it yet — that is T-181.35.**
+//!     ever writes `users.arma_id`. The mod **does** implement that path: `TBD_IdentityLink`
+//!     exposes `#tbd link <code>` (also `#tbd link status`), and `TBD_MissionLoader.ParseMissionJson`
+//!     calls `TBD_IdentityLink.Arm()` (T-181.35 shipped).
 //!   * `POST /api/v1/ingest/match-results` (`apps/website/api/src/handlers/telemetry.rs:215`)
 //!     resolves each player with `SELECT discord_id FROM users WHERE arma_id = $1`
-//!     (telemetry.rs:238). That is `TBD_ResultsReporter`, this slice.
+//!     (telemetry.rs:238). That is `TBD_ResultsReporter`.
 //!
-//! A join on a string is a join on a string: if T-181.35 sends the engine identity and this sends
-//! anything else — a cached value, a lower-cased value, a `player:<id>` lease — the match returns
-//! zero rows and the backend cheerfully reports success. Nothing logs. Nothing 500s. Attendance,
-//! the user-stat recompute and the leaderboard refresh all just do nothing.
+//! A join on a string is a join on a string: if either half sends anything other than the engine
+//! identity this returns — a cached value, a lower-cased value, a `player:<id>` lease — the match
+//! returns zero rows and the backend cheerfully reports success. Nothing logs. Nothing 500s.
+//! Attendance, the user-stat recompute and the leaderboard refresh all just do nothing.
 //!
-//! So there is ONE function, `GetArmaId`, and both halves call it. **T-181.35 must not resolve the
-//! identity itself.** If it needs a different shape (trimmed, prefixed, whatever), the change goes
-//! HERE so both halves move together.
+//! So there is ONE function, `GetArmaId`, and both halves call it. **`TBD_IdentityLink` must not
+//! resolve the identity itself** — and it does not; it calls this accessor. If the shape ever
+//! needs to change (trimmed, prefixed, whatever), the change goes HERE so both halves move together.
+//!
+//! What stays true: an ENGINE-resolved identity is still not a LINKED one. Players who never run
+//! `#tbd link <code>` have no `users.arma_id`, so match-results can still return 200 while
+//! attendance / stats / leaderboard match nobody for those rows. Production coverage of
+//! `users.arma_id` therefore depends on players actually linking, not merely on this accessor
+//! returning a durable id.
 //!
 //! ══ WHY NOT REUSE TBD_SpawnManager.PlayerBindKey ═══════════════════════════════════════════
 //! `PlayerBindKey` (TBD_SpawnManager.c) answers a different question and has a deliberately
