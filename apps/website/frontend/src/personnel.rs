@@ -20,7 +20,9 @@
 //! reason prompt as ban (the prior mock success toast is gone). When `is_banned`, the dossier
 //! shows **Unban** → `DELETE …/ban` instead of a dead "Personnel Banned" label. Header Sort /
 //! Filter cycle client-side modes over the loaded page (roster API has no sort/filter query).
-//! Deployments stays "—" — `RosterRow` / `AdminUserRow` do not carry `total_deployments`.
+//!
+//! T-448: dossier Deployments binds `AdminUserRow.total_deployments` (API `RosterRow` projects
+//! `users.total_deployments`) — integer string, including `0` (no em-dash placeholder).
 #![allow(dead_code)]
 use crate::dto::{AdminUserRow, Paginated};
 use crate::ui::{cn, AdminGate, MaterialIcon};
@@ -696,8 +698,7 @@ fn dossier(u: AdminUserRow, refetch: Callback<()>) -> impl IntoView {
                 </div>
 
                 <div class="mt-6 grid grid-cols-2 gap-3">
-                    // RosterRow / AdminUserRow omit total_deployments — honest unknown, not a fake 0.
-                    {stat("Deployments", "—".to_string())}
+                    {stat("Deployments", u.total_deployments.to_string())}
                     {stat_reactive("Current Rank", move || role.get().to_uppercase())}
                     {stat_reactive("Warnings", move || warnings.get().to_string())}
                     {stat_reactive(
@@ -831,7 +832,40 @@ mod tests {
             role,
             is_banned,
             warnings,
+            total_deployments: 0,
         }
+    }
+
+    #[test]
+    fn admin_user_row_deserializes_total_deployments() {
+        // T-448: wire field must survive the AdminUserRow decode — zero is a real count.
+        let u: AdminUserRow = serde_json::from_str(
+            r#"{"discord_id":"1","username":"u","discord_handle":"u","arma_id":null,"arma_character":"","role":"enlisted","is_banned":false,"warnings":0,"total_deployments":0}"#,
+        )
+        .expect("AdminUserRow with total_deployments=0");
+        assert_eq!(u.total_deployments, 0);
+        let u17: AdminUserRow = serde_json::from_str(
+            r#"{"discord_id":"1","username":"u","discord_handle":"u","arma_id":null,"arma_character":"","role":"enlisted","is_banned":false,"warnings":0,"total_deployments":17}"#,
+        )
+        .expect("AdminUserRow with total_deployments=17");
+        assert_eq!(u17.total_deployments, 17);
+    }
+
+    #[test]
+    fn dossier_deployments_binds_total_deployments_not_em_dash() {
+        // T-448: dossier used to hardcode stat("Deployments", "—") while the API column existed.
+        // Forbidden / required needles assembled so include_str cannot false-green off this test.
+        const SRC: &str = include_str!("personnel.rs");
+        let em_dash_stat = format!("{}{}", r#"stat("Deployments", ""#, r#"—".to_string())"#);
+        let bind = "u.total_deployments.to_string()";
+        assert!(
+            !SRC.contains(&em_dash_stat),
+            "dossier Deployments must not hardcode em-dash (perturbation: restore stat Deployments —)"
+        );
+        assert!(
+            SRC.contains("stat(\"Deployments\"") && SRC.contains(bind),
+            "dossier Deployments must bind u.total_deployments.to_string()"
+        );
     }
 
     #[test]

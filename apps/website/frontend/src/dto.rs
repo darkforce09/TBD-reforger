@@ -734,6 +734,8 @@ pub struct AdminUserRow {
     pub role: crate::nav::Role,
     pub is_banned: bool,
     pub warnings: i64,
+    /// `users.total_deployments` — same denormalized counter as `/me` (T-448).
+    pub total_deployments: i64,
 }
 
 /// The mission version embedded in `GET /missions/:id` (`current_version`). `json_payload` is the
