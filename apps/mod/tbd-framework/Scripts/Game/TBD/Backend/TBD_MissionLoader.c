@@ -308,8 +308,11 @@ class TBD_MissionDocumentStruct
 //! @route GET /api/v1/missions/{id}/compiled (service-token tier; body = this canonical document, T-092.2).
 class TBD_MissionLoader
 {
-	//! Hard cap on a profile mission file. A file over this would silently truncate in
-	//! Read() and then fail JSON parse with a misleading error — reject it up front (T-130.4 F1-16).
+	//! Hard cap on a mission body (profile file or REST `/compiled` payload). A profile file
+	//! over this would silently truncate in Read() and then fail JSON parse with a misleading
+	//! error — reject it up front (T-130.4 F1-16). T-456 applies the same ceiling to
+	//! `OnBackendFetchSuccess` so a compromised/stale API path cannot hand the mod an oversized
+	//! JSON that skips the profile gate.
 	//! T-450: the SAME ceiling is pinned on mission.schema.json as `x-tbd-missionFileMaxBytes`
 	//! (8388608) and enforced by `validate_mission_document` before `/compiled` serves a body.
 	//! Do not change this constant without updating the schema keyword and the API/xtask checks.
@@ -722,6 +725,17 @@ class TBD_MissionLoader
 			return;
 		}
 
+		// T-456 — REST path must honour the same MISSION_FILE_MAX_BYTES ceiling as profile load.
+		// A compromised/stale API could otherwise hand the mod an oversized body that skips the
+		// profile FileHandle.GetLength() gate and still reaches ParseMissionJson.
+		if (!IsMissionBodyWithinCap(data))
+		{
+			Print(string.Format("[TBD] Backend mission body too large (%1 B > %2 B cap) — refusing to parse.",
+				data.Length(), MISSION_FILE_MAX_BYTES), LogLevel.ERROR);
+			TryProfileFallbackAfterRestFailure(0);
+			return;
+		}
+
 		if (!ParseMissionJson(data))
 		{
 			TryProfileFallbackAfterRestFailure(0);
@@ -851,6 +865,15 @@ class TBD_MissionLoader
 		handle.Close();
 
 		return ParseMissionJson(data);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-456 — shared body ceiling against `MISSION_FILE_MAX_BYTES` (REST path; profile uses the
+	//! same constant via `FileHandle.GetLength()` before Read so a truncated read never lands).
+	//! `string.Length()` is byte-counted in Enforce (same unit as the file-size gate).
+	protected static bool IsMissionBodyWithinCap(string data)
+	{
+		return data.Length() <= MISSION_FILE_MAX_BYTES;
 	}
 
 	//------------------------------------------------------------------------------------------------
