@@ -9,6 +9,10 @@
 # T-476 — Same hollow-body tripwire for Makefile `verify-t438:` /
 #         `verify-t456:` — recipes must invoke the real bash scripts
 #         (not `@true` / `echo PASS` / `#fake` comment smuggle).
+# T-486 — Self-pin: Makefile `verify-t468:` must also invoke this script
+#         (hollow `verify-t468:\n\t@true` greened make / ci-local / ci.yml
+#         while wave.sh cold gate still ran bash directly — tripwire missed
+#         its own recipe body).
 #
 # T-434 aligned `.github/workflows/ci.yml` to `make ci-local-schema` so CI runs
 # the full schema-validate set (incl. map-object-enums) + citations. Without a
@@ -26,6 +30,8 @@
 # `@true` verify-t438 still greened `make verify-t438` + GitHub mod-gates-hosted
 # (ci.yml ran make verify-t438 only). T-485 wires this script into Makefile /
 # ci-local / ci.yml so hollow recipes fail outside cold gate.
+# Wave-33 adversarial: T-476 pins t438/t456 but not verify-t468 itself —
+# hollow `@true` verify-t468 greened make / ci-local / ci.yml; T-486 self-pins.
 #
 # Gate: make verify-t468
 #   (or: bash scripts/mod/verify-t468-ci-schema-parity.sh)
@@ -308,12 +314,16 @@ else:
     # T-476: pin verify-t438 / verify-t456 recipe bodies to the real bash scripts.
     # Pre-T-476 hole: `verify-t438:\n\t@true` still greened `make verify-t438`
     # while the Class-R script never ran (wave-28 adversarial).
+    # T-486: also self-pin verify-t468 — hollow `verify-t468:\n\t@true` greened
+    # make / ci-local / ci.yml while cold gate still ran this script directly
+    # (wave-33 adversarial). Same exact-goal regex; cold gate / direct bash FAIL.
     # Exact recipe goal (T-472 spirit):
     #   ^\t @? bash <exact-script-path> (whitespace|EOL)
     # Rejects: @true, echo PASS, echo "bash …", @true # bash …, path-fake suffix.
     bash_pins = (
         ("verify-t438", "scripts/mod/verify-t438-deploy-staging-compose-path.sh"),
         ("verify-t456", "scripts/mod/verify-t456-mission-rest-size-gate.sh"),
+        ("verify-t468", "scripts/mod/verify-t468-ci-schema-parity.sh"),
     )
     for target, script in bash_pins:
         live = extract_recipe_live(target)
@@ -338,7 +348,7 @@ else:
             for ln in live:
                 print(f"        {ln!r}")
             print(
-                "      T-476: require tab + optional @ + bash + exact script path "
+                "      T-476/T-486: require tab + optional @ + bash + exact script path "
                 "(not @true/echo, not # comment smuggle, not -fake suffix)."
             )
             fail = 1
