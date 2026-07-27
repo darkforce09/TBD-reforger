@@ -335,7 +335,7 @@
 99	T-534	IT suites still seed fixed arma_ids via shared seed_user	apps/website/api/tests/common/mod.rs; apps/website/api/tests
 50	T-535	T-385 live IT positive terrain join	apps/website/api/tests/misc_integration.rs
 51	T-536	touch_changed masks changed_rs porcelain failure	scripts/platform/wave.sh
-58	T-537	xtask empty/lossy write residuals outside T-383 owns	xtask/src/enf; tools/tbd-tools/src/world; tools/tbd-tools/src/map
+58	T-537	xtask empty/lossy write residuals outside T-383 owns	tools/tbd-tools/src/enf; tools/tbd-tools/src/world; tools/tbd-tools/src/map
 52	T-538	flatten-orbat-slots stdout path still drops loadout/uid	xtask/src/schema_gates.rs
 52	T-539	T-538 Class-R must pin stdout flatten entrypoint	xtask/src/schema_gates.rs
 99	T-540	T-384 Class-R only — no IT for attendance retract on re-point	apps/website/api/tests/telemetry.rs; apps/website/api/src/handlers/telemetry.rs
