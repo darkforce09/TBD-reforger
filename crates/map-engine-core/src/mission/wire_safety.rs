@@ -59,6 +59,22 @@
 //! (a blank is unambiguous and the author expressed no intent); quietly deleting a character out of
 //! a name somebody typed is not — they would ship a mission whose roster reads differently from
 //! their editor and never be told. This pass reports and the caller rejects.
+//!
+//! ## T-416 — cargo capacity (same channel, different inputs)
+//!
+//! Over-capacity cargo used to refuse only at the Arsenal export button
+//! (`apps/website/frontend/src/arsenal_rules.rs` `cargo_capacity_errors`). That is the wrong home:
+//! Save Version and `/compiled` never saw it, and the FE seam is `wasm32`-only so the gate cannot
+//! prove it. The durable home is this module — one linear pass over the already-parsed editor
+//! payload, findings joining the same `details` array Save already renders.
+//!
+//! **Design choice (registry vs pure core):** `map-engine-core` has no registry and must not grow
+//! one. The arithmetic and the silence rules ("never invent capacity") live here as
+//! [`scan_cargo_capacity`]; the caller supplies a [`CargoPhysCatalog`] keyed by `resource_name`
+//! (weights / volumes / garment maxima / display names). The API crate builds that table from
+//! `registry_items` and passes it into
+//! `validate_mission_editor_payload_with_catalog`. An empty catalog is a deliberate no-op, not a
+//! guessed limit — same posture as T-240.
 
 use std::collections::HashMap;
 
@@ -303,6 +319,154 @@ fn non_empty(v: Option<&Value>) -> bool {
     v.and_then(Value::as_str).is_some_and(|s| !s.is_empty())
 }
 
+/* ─────────────── T-416 — cargo capacity (catalog supplied by the API) ─────────────── */
+
+/// Wear/container keys that carry cargo on `SlotLoadoutV2` — byte-identical to
+/// `arsenal_rules::CARGO_CONTAINERS`.
+const CARGO_CONTAINERS: &[&str] = &["vest", "pants", "jacket", "backpack"];
+
+/// Why an over-capacity fault is a refusal and not a prediction. Copied in substance from
+/// `arsenal_rules::CARGO_CAPACITY_CAVEAT` so Save and Arsenal export do not disagree about what the
+/// number means.
+pub const CARGO_CAPACITY_CAVEAT: &str = "Capacity is a build-time catalogue figure the game never reads back, so treat it as an estimate, not a guarantee. The failure it points at is real: at spawn, cargo the character cannot hold is silently moved to another container or dropped — the rest of that row goes with it — and nothing reports it.";
+
+/// Phys attrs for one `registry_items` row — the only registry surface this crate will accept.
+///
+/// Built by the API from DB/import rows. Core never loads the registry itself (see module header
+/// **T-416 — cargo capacity**).
+#[derive(Clone, Debug, Default)]
+pub struct CargoPhys {
+    pub display_name: String,
+    pub weight_kg: Option<f64>,
+    pub volume_cm3: Option<f64>,
+    pub max_weight_kg: Option<f64>,
+    pub max_volume_cm3: Option<f64>,
+}
+
+/// `resource_name →` phys attrs. Empty map ⇒ [`scan_cargo_capacity`] reports nothing (never invent).
+pub type CargoPhysCatalog = HashMap<String, CargoPhys>;
+
+/// Scan authored `editor.slots[].loadout` cargo against garment capacities in `catalog`.
+///
+/// Mirrors T-240 `cargo_capacity_errors` silence rules:
+/// * garment has no `max_weight_kg` / `max_volume_cm3` → silent;
+/// * no garment worn for that container → silent;
+/// * pick / item absent from `catalog` → silent (unknown weight does not invent a total either —
+///   missing item mass contributes 0, matching the FE budget helper).
+///
+/// Findings use the same `/editor/...` location prefix as [`scan_editor_payload`] so the Save
+/// dialog can render them without a second code path.
+#[must_use]
+pub fn scan_cargo_capacity(payload: &Value, catalog: &CargoPhysCatalog) -> Vec<String> {
+    // Empty catalog = API has not supplied phys attrs. Walking 367k slots to conclude "nothing
+    // known" would be a pure tax on every save; bail before the walk.
+    if catalog.is_empty() {
+        return Vec::new();
+    }
+    let Some(slots) = payload
+        .get("editor")
+        .and_then(|e| e.get("slots"))
+        .and_then(Value::as_array)
+    else {
+        return Vec::new();
+    };
+
+    let mut out = Vec::new();
+    for (i, sl) in slots.iter().enumerate() {
+        if out.len() >= MAX_REPORTED {
+            out.push(format!(
+                "/editor: further slot(s) carry over-capacity cargo — fix the ones above and save \
+                 again to see the rest"
+            ));
+            break;
+        }
+        let Some(lo) = sl.get("loadout").filter(|v| v.is_object()) else {
+            continue;
+        };
+        let wear = lo.get("wear");
+        let rows = lo.get("cargo").and_then(Value::as_array);
+        for container in CARGO_CONTAINERS {
+            if out.len() >= MAX_REPORTED {
+                break;
+            }
+            let Some((row_key, garment_rn)) = cargo_garment(wear, container) else {
+                continue;
+            };
+            let garment = catalog.get(garment_rn);
+            let mut weight = 0.0_f64;
+            let mut volume = 0.0_f64;
+            if let Some(rows) = rows {
+                for r in rows {
+                    let Some(c) = r.get("container").and_then(Value::as_str) else {
+                        continue;
+                    };
+                    if c != *container {
+                        continue;
+                    }
+                    let Some(item) = r.get("item").and_then(Value::as_str) else {
+                        continue;
+                    };
+                    let qty = r
+                        .get("qty")
+                        .and_then(Value::as_i64)
+                        .filter(|q| *q >= 1)
+                        .unwrap_or(0) as f64;
+                    if qty == 0.0 {
+                        continue;
+                    }
+                    if let Some(it) = catalog.get(item) {
+                        weight += it.weight_kg.unwrap_or(0.0) * qty;
+                        volume += it.volume_cm3.unwrap_or(0.0) * qty;
+                    }
+                }
+            }
+            let max_weight = garment.and_then(|g| g.max_weight_kg);
+            let max_volume = garment.and_then(|g| g.max_volume_cm3);
+            let over_w = max_weight.is_some_and(|m| weight > m);
+            let over_v = max_volume.is_some_and(|m| volume > m);
+            if !over_w && !over_v {
+                continue;
+            }
+            let mut dims: Vec<String> = Vec::new();
+            if let Some(m) = max_weight.filter(|m| weight > *m) {
+                dims.push(format!("{weight:.1} / {m} kg"));
+            }
+            if let Some(m) = max_volume.filter(|m| volume > *m) {
+                dims.push(format!("{volume:.0} / {m} cm³"));
+            }
+            let garment_label = garment
+                .map(|g| g.display_name.as_str())
+                .filter(|s| !s.is_empty())
+                .unwrap_or(garment_rn);
+            out.push(format!(
+                "/editor/slots/{i}/loadout/wear/{row_key}: {container} cargo is over the \
+                 catalogued capacity of {garment_label} — {}. {CARGO_CAPACITY_CAVEAT}",
+                dims.join(" · "),
+            ));
+        }
+    }
+    out
+}
+
+/// Worn garment backing a cargo container key. `vest` accepts `armoredVest` — same spike lock as
+/// `arsenal_rules::cargo_garment`. Returns the **wear row key** the author must change.
+fn cargo_garment<'a>(wear: Option<&'a Value>, container: &str) -> Option<(&'static str, &'a str)> {
+    let wear = wear?;
+    let live = |k: &'static str| {
+        wear.get(k)
+            .and_then(Value::as_str)
+            .filter(|v| !v.is_empty())
+            .map(|v| (k, v))
+    };
+    match container {
+        "vest" => live("vest").or_else(|| live("armoredVest")),
+        "pants" => live("pants"),
+        "jacket" => live("jacket"),
+        "backpack" => live("backpack"),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -407,5 +571,154 @@ mod tests {
     fn missing_editor_block_is_not_an_error() {
         assert!(scan_editor_payload(&json!({})).is_empty());
         assert!(scan_editor_payload(&json!({"editor": 7})).is_empty());
+    }
+
+    /* ─────────────── T-416 — cargo capacity Class-R ─────────────── */
+
+    fn catalog_fixture() -> CargoPhysCatalog {
+        let mut c = CargoPhysCatalog::new();
+        c.insert(
+            "mag".into(),
+            CargoPhys {
+                display_name: "Mag".into(),
+                weight_kg: Some(0.5),
+                volume_cm3: Some(60.0),
+                ..CargoPhys::default()
+            },
+        );
+        c.insert(
+            "vest_rn".into(),
+            CargoPhys {
+                display_name: "Plate Carrier".into(),
+                max_weight_kg: Some(5.0),
+                max_volume_cm3: Some(200.0),
+                ..CargoPhys::default()
+            },
+        );
+        c.insert(
+            "pack_rn".into(),
+            CargoPhys {
+                display_name: "Rucksack".into(),
+                max_weight_kg: Some(20.0),
+                max_volume_cm3: Some(4000.0),
+                ..CargoPhys::default()
+            },
+        );
+        c
+    }
+
+    fn slot_with_cargo(wear: Value, cargo: Value) -> Value {
+        json!({
+            "editor": {
+                "slots": [{
+                    "id": "s1",
+                    "role": "RFL",
+                    "loadout": { "version": 2, "wear": wear, "weapons": [], "cargo": cargo }
+                }]
+            }
+        })
+    }
+
+    #[test]
+    fn over_capacity_cargo_is_a_finding() {
+        let cat = catalog_fixture();
+        // 4 × 60 = 240 cm³ into a 200 cm³ vest; backpack under limit.
+        let p = slot_with_cargo(
+            json!({"vest": "vest_rn", "backpack": "pack_rn"}),
+            json!([
+                {"container": "vest", "item": "mag", "qty": 4},
+                {"container": "backpack", "item": "mag", "qty": 4}
+            ]),
+        );
+        let d = scan_cargo_capacity(&p, &cat);
+        assert_eq!(d.len(), 1, "{d:?}");
+        assert!(
+            d[0].starts_with("/editor/slots/0/loadout/wear/vest:"),
+            "{d:?}"
+        );
+        assert!(d[0].contains("240 / 200 cm³"), "{d:?}");
+        assert!(d[0].contains("Plate Carrier"), "{d:?}");
+        assert!(!d[0].contains("kg"), "weight under limit must stay quiet: {d:?}");
+        assert!(d[0].contains(CARGO_CAPACITY_CAVEAT), "{d:?}");
+    }
+
+    #[test]
+    fn under_capacity_cargo_is_ok() {
+        let cat = catalog_fixture();
+        let p = slot_with_cargo(
+            json!({"vest": "vest_rn"}),
+            json!([{"container": "vest", "item": "mag", "qty": 3}]), // 180 ≤ 200
+        );
+        assert!(scan_cargo_capacity(&p, &cat).is_empty());
+    }
+
+    #[test]
+    fn empty_catalog_never_invents_a_limit() {
+        let p = slot_with_cargo(
+            json!({"vest": "vest_rn"}),
+            json!([{"container": "vest", "item": "mag", "qty": 40}]),
+        );
+        assert!(scan_cargo_capacity(&p, &CargoPhysCatalog::new()).is_empty());
+    }
+
+    #[test]
+    fn no_garment_or_uncatalogued_capacity_is_silent() {
+        let cat = catalog_fixture();
+        let heavy = json!([{"container": "vest", "item": "mag", "qty": 40}]);
+        // No garment worn.
+        assert!(scan_cargo_capacity(
+            &slot_with_cargo(json!({}), heavy.clone()),
+            &cat
+        )
+        .is_empty());
+        // Garment worn but catalog has no maxima for it.
+        let mut cat2 = catalog_fixture();
+        cat2.insert(
+            "plain_rn".into(),
+            CargoPhys {
+                display_name: "Uncatalogued Vest".into(),
+                ..CargoPhys::default()
+            },
+        );
+        assert!(scan_cargo_capacity(
+            &slot_with_cargo(json!({"vest": "plain_rn"}), heavy),
+            &cat2
+        )
+        .is_empty());
+    }
+
+    #[test]
+    fn armored_vest_fault_keys_on_the_wear_row() {
+        let mut cat = CargoPhysCatalog::new();
+        cat.insert(
+            "brick".into(),
+            CargoPhys {
+                display_name: "Brick".into(),
+                weight_kg: Some(4.0),
+                volume_cm3: Some(300.0),
+                ..CargoPhys::default()
+            },
+        );
+        cat.insert(
+            "av_rn".into(),
+            CargoPhys {
+                display_name: "Armored Vest".into(),
+                max_weight_kg: Some(5.0),
+                max_volume_cm3: Some(200.0),
+                ..CargoPhys::default()
+            },
+        );
+        let p = slot_with_cargo(
+            json!({"armoredVest": "av_rn"}),
+            json!([{"container": "vest", "item": "brick", "qty": 2}]),
+        );
+        let d = scan_cargo_capacity(&p, &cat);
+        assert_eq!(d.len(), 1, "{d:?}");
+        assert!(
+            d[0].starts_with("/editor/slots/0/loadout/wear/armoredVest:"),
+            "{d:?}"
+        );
+        assert!(d[0].contains("8.0 / 5 kg"), "{d:?}");
+        assert!(d[0].contains("600 / 200 cm³"), "{d:?}");
     }
 }
