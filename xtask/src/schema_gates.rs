@@ -1137,9 +1137,11 @@ pub fn t090_specs() -> Result<u8> {
 
 /* ─────────────────────────── flatten-orbat-slots ─────────────────────────── */
 
-pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
-    let file = PathBuf::from(path);
-    let mut mission = read_json(&file)?;
+/// Shared flatten transform + T-383/T-538 preserve/refuse rules.
+///
+/// Used by both `--in-place` and stdout paths so neither silently drops loadout/uid
+/// or force-stamps `schemaVersion` over a deliberate prior value.
+fn apply_flatten_orbat_slots(mission: &mut Value, context: &str) -> Result<usize> {
     let prior_schema = mission.get("schemaVersion").cloned();
     let prior_slots: Vec<Value> = mission
         .get("slots")
@@ -1240,32 +1242,40 @@ pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
     let new_loadout_n = slots.iter().filter(|s| s.get("loadout").is_some()).count();
     let new_uid_n = slots.iter().filter(|s| s.get("uid").is_some()).count();
 
-    if in_place {
-        // T-383: refuse empty / lossy in-place overwrite of committed goldens.
-        refuse_empty_write(
-            &format!("flatten-orbat-slots --in-place {}", file.display()),
-            n == 0 && !prior_slots.is_empty(),
-            "would write empty slots[] over a non-empty committed slots array",
-        )?;
-        if new_loadout_n < prior_loadout_n || new_uid_n < prior_uid_n {
-            bail!(
-                "refusing empty write (flatten-orbat-slots --in-place {}): \
-                 would drop loadout ({prior_loadout_n}→{new_loadout_n}) or \
-                 uid ({prior_uid_n}→{new_uid_n}) from committed slots",
-                file.display()
-            );
-        }
-        // Preserve deliberate schemaVersion (e.g. 1.0 last-stand fixture) — never force-stamp 1.1.
-        if prior_schema.is_none() {
-            mission["schemaVersion"] = Value::String("1.1".into());
-        }
-        // else: leave schemaVersion untouched
-    } else {
-        // stdout transform: emit the 1.1 flattened shape (tool default).
+    // T-383 / T-538: refuse empty / lossy transform — same rules for --in-place AND stdout.
+    // Stdout must not silently emit a lossy preview (pre-T-538 force-stamped 1.1 and dropped
+    // unmatched loadout/uid without error).
+    refuse_empty_write(
+        context,
+        n == 0 && !prior_slots.is_empty(),
+        "would write empty slots[] over a non-empty committed slots array",
+    )?;
+    if new_loadout_n < prior_loadout_n || new_uid_n < prior_uid_n {
+        bail!(
+            "refusing empty write ({context}): \
+             would drop loadout ({prior_loadout_n}→{new_loadout_n}) or \
+             uid ({prior_uid_n}→{new_uid_n}) from committed slots"
+        );
+    }
+    // Preserve deliberate schemaVersion (e.g. 1.0 last-stand fixture) — never force-stamp 1.1.
+    if prior_schema.is_none() {
         mission["schemaVersion"] = Value::String("1.1".into());
     }
+    // else: leave schemaVersion untouched
 
     mission["slots"] = Value::Array(slots);
+    Ok(n)
+}
+
+pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
+    let file = PathBuf::from(path);
+    let mut mission = read_json(&file)?;
+    let context = if in_place {
+        format!("flatten-orbat-slots --in-place {}", file.display())
+    } else {
+        format!("flatten-orbat-slots (stdout) {}", file.display())
+    };
+    let n = apply_flatten_orbat_slots(&mut mission, &context)?;
     let out = serde_json::to_string_pretty(&mission)? + "\n";
     if in_place {
         fs::write(&file, out)?;
@@ -2726,6 +2736,73 @@ mod tests {
         assert!(
             msg.contains("refusing empty write") && msg.contains("empty slots"),
             "expected empty-slots refuse, got: {msg}"
+        );
+        assert_eq!(before, fs::read_to_string(&path).unwrap());
+    }
+
+    // ─── T-538: stdout path shares preserve/refuse (not a silent lossy preview) ───
+
+    #[test]
+    fn flatten_stdout_preserves_loadout_uid_and_schema() {
+        let mut m = mission_with_prior_loadout_uid();
+        apply_flatten_orbat_slots(&mut m, "flatten-orbat-slots (stdout) probe")
+            .expect("stdout transform must succeed");
+        assert_eq!(m["schemaVersion"], "1.1");
+        let slot = &m["slots"][0];
+        assert_eq!(slot["uid"], "keep-me");
+        assert_eq!(slot["loadout"]["gear"]["primary"], "Rifle.et");
+    }
+
+    #[test]
+    fn flatten_stdout_preserves_schema_version_1_0() {
+        let mut m = mission_with_prior_loadout_uid();
+        m["schemaVersion"] = json!("1.0");
+        m["slots"] = json!([]);
+        apply_flatten_orbat_slots(&mut m, "flatten-orbat-slots (stdout) probe").expect("ok");
+        assert_eq!(
+            m["schemaVersion"], "1.0",
+            "stdout must not force-stamp schemaVersion 1.1 over deliberate 1.0"
+        );
+        assert!(m["slots"].as_array().unwrap().len() >= 1);
+    }
+
+    #[test]
+    fn flatten_stdout_refuses_lossy_loadout_drop() {
+        // Class-R: silent drop on stdout must RED (same refuse as --in-place).
+        let mut m = mission_with_prior_loadout_uid();
+        m["slots"][0]["id"] = json!("blufor:Other:SL:0");
+        let path = write_temp_mission("stdout-lossy.json", &m);
+        let before = fs::read_to_string(&path).unwrap();
+        let err = flatten_orbat_slots(path.to_str().unwrap(), false)
+            .expect_err("must refuse lossy stdout");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing empty write")
+                && msg.contains("stdout")
+                && (msg.contains("loadout") || msg.contains("uid")),
+            "expected lossy stdout refuse, got: {msg}"
+        );
+        assert_eq!(
+            before,
+            fs::read_to_string(&path).unwrap(),
+            "lossy stdout refuse must not touch the file"
+        );
+    }
+
+    #[test]
+    fn flatten_stdout_refuses_empty_slots() {
+        let mut m = mission_with_prior_loadout_uid();
+        m["orbat"] = json!({});
+        let path = write_temp_mission("stdout-empty-slots.json", &m);
+        let before = fs::read_to_string(&path).unwrap();
+        let err = flatten_orbat_slots(path.to_str().unwrap(), false)
+            .expect_err("must refuse empty stdout");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing empty write")
+                && msg.contains("stdout")
+                && msg.contains("empty slots"),
+            "expected empty-slots stdout refuse, got: {msg}"
         );
         assert_eq!(before, fs::read_to_string(&path).unwrap());
     }
