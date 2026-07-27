@@ -10036,7 +10036,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3169,
       "stream": "web-platform",
       "targets": [
@@ -13077,7 +13077,7 @@
         "security",
         "api"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3333,
       "stream": "web-platform",
       "targets": [
@@ -14069,7 +14069,7 @@
         "infra",
         "dx"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3383,
       "executor": "claude-code",
       "priority": 2,

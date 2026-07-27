@@ -91,7 +91,7 @@
 0	T-361	The gate cannot browser-test any SSE page — its proxy awaits the whole body	tools/tbd-tools/src/smokes.rs
 0	T-358	factions.rs defeats its own unique index, and both sweeps were structurally blind to it	apps/website/api/src/handlers/factions.rs; apps/website/api/tests/factions.rs
 0	T-356	The other side of the armory join has the identical defect, still open	crates/map-engine-core/src/mission/orbat.rs; apps/website/api/src/handlers/events.rs
-0	T-353	Four SPA gaps T-232 could not reach from its own files	apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/router.rs; apps/website/frontend/src/datefmt.rs
+55	T-353	Four SPA gaps T-232 could not reach from its own files	apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/router.rs; apps/website/frontend/src/datefmt.rs; apps/website/frontend/src/announcements.rs; apps/website/frontend/src/server_intel.rs; apps/website/frontend/src/dashboard.rs; apps/website/frontend/src/events.rs
 52	T-364	COALESCE-on-None admits a third state, and a body-only PATCH leaves the snippet stale	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/handlers/cms.rs
 47	T-350	Four sites report an identity as linked when it is whitespace	apps/website/api/src/handlers/auth.rs; apps/website/api/src/handlers/oauth.rs; apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/t350_whitespace_linked.rs
 0	T-351	Nothing pins the arma_id trim, and legacy whitespace rows are still in the tables	apps/website/api/tests/identity_link.rs; apps/website/api/migrations
@@ -296,7 +296,7 @@
 99	T-495	members IT offset exercise	apps/website/api/tests/events.rs
 52	T-496	T-410 library/bookmark Class-R residue-dependent	apps/website/api/tests/missions.rs
 53	T-497	mission mutators still AuthUser+can_edit	apps/website/api/src/handlers/missions.rs
-99	T-498	Discord webhook title not formula-safe	apps/website/api/src/services/webhook.rs; apps/website/api/src/handlers/cms.rs
+55	T-498	Discord webhook title not formula-safe	apps/website/api/src/services/webhook.rs; apps/website/api/src/handlers/cms.rs
 99	T-499	admin_field roles/sync demotes all users in IT	apps/website/api/tests/admin_field.rs
 99	T-500	mission_compile skips cargo wire_safety	apps/website/api/src/services/mission_compile.rs
 99	T-501	community-terrain soft-fail HTTP IT	apps/website/api/tests/telemetry.rs
@@ -341,5 +341,5 @@
 99	T-540	T-384 Class-R only — no IT for attendance retract on re-point	apps/website/api/tests/telemetry.rs; apps/website/api/src/handlers/telemetry.rs
 99	T-541	SpawnManager never calls IsComplete after T-415	apps/mod/tbd-framework/Scripts/Game/TBD; apps/website/frontend/src/arsenal_rules.rs
 54	T-542	T-381 incomplete — wire require_test_database_url into every IT binary	apps/website/api/tests
-99	T-543	mcpd-bin.sh still echoes shared target/debug/mcpd path	scripts/mod/lib/mcpd-bin.sh; scripts/mod/mcp-call-selftest.sh
+55	T-543	mcpd-bin.sh still echoes shared target/debug/mcpd path	scripts/mod/lib/mcpd-bin.sh; scripts/mod/mcp-call-selftest.sh
 99	T-544	T-532 Class-R only — no HTTP IT for set-current	apps/website/api/tests/missions.rs; apps/website/api/src/handlers/missions.rs
