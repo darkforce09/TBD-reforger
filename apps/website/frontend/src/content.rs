@@ -92,10 +92,7 @@ fn cms_uploads_path() -> &'static str {
 #[cfg(target_arch = "wasm32")]
 fn absolute_cms_upload_url(raw: &str) -> String {
     let trimmed = raw.trim();
-    if trimmed.is_empty()
-        || trimmed.starts_with("http://")
-        || trimmed.starts_with("https://")
-    {
+    if trimmed.is_empty() || trimmed.starts_with("http://") || trimmed.starts_with("https://") {
         return trimmed.to_string();
     }
     let origin = web_sys::window()
@@ -688,18 +685,14 @@ fn editor(
                             toasts.success("Hero image uploaded");
                         }
                         Err(e) => {
-                            toasts.error(crate::client::api_error_message(
-                                &e,
-                                "Hero upload failed",
-                            ));
+                            toasts
+                                .error(crate::client::api_error_message(&e, "Hero upload failed"));
                         }
                     }
                 });
             });
-            let _ = input.add_event_listener_with_callback(
-                "change",
-                on_change.as_ref().unchecked_ref(),
-            );
+            let _ = input
+                .add_event_listener_with_callback("change", on_change.as_ref().unchecked_ref());
             // Keep the one-shot listener alive past this stack frame (picker is fire-and-forget).
             on_change.forget();
             input.click();
