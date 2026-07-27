@@ -39,9 +39,9 @@
 //! read site of the same telemetry payload (alongside SSE + `/servers`). That removed the last
 //! `Value` sink that let a `server_fps` type drift hide from the dashboard golden.
 //!
-//! Remaining known gap (needs fixture files under `tests/fixtures/api/`, outside T-360 owns):
-//! `/members`, `/registry/compat` and `POST /fire-missions/solve` have live typed DTOs and **no
-//! fixture at all**, so the gate cannot speak to them either way.
+//! **T-519** closed the remaining typed-DTO gap: `/members`, `/registry/compat`, and
+//! `POST /fire-missions/solve` now have committed goldens under `tests/fixtures/api/` and
+//! `r_api` round-trip pins (see `members_envelope`, `registry_compat_envelope`, `fire_solution`).
 use crate::auth::User;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -85,14 +85,24 @@ pub struct LinkStatus {
     pub pending_code: Option<bool>,
 }
 
-/// A mortar firing solution — mirrors `types/api` `FireSolution` (`POST /fire-missions/solve`).
+/// A mortar firing solution — mirrors backend `services::FireSolution`
+/// (`POST /fire-missions/solve`).
+///
+/// **T-519 — field types match the Axum wire, not a guessed TS port.** The backend emits
+/// `distance_m` / `azimuth_mils` / `charge` / `elevation_mils` as JSON integers (`i64` on the
+/// Rust side). Typing `distance_m` as `f64` deserializes `1000` fine but re-serializes
+/// `1000.0`, which fails the R-api canonical round-trip — the same class of latent drift
+/// T-306 caught on `EventListItem::percent`. `azimuth_mils` and `charge` are named fields so
+/// they cannot hide under `extra`.
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct FireSolution {
     pub weapon_system: String,
-    pub distance_m: f64,
+    pub distance_m: i64,
     pub azimuth_deg: f64,
+    pub azimuth_mils: i64,
     pub elevation_mils: i64,
+    pub charge: i64,
     pub time_of_flight_s: f64,
     #[serde(flatten)]
     pub extra: serde_json::Map<String, Value>,
@@ -1394,6 +1404,53 @@ pub(crate) mod r_api {
     fn registry_envelope() {
         assert_golden::<RegistryResponse>(golden!("GET__registry.json"), &[]);
     }
+    /// T-519 — `GET /registry/compat` was a typed DTO (`RegistryCompatResponse`) with **no**
+    /// fixture, so the gate could not speak to edge shape / etag / modpack identity. Captured
+    /// off a running Axum stack (`?edge_type=mag_in_vehicle_weapon`); `data` truncated to two
+    /// live rows so the corpus stays small while every named edge field is still populated
+    /// (incl. non-empty `evidence` + `qty`).
+    #[test]
+    fn registry_compat_envelope() {
+        const G: &str = golden!("GET__registry__compat.json");
+        assert_golden::<RegistryCompatResponse>(G, &[]);
+        let body: RegistryCompatResponse = serde_json::from_str(G).unwrap();
+        assert!(
+            body.data.len() >= 2,
+            "compat golden must carry ≥2 edges so qty/evidence/timestamps are exercised"
+        );
+        assert!(
+            body.data.iter().all(|e| !e.id.is_empty()
+                && !e.from_node.is_empty()
+                && !e.to_node.is_empty()
+                && !e.edge_type.is_empty()
+                && e.qty >= 1),
+            "each edge must round-trip populated named fields"
+        );
+        assert!(
+            !body.etag.is_empty()
+                && !body.modpack_id.is_empty()
+                && !body.modpack_version.is_empty(),
+            "cache-identity fields must be present"
+        );
+    }
+    /// T-519 — `POST /fire-missions/solve` body. Live capture at FP (0,0) → TGT (0,1000) on
+    /// `M252 81mm`. Pins integer `distance_m` / `azimuth_mils` / `charge` (T-306 class: an
+    /// `f64` `distance_m` greened deserialize and failed only on re-serialize).
+    #[test]
+    fn fire_solution() {
+        const G: &str = golden!("POST__fire-missions__solve.json");
+        assert_golden::<FireSolution>(G, &[]);
+        let sol: FireSolution = serde_json::from_str(G).unwrap();
+        assert_eq!(sol.weapon_system, "M252 81mm");
+        assert_eq!(sol.distance_m, 1000);
+        assert_eq!(sol.azimuth_mils, 0);
+        assert_eq!(sol.charge, 1);
+        assert!(sol.elevation_mils > 800, "high-angle solution");
+        assert!(
+            sol.extra.is_empty(),
+            "every wire key must be a named field, not absorbed by extra"
+        );
+    }
     #[test]
     fn mission_detail() {
         // `json_payload` is the editor superset, deliberately opaque (`Value`).
@@ -1754,6 +1811,34 @@ pub(crate) mod r_api {
     #[test]
     fn servers_envelope() {
         assert_golden::<DataEnvelope<ServerRowDto>>(golden!("GET__servers.json"), &[]);
+    }
+    /// T-519 — `GET /members` assignee-picker body. The Event Hub reads
+    /// `DataEnvelope<Member>`; the golden was missing entirely so `avatar_url`'s
+    /// present/absent (`skip_serializing_if`) cases had zero structural coverage. Live capture
+    /// includes both shapes (Brandt omits; Okafor carries a CDN URL).
+    #[test]
+    fn members_envelope() {
+        const G: &str = golden!("GET__members.json");
+        assert_golden::<DataEnvelope<Member>>(G, &[]);
+        let env: DataEnvelope<Member> = serde_json::from_str(G).unwrap();
+        assert!(
+            env.data.len() >= 2,
+            "members golden must cover more than one row"
+        );
+        assert!(
+            env.data.iter().any(|m| m.avatar_url.is_some()),
+            "at least one row must carry avatar_url (present case)"
+        );
+        assert!(
+            env.data.iter().any(|m| m.avatar_url.is_none()),
+            "at least one row must omit avatar_url (absent case)"
+        );
+        assert!(
+            env.data
+                .iter()
+                .all(|m| !m.discord_id.is_empty() && !m.username.is_empty()),
+            "discord_id and username must round-trip populated"
+        );
     }
 
     /// One **live** `GET /servers/:id/status/stream` frame, captured byte-exact off a running Axum

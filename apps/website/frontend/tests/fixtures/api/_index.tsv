@@ -21,3 +21,6 @@
 200	/api/v1/event-missions/89b1b731-37a8-4926-901a-3c7ff7de5eb3/orbat	GET__event-missions__89b1b731-37a8-4926-901a-3c7ff7de5eb3__orbat.json	2841B
 200	/api/v1/missions/82b937fc-c88e-4bb9-abb3-0bef67379398	GET__missions__82b937fc-c88e-4bb9-abb3-0bef67379398.json	1109B
 200	/api/v1/missions?scope=mine	GET__missions__scope-mine-rejected.json	5213B
+200	/api/v1/members	GET__members.json	539B
+200	/api/v1/registry/compat	GET__registry__compat.json	1049B
+200	/api/v1/fire-missions/solve	POST__fire-missions__solve.json	139B
