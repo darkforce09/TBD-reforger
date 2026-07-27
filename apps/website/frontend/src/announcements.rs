@@ -21,7 +21,9 @@
 //! Selection is deliberately **not** auto-advanced to the first row (unlike `events.rs`, whose
 //! surface spec asks for it): this is the Apple-Mail port, where the resting state is "nothing
 //! opened yet", and it keeps the empty-DB golden's `SplitPaneEmpty` as the honest zero-selection
-//! render rather than a special case of it.
+//! render rather than a special case of it. **T-353** adds `/announcements/:id` so the dashboard
+//! intel feed (and in-list clicks) can deep-link a post — URL `id` drives selection; bare
+//! `/announcements` stays unselected.
 //!
 //! The detail needs **no second fetch** — the list payload already carries `body` — so the T-226
 //! stale-Resource hazard (a `Resource` serving its previous value under a new row's chrome) cannot
@@ -34,6 +36,7 @@ use crate::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
 use crate::ui::{badge_class, AuthGate, MaterialIcon};
 use crate::url_guard;
 use leptos::prelude::*;
+use leptos_router::hooks::{use_navigate, use_params_map};
 use serde_json::Value;
 
 fn vstr(v: &Value, k: &str) -> String {
@@ -152,10 +155,21 @@ fn board(posts: Vec<Value>) -> impl IntoView {
     // The rows and the reader both read the same fetched payload, so it is stored once and read by
     // both closures. Nothing here refetches, so nothing here can go stale.
     let posts = StoredValue::new(posts);
-    let selected = RwSignal::new(None::<String>);
+    // T-353 — URL `id` is the selection SoT (no auto-select on bare `/announcements`).
+    let params = use_params_map();
+    let selected = Memo::new(move |_| {
+        params
+            .read()
+            .get("id")
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+    });
+    let navigate = use_navigate();
 
     let master = view! {
         {move || {
+            // Read selection so list highlight tracks `/announcements/:id` navigation.
+            let sel = selected.get();
             posts
                 .with_value(|posts| {
                     if posts.is_empty() {
@@ -171,6 +185,7 @@ fn board(posts: Vec<Value>) -> impl IntoView {
                         .map(|p| {
                             let id = vstr(p, "id");
                             let click_id = id.clone();
+                            let navigate = navigate.clone();
                             let pinned = vbool(p, "is_pinned");
                             let tag = vstr(p, "tag");
                             let title = vstr(p, "title");
@@ -181,9 +196,10 @@ fn board(posts: Vec<Value>) -> impl IntoView {
                             };
                             let date = format_short_date(&vstr(p, "published_at"));
                             let preview = preview_text(p);
+                            let is_active = sel.as_deref() == Some(id.as_str());
                             view! {
                                 <ListDetailItem
-                                    active=selected.get().as_deref() == Some(id.as_str())
+                                    active=is_active
                                     meta=view! { {date} }.into_any()
                                     dot_class=if pinned { "bg-tactical-yellow" } else { "" }
                                     title=view! { {title} }.into_any()
@@ -195,7 +211,10 @@ fn board(posts: Vec<Value>) -> impl IntoView {
                                         .into_any()
                                     preview=view! { {preview} }.into_any()
                                     on_click=Callback::new(move |()| {
-                                        selected.set(Some(click_id.clone()))
+                                        navigate(
+                                            &format!("/announcements/{click_id}"),
+                                            Default::default(),
+                                        );
                                     })
                                 />
                             }
@@ -224,8 +243,7 @@ fn board(posts: Vec<Value>) -> impl IntoView {
                 .with_value(|posts| {
                     match posts.iter().find(|p| vstr(p, "id") == id) {
                         Some(p) => reader(p).into_any(),
-                        // Unreachable while the list is the only source of ids, but a selection
-                        // that outlives its row must not render a blank pane.
+                        // Deep link to an id that is not in the current feed.
                         None => {
                             view! {
                                 <SplitPaneEmpty

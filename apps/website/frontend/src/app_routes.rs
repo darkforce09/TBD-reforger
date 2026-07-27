@@ -81,6 +81,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/") view=DashboardPage />
             <Route path=path!("/server-intel") view=ServerIntelPage />
             <Route path=path!("/announcements") view=AnnouncementsPage />
+            <Route path=path!("/announcements/:id") view=AnnouncementsPage />
             <Route path=path!("/deployments") view=DeploymentsPage />
             <Route path=path!("/leaderboards") view=LeaderboardsPage />
             <Route path=path!("/missions") view=MissionLibraryPage />

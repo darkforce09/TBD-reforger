@@ -53,6 +53,13 @@ pub static ROUTES: &[RouteDef] = &[
         auth: "none",
     },
     RouteDef {
+        path: "/announcements/:id",
+        component: "AnnouncementsPage",
+        full_bleed: true,
+        chromeless: false,
+        auth: "none",
+    },
+    RouteDef {
         path: "/deployments",
         component: "DeploymentsPage",
         full_bleed: true,
@@ -226,7 +233,7 @@ pub fn breadcrumb(path: &str) -> Option<(&'static str, &'static str)> {
     Some(match match_route(path)?.path {
         "/" => ("Command Center", "Dashboard"),
         "/server-intel" => ("Command Center", "Server Intel"),
-        "/announcements" => ("Command Center", "Announcements"),
+        "/announcements" | "/announcements/:id" => ("Command Center", "Announcements"),
         "/deployments" => ("Operations", "My Deployments"),
         "/leaderboards" => ("Operations", "Global Leaderboards"),
         "/missions" => ("Mission Hub", "Mission Library"),

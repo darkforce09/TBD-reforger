@@ -13,6 +13,7 @@
 //! `matches.terrain` LEFT JOIN on the route and the golden; the panel reads `terrain` again and
 //! only labels a theater when the key carries a non-empty string (no permanent placeholder).
 #![allow(dead_code)]
+use crate::datefmt::format_uptime;
 use crate::dto::{DataEnvelope, ServerStatusDto};
 use crate::ui::{cn, AuthGate, MaterialIcon};
 use leptos::prelude::*;
@@ -41,14 +42,6 @@ fn v_bool(v: &Value, k: &str) -> bool {
 /// `f64` since T-306 — the wire is `numeric(5,1)`, so an `i64` threshold no longer type-checks
 /// against the field, which is how this constant came to be named at all.
 const FPS_OPTIMAL_FLOOR: f64 = 30.0;
-
-/// lib/format.ts `formatUptime` — HH:MM:SS zero-padded.
-fn format_uptime(seconds: i64) -> String {
-    let h = seconds / 3600;
-    let m = (seconds % 3600) / 60;
-    let s = seconds % 60;
-    format!("{h:02}:{m:02}:{s:02}")
-}
 
 /// lib/defaultServer.ts `pickDefaultServer` (no VITE_DEFAULT_SERVER_NAME env in Leptos dev):
 /// first `is_active` row, else the first row.

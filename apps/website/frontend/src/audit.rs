@@ -26,6 +26,7 @@
 //! the `audit_severity` enum (`info` / `warn` / `crit`).
 #![allow(dead_code)]
 use crate::auth::AuthStore;
+use crate::datefmt::log_stamp;
 use crate::dto::CursorList;
 use crate::split_pane::{search_matches, SplitPane, SplitPaneEmpty};
 use crate::ui::{badge_class, AdminGate, MaterialIcon};
@@ -70,26 +71,6 @@ fn severity_variant(severity: &str) -> &'static str {
         "info" => "primary",
         _ => "neutral",
     }
-}
-
-/// `YYYY-MM-DD HH:MM:SS` in the browser's zone — the log-stream stamp. `datefmt`'s formatters are
-/// the human-prose ones ("Sat Aug 1, 21:00 GMT+2"); a terminal wants fixed-width, so this is local
-/// (the `event_manager.rs` precedent for a page-specific `js_sys::Date` helper). `datefmt.rs` is
-/// not T-232's to extend.
-fn log_stamp(iso: &str) -> String {
-    let d = js_sys::Date::new(&wasm_bindgen::JsValue::from_str(iso));
-    if d.get_time().is_nan() {
-        return "--------- --:--:--".into();
-    }
-    format!(
-        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
-        d.get_full_year(),
-        d.get_month() + 1,
-        d.get_date(),
-        d.get_hours(),
-        d.get_minutes(),
-        d.get_seconds()
-    )
 }
 
 /// Everything the filter box matches on, joined into one haystack: the stamp, the level, the

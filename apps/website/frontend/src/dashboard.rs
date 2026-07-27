@@ -12,12 +12,13 @@
 //!
 //! 1. **Intelligence feed rows** — the literal `().into_any()`. A non-empty
 //!    `recent_announcements` (3 rows live) rendered *nothing*: the card had a heading over blank
-//!    space. Now one date-pill + title + snippet row per announcement, linking to `/announcements`.
+//!    space. Now one date-pill + title + snippet row per announcement, linking to
+//!    `/announcements/:id` (T-353 deep link).
 //! 2. **Hero countdown** — read `format!("T-MINUS {}", start_time)`, i.e. the literal
 //!    `T-MINUS 2026-08-01T19:00:00Z`. `datefmt::countdown_label` is the port of the React
 //!    `countdownLabel` the spec asks for (element 3) and was already in the tree, unused here.
 //! 3. **Server uptime** — the `Some` and `None` arms both returned `"—"`, so an online server with
-//!    `uptime_seconds: 19842` reported no uptime at all. Now `format_uptime`.
+//!    `uptime_seconds: 19842` reported no uptime at all. Now `datefmt::format_uptime`.
 //!
 //! One more live defect in the same block: `server_fps` is `numeric(5,1)` on the wire (`58.7`), and
 //! reading it with `as_i64()` yields `None` → the card rendered a confident **`FPS: 0`** for a
@@ -28,7 +29,7 @@
 //! `next_event` / `my_assignment` / `recent_announcements` stay `serde_json::Value` until those
 //! nested bodies get their own DTOs.
 #![allow(dead_code)]
-use crate::datefmt::{countdown_label, format_short_date};
+use crate::datefmt::{countdown_label, format_short_date, format_uptime};
 use crate::dto::DashboardResponse;
 use crate::ui::{cn, AuthGate, MaterialIcon};
 use leptos::prelude::*;
@@ -55,16 +56,6 @@ fn vstr(v: &Value, k: &str) -> String {
 }
 fn vbool(v: &Value, k: &str) -> bool {
     v.get(k).and_then(Value::as_bool).unwrap_or(false)
-}
-
-/// lib/format.ts `formatUptime` — HH:MM:SS zero-padded. A local copy of `server_intel.rs`'s
-/// helper: that one is private to its module and `server_intel.rs` is not T-232's to change. Lifting
-/// the pair into a shared home is noted as a follow-up rather than done from inside this slice.
-fn format_uptime(seconds: i64) -> String {
-    let h = seconds / 3600;
-    let m = (seconds % 3600) / 60;
-    let s = seconds % 60;
-    format!("{h:02}:{m:02}:{s:02}")
 }
 
 #[component]
@@ -385,13 +376,14 @@ fn bento(d: DashboardResponse) -> impl IntoView {
 }
 
 /// One Recent Intelligence row — spec elements 19/20: a mono date pill, the headline, the snippet,
-/// and the whole row a link.
-///
-/// Element 20 wants `/announcements/:id`, but `router.rs` registers no such route (the feed is a
-/// `SplitPane` with in-page selection, not a per-post page), so an anchor there would 404 on the
-/// SPA. It links to `/announcements` instead, which is where the reader for that post actually
-/// lives. Deep-linking a selected broadcast needs a route this slice does not own — reported.
+/// and the whole row a link to `/announcements/:id` (T-353).
 fn intel_row(a: Value) -> impl IntoView {
+    let id = vstr(&a, "id");
+    let href = if id.is_empty() {
+        "/announcements".to_string()
+    } else {
+        format!("/announcements/{id}")
+    };
     let title = vstr(&a, "title");
     let title = if title.is_empty() {
         "Untitled Post".to_string()
@@ -416,7 +408,7 @@ fn intel_row(a: Value) -> impl IntoView {
     };
     view! {
         <a
-            href="/announcements"
+            href=href
             class="group/row flex items-start gap-3 rounded-lg border border-transparent p-3 transition-all hover:border-outline-variant/30 hover:bg-surface-variant/40"
         >
             <span class="mt-0.5 shrink-0 rounded border border-border-subtle bg-surface-container-lowest px-2 py-0.5 font-mono text-[10px] tracking-widest text-on-surface-variant uppercase">

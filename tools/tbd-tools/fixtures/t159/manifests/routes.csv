@@ -8,6 +8,7 @@ path,component,fullBleed,chromeless,router_auth
 /admin/personnel,PersonnelRosterPage,true,false,admin
 /admin/server,ServerControlPage,true,false,admin
 /announcements,AnnouncementsPage,true,false,none
+/announcements/:id,AnnouncementsPage,true,false,none
 /auth/callback,AuthCallbackPage,false,false,none
 /deployments,DeploymentsPage,true,false,none
 /events,EventSchedulePage,true,false,none

@@ -23,16 +23,14 @@
 //! id it was loaded for**, and the detail renders the loading state whenever that id does not match
 //! the current selection.
 //!
-//! **Scope note:** the spec's full inline-ORBAT detail is `event_hub.rs`'s `event_hub_view`, which
-//! is private to that module (T-232 owns neither it nor `ui.rs`). The detail here is the
-//! self-contained dossier summary plus a deep link to `/events/:id`; exporting `event_hub_view` is
-//! reported as the follow-up.
+//! **T-353:** detail column renders `event_hub::event_hub_view` (same body as `/events/:id`) so
+//! inline ORBAT register matches the surface spec — no dossier summary + deep-link stand-in.
 #![allow(dead_code)]
 use crate::datefmt::{countdown_label, format_local_datetime};
-use crate::dto::{EventHub, EventMissionDossier, Paginated};
+use crate::dto::{EventHub, Paginated};
+use crate::event_hub::event_hub_view;
 use crate::split_pane::{SplitPane, SplitPaneEmpty};
 use crate::ui::{badge_class, cn, AuthGate, MaterialIcon};
-use crate::url_guard;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -56,14 +54,6 @@ fn status_variant(status: &str) -> &'static str {
         "completed" => "tertiary",
         "cancelled" => "error",
         _ => "neutral",
-    }
-}
-
-fn terrain_label(t: &str) -> String {
-    let mut c = t.chars();
-    match c.next() {
-        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-        None => "—".into(),
     }
 }
 
@@ -202,9 +192,10 @@ fn board(events: Vec<Value>) -> impl IntoView {
                     }
                         .into_any()
                 }
-                // The value in hand is the one asked for.
+                // The value in hand is the one asked for — full inline-ORBAT hub (T-353).
                 (Some(want), Some(Hub::Loaded(got, ev))) if got == want => {
-                    hub_detail(ev).into_any()
+                    let on_change = Callback::new(move |()| hub.refetch());
+                    event_hub_view(ev, on_change).into_any()
                 }
                 (Some(_), Some(Hub::Failed)) => {
                     view! {
@@ -316,194 +307,5 @@ fn op_card(
                 ></div>
             </div>
         </button>
-    }
-}
-
-/// The detail column: the operation hero + its attached mission dossiers. The full inline-ORBAT hub
-/// lives in `event_hub.rs` (see the module note) and is reachable from the header link.
-fn hub_detail(ev: EventHub) -> impl IntoView {
-    let title = ev
-        .name_override
-        .clone()
-        .filter(|n| !n.is_empty())
-        .unwrap_or_else(|| "Untitled Operation".into());
-    let when = format_local_datetime(&ev.start_time);
-    let countdown = countdown_label(&ev.start_time);
-    let href = format!("/events/{}", ev.id);
-    let mission_count = ev.missions.len();
-    let banner = ev.banner_image_url.clone().unwrap_or_default();
-    let briefing = ev.briefing.clone().unwrap_or_default();
-    let status = ev.status.clone();
-    let status_class = badge_class(status_variant(&status));
-    let locked = ev.registration_locked;
-    let max_slots = ev.max_slots;
-    view! {
-        <div class="flex flex-col">
-            <header class="relative overflow-hidden border-b border-outline-variant/30">
-                {banner_img_src(&banner)
-                    .map(|src| {
-                        view! {
-                            <>
-                                <img
-                                    src=src.to_string()
-                                    alt=""
-                                    class="absolute inset-0 h-full w-full object-cover opacity-25 mix-blend-luminosity"
-                                />
-                                <div class="absolute inset-0 bg-gradient-to-r from-surface-container-lowest/80 to-transparent"></div>
-                            </>
-                        }
-                    })}
-                <div class="relative z-10 flex flex-col gap-4 px-8 py-8">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class=status_class>{status}</span>
-                        <span class=badge_class(
-                            if locked { "neutral" } else { "success" },
-                        )>{if locked { "Registration locked" } else { "Registration open" }}</span>
-                    </div>
-                    <h1 class="text-headline-md tracking-tight text-on-surface">{title}</h1>
-                    <div class="flex flex-wrap items-center gap-x-6 gap-y-1 font-mono text-sm text-on-surface-variant">
-                        <span>{when}</span>
-                        <span class="text-primary">"T-MINUS "{countdown}</span>
-                        {(max_slots > 0)
-                            .then(|| {
-                                view! { <span>{max_slots}" slot cap"</span> }
-                            })}
-                    </div>
-                    <a
-                        href=href
-                        class="group inline-flex w-fit items-center gap-2 rounded-lg border border-primary/50 bg-surface/50 px-5 py-2.5 text-sm font-bold tracking-widest text-primary uppercase backdrop-blur-md transition-all hover:bg-primary/20 active:scale-95"
-                    >
-                        "Open Operation Hub"
-                        <MaterialIcon
-                            name="arrow_forward"
-                            class="transition-transform group-hover:translate-x-1"
-                        />
-                    </a>
-                </div>
-            </header>
-            {(!briefing.is_empty())
-                .then(|| {
-                    view! {
-                        <section class="border-b border-outline-variant/30 px-8 py-6">
-                            <h2 class="mb-3 font-mono text-xs tracking-widest text-on-surface-variant uppercase">
-                                "Briefing"
-                            </h2>
-                            <p class="max-w-prose whitespace-pre-line text-sm leading-relaxed text-on-surface-variant">
-                                {briefing}
-                            </p>
-                        </section>
-                    }
-                })}
-            <section class="px-8 py-6">
-                <h2 class="mb-4 font-mono text-xs tracking-widest text-on-surface-variant uppercase">
-                    "Attached Missions "
-                    <span class="text-on-surface">"("{mission_count}")"</span>
-                </h2>
-                {if ev.missions.is_empty() {
-                    view! {
-                        <p class="text-label-md text-on-surface-variant">
-                            "No missions attached to this operation yet."
-                        </p>
-                    }
-                        .into_any()
-                } else {
-                    let event_id = ev.id.clone();
-                    view! {
-                        <div class="flex flex-col gap-3">
-                            {ev
-                                .missions
-                                .into_iter()
-                                .map(|m| mission_row(&event_id, m))
-                                .collect_view()}
-                        </div>
-                    }
-                        .into_any()
-                }}
-            </section>
-        </div>
-    }
-}
-
-/// One attached-mission summary: title, terrain / mode, fill, factions, and the caller's own
-/// registration state when the backend reported one.
-///
-/// The ORBAT deep link is `/events/:id/missions/:emid/orbat` — the shape `router.rs:105` actually
-/// registers. The dossier only carries `event_mission_id`, so the event id is threaded in from the
-/// hub: building it from the dossier alone would produce a route that does not exist.
-fn mission_row(event_id: &str, m: EventMissionDossier) -> impl IntoView + use<> {
-    let orbat_href = format!("/events/{event_id}/missions/{}/orbat", m.event_mission_id);
-    let factions = if m.factions.is_empty() {
-        String::new()
-    } else {
-        m.factions.join(" · ")
-    };
-    let my_state = m.my_state.clone().unwrap_or_default();
-    view! {
-        <div class="rounded-xl border border-white/10 bg-surface-container-lowest/40 p-4">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div class="min-w-0">
-                    <h3 class="truncate font-semibold text-on-surface">{m.title}</h3>
-                    <p class="mt-1 font-mono text-xs text-on-surface-variant">
-                        {terrain_label(&m.terrain)} " · " {m.game_mode.clone()} " · " {m.filled} "/"
-                        {m.total} " slots"
-                    </p>
-                    {(!factions.is_empty())
-                        .then(|| {
-                            view! {
-                                <p class="mt-1 font-mono text-xs text-outline">{factions}</p>
-                            }
-                        })}
-                </div>
-                <div class="flex shrink-0 items-center gap-2">
-                    {(!my_state.is_empty())
-                        .then(|| {
-                            let variant = match my_state.as_str() {
-                                "registered" | "attended" => "success",
-                                "waitlisted" => "warning",
-                                "no_show" => "error",
-                                _ => "neutral",
-                            };
-                            view! { <span class=badge_class(variant)>{my_state.clone()}</span> }
-                        })}
-                    <a
-                        href=orbat_href
-                        class="rounded-lg border border-white/10 px-3 py-1.5 font-mono text-xs tracking-wider text-on-surface uppercase transition hover:bg-white/5"
-                    >
-                        "ORBAT"
-                    </a>
-                </div>
-            </div>
-        </div>
-    }
-}
-
-/// Event hub banner `<img src>`. **T-413** — empty / non-http → no banner (same empty state as before).
-fn banner_img_src(url: &str) -> Option<&str> {
-    url_guard::is_http_url(url).then_some(url)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::banner_img_src;
-
-    include!("../../shared/is_http_url_cases.rs");
-
-    #[test]
-    fn event_banner_emits_src_only_for_http_urls() {
-        let mut wrong = Vec::new();
-        for (input, should_img) in IS_HTTP_URL_CASES {
-            match (banner_img_src(input), should_img) {
-                (Some(_), false) => wrong.push(format!("  RENDERED AN IMG FOR {input:?}")),
-                (None, true) => wrong.push(format!("  refused a legitimate banner {input:?}")),
-                _ => {}
-            }
-        }
-        assert!(
-            wrong.is_empty(),
-            "event banner sink wrong on {} of {} cases:\n{}",
-            wrong.len(),
-            IS_HTTP_URL_CASES.len(),
-            wrong.join("\n")
-        );
     }
 }
