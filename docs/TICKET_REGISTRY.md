@@ -2390,12 +2390,12 @@ Repro: break schema.json required fields; ./scripts/ticket check still OK; pytho
 Cure: load Draft 2020-12 schema in ticket check (or make verify-ticket-schema target + wave gate step).
 
 CANCELLED 2026-07-27: duplicate of T-237 (promoted wave 16). |
-| T-450 | 3289 | deferred | platform | Pin MISSION_FILE_MAX_BYTES (8MB) in mission schema | Residual from T-275 / wave 16. Schema now pins MAX_NETS/MAX_LABEL_CHARS/MAX_GRACE_SECONDS/MAX_DURATION_SECONDS, but TBD_MissionLoader.c still enforces MISSION_FILE_MAX_BYTES = 8*1024*1024 outside owns — a document can validate then fail at mod load on size.
+| T-450 | 3289 | ready | platform | Pin MISSION_FILE_MAX_BYTES (8MB) in mission schema | Residual from T-275 / wave 16. Schema now pins MAX_NETS/MAX_LABEL_CHARS/MAX_GRACE_SECONDS/MAX_DURATION_SECONDS, but TBD_MissionLoader.c still enforces MISSION_FILE_MAX_BYTES = 8*1024*1024 outside owns — a document can validate then fail at mod load on size.
 
 Repro: craft a schema-valid mission JSON >8MB; CreateVersion/schema-validate OK; mod loader rejects at TBD_MissionLoader.c (~836).
 
 Cure: add an explicit size ceiling to mission.schema.json (or document + API preflight) matching MISSION_FILE_MAX_BYTES; cite TBD_MissionLoader.c. |
-| T-451 | 3290 | deferred | platform | ticket set-status mutates without schema check preflight | Residual from T-237 / wave 16 adversarial. ticket ship/done now call require_check_ok before status write, but cmd_set_status (and mark_ready etc.) still mutate registry without loading .ai/tickets/schema.json — an operator can force a red registry to a status.
+| T-451 | 3290 | ready | platform | ticket set-status mutates without schema check preflight | Residual from T-237 / wave 16 adversarial. ticket ship/done now call require_check_ok before status write, but cmd_set_status (and mark_ready etc.) still mutate registry without loading .ai/tickets/schema.json — an operator can force a red registry to a status.
 
 Repro: break a required field in registry.json; ./scripts/ticket check RED; ./scripts/ticket set-status T-001 shipped still mutates.
 
@@ -2405,7 +2405,7 @@ Cure: gate mutators through require_check_ok (or document intentional escape hat
 Repro: rg 'does not implement\|T-181.35' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c
 
 Cure: rewrite the stale header to match IdentityLink (same honesty bar as T-296). |
-| T-453 | 3292 | deferred | platform | CI rust-backend fmt still misses workspace cargo fmt --all | Residual from T-297 / wave 18 adversarial MINOR. Local `make rust-fmt` now runs `cargo fmt --all --check`, but `.github/workflows/ci.yml` rust-backend still uses `working-directory: apps/website/api` + package-scoped `cargo fmt --check`, so GitHub CI can miss tbd-tools/xtask drift. Also `scripts/platform/wave.sh` still comments that `cargo fmt --all` is deliberately unused (stale).
+| T-453 | 3292 | ready | platform | CI rust-backend fmt still misses workspace cargo fmt --all | Residual from T-297 / wave 18 adversarial MINOR. Local `make rust-fmt` now runs `cargo fmt --all --check`, but `.github/workflows/ci.yml` rust-backend still uses `working-directory: apps/website/api` + package-scoped `cargo fmt --check`, so GitHub CI can miss tbd-tools/xtask drift. Also `scripts/platform/wave.sh` still comments that `cargo fmt --all` is deliberately unused (stale).
 
 Repro: format-break tools/tbd-tools/src/lib.rs; local rust-fmt RED; push and watch CI rust-backend still GREEN if only api fmt runs.
 

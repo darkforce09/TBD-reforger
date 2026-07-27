@@ -12034,7 +12034,7 @@
         "mod",
         "mission-creator"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3289,
       "stream": "web-platform",
       "targets": [
@@ -12055,7 +12055,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3290,
       "stream": "web-platform",
       "targets": [
@@ -12096,7 +12096,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3292,
       "stream": "web-platform",
       "targets": [
