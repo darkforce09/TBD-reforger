@@ -924,11 +924,6 @@ Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegi
 Repro: author a destroy objective whose alias fails for zone/timing/registry reasons; inertReason still says the build does not spawn entities[] — misdiagnoses live failures.
 
 Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs out-of-zone; update schema prose.
-- **T-438** (deferred) — deploy-staging.sh still looks for docker-compose.staging.yml under apps/website/api [INFRA] — Residual from T-251 / wave 9 N1. T-251 placed apps/website/docker-compose.staging.yml, but scripts/mod/deploy-staging.sh:184 still cds to apps/website/api and runs docker compose -f docker-compose.staging.yml there.
-
-Repro: after T-251 land, follow game staging path that uses deploy-staging.sh compose step — file not found / wrong cwd.
-
-Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-compose.staging.yml; align STAGING-SERVER.md.
 - **T-439** (deferred) — Objects palette aliases need prop:/comp: rows in mod Data/registry.json [MOD, FE] — Residual from T-254 / wave 9 N5. Editor synthesises prop:*/comp:* aliases for crate|other (~333 workbench kinds); mod Data/registry.json has 1 comp: (comp:checkpoint_small) and 0 prop: entries. SpawnMissionEntities warn+skips unknown aliases.
 
 Repro: place a non-checkpoint Objects leaf → compile entities[] → world-boot → spawn warns and skips; only checkpoint_small resolves.
@@ -951,11 +946,6 @@ Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall ba
 Repro: make db-up + make seed on empty DB; curl GET /api/v1/wiki → data:[]; vehicles have rows.
 
 Cure: extract wiki INSERT seed (or include content_golden wiki section) into seeds/ + Makefile seed line, same shape as vehicle_database.sql.
-- **T-445** (deferred) — Audit Load-more Class-R does not pin on_load_more UI wiring [FE, INFRA] — Residual from T-266 / wave 13 adversarial MINOR. Class-R tests pin audit_logs_path / parse_next_cursor / merge_audit_page helpers, but nothing asserts on_load_more calls merge_audit_page. A replace bug (lines.set(page.data) instead of append) would keep those tests green while truncating the trail again.
-
-Repro: change Load more to replace the vec; cargo test -p website-frontend audit::tests still PASS.
-
-Cure: include_str! / source guard (T-264 style) that on_load_more uses merge_audit_page + audit_logs_path(Some(before)).
 - **T-446** (deferred) — CMS hero image upload needs web-sys FormData features [FE] — Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.
 
 Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
@@ -966,11 +956,6 @@ Cure: enable FormData/File features, wire multipart api helper, POST /cms/upload
 Repro: Publish announcement; reload /content → mock seed only.
 
 Cure: add list route if missing + FE LocalResource GET /cms/announcements.
-- **T-448** (deferred) — Personnel dossier Deployments stat has no API field [FE, BE] — Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.
-
-Repro: Personnel dossier → Deployments always —.
-
-Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

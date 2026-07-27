@@ -9,6 +9,21 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-438** (3277) — deploy-staging.sh still looks for docker-compose.staging.yml under apps/website/api [ready] — Residual from T-251 / wave 9 N1. T-251 placed apps/website/docker-compose.staging.yml, but scripts/mod/deploy-staging.sh:184 still cds to apps/website/api and runs docker compose -f docker-compose.staging.yml there.
+
+Repro: after T-251 land, follow game staging path that uses deploy-staging.sh compose step — file not found / wrong cwd.
+
+Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-compose.staging.yml; align STAGING-SERVER.md.
+- **T-445** (3284) — Audit Load-more Class-R does not pin on_load_more UI wiring [ready] — Residual from T-266 / wave 13 adversarial MINOR. Class-R tests pin audit_logs_path / parse_next_cursor / merge_audit_page helpers, but nothing asserts on_load_more calls merge_audit_page. A replace bug (lines.set(page.data) instead of append) would keep those tests green while truncating the trail again.
+
+Repro: change Load more to replace the vec; cargo test -p website-frontend audit::tests still PASS.
+
+Cure: include_str! / source guard (T-264 style) that on_load_more uses merge_audit_page + audit_logs_path(Some(before)).
+- **T-448** (3287) — Personnel dossier Deployments stat has no API field [ready] — Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.
+
+Repro: Personnel dossier → Deployments always —.
+
+Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.
 
 ## Next queued (top 10)
 
