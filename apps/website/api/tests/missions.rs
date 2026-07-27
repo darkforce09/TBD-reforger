@@ -572,6 +572,141 @@ async fn control_character_in_a_callsign_is_refused_at_save_not_at_fetch() {
     assert_eq!(json(&b)["slots"][0]["groupCallsign"], "ALPHA");
 }
 
+/// T-549 — live `/compiled` refuses pre-T-416 over-capacity versions once the registry phys
+/// catalog is loaded (same numbers as Save's T-416 Class-R: 4×60 cm³ into a 200 cm³ vest).
+///
+/// Save already refuses this payload (cannot POST it). The bug was empty-catalog compile of
+/// rows that bypassed Save — so this IT inserts the version directly and asserts `/compiled`
+/// answers 500 with the cargo finding, not 200.
+///
+/// RED: `get_compiled_mission` calls no-arg `flatten_to_mod_document` again.
+#[tokio::test]
+async fn compiled_refuses_over_capacity_when_registry_phys_is_loaded() {
+    let Some((app, pool, maker, _admin)) = app_pool_and_tokens().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let vest_rn = format!("t549_vest_{stamp}");
+    let mag_rn = format!("t549_mag_{stamp}");
+
+    // A current modpack + phys rows Save/compile both read. Private resource names so parallel
+    // suites cannot collide; is_current=true so load_cargo_phys_catalog includes them even if
+    // another pack is also current.
+    let pack_id: uuid::Uuid = sqlx::query_scalar(
+        "INSERT INTO modpacks (name, version, total_size_bytes, workshop_url, is_current, created_at) \
+         VALUES ($1, '0.0.1', 1, 'https://example.invalid/t549', true, now()) RETURNING id",
+    )
+    .bind(format!("T549 Pack {stamp}"))
+    .fetch_one(&pool)
+    .await
+    .expect("seed modpack");
+    sqlx::query(
+        "INSERT INTO registry_items \
+         (modpack_id, resource_name, display_name, category, kind, sort_order, \
+          weight_kg, volume_cm3, created_at, updated_at) \
+         VALUES ($1, $2, 'Mag', 'T549', 'gear_vest', 0, 0.5, 60.0, now(), now())",
+    )
+    .bind(pack_id)
+    .bind(&mag_rn)
+    .execute(&pool)
+    .await
+    .expect("seed mag phys");
+    sqlx::query(
+        "INSERT INTO registry_items \
+         (modpack_id, resource_name, display_name, category, kind, sort_order, \
+          max_weight_kg, max_volume_cm3, created_at, updated_at) \
+         VALUES ($1, $2, 'Plate Carrier', 'T549', 'gear_vest', 1, 5.0, 200.0, now(), now())",
+    )
+    .bind(pack_id)
+    .bind(&vest_rn)
+    .execute(&pool)
+    .await
+    .expect("seed vest phys");
+
+    let create = format!(
+        r#"{{"title":"T549 Cargo {stamp}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+    );
+    let (st, b) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        Some(&maker),
+        None,
+        Some(&create),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
+    let mid = json(&b)["id"].as_str().unwrap().to_string();
+
+    // Bypass Save (which would 400) — the pre-T-416 residual is a stored row, not an API write.
+    let payload = format!(
+        r#"{{"schemaVersion":1,"editor":{{
+        "factions":[{{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}}],
+        "squads":[{{"id":"sq1","factionId":"f1","callsign":"Alpha","slotIds":["s1"]}}],
+        "slots":[{{"id":"s1","squadId":"sq1","index":0,"role":"RFL",
+            "position":{{"x":100.0,"y":200.0,"z":0,"rotation":0}},
+            "loadout":{{"version":2,"wear":{{"vest":"{vest_rn}"}},"weapons":[],
+              "cargo":[{{"container":"vest","item":"{mag_rn}","qty":4}}]}}}}],
+        "editorLayers":[]}}}}"#
+    );
+    let vid = uuid::Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO mission_versions (id, mission_id, semver, json_payload, editor_notes, created_by, created_at) \
+         VALUES ($1, $2::uuid, '9.9.9', $3::jsonb, '', '000000000000000001', now())",
+    )
+    .bind(vid)
+    .bind(&mid)
+    .bind(&payload)
+    .execute(&pool)
+    .await
+    .expect("insert over-capacity version");
+    sqlx::query("UPDATE missions SET current_version_id = $1 WHERE id = $2::uuid")
+        .bind(vid)
+        .bind(&mid)
+        .execute(&pool)
+        .await
+        .expect("point tip at over-capacity version");
+
+    let (st, b) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/missions/{mid}/compiled"),
+        None,
+        Some("test-service-token"),
+        None,
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "over-capacity tip must not compile: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let err = json(&b);
+    assert_eq!(err["error"], "could not compile mission");
+    let detail = err["details"]["detail"]
+        .as_str()
+        .unwrap_or_else(|| panic!("compile detail missing: {err}"));
+    assert!(
+        detail.contains("240 / 200 cm³") && detail.contains("Plate Carrier"),
+        "compile refuse must name the cargo finding: {detail}"
+    );
+
+    // Cleanup so the shared gate DB does not accumulate forever-current packs.
+    let _ = sqlx::query("DELETE FROM registry_items WHERE modpack_id = $1")
+        .bind(pack_id)
+        .execute(&pool)
+        .await;
+    let _ = sqlx::query("DELETE FROM modpacks WHERE id = $1")
+        .bind(pack_id)
+        .execute(&pool)
+        .await;
+}
+
 /// The four-item armory every T-315 case starts from.
 const ARMORY_SEED: &str = r#"{"items":[
     {"faction":"USA","category":"rifle","item_name":"M4A1","quantity":24,"icon":"m4.png","sort_order":0},

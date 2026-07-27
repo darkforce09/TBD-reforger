@@ -30,7 +30,8 @@ use crate::models::{
 };
 use crate::services::text::is_http_url;
 use crate::services::{
-    CompileError, ModMissionDocument, flatten_to_mod_document, mission_terrain_key, write_audit,
+    CompileError, ModMissionDocument, flatten_to_mod_document_with_catalog, mission_terrain_key,
+    write_audit,
 };
 use crate::state::AppState;
 
@@ -1588,6 +1589,10 @@ pub async fn ingest_list_missions(
 /// Runs the Phase 8 flatten engine live (gate G6 end-to-end), then holds the result to
 /// `mission.schema.json` before serving it — see [`validated_compiled_body`].
 ///
+/// **T-549 — cargo capacity at compile.** Loads the same registry phys table Save uses
+/// ([`load_cargo_phys_catalog`]) and compiles via [`flatten_to_mod_document_with_catalog`], so
+/// pre-T-416 over-capacity versions refuse here instead of shipping an empty-catalog no-op.
+///
 /// @route GET /api/v1/missions/:id/compiled
 /// @contract mission.schema.json#/
 pub async fn get_compiled_mission(
@@ -1606,13 +1611,17 @@ pub async fn get_compiled_mission(
     let Some(v) = v else {
         return Err(ApiError::conflict("no saved version to compile"));
     };
-    let doc = match flatten_to_mod_document(&m, v.json_payload.0.get().as_bytes()) {
-        Ok(doc) => doc,
-        Err(CompileError::NoSlots) => return Err(ApiError::conflict("no placed slots")),
-        Err(CompileError::Parse(detail)) => {
-            return Err(unreadable_stored_payload(&id, &detail));
-        }
-    };
+    // Same phys table as validate_payload — empty catalog stays silent (never invent).
+    let catalog = load_cargo_phys_catalog(&state.pool).await?;
+    let doc =
+        match flatten_to_mod_document_with_catalog(&m, v.json_payload.0.get().as_bytes(), &catalog)
+        {
+            Ok(doc) => doc,
+            Err(CompileError::NoSlots) => return Err(ApiError::conflict("no placed slots")),
+            Err(CompileError::Parse(detail)) => {
+                return Err(unreadable_stored_payload(&id, &detail));
+            }
+        };
     let body = validated_compiled_body(&id, &doc)?;
     Ok(([(header::CONTENT_TYPE, "application/json")], body).into_response())
 }
@@ -2068,6 +2077,41 @@ mod tests {
         assert!(
             !stripped.contains("validate_mission_editor_payload("),
             "validate_payload_with_catalog must not fall back to the empty-catalog entry"
+        );
+    }
+
+    /// T-549 Class-R: live `/compiled` must load the Save phys catalog and compile through the
+    /// catalogued gate — empty-catalog `flatten_to_mod_document` lets pre-T-416 over-capacity
+    /// versions ship. RED: swap back to the no-arg flatten, or drop the catalog load.
+    #[test]
+    fn compiled_route_loads_cargo_phys_catalog() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        let start = production
+            .find("pub async fn get_compiled_mission(")
+            .expect("get_compiled_mission must exist");
+        let after = &production[start..];
+        // Next pub async fn after this one (unreadable_stored_payload is private fn).
+        let body = after
+            .split("\nfn unreadable_stored_payload(")
+            .next()
+            .expect("get_compiled_mission must precede unreadable_stored_payload");
+        assert!(
+            body.contains("load_cargo_phys_catalog"),
+            "/compiled must load registry phys into the catalog; got:\n{body}"
+        );
+        assert!(
+            body.contains("flatten_to_mod_document_with_catalog("),
+            "/compiled must call the catalogued compile gate; got:\n{body}"
+        );
+        // Isolate so a with_catalog import alone cannot false-green a no-arg call.
+        let stripped = body.replace("flatten_to_mod_document_with_catalog", "");
+        assert!(
+            !stripped.contains("flatten_to_mod_document("),
+            "/compiled must not call the empty-catalog no-arg flatten; got:\n{body}"
         );
     }
 
