@@ -289,6 +289,8 @@ verify-t180: ## T-180.10 Class-R coherency gate (ORBAT + Eden locks A–I)
 
 # T-467: Makefile + ci-local + ci.yml siblings for wave.sh-wired Class-R scripts
 # (T-463 wired them into the cold gate; pre-T-467 they had no make/CI authority).
+# T-476: verify-t468 tripwire pins verify-t438/t456 recipe bodies — hollow
+# `@true` / `echo PASS` / `#fake` must FAIL (same spirit as T-471/T-472).
 verify-t438: ## T-438/T-461 deploy-staging compose path (website/, not api/)
 	@bash scripts/mod/verify-t438-deploy-staging-compose-path.sh
 
