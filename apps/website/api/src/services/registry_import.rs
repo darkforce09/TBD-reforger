@@ -110,8 +110,13 @@ async fn count_rows(
 /// Ingest a T-150 items envelope. Idempotent: upsert by `(modpack_id,
 /// resource_name)`; the `IS DISTINCT FROM` guard makes a no-op re-run touch zero
 /// rows (stable `updated_at` ⇒ stable ETag). `icon_url` is written on insert but
-/// never updated (curated icons survive re-imports). `sort_order` = envelope
-/// index. `prune` deletes modpack rows absent from the envelope.
+/// never updated (curated icons survive re-imports). The ten `Option` metadata
+/// columns (`abstract`, `arsenal_type`, `weight_kg`, `volume_cm3`,
+/// `max_weight_kg`, `max_volume_cm3`, `addon`, `variant_of`, `cargo_grid_w`,
+/// `cargo_grid_h`) use `COALESCE(EXCLUDED.col, registry_items.col)` on conflict
+/// — absent in a sparse/v2 envelope means **unknown**, not clear (T-376).
+/// `display_name` / `category` are trimmed. `sort_order` = envelope index.
+/// `prune` deletes modpack rows absent from the envelope.
 pub async fn import_items(
     pool: &PgPool,
     raw: &[u8],
@@ -151,11 +156,11 @@ pub async fn import_items(
             .collect();
         let dns: Vec<String> = chunk
             .iter()
-            .map(|(_, it)| it.display_name.to_string())
+            .map(|(_, it)| it.display_name.trim().to_string())
             .collect();
         let cats: Vec<String> = chunk
             .iter()
-            .map(|(_, it)| it.category.to_string())
+            .map(|(_, it)| it.category.trim().to_string())
             .collect();
         let kinds: Vec<String> = chunk.iter().map(|(_, it)| wire_str(&it.kind)).collect();
         let icons: Vec<Option<String>> = chunk
@@ -163,7 +168,8 @@ pub async fn import_items(
             .map(|(_, it)| it.icon_url.clone().filter(|s| !s.is_empty()))
             .collect();
         let orders: Vec<i64> = chunk.iter().map(|(i, _)| *i as i64).collect();
-        // v3 (T-068.10.2) metadata — all optional; v2 envelopes bind NULL columns.
+        // v3 (T-068.10.2) metadata — all optional; absent Option binds NULL, which
+        // means unknown on conflict (COALESCE keeps the populated column — T-376).
         let abstracts: Vec<Option<bool>> = chunk.iter().map(|(_, it)| it.abstract_).collect();
         let arsenal_types: Vec<Option<String>> = chunk
             .iter()
@@ -201,11 +207,16 @@ pub async fn import_items(
              ON CONFLICT (modpack_id, resource_name) DO UPDATE SET \
                display_name = EXCLUDED.display_name, category = EXCLUDED.category, \
                kind = EXCLUDED.kind, sort_order = EXCLUDED.sort_order, \
-               \"abstract\" = EXCLUDED.\"abstract\", arsenal_type = EXCLUDED.arsenal_type, \
-               weight_kg = EXCLUDED.weight_kg, volume_cm3 = EXCLUDED.volume_cm3, \
-               max_weight_kg = EXCLUDED.max_weight_kg, max_volume_cm3 = EXCLUDED.max_volume_cm3, \
-               addon = EXCLUDED.addon, variant_of = EXCLUDED.variant_of, \
-               cargo_grid_w = EXCLUDED.cargo_grid_w, cargo_grid_h = EXCLUDED.cargo_grid_h, \
+               \"abstract\" = COALESCE(EXCLUDED.\"abstract\", registry_items.\"abstract\"), \
+               arsenal_type = COALESCE(EXCLUDED.arsenal_type, registry_items.arsenal_type), \
+               weight_kg = COALESCE(EXCLUDED.weight_kg, registry_items.weight_kg), \
+               volume_cm3 = COALESCE(EXCLUDED.volume_cm3, registry_items.volume_cm3), \
+               max_weight_kg = COALESCE(EXCLUDED.max_weight_kg, registry_items.max_weight_kg), \
+               max_volume_cm3 = COALESCE(EXCLUDED.max_volume_cm3, registry_items.max_volume_cm3), \
+               addon = COALESCE(EXCLUDED.addon, registry_items.addon), \
+               variant_of = COALESCE(EXCLUDED.variant_of, registry_items.variant_of), \
+               cargo_grid_w = COALESCE(EXCLUDED.cargo_grid_w, registry_items.cargo_grid_w), \
+               cargo_grid_h = COALESCE(EXCLUDED.cargo_grid_h, registry_items.cargo_grid_h), \
                updated_at = now() \
              WHERE (registry_items.display_name, registry_items.category, registry_items.kind, \
                     registry_items.sort_order, registry_items.\"abstract\", registry_items.arsenal_type, \
@@ -214,9 +225,16 @@ pub async fn import_items(
                     registry_items.cargo_grid_w, registry_items.cargo_grid_h) \
                IS DISTINCT FROM \
                    (EXCLUDED.display_name, EXCLUDED.category, EXCLUDED.kind, EXCLUDED.sort_order, \
-                    EXCLUDED.\"abstract\", EXCLUDED.arsenal_type, EXCLUDED.weight_kg, EXCLUDED.volume_cm3, \
-                    EXCLUDED.max_weight_kg, EXCLUDED.max_volume_cm3, EXCLUDED.addon, EXCLUDED.variant_of, \
-                    EXCLUDED.cargo_grid_w, EXCLUDED.cargo_grid_h)",
+                    COALESCE(EXCLUDED.\"abstract\", registry_items.\"abstract\"), \
+                    COALESCE(EXCLUDED.arsenal_type, registry_items.arsenal_type), \
+                    COALESCE(EXCLUDED.weight_kg, registry_items.weight_kg), \
+                    COALESCE(EXCLUDED.volume_cm3, registry_items.volume_cm3), \
+                    COALESCE(EXCLUDED.max_weight_kg, registry_items.max_weight_kg), \
+                    COALESCE(EXCLUDED.max_volume_cm3, registry_items.max_volume_cm3), \
+                    COALESCE(EXCLUDED.addon, registry_items.addon), \
+                    COALESCE(EXCLUDED.variant_of, registry_items.variant_of), \
+                    COALESCE(EXCLUDED.cargo_grid_w, registry_items.cargo_grid_w), \
+                    COALESCE(EXCLUDED.cargo_grid_h, registry_items.cargo_grid_h))",
         )
         .bind(modpack)
         .bind(&rns)
@@ -375,4 +393,161 @@ pub async fn import_compat(
     counts.inserted = (after + i64::try_from(counts.pruned).unwrap_or(0) - before).max(0) as u64;
     counts.updated = affected.saturating_sub(counts.inserted);
     Ok(counts)
+}
+
+#[cfg(test)]
+mod t376_sparse_reimport {
+    //! Class-R: sparse re-import must not NULL populated Option columns (T-376).
+    use super::*;
+    use crate::db;
+
+    const MP: &str = "00000000-0000-4000-a000-000000003377";
+    const RN: &str = "{DEADBEEF00003761}Prefabs/Clothing/T376_ClassR_Vest.et";
+
+    fn rich_envelope() -> Vec<u8> {
+        format!(
+            r#"{{
+  "registryItemsVersion": "2",
+  "modpackId": "{MP}",
+  "generatedAt": "2026-07-27T00:00:00Z",
+  "addons": [{{ "guid": "5EB744C5F42E0800", "name": "ArmaReforger", "title": "Arma Reforger", "vanilla": true }}],
+  "items": [{{
+    "resource_name": "{RN}",
+    "display_name": "  T376 ClassR Vest  ",
+    "category": "  NATO/Vest  ",
+    "kind": "gear_vest",
+    "abstract": false,
+    "arsenal_type": "VEST",
+    "weight_kg": 2.5,
+    "volume_cm3": 400.0,
+    "max_weight_kg": 15.0,
+    "max_volume_cm3": 2000.0,
+    "addon": "ArmaReforger",
+    "cargo_grid_w": 4,
+    "cargo_grid_h": 6,
+    "icon_url": "items/t376.png"
+  }}]
+}}"#
+        )
+        .into_bytes()
+    }
+
+    fn sparse_envelope() -> Vec<u8> {
+        format!(
+            r#"{{
+  "registryItemsVersion": "2",
+  "modpackId": "{MP}",
+  "generatedAt": "2026-07-27T00:00:00Z",
+  "addons": [{{ "guid": "5EB744C5F42E0800", "name": "ArmaReforger", "title": "Arma Reforger", "vanilla": true }}],
+  "items": [{{
+    "resource_name": "{RN}",
+    "display_name": "T376 ClassR Vest Renamed",
+    "category": "NATO/Vest",
+    "kind": "gear_vest"
+  }}]
+}}"#
+        )
+        .into_bytes()
+    }
+
+    #[tokio::test]
+    async fn sparse_reimport_preserves_option_columns() {
+        let url = match std::env::var("TEST_DATABASE_URL") {
+            Ok(u) => u,
+            Err(_) => {
+                eprintln!("skip: TEST_DATABASE_URL unset");
+                return;
+            }
+        };
+        let pool = db::connect(&url).await.expect("connect");
+        db::migrate(&pool).await.expect("migrate");
+        let mp = Uuid::parse_str(MP).unwrap();
+        for q in [
+            "DELETE FROM registry_items WHERE modpack_id = $1",
+            "DELETE FROM modpacks WHERE id = $1",
+        ] {
+            sqlx::query(q).bind(mp).execute(&pool).await.expect("clean");
+        }
+
+        let c1 = import_items(&pool, &rich_envelope(), Some(mp), false)
+            .await
+            .expect("rich");
+        assert_eq!((c1.inserted, c1.updated), (1, 0));
+
+        #[derive(sqlx::FromRow)]
+        struct Row {
+            display_name: String,
+            category: String,
+            weight_kg: Option<f64>,
+            volume_cm3: Option<f64>,
+            max_weight_kg: Option<f64>,
+            max_volume_cm3: Option<f64>,
+            addon: Option<String>,
+            arsenal_type: Option<String>,
+            abstract_: Option<bool>,
+            cargo_grid_w: Option<i32>,
+            cargo_grid_h: Option<i32>,
+            icon_url: Option<String>,
+        }
+
+        let after_rich: Row = sqlx::query_as(
+            "SELECT display_name, category, weight_kg, volume_cm3, max_weight_kg, max_volume_cm3, \
+             addon, arsenal_type, \"abstract\" AS abstract_, cargo_grid_w, cargo_grid_h, icon_url \
+             FROM registry_items WHERE modpack_id = $1 AND resource_name = $2",
+        )
+        .bind(mp)
+        .bind(RN)
+        .fetch_one(&pool)
+        .await
+        .expect("after rich");
+        assert_eq!(
+            after_rich.display_name, "T376 ClassR Vest",
+            "trim display_name"
+        );
+        assert_eq!(after_rich.category, "NATO/Vest", "trim category");
+        assert_eq!(after_rich.weight_kg, Some(2.5));
+        assert_eq!(after_rich.icon_url.as_deref(), Some("items/t376.png"));
+
+        let c2 = import_items(&pool, &sparse_envelope(), Some(mp), false)
+            .await
+            .expect("sparse");
+        // display_name change forces the UPDATE path; Option absences must not NULL columns.
+        assert_eq!(c2.inserted, 0);
+        assert_eq!(c2.updated, 1, "display_name rename must update the row");
+
+        let after_sparse: Row = sqlx::query_as(
+            "SELECT display_name, category, weight_kg, volume_cm3, max_weight_kg, max_volume_cm3, \
+             addon, arsenal_type, \"abstract\" AS abstract_, cargo_grid_w, cargo_grid_h, icon_url \
+             FROM registry_items WHERE modpack_id = $1 AND resource_name = $2",
+        )
+        .bind(mp)
+        .bind(RN)
+        .fetch_one(&pool)
+        .await
+        .expect("after sparse");
+
+        assert_eq!(after_sparse.display_name, "T376 ClassR Vest Renamed");
+        assert_eq!(after_sparse.weight_kg, Some(2.5), "weight_kg preserved");
+        assert_eq!(after_sparse.volume_cm3, Some(400.0), "volume_cm3 preserved");
+        assert_eq!(
+            after_sparse.max_weight_kg,
+            Some(15.0),
+            "max_weight_kg preserved"
+        );
+        assert_eq!(
+            after_sparse.max_volume_cm3,
+            Some(2000.0),
+            "max_volume_cm3 preserved"
+        );
+        assert_eq!(after_sparse.addon.as_deref(), Some("ArmaReforger"));
+        assert_eq!(after_sparse.arsenal_type.as_deref(), Some("VEST"));
+        assert_eq!(after_sparse.abstract_, Some(false));
+        assert_eq!(after_sparse.cargo_grid_w, Some(4));
+        assert_eq!(after_sparse.cargo_grid_h, Some(6));
+        assert_eq!(
+            after_sparse.icon_url.as_deref(),
+            Some("items/t376.png"),
+            "icon_url still never updated"
+        );
+    }
 }
