@@ -295,6 +295,12 @@ verify-t180: ## T-180.10 Class-R coherency gate (ORBAT + Eden locks A–I)
 # t438/t456 recipes fail outside wave.sh cold gate (same authority as T-467).
 # T-486: tripwire also self-pins verify-t468 recipe body — hollow `@true` must
 # FAIL when the script runs (wave.sh cold gate / direct bash).
+# T-489: circularity — the self-pin only works when this script is invoked
+# *without* depending on the `verify-t468` make target being intact. If
+# ci-local / ci.yml call `$(MAKE) verify-t468` / `make verify-t468`, a hollow
+# `@true` recipe greens CI while the tripwire never runs. Keep the human
+# `make verify-t468` target (still calls the script); CI/ci-local/wave use
+# direct `bash scripts/mod/verify-t468-ci-schema-parity.sh`.
 verify-t438: ## T-438/T-461 deploy-staging compose path (website/, not api/)
 	@bash scripts/mod/verify-t438-deploy-staging-compose-path.sh
 
@@ -304,7 +310,7 @@ verify-t440: ## T-440/T-478 faction library seed: live INSERT + `< seeds/…` re
 verify-t456: ## T-456/T-460 mission REST body size gate before ParseMissionJson
 	@bash scripts/mod/verify-t456-mission-rest-size-gate.sh
 
-verify-t468: ## T-468/T-476/T-485/T-486 CI schema parity + hollow recipe self-pin
+verify-t468: ## T-468/T-476/T-485/T-486/T-489 CI schema parity (human entry; CI uses direct bash)
 	@bash scripts/mod/verify-t468-ci-schema-parity.sh
 
 verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
@@ -399,9 +405,11 @@ verify-no-node: ## T-165.10 hard gate — zero tracked .mjs/.cjs; node only as t
 
 # ci-local mirrors .github/workflows/ci.yml (CODING_STANDARDS.md §0.3 CI-2, §11). Order:
 # editorconfig (FMT-2) -> rust backend -> coding standards -> Leptos SPA -> schema ->
-# T-438/T-456 Class-R (T-467) -> T-468 tripwire (T-485); each sub-target is a separate
-# $(MAKE) so a non-zero recipe halts the run (fail-fast). Node-free since T-165 — every
-# gate is cargo/bash (Node exists solely as the enfusion-mcp runtime).
+# T-438/T-456 Class-R (T-467) -> T-468 tripwire direct bash (T-489; not $(MAKE)
+# verify-t468 — hollow make target must not green this step). Each $(MAKE)
+# sub-target is a separate recipe line so a non-zero recipe halts the run
+# (fail-fast). Node-free since T-165 — every gate is cargo/bash (Node exists
+# solely as the enfusion-mcp runtime).
 ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` first)
 	$(MAKE) verify-editorconfig
 	$(MAKE) verify-no-python
@@ -412,7 +420,7 @@ ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` first)
 	$(MAKE) ci-local-schema
 	$(MAKE) verify-t438
 	$(MAKE) verify-t456
-	$(MAKE) verify-t468
+	@bash scripts/mod/verify-t468-ci-schema-parity.sh
 
 ci-local-leptos: ## CI gate: Leptos SPA fmt + clippy(wasm32) + native tests + trunk release build (mirrors ci.yml website-frontend)
 	cargo fmt -p website-frontend --check
