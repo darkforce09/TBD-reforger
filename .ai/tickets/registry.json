@@ -11026,7 +11026,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3217,
       "stream": "web-platform",
       "targets": [
@@ -11067,7 +11067,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3219,
       "stream": "web-platform",
       "targets": [
@@ -11293,7 +11293,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3235,
       "stream": "web-platform",
       "targets": [
@@ -12933,6 +12933,28 @@
       "stream": "web-platform",
       "targets": [
         "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-492",
+      "title": "fmt_changed/clippy_changed ignore changed_rs rc (empty→SKIP)",
+      "summary": "Wave 36 adversarial NIT. T-401 made git_porcelain_paths fail-loud, and wasm_changed/refuse_empty_range check rc. fmt_changed and clippy_changed still do files=\"$(changed_rs …)\" and treat empty as SKIP (return 0) without checking $?. Gate path is still safe because refuse_empty_range runs first. Cure: propagate changed_rs failure in those helpers (or share a wrapper that dies on rc≠0).",
+      "program": "platform",
+      "surfaces": [
+        "CI",
+        "INFRA"
+      ],
+      "impact": [
+        "infra",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3331,
+      "stream": "web-platform",
+      "targets": [
+        "root"
       ],
       "executor": "claude-code",
       "priority": 2

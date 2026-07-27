@@ -812,6 +812,7 @@ Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; as
 Repro: select one slot + one vehicle, drag, undo once — only one kind moves back.
 
 Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/marquee helpers; optional vehicle drag preview.
+- **T-492** (deferred) — fmt_changed/clippy_changed ignore changed_rs rc (empty→SKIP) [CI, INFRA] — Wave 36 adversarial NIT. T-401 made git_porcelain_paths fail-loud, and wasm_changed/refuse_empty_range check rc. fmt_changed and clippy_changed still do files="$(changed_rs …)" and treat empty as SKIP (return 0) without checking $?. Gate path is still safe because refuse_empty_range runs first. Cure: propagate changed_rs failure in those helpers (or share a wrapper that dies on rc≠0).
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
