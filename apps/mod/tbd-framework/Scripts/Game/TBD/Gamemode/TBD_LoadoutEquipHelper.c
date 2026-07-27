@@ -31,6 +31,14 @@
  *    that ends up with no jacket and/or no pants is an ERROR naming the slot, so a bad kit
  *    prefab or a bad loadout can never quietly ship a naked player.
  *
+ * T-415 — DELIVERY VERIFICATION IS REAL (durable fix for T-240's client-half):
+ *  - CARGO Can* PRECHECK: InsertCargo mirrors the weapon-slot path — CanInsertItemInStorage
+ *    before TryInsertItemInStorage on the authored container, CanInsertItem before the
+ *    any-storage fallback. A container that will not accept the item is never "tried" blind.
+ *  - IsComplete IS CONSUMED: ReportVerdict branches on IsComplete() and a non-complete pass
+ *    emits a loadout delivery REFUSED ERROR. Computing completeness and discarding it is the
+ *    defect; the answer now drives the loud refuse.
+ *
  * T-181.41 — THE NAKEDNESS GUARD GETS A REAL ANCHOR.
  *  The guard above was written to catch a bad KIT PREFAB, and until now it only ever reached
  *  a kit-only body BY ACCIDENT: `if (slot.loadout)` is always true under JsonLoadContext's
@@ -194,6 +202,10 @@ class TBD_LoadoutApplication : Managed
 	//------------------------------------------------------------------------------------------------
 	//! T-181.10 — true when the finished pass delivered everything the JSON asked for.
 	//! Meaningless before IsDone().
+	//!
+	//! T-415 — CONSUMED by ReportVerdict (was zero callers). Incomplete → `loadout delivery
+	//! REFUSED` ERROR. External readers (SpawnManager / harness) may also call this; the helper
+	//! itself must never finish an incomplete pass without that refuse line.
 	bool IsComplete()
 	{
 		return m_aFailures.IsEmpty() && m_aDegraded.IsEmpty();
@@ -1051,9 +1063,14 @@ class TBD_LoadoutApplication : Managed
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Insert every cargo row into its resolved container storage. Failure ladder per unit:
-	//! targeted TryInsertItemInStorage -> TryInsertItem anywhere (DEGRADED) -> delete (FAILED).
-	//! No silent drops: every row logs an outcome naming the slot and the item.
+	//! Insert every cargo row into its resolved container storage.
+	//!
+	//! T-415 — Can* PRECHECK LADDER (mirrors IssueEquip weapon slots at CanInsertItemInStorage):
+	//!   1. authored container: CanInsertItemInStorage → only then TryInsertItemInStorage
+	//!   2. any-storage fallback: CanInsertItem → only then TryInsertItem (DEGRADED)
+	//!   3. neither accepts → delete + FAILED (remaining qty of the row abandoned, as before)
+	//! A container that will not fit the item is never blindly Try*-pushed. No silent success:
+	//! Fail/Degrade populate the arrays IsComplete() reads, and ReportVerdict refuses loudly.
 	protected void InsertCargo()
 	{
 		if (!m_Loadout.cargo || m_Loadout.cargo.IsEmpty())
@@ -1117,13 +1134,22 @@ class TBD_LoadoutApplication : Managed
 				}
 
 				bool ok = false;
-				if (storage)
+				// T-415 — authored path: Can* first, same shape as weapon IssueEquip (~491).
+				// Never call TryInsertItemInStorage when CanInsertItemInStorage already refused.
+				if (storage && mgr.CanInsertItemInStorage(item, storage))
 					ok = mgr.TryInsertItemInStorage(item, storage);
+
 				if (!ok)
 				{
-					ok = mgr.TryInsertItem(item);
-					if (ok && storage)
-						Degrade("cargo:" + row.container, row.item, string.Format("unit %1/%2 did not fit the container — inserted elsewhere", u + 1, row.qty));
+					// Any-storage fallback also gated by Can* — no blind push into a full character.
+					if (mgr.CanInsertItem(item))
+					{
+						ok = mgr.TryInsertItem(item);
+						if (ok && storage)
+							Degrade("cargo:" + row.container, row.item, string.Format(
+								"unit %1/%2 did not fit the authored container (CanInsertItemInStorage=0) — inserted elsewhere",
+								u + 1, row.qty));
+					}
 				}
 
 				if (ok)
@@ -1133,7 +1159,14 @@ class TBD_LoadoutApplication : Managed
 				else
 				{
 					SCR_EntityHelper.DeleteEntityAndChildren(item);
-					stopReason = string.Format("no storage would accept unit %1/%2 (character full)", u + 1, row.qty);
+					if (storage)
+						stopReason = string.Format(
+							"authored container refused unit %1/%2 (CanInsertItemInStorage=0) and no other storage would accept it — deleted; remaining qty of this row abandoned",
+							u + 1, row.qty);
+					else
+						stopReason = string.Format(
+							"no storage would accept unit %1/%2 (CanInsertItem=0, character full) — deleted; remaining qty of this row abandoned",
+							u + 1, row.qty);
 					break; // a full character won't accept later units either
 				}
 			}
@@ -1337,16 +1370,26 @@ class TBD_LoadoutApplication : Managed
 	//! The one line an operator greps for: did this slot get the loadout its JSON asked
 	//! for? Complete passes log a single OK line; anything less repeats every offending
 	//! item so the verdict is self-contained.
+	//!
+	//! T-415 — IsComplete() is the BRANCH, not dead code. Before this ticket the answer was
+	//! computed and discarded (zero callers repo-wide); ReportVerdict re-checked the arrays by
+	//! hand and a DEGRADED-only pass stayed at WARNING — soft enough that world-boot's
+	//! TBD-ERROR gate never saw it. Now a non-complete pass always emits
+	//! `loadout delivery REFUSED` at ERROR, then the per-issue detail lines.
 	protected void ReportVerdict()
 	{
 		string counts = string.Format("gear=%1/%2 cargo=%3/%4",
 			m_iGearApplied, m_iGearRequested, m_iCargoInserted, m_iCargoRequested);
 
-		if (m_aFailures.IsEmpty() && m_aDegraded.IsEmpty())
+		if (IsComplete())
 		{
 			Print(string.Format("%1 slot=%2 loadout pass complete %3", m_sTag, m_sLabel, counts));
 			return;
 		}
+
+		// Loud refuse — IsComplete() answered; do not let incomplete look like success.
+		Print(string.Format("%1 slot=%2 loadout delivery REFUSED %3 — IsComplete=0 (authored loadout was not fully delivered)",
+			m_sTag, m_sLabel, counts), LogLevel.ERROR);
 
 		if (!m_aFailures.IsEmpty())
 			Print(string.Format("%1 slot=%2 loadout INCOMPLETE %3 — failed: %4",
