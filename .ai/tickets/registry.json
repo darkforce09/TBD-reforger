@@ -13550,6 +13550,27 @@
       ],
       "executor": "claude-code",
       "priority": 2
+    },
+    {
+      "id": "T-520",
+      "title": "W46 hotfix: rustfmt events.rs after T-511",
+      "summary": "Wave 46 cold gate FAIL on fmt (changed). T-511 apps/website/api/tests/events.rs fails rustfmt --check (indent/wrapping around the new 23505 probe). Cure: rustfmt that file only; no logic change. Owns: apps/website/api/tests/events.rs.",
+      "program": "platform",
+      "surfaces": [
+        "tests"
+      ],
+      "impact": [
+        "website",
+        "tests"
+      ],
+      "status": "running",
+      "order": 3360,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
     }
   ]
 }
