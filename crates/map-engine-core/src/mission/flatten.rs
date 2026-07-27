@@ -3147,8 +3147,7 @@ mod tests {
     fn terrain_boundary_fallback_uses_arland_4096_ring() {
         let mut arland = meta();
         arland.terrain = "arland".into();
-        let doc =
-            flatten_to_mod_document(&arland, &zones_test_payload("[]")).expect("compiles");
+        let doc = flatten_to_mod_document(&arland, &zones_test_payload("[]")).expect("compiles");
         let bounds = doc
             .zones
             .iter()
