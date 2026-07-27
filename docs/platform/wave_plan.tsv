@@ -78,7 +78,7 @@
 0	T-377	PATCH and the compiler hold opposite meanings for an empty weather string	apps/website/api/src/handlers/missions.rs
 0	T-378	gate v-suite accept can write the literal string null over a committed golden	tools/tbd-tools/src/vsuite.rs; tools/tbd-tools/src/world/build.rs
 0	T-379	role_played accepts a blank and replaces a populated scoreline	apps/website/api/src/handlers/telemetry.rs
-54	T-381	The integration suite can point at the live database, and one delete is unscoped	apps/website/api/tests/factions.rs
+54	T-381	The integration suite can point at the live database, and one delete is unscoped	apps/website/api/tests/factions.rs; apps/website/api/tests/identity_link.rs; apps/website/api/tests/common/mod.rs
 48	T-382	Empty-but-valid payload becomes current_version_id with no rollback route	apps/website/api/src/handlers/missions.rs
 51	T-383	Four tooling paths overwrite committed files with empty or wrong content	xtask/src/cmds.rs; xtask/src/sync.rs; xtask/src/schema_gates.rs
 48	T-371	display_name() selects on an untrimmed is_empty, so a whitespace Discord name is stored verbatim	apps/website/api/src/services/discord.rs; apps/website/api/src/handlers/admin.rs
