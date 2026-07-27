@@ -3,6 +3,14 @@
 //! Dev-login minting goes through [`common::dev_login_token`] (T-469) so a non-302 or
 //! missing `Location` reports status + body + suite instead of
 //! `no entry found for key "location"`.
+//!
+//! # T-499 — roles/sync must not demote the shared IT DB
+//!
+//! `POST /api/v1/admin/roles/sync` walks **every** `users` row. T-372 skips empty
+//! `user_discord_roles` snapshots, but any user with stored snowflakes can still be
+//! remapped/demoted. On the shared gate DB that rewrites sibling suites' actors.
+//! Suite-scoped snapshot → call → restore keeps the endpoint covered without leaving
+//! demotions behind.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -27,6 +35,53 @@ async fn boot() -> Option<(Router, PgPool)> {
         Config::for_tests(url, "af-secret"),
     ));
     Some((app, pool))
+}
+
+/// Suite-scoped web-role snapshot for T-499 isolation around `POST /admin/roles/sync`.
+async fn snapshot_user_roles(pool: &PgPool) -> Vec<(String, String)> {
+    sqlx::query_as(
+        "SELECT discord_id, role::text FROM users WHERE deleted_at IS NULL ORDER BY discord_id",
+    )
+    .fetch_all(pool)
+    .await
+    .expect("T-499: snapshot user roles")
+}
+
+/// Restore every snapped role exactly — sibling suites must keep the tiers they set.
+///
+/// Rows that disappear mid-test (another tokio test in this binary deleted them) are
+/// skipped; we only require that every *still-present* snapped user is restored.
+async fn restore_user_roles(pool: &PgPool, snapshot: &[(String, String)]) {
+    for (discord_id, role) in snapshot {
+        sqlx::query(
+            // Keep `updated_at` — we are undoing a cross-suite side effect, not editing.
+            "UPDATE users SET role = $1::user_role WHERE discord_id = $2 AND deleted_at IS NULL",
+        )
+        .bind(role)
+        .bind(discord_id)
+        .execute(pool)
+        .await
+        .unwrap_or_else(|e| panic!("T-499: restore role for {discord_id}: {e}"));
+    }
+}
+
+/// Assert every still-present snapped user holds the pre-sync web role (T-499).
+async fn assert_roles_match_snapshot(pool: &PgPool, snapshot: &[(String, String)]) {
+    for (discord_id, role) in snapshot {
+        let current: Option<String> = sqlx::query_scalar(
+            "SELECT role::text FROM users WHERE discord_id = $1 AND deleted_at IS NULL",
+        )
+        .bind(discord_id)
+        .fetch_optional(pool)
+        .await
+        .expect("T-499: re-read role after restore");
+        if let Some(cur) = current {
+            assert_eq!(
+                cur, *role,
+                "T-499: discord_id={discord_id} role after restore is {cur}, want {role}"
+            );
+        }
+    }
 }
 
 async fn admin_token(app: &Router) -> String {
@@ -377,8 +432,13 @@ async fn admin_approvals_cms_field() {
     assert_eq!(st, StatusCode::OK);
     assert_eq!(r["banned"], false);
 
-    let (st, _) = call(&app, "POST", "/api/v1/admin/roles/sync", &t, None).await;
-    assert_eq!(st, StatusCode::OK);
+    // T-499: snapshot → sync → restore. The handler still walks every user; we must
+    // not leave remapped/demoted tiers on the shared gate DB for sibling binaries.
+    let role_snap = snapshot_user_roles(&pool).await;
+    let (st, sync_body) = call(&app, "POST", "/api/v1/admin/roles/sync", &t, None).await;
+    assert_eq!(st, StatusCode::OK, "roles/sync: {sync_body}");
+    restore_user_roles(&pool, &role_snap).await;
+    assert_roles_match_snapshot(&pool, &role_snap).await;
     let (st, r) = call(
         &app,
         "POST",
@@ -546,4 +606,48 @@ async fn admin_approvals_cms_field() {
     let (st, saved) = call(&app, "POST", "/api/v1/fire-missions", &t, Some(r#"{"weapon_system":"M252 81mm","fp_x":0,"fp_y":0,"tgt_x":0,"tgt_y":1000,"fp_grid":"012345","target_grid":"012845"}"#)).await;
     assert_eq!(st, StatusCode::CREATED, "save fire: {saved}");
     assert_eq!(saved["fire_mission"]["distance_m"], 1000);
+}
+
+/// Class-R (T-499): `admin_approvals_cms_field` must keep roles/sync behind snapshot/restore.
+///
+/// A bare `POST /admin/roles/sync` on the shared gate DB remaps every user with stored
+/// Discord snowflakes and (pre-T-372) demoted empty-snapshot admins. Removing the restore
+/// is a silent cross-suite demotion — this pin fails the binary if the isolation helpers
+/// or call-site restore disappear.
+#[test]
+fn t499_roles_sync_is_suite_scoped_snapshot_restore() {
+    let src = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/admin_field.rs"
+    ));
+    assert!(
+        src.contains("common::require_test_database_url"),
+        "admin_field boot must call common::require_test_database_url (T-381/T-542)"
+    );
+    assert!(
+        src.contains("fn snapshot_user_roles"),
+        "T-499: snapshot_user_roles helper missing"
+    );
+    assert!(
+        src.contains("fn restore_user_roles"),
+        "T-499: restore_user_roles helper missing"
+    );
+    assert!(
+        src.contains("/api/v1/admin/roles/sync"),
+        "T-499: roles/sync coverage must remain (do not silently drop the endpoint IT)"
+    );
+    // Call order pin: snapshot before sync, restore after — not merely that the helpers exist.
+    let snap = src
+        .find("let role_snap = snapshot_user_roles")
+        .expect("T-499: role_snap = snapshot_user_roles call site missing");
+    let sync = src
+        .find(r#"call(&app, "POST", "/api/v1/admin/roles/sync""#)
+        .expect("T-499: roles/sync call(...) site missing");
+    let restore = src
+        .find("restore_user_roles(&pool, &role_snap)")
+        .expect("T-499: restore_user_roles(&pool, &role_snap) call site missing");
+    assert!(
+        snap < sync && sync < restore,
+        "T-499: expected snapshot → roles/sync → restore order (snap={snap} sync={sync} restore={restore})"
+    );
 }
