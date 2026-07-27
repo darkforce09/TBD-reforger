@@ -37,6 +37,8 @@ struct RosterRow {
     role: UserRole,
     is_banned: bool,
     warnings: i64,
+    /// Denormalized column maintained by telemetry/me — projected for the personnel dossier.
+    total_deployments: i64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -78,7 +80,8 @@ pub async fn list_users(
     let mut sq: QueryBuilder<Postgres> = QueryBuilder::new(
         "SELECT discord_id, COALESCE(username, '') AS username, COALESCE(discord_handle, '') AS discord_handle, \
          arma_id, COALESCE(arma_character, '') AS arma_character, role, is_banned, \
-         (SELECT count(*) FROM warnings w WHERE w.discord_id = users.discord_id) AS warnings \
+         (SELECT count(*) FROM warnings w WHERE w.discord_id = users.discord_id) AS warnings, \
+         total_deployments \
          FROM users WHERE true",
     );
     if let Some(s) = search {
