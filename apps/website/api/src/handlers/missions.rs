@@ -803,16 +803,21 @@ async fn apply_status_patch(
     Ok(())
 }
 
-/// `DELETE /api/v1/missions/:id` — soft delete (author/admin), blocked if attached.
+/// `DELETE /api/v1/missions/:id` — soft delete (mission_maker+ author, or admin), blocked if attached.
+///
+/// **T-497 authz:** same tier as [`update_mission`] / [`create_mission`] — demotion revokes
+/// delete. Ownership does **not** outlive the role; [`can_edit`] alone left an enlisted
+/// former author able to soft-delete.
 ///
 /// @route DELETE /api/v1/missions/:id
 pub async fn delete_mission(
     State(state): State<AppState>,
-    user: AuthUser,
+    maker: MissionMakerUser,
     Path(id): Path<String>,
 ) -> Result<StatusCode, ApiError> {
+    let user = &maker.0;
     let m = load(&state.pool, &id).await?;
-    if !can_edit(&user, &m) {
+    if !can_edit(user, &m) {
         return Err(ApiError::forbidden("not your mission"));
     }
     let attached: i64 =
@@ -849,13 +854,17 @@ pub async fn delete_mission(
 /// mission), and `GET /approvals` is admin-only, so the reviewer tier is unchanged either way.
 /// Accepted transitions are `draft` and `rejected`; `pending_approval` / `live` / `archived` all
 /// answer 409, so a double submit cannot enqueue a mission twice.
+///
+/// **T-497 authz:** extractor is [`MissionMakerUser`] (same as PATCH) — demotion revokes submit.
+/// `can_edit` remains the author-or-admin gate on top of the role tier.
 pub async fn submit_mission(
     State(state): State<AppState>,
-    user: AuthUser,
+    maker: MissionMakerUser,
     Path(id): Path<String>,
 ) -> Result<Json<Mission>, ApiError> {
+    let user = &maker.0;
     let m = load(&state.pool, &id).await?;
-    if !can_edit(&user, &m) {
+    if !can_edit(user, &m) {
         return Err(ApiError::forbidden("not your mission"));
     }
     if m.status != MissionStatus::Draft && m.status != MissionStatus::Rejected {
@@ -944,17 +953,21 @@ pub struct CreateVersionInput {
     editor_notes: String,
 }
 
-/// `POST /api/v1/missions/:id/versions` — save a 2D-editor snapshot (author/admin).
+/// `POST /api/v1/missions/:id/versions` — save a 2D-editor snapshot (mission_maker+ author, or admin).
+///
+/// **T-497 authz:** same tier as [`update_mission`] — demotion revokes version save. A bare
+/// [`AuthUser`] + [`can_edit`] left an enlisted former author able to push payloads.
 ///
 /// @route POST /api/v1/missions/:id/versions
 pub async fn create_version(
     State(state): State<AppState>,
-    user: AuthUser,
+    maker: MissionMakerUser,
     Path(id): Path<String>,
     body: Result<Json<CreateVersionInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<MissionVersion>), ApiError> {
+    let user = &maker.0;
     let m = load(&state.pool, &id).await?;
-    if !can_edit(&user, &m) {
+    if !can_edit(user, &m) {
         return Err(ApiError::forbidden("not your mission"));
     }
     let Json(input) = body.map_err(|rej| {
@@ -1167,7 +1180,7 @@ pub struct SetArmoryInput {
     items: Vec<ArmoryItemInput>,
 }
 
-/// `PUT /api/v1/missions/:id/armory` — replace the armory wholesale (author/admin).
+/// `PUT /api/v1/missions/:id/armory` — replace the armory wholesale (mission_maker+ author, or admin).
 ///
 /// Wholesale means the first statement in the transaction is an unconditional DELETE, so every
 /// way this body can be wrong is a way to lose the armory. `{"items":[]}` clears it deliberately
@@ -1175,15 +1188,18 @@ pub struct SetArmoryInput {
 /// `Content-Type` and malformed JSON all answer 400 with the rows untouched (T-315) — as do a
 /// missing, blank or whitespace-padded `faction`, because it is the Event Hub's join key (T-346).
 ///
+/// **T-497 authz:** same tier as [`update_mission`] — demotion revokes armory replace.
+///
 /// @route PUT /api/v1/missions/:id/armory
 pub async fn set_armory(
     State(state): State<AppState>,
-    user: AuthUser,
+    maker: MissionMakerUser,
     Path(id): Path<String>,
     body: Result<Json<SetArmoryInput>, JsonRejection>,
 ) -> Result<Json<Value>, ApiError> {
+    let user = &maker.0;
     let m = load(&state.pool, &id).await?;
-    if !can_edit(&user, &m) {
+    if !can_edit(user, &m) {
         return Err(ApiError::forbidden("not your mission"));
     }
     // `map_err`, not `.ok().unwrap_or_default()` — the latter collapses a missing body, a wrong
@@ -1853,6 +1869,43 @@ mod tests {
             !sig.contains("user: AuthUser"),
             "update_mission must not take bare AuthUser (that is the demotion-survives-edit bug); got:\n{sig}"
         );
+    }
+
+    /// T-497 Class-R: DELETE / submit / create_version / set_armory must require
+    /// `MissionMakerUser`, same tier as T-408 PATCH — demotion revokes all mutators.
+    ///
+    /// RED: change any of the four extractors back to `user: AuthUser` — this pin fails.
+    #[test]
+    fn mission_mutators_require_mission_maker_tier() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        for name in [
+            "delete_mission",
+            "submit_mission",
+            "create_version",
+            "set_armory",
+        ] {
+            let marker = format!("pub async fn {name}(");
+            let start = production
+                .find(&marker)
+                .unwrap_or_else(|| panic!("{name} must exist in production source"));
+            let after = &production[start..];
+            let end = after
+                .find(") ->")
+                .unwrap_or_else(|| panic!("{name} must have a `) ->` return arrow"));
+            let sig = &after[..=end];
+            assert!(
+                sig.contains("maker: MissionMakerUser"),
+                "{name} must take MissionMakerUser (role still required after demotion); got:\n{sig}"
+            );
+            assert!(
+                !sig.contains("user: AuthUser"),
+                "{name} must not take bare AuthUser (demotion-survives-mutator bug); got:\n{sig}"
+            );
+        }
     }
 
     /// T-416 — Save refuses over-capacity cargo when the caller supplies phys attrs. Empty
