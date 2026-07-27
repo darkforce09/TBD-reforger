@@ -5,17 +5,6 @@
 
 ## Running / Review
 
-- **T-495** (3334) — GET /members IT still only asserts data is_array (no offset exercise) [running] — Wave 37 residual from T-412. Handler Class-R pins limit/offset + envelope. apps/website/api/tests/events.rs:~275 still only assert!(mem["data"].is_array()). Cure: seed >20 members on a cold IT DB and assert offset=20 returns member 21 / envelope total.
-- **T-547** (3387) — datefmt format_uptime doc overclaims server-control sharing [running] — FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-353.
-
-Gap 3 correctly shared format_uptime/log_stamp for dashboard/server_intel/audit. datefmt docs overclaim server-control uses the same HH:MM:SS helper; that page still has a different private helper. Cure: fix the doc comment or unify the helper.
-
-Repro: rg format_uptime apps/website/frontend/src/
-- **T-548** (3388) — missions.rs featured-card briefing still uses !b.is_empty() without trim [running] — FOUND by W56 adversarial verifier (CLEAN residual, outside T-494 owns) after T-494.
-
-mission_overview / event_hub / schedule (events.rs) now trim-ratchet briefing emptiness. Library hero featured card in apps/website/frontend/src/missions.rs still uses .filter(|b| !b.is_empty()) without trim.
-
-Repro: rg 'filter\(\|b\| !b\.is_empty\(\)\)' apps/website/frontend/src/missions.rs
 
 ## Ready
 
