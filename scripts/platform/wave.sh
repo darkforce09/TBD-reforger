@@ -1402,6 +1402,10 @@ gate_slice() {
   # have stopped T-244, whose diff is 0 .rs files — so every other step above it is change-scoped
   # down to nothing and its slice gate was green over a red `make schema-validate`. ~1.4 s warm.
   run "schema"       gate_schema
+  # T-462. Shell Class-R near schema: verify scripts that exist but were never
+  # invoked by the cold gate (wave 24 adversarial — T-439 unwired; T-444 pin absent).
+  run "T-439 objects aliases" bash "$ROOT/scripts/mod/verify-t439-objects-registry-aliases.sh"
+  run "T-444 wiki seed"       bash "$ROOT/scripts/mod/verify-t444-wiki-seed.sh"
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "SLICE GATE"; return 1; }
   gate_verdict PASS "SLICE GATE"
@@ -1535,6 +1539,10 @@ cmd_gate() {
   # `if`: wave 4's schema change was backend-only and would have skipped a conditional step.
   run "schema"           gate_schema
   run "ticket registry"  hostrun ./scripts/ticket check
+  # T-462. Same shell Class-R as gate_slice — fail-fast actionable scripts next to
+  # schema/ticket so a deleted wiki seed line or Objects guid mismatch cannot stay cargo-green.
+  run "T-439 objects aliases" bash "$ROOT/scripts/mod/verify-t439-objects-registry-aliases.sh"
+  run "T-444 wiki seed"       bash "$ROOT/scripts/mod/verify-t444-wiki-seed.sh"
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "GATE"; return 1; }
   gate_verdict PASS "GATE"
