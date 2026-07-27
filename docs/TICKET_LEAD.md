@@ -9,9 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-237** (2550) — ticket ship verifies nothing and check ignores the schema [ready] — xtask/src/cmds.rs:534 sets status to shipped and returns. xtask/src/check.rs contains zero references to schema.json and hand-rolls a narrower subset, so 314 schema violations are invisible: program Platform, invented impact and surfaces values, shipped_at which is not in the schema at all, and 13 null active_slice entries.
-- **T-274** (2920) — Record the untracked spawn-determinism program [ready] — 57 commits carry no ticket id, including a full spawn determinism program (7a5ab1e3 1065 lines, f4b25440, a18eeb2e), a new gate scripts/mod/tbd-spawn-determinism.sh with an 18.7KB verify log and no Makefile target, the B2 ORBAT mutate-in-place rewrite, and the map-assets LFS slim.
-- **T-275** (2930) — Declare mod-enforced limits in the schema [ready] — The mod clamps values the schema is silent about: MAX_NETS=32 (TBD_RadioPlan.c:91), MAX_LABEL_CHARS=48 (:94), MAX_GRACE_SECONDS=3600 (TBD_ZoneRegistry.c:52), MAX_DURATION_SECONDS=21600 (TBD_ObjectiveRegistry.c:60), MISSION_FILE_MAX_BYTES=8MB. A document can validate and still be silently clamped.
 
 ## Next queued (top 10)
 

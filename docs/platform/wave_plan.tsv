@@ -248,3 +248,5 @@
 99	T-447	CMS content page still seeds from mock_docs; no GET /cms/announcements list	apps/website/frontend/src/content.rs; apps/website/api/src/handlers/cms.rs; apps/website/api/src/app.rs
 99	T-448	Personnel dossier Deployments stat has no API field (hardcoded em-dash)	apps/website/api/src/handlers/admin.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/personnel.rs
 99	T-449	Wire ./scripts/ticket check to .ai/tickets/schema.json	xtask/src/check.rs; .ai/tickets/schema.json; scripts/ticket
+99	T-450	Pin MISSION_FILE_MAX_BYTES (8MB) in mission schema	packages/tbd-schema/schema/mission.schema.json; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
+99	T-451	ticket set-status mutates without schema check preflight	xtask/src/cmds.rs; xtask/src/check.rs

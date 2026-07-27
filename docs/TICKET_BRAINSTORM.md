@@ -980,6 +980,16 @@ Cure: add list route if missing + FE LocalResource GET /cms/announcements.
 Repro: Personnel dossier → Deployments always —.
 
 Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.
+- **T-450** (deferred) — Pin MISSION_FILE_MAX_BYTES (8MB) in mission schema [SCHEMA, MOD] — Residual from T-275 / wave 16. Schema now pins MAX_NETS/MAX_LABEL_CHARS/MAX_GRACE_SECONDS/MAX_DURATION_SECONDS, but TBD_MissionLoader.c still enforces MISSION_FILE_MAX_BYTES = 8*1024*1024 outside owns — a document can validate then fail at mod load on size.
+
+Repro: craft a schema-valid mission JSON >8MB; CreateVersion/schema-validate OK; mod loader rejects at TBD_MissionLoader.c (~836).
+
+Cure: add an explicit size ceiling to mission.schema.json (or document + API preflight) matching MISSION_FILE_MAX_BYTES; cite TBD_MissionLoader.c.
+- **T-451** (deferred) — ticket set-status mutates without schema check preflight [INFRA] — Residual from T-237 / wave 16 adversarial. ticket ship/done now call require_check_ok before status write, but cmd_set_status (and mark_ready etc.) still mutate registry without loading .ai/tickets/schema.json — an operator can force a red registry to a status.
+
+Repro: break a required field in registry.json; ./scripts/ticket check RED; ./scripts/ticket set-status T-001 shipped still mutates.
+
+Cure: gate mutators through require_check_ok (or document intentional escape hatch + refuse in CI).
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
