@@ -75,6 +75,76 @@ fn payload_title_for_row_mirror(payload_str: &str) -> Option<String> {
     validated_mission_title(raw).ok()
 }
 
+/// **T-382.** Whether a version payload is vacuous — schema-valid but useless as `current_version_id`.
+///
+/// `mission-editor-payload.schema.json` has no top-level `required` / `minProperties`, so `{}`
+/// passes [`validate_payload`] (pinned in `contract/validate.rs`). `create_mission` deliberately
+/// stores that stub as `0.1.0`. Promoting the same shape (or any object with no editor graph and
+/// no placed content) through [`create_version`] moves `current_version_id` with **no API rollback**
+/// — `/compiled` 409s (`CompileError::NoSlots`), orbat attach materialises zero slots, ingest
+/// roster omits the mission. Prior version rows survive in DB only.
+///
+/// "Empty" here is measured against the same surfaces that break:
+/// - `editor.slots` array (flatten / `ingest_list_missions` `jsonb_array_length` census)
+/// - non-empty top-level `orbat` (explicit ORBAT wins in `parse_orbat_template`)
+/// - non-empty `objectives` / `vehicles` / `markers` / `entities` (peers of
+///   `MissionDocCore::has_content`)
+/// - non-empty `editor.factions` / `squads` / `editorLayers` (authored structure without slots yet)
+///
+/// Explicit `editor.slots: []` is **not** vacuous — it is the draft skeleton ITs and WIP saves use
+/// before place. Schema `minItems` is deliberately **not** the fix (T-357: naive tightening would
+/// have 400'd live missions). Non-JSON returns `false` so [`validate_payload`] owns that message.
+fn version_payload_is_vacuous(payload: &str) -> bool {
+    let Ok(v) = serde_json::from_str::<Value>(payload) else {
+        return false;
+    };
+    let Some(obj) = v.as_object() else {
+        return true;
+    };
+    if let Some(orbat) = obj.get("orbat").and_then(Value::as_array)
+        && !orbat.is_empty()
+    {
+        return false;
+    }
+    for key in ["objectives", "vehicles", "markers", "entities"] {
+        if obj
+            .get(key)
+            .and_then(Value::as_array)
+            .is_some_and(|a| !a.is_empty())
+        {
+            return false;
+        }
+    }
+    match obj.get("editor").and_then(Value::as_object) {
+        Some(ed) => {
+            if ed.get("slots").is_some_and(Value::is_array) {
+                return false;
+            }
+            for key in ["factions", "squads", "editorLayers"] {
+                if ed
+                    .get(key)
+                    .and_then(Value::as_array)
+                    .is_some_and(|a| !a.is_empty())
+                {
+                    return false;
+                }
+            }
+            true
+        }
+        None => true,
+    }
+}
+
+/// T-382 write-time gate for [`create_version`] — 400 before INSERT / `current_version_id` update.
+fn reject_vacuous_version_payload(payload: &str) -> Result<(), ApiError> {
+    if version_payload_is_vacuous(payload) {
+        return Err(ApiError::bad_request(
+            "payload must include editor content (refusing empty payload as current version)",
+        ));
+    }
+    Ok(())
+}
+
 /// SemVer 2.0.0 core + optional pre-release / build — **T-363**.
 ///
 /// `mission_versions.semver` is a plain `text` unique key; without a parse, `' 0.1.0 '` and
@@ -911,6 +981,9 @@ pub async fn create_version(
     }
     let payload_str = payload.get();
     validate_payload(&state.pool, payload_str).await?;
+    // **T-382.** Schema accepts `{}`; promoting it to `current_version_id` is unrecoverable via
+    // API (no re-point route). Reject vacuous payloads here — not via schema `minItems` (T-357).
+    reject_vacuous_version_payload(payload_str)?;
 
     let version: Result<MissionVersion, sqlx::Error> = sqlx::query_as(
         "INSERT INTO mission_versions (mission_id, semver, json_payload, editor_notes, created_by, created_at) \
@@ -2141,5 +2214,107 @@ mod tests {
         assert_eq!(payload_title_for_row_mirror(r#"{"title":""}"#), None);
         assert_eq!(payload_title_for_row_mirror(r#"{"editor":{}}"#), None);
         assert_eq!(payload_title_for_row_mirror("not-json"), None);
+    }
+
+    /// T-382 — vacuous vs draft-skeleton accept set. `{}` is the measured hole (schema-valid,
+    /// becomes `current_version_id`, no API rollback). Explicit `editor.slots` (even `[]`) is the
+    /// draft shape ITs / WIP saves use and must stay accepted.
+    ///
+    /// RED: make `version_payload_is_vacuous` always return `false` — empty cases below fail.
+    #[test]
+    fn version_payload_vacuous_rejects_empty_keeps_editor_skeleton() {
+        for empty in [
+            "{}",
+            r#"{"editor":{}}"#,
+            r#"{"title":"x"}"#,
+            r#"{"schemaVersion":1}"#,
+            r#"{"map":{"terrain":"everon"}}"#,
+            r#"{"environment":{}}"#,
+            r#"{"orbat":[]}"#,
+            "null",
+            "[]",
+        ] {
+            assert!(
+                version_payload_is_vacuous(empty),
+                "expected vacuous: {empty}"
+            );
+        }
+        for ok in [
+            r#"{"editor":{"slots":[]}}"#,
+            r#"{"editor":{"factions":[],"squads":[],"slots":[],"editorLayers":[]}}"#,
+            r#"{"schemaVersion":1,"editor":{"slots":[{"id":"s1"}]}}"#,
+            r#"{"orbat":[{"faction":"BLUFOR","callsign":"A","squad":"Alpha","slots":[]}]}"#,
+            r#"{"objectives":[{"id":"o1"}]}"#,
+            r#"{"vehicles":[{"id":"v1"}]}"#,
+            r#"{"markers":[{"id":"m1"}]}"#,
+            r#"{"entities":[{"id":"e1"}]}"#,
+            r#"{"editor":{"factions":[{"id":"f1","key":"BLUFOR","name":"US","squadIds":[]}]}}"#,
+        ] {
+            assert!(
+                !version_payload_is_vacuous(ok),
+                "expected non-vacuous: {ok}"
+            );
+        }
+        // Malformed JSON: not our message — validate_payload owns it.
+        assert!(!version_payload_is_vacuous("not-json"));
+    }
+
+    /// T-382 Class-R: `create_version` must call [`reject_vacuous_version_payload`] after
+    /// [`validate_payload`] and before INSERT / `current_version_id` UPDATE.
+    ///
+    /// RED: delete the `reject_vacuous_version_payload(payload_str)?` call — this pin fails.
+    #[test]
+    fn create_version_rejects_vacuous_payload_before_insert() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        let body = production
+            .split("pub async fn create_version(")
+            .nth(1)
+            .and_then(|s| s.split("pub async fn get_version(").next())
+            .expect("create_version body");
+        assert!(
+            body.contains("reject_vacuous_version_payload(payload_str)"),
+            "create_version must refuse vacuous payloads before INSERT"
+        );
+        let validate_at = body
+            .find("validate_payload(&state.pool, payload_str)")
+            .expect("create_version must still validate_payload");
+        let reject_at = body
+            .find("reject_vacuous_version_payload(payload_str)")
+            .expect("reject call");
+        assert!(
+            reject_at > validate_at,
+            "vacuous gate must run after validate_payload (schema errors first)"
+        );
+        assert!(
+            body.contains("current_version_id = $1"),
+            "create_version must still update current_version_id on success"
+        );
+        // Gate is create_version-only — create_mission may still store `{}` as the 0.1.0 stub.
+        let create = production
+            .split("pub async fn create_mission(")
+            .nth(1)
+            .and_then(|s| s.split("pub async fn").next())
+            .expect("create_mission body");
+        assert!(
+            !create.contains("reject_vacuous_version_payload"),
+            "create_mission must keep allowing the empty stub payload"
+        );
+    }
+
+    /// T-382 — helper surfaces a 400 with the refuse message (perturbation target).
+    #[test]
+    fn reject_vacuous_version_payload_is_bad_request() {
+        let err = reject_vacuous_version_payload("{}").expect_err("empty must 400");
+        assert_eq!(err.status, StatusCode::BAD_REQUEST);
+        assert!(
+            err.message.contains("empty payload"),
+            "error must name empty payload; got {:?}",
+            err.message
+        );
+        assert!(reject_vacuous_version_payload(r#"{"editor":{"slots":[]}}"#).is_ok());
     }
 }
