@@ -374,6 +374,24 @@ tree_state() {
   if [ "$rc" -ne 0 ]; then echo unknown; return; fi
   if [ -n "$out" ]; then echo dirty; else echo committed; fi
 }
+
+# Working-tree porcelain paths with LFS filters neutralised — same flags as tree_state.
+#
+# T-401: `changed_rs` / `wasm_changed` / `refuse_empty_range` used
+# `git status --porcelain 2>/dev/null` and treated empty stdout as "no changes". When the LFS
+# clean filter aborts (exit 128, empty stdout) that silently half-killed every change-scoped
+# gate: committed diffs still showed, but uncommitted working-tree Rust/frontend edits vanished.
+# Capture rc, never swallow a non-zero behind `2>/dev/null`, and fail loud.
+git_porcelain_paths() {
+  local out rc
+  out="$(git -c filter.lfs.process= -c filter.lfs.clean=cat -c filter.lfs.smudge=cat \
+         -c filter.lfs.required=false status --porcelain)"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "wave.sh: git status --porcelain failed (rc=$rc) — refusing silent empty change list" >&2
+    return "$rc"
+  fi
+  printf '%s\n' "$out" | sed 's/^...//'
+}
 has_work() { [ "$(git rev-list --count "main..slice/$1" 2>/dev/null || echo 0)" -gt 0 ]; }
 
 # How many tickets have shipped since the last adversarial verifier ran.
@@ -470,9 +488,10 @@ cmd_prep() {
 # arrow-joined pseudo-path in the list. `[ -f ]` drops it and `git diff --name-only` lists the real
 # new path separately, so it costs a phantom LISTED and nothing else.)
 changed_rs() {
-  local base="${1:-main...HEAD}"
-  { git diff --name-only "$base" 2>/dev/null
-    git status --porcelain 2>/dev/null | sed 's/^...//'
+  local base="${1:-main...HEAD}" wt
+  wt="$(git_porcelain_paths)" || return $?
+  { git diff --name-only "$base" 2>/dev/null || true
+    printf '%s\n' "$wt"
   } | grep '\.rs$' | sort -u || true
 }
 
@@ -533,10 +552,11 @@ fmt_changed() {
 # file it never looked at. T-188 hit exactly this. Any slice touching the frontend must be checked
 # for wasm32 or the gate is decorative. Warm cost measured: 0.16s.
 wasm_changed() {
-  local base="${1:-main...HEAD}"
-  # Same union as fmt_changed, for the same reason.
-  { git diff --name-only "$base" 2>/dev/null
-    git status --porcelain 2>/dev/null | sed 's/^...//'
+  local base="${1:-main...HEAD}" wt
+  # Same union as fmt_changed, for the same reason. LFS-safe porcelain (T-401).
+  wt="$(git_porcelain_paths)" || return $?
+  { git diff --name-only "$base" 2>/dev/null || true
+    printf '%s\n' "$wt"
   } | grep -q '^apps/website/frontend/' || { echo "frontend untouched"; return 0; }
   # checkrun, not hostrun: this IS a cargo check, so it carries the T-421 exposure verbatim. The
   # ticket's fix direction names `cargo check --workspace` and the three clippy steps; this line is
@@ -1272,9 +1292,11 @@ refuse_empty_range() {
   # Same committed ∪ working-tree union as changed_rs. Diffing the range alone refused
   # `gate --slice` when a slice had working-tree changes but no commits yet — contradicting
   # changed_rs's stated purpose (T-409 NIT; pre-existing, not T-406).
-  local n
-  n=$( { git diff --name-only "$range" 2>/dev/null
-         git status --porcelain 2>/dev/null | sed 's/^...//'
+  # Porcelain via git_porcelain_paths (T-401) — never treat LFS filter exit 128 as empty.
+  local n wt
+  wt="$(git_porcelain_paths)" || return $?
+  n=$( { git diff --name-only "$range" 2>/dev/null || true
+         printf '%s\n' "$wt"
        } | sort -u | sed '/^$/d' | wc -l)
   [ "$n" -gt 0 ] && return 0
   echo "gate: '$range' (plus working tree) contains no changed files — refusing to run."
