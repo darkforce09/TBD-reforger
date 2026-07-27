@@ -908,7 +908,7 @@ gate_test_api() {
 # file missing the UPDATE) — never for production gating.
 gate_db_migrate_claim_body() {
   local f="${TBD_GATE_MIGRATION_0016:-$ROOT/apps/website/api/migrations/0016_backfill_pre_t326_linked_match_stats.sql}"
-  local needle miss=()
+  local needle miss=() body
   if [ ! -f "$f" ]; then
     echo "db_migrate claim body: missing migration file: $f"
     echo "        T-335 0016 is the one-shot claim for pre-T-326 linked accounts; without it"
@@ -916,12 +916,44 @@ gate_db_migrate_claim_body() {
     echo "        TBD_GATE_MIGRATION_0016."
     return 1
   fi
+  # Strip /*…*/ block comments (incl. multiline) then -- line comments before needle
+  # search so comment-only bait cannot false-green (T-523 / verifier MAJOR).
+  body=$(awk '
+    BEGIN { inblock = 0 }
+    {
+      s = $0
+      out = ""
+      while (length(s) > 0) {
+        if (inblock) {
+          idx = index(s, "*/")
+          if (idx == 0) { s = ""; break }
+          s = substr(s, idx + 2)
+          inblock = 0
+          continue
+        }
+        i_block = index(s, "/*")
+        i_line = index(s, "--")
+        if (i_block == 0 && i_line == 0) {
+          out = out s
+          break
+        }
+        if (i_line > 0 && (i_block == 0 || i_line < i_block)) {
+          out = out substr(s, 1, i_line - 1)
+          break
+        }
+        out = out substr(s, 1, i_block - 1)
+        s = substr(s, i_block + 2)
+        inblock = 1
+      }
+      print out
+    }
+  ' "$f")
   for needle in \
     'UPDATE public.match_player_stats AS s' \
     'SET discord_id = u.discord_id' \
     'AND s.discord_id IS NULL'
   do
-    grep -qF -- "$needle" "$f" || miss+=("$needle")
+    printf '%s\n' "$body" | grep -qF -- "$needle" || miss+=("$needle")
   done
   if [ "${#miss[@]}" -gt 0 ]; then
     echo "db_migrate claim body: FAIL — $f is missing claim UPDATE needle(s):"
