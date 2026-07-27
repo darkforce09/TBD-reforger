@@ -2,13 +2,15 @@
 //! same mission JSON the loader already parsed.
 //!
 //! ══ Why a second parse, and why that is not duplication ══════════════════════════════════════
-//! `mission.schema.json#/$defs/zone/rules` is `{"type":"object","additionalProperties":true}` with
-//! no declared properties. Enfusion's `JsonLoadContext` maps JSON keys onto NAMED class fields, so
-//! it can only ever see keys a class declares — an open object is not expressible. The mission
-//! loader's `TBD_MissionZoneRulesStruct` therefore declares exactly the three keys the PLAY-AREA
-//! subsystem consumes (`graceSeconds`, `warnEverySeconds`, `penalty`) and is structurally blind to
+//! `mission.schema.json#/$defs/zoneRules` is a CLOSED 16-key vocabulary (`additionalProperties:
+//! false`, T-241). Schema validation is the only place a misspelled rule key is caught: Enfusion's
+//! `JsonLoadContext` maps JSON keys onto NAMED class fields, so a key no class declares is
+//! invisible at runtime — not rejected, not logged, simply absent. The mission loader's
+//! `TBD_MissionZoneRulesStruct` therefore declares exactly the three keys the PLAY-AREA subsystem
+//! consumes (`graceSeconds`, `warnEverySeconds`, `penalty`) and is structurally blind to
 //! `captureSeconds`, `contestable`, `holdSeconds`, `targetAlias` and `points` — the keys the
-//! golden missions actually author on objective zones.
+//! golden missions actually author on objective zones. Those keys are still schema-legal; they are
+//! simply read by THIS pass.
 //!
 //! Two ways to fix that:
 //!   1. add the objective keys to `TBD_MissionZoneRulesStruct` in `Backend/TBD_MissionLoader.c`;
@@ -18,10 +20,11 @@
 //! (2) is what this file does, for two reasons. The mechanical one: `Backend/**` belongs to another
 //! slice's lane and a cross-lane edit to a shared parser is exactly the kind of change that turns
 //! into a merge conflict nobody reviews. The design one: it keeps the objective vocabulary NEXT TO
-//! the code that interprets it, so adding a rule is one file rather than two, and it makes the
-//! subsystem's dependency on the document explicit rather than smuggled through a shared struct
-//! that grows a field per consumer. The cost is one extra parse of a document that is at most 8 MB
-//! and is parsed exactly ONCE per world — off the hot path entirely.
+//! the code that interprets it, so adding a rule is one file rather than two (plus the matching
+//! `#/$defs/zoneRules` property — T-241), and it makes the subsystem's dependency on the document
+//! explicit rather than smuggled through a shared struct that grows a field per consumer. The cost
+//! is one extra parse of a document that is at most 8 MB and is parsed exactly ONCE per world —
+//! off the hot path entirely.
 //!
 //! If a later slice consolidates the two, the seam is `TBD_ObjectiveRulesReader.ForZone()`: point
 //! it at `TBD_MissionZoneStruct.rules` instead and delete the structs below. Nothing else changes.
@@ -41,10 +44,12 @@
 //!   * `resetOnEnemy = false` / `requireHolderPresent = false` — absent and authored-false agree.
 //! All three cases are handled correctly. The only thing lost is the ability to say "you did not
 //! author this key", which is a diagnostic, not a behaviour.
-//! @contract mission.schema.json#/$defs/zone (rules)
+//! @contract mission.schema.json#/$defs/zoneRules
 
 //------------------------------------------------------------------------------------------------
-//! The objective rule vocabulary. Additive and legal under `additionalProperties: true`.
+//! The objective half of the CLOSED `zoneRules` vocabulary (`additionalProperties: false`, T-241).
+//! Every key below is declared in `#/$defs/zoneRules`; undeclared keys fail schema validation.
+//! Adding a rule is a field here PLUS a property there — not an open-object free-for-all.
 //!
 //! ── objective_capture ───────────────────────────────────────────────────────────────────────
 //! `captureSeconds`       number > 0  — uninterrupted presence needed to take a NEUTRAL objective.
