@@ -11,12 +11,16 @@
 //!
 //! # Why it exists
 //!
-//! `cargo test -p website-api` builds 22 test binaries against **one** database
-//! (`tbd_gate_it` under the wave gate). They run concurrently, share a schema with no
-//! foreign keys, and — until this file — every one of them hand-rolled its own dev-login
-//! extractor: 9 copy-pasted `async fn token`/`dev_login`/`admin_token` plus 4 inline
-//! copies across 18 files, no `mod` declarations, no `[dev-dependencies]`, no `[[test]]`
-//! section in `Cargo.toml`.
+//! `cargo test -p website-api` builds ~29 test binaries. Until this file, every one of them
+//! hand-rolled its own dev-login extractor: 9 copy-pasted
+//! `async fn token`/`dev_login`/`admin_token` plus 4 inline copies across 18 files, no `mod`
+//! declarations, no `[dev-dependencies]`, no `[[test]]` section in `Cargo.toml`.
+//!
+//! **Corrected at T-534, measured:** this header used to say those binaries "run
+//! concurrently" against one database. Cargo runs test TARGETS one at a time — a run that
+//! fails mid-suite stops after the failing binary, and the per-target output blocks never
+//! interleave. What *is* concurrent is the tests **inside** one binary. And they no longer
+//! share a database at all: [`require_test_database_url`] gives each binary its own.
 //!
 //! The cost of that duplication is not the duplication. It is that **every copy read the
 //! `Location` header through `HeaderMap`'s `Index` impl**, which panics with
@@ -35,12 +39,13 @@
 // a helper here for suite A turns suite B red.
 #![allow(dead_code)]
 
+use std::sync::OnceLock;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
-use sqlx::PgPool;
+use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use tower::ServiceExt;
 use url::Url;
 use uuid::Uuid;
@@ -127,12 +132,333 @@ pub fn assert_test_database_url(database_url: &str) {
     }
 }
 
-/// Read `TEST_DATABASE_URL`: `None` when unset (suite skip); panics when set to an
-/// unsafe database name.
+// ─────────────────────── T-534 one database per test BINARY ───────────────────────
+
+/// The test binary this copy of `common` was compiled into.
+///
+/// Cargo compiles one crate per top-level `tests/*.rs`, and `CARGO_CRATE_NAME` is set per
+/// compilation unit — so this expands to `admin_field` inside `tests/admin_field.rs`'s
+/// binary and to `misc_integration` inside `tests/misc_integration.rs`'s. It is a
+/// compile-time `env!`, so a Cargo that stopped setting it is a build error here rather
+/// than a silent fallback to one shared name (which is the bug this whole section exists
+/// to remove).
+const SUITE: &str = env!("CARGO_CRATE_NAME");
+
+/// Resolved once per test binary: the per-binary database URL, or `None` when
+/// `TEST_DATABASE_URL` is unset (the suite-skip path).
+static PER_BINARY_URL: OnceLock<Option<String>> = OnceLock::new();
+
+/// The shared `dev-login` row's `arma_id`, pinned from `src/handlers/dev.rs:44`.
+///
+/// Kept honest by [`t534_dev_login_prime_literals_still_match_handler`] — if the handler's
+/// literal changes and this one does not, that Class-R goes red instead of the race quietly
+/// coming back.
+const DEV_LOGIN_ARMA_ID: &str = "dev-arma-76561190000000001";
+
+/// Derive this binary's private database name from the operator's base name.
+///
+/// `("tbd_gate_w60", "admin_field")` → `"tbd_gate_w60_admin_field_it"`.
+///
+/// The `_it` suffix is not decoration: it is what keeps every generated name inside the
+/// T-381 allow-list ([`is_safe_test_database_name`]) no matter what the base was —
+/// `rust_it`, `tbd_gate_w60` and `tbd_x_cold` all derive to a `*_it` name. The suffix is
+/// re-checked at runtime in [`resolve_and_provision`]; this function is not trusted to have
+/// got it right.
+///
+/// Postgres truncates identifiers at 63 bytes, and a truncated name is a name two binaries
+/// can share — which is exactly the defect. Over-long names therefore fold their tail into a
+/// hash rather than losing it.
+pub fn per_binary_database_name(base: &str, suite: &str) -> String {
+    let sanitised: String = suite
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let name = format!("{base}_{sanitised}_it");
+    if name.len() <= 63 {
+        return name;
+    }
+    // FNV-1a over the full untruncated name: stable across runs and processes (unlike
+    // DefaultHasher, which is randomly seeded per process and would hand the same binary a
+    // different database on every run).
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for b in name.as_bytes() {
+        hash ^= u64::from(*b);
+        hash = hash.wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    // 63 = keep + 1 ('_') + 16 (hex) + 3 ("_it")
+    format!("{}_{hash:016x}_it", &name[..43])
+}
+
+/// Swap the database name in a Postgres URL, preserving user/host/port/query.
+pub fn with_database_name(url: &str, database: &str) -> Option<String> {
+    let mut parsed = Url::parse(url).ok()?;
+    parsed.set_path(database);
+    Some(parsed.into())
+}
+
+/// Read `TEST_DATABASE_URL` and hand back **this binary's own** database URL.
+///
+/// `None` when unset (suite skip); panics when the operator's URL — or the name derived
+/// from it — is not an allow-listed test database.
+///
+/// # T-534 — why this no longer returns what the operator exported
+///
+/// It used to. Every one of the ~25 DB-backed test binaries connected to the single
+/// `TEST_DATABASE_URL`, so the suite's verdict depended on what its siblings had left in
+/// `users`, `missions`, `user_factions`, … The visible symptom was a wave gate whose result
+/// was not reproducible: measured on this tree, 2 of 8 runs — each against its own **fresh
+/// cold** database — failed, and earlier runs failed on a *different* test than later ones.
+/// A fresh database did not help, because the residue is made **within** one run.
+///
+/// The cure is one database per binary, created here on first call and named
+/// `<base>_<suite>_it` (see [`per_binary_database_name`]). It is dropped and recreated on
+/// every run, so a binary's verdict cannot depend on a previous run either, and the T-381
+/// allow-list is asserted on the **derived** name as well as the operator's.
+///
+/// Two things this deliberately does NOT do. It does not serialise anything — tests still
+/// run in parallel inside a binary, at full speed. And it does not weaken a single
+/// assertion; the suites are unchanged.
 pub fn require_test_database_url() -> Option<String> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
-    assert_test_database_url(&url);
-    Some(url)
+    PER_BINARY_URL.get_or_init(resolve_and_provision).clone()
+}
+
+/// One-shot: derive the per-binary name, guard it, create the database, migrate it, and
+/// prime the shared `dev-login` row. Runs at most once per test binary.
+fn resolve_and_provision() -> Option<String> {
+    let base_url = std::env::var("TEST_DATABASE_URL").ok()?;
+    // The operator's own name is checked first and unchanged — a URL pointing at the live
+    // database must still panic here, before anything below can create or drop anything.
+    assert_test_database_url(&base_url);
+    let base_name =
+        database_name_from_url(&base_url).expect("assert_test_database_url accepted the URL");
+
+    let derived_name = per_binary_database_name(&base_name, SUITE);
+    assert!(
+        derived_name
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_'),
+        "T-534: derived database name `{derived_name}` is not a bare identifier — it is \
+         interpolated into DDL below and must never need quoting or escaping"
+    );
+    let derived_url = with_database_name(&base_url, &derived_name)
+        .unwrap_or_else(|| panic!("T-534: cannot rewrite database name in `{base_url}`"));
+    // The guard applies to what we actually connect to, not only to what was exported.
+    // If a future base name derives to something the allow-list refuses, that is a hard
+    // stop here rather than a database created outside the list.
+    assert_test_database_url(&derived_url);
+
+    provision(&base_url, &derived_name, &derived_url);
+    Some(derived_url)
+}
+
+/// Run [`provision_async`] on its own thread + runtime.
+///
+/// `require_test_database_url` is called from inside `#[tokio::test]` bodies, so it cannot
+/// `block_on` here — a nested `block_on` panics. A dedicated thread owning its own
+/// current-thread runtime keeps the caller's signature synchronous, which is what lets
+/// `OnceLock` do the once-per-process serialisation with no changes at ~25 call sites.
+fn provision(base_url: &str, derived_name: &str, derived_url: &str) {
+    let (base_url, derived_name, derived_url) = (
+        base_url.to_string(),
+        derived_name.to_string(),
+        derived_url.to_string(),
+    );
+    let handle = std::thread::spawn(move || {
+        tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("T-534: build provisioning runtime")
+            .block_on(provision_async(&base_url, &derived_name, &derived_url));
+    });
+    if let Err(payload) = handle.join() {
+        let why = payload
+            .downcast_ref::<String>()
+            .map(String::as_str)
+            .or_else(|| payload.downcast_ref::<&str>().copied())
+            .unwrap_or("<non-string panic payload>");
+        panic!("T-534: provisioning tests/{SUITE}.rs's database failed: {why}");
+    }
+}
+
+async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) {
+    // Maintenance session on the operator's own (allow-listed) database — never `postgres`,
+    // so no connection this harness opens is outside the T-381 list. DROP/CREATE DATABASE
+    // cannot run against the database being dropped, which is the only reason a second
+    // database is involved at all.
+    let mut admin = PgConnection::connect(base_url).await.unwrap_or_else(|e| {
+        panic!(
+            "T-534: connect to `{base_url}` to create tests/{SUITE}.rs's database: {e}\n  \
+             The base database must exist — the wave gate's ensure_gate_db creates it, \
+             `make test-it` creates rust_it."
+        )
+    });
+    // WITH (FORCE) so a leaked connection from a killed run cannot pin the name. The target
+    // is `<base>_<suite>_it`, a name nothing but this binary ever uses.
+    // `raw_sql`, not `query`: DDL must go over the SIMPLE protocol. sqlx's own guidance says
+    // so, and `CREATE DATABASE` is one of the statements Postgres refuses inside the implicit
+    // transaction the extended protocol opens. `AssertSqlSafe` is load-bearing rather than
+    // decorative — `derived_name` was asserted to be a bare `[a-z0-9_]` identifier above, which
+    // is what makes interpolating it here safe.
+    let drop_sql = format!("DROP DATABASE IF EXISTS {derived_name} WITH (FORCE)");
+    let create_sql = format!("CREATE DATABASE {derived_name}");
+    sqlx::raw_sql(AssertSqlSafe(drop_sql))
+        .execute(&mut admin)
+        .await
+        .unwrap_or_else(|e| panic!("T-534: DROP DATABASE {derived_name}: {e}"));
+    sqlx::raw_sql(AssertSqlSafe(create_sql))
+        .execute(&mut admin)
+        .await
+        .unwrap_or_else(|e| panic!("T-534: CREATE DATABASE {derived_name}: {e}"));
+    admin
+        .close()
+        .await
+        .unwrap_or_else(|e| panic!("T-534: close maintenance connection: {e}"));
+
+    let pool = website_api::db::connect(derived_url)
+        .await
+        .unwrap_or_else(|e| panic!("T-534: connect to `{derived_url}`: {e}"));
+    website_api::db::migrate(&pool)
+        .await
+        .unwrap_or_else(|e| panic!("T-534: migrate `{derived_name}`: {e}"));
+
+    // ── Prime the shared dev-login row. Read this before deleting it. ──
+    //
+    // `dev_login` (src/handlers/dev.rs:41) upserts with `ON CONFLICT (discord_id)`, but the
+    // same INSERT writes a FIXED `arma_id`, and `arma_id` carries its own unique index
+    // (`idx_users_arma_id`). ON CONFLICT arbitrates the discord_id index ONLY. So when two
+    // parallel tests call dev-login on a database where the row does not exist yet, both
+    // take the INSERT path, the loser collides on `idx_users_arma_id` — an index the ON
+    // CONFLICT clause does not cover — and Postgres raises 23505 instead of falling through
+    // to DO UPDATE. The handler maps that to 500 and the test dies on
+    // `dev-login did not mint a session … status: 500`.
+    //
+    // MEASURED on this tree: `cargo test -p website-api --test admin_field` alone, on a
+    // fresh database, failed 2 of 15 runs that way — once on
+    // `ban_reason_survives_a_malformed_reban`, once on
+    // `empty_snapshot_admin_survives_roles_sync`. Those are exactly the two tests the ticket
+    // recorded as failing under the gate, and the ticket's premise that they "pass in
+    // isolation" is simply what one lucky run looks like.
+    //
+    // Per-binary databases make this WORSE, not better, if left alone: before, only the
+    // first binary of a run met an empty `users` table; now every binary does. So the fix
+    // ships with the isolation, not after it.
+    //
+    // Inserting the row here — once, serialised, before any test runs — means every
+    // dev-login the binary makes finds the row and takes the DO UPDATE branch, which never
+    // touches `arma_id`. Nothing is serialised at test time and no assertion changes.
+    //
+    // The right long-term fix is in the handler (arbitrate both indexes, or stop writing a
+    // fixed arma_id); that is application source and out of this slice's scope — reported,
+    // not silently patched.
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, \
+         arma_character, role, is_banned, ban_reason, last_login_at, created_at, updated_at) \
+         VALUES ($1, 'Dev Operator', 'devoperator', '', $2, '[TBD] Dev Operator', \
+         'admin'::user_role, false, '', now(), now(), now()) \
+         ON CONFLICT (discord_id) DO NOTHING",
+    )
+    .bind(DEV_LOGIN_USER)
+    .bind(DEV_LOGIN_ARMA_ID)
+    .execute(&pool)
+    .await
+    .unwrap_or_else(|e| panic!("T-534: prime dev-login row in `{derived_name}`: {e}"));
+
+    pool.close().await;
+}
+
+/// Class-R (T-534): the derived name is per-binary, stable, and allow-listed.
+#[test]
+fn t534_per_binary_database_name() {
+    // Distinct binaries never derive the same database.
+    assert_eq!(
+        per_binary_database_name("tbd_gate_w60", "admin_field"),
+        "tbd_gate_w60_admin_field_it"
+    );
+    assert_eq!(
+        per_binary_database_name("tbd_gate_w60", "misc_integration"),
+        "tbd_gate_w60_misc_integration_it"
+    );
+    assert_ne!(
+        per_binary_database_name("tbd_gate_w60", "admin_field"),
+        per_binary_database_name("tbd_gate_w60", "misc_integration")
+    );
+    // Stable across calls — a name that changed per call would leak a database per run.
+    assert_eq!(
+        per_binary_database_name("rust_it", "factions"),
+        per_binary_database_name("rust_it", "factions")
+    );
+    // Every base shape in the T-381 allow-list derives to a name the allow-list still takes.
+    for base in [
+        "rust_it",
+        "tbd_gate_it",
+        "tbd_gate_w60",
+        "tbd_t399_cold",
+        "tbd_t350_probe",
+    ] {
+        let derived = per_binary_database_name(base, "admin_field");
+        assert!(
+            is_safe_test_database_name(&derived),
+            "derived `{derived}` must stay inside the T-381 allow-list"
+        );
+        assert!(
+            derived.len() <= 63,
+            "`{derived}` exceeds Postgres' 63 bytes"
+        );
+    }
+    // Over-long input folds into a hash instead of truncating into a shared name.
+    let long_a = per_binary_database_name(&"b".repeat(50), &"suite_a".repeat(6));
+    let long_b = per_binary_database_name(&"b".repeat(50), &"suite_b".repeat(6));
+    assert_eq!(long_a.len(), 63);
+    assert_ne!(long_a, long_b, "truncation must not collide two binaries");
+    assert!(is_safe_test_database_name(&long_a));
+    // Non-identifier characters cannot reach the DDL.
+    assert_eq!(
+        per_binary_database_name("rust_it", "Odd-Name.42"),
+        "rust_it_odd_name_42_it"
+    );
+    // URL rewrite keeps credentials, host, port and query.
+    assert_eq!(
+        with_database_name(
+            "postgres://tbd:tbd@localhost:5434/tbd_gate_w60?sslmode=disable",
+            "tbd_gate_w60_admin_field_it"
+        )
+        .as_deref(),
+        Some("postgres://tbd:tbd@localhost:5434/tbd_gate_w60_admin_field_it?sslmode=disable")
+    );
+}
+
+/// Class-R (T-534): the primed row must stay byte-identical to what `dev_login` writes.
+///
+/// The prime above exists to stop `dev_login`'s first INSERT from ever racing itself. If the
+/// handler's snowflake or `arma_id` literal changes and the prime does not, the prime stops
+/// matching, the first dev-login inserts again, and the flake returns — silently. Pin both
+/// literals against the handler source so that change is a red test instead.
+#[test]
+fn t534_dev_login_prime_literals_still_match_handler() {
+    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/dev.rs");
+    let src = std::fs::read_to_string(&handler)
+        .unwrap_or_else(|e| panic!("T-534 Class-R: read {}: {e}", handler.display()));
+    for needle in [DEV_LOGIN_USER, DEV_LOGIN_ARMA_ID] {
+        assert!(
+            src.contains(needle),
+            "T-534: src/handlers/dev.rs no longer contains `{needle}`. The dev-login prime in \
+             tests/common/mod.rs seeds that exact row so parallel dev-logins cannot race \
+             idx_users_arma_id; update both together or the flake comes back."
+        );
+    }
+    // The prime is only sufficient while ON CONFLICT still arbitrates discord_id (so the
+    // second and later calls take DO UPDATE and never re-touch arma_id).
+    assert!(
+        src.contains("ON CONFLICT (discord_id) DO UPDATE"),
+        "T-534: dev_login's upsert changed shape — re-derive whether the prime still closes \
+         the idx_users_arma_id race"
+    );
 }
 
 /// Class-R: the allow/deny table for [`is_safe_test_database_name`] (T-381).

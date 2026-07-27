@@ -34,6 +34,25 @@ mod common;
 
 const TARGET: &str = "000000000000000009";
 
+/// T-534 — serialises the two tests that snapshot / mutate the **whole** `users` table.
+///
+/// `POST /admin/roles/sync` walks every row, so the T-499 isolation around it is a
+/// whole-table `snapshot → sync → restore`. Two of those running at once is a race no
+/// amount of per-row care fixes: `empty_snapshot_admin_survives_roles_sync` snapshots
+/// [`TARGET`] as `enlisted`, `admin_approvals_cms_field` PATCHes the same row to `leader`,
+/// and whichever restores last is wrong about the other.
+///
+/// MEASURED before this lock, with per-binary databases already in place: 1 of 8 full-suite
+/// runs died on `T-499: discord_id=000000000000000009 role after restore is leader, want
+/// enlisted`. Database isolation cannot reach this one — both tests are in the SAME binary
+/// and therefore the same database by construction.
+///
+/// Held for each test's whole body, not just the snapshot window: `admin_approvals_cms_field`
+/// mutates [`TARGET`]'s role well before it snapshots, and that write is what the sibling's
+/// snapshot must not straddle. The other 7 tests in this binary stay parallel.
+static ROLES_TABLE_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
+    std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
+
 async fn boot() -> Option<(Router, PgPool)> {
     let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
@@ -353,6 +372,8 @@ async fn ban_reason_survives_a_malformed_reban() {
 
 #[tokio::test]
 async fn admin_approvals_cms_field() {
+    // T-534: whole-table roles/sync isolation — see ROLES_TABLE_LOCK.
+    let _roles_table = ROLES_TABLE_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
@@ -628,6 +649,8 @@ async fn admin_approvals_cms_field() {
 /// real snowflakes are not left remapped for sibling binaries on the shared gate DB.
 #[tokio::test]
 async fn empty_snapshot_admin_survives_roles_sync() {
+    // T-534: whole-table roles/sync isolation — see ROLES_TABLE_LOCK.
+    let _roles_table = ROLES_TABLE_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
