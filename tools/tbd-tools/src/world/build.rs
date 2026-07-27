@@ -30,6 +30,25 @@ pub const PHASE_ORDER: [&str; 5] = [
     "P5_props",
 ];
 
+/// T-378: only an intentional density rebuild may wipe `objects/density/`.
+/// Non-density phases must leave the 625 committed bins alone.
+pub fn may_clear_density_dir(density_phase: bool) -> bool {
+    density_phase
+}
+
+/// Clear `density_dir` only when `rebuilding` is true (density phase / redensify).
+/// Returns whether a clear was attempted. Non-density callers must pass `false`.
+pub fn clear_density_dir_if_rebuilding(density_dir: &Path, rebuilding: bool) -> Result<bool> {
+    if !may_clear_density_dir(rebuilding) {
+        return Ok(false);
+    }
+    match std::fs::remove_dir_all(density_dir) {
+        Ok(()) => Ok(true),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(true),
+        Err(e) => Err(e.into()),
+    }
+}
+
 /// Cumulative kind filter per import phase (t090_phased_object_import.md).
 pub fn phase_kinds(phase: &str) -> Option<&'static [&'static str]> {
     Some(match phase {
@@ -463,7 +482,7 @@ pub fn build_world_objects_opt(
             );
             std::process::exit(1);
         }
-        let _ = std::fs::remove_dir_all(&density_dir);
+        let _ = clear_density_dir_if_rebuilding(&density_dir, true)?;
         std::fs::create_dir_all(&density_dir)?;
         // T-176 A2 — the tree channel written to disk is the canopy-blurred grid (density.rs
         // `box_blur_corners`); the raw `tree_grid` above stays only for the PH-P2 sum identity.
@@ -526,7 +545,16 @@ pub fn build_world_objects_opt(
         }));
         regions_result = Some(derived);
     } else {
-        let _ = std::fs::remove_dir_all(&density_dir);
+        // T-378: a non-density `--phase` must NOT wipe committed density bins.
+        let cleared = clear_density_dir_if_rebuilding(&density_dir, false)?;
+        debug_assert!(!cleared);
+        if density_dir.exists() {
+            eprintln!(
+                "build-world-objects: leaving existing densify tree intact \
+                 (non-density phase; {} present)",
+                density_dir.display()
+            );
+        }
     }
 
     // ---- census (catalog scope) ----
@@ -867,7 +895,7 @@ pub fn redensify_from_committed(terrain: &str) -> Result<()> {
         density::box_blur_corners(&tree_grid, tree_size, density::CANOPY_KERNEL_RADIUS_CELLS);
 
     let grid_cells = (world_size_m / CHUNK_SIZE_M).round() as usize;
-    let _ = std::fs::remove_dir_all(&density_dir);
+    let _ = clear_density_dir_if_rebuilding(&density_dir, true)?;
     std::fs::create_dir_all(&density_dir)?;
     let mut density_bytes = 0u64;
     for cy in 0..grid_cells {
@@ -1076,4 +1104,50 @@ pub fn build_roads_from_topo_opt(
         println!("build-roads-from-topo: {terrain} — {}", compact(&summary));
     }
     Ok(summary)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn non_density_phase_must_not_clear() {
+        assert!(!may_clear_density_dir(false));
+        assert!(may_clear_density_dir(true));
+    }
+
+    #[test]
+    fn clear_density_skips_when_not_rebuilding() {
+        let dir = std::env::temp_dir().join(format!("t378-density-skip-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let marker = dir.join("12_34.bin");
+        fs::write(&marker, b"keep-me").unwrap();
+
+        let cleared = clear_density_dir_if_rebuilding(&dir, false).unwrap();
+        assert!(!cleared, "non-rebuild must not attempt clear");
+        assert!(
+            marker.exists(),
+            "non-density phase must leave density bins intact"
+        );
+
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn clear_density_wipes_when_rebuilding() {
+        let dir = std::env::temp_dir().join(format!("t378-density-wipe-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let marker = dir.join("12_34.bin");
+        fs::write(&marker, b"gone").unwrap();
+
+        let cleared = clear_density_dir_if_rebuilding(&dir, true).unwrap();
+        assert!(cleared);
+        assert!(
+            !dir.exists(),
+            "intentional density rebuild must remove the dir"
+        );
+    }
 }

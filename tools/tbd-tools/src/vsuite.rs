@@ -78,6 +78,45 @@ pub fn js_len(s: &str) -> usize {
     s.chars().map(char::len_utf16).sum()
 }
 
+/// Floor on accept-mode DOM size (`js_len` / manifest `bytes`). Committed goldens are
+/// ≥ ~3.4 KB (`callback.dom.json`); the SPA-failure sentinel from `inject.rs` is the
+/// 4-char literal `"null"`. Floor sits well below any real page and well above that stub.
+pub const MIN_ACCEPT_DOM_JS_LEN: usize = 256;
+
+/// Validate a captured DOM string before `accept` may overwrite a committed golden (T-378).
+/// Mirrors verify-mode's `serde_json::from_str` parse, then refuses JSON `null` and
+/// undersized captures that would destroy the baseline.
+pub fn validate_accept_dom(dom: &str) -> Result<()> {
+    let v: Value = serde_json::from_str(dom)
+        .map_err(|e| anyhow!("accept refused: captured DOM is not valid JSON ({e})"))?;
+    if v.is_null() {
+        return Err(anyhow!(
+            "accept refused: captured DOM is JSON null \
+             (SPA failed to mount — inject serializer returns literal \"null\")"
+        ));
+    }
+    if !v.is_object() {
+        return Err(anyhow!(
+            "accept refused: captured DOM root must be a JSON object, got {}",
+            match &v {
+                Value::Bool(_) => "bool",
+                Value::Number(_) => "number",
+                Value::String(_) => "string",
+                Value::Array(_) => "array",
+                _ => "non-object",
+            }
+        ));
+    }
+    let n = js_len(dom);
+    if n < MIN_ACCEPT_DOM_JS_LEN {
+        return Err(anyhow!(
+            "accept refused: captured DOM js_len={n} < floor {MIN_ACCEPT_DOM_JS_LEN} \
+             (structurally empty / undersized)"
+        ));
+    }
+    Ok(())
+}
+
 fn sha_hex(bytes: &[u8]) -> String {
     let mut h = Sha256::new();
     h.update(bytes);
@@ -387,6 +426,9 @@ async fn run_modes(
                     std::fs::copy(&gold_file, &react_ref)?;
                 }
                 let cap = capture_route(browser, &args.leptos_dir, 5197, route).await?;
+                // T-378: verify parses; accept used to write blindly — refuse `"null"` /
+                // undersized DOM before overwriting a committed golden.
+                validate_accept_dom(&cap.dom)?;
                 std::fs::write(&gold_file, &cap.dom)?;
                 std::fs::write(gold.join(format!("{}.png", route.slug)), &cap.png)?;
                 let manifest_path = gold.join("manifest.json");
@@ -475,4 +517,54 @@ async fn run_modes(
         }
     }
     Ok(u8::from(fail > 0))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accept_refuses_literal_null() {
+        let err = validate_accept_dom("null").unwrap_err().to_string();
+        assert!(
+            err.contains("JSON null"),
+            "expected null refusal, got: {err}"
+        );
+    }
+
+    #[test]
+    fn accept_refuses_undersized_object() {
+        // Valid JSON object but far below any committed golden (and below the floor).
+        let tiny = r#"{"tag":"div","attrs":{},"style":{},"children":[]}"#;
+        assert!(js_len(tiny) < MIN_ACCEPT_DOM_JS_LEN);
+        let err = validate_accept_dom(tiny).unwrap_err().to_string();
+        assert!(
+            err.contains("js_len=") && err.contains("floor"),
+            "expected size-floor refusal, got: {err}"
+        );
+    }
+
+    #[test]
+    fn accept_refuses_non_json() {
+        let err = validate_accept_dom("not-json").unwrap_err().to_string();
+        assert!(
+            err.contains("not valid JSON"),
+            "expected parse refusal, got: {err}"
+        );
+    }
+
+    #[test]
+    fn accept_allows_plausible_object() {
+        // Pad a real-shaped root past the floor without needing a full golden on disk.
+        let mut body = String::from(r#"{"tag":"div","attrs":{"id":"x"},"style":{},"children":["#);
+        while js_len(&format!("{body}]}}")) < MIN_ACCEPT_DOM_JS_LEN {
+            body.push_str(r#"{"tag":"span","attrs":{},"style":{},"children":[]},"#);
+        }
+        // trim trailing comma
+        if body.ends_with(',') {
+            body.pop();
+        }
+        body.push_str("]}");
+        validate_accept_dom(&body).expect("plausible DOM must pass");
+    }
 }
