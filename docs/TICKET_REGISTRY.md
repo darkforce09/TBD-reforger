@@ -2420,7 +2420,7 @@ Cure: switch action gates to `has_min_role_authed` + reactive Memo where afforda
 Repro: break a required field; ticket check RED; ticket add still inserts a row.
 
 Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force). |
-| T-456 | 3295 | deferred | platform | OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES | Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB via x-tbd-missionFileMaxBytes + validate_mission_document + profile LoadFromProfileFile, but OnBackendFetchSuccess → ParseMissionJson does not re-check body size. A compromised/stale API path could still hand the mod an oversized JSON.
+| T-456 | 3295 | ready | platform | OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES | Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB via x-tbd-missionFileMaxBytes + validate_mission_document + profile LoadFromProfileFile, but OnBackendFetchSuccess → ParseMissionJson does not re-check body size. A compromised/stale API path could still hand the mod an oversized JSON.
 
 Repro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.
 
@@ -2433,14 +2433,14 @@ Repro T-287: comment out server_intel on_cleanup registration but leave the stri
 Repro T-454: keep Memo+has_min_role_authed unused; drive is_admin via has_min_role → admin_affordance Class-R PASSes while Edit uses None=>true.
 
 Cure: strip // comments (or require a non-comment production line) for the on_cleanup pin; bind wiki/modpacks/event_hub pins to the is_admin/is_leader Memo assignment used at .get() call sites and ban free has_min_role( in those files' production sections. |
-| T-458 | 3297 | deferred | platform | AdminGate still uses browse-mode has_min_role | Residual from T-454 / wave 21 adversarial NIT. wiki/modpacks/event_hub action gates now use has_min_role_authed, but ui.rs AdminGate still calls auth.has_min_role(Role::Admin) (browse-mode None=>true via auth.rs).
+| T-458 | 3297 | ready | platform | AdminGate still uses browse-mode has_min_role | Residual from T-454 / wave 21 adversarial NIT. wiki/modpacks/event_hub action gates now use has_min_role_authed, but ui.rs AdminGate still calls auth.has_min_role(Role::Admin) (browse-mode None=>true via auth.rs).
 
 Mitigation today: AdminGate is nested under AuthGate, which only renders children when is_authenticated() (user is Some), so guests cannot flash admin UI via None=>true.
 
 Repro: read apps/website/frontend/src/ui.rs:244-264 and auth.rs has_min_role.
 
 Cure: switch AdminGate to has_min_role_authed (or equivalent None=>false) while keeping the reactive move \|\| auth path. |
-| T-459 | 3298 | deferred | platform | ticket advance-slice mutates without schema check preflight | Residual from T-455 / wave 21 adversarial NIT. cmd_add/cmd_remove (and set-status/mark-ready/reorder/ship) now call require_check_ok before write, but cmd_advance_slice still save_registry + sync with no preflight while check is red.
+| T-459 | 3298 | ready | platform | ticket advance-slice mutates without schema check preflight | Residual from T-455 / wave 21 adversarial NIT. cmd_add/cmd_remove (and set-status/mark-ready/reorder/ship) now call require_check_ok before write, but cmd_advance_slice still save_registry + sync with no preflight while check is red.
 
 Repro: red in-memory registry → cmd_advance_slice still writes active_slice.
 

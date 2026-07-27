@@ -13,3 +13,41 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-456 — OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-456`
+- **Targets:** mod
+- **Summary:** Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB via x-tbd-missionFileMaxBytes + validate_mission_document + profile LoadFromProfileFile, but OnBackendFetchSuccess → ParseMissionJson does not re-check body size. A compromised/stale API path could still hand the mod an oversized JSON.
+
+Repro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.
+
+Cure: apply the same MISSION_FILE_MAX_BYTES check on the REST success path before ParseMissionJson.
+
+## T-458 — AdminGate still uses browse-mode has_min_role
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-458`
+- **Targets:** website
+- **Summary:** Residual from T-454 / wave 21 adversarial NIT. wiki/modpacks/event_hub action gates now use has_min_role_authed, but ui.rs AdminGate still calls auth.has_min_role(Role::Admin) (browse-mode None=>true via auth.rs).
+
+Mitigation today: AdminGate is nested under AuthGate, which only renders children when is_authenticated() (user is Some), so guests cannot flash admin UI via None=>true.
+
+Repro: read apps/website/frontend/src/ui.rs:244-264 and auth.rs has_min_role.
+
+Cure: switch AdminGate to has_min_role_authed (or equivalent None=>false) while keeping the reactive move || auth path.
+
+## T-459 — ticket advance-slice mutates without schema check preflight
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-459`
+- **Targets:** root
+- **Summary:** Residual from T-455 / wave 21 adversarial NIT. cmd_add/cmd_remove (and set-status/mark-ready/reorder/ship) now call require_check_ok before write, but cmd_advance_slice still save_registry + sync with no preflight while check is red.
+
+Repro: red in-memory registry → cmd_advance_slice still writes active_slice.
+
+Cure: call require_check_ok(root, registry, &format!("advance-slice {id}")) before mutate, with a Class-R/unit test mirroring add_refuses_invalid.
