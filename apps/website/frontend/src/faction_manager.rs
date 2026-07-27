@@ -91,11 +91,16 @@ pub fn FactionManagerDialog(
     };
 
     let save = move |_| {
-        let doc = editing.get_untracked();
-        if doc.name.trim().is_empty() {
+        // T-507 — API `validated_side_name` rejects pad (`name != name.trim()`). Trim
+        // before serialize so create/update bodies match what the API accepts; empty-
+        // after-trim still fails the check below (same UX as the prior trim-empty gate).
+        let mut doc = editing.get_untracked();
+        doc.name = doc.name.trim().to_string();
+        if doc.name.is_empty() {
             status.set("A faction name is required.".into());
             return;
         }
+        editing.set(doc.clone());
         if doc
             .roles
             .iter()
@@ -341,6 +346,34 @@ mod tests {
         assert!(
             !SRC.contains("aria-label=\"Delete faction\" on:click=delete"),
             "toolbar Delete must not invoke api_delete without confirmation"
+        );
+    }
+
+    /// T-507 Class-R — save must trim `doc.name` before `serde_json::to_value(&doc)`.
+    /// Pre-fix: empty check used `trim()` then posted the untrimmed string; API
+    /// `validated_side_name` rejects pad (`name != name.trim()`), so `"USA "` 400'd.
+    #[test]
+    fn save_trims_name_before_serialize() {
+        const SRC: &str = include_str!("faction_manager.rs");
+        let save_start = SRC
+            .find("let save = move |_|")
+            .expect("save handler present");
+        let save = &SRC[save_start..];
+        let trim_at = save
+            .find("doc.name = doc.name.trim().to_string()")
+            .expect("save must assign trimmed name onto doc before post/put");
+        let ser_at = save
+            .find("serde_json::to_value(&doc)")
+            .expect("save must serialize &doc");
+        assert!(
+            trim_at < ser_at,
+            "trim assign must precede serde_json::to_value(&doc) (got trim@{trim_at} ser@{ser_at})"
+        );
+        // Guard against regressing to trim-empty-only without mutating the payload.
+        assert!(
+            !save.contains("if doc.name.trim().is_empty()")
+                || save.contains("doc.name = doc.name.trim().to_string()"),
+            "must not check trim-empty then serialize the untrimmed name"
         );
     }
 }
