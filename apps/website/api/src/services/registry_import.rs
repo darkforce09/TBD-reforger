@@ -487,12 +487,13 @@ mod t376_sparse_reimport {
             abstract_: Option<bool>,
             cargo_grid_w: Option<i32>,
             cargo_grid_h: Option<i32>,
-            icon_url: Option<String>,
+            icon_url: String,
         }
 
         let after_rich: Row = sqlx::query_as(
             "SELECT display_name, category, weight_kg, volume_cm3, max_weight_kg, max_volume_cm3, \
-             addon, arsenal_type, \"abstract\" AS abstract_, cargo_grid_w, cargo_grid_h, icon_url \
+             addon, arsenal_type, \"abstract\" AS abstract_, cargo_grid_w, cargo_grid_h, \
+             COALESCE(icon_url, '') AS icon_url \
              FROM registry_items WHERE modpack_id = $1 AND resource_name = $2",
         )
         .bind(mp)
@@ -506,7 +507,7 @@ mod t376_sparse_reimport {
         );
         assert_eq!(after_rich.category, "NATO/Vest", "trim category");
         assert_eq!(after_rich.weight_kg, Some(2.5));
-        assert_eq!(after_rich.icon_url.as_deref(), Some("items/t376.png"));
+        assert_eq!(after_rich.icon_url, "items/t376.png");
 
         let c2 = import_items(&pool, &sparse_envelope(), Some(mp), false)
             .await
@@ -517,7 +518,8 @@ mod t376_sparse_reimport {
 
         let after_sparse: Row = sqlx::query_as(
             "SELECT display_name, category, weight_kg, volume_cm3, max_weight_kg, max_volume_cm3, \
-             addon, arsenal_type, \"abstract\" AS abstract_, cargo_grid_w, cargo_grid_h, icon_url \
+             addon, arsenal_type, \"abstract\" AS abstract_, cargo_grid_w, cargo_grid_h, \
+             COALESCE(icon_url, '') AS icon_url \
              FROM registry_items WHERE modpack_id = $1 AND resource_name = $2",
         )
         .bind(mp)
@@ -545,8 +547,7 @@ mod t376_sparse_reimport {
         assert_eq!(after_sparse.cargo_grid_w, Some(4));
         assert_eq!(after_sparse.cargo_grid_h, Some(6));
         assert_eq!(
-            after_sparse.icon_url.as_deref(),
-            Some("items/t376.png"),
+            after_sparse.icon_url, "items/t376.png",
             "icon_url still never updated"
         );
     }
