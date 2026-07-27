@@ -281,7 +281,7 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
         // CMS — announcements + uploads.
         .route(
             "/cms/announcements",
-            post(handlers::cms::create_announcement),
+            get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement),
         )
         .route(
             "/cms/announcements/{id}",
