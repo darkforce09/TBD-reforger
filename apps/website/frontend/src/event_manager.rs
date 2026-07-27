@@ -1553,8 +1553,43 @@ fn EventManagerInner() -> impl IntoView {
 
 #[cfg(test)]
 mod tests {
-    /// T-332 Class-R — Edit dialog must be able to re-attach (POST) after detach, and the
-    /// briefing/banner clear path must keep posting empty string (the blessed contract).
+    /// T-332 / T-530 Class-R — Edit dialog must be able to re-attach (POST) after detach,
+    /// and the briefing/banner clear path must keep posting empty string via live
+    /// `body.insert` (not a doc-comment phrase).
+    ///
+    /// T-530: prior pin required `T-332 clear contract` / `empty string clears` comment
+    /// prose. Comment-only edits stayed green. Cure: pin live identifiers + inserts after
+    /// stripping `//` / `/* */`.
+    fn strip_rust_comments(src: &str) -> String {
+        let bytes = src.as_bytes();
+        let mut out = String::with_capacity(src.len());
+        let mut i = 0;
+        while i < bytes.len() {
+            if i + 1 < bytes.len() && bytes[i] == b'/' && bytes[i + 1] == b'/' {
+                i += 2;
+                while i < bytes.len() && bytes[i] != b'\n' {
+                    i += 1;
+                }
+                continue;
+            }
+            if i + 1 < bytes.len() && bytes[i] == b'/' && bytes[i + 1] == b'*' {
+                i += 2;
+                while i + 1 < bytes.len() && !(bytes[i] == b'*' && bytes[i + 1] == b'/') {
+                    i += 1;
+                }
+                if i + 1 < bytes.len() {
+                    i += 2;
+                } else {
+                    i = bytes.len();
+                }
+                continue;
+            }
+            out.push(char::from(bytes[i]));
+            i += 1;
+        }
+        out
+    }
+
     #[test]
     fn edit_dialog_reattach_and_empty_string_clear_are_wired() {
         const SRC: &str = include_str!("event_manager.rs");
@@ -1562,41 +1597,46 @@ mod tests {
             .split("mod tests {")
             .next()
             .expect("tests module marker");
+        let code = strip_rust_comments(production);
 
         assert!(
-            production.contains("edit_attach_open"),
+            code.contains("edit_attach_open"),
             "Edit dialog must own an attach dropdown distinct from create's attach_open \
              (perturbation: remove edit_attach_open)"
         );
         assert!(
-            production.contains("data-testid=\"edit-attach-mission\""),
+            code.contains("data-testid=\"edit-attach-mission\""),
             "Edit Attach Mission control must be present \
              (perturbation: remove data-testid=\"edit-attach-mission\")"
         );
         assert!(
-            production.contains("on_attach_mission")
-                && production.contains("&format!(\"/events/{id}/missions\")"),
+            code.contains("on_attach_mission")
+                && code.contains("&format!(\"/events/{id}/missions\")"),
             "Edit attach must POST /events/{{id}}/missions \
              (perturbation: drop on_attach_mission or the missions path)"
         );
         // Create also POSTs that path; require the Edit-specific success toast so a create-only
         // caller cannot false-green the re-attach pin.
         assert!(
-            production.contains("Attached {title}"),
+            code.contains("Attached {title}"),
             "Edit attach success toast must be distinct from create's publish toast \
              (perturbation: remove Attached {{title}} toast)"
         );
+        // Blessed clear: blanking the form diffs against unwrap_or_default() and inserts
+        // the (possibly empty) string — key present with "" clears server-side.
         assert!(
-            production.contains("T-332 clear contract")
-                && production.contains("empty string clears"),
-            "Edit save must document the blessed empty-string clear for briefing/banner \
-             (perturbation: drop the T-332 clear-contract comment)"
+            code.contains("edit_briefing.get_untracked()")
+                && code.contains("orig.briefing.clone().unwrap_or_default()")
+                && code.contains("body.insert(\"briefing\".into(), br.into())"),
+            "Edit save must POST briefing when changed — including \"\" clears \
+             (perturbation: stop inserting empty briefing / drop unwrap_or_default diff)"
         );
         assert!(
-            production.contains("body.insert(\"briefing\".into(), br.into())")
-                && production.contains("body.insert(\"banner_image_url\".into(), bn.into())"),
-            "Edit save must still POST briefing/banner when changed — including \"\" clears \
-             (perturbation: stop inserting empty briefing/banner)"
+            code.contains("edit_banner.get_untracked()")
+                && code.contains("orig.banner_image_url.clone().unwrap_or_default()")
+                && code.contains("body.insert(\"banner_image_url\".into(), bn.into())"),
+            "Edit save must POST banner_image_url when changed — including \"\" clears \
+             (perturbation: stop inserting empty banner / drop unwrap_or_default diff)"
         );
     }
 }
