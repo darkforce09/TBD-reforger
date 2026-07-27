@@ -101,7 +101,6 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 - **T-269** (idea) — Real RCON transport — the current endpoint is a no-op that reports success [SHELL] — POST /admin/servers/{id}/rcon (admin.rs:331-379) validates the action enum, explicitly discards the command at admin.rs:361, writes an audit row and returns 202 accepted:true. Grep for std::process, Command::new, tokio::process or ssh over the api returns zero hits.
 - **T-279** (idea) — Discord bot — greenfield [CONN] — There is no bot skeleton at all. Grep for serenity, twilight, poise, discord.js, gateway, application command or ed25519 across every file type returns zero hits. DISCORD_BOT_TOKEN is loaded at config.rs:46,87 and never read by any consumer. No interactions endpoint, no signature verification, no inbound Discord surface.
 - **T-285** (idea) — Field tools — solutions never persist and inject writes to a dead directory [SHELL] — POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads.
-- **T-287** (idea) — SSE reader leaks one connection per SPA navigation [SHELL] — Self-documented at sse.rs:8-12: the stream is never torn down on route change because Leptos on_cleanup is Send-bound and AbortController is not. Harmless today only because the stream never emits.
 - **T-288** (idea) — Modpack to server-config renderer and push [SHELL] — The database modpack concept and the server's actual mod list are unconnected universes. deploy-staging.sh:258-260 hardcodes a single mod from an env var and never reads the modpacks table.
 - **T-289** (idea) — Server-host deploy agent for start, stop and status [SHELL] — The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive.
 - **T-327** (deferred) — `#tbd link` code is visible in chat before TBD can suppress it [MOD] — SPLIT FROM T-231 (b). The agent verified the load-bearing claim AT THE CALL SITE rather than trusting the header: TBD_AdminCommands.c:30-46 calls `super.OnNewMessage(...)` at line 32, BEFORE `TBD_IdentityLink.TryHandleChat(...)` at line 45. The message is already distributed by the time TBD sees it, so returning true suppresses NOTHING. There is no script-side fix.
@@ -972,16 +971,6 @@ Cure: add list route if missing + FE LocalResource GET /cms/announcements.
 Repro: Personnel dossier → Deployments always —.
 
 Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.
-- **T-454** (deferred) — wiki/modpacks/event_hub still one-shot has_min_role [FE] — Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive `has_min_role_authed` (None=>false). wiki.rs / modpacks.rs / event_hub.rs still one-shot `store.has_min_role` (browse-mode None=>true). Behind AuthGate today so Mission-Library freeze is not reproduced, but the pattern debt remains.
-
-Repro: rg 'has_min_role\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs — still browse-mode helper.
-
-Cure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role.
-- **T-455** (deferred) — ticket add/remove mutate without schema check preflight [INFRA] — Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.
-
-Repro: break a required field; ticket check RED; ticket add still inserts a row.
-
-Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force).
 - **T-456** (deferred) — OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES [MOD] — Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB via x-tbd-missionFileMaxBytes + validate_mission_document + profile LoadFromProfileFile, but OnBackendFetchSuccess → ParseMissionJson does not re-check body size. A compromised/stale API path could still hand the mod an oversized JSON.
 
 Repro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.

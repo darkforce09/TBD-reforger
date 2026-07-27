@@ -8702,7 +8702,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 3050,
       "stream": "web-platform",
       "targets": [
@@ -12116,7 +12116,7 @@
       "impact": [
         "website"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3293,
       "stream": "web-platform",
       "targets": [
@@ -12136,7 +12136,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3294,
       "stream": "web-platform",
       "targets": [

@@ -9,6 +9,17 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-287** (3050) — SSE reader leaks one connection per SPA navigation [ready] — Self-documented at sse.rs:8-12: the stream is never torn down on route change because Leptos on_cleanup is Send-bound and AbortController is not. Harmless today only because the stream never emits.
+- **T-454** (3293) — wiki/modpacks/event_hub still one-shot has_min_role [ready] — Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive `has_min_role_authed` (None=>false). wiki.rs / modpacks.rs / event_hub.rs still one-shot `store.has_min_role` (browse-mode None=>true). Behind AuthGate today so Mission-Library freeze is not reproduced, but the pattern debt remains.
+
+Repro: rg 'has_min_role\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs — still browse-mode helper.
+
+Cure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role.
+- **T-455** (3294) — ticket add/remove mutate without schema check preflight [ready] — Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.
+
+Repro: break a required field; ticket check RED; ticket add still inserts a row.
+
+Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force).
 
 ## Next queued (top 10)
 
