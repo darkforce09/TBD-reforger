@@ -65,10 +65,7 @@ mod t505_tests {
     #[test]
     fn adopt_payload_wires_prefer_helper() {
         const SRC: &str = include_str!("mission_hydrate.rs");
-        let production = SRC
-            .split("#[cfg(test)]")
-            .next()
-            .unwrap_or(SRC);
+        let production = SRC.split("#[cfg(test)]").next().unwrap_or(SRC);
         let adopt = production
             .split("fn adopt_payload(")
             .nth(1)
