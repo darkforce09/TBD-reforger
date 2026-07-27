@@ -342,14 +342,23 @@ pub async fn issue_warning(
     if reason.is_empty() {
         return Err(ApiError::bad_request("reason is required"));
     }
-    let target_name: Option<String> =
-        sqlx::query_scalar("SELECT COALESCE(username, '') FROM users WHERE discord_id = $1")
+    // Existence first — `username()` falls through to `discord_id` when the row is missing
+    // (or blank), so it cannot be the not-found check. Ban/role_change use rows_affected on
+    // their UPDATE; warn is an INSERT, so we ask EXISTS.
+    //
+    // **T-371 — target_name goes through `username()`, not a hand-rolled COALESCE.** The old
+    // query duplicated `handlers::username`'s SELECT minus the discord_id fallback, so with
+    // `username = ''` the warn audit logged `"… warned '': …"` while every sibling action
+    // (ban/unban/role_change) named the target by id. Calling the shared helper lands the
+    // T-366 display-trim decision on both halves of the same audit line.
+    let exists: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE discord_id = $1)")
             .bind(&discord_id)
-            .fetch_optional(&state.pool)
+            .fetch_one(&state.pool)
             .await?;
-    let Some(target_name) = target_name else {
+    if !exists {
         return Err(ApiError::not_found("user not found"));
-    };
+    }
     let actor = &admin.0.discord_id;
     let warning: crate::models::Warning = sqlx::query_as(
         "INSERT INTO warnings (discord_id, issued_by, reason, created_at) VALUES ($1, $2, $3, now()) RETURNING id, discord_id, issued_by, reason, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at",
@@ -360,6 +369,7 @@ pub async fn issue_warning(
     .fetch_one(&state.pool)
     .await?;
     let actor_name = username(&state.pool, actor).await;
+    let target_name = username(&state.pool, &discord_id).await;
     write_audit(
         &state.pool,
         AuditSeverity::Warn,
