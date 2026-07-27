@@ -1,12 +1,12 @@
 //! Self-service + Arma-link handlers — Rust port of `handlers/me.go`.
 
-use axum::extract::State;
 use axum::extract::rejection::JsonRejection;
+use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::Json;
 use chrono::{Duration, Utc};
 use serde::Deserialize;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 
 use crate::auth;
 use crate::db::refresh_leaderboard;
@@ -41,28 +41,38 @@ const LINK_CODE_TTL_MIN: i64 = 10;
 const BACKFILL_MATCH_STATS: &str = "UPDATE match_player_stats SET discord_id = $1 \
      WHERE arma_id = $2 AND discord_id IS NULL";
 
-/// Mark the attendance a pre-link match could not mark (T-326).
+/// Mark the attendance a pre-link match could not mark (T-326 / T-431).
 ///
 /// `event_registrations` never keyed on `arma_id` — the human registered with their Discord
 /// account — so there is nothing to re-key. What is missing is the *flip*: the attendance
-/// write in `ingest_match_results` (`telemetry.rs:418-427`) only fires for players who
+/// write in `ingest_match_results` (`telemetry.rs` T-230 block) only fires for players who
 /// resolved at ingest, so an op played before linking leaves the registration on
-/// `registered` forever. `recompute_user_stats` divides `attended` by `past_registered`
-/// (`telemetry.rs:537-550`), so `attendance_rate` is short by exactly those ops. Fixing
-/// deployments and leaving this would be half a fix.
+/// `registered` forever. `recompute_user_stats` divides `attended` by `past_registered`,
+/// so `attendance_rate` is short by exactly those ops. Fixing deployments and leaving this
+/// would be half a fix.
 ///
 /// Scoped through `s.arma_id` rather than the freshly-written `discord_id` so it states what
-/// it means (the events this Steam id actually played) and does not depend on the backfill
+/// it means (the missions this Steam id actually played) and does not depend on the backfill
 /// above having matched. `state <> 'attended'` only narrows the write — the end state matches
 /// telemetry's unconditional `SET state = 'attended'`, including its deliberate override of a
 /// `withdrawn` registration for someone who withdrew and then turned up anyway.
+///
+/// **T-431:** join on `(event_id, mission_id)` — the same shape as T-230 ingest
+/// (`telemetry.rs` `ON m.event_id = em.event_id AND m.mission_id = em.mission_id`). Pre-fix
+/// this used `em.event_id IN (SELECT m.event_id …)` and flipped *every* `event_mission` on
+/// those events, so a multi-mission event marked sibling registrations `attended` when the
+/// player only played one. Both columns must be non-NULL on the match: an event-only row
+/// cannot know which mission was played.
 const BACKFILL_ATTENDANCE: &str = "UPDATE event_registrations SET state = 'attended' \
      WHERE discord_id = $1 AND state <> 'attended' \
        AND event_mission_id IN ( \
-         SELECT em.id FROM event_missions em WHERE em.event_id IN ( \
-           SELECT m.event_id FROM matches m \
-             JOIN match_player_stats s ON s.match_id = m.id \
-            WHERE s.arma_id = $2 AND m.event_id IS NOT NULL))";
+         SELECT em.id FROM event_missions em \
+         INNER JOIN matches m \
+           ON m.event_id = em.event_id AND m.mission_id = em.mission_id \
+         INNER JOIN match_player_stats s ON s.match_id = m.id \
+         WHERE s.arma_id = $2 \
+           AND m.event_id IS NOT NULL \
+           AND m.mission_id IS NOT NULL)";
 
 /// `GET /api/v1/me` — the caller's user object plus their Arma-link flag.
 ///
@@ -501,4 +511,67 @@ pub async fn ingest_link_confirm(
         "arma_id": arma_id,
         "arma_character": req.arma_character,
     })))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// T-431 Class-R — identity-link attendance backfill must scope through
+    /// `(event_id, mission_id)`, matching T-230 ingest. Playing one mission on a
+    /// multi-mission event must NOT flip sibling `event_mission` registrations.
+    ///
+    /// RED: restore the pre-T-431 nest
+    ///   `SELECT em.id FROM event_missions em WHERE em.event_id IN (SELECT m.event_id …)`
+    ///   (drop `m.mission_id = em.mission_id`) → this test FAIL.
+    /// GREEN: the JOIN pin below is present and the event-only nest is absent.
+    #[test]
+    fn backfill_attendance_joins_event_id_and_mission_id() {
+        // Assembled so a bait comment / this test's source cannot false-green the const.
+        let join_pin = format!(
+            "{}{}",
+            "m.event_id = em.event_id AND ", "m.mission_id = em.mission_id"
+        );
+        assert!(
+            BACKFILL_ATTENDANCE.contains(&join_pin),
+            "BACKFILL_ATTENDANCE must join event_missions on (event_id, mission_id) \
+             like T-230 ingest (perturbation: drop mission_id from the JOIN)"
+        );
+        assert!(
+            BACKFILL_ATTENDANCE.contains("m.mission_id IS NOT NULL"),
+            "BACKFILL_ATTENDANCE must refuse event-only matches (no mission to scope)"
+        );
+
+        // Forbidden pre-T-431 shape: every event_mission on the event, not the played one.
+        let event_only_nest = format!("{}{}", "em.event_id IN (", " SELECT m.event_id");
+        let collapsed: String = BACKFILL_ATTENDANCE
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ");
+        assert!(
+            !collapsed.contains(
+                &event_only_nest
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            ),
+            "BACKFILL_ATTENDANCE must not nest `em.event_id IN (SELECT m.event_id …)` — \
+             that flips sibling missions on multi-mission events"
+        );
+
+        // Source pin (production only) — same join must appear on the const, not only in docs.
+        const SRC: &str = include_str!("me.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("me.rs must have a #[cfg(test)] module");
+        assert!(
+            production.contains(&join_pin),
+            "production BACKFILL_ATTENDANCE source must contain `{join_pin}`"
+        );
+        assert!(
+            !production.contains("WHERE em.event_id IN ("),
+            "production must not keep the pre-T-431 event_id-only nest"
+        );
+    }
 }
