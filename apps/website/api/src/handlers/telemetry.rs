@@ -1237,9 +1237,41 @@ mod tests {
         assert_eq!(require_role_played("Rifleman").unwrap(), "Rifleman");
     }
 
-    /// Class-R (T-506): both `ingest_match_results` sites must invoke `require_role_played`.
-    /// Helper-only tests (`blank_role_played_is_rejected` / `non_blank_role_played_ok`) stay
-    /// green if the call sites are deleted — this pin fails that deletion.
+    /// Class-R (T-506 / T-513): both `ingest_match_results` sites must invoke
+    /// `require_role_played`. Helper-only tests (`blank_role_played_is_rejected` /
+    /// `non_blank_role_played_ok`) stay green if the call sites are deleted — this pin
+    /// fails that deletion. T-513: strip `//` / `/* */` before counting so a bait
+    /// comment cannot false-green a deleted live call.
+    fn strip_rust_comments(src: &str) -> String {
+        let bytes = src.as_bytes();
+        let mut out = String::with_capacity(src.len());
+        let mut i = 0;
+        while i < bytes.len() {
+            if i + 1 < bytes.len() && bytes[i] == b'/' && bytes[i + 1] == b'/' {
+                i += 2;
+                while i < bytes.len() && bytes[i] != b'\n' {
+                    i += 1;
+                }
+                continue;
+            }
+            if i + 1 < bytes.len() && bytes[i] == b'/' && bytes[i + 1] == b'*' {
+                i += 2;
+                while i + 1 < bytes.len() && !(bytes[i] == b'*' && bytes[i + 1] == b'/') {
+                    i += 1;
+                }
+                if i + 1 < bytes.len() {
+                    i += 2;
+                } else {
+                    i = bytes.len();
+                }
+                continue;
+            }
+            out.push(char::from(bytes[i]));
+            i += 1;
+        }
+        out
+    }
+
     #[test]
     fn ingest_match_results_invokes_require_role_played_at_both_sites() {
         const SRC: &str = include_str!("telemetry.rs");
@@ -1256,7 +1288,7 @@ mod tests {
             .find("\nasync fn ")
             .map(|i| i + 1)
             .unwrap_or(after.len());
-        let handler = &after[..end];
+        let handler = strip_rust_comments(&after[..end]);
         let collapsed: String = handler.split_whitespace().collect::<Vec<_>>().join(" ");
         // Assembled so a free-floating bait comment / this test's source cannot false-green
         // with a bare `contains("require_role_played")` on the helper-only suite.
