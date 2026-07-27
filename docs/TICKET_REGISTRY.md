@@ -662,7 +662,7 @@ Honest about residual gaps: select lists assembled past their literal prefix (Qu
 Latent on the operator's data today — `missions` has no NULL updated_at there — but it is the same defect as T-329 (live) and T-307 (reachable from any fresh seed), and 'latent' here means 'nothing has written that value yet', not 'cannot happen'.
 
 Same fix shape as T-329: COALESCE at the query, not Option on the model. See T-325's reasoning recorded in models/telemetry.rs for why the model-level change is wrong. |
-| T-331 | 3147 | deferred | platform | content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained | FOUND by T-228 while constraining role_played; blocking two thirds of that work and not in its owned directory.
+| T-331 | 3147 | running | platform | content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained | FOUND by T-228 while constraining role_played; blocking two thirds of that work and not in its owned directory.
 
 `seeds/content_golden.sql:358-369` inserts literal NULL into `matches.aar_replay_url` (2 rows) and `matches.winning_faction` (1 row), under ON CONFLICT (id) DO UPDATE SET ... = EXCLUDED.... **That seed is where the operator's live NULLs came from.** T-228 measured both branches on a pg_dump copy rather than arguing them:
   - WITH the NOT NULL constraint: `psql < seeds/content_golden.sql` fails `ERROR: null value in column "aar_replay_url" ... violates not-null constraint`, exit 3, failing row rf-match-20260704-01.
@@ -1213,7 +1213,7 @@ Also worth recording, from T-347's read of the mod side: TBD_ResultsReporter.c:5
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-356 | 3172 | deferred | platform | The other side of the armory join has the identical defect, still open | FOUND by T-346 while proving why it must NOT trim. This is the mirror image of T-346, on the other side of the same join, and it produces the same user-visible empty dossier card from the opposite direction.
+| T-356 | 3172 | running | platform | The other side of the armory join has the identical defect, still open | FOUND by T-346 while proving why it must NOT trim. This is the mirror image of T-346, on the other side of the same join, and it produces the same user-visible empty dossier card from the opposite direction.
 
 `crates/map-engine-core/src/mission/orbat.rs:23-25` — OrbatSquadTemplate.faction is #[serde(default)] and untrimmed. `apps/website/api/src/handlers/events.rs:391` binds it straight into orbat_slots.faction with no normalisation. So attaching a mission with no `faction` key stores `""`, and a padded one stores the padding.
 
@@ -1581,7 +1581,7 @@ Blast radius: handlers/registry.rs:82-94 serves all ten; weight_kg and cargo_gri
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-377 | 3193 | deferred | platform | PATCH and the compiler hold opposite meanings for an empty weather string | TWO HALVES OF ONE T-192 FIX DISAGREEING, and the only defence is client-side.
+| T-377 | 3193 | running | platform | PATCH and the compiler hold opposite meanings for an empty weather string | TWO HALVES OF ONE T-192 FIX DISAGREEING, and the only defence is client-side.
 
 handlers/missions.rs:48-56 — `valid_weather` maps `"" \| "clear"` to `WeatherType::Clear`. So PATCH /missions/:id with `{"weather": ""}` **silently rewrites a stored `dense_fog` to `clear` and answers 200.**
 

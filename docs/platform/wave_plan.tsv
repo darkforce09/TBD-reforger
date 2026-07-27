@@ -90,7 +90,7 @@
 0	T-360	DashboardResponse.server_status is the third read of one payload and still Option<Value>	apps/website/frontend/src/dashboard.rs
 0	T-361	The gate cannot browser-test any SSE page — its proxy awaits the whole body	tools/tbd-tools/src/smokes.rs
 0	T-358	factions.rs defeats its own unique index, and both sweeps were structurally blind to it	apps/website/api/src/handlers/factions.rs; apps/website/api/tests/factions.rs
-0	T-356	The other side of the armory join has the identical defect, still open	crates/map-engine-core/src/mission/orbat.rs
+0	T-356	The other side of the armory join has the identical defect, still open	crates/map-engine-core/src/mission/orbat.rs; apps/website/api/src/handlers/events.rs
 0	T-353	Four SPA gaps T-232 could not reach from its own files	apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/router.rs; apps/website/frontend/src/datefmt.rs
 0	T-364	COALESCE-on-None admits a third state, and a body-only PATCH leaves the snippet stale	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/handlers/cms.rs
 0	T-350	Four sites report an identity as linked when it is whitespace	apps/website/api/src/handlers/auth.rs; apps/website/api/src/handlers/oauth.rs; apps/website/api/src/handlers/deployments.rs
