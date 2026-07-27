@@ -9,6 +9,9 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-297** (2297) — cargo fmt --all is ungated — 12 files drifted [ready] — tools/tbd-tools and xtask are workspace members (Cargo.toml:8-16) but no gate covers their formatting: Makefile:80 wasm-ci scopes to map-engine crates, Makefile:105 rust-fmt cds into apps/website/api, Makefile:284 ci-local-leptos scopes to website-frontend, and ci.yml:55 runs cargo fmt --check under working-directory apps/website/api. Nobody runs cargo fmt --all. Result: 12 files / 32 hunks are unformatted on main. Format them and add an --all check to the workspace gate so it cannot drift again.
+- **T-284** (3020) — events.match_id is dead weight and clear_slot is unreachable [ready] — events.match_id is selected in every event query and never written by any insert or update — the real link runs the other way via matches.event_id. Separately, clear_slot has no frontend caller, so an admin can never free a claimed slot.
+- **T-286** (3040) — Dead scaffolding and a non-reactive role read [ready] — PageStub and ApiPage are defined and routed nowhere. missions.rs:87 is a one-shot non-reactive role read evaluated before AuthGate resolves; combined with nav.rs:41-46 returning true for None, a not-yet-bootstrapped session yields is_maker=true and never corrects. faction_manager.rs deletes with no confirmation dialog, unlike every sibling page.
 
 ## Next queued (top 10)
 

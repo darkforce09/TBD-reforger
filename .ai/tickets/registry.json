@@ -8645,7 +8645,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 3020,
       "stream": "web-platform",
       "targets": [
@@ -8683,7 +8683,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 3040,
       "stream": "web-platform",
       "targets": [
@@ -8892,7 +8892,7 @@
       "impact": [
         "registry-hygiene"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2297,
       "stream": "infra",
       "targets": [
