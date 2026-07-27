@@ -987,6 +987,11 @@ Cure: add an explicit size ceiling to mission.schema.json (or document + API pre
 Repro: break a required field in registry.json; ./scripts/ticket check RED; ./scripts/ticket set-status T-001 shipped still mutates.
 
 Cure: gate mutators through require_check_ok (or document intentional escape hatch + refuse in CI).
+- **T-452** (deferred) — TBD_PlayerIdentity still claims link unimplemented after T-181.35 [MOD] — Residual from T-296 / wave 17 adversarial. ResultsReporter banner/comments now tell the truth about shipped `#tbd link` (TBD_IdentityLink + MissionLoader Arm()), but TBD_PlayerIdentity.c:9 still says the mod does not implement link-confirm / that is T-181.35.
+
+Repro: rg 'does not implement|T-181.35' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c
+
+Cure: rewrite the stale header to match IdentityLink (same honesty bar as T-296).
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

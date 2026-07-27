@@ -9,9 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-296** (2296) — TBD_ResultsReporter banner now contradicts shipped code [ready] — TBD_ResultsReporter.c:23, :28-29 and :422-423 still state that identity linking is unimplemented and that 'there is no #tbd link command'. T-181.35 landed TBD_IdentityLink.c (780 lines) at 17:46 on 2026-07-25 and the command exists. The :422-423 line prints once per round into the operator log, so it actively misleads whoever reads the round output. Correct all three sites to describe what the results POST actually does today.
-- **T-276** (2940) — Close the marker.icon vocabulary [ready] — mission.schema.json:446 is a bare string with no enum and no minLength. TBD_MarkerIcons.c:43-45,165 falls back to a dot and logs once. This is the exact degradation cargoContainer was closed to prevent.
-- **T-281** (2990) — apps/mod README falsely claims the compile route does not exist [ready] — apps/mod/tbd-framework/README.md:23 says the route is not in the current backend and cites the wrong path without /v1. Both are false — contradicted by app.rs:158-161 and TBD_MissionLoader.c:506.
 
 ## Next queued (top 10)
 

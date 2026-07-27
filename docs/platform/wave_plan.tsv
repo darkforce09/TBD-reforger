@@ -169,7 +169,7 @@
 6	T-273	schema.json is a month stale and would now reject nearly every ticket	.ai/tickets/schema.json
 6	T-274	Record the untracked spawn-determinism program	scripts/mod/tbd-spawn-determinism.sh; Makefile; docs/mod
 6	T-275	Declare mod-enforced limits in the schema	apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c; apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c; packages/tbd-schema/schema/mission.schema.json
-7	T-276	Close the marker.icon vocabulary	apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerIcons.c; packages/tbd-schema/schema/mission.schema.json
+7	T-276	Close the marker.icon vocabulary	apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerIcons.c; packages/tbd-schema/schema/mission.schema.json; packages/tbd-schema/golden-missions/empty-warning-fields.json
 7	T-277	27.4% of the shipped map catalogue is unclassified	packages/tbd-schema/rules/prefab-classify.json
 7	T-190	Two browser tabs on one mission silently clobber each other	apps/website/frontend/src/yrs_persist.rs
 7	T-242	Add vehicle and entity inventory to the entity schema	crates/map-engine-core/src/doc/store.rs
@@ -192,7 +192,7 @@
 9	T-292	net.range short is parsed then discarded	apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioService.c
 9	T-294	Only one of two registered terrains has object data	packages/map-assets/arland
 9	T-295	Realtime collaborative editing	apps/website/frontend/src/yrs_persist.rs
-9	T-296	TBD_ResultsReporter banner now contradicts shipped code	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c
+9	T-296	TBD_ResultsReporter banner now contradicts shipped code	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c; scripts/mod/verify-t296-results-reporter-identity-comments.sh
 10	T-293	TBD_RadioPlan re-parses raw JSON instead of the parsed field	apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
 10	T-289	Server-host deploy agent for start, stop and status	scripts/mod/deploy-staging.sh
 10	T-297	cargo fmt --all is ungated — 12 files drifted	tools/tbd-tools/src/lib.rs; xtask/src/cmds.rs; Makefile
@@ -250,3 +250,4 @@
 99	T-449	Wire ./scripts/ticket check to .ai/tickets/schema.json	xtask/src/check.rs; .ai/tickets/schema.json; scripts/ticket
 99	T-450	Pin MISSION_FILE_MAX_BYTES (8MB) in mission schema	packages/tbd-schema/schema/mission.schema.json; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
 99	T-451	ticket set-status mutates without schema check preflight	xtask/src/cmds.rs; xtask/src/check.rs
+99	T-452	TBD_PlayerIdentity still claims link unimplemented after T-181.35	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c
