@@ -188,6 +188,12 @@ pub fn census_spike(terrain: &str) -> Result<u8> {
         );
     }
     let total_instances = entries.len();
+    // T-537: refuse writing an empty spike inventory over a prior census artifact.
+    super::refuse_empty_write(
+        "census-spike type-inventory",
+        total_instances == 0,
+        "zero classified instances — refusing empty type-inventory overwrite",
+    )?;
     let generated_at = iso_from_system_time(std::fs::metadata(&raw)?.modified()?);
     let inventory = json!({
         "schemaVersion": "1.0.0",
@@ -1005,17 +1011,25 @@ pub fn copy_world_export_profile(
         );
         return Ok(1);
     }
-    std::fs::create_dir_all(&dest_dir)?;
-    std::fs::copy(&src_jsonl, &dest_jsonl)?;
+    // T-537: count source FIRST — never overwrite a staged export with an empty jsonl.
     let mut line_count = 0u64;
     {
-        let f = std::fs::File::open(&dest_jsonl)?;
+        let f = std::fs::File::open(&src_jsonl)?;
         for line in std::io::BufReader::new(f).lines() {
             if !line?.trim().is_empty() {
                 line_count += 1;
             }
         }
     }
+    if line_count == 0 {
+        eprintln!(
+            "copy-world-export-profile: refusing empty write — source jsonl has 0 rows: {}",
+            src_jsonl.display()
+        );
+        return Ok(1);
+    }
+    std::fs::create_dir_all(&dest_dir)?;
+    std::fs::copy(&src_jsonl, &dest_jsonl)?;
     if full {
         let meta_doc: Value = serde_json::from_str(&std::fs::read_to_string(&src_meta)?)?;
         if meta_doc["keptCount"].as_u64() != Some(line_count) {
@@ -1045,6 +1059,13 @@ pub fn copy_world_export_profile(
             dest_jsonl.display(),
             dest_meta.display()
         );
+    } else if dest_meta.exists() {
+        // T-537: refuse lossy synth overwrite of an existing real/prior meta.
+        eprintln!(
+            "copy-world-export-profile: refusing lossy write — source meta missing and dest meta already exists at {}; left jsonl updated, meta untouched",
+            dest_meta.display()
+        );
+        return Ok(1);
     } else {
         let synth = json!({ "source": src_jsonl.to_string_lossy(), "copiedRows": line_count });
         std::fs::write(&dest_meta, serde_json::to_string_pretty(&synth)? + "\n")?;
@@ -1249,6 +1270,16 @@ pub fn catalog_sap_cells(terrain: &str) -> Result<u8> {
         "source": "sap-supertexture-stitch",
         "cells": entries,
     });
+    // T-537: refuse an empty cell catalog overwrite.
+    super::refuse_empty_write(
+        "catalog-sap-cells",
+        catalog["cellCount"].as_u64() != Some(u64::from(CELL_COUNT))
+            || catalog["cells"].as_array().map(|a| a.len()).unwrap_or(0) == 0,
+        &format!(
+            "cellCount {} != expected {CELL_COUNT} — refusing empty/partial cell-catalog.json overwrite",
+            catalog["cellCount"]
+        ),
+    )?;
     std::fs::create_dir_all(&out_dir)?;
     let out = out_dir.join("cell-catalog.json");
     std::fs::write(&out, serde_json::to_string_pretty(&catalog)? + "\n")?;

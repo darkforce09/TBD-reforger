@@ -412,6 +412,12 @@ pub fn build_world_objects_opt(
     });
 
     // ---- write artifacts ----
+    // T-537: refuse wiping objects/ with an empty catalog (would overwrite committed prefabs/chunks).
+    super::refuse_empty_write(
+        "build-world-objects catalog",
+        kept.is_empty() || phase_prefab_names.is_empty(),
+        "zero kept instances/prefabs — refusing empty objects/ overwrite",
+    )?;
     let _ = std::fs::remove_dir_all(&chunks_dir);
     std::fs::create_dir_all(&chunks_dir)?;
     let mut prefabs_doc =
@@ -891,6 +897,12 @@ pub fn redensify_from_committed(terrain: &str) -> Result<()> {
 
     let (tree_grid, tree_size) = density::accumulate_corners(trees.iter().copied(), world_size_m);
     let (rock_grid, rock_size) = density::accumulate_corners(rocks.iter().copied(), world_size_m);
+    // T-537: refuse redensifying committed density bins from an empty tree+rock set.
+    super::refuse_empty_write(
+        "redensify density bins",
+        trees.is_empty() && rocks.is_empty(),
+        "zero trees and rocks in committed chunks — refusing empty density overwrite",
+    )?;
     let tree_canopy =
         density::box_blur_corners(&tree_grid, tree_size, density::CANOPY_KERNEL_RADIUS_CELLS);
 
@@ -951,6 +963,12 @@ pub fn gen_density_fixture() -> Result<()> {
     };
     let trees = pos("treePositions");
     let rocks = pos("rockPositions");
+    // T-537: refuse regenerating the golden density fixture from an empty position set.
+    super::refuse_empty_write(
+        "gen-density-fixture positions",
+        trees.is_empty() && rocks.is_empty(),
+        "no treePositions/rockPositions — refusing empty overwrite of density-fixture.bin",
+    )?;
     let (t_grid, t_size) = density::accumulate_corners(trees.into_iter(), world);
     let (r_grid, r_size) = density::accumulate_corners(rocks.into_iter(), world);
     let t_slice = density::slice_chunk_corners(&t_grid, t_size, ccx, ccy);
@@ -961,7 +979,6 @@ pub fn gen_density_fixture() -> Result<()> {
         density::DENSITY_ROWS,
         &[&t_slice, &r_slice],
     );
-    std::fs::write(dir.join("density-fixture.bin"), &buf)?;
 
     let cols = density::DENSITY_COLS as usize;
     let rows = density::DENSITY_ROWS as usize;
@@ -975,6 +992,13 @@ pub fn gen_density_fixture() -> Result<()> {
             }
         }
     }
+    super::refuse_empty_write(
+        "gen-density-fixture corners",
+        corners.is_empty() || buf.is_empty(),
+        "zero nonzero corners / empty TBDD buffer — refusing empty overwrite of density-fixture.bin",
+    )?;
+    std::fs::write(dir.join("density-fixture.bin"), &buf)?;
+
     let half = density::DENSITY_CELL_M / 2;
     fx["description"] = json!(format!(
         "S13 synthetic TBDD fixture — encode(fixture) must equal density-fixture.bin byte-for-byte; decode(bin) must match expectedCorners. Corner (i,j) of chunk (cx,cy) counts instances in [X-{half},X+{half}) x [Y-{half},Y+{half}), X = cx*512+i*{}.",
@@ -1060,6 +1084,12 @@ pub fn build_roads_from_topo_opt(
         })
         .collect();
     let doc = json!({ "schemaVersion": "1.0.0", "terrainId": terrain, "roadSegments": segments });
+    // T-537: refuse writing empty roads.json.gz over the committed 888-segment catalog.
+    super::refuse_empty_write(
+        "build-roads-from-topo",
+        segments.is_empty(),
+        "zero road segments — refusing empty roads.json.gz overwrite",
+    )?;
     let out_base: PathBuf = out_base
         .map(Path::to_path_buf)
         .unwrap_or_else(|| repo_root().join("packages/map-assets").join(terrain));
@@ -1148,6 +1178,22 @@ mod tests {
         assert!(
             !dir.exists(),
             "intentional density rebuild must remove the dir"
+        );
+    }
+
+    #[test]
+    fn refuse_empty_catalog_write_contract() {
+        // T-537 Class-R: empty kept/prefab set must refuse before objects/ wipe.
+        let err = super::super::refuse_empty_write(
+            "build-world-objects catalog",
+            true,
+            "zero kept instances/prefabs — refusing empty objects/ overwrite",
+        )
+        .expect_err("must refuse");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("refusing empty write (build-world-objects catalog)"),
+            "{msg}"
         );
     }
 }

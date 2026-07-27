@@ -147,6 +147,12 @@ pub fn build(src: &Path, out: &Path) -> Result<SourceStats> {
         st.lines += lines.len();
     }
 
+    // T-537: refuse a header-only `_SOURCE_MANIFEST.tsv` overwrite when nothing demangled.
+    super::refuse_empty_write(
+        "enf source manifest",
+        st.files == 0,
+        "extracted zero source pages — refusing header-only _SOURCE_MANIFEST.tsv overwrite",
+    )?;
     std::fs::write(out.join("_SOURCE_MANIFEST.tsv"), manifest)?;
     Ok(st)
 }

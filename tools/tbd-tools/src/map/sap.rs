@@ -962,12 +962,27 @@ pub fn stitch_sap_ortho(terrain: &str) -> Result<u8> {
     let seams = bridge_seams(&mut canvas, ortho_px, 4)?;
     eprintln!("  seam repair: bridged {seams} interior seams/axis (apron feather HW=4)");
 
+    // T-537: refuse writing meta/PNG claiming success with an incomplete or empty stitch.
+    super::refuse_empty_write(
+        "stitch-sap-ortho cells",
+        decoded == 0 || decoded != edds::CELL_COUNT,
+        &format!(
+            "decoded {decoded} cells (expected {}) — refusing empty/partial SAP overwrite",
+            edds::CELL_COUNT
+        ),
+    )?;
+
     std::fs::create_dir_all(&out_dir)?;
     // RGBA → RGB (drop alpha; the ortho is opaque).
     let mut rgb = Vec::with_capacity(ortho_px * ortho_px * 3);
     for px in canvas.chunks_exact(4) {
         rgb.extend_from_slice(&px[..3]);
     }
+    super::refuse_empty_write(
+        "stitch-sap-ortho rgb",
+        rgb.is_empty() || rgb.len() != ortho_px * ortho_px * 3,
+        "RGB buffer empty or wrong size — refusing SAP ortho/meta overwrite",
+    )?;
     let png_path = out_dir.join("everon-sap-ortho.png");
     img::save_png_rgb(
         &png_path,

@@ -136,6 +136,18 @@ pub fn build(root: &Path, out_dir: &Path, prefix: &str) -> Result<Stats> {
         st.rpl_props += scan.rpl_props.len();
     }
 
+    // T-537: same class as apidoc — never stamp header-only TSVs over a committed index.
+    super::refuse_empty_write(
+        &format!("enf index {prefix}_symbols.tsv"),
+        st.symbols == 0,
+        "parsed zero symbols — refusing header-only overwrite",
+    )?;
+    super::refuse_empty_write(
+        &format!("enf index {prefix}_files.tsv"),
+        st.files == 0,
+        "parsed zero .c files — refusing header-only overwrite",
+    )?;
+
     std::fs::create_dir_all(out_dir)?;
     std::fs::write(out_dir.join(format!("{prefix}_symbols.tsv")), symbols_tsv)?;
     std::fs::write(out_dir.join(format!("{prefix}_files.tsv")), files_tsv)?;

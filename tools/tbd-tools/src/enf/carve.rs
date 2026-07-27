@@ -205,6 +205,12 @@ pub fn carve(game_root: &Path, out_dir: &Path) -> Result<CarveStats> {
         }
     }
 
+    // T-537: refuse writing an empty carve manifest over a previous successful carve.
+    super::refuse_empty_write(
+        "enf carve manifest",
+        st.blobs_kept == 0,
+        "carved zero script blobs — refusing empty _MANIFEST.tsv overwrite",
+    )?;
     std::fs::write(out_dir.join("_MANIFEST.tsv"), manifest)?;
     std::fs::write(out_dir.join("REFERENCE-ONLY.md"), REFERENCE_ONLY_MD)?;
     Ok(st)
