@@ -5,6 +5,15 @@
 
 ## Running / Review
 
+- **T-519** (3359) — R-api fixture goldens for Member / RegistryCompat / FireSolution [running] — Wave 45 residual (T-360 NIT). DashboardResponse.server_status is typed Option<ServerStatusDto> end-to-end; dto::r_api::dashboard green. Remaining typed DTOs Member, RegistryCompatResponse, FireSolution still lack fixtures under apps/website/frontend/tests/fixtures/api/ (ls | rg -i 'member|compat|fire|solve' → empty). Owns when filed: apps/website/frontend/tests/fixtures/api/ + matching dto.rs R-api modules. Outside T-360 owns at ship time.
+- **T-524** (3364) — T-505 compile.rs KNOWN keys / hydrate-title comment lockstep [running] — Wave 46 verifier NIT. After T-505, store.rs loads payload title and lists title as known, but crates/map-engine-core/src/mission/compile.rs still omits title from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS and retains stale T-375 comment that hydrate does not load title. Cure: add title to known keys + fix comment.
+- **T-549** (3389) — Live /compiled still uses empty CargoPhysCatalog (T-500 trust-saved residual) [running] — FOUND by W58 adversarial verifier (CLEAN MINOR) after T-500.
+
+T-500 added flatten_to_mod_document_with_catalog + scan_cargo_capacity; the no-arg entry still uses an empty catalog (documented trust-Save). Live get_compiled_mission / events roster still call the no-arg path, so pre-T-416 over-capacity versions can still compile until re-saved.
+
+Cure: load_cargo_phys_catalog in the compile handler(s) and call flatten_to_mod_document_with_catalog with the live table.
+
+Repro: rg flatten_to_mod_document apps/website/api/src/handlers
 
 ## Ready
 

@@ -13542,7 +13542,7 @@
         "website",
         "tests"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3359,
       "stream": "web-platform",
       "targets": [
@@ -13653,7 +13653,7 @@
         "compiler",
         "docs"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3364,
       "stream": "web-platform",
       "targets": [
@@ -14201,7 +14201,7 @@
         "api",
         "mission-authoring"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3389,
       "executor": "claude-code",
       "priority": 2,

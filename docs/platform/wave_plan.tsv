@@ -317,12 +317,12 @@
 45	T-516	W45 hotfix identity_link arma_id seed race	apps/website/api/tests/identity_link.rs
 45	T-517	W45 hotfix PAD_ACTOR vs telemetry discord collision	apps/website/api/tests/identity_link.rs
 99	T-518	T-517 Class-R one-sided denylist not bound to telemetry PLAYER_DISCORD	apps/website/api/tests/identity_link.rs; apps/website/api/tests/telemetry.rs
-99	T-519	R-api fixture goldens Member RegistryCompat FireSolution	apps/website/frontend/tests/fixtures/api/; apps/website/frontend/src/dto.rs
+59	T-519	R-api fixture goldens Member RegistryCompat FireSolution	apps/website/frontend/tests/fixtures/api/; apps/website/frontend/src/dto.rs
 46	T-520	W46 hotfix rustfmt events.rs after T-511	apps/website/api/tests/events.rs
 46	T-521	W46 hotfix rustfmt missions.rs after T-505	apps/website/api/src/handlers/missions.rs
 46	T-522	W46 hotfix: T-505 prefer-payload Class-R must run on native CI	apps/website/frontend/src/mission_hydrate.rs; apps/website/frontend/src/main.rs; apps/website/frontend/src/mission_title_prefer.rs
 46	T-523	W46 hotfix: T-515 db_migrate claim body must strip SQL comments	scripts/platform/wave.sh
-99	T-524	T-505 compile.rs title known-keys lockstep	crates/map-engine-core/src/mission/compile.rs
+59	T-524	T-505 compile.rs title known-keys lockstep	crates/map-engine-core/src/mission/compile.rs
 99	T-525	content_golden obsolete two-seat comments after T-511	apps/website/api/seeds/content_golden.sql
 46	T-526	W46 hotfix rustfmt mission_title_prefer after T-522	apps/website/frontend/src/mission_title_prefer.rs
 47	T-527	W47 hotfix rustfmt event_manager after T-332	apps/website/frontend/src/event_manager.rs
@@ -347,4 +347,4 @@
 99	T-546	T-498 Class-R only — no HTTP IT for Discord formula-title sanitize	apps/website/api/tests; apps/website/api/src/services/webhook.rs
 57	T-547	datefmt format_uptime doc overclaims server-control sharing	apps/website/frontend/src/datefmt.rs; apps/website/frontend/src/server_control.rs
 57	T-548	missions.rs featured-card briefing still uses !b.is_empty() without trim	apps/website/frontend/src/missions.rs
-99	T-549	Live /compiled still uses empty CargoPhysCatalog	apps/website/api/src/handlers/missions.rs; apps/website/api/src/services/mission_compile.rs
+59	T-549	Live /compiled still uses empty CargoPhysCatalog	apps/website/api/src/handlers/missions.rs; apps/website/api/src/services/mission_compile.rs
