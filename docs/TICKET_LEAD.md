@@ -9,28 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-435** (3274) — Pin arland z_bounds polygon in flatten zone tests [ready] — MINOR from wave 8 verifier on T-201. Everon z_bounds is pinned ([[0,0],[12800,0],…]); arland uses terrain_bounds("arland")→4096² but no flatten-level test asserts that polygon.
-
-Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.
-
-Cure: unit test with terrain=arland expecting 4096² ring.
-- **T-446** (3285) — CMS hero image upload needs web-sys FormData features [ready] — Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.
-
-Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
-
-Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url.
-- **T-467** (3306) — verify-t438/t456 still unwired from Makefile/CI siblings [ready] — Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 (T-463), but Makefile/CI have no sibling targets (same shape as pre-T-452 for other verifies).
-
-Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
-
-Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin.
-- **T-475** (3314) — T-446 Class-R greens comment-out FormData + unpinned absolute URL [ready] — Residual from wave 28 adversarial MAJOR×2 on T-446.
-(1) content.rs Class-R uses raw CARGO.contains("\"FormData\"") — commenting the feature line (`# "FormData",`) still PASS because the string remains in the file. Same comment-needle class as T-460/T-461.
-(2) Live handle_hero calls absolute_cms_upload_url(&raw) so Publish gets http(s) for T-405 validated_thumbnail, but Class-R never mentions absolute_cms_upload_url — replacing with `let url = raw;` still greens all content::tests (11/11).
-
-Repro: `# "FormData",` in Cargo.toml → hero_multipart_upload_is_wired_not_stubbed PASS; `let url = raw;` → content::tests PASS.
-
-Cure: strip // and # comments (and TOML string-safe comment lines) before Cargo FormData/File/FileList pins; require live prod call absolute_cms_upload_url(…) on the upload Ok path (not comment-only). RED→GREEN on both verifier perturbations.
 
 ## Next queued (top 10)
 
