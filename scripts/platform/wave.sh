@@ -893,6 +893,49 @@ gate_test_api() {
   return 0
 }
 
+# T-515 — Class-R: SQL-only claim migration 0016 must keep its claim UPDATE body.
+#
+# `tests/db_migrate.rs` only asserts schema/object counts after sqlx migrate. A hollow
+# 0016 that drops the claim UPDATE (`UPDATE match_player_stats … SET discord_id`) but
+# keeps `REFRESH MATERIALIZED VIEW` still lands the same table/enum/matview census and
+# stays gate-green when claimable orphans are 0. That class of defect is invisible to
+# the Rust gate; pin the claim needles on disk here.
+#
+# Needles measured from apps/website/api/migrations/0016_backfill_pre_t326_linked_match_stats.sql
+# claim step 2 (not comments — comment prose uses unqualified `discord_id IS NULL`).
+#
+# Path override TBD_GATE_MIGRATION_0016 is for perturbation probes only (point at a bait
+# file missing the UPDATE) — never for production gating.
+gate_db_migrate_claim_body() {
+  local f="${TBD_GATE_MIGRATION_0016:-$ROOT/apps/website/api/migrations/0016_backfill_pre_t326_linked_match_stats.sql}"
+  local needle miss=()
+  if [ ! -f "$f" ]; then
+    echo "db_migrate claim body: missing migration file: $f"
+    echo "        T-335 0016 is the one-shot claim for pre-T-326 linked accounts; without it"
+    echo "        this Class-R cannot pin the UPDATE body. Restore the file or unset"
+    echo "        TBD_GATE_MIGRATION_0016."
+    return 1
+  fi
+  for needle in \
+    'UPDATE public.match_player_stats AS s' \
+    'SET discord_id = u.discord_id' \
+    'AND s.discord_id IS NULL'
+  do
+    grep -qF -- "$needle" "$f" || miss+=("$needle")
+  done
+  if [ "${#miss[@]}" -gt 0 ]; then
+    echo "db_migrate claim body: FAIL — $f is missing claim UPDATE needle(s):"
+    for needle in "${miss[@]}"; do
+      echo "        - $needle"
+    done
+    echo "        Hollow 0016 (REFRESH kept, claim UPDATE dropped) still passes schema counts."
+    echo "        Restore the T-335 claim UPDATE body (do not weaken this assert)."
+    return 1
+  fi
+  echo "db_migrate claim body: OK — 0016 retains claim UPDATE needles ($f)"
+  return 0
+}
+
 # `trunk build --release`, ISOLATED FROM THE OPERATOR'S DEV SERVER — read before simplifying.
 #
 # `make leptos` is `trunk serve --release`: the same binary, running the same pipeline, over the
@@ -1514,6 +1557,9 @@ gate_slice() {
   # have stopped T-244, whose diff is 0 .rs files — so every other step above it is change-scoped
   # down to nothing and its slice gate was green over a red `make schema-validate`. ~1.4 s warm.
   run "schema"       gate_schema
+  # T-515. Class-R on 0016 claim UPDATE body — db_migrate.rs is schema-count-only;
+  # a hollow claim migration stays green. Unconditional (wave.sh-only slices must hit it).
+  run "db_migrate claim body" gate_db_migrate_claim_body
   # T-462. Shell Class-R near schema: verify scripts that exist but were never
   # invoked by the cold gate (wave 24 adversarial — T-439 unwired; T-444 pin absent).
   # T-463. Same pattern for T-438 deploy-staging compose path + T-456 REST size gate
@@ -1624,6 +1670,9 @@ cmd_gate() {
   # rc honoured: ensure_gate_db now refuses to force-drop tbd_gate_migrate without the gate lock,
   # and a gate that could not prepare its database must not go on to interpret the result.
   ensure_gate_db || fail=1
+  # T-515. Adjacent to migrate DB prep: Class-R pins 0016 claim UPDATE body on disk.
+  # schema-count db_migrate.rs cannot see a hollow claim (REFRESH kept, UPDATE dropped).
+  run "db_migrate claim body" gate_db_migrate_claim_body
   run "test api"         gate_test_api
   # --features mission is REQUIRED. The mission module is feature-gated, so a bare
   # `cargo test -p map-engine-core` runs 116 tests and silently skips 26 — every test in flatten.rs,
