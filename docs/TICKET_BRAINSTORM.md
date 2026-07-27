@@ -989,6 +989,16 @@ Cure: gate mutators through require_check_ok (or document intentional escape hat
 Repro: rg 'does not implement|T-181.35' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c
 
 Cure: rewrite the stale header to match IdentityLink (same honesty bar as T-296).
+- **T-453** (deferred) — CI rust-backend fmt still misses workspace cargo fmt --all [INFRA, CI] — Residual from T-297 / wave 18 adversarial MINOR. Local `make rust-fmt` now runs `cargo fmt --all --check`, but `.github/workflows/ci.yml` rust-backend still uses `working-directory: apps/website/api` + package-scoped `cargo fmt --check`, so GitHub CI can miss tbd-tools/xtask drift. Also `scripts/platform/wave.sh` still comments that `cargo fmt --all` is deliberately unused (stale).
+
+Repro: format-break tools/tbd-tools/src/lib.rs; local rust-fmt RED; push and watch CI rust-backend still GREEN if only api fmt runs.
+
+Cure: root/workspace fmt step in ci.yml (or drop working-directory for fmt); refresh wave.sh comment.
+- **T-454** (deferred) — wiki/modpacks/event_hub still one-shot has_min_role [FE] — Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive `has_min_role_authed` (None=>false). wiki.rs / modpacks.rs / event_hub.rs still one-shot `store.has_min_role` (browse-mode None=>true). Behind AuthGate today so Mission-Library freeze is not reproduced, but the pattern debt remains.
+
+Repro: rg 'has_min_role\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs — still browse-mode helper.
+
+Cure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

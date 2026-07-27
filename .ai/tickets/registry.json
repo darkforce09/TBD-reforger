@@ -8645,7 +8645,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3020,
       "stream": "web-platform",
       "targets": [
@@ -8683,7 +8683,7 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3040,
       "stream": "web-platform",
       "targets": [
@@ -8892,7 +8892,7 @@
       "impact": [
         "registry-hygiene"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2297,
       "stream": "infra",
       "targets": [
@@ -12080,6 +12080,47 @@
       "stream": "web-platform",
       "targets": [
         "mod"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-453",
+      "title": "CI rust-backend fmt still misses workspace cargo fmt --all",
+      "summary": "Residual from T-297 / wave 18 adversarial MINOR. Local `make rust-fmt` now runs `cargo fmt --all --check`, but `.github/workflows/ci.yml` rust-backend still uses `working-directory: apps/website/api` + package-scoped `cargo fmt --check`, so GitHub CI can miss tbd-tools/xtask drift. Also `scripts/platform/wave.sh` still comments that `cargo fmt --all` is deliberately unused (stale).\n\nRepro: format-break tools/tbd-tools/src/lib.rs; local rust-fmt RED; push and watch CI rust-backend still GREEN if only api fmt runs.\n\nCure: root/workspace fmt step in ci.yml (or drop working-directory for fmt); refresh wave.sh comment.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA",
+        "CI"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3292,
+      "stream": "web-platform",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-454",
+      "title": "wiki/modpacks/event_hub still one-shot has_min_role",
+      "summary": "Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive `has_min_role_authed` (None=>false). wiki.rs / modpacks.rs / event_hub.rs still one-shot `store.has_min_role` (browse-mode None=>true). Behind AuthGate today so Mission-Library freeze is not reproduced, but the pattern debt remains.\n\nRepro: rg 'has_min_role\\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs \u2014 still browse-mode helper.\n\nCure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role.",
+      "program": "platform",
+      "surfaces": [
+        "FE"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3293,
+      "stream": "web-platform",
+      "targets": [
+        "website"
       ],
       "executor": "claude-code",
       "priority": 2
