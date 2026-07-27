@@ -239,6 +239,55 @@ Repro:
   # Temporarily return None for briefing in mission_hydrate RowMeta construction;
   # website-frontend tests that mention briefing/hydrate still green;
   # only map-engine-core Class-R fails if apply_row_meta itself is gutted.
+- **T-557** (deferred) — dev-login 500s on concurrent first use: ON CONFLICT (discord_id) cannot arbitrate idx_users_arma_id [API] — A REAL APPLICATION DEFECT, found by T-534 while chasing a flaky gate. T-534 removed it from the TEST
+path with a serialised prime; the handler is unchanged and a real client still hits it.
+
+`apps/website/api/src/handlers/dev.rs:41` INSERTs a user with a FIXED `arma_id`
+(`dev-arma-76561190000000001`) and `ON CONFLICT (discord_id) DO UPDATE`. But `arma_id` carries its own
+unique index -- `idx_users_arma_id`, `apps/website/api/migrations/0001_initial_schema.sql:887`.
+ON CONFLICT arbitrates exactly ONE index. Two concurrent FIRST-TIME dev-logins against a cold database
+both take the INSERT path; the loser violates idx_users_arma_id, which the conflict clause does not
+cover, so Postgres raises 23505 instead of falling through to DO UPDATE. The handler maps it to 500.
+
+MEASURED from the Postgres log, not inferred:
+    ERROR:  duplicate key value violates unique constraint "idx_users_arma_id"
+    DETAIL: Key (arma_id)=(dev-arma-76561190000000001) already exists.
+    STATEMENT: INSERT INTO users (..., arma_id, ...) ... ON CONFLICT (discord_id) DO UPDATE SET ...
+Symptom seen by the caller: `dev-login did not mint a session ... status: 500`.
+
+SCOPE NOTE: dev-login is development-only (`APP_ENV=development`), so this is not a production
+outage -- but it is the front door every agent, gate and operator uses to get a session, and it fails
+exactly when the database is cold, which is exactly when the gate runs.
+
+FIX DIRECTIONS: arbitrate both indexes (or drop the fixed `arma_id` from the INSERT and let it be set
+only on first create), or make the dev user's `arma_id` a function of `discord_id` so the two indexes
+can never disagree. T-534 pinned the current literals with a Class-R test
+(`t534_dev_login_prime_literals_still_match_handler`) that greps dev.rs for both the literals AND the
+`ON CONFLICT (discord_id) DO UPDATE` shape -- IT WILL GO RED when you change this, deliberately.
+Update it in the same commit rather than deleting it.
+- **T-558** (deferred) — Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB [INFRA] — Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
+
+1. `apps/website/api/src/services/registry_import.rs:455` -- a THIRTIETH database consumer that the
+   T-542 Class-R guard cannot see. An in-crate `#[tokio::test]` reads TEST_DATABASE_URL raw and
+   migrates the operator's BASE database. It is the only DB test in the lib target, self-cleaning and
+   idempotent, so it is deterministic today -- and it now has the base database entirely to itself
+   because T-534 moved everything else onto per-binary DBs. The real gap:
+   `t542_no_raw_test_database_url_reads_outside_common` scans only `tests/*.rs`. Extend it to `src/`
+   and this class stops being invisible.
+
+2. `make test-it` now leaves 25 `rust_it_<suite>_it` databases behind. They are recreated per run so
+   they do not grow, but nothing prunes them -- the Makefile drops only `rust_it`. `Makefile` was
+   outside T-534's scope. (The GATE path is handled: T-534 extended `prune_old_gate_wave_dbs` in
+   wave.sh to reap derived names on the same keep-N-and-N-1 policy.)
+
+3. `tests/db_migrate.rs` and `tests/models_fromrow.rs` still SHARE one `MIGRATE_TEST_DATABASE_URL`.
+   Two binaries, one database -- the exact shape T-534 removed everywhere else. Deterministic today
+   only because cargo runs targets sequentially and both use `>=`/count assertions the sibling's rows
+   do not move. It survives on ordering, which is what this program keeps paying for.
+
+4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`
+   rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --
+   recorded so nobody rediscovers it as new.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

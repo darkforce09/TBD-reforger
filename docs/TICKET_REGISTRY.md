@@ -2673,7 +2673,7 @@ Needs a rollback / re-point handler in missions.rs **and** route registration in
 upsert_match uses parse_uuid_opt_strict and unit/source pins prove junk → BadRequest, but no integration test POSTs a malformed event_id/mission_id through the live route and asserts HTTP 400. RED if the handler call sites are deleted while unit helper tests remain: today the source pin covers that; an HTTP IT would close the residual.
 
 Repro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note absence of IT asserting status 400 on junk ids. |
-| T-534 | 3374 | ready | platform | IT suites still seed fixed arma_ids via shared seed_user (cross-binary race residual) | FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-479.
+| T-534 | 3374 | shipped | platform | IT suites still seed fixed arma_ids via shared seed_user (cross-binary race residual) | FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-479.
 
 T-479 fixed the events suite (unique_arma + DB_LOCK + release foreign holders). Other ITs (identity_link, factions, t350, t528, …) still pass fixed arma_id strings into shared common::seed_user. Cross-binary parallel cargo test can still trip idx_users_arma_id (admin_field flake class). Not caused by T-479 release of events armas.
 
@@ -2709,7 +2709,34 @@ per-binary serialisation -- simplest but slowest and only hides ordering, not sh
 collide on identity rows. (a)+(c) together is the durable answer.
 NOTE the existing allow-list guard in the suite (`Allowed names: rust_it, tbd_gate*, *_cold, *_it,
 *_probe`) is good and must survive whatever you do -- it is what stops a suite pointing at the live
-dev database. |
+dev database.
+
+== CORRECTED BY THE SLICE 2026-07-27, and the command center's escalation above was WRONG TWICE ==
+1. "cargo runs those binaries IN PARALLEL" is FALSE. Cargo runs test TARGETS ONE AT A TIME -- measured:
+   a failing run stops after the failing binary and per-target output blocks never interleave. The
+   concurrency is INSIDE a binary. So "one DB per binary" could not by itself have fixed either named
+   failure, and anyone reasoning from the escalation text above would have built the wrong thing.
+2. "Both pass in isolation" was ONE LUCKY RUN. `cargo test -p website-api --test admin_field` ALONE on
+   its own fresh cold DB failed 2 of 15 runs -- once on each of the two tests named above.
+
+THE ACTUAL ROOT CAUSE, measured from the Postgres log rather than inferred:
+    ERROR: duplicate key value violates unique constraint "idx_users_arma_id"
+    DETAIL: Key (arma_id)=(dev-arma-76561190000000001) already exists.
+`apps/website/api/src/handlers/dev.rs:41` INSERTs a FIXED `arma_id` with `ON CONFLICT (discord_id)`.
+ON CONFLICT arbitrates ONE index. Two concurrent FIRST-TIME dev-logins both take the INSERT path; the
+loser collides on idx_users_arma_id (0001_initial_schema.sql:887), which the clause does not cover, so
+Postgres raises 23505 instead of falling through to DO UPDATE and the handler 500s.
+That is an APPLICATION defect, not a test defect -- see T-557.
+
+WHY PER-BINARY DBs ALONE WOULD HAVE MADE IT WORSE, and this is the sharp part: before, only the FIRST
+binary met an empty users table, so there was one chance to race. Per-binary databases give every
+binary an empty table -- 25 chances. The dev-login prime therefore had to ship WITH the isolation.
+Measured alternative for the record: `--test-threads=1` = 23.1s vs 15.9s for isolation alone vs 10.6s
+baseline, and it converts a race into a STABLE LATENT ordering dependence, which is worse.
+
+A SECOND interference class surfaced only because isolation exposed it: POST /admin/roles/sync walks
+every users row, so two whole-table snapshot->sync->restore tests in the SAME binary race each other.
+Database isolation cannot reach that by construction; fixed with a suite lock in admin_field.rs. |
 | T-535 | 3375 | shipped | platform | T-385: live IT must assert GET /servers terrain from match join (positive) | FOUND by W50 adversarial verifier (MAJOR) after T-385.
 
 T-385 ships LEFT JOIN matches.terrain and Class-R/golden pins, but the only live IT path asserts terrain is null on create. A regression that always returns None (broken join / wrong column) stays green. Cure: seed a match with terrain + point server_statuses.current_match_id at it, then GET /servers and assert the row's terrain equals the seeded value (e.g. everon).
@@ -2907,6 +2934,55 @@ SCOPE: verify-t456, verify-t437, verify-t296, verify-t452, plus a sweep of scrip
 and scripts/platform/*.sh for any other `rg` use or `if grep ...; then fail; fi` shape. Decide
 deliberately whether the two dead scripts get wired into the gate or deleted -- do not leave them
 dead AND broken. |
+| T-557 | 3410 | deferred | platform | dev-login 500s on concurrent first use: ON CONFLICT (discord_id) cannot arbitrate idx_users_arma_id | A REAL APPLICATION DEFECT, found by T-534 while chasing a flaky gate. T-534 removed it from the TEST
+path with a serialised prime; the handler is unchanged and a real client still hits it.
+
+`apps/website/api/src/handlers/dev.rs:41` INSERTs a user with a FIXED `arma_id`
+(`dev-arma-76561190000000001`) and `ON CONFLICT (discord_id) DO UPDATE`. But `arma_id` carries its own
+unique index -- `idx_users_arma_id`, `apps/website/api/migrations/0001_initial_schema.sql:887`.
+ON CONFLICT arbitrates exactly ONE index. Two concurrent FIRST-TIME dev-logins against a cold database
+both take the INSERT path; the loser violates idx_users_arma_id, which the conflict clause does not
+cover, so Postgres raises 23505 instead of falling through to DO UPDATE. The handler maps it to 500.
+
+MEASURED from the Postgres log, not inferred:
+    ERROR:  duplicate key value violates unique constraint "idx_users_arma_id"
+    DETAIL: Key (arma_id)=(dev-arma-76561190000000001) already exists.
+    STATEMENT: INSERT INTO users (..., arma_id, ...) ... ON CONFLICT (discord_id) DO UPDATE SET ...
+Symptom seen by the caller: `dev-login did not mint a session ... status: 500`.
+
+SCOPE NOTE: dev-login is development-only (`APP_ENV=development`), so this is not a production
+outage -- but it is the front door every agent, gate and operator uses to get a session, and it fails
+exactly when the database is cold, which is exactly when the gate runs.
+
+FIX DIRECTIONS: arbitrate both indexes (or drop the fixed `arma_id` from the INSERT and let it be set
+only on first create), or make the dev user's `arma_id` a function of `discord_id` so the two indexes
+can never disagree. T-534 pinned the current literals with a Class-R test
+(`t534_dev_login_prime_literals_still_match_handler`) that greps dev.rs for both the literals AND the
+`ON CONFLICT (discord_id) DO UPDATE` shape -- IT WILL GO RED when you change this, deliberately.
+Update it in the same commit rather than deleting it. |
+| T-558 | 3411 | deferred | platform | Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB | Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
+
+1. `apps/website/api/src/services/registry_import.rs:455` -- a THIRTIETH database consumer that the
+   T-542 Class-R guard cannot see. An in-crate `#[tokio::test]` reads TEST_DATABASE_URL raw and
+   migrates the operator's BASE database. It is the only DB test in the lib target, self-cleaning and
+   idempotent, so it is deterministic today -- and it now has the base database entirely to itself
+   because T-534 moved everything else onto per-binary DBs. The real gap:
+   `t542_no_raw_test_database_url_reads_outside_common` scans only `tests/*.rs`. Extend it to `src/`
+   and this class stops being invisible.
+
+2. `make test-it` now leaves 25 `rust_it_<suite>_it` databases behind. They are recreated per run so
+   they do not grow, but nothing prunes them -- the Makefile drops only `rust_it`. `Makefile` was
+   outside T-534's scope. (The GATE path is handled: T-534 extended `prune_old_gate_wave_dbs` in
+   wave.sh to reap derived names on the same keep-N-and-N-1 policy.)
+
+3. `tests/db_migrate.rs` and `tests/models_fromrow.rs` still SHARE one `MIGRATE_TEST_DATABASE_URL`.
+   Two binaries, one database -- the exact shape T-534 removed everywhere else. Deterministic today
+   only because cargo runs targets sequentially and both use `>=`/count assertions the sibling's rows
+   do not move. It survives on ordering, which is what this program keeps paying for.
+
+4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`
+   rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --
+   recorded so nobody rediscovers it as new. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
