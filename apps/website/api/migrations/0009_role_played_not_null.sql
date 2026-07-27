@@ -37,16 +37,21 @@ ALTER TABLE public.match_player_stats
     ALTER COLUMN role_played SET DEFAULT '',
     ALTER COLUMN role_played SET NOT NULL;
 
--- ── CONSTRAINED IN 0015_matches_empty_text_missions_timestamps.sql (T-331) ─────
+-- ── NOT CONSTRAINED HERE, AND NOT FOR SEMANTIC REASONS ────────────────────────────────────
 -- `matches.winning_faction` and `matches.aar_replay_url` were the other two columns in the
 -- request. Semantically they belong here: the mod OMITS `winning_faction` from the payload
 -- when there is no winner (TBD_ResultsReporter.c:18,546), `outcome` already carries
 -- pending/failure/aborted, and the create path at telemetry.rs:519 ALREADY writes
 -- `COALESCE($8, '')` — `''` is the canonical "no winner" on the only write path there is.
 --
--- They were blocked on seeds/content_golden.sql inserting literal NULL under
--- `ON CONFLICT (id) DO UPDATE SET … = EXCLUDED.…`. T-331 fixed the three seed NULLs and
--- applied the DDL below in 0015 (kept here as the original derivation record):
+-- They are blocked on a file this slice does not own. seeds/content_golden.sql:358-369 inserts
+-- literal NULL into `aar_replay_url` (2 rows) and `winning_faction` (1 row), under
+-- `ON CONFLICT (id) DO UPDATE SET … = EXCLUDED.…` (:374-375). That makes BOTH halves fail:
+--   * WITH `NOT NULL`, the next `psql < seeds/content_golden.sql` dies on the INSERT at :355.
+--   * WITHOUT it, a backfill here is self-defeating — re-running the seed writes the NULLs
+--     straight back over it. The seed is where the operator's live NULLs came from.
+-- So the seed must change (three `NULL` → `''`) in the same landing as the constraint. When it
+-- does, this is the whole migration:
 --
 --   UPDATE matches SET winning_faction = '' WHERE winning_faction IS NULL;
 --   UPDATE matches SET aar_replay_url  = '' WHERE aar_replay_url  IS NULL;
