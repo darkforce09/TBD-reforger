@@ -293,6 +293,8 @@ verify-t180: ## T-180.10 Class-R coherency gate (ORBAT + Eden locks A–I)
 # `@true` / `echo PASS` / `#fake` must FAIL (same spirit as T-471/T-472).
 # T-485: wire verify-t468 itself into Makefile + ci-local + ci.yml so hollow
 # t438/t456 recipes fail outside wave.sh cold gate (same authority as T-467).
+# T-486: tripwire also self-pins verify-t468 recipe body — hollow `@true` must
+# FAIL when the script runs (wave.sh cold gate / direct bash).
 verify-t438: ## T-438/T-461 deploy-staging compose path (website/, not api/)
 	@bash scripts/mod/verify-t438-deploy-staging-compose-path.sh
 
@@ -302,7 +304,7 @@ verify-t440: ## T-440/T-478 faction library seed: live INSERT + `< seeds/…` re
 verify-t456: ## T-456/T-460 mission REST body size gate before ParseMissionJson
 	@bash scripts/mod/verify-t456-mission-rest-size-gate.sh
 
-verify-t468: ## T-468/T-476/T-485 CI schema parity + hollow verify-t438/t456 recipe tripwire
+verify-t468: ## T-468/T-476/T-485/T-486 CI schema parity + hollow recipe self-pin
 	@bash scripts/mod/verify-t468-ci-schema-parity.sh
 
 verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
