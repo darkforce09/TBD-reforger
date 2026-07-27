@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
 # T-468 — CI schema job must stay on `make ci-local-schema` (full gate set).
+# T-471 — Makefile `ci-local-schema` recipe must still invoke schema-validate +
+#         verify-citations (hollow `echo`-only recipe must FAIL).
 #
 # T-434 aligned `.github/workflows/ci.yml` to `make ci-local-schema` so CI runs
 # the full schema-validate set (incl. map-object-enums) + citations. Without a
 # tripwire, someone can revert the job to `cargo run -p xtask -- schema validate`
 # + citations only and the map-object-enums hole returns while CI stays green.
+# Wave-26 adversarial: target-name-only pin still PASS'd a hollow recipe —
+# T-471 closes that hole by inspecting the recipe body.
 #
 # Gate: bash scripts/mod/verify-t468-ci-schema-parity.sh
 # (No Makefile sibling — same shape as verify-t438 / verify-t456.)
 #
-# OWNS WIDEN: wave_plan T-468 lists `.github/workflows/ci.yml` +
-# `scripts/platform/wave.sh`; this script is the Class-R perturbation guard
-# (plus wiring into wave.sh gate_slice / cmd_gate).
+# OWNS: scripts/mod/verify-t468-ci-schema-parity.sh (script-only preferred;
+# Makefile only if recipe comment/pin needed). Wire: wave.sh gate_slice / cmd_gate.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -152,6 +155,8 @@ if narrow and not has_good:
 
 # Soft ban: if both good and a lone validate step exist, still require good (already checked).
 # Extra: ensure Makefile still defines the target we pin (repo contract).
+# T-471: also pin the *recipe body* — a hollow `ci-local-schema:\n\techo hollow-only`
+# still matched the target-name regex and left the wave-26 adversarial hole open.
 # path = <root>/.github/workflows/ci.yml → three dirname hops to repo root.
 root = path
 for _ in range(3):
@@ -165,6 +170,58 @@ else:
     if not re.search(r"(?m)^ci-local-schema:", mf):
         print("FAIL: Makefile missing `ci-local-schema:` target (CI pin would be vacuous)")
         fail = 1
+    else:
+        # Extract tab-indented recipe lines under ci-local-schema: (same shape as T-444 seed pin).
+        # Stop at the next non-comment target / blank-then-target; ignore recipe `#` comments.
+        recipe_lines = []
+        in_target = False
+        for line in mf.splitlines():
+            if re.match(r"^ci-local-schema:", line):
+                in_target = True
+                continue
+            if not in_target:
+                continue
+            # Next Make target (not a recipe line, not a lone comment).
+            if re.match(r"^[^\s#]", line) and not line.startswith("\t"):
+                break
+            if line.startswith("\t"):
+                recipe_lines.append(line)
+            # blank / # lines between recipe lines stay inside the target block
+
+        live = [
+            ln
+            for ln in recipe_lines
+            if not re.match(r"^\t\s*#", ln) and ln.strip() not in ("", "\t")
+        ]
+        if not live:
+            print("FAIL: Makefile `ci-local-schema:` has no tab-indented recipe body")
+            print("      hollow target names still green CI — require schema-validate + verify-citations")
+            fail = 1
+        else:
+            body = "\n".join(live)
+            # Live contract (Makefile ~399–401): $(MAKE) schema-validate + $(MAKE) verify-citations.
+            # Accept $(MAKE)/make invocations; reject echo-only / renamed stubs.
+            need = ("schema-validate", "verify-citations")
+            missing = []
+            for pin in need:
+                if not re.search(
+                    rf"(?m)^\t.*(?:\$\(MAKE\)|make)\s+{re.escape(pin)}\b",
+                    body,
+                ):
+                    missing.append(pin)
+            if missing:
+                print(
+                    "FAIL: Makefile `ci-local-schema:` recipe must invoke: "
+                    + ", ".join(missing)
+                )
+                print("      found recipe lines:")
+                for ln in live:
+                    print(f"        {ln!r}")
+                print(
+                    "      T-471: target name alone is hollow — recipe must call "
+                    "schema-validate + verify-citations (full gate set)."
+                )
+                fail = 1
 
 sys.exit(fail)
 PY
