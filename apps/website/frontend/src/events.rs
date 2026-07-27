@@ -32,6 +32,7 @@ use crate::datefmt::{countdown_label, format_local_datetime};
 use crate::dto::{EventHub, EventMissionDossier, Paginated};
 use crate::split_pane::{SplitPane, SplitPaneEmpty};
 use crate::ui::{badge_class, cn, AuthGate, MaterialIcon};
+use crate::url_guard;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -339,12 +340,12 @@ fn hub_detail(ev: EventHub) -> impl IntoView {
     view! {
         <div class="flex flex-col">
             <header class="relative overflow-hidden border-b border-outline-variant/30">
-                {(!banner.is_empty())
-                    .then(|| {
+                {banner_img_src(&banner)
+                    .map(|src| {
                         view! {
                             <>
                                 <img
-                                    src=banner.clone()
+                                    src=src.to_string()
                                     alt=""
                                     class="absolute inset-0 h-full w-full object-cover opacity-25 mix-blend-luminosity"
                                 />
@@ -473,5 +474,36 @@ fn mission_row(event_id: &str, m: EventMissionDossier) -> impl IntoView + use<> 
                 </div>
             </div>
         </div>
+    }
+}
+
+/// Event hub banner `<img src>`. **T-413** — empty / non-http → no banner (same empty state as before).
+fn banner_img_src(url: &str) -> Option<&str> {
+    url_guard::is_http_url(url).then_some(url)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::banner_img_src;
+
+    include!("../../shared/is_http_url_cases.rs");
+
+    #[test]
+    fn event_banner_emits_src_only_for_http_urls() {
+        let mut wrong = Vec::new();
+        for (input, should_img) in IS_HTTP_URL_CASES {
+            match (banner_img_src(input), should_img) {
+                (Some(_), false) => wrong.push(format!("  RENDERED AN IMG FOR {input:?}")),
+                (None, true) => wrong.push(format!("  refused a legitimate banner {input:?}")),
+                _ => {}
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "event banner sink wrong on {} of {} cases:\n{}",
+            wrong.len(),
+            IS_HTTP_URL_CASES.len(),
+            wrong.join("\n")
+        );
     }
 }

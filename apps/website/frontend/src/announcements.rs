@@ -32,6 +32,7 @@ use crate::datefmt::{format_local_datetime, format_short_date};
 use crate::dto::Paginated;
 use crate::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
 use crate::ui::{badge_class, AuthGate, MaterialIcon};
+use crate::url_guard;
 use leptos::prelude::*;
 use serde_json::Value;
 
@@ -304,11 +305,11 @@ fn reader(p: &Value) -> impl IntoView + use<> {
                     <span>{published}</span>
                 </div>
             </header>
-            {(!thumb.is_empty())
-                .then(|| {
+            {thumbnail_img_src(&thumb)
+                .map(|src| {
                     view! {
                         <img
-                            src=thumb
+                            src=src.to_string()
                             alt=""
                             class="max-h-72 w-full rounded-xl border border-white/10 object-cover"
                         />
@@ -317,6 +318,11 @@ fn reader(p: &Value) -> impl IntoView + use<> {
             <div class="flex flex-col gap-4">{body_paragraphs(&body)}</div>
         </article>
     }
+}
+
+/// Announcement detail thumbnail `src`. **T-413** — writer guarded by T-405; sink still checks.
+fn thumbnail_img_src(url: &str) -> Option<&str> {
+    url_guard::is_http_url(url).then_some(url)
 }
 
 #[cfg(test)]
@@ -344,5 +350,26 @@ mod tests {
         let from_body = json!({"snippet": "", "body": "a < b\n\nmore"});
         assert_eq!(preview_text(&from_body), "a < b");
         assert!(!preview_text(&from_body).contains("&lt;"));
+    }
+
+    include!("../../shared/is_http_url_cases.rs");
+
+    #[test]
+    fn announcement_thumbnail_emits_src_only_for_http_urls() {
+        let mut wrong = Vec::new();
+        for (input, should_img) in IS_HTTP_URL_CASES {
+            match (thumbnail_img_src(input), should_img) {
+                (Some(_), false) => wrong.push(format!("  RENDERED AN IMG FOR {input:?}")),
+                (None, true) => wrong.push(format!("  refused a legitimate thumb {input:?}")),
+                _ => {}
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "announcement thumbnail sink wrong on {} of {} cases:\n{}",
+            wrong.len(),
+            IS_HTTP_URL_CASES.len(),
+            wrong.join("\n")
+        );
     }
 }

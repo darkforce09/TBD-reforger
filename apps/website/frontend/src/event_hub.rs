@@ -25,6 +25,7 @@ use crate::datefmt::{countdown_label, format_local_datetime};
 use crate::dto::{DataEnvelope, EventHub, EventMissionDossier, Member, ModpackDto, OrbatSquad};
 use crate::nav::{has_min_role_authed, Role};
 use crate::ui::{cn, AuthGate, MaterialIcon, DEFAULT_AVATAR};
+use crate::url_guard;
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
 
@@ -104,6 +105,15 @@ fn faction_side(name: &str) -> u8 {
 fn sort_factions(mut factions: Vec<String>) -> Vec<String> {
     factions.sort_by(|a, b| faction_side(a).cmp(&faction_side(b)).then_with(|| a.cmp(b)));
     factions
+}
+
+/// Member-picker avatar `src`. **T-413** — http(s) Discord CDN only; else local SVG placeholder.
+fn safe_avatar_url(stored: &str) -> String {
+    if url_guard::is_http_url(stored) {
+        stored.to_string()
+    } else {
+        DEFAULT_AVATAR.to_string()
+    }
 }
 
 #[component]
@@ -1526,8 +1536,8 @@ fn AssignPicker(
                                     .map(|m| {
                                         let avatar = m
                                             .avatar_url
-                                            .clone()
-                                            .filter(|a| !a.is_empty())
+                                            .as_deref()
+                                            .map(safe_avatar_url)
                                             .unwrap_or_else(|| DEFAULT_AVATAR.to_string());
                                         let username = m.username.clone();
                                         let pick = m.clone();
@@ -1845,5 +1855,32 @@ mod tests {
             !code.contains(&one_shot_leader) && !code.contains(&one_shot_admin),
             "one-shot store.has_min_role freezes pre-bootstrap None as leader/admin"
         );
+    }
+
+    include!("../../shared/is_http_url_cases.rs");
+
+    #[test]
+    fn member_picker_avatar_src_only_keeps_http_urls() {
+        let mut wrong = Vec::new();
+        for (input, ok) in IS_HTTP_URL_CASES {
+            let got = safe_avatar_url(input);
+            if *ok {
+                if got != *input {
+                    wrong.push(format!("  dropped a legitimate avatar {input:?}"));
+                }
+            } else if got != DEFAULT_AVATAR {
+                wrong.push(format!(
+                    "  kept a non-http avatar {input:?} (got {got:?})"
+                ));
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "event_hub avatar sink wrong on {} of {} cases:\n{}",
+            wrong.len(),
+            IS_HTTP_URL_CASES.len(),
+            wrong.join("\n")
+        );
+        assert_eq!(safe_avatar_url(""), DEFAULT_AVATAR);
     }
 }

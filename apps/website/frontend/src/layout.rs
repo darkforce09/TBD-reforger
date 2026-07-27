@@ -5,6 +5,7 @@ use crate::app_routes::AppRoutes;
 use crate::auth::AuthStore;
 use crate::nav::{has_min_role, NavItem, Role, NAVIGATION};
 use crate::ui::{cn, MaterialIcon, DEFAULT_AVATAR};
+use crate::url_guard;
 use leptos::prelude::*;
 use leptos_router::hooks::use_location;
 
@@ -15,6 +16,18 @@ fn is_active(path: &str, current: &str) -> bool {
         current == "/"
     } else {
         current == path || current.starts_with(&format!("{path}/"))
+    }
+}
+
+/// Top-nav avatar `src`: http(s) Discord CDN, else the local SVG placeholder. **T-413.**
+///
+/// `DEFAULT_AVATAR` is a `data:` URL — it must bypass the scheme allowlist (it is ours, not a
+/// stored column). Only the *stored* `users.avatar_url` is filtered.
+fn safe_avatar_url(stored: &str) -> String {
+    if url_guard::is_http_url(stored) {
+        stored.to_string()
+    } else {
+        DEFAULT_AVATAR.to_string()
     }
 }
 
@@ -195,7 +208,7 @@ fn TopNav() -> impl IntoView {
                     let avatar = user
                         .as_ref()
                         .map(|u| u.avatar_url.clone())
-                        .filter(|s| !s.is_empty())
+                        .map(|u| safe_avatar_url(&u))
                         .unwrap_or_else(|| DEFAULT_AVATAR.to_string());
                     // StatusPill: linked iff arma_id is present/non-empty.
                     let arma_id = user.as_ref().and_then(|u| u.arma_id.clone()).filter(|s| !s.is_empty());
@@ -399,7 +412,8 @@ fn SidebarNav(
 
 #[cfg(test)]
 mod tests {
-    use super::{classify_frame, is_active, FrameKind};
+    use super::{classify_frame, is_active, safe_avatar_url, FrameKind};
+    use crate::ui::DEFAULT_AVATAR;
 
     #[test]
     fn is_active_dashboard_exact() {
@@ -425,5 +439,33 @@ mod tests {
         ));
         assert!(matches!(classify_frame("/"), FrameKind::Chrome));
         assert!(matches!(classify_frame("/missions"), FrameKind::Chrome));
+    }
+
+    include!("../../shared/is_http_url_cases.rs");
+
+    #[test]
+    fn topnav_avatar_src_only_keeps_http_urls() {
+        let mut wrong = Vec::new();
+        for (input, ok) in IS_HTTP_URL_CASES {
+            let got = safe_avatar_url(input);
+            if *ok {
+                if got != *input {
+                    wrong.push(format!("  dropped a legitimate avatar {input:?}"));
+                }
+            } else if got != DEFAULT_AVATAR {
+                wrong.push(format!(
+                    "  kept a non-http avatar {input:?} (got {got:?})"
+                ));
+            }
+        }
+        assert!(
+            wrong.is_empty(),
+            "layout avatar sink wrong on {} of {} cases:\n{}",
+            wrong.len(),
+            IS_HTTP_URL_CASES.len(),
+            wrong.join("\n")
+        );
+        // Empty → placeholder (same as before T-413).
+        assert_eq!(safe_avatar_url(""), DEFAULT_AVATAR);
     }
 }
