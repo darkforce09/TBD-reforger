@@ -13683,6 +13683,28 @@
       ],
       "executor": "claude-code",
       "priority": 2
+    },
+    {
+      "id": "T-526",
+      "title": "W46 hotfix: rustfmt mission_title_prefer.rs after T-522",
+      "summary": "Wave 46 cold gate FAIL fmt after T-522/523 merge. apps/website/frontend/src/mission_title_prefer.rs fails rustfmt --check (split chain wrapping in adopt_payload_wires_prefer_helper). Cure: rustfmt that file only. Owns: apps/website/frontend/src/mission_title_prefer.rs.",
+      "program": "platform",
+      "surfaces": [
+        "FE",
+        "tests"
+      ],
+      "impact": [
+        "frontend",
+        "tests"
+      ],
+      "status": "running",
+      "order": 3366,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
     }
   ]
 }

@@ -324,3 +324,4 @@
 46	T-523	W46 hotfix: T-515 db_migrate claim body must strip SQL comments	scripts/platform/wave.sh
 99	T-524	T-505 compile.rs title known-keys lockstep	crates/map-engine-core/src/mission/compile.rs
 99	T-525	content_golden obsolete two-seat comments after T-511	apps/website/api/seeds/content_golden.sql
+46	T-526	W46 hotfix rustfmt mission_title_prefer after T-522	apps/website/frontend/src/mission_title_prefer.rs
