@@ -374,10 +374,11 @@ pub fn scan_cargo_capacity(payload: &Value, catalog: &CargoPhysCatalog) -> Vec<S
     let mut out = Vec::new();
     for (i, sl) in slots.iter().enumerate() {
         if out.len() >= MAX_REPORTED {
-            out.push(format!(
+            out.push(
                 "/editor: further slot(s) carry over-capacity cargo — fix the ones above and save \
                  again to see the rest"
-            ));
+                    .to_string(),
+            );
             break;
         }
         let Some(lo) = sl.get("loadout").filter(|v| v.is_object()) else {
@@ -638,7 +639,10 @@ mod tests {
         );
         assert!(d[0].contains("240 / 200 cm³"), "{d:?}");
         assert!(d[0].contains("Plate Carrier"), "{d:?}");
-        assert!(!d[0].contains("kg"), "weight under limit must stay quiet: {d:?}");
+        assert!(
+            !d[0].contains("kg"),
+            "weight under limit must stay quiet: {d:?}"
+        );
         assert!(d[0].contains(CARGO_CAPACITY_CAVEAT), "{d:?}");
     }
 
@@ -666,11 +670,7 @@ mod tests {
         let cat = catalog_fixture();
         let heavy = json!([{"container": "vest", "item": "mag", "qty": 40}]);
         // No garment worn.
-        assert!(scan_cargo_capacity(
-            &slot_with_cargo(json!({}), heavy.clone()),
-            &cat
-        )
-        .is_empty());
+        assert!(scan_cargo_capacity(&slot_with_cargo(json!({}), heavy.clone()), &cat).is_empty());
         // Garment worn but catalog has no maxima for it.
         let mut cat2 = catalog_fixture();
         cat2.insert(
@@ -680,11 +680,10 @@ mod tests {
                 ..CargoPhys::default()
             },
         );
-        assert!(scan_cargo_capacity(
-            &slot_with_cargo(json!({"vest": "plain_rn"}), heavy),
-            &cat2
-        )
-        .is_empty());
+        assert!(
+            scan_cargo_capacity(&slot_with_cargo(json!({"vest": "plain_rn"}), heavy), &cat2)
+                .is_empty()
+        );
     }
 
     #[test]

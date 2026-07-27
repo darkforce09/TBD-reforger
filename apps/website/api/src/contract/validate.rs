@@ -102,11 +102,17 @@ pub fn validate_mission_editor_payload_with_catalog(
     catalog: &CargoPhysCatalog,
 ) -> Result<Vec<String>, ContractError> {
     static V: OnceLock<Result<Validator, String>> = OnceLock::new();
-    run_parsed(&V, EDITOR_SCHEMA, raw, "payload is not valid JSON", |instance| {
-        let mut d = wire_safety::scan_editor_payload(instance);
-        d.extend(wire_safety::scan_cargo_capacity(instance, catalog));
-        d
-    })
+    run_parsed(
+        &V,
+        EDITOR_SCHEMA,
+        raw,
+        "payload is not valid JSON",
+        |instance| {
+            let mut d = wire_safety::scan_editor_payload(instance);
+            d.extend(wire_safety::scan_cargo_capacity(instance, catalog));
+            d
+        },
+    )
 }
 
 /// T-450 — mirrors `TBD_MissionLoader.MISSION_FILE_MAX_BYTES` (`8 * 1024 * 1024`) and
