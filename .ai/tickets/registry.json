@@ -7746,7 +7746,7 @@
       "impact": [
         "registry-hygiene"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2550,
       "stream": "infra",
       "targets": [
@@ -8454,7 +8454,7 @@
       "impact": [
         "registry-hygiene"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2920,
       "stream": "infra",
       "targets": [
@@ -8473,7 +8473,7 @@
       "impact": [
         "contract"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2930,
       "stream": "mission-creator",
       "targets": [
@@ -12004,7 +12004,7 @@
     {
       "id": "T-449",
       "title": "Wire ./scripts/ticket check to .ai/tickets/schema.json",
-      "summary": "Residual from T-273 / wave 15 adversarial NIT (also T-237 territory). Regenerated schema validates 423 tickets via python jsonschema, but xtask/src/check.rs never loads .ai/tickets/schema.json — wave gate ticket registry PASS does not examine the schema file.\n\nRepro: break schema.json required fields; ./scripts/ticket check still OK; python jsonschema fails.\n\nCure: load Draft 2020-12 schema in ticket check (or make verify-ticket-schema target + wave gate step).",
+      "summary": "Residual from T-273 / wave 15 adversarial NIT (also T-237 territory). Regenerated schema validates 423 tickets via python jsonschema, but xtask/src/check.rs never loads .ai/tickets/schema.json — wave gate ticket registry PASS does not examine the schema file.\n\nRepro: break schema.json required fields; ./scripts/ticket check still OK; python jsonschema fails.\n\nCure: load Draft 2020-12 schema in ticket check (or make verify-ticket-schema target + wave gate step).\n\nCANCELLED 2026-07-27: duplicate of T-237 (promoted wave 16).",
       "program": "platform",
       "surfaces": [
         "INFRA"
@@ -12012,7 +12012,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "cancelled",
       "order": 3288,
       "stream": "web-platform",
       "targets": [

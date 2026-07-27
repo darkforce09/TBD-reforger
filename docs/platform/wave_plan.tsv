@@ -167,15 +167,15 @@
 6	T-271	Modpack CRUD plus workshop-id columns	apps/website/api/src/handlers/modpacks.rs; apps/website/api/migrations; apps/website/api/src/models/content.rs; apps/website/api/src/app.rs; apps/website/api/tests/modpacks_crud.rs; apps/website/frontend/src/modpacks.rs
 6	T-272	Server-status producer — close the SSE loop	apps/website/api/src/realtime.rs; apps/website/frontend/src/sse.rs; apps/website/api/src/bin/api.rs; apps/website/api/src/handlers/telemetry.rs; apps/website/api/.env.example
 6	T-273	schema.json is a month stale and would now reject nearly every ticket	.ai/tickets/schema.json
-6	T-274	Record the untracked spawn-determinism program	scripts/mod/tbd-spawn-determinism.sh
-6	T-275	Declare mod-enforced limits in the schema	apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c; apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c
+6	T-274	Record the untracked spawn-determinism program	scripts/mod/tbd-spawn-determinism.sh; Makefile; docs/mod
+6	T-275	Declare mod-enforced limits in the schema	apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c; apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c; packages/tbd-schema/schema/mission.schema.json
 7	T-276	Close the marker.icon vocabulary	apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerIcons.c
 7	T-277	27.4% of the shipped map catalogue is unclassified	packages/tbd-schema/rules/prefab-classify.json
 7	T-190	Two browser tabs on one mission silently clobber each other	apps/website/frontend/src/yrs_persist.rs
 7	T-242	Add vehicle and entity inventory to the entity schema	crates/map-engine-core/src/doc/store.rs
 7	T-278	No paks-to-registry pipeline and no Makefile target to regenerate the catalogue	tools/tbd-tools/src/world
 7	T-279	Discord bot — greenfield	apps/website/api/src/config.rs
-7	T-237	ticket ship verifies nothing and check ignores the schema	xtask/src/cmds.rs; xtask/src/check.rs
+7	T-237	ticket ship verifies nothing and check ignores the schema	xtask/src/cmds.rs; xtask/src/check.rs; .ai/tickets/schema.json
 7	T-280	No observability, no backups, no durable rate limiting	apps/website/api/src/app.rs; apps/website/api/Cargo.toml
 8	T-282	Mission version history — differ and timeline	apps/website/frontend/src/missions.rs
 8	T-283	Mission review and commenting workflow	apps/website/api/src/handlers/approvals.rs; apps/website/api/src/handlers/missions.rs
