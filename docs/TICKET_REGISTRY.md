@@ -2673,11 +2673,43 @@ Needs a rollback / re-point handler in missions.rs **and** route registration in
 upsert_match uses parse_uuid_opt_strict and unit/source pins prove junk → BadRequest, but no integration test POSTs a malformed event_id/mission_id through the live route and asserts HTTP 400. RED if the handler call sites are deleted while unit helper tests remain: today the source pin covers that; an HTTP IT would close the residual.
 
 Repro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note absence of IT asserting status 400 on junk ids. |
-| T-534 | 3374 | deferred | platform | IT suites still seed fixed arma_ids via shared seed_user (cross-binary race residual) | FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-479.
+| T-534 | 3374 | ready | platform | IT suites still seed fixed arma_ids via shared seed_user (cross-binary race residual) | FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-479.
 
 T-479 fixed the events suite (unique_arma + DB_LOCK + release foreign holders). Other ITs (identity_link, factions, t350, t528, …) still pass fixed arma_id strings into shared common::seed_user. Cross-binary parallel cargo test can still trip idx_users_arma_id (admin_field flake class). Not caused by T-479 release of events armas.
 
-Cure: migrate remaining suites to unique_arma / suite Mutex, or document denylist of fixed strings. Repro: rg 'seed_user\(' apps/website/api/tests \| rg -v unique_arma. |
+Cure: migrate remaining suites to unique_arma / suite Mutex, or document denylist of fixed strings. Repro: rg 'seed_user\(' apps/website/api/tests \| rg -v unique_arma.
+
+== ESCALATED TO P0 2026-07-27 — THIS MAKES THE WAVE GATE NON-DETERMINISTIC ==
+Measured while gating T-556. The gate's `test api` step runs every website-api test BINARY against
+ONE shared TBD_GATE_DB, and cargo runs those binaries IN PARALLEL. Two runs over the same tree, each
+against its own FRESH COLD database, failed on DIFFERENT tests:
+    wave gate  (tbd_w556_cold)  -> FAILED: admin_field::ban_reason_survives_a_malformed_reban
+    repro      (tbd_diag3_cold) -> FAILED: misc_integration::empty_snapshot_admin_survives_roles_sync
+BOTH PASS IN ISOLATION on a fresh DB:
+    cargo test -p website-api --test admin_field ban_reason_survives_a_malformed_reban  -> ok 1 passed
+    cargo test -p website-api --test admin_field                                        -> ok 7 passed
+So this is not residue accumulating across runs (that is T-410/T-411, already shipped) -- it is
+CROSS-BINARY INTERFERENCE WITHIN A SINGLE RUN, and a fresh database does not help.
+
+WHY THIS IS NOW P0 RATHER THAN HYGIENE: the wave gate's verdict is not reproducible. Every wave
+carries a chance of a FALSE RED, which is the failure mode that teaches agents gate failures are
+noise (see T-409). And the same interference could equally mask a real failure -- a gate whose
+verdict depends on scheduling cannot be trusted in either direction, which is the standing
+always-BLOCKER class in PLATFORM_FACTORY.md.
+
+REPRO (either outcome proves it -- run twice, expect different or no failures):
+    psql -c 'CREATE DATABASE tbd_x_cold OWNER tbd'
+    TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/tbd_x_cold?sslmode=disable \
+      cargo test -q -p website-api --tests
+
+FIX DIRECTIONS, pick deliberately: (a) one database per test BINARY, derived from the binary name --
+cheapest, matches the existing `*_cold`/`*_it` allow-list guard; (b) `--test-threads=1` plus
+per-binary serialisation -- simplest but slowest and only hides ordering, not sharing;
+(c) stop seeding FIXED arma_ids / discord ids (the original diagnosis below) so binaries cannot
+collide on identity rows. (a)+(c) together is the durable answer.
+NOTE the existing allow-list guard in the suite (`Allowed names: rust_it, tbd_gate*, *_cold, *_it,
+*_probe`) is good and must survive whatever you do -- it is what stops a suite pointing at the live
+dev database. |
 | T-535 | 3375 | shipped | platform | T-385: live IT must assert GET /servers terrain from match join (positive) | FOUND by W50 adversarial verifier (MAJOR) after T-385.
 
 T-385 ships LEFT JOIN matches.terrain and Class-R/golden pins, but the only live IT path asserts terrain is null on create. A regression that always returns None (broken join / wrong column) stays green. Cure: seed a match with terrain + point server_statuses.current_match_id at it, then GET /servers and assert the row's terrain equals the seeded value (e.g. everon).
@@ -2826,7 +2858,7 @@ The command center applied two throwaway fixes by hand to restore the dev API, t
   - 0009 is back to its BROKEN (post-T-331) state on disk -- the defect is live and reproducible.
   - The dev database row was already fixed: `UPDATE orbat_slots SET assigned_to=NULL WHERE id='00000000-0000-4000-5000-000000000015'`. So defect 2 NO LONGER REPRODUCES on the dev DB. Recreate it in a scratch DB to verify your fix -- do not assume it is gone because the dev DB is clean.
   - The running API on :8080 booted from that hand-patched state. It will fail to boot again on restart until this ships. |
-| T-556 | 3401 | ready | platform | BLOCKER: the gate depends on `rg`, which is installed nowhere — it resolves only via an agent-injected shell function | Found 2026-07-27 while gating T-555. **The wave gate is RED on merged main** and has been before T-555 touched anything — proven by running both scripts from a clean checkout with no slice changes (both exit 1).
+| T-556 | 3401 | shipped | platform | BLOCKER: the gate depends on `rg`, which is installed nowhere — it resolves only via an agent-injected shell function | Found 2026-07-27 while gating T-555. **The wave gate is RED on merged main** and has been before T-555 touched anything — proven by running both scripts from a clean checkout with no slice changes (both exit 1).
 
 === THE MECHANISM ===
 `ripgrep` is NOT INSTALLED. Not in the container, not on the host:

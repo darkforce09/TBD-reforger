@@ -204,11 +204,6 @@ Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/m
 upsert_match uses parse_uuid_opt_strict and unit/source pins prove junk → BadRequest, but no integration test POSTs a malformed event_id/mission_id through the live route and asserts HTTP 400. RED if the handler call sites are deleted while unit helper tests remain: today the source pin covers that; an HTTP IT would close the residual.
 
 Repro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note absence of IT asserting status 400 on junk ids.
-- **T-534** (deferred) — IT suites still seed fixed arma_ids via shared seed_user (cross-binary race residual) [API, tests] — FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-479.
-
-T-479 fixed the events suite (unique_arma + DB_LOCK + release foreign holders). Other ITs (identity_link, factions, t350, t528, …) still pass fixed arma_id strings into shared common::seed_user. Cross-binary parallel cargo test can still trip idx_users_arma_id (admin_field flake class). Not caused by T-479 release of events armas.
-
-Cure: migrate remaining suites to unique_arma / suite Mutex, or document denylist of fixed strings. Repro: rg 'seed_user\(' apps/website/api/tests | rg -v unique_arma.
 - **T-540** (deferred) — T-384 Class-R only — no IT for attendance retract on match re-point [API, tests] — FOUND by W53 adversarial verifier (CLEAN MINOR-NIT) after T-384.
 
 ingest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1→EV2 and asserts EV1 returns to registered while EV2 is attended.

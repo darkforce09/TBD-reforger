@@ -177,11 +177,18 @@ record the correction in the ticket and tell the operator plainly.
   brief agents to check the file rather than believe the tool.
 - **`make` is not on the container PATH either**, alongside cargo/rustfmt/xtask. Route it through
   `distrobox-host-exec` like the rest. Only `wave.sh` runs directly, never wrapped.
-- **`rg` is container-only; `cargo` is host-only; `grep` exists on both.** A gate that needs both a
-  static scan and a cargo call cannot use ripgrep — `if rg …; then fail; fi` exits 127 when absent,
-  the `if` is false, and the ban prints OK having compared nothing. Use `grep -E` and read the exit
-  status: 0 match / 1 no-match / 2 file missing / 127 tool absent. Only the last two are new
-  information and both must fail closed.
+- **`rg` DOES NOT EXIST — corrected 2026-07-27 (T-556). The earlier claim here that it was
+  "container-only" was WRONG and this doc propagated it into a code comment.** ripgrep is installed
+  nowhere: not in the container, not on the host, no rpm. `command -v rg` succeeds only because an
+  agent harness (Claude Code, and presumably Cursor) injects a shell **function** named `rg` that
+  routes to its own bundled copy. `type rg` → "rg is a function"; `bash -c 'command -v rg'` → absent,
+  because functions are not exported to subshells. **So any gate using `rg` passes only when an AI
+  agent is the thing invoking it** — measured: two gate steps were red on `main` for exactly this.
+  Use `grep -E` (container, host, and every CI runner) and **read the exit status** rather than
+  collapsing it to a boolean: 0 match / 1 no-match / 2 file missing / 127 tool absent. Only the last
+  two are new information and both must fail closed, naming which happened.
+  The shared helpers are `scripts/mod/lib/gate-grep.sh` (`gate_ban`, `gate_require`, …) — use them
+  rather than hand-rolling, which is how this defect kept being reborn by copy-paste.
 
 ## The shape
 

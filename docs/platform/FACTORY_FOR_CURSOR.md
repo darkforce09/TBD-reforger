@@ -457,7 +457,7 @@ Co-Authored-By: Grok <noreply@x.ai>
 | `slice-worktree.sh create` prints usage and exits 2 | The subcommand is **`new`** |
 | The shared `tbd_gate_it` DB reds the gate | Fresh cold DB + `TBD_GATE_DB`, every gate |
 | A `git checkout` restore does not re-trigger a cargo rebuild | `touch` the file after restoring. The **green** half of a perturbation loop can be stale |
-| `rg` is container-only; `cargo` is host-only; `grep` is on both | Use `grep -E` in anything that must do both |
+| **`rg` does not exist anywhere** — it is a shell *function* injected by the agent harness, so a gate using it passes only when an AI runs it (T-556) | Use `grep -E` and read the exit status (0/1/2/127), or the helpers in `scripts/mod/lib/gate-grep.sh`. Never `if rg …; then fail; fi` |
 | `make ci-local` | **Never.** Red for weeks for unrelated reasons; 15–40 min |
 | A rate-limited subagent reports `completed` | Treat a rate-limit/reset string as a **FAILURE**, not a finished agent |
 

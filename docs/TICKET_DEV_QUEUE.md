@@ -14,58 +14,46 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 
-## T-556 — BLOCKER: the gate depends on `rg`, which is installed nowhere — it resolves only via an agent-injected shell function
+## T-534 — IT suites still seed fixed arma_ids via shared seed_user (cross-binary race residual)
 
 - **Slice spec:** ``
 - **Program hub:** ``
-- **Branch:** `ticket/T-556`
+- **Branch:** `ticket/T-534`
 - **Targets:** website
-- **Summary:** Found 2026-07-27 while gating T-555. **The wave gate is RED on merged main** and has been before T-555 touched anything — proven by running both scripts from a clean checkout with no slice changes (both exit 1).
+- **Summary:** FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-479.
 
-=== THE MECHANISM ===
-`ripgrep` is NOT INSTALLED. Not in the container, not on the host:
-    rpm -q ripgrep                      -> not installed
-    ls /usr/bin/rg /usr/local/bin/rg    -> absent
-    distrobox-host-exec sh -c 'ls /usr/bin/rg'  -> not on host either
-`command -v rg` SUCCEEDS in an agent shell only because Claude Code (and presumably Cursor) inject a
-shell FUNCTION named `rg` that routes to the agent binary's bundled ripgrep. Proof:
-    type rg          -> "rg is a function"
-    bash -c 'command -v rg'  -> ABSENT   (functions are not exported to subshells)
+T-479 fixed the events suite (unique_arma + DB_LOCK + release foreign holders). Other ITs (identity_link, factions, t350, t528, …) still pass fixed arma_id strings into shared common::seed_user. Cross-binary parallel cargo test can still trip idx_users_arma_id (admin_field flake class). Not caused by T-479 release of events armas.
 
-So every gate script using `rg` passes ONLY when invoked from a shell where an AI agent harness
-happens to have defined that shim. Change how the gate is invoked and the verdict changes. That is a
-direct violation of acceptance-gates-reproducible.mdc rule 1 -- the rule that exists BECAUSE an
-unpinned external tool once turned a routine ticket into a multi-hour session.
+Cure: migrate remaining suites to unique_arma / suite Mutex, or document denylist of fixed strings. Repro: rg 'seed_user\(' apps/website/api/tests | rg -v unique_arma.
 
-=== WHAT IS RED RIGHT NOW ON MAIN ===
-    T-456 REST size gate   FAIL   scripts/mod/verify-t456-mission-rest-size-gate.sh:115  "rg: command not found"
-    T-437 destroy inert    FAIL   scripts/mod/verify-t437-destroy-inert-diagnostics.sh
-T-437's trace is less obviously rg-only -- its RED proofs fire as expected and its GREEN proof prints
-PASS, yet the script returns 1. DIAGNOSE IT SEPARATELY rather than assuming it is the same cause.
+== ESCALATED TO P0 2026-07-27 — THIS MAKES THE WAVE GATE NON-DETERMINISTIC ==
+Measured while gating T-556. The gate's `test api` step runs every website-api test BINARY against
+ONE shared TBD_GATE_DB, and cargo runs those binaries IN PARALLEL. Two runs over the same tree, each
+against its own FRESH COLD database, failed on DIFFERENT tests:
+    wave gate  (tbd_w556_cold)  -> FAILED: admin_field::ban_reason_survives_a_malformed_reban
+    repro      (tbd_diag3_cold) -> FAILED: misc_integration::empty_snapshot_admin_survives_roles_sync
+BOTH PASS IN ISOLATION on a fresh DB:
+    cargo test -p website-api --test admin_field ban_reason_survives_a_malformed_reban  -> ok 1 passed
+    cargo test -p website-api --test admin_field                                        -> ok 7 passed
+So this is not residue accumulating across runs (that is T-410/T-411, already shipped) -- it is
+CROSS-BINARY INTERFERENCE WITHIN A SINGLE RUN, and a fresh database does not help.
 
-=== CI IS EXPOSED, AND UNPINNED ===
-.github/workflows/ci.yml runs `verify-t456` (3 rg uses) on `ubuntu-latest` with NO ripgrep install
-step. Whether CI is green depends entirely on whether the runner image ships ripgrep that week. That
-is unpinned floating state, forbidden by the same rule. Either install it deliberately in the
-workflow (pinned) or remove the dependency.
+WHY THIS IS NOW P0 RATHER THAN HYGIENE: the wave gate's verdict is not reproducible. Every wave
+carries a chance of a FALSE RED, which is the failure mode that teaches agents gate failures are
+noise (see T-409). And the same interference could equally mask a real failure -- a gate whose
+verdict depends on scheduling cannot be trusted in either direction, which is the standing
+always-BLOCKER class in PLATFORM_FACTORY.md.
 
-=== TWO MORE SCRIPTS, SAME FAMILY, AND THEY ARE DEAD ===
-verify-t296-results-reporter-identity-comments.sh:21,25 and
-verify-t452-player-identity-link-comments.sh:21,29 use the FAIL-OPEN shape
-    if rg ...; then fail; fi
-With rg absent this exits 127, the `if` is false, and the ban prints OK HAVING COMPARED NOTHING.
-Both scripts are also wired to NOTHING -- not the gate, not ci.yml, not the Makefile. Dead gates
-carrying a known-broken shape, waiting to be wired up by someone who trusts them.
+REPRO (either outcome proves it -- run twice, expect different or no failures):
+    psql -c 'CREATE DATABASE tbd_x_cold OWNER tbd'
+    TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/tbd_x_cold?sslmode=disable \
+      cargo test -q -p website-api --tests
 
-=== THE FIX IS ALREADY WRITTEN ELSEWHERE ===
-T-216 solved exactly this in wave 5 for scripts/verify-t180-coherency.sh: drop `rg` for `grep -E`
-(present in container AND on host AND on every runner), and read the EXIT STATUS rather than
-collapsing it to a boolean --
-    0 = match | 1 = no match | 2 = target file missing | 127 = tool absent
--- with the last two failing CLOSED and naming which of the two happened. Patterns are identical in
-ERE. That fix did not propagate to scripts written afterwards; this ticket propagates it.
-
-SCOPE: verify-t456, verify-t437, verify-t296, verify-t452, plus a sweep of scripts/mod/verify-t*.sh
-and scripts/platform/*.sh for any other `rg` use or `if grep ...; then fail; fi` shape. Decide
-deliberately whether the two dead scripts get wired into the gate or deleted -- do not leave them
-dead AND broken.
+FIX DIRECTIONS, pick deliberately: (a) one database per test BINARY, derived from the binary name --
+cheapest, matches the existing `*_cold`/`*_it` allow-list guard; (b) `--test-threads=1` plus
+per-binary serialisation -- simplest but slowest and only hides ordering, not sharing;
+(c) stop seeding FIXED arma_ids / discord ids (the original diagnosis below) so binaries cannot
+collide on identity rows. (a)+(c) together is the durable answer.
+NOTE the existing allow-list guard in the suite (`Allowed names: rust_it, tbd_gate*, *_cold, *_it,
+*_probe`) is good and must survive whatever you do -- it is what stops a suite pointing at the live
+dev database.
