@@ -3104,15 +3104,13 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
         let html = eval_str(&h.page, "document.body.innerHTML").await?;
         // awaitPromise so async-IIFE probes can settle reactive updates between steps
         // (T-172 behavioral probes); plain values pass through unchanged. The raw value is
-        // echoed in the verdict so a diagnostic probe can return a JSON string.
+        // echoed in the verdict so a diagnostic probe can return a JSON string — but a string
+        // (or any object without a boolean `pass`) is NOT a pass (T-386).
         let assert_value = match &a.assert_js {
             Some(js) => Some(h.page.evaluate(js, true).await?),
             None => None,
         };
-        let assert_ok = assert_value.as_ref().map(|v| {
-            v.as_bool() == Some(true)
-                || !(v.is_null() || *v == json!(false) || *v == json!(0) || *v == json!(""))
-        });
+        let assert_ok = assert_value.as_ref().map(assert_js_ok);
         h.page.close().await;
 
         let found = if a.expect.is_empty() {
@@ -3374,6 +3372,23 @@ pub async fn smoke_perf(dist: &str, strict: bool) -> Result<u8> {
     code
 }
 
+/// T-386 — explicit `--assert-js` verdict. No truthiness.
+///
+/// Recognised **pass**: literal boolean `true`, or a JSON object whose `"pass"` field is
+/// boolean `true`. Recognised **fail**: literal `false` / `null` / `0` / `""`, an object with
+/// `"pass": false`, an object/string/array/number with no recognised verdict — including a
+/// diagnostic string echoed in `assertValue`. Pre-T-386 treated every non-null object as pass,
+/// so probes returning `{"pass":false,...}` exited 0.
+fn assert_js_ok(v: &Value) -> bool {
+    if let Some(b) = v.as_bool() {
+        return b;
+    }
+    if let Some(obj) = v.as_object() {
+        return obj.get("pass").and_then(Value::as_bool) == Some(true);
+    }
+    false
+}
+
 /// Dispatch one smoke by suite name. `dist`/`path` fall back to the Node defaults.
 pub async fn run_smoke(name: &str, dist: Option<String>, path: Option<String>) -> Result<u8> {
     let dist = dist.unwrap_or_else(|| DIST_DEFAULT.to_string());
@@ -3415,4 +3430,63 @@ pub async fn editor_suite(dist: Option<String>) -> Result<u8> {
         }
     }
     Ok(0)
+}
+
+#[cfg(test)]
+mod assert_js_ok_tests {
+    use super::{assert_js_ok, to_code};
+    use serde_json::json;
+
+    /// T-386 Class-R: `{pass:false}` must fail assert_ok and map to nonzero exit.
+    #[test]
+    fn pass_false_object_fails() {
+        let v = json!({"pass": false, "failed": ["W1_reached_editor", "THROWN"]});
+        assert!(!assert_js_ok(&v), "pre-T-386 truthiness treated this as pass");
+        assert_eq!(to_code(assert_js_ok(&v)), 1);
+    }
+
+    /// T-386 Class-R: `{pass:true}` is the authoritative object pass.
+    #[test]
+    fn pass_true_object_ok() {
+        let v = json!({"pass": true, "checks": {"a": true}});
+        assert!(assert_js_ok(&v));
+        assert_eq!(to_code(assert_js_ok(&v)), 0);
+    }
+
+    /// T-386 Class-R: bare diagnostic object (no `pass`) must FAIL, not pass.
+    #[test]
+    fn bare_diagnostic_object_fails() {
+        let v = json!({"reached": true, "username": "cpl-authed", "failed": []});
+        assert!(
+            !assert_js_ok(&v),
+            "object without boolean pass must not truthiness-pass"
+        );
+        assert_eq!(to_code(assert_js_ok(&v)), 1);
+    }
+
+    #[test]
+    fn literal_true_ok_literal_false_fails() {
+        assert!(assert_js_ok(&json!(true)));
+        assert!(!assert_js_ok(&json!(false)));
+        assert_eq!(to_code(assert_js_ok(&json!(true))), 0);
+        assert_eq!(to_code(assert_js_ok(&json!(false))), 1);
+    }
+
+    #[test]
+    fn diagnostic_string_is_echoable_not_pass() {
+        // render_check still echoes assertValue; the string must not flip assertOk.
+        assert!(!assert_js_ok(&json!("all good, username=cpl")));
+        assert!(!assert_js_ok(&json!("")));
+        assert!(!assert_js_ok(&json!(null)));
+        assert!(!assert_js_ok(&json!(0)));
+        assert!(!assert_js_ok(&json!(1)));
+        assert!(!assert_js_ok(&json!([])));
+    }
+
+    /// Non-boolean `pass` is not a recognised verdict.
+    #[test]
+    fn pass_non_boolean_fails() {
+        assert!(!assert_js_ok(&json!({"pass": "yes"})));
+        assert!(!assert_js_ok(&json!({"pass": 1})));
+    }
 }
