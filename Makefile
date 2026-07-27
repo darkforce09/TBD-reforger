@@ -15,7 +15,7 @@ TBD_GIT_COMMON := $(shell git rev-parse --path-format=absolute --git-common-dir 
 TBD_REPO_ROOT := $(patsubst %/.git,%,$(TBD_GIT_COMMON))
 export CARGO_TARGET_DIR ?= $(TBD_REPO_ROOT)/target
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-t438 verify-t456 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke mod-spawn-determinism mod-spawn-determinism-preflight ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat verify-cargo-target print-cargo-target-dir reclaim-target-ci
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-t438 verify-t440 verify-t456 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke mod-spawn-determinism mod-spawn-determinism-preflight ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat verify-cargo-target print-cargo-target-dir reclaim-target-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -291,6 +291,9 @@ verify-t180: ## T-180.10 Class-R coherency gate (ORBAT + Eden locks A–I)
 # (T-463 wired them into the cold gate; pre-T-467 they had no make/CI authority).
 verify-t438: ## T-438/T-461 deploy-staging compose path (website/, not api/)
 	@bash scripts/mod/verify-t438-deploy-staging-compose-path.sh
+
+verify-t440: ## T-440 Makefile seed: must apply seeds/faction_library.sql + starter row pin
+	@bash scripts/mod/verify-t440-faction-library-seed.sh
 
 verify-t456: ## T-456/T-460 mission REST body size gate before ParseMissionJson
 	@bash scripts/mod/verify-t456-mission-rest-size-gate.sh
