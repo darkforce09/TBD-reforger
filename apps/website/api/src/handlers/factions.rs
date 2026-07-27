@@ -33,9 +33,21 @@ fn validated_side_name(doc: &Value) -> Result<(String, String), ApiError> {
         )));
     }
     // Safe unwraps: the schema just guaranteed both required string fields.
+    // Schema minLength:1 is a LENGTH check only — "\t", "   ", and "USA " all validate
+    // (T-358). Without a content check here, those bytes land in the UNIQUE (owner_id, name)
+    // key and defeat ON CONFLICT / the clash SELECT (same class as wiki slug T-349).
+    // Generated TbdFactionLibraryEntryName also rejects only len < 1 — do not rely on it.
     let side = doc["side"].as_str().unwrap_or_default().to_string();
-    let name = doc["name"].as_str().unwrap_or_default().to_string();
-    Ok((side, name))
+    let name = doc["name"].as_str().unwrap_or_default();
+    if name.trim().is_empty() {
+        return Err(ApiError::bad_request("name is required"));
+    }
+    if name != name.trim() {
+        return Err(ApiError::bad_request(
+            "name must not have leading or trailing whitespace",
+        ));
+    }
+    Ok((side, name.to_string()))
 }
 
 /// `GET /api/v1/factions` — the caller's faction library, side then name order.
