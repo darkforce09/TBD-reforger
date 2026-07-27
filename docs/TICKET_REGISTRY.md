@@ -2280,7 +2280,7 @@ CONFIRMED SOUND, do not re-audit: T-215's design call that a map-placed vehicle 
 Repro: cold-load /missions/:id/edit; Network shows full GET /api/v1/registry and /api/v1/registry/compat (~1.8k items / ~20k edges). Remount within the same wasm session does not re-fetch (covered by t245_registry_session).
 
 Cure lives in API pagination / narrower endpoints + frontend DTO/client — outside T-245 owns (mission_editor.rs only). |
-| T-428 | 3267 | deferred | platform | Schedule Discord role resync; replace placeholder leader snowflake in seed | Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.
+| T-428 | 3267 | ready | platform | Schedule Discord role resync; replace placeholder leader snowflake in seed | Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.
 
 Repro: grep apps/website/api and scripts for a timer/cron calling resync_all_roles — none. Seed row: ('1517290000000000000', 'Squad Leader', 'leader', 30). |
 | T-429 | 3268 | shipped | platform | oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects | Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.
@@ -2596,12 +2596,12 @@ Cure: change that verify-t180 pin to --features "doc mission" (same as place_/at
 Repro: soft check accepts 'oauth_state=; Path=/api; Max-Age=0; HttpOnly'.
 
 Cure: assert equality to OAUTH_STATE_CLEAR (or require Path=/ exact) in the unit helper. |
-| T-484 | 3323 | deferred | platform | Reject whitespace-only DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL | Wave 32 verifier residual (T-481 shipped client_id trim). Production validate still uses bare is_empty() for discord_client_secret and discord_redirect_url (config.rs ~120-125). Whitespace-only secret/redirect validates Ok — same disguise class as pre-T-481 client id.
+| T-484 | 3323 | ready | platform | Reject whitespace-only DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL | Wave 32 verifier residual (T-481 shipped client_id trim). Production validate still uses bare is_empty() for discord_client_secret and discord_redirect_url (config.rs ~120-125). Whitespace-only secret/redirect validates Ok — same disguise class as pre-T-481 client id.
 
 Repro: env=production, secret=" " or redirect=" " → validate() Ok.
 
 Cure: trim().is_empty() (or reject trim-empty) for both; Class-R pins. |
-| T-485 | 3324 | deferred | platform | Wire verify-t468 into Makefile / ci-local / CI so hollow t438/t456 recipes fail outside cold gate | Wave 32 verifier NIT (T-476). Tripwire lives in verify-t468-ci-schema-parity.sh and runs in wave.sh cold gate, but hollow `@true` verify-t438 still greens `make verify-t438` and GitHub mod-gates-hosted (ci.yml runs make verify-t438 only). Not in Makefile target, ci-local, or CI as a step that catches hollow recipes outside cold gate.
+| T-485 | 3324 | ready | platform | Wire verify-t468 into Makefile / ci-local / CI so hollow t438/t456 recipes fail outside cold gate | Wave 32 verifier NIT (T-476). Tripwire lives in verify-t468-ci-schema-parity.sh and runs in wave.sh cold gate, but hollow `@true` verify-t438 still greens `make verify-t438` and GitHub mod-gates-hosted (ci.yml runs make verify-t438 only). Not in Makefile target, ci-local, or CI as a step that catches hollow recipes outside cold gate.
 
 Repro: recipe `verify-t438:\n\t@true` → make verify-t438 rc=0; bash verify-t468 → FAIL.
 

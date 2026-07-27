@@ -11580,7 +11580,7 @@
         "auth",
         "admin"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3267,
       "stream": "web-platform",
       "targets": [
@@ -12780,7 +12780,7 @@
       "impact": [
         "website"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3323,
       "stream": "web-platform",
       "targets": [
@@ -12801,7 +12801,7 @@
       "impact": [
         "website"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3324,
       "stream": "web-platform",
       "targets": [
