@@ -21,10 +21,12 @@
 //!
 //! One more live defect in the same block: `server_fps` is `numeric(5,1)` on the wire (`58.7`), and
 //! reading it with `as_i64()` yields `None` → the card rendered a confident **`FPS: 0`** for a
-//! healthy server. It is read as an `f64` now. See the report for the matching `dto.rs` bug this
-//! shares a root cause with.
+//! healthy server. **T-360** typed `DashboardResponse::server_status` as `ServerStatusDto` (same
+//! shape as the SSE frame / `/servers` row status), so the card reads `server_fps: f64` directly —
+//! the T-232 `vf64` Value hand-parse is gone.
 //!
-//! Nested bodies stay `serde_json::Value` until their own DTOs are golden-proven.
+//! `next_event` / `my_assignment` / `recent_announcements` stay `serde_json::Value` until those
+//! nested bodies get their own DTOs.
 #![allow(dead_code)]
 use crate::datefmt::{countdown_label, format_short_date};
 use crate::dto::DashboardResponse;
@@ -51,17 +53,8 @@ fn format_bytes(bytes: i64) -> String {
 fn vstr(v: &Value, k: &str) -> String {
     v.get(k).and_then(Value::as_str).unwrap_or_default().into()
 }
-fn vint(v: &Value, k: &str) -> i64 {
-    v.get(k).and_then(Value::as_i64).unwrap_or(0)
-}
 fn vbool(v: &Value, k: &str) -> bool {
     v.get(k).and_then(Value::as_bool).unwrap_or(false)
-}
-/// `server_fps` is `numeric(5,1)` (`58.7`), so it must be read as a float — `as_i64()` returns
-/// `None` on a non-integral number and the `unwrap_or(0)` behind it printed `FPS: 0` for a healthy
-/// server. `as_f64()` accepts both an integral and a fractional JSON number.
-fn vf64(v: &Value, k: &str) -> Option<f64> {
-    v.get(k).and_then(Value::as_f64)
 }
 
 /// lib/format.ts `formatUptime` — HH:MM:SS zero-padded. A local copy of `server_intel.rs`'s
@@ -131,9 +124,8 @@ fn bento(d: DashboardResponse) -> impl IntoView {
     let announcements = d.recent_announcements;
 
     let player_pct = match &server {
-        Some(s) if vint(s, "max_players") > 0 => {
-            ((vint(s, "player_count") as f64 / vint(s, "max_players") as f64) * 100.0).round()
-                as i64
+        Some(s) if s.max_players > 0 => {
+            ((s.player_count as f64 / s.max_players as f64) * 100.0).round() as i64
         }
         _ => 0,
     };
@@ -211,7 +203,7 @@ fn bento(d: DashboardResponse) -> impl IntoView {
                             <div class=cn(
                                 &[
                                     "h-2 w-2 rounded-full",
-                                    if server.as_ref().is_some_and(|s| vbool(s, "is_online")) {
+                                    if server.as_ref().is_some_and(|s| s.is_online) {
                                         "bg-success tactical-pulse"
                                     } else {
                                         "bg-outline"
@@ -219,7 +211,7 @@ fn bento(d: DashboardResponse) -> impl IntoView {
                                 ],
                             )></div>
                             <span class="font-mono text-[10px] font-bold tracking-widest text-success">
-                                {if server.as_ref().is_some_and(|s| vbool(s, "is_online")) {
+                                {if server.as_ref().is_some_and(|s| s.is_online) {
                                     "ONLINE"
                                 } else {
                                     "OFFLINE"
@@ -230,11 +222,11 @@ fn bento(d: DashboardResponse) -> impl IntoView {
                     <div class="mt-2 flex flex-col">
                         <div class="mb-2 flex items-end justify-between">
                             <span class="font-mono text-3xl font-light text-on-surface">
-                                {server.as_ref().map(|s| vint(s, "player_count")).unwrap_or(0)}
+                                {server.as_ref().map(|s| s.player_count).unwrap_or(0)}
                                 // React renders the literal "/" and the number as SEPARATE text nodes.
                                 <span class="text-lg text-on-surface-variant">
                                     "/"
-                                    {server.as_ref().map(|s| vint(s, "max_players")).unwrap_or(0)}
+                                    {server.as_ref().map(|s| s.max_players).unwrap_or(0)}
                                 </span>
                             </span>
                             <span class="mb-1 font-mono text-xs text-on-surface-variant">"PLAYERS"</span>
@@ -250,10 +242,10 @@ fn bento(d: DashboardResponse) -> impl IntoView {
                         // "FPS: " literal + the value are separate text nodes (React JSX split).
                         <span>
                             "FPS: "
-                            // T-232: read as f64 — `numeric(5,1)` on the wire, so `as_i64()` was
-                            // always `None` and this printed `0`.
-                            {match server.as_ref().and_then(|s| vf64(s, "server_fps")) {
-                                Some(f) => format!("{f}"),
+                            // T-360: typed `ServerStatusDto.server_fps: f64` — no Value/`vf64`.
+                            // Absent status still shows "—" (no row); present always has the field.
+                            {match &server {
+                                Some(s) => format!("{}", s.server_fps),
                                 None => "—".to_string(),
                             }}
                         </span>
@@ -261,7 +253,7 @@ fn bento(d: DashboardResponse) -> impl IntoView {
                             "UPTIME: "
                             // T-232: both arms returned "—", so uptime never rendered at all.
                             {match &server {
-                                Some(s) => format_uptime(vint(s, "uptime_seconds")),
+                                Some(s) => format_uptime(s.uptime_seconds),
                                 None => "—".to_string(),
                             }}
                         </span>

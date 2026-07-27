@@ -35,13 +35,13 @@
 //! `/vehicle-database`, `/modpacks` (list), `/admin/audit-logs` — where `Value` is the accurate
 //! statement, not an escape hatch.
 //!
-//! Two known gaps left, both outside this slice's file ownership:
-//!   * `DashboardResponse::server_status` is still `Option<Value>` — the *third* read site of the
-//!     same telemetry payload. Typing it as `Option<ServerStatusDto>` is the obvious follow-up, but
-//!     `dashboard.rs` reads it through `Value` helpers (T-232's `vf64`) and would need changing with
-//!     it.
-//!   * `/members`, `/registry/compat` and `POST /fire-missions/solve` have live typed DTOs and **no
-//!     fixture at all**, so the gate cannot speak to them either way.
+//! **T-360** typed `DashboardResponse::server_status` as `Option<ServerStatusDto>` — the third
+//! read site of the same telemetry payload (alongside SSE + `/servers`). That removed the last
+//! `Value` sink that let a `server_fps` type drift hide from the dashboard golden.
+//!
+//! Remaining known gap (needs fixture files under `tests/fixtures/api/`, outside T-360 owns):
+//! `/members`, `/registry/compat` and `POST /fire-missions/solve` have live typed DTOs and **no
+//! fixture at all**, so the gate cannot speak to them either way.
 use crate::auth::User;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -453,14 +453,17 @@ pub struct ModpackDto {
 }
 
 /// `GET /dashboard` — the landing aggregate. Every field is always present (nulls stay null, not
-/// omitted), so none is `skip_serializing_if`. The three still-untyped nested bodies ride `Value`
-/// until their pages land (events / assignment / server-status); `current_modpack` is fully typed.
+/// omitted), so none is `skip_serializing_if`. `server_status` is the same telemetry shape as the
+/// SSE frame and `ServerRowDto::status` (**T-360** — was `Option<Value>`, which forced
+/// `dashboard.rs` through T-232's `vf64` hand-parse and hid the next `server_fps` drift from this
+/// golden). `next_event` / `my_assignment` / `recent_announcements` stay `Value` until those
+/// nested bodies get their own DTOs; `current_modpack` is fully typed.
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct DashboardResponse {
     pub next_event: Option<Value>,
     pub my_assignment: Option<Value>,
-    pub server_status: Option<Value>,
+    pub server_status: Option<ServerStatusDto>,
     pub current_modpack: Option<ModpackDto>,
     pub recent_announcements: Vec<Value>,
 }
@@ -1354,17 +1357,12 @@ pub(crate) mod r_api {
     }
     #[test]
     fn dashboard() {
-        // The four still-untyped nested bodies, named. `server_status` is the third read site of
-        // the telemetry payload the module header calls out — typing it as `ServerStatusDto` would
-        // delete that line from this list, which is the point of keeping the list exact.
+        // Three still-untyped nested bodies. `server_status` was the fourth (T-306 escape) —
+        // T-360 typed it as `ServerStatusDto`, so it MUST NOT appear here: if it returns to this
+        // list the structural half has gone blind to the third telemetry read site again.
         assert_golden::<DashboardResponse>(
             golden!("GET__dashboard.json"),
-            &[
-                "my_assignment",
-                "next_event",
-                "recent_announcements/*",
-                "server_status",
-            ],
+            &["my_assignment", "next_event", "recent_announcements/*"],
         );
     }
     #[test]
