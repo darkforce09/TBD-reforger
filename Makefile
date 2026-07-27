@@ -15,7 +15,7 @@ TBD_GIT_COMMON := $(shell git rev-parse --path-format=absolute --git-common-dir 
 TBD_REPO_ROOT := $(patsubst %/.git,%,$(TBD_GIT_COMMON))
 export CARGO_TARGET_DIR ?= $(TBD_REPO_ROOT)/target
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-t438 verify-t440 verify-t456 verify-t468 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke mod-spawn-determinism mod-spawn-determinism-preflight ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat verify-cargo-target print-cargo-target-dir reclaim-target-ci
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-t296 verify-t438 verify-t440 verify-t452 verify-t456 verify-t468 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke mod-spawn-determinism mod-spawn-determinism-preflight ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat verify-cargo-target print-cargo-target-dir reclaim-target-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -312,6 +312,16 @@ verify-t456: ## T-456/T-460 mission REST body size gate before ParseMissionJson
 
 verify-t468: ## T-468/T-476/T-485/T-486/T-489 CI schema parity (human entry; CI uses direct bash)
 	@bash scripts/mod/verify-t468-ci-schema-parity.sh
+
+# T-556: the two scripts that were both DEAD (no wave/CI/make caller) and FAIL-OPEN
+# (`if rg …; then fail; fi` reports clean when the tool is absent — and `rg` is installed
+# nowhere). Wired into wave.sh gate_slice + cmd_gate; these are the human entry points,
+# matching the T-467 shape for verify-t438/t456.
+verify-t296: ## T-296/T-556 ResultsReporter must not claim `#tbd link` is unimplemented
+	@bash scripts/mod/verify-t296-results-reporter-identity-comments.sh
+
+verify-t452: ## T-452/T-556 PlayerIdentity must not claim link-confirm is future work
+	@bash scripts/mod/verify-t452-player-identity-link-comments.sh
 
 verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
 	cargo run -q -p xtask -- schema terrain-manifest --terrain everon

@@ -1919,6 +1919,13 @@ gate_slice() {
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
   run "T-437 destroy inert"   bash "$ROOT/scripts/mod/verify-t437-destroy-inert-diagnostics.sh"
+  # T-556. The T-462/T-463 pattern once more, and the worst instance of it: these two
+  # existed, carried the fail-open `if rg …; then fail; fi` shape, AND were invoked by
+  # nothing — not this gate, not ci.yml, not the Makefile. So a reader who found them
+  # would have trusted a pair of bans that had never compared anything. Wired into both
+  # halves (here and cmd_gate) so neither path can drift green on its own.
+  run "T-296 reporter identity" bash "$ROOT/scripts/mod/verify-t296-results-reporter-identity-comments.sh"
+  run "T-452 player identity" bash "$ROOT/scripts/mod/verify-t452-player-identity-link-comments.sh"
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "SLICE GATE"; return 1; }
   gate_verdict PASS "SLICE GATE"
@@ -2074,6 +2081,10 @@ cmd_gate() {
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
   run "T-437 destroy inert"   bash "$ROOT/scripts/mod/verify-t437-destroy-inert-diagnostics.sh"
+  # T-556. Cold-path twin of the gate_slice runs above — the two scripts that were dead
+  # AND fail-open. Both halves, for the T-478 reason: one path alone can drift green.
+  run "T-296 reporter identity" bash "$ROOT/scripts/mod/verify-t296-results-reporter-identity-comments.sh"
+  run "T-452 player identity" bash "$ROOT/scripts/mod/verify-t452-player-identity-link-comments.sh"
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "GATE"; return 1; }
   gate_verdict PASS "GATE"
