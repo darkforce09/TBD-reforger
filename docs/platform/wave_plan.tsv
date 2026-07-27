@@ -353,3 +353,5 @@
 61	T-552	0015 migration comment still narrates deferred two-seat	apps/website/api/migrations
 99	T-553	TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual)	apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
 99	T-554	T-418 FE hydrate→briefing wire has no Class-R pin (core only)	apps/website/frontend/src/mission_hydrate.rs
+3	T-555	Migrations untested against a populated DB; two live defects	apps/website/api/migrations/0009_role_played_not_null.sql; apps/website/api/migrations/0017_orbat_slots_assigned_partial_unique.sql; scripts/platform/wave.sh
+3	T-556	Gate depends on rg, installed nowhere; two dead fail-open scripts	scripts/mod/verify-t456-mission-rest-size-gate.sh; scripts/mod/verify-t437-destroy-inert-diagnostics.sh; scripts/mod/verify-t296-results-reporter-identity-comments.sh; scripts/mod/verify-t452-player-identity-link-comments.sh

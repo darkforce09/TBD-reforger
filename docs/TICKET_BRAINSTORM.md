@@ -108,26 +108,6 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 Existing mitigations are correct and complete for a chat surface and should NOT be redone: the usage text warns, every failure path emits NewCodeAdvice(), success consumes the code in the same transaction so a leaked code is single-use and already spent, and the code is never logged (the HTTP_CODE_NULL branch deliberately drops the body because GetData() returns the REQUEST on transport failure).
 
 The real fix is an in-game UI field instead of a chat line, which is blocked on `resourceDatabase.rdb` regeneration — the same blocker TBD_AdminScreen carries (TBD_AdminCommands.c:23-25). OPERATOR/WORKBENCH ONLY.
-- **T-328** (deferred) — mcpd runs long-lived from the shared target dir, so it can serve unmerged code [CI] — FOUND by T-322 while isolating `make api`; flagged not fixed, different owner.
-
-`mcpd` (scripts/mod/mcp-daemon.sh) is the second long-lived process running out of the shared CARGO_TARGET_DIR, with a 4h max-life. It carries the same correctness exposure `make api` just had: the wave gate's `cargo test -p website-api` rewrites binaries in that tree after every land, so a daemon started before a land keeps running one tree's code while the repo has moved on.
-
-Note what T-322 established, so this is not fixed for the wrong reason: a rebuild does NOT kill a running process (cargo unlinks and re-links; the process keeps its inode, and the kernel refuses an in-place overwrite with ETXTBSY). The risk is STALENESS, not death — the daemon silently serving code that is no longer what main says.
-
-Apply the same fix: an inline CARGO_TARGET_DIR on whatever builds it, matching the shape used for `api`/`rust-api` in the Makefile and for target-gate-frontend / dist-gate-frontend in wave.sh.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-332** (deferred) — PATCH /events/:id cannot clear a briefing or banner, and a mission cannot be re-attached [API, FRONTEND] — Two gaps found by T-226 while wiring the Event Manager's edit path. Both are backend; T-226 owned only the frontend file and correctly left them.
-
-1. **No null path on PATCH.** Every field on `PatchEventInput` is `Option<String>` where None means 'do not touch', so there is no way to CLEAR `briefing` or `banner_image_url`. The UI T-226 shipped sends `""` to blank them, which works but is a workaround standing in for a missing contract. Decide the shape — a nullable wrapper, an explicit clear list, or bless `""` as the documented clear signal — then make the UI match.
-
-2. **A mission cannot be attached after creation.** `POST /events/:id/missions` has a caller ONLY in the create flow, so an admin who detaches the last mission must delete and recreate the whole operation. The endpoint is not dead, which is why it fell outside T-226's three bullets — but T-226 shipping the detach button makes this reachable and therefore much more visible than it was. Add an attach path to the Event Manager's Attached Missions roster, next to Detach.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
 - **T-333** (deferred) — Dialog installs a window-level Escape listener per instance, so Esc closes stacked dialogs [FRONTEND] — Pre-existing, found by T-226 while stacking a confirm on top of an edit dialog. `ui.rs` `Dialog` installs a window-level Escape listener PER INSTANCE, so pressing Esc with both open closes BOTH — the confirm and the form behind it. The operator loses unsaved edits to dismiss a confirmation.
 
 T-226 did not touch it (`ui.rs` was not in its owns) and worked around it by testing the confirm path via clicks. Fix: only the topmost dialog should handle Escape — a shared stack/depth counter, or listen on the dialog element rather than window and let it stop propagation.
@@ -146,117 +126,6 @@ Deliberately deferred rather than done: it is a cross-cutting move that would ha
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-337** (deferred) — Approving or rejecting a mission never touches updated_at [API] — FOUND by T-330 in its own file, and deliberately NOT shipped there because it is a write-semantics change rather than the read fix that ticket was for. Confirmed live, not inferred: approving a mission whose updated_at was NULL left it NULL.
-
-handlers/approvals.rs:105 (approve) and :170 (reject) both UPDATE the mission's status without setting `updated_at`. Every sibling write does — handlers/missions.rs:392 and :543 both set `updated_at = now()`.
-
-Consequences: the approvals queue orders by that timestamp (T-330 made the ORDER BY match the displayed value), so a mission's position never reflects that it was actioned; and any consumer using updated_at for cache invalidation or sync will not see an approval at all. It is also the reason a NULL can persist through a state transition that plainly modified the row.
-
-Small fix, but decide one thing deliberately: whether `updated_at` should also move on a REJECT, or whether rejection wants its own timestamp column. T-313 (the author can never read why their mission was rejected) is adjacent and may want the same row touched.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-339** (deferred) — Two gate-harness gaps T-320 could not reach from its own files [CI] — Both found and diagnosed by T-320, both left because the files were outside its ownership. Neither is red today; both are one small change.
-
-1. **`vsuite.rs:366` launches its own chromium** and therefore does NOT get T-320's `ensure_gate_font_cache()`. It is green only because it renders ordinary routes, which survive a zero-font environment — the mission editor is the one route that reaches a per-character fallback and aborts. Moving `ensure_gate_font_cache()` into `cdp::launch` closes it for EVERY caller in one line. `cdp.rs` was not T-320's file. Do this one first; it is the durable form of the fix.
-
-2. **`smokes.rs render_check` builds its Harness with `api_proxy: None`**, so render-check cannot reach an API at all (T-226 hit this independently and had to drive Chrome by hand). T-320 confirmed it is NOT a wedge — the editor boots, installs all three bridges and answers --assert-js with no backend — but any assertion needing live data is impossible. The flag has to be threaded through `bin/gate.rs` -> `RenderCheckArgs`, and `bin/gate.rs` was outside T-320's list.
-
-Leave `gate smoke hydrate` returning exit 2 on 'backend not reachable' alone: T-320 judged it correct, and it is — a data-safety gate that could not run must not report green.
-
-T-339 BITES HARDER THAN 'no API' — sharpened by T-338, which hit it and worked around it.
-
-With api_proxy: None, `--seed-auth` leaves the session HALF-hydrated: bootstrap sets `user` from localStorage but /me fails, so `access_token` stays None, `is_authenticated()` is false, and THE WHOLE USER MENU — including Sign Out — never renders. So it is not merely 'no live data'; any probe of an authenticated surface silently tests a signed-out page.
-
-T-338's workaround, using the app's own path, worth keeping until this is fixed: boot at `--path '/auth/callback#access_token=x&refresh_token=y&expires_at=2036-01-01T00:00:00Z' --seed-auth`, or history.pushState plus a synthetic PopStateEvent to it. set_tokens writes only the three token signals, so `user` is untouched.
-
-Two more harness facts from the same slice:
-  - leptos_router DROPS THE FRAGMENT on anchor-click navigation (location.hash empty, parse_callback_hash fails). pushState + PopStateEvent carries it.
-  - Navigating the TOP-LEVEL document into the editor and then doing IndexedDB + wasm-bridge work in that same document WEDGED the renderer on four separate attempts, including with per-step timeout races. Hosting the editor in an iframe and driving IDB from the top level is stable and boots in ~2 polls. Root cause not chased — it is not that ticket's, but it will bite the next frontend probe, and it is a DIFFERENT wedge from the fontconfig abort T-320 fixed.
-
-T-354 ASSESSED THE ONE-LINE MOVE AND RECOMMENDS AGAINST cdp::launch, with a real safety argument rather than a preference:
-
-Putting `ensure_gate_font_cache()` in cdp::launch would relocate an `unsafe { set_var }` from a single-threaded prologue INTO A MULTI-THREADED WINDOW — `launch` runs AFTER start_server has spawned live tokio tasks, and `reqwest::Client::new()` (which reads proxy env vars) is called inside `launch` itself. The existing SAFETY comment's claim that 'nothing else reads the environment' stops being true there. OnceLock limits the race to the first launch per process, which for vsuite is the only launch, but that is luck rather than design.
-
-BETTER ONE-LINER: `bin/gate.rs::main`, before `Runtime::block_on` — provably single-threaded, covers every subcommand permanently, and lets the other three call sites go. Both files are in this ticket's scope; T-354 changed neither.
-
-T-362 UNBLOCKED THIS AND SUPPLIED THE MECHANISM. It made ensure_gate_font_cache's decision independent of ambient env, so moving the call is now BEHAVIOUR-PRESERVING (before, a call from main vs from run() could see a different XDG_CACHE_HOME and pick differently). T-354's suggestion — call it in bin/gate.rs::main before Runtime::block_on — is correct and now safe to execute.
-
-BETTER STILL, and T-362 exposed `pub fn gate_font_cache_dir()` for exactly this: have cdp::launch do `.env("XDG_CACHE_HOME", doctor::gate_font_cache_dir())` on the Command rather than calling set_var at all. That closes vsuite's separate-chromium gap AND deletes the unsafe block AND removes the multi-threaded-window question entirely, instead of relocating it. Prefer this over the move.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-341** (deferred) — deployments.rs has a bare SELECT * and swallows decode errors, in the file held up as the good example [API] — FOUND by T-329 while fixing the sibling bug. The irony is the point: deployments.rs:103 is what every other read site was told to copy, and two other statements in the same file are the defects it was supposed to model against.
-
-1. **`deployments.rs:76`** — `SELECT event_registrations.*`, the identical bare-`*` shape that made dashboard.rs 500 in production. Benign only because `slot_id` HAPPENS to be `Option<Uuid>` today. Any future nullable column on that table makes this a live 500, and nothing warns you.
-
-2. **`deployments.rs:55`** — `mission_title_terrain` swallows every error via `.ok().flatten()`, so a decode failure degrades silently to `None` instead of surfacing. That is the same class as the gate defects this program has fixed repeatedly: something reporting success while examining less than it claims. A missing mission title reads as 'no mission' rather than 'this query is broken'.
-
-3. **`tests/dashboard_reads.rs:80`** asserts /dashboard is 200 but passes VACUOUSLY — same reachability defect T-329 found in null_tolerance.rs: it authenticates as one user and the assertion depends on rows belonging to another. Fix it the way T-329 fixed its own: mint a session whose identity owns the seeded rows.
-
-T-329's static enumerator will name :76 once it runs; check whether it is in the tolerance list and prune it as part of this.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-342** (deferred) — Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt [FRONTEND] — RECOMMENDED by T-323 with a hard engineering reason rather than a taste argument, which is why it is filed rather than dismissed.
-
-personnel.rs's ban flow uses `window.prompt`. T-323 established, by trying: **overriding window.prompt from JS does NOT intercept the web_sys call** (patching Window.prototype.prompt does not either), and with the CDP Page domain enabled and no dialog handler a real prompt BLOCKS THE RENDERER. So the browser gate cannot drive this destructive admin action at all, in principle, while it remains a native prompt. T-323 had to prove its fix with host-side unit tests on an extracted `classify_ban_reason` instead — good work, but it means the actual click path is untested forever.
-
-A shared Dialog/Sheet also lets the required-reason rule be INLINE — disable the confirm button — rather than teaching it through an error toast after the fact, which is what T-323 had to settle for. The platform already has the Dialog vocabulary; T-226's Event Manager edit dialog (landed today, 31/31 browser assertions) is the freshest reference.
-
-Two smaller items in the same file, worth folding in:
-  - personnel.rs:333 — the role editor still does `Err(_) => toasts.error("Failed to update role")`, discarding the server message exactly as the ban did. One-line api_error_message fix.
-  - 'Issue Warning' is still a mock toast although POST /admin/users/:id/warnings exists.
-
-Note the browser gate is HEALTHY as of T-320, so a Dialog version IS testable end to end — that is the payoff.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-350** (deferred) — Four sites report an identity as linked when it is whitespace [API] — FOUND by T-343. auth.rs:165, oauth.rs:152, me.rs:77 and me.rs:160 all gate "linked" on `Option::is_some()` with no content check. A legacy whitespace row therefore reads as LINKED at all four and RESOLVES at none — the exact silent-uselessness T-326 found, surviving in the read path after T-326 fixed the write path.
-
-Related and in the same family: events.rs:2039 — the roster guards `u.arma_id <> ''` rather than `btrim(...) <> ''` and emits the value verbatim as the seating key at :2050, while all five other arma_id sites trim. Latent for rows written today, live for anything predating T-326.
-
-Also: deployments.rs:241 `submit_leave.reason` has no guard — the fourth `reason` field in this family after T-218, T-317 and T-343.
-
-══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══
-T-343 found these and they bind on any ticket in this family:
-  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.
-  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.
-Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-353** (deferred) — Four SPA gaps T-232 could not reach from its own files [FRONTEND] — All found by T-232 while writing the populated render branches; each needs a file it did not own.
-
-1. **`event_hub.rs:182` `fn event_hub_view` is private.** The /events surface spec wants the full inline-ORBAT hub in the detail column. T-232 built a self-contained dossier summary plus a deep link instead. Making it `pub(crate)` gets events.rs to spec parity without duplicating anything.
-
-2. **No `/announcements/:id` route exists** (`router.rs`), so the dashboard intel feed row — spec element 20 — links to `/announcements` rather than deep-linking the post. Needs the route plus URL-driven selection in announcements.rs. Note T-232 deliberately left announcements.rs WITHOUT auto-selection, so a deep link is the intended way in.
-
-3. **`server_intel.rs:30` `format_uptime` is private**, so dashboard.rs now carries a duplicate. Wants a shared home in `datefmt.rs` — and `log_stamp` from audit.rs wants to go with it. Two definitions of a displayed timestamp drifting apart is the same class as the two definitions of 'a deployment' T-326 refused to create.
-
-4. **`POST /me/leave-requests` exists (`api/src/app.rs:100`) with NO CALLER in the SPA** — the deployments spec's LOA button, item 8. Identical shape to the dead PATCH/DELETE T-226 found and wired. T-232 correctly left it: that slice was render branches, not mutations.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-355** (deferred) — An unparseable event_id silently becomes NULL and skips the attendance write on a 200 [API] — FOUND by T-347, which fixed the whitespace half and deliberately left this because it is a per-call-site decision rather than one line.
-
-handlers/telemetry.rs:44 — `parse_uuid_opt` turns an UNPARSEABLE non-empty `event_id` or `mission_id` into `None`. The handler then skips the attendance UPDATE entirely and returns 200. So a game server sending a malformed id gets a success response while nobody's attendance is recorded, and there is no signal anywhere that it happened.
-
-T-347 already fixed the adjacent whitespace case (a PADDED id failed the parse the same way; it now trims first). What remains is genuinely-malformed input, and it should almost certainly be a 400 — an id the sender clearly meant to supply and got wrong is not the same as an absent one.
-
-WHY IT IS NOT A ONE-LINER: `current_match_id` shares the same helper and has a DOCUMENTED three-state contract (absent keeps / "" clears / uuid sets), which T-316 established deliberately to stop a pure COALESCE pinning the live row to a finished match forever. So the helper cannot simply start rejecting — the decision has to be made per call site. Read T-316's reasoning before changing anything.
-
-Also worth recording, from T-347's read of the mod side: TBD_ResultsReporter.c:596 `BuildSourceMatchId` always appends `@<utc>#<tick>`, so the SHIPPING mod cannot send a wholly blank id. The blank and malformed paths are reachable by any other sender — including the hand-replay that the reporter's own log at :503 instructs an admin to perform.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
 - **T-361** (deferred) — The gate cannot browser-test any SSE page — its proxy awaits the whole body [CI] — FOUND by T-306, which had to hand-roll a driver to verify its own fix.
 
 `gate serve`'s proxy does `upstream.bytes().await`, so it CANNOT proxy an endless event stream — the request never completes. Combined with `render-check` hardcoding `api_proxy: None` (T-339), there is no supported way to browser-test a page driven by Server-Sent Events. T-306 worked around it with a shim that replays captured frame bytes plus a close, so the body is finite; the bytes are real and the only deviation is the close, which the `\n\n` splitter is indifferent to.
@@ -264,15 +133,6 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 That workaround is sound for one slice but should not be the standing answer: the SSE hub is the realtime spine of Server Intel and the dashboard, and it is currently unverifiable by the gate. Make the proxy stream rather than buffer (`bytes_stream()` rather than `bytes()`), which also fixes it for any future long-poll or chunked endpoint.
 
 Sequence this with T-339, which threads `api_proxy` through `bin/gate.rs` -> RenderCheckArgs — without that, a streaming proxy still has no caller. Both are in tools/tbd-tools; do them together or T-339 first.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-364** (deferred) — COALESCE-on-None admits a third state, and a body-only PATCH leaves the snippet stale [API] — Two narrow findings from T-348, both precise about mechanism rather than pattern-matched.
-
-1. **telemetry.rs:488-498 and :511, :522-523.** The mechanism here is NOT `is_empty()` — it is SQL COALESCE-on-NULL keyed on Rust `None`, and per the doc comment at :259-263 an explicit `""` clear is INTENTIONAL. So the defect is narrower than the family it looks like: `Some("   ")` is non-NULL, so COALESCE admits a THIRD state that is neither keep nor clear. Fix it without breaking the deliberate two-state contract T-316 designed — read that reasoning first; T-316 chose COALESCE for heartbeats specifically because a partial heartbeat is honest.
-
-2. **cms.rs — `snippet` goes stale after a body-only PATCH.** Create derives it via `snippet_from`; PATCH only writes it when explicitly supplied. So the list view keeps the OLD snippet under a NEW body — a preview that contradicts the article. Either derive it on PATCH whenever `body` changes, or stop storing it and derive on read. Deriving on write is probably right (the list view should not pay for it), but say which and why.
 
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
@@ -295,89 +155,14 @@ Note mission_hydrate.rs is assigned to T-191/T-223/T-338 in the wave plan, so ch
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-371** (deferred) — display_name() selects on an untrimmed is_empty, so a whitespace Discord name is stored verbatim [API] — FOUND by T-366 while establishing whether trimming on read was safe. This is the WRITE side of the bug it fixed on the read side, and it is reachable in production.
+- **T-387** (deferred) — render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) [CI] — NARROWED after W61 (T-339 shipped). The original api_proxy:None render-check hole is CLOSED by T-339 (CLI --api-proxy + default :8080).
 
-`services/discord.rs:113` `display_name()` chooses between `global_name` and `username` using `global_name.is_empty()` — an untrimmed FIELD-SELECTION test. So a Discord `global_name` of `"   "` wins that branch and is stored verbatim into `users.username` by the login upsert at `handlers/oauth.rs:117`, which rewrites on EVERY login.
+Remaining from the original T-387 write-up (do not re-litigate api_proxy):
+- Dev-login / probe path still folds multiple roles onto a single Discord id in ways that half-hydrate or collide sessions (see original T-387 notes + T-361 SSE proxy sibling if overlapping).
 
-T-366 fixed the consequence (a whitespace username no longer produces an anonymous audit line) but deliberately did not touch this file. Note the shape: this is not a guard that should have trimmed, it is a CHOICE BETWEEN TWO FIELDS made on a test that whitespace passes — so the fix is to make the selection test meaningful, not to trim the winner.
+Measure live gate/smokes/dev-login before implementing; owns stay tools gate/smokes unless evidence moves the residual.
 
-T-319 already hardened `DiscordUser.username` in this file (it required the field, closing the case where an absent username blanked the stored name). This is the adjacent case: present, non-empty, and meaningless. Read T-319's reasoning first — it established that a malformed upstream response is not a client error and there is no request to reject, so the only lever is whether the body decodes and what the code then selects.
-
-Also fold in: `handlers/admin.rs:342-344` hand-rolls a duplicate of `handlers/mod.rs::username()` minus the discord_id fallback, so with `username = ''` a warn logs `"000000000000000001 warned '': probe"` — actor falls back, target renders empty. It should call `username()`. Doing so would also let the display-trim decision T-366 deferred land coherently across both halves instead of one.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-381** (deferred) — The integration suite can point at the live database, and one delete is unscoped [CI] — All 20 files in apps/website/api/tests/ early-return unless TEST_DATABASE_URL is set, and Makefile:121-123 points it at a dedicated `rust_it`. But **nothing validates the target database name**, so an exported `TEST_DATABASE_URL=.../tbd_reforger` runs the whole suite against the live dev DB.
-
-The one unscoped destructive statement: tests/factions.rs:18 — `DELETE FROM user_factions` with **no WHERE**. Wipes the table. Every other suite scopes to test-owned rows. Also tests/identity_link.rs:26 — `UPDATE users SET arma_id = NULL WHERE discord_id = $3` against the shared dev operator row.
-
-tests/null_tolerance.rs:240-245 already documents the shared-dev-row hazard, so the awareness exists and the guard does not.
-
-Two fixes, both cheap: refuse to run unless the database name matches a test pattern (`rust_it`, `*_it`, `*_probe`), and scope that DELETE. Several agents this run have created and dropped their own throwaway DBs correctly — the convention exists; enforce it.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-382** (deferred) — Empty-but-valid payload becomes current_version_id with no rollback route [API] — mission-editor-payload.schema.json has NO top-level `required`, no `minProperties`, and `editor.slots` is a bare `{"type":"array"}` with no `minItems`. `create_version` requires only that payload be Some and semver non-empty (missions.rs:587), then `validate_payload` passes `{}` clean — the crate's own test pins this as valid at contract/validate.rs:151-156.
-
-So `{"semver":"0.1.5","payload":{}}` returns 201 and `UPDATE missions SET current_version_id` (missions.rs:611) moves the pointer. Downstream: `/compiled` 409s on NoSlots so the game server can no longer load the mission; `orbat_template_for_mission` materialises ZERO orbat_slots on attach; `ingest_event_roster` omits the mission.
-
-`current_version_id` has exactly two writers and **there is no endpoint to re-point it at an older version**, so through the API this is unrecoverable. The prior version row does survive in mission_versions, so an operator can fix it with psql — which is why this is judgement rather than clear-cut, and why the fix might be a rollback route rather than a stricter schema.
-
-Note T-357 measured that a naive tightening of that schema would have 400'd six real live missions, so do not reach for `minItems` without checking. A gate at write time is what is missing; the gate at read time (409) already exists and is too late.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-383** (deferred) — Four tooling paths overwrite committed files with empty or wrong content [CI] — The tail of the tooling cluster (T-378 has the two worst). All the same shape: a success path writing structurally empty or silently-lossy content over something committed.
-
-  xtask/src/cmds.rs:765-774 — `cmd_set_status` has no non-empty check and no enum, so `./scripts/ticket set-status T-090 ""` writes `"status": ""` over `"ready"`. The registry is the source of truth for the whole program.
-  xtask/src/sync.rs:403 + registry.rs:133-138 — `inject_marker_block` collapses the ROADMAP marker block to a bare heading when `tickets` is missing or empty, and CLAUDE.md's 'Latest shipped' falls back to a HARDCODED WRONG `"T-066"`.
-  xtask/src/schema_gates.rs:1174-1195 — `flatten-orbat-slots --in-place` emits 8 of the schema's 11 slot keys, silently dropping `loadout` and `uid` from 3 of 5 committed goldens, and force-stamps `schemaVersion = "1.1"` over the deliberate 1.0 fixture.
-  enf/apidoc.rs:168 — header-only TSV overwrite that exits 0.
-  Also: world/aux.rs:1009/1022/1050, world/build.rs:664/958, map/labels.rs:455, map/sap.rs:1007.
-
-None is urgent alone; together they are why a golden or a registry field can go wrong with nothing red. A shared 'refuse to write structurally empty output' helper would close most of them.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-384** (deferred) — Re-pointing a match to another event leaves the first event marked attended [API, DATA] — CREATED BY T-369's OWN FIX, and it flagged it rather than hiding it. The re-point path is now reachable — a corrected re-POST can move a match from EV1 to EV2 — but the attendance UPDATE only ever SETS `attended`, never retracts.
-
-Measured by T-369: re-pointing a match from EV1 to EV2 marks EV2 attended and **leaves EV1 attended**, inflating attendance_rate to 100%.
-
-This needs a contract decision, not a patch: there is no record of WHICH match marked a registration as attended, so the write is not currently reversible. Options — store the match id on the registration so it can be retracted; recompute attendance from match_player_stats rather than storing a flag; or declare attendance monotonic and document it.
-
-Recomputing is probably right and matches how T-326 handled deployments (it refused to re-derive 'a deployment' in a second place, precisely so two definitions could not drift). Read T-369's reasoning and T-316's per-field rules first.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-385** (deferred) — Join matches.terrain into /servers so the theater readout can come back [API, FRONTEND] — HANDOFF from T-359, which removed the phantom readout and left a tripwire test that FAILS with instructions the day this lands. Do not restore the UI before the route.
-
-The data exists and is populated: `matches.terrain` (terrain_type, nullable), keyed by `server_statuses.current_match_id`. T-359 ran the join on the live dev DB and got `TBD Primary — Everon | everon`. No migration and no ingest change needed — terrain already arrives at handlers/telemetry.rs:341 (MatchInput.terrain), validated at :22, bound at :597.
-
-  1. handlers/servers.rs:29 `server_intel()` — add `LEFT JOIN matches ON matches.id = server_statuses.current_match_id` and expose it on ServerIntelDto (:20).
-  2. frontend/src/dto.rs:283 — the field must land in the SAME COMMIT as the recaptured golden, never ahead of the route. An Option + skip_serializing_if round-trips absent -> None -> absent, so the gate would stay GREEN over a fictional field. That is precisely the defect T-306 removed the catch-all to prevent, and it would recur.
-  3. Then delete T-359's tripwire and restore the readout.
-
-WORTH DOING AT THE SAME TIME, because it is why this bug was invisible: `ServerRowDto` has exactly two references in the crate — its own definition and its own golden test — while server_intel.rs:73 fetches `DataEnvelope<Value>`. A DTO only its own golden reads proves the wire, not the page. Adopting it is blocked on `ServerRowDto.status` keeping a TOLERANT parse, or one unparseable status fails the whole envelope and the page renders 'Failed to load data.' for every server. Also `v_str` (server_intel.rs:19-21) ends in unwrap_or_default(), collapsing absent/null/non-string/empty into one "" — the conflation T-306 split apart for the status object and left on the row's scalars.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-387** (deferred) — render-check hard-codes api_proxy None, so no probe can reach a real session [CI] — Confirmed independently by a third agent, which had to patch and rebuild the binary to get a real session and then restored both files byte-exact.
-
-smokes.rs:3090 hard-codes `api_proxy: None` for render-check. T-339 already records the consequence for `--seed-auth` (the session is left HALF-hydrated: `user` set from localStorage but `/me` fails so `access_token` stays None, `is_authenticated()` is false, and authenticated surfaces silently render SIGNED OUT). This ticket is the fix itself: thread `--api-proxy` through `bin/gate.rs` -> `RenderCheckArgs` so a probe can point at a real API.
-
-T-361 is the sibling and should probably land with it: `gate serve`'s proxy does `upstream.bytes().await`, so it cannot proxy an SSE stream at all.
-
-Also fold in, same file: **dev-login cannot produce two distinct accounts.** handlers/dev.rs:14 binds `DEV_USER_ID = "000000000000000001"` unconditionally for every role, so `?role=admin` and `?role=mission_maker` both return `sub: 000000000000000001`. Since `owner_token()` keys on `discord_id`, any cross-account probe built on the role parameter is VACUOUS — it tests one account twice. Every honest cross-account probe tonight had to forge a `tbd-auth` blob instead. Either give dev-login a per-role synthetic id, or document that forging is the supported method; leaving it implicit has already cost two agents a wasted arm.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+== DEFERRED — residual after T-339 ==
 - **T-388** (deferred) — The adoption-residue purge is not guaranteed on a first editor open [FRONTEND] — MINOR, from the behavioural probe of T-352. Its residue purge (`editor_session.rs:149 purge_legacy_markers`) is reachable ONLY via `mark_adopted`, and three paths reach the editor without calling it:
   mission_hydrate.rs:181-190 — the `is_empty && loaded_from_idb` branch calls `apply_row` and no `mark_adopted`;
   `Local::Diverged` (:236) defers to conflict resolution;
@@ -404,66 +189,61 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 == TWO MORE, from wave 2 ==
 4. `apps/website/frontend/src/event_hub.rs:411` — the comment justifying the objectives-panel deletion says the `objectivesById` root "is still the closed hydrate→emit loop with no mutator". `crates/map-engine-core/src/doc/store.rs:1102,1122,1130` show `hydrate()` calling `objectives.clear(&mut txn)` then `load_rows(...)` — that IS a mutator; what is absent is an INCREMENTAL, user-facing one. The deletion decision survives on the stronger ground the same comment already gives (the DTO carries no objectives field on either side of the wire, verified at handlers/events.rs:952-972 and dto.rs:781-800), so this is a wording defect in a load-bearing comment, not a wrong call.
 5. `docs/platform/frontend_data_provenance.md:41,62` — its event_hub.rs citations drifted by ~5-50 lines, and `:62` names `event_hub.rs:211` as an `events.briefing` render site when `:211` is the `name_override` fallback and the Event Hub never read the event briefing at all. The `:41` row is invalidated wholesale by T-392's removals. Same drift on its `orbat_selection.rs:90` citation.
-- **T-415** (deferred) — The mod never checks whether it delivered the authored loadout, and IsComplete has zero callers [MOD] — THE DURABLE FIX for T-240, which shipped the client half only. Confirmed twice by independent agents on 2026-07-26, and re-confirmed against the source during wave 4.
-
-The mod has NO runtime capacity math at all -- zero volume/weight/grid arithmetic under Scripts/Game/. InsertCargo pushes at the engine and reads the bool; it does not even call CanInsertItemInStorage (that pre-check exists only on the weapon-slot path, TBD_LoadoutEquipHelper.c:491/:495).
-
-On a cargo item that will not fit (TBD_LoadoutEquipHelper.c:1108-1145) it tries the authored container, then ANY storage on the character (logged Degrade/WARNING); if nothing accepts it, it DELETES THE ENTITY, **BREAKS the row qty loop** -- dropping THE ENTIRE REMAINING QUANTITY of that row, not one item -- logs one ERROR naming slot+item+'no storage would accept unit N/M (character full)', and continues. It never aborts the loadout, never leaves the character naked, never refuses to spawn.
-
-NOTHING READS THE RESULT. ReportVerdict only prints. `bool IsComplete()` (TBD_LoadoutEquipHelper.c:197-200) has ZERO CALLERS repo-wide -- verified again in wave 4 by `grep -rn IsComplete apps/ scripts/ crates/ packages/`, which returns exactly one hit: the definition. The answer to 'did we deliver the authored JSON' is computed and discarded. SpawnSlotBody returns the body unconditionally (:1070); MaterializeSlotBodies counts a failure only when the body is null; boot proceeds to LOBBY regardless. The only surface is log text, and the only thing that turns it into a failure is world-boot.sh's no-TBD-ERROR check -- a CI gate, not runtime.
-
-RESULT: the operator gets a body in the field missing kit they authored, with a log line nobody reads.
-
-FIX: consume IsComplete, or pre-check with the Can* family. Either closes it. Until then, EVERY client-side refusal (T-240's export gate included) is a heuristic over an export the mod never reads back -- the website's CargoBudget derives from Workbench export-time data (TBD_RegistryScan.c:896-909, cells = Ceil(maxVolume/50), hardcoded grid w=4) which the mod NEVER READS.
-
-NOT AN ISSUE, do not re-derive (two paid subagent runs already answered it): recursion is NOT REACHABLE. CargoRow is three scalars (container, item, qty) with no id/parent/path so a tree is not expressible even in principle (arsenal_rules.rs:586); mission.schema.json cargoContainer is a flat 4-token enum; additionalProperties:false rejects a children/parentId key outright.
-- **T-418** (deferred) — map-engine-wasm is dead as a whole crate, and compile_export's briefing is a dead key [FRONTEND, DATA] — Two independent dead-surface findings from wave 4, both larger than the tickets that surfaced them.
-
-1. THE WHOLE map-engine-wasm CRATE IS DEAD, not just the binding T-243 deleted. `cargo tree -p map-engine-wasm --invert --depth 1` returns only itself -- zero reverse dependencies, and it appears in no [dependencies] table anywhere. Its Cargo.toml describes it as 'a shim exposing map-engine-core to the TypeScript UI shell', and that shell was DELETED at T-159.29.3: there are ZERO .ts/.tsx files outside node_modules and no map_engine_wasm* artifact is ever produced -- it is never wasm-packed. The Leptos SPA links map-engine-core DIRECTLY and says why (frontend/Cargo.toml:89 'instead of reaching it through the map-engine-wasm shim'; mission_doc.rs:5 'no map-engine-wasm JS shim, spec D2') -- that collapse was the point of T-159.15.
-   Its entire remaining surface (DemGrid, SeaBandResult, HillshadeResult, TbddResult, DecodedDem, SlotIndex, WorldStore, RenderEngine, ...) exports to a JS boundary that no longer exists, and it costs a fmt+clippy pass on every `make lint`. T-243 deleted only what its ticket named.
-   DECIDE: delete the crate, or document why it is kept (a planned future JS consumer is a legitimate answer -- an undocumented one is not).
-
-2. compile_export's envelope `briefing` always resolves to \"\". T-214 wired it to read meta.briefing, but apply_row_meta never threads it: mission_hydrate.rs:403-424's RowMeta carries only title/terrain/time/weather, so the key is absent and the field is dead. Pre-existing and already documented as such at compile.rs:164-172. REPRO: export any mission whose row has a briefing; the downloaded envelope's briefing is empty.
-- **T-419** (deferred) — Six mod comments now assert the schema is open, and four tickets will read them as the contract [MOD] — Filed by wave 4's T-241 agent, which correctly reported rather than fixed (the mod .c files were in its owns but changing mod prose was out of its scope).
-
-T-241 closed zones[].rules to a 16-key vocabulary with additionalProperties:false. Six comments in the mod now assert the opposite -- that the vocabulary is open and additive:
-  apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c:71, :72, :87
-  apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c:5, :6, :47
-Example, verbatim: 'The objective rule vocabulary. Additive and legal under `additionalProperties: true`'.
-
-WHY THIS MATTERS MORE THAN A NORMAL STALE COMMENT: T-241 is a DEPENDENCY ROOT. slice-collisions.py encodes T-201, T-211, T-212 and T-275 -> T-241 precisely so the zones vocabulary is declared ONCE instead of four tickets each inventing one. All four will read these headers as the contract for what they are building on, and the headers now describe a schema that no longer exists. This is the stale-doc trap that costs a whole slice.
-
-Comment-only edit, zero behavioural risk.
-
-ALSO IN THE SAME FILES: TBD_MissionLoader.c:88 documents graceSeconds as 'number >= 0' but the code at :389 also rejects > MAX_GRACE_SECONDS. The header omits the ceiling. T-275-adjacent.
-
-RECORDED DECISION so it is not re-litigated: T-241 deliberately did NOT encode conditional `required` for holdSeconds and targetAlias, though both are effectively mandatory (without them the objective goes inert with an operator-facing reason). Reason: it is a different defect from T-241's, and conditional requires are the shape most likely to collide with T-201/T-211/T-212. Both keys carry the requirement in prose instead. The command center endorsed this. Enforce it when a consumer actually needs it, not before.
-- **T-479** (deferred) — Flaky events IT: event_orbat_registration_and_race duplicate arma_id [API, tests] — Observed wave 29 cold re-gate FAIL once on fresh tbd_wave29b_cold: event_orbat_registration_and_race panicked in common/mod.rs:217 seed_user with duplicate key idx_users_arma_id (events-arma-000000000000334002). Immediate re-gate on fresh tbd_wave29c_cold PASS (33/40/13). Not caused by T-431/477 product SQL (attendance backfill). Likely parallel seed race or leftover arma_id uniqueness collision in events IT fixtures.
-
-Repro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.
-
-Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; assert no shared snowflake collision across parallel tests.
 - **T-491** (deferred) — T-425 mixed slot+vehicle drag commits two undo txns; pick/marquee untested [tests] — Wave 35 adversarial MAJOR (deferred). mission_editor Move commit calls move_entities(slots) then move_vehicles(vehs) — each its own yrs txn — so one mixed gesture needs two Ctrl+Z. New pick_slot_or_vehicle / marquee_* helpers have no unit tests (only flatten/kit Class-R). Vehicle drag also skips GPU set_drag preview (slots only).
 
 Repro: select one slot + one vehicle, drag, undo once — only one kind moves back.
 
 Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/marquee helpers; optional vehicle drag preview.
-- **T-492** (deferred) — fmt_changed/clippy_changed ignore changed_rs rc (empty→SKIP) [CI, INFRA] — Wave 36 adversarial NIT. T-401 made git_porcelain_paths fail-loud, and wasm_changed/refuse_empty_range check rc. fmt_changed and clippy_changed still do files="$(changed_rs …)" and treat empty as SKIP (return 0) without checking $?. Gate path is still safe because refuse_empty_range runs first. Cure: propagate changed_rs failure in those helpers (or share a wrapper that dies on rc≠0).
-- **T-496** (deferred) — T-410 library/bookmark page-1 Class-R weak without NULL updated_at residue [API, CI] — Wave 38 adversarial NIT. find_in_approvals page-1-only RED on tbd_gate_it (26 pending). Disabling prefer-mine RED on dashboard. But find_id_in_missions_list→page-1 limit=20 stayed GREEN on mission_lifecycle_and_compiled because only 2 NULL updated_at rows — DESC puts fresh missions on page 1. Cure: Class-R that forces >20 NULL-updated_at residue (or source ratchet that the helper always paginates) so library/bookmark pins fail without relying on shared-DB residue.
 - **T-493** (deferred) — T-397 Class-R blind to sum(COALESCE(deaths,0)) on leaderboard_totals [API, DATA] — Wave 37 adversarial NIT. insert_without_counters_stores_null_not_zero holds. leaderboard_mv_does_not_invent_deaths_from_null went RED when INSERT bound 0, but poisoning the MV to sum(COALESCE(deaths,0)) with a mixed NULL+measured fixture still left the Class-R GREEN (0+3=3). Cure: pin all-NULL row set → kd_ratio IS NULL and/or source-ratchet migration 0014 / live MV for FILTER (WHERE deaths IS NOT NULL) / no COALESCE(deaths,0) in the aggregate.
-- **T-497** (deferred) — Mission mutators still AuthUser+can_edit after T-408 PATCH tier fix [API] — Wave 38 residual from T-408. update_mission now MissionMakerUser. Still AuthUser+can_edit only: delete_mission, submit_mission, create_version, set_armory in handlers/missions.rs. Demotion still leaves those paths open. Cure: same MissionMakerUser tier (or deliberate ownership-outlives-role Class-R per path).
-- **T-494** (deferred) — mission_overview trim source-ratchet still allows !b.is_empty() match arm [FE] — Wave 37 adversarial NIT on T-407. dossier_body_uses_trim_aware_briefing_helper only bans .filter(|b| !b.is_empty()); a match-arm !b.is_empty() stayed GREEN while the behavioral trim test went RED. Also residual from T-407 report: schedule events.rs briefing still uses (!briefing.is_empty()) without trim (out of T-407 owns). Cure: widen source ratchet to ban non-trim empty checks on briefing paths; align schedule card trim with event_hub/mission_overview.
-- **T-498** (deferred) — Discord webhook title not CSV/formula-safe (sibling of T-408) [API] — Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord — user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R.
-- **T-495** (deferred) — GET /members IT still only asserts data is_array (no offset exercise) [API, CI] — Wave 37 residual from T-412. Handler Class-R pins limit/offset + envelope. apps/website/api/tests/events.rs:~275 still only assert!(mem["data"].is_array()). Cure: seed >20 members on a cold IT DB and assert offset=20 returns member 21 / envelope total.
-- **T-499** (deferred) — admin_field roles/sync still demotes all users in shared IT DB [API, CI] — Wave 38 residual from T-400. identity_link/factions/telemetry isolated. admin_field.rs POST /admin/roles/sync still loops every users row and demotes anyone without user_discord_roles — fires inside the suite against shared rows. Cure: scope sync to fixture actors or skip in IT / use private actors for asserts.
-- **T-500** (deferred) — mission_compile does not run cargo wire_safety (Save-only refuse) [API] — Wave 39 adversarial residual (CLEAN). T-416 wires Save Version via load_cargo_phys_catalog + validate_mission_editor_payload_with_catalog. Production mission_compile.rs does not call scan_cargo_capacity — pre-existing over-capacity versions can still compile until re-saved. Cure: pass CargoPhysCatalog into the compile gate (same table as Save) or document compile-as-trust-saved with a Class-R that compile path mentions the Save refuse.
 - **T-501** (deferred) — Community-terrain soft-fail has no match-ingest HTTP IT [API, CI] — Wave 39 residual from T-402. parse_terrain_opt + unit Class-R pin unknown terrain → None. No IT proves POST match ingest with terrain kolguyev/anizay returns 200 and stores NULL terrain. Cure: apps/website/api/tests/telemetry.rs case on cold DB.
-- **T-502** (deferred) — POST /admin/roles/sync IT does not prove empty-snapshot admin survives [API, CI] — Wave 40 residual from T-372. Class-R pins resync_ids_from_snapshot empty→None. Existing roles/sync IT only asserts 200. Cure: cold IT — promote admin with zero user_discord_roles, POST sync, assert role still admin.
 - **T-503** (deferred) — Arsenal has no Save button — cargo persists immediately (T-417 structural) [ATTR, DATA] — Wave 40 residual from T-417. arsenal.rs persist_cargo→set_loadout on every cargo mutation; export gate is the only client refusal. Cure: either add explicit Save UX or document intentional auto-persist with Class-R.
 - **T-504** (deferred) — Silent no-garment cargo in Arsenal (T-417 structural) [ATTR, DATA] — Wave 40 residual from T-417. arsenal UI shows 'no garment worn' with total and no limit; arsenal_rules deliberate silence; mod TBD_LoadoutEquipHelper already degrades. Author never hears undeliverable cargo. Cure: authoring-time warning/refuse when cargo targets unworn container.
-- **T-505** (deferred) — Hydrate/row-mirror still stomps authored title after T-375 compile emit [EDITOR, API, DATA] — Wave 41 residual (CLEAN). T-375 emits non-blank trimmed meta.title on compile_payload. hydrate/apply_row_meta still does not load payload title into meta; create_version does not PATCH missions.title. Reload can overwrite authored title with stale row. Cure: adopt_payload/apply_row_meta prefer payload title (trim-aware) and/or mirror title to row on Save with non-blank guard.
-- **T-511** (deferred) — Land orbat_slots partial unique (assigned_to) + retire events.rs two-seat seed [API, DATA, tests] — Wave 43 residual (CLEAN). T-331 cleared content_golden double-seat and left the partial unique on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL unlanded because tests/events.rs:540 still seeds legacy two-seat for T-318 recovery and a partial unique cannot be DEFERRABLE. Cure: deliberately update/retire that assertion (or drop index around the seed), then CREATE UNIQUE INDEX in a migration. Repro: create index on clean DB, UPDATE second seat assigned_to → 23505.
-- **T-515** (deferred) — Cold gate db_migrate hollow for SQL-only claim migrations [CI, INFRA] — Wave 44 residual (CLEAN after T-513/514; MINOR from verifier). db_migrate in wave.sh only checks schema/object counts. A SQL-only claim migration like T-335 0016 can drop the claim UPDATE yet keep REFRESH and still gate-green when claimable orphans are 0. Mitigated by synthetic non-vacuity in the slice report, not by the gate. Cure: gate asserts migration body contains the claim UPDATE (Class-R on 0016) and/or runs a planted-orphan migrate probe.
+- **T-518** (deferred) — T-517 Class-R denylists old telemetry id only (not live PLAYER_DISCORD) [API, tests] — Wave 45 verifier MINOR. identity_link.rs Class-R assert_ne!(PAD_ACTOR, "000000000000400003") REDs if PAD returns to 400003, but stays green if telemetry PLAYER_DISCORD moves onto live PAD (…400013) — pin is a hardcoded denylist, not bound to telemetry.rs. Original shared-discord_id failure class can return one-sided. Cure: include_str!/parse PLAYER_DISCORD from telemetry.rs in the Class-R test, or assert_ne against a shared test const both suites import. Repro: set PLAYER_DISCORD to 000000000000400013 in tests/telemetry.rs; cargo test -p website-api --test identity_link t400_actor_is_not_shared_dev_login_user -- --exact → ok (false green); restore after.
+- **T-533** (deferred) — T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400 [API, tests] — FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-355.
+
+upsert_match uses parse_uuid_opt_strict and unit/source pins prove junk → BadRequest, but no integration test POSTs a malformed event_id/mission_id through the live route and asserts HTTP 400. RED if the handler call sites are deleted while unit helper tests remain: today the source pin covers that; an HTTP IT would close the residual.
+
+Repro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note absence of IT asserting status 400 on junk ids.
+- **T-534** (deferred) — IT suites still seed fixed arma_ids via shared seed_user (cross-binary race residual) [API, tests] — FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-479.
+
+T-479 fixed the events suite (unique_arma + DB_LOCK + release foreign holders). Other ITs (identity_link, factions, t350, t528, …) still pass fixed arma_id strings into shared common::seed_user. Cross-binary parallel cargo test can still trip idx_users_arma_id (admin_field flake class). Not caused by T-479 release of events armas.
+
+Cure: migrate remaining suites to unique_arma / suite Mutex, or document denylist of fixed strings. Repro: rg 'seed_user\(' apps/website/api/tests | rg -v unique_arma.
+- **T-540** (deferred) — T-384 Class-R only — no IT for attendance retract on match re-point [API, tests] — FOUND by W53 adversarial verifier (CLEAN MINOR-NIT) after T-384.
+
+ingest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1→EV2 and asserts EV1 returns to registered while EV2 is attended.
+
+Repro: rg retract_from apps/website/api — no IT exercises the path.
+- **T-541** (deferred) — SpawnManager never calls IsComplete after T-415 helper consume [MOD, FE] — FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.
+
+Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
+
+Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync.
+- **T-546** (deferred) — T-498 Class-R only — no HTTP IT for Discord formula-title sanitize [API, tests] — FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-498.
+
+sanitize_discord_embed_field + include_str wire pins exist; no services_http / CMS IT asserts a leading '=title' becomes ZWSP-prefixed in the outbound embed JSON.
+
+Repro: rg sanitize_discord apps/website/api/tests — no hit.
+- **T-553** (deferred) — TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual) [MOD] — FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.
+
+T-419 closed open-schema lore in TBD_ObjectiveRules.c + TBD_MissionLoader.c, but TBD_ZoneRegistry.c:39 still says:
+  //! `rules.penalty` vocabulary. Additive under the schema's `additionalProperties: true`.
+
+Live pin: packages/tbd-schema/schema/mission.schema.json $defs.zoneRules.additionalProperties = false.
+
+Repro:
+  rg -n 'additionalProperties: true' apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
+  # expect hit at line 39; schema says false.
+- **T-554** (deferred) — T-418 FE hydrate→briefing wire has no Class-R pin (core only) [FRONTEND, tests] — FOUND by W62 adversarial verifier (DIRTY MINOR) after T-418.
+
+mission_hydrate.rs threads MissionDetail.briefing into apply_row_meta via opt(&row.briefing). Core Class-R t418_apply_row_meta_threads_briefing_into_meta covers apply_row_meta/compile_export, not the FE call site.
+
+Mutation probe: replace both opt(&row.briefing) with None → cargo test -p website-frontend briefing|hydrate still PASS.
+
+Repro:
+  # Temporarily return None for briefing in mission_hydrate RowMeta construction;
+  # website-frontend tests that mention briefing/hydrate still green;
+  # only map-engine-core Class-R fails if apply_row_meta itself is gutted.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

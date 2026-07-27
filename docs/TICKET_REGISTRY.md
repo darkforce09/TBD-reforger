@@ -2799,6 +2799,82 @@ Repro:
   # Temporarily return None for briefing in mission_hydrate RowMeta construction;
   # website-frontend tests that mention briefing/hydrate still green;
   # only map-engine-core Class-R fails if apply_row_meta itself is gutted. |
+| T-555 | 3400 | shipped | platform | BLOCKER: migrations are only ever tested forward from empty, so two live defects break every populated database | THE ALWAYS-BLOCKER CLASS. Found 2026-07-27 by the command center when the dev API would not boot. Two independent defects, one root cause, and the wave gate is STRUCTURALLY INCAPABLE of catching either.
+
+=== DEFECT 1 — an already-applied migration was edited ===
+Commit a843905f (T-331) edited `apps/website/api/migrations/0009_role_played_not_null.sql`. The change is COMMENT-ONLY -- verified: `diff <(grep -vE '^\s*--\|^\s*$' old) <(grep -vE '^\s*--\|^\s*$' new)` is empty, the SQL is byte-identical. But sqlx checksums the WHOLE FILE, so any database that already ran migration 9 now refuses to boot:
+    Error: migration 9 was previously applied but has been modified
+REPRO: `make api` against the existing dev database.
+FIX: restore 0009 to its pre-a843905f bytes (`git show a843905f^:apps/website/api/migrations/0009_role_played_not_null.sql`). The cross-reference note it added is worth keeping -- put it in 0015, which is the migration that actually does the work.
+
+=== DEFECT 2 — a unique index created without deduplicating pre-existing data ===
+`0017_orbat_slots_assigned_partial_unique.sql:15` does CREATE UNIQUE INDEX on (event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL. On a populated DB:
+    could not create unique index \"idx_orbat_slots_em_assigned\"
+The migration's OWN HEADER says \"T-331 cleared the content_golden double-seat that blocked CREATE UNIQUE INDEX on a populated DB\" -- but T-331 fixed the SEED FILE and never touched the row the old seed had already inserted. Fixing a seed does not fix data already seeded.
+MEASURED on the dev DB: event_mission 89b1b731-37a8-4926-901a-3c7ff7de5eb3 had user 000000000000000005 seated twice -- slots 00000000-0000-4000-5000-000000000005 (Alpha/Grenadier) and ...015 (Recon/Designated Marksman).
+FIX: dedup INSIDE 0017 before the CREATE UNIQUE INDEX. The established pattern in this repo is T-405's 0010_backfill_aar_replay_url_scheme.sql -- quarantine/neutralise offending rows first, then enforce. Keep the earliest seat, NULL the rest (a NULL assigned_to is a free seat and is explicitly legal under the partial index).
+
+=== THE ROOT CAUSE, which is the actual deliverable ===
+`ensure_gate_db` does `DROP DATABASE IF EXISTS tbd_gate_migrate WITH (FORCE)` at EVERY gate start. So `db_migrate` only ever runs migrations FORWARD FROM EMPTY, where the fixed seed produces no duplicate and checksums match by construction. EVERY WAVE GATE SINCE T-331 HAS BEEN GREEN over a defect that breaks every existing database -- including staging and production on deploy.
+
+This is the program's signature defect at a level not previously hit: not a test that examined nothing, but a WHOLE CATEGORY -- backward compatibility -- that the gate architecture excludes by design.
+
+THE GATE MUST GAIN A POPULATED-DATABASE MIGRATION STEP. Suggested shape, but the slice owns the design: keep a persistent `tbd_gate_migrate_persist` DB that is NEVER dropped; each gate run applies only the NEW migrations to it and fails if any previously-applied migration's checksum changed or any DDL fails on real data. Without this the class recurs on the next migration.
+
+=== STATE OF THE MACHINE RIGHT NOW ===
+The command center applied two throwaway fixes by hand to restore the dev API, then REVERTED the source change so this slice starts from an honest base:
+  - 0009 is back to its BROKEN (post-T-331) state on disk -- the defect is live and reproducible.
+  - The dev database row was already fixed: `UPDATE orbat_slots SET assigned_to=NULL WHERE id='00000000-0000-4000-5000-000000000015'`. So defect 2 NO LONGER REPRODUCES on the dev DB. Recreate it in a scratch DB to verify your fix -- do not assume it is gone because the dev DB is clean.
+  - The running API on :8080 booted from that hand-patched state. It will fail to boot again on restart until this ships. |
+| T-556 | 3401 | ready | platform | BLOCKER: the gate depends on `rg`, which is installed nowhere — it resolves only via an agent-injected shell function | Found 2026-07-27 while gating T-555. **The wave gate is RED on merged main** and has been before T-555 touched anything — proven by running both scripts from a clean checkout with no slice changes (both exit 1).
+
+=== THE MECHANISM ===
+`ripgrep` is NOT INSTALLED. Not in the container, not on the host:
+    rpm -q ripgrep                      -> not installed
+    ls /usr/bin/rg /usr/local/bin/rg    -> absent
+    distrobox-host-exec sh -c 'ls /usr/bin/rg'  -> not on host either
+`command -v rg` SUCCEEDS in an agent shell only because Claude Code (and presumably Cursor) inject a
+shell FUNCTION named `rg` that routes to the agent binary's bundled ripgrep. Proof:
+    type rg          -> "rg is a function"
+    bash -c 'command -v rg'  -> ABSENT   (functions are not exported to subshells)
+
+So every gate script using `rg` passes ONLY when invoked from a shell where an AI agent harness
+happens to have defined that shim. Change how the gate is invoked and the verdict changes. That is a
+direct violation of acceptance-gates-reproducible.mdc rule 1 -- the rule that exists BECAUSE an
+unpinned external tool once turned a routine ticket into a multi-hour session.
+
+=== WHAT IS RED RIGHT NOW ON MAIN ===
+    T-456 REST size gate   FAIL   scripts/mod/verify-t456-mission-rest-size-gate.sh:115  "rg: command not found"
+    T-437 destroy inert    FAIL   scripts/mod/verify-t437-destroy-inert-diagnostics.sh
+T-437's trace is less obviously rg-only -- its RED proofs fire as expected and its GREEN proof prints
+PASS, yet the script returns 1. DIAGNOSE IT SEPARATELY rather than assuming it is the same cause.
+
+=== CI IS EXPOSED, AND UNPINNED ===
+.github/workflows/ci.yml runs `verify-t456` (3 rg uses) on `ubuntu-latest` with NO ripgrep install
+step. Whether CI is green depends entirely on whether the runner image ships ripgrep that week. That
+is unpinned floating state, forbidden by the same rule. Either install it deliberately in the
+workflow (pinned) or remove the dependency.
+
+=== TWO MORE SCRIPTS, SAME FAMILY, AND THEY ARE DEAD ===
+verify-t296-results-reporter-identity-comments.sh:21,25 and
+verify-t452-player-identity-link-comments.sh:21,29 use the FAIL-OPEN shape
+    if rg ...; then fail; fi
+With rg absent this exits 127, the `if` is false, and the ban prints OK HAVING COMPARED NOTHING.
+Both scripts are also wired to NOTHING -- not the gate, not ci.yml, not the Makefile. Dead gates
+carrying a known-broken shape, waiting to be wired up by someone who trusts them.
+
+=== THE FIX IS ALREADY WRITTEN ELSEWHERE ===
+T-216 solved exactly this in wave 5 for scripts/verify-t180-coherency.sh: drop `rg` for `grep -E`
+(present in container AND on host AND on every runner), and read the EXIT STATUS rather than
+collapsing it to a boolean --
+    0 = match \| 1 = no match \| 2 = target file missing \| 127 = tool absent
+-- with the last two failing CLOSED and naming which of the two happened. Patterns are identical in
+ERE. That fix did not propagate to scripts written afterwards; this ticket propagates it.
+
+SCOPE: verify-t456, verify-t437, verify-t296, verify-t452, plus a sweep of scripts/mod/verify-t*.sh
+and scripts/platform/*.sh for any other `rg` use or `if grep ...; then fail; fi` shape. Decide
+deliberately whether the two dead scripts get wired into the gate or deleted -- do not leave them
+dead AND broken. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
