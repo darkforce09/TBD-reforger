@@ -68,11 +68,13 @@ class TBD_MissionShapeStruct
 //! T-181.18 — the zone `rules` object, as much of it as a TYPED parser can see.
 //!
 //! ── The problem, stated honestly ────────────────────────────────────────────────────────────
-//! `mission.schema.json#/$defs/zone/rules` is `{"type":"object","additionalProperties":true}` with
-//! **no declared properties at all**. Enfusion's `JsonLoadContext` maps JSON keys onto named class
-//! fields; it cannot model an open object, so it can only ever see keys this class declares by
-//! name. Keys it does not declare are invisible — not rejected, not logged, simply absent. That is
-//! a real limitation of the lane and it is written down here rather than papered over.
+//! `mission.schema.json#/$defs/zoneRules` is a CLOSED 16-key vocabulary (`additionalProperties:
+//! false`, T-241). Schema validation rejects undeclared keys; Enfusion's `JsonLoadContext` still
+//! only maps JSON keys onto named class fields, so a key this class does not declare is invisible
+//! at runtime — not rejected, not logged, simply absent. That is a real limitation of the typed
+//! reader and it is written down here rather than papered over. Objective keys
+//! (`captureSeconds`, `holdSeconds`, …) are schema-legal and are read by the second pass in
+//! `Objectives/TBD_ObjectiveRules.c`, not here.
 //!
 //! ── The decision ────────────────────────────────────────────────────────────────────────────
 //! Carry the rules the framework actually consumes as named fields with ABSENT sentinels, and make
@@ -82,14 +84,15 @@ class TBD_MissionShapeStruct
 //!   * a `penalty` string this build does not recognise                        -> ERROR + default
 //! so an authored rule that cannot be honoured is LOUD, never a silent default. What it cannot do
 //! is name an unknown key, because a typed parser never sees one. Adding a rule to the vocabulary
-//! is a field here plus a case in `ResolveRules` — that is the whole cost.
+//! is a field here (or in `TBD_ObjectiveRulesStruct`) plus a `#/$defs/zoneRules` property plus a
+//! case in `ResolveRules` — that is the whole cost (T-241).
 //!
-//! ── The vocabulary (additive; legal under `additionalProperties: true`) ─────────────────────
+//! ── The play-area vocabulary (closed; `#/$defs/zoneRules`, `additionalProperties: false`) ───
 //! `graceSeconds`     number >= 0 — seconds a player may remain in violation before the penalty.
 //! `warnEverySeconds` number >  0 — how often the player is told, while in violation.
 //! `penalty`          string      — "none" | "warn" | "kill". See TBD_EZonePenalty for why the
 //!                                  default is deliberately NOT "kill" under one life.
-//! @contract mission.schema.json#/$defs/zone (rules)
+//! @contract mission.schema.json#/$defs/zoneRules
 class TBD_MissionZoneRulesStruct
 {
 	//! Sentinel for "key absent from JSON". Same device `TBD_MissionSlotStruct.Y_ABSENT` uses and
