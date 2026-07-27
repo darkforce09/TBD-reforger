@@ -1,12 +1,12 @@
 //! Self-service + Arma-link handlers — Rust port of `handlers/me.go`.
 
-use axum::extract::rejection::JsonRejection;
 use axum::extract::State;
+use axum::extract::rejection::JsonRejection;
 use axum::http::StatusCode;
 use axum::response::Json;
 use chrono::{Duration, Utc};
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::auth;
 use crate::db::refresh_leaderboard;
