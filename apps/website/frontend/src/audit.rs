@@ -525,4 +525,81 @@ mod tests {
             "discarding next_cursor must not produce the same request path as forwarding it"
         );
     }
+
+    /// Strip `//` / `/* */` so Class-R `contains` cannot green on a commented-out merge
+    /// (T-457 / Wave 21–22 false-green class).
+    fn strip_rust_comments(src: &str) -> String {
+        let mut out = String::with_capacity(src.len());
+        let mut chars = src.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c == '/' {
+                match chars.peek() {
+                    Some('/') => {
+                        chars.next();
+                        while let Some(n) = chars.next() {
+                            if n == '\n' {
+                                out.push('\n');
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+                    Some('*') => {
+                        chars.next();
+                        while let Some(n) = chars.next() {
+                            if n == '*' && matches!(chars.peek(), Some('/')) {
+                                chars.next();
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+                    _ => {}
+                }
+            }
+            out.push(c);
+        }
+        out
+    }
+
+    fn collapse_ws(s: &str) -> String {
+        s.split_whitespace().collect::<Vec<_>>().join(" ")
+    }
+
+    /// T-445 Class-R — helper unit tests alone do not pin the Load-more UI. A replace bug
+    /// (`lines.set(page.data)` instead of `merge_audit_page`) keeps `merge_appends_*` green
+    /// while truncating the trail. Bind to the live `on_load_more` Ok-arm (comment-stripped).
+    #[test]
+    fn on_load_more_appends_via_merge_audit_page() {
+        const SRC: &str = include_str!("audit.rs");
+        let production = SRC
+            .split("mod tests {")
+            .next()
+            .expect("tests module marker");
+        // Scope the pin to the Load-more closure so a dead string elsewhere cannot false-green.
+        let load_more = production
+            .split("let on_load_more = move |_|")
+            .nth(1)
+            .and_then(|rest| rest.split("let master_header =").next())
+            .expect("on_load_more closure must sit before master_header");
+        let code = collapse_ws(&strip_rust_comments(load_more));
+
+        assert!(
+            code.contains("audit_logs_path(Some(before))"),
+            "on_load_more must request the continuation page via audit_logs_path(Some(before))"
+        );
+        assert!(
+            code.contains("let cursor = merge_audit_page(&mut rows, page)"),
+            "on_load_more Ok-arm must append via merge_audit_page (not replace the trail)"
+        );
+        assert!(
+            code.contains("lines.set(rows)"),
+            "on_load_more must write the merged rows back into the lines signal"
+        );
+        assert!(
+            !code.contains("lines.set(page.data)"),
+            "on_load_more must not replace the trail with page.data alone \
+             (perturbation: lines.set(page.data) truncates prior pages)"
+        );
+    }
 }
