@@ -331,6 +331,18 @@ fn source_match_key(raw: &Option<String>) -> Result<Option<&str>, ApiError> {
     }
 }
 
+/// Present-but-blank `role_played` is a 400 — same shape as `outcome` (T-316) and
+/// `source_match_id` (T-347). Absence is already a decode 400 (required `String`); this
+/// closes the present-and-blank hole that `ON CONFLICT … role_played = EXCLUDED.role_played`
+/// used to write over a populated role with `''` / whitespace. Migration 0009 made the
+/// column `NOT NULL DEFAULT ''`, so `''` is storable — NOT NULL does not close this (T-379).
+fn require_role_played(raw: &str) -> Result<&str, ApiError> {
+    match raw.trim() {
+        "" => Err(ApiError::bad_request("player role_played must not be blank")),
+        role => Ok(role),
+    }
+}
+
 /// The match half of a results POST.
 ///
 /// **`outcome` is deliberately required — do not add `#[serde(default)]` to it, and do not
@@ -669,6 +681,9 @@ pub async fn ingest_match_results(
         if p.source_event_id.trim().is_empty() {
             return Err(ApiError::bad_request("player source_event_id is required"));
         }
+        // T-379. Present-and-blank used to pass and replace a populated role on UPSERT —
+        // same blank-reject as `outcome` / `source_match_id` (see `require_role_played`).
+        require_role_played(&p.role_played)?;
         // T-393. A pre-split flat body would otherwise be accepted silently and store zeros —
         // read the tripwire fields on `PlayerStatInput`. The message names the key it found and
         // the shape to move it to, because the sender is a game server whose only channel back
@@ -701,6 +716,8 @@ pub async fn ingest_match_results(
         // key, so `"abc"` and `" abc"` must not become two rows for the same player.
         let arma_id = p.arma_id.trim();
         let source_event_id = p.source_event_id.trim();
+        // Validated above; re-resolve so the bind is the same trimmed bytes the guard saw.
+        let role_played = require_role_played(&p.role_played)?;
         // The one resolver, and the only one there is — nothing else in the crate maps an
         // `arma_id` to an account. `identity_link_codes.arma_id` is written only as a code is
         // consumed, by which point `users.arma_id` is already set, so it holds no answer this
@@ -725,12 +742,15 @@ pub async fn ingest_match_results(
                 }
             }
         }
-        // `discord_id = EXCLUDED.discord_id` re-asks the resolver on every re-ingest, so a retry
-        // of an old match after a link claims the row and a retry after an *unlink* releases it
-        // — the identity column tracks `users.arma_id` rather than freezing the first answer.
-        // Worth stating because T-229 was filed on the premise that "the upsert key includes
-        // arma_id, [so] linking later does not backfill": the key is exactly what makes both this
-        // statement and T-326's backfill able to find the row again.
+        // `discord_id = EXCLUDED.discord_id` re-asks the resolver on every re-ingest and binds
+        // the lookup result verbatim — including NULL. So: a retry after a link claims the
+        // row; a retry after an *unlink* (T-326 clears `users.arma_id`) deliberately nulls a
+        // previously-populated `discord_id`. That is not a clobber bug: T-326's contract is
+        // that unlink releases the stats rows, and this EXCLUDED write is the ingest-side
+        // half of that release. Freezing the first owner would leave orphaned linked rows
+        // after unlink. The upsert key includes `arma_id` precisely so this statement and
+        // T-326's backfill can find the row again (T-229's "linking later does not backfill"
+        // premise was wrong for the same reason).
         //
         // **T-393 + T-397 — two statements, because "absent counters is not a write" has to be
         // true of the SQL and not just of the struct.** On conflict the counters-absent
@@ -765,7 +785,7 @@ pub async fn ingest_match_results(
                 .bind(match_id)
                 .bind(arma_id)
                 .bind(&discord_id)
-                .bind(&p.role_played)
+                .bind(role_played)
                 .bind(c.kills)
                 .bind(c.deaths)
                 .bind(c.team_kills)
@@ -789,7 +809,7 @@ pub async fn ingest_match_results(
                 .bind(match_id)
                 .bind(arma_id)
                 .bind(&discord_id)
-                .bind(&p.role_played)
+                .bind(role_played)
                 .bind(source_event_id)
                 .execute(&mut *tx)
                 .await?;
@@ -1104,6 +1124,7 @@ pub(super) async fn recompute_user_stats(pool: &PgPool, discord_id: &str) -> Res
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::http::StatusCode;
     use serde_json::json;
 
     fn core_player(extra: serde_json::Value) -> PlayerStatInput {
@@ -1186,5 +1207,28 @@ mod tests {
         assert_eq!(parse_terrain_opt(&Some("anizay".into())), None);
         assert_eq!(parse_terrain_opt(&Some("  ".into())), None);
         assert_eq!(parse_terrain_opt(&None), None);
+    }
+
+    /// Class-R (T-379): present-and-blank `role_played` is a 400 — mirrors
+    /// `source_match_key` / outcome blank rejects. `''` and whitespace both reject.
+    #[test]
+    fn blank_role_played_is_rejected() {
+        for blank in ["", "   ", "\t", "\n", " \t\n "] {
+            let err = require_role_played(blank).expect_err("blank must 400");
+            assert_eq!(err.status, StatusCode::BAD_REQUEST);
+            assert!(
+                err.message.contains("role_played must not be blank"),
+                "unexpected message for {blank:?}: {:?}",
+                err.message
+            );
+        }
+    }
+
+    /// Class-R (T-379): non-blank role is accepted; trimmed form is what binds.
+    #[test]
+    fn non_blank_role_played_ok() {
+        assert_eq!(require_role_played("SL").unwrap(), "SL");
+        assert_eq!(require_role_played("  Squad Leader  ").unwrap(), "Squad Leader");
+        assert_eq!(require_role_played("Rifleman").unwrap(), "Rifleman");
     }
 }
