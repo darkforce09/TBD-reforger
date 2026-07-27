@@ -4,6 +4,7 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
+use crate::check::require_check_ok;
 use crate::gap::test_gap_analysis_round_trip;
 use crate::prompt::extract_prompt;
 use crate::registry::*;
@@ -227,9 +228,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "CONSUME: sampleElevation/isDemReady/isDemDegraded from tactical-map/dem — do not redo loader"
             );
-            println!(
-                "PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091"
-            );
+            println!("PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091");
             println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
             println!(
                 "MANUAL: M1 CUR Z >5m; M3 Save z=123.456; M5/M6 toggles; M7 degraded; M8 Attributes X→Z re-sample"
@@ -245,9 +244,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "REFERENCE (port, do not re-run): packages/tbd-schema/scripts/lib/dem-sample.mjs"
             );
-            println!(
-                "PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091"
-            );
+            println!("PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091");
             println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
         }
         _ => {
@@ -532,6 +529,12 @@ pub fn cmd_gap_round_trip(root: &Path) -> Result<()> {
 }
 
 pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
+    // T-237: refuse to mark shipped when the registry fails ticket check
+    // (including Draft 2020-12 .ai/tickets/schema.json). Check runs first so a
+    // red registry never gets a status write + sync.
+    let _ = require_ticket(registry, id);
+    require_check_ok(root, registry, &format!("ship {id}"));
+
     let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
     if let Some(obj) = t.as_object_mut() {
         obj.insert("status".into(), json!("shipped"));

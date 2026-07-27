@@ -1,5 +1,6 @@
 use anyhow::Result;
 use regex::Regex;
+use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -14,6 +15,62 @@ use crate::root::gap_analysis_path;
 static STRICT_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(STRICT_LEGACY).unwrap());
 static PRIORITY_P: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?m)^\d+\.\s+\*\*P[0-3]").unwrap());
+
+/// Cap schema-error spam so a broken registry still yields an actionable first page.
+const SCHEMA_ERROR_CAP: usize = 100;
+
+fn ticket_schema_path(root: &Path) -> PathBuf {
+    root.join(".ai/tickets/schema.json")
+}
+
+/// Validate `registry` against Draft 2020-12 `.ai/tickets/schema.json`.
+/// Missing/unreadable/uncompilable schema is itself a hard failure (never silent skip).
+pub fn validate_registry_schema(root: &Path, registry: &Value) -> Vec<String> {
+    let path = ticket_schema_path(root);
+    if !path.is_file() {
+        return vec![format!(
+            "missing ticket schema (required for ticket check): {}",
+            path.display()
+        )];
+    }
+    let text = match fs::read_to_string(&path) {
+        Ok(t) => t,
+        Err(e) => {
+            return vec![format!("read ticket schema {}: {e}", path.display())];
+        }
+    };
+    let schema: Value = match serde_json::from_str(&text) {
+        Ok(v) => v,
+        Err(e) => {
+            return vec![format!("parse ticket schema {}: {e}", path.display())];
+        }
+    };
+    let validator = match jsonschema::validator_for(&schema) {
+        Ok(v) => v,
+        Err(e) => {
+            return vec![format!("compile ticket schema {}: {e}", path.display())];
+        }
+    };
+    let mut errors = Vec::new();
+    for err in validator.iter_errors(registry) {
+        let inst = err.instance_path().to_string();
+        let loc = if inst.is_empty() {
+            "/".to_string()
+        } else {
+            inst
+        };
+        // Use masked() so a root-type failure does not dump the entire registry JSON
+        // into stderr (Display of ValidationError embeds the instance value).
+        errors.push(format!("schema {loc}: {}", err.masked()));
+        if errors.len() >= SCHEMA_ERROR_CAP {
+            errors.push(format!(
+                "schema: truncated after {SCHEMA_ERROR_CAP} errors (fix remaining silently)"
+            ));
+            break;
+        }
+    }
+    errors
+}
 
 fn validate_row(row: &serde_json::Value) -> Vec<String> {
     let mut errors = vec![];
@@ -109,7 +166,10 @@ fn scan_legacy_ids(root: &Path) -> HashMap<String, Vec<String>> {
 }
 
 pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<String> {
-    let mut errors = validate_registry(registry);
+    // Schema first: structural/enum contract from .ai/tickets/schema.json (T-237 / T-273).
+    // Hand-rolled checks below add business rules (order, phantoms, on-disk specs, markers).
+    let mut errors = validate_registry_schema(root, registry);
+    errors.extend(validate_registry(registry));
 
     for row in tickets(registry) {
         let tid = str_field(row, "id");
@@ -218,4 +278,128 @@ pub fn cmd_check(root: &Path, registry: &serde_json::Value, strict: bool) -> Res
     }
     println!("check OK");
     Ok(())
+}
+
+/// Fail-fast helper for commands that must not mutate the registry when check is red
+/// (notably `ticket ship` — T-237).
+pub fn require_check_ok(root: &Path, registry: &Value, context: &str) {
+    let errors = check(root, registry, false);
+    if errors.is_empty() {
+        return;
+    }
+    for e in &errors {
+        eprintln!("ERROR: {e}");
+    }
+    eprintln!(
+        "refusing {context}: ticket check failed ({} error(s))",
+        errors.len()
+    );
+    std::process::exit(1);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+    use std::path::PathBuf;
+
+    fn worktree_root() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("xtask parent = repo/worktree root")
+            .to_path_buf()
+    }
+
+    #[test]
+    fn tip_registry_passes_schema() {
+        let root = worktree_root();
+        let registry = load_registry(&root).expect("load tip registry");
+        let errs = validate_registry_schema(&root, &registry);
+        assert!(
+            errs.is_empty(),
+            "tip registry must PASS schema; got:\n{}",
+            errs.join("\n")
+        );
+    }
+
+    #[test]
+    fn tip_registry_full_check_ok() {
+        let root = worktree_root();
+        let registry = load_registry(&root).expect("load tip registry");
+        let errs = check(&root, &registry, false);
+        assert!(
+            errs.is_empty(),
+            "tip registry must PASS full check; got:\n{}",
+            errs.join("\n")
+        );
+    }
+
+    #[test]
+    fn perturbed_ticket_field_fails_schema() {
+        let root = worktree_root();
+        let mut registry = load_registry(&root).expect("load tip registry");
+        let tickets = registry
+            .get_mut("tickets")
+            .and_then(|t| t.as_array_mut())
+            .expect("tickets array");
+        let first = tickets.first_mut().expect("at least one ticket");
+        first
+            .as_object_mut()
+            .expect("ticket object")
+            .remove("title");
+        let errs = validate_registry_schema(&root, &registry);
+        assert!(
+            !errs.is_empty(),
+            "removing required title must make schema check RED"
+        );
+        assert!(
+            errs.iter().any(|e| e.contains("schema")),
+            "errors should be schema-tagged: {errs:?}"
+        );
+    }
+
+    #[test]
+    fn perturbed_schema_rejects_tip_registry() {
+        let root = worktree_root();
+        let registry = load_registry(&root).expect("load tip registry");
+        let schema_path = ticket_schema_path(&root);
+        let schema_text = fs::read_to_string(&schema_path).expect("read schema");
+        let mut schema: Value = serde_json::from_str(&schema_text).expect("parse schema");
+        // Narrow root type to array — tip registry is an object → must fail.
+        schema
+            .as_object_mut()
+            .expect("schema object")
+            .insert("type".into(), json!("array"));
+        let validator =
+            jsonschema::validator_for(&schema).expect("perturbed schema still compiles");
+        let errs: Vec<_> = validator.iter_errors(&registry).collect();
+        assert!(
+            !errs.is_empty(),
+            "type=array schema must reject object registry"
+        );
+    }
+
+    #[test]
+    fn require_check_ok_blocks_invalid_registry() {
+        let root = worktree_root();
+        let mut registry = load_registry(&root).expect("load tip registry");
+        registry
+            .get_mut("tickets")
+            .and_then(|t| t.as_array_mut())
+            .expect("tickets")
+            .first_mut()
+            .expect("ticket")
+            .as_object_mut()
+            .expect("obj")
+            .insert("status".into(), json!("not-a-real-status"));
+        let errs = check(&root, &registry, false);
+        assert!(
+            !errs.is_empty(),
+            "invalid status must fail check (ship preflight relies on this)"
+        );
+        assert!(
+            errs.iter().any(|e| e.contains("schema")),
+            "expected schema error for bogus status: {errs:?}"
+        );
+    }
 }
