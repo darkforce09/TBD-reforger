@@ -13876,6 +13876,50 @@
       ],
       "executor": "claude-code",
       "priority": 2
+    },
+    {
+      "id": "T-535",
+      "title": "T-385: live IT must assert GET /servers terrain from match join (positive)",
+      "summary": "FOUND by W50 adversarial verifier (MAJOR) after T-385.\n\nT-385 ships LEFT JOIN matches.terrain and Class-R/golden pins, but the only live IT path asserts terrain is null on create. A regression that always returns None (broken join / wrong column) stays green. Cure: seed a match with terrain + point server_statuses.current_match_id at it, then GET /servers and assert the row's terrain equals the seeded value (e.g. everon).\n\nRepro: delete LEFT JOIN from SERVER_STATUS_SELECT_* \u2192 golden/source pins may still pass if not re-run; HTTP create-null IT still passes. Need positive IT RED on join removal.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "api",
+        "tests",
+        "platform-server"
+      ],
+      "status": "running",
+      "order": 3375,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-536",
+      "title": "touch_changed still masks changed_rs porcelain failure as empty list",
+      "summary": "FOUND by W50 adversarial verifier (MINOR-NIT) after T-492.\n\nfmt_changed/clippy_changed now propagate changed_rs rc. touch_changed still does `for f in $(changed_rs \u2026)` and can return 0 with listed=0 when porcelain fails. Same mask class.\n\nCure: `files=$(changed_rs) || return $?` (or equivalent) in touch_changed.",
+      "program": "platform",
+      "surfaces": [
+        "infra"
+      ],
+      "impact": [
+        "ci",
+        "dx"
+      ],
+      "status": "deferred",
+      "order": 3376,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }

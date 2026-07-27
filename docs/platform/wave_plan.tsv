@@ -333,3 +333,5 @@
 99	T-532	No API route to re-point mission current_version_id after a bad version	apps/website/api/src/handlers/missions.rs; apps/website/api/src/app.rs
 99	T-533	T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400	apps/website/api/tests/telemetry.rs; apps/website/api/src/handlers/telemetry.rs
 99	T-534	IT suites still seed fixed arma_ids via shared seed_user	apps/website/api/tests/common/mod.rs; apps/website/api/tests
+50	T-535	T-385 live IT positive terrain join	apps/website/api/tests/misc_integration.rs
+99	T-536	touch_changed masks changed_rs porcelain failure	scripts/platform/wave.sh

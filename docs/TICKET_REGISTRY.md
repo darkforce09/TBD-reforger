@@ -2681,6 +2681,16 @@ Repro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note
 T-479 fixed the events suite (unique_arma + DB_LOCK + release foreign holders). Other ITs (identity_link, factions, t350, t528, …) still pass fixed arma_id strings into shared common::seed_user. Cross-binary parallel cargo test can still trip idx_users_arma_id (admin_field flake class). Not caused by T-479 release of events armas.
 
 Cure: migrate remaining suites to unique_arma / suite Mutex, or document denylist of fixed strings. Repro: rg 'seed_user\(' apps/website/api/tests \| rg -v unique_arma. |
+| T-535 | 3375 | running | platform | T-385: live IT must assert GET /servers terrain from match join (positive) | FOUND by W50 adversarial verifier (MAJOR) after T-385.
+
+T-385 ships LEFT JOIN matches.terrain and Class-R/golden pins, but the only live IT path asserts terrain is null on create. A regression that always returns None (broken join / wrong column) stays green. Cure: seed a match with terrain + point server_statuses.current_match_id at it, then GET /servers and assert the row's terrain equals the seeded value (e.g. everon).
+
+Repro: delete LEFT JOIN from SERVER_STATUS_SELECT_* → golden/source pins may still pass if not re-run; HTTP create-null IT still passes. Need positive IT RED on join removal. |
+| T-536 | 3376 | deferred | platform | touch_changed still masks changed_rs porcelain failure as empty list | FOUND by W50 adversarial verifier (MINOR-NIT) after T-492.
+
+fmt_changed/clippy_changed now propagate changed_rs rc. touch_changed still does `for f in $(changed_rs …)` and can return 0 with listed=0 when porcelain fails. Same mask class.
+
+Cure: `files=$(changed_rs) \|\| return $?` (or equivalent) in touch_changed. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
