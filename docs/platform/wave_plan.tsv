@@ -291,3 +291,6 @@
 99	T-490	T-411 sticky gate DB on plan wave 3	scripts/platform/wave.sh; docs/platform/factory_pack_wave
 99	T-491	T-425 mixed drag two undo txns + untested pick/marquee	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; crates/map-engine-core/src/doc/store.rs
 99	T-492	fmt_changed/clippy_changed ignore changed_rs rc	scripts/platform/wave.sh
+99	T-493	T-397 Class-R blind to COALESCE(deaths,0)	apps/website/api/tests/telemetry.rs; apps/website/api/migrations/0014_nullable_match_player_stat_counters.sql
+99	T-494	trim source-ratchet + schedule briefing trim	apps/website/frontend/src/mission_overview.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/events.rs
+99	T-495	members IT offset exercise	apps/website/api/tests/events.rs
