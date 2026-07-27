@@ -1014,13 +1014,7 @@ mod tests {
                 "whitespace-only title {raw:?} must not appear on the Save payload; got {:?}",
                 p.get("title")
             );
-            let doc = compile_export(
-                &p,
-                &small,
-                "smoke",
-                "0.1.0",
-                "1970-01-01T00:00:00.000Z",
-            );
+            let doc = compile_export(&p, &small, "smoke", "0.1.0", "1970-01-01T00:00:00.000Z");
             assert_eq!(doc["title"], json!("Untitled Mission"));
         }
 
