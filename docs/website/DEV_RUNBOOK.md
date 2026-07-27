@@ -180,19 +180,24 @@ SELECT created_at, severity, action, message
 
 A flawless login still resolves to **enlisted** unless the guild's role snowflakes are mapped.
 `make seed` applies `apps/website/api/seeds/discord_roles.sql`, whose ids are specific to the TBD
-guild — and one (`1517290000000000000`, "Squad Leader") is an explicit placeholder. `resolve_role`
-takes the `mapped_role` of the highest-`priority` matching row and falls back to enlisted when
-nothing matches.
+guild (Command Staff / Mission Maker / Player). **Squad Leader / `leader` is not seeded** — the old
+placeholder snowflake `1517290000000000000` was removed at T-428 (no real guild id is committed).
+Insert the real mapping after a login (recipe is in the seed file header), then re-resolve.
+`resolve_role` takes the `mapped_role` of the highest-`priority` matching row and falls back to
+enlisted when nothing matches.
 
-The practical order is: log in once, read the real snowflakes back out of `user_discord_roles`
-(they are stored even when unmapped, precisely for this), map them, then re-resolve **everyone**
-without making them log in again:
+The API also arms a nightly Discord role resync (`ROLE_RESYNC_INTERVAL_SECS`, default 24h — T-428)
+as a safety net. For an immediate re-resolve of **everyone** without waiting:
 
 ```bash
 # admin JWT — in dev, read access_token out of the dev-login redirect fragment
 curl -X POST http://localhost:8080/api/v1/admin/roles/sync \
   -H "Authorization: Bearer $ADMIN_JWT"
 ```
+
+If a dirty DB still has the old placeholder row, delete it manually
+(`DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000';`) — re-`make seed`
+does not remove orphans.
 
 `resolve_role` returns enlisted for an empty snapshot, so a user who is genuinely in no mapped
 role stays enlisted by design — that is not the same failure as an unmapped snowflake.

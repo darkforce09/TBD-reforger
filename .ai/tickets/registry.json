@@ -11580,7 +11580,7 @@
         "auth",
         "admin"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3267,
       "stream": "web-platform",
       "targets": [
@@ -12780,7 +12780,7 @@
       "impact": [
         "website"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3323,
       "stream": "web-platform",
       "targets": [
@@ -12801,8 +12801,70 @@
       "impact": [
         "website"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3324,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-486",
+      "title": "Tripwire hollow make verify-t468 recipe body (self-pin)",
+      "summary": "Wave 33 verifier NIT (T-485). verify-t468 pins t438/t456 recipe bodies but not its own. Hollow `verify-t468:\\n\\t@true` greens make verify-t468 / ci-local / ci.yml step; wave.sh cold gate still runs the bash script directly so cold gate stays honest.\n\nRepro: replace verify-t468 recipe with @true → make verify-t468 rc=0.\n\nCure: extend verify-t468 (or sibling) to assert Makefile verify-t468 recipe invokes the real script.",
+      "program": "platform",
+      "surfaces": [
+        "CI",
+        "INFRA"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3325,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-487",
+      "title": "Seed DELETE for orphan Discord Squad Leader placeholder snowflake",
+      "summary": "Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.\n\nRepro: DB with placeholder row; make seed; SELECT still returns the row.\n\nCure: add DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000' (or equivalent) to discord_roles.sql before INSERT.",
+      "program": "platform",
+      "surfaces": [
+        "DATA",
+        "API"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3326,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-488",
+      "title": "Document ROLE_RESYNC_INTERVAL_SECS in .env.example",
+      "summary": "Wave 33 residual (T-428). api.rs arms role resync via ROLE_RESYNC_INTERVAL_SECS (default 24h) but apps/website/api/.env.example only documents SERVER_STATUS_PUBLISH_INTERVAL_SECS and LEADERBOARD_REFRESH_INTERVAL_SECS.\n\nCure: add commented ROLE_RESYNC_INTERVAL_SECS=86400 next to sibling interval knobs.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3327,
       "stream": "web-platform",
       "targets": [
         "website"
