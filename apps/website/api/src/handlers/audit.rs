@@ -255,7 +255,11 @@ mod tests {
         let mut rdr = csv::ReaderBuilder::new()
             .has_headers(true)
             .from_reader(body.as_bytes());
-        let rec = rdr.records().next().expect("one data row").expect("csv row");
+        let rec = rdr
+            .records()
+            .next()
+            .expect("one data row")
+            .expect("csv row");
         for (i, field) in rec.iter().enumerate() {
             assert!(
                 !matches!(field.as_bytes().first(), Some(b'=' | b'+' | b'-' | b'@')),
