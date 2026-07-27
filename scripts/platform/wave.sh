@@ -523,7 +523,9 @@ file_edition() {
 # through five consecutive green wave gates.
 fmt_changed() {
   local base="${1:-main...HEAD}" files f ed rc=0 listed=0 checked=0
-  files="$(changed_rs "$base")"
+  # T-492: empty→SKIP must not mask a failed changed_rs (e.g. git_porcelain_paths rc≠0).
+  # wasm_changed / refuse_empty_range already check porcelain rc; these two helpers did not.
+  files="$(changed_rs "$base")" || return $?
   # A range with no Rust files at all is a legitimate SKIP — that is a backend-untouched slice, and
   # refuse_empty_range has already proved the range as a whole is non-empty.
   [ -z "$files" ] && { echo "no Rust files changed"; return 0; }
@@ -801,7 +803,8 @@ touch_workspace() {
 # ci.yml:113; everything else takes -D warnings, matching the wave gate.
 clippy_changed() {
   local base="${1:-main...HEAD}" files crates=() c d f pkg
-  files="$(changed_rs "$base")"
+  # T-492: propagate changed_rs failure — empty stdout + rc≠0 must not become SKIP.
+  files="$(changed_rs "$base")" || return $?
   [ -z "$files" ] && { echo "no rust changes"; return 0; }
   # Map each file to its owning crate by walking up to the nearest Cargo.toml with a [package] name.
   # Orphan fragments (apps/website/shared/*.rs) have no package ancestor — the walk stops at '.' —
