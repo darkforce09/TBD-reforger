@@ -88,6 +88,47 @@ async fn send(
     (status, json)
 }
 
+async fn get(app: &Router, uri: &str, token: &str) -> (StatusCode, Value) {
+    let resp = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(uri)
+                .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                .body(Body::empty())
+                .expect("build request"),
+        )
+        .await
+        .expect("get");
+    let status = resp.status();
+    let bytes = to_bytes(resp.into_body(), 1 << 20).await.expect("body");
+    let json = serde_json::from_slice(&bytes).unwrap_or(Value::Null);
+    (status, json)
+}
+
+/// Walk `{data,total,limit,offset}` pages until `id` appears or the queue ends.
+async fn find_id_in_list(app: &Router, uri_base: &str, token: &str, id: &str) -> bool {
+    const PAGE: usize = 100;
+    let mut offset = 0usize;
+    loop {
+        let uri = format!("{uri_base}?limit={PAGE}&offset={offset}");
+        let (st, body) = get(app, &uri, token).await;
+        assert_eq!(st, StatusCode::OK, "{uri}: {body}");
+        let rows = body["data"]
+            .as_array()
+            .unwrap_or_else(|| panic!("{uri} missing data: {body}"));
+        if rows.iter().any(|r| r["id"].as_str() == Some(id)) {
+            return true;
+        }
+        if rows.len() < PAGE {
+            return false;
+        }
+        offset += rows.len();
+        assert!(offset < 100_000, "{uri_base} paging never terminated");
+    }
+}
+
 #[tokio::test]
 async fn create_stores_bare_angle_brackets_without_html_entities() {
     let Some((app, pool)) = boot().await else {
@@ -355,4 +396,56 @@ async fn push_discord_allows_published() {
     .unwrap();
     assert!(pushed, "row must record webhook success");
     assert_eq!(msg_id, "t246-msg");
+}
+
+/// T-465 — CMS master list returns drafts; public feed does not; non-admin is refused.
+///
+/// RED: change `list_cms_announcements` SQL to published-only (`status = 'published'`) —
+/// `find_id_in_list(... /cms/announcements ...)` fails because the draft id is absent.
+#[tokio::test]
+async fn cms_list_includes_draft_public_feed_excludes_non_admin_forbidden() {
+    let Some((app, _pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = common::dev_login_token(&app, SUITE, "admin").await;
+    let title = format!("t465-draft-{}", uuid::Uuid::new_v4());
+
+    let (status, resp) = send(
+        &app,
+        "POST",
+        "/api/v1/cms/announcements",
+        &admin,
+        json!({
+            "title": title,
+            "body": "t465 draft body — must appear on CMS list only",
+            "tag": "update",
+            "status": "draft",
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "create draft: {resp}");
+    assert_eq!(resp["status"], "draft", "create must store draft: {resp}");
+    let id = resp["id"].as_str().expect("create returns id").to_string();
+
+    assert!(
+        find_id_in_list(&app, "/api/v1/cms/announcements", &admin, &id).await,
+        "GET /cms/announcements must include draft {id} (RED: published-only CMS list)"
+    );
+
+    assert!(
+        !find_id_in_list(&app, "/api/v1/announcements", &admin, &id).await,
+        "GET /announcements (public feed) must NOT include draft {id}"
+    );
+
+    // AdminUser extractor → 403 insufficient role (not 401) for authenticated non-admins.
+    for role in ["enlisted", "mission_maker"] {
+        let tok = common::dev_login_token(&app, SUITE, role).await;
+        let (st, body) = get(&app, "/api/v1/cms/announcements?limit=1", &tok).await;
+        assert_eq!(
+            st,
+            StatusCode::FORBIDDEN,
+            "non-admin {role} GET /cms/announcements must be 403 (AdminUser): {body}"
+        );
+    }
 }
