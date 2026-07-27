@@ -649,11 +649,11 @@ VALUES
   -- entries and the ORBAT selector has to render a faction split at all.
   ('00000000-0000-4000-5000-000000000014', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    'OPFOR', 'Recon', 'GHOST', 'Team Leader', 'AK-74 + Optic', 'TL', 0, NULL, NULL),
-  -- T-331: was double-seated with BLUFOR/Alpha#1 (:623) on the same discord_id
-  -- 000000000000000005. Registration §9 names the earlier seat (:685 → …0005).
-  -- Clear this seat so a partial unique on (event_mission_id, assigned_to)
-  -- WHERE assigned_to IS NOT NULL can land (index itself deferred — events.rs:540
-  -- still seeds legacy two-seat for T-318 recovery; that file is outside this slice).
+  -- T-331: was double-seated with BLUFOR/Alpha#1 above on the same discord_id
+  -- 000000000000000005. Registration §9 names the earlier seat (…0005). Keep
+  -- assigned_to NULL so this seed stays compatible with idx_orbat_slots_em_assigned
+  -- (0017 / T-511: UNIQUE (event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL).
+  -- Legacy two-seat test seed in events.rs was retired with that index.
   ('00000000-0000-4000-5000-000000000015', '89b1b731-37a8-4926-901a-3c7ff7de5eb3',
    'OPFOR', 'Recon', 'GHOST', 'Designated Marksman', 'SVD', 'DMR', 1,
    NULL, NULL),
