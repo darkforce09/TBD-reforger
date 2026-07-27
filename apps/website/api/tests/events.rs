@@ -2346,3 +2346,95 @@ async fn patch_clears_briefing_banner_and_mission_reattach_works() {
         "re-attach must mint a new event_mission id"
     );
 }
+
+/// T-495 — `GET /api/v1/members` must honour `offset` (not only return an array).
+///
+/// T-412 shipped handler LIMIT/OFFSET + `{data,total,limit,offset}` and a pure-oracle unit
+/// test, but the live IT path in this suite still only did `assert!(mem["data"].is_array())`.
+/// That stays green if OFFSET is deleted. Cure: seed 25 suite-private members whose
+/// usernames sort under a unique `q` prefix, request `offset=20` (default limit 20), and
+/// assert the window starts at member index 20 plus the envelope fields.
+///
+/// Perturbation: drop `OFFSET` / hard-code `LIMIT 20` with no bind → page still length 20 but
+/// first username is `t495_user_00` (or total/offset mismatch) → assert fails.
+#[tokio::test]
+async fn members_list_honours_offset_pagination() {
+    let _serial = DB_LOCK.lock().await;
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+
+    const N: usize = 25;
+    const PREFIX: &str = "t495_user_";
+    // Suite-private discord ids (T-495 range) — must not collide with OTHER/THIRD / other suites.
+    for i in 0..N {
+        let discord_id = format!("000000000000495{i:03}");
+        let username = format!("{PREFIX}{i:02}");
+        common::seed_user(&pool, &discord_id, &username, &arma(&discord_id), "enlisted").await;
+    }
+
+    let leader = token(&app, "leader").await;
+
+    // Page 0 — member at index 20 must be invisible.
+    let (st, page0) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/members?q={PREFIX}&limit=20&offset=0"),
+        &leader,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "members page0: {page0}");
+    let data0 = page0["data"]
+        .as_array()
+        .unwrap_or_else(|| panic!("page0 missing data array: {page0}"));
+    assert_eq!(data0.len(), 20, "default first page size: {page0}");
+    assert_eq!(page0["total"], N as i64, "filtered total must be seeded N: {page0}");
+    assert_eq!(page0["limit"], 20, "envelope limit: {page0}");
+    assert_eq!(page0["offset"], 0, "envelope offset: {page0}");
+    let names0: Vec<&str> = data0
+        .iter()
+        .map(|m| m["username"].as_str().unwrap_or(""))
+        .collect();
+    assert_eq!(names0.first().copied(), Some("t495_user_00"));
+    assert!(
+        !names0.contains(&"t495_user_20"),
+        "offset=0 must not include member index 20: {names0:?}"
+    );
+
+    // Page at offset=20 — member 21 (0-based index 20) is the first row.
+    let (st, page_off) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/members?q={PREFIX}&limit=20&offset=20"),
+        &leader,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "members offset=20: {page_off}");
+    let data_off = page_off["data"]
+        .as_array()
+        .unwrap_or_else(|| panic!("offset page missing data array: {page_off}"));
+    assert_eq!(
+        data_off.len(),
+        5,
+        "25 seeded − offset 20 → 5 rows: {page_off}"
+    );
+    assert_eq!(
+        page_off["total"], N as i64,
+        "total must stay N across pages: {page_off}"
+    );
+    assert_eq!(page_off["limit"], 20, "envelope limit: {page_off}");
+    assert_eq!(page_off["offset"], 20, "envelope offset: {page_off}");
+    assert_eq!(
+        data_off[0]["username"].as_str(),
+        Some("t495_user_20"),
+        "offset=20 must surface member at index 20 first: {page_off}"
+    );
+    assert_eq!(
+        data_off[4]["username"].as_str(),
+        Some("t495_user_24"),
+        "last row of the window: {page_off}"
+    );
+}
