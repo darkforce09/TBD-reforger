@@ -154,7 +154,7 @@
 5	T-255	Asset palette is not side-aware	apps/website/frontend/src/asset_catalog.rs; apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/mission_editor.rs
 5	T-263	Wiki and Vehicle Database are fully hardcoded	apps/website/frontend/src/wiki.rs; apps/website/frontend/src/vehicles.rs; apps/website/api/src/handlers/wiki.rs; apps/website/api/src/app.rs; apps/website/api/seeds/vehicle_database.sql; Makefile
 4	T-443	IT coverage for POST /vehicle-database (T-263 write path)	apps/website/api/tests/content_read.rs
-99	T-444	make seed does not apply wiki pages (content_golden only)	Makefile; apps/website/api/seeds
+99	T-444	make seed does not apply wiki pages (content_golden only)	Makefile; apps/website/api/seeds; scripts/mod/verify-t444-wiki-seed.sh
 5	T-211	Zone and play-area draw tool	crates/map-engine-core/src/doc/store.rs
 5	T-264	Bookmarked tab with no bookmark button	apps/website/frontend/src/missions.rs
 5	T-265	Leave-of-Absence feature has zero UI	apps/website/frontend/src/deployments.rs; apps/website/frontend/src/nav.rs; apps/website/frontend/src/dto.rs
@@ -239,7 +239,7 @@
 3	T-436	Harden deploy-website.sh path policy	scripts/deploy/deploy-website.sh; scripts/deploy/deploy.env.example
 99	T-437	Destroy-target inert diagnostics still claim entities[] never spawn	apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c; packages/tbd-schema/schema/mission.schema.json
 99	T-438	deploy-staging.sh still looks for docker-compose.staging.yml under apps/website/api	scripts/mod/deploy-staging.sh; scripts/mod/verify-t438-deploy-staging-compose-path.sh; docs/website/HOME_SERVER.md
-99	T-439	Objects palette aliases need prop:/comp: rows in mod Data/registry.json	apps/mod/tbd-framework/Data/registry.json; apps/website/frontend/src/asset_catalog.rs
+99	T-439	Objects palette aliases need prop:/comp: rows in mod Data/registry.json	apps/mod/tbd-framework/Data/registry.json; apps/website/frontend/src/asset_catalog.rs; scripts/mod/verify-t439-objects-registry-aliases.sh
 99	T-440	Cold/schema gates never apply make seed / faction_library.sql	Makefile; scripts/platform/wave.sh; apps/website/api/seeds/faction_library.sql
 4	T-441	null_tolerance OPTION_FIELDS for events.server_id/modpack_id	apps/website/api/tests/null_tolerance.rs
 99	T-442	Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id	apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/dto.rs
@@ -260,3 +260,5 @@
 99	T-459	ticket advance-slice mutates without schema check preflight	xtask/src/cmds.rs; xtask/src/check.rs
 99	T-460	Class-R pins for T-456/T-458 are false-green	scripts/mod/verify-t456-mission-rest-size-gate.sh; apps/website/frontend/src/ui.rs; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
 99	T-461	Class-R pins for T-438/T-448 are false-green	scripts/mod/verify-t438-deploy-staging-compose-path.sh; scripts/mod/deploy-staging.sh; apps/website/frontend/src/personnel.rs; apps/website/api/src/handlers/admin.rs
+99	T-462	Wave 24 Class-R/verify gates unwired (wiki seed + Objects aliases)	Makefile; scripts/platform/wave.sh; scripts/mod/verify-t439-objects-registry-aliases.sh; scripts/mod/verify-t444-wiki-seed.sh; apps/website/frontend/src/event_hub.rs
+99	T-463	verify-t438/t456 shell gates still unwired from wave cold gate	scripts/platform/wave.sh; scripts/mod/verify-t438-deploy-staging-compose-path.sh; scripts/mod/verify-t456-mission-rest-size-gate.sh

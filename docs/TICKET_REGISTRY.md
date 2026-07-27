@@ -2331,7 +2331,7 @@ Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs ou
 Repro: after T-251 land, follow game staging path that uses deploy-staging.sh compose step — file not found / wrong cwd.
 
 Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-compose.staging.yml; align STAGING-SERVER.md. |
-| T-439 | 3278 | ready | platform | Objects palette aliases need prop:/comp: rows in mod Data/registry.json | Residual from T-254 / wave 9 N5. Editor synthesises prop:*/comp:* aliases for crate\|other (~333 workbench kinds); mod Data/registry.json has 1 comp: (comp:checkpoint_small) and 0 prop: entries. SpawnMissionEntities warn+skips unknown aliases.
+| T-439 | 3278 | shipped | platform | Objects palette aliases need prop:/comp: rows in mod Data/registry.json | Residual from T-254 / wave 9 N5. Editor synthesises prop:*/comp:* aliases for crate\|other (~333 workbench kinds); mod Data/registry.json has 1 comp: (comp:checkpoint_small) and 0 prop: entries. SpawnMissionEntities warn+skips unknown aliases.
 
 Repro: place a non-checkpoint Objects leaf → compile entities[] → world-boot → spawn warns and skips; only checkpoint_small resolves.
 
@@ -2348,7 +2348,7 @@ Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts s
 Repro: after T-260 merge, wave.sh gate → null_tolerance FAIL on server_id/modpack_id without COALESCE.
 
 Cure: add ("events", "server_id") and ("events", "modpack_id") to OPTION_FIELDS (same claim as match_id). |
-| T-442 | 3281 | ready | platform | Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id | Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.
+| T-442 | 3281 | shipped | platform | Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id | Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.
 
 Repro: create event with modpack_id set; Hub UI still shows global current pack.
 
@@ -2358,7 +2358,7 @@ Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall ba
 Repro: delete .post(create_vehicle) from app.rs or stub create_vehicle to always 500; wave gate still PASS.
 
 Cure: extend apps/website/api/tests/content_read.rs (or sibling) with admin POST happy path + 400 on missing name/faction/armor_type + GET list contains the new row. Perturbation must RED if route/handler missing. |
-| T-444 | 3283 | ready | platform | make seed does not apply wiki pages (content_golden only) | Residual from T-263 / wave 12 adversarial MINOR. make seed now applies vehicle_database.sql, but wiki manuals remain only in content_golden.sql (not in the seed recipe). Fresh seed DB → GET /wiki empty → SPA "No manuals yet." (explicit empty, not silent mock).
+| T-444 | 3283 | shipped | platform | make seed does not apply wiki pages (content_golden only) | Residual from T-263 / wave 12 adversarial MINOR. make seed now applies vehicle_database.sql, but wiki manuals remain only in content_golden.sql (not in the seed recipe). Fresh seed DB → GET /wiki empty → SPA "No manuals yet." (explicit empty, not silent mock).
 
 Repro: make db-up + make seed on empty DB; curl GET /api/v1/wiki → data:[]; vehicles have rows.
 
@@ -2461,6 +2461,19 @@ Repro T-438: keep good path in comment/dry-run; set live -f apps/website/api/doc
 Repro T-448: zero→em-dash conditional → dossier Class-R PASS; fake SELECT 0::bigint → check green.
 
 Cure: strip comments; require good compose path on both dry-run and live lines; reject apps/website/api/docker-compose.staging.yml; wire verify into slice/Makefile if natural. Forbid em-dash near Deployments / require exact single bind; pin/IT that roster total_deployments equals seeded users.total_deployments. |
+| T-462 | 3301 | shipped | platform | Wave 24 Class-R/verify gates unwired (wiki seed + Objects aliases) | Residual from wave 24 adversarial MAJOR. Live T-442/T-444/T-439 features hold, but gates do not examine them:
+(1) T-444: no Class-R pins Makefile seed ↔ seeds/wiki_pages.sql — deleting the seed line or emptying the SQL still greens cold gate (same class as deferred T-440).
+(2) T-439: verify-t439-objects-registry-aliases.sh RED on guid mismatch but is not wired into wave cold gate / Makefile / CI, so cargo Class-R alone stays green.
+(3) T-442 MINOR: hub_chip Class-R does not pin mp.modpack.id == id find predicate.
+
+Repro: remove wiki_pages.sql from Makefile seed → cold gate still PASS; corrupt a prop guid in mod registry → cargo green while verify-t439 would FAIL if run.
+
+Cure: Class-R/source guard that seed: recipe references seeds/wiki_pages.sql (optional seed↔content_golden wiki body hash); wire bash scripts/mod/verify-t439-….sh into wave.sh gate or an existing make verify target that cold gate runs; tighten event_hub Class-R to require the list+find id predicate. |
+| T-463 | 3302 | deferred | platform | verify-t438/t456 shell gates still unwired from wave cold gate | Residual from T-462 / wave 24. wave.sh now runs verify-t439 and verify-t444 after schema, but scripts/mod/verify-t438-deploy-staging-compose-path.sh and verify-t456-mission-rest-size-gate.sh remain agent-local only — cold gate never executes them.
+
+Repro: corrupt deploy-staging compose path or strip REST size check → wave.sh gate still PASS until those scripts are invoked manually.
+
+Cure: wire both into wave.sh gate_slice + cmd_gate next to the T-439/T-444 steps (same pattern). |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

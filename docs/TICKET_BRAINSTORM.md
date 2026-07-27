@@ -941,6 +941,11 @@ Cure: enable FormData/File features, wire multipart api helper, POST /cms/upload
 Repro: Publish announcement; reload /content → mock seed only.
 
 Cure: add list route if missing + FE LocalResource GET /cms/announcements.
+- **T-463** (deferred) — verify-t438/t456 shell gates still unwired from wave cold gate [INFRA, tests] — Residual from T-462 / wave 24. wave.sh now runs verify-t439 and verify-t444 after schema, but scripts/mod/verify-t438-deploy-staging-compose-path.sh and verify-t456-mission-rest-size-gate.sh remain agent-local only — cold gate never executes them.
+
+Repro: corrupt deploy-staging compose path or strip REST size check → wave.sh gate still PASS until those scripts are invoked manually.
+
+Cure: wire both into wave.sh gate_slice + cmd_gate next to the T-439/T-444 steps (same pattern).
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
