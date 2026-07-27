@@ -13014,7 +13014,7 @@
       "impact": [
         "tests"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3334,
       "stream": "web-platform",
       "targets": [
@@ -14157,7 +14157,7 @@
         "docs",
         "frontend"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3387,
       "executor": "claude-code",
       "priority": 2,
@@ -14179,7 +14179,7 @@
         "frontend",
         "ui"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3388,
       "executor": "claude-code",
       "priority": 2,

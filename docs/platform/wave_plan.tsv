@@ -293,7 +293,7 @@
 50	T-492	fmt_changed/clippy_changed ignore changed_rs rc	scripts/platform/wave.sh
 99	T-493	T-397 Class-R blind to COALESCE(deaths,0)	apps/website/api/tests/telemetry.rs; apps/website/api/migrations/0014_nullable_match_player_stat_counters.sql
 56	T-494	trim source-ratchet + schedule briefing trim	apps/website/frontend/src/mission_overview.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/events.rs
-99	T-495	members IT offset exercise	apps/website/api/tests/events.rs
+57	T-495	members IT offset exercise	apps/website/api/tests/events.rs
 52	T-496	T-410 library/bookmark Class-R residue-dependent	apps/website/api/tests/missions.rs
 53	T-497	mission mutators still AuthUser+can_edit	apps/website/api/src/handlers/missions.rs
 55	T-498	Discord webhook title not formula-safe	apps/website/api/src/services/webhook.rs; apps/website/api/src/handlers/cms.rs
@@ -345,5 +345,5 @@
 56	T-544	T-532 Class-R only — no HTTP IT for set-current	apps/website/api/tests/missions.rs; apps/website/api/src/handlers/missions.rs
 56	T-545	mcp-daemon.sh comment still claims mcpd-bin ignores CARGO_TARGET_DIR	scripts/mod/mcp-daemon.sh
 99	T-546	T-498 Class-R only — no HTTP IT for Discord formula-title sanitize	apps/website/api/tests; apps/website/api/src/services/webhook.rs
-99	T-547	datefmt format_uptime doc overclaims server-control sharing	apps/website/frontend/src/datefmt.rs; apps/website/frontend/src/server_control.rs
-99	T-548	missions.rs featured-card briefing still uses !b.is_empty() without trim	apps/website/frontend/src/missions.rs
+57	T-547	datefmt format_uptime doc overclaims server-control sharing	apps/website/frontend/src/datefmt.rs; apps/website/frontend/src/server_control.rs
+57	T-548	missions.rs featured-card briefing still uses !b.is_empty() without trim	apps/website/frontend/src/missions.rs
