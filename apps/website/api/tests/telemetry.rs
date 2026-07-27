@@ -1953,15 +1953,17 @@ async fn insert_without_counters_stores_null_not_zero() {
     .await;
     assert_eq!(st, StatusCode::OK, "identity-only insert: {r}");
 
-    let row: (
-        Option<i64>,
-        Option<i64>,
-        Option<i64>,
-        Option<i64>,
-        Option<i64>,
-        Option<bool>,
-        Option<bool>,
-    ) = sqlx::query_as(
+    #[derive(Debug, sqlx::FromRow)]
+    struct CountersNull {
+        kills: Option<i64>,
+        deaths: Option<i64>,
+        team_kills: Option<i64>,
+        longest_kill_m: Option<i64>,
+        vehicles_destroyed: Option<i64>,
+        is_command: Option<bool>,
+        command_win: Option<bool>,
+    }
+    let row: CountersNull = sqlx::query_as(
         "SELECT kills, deaths, team_kills, longest_kill_m, vehicles_destroyed, is_command, command_win \
          FROM match_player_stats WHERE arma_id = $1",
     )
@@ -1969,10 +1971,15 @@ async fn insert_without_counters_stores_null_not_zero() {
     .fetch_one(&pool)
     .await
     .unwrap();
-    assert_eq!(
-        row,
-        (None, None, None, None, None, None, None),
-        "absent counters must store NULL on first insert, not DEFAULT 0"
+    assert!(
+        row.kills.is_none()
+            && row.deaths.is_none()
+            && row.team_kills.is_none()
+            && row.longest_kill_m.is_none()
+            && row.vehicles_destroyed.is_none()
+            && row.is_command.is_none()
+            && row.command_win.is_none(),
+        "absent counters must store NULL on first insert, not DEFAULT 0; got {row:?}"
     );
 
     clean(pool.clone()).await;
@@ -2077,10 +2084,7 @@ async fn leaderboard_mv_does_not_invent_deaths_from_null() {
     assert_eq!(lb.1, 3, "SUM(deaths) ignores NULL — must not invent a 0");
     assert_eq!(lb.3, 2, "both matches still count as played");
     let kd = lb.2.expect("kd_ratio present when measured deaths exist");
-    assert!(
-        (kd - 5.67).abs() < 1e-9,
-        "17/3 → 5.67, got {kd}"
-    );
+    assert!((kd - 5.67).abs() < 1e-9, "17/3 → 5.67, got {kd}");
 
     clean(pool.clone()).await;
 }
