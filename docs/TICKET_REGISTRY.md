@@ -2283,10 +2283,10 @@ Cure lives in API pagination / narrower endpoints + frontend DTO/client — outs
 | T-428 | 3267 | deferred | platform | Schedule Discord role resync; replace placeholder leader snowflake in seed | Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.
 
 Repro: grep apps/website/api and scripts for a timer/cron calling resync_all_roles — none. Seed row: ('1517290000000000000', 'Squad Leader', 'leader', 30). |
-| T-429 | 3268 | deferred | platform | oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects | Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.
+| T-429 | 3268 | ready | platform | oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects | Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.
 
 Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in handlers/oauth.rs cover the helper; IT does not. |
-| T-430 | 3269 | deferred | platform | Production Config::validate should require DISCORD_CLIENT_ID | Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
+| T-430 | 3269 | ready | platform | Production Config::validate should require DISCORD_CLIENT_ID | Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
 
 Repro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured. |
 | T-431 | 3270 | shipped | platform | Identity-link attendance backfill still marks every mission on the event | MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.
@@ -2294,7 +2294,7 @@ Repro: production Config with secret+redirect set and client_id empty — load s
 Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.
 
 Cure: same JOIN shape as T-230 telemetry ingest. |
-| T-432 | 3271 | deferred | platform | Reserve or rename payloadExtras so authored wire keys cannot collide | MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.
+| T-432 | 3271 | ready | platform | Reserve or rename payloadExtras so authored wire keys cannot collide | MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.
 
 Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.
 
@@ -2568,6 +2568,11 @@ Cure: harden Class-R — strip SQL `--`/`/* */` comments before pins; require a 
 Repro: comment-only starter name or echo-path recipe → verify-t440 PASS.
 
 Cure: strip SQL comments before name pin; require live INSERT INTO user_factions (or measured table) with name column value; require recipe line that actually redirects/applies the file to psql (same shape as verify-t444 if tighter); pin wave.sh both gate paths invoke the script. RED→GREEN on verifier perturbations. |
+| T-479 | 3318 | deferred | platform | Flaky events IT: event_orbat_registration_and_race duplicate arma_id | Observed wave 29 cold re-gate FAIL once on fresh tbd_wave29b_cold: event_orbat_registration_and_race panicked in common/mod.rs:217 seed_user with duplicate key idx_users_arma_id (events-arma-000000000000334002). Immediate re-gate on fresh tbd_wave29c_cold PASS (33/40/13). Not caused by T-431/477 product SQL (attendance backfill). Likely parallel seed race or leftover arma_id uniqueness collision in events IT fixtures.
+
+Repro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.
+
+Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; assert no shared snowflake collision across parallel tests. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

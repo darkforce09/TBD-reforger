@@ -886,22 +886,16 @@ Cure lives in API pagination / narrower endpoints + frontend DTO/client — outs
 - **T-428** (deferred) — Schedule Discord role resync; replace placeholder leader snowflake in seed [BE, OPS] — Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.
 
 Repro: grep apps/website/api and scripts for a timer/cron calling resync_all_roles — none. Seed row: ('1517290000000000000', 'Squad Leader', 'leader', 30).
-- **T-429** (deferred) — oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects [BE] — Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.
-
-Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in handlers/oauth.rs cover the helper; IT does not.
-- **T-430** (deferred) — Production Config::validate should require DISCORD_CLIENT_ID [BE] — Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
-
-Repro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured.
-- **T-432** (deferred) — Reserve or rename payloadExtras so authored wire keys cannot collide [FE] — MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.
-
-Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.
-
-Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage name.
 - **T-476** (deferred) — verify-t438/t456 Makefile recipes lack hollow-body tripwire [INFRA, tests] — NIT from wave 28 adversarial. T-467 wired real bash recipes into Makefile + ci-local + ci.yml, but there is no T-471/T-472-style recipe-body tripwire — a future hollow `@true` / `echo PASS` / `#fake` recipe would green until noticed.
 
 Repro (hypothetical): replace verify-t438 recipe with `@true` → make verify-t438 PASS while script never runs.
 
 Cure: extend verify-t468-style (or sibling) tripwire to assert Makefile verify-t438/verify-t456 recipes invoke the real bash scripts (not echo/@true/#).
+- **T-479** (deferred) — Flaky events IT: event_orbat_registration_and_race duplicate arma_id [API, tests] — Observed wave 29 cold re-gate FAIL once on fresh tbd_wave29b_cold: event_orbat_registration_and_race panicked in common/mod.rs:217 seed_user with duplicate key idx_users_arma_id (events-arma-000000000000334002). Immediate re-gate on fresh tbd_wave29c_cold PASS (33/40/13). Not caused by T-431/477 product SQL (attendance backfill). Likely parallel seed race or leftover arma_id uniqueness collision in events IT fixtures.
+
+Repro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.
+
+Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; assert no shared snowflake collision across parallel tests.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

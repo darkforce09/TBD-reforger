@@ -11601,7 +11601,7 @@
         "auth",
         "tests"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3268,
       "stream": "web-platform",
       "targets": [
@@ -11621,7 +11621,7 @@
       "impact": [
         "auth"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3269,
       "stream": "web-platform",
       "targets": [
@@ -11662,7 +11662,7 @@
       "impact": [
         "mission-creator"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3271,
       "stream": "web-platform",
       "targets": [
@@ -12660,6 +12660,28 @@
       ],
       "executor": "claude-code",
       "priority": 1
+    },
+    {
+      "id": "T-479",
+      "title": "Flaky events IT: event_orbat_registration_and_race duplicate arma_id",
+      "summary": "Observed wave 29 cold re-gate FAIL once on fresh tbd_wave29b_cold: event_orbat_registration_and_race panicked in common/mod.rs:217 seed_user with duplicate key idx_users_arma_id (events-arma-000000000000334002). Immediate re-gate on fresh tbd_wave29c_cold PASS (33/40/13). Not caused by T-431/477 product SQL (attendance backfill). Likely parallel seed race or leftover arma_id uniqueness collision in events IT fixtures.\n\nRepro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.\n\nCure: make seed_user idempotent on arma_id or unique arma_id per test worker; assert no shared snowflake collision across parallel tests.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "website",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3318,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }

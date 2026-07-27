@@ -277,3 +277,4 @@
 99	T-476	verify-t438/t456 Makefile recipes lack hollow-body tripwire	Makefile; scripts/mod/verify-t468-ci-schema-parity.sh
 99	T-477	T-431 Class-R greened on event-wide BACKFILL shapes	apps/website/api/src/handlers/me.rs
 99	T-478	T-440 verify comment name + path-echo seed recipe	scripts/mod/verify-t440-faction-library-seed.sh; scripts/platform/wave.sh; Makefile; apps/website/api/seeds/faction_library.sql
+99	T-479	Flaky events IT duplicate arma_id on seed_user	apps/website/api/tests/common/mod.rs; apps/website/api/tests/events.rs
