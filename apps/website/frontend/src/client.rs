@@ -331,6 +331,71 @@ mod wasm_client {
         .await
     }
 
+    /// POST multipart upload — form field `"file"` (CMS `POST /cms/uploads`, T-446).
+    ///
+    /// Same auth contract as the JSON verbs (Bearer + single-flight 401 refresh + one retry).
+    /// Does **not** set `Content-Type` — the browser supplies `multipart/form-data` with the
+    /// boundary when the body is a `FormData`.
+    pub async fn api_upload_file<T: DeserializeOwned + Clone + 'static>(
+        store: AuthStore,
+        path: &str,
+        file: web_sys::File,
+    ) -> Result<T, super::ApiErr> {
+        let sf = REFRESH_SF.with(|s| s.clone());
+        let url = format!("{API_BASE}{path}");
+        let send = move |tok: Option<String>| -> Req<T> {
+            let url = url.clone();
+            let file = file.clone();
+            async move {
+                let Ok(form) = web_sys::FormData::new() else {
+                    return Err((0u16, None));
+                };
+                if form
+                    .append_with_blob_and_filename("file", file.as_ref(), &file.name())
+                    .is_err()
+                {
+                    return Err((0u16, None));
+                }
+                let mut req = gloo_net::http::Request::post(&url)
+                    .credentials(web_sys::RequestCredentials::Include);
+                if let Some(t) = tok {
+                    req = req.header("Authorization", &format!("Bearer {t}"));
+                }
+                let Ok(req) = req.body(form) else {
+                    return Err((0u16, None));
+                };
+                match req.send().await {
+                    Ok(resp) => {
+                        let status = resp.status();
+                        if (200..300).contains(&status) {
+                            resp.json::<T>().await.map_err(|_| (0u16, None))
+                        } else {
+                            let msg = resp
+                                .json::<serde_json::Value>()
+                                .await
+                                .ok()
+                                .and_then(|v| super::error_body_message(&v));
+                            Err((status, msg))
+                        }
+                    }
+                    Err(_) => Err((0u16, None)),
+                }
+            }
+            .boxed_local()
+        };
+        send_with_refresh(
+            &sf,
+            send,
+            move || store.access_token.get_untracked(),
+            move || refresh_via_gloo(store).boxed_local(),
+            move |r: &RefreshResponse| {
+                store.set_tokens(r.clone());
+                persist(&store.persist_state());
+            },
+        )
+        .await
+    }
+
     /// Cold-load bootstrap (useAuthBootstrap): hydrate tokens from tbd-auth, then GET /me — which
     /// self-handles a stale/absent access token via the 401 → single-flight refresh → retry path.
     /// No-ops (stays guest) when nothing is persisted.
@@ -363,7 +428,9 @@ mod wasm_client {
 
 #[cfg(target_arch = "wasm32")]
 #[allow(unused_imports)] // the T-159.24 verbs are wired by the T-159.25 suite live-wire
-pub use wasm_client::{api_delete, api_get, api_patch, api_post, api_post_ok, api_put, bootstrap};
+pub use wasm_client::{
+    api_delete, api_get, api_patch, api_post, api_post_ok, api_put, api_upload_file, bootstrap,
+};
 
 #[cfg(test)]
 mod tests {
@@ -506,5 +573,29 @@ mod tests {
             Some("target out of range")
         );
         assert!(error_body_message(&serde_json::json!({"detail": "x"})).is_none());
+    }
+
+    /// T-446 Class-R — multipart upload helper must stay in the wasm client (source pin; the
+    /// function is cfg(wasm32) so native tests cannot call it).
+    #[test]
+    fn api_upload_file_posts_multipart_file_field() {
+        const SRC: &str = include_str!("client.rs");
+        let prod = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("client.rs must have a #[cfg(test)] module");
+        assert!(
+            prod.contains("pub async fn api_upload_file<"),
+            "api_upload_file must exist (perturbation: rename/delete)"
+        );
+        assert!(
+            prod.contains("FormData::new()")
+                && prod.contains("append_with_blob_and_filename(\"file\""),
+            "upload must build FormData with field name \"file\" matching POST /cms/uploads"
+        );
+        assert!(
+            prod.contains("Request::post(&url)") && prod.contains(".body(form)"),
+            "upload must POST FormData without forcing a JSON Content-Type"
+        );
     }
 }

@@ -69,6 +69,12 @@ web-sys = { version = "0.3", features = [
     "Url",
     "HtmlAnchorElement",
     "HtmlElement",
+    # T-446 — CMS Content hero upload: `<input type=file>` → FormData field `"file"` →
+    # POST /api/v1/cms/uploads. `File` extends `Blob` (already listed); `FileList` is required for
+    # `HtmlInputElement::files()` (HtmlInputElement's feature deps do not pull it).
+    "FormData",
+    "File",
+    "FileList",
     # T-159.25 SSE consumer (sse.rs): Bearer fetch + ReadableStream reader — the useServerTelemetry
     # transport (EventSource can't carry the Authorization header).
     "Headers",
