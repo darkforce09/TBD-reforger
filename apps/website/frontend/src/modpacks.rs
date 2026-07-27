@@ -833,23 +833,70 @@ fn editor(
 
 #[cfg(test)]
 mod tests {
-    /// T-454 Class-R — modpack Create/Edit must not use browse-mode `has_min_role(None)=>true`.
+    /// Strip `//` / `/* */` so bans cannot false-red on doc comments (T-457).
+    fn strip_rust_comments(src: &str) -> String {
+        let mut out = String::with_capacity(src.len());
+        let mut chars = src.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c == '/' {
+                match chars.peek() {
+                    Some('/') => {
+                        chars.next();
+                        while let Some(n) = chars.next() {
+                            if n == '\n' {
+                                out.push('\n');
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+                    Some('*') => {
+                        chars.next();
+                        while let Some(n) = chars.next() {
+                            if n == '*' && matches!(chars.peek(), Some('/')) {
+                                chars.next();
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+                    _ => {}
+                }
+            }
+            out.push(c);
+        }
+        out
+    }
+
+    fn collapse_ws(s: &str) -> String {
+        s.split_whitespace().collect::<Vec<_>>().join(" ")
+    }
+
+    /// T-454 / T-457 Class-R — modpack Create/Edit must not use browse-mode `has_min_role(None)=>true`.
+    /// Binds to the live `is_admin` Memo assignment; bans free `has_min_role(` in production.
     #[test]
     fn admin_affordance_uses_authed_reactive_role() {
         const SRC: &str = include_str!("modpacks.rs");
+        let production = SRC
+            .split("mod tests {")
+            .next()
+            .expect("tests module marker");
+        let code = collapse_ws(&strip_rust_comments(production));
         assert!(
-            SRC.contains("has_min_role_authed"),
-            "modpacks admin gate must use has_min_role_authed (not browse-mode None=>true)"
+            code.contains(
+                "let is_admin = Memo::new(move |_| has_min_role_authed(store.user.get().map(|u| u.role), Role::Admin))"
+            ),
+            "is_admin must be the Memo that re-reads AuthStore.user via has_min_role_authed \
+             (dead Memo + browse-mode has_min_role is a fail)"
         );
+        let masked = code.replace("has_min_role_authed", "HAS_MIN_ROLE_AUTHED");
         assert!(
-            SRC.contains("Memo::new(move |_|")
-                && SRC
-                    .contains("has_min_role_authed(store.user.get().map(|u| u.role), Role::Admin)"),
-            "is_admin must be a Memo that re-reads AuthStore.user after bootstrap"
+            !masked.contains("has_min_role("),
+            "production must not call browse-mode has_min_role( — use has_min_role_authed only"
         );
         let one_shot = format!("store.has_min_role({}::Admin)", "Role");
         assert!(
-            !SRC.contains(&one_shot),
+            !code.contains(&one_shot),
             "one-shot store.has_min_role(Admin) freezes pre-bootstrap None as admin"
         );
     }
