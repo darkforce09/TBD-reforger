@@ -40,6 +40,7 @@ use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
 use sqlx::PgPool;
 use tower::ServiceExt;
+use website_api::state::AppState;
 
 /// The single identity `GET /auth/dev-login` mints for **every** role
 /// (`src/handlers/dev.rs:14`). It is shared by every suite that calls dev-login, and each
@@ -215,4 +216,33 @@ pub async fn seed_user(pool: &PgPool, discord_id: &str, username: &str, arma_id:
     .execute(pool)
     .await
     .unwrap_or_else(|e| panic!("seed_user({discord_id}, arma_id={arma_id}, role={role}): {e}"));
+}
+
+/// Mint an access token **without** rewriting the shared `dev-login` row.
+///
+/// Prefer this whenever the suite needs a specific `discord_id` (private actor) or must not
+/// leave `users.role` on `DEV_LOGIN_USER` as `enlisted` for a sibling binary that reads the
+/// DB (`misc_integration.rs` asserts `role == admin` via `GET /me`). JWT role gates
+/// (`MissionMakerUser`, `AdminUser`, …) read the claim, not the row — so this loses no
+/// coverage versus `dev_login_token` for authz paths.
+///
+/// `suite` appears in the panic so a mint failure names the caller the same way
+/// [`dev_login_token`] does.
+pub fn access_token(
+    state: &AppState,
+    suite: &str,
+    discord_id: &str,
+    role: &str,
+    arma_linked: bool,
+) -> String {
+    state
+        .jwt
+        .issue_access(discord_id, role, arma_linked)
+        .unwrap_or_else(|e| {
+            panic!(
+                "tests/{suite}.rs: issue_access(discord_id={discord_id}, role={role}, \
+                 arma_linked={arma_linked}): {e}"
+            )
+        })
+        .0
 }

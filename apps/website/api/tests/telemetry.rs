@@ -1,6 +1,13 @@
 //! Telemetry ingest — server-status upsert (+ low-FPS audit + status read-back) and
 //! match-results (idempotent, arma→discord resolve, leaderboard MV refresh, stats
 //! recompute). Skips without `TEST_DATABASE_URL`.
+//!
+//! # Fixture ownership (T-400)
+//!
+//! `PLAYER_DISCORD` used to be the content-golden Vance snowflake (`…003`). T-334 vacated
+//! the `events.rs` half of that double-booking; this suite's half still rewrote Vance via
+//! `ON CONFLICT … DO UPDATE SET arma_id = EXCLUDED.arma_id`. The id is now in the T-400
+//! private range. Admin tokens go through [`common::dev_login_token`].
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -13,9 +20,13 @@ use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db};
 
+mod common;
+
 const SVC: &str = "test-service-token";
-const PLAYER_DISCORD: &str = "000000000000000003";
-const PLAYER_ARMA: &str = "test-arma-999";
+/// Private player — must never be content_golden Vance (`…003`). See
+/// [`t400_player_is_not_content_golden_vance`].
+const PLAYER_DISCORD: &str = "000000000000400003";
+const PLAYER_ARMA: &str = "telemetry-arma-400003";
 
 async fn boot() -> Option<(Router, PgPool)> {
     let url = std::env::var("TEST_DATABASE_URL").ok()?;
@@ -29,24 +40,18 @@ async fn boot() -> Option<(Router, PgPool)> {
 }
 
 async fn admin_token(app: &Router) -> String {
-    let resp = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri("/api/v1/auth/dev-login?role=admin")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    let loc = resp.headers()[header::LOCATION].to_str().unwrap();
-    loc.split_once('#')
-        .unwrap()
-        .1
-        .split('&')
-        .find_map(|p| p.strip_prefix("access_token="))
-        .unwrap()
-        .to_string()
+    common::dev_login_token(app, "telemetry", "admin").await
+}
+
+/// Class-R: the main ingest player must not be content_golden Vance (T-400 / T-334 residual).
+#[test]
+fn t400_player_is_not_content_golden_vance() {
+    assert_ne!(
+        PLAYER_DISCORD, "000000000000000003",
+        "PLAYER_DISCORD must not be content_golden Vance — T-334 vacated events; T-400 \
+         vacates telemetry"
+    );
+    assert_ne!(PLAYER_ARMA, "76561190000000003");
 }
 
 async fn call(
