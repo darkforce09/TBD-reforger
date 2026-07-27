@@ -456,20 +456,6 @@ enum Adopt {
     Undoable,
 }
 
-/// Non-blank trimmed top-level `title` from a compiled payload (T-375 wire emit).
-///
-/// **T-505.** Prefer this over the mission-row title when adopting: hydrate loads it into meta, but
-/// a subsequent `apply_row_meta` with a stale row would otherwise stomp it. Whitespace-only is not a
-/// title (same spirit as `eden_chrome` / `compile_payload`).
-fn payload_title_nonblank(payload_json: &str) -> Option<String> {
-    let v: serde_json::Value = serde_json::from_str(payload_json).ok()?;
-    v.get("title")
-        .and_then(|t| t.as_str())
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .map(str::to_string)
-}
-
 /// Hydrate a compiled payload into the doc, then rebind the engine glyphs + persist via the shared
 /// tail. `mode` decides whether the replacement is an undo step (see [`Adopt`]); `after_local_edit`
 /// then rebinds/persists (and marks dirty — the caller clears it).
@@ -489,8 +475,9 @@ fn adopt_payload(doc: &DocHandle, payload_json: &str, row: &RowMeta, mode: Adopt
         core.hydrate(payload_json, DEFAULT_LAYER_ID);
         if !row.is_empty() {
             // T-505 — prefer non-blank payload title over a stale missions-row title.
-            let title = payload_title_nonblank(payload_json)
-                .unwrap_or_else(|| row.title.trim().to_string());
+            // Helper + Class-R live in `mission_title_prefer` so native cold-gate CI can pin this
+            // (T-522); do not pass `&row.title` straight into `apply_row_meta`.
+            let title = crate::mission_title_prefer::prefer_payload_title(payload_json, &row.title);
             core.apply_row_meta(
                 &title,
                 &row.terrain,
@@ -1024,44 +1011,5 @@ fn register_mission_backup(mission_id: String, doc: &DocHandle) {
     undo_restore_fn.forget();
 }
 
-#[cfg(test)]
-mod t505_tests {
-    /// T-505 Class-R: `adopt_payload` must prefer a non-blank payload title over the row.
-    ///
-    /// RED: remove `payload_title_nonblank` / pass `&row.title` straight into `apply_row_meta`.
-    #[test]
-    fn adopt_payload_prefers_payload_title() {
-        const SRC: &str = include_str!("mission_hydrate.rs");
-        let production = SRC
-            .split("#[cfg(test)]")
-            .next()
-            .expect("mission_hydrate.rs must have a #[cfg(test)] module");
-        assert!(
-            production.contains("fn payload_title_nonblank"),
-            "payload_title_nonblank helper must exist"
-        );
-        let adopt = production
-            .split("fn adopt_payload(")
-            .nth(1)
-            .and_then(|s| s.split("\nfn ").next())
-            .expect("adopt_payload body");
-        assert!(
-            adopt.contains("payload_title_nonblank(payload_json)"),
-            "adopt_payload must prefer payload_title_nonblank; got:\n{adopt}"
-        );
-        assert!(
-            !adopt.contains("&row.title,"),
-            "adopt_payload must not pass &row.title straight into apply_row_meta (stomp); got:\n{adopt}"
-        );
-    }
-
-    #[test]
-    fn payload_title_nonblank_trim() {
-        assert_eq!(
-            super::payload_title_nonblank(r#"{"title":"  Authored  "}"#).as_deref(),
-            Some("Authored")
-        );
-        assert_eq!(super::payload_title_nonblank(r#"{"title":"  "}"#), None);
-        assert_eq!(super::payload_title_nonblank(r#"{"editor":{}}"#), None);
-    }
-}
+// T-505 / T-522 Class-R moved to `mission_title_prefer` so it runs on native
+// `cargo test -p website-frontend` (this file is `#![cfg(target_arch = "wasm32")]`).
