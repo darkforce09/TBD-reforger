@@ -39,6 +39,21 @@ fn valid_terrain(s: &str) -> Option<TerrainType> {
     }
 }
 
+/// Map a wire terrain string onto the Postgres enum, or `None` when absent/blank/unknown.
+///
+/// **T-402 — unknown names soft-fail to `None`; they do not 400 the report.** The mission
+/// schema constrains terrain to `^[a-z][a-z0-9_]*$` (`packages/tbd-schema/schema/mission.schema.json`),
+/// so community missions legitimately carry names outside `everon|arland|custom`. Rejecting
+/// the whole match-results POST for that was the "production ingest 400s" failure mode for
+/// those senders. Mirrors `parse_uuid_opt`: an unparseable optional field degrades rather
+/// than rejecting the request. Known pins still map; Class-R in `tests` locks both halves.
+fn parse_terrain_opt(s: &Option<String>) -> Option<TerrainType> {
+    s.as_deref()
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .and_then(valid_terrain)
+}
+
 /// `""` (and now `"   "`) means "none"; anything else must parse as a uuid.
 ///
 /// The `trim` is T-347. `server_id` has always been trimmed before `Uuid::parse_str`
@@ -464,32 +479,54 @@ pub struct PlayerStatInput {
     /// not name the counter columns at all. Present = authoritative for every one of them.
     counters: Option<PlayerCountersInput>,
 
-    // ---- legacy-shape tripwire (T-393) — presence only; the values are discarded ----
+    // ---- legacy-shape tripwire (T-393 / T-402) — presence only; the values are discarded ----
     //
-    // These five keys used to live here, at the row's top level. Serde ignores unknown fields
+    // These six keys used to live here, at the row's top level. Serde ignores unknown fields
     // (and must — denying them would 400 the shipping mod's extra `deaths`), so a sender still
     // using the pre-T-393 flat body would be *silently* accepted and write no counters at all:
     // a fresh row would store NULL counters (T-397) while the sender's 200 implied its scoreline
     // landed. That is the T-316 failure mode wearing new clothes — a silent loss where the sender
     // believes it stated something — so the flat shape is detected and rejected out loud by
-    // `reject_legacy_counter_shape` instead of being ignored into an unmeasured row.
+    // `legacy_counter_key` instead of being ignored into an unmeasured row.
     //
     // `deaths` is deliberately **not** on this list even though it moved with the others: the
     // shipping `TBD_ResultsReporter.c` sends exactly `arma_id`/`role_played`/`deaths`/
     // `source_event_id`, and rejecting a top-level `deaths` would 400 every production match
-    // report — which is the defect this ticket exists to fix. It is tolerated and ignored, and
-    // the struct doc says so out loud. Nothing else that moved is tolerated, because nothing
-    // else has a shipping sender.
-    #[serde(rename = "kills")]
-    legacy_kills: Option<IgnoredAny>,
-    #[serde(rename = "team_kills")]
-    legacy_team_kills: Option<IgnoredAny>,
-    #[serde(rename = "longest_kill_m")]
-    legacy_longest_kill_m: Option<IgnoredAny>,
-    #[serde(rename = "vehicles_destroyed")]
-    legacy_vehicles_destroyed: Option<IgnoredAny>,
-    #[serde(rename = "is_command")]
-    legacy_is_command: Option<IgnoredAny>,
+    // report — which is the defect T-393 exists to fix. It is tolerated and ignored, and the
+    // struct doc says so out loud.
+    //
+    // **Every other moved counter is on this list**, including `command_win` (T-402). A genuine
+    // pre-split sender usually also carries `kills`/… and would trip anyway, but the comment
+    // that used to claim "nothing else that moved is tolerated" while omitting `command_win`
+    // was false about the code beneath it — the list and the prose now agree.
+    //
+    // **JSON `null` counts as presence (T-402).** `Option<IgnoredAny>` maps `null → None` under
+    // serde_json's `deserialize_option`, which would let `{"kills": null, …}` escape as a
+    // modern body. `LegacyPresence` is fail-closed: any present key, null included, trips.
+    #[serde(default, rename = "kills")]
+    legacy_kills: LegacyPresence,
+    #[serde(default, rename = "team_kills")]
+    legacy_team_kills: LegacyPresence,
+    #[serde(default, rename = "longest_kill_m")]
+    legacy_longest_kill_m: LegacyPresence,
+    #[serde(default, rename = "vehicles_destroyed")]
+    legacy_vehicles_destroyed: LegacyPresence,
+    #[serde(default, rename = "is_command")]
+    legacy_is_command: LegacyPresence,
+    #[serde(default, rename = "command_win")]
+    legacy_command_win: LegacyPresence,
+}
+
+/// Presence-only tripwire flag: absent → `false`; present at any value **including JSON
+/// `null`** → `true`. See the tripwire block on `PlayerStatInput` for why `Option` is wrong.
+#[derive(Debug, Default)]
+struct LegacyPresence(bool);
+
+impl<'de> Deserialize<'de> for LegacyPresence {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let _ = IgnoredAny::deserialize(deserializer)?;
+        Ok(LegacyPresence(true))
+    }
 }
 
 impl PlayerStatInput {
@@ -498,14 +535,15 @@ impl PlayerStatInput {
     /// floor. See the tripwire fields above for why `deaths` is not among them.
     fn legacy_counter_key(&self) -> Option<&'static str> {
         [
-            ("kills", &self.legacy_kills),
-            ("team_kills", &self.legacy_team_kills),
-            ("longest_kill_m", &self.legacy_longest_kill_m),
-            ("vehicles_destroyed", &self.legacy_vehicles_destroyed),
-            ("is_command", &self.legacy_is_command),
+            ("kills", self.legacy_kills.0),
+            ("team_kills", self.legacy_team_kills.0),
+            ("longest_kill_m", self.legacy_longest_kill_m.0),
+            ("vehicles_destroyed", self.legacy_vehicles_destroyed.0),
+            ("is_command", self.legacy_is_command.0),
+            ("command_win", self.legacy_command_win.0),
         ]
         .into_iter()
-        .find_map(|(name, seen)| seen.as_ref().map(|_| name))
+        .find_map(|(name, seen)| seen.then_some(name))
     }
 }
 
@@ -639,8 +677,8 @@ pub async fn ingest_match_results(
             return Err(ApiError::bad_request(format!(
                 "player counters moved into a nested \"counters\" object (T-393); found top-level \
                  \"{key}\". Send all of kills/deaths/team_kills/longest_kill_m/vehicles_destroyed/\
-                 is_command inside \"counters\", or omit \"counters\" entirely to leave the stored \
-                 scoreline untouched"
+                 is_command/command_win inside \"counters\", or omit \"counters\" entirely to leave \
+                 the stored scoreline untouched"
             )));
         }
     }
@@ -868,18 +906,10 @@ async fn upsert_match(
 ) -> Result<(Uuid, Option<Uuid>), ApiError> {
     let event_id = parse_uuid_opt(&m.event_id);
     let mission_id = parse_uuid_opt(&m.mission_id);
-    // Terrain stays optional, but a non-empty value we don't recognise is a typo, not a
-    // "no terrain" — silently storing NULL for it is the same silent-data-loss shape as the
-    // rest of this ticket. Mirrors the `invalid outcome` 400 above.
-    let terrain = match m
-        .terrain
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-    {
-        None => None,
-        Some(t) => Some(valid_terrain(t).ok_or_else(|| ApiError::bad_request("invalid terrain"))?),
-    };
+    // Terrain stays optional. Known pins (`everon`/`arland`/`custom`) map to the enum;
+    // anything else soft-fails to NULL (T-402) — see `parse_terrain_opt`. This used to 400
+    // the whole report for community terrain names that the mission schema otherwise allows.
+    let terrain = parse_terrain_opt(&m.terrain);
 
     // **T-391 — the live XSS.** The SPA binds this column straight into an `<a href>`
     // (`frontend/src/deployments.rs:471`, read at `:447`) and nothing on the way in had ever
@@ -1069,4 +1099,92 @@ pub(super) async fn recompute_user_stats(pool: &PgPool, discord_id: &str) -> Res
     .execute(pool)
     .await?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn core_player(extra: serde_json::Value) -> PlayerStatInput {
+        let mut v = json!({
+            "arma_id": "a1",
+            "role_played": "SL",
+            "source_event_id": "e1",
+        });
+        if let Some(obj) = v.as_object_mut()
+            && let Some(extra_obj) = extra.as_object()
+        {
+            for (k, val) in extra_obj {
+                obj.insert(k.clone(), val.clone());
+            }
+        }
+        serde_json::from_value(v).expect("PlayerStatInput decodes")
+    }
+
+    /// Class-R: top-level `command_win` is on the tripwire (T-402).
+    #[test]
+    fn legacy_tripwire_includes_command_win() {
+        let p = core_player(json!({ "command_win": true }));
+        assert_eq!(p.legacy_counter_key(), Some("command_win"));
+    }
+
+    /// Class-R: JSON `null` is presence — fail-closed (T-402). Pre-fix,
+    /// `Option<IgnoredAny>` mapped null → None and this escaped.
+    #[test]
+    fn legacy_tripwire_null_is_presence() {
+        let p = core_player(json!({ "kills": null }));
+        assert_eq!(p.legacy_counter_key(), Some("kills"));
+    }
+
+    /// Class-R: shipping mod's top-level `deaths` is still tolerated.
+    #[test]
+    fn deaths_top_level_still_tolerated() {
+        let p = core_player(json!({ "deaths": 3 }));
+        assert_eq!(p.legacy_counter_key(), None);
+    }
+
+    /// Class-R: modern nested counters do not trip the legacy wire.
+    #[test]
+    fn nested_counters_do_not_trip_legacy() {
+        let p = core_player(json!({
+            "counters": {
+                "kills": 1,
+                "deaths": 0,
+                "team_kills": 0,
+                "longest_kill_m": 0,
+                "vehicles_destroyed": 0,
+                "is_command": false,
+                "command_win": true
+            }
+        }));
+        assert_eq!(p.legacy_counter_key(), None);
+        assert!(p.counters.is_some());
+    }
+
+    /// Class-R: known terrains still map (do not break everon/arland/custom).
+    #[test]
+    fn terrain_known_pins() {
+        assert_eq!(
+            parse_terrain_opt(&Some("everon".into())),
+            Some(TerrainType::Everon)
+        );
+        assert_eq!(
+            parse_terrain_opt(&Some(" arland ".into())),
+            Some(TerrainType::Arland)
+        );
+        assert_eq!(
+            parse_terrain_opt(&Some("custom".into())),
+            Some(TerrainType::Custom)
+        );
+    }
+
+    /// Class-R: community / unknown terrain soft-fails to None — does not 400 (T-402).
+    #[test]
+    fn terrain_community_degrades_to_none() {
+        assert_eq!(parse_terrain_opt(&Some("kolguyev".into())), None);
+        assert_eq!(parse_terrain_opt(&Some("anizay".into())), None);
+        assert_eq!(parse_terrain_opt(&Some("  ".into())), None);
+        assert_eq!(parse_terrain_opt(&None), None);
+    }
 }
