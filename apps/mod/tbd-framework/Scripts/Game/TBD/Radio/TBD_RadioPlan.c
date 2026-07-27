@@ -86,11 +86,12 @@ class TBD_RadioPlan
 	static const float FREQ_MHZ_MIN = 30;
 	static const float FREQ_MHZ_MAX = 512;
 
-	//! Hard cap on nets accepted from one document. The schema puts no `maxItems` on `nets`, and
-	//! everything downstream of here is a reliable RPC. Truncation is LOGGED, never silent.
+	//! Hard cap on nets accepted from one document. Pinned in schema as
+	//! `radioPlan.nets.maxItems` = 32 (T-275 / mission.schema.json). The mod cannot run the JSON
+	//! schema, so the ceiling is re-asserted here; truncation is LOGGED, never silent.
 	static const int MAX_NETS = 32;
 
-	//! Longest label carried anywhere. The schema has no `maxLength`.
+	//! Longest label carried anywhere. Pinned in schema as `net.label.maxLength` = 48 (T-275).
 	static const int MAX_LABEL_CHARS = 48;
 
 	//! Validated nets, in document order. Empty (never null) once parsed.
