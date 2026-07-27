@@ -304,3 +304,5 @@
 99	T-503	Arsenal no Save button auto-persist	apps/website/frontend/src/arsenal.rs
 99	T-504	silent no-garment cargo Arsenal	apps/website/frontend/src/arsenal.rs; apps/website/frontend/src/arsenal_rules.rs
 99	T-505	hydrate/row-mirror stomps title after T-375	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/mission_hydrate.rs; apps/website/api/src/handlers/missions.rs
+99	T-506	T-379 Class-R helper-only (no ingest call-site pin)	apps/website/api/src/handlers/telemetry.rs
+99	T-507	FE faction_manager posts untrimmed name	apps/website/frontend/src/faction_manager.rs
