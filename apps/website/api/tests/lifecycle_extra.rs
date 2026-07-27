@@ -15,10 +15,12 @@ use website_api::services::purge_expired_refresh_tokens;
 use website_api::state::AppState;
 use website_api::{app, db};
 
+mod common;
+
 const OTHER: &str = "000000000000000007";
 
 async fn boot() -> Option<(Router, PgPool)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     let app = app::router(AppState::new(
@@ -340,6 +342,7 @@ async fn purge_removes_only_long_expired_tokens() {
     let Some((_, pool)) = boot().await else {
         return;
     };
+
     let fresh = format!("hash-fresh-{}", Uuid::new_v4());
     let stale = format!("hash-stale-{}", Uuid::new_v4());
     // Fresh (future expiry) + stale (expired > 7 days ago).

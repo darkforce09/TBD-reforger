@@ -117,7 +117,7 @@ fn t479_actor_snowflakes_are_suite_private() {
 }
 
 async fn boot() -> Option<(Router, PgPool)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     let app = app::router(AppState::new(

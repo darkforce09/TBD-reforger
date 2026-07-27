@@ -15,10 +15,12 @@ use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db, handlers};
 
+mod common;
+
 const ORIGIN: &str = "http://localhost:5173";
 
 async fn boot() -> Option<Router> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     Some(app::router(AppState::new(
@@ -256,7 +258,7 @@ async fn servers_crud_registered(base: &Router) -> bool {
 /// cargo runs test binaries in parallel, so wiping the table here would fail their tests, not mine.
 /// Every assertion below likewise filters `GET /servers` down to its own rows.
 async fn boot_servers(tag: &str) -> Option<(Router, PgPool, AppState)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     let like = format!("T235 {tag}%");
@@ -893,9 +895,10 @@ async fn servers_write_validation_rejects_at_the_boundary() {
 /// whether the handoff was ever applied.
 #[tokio::test]
 async fn servers_crud_registration_pending_in_app_rs() {
-    let Some(url) = std::env::var("TEST_DATABASE_URL").ok() else {
+    let Some(url) = common::require_test_database_url() else {
         return;
     };
+
     let pool = db::connect(&url).await.expect("connect");
     let base = app::router(AppState::new(
         pool,

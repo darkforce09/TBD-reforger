@@ -48,7 +48,7 @@ const EDITOR_PAYLOAD: &str = r#"{
 }"#;
 
 async fn boot() -> Option<(Router, AppState, PgPool)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     let cfg = Config::for_tests(url, "t529-secret");

@@ -168,6 +168,41 @@ fn t381_test_database_name_guard() {
     );
 }
 
+/// Class-R (T-542): only [`require_test_database_url`] may read `TEST_DATABASE_URL`.
+///
+/// Scans every top-level `tests/*.rs` binary (not this `common/` module). A raw
+/// `env::var("TEST_DATABASE_URL")` outside `common/mod.rs` is a regression — parallel
+/// IT against live `tbd_reforger` must panic, not mutate.
+#[test]
+fn t542_no_raw_test_database_url_reads_outside_common() {
+    let needle = concat!("env::var(", "\"TEST_DATABASE_URL\")");
+    let tests_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests");
+    let mut offenders = Vec::new();
+    let entries = std::fs::read_dir(&tests_dir)
+        .unwrap_or_else(|e| panic!("T-542 Class-R: read_dir({}): {e}", tests_dir.display()));
+    for entry in entries {
+        let entry = entry.expect("T-542 Class-R: DirEntry");
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+            continue;
+        }
+        // Only top-level binaries — `tests/common/` is not scanned.
+        if !path.is_file() {
+            continue;
+        }
+        let src = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("T-542 Class-R: read {}: {e}", path.display()));
+        if src.contains(needle) {
+            offenders.push(path.file_name().unwrap().to_string_lossy().into_owned());
+        }
+    }
+    assert!(
+        offenders.is_empty(),
+        "T-542: these IT binaries still contain {needle} — use common::require_test_database_url \
+         (only common/mod.rs may hold that literal): {offenders:?}"
+    );
+}
+
 /// The single identity `GET /auth/dev-login` mints for **every** role
 /// (`src/handlers/dev.rs:14`). It is shared by every suite that calls dev-login, and each
 /// call rewrites that row's `username`, `discord_handle`, `role` and `last_login_at`

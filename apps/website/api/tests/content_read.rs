@@ -10,8 +10,10 @@ use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db};
 
+mod common;
+
 async fn setup() -> Option<(Router, String)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     let _ = sqlx::query("DELETE FROM wiki_pages WHERE slug = 'content-test'")
@@ -137,6 +139,7 @@ async fn vehicle_database_create_round_trip() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+
     let t = Some(tok.as_str());
 
     let payload = r#"{"name":"content-test-vehicle","faction":"BLUFOR","armor_type":"MBT","amphibious":"no","primary_threat":"ATGM","profile_image_url":"https://example.com/v.png"}"#;

@@ -12,10 +12,12 @@ use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db};
 
+mod common;
+
 const DEV_ID: &str = "000000000000000001";
 
 async fn setup() -> Option<(Router, PgPool)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     // Isolate: clear the dev user's tokens from prior runs.
