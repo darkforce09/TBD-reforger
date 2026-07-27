@@ -8797,7 +8797,7 @@
       "impact": [
         "contract"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 3100,
       "stream": "mission-creator",
       "targets": [
@@ -8816,7 +8816,7 @@
       "impact": [
         "contract"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 3110,
       "stream": "mission-creator",
       "targets": [
@@ -12075,7 +12075,7 @@
       "impact": [
         "mod"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3291,
       "stream": "web-platform",
       "targets": [

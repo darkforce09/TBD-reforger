@@ -9,6 +9,13 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-292** (3100) — net.range short is parsed then discarded [ready] — TBD_RadioService.c:214-220 maps only long to a nonzero value; short and any both collapse to 0 and are behaviourally identical. The schema advertises a three-value enum (mission.schema.json:308) the runtime does not honour.
+- **T-293** (3110) — TBD_RadioPlan re-parses raw JSON instead of the parsed field [ready] — TBD_RadioPlan.c:4-6 claims the document struct has no radioPlan member. It does — TBD_MissionLoader.c:262. The class re-parses GetRawJson() through a separate projection (:233,258-264), so there are now two parse paths for one block.
+- **T-452** (3291) — TBD_PlayerIdentity still claims link unimplemented after T-181.35 [ready] — Residual from T-296 / wave 17 adversarial. ResultsReporter banner/comments now tell the truth about shipped `#tbd link` (TBD_IdentityLink + MissionLoader Arm()), but TBD_PlayerIdentity.c:9 still says the mod does not implement link-confirm / that is T-181.35.
+
+Repro: rg 'does not implement|T-181.35' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c
+
+Cure: rewrite the stale header to match IdentityLink (same honesty bar as T-296).
 
 ## Next queued (top 10)
 
