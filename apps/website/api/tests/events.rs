@@ -19,6 +19,17 @@
 //! status, the body and the asking suite on failure instead of panicking on a missing
 //! `Location` header. That module also records why the T-365 "dev-login 403s a banned
 //! account" diagnosis is false — read it there before re-deriving it.
+//!
+//! # Intra-suite seed race (T-479)
+//!
+//! Several tests call [`common::seed_user`] for [`OTHER`] / [`THIRD`] under
+//! `cargo test` (parallel by default). Pre-fix `arma()` returned the **fixed** string
+//! `events-arma-{discord_id}` — one global `idx_users_arma_id` slot. Parallel seeds (or a
+//! leftover foreign holder) panic in `seed_user` with duplicate key on that string
+//! (`event_orbat_registration_and_race` / `events-arma-000000000000334002` on a cold gate
+//! DB). Cure (same family as T-516/T-517): [`DB_LOCK`] serialises DB-touching tests,
+//! [`arma`] mints via [`common::unique_arma`] (AtomicU64 + UUID), and `seed_user` itself
+//! releases any foreign holder of the target `arma_id` before upsert.
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -31,6 +42,11 @@ use website_api::state::AppState;
 use website_api::{app, db};
 
 mod common;
+
+/// Serialise DB-touching tests — they share [`OTHER`] / [`THIRD`] and event rows on one
+/// gate DB (T-479). Pattern: `identity_link.rs` / `null_tolerance.rs` (T-516).
+static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
+    std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
 
 /// This suite's second actor: the one already holding a seat when the caller claims.
 ///
@@ -49,12 +65,55 @@ const THIRD: &str = "000000000000334003";
 /// own `events` / `orbat_slots` rows.
 const DEV_USER: &str = common::DEV_LOGIN_USER;
 
-/// `arma_id` for a seeded actor. It must be unique across the whole database
-/// (`idx_users_arma_id` is a non-partial `CREATE UNIQUE INDEX`), and deriving it from the
-/// already-private discord id makes it unique for free — where the previous `''` was a
-/// single global slot that any second suite writing `''` would collide on.
+/// `arma_id` for a seeded actor (T-479).
+///
+/// Must be unique across the whole database (`idx_users_arma_id`). A fixed
+/// `events-arma-{discord_id}` is one slot and races under parallel IT — mint a durable
+/// unique string instead (AtomicU64 + UUID via [`common::unique_arma`]).
 fn arma(discord_id: &str) -> String {
-    format!("events-arma-{discord_id}")
+    common::unique_arma(&format!("events-arma-{discord_id}"))
+}
+
+/// Class-R: two seeds must not share a fixed `arma_id` string (the T-479 cold-gate flake).
+///
+/// Perturbation: change [`arma`] back to `format!("events-arma-{discord_id}")` → both
+/// equal the literal below → assert fails.
+#[test]
+fn t479_arma_mint_never_collides_on_fixed_string() {
+    let a = arma(OTHER);
+    let b = arma(OTHER);
+    assert_ne!(
+        a, b,
+        "arma() must mint distinct ids — fixed events-arma-{{discord}} collides under parallel IT"
+    );
+    let fixed = format!("events-arma-{OTHER}");
+    assert_ne!(a, fixed, "mint must not be the pre-T-479 fixed string: {a}");
+    assert_ne!(b, fixed, "mint must not be the pre-T-479 fixed string: {b}");
+    assert!(
+        a.starts_with(&format!("events-arma-{OTHER}-")),
+        "traceable prefix required: {a}"
+    );
+}
+
+/// Class-R: suite snowflakes must stay off telemetry / identity / dev-login ranges (T-517).
+///
+/// Perturbation: set OTHER/THIRD equal to a known foreign actor → assert fails.
+#[test]
+fn t479_actor_snowflakes_are_suite_private() {
+    // telemetry.rs PLAYER_DISCORD (pre-T-517 collision class)
+    const TELEMETRY_PLAYER: &str = "000000000000400003";
+    // identity_link.rs ACTOR / PAD
+    const IDENTITY_ACTOR: &str = "000000000000400001";
+    const IDENTITY_PAD: &str = "000000000000400013";
+    assert_ne!(OTHER, THIRD);
+    assert_ne!(OTHER, DEV_USER);
+    assert_ne!(THIRD, DEV_USER);
+    assert_ne!(OTHER, TELEMETRY_PLAYER);
+    assert_ne!(THIRD, TELEMETRY_PLAYER);
+    assert_ne!(OTHER, IDENTITY_ACTOR);
+    assert_ne!(THIRD, IDENTITY_ACTOR);
+    assert_ne!(OTHER, IDENTITY_PAD);
+    assert_ne!(THIRD, IDENTITY_PAD);
 }
 
 async fn boot() -> Option<(Router, PgPool)> {
@@ -100,6 +159,7 @@ async fn call(
 
 #[tokio::test]
 async fn event_orbat_registration_and_race() {
+    let _serial = DB_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
@@ -309,6 +369,7 @@ async fn event_orbat_registration_and_race() {
 /// disagreeing in a way that strands a seat.
 #[tokio::test]
 async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
+    let _serial = DB_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
@@ -595,6 +656,7 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
 /// is reachable now, and stays reachable when that index widens to include `faction`.
 #[tokio::test]
 async fn orbat_groups_by_faction_and_squad() {
+    let _serial = DB_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
@@ -687,6 +749,7 @@ async fn orbat_groups_by_faction_and_squad() {
 /// user's seat, another operation's seat, or the waitlist.
 #[tokio::test]
 async fn register_moves_the_caller_s_seat() {
+    let _serial = DB_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
@@ -988,6 +1051,7 @@ async fn register_moves_the_caller_s_seat() {
 /// override, and a padded-but-real name is stored byte-identical.
 #[tokio::test]
 async fn blank_name_override_does_not_overwrite_a_real_operation_name() {
+    let _serial = DB_LOCK.lock().await;
     const SENTINEL: &str = "SENTINEL Operation Nightfall [T-348]";
     const FALLBACK: &str = "SENTINEL Mission Title [T-348]";
 
@@ -1221,6 +1285,7 @@ async fn blank_name_override_does_not_overwrite_a_real_operation_name() {
 /// request, and the guards under test return before the `INSERT`/`UPDATE` that a push reads.
 #[tokio::test]
 async fn blank_announcement_fields_are_refused_and_an_unknown_status_is_not_a_silent_draft() {
+    let _serial = DB_LOCK.lock().await;
     const TITLE: &str = "SENTINEL Announcement [T-348]";
     const BODY: &str = "<p>SENTINEL body [T-348]</p>";
 
@@ -1374,6 +1439,7 @@ async fn blank_announcement_fields_are_refused_and_an_unknown_status_is_not_a_si
 /// error and an unreadable `orbat` alike, and `add_event_mission` committed regardless (T-227).
 #[tokio::test]
 async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
+    let _serial = DB_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
@@ -1549,6 +1615,7 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
 /// which is also how the pre-fix rows and the dev seed arrive.
 #[tokio::test]
 async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event() {
+    let _serial = DB_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
@@ -1765,6 +1832,7 @@ async fn a_seatless_operation_refuses_registration_and_max_slots_caps_the_event(
 /// and a create that omits them leaves the keys absent (NULL in DB — safe for old rows).
 #[tokio::test]
 async fn event_server_and_modpack_binding() {
+    let _serial = DB_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
@@ -1934,6 +2002,7 @@ async fn event_server_and_modpack_binding() {
 /// `events.match_id`.
 #[tokio::test]
 async fn clear_slot_frees_assignment_and_events_have_no_match_id() {
+    let _serial = DB_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
@@ -2122,6 +2191,7 @@ async fn clear_slot_frees_assignment_and_events_have_no_match_id() {
 /// `POST /events/:id/missions` (covered by the FE Class-R). This IT pins the BE contracts.
 #[tokio::test]
 async fn patch_clears_briefing_banner_and_mission_reattach_works() {
+    let _serial = DB_LOCK.lock().await;
     let Some((app, pool)) = boot().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
