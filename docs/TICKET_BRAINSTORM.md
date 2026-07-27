@@ -907,11 +907,6 @@ Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage 
 Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
 
 Cure: delete it or replace with a non-vacuous pin (handler/IT only).
-- **T-435** (deferred) — Pin arland z_bounds polygon in flatten zone tests [FE] — MINOR from wave 8 verifier on T-201. Everon z_bounds is pinned ([[0,0],[12800,0],…]); arland uses terrain_bounds("arland")→4096² but no flatten-level test asserts that polygon.
-
-Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.
-
-Cure: unit test with terrain=arland expecting 4096² ring.
 - **T-440** (deferred) — Cold/schema gates never apply make seed / faction_library.sql [INFRA, CI] — Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
 
 Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.
@@ -919,16 +914,6 @@ Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scrip
 Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.
 
 Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB).
-- **T-446** (deferred) — CMS hero image upload needs web-sys FormData features [FE] — Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.
-
-Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
-
-Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url.
-- **T-467** (deferred) — verify-t438/t456 still unwired from Makefile/CI siblings [INFRA, CI] — Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 (T-463), but Makefile/CI have no sibling targets (same shape as pre-T-452 for other verifies).
-
-Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
-
-Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

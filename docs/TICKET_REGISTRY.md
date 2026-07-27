@@ -2309,7 +2309,7 @@ Cure: delete it or replace with a non-vacuous pin (handler/IT only). |
 Repro: compare ci.yml schema job vs Makefile schema-validate recipe / GATE_SCHEMA_VALIDATE_GATES in wave.sh.
 
 Cure: align CI with make schema-validate (or document intentional narrowing with a tripwire). |
-| T-435 | 3274 | deferred | platform | Pin arland z_bounds polygon in flatten zone tests | MINOR from wave 8 verifier on T-201. Everon z_bounds is pinned ([[0,0],[12800,0],…]); arland uses terrain_bounds("arland")→4096² but no flatten-level test asserts that polygon.
+| T-435 | 3274 | ready | platform | Pin arland z_bounds polygon in flatten zone tests | MINOR from wave 8 verifier on T-201. Everon z_bounds is pinned ([[0,0],[12800,0],…]); arland uses terrain_bounds("arland")→4096² but no flatten-level test asserts that polygon.
 
 Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.
 
@@ -2368,7 +2368,7 @@ Cure: extract wiki INSERT seed (or include content_golden wiki section) into see
 Repro: change Load more to replace the vec; cargo test -p website-frontend audit::tests still PASS.
 
 Cure: include_str! / source guard (T-264 style) that on_load_more uses merge_audit_page + audit_logs_path(Some(before)). |
-| T-446 | 3285 | deferred | platform | CMS hero image upload needs web-sys FormData features | Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.
+| T-446 | 3285 | ready | platform | CMS hero image upload needs web-sys FormData features | Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.
 
 Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
 
@@ -2492,7 +2492,7 @@ Cure: (A) IT POST draft then GET /cms/announcements must include it + public fee
 Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.
 
 Cure: surface error + retry; do not set list_seeded on Err. |
-| T-467 | 3306 | deferred | platform | verify-t438/t456 still unwired from Makefile/CI siblings | Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 (T-463), but Makefile/CI have no sibling targets (same shape as pre-T-452 for other verifies).
+| T-467 | 3306 | ready | platform | verify-t438/t456 still unwired from Makefile/CI siblings | Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 (T-463), but Makefile/CI have no sibling targets (same shape as pre-T-452 for other verifies).
 
 Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
 

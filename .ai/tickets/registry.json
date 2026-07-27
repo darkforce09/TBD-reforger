@@ -11724,7 +11724,7 @@
       "impact": [
         "mission-creator"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3274,
       "stream": "web-platform",
       "targets": [
@@ -11950,7 +11950,7 @@
       "impact": [
         "website"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3285,
       "stream": "web-platform",
       "targets": [
@@ -12406,7 +12406,7 @@
         "infra",
         "tests"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3306,
       "stream": "web-platform",
       "targets": [
