@@ -51,9 +51,9 @@ mod leaderboards;
 // module declaration like the engine block inside `mission_editor`.
 #[cfg(target_arch = "wasm32")]
 mod mission_doc;
-// T-159.20 Save Version + Export — compile (map-engine-core `mission`) + authed POST + file download;
-// wasm32-only, gated like the doc host.
-#[cfg(target_arch = "wasm32")]
+// T-159.20 Save Version + Export — compile (map-engine-core `mission`) + authed POST + file download.
+// Module is ungated so T-417 Class-R helpers/tests compile on native `cargo test`; the wasm
+// transport body lives behind `#[cfg(target_arch = "wasm32")]` inside the file (sse.rs pattern).
 mod mission_commands;
 mod mission_editor;
 // T-159.26 server hydrate / conflict / dirty — GET /missions/:id → hydrate the saved version or
