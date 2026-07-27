@@ -61,3 +61,18 @@ CONTEXT: this is the third gate-integrity defect found in that one script this w
 Repro: python3 -c 'c="oauth_state=; Path=/api; Max-Age=0; HttpOnly"; print(c.startswith("oauth_state=") and "Max-Age=0" in c and "Path=/" in c and "HttpOnly" in c)' → True while Path diverges from OAUTH_STATE_CLEAR.
 
 Cure: assert Set-Cookie equals OAUTH_STATE_CLEAR (or parse and require Path=/ exact).
+
+## T-482 — T-423 gated vehicle-floor test behind doc; verify-t180 pin still mission-only
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-482`
+- **Targets:** website
+- **Summary:** Wave 31 adversarial BLOCKER. T-423 moved the_vehicle_row_still_has_the_shape_this_module_reads onto MissionDocCore behind #[cfg(feature = "doc")] in flatten.rs, but scripts/verify-t180-coherency.sh:213-214 still pins it with --features mission only. cargo_test_pin (T-424) correctly FAILs: 0 tests passed. make verify-t180 is red on tip. Cold wave gate still PASS because it runs cargo test with doc,mission.
+
+Repro:
+  cargo test -p map-engine-core --features mission --lib the_vehicle_row_still_has_the_shape_this_module_reads -- --quiet
+  # running 0 tests; ok. 0 passed
+  # with --features "doc,mission" → 1 passed
+
+Cure: change that verify-t180 pin to --features "doc mission" (same as place_/attach_vehicle pins), OR ungated cfg so mission alone compiles the test. Prefer script feature align — keep Class-R on writer round-trip.
