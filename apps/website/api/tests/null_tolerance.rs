@@ -57,6 +57,8 @@ use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db};
 
+mod common;
+
 /// The two database tests share this suite's fixtures on one database, and `boot()` clears the
 /// previous run's rows — so without this a concurrent `boot()` would delete the other test's seed
 /// mid-sweep. `cargo test` runs test fns in parallel by default, so the serialisation has to be
@@ -239,7 +241,7 @@ const ROUTE_SWEEP_SKIP: &[(&str, &str)] = &[
 /// the one it authenticates as. Inserting a `refresh_tokens` row keyed by
 /// `auth::hash_token` — the same hash the handler recomputes — gives this suite its own user.
 async fn boot() -> Option<(Router, PgPool, String)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
 
@@ -1111,7 +1113,7 @@ fn every_get_route_is_swept_or_skipped_with_a_reason() {
 /// only checked as far as their literal prefix.
 #[tokio::test]
 async fn no_query_as_reads_a_nullable_column_without_coalesce() {
-    let Some(url) = std::env::var("TEST_DATABASE_URL").ok() else {
+    let Some(url) = common::require_test_database_url() else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
@@ -1458,5 +1460,6 @@ fn produced_column(item: &str) -> Option<(String, String, Option<&str>)> {
         _ if ident(item) => (None, item),
         _ => return None,
     };
+
     Some((bare.to_ascii_lowercase(), item.to_string(), qual))
 }

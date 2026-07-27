@@ -15,6 +15,8 @@ use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db};
 
+mod common;
+
 /// The dev-login admin (`handlers/dev.rs:14`). `/me/deployments` reports only the caller, so
 /// exercising the route on real numbers means seeding this identity specifically.
 const DEV_ID: &str = "000000000000000001";
@@ -23,7 +25,7 @@ const DEV_ID: &str = "000000000000000001";
 const EV: &str = "e-t233-combat";
 
 async fn setup() -> Option<(Router, String, PgPool)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     let app = app::router(AppState::new(
@@ -303,10 +305,11 @@ async fn derived_combat_figures_match_hand_computation() {
 /// and a golden could only show that today's response omits the key.
 #[tokio::test]
 async fn no_column_records_what_a_player_actually_used() {
-    let Some(url) = std::env::var("TEST_DATABASE_URL").ok() else {
+    let Some(url) = common::require_test_database_url() else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
 

@@ -41,7 +41,7 @@ async fn boot() -> Option<(Router, PgPool)> {
 }
 
 async fn boot_with_webhook(webhook_url: String) -> Option<(Router, PgPool)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     let mut cfg = Config::for_tests(url, "t239-secret");

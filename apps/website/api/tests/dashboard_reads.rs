@@ -20,6 +20,8 @@ use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db};
 
+mod common;
+
 /// Private snowflake for this suite — never the shared `dev-login` id (`…001`).
 const DASH_UID: &str = "000000000000000341";
 
@@ -34,7 +36,7 @@ const EVENT_TAG: &str = "T341-Dash-";
 /// caller-scoped rows against a different id than the bearer token is exactly how
 /// `/dashboard` 200 used to pass without ever executing the assignment branch.
 async fn setup() -> Option<(Router, String, PgPool)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
 

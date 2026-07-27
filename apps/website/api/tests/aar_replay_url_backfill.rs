@@ -38,6 +38,8 @@ use uuid::Uuid;
 use website_api::db;
 use website_api::services::text::is_http_url;
 
+mod common;
+
 // The same table the two Rust implementations are pinned to. Reused here so the SQL predicate is
 // held to the identical corpus rather than a friendlier one somebody wrote for it.
 include!("../../shared/is_http_url_cases.rs");
@@ -87,12 +89,18 @@ fn unstorable(s: &str) -> bool {
 }
 
 async fn boot() -> PgPool {
-    let url = std::env::var("TEST_DATABASE_URL")
-        .or_else(|_| std::env::var("TBD_GATE_DB"))
-        .expect(
-            "TEST_DATABASE_URL (or TBD_GATE_DB) required — a missing DB URL is a FAIL, not a skip; \
-             the gate's ensure_gate_db exports TEST_DATABASE_URL from TBD_GATE_DB",
-        );
+    // T-542: hard-require — missing URL is FAIL (not skip); refuse live `tbd_reforger`.
+    let url = match common::require_test_database_url() {
+        Some(u) => u,
+        None => {
+            let url = std::env::var("TBD_GATE_DB").expect(
+                "TEST_DATABASE_URL (or TBD_GATE_DB) required — a missing DB URL is a FAIL, not a skip; \
+                 the gate's ensure_gate_db exports TEST_DATABASE_URL from TBD_GATE_DB",
+            );
+            common::assert_test_database_url(&url);
+            url
+        }
+    };
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     pool

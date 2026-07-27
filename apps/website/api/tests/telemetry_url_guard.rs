@@ -33,6 +33,8 @@ use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db};
 
+mod common;
+
 const SVC: &str = "test-service-token";
 const ARMA: &str = "test-arma-t391";
 const SRC: &str = "t391-url-guard";
@@ -57,7 +59,7 @@ fn next_peer() -> SocketAddr {
 }
 
 async fn boot() -> Option<(Router, PgPool)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     let app = app::router(AppState::new(
@@ -298,6 +300,7 @@ async fn accepts_real_links_and_preserves_absent_and_blank() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+
     let ns = Ns("accept");
     ns.clean(&pool).await;
 

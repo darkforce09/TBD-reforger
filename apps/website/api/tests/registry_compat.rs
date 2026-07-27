@@ -22,6 +22,8 @@ use website_api::services::registry_import::{import_compat, import_items};
 use website_api::state::AppState;
 use website_api::{app, db};
 
+mod common;
+
 /// Fixed test-scoped modpacks: vanilla T-150 envelopes + the synthetic "any mod".
 const TEST_MP: &str = "00000000-0000-4000-a000-00000000c0de";
 const TEST_MP2: &str = "00000000-0000-4000-a000-00000000c0d2";
@@ -36,7 +38,7 @@ const COMPAT_PATH: &str = concat!(
 );
 
 async fn setup() -> Option<(Router, PgPool, String, String)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     // Own rows only — other suites share this DB.
@@ -451,6 +453,7 @@ async fn registry_compat_ingest_api_worker_gates() {
     let rn = |i: usize| {
         format!("{{AB12CD34EF56AB{i:02}}}Prefabs/Any Mod's Pack (v2)/Sub-dir_1.0/Item {i:02}.et")
     };
+
     let syn_items: Vec<Value> = kinds
         .iter()
         .enumerate()

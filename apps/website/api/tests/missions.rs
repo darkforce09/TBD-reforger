@@ -10,8 +10,10 @@ use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db};
 
+mod common;
+
 async fn app_and_token(role: &str) -> Option<(Router, String)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
     let app = app::router(AppState::new(
@@ -973,7 +975,7 @@ async fn armory_faction_is_the_event_hub_join_key() {
 /// tokens therefore address the SAME `discord_id` — which is why the non-author case below needs a
 /// mission inserted for a second author directly, and cannot be expressed with a second dev-login.
 async fn app_pool_and_tokens() -> Option<(Router, sqlx::PgPool, String, String)> {
-    let url = std::env::var("TEST_DATABASE_URL").ok()?;
+    let url = common::require_test_database_url()?;
     let (app, maker) = app_and_token("mission_maker").await?;
     let (_, admin) = app_and_token("admin").await?;
     let pool = db::connect(&url).await.expect("connect");
@@ -1728,6 +1730,7 @@ async fn t496_library_bookmark_lookup_survives_page1_overflow() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
+
     const FILLERS: i32 = 21; // default list limit is 20
     const AUTHOR: &str = "000000000000000001"; // dev-login discord_id
 
