@@ -291,8 +291,10 @@ class TBD_MissionDocumentStruct
 	//! is not in the schema's top-level `required` list and every mission authored before it
 	//! existed has none, so this stays null and that is legal.
 	ref map<string, ref TBD_MissionBriefingStruct> briefings;
-	//! T-181.40 — the radio plan. OPTIONAL: missions authored before it exists carry none, and
-	//! `empty-warning-fields.json` deliberately authors none, so null here is legal not an error.
+	//! T-181.40 / T-293 — the radio plan. ALWAYS non-null after a parse even when the JSON key is
+	//! absent — `JsonLoadContext` allocates nested `ref` fields regardless. Presence is a CONTENT
+	//! test on `nets` (count / `freqMHz` sentinel) inside `TBD_RadioPlan`, never a null check here.
+	//! An unauthored plan (e.g. `empty-warning-fields.json`) is legal: empty/absent nets, no error.
 	//! @contract mission.schema.json#/$defs/radioPlan
 	ref TBD_MissionRadioPlanStruct radioPlan;
 	//! T-259 — mission policy (respawn / spectator / NVG). ALWAYS non-null after a parse even
