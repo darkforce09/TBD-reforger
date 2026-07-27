@@ -2479,6 +2479,14 @@ Cure: wire both into wave.sh gate_slice + cmd_gate next to the T-439/T-444 steps
 Repro: after T-447 merge, `wave.sh gate` → test api FAIL — `GET routes … neither swept …: ["/cms/announcements"]`.
 
 Cure: add `/cms/announcements` to route_sweep() (admin list; drafts+published) with Seed auth as other admin GETs; prove RED→GREEN. Do not skip unless sweep is impossible. |
+| T-465 | 3304 | ready | platform | T-447 Class-R false-green: draft filter + Content hydrate unexamined | Residual from wave 25 adversarial. Live T-447 behavior holds (SQL drafts+published, AdminUser, LocalResource hydrate), but Class-R pins are false-green:
+(1) list_cms_announcements_is_drafts_plus_published_not_public_feed greends if status IN ('draft', 'published') appears anywhere in prod (incl. bait comment) while live SQL is published-only.
+(2) content_boots_from_cms_list_not_mock_docs greends if LocalResource+api_get strings remain while Effect ignores opt and docs.set(hardcoded mock).
+(3) AdminUser extractor not pinned; no IT asserts GET /cms/announcements returns a draft or 401 for non-admin.
+
+Repro: published-only SQL + bait comment → Class-R PASS; Effect docs.set(mock) → Class-R PASS.
+
+Cure: (A) IT POST draft then GET /cms/announcements must include it + public feed must not; non-admin GET → 401. (B) Harden Class-R: pin AdminUser on list handler; pin Effect docs.set(mapped) / filter_map(doc_from_announcement) chain so ignoring hydrate fails. RED→GREEN on verifier perturbations. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
