@@ -24,6 +24,20 @@ use crate::state::AppState;
 /// Opaque refresh token lifetime (30 days).
 const REFRESH_TTL_DAYS: i64 = 30;
 
+/// True when `arma_id` is present **and** non-whitespace after trim.
+///
+/// Read-side only — does not mutate storage. Legacy rows can hold `Some("   ")`
+/// (T-326 fixed the write path; this is the matching read half). `Option::is_some()`
+/// alone reports those as linked; JWT claims and SPA gates then say LINKED while
+/// every resolve path that trims sees nothing (T-350).
+///
+/// Safe to trim *here*: the flag is derived for the claim, not written back, and
+/// does not participate in the T-343 byte-identity joins (`orbat_reservations.squad`
+/// / `or_fallback`).
+pub fn arma_id_is_linked(arma_id: &Option<String>) -> bool {
+    arma_id.as_deref().is_some_and(|s| !s.trim().is_empty())
+}
+
 /// Body for `/auth/refresh` and `/auth/logout`.
 #[derive(Debug, Deserialize)]
 pub struct RefreshRequest {
@@ -162,7 +176,7 @@ pub async fn refresh(
         return Err(ApiError::unauthorized("refresh token reuse detected"));
     }
 
-    let arma_linked = user.arma_id.is_some();
+    let arma_linked = arma_id_is_linked(&user.arma_id);
     let (access, exp) = state
         .jwt
         .issue_access(&user.discord_id, user.role.as_str(), arma_linked)
@@ -221,4 +235,31 @@ pub fn session_redirect(
             ("arma_linked", arma),
         ],
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::arma_id_is_linked;
+
+    /// Class-R: `Option::is_some()` alone returns true for every case below — that is the
+    /// T-350 bug. This pin fails if the helper is rewritten back to `is_some()`.
+    #[test]
+    fn whitespace_only_arma_id_is_not_linked() {
+        for raw in ["", " ", "   ", "\t", "\n", " \t\n "] {
+            let v = Some(raw.to_string());
+            assert!(v.is_some(), "precondition: Option is Some");
+            assert!(
+                !arma_id_is_linked(&v),
+                "whitespace-only {raw:?} must not count as linked (is_some()-only would)"
+            );
+        }
+        assert!(!arma_id_is_linked(&None));
+    }
+
+    #[test]
+    fn nonempty_arma_id_is_linked_even_if_padded() {
+        assert!(arma_id_is_linked(&Some("76561198000000999".into())));
+        // Padding around a real id still has content after trim — linked.
+        assert!(arma_id_is_linked(&Some("  76561198000000999  ".into())));
+    }
 }

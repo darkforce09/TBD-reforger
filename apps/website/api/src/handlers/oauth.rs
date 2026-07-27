@@ -20,7 +20,9 @@ use axum::response::Response;
 use serde::Deserialize;
 
 use crate::auth;
-use crate::handlers::auth::{issue_session, redirect_auth_error, session_redirect};
+use crate::handlers::auth::{
+    arma_id_is_linked, issue_session, redirect_auth_error, session_redirect,
+};
 use crate::handlers::load_user;
 use crate::models::AuditSeverity;
 use crate::services;
@@ -204,7 +206,7 @@ pub async fn discord_callback(
     if fresh.is_banned {
         return err("banned");
     }
-    let arma_linked = fresh.arma_id.is_some();
+    let arma_linked = arma_id_is_linked(&fresh.arma_id);
 
     let Ok((access, exp, refresh)) =
         issue_session(&state, &du.id, fresh.role.as_str(), arma_linked).await
