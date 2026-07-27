@@ -10944,7 +10944,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3213,
       "stream": "web-platform",
       "targets": [
@@ -11151,7 +11151,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3223,
       "stream": "web-platform",
       "targets": [
@@ -11252,7 +11252,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3233,
       "stream": "web-platform",
       "targets": [
@@ -12991,7 +12991,7 @@
       ],
       "impact": [
         "tests",
-        "ux"
+        "frontend"
       ],
       "status": "deferred",
       "order": 3333,
