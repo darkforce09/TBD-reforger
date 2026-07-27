@@ -948,20 +948,20 @@ async fn every_nullable_column_null_and_every_get_route_still_serves() {
     );
 }
 
-/// The approvals queue must serve a NULL `missions.updated_at` **and** keep the timestamp
-/// honest — requested by T-330, and the one thing the enumeration above provably cannot check.
+/// Approvals `submitted_at` + T-331 timestamp structural pin (T-510).
 ///
-/// Why a hand-written case is right here where a listed *endpoint* was wrong: the blast NULLs
-/// *every* nullable column at once, so it can prove `GET /api/v1/approvals` returns 200 but not
-/// *which* value `submitted_at` carries. `COALESCE(updated_at, sentinel)` and
-/// `COALESCE(updated_at, created_at, sentinel)` are indistinguishable when both timestamps are
-/// NULL. Row 2 below is the discriminator: with `created_at` written and only `updated_at` NULL,
-/// the queue must show the real creation time. Without it, a later "simplification" to the
-/// two-argument form would pass every other test in this file while silently reporting every
-/// unknown-age submission as year 0001.
+/// Pre-T-331 this test planted NULL `missions.created_at` / `updated_at` to discriminate the
+/// three-link `COALESCE(updated_at, created_at, sentinel)` chain (T-330). Migration 0015
+/// (`DEFAULT now() NOT NULL`) made those plants illegal — an INSERT with an explicit NULL now
+/// fails with Postgres **23502**. Retiring the both-NULL / updated_at-NULL discriminator rows
+/// is required; weakening 0015 is not.
 ///
-/// `missions.created_at` is itself nullable with no default (`0001_initial_schema.sql`), which is
-/// why the sentinel is still needed as the third argument — row 1 covers that.
+/// What remains load-bearing:
+///   1. **Class-R structural pin** — planting NULL into either timestamp column must fail
+///      23502. If someone reverts 0015's NOT NULL, this fails loudly.
+///   2. **Minimal behavioural assert** — with both timestamps set, `GET /approvals` must
+///      report `updated_at` as `submitted_at` (first COALESCE arm). The second/third arms are
+///      unreachable via INSERT under 0015; the structural pin above owns that guarantee.
 #[tokio::test]
 async fn approvals_queue_reports_an_honest_submitted_at_over_null_timestamps() {
     let _serial = DB_LOCK.lock().await;
@@ -969,61 +969,75 @@ async fn approvals_queue_reports_an_honest_submitted_at_over_null_timestamps() {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
-    const ZERO_TIME: &str = "0001-01-01T00:00:00Z";
-    let born = "2026-03-04T05:06:07Z";
 
-    // Row 1 — both timestamps NULL: nothing is known, so the Go zero time is the honest answer.
-    let both_null = Uuid::new_v4();
-    // Row 2 — `created_at` known, `updated_at` NULL: the creation time is the honest answer.
-    let created_only = Uuid::new_v4();
-    for (id, created) in [(both_null, None), (created_only, Some(born))] {
-        sqlx::query(
+    // T-331 / 0015 structural guarantee: explicit NULL into either NOT NULL timestamp → 23502.
+    // Omitting the column would silently take DEFAULT now() — that would be a false green.
+    let pin = "2026-03-04T05:06:07Z";
+    for (label, created, updated) in [
+        ("both NULL", None, None),
+        ("created_at NULL", None, Some(pin)),
+        ("updated_at NULL", Some(pin), None),
+    ] {
+        let id = Uuid::new_v4();
+        let err = sqlx::query(
             "INSERT INTO missions (id, title, author_id, terrain, game_mode, weather, time_of_day, \
              max_players, status, created_at, updated_at) \
-             VALUES ($1, 'Null Approval', $2, 'everon', 'pve_coop', 'clear', '14:00', 16, \
-             'pending_approval', $3::timestamptz, NULL)",
+             VALUES ($1, 'Null Approval 23502', $2, 'everon', 'pve_coop', 'clear', '14:00', 16, \
+             'pending_approval', $3::timestamptz, $4::timestamptz)",
         )
         .bind(id)
         .bind(NULL_UID)
         .bind(created)
+        .bind(updated)
         .execute(&pool)
         .await
-        .expect("seed pending_approval mission");
+        .expect_err(&format!(
+            "T-331: INSERT with {label} must be rejected (missions.created_at/updated_at \
+             are DEFAULT now() NOT NULL after migration 0015)"
+        ));
+        let db = err
+            .as_database_error()
+            .unwrap_or_else(|| panic!("T-331: expected a database error for {label}, got: {err}"));
+        assert_eq!(
+            db.code().as_deref(),
+            Some("23502"),
+            "T-331: {label} must fail not-null violation 23502, got code {:?} — {err}",
+            db.code()
+        );
     }
 
+    // Behavioural: both timestamps real — COALESCE prefers updated_at.
+    let pending = Uuid::new_v4();
+    let created = "2026-01-02T03:04:05Z";
+    let updated = "2026-03-04T05:06:07Z";
+    sqlx::query(
+        "INSERT INTO missions (id, title, author_id, terrain, game_mode, weather, time_of_day, \
+         max_players, status, created_at, updated_at) \
+         VALUES ($1, 'Null Approval Live', $2, 'everon', 'pve_coop', 'clear', '14:00', 16, \
+         'pending_approval', $3::timestamptz, $4::timestamptz)",
+    )
+    .bind(pending)
+    .bind(NULL_UID)
+    .bind(created)
+    .bind(updated)
+    .execute(&pool)
+    .await
+    .expect("seed pending_approval mission with real timestamps");
+
     let (st, body) = get(&app, "/api/v1/approvals", &tok, false).await;
-    if st.is_server_error() {
-        // This slice's base predates T-330 @ 39e5d5a5, where `approvals.rs` still selects a bare
-        // `m.updated_at`; the 500 is that defect, already recorded in KNOWN_OPEN_ROUTES. The
-        // assertions below arm themselves as soon as this branch rebases onto that fix.
-        eprintln!(
-            "note: GET /api/v1/approvals still 500s here (pre-T-330 base) — submitted_at \
-             assertions skipped: {}",
-            body.trim()
-        );
-        return;
-    }
     assert_eq!(st, StatusCode::OK, "approvals: {body}");
     let v: Value = serde_json::from_str(&body).expect("approvals json");
-    let row = |id: Uuid| -> Value {
-        v["data"]
-            .as_array()
-            .expect("approvals data array")
-            .iter()
-            .find(|r| r["mission_id"] == id.to_string())
-            .unwrap_or_else(|| panic!("mission {id} missing from the approvals queue"))
-            .clone()
-    };
+    let row = v["data"]
+        .as_array()
+        .expect("approvals data array")
+        .iter()
+        .find(|r| r["mission_id"] == pending.to_string())
+        .unwrap_or_else(|| panic!("mission {pending} missing from the approvals queue"));
     assert_eq!(
-        row(both_null)["submitted_at"],
-        ZERO_TIME,
-        "both timestamps NULL must fall through to the Go zero time, not 500 and not a real date"
-    );
-    assert_eq!(
-        row(created_only)["submitted_at"],
-        born,
-        "updated_at NULL with created_at set must report the creation time — a bare \
-         COALESCE(updated_at, sentinel) would say {ZERO_TIME} and lose the submission's real age"
+        row["submitted_at"], updated,
+        "with both timestamps set, submitted_at must be updated_at (first COALESCE arm) — \
+         got {}",
+        row["submitted_at"]
     );
 }
 
