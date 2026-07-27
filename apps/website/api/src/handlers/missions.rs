@@ -64,6 +64,17 @@ fn validated_mission_title(raw: &str) -> Result<String, ApiError> {
     Ok(trimmed.to_string())
 }
 
+/// Non-blank trimmed top-level `title` from a Save payload (T-375 wire emit) — **T-505**.
+///
+/// Used by [`create_version`] to mirror the authored title onto `missions.title`. Reuses
+/// [`validated_mission_title`] so the row write has the same non-blank trim guard as CREATE/PATCH.
+/// Absent / non-string / whitespace-only → `None` (leave the row title alone).
+fn payload_title_for_row_mirror(payload_str: &str) -> Option<String> {
+    let v: Value = serde_json::from_str(payload_str).ok()?;
+    let raw = v.get("title")?.as_str()?;
+    validated_mission_title(raw).ok()
+}
+
 /// SemVer 2.0.0 core + optional pre-release / build — **T-363**.
 ///
 /// `mission_versions.semver` is a plain `text` unique key; without a parse, `' 0.1.0 '` and
@@ -924,11 +935,28 @@ pub async fn create_version(
     // frozen at create/PATCH time, so a save that only touched the editor payload never
     // bubbled the mission to the top of either surface. Bump in the same statement that
     // points `current_version_id` — same shape as `submit_mission`'s `updated_at = now()`.
-    sqlx::query("UPDATE missions SET current_version_id = $1, updated_at = now() WHERE id = $2")
+    //
+    // **T-505.** When the compiled payload carries a non-blank trimmed `title` (T-375), mirror it
+    // onto `missions.title` so the next hydrate's row meta matches the authored title — Save used
+    // to leave the row frozen at create/PATCH and reload stomped the doc.
+    let mirrored_title = payload_title_for_row_mirror(payload_str);
+    let audit_title = mirrored_title.as_deref().unwrap_or(m.title.as_str());
+    if let Some(ref title) = mirrored_title {
+        sqlx::query(
+            "UPDATE missions SET current_version_id = $1, updated_at = now(), title = $3 WHERE id = $2",
+        )
         .bind(version.id)
         .bind(m.id)
+        .bind(title)
         .execute(&state.pool)
         .await?;
+    } else {
+        sqlx::query("UPDATE missions SET current_version_id = $1, updated_at = now() WHERE id = $2")
+            .bind(version.id)
+            .bind(m.id)
+            .execute(&state.pool)
+            .await?;
+    }
     // Mirror `mission.submit` / `mission.approve`: the audit row is the only durable
     // "who saved what, when" record. The version row itself has `created_by`, but nothing
     // indexes saves onto the mission timeline the admin audit log reads.
@@ -937,13 +965,13 @@ pub async fn create_version(
     let message = if *actor == m.author_id {
         format!(
             "{actor_name} saved version {} of mission '{}'",
-            input.semver, m.title
+            input.semver, audit_title
         )
     } else {
         let author_name = username(&state.pool, &m.author_id).await;
         format!(
             "{actor_name} saved version {} of {author_name}'s mission '{}'",
-            input.semver, m.title
+            input.semver, audit_title
         )
     };
     write_audit(
@@ -2065,5 +2093,51 @@ mod tests {
             !update.contains("w.is_empty()"),
             "update_mission must not special-case empty weather as Clear"
         );
+    }
+
+    /// T-505 Class-R: `create_version` must mirror a non-blank payload `title` onto `missions.title`.
+    ///
+    /// RED: drop `payload_title_for_row_mirror` / the `title = $3` UPDATE arm — this pin fails.
+    #[test]
+    fn create_version_mirrors_payload_title_onto_row() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        let create_version = production
+            .split("pub async fn create_version(")
+            .nth(1)
+            .and_then(|s| s.split("pub async fn").next())
+            .expect("create_version body");
+        assert!(
+            create_version.contains("payload_title_for_row_mirror"),
+            "create_version must extract payload title via payload_title_for_row_mirror"
+        );
+        assert!(
+            create_version.contains("title = $3"),
+            "create_version must UPDATE missions.title when mirroring; got:\n{create_version}"
+        );
+        assert!(
+            production.contains("fn payload_title_for_row_mirror"),
+            "payload_title_for_row_mirror helper must exist"
+        );
+        assert!(
+            production.contains("validated_mission_title(raw)"),
+            "row-mirror must reuse validated_mission_title (non-blank trim guard)"
+        );
+    }
+
+    /// T-505 — extractor accepts trimmed non-blank, rejects blank/whitespace/absent.
+    #[test]
+    fn payload_title_for_row_mirror_nonblank_trim() {
+        assert_eq!(
+            payload_title_for_row_mirror(r#"{"title":"  Authored Op  "}"#).as_deref(),
+            Some("Authored Op")
+        );
+        assert_eq!(payload_title_for_row_mirror(r#"{"title":"   "}"#), None);
+        assert_eq!(payload_title_for_row_mirror(r#"{"title":""}"#), None);
+        assert_eq!(payload_title_for_row_mirror(r#"{"editor":{}}"#), None);
+        assert_eq!(payload_title_for_row_mirror("not-json"), None);
     }
 }
