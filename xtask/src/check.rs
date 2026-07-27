@@ -280,8 +280,9 @@ pub fn cmd_check(root: &Path, registry: &serde_json::Value, strict: bool) -> Res
     Ok(())
 }
 
-/// Schema + structural preflight shared by mutators that write ticket status
-/// (`ship`/`done` — T-237; `set-status`/`mark-ready` — T-451).
+/// Schema + structural preflight shared by registry mutators
+/// (`ship`/`done` — T-237; `set-status`/`mark-ready`/`reorder` — T-451;
+/// `add`/`remove` — T-455).
 ///
 /// Returns `Ok(())` when `check` is green; `Err` with a refuse message when red.
 /// Callers must not mutate the registry on `Err`. Prefer this over `process::exit`
