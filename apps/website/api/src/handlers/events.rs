@@ -2211,9 +2211,23 @@ struct MemberDto {
 #[derive(Debug, Deserialize)]
 pub struct MemberQuery {
     q: Option<String>,
+    limit: Option<i64>,
+    offset: Option<i64>,
+}
+
+/// Apply the optional `q` substring filter shared by the members COUNT + page SELECTs.
+fn push_member_search_filter(qb: &mut QueryBuilder<Postgres>, search: &str) {
+    let like = format!("%{search}%");
+    qb.push(" AND (username ILIKE ").push_bind(like.clone());
+    qb.push(" OR discord_handle ILIKE ")
+        .push_bind(like)
+        .push(")");
 }
 
 /// `GET /api/v1/members` — slim member directory for leaders (excludes banned).
+///
+/// Offset-paginated via shared [`PageParams`] bounds (default limit 20 / max 100). Response
+/// shape matches other list endpoints: `{data, total, limit, offset}`.
 ///
 /// @route GET /api/v1/members
 pub async fn search_members(
@@ -2221,19 +2235,36 @@ pub async fn search_members(
     _l: LeaderUser,
     Query(q): Query<MemberQuery>,
 ) -> Result<Json<Value>, ApiError> {
+    let (limit, offset) = PageParams {
+        limit: q.limit,
+        offset: q.offset,
+    }
+    .bounds();
+    let search = q.q.as_deref().filter(|s| !s.is_empty());
+
+    let mut count_qb: QueryBuilder<Postgres> =
+        QueryBuilder::new("SELECT count(*) FROM users WHERE is_banned = false");
+    if let Some(s) = search {
+        push_member_search_filter(&mut count_qb, s);
+    }
+    let total: i64 = count_qb
+        .build_query_scalar()
+        .fetch_one(&state.pool)
+        .await
+        .map_err(ApiError::from)?;
+
     // COALESCE nullable text → '' to mirror Go/GORM scanning NULL into the string zero.
     let mut qb: QueryBuilder<Postgres> = QueryBuilder::new(
         "SELECT discord_id, COALESCE(username, ''), COALESCE(avatar_url, '') \
          FROM users WHERE is_banned = false",
     );
-    if let Some(search) = q.q.as_deref().filter(|s| !s.is_empty()) {
-        let like = format!("%{search}%");
-        qb.push(" AND (username ILIKE ").push_bind(like.clone());
-        qb.push(" OR discord_handle ILIKE ")
-            .push_bind(like)
-            .push(")");
+    if let Some(s) = search {
+        push_member_search_filter(&mut qb, s);
     }
-    qb.push(" ORDER BY username ASC LIMIT 20");
+    qb.push(" ORDER BY username ASC LIMIT ")
+        .push_bind(limit)
+        .push(" OFFSET ")
+        .push_bind(offset);
     let rows: Vec<(String, String, String)> = qb
         .build_query_as()
         .fetch_all(&state.pool)
@@ -2247,7 +2278,9 @@ pub async fn search_members(
             avatar_url,
         })
         .collect();
-    Ok(Json(json!({ "data": out })))
+    Ok(Json(
+        json!({ "data": out, "total": total, "limit": limit, "offset": offset }),
+    ))
 }
 
 // --- Game-server ingest (service token) ---
@@ -2453,4 +2486,99 @@ pub async fn ingest_event_roster(
         "missionId": mission_id,
         "assignments": assignments,
     })))
+}
+
+#[cfg(test)]
+mod t412_members_pagination {
+    use super::PageParams;
+
+    /// Pure page oracle over a sorted username list — mirrors SQL `ORDER BY username ASC
+    /// LIMIT $limit OFFSET $offset`. Member index 20 is invisible at offset 0 and appears
+    /// only when offset ≥ 20.
+    fn page_usernames<'a>(sorted: &'a [&str], limit: usize, offset: usize) -> Vec<&'a str> {
+        sorted.iter().copied().skip(offset).take(limit).collect()
+    }
+
+    #[test]
+    fn member_at_index_20_requires_offset() {
+        let names: Vec<String> = (0..25).map(|i| format!("user_{i:02}")).collect();
+        let sorted: Vec<&str> = names.iter().map(String::as_str).collect();
+        assert_eq!(sorted.len(), 25);
+
+        let page0 = page_usernames(&sorted, 20, 0);
+        assert_eq!(page0.len(), 20);
+        assert!(
+            !page0.contains(&"user_20"),
+            "default first page must not include member at index 20"
+        );
+
+        let page_off = page_usernames(&sorted, 20, 20);
+        assert!(
+            page_off.contains(&"user_20"),
+            "offset=20 must surface member at index 20"
+        );
+        assert_eq!(page_off.first().copied(), Some("user_20"));
+    }
+
+    #[test]
+    fn page_params_default_limit_is_20_offset_0() {
+        assert_eq!(
+            PageParams {
+                limit: None,
+                offset: None
+            }
+            .bounds(),
+            (20, 0)
+        );
+        assert_eq!(
+            PageParams {
+                limit: Some(20),
+                offset: Some(20)
+            }
+            .bounds(),
+            (20, 20)
+        );
+    }
+
+    /// Class-R source ratchet: production `search_members` must bind LIMIT + OFFSET (never a
+    /// hard-coded `LIMIT 20` with no offset) and emit the list envelope fields.
+    #[test]
+    fn search_members_binds_limit_offset_and_list_envelope() {
+        const SRC: &str = include_str!("events.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source before tests module");
+        let handler = production
+            .split("pub async fn search_members")
+            .nth(1)
+            .expect("search_members handler")
+            .split("\npub async fn ")
+            .next()
+            .expect("handler body until next pub async fn");
+        let collapsed: String = handler.split_whitespace().collect::<Vec<_>>().join(" ");
+
+        assert!(
+            !collapsed.contains("ORDER BY username ASC LIMIT 20\""),
+            "search_members must not hard-code LIMIT 20 without OFFSET"
+        );
+        assert!(
+            !collapsed.contains("ORDER BY username ASC LIMIT 20"),
+            "search_members must not hard-code LIMIT 20 without OFFSET"
+        );
+        assert!(
+            collapsed.contains("push_bind(limit)") && collapsed.contains("push_bind(offset)"),
+            "search_members must bind limit and offset parameters"
+        );
+        assert!(
+            collapsed.contains("OFFSET"),
+            "search_members SQL must include OFFSET"
+        );
+        assert!(
+            collapsed.contains("\"total\"")
+                && collapsed.contains("\"limit\"")
+                && collapsed.contains("\"offset\""),
+            "search_members must return {{data,total,limit,offset}}"
+        );
+    }
 }
