@@ -1037,20 +1037,15 @@ async fn approvals_queue_reports_an_honest_submitted_at_over_null_timestamps() {
 fn every_get_route_is_swept_or_skipped_with_a_reason() {
     // T-531 Class-R pins: after T-341 closed the last defect, both the tolerance list and its
     // ceiling stay at zero. Re-adding an entry *or* bumping the cap without a deliberate ticket
-    // must RED — `<= BASELINE_CAP` alone would stay green if someone raised the cap with an empty
-    // list.
+    // must RED. With BASELINE_CAP pinned at 0, `baseline <= BASELINE_CAP` is identical to
+    // `baseline == 0` (and clippy::absurd_extreme_comparisons denies the `<=` form).
     assert_eq!(
         BASELINE_CAP, 0,
         "T-531: BASELINE_CAP must remain 0 — raising it re-opens silent tolerance slack"
     );
     let baseline = KNOWN_OPEN.len() + KNOWN_OPEN_ROUTES.len();
     assert_eq!(
-        baseline, 0,
-        "T-531: KNOWN_OPEN + KNOWN_OPEN_ROUTES must stay empty after the T-341 prune \
-         (got {baseline})"
-    );
-    assert!(
-        baseline <= BASELINE_CAP,
+        baseline, BASELINE_CAP,
         "KNOWN_OPEN + KNOWN_OPEN_ROUTES hold {baseline} entries, over BASELINE_CAP of \
          {BASELINE_CAP}. Fix the defect, or raise the cap deliberately so a reviewer sees it."
     );
