@@ -2702,6 +2702,11 @@ Same shape: success path writing structurally empty/lossy content over committed
 T-383 fixed `--in-place`. Non-`--in-place` stdout flatten still drops loadout/uid and force-stamps schemaVersion 1.1. Cure: same preserve/refuse rules on stdout path, or document stdout as lossy preview only with a loud warning + Class-R pin.
 
 Repro: run flatten-orbat-slots without --in-place on a golden with loadout/uid. |
+| T-539 | 3379 | running | platform | T-538 Class-R pins apply_* not stdout flatten_orbat_slots entrypoint | FOUND by W52 adversarial verifier (MAJOR) after T-538.
+
+Stdout schema/preserve Class-R calls `apply_flatten_orbat_slots` directly, not `flatten_orbat_slots(..., false)`. A post-apply stdout-only `mission["schemaVersion"] = "1.1"` stamp (exact pre-T-538 bug shape) keeps all `flatten_stdout_*` tests GREEN. Production path is shared/correct today; pin does not cover the CLI entrypoint claim.
+
+Cure: Class-R must exercise stdout entrypoint (or source-pin that stdout path cannot reassign schemaVersion after apply). Repro: add stamp after apply in flatten_orbat_slots false branch → current tests stay green. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

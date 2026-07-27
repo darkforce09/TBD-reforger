@@ -20,6 +20,11 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 T-383 fixed `--in-place`. Non-`--in-place` stdout flatten still drops loadout/uid and force-stamps schemaVersion 1.1. Cure: same preserve/refuse rules on stdout path, or document stdout as lossy preview only with a loud warning + Class-R pin.
 
 Repro: run flatten-orbat-slots without --in-place on a golden with loadout/uid.
+- **T-539** (3379) — T-538 Class-R pins apply_* not stdout flatten_orbat_slots entrypoint [running] — FOUND by W52 adversarial verifier (MAJOR) after T-538.
+
+Stdout schema/preserve Class-R calls `apply_flatten_orbat_slots` directly, not `flatten_orbat_slots(..., false)`. A post-apply stdout-only `mission["schemaVersion"] = "1.1"` stamp (exact pre-T-538 bug shape) keeps all `flatten_stdout_*` tests GREEN. Production path is shared/correct today; pin does not cover the CLI entrypoint claim.
+
+Cure: Class-R must exercise stdout entrypoint (or source-pin that stdout path cannot reassign schemaVersion after apply). Repro: add stamp after apply in flatten_orbat_slots false branch → current tests stay green.
 
 ## Ready
 
