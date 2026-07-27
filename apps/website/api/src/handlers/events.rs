@@ -25,10 +25,11 @@ use crate::models::{
 };
 use crate::services::text::is_http_url;
 use crate::services::{
-    OrbatSquadTemplate, flatten_to_mod_document, parse_orbat_template, write_audit,
+    OrbatSquadTemplate, flatten_to_mod_document_with_catalog, parse_orbat_template, write_audit,
 };
 use crate::state::AppState;
 use map_engine_core::mission::orbat::validate_faction_join_key;
+use map_engine_core::mission::wire_safety::{CargoPhys, CargoPhysCatalog};
 
 /// `events.banner_image_url`, validated at the write boundary. **T-413**, adopting T-405 /
 /// T-391's `is_http_url` on the remaining writer that still lacked it.
@@ -2454,6 +2455,12 @@ fn pair_slots(
 /// harmless (their `uid` resolves to nothing there); a player registered on two missions of
 /// one event is resolved deterministically — earliest mission by start time wins.
 ///
+/// **T-550 — cargo capacity at roster compile.** Loads the same registry phys table Save /
+/// `/compiled` use ([`load_cargo_phys_catalog`]) and compiles via
+/// [`flatten_to_mod_document_with_catalog`], so pre-T-416 over-capacity versions are omitted
+/// here instead of seating from an empty-catalog no-op. (`load_cargo_phys_catalog` is private
+/// in `missions.rs` — duplicated below; owns is events-only.)
+///
 /// @route GET /api/v1/ingest/events/:id/roster
 pub async fn ingest_event_roster(
     State(state): State<AppState>,
@@ -2471,6 +2478,10 @@ pub async fn ingest_event_roster(
     .bind(ev.id)
     .fetch_all(&state.pool)
     .await?;
+
+    // Same phys table as Save / GET /compiled — empty catalog stays silent (never invent).
+    // Loaded once for the whole roster; current-modpack table does not vary per mission.
+    let catalog = load_cargo_phys_catalog(&state.pool).await?;
 
     // Serialized as a JSON object of identity → slot uid. BTreeMap so the body is stable
     // across calls (the mod diffs nothing, but a stable body makes a capture diffable).
@@ -2493,10 +2504,10 @@ pub async fn ingest_event_roster(
         };
         let bytes = payload.0.get().as_bytes();
 
-        let doc = match flatten_to_mod_document(&mission, bytes) {
+        let doc = match flatten_to_mod_document_with_catalog(&mission, bytes, &catalog) {
             Ok(doc) => doc,
-            // A mission with no placed slots has no seats to hand out; the mod's own
-            // `/compiled` fetch answers 409 for it too.
+            // A mission with no placed slots (or cargo refuse) has no seats to hand out; the
+            // mod's own `/compiled` fetch answers 409 / 500 for those cases too.
             Err(e) => {
                 tracing::warn!(
                     event_mission = %em.id,
@@ -2560,6 +2571,88 @@ pub async fn ingest_event_roster(
         "missionId": mission_id,
         "assignments": assignments,
     })))
+}
+
+/// Phys attrs for the T-416 cargo-capacity walk — only columns `scan_cargo_capacity` needs.
+///
+/// Duplicated from `handlers/missions.rs` (T-550): that helper is private and this slice's
+/// owns is `events.rs` only. Keep the SQL and insert shape byte-identical to missions.
+#[derive(sqlx::FromRow)]
+struct CargoPhysRow {
+    resource_name: String,
+    display_name: String,
+    weight_kg: Option<f64>,
+    volume_cm3: Option<f64>,
+    max_weight_kg: Option<f64>,
+    max_volume_cm3: Option<f64>,
+}
+
+/// Load `CargoPhysCatalog` from the **current** modpack's `registry_items`.
+///
+/// Mirror of `handlers::missions::load_cargo_phys_catalog` (private there). Missing weights /
+/// maxima stay `None` (never invent). No current modpack / empty table → empty catalog →
+/// cargo walk is a no-op.
+async fn load_cargo_phys_catalog(pool: &PgPool) -> Result<CargoPhysCatalog, ApiError> {
+    let rows: Vec<CargoPhysRow> = sqlx::query_as(
+        "SELECT ri.resource_name, ri.display_name, \
+                ri.weight_kg, ri.volume_cm3, ri.max_weight_kg, ri.max_volume_cm3 \
+         FROM registry_items ri \
+         INNER JOIN modpacks m ON m.id = ri.modpack_id \
+         WHERE m.is_current = true",
+    )
+    .fetch_all(pool)
+    .await?;
+    let mut catalog = CargoPhysCatalog::with_capacity(rows.len());
+    for r in rows {
+        catalog.insert(
+            r.resource_name,
+            CargoPhys {
+                display_name: r.display_name,
+                weight_kg: r.weight_kg,
+                volume_cm3: r.volume_cm3,
+                max_weight_kg: r.max_weight_kg,
+                max_volume_cm3: r.max_volume_cm3,
+            },
+        );
+    }
+    Ok(catalog)
+}
+
+#[cfg(test)]
+mod t550_roster_cargo_catalog {
+    /// T-550 Class-R: live roster must load the Save phys catalog and compile through the
+    /// catalogued gate — empty-catalog `flatten_to_mod_document` lets pre-T-416 over-capacity
+    /// versions seat. RED: swap back to the no-arg flatten, or drop the catalog load.
+    #[test]
+    fn roster_loads_cargo_phys_catalog() {
+        const SRC: &str = include_str!("events.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("events.rs must have a #[cfg(test)] module");
+        let start = production
+            .find("pub async fn ingest_event_roster(")
+            .expect("ingest_event_roster must exist");
+        let after = &production[start..];
+        let body = after
+            .split("\n/// Phys attrs for the T-416 cargo-capacity walk")
+            .next()
+            .expect("ingest_event_roster must precede CargoPhysRow");
+        assert!(
+            body.contains("load_cargo_phys_catalog"),
+            "roster must load registry phys into the catalog; got:\n{body}"
+        );
+        assert!(
+            body.contains("flatten_to_mod_document_with_catalog("),
+            "roster must call the catalogued compile gate; got:\n{body}"
+        );
+        // Isolate so a with_catalog import alone cannot false-green a no-arg call.
+        let stripped = body.replace("flatten_to_mod_document_with_catalog", "");
+        assert!(
+            !stripped.contains("flatten_to_mod_document("),
+            "roster must not call the empty-catalog no-arg flatten; got:\n{body}"
+        );
+    }
 }
 
 #[cfg(test)]
