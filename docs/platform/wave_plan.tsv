@@ -262,3 +262,4 @@
 99	T-461	Class-R pins for T-438/T-448 are false-green	scripts/mod/verify-t438-deploy-staging-compose-path.sh; scripts/mod/deploy-staging.sh; apps/website/frontend/src/personnel.rs; apps/website/api/src/handlers/admin.rs
 99	T-462	Wave 24 Class-R/verify gates unwired (wiki seed + Objects aliases)	Makefile; scripts/platform/wave.sh; scripts/mod/verify-t439-objects-registry-aliases.sh; scripts/mod/verify-t444-wiki-seed.sh; apps/website/frontend/src/event_hub.rs
 99	T-463	verify-t438/t456 shell gates still unwired from wave cold gate	scripts/platform/wave.sh; scripts/mod/verify-t438-deploy-staging-compose-path.sh; scripts/mod/verify-t456-mission-rest-size-gate.sh
+99	T-464	Null-tolerance sweep for GET /cms/announcements	apps/website/api/tests/null_tolerance.rs; apps/website/api/src/handlers/cms.rs

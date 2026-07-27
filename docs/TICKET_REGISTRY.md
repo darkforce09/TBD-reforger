@@ -2474,6 +2474,11 @@ Cure: Class-R/source guard that seed: recipe references seeds/wiki_pages.sql (op
 Repro: corrupt deploy-staging compose path or strip REST size check → wave.sh gate still PASS until those scripts are invoked manually.
 
 Cure: wire both into wave.sh gate_slice + cmd_gate next to the T-439/T-444 steps (same pattern). |
+| T-464 | 3303 | ready | platform | Null-tolerance sweep for GET /cms/announcements | Residual from T-447 / wave 25 cold gate. Admin GET /cms/announcements is registered but null_tolerance every_get_route_is_swept_or_skipped_with_a_reason fails: path neither in route_sweep() nor ROUTE_SWEEP_SKIP.
+
+Repro: after T-447 merge, `wave.sh gate` → test api FAIL — `GET routes … neither swept …: ["/cms/announcements"]`.
+
+Cure: add `/cms/announcements` to route_sweep() (admin list; drafts+published) with Seed auth as other admin GETs; prove RED→GREEN. Do not skip unless sweep is impossible. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

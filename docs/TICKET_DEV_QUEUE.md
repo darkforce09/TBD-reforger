@@ -49,3 +49,15 @@ Cure: add list route if missing + FE LocalResource GET /cms/announcements.
 Repro: corrupt deploy-staging compose path or strip REST size check → wave.sh gate still PASS until those scripts are invoked manually.
 
 Cure: wire both into wave.sh gate_slice + cmd_gate next to the T-439/T-444 steps (same pattern).
+
+## T-464 — Null-tolerance sweep for GET /cms/announcements
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-464`
+- **Targets:** website
+- **Summary:** Residual from T-447 / wave 25 cold gate. Admin GET /cms/announcements is registered but null_tolerance every_get_route_is_swept_or_skipped_with_a_reason fails: path neither in route_sweep() nor ROUTE_SWEEP_SKIP.
+
+Repro: after T-447 merge, `wave.sh gate` → test api FAIL — `GET routes … neither swept …: ["/cms/announcements"]`.
+
+Cure: add `/cms/announcements` to route_sweep() (admin list; drafts+published) with Seed auth as other admin GETs; prove RED→GREEN. Do not skip unless sweep is impossible.
