@@ -8,6 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 XTASK="$SCRIPT_DIR/lib/xtask-run.sh"
 # T-165.7: the stub is the Rust mcpd in stub mode (MCP_STUB=1; broker mode still wins on
 # --socket, so exporting it around mcp-daemon.sh is safe).
+# T-543: mcpd-bin.sh honors CARGO_TARGET_DIR (default $ROOT/target) — echo must match.
+ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 STUB="$("$SCRIPT_DIR/lib/mcpd-bin.sh")"
 export MCP_STUB=1
 FIX="$SCRIPT_DIR/fixtures"
@@ -17,6 +19,10 @@ PASS=0; FAIL=0
 ok() { echo "  ✓ $1"; PASS=$((PASS + 1)); }
 no() { echo "  ✗ $1" >&2; FAIL=$((FAIL + 1)); }
 rc_is() { [ "$2" = "$3" ] && ok "$1 (rc=$3)" || no "$1 (want rc$2 got rc$3)"; }
+
+echo "[T-543] mcpd-bin CARGO_TARGET_DIR honor"
+want_stub="${CARGO_TARGET_DIR:-$ROOT/target}/debug/mcpd"
+[ "$STUB" = "$want_stub" ] && ok "mcpd-bin echo path ($STUB)" || no "mcpd-bin echo (want=$want_stub got=$STUB)"
 
 cleanup() { MCP_SOCK="$SOCK" bash "$SCRIPT_DIR/mcp-daemon.sh" stop >/dev/null 2>&1; rm -f "$SOCK"*; }
 trap cleanup EXIT
