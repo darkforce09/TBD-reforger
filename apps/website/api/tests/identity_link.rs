@@ -10,6 +10,18 @@
 //! shared id — so a concurrent `cargo test -p website-api` interleaved this setup ahead of
 //! auth_refresh and failed. Actors here now live in the T-400 private range and are minted
 //! via [`common::access_token`] (writes nothing on the shared row).
+//!
+//! # Intra-suite seed race (T-516)
+//!
+//! `arma_link_flow` and `padded_arma_id_is_stored_trimmed_and_resolvable` both call
+//! [`setup`], which `seed_user`s ACTOR with placeholder `identity-link-seed-400001` before
+//! clearing it. Under `cargo test` (parallel by default) two `setup()`s can race on
+//! `UNIQUE(arma_id)` (`idx_users_arma_id`): one holds the placeholder while the other
+//! `ON CONFLICT … SET arma_id = EXCLUDED.arma_id` hits the same value still owned by any
+//! row (or the clash partner still holding `identity-link-seed-400002`). Isolated
+//! `--test identity_link` often passes; full `cargo test -p website-api` on the shared
+//! gate DB fails. Fix: [`DB_LOCK`] serialises the async tests, and `setup` releases the
+//! seed placeholders before `seed_user` (same pattern as live arma ids).
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -23,6 +35,11 @@ use website_api::{app, db};
 
 mod common;
 
+/// Serialise DB-touching tests in this binary — both async tests share ACTOR /
+/// seed placeholders on one gate DB (see module docs §T-516). Pattern: `null_tolerance.rs`.
+static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
+    std::sync::LazyLock::new(|| tokio::sync::Mutex::new(()));
+
 /// Primary actor under test — namespaced so no sibling binary can rewrite its `arma_id`.
 const ACTOR: &str = "000000000000400001";
 /// Clash partner for the 409 path (same private range).
@@ -34,6 +51,10 @@ const ACTOR_ARMA: &str = "identity-link-arma-400001";
 const PAD_ARMA: &str = "identity-link-arma-padded-400003";
 /// Wire form that must NOT land in `users.arma_id` — spaces around the id.
 const PAD_ARMA_PADDED: &str = "  identity-link-arma-padded-400003  ";
+/// Placeholders `seed_user` writes before the unlink step — must be released first (T-516).
+const SEED_ARMA_ACTOR: &str = "identity-link-seed-400001";
+const SEED_ARMA_USER2: &str = "identity-link-seed-400002";
+const SEED_ARMA_PAD: &str = "identity-link-seed-400003";
 const SVC: &str = "test-service-token";
 
 async fn setup() -> Option<(Router, AppState, PgPool)> {
@@ -57,9 +78,17 @@ async fn setup() -> Option<(Router, AppState, PgPool)> {
             .await
             .unwrap_or_else(|e| panic!("identity_link cleanup `{q}`: {e}"));
     }
-    // Release our private arma_id if another row somehow holds it (UNIQUE, non-partial).
+    // Release live arma ids *and* seed placeholders (UNIQUE, non-partial). Without the
+    // placeholders, a concurrent/prior `seed_user` still holding them trips
+    // `idx_users_arma_id` on the next `setup` (T-516).
     sqlx::query("UPDATE users SET arma_id = NULL WHERE arma_id = ANY($1)")
-        .bind(vec![ACTOR_ARMA.to_string(), PAD_ARMA.to_string()])
+        .bind(vec![
+            ACTOR_ARMA.to_string(),
+            PAD_ARMA.to_string(),
+            SEED_ARMA_ACTOR.to_string(),
+            SEED_ARMA_USER2.to_string(),
+            SEED_ARMA_PAD.to_string(),
+        ])
         .execute(&pool)
         .await
         .unwrap_or_else(|e| panic!("identity_link release arma: {e}"));
@@ -81,7 +110,7 @@ async fn setup() -> Option<(Router, AppState, PgPool)> {
         &pool,
         ACTOR,
         "Identity Link Actor",
-        "identity-link-seed-400001",
+        SEED_ARMA_ACTOR,
         "admin",
     )
     .await;
@@ -153,6 +182,7 @@ fn t400_actor_is_not_shared_dev_login_user() {
 
 #[tokio::test]
 async fn arma_link_flow() {
+    let _serial = DB_LOCK.lock().await;
     let Some((app, state, pool)) = setup().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
@@ -230,7 +260,7 @@ async fn arma_link_flow() {
         &pool,
         USER2,
         "Identity Link User2",
-        "identity-link-seed-400002",
+        SEED_ARMA_USER2,
         "enlisted",
     )
     .await;
@@ -270,6 +300,7 @@ async fn arma_link_flow() {
 /// subsequent match ingest resolves the account (linked=1).
 #[tokio::test]
 async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
+    let _serial = DB_LOCK.lock().await;
     let Some((app, _state, pool)) = setup().await else {
         eprintln!("skip: TEST_DATABASE_URL unset");
         return;
@@ -282,7 +313,7 @@ async fn padded_arma_id_is_stored_trimmed_and_resolvable() {
         &pool,
         PAD_ACTOR,
         "Identity Link Pad Actor",
-        "identity-link-seed-400003",
+        SEED_ARMA_PAD,
         "enlisted",
     )
     .await;
