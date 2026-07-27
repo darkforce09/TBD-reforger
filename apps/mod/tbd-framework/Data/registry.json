@@ -1,14 +1,17 @@
 {
   "registryVersion": "1.0",
-  "generatedAt": "2026-06-13T00:00:00Z",
+  "generatedAt": "2026-07-27T00:00:00Z",
   "modset": [
-    { "name": "Arma Reforger (vanilla)", "workshopId": "58D0FB3206B6F859" }
+    {
+      "name": "Arma Reforger (vanilla)",
+      "workshopId": "58D0FB3206B6F859"
+    }
   ],
   "entries": [
     {
       "alias": "preset:us_army_82nd",
       "guid": "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
-      "displayName": "US Army 82nd (POC — faction preset resolves to rifleman until TBD-Content)"
+      "displayName": "US Army 82nd (POC \u2014 faction preset resolves to rifleman until TBD-Content)"
     },
     {
       "alias": "kit:us_rifleman",
@@ -18,7 +21,7 @@
     {
       "alias": "kit:us_sl",
       "guid": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et",
-      "displayName": "US Squad Leader (POC — GL stand-in; replace with Character_US_SL in Workbench)"
+      "displayName": "US Squad Leader (POC \u2014 GL stand-in; replace with Character_US_SL in Workbench)"
     },
     {
       "alias": "kit:us_tl",
@@ -38,7 +41,7 @@
     {
       "alias": "preset:sov_vdv",
       "guid": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
-      "displayName": "Soviet VDV (POC — preset resolves to rifleman until TBD-Content)"
+      "displayName": "Soviet VDV (POC \u2014 preset resolves to rifleman until TBD-Content)"
     },
     {
       "alias": "kit:sov_rifleman",
@@ -58,7 +61,7 @@
     {
       "alias": "preset:fia",
       "guid": "{84B40583F4D1B7A3}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et",
-      "displayName": "FIA (POC — faction preset resolves to rifleman until TBD-Content)"
+      "displayName": "FIA (POC \u2014 faction preset resolves to rifleman until TBD-Content)"
     },
     {
       "alias": "kit:fia_rifleman",
@@ -78,7 +81,7 @@
     {
       "alias": "preset:civ",
       "guid": "{22E43956740A6794}Prefabs/Characters/Factions/CIV/GenericCivilians/Character_CIV_Randomized.et",
-      "displayName": "Civilians (POC — preset resolves to the randomized civilian until TBD-Content)"
+      "displayName": "Civilians (POC \u2014 preset resolves to the randomized civilian until TBD-Content)"
     },
     {
       "alias": "kit:civ_generic",
@@ -89,13 +92,1685 @@
       "alias": "veh:m151_mg",
       "guid": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
       "displayName": "M151A2 (M2HB)",
-      "footprint": { "radius": 3.5 }
+      "footprint": {
+        "radius": 3.5
+      }
     },
     {
       "alias": "comp:checkpoint_small",
       "guid": "{E1D01D77D7F47EF3}PrefabsEditable/Auto/Compositions/Misc/SubCompositions/E_Sandbag_Barricade_US_04.et",
       "displayName": "Small Checkpoint (sandbag barricade POC)",
-      "footprint": { "box": [12, 12] }
+      "footprint": {
+        "box": [
+          12,
+          12
+        ]
+      }
+    },
+    {
+      "alias": "comp:ammoboxarsenal_equipment_us_apparel",
+      "guid": "{3568138FF7A659A1}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/AmmoBoxArsenal_Equipment_US_Apparel.et",
+      "displayName": "AmmoBoxArsenal Equipment US Apparel"
+    },
+    {
+      "alias": "comp:ammoboxarsenal_equipment_us_gadgets",
+      "guid": "{2CBCB67BBA49972B}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/AmmoBoxArsenal_Equipment_US_Gadgets.et",
+      "displayName": "AmmoBoxArsenal Equipment US Gadgets"
+    },
+    {
+      "alias": "comp:ammoboxarsenal_equipment_us_noradio",
+      "guid": "{EDD6F0D4F75D7369}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/AmmoBoxArsenal_Equipment_US_NoRadio.et",
+      "displayName": "AmmoBoxArsenal Equipment US NoRadio"
+    },
+    {
+      "alias": "comp:ammoboxarsenal_equipment_us_radios",
+      "guid": "{F0B225D7CD87D140}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/AmmoBoxArsenal_Equipment_US_Radios.et",
+      "displayName": "AmmoBoxArsenal Equipment US Radios"
+    },
+    {
+      "alias": "comp:ammoboxarsenal_equipment_ussr_apparel",
+      "guid": "{759115303A582527}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/AmmoBoxArsenal_Equipment_USSR_Apparel.et",
+      "displayName": "AmmoBoxArsenal Equipment USSR Apparel"
+    },
+    {
+      "alias": "comp:ammoboxarsenal_equipment_ussr_gadgets",
+      "guid": "{6C45B0C477B7EBAD}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/AmmoBoxArsenal_Equipment_USSR_Gadgets.et",
+      "displayName": "AmmoBoxArsenal Equipment USSR Gadgets"
+    },
+    {
+      "alias": "comp:ammoboxarsenal_equipment_ussr_noradio",
+      "guid": "{AD2FF66B3AA30FEF}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/AmmoBoxArsenal_Equipment_USSR_NoRadio.et",
+      "displayName": "AmmoBoxArsenal Equipment USSR NoRadio"
+    },
+    {
+      "alias": "comp:ammoboxarsenal_equipment_ussr_radios",
+      "guid": "{8A9519553A5E3027}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/AmmoBoxArsenal_Equipment_USSR_Radios.et",
+      "displayName": "AmmoBoxArsenal Equipment USSR Radios"
+    },
+    {
+      "alias": "comp:ammoboxarsenal_weapons_us_pistols",
+      "guid": "{19632F112985ED4B}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/AmmoBoxArsenal_Weapons_US_Pistols.et",
+      "displayName": "AmmoBoxArsenal Weapons US Pistols"
+    },
+    {
+      "alias": "comp:ammoboxarsenal_weapons_ussr_pistols",
+      "guid": "{97AFDBFB3394A634}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/AmmoBoxArsenal_Weapons_USSR_Pistols.et",
+      "displayName": "AmmoBoxArsenal Weapons USSR Pistols"
+    },
+    {
+      "alias": "comp:arsenalbox_civ",
+      "guid": "{F542F974956C255F}Prefabs/Props/Military/Compositions/CIV/ArsenalBox_CIV.et",
+      "displayName": "ArsenalBox CIV"
+    },
+    {
+      "alias": "comp:arsenalbox_fia",
+      "guid": "{B53B98CEA2D72735}Prefabs/Props/Military/Compositions/FIA/ArsenalBox_FIA.et",
+      "displayName": "ArsenalBox FIA"
+    },
+    {
+      "alias": "comp:arsenalbox_fia_equipment",
+      "guid": "{5B69F7B2F3435B1D}Prefabs/Props/Military/Compositions/FIA/ArsenalBox_FIA_Equipment.et",
+      "displayName": "ArsenalBox FIA Equipment"
+    },
+    {
+      "alias": "comp:arsenalbox_fia_equipment_noaffiliation",
+      "guid": "{E5CB44A5FE1DEC03}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_FIA_Equipment_NoAffiliation.et",
+      "displayName": "ArsenalBox FIA Equipment NoAffiliation"
+    },
+    {
+      "alias": "comp:arsenalbox_fia_noaffiliation",
+      "guid": "{9B6197BE8951A3A1}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_FIA_NoAffiliation.et",
+      "displayName": "ArsenalBox FIA NoAffiliation"
+    },
+    {
+      "alias": "comp:arsenalbox_fia_weapons",
+      "guid": "{9EF8CF9ED5F800A7}Prefabs/Props/Military/Compositions/FIA/ArsenalBox_FIA_Weapons.et",
+      "displayName": "ArsenalBox FIA Weapons"
+    },
+    {
+      "alias": "comp:arsenalbox_fia_weapons_noaffiliation",
+      "guid": "{658116C15069D447}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_FIA_Weapons_NoAffiliation.et",
+      "displayName": "ArsenalBox FIA Weapons NoAffiliation"
+    },
+    {
+      "alias": "comp:arsenalbox_us",
+      "guid": "{45C675ED3CFBBEC5}Prefabs/Props/Military/Compositions/US/ArsenalBox_US.et",
+      "displayName": "ArsenalBox US"
+    },
+    {
+      "alias": "comp:arsenalbox_us_equipment",
+      "guid": "{A28E5D231A74D95D}Prefabs/Props/Military/Compositions/US/ArsenalBox_US_Equipment.et",
+      "displayName": "ArsenalBox US Equipment"
+    },
+    {
+      "alias": "comp:arsenalbox_us_equipment_noaffiliation",
+      "guid": "{705D4C030A30D4A3}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_US_Equipment_NoAffiliation.et",
+      "displayName": "ArsenalBox US Equipment NoAffiliation"
+    },
+    {
+      "alias": "comp:arsenalbox_us_noaffiliation",
+      "guid": "{FF27B5E7B51F45F0}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_US_NoAffiliation.et",
+      "displayName": "ArsenalBox US NoAffiliation"
+    },
+    {
+      "alias": "comp:arsenalbox_us_weapons",
+      "guid": "{2F17BFBCDB329CCA}Prefabs/Props/Military/Compositions/US/ArsenalBox_US_Weapons.et",
+      "displayName": "ArsenalBox US Weapons"
+    },
+    {
+      "alias": "comp:arsenalbox_us_weapons_noaffiliation",
+      "guid": "{B642B7B2BF172CF5}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_US_Weapons_NoAffiliation.et",
+      "displayName": "ArsenalBox US Weapons NoAffiliation"
+    },
+    {
+      "alias": "comp:arsenalbox_ussr",
+      "guid": "{AD59EDEAA26CE792}Prefabs/Props/Military/Compositions/USSR/ArsenalBox_USSR.et",
+      "displayName": "ArsenalBox USSR"
+    },
+    {
+      "alias": "comp:arsenalbox_ussr_equipment",
+      "guid": "{FE8505D4F04785F8}Prefabs/Props/Military/Compositions/USSR/ArsenalBox_USSR_Equipment.et",
+      "displayName": "ArsenalBox USSR Equipment"
+    },
+    {
+      "alias": "comp:arsenalbox_ussr_equipment_noaffiliation",
+      "guid": "{EA1DD6EE6534033A}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_USSR_Equipment_NoAffiliation.et",
+      "displayName": "ArsenalBox USSR Equipment NoAffiliation"
+    },
+    {
+      "alias": "comp:arsenalbox_ussr_noaffiliation",
+      "guid": "{0150701FD7034232}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_USSR_NoAffiliation.et",
+      "displayName": "ArsenalBox USSR NoAffiliation"
+    },
+    {
+      "alias": "comp:arsenalbox_ussr_weapons",
+      "guid": "{372DCA487884C4E8}Prefabs/Props/Military/Compositions/USSR/ArsenalBox_USSR_Weapons.et",
+      "displayName": "ArsenalBox USSR Weapons"
+    },
+    {
+      "alias": "comp:arsenalbox_ussr_weapons_noaffiliation",
+      "guid": "{8501E99781563FF4}Prefabs/Compositions/Misc/CustomEntities/InteractionPoints/ArsenalBox_USSR_Weapons_NoAffiliation.et",
+      "displayName": "ArsenalBox USSR Weapons NoAffiliation"
+    },
+    {
+      "alias": "comp:cargocontainer_ammo_cluttered_us_01",
+      "guid": "{28DEC0CA97C35511}Prefabs/Compositions/Misc/SubCompositions/CargoContainer_Ammo_Cluttered_US_01.et",
+      "displayName": "CargoContainer Ammo Cluttered US 01"
+    },
+    {
+      "alias": "comp:equipmentboxstacked_cluttered_us_01",
+      "guid": "{89B5E4FFF711EBEC}Prefabs/Compositions/Misc/SubCompositions/EquipmentBoxStacked_Cluttered_US_01.et",
+      "displayName": "EquipmentBoxStacked Cluttered US 01"
+    },
+    {
+      "alias": "comp:equipmentboxstacked_cluttered_us_02",
+      "guid": "{167AE5590B8A2601}Prefabs/Compositions/Misc/SubCompositions/EquipmentBoxStacked_Cluttered_US_02.et",
+      "displayName": "EquipmentBoxStacked Cluttered US 02"
+    },
+    {
+      "alias": "comp:equipmentboxstacked_cluttered_us_03",
+      "guid": "{F3E6A9A0076FB16A}Prefabs/Compositions/Misc/SubCompositions/EquipmentBoxStacked_Cluttered_US_03.et",
+      "displayName": "EquipmentBoxStacked Cluttered US 03"
+    },
+    {
+      "alias": "comp:equipmentboxstacked_cluttered_ussr_01",
+      "guid": "{025FB956F636B442}Prefabs/Compositions/Misc/SubCompositions/EquipmentBoxStacked_Cluttered_USSR_01.et",
+      "displayName": "EquipmentBoxStacked Cluttered USSR 01"
+    },
+    {
+      "alias": "comp:equipmentboxstacked_cluttered_ussr_02",
+      "guid": "{6E0B8DB64AF23B6C}Prefabs/Compositions/Misc/SubCompositions/EquipmentBoxStacked_Cluttered_USSR_02.et",
+      "displayName": "EquipmentBoxStacked Cluttered USSR 02"
+    },
+    {
+      "alias": "comp:equipmentboxstacked_cluttered_ussr_03",
+      "guid": "{8B97C14F4617AC07}Prefabs/Compositions/Misc/SubCompositions/EquipmentBoxStacked_Cluttered_USSR_03.et",
+      "displayName": "EquipmentBoxStacked Cluttered USSR 03"
+    },
+    {
+      "alias": "comp:equipmentboxstacked_cluttered_ussr_04",
+      "guid": "{B6A3E477337B2530}Prefabs/Compositions/Misc/SubCompositions/EquipmentBoxStacked_Cluttered_USSR_04.et",
+      "displayName": "EquipmentBoxStacked Cluttered USSR 04"
+    },
+    {
+      "alias": "comp:equipmentboxstacked_cluttered_ussr_05",
+      "guid": "{533FA88E3F9EB25B}Prefabs/Compositions/Misc/SubCompositions/EquipmentBoxStacked_Cluttered_USSR_05.et",
+      "displayName": "EquipmentBoxStacked Cluttered USSR 05"
+    },
+    {
+      "alias": "comp:equipmentboxstacked_cluttered_ussr_06",
+      "guid": "{3F6B9C6E835A3D75}Prefabs/Compositions/Misc/SubCompositions/EquipmentBoxStacked_Cluttered_USSR_06.et",
+      "displayName": "EquipmentBoxStacked Cluttered USSR 06"
+    },
+    {
+      "alias": "comp:equipmentboxstacked_combined_ussr_01",
+      "guid": "{9F49087B42507C90}Prefabs/Compositions/Misc/SubCompositions/EquipmentBoxStacked_Combined_USSR_01.et",
+      "displayName": "EquipmentBoxStacked Combined USSR 01"
+    },
+    {
+      "alias": "comp:heliweapons_arsenalbox_helipad_us",
+      "guid": "{82A575F7D83C3231}Prefabs/Props/Military/Compositions/US/HeliWeapons_ArsenalBox_HeliPad_US.et",
+      "displayName": "HeliWeapons ArsenalBox HeliPad US"
+    },
+    {
+      "alias": "comp:heliweapons_arsenalbox_helipad_ussr",
+      "guid": "{B26025BBAD4A2852}Prefabs/Props/Military/Compositions/USSR/HeliWeapons_ArsenalBox_HeliPad_USSR.et",
+      "displayName": "HeliWeapons ArsenalBox HeliPad USSR"
+    },
+    {
+      "alias": "comp:heliweapons_arsenalbox_us",
+      "guid": "{9BCB06640CF586C1}Prefabs/Props/Military/Compositions/US/HeliWeapons_ArsenalBox_US.et",
+      "displayName": "HeliWeapons ArsenalBox US"
+    },
+    {
+      "alias": "comp:heliweapons_arsenalbox_ussr",
+      "guid": "{CB68059D1D1D574A}Prefabs/Props/Military/Compositions/USSR/HeliWeapons_ArsenalBox_USSR.et",
+      "displayName": "HeliWeapons ArsenalBox USSR"
+    },
+    {
+      "alias": "prop:ambulance_virtualarsenalslot",
+      "guid": "{65F17676960CBF58}Prefabs/Vehicles/Core/VirtualSlots/Ambulance_VirtualArsenalSlot.et",
+      "displayName": "Ambulance VirtualArsenalSlot"
+    },
+    {
+      "alias": "prop:ammobox_50cal_100rnd",
+      "guid": "{7007B975BEC018D9}Prefabs/Props/Military/AmmoBoxes/AmmoBox_50cal_100rnd.et",
+      "displayName": "AmmoBox 50cal 100rnd"
+    },
+    {
+      "alias": "prop:ammobox_545x39_1080rnd",
+      "guid": "{5DD9020BE477CB9C}Prefabs/Props/Military/AmmoBoxes/AmmoBox_545x39_1080rnd.et",
+      "displayName": "AmmoBox 545x39 1080rnd"
+    },
+    {
+      "alias": "prop:ammobox_545x39_2160rnd",
+      "guid": "{E521AEA6D14589B1}Prefabs/Props/Military/AmmoBoxes/AmmoBox_545x39_2160rnd.et",
+      "displayName": "AmmoBox 545x39 2160rnd"
+    },
+    {
+      "alias": "prop:ammobox_556x45_1680rnd",
+      "guid": "{092FE092D6DF1EB3}Prefabs/Props/Military/AmmoBoxes/AmmoBox_556x45_1680rnd.et",
+      "displayName": "AmmoBox 556x45 1680rnd"
+    },
+    {
+      "alias": "prop:ammobox_556x45_840rnd",
+      "guid": "{AFD43C42CFAF65E3}Prefabs/Props/Military/AmmoBoxes/AmmoBox_556x45_840rnd.et",
+      "displayName": "AmmoBox 556x45 840rnd"
+    },
+    {
+      "alias": "prop:ammobox_762x51_200rnd",
+      "guid": "{7F9923063FBB628B}Prefabs/Props/Military/AmmoBoxes/AmmoBox_762x51_200rnd.et",
+      "displayName": "AmmoBox 762x51 200rnd"
+    },
+    {
+      "alias": "prop:ammobox_762x54_440rnd",
+      "guid": "{036A2332E131AE05}Prefabs/Props/Military/AmmoBoxes/AmmoBox_762x54_440rnd.et",
+      "displayName": "AmmoBox 762x54 440rnd"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_ammunition_fia",
+      "guid": "{10F9EE0FB9EC0E4E}Prefabs/Props/Military/Arsenal/AmmoBoxes/FIA/AmmoBoxArsenal_Ammunition_FIA.et",
+      "displayName": "AmmoBoxArsenal Ammunition FIA"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_ammunition_hq_fia",
+      "guid": "{97E002FA99A6D88F}Prefabs/Props/Military/Arsenal/AmmoBoxes/FIA/AmmoBoxArsenal_Ammunition_HQ_FIA.et",
+      "displayName": "AmmoBoxArsenal Ammunition HQ FIA"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_ammunition_hq_us",
+      "guid": "{4557C927E8D72EA5}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Ammunition_HQ_US.et",
+      "displayName": "AmmoBoxArsenal Ammunition HQ US"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_ammunition_hq_ussr",
+      "guid": "{E53AF7A761CCE3C7}Prefabs/Props/Military/Arsenal/AmmoBoxes/USSR/AmmoBoxArsenal_Ammunition_HQ_USSR.et",
+      "displayName": "AmmoBoxArsenal Ammunition HQ USSR"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_ammunition_us",
+      "guid": "{5FFD91CF507BFFFB}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Ammunition_US.et",
+      "displayName": "AmmoBoxArsenal Ammunition US"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_ammunition_ussr",
+      "guid": "{5E6CBF60621C39CD}Prefabs/Props/Military/Arsenal/AmmoBoxes/USSR/AmmoBoxArsenal_Ammunition_USSR.et",
+      "displayName": "AmmoBoxArsenal Ammunition USSR"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_equipment_fia",
+      "guid": "{7F1A910F6EA32A82}Prefabs/Props/Military/Arsenal/AmmoBoxes/FIA/AmmoBoxArsenal_Equipment_FIA.et",
+      "displayName": "AmmoBoxArsenal Equipment FIA"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_equipment_hq_fia",
+      "guid": "{F7D91E0785D97700}Prefabs/Props/Military/Arsenal/AmmoBoxes/FIA/AmmoBoxArsenal_Equipment_HQ_FIA.et",
+      "displayName": "AmmoBoxArsenal Equipment HQ FIA"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_equipment_hq_us",
+      "guid": "{55789E34C8CEE473}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Equipment_HQ_US.et",
+      "displayName": "AmmoBoxArsenal Equipment HQ US"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_equipment_hq_ussr",
+      "guid": "{B84961CBFE04A2E5}Prefabs/Props/Military/Arsenal/AmmoBoxes/USSR/AmmoBoxArsenal_Equipment_HQ_USSR.et",
+      "displayName": "AmmoBoxArsenal Equipment HQ USSR"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_equipment_us",
+      "guid": "{0FC1D6E9B592F75D}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Equipment_US.et",
+      "displayName": "AmmoBoxArsenal Equipment US"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_equipment_ussr",
+      "guid": "{B728C4AE0E6EB1E8}Prefabs/Props/Military/Arsenal/AmmoBoxes/USSR/AmmoBoxArsenal_Equipment_USSR.et",
+      "displayName": "AmmoBoxArsenal Equipment USSR"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_explosives_fia",
+      "guid": "{584CEDC2E56BAEBF}Prefabs/Props/Military/Arsenal/AmmoBoxes/FIA/AmmoBoxArsenal_Explosives_FIA.et",
+      "displayName": "AmmoBoxArsenal Explosives FIA"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_explosives_us",
+      "guid": "{1A942A9E6D0CD0F2}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Explosives_US.et",
+      "displayName": "AmmoBoxArsenal Explosives US"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_explosives_ussr",
+      "guid": "{76153B97A551AADE}Prefabs/Props/Military/Arsenal/AmmoBoxes/USSR/AmmoBoxArsenal_Explosives_USSR.et",
+      "displayName": "AmmoBoxArsenal Explosives USSR"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_launcher_fia",
+      "guid": "{8DCF642905449796}Prefabs/Props/Military/Arsenal/AmmoBoxes/FIA/AmmoBoxArsenal_Launcher_FIA.et",
+      "displayName": "AmmoBoxArsenal Launcher FIA"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_launcher_us",
+      "guid": "{C026AEDDA55DB43C}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Launcher_US.et",
+      "displayName": "AmmoBoxArsenal Launcher US"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_launcher_ussr",
+      "guid": "{7C93700E1AC4C388}Prefabs/Props/Military/Arsenal/AmmoBoxes/USSR/AmmoBoxArsenal_Launcher_USSR.et",
+      "displayName": "AmmoBoxArsenal Launcher USSR"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_medical_fia",
+      "guid": "{0AA94C2082A4A3A0}Prefabs/Props/Military/Arsenal/AmmoBoxes/FIA/AmmoBoxArsenal_Medical_FIA.et",
+      "displayName": "AmmoBoxArsenal Medical FIA"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_medical_hq_fia",
+      "guid": "{385606DBB9255163}Prefabs/Props/Military/Arsenal/AmmoBoxes/FIA/AmmoBoxArsenal_Medical_HQ_FIA.et",
+      "displayName": "AmmoBoxArsenal Medical HQ FIA"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_medical_hq_us",
+      "guid": "{7B69DFC06320F251}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Medical_HQ_US.et",
+      "displayName": "AmmoBoxArsenal Medical HQ US"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_medical_hq_ussr",
+      "guid": "{7A81D12120015C2F}Prefabs/Props/Military/Arsenal/AmmoBoxes/USSR/AmmoBoxArsenal_Medical_HQ_USSR.et",
+      "displayName": "AmmoBoxArsenal Medical HQ USSR"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_medical_us",
+      "guid": "{891EF8A5FB7162F1}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Medical_US.et",
+      "displayName": "AmmoBoxArsenal Medical US"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_medical_ussr",
+      "guid": "{7C93700E1AC4C387}Prefabs/Props/Military/Arsenal/AmmoBoxes/USSR/AmmoBoxArsenal_Medical_USSR.et",
+      "displayName": "AmmoBoxArsenal Medical USSR"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_mortar_fia",
+      "guid": "{BE4DAABB924C83AF}Prefabs/Props/Military/Arsenal/AmmoBoxes/FIA/AmmoBoxArsenal_Mortar_FIA.et",
+      "displayName": "AmmoBoxArsenal Mortar FIA"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_mortar_us",
+      "guid": "{E1FD1ACDA98123AE}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Mortar_US.et",
+      "displayName": "AmmoBoxArsenal Mortar US"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_mortar_ussr",
+      "guid": "{2351FA1249150AE6}Prefabs/Props/Military/Arsenal/AmmoBoxes/USSR/AmmoBoxArsenal_Mortar_USSR.et",
+      "displayName": "AmmoBoxArsenal Mortar USSR"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_vehiclegadget_fia",
+      "guid": "{5F20C0063AD2D702}Prefabs/Props/Military/Arsenal/AmmoBoxes/FIA/AmmoBoxArsenal_VehicleGadget_FIA.et",
+      "displayName": "AmmoBoxArsenal VehicleGadget FIA"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_vehiclegadget_us",
+      "guid": "{44C65662117C2FB6}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_VehicleGadget_US.et",
+      "displayName": "AmmoBoxArsenal VehicleGadget US"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_vehiclegadget_ussr",
+      "guid": "{FC8BFF421115C2D8}Prefabs/Props/Military/Arsenal/AmmoBoxes/USSR/AmmoBoxArsenal_VehicleGadget_USSR.et",
+      "displayName": "AmmoBoxArsenal VehicleGadget USSR"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_weapons_fia",
+      "guid": "{68E1EAF6EF214A1B}Prefabs/Props/Military/Arsenal/AmmoBoxes/FIA/AmmoBoxArsenal_Weapons_FIA.et",
+      "displayName": "AmmoBoxArsenal Weapons FIA"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_weapons_us",
+      "guid": "{377EB906F591E4BA}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Weapons_US.et",
+      "displayName": "AmmoBoxArsenal Weapons US"
+    },
+    {
+      "alias": "prop:ammoboxarsenal_weapons_ussr",
+      "guid": "{E74C02B60805F7C7}Prefabs/Props/Military/Arsenal/AmmoBoxes/USSR/AmmoBoxArsenal_Weapons_USSR.et",
+      "displayName": "AmmoBoxArsenal Weapons USSR"
+    },
+    {
+      "alias": "prop:ammoboxcache_cp",
+      "guid": "{EA34AA1A128DDF6E}Prefabs/Props/Military/Arsenal/AmmoBoxes/AmmoBoxCache_CP.et",
+      "displayName": "AmmoBoxCache CP"
+    },
+    {
+      "alias": "prop:ammoboxtutorialshortrange",
+      "guid": "{7F3BE9FB451D10AA}Prefabs/Scenarios/Tutorial/Weapons/AmmoBox/AmmoboxTutorialShortRange.et",
+      "displayName": "AmmoboxTutorialShortRange"
+    },
+    {
+      "alias": "prop:armycrackers_soviet_01",
+      "guid": "{50A68300B537EDFA}Prefabs/Items/Food/ArmyCrackers_Soviet_01.et",
+      "displayName": "ArmyCrackers Soviet 01"
+    },
+    {
+      "alias": "prop:arsenalbox_fia",
+      "guid": "{39568880CC1F9CED}Prefabs/Props/Military/Arsenal/ArsenalBoxes/FIA/ArsenalBox_FIA.et",
+      "displayName": "ArsenalBox FIA"
+    },
+    {
+      "alias": "prop:arsenalbox_us",
+      "guid": "{BE99D77D1155B127}Prefabs/Props/Military/Arsenal/ArsenalBoxes/US/ArsenalBox_US.et",
+      "displayName": "ArsenalBox US"
+    },
+    {
+      "alias": "prop:arsenalbox_ussr",
+      "guid": "{EDE6EC8B05227E3E}Prefabs/Props/Military/Arsenal/ArsenalBoxes/USSR/ArsenalBox_USSR.et",
+      "displayName": "ArsenalBox USSR"
+    },
+    {
+      "alias": "prop:arsenalbox_ussr_co",
+      "guid": "{D3FCFE5148A78C43}Prefabs/MP/CombatOps/AmmoBoxes/ArsenalBox_USSR_CO.et",
+      "displayName": "ArsenalBox USSR CO"
+    },
+    {
+      "alias": "prop:aspirinbottle",
+      "guid": "{C98FCC6CA6C56069}Prefabs/Items/Medicine/AspirinBottle.et",
+      "displayName": "AspirinBottle"
+    },
+    {
+      "alias": "prop:basevirtualarsenalslot",
+      "guid": "{D7EE0FF05FB54E4C}Prefabs/Vehicles/Core/VirtualSlots/BaseVirtualArsenalSlot.et",
+      "displayName": "BaseVirtualArsenalSlot"
+    },
+    {
+      "alias": "prop:bayonet_6kh4",
+      "guid": "{98C79F5FAE12F9B6}Prefabs/Weapons/Attachments/Bayonets/Bayonet_6Kh4.et",
+      "displayName": "Bayonet 6Kh4"
+    },
+    {
+      "alias": "prop:bayonet_m9",
+      "guid": "{558117556F3880A8}Prefabs/Weapons/Attachments/Bayonets/Bayonet_M9.et",
+      "displayName": "Bayonet M9"
+    },
+    {
+      "alias": "prop:bayonet_vz58_v1",
+      "guid": "{3F1B1BAD1F6DDC28}Prefabs/Weapons/Attachments/Bayonets/Bayonet_VZ58/Bayonet_VZ58_v1.et",
+      "displayName": "Bayonet VZ58 v1"
+    },
+    {
+      "alias": "prop:bayonet_vz58_v2",
+      "guid": "{F4B9ADFE20D0D6B8}Prefabs/Weapons/Attachments/Bayonets/Bayonet_VZ58/Bayonet_VZ58_v2.et",
+      "displayName": "Bayonet VZ58 v2"
+    },
+    {
+      "alias": "prop:bayonet_vz58_v3",
+      "guid": "{1125E1072C3541D3}Prefabs/Weapons/Attachments/Bayonets/Bayonet_VZ58/Bayonet_VZ58_v3.et",
+      "displayName": "Bayonet VZ58 v3"
+    },
+    {
+      "alias": "prop:camouflage_wrap_artii",
+      "guid": "{E06C5B0E2595702B}Prefabs/Weapons/Attachments/Camouflage/Camouflage_M21/Camouflage_Wrap_ARTII.et",
+      "displayName": "Camouflage Wrap ARTII"
+    },
+    {
+      "alias": "prop:camouflage_wrap_m21",
+      "guid": "{6060A767D637310F}Prefabs/Weapons/Attachments/Camouflage/Camouflage_M21/Camouflage_Wrap_M21.et",
+      "displayName": "Camouflage Wrap M21"
+    },
+    {
+      "alias": "prop:campaign_cache_fia",
+      "guid": "{C40B91D801E3832C}Prefabs/Props/Military/Arsenal/ArsenalBoxes/FIA/Campaign_Cache_FIA.et",
+      "displayName": "Campaign Cache FIA"
+    },
+    {
+      "alias": "prop:campaign_cachenote_fia",
+      "guid": "{07C703B76CD25499}Prefabs/Items/Misc/Caches/Campaign_CacheNote_FIA.et",
+      "displayName": "Campaign CacheNote FIA"
+    },
+    {
+      "alias": "prop:campaignmobileassemblycargoeast",
+      "guid": "{11163822C9E62B3E}Prefabs/MP/Campaign/Assets/CampaignMobileAssemblyCargoEast.et",
+      "displayName": "CampaignMobileAssemblyCargoEast"
+    },
+    {
+      "alias": "prop:campaignmobileassemblycargowest",
+      "guid": "{7E7F465C4741B5D7}Prefabs/MP/Campaign/Assets/CampaignMobileAssemblyCargoWest.et",
+      "displayName": "CampaignMobileAssemblyCargoWest"
+    },
+    {
+      "alias": "prop:campaignradiobox",
+      "guid": "{8154532BBAD4C09C}Prefabs/MP/Campaign/Assets/CampaignRadioBox.et",
+      "displayName": "CampaignRadioBox"
+    },
+    {
+      "alias": "prop:canteen_soviet_01",
+      "guid": "{70BC751317551D9B}Prefabs/Items/Equipment/Canteens/Canteen_Soviet_01.et",
+      "displayName": "Canteen Soviet 01"
+    },
+    {
+      "alias": "prop:canteen_soviet_01_black",
+      "guid": "{62D174018D1046F5}Prefabs/Items/Equipment/Canteens/Canteen_Soviet_01_Black.et",
+      "displayName": "Canteen Soviet 01 Black"
+    },
+    {
+      "alias": "prop:canteen_us_01",
+      "guid": "{630FB4AD4A735264}Prefabs/Items/Equipment/Canteens/Canteen_US_01.et",
+      "displayName": "Canteen US 01"
+    },
+    {
+      "alias": "prop:cargocontainer_01_10ft_us_ammo",
+      "guid": "{892D59073561FCA6}Prefabs/Props/Military/CargoContainers/CargoContainer_01_10ft_US_ammo.et",
+      "displayName": "CargoContainer 01 10ft US ammo"
+    },
+    {
+      "alias": "prop:cargocontainer_01_10ft_us_supplies",
+      "guid": "{EF490B50F7E11EBA}Prefabs/Props/Military/CargoContainers/CargoContainer_01_10ft_US_supplies.et",
+      "displayName": "CargoContainer 01 10ft US supplies"
+    },
+    {
+      "alias": "prop:cargocontainer_01_10ft_ussr_ammo",
+      "guid": "{124DC29CA359557C}Prefabs/Props/Military/CargoContainers/CargoContainer_01_10ft_USSR_ammo.et",
+      "displayName": "CargoContainer 01 10ft USSR ammo"
+    },
+    {
+      "alias": "prop:cargocontainer_01_10ft_ussr_supplies",
+      "guid": "{84D9030883610D2F}Prefabs/Props/Military/CargoContainers/CargoContainer_01_10ft_USSR_supplies.et",
+      "displayName": "CargoContainer 01 10ft USSR supplies"
+    },
+    {
+      "alias": "prop:cargocontainer_01_20ft_us_ammo",
+      "guid": "{1BBC135B17B2FEB3}Prefabs/Props/Military/CargoContainers/CargoContainer_01_20ft_US_ammo.et",
+      "displayName": "CargoContainer 01 20ft US ammo"
+    },
+    {
+      "alias": "prop:cargocontainer_01_20ft_us_supplies",
+      "guid": "{63CBCCD35D82066C}Prefabs/Props/Military/CargoContainers/CargoContainer_01_20ft_US_supplies.et",
+      "displayName": "CargoContainer 01 20ft US supplies"
+    },
+    {
+      "alias": "prop:cargocontainer_01_20ft_ussr_ammo",
+      "guid": "{C1868B74D5A0C96E}Prefabs/Props/Military/CargoContainers/CargoContainer_01_20ft_USSR_ammo.et",
+      "displayName": "CargoContainer 01 20ft USSR ammo"
+    },
+    {
+      "alias": "prop:cargocontainer_01_20ft_ussr_supplies",
+      "guid": "{CAD13AC8DAFEB0E8}Prefabs/Props/Military/CargoContainers/CargoContainer_01_20ft_USSR_supplies.et",
+      "displayName": "CargoContainer 01 20ft USSR supplies"
+    },
+    {
+      "alias": "prop:co_dropoffcrate_weapons_us",
+      "guid": "{587076AAD5B4A6E6}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/CO_DropOffCrate_Weapons_US.et",
+      "displayName": "CO DropOffCrate Weapons US"
+    },
+    {
+      "alias": "prop:cocain_ammo_akstash",
+      "guid": "{2787DBE1B5487892}Prefabs/MP/CombatOps/Cain/COCain_Ammo_AKStash.et",
+      "displayName": "COCain Ammo AKStash"
+    },
+    {
+      "alias": "prop:cocain_ammo_mgstash",
+      "guid": "{CD58FFEE11204970}Prefabs/MP/CombatOps/Cain/COCain_Ammo_MGStash.et",
+      "displayName": "COCain Ammo MGStash"
+    },
+    {
+      "alias": "prop:cocain_ammo_rpgstash",
+      "guid": "{2EED971B3A960A57}Prefabs/MP/CombatOps/Cain/COCain_Ammo_RPGStash.et",
+      "displayName": "COCain Ammo RPGStash"
+    },
+    {
+      "alias": "prop:cocain_mortarammobox",
+      "guid": "{15DF006A74ED8B4D}Prefabs/MP/CombatOps/Cain/CoCain_MortarAmmoBox.et",
+      "displayName": "CoCain MortarAmmoBox"
+    },
+    {
+      "alias": "prop:cok_explosivestash",
+      "guid": "{68F924AC1C9BBBC2}Prefabs/MP/CombatOps/Cain/COK_ExplosiveStash.et",
+      "displayName": "COK ExplosiveStash"
+    },
+    {
+      "alias": "prop:document",
+      "guid": "{59E8CDFB824DE3B9}Prefabs/Props/Civilian/Notebook_01_Single_MarbleBlack_CP.et",
+      "displayName": "Document"
+    },
+    {
+      "alias": "prop:dovetail_ak",
+      "guid": "{D92368B78263A9E0}Prefabs/Weapons/Attachments/Mounts/Dovetail_AK/Dovetail_AK.et",
+      "displayName": "Dovetail AK"
+    },
+    {
+      "alias": "prop:dovetail_nsv",
+      "guid": "{A97F179B2DA6DE33}Prefabs/Weapons/Attachments/Mounts/Dovetail_NSV/Dovetail_NSV.et",
+      "displayName": "Dovetail NSV"
+    },
+    {
+      "alias": "prop:dovetail_pkm",
+      "guid": "{2D26D2AE25429499}Prefabs/Weapons/Attachments/Mounts/Dovetail_PKM/Dovetail_PKM.et",
+      "displayName": "Dovetail PKM"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v1",
+      "guid": "{CEA6C2073B3DB240}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V1.et",
+      "displayName": "EquipmentBoxStack FIA 01 V1"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v1_covered",
+      "guid": "{2E0805B2022B55A4}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V1_covered.et",
+      "displayName": "EquipmentBoxStack FIA 01 V1 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v2",
+      "guid": "{A2F2F6E787F93D6E}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V2.et",
+      "displayName": "EquipmentBoxStack FIA 01 V2"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v2_covered",
+      "guid": "{D1D258E682DFC5E2}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V2_covered.et",
+      "displayName": "EquipmentBoxStack FIA 01 V2 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v3",
+      "guid": "{476EBA1E8B1CAA05}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V3.et",
+      "displayName": "EquipmentBoxStack FIA 01 V3"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v3_covered",
+      "guid": "{453433739A2A5851}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V3_covered.et",
+      "displayName": "EquipmentBoxStack FIA 01 V3 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v4",
+      "guid": "{7A5A9F26FE702332}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V4.et",
+      "displayName": "EquipmentBoxStack FIA 01 V4"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v4_covered",
+      "guid": "{6C9603A42ADCD3FD}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V4_covered.et",
+      "displayName": "EquipmentBoxStack FIA 01 V4 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v5",
+      "guid": "{9FC6D3DFF295B459}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V5.et",
+      "displayName": "EquipmentBoxStack FIA 01 V5"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v5_covered",
+      "guid": "{F870683132294E4E}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V5_covered.et",
+      "displayName": "EquipmentBoxStack FIA 01 V5 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v6",
+      "guid": "{F392E73F4E513B77}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V6.et",
+      "displayName": "EquipmentBoxStack FIA 01 V6"
+    },
+    {
+      "alias": "prop:equipmentboxstack_fia_01_v6_covered",
+      "guid": "{07AA3565B2DDDE08}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/FIA/EquipmentBoxStack_FIA_01_V6_covered.et",
+      "displayName": "EquipmentBoxStack FIA 01 V6 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v1",
+      "guid": "{E25E6578ED58CEF3}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V1.et",
+      "displayName": "EquipmentBoxStack US 01 V1"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v1_covered",
+      "guid": "{4BAC1B025834E407}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V1_covered.et",
+      "displayName": "EquipmentBoxStack US 01 V1 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v2",
+      "guid": "{8E0A5198519C41DD}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V2.et",
+      "displayName": "EquipmentBoxStack US 01 V2"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v2_covered",
+      "guid": "{B4764656D8C07441}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V2_covered.et",
+      "displayName": "EquipmentBoxStack US 01 V2 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v3",
+      "guid": "{6B961D615D79D6B6}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V3.et",
+      "displayName": "EquipmentBoxStack US 01 V3"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v3_covered",
+      "guid": "{20902DC3C035E9F2}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V3_covered.et",
+      "displayName": "EquipmentBoxStack US 01 V3 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v4",
+      "guid": "{56A2385928155F81}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V4.et",
+      "displayName": "EquipmentBoxStack US 01 V4"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v4_covered",
+      "guid": "{09321D1470C3625E}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V4_covered.et",
+      "displayName": "EquipmentBoxStack US 01 V4 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v5",
+      "guid": "{B33E74A024F0C8EA}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V5.et",
+      "displayName": "EquipmentBoxStack US 01 V5"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v5_covered",
+      "guid": "{9DD476816836FFED}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V5_covered.et",
+      "displayName": "EquipmentBoxStack US 01 V5 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v6",
+      "guid": "{DF6A4040983447C4}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V6.et",
+      "displayName": "EquipmentBoxStack US 01 V6"
+    },
+    {
+      "alias": "prop:equipmentboxstack_us_01_v6_covered",
+      "guid": "{620E2BD5E8C26FAB}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/US/EquipmentBoxStack_US_01_V6_covered.et",
+      "displayName": "EquipmentBoxStack US 01 V6 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v1",
+      "guid": "{65CD3EE14677E3AA}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V1.et",
+      "displayName": "EquipmentBoxStack USSR 01 V1"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v1_covered",
+      "guid": "{76D4B8AFA34EE178}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V1_covered.et",
+      "displayName": "EquipmentBoxStack USSR 01 V1 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v2",
+      "guid": "{09990A01FAB36C84}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V2.et",
+      "displayName": "EquipmentBoxStack USSR 01 V2"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v2_covered",
+      "guid": "{890EE5FB23BA713E}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V2_covered.et",
+      "displayName": "EquipmentBoxStack USSR 01 V2 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v3",
+      "guid": "{EC0546F8F656FBEF}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V3.et",
+      "displayName": "EquipmentBoxStack USSR 01 V3"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v3_covered",
+      "guid": "{1DE88E6E3B4FEC8D}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V3_covered.et",
+      "displayName": "EquipmentBoxStack USSR 01 V3 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v4",
+      "guid": "{D13163C0833A72D8}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V4.et",
+      "displayName": "EquipmentBoxStack USSR 01 V4"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v4_covered",
+      "guid": "{344ABEB98BB96721}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V4_covered.et",
+      "displayName": "EquipmentBoxStack USSR 01 V4 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v5",
+      "guid": "{34AD2F398FDFE5B3}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V5.et",
+      "displayName": "EquipmentBoxStack USSR 01 V5"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v5_covered",
+      "guid": "{A0ACD52C934CFA92}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V5_covered.et",
+      "displayName": "EquipmentBoxStack USSR 01 V5 covered"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v6",
+      "guid": "{58F91BD9331B6A9D}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V6.et",
+      "displayName": "EquipmentBoxStack USSR 01 V6"
+    },
+    {
+      "alias": "prop:equipmentboxstack_ussr_01_v6_covered",
+      "guid": "{5F76887813B86AD4}Prefabs/Props/Military/AmmoBoxes/EquipmentBoxStack/USSR/EquipmentBoxStack_USSR_01_V6_covered.et",
+      "displayName": "EquipmentBoxStack USSR 01 V6 covered"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_ammunition_01_fia",
+      "guid": "{A8D863B2FD266297}Prefabs/Props/Military/AmmoBoxes/FIA/EquipmentBoxWooden_Ammunition_01_FIA.et",
+      "displayName": "EquipmentBoxWooden Ammunition 01 FIA"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_ammunition_01_us",
+      "guid": "{2C303FA30DF3D73F}Prefabs/Props/Military/AmmoBoxes/US/EquipmentBoxWooden_Ammunition_01_US.et",
+      "displayName": "EquipmentBoxWooden Ammunition 01 US"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_ammunition_01_ussr",
+      "guid": "{A48EDE9CBA71B5A3}Prefabs/Props/Military/AmmoBoxes/USSR/EquipmentBoxWooden_Ammunition_01_USSR.et",
+      "displayName": "EquipmentBoxWooden Ammunition 01 USSR"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_equipment_01_fia",
+      "guid": "{2660E3988DF90EBB}Prefabs/Props/Military/AmmoBoxes/FIA/EquipmentBoxWooden_Equipment_01_FIA.et",
+      "displayName": "EquipmentBoxWooden Equipment 01 FIA"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_equipment_01_us",
+      "guid": "{59E846445A56B65C}Prefabs/Props/Military/AmmoBoxes/US/EquipmentBoxWooden_Equipment_01_US.et",
+      "displayName": "EquipmentBoxWooden Equipment 01 US"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_equipment_01_ussr",
+      "guid": "{CD62E36CFDCB8FD8}Prefabs/Props/Military/AmmoBoxes/USSR/EquipmentBoxWooden_Equipment_01_USSR.et",
+      "displayName": "EquipmentBoxWooden Equipment 01 USSR"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_explosives_01_fia",
+      "guid": "{FB125F997054366A}Prefabs/Props/Military/AmmoBoxes/FIA/EquipmentBoxWooden_Explosives_01_FIA.et",
+      "displayName": "EquipmentBoxWooden Explosives 01 FIA"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_explosives_01_us",
+      "guid": "{B8BA01645C9D3476}Prefabs/Props/Military/AmmoBoxes/US/EquipmentBoxWooden_Explosives_01_US.et",
+      "displayName": "EquipmentBoxWooden Explosives 01 US"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_explosives_01_ussr",
+      "guid": "{159BADC74896B7D6}Prefabs/Props/Military/AmmoBoxes/USSR/EquipmentBoxWooden_Explosives_01_USSR.et",
+      "displayName": "EquipmentBoxWooden Explosives 01 USSR"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_launcher_01_fia",
+      "guid": "{63DA21D3BBFFE518}Prefabs/Props/Military/AmmoBoxes/FIA/EquipmentBoxWooden_Launcher_01_FIA.et",
+      "displayName": "EquipmentBoxWooden Launcher 01 FIA"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_launcher_01_us",
+      "guid": "{7389C3874BF54AC2}Prefabs/Props/Military/AmmoBoxes/US/EquipmentBoxWooden_Launcher_01_US.et",
+      "displayName": "EquipmentBoxWooden Launcher 01 US"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_launcher_01_ussr",
+      "guid": "{92F3D49676C8CB61}Prefabs/Props/Military/AmmoBoxes/USSR/EquipmentBoxWooden_Launcher_01_USSR.et",
+      "displayName": "EquipmentBoxWooden Launcher 01 USSR"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_medical_01_fia",
+      "guid": "{647BA609E129CC85}Prefabs/Props/Military/AmmoBoxes/FIA/EquipmentBoxWooden_Medical_01_FIA.et",
+      "displayName": "EquipmentBoxWooden Medical 01 FIA"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_medical_01_us",
+      "guid": "{F0404B3895D3F80E}Prefabs/Props/Military/AmmoBoxes/US/EquipmentBoxWooden_Medical_01_US.et",
+      "displayName": "EquipmentBoxWooden Medical 01 US"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_medical_01_ussr",
+      "guid": "{70837F44CD03FD05}Prefabs/Props/Military/AmmoBoxes/USSR/EquipmentBoxWooden_Medical_01_USSR.et",
+      "displayName": "EquipmentBoxWooden Medical 01 USSR"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_weapon_01_fia",
+      "guid": "{A9989C248817C11E}Prefabs/Props/Military/AmmoBoxes/FIA/EquipmentBoxWooden_Weapon_01_FIA.et",
+      "displayName": "EquipmentBoxWooden Weapon 01 FIA"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_weapon_01_us",
+      "guid": "{5C9A089F424D8001}Prefabs/Props/Military/AmmoBoxes/US/EquipmentBoxWooden_Weapon_01_US.et",
+      "displayName": "EquipmentBoxWooden Weapon 01 US"
+    },
+    {
+      "alias": "prop:equipmentboxwooden_weapon_01_ussr",
+      "guid": "{8C7C140EEB0ECF36}Prefabs/Props/Military/AmmoBoxes/USSR/EquipmentBoxWooden_Weapon_01_USSR.et",
+      "displayName": "EquipmentBoxWooden Weapon 01 USSR"
+    },
+    {
+      "alias": "prop:etool_alice",
+      "guid": "{0619993AE6CDBF85}Prefabs/Items/Equipment/Accessories/ETool_ALICE/ETool_ALICE.et",
+      "displayName": "ETool ALICE"
+    },
+    {
+      "alias": "prop:etool_mpl50",
+      "guid": "{8A89D3F70713E55B}Prefabs/Items/Equipment/Accessories/ETool_MPL50/ETool_MPL50.et",
+      "displayName": "ETool MPL50"
+    },
+    {
+      "alias": "prop:fuel_virtualarsenalslot",
+      "guid": "{FC2D5D9BB8DE3EA5}Prefabs/Vehicles/Core/VirtualSlots/Fuel_VirtualArsenalSlot.et",
+      "displayName": "Fuel VirtualArsenalSlot"
+    },
+    {
+      "alias": "prop:fuelnozzle_01",
+      "guid": "{486D45EE6885B589}Prefabs/Props/Commercial/FuelNozzle_01.et",
+      "displayName": "FuelNozzle 01"
+    },
+    {
+      "alias": "prop:holster_m12",
+      "guid": "{6B9646EC0757693C}Prefabs/Items/Equipment/Accessories/Holster_M12/Holster_M12.et",
+      "displayName": "Holster M12"
+    },
+    {
+      "alias": "prop:holster_m12_magpouch",
+      "guid": "{7E9C22C159E879A2}Prefabs/Items/Equipment/Accessories/Holster_M12/Holster_M12_magpouch.et",
+      "displayName": "Holster M12 magpouch"
+    },
+    {
+      "alias": "prop:holster_pm",
+      "guid": "{50084B2B2B8004FA}Prefabs/Items/Equipment/Accessories/Holster_PM/Holster_PM.et",
+      "displayName": "Holster PM"
+    },
+    {
+      "alias": "prop:holster_pm_black",
+      "guid": "{B55078010CC0FF57}Prefabs/Items/Equipment/Accessories/Holster_PM/Holster_PM_Black.et",
+      "displayName": "Holster PM Black"
+    },
+    {
+      "alias": "prop:holster_pm_magpouch",
+      "guid": "{D3C36A56E140D8AB}Prefabs/Items/Equipment/Accessories/Holster_PM/Holster_PM_magpouch.et",
+      "displayName": "Holster PM magpouch"
+    },
+    {
+      "alias": "prop:holster_pm_magpouch_black",
+      "guid": "{9BD20A721C3BF593}Prefabs/Items/Equipment/Accessories/Holster_PM/Holster_PM_magpouch_Black.et",
+      "displayName": "Holster PM magpouch Black"
+    },
+    {
+      "alias": "prop:intelligencefolder_e_01",
+      "guid": "{6D56FED1E55A8F84}Prefabs/Items/Misc/IntelligenceFolder_E_01/IntelligenceFolder_E_01.et",
+      "displayName": "IntelligenceFolder E 01"
+    },
+    {
+      "alias": "prop:m151a2_bench_cargo",
+      "guid": "{B56FF8E1E075048A}Prefabs/Vehicles/Wheeled/M151A2/M151A2_bench_cargo.et",
+      "displayName": "M151A2 bench cargo"
+    },
+    {
+      "alias": "prop:m151a2_bench_cargo_covered",
+      "guid": "{6D9B18755685AD17}Prefabs/Vehicles/Wheeled/M151A2/M151A2_bench_cargo_covered.et",
+      "displayName": "M151A2 bench cargo covered"
+    },
+    {
+      "alias": "prop:m923a1_ammo_box",
+      "guid": "{402274CE2FB0720D}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_ammo_box.et",
+      "displayName": "M923A1 ammo box"
+    },
+    {
+      "alias": "prop:m923a1_arsenal_box",
+      "guid": "{5EA386DB110C32E3}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_arsenal_box.et",
+      "displayName": "M923A1 arsenal box"
+    },
+    {
+      "alias": "prop:m923a1_cargo",
+      "guid": "{5A7E3ECE4599214B}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_cargo.et",
+      "displayName": "M923A1 cargo"
+    },
+    {
+      "alias": "prop:m923a1_cargo_canvas",
+      "guid": "{4AFBDAC4EE3FADBB}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_cargo_canvas.et",
+      "displayName": "M923A1 cargo canvas"
+    },
+    {
+      "alias": "prop:m923a1_cargo_canvas_closed",
+      "guid": "{F6770A0E1E5E901C}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_cargo_canvas_closed.et",
+      "displayName": "M923A1 cargo canvas closed"
+    },
+    {
+      "alias": "prop:m923a1_cargo_canvas_closed_merdc",
+      "guid": "{F109C8DFC6DB0C92}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_cargo_canvas_closed_MERDC.et",
+      "displayName": "M923A1 cargo canvas closed MERDC"
+    },
+    {
+      "alias": "prop:m923a1_cargo_canvas_merdc",
+      "guid": "{2ED880E020D7A0D9}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_cargo_canvas_MERDC.et",
+      "displayName": "M923A1 cargo canvas MERDC"
+    },
+    {
+      "alias": "prop:m923a1_cargo_merdc",
+      "guid": "{D31AE7DED1589687}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_cargo_MERDC.et",
+      "displayName": "M923A1 cargo MERDC"
+    },
+    {
+      "alias": "prop:m923a1_cargo_merdc_filled",
+      "guid": "{A12505288E6AE5A8}Prefabs/Vehicles/Wheeled/M923A1/M923A1_cargo_MERDC_filled.et",
+      "displayName": "M923A1 cargo MERDC filled"
+    },
+    {
+      "alias": "prop:m923a1_combox",
+      "guid": "{DCE16D92C350D64F}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_combox.et",
+      "displayName": "M923A1 combox"
+    },
+    {
+      "alias": "prop:m923a1_combox_merdc",
+      "guid": "{5E3606C2EE668D0F}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_combox_MERDC.et",
+      "displayName": "M923A1 combox MERDC"
+    },
+    {
+      "alias": "prop:m923a1_combox_spawn",
+      "guid": "{2FEC720240E90029}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_combox_spawn.et",
+      "displayName": "M923A1 combox spawn"
+    },
+    {
+      "alias": "prop:m923a1_combox_spawn_merc",
+      "guid": "{14E6694B302F7688}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_combox_spawn_MERC.et",
+      "displayName": "M923A1 combox spawn MERC"
+    },
+    {
+      "alias": "prop:m923a1_engineer_box",
+      "guid": "{FB186A7EAB2ADE68}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_engineer_box.et",
+      "displayName": "M923A1 engineer box"
+    },
+    {
+      "alias": "prop:m923a1_fuel_nozzle",
+      "guid": "{53D2951FCC1F1254}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_Fuel_nozzle.et",
+      "displayName": "M923A1 Fuel nozzle"
+    },
+    {
+      "alias": "prop:m923a1_merdc_ammo_box",
+      "guid": "{CDF92AF575E73EF8}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_MERDC_ammo_box.et",
+      "displayName": "M923A1 MERDC ammo box"
+    },
+    {
+      "alias": "prop:m923a1_merdc_arsenal_box",
+      "guid": "{CE15E5F69BA814FC}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_MERDC_arsenal_box.et",
+      "displayName": "M923A1 MERDC arsenal box"
+    },
+    {
+      "alias": "prop:m923a1_merdc_engineer_box",
+      "guid": "{CCDC203B7C0CF916}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_MERDC_engineer_box.et",
+      "displayName": "M923A1 MERDC engineer box"
+    },
+    {
+      "alias": "prop:m923a1_merdc_engineer_box_filled",
+      "guid": "{B493E0669DA239CD}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_MERDC_engineer_box_filled.et",
+      "displayName": "M923A1 MERDC engineer box filled"
+    },
+    {
+      "alias": "prop:m923a1_merdc_repair_box",
+      "guid": "{246C60FDE9B73D97}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_MERDC_repair_box.et",
+      "displayName": "M923A1 MERDC repair box"
+    },
+    {
+      "alias": "prop:m923a1_repair_box",
+      "guid": "{8C4E40B100F010CF}Prefabs/Vehicles/Wheeled/M923A1/VehParts/M923A1_repair_box.et",
+      "displayName": "M923A1 repair box"
+    },
+    {
+      "alias": "prop:m997_maxi_ambulance_box",
+      "guid": "{8660125469E1F8EA}Prefabs/Vehicles/Wheeled/M998/VehParts/M997_maxi_ambulance_box.et",
+      "displayName": "M997 maxi ambulance box"
+    },
+    {
+      "alias": "prop:m997_maxi_ambulance_box_merdc",
+      "guid": "{8ECB3331C5586A7B}Prefabs/Vehicles/Wheeled/M998/VehParts/M997_maxi_ambulance_box_MERDC.et",
+      "displayName": "M997 maxi ambulance box MERDC"
+    },
+    {
+      "alias": "prop:map_paper_01_unfolded_table",
+      "guid": "{D60220233693B077}Prefabs/Items/Equipment/Maps/Map_Paper_01/Map_Paper_01_unfolded_table.et",
+      "displayName": "Map Paper 01 unfolded table"
+    },
+    {
+      "alias": "prop:map_paper_01_unfolded_table_ussr",
+      "guid": "{942A96E02BC7AFA6}Prefabs/Items/Equipment/Maps/Map_Paper_01/Map_Paper_01_unfolded_table_USSR.et",
+      "displayName": "Map Paper 01 unfolded table USSR"
+    },
+    {
+      "alias": "prop:map_paper_02_unfolded",
+      "guid": "{3E4984A669350723}Prefabs/Items/Equipment/Maps/Map_Paper_02/Map_Paper_02_unfolded.et",
+      "displayName": "Map Paper 02 unfolded"
+    },
+    {
+      "alias": "prop:meat_01_dry",
+      "guid": "{C22A2F123CD609FC}Prefabs/Items/Food/Meat_01_Dry.et",
+      "displayName": "Meat 01 Dry"
+    },
+    {
+      "alias": "prop:meatleg_01",
+      "guid": "{128A19AA9F731095}Prefabs/Items/Food/MeatLeg_01.et",
+      "displayName": "MeatLeg 01"
+    },
+    {
+      "alias": "prop:mine_m14",
+      "guid": "{E4C9F0A4090CFE4D}Prefabs/Weapons/Explosives/Mine_M14/Mine_M14.et",
+      "displayName": "Mine M14"
+    },
+    {
+      "alias": "prop:mine_m14_effectmoduleentity",
+      "guid": "{EC2A70F844008936}Prefabs/Weapons/Explosives/Mine_M14/Mine_M14_EffectModuleEntity.et",
+      "displayName": "Mine M14 EffectModuleEntity"
+    },
+    {
+      "alias": "prop:mine_m15at",
+      "guid": "{49FFE8F373F55960}Prefabs/Weapons/Explosives/Mine_M15AT/Mine_M15AT.et",
+      "displayName": "Mine M15AT"
+    },
+    {
+      "alias": "prop:mine_m15at_effectmoduleentity",
+      "guid": "{A3FD9F5CD331577C}Prefabs/Weapons/Explosives/Mine_M15AT/Mine_M15AT_EffectModuleEntity.et",
+      "displayName": "Mine M15AT EffectModuleEntity"
+    },
+    {
+      "alias": "prop:mine_pmn4",
+      "guid": "{B05A816C0BF50802}Prefabs/Weapons/Explosives/Mine_PMN4/Mine_PMN4.et",
+      "displayName": "Mine PMN4"
+    },
+    {
+      "alias": "prop:mine_pmn4_effectmoduleentity",
+      "guid": "{CA61FDD71E40C749}Prefabs/Weapons/Explosives/Mine_PMN4/Mine_PMN4_EffectModuleEntity.et",
+      "displayName": "Mine PMN4 EffectModuleEntity"
+    },
+    {
+      "alias": "prop:mine_tm62m",
+      "guid": "{D6EF54367CECE1D9}Prefabs/Weapons/Explosives/Mine_TM62M/Mine_TM62M.et",
+      "displayName": "Mine TM62M"
+    },
+    {
+      "alias": "prop:mine_tm62m_effectmoduleentity",
+      "guid": "{2993E2D661DED576}Prefabs/Weapons/Explosives/Mine_TM62M/Mine_TM62M_EffectModuleEntity.et",
+      "displayName": "Mine TM62M EffectModuleEntity"
+    },
+    {
+      "alias": "prop:mineflag_us",
+      "guid": "{EC13D4E934B2ADD8}Prefabs/Items/Demining/MineFlags/MineFlag_US.et",
+      "displayName": "MineFlag US"
+    },
+    {
+      "alias": "prop:mineflag_ussr",
+      "guid": "{AC67BAB9763A3977}Prefabs/Items/Demining/MineFlags/MineFlag_USSR.et",
+      "displayName": "MineFlag USSR"
+    },
+    {
+      "alias": "prop:mre",
+      "guid": "{EB21D26B8D5A3232}Prefabs/Items/Food/MRE.et",
+      "displayName": "MRE"
+    },
+    {
+      "alias": "prop:optic_spp",
+      "guid": "{B623482E2704B69A}Prefabs/Weapons/Attachments/Optics/Optic_SPP/Optic_SPP.et",
+      "displayName": "Optic SPP"
+    },
+    {
+      "alias": "prop:optic_spp_disabled",
+      "guid": "{849A70689F8DCE05}Prefabs/Weapons/Attachments/Optics/Optic_SPP/Optic_SPP_Disabled.et",
+      "displayName": "Optic SPP Disabled"
+    },
+    {
+      "alias": "prop:papermap_01_full",
+      "guid": "{865B9E01D2C0B2D7}Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_full.et",
+      "displayName": "PaperMap 01 full"
+    },
+    {
+      "alias": "prop:papermap_01_full_kolguyev",
+      "guid": "{D5D6F45EEA5F4140}Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_full_Kolguyev.et",
+      "displayName": "PaperMap 01 full Kolguyev"
+    },
+    {
+      "alias": "prop:personalbelongings_civ",
+      "guid": "{E7FF723379730BD5}Prefabs/Items/PersonalBelongings/PersonalBelongings_CIV.et",
+      "displayName": "PersonalBelongings CIV"
+    },
+    {
+      "alias": "prop:personalbelongings_fia",
+      "guid": "{AE2B7341B5A82545}Prefabs/Items/PersonalBelongings/PersonalBelongings_FIA.et",
+      "displayName": "PersonalBelongings FIA"
+    },
+    {
+      "alias": "prop:personalbelongings_us",
+      "guid": "{6676FF9B716402CC}Prefabs/Items/PersonalBelongings/PersonalBelongings_US.et",
+      "displayName": "PersonalBelongings US"
+    },
+    {
+      "alias": "prop:personalbelongings_ussr",
+      "guid": "{E096C6BD45C87B63}Prefabs/Items/PersonalBelongings/PersonalBelongings_USSR.et",
+      "displayName": "PersonalBelongings USSR"
+    },
+    {
+      "alias": "prop:pouch_alice_200rnd_m249",
+      "guid": "{4F018E3CF74D8636}Prefabs/Items/Equipment/Accessories/Pouch_ALICE_200rnd_M249/Pouch_ALICE_200rnd_M249.et",
+      "displayName": "Pouch ALICE 200rnd M249"
+    },
+    {
+      "alias": "prop:pouch_alice_20rnd_m14",
+      "guid": "{9C00CF3A286C048F}Prefabs/Items/Equipment/Accessories/Pouch_ALICE_20rnd_M14/Pouch_ALICE_20rnd_M14.et",
+      "displayName": "Pouch ALICE 20rnd M14"
+    },
+    {
+      "alias": "prop:pouch_alice_30rnd_stanag",
+      "guid": "{E3154E0EAC48D67B}Prefabs/Items/Equipment/Accessories/Pouch_ALICE_30rnd_STANAG/Pouch_ALICE_30rnd_STANAG.et",
+      "displayName": "Pouch ALICE 30rnd STANAG"
+    },
+    {
+      "alias": "prop:pouch_soviet_100rnd_pkm",
+      "guid": "{F03EAAE51C256CFA}Prefabs/Items/Equipment/Accessories/Pouch_Soviet_100rnd_PKM/Pouch_Soviet_100rnd_PKM.et",
+      "displayName": "Pouch Soviet 100rnd PKM"
+    },
+    {
+      "alias": "prop:pouch_soviet_100rnd_pkm_black",
+      "guid": "{D39F54EC5B108045}Prefabs/Items/Equipment/Accessories/Pouch_Soviet_100rnd_PKM/Pouch_Soviet_100rnd_PKM_Black.et",
+      "displayName": "Pouch Soviet 100rnd PKM Black"
+    },
+    {
+      "alias": "prop:pouch_soviet_10rnd_svd",
+      "guid": "{A01218E4F8EE0DE7}Prefabs/Items/Equipment/Accessories/Pouch_Soviet_10rnd_SVD/Pouch_Soviet_10rnd_SVD.et",
+      "displayName": "Pouch Soviet 10rnd SVD"
+    },
+    {
+      "alias": "prop:pouch_soviet_30rnd_ak74",
+      "guid": "{8C9F39278B899AE6}Prefabs/Items/Equipment/Accessories/Pouch_Soviet_30rnd_AK74/Pouch_Soviet_30rnd_AK74.et",
+      "displayName": "Pouch Soviet 30rnd AK74"
+    },
+    {
+      "alias": "prop:pouch_soviet_30rnd_ak74_black",
+      "guid": "{EA5FBB191D7747AB}Prefabs/Items/Equipment/Accessories/Pouch_Soviet_30rnd_AK74/Pouch_Soviet_30rnd_AK74_Black.et",
+      "displayName": "Pouch Soviet 30rnd AK74 Black"
+    },
+    {
+      "alias": "prop:pouch_soviet_45rnd_rpk74",
+      "guid": "{B6EEF03975F21E4E}Prefabs/Items/Equipment/Accessories/Pouch_Soviet_45rnd_RPK74/Pouch_Soviet_45rnd_RPK74.et",
+      "displayName": "Pouch Soviet 45rnd RPK74"
+    },
+    {
+      "alias": "prop:pouch_soviet_45rnd_rpk74_black",
+      "guid": "{D58833B85D5C777A}Prefabs/Items/Equipment/Accessories/Pouch_Soviet_45rnd_RPK74/Pouch_Soviet_45rnd_RPK74_Black.et",
+      "displayName": "Pouch Soviet 45rnd RPK74 Black"
+    },
+    {
+      "alias": "prop:radio_virtualarsenalslot",
+      "guid": "{8A239DEA19509B1B}Prefabs/Vehicles/Core/VirtualSlots/Radio_VirtualArsenalSlot.et",
+      "displayName": "Radio VirtualArsenalSlot"
+    },
+    {
+      "alias": "prop:repair_virtualarsenalslot",
+      "guid": "{FC2D5D9BB8DE3EA6}Prefabs/Vehicles/Core/VirtualSlots/Repair_VirtualArsenalSlot.et",
+      "displayName": "Repair VirtualArsenalSlot"
+    },
+    {
+      "alias": "prop:restricteddeployablespawnpoint_radio_supplies",
+      "guid": "{5A258632A5C32E48}Prefabs/MP/Spawning/ItemSpecifics/RestrictedDeployableSpawnPoint_Radio_Supplies.et",
+      "displayName": "RestrictedDeployableSpawnPoint Radio Supplies"
+    },
+    {
+      "alias": "prop:restricteddeployablespawnpoint_tent_supplies",
+      "guid": "{E6C29F20951FD6B8}Prefabs/MP/Spawning/ItemSpecifics/RestrictedDeployableSpawnPoint_Tent_Supplies.et",
+      "displayName": "RestrictedDeployableSpawnPoint Tent Supplies"
+    },
+    {
+      "alias": "prop:s1203_rear_seats",
+      "guid": "{8DD24C2736DCB16D}Prefabs/Vehicles/Wheeled/S1203/VehParts/S1203_rear_seats.et",
+      "displayName": "S1203 rear seats"
+    },
+    {
+      "alias": "prop:supplycontainergeneric",
+      "guid": "{9F0C54A3740F7FC9}Prefabs/Props/Military/SupplyBox/SupplyPortableContainers/SupplyPortableContainer_01/SupplyContainerGeneric.et",
+      "displayName": "SupplyContainerGeneric"
+    },
+    {
+      "alias": "prop:supplycrate_01_freeroambuilding",
+      "guid": "{4BBE0A784C01900E}Prefabs/Props/Military/SupplyBox/SupplyCrate/SupplyCrate_01/SupplyCrate_01_FreeRoamBuilding.et",
+      "displayName": "SupplyCrate 01 FreeRoamBuilding"
+    },
+    {
+      "alias": "prop:supplycrate_01_item",
+      "guid": "{2E93D634BF435971}Prefabs/Props/Military/SupplyBox/SupplyCrate/SupplyCrate_01/SupplyCrate_01_item.et",
+      "displayName": "SupplyCrate 01 item"
+    },
+    {
+      "alias": "prop:supplycrate_01_vehicle",
+      "guid": "{11E588E215EBCF23}Prefabs/Props/Military/SupplyBox/SupplyCrate/SupplyCrate_01/SupplyCrate_01_Vehicle.et",
+      "displayName": "SupplyCrate 01 Vehicle"
+    },
+    {
+      "alias": "prop:supplyportablecontainers_01_large_item",
+      "guid": "{A8B7AD5DBDCF22C2}Prefabs/Props/Military/SupplyBox/SupplyPortableContainers/SupplyPortableContainer_01/SupplyPortableContainers_01_large_item.et",
+      "displayName": "SupplyPortableContainers 01 large item"
+    },
+    {
+      "alias": "prop:supplyportablecontainers_01_large_vehicle",
+      "guid": "{2E10FD09B66A44FF}Prefabs/Props/Military/SupplyBox/SupplyPortableContainers/SupplyPortableContainer_01/SupplyPortableContainers_01_large_Vehicle.et",
+      "displayName": "SupplyPortableContainers 01 large Vehicle"
+    },
+    {
+      "alias": "prop:supplyportablecontainers_01_medium_item",
+      "guid": "{024ADA8FA4FC92E0}Prefabs/Props/Military/SupplyBox/SupplyPortableContainers/SupplyPortableContainer_01/SupplyPortableContainers_01_medium_item.et",
+      "displayName": "SupplyPortableContainers 01 medium item"
+    },
+    {
+      "alias": "prop:supplyportablecontainers_01_medium_vehicle",
+      "guid": "{8C29E423099B0C5A}Prefabs/Props/Military/SupplyBox/SupplyPortableContainers/SupplyPortableContainer_01/SupplyPortableContainers_01_medium_Vehicle.et",
+      "displayName": "SupplyPortableContainers 01 medium Vehicle"
+    },
+    {
+      "alias": "prop:supplyportablecontainers_01_small_item",
+      "guid": "{F5604E614B23F81E}Prefabs/Props/Military/SupplyBox/SupplyPortableContainers/SupplyPortableContainer_01/SupplyPortableContainers_01_small_item.et",
+      "displayName": "SupplyPortableContainers 01 small item"
+    },
+    {
+      "alias": "prop:supplyportablecontainers_01_small_vehicle",
+      "guid": "{90880A50314370B5}Prefabs/Props/Military/SupplyBox/SupplyPortableContainers/SupplyPortableContainer_01/SupplyPortableContainers_01_small_Vehicle.et",
+      "displayName": "SupplyPortableContainers 01 small Vehicle"
+    },
+    {
+      "alias": "prop:supplystack_large_01_item",
+      "guid": "{7165ECD98DF55E7C}Prefabs/Props/Military/SupplyBox/SupplyStack/SupplyStack_Large_01/SupplyStack_Large_01_item.et",
+      "displayName": "SupplyStack Large 01 item"
+    },
+    {
+      "alias": "prop:supplystack_large_01_vehicle",
+      "guid": "{FE4A51A953C54DA0}Prefabs/Props/Military/SupplyBox/SupplyStack/SupplyStack_Large_01/SupplyStack_Large_01_Vehicle.et",
+      "displayName": "SupplyStack Large 01 Vehicle"
+    },
+    {
+      "alias": "prop:supplystack_small_01_item",
+      "guid": "{A8A4609979D3385D}Prefabs/Props/Military/SupplyBox/SupplyStack/SupplyStack_Small_01/SupplyStack_Small_01_item.et",
+      "displayName": "SupplyStack Small 01 item"
+    },
+    {
+      "alias": "prop:supplystack_small_01_vehicle",
+      "guid": "{1C0884445CC5EE5D}Prefabs/Props/Military/SupplyBox/SupplyStack/SupplyStack_Small_01/SupplyStack_Small_01_Vehicle.et",
+      "displayName": "SupplyStack Small 01 Vehicle"
+    },
+    {
+      "alias": "prop:supplystack_small_01_vehicle_canvastruck",
+      "guid": "{0527710F8BE6CB02}Prefabs/Props/Military/SupplyBox/SupplyStack/SupplyStack_Small_01/SupplyStack_Small_01_Vehicle_CanvasTruck.et",
+      "displayName": "SupplyStack Small 01 Vehicle CanvasTruck"
+    },
+    {
+      "alias": "prop:todo_tentsmallfia_01_packed",
+      "guid": "{86E03364AB549230}Prefabs/Items/Equipment/Tents/TentSmallFIA_01_packed.et",
+      "displayName": "TODO TentSmallFIA_01_packed"
+    },
+    {
+      "alias": "prop:tutorial_commandbox",
+      "guid": "{4A6436E90A521827}Prefabs/Scenarios/Tutorial/Tutorial_CommandBox.et",
+      "displayName": "Tutorial CommandBox"
+    },
+    {
+      "alias": "prop:tutorial_engineering_box",
+      "guid": "{A547D257F57D1C86}Prefabs/Vehicles/Wheeled/M923A1/VehParts/Tutorial_Engineering_Box.et",
+      "displayName": "Tutorial Engineering Box"
+    },
+    {
+      "alias": "prop:uaz469_seats_rear",
+      "guid": "{780AAF0A51AEE61A}Prefabs/Vehicles/Wheeled/UAZ469/VehParts/Seats/UAZ469_seats_rear.et",
+      "displayName": "UAZ469 seats rear"
+    },
+    {
+      "alias": "prop:uaz469_seats_rear_civ",
+      "guid": "{D54F4B014BD04F95}Prefabs/Vehicles/Wheeled/UAZ469/VehParts/Seats/UAZ469_seats_rear_CIV.et",
+      "displayName": "UAZ469 seats rear CIV"
+    },
+    {
+      "alias": "prop:uaz469_seats_rear_civ_uncovered",
+      "guid": "{315BA24B813E6F47}Prefabs/Vehicles/Wheeled/UAZ469/VehParts/Seats/UAZ469_seats_rear_CIV_uncovered.et",
+      "displayName": "UAZ469 seats rear CIV uncovered"
+    },
+    {
+      "alias": "prop:uaz469_seats_rear_fia",
+      "guid": "{0C33B37571607A44}Prefabs/Vehicles/Wheeled/UAZ469/VehParts/Seats/UAZ469_seats_rear_FIA.et",
+      "displayName": "UAZ469 seats rear FIA"
+    },
+    {
+      "alias": "prop:uaz469_seats_rear_fia_uncovered",
+      "guid": "{322A92C631142015}Prefabs/Vehicles/Wheeled/UAZ469/VehParts/Seats/UAZ469_seats_rear_FIA_uncovered.et",
+      "displayName": "UAZ469 seats rear FIA uncovered"
+    },
+    {
+      "alias": "prop:uaz469_seats_rear_uncovered",
+      "guid": "{9087F247F05F49DE}Prefabs/Vehicles/Wheeled/UAZ469/VehParts/Seats/UAZ469_seats_rear_uncovered.et",
+      "displayName": "UAZ469 seats rear uncovered"
+    },
+    {
+      "alias": "prop:ural4320_ammo_box",
+      "guid": "{03FFD2B45BEE8A17}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_ammo_box.et",
+      "displayName": "Ural4320 ammo box"
+    },
+    {
+      "alias": "prop:ural4320_arsenal_box",
+      "guid": "{2C01215170B0FFE0}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_arsenal_box.et",
+      "displayName": "Ural4320 arsenal box"
+    },
+    {
+      "alias": "prop:ural4320_cargo",
+      "guid": "{58B3FB7F102A8B1B}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_cargo.et",
+      "displayName": "Ural4320 cargo"
+    },
+    {
+      "alias": "prop:ural4320_cargo_canvas",
+      "guid": "{5F533EBE61514610}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_cargo_canvas.et",
+      "displayName": "Ural4320 cargo canvas"
+    },
+    {
+      "alias": "prop:ural4320_cargo_canvas_civ_jzd",
+      "guid": "{28ADC26474652E5D}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/CIV/Ural4320_cargo_canvas_CIV_JZD.et",
+      "displayName": "Ural4320 cargo canvas CIV JZD"
+    },
+    {
+      "alias": "prop:ural4320_cargo_canvas_civ_orange",
+      "guid": "{B89A0EFDB0A9F2A3}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/CIV/Ural4320_cargo_canvas_CIV_Orange.et",
+      "displayName": "Ural4320 cargo canvas CIV Orange"
+    },
+    {
+      "alias": "prop:ural4320_cargo_canvas_closed",
+      "guid": "{159F48EDCF903D1F}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_cargo_canvas_closed.et",
+      "displayName": "Ural4320 cargo canvas closed"
+    },
+    {
+      "alias": "prop:ural4320_cargo_civ_forest",
+      "guid": "{94B79579DD7722B6}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/CIV/Ural4320_cargo_CIV_Forest.et",
+      "displayName": "Ural4320 cargo CIV Forest"
+    },
+    {
+      "alias": "prop:ural4320_cargo_filled",
+      "guid": "{936A287007DCE2EE}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_cargo_filled.et",
+      "displayName": "Ural4320 cargo filled"
+    },
+    {
+      "alias": "prop:ural4320_combox",
+      "guid": "{D9C7B82F567BA500}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_combox.et",
+      "displayName": "Ural4320 combox"
+    },
+    {
+      "alias": "prop:ural4320_combox_spawn",
+      "guid": "{21FD6DEA2F771C1C}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_combox_spawn.et",
+      "displayName": "Ural4320 combox spawn"
+    },
+    {
+      "alias": "prop:ural4320_engineer_box",
+      "guid": "{11037F1D2CCE0ED7}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_engineer_box.et",
+      "displayName": "Ural4320 engineer box"
+    },
+    {
+      "alias": "prop:ural4320_engineer_box_filled",
+      "guid": "{9328C24D87FCFF67}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_engineer_box_filled.et",
+      "displayName": "Ural4320 engineer box filled"
+    },
+    {
+      "alias": "prop:ural4320_fia_ammo_box",
+      "guid": "{24ADE3A278D243EB}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_FIA_ammo_box.et",
+      "displayName": "Ural4320 FIA ammo box"
+    },
+    {
+      "alias": "prop:ural4320_fia_arsenal_box",
+      "guid": "{AE98BF4439787E34}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_FIA_arsenal_box.et",
+      "displayName": "Ural4320 FIA arsenal box"
+    },
+    {
+      "alias": "prop:ural4320_fia_cargo",
+      "guid": "{655D7F2D222AACA8}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/FIA/Ural4320_FIA_cargo.et",
+      "displayName": "Ural4320 FIA cargo"
+    },
+    {
+      "alias": "prop:ural4320_fia_cargo_canvas",
+      "guid": "{12D7EB72A88C923F}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/FIA/Ural4320_FIA_cargo_canvas.et",
+      "displayName": "Ural4320 FIA cargo canvas"
+    },
+    {
+      "alias": "prop:ural4320_fia_cargo_canvas_closed",
+      "guid": "{1BB2E73D40A7EE30}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/FIA/Ural4320_FIA_cargo_canvas_closed.et",
+      "displayName": "Ural4320 FIA cargo canvas closed"
+    },
+    {
+      "alias": "prop:ural4320_fia_combox",
+      "guid": "{392FBE246E9CF91C}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/FIA/Ural4320_FIA_combox.et",
+      "displayName": "Ural4320 FIA combox"
+    },
+    {
+      "alias": "prop:ural4320_fia_combox_spawn",
+      "guid": "{37B2DC563DBE0711}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/FIA/Ural4320_FIA_combox_spawn.et",
+      "displayName": "Ural4320 FIA combox spawn"
+    },
+    {
+      "alias": "prop:ural4320_fia_engineer_box",
+      "guid": "{FB864C43CAA9C33C}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_FIA_engineer_box.et",
+      "displayName": "Ural4320 FIA engineer box"
+    },
+    {
+      "alias": "prop:ural4320_fia_repair_box",
+      "guid": "{2096570A3B9E831E}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_FIA_repair_box.et",
+      "displayName": "Ural4320 FIA repair box"
+    },
+    {
+      "alias": "prop:ural4320_repair_box",
+      "guid": "{2F088A1CDD3FB2F1}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural4320_repair_box.et",
+      "displayName": "Ural4320 repair box"
+    },
+    {
+      "alias": "prop:ural_4320_fuel_nozzle",
+      "guid": "{79605025C5280E7B}Prefabs/Vehicles/Wheeled/Ural4320/VehParts/Ural_4320_fuel_nozzle.et",
+      "displayName": "Ural 4320 fuel nozzle"
+    },
+    {
+      "alias": "prop:ussr_ammobox_empty",
+      "guid": "{EBBC859CCD94D96D}Prefabs/Props/EmptyStorages/USSR_AmmoBox_empty.et",
+      "displayName": "USSR AmmoBox empty"
+    },
+    {
+      "alias": "prop:ussr_explosives_empty",
+      "guid": "{498E3ACA947AF704}Prefabs/Props/EmptyStorages/USSR_Explosives_empty.et",
+      "displayName": "USSR Explosives empty"
+    },
+    {
+      "alias": "prop:ussr_medicalbox_empty",
+      "guid": "{387B85277E063AEA}Prefabs/Props/EmptyStorages/USSR_MedicalBox_empty.et",
+      "displayName": "USSR MedicalBox empty"
+    },
+    {
+      "alias": "prop:vehpart_mi8_civ_seats_cargo",
+      "guid": "{CE60E92834BF5723}Prefabs/Vehicles/Helicopters/Mi8MT/VehParts/Seats/VehPart_MI8_CIV_seats_cargo.et",
+      "displayName": "VehPart MI8 CIV seats cargo"
+    },
+    {
+      "alias": "prop:vehpart_mi8_seats_cargo",
+      "guid": "{9503E8AF9FFBA67A}Prefabs/Vehicles/Helicopters/Mi8MT/VehParts/Seats/VehPart_MI8_seats_cargo.et",
+      "displayName": "VehPart MI8 seats cargo"
+    },
+    {
+      "alias": "prop:vehpart_uaz452_civ_rearcargo_van",
+      "guid": "{C76CB4DD7D9AA85C}Prefabs/Vehicles/Wheeled/UAZ452/VehParts/VehPart_UAZ452_CIV_rearCargo_van.et",
+      "displayName": "VehPart UAZ452 CIV rearCargo van"
+    },
+    {
+      "alias": "prop:vehpart_uaz452_fia_rearcargo_ambulance",
+      "guid": "{1ED61C442547BAD9}Prefabs/Vehicles/Wheeled/UAZ452/VehParts/VehPart_UAZ452_FIA_rearCargo_ambulance.et",
+      "displayName": "VehPart UAZ452 FIA rearCargo ambulance"
+    },
+    {
+      "alias": "prop:vehpart_uaz452_fia_rearcargo_cargo",
+      "guid": "{74D44EFE84C99078}Prefabs/Vehicles/Wheeled/UAZ452/VehParts/VehPart_UAZ452_FIA_rearCargo_cargo.et",
+      "displayName": "VehPart UAZ452 FIA rearCargo cargo"
+    },
+    {
+      "alias": "prop:vehpart_uaz452_fia_rearcargo_van",
+      "guid": "{DB1589050FFF4F16}Prefabs/Vehicles/Wheeled/UAZ452/VehParts/VehPart_UAZ452_FIA_rearCargo_van.et",
+      "displayName": "VehPart UAZ452 FIA rearCargo van"
+    },
+    {
+      "alias": "prop:vehpart_uaz452_rearcargo_ambulance",
+      "guid": "{2E7A21E3425E60D4}Prefabs/Vehicles/Wheeled/UAZ452/VehParts/VehPart_UAZ452_rearCargo_ambulance.et",
+      "displayName": "VehPart UAZ452 rearCargo ambulance"
+    },
+    {
+      "alias": "prop:vehpart_uaz452_rearcargo_cargo",
+      "guid": "{167ACC2C3F624F74}Prefabs/Vehicles/Wheeled/UAZ452/VehParts/VehPart_UAZ452_rearCargo_cargo.et",
+      "displayName": "VehPart UAZ452 rearCargo cargo"
+    },
+    {
+      "alias": "prop:vehpart_uaz452_rearcargo_van",
+      "guid": "{341DE5BE5CE3B8B3}Prefabs/Vehicles/Wheeled/UAZ452/VehParts/VehPart_UAZ452_rearCargo_van.et",
+      "displayName": "VehPart UAZ452 rearCargo van"
+    },
+    {
+      "alias": "prop:vehpart_uh1h_civ_seats_cargo",
+      "guid": "{D35AF8CB422C0412}Prefabs/Vehicles/Helicopters/UH1H/VehParts/Seats/VehPart_UH1H_CIV_seats_cargo.et",
+      "displayName": "VehPart UH1H CIV seats cargo"
+    },
+    {
+      "alias": "prop:vehpart_uh1h_civ_seats_gunners",
+      "guid": "{2BF2C29A09A0B84D}Prefabs/Vehicles/Helicopters/UH1H/VehParts/Seats/VehPart_UH1H_CIV_seats_gunners.et",
+      "displayName": "VehPart UH1H CIV seats gunners"
+    },
+    {
+      "alias": "prop:vehpart_uh1h_seats_cargo",
+      "guid": "{205599C7074F1E02}Prefabs/Vehicles/Helicopters/UH1H/VehParts/Seats/VehPart_UH1H_seats_cargo.et",
+      "displayName": "VehPart UH1H seats cargo"
+    },
+    {
+      "alias": "prop:vehpart_uh1h_seats_cargo_opendoor",
+      "guid": "{5C4D9B53495B219A}Prefabs/Vehicles/Helicopters/UH1H/VehParts/Seats/VehPart_UH1H_seats_cargo_openDoor.et",
+      "displayName": "VehPart UH1H seats cargo openDoor"
+    },
+    {
+      "alias": "prop:vehpart_uh1h_seats_gunners",
+      "guid": "{67030528FA4FA725}Prefabs/Vehicles/Helicopters/UH1H/VehParts/Seats/VehPart_UH1H_seats_gunners.et",
+      "displayName": "VehPart UH1H seats gunners"
+    },
+    {
+      "alias": "prop:vest_alice_belt",
+      "guid": "{0BC230E08CEA02B6}Prefabs/Characters/Vests/Vest_ALICE/Vest_ALICE_belt.et",
+      "displayName": "Vest ALICE belt"
+    },
+    {
+      "alias": "prop:vest_alice_buttpack",
+      "guid": "{9A21918AC35AC182}Prefabs/Characters/Vests/Vest_ALICE/Vest_ALICE_buttpack.et",
+      "displayName": "Vest ALICE buttpack"
+    },
+    {
+      "alias": "prop:vest_alice_firstaid",
+      "guid": "{02DF51DB063ABD36}Prefabs/Characters/Vests/Vest_ALICE/Vest_ALICE_firstaid.et",
+      "displayName": "Vest ALICE firstaid"
+    },
+    {
+      "alias": "prop:vest_alice_suspenders_1",
+      "guid": "{51545851688567F1}Prefabs/Characters/Vests/Vest_ALICE/Vest_ALICE_suspenders_1.et",
+      "displayName": "Vest ALICE suspenders 1"
+    },
+    {
+      "alias": "prop:vest_alice_suspenders_2",
+      "guid": "{B95BD66EA8F863C8}Prefabs/Characters/Vests/Vest_ALICE/Vest_ALICE_suspenders_2.et",
+      "displayName": "Vest ALICE suspenders 2"
+    },
+    {
+      "alias": "prop:vest_lifchik_grenadebelt",
+      "guid": "{AB84E597273FAECA}Prefabs/Characters/Vests/Vest_Lifchik/Vest_Lifchik_GrenadeBelt.et",
+      "displayName": "Vest Lifchik GrenadeBelt"
+    },
+    {
+      "alias": "prop:vest_sovietharness_grenadebandolier",
+      "guid": "{41174B59DA65659A}Prefabs/Characters/Vests/Vest_SovietHarness/Vest_SovietHarness_GrenadeBandolier.et",
+      "displayName": "Vest SovietHarness GrenadeBandolier"
+    },
+    {
+      "alias": "prop:vest_sovietharness_grenadepouch",
+      "guid": "{C5A8B378E38AA4FF}Prefabs/Characters/Vests/Vest_SovietHarness/Vest_SovietHarness_GrenadePouch.et",
+      "displayName": "Vest SovietHarness GrenadePouch"
+    },
+    {
+      "alias": "prop:vest_sovietharness_grenadepouch_black",
+      "guid": "{7F56A8069BEC01CE}Prefabs/Characters/Vests/Vest_SovietHarness/Vest_SovietHarness_GrenadePouch_Black.et",
+      "displayName": "Vest SovietHarness GrenadePouch Black"
+    },
+    {
+      "alias": "prop:vest_sovietharness_medicalpouch",
+      "guid": "{D11383C5E70AAA89}Prefabs/Characters/Vests/Vest_SovietHarness/Vest_SovietHarness_MedicalPouch.et",
+      "displayName": "Vest SovietHarness MedicalPouch"
+    },
+    {
+      "alias": "prop:vest_sovietharness_suspenders",
+      "guid": "{B699C9B282352EDE}Prefabs/Characters/Vests/Vest_SovietHarness/Vest_SovietHarness_Suspenders.et",
+      "displayName": "Vest SovietHarness Suspenders"
+    },
+    {
+      "alias": "prop:vest_sovietharness_suspenders_black",
+      "guid": "{F1C194CD245C9C59}Prefabs/Characters/Vests/Vest_SovietHarness/Vest_SovietHarness_Suspenders_Black.et",
+      "displayName": "Vest SovietHarness Suspenders Black"
     }
   ]
 }
