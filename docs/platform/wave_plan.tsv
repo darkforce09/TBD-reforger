@@ -78,7 +78,7 @@
 0	T-377	PATCH and the compiler hold opposite meanings for an empty weather string	apps/website/api/src/handlers/missions.rs
 0	T-378	gate v-suite accept can write the literal string null over a committed golden	tools/tbd-tools/src/vsuite.rs; tools/tbd-tools/src/world/build.rs
 0	T-379	role_played accepts a blank and replaces a populated scoreline	apps/website/api/src/handlers/telemetry.rs
-0	T-381	The integration suite can point at the live database, and one delete is unscoped	apps/website/api/tests/factions.rs
+54	T-381	The integration suite can point at the live database, and one delete is unscoped	apps/website/api/tests/factions.rs
 48	T-382	Empty-but-valid payload becomes current_version_id with no rollback route	apps/website/api/src/handlers/missions.rs
 51	T-383	Four tooling paths overwrite committed files with empty or wrong content	xtask/src/cmds.rs; xtask/src/sync.rs; xtask/src/schema_gates.rs
 48	T-371	display_name() selects on an untrimmed is_empty, so a whitespace Discord name is stored verbatim	apps/website/api/src/services/discord.rs; apps/website/api/src/handlers/admin.rs
@@ -103,7 +103,7 @@
 0	T-335	One-off backfill for players who linked before T-326 shipped	apps/website/api/migrations
 47	T-332	PATCH /events/:id cannot clear a briefing or banner, and a mission cannot be re-attached	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs; apps/website/api/tests/events.rs
 0	T-333	Dialog installs a window-level Escape listener per instance, so Esc closes stacked dialogs	apps/website/frontend/src/ui.rs
-0	T-328	mcpd runs long-lived from the shared target dir	scripts/mod/mcp-daemon.sh
+54	T-328	mcpd runs long-lived from the shared target dir	scripts/mod/mcp-daemon.sh
 0	T-336	recompute_user_stats belongs in services/, not private to the telemetry handler	apps/website/api/src/services; apps/website/api/src/handlers/telemetry.rs
 0	T-331	content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained	apps/website/api/seeds/content_golden.sql; apps/website/api/migrations
 0	T-374	The persist guard is byte-level, so an empty document overwrites a populated record	apps/website/frontend/src/yrs_persist.rs
@@ -330,7 +330,7 @@
 51	T-529	events roster SQL whitespace arma_id no btrim	apps/website/api/src/handlers/events.rs; apps/website/api/tests/t529_roster_whitespace_arma.rs
 99	T-530	T-332 Class-R partly pins doc comments	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
 49	T-531	null_tolerance still lists deployments.* as KNOWN_OPEN after T-341	apps/website/api/tests/null_tolerance.rs
-99	T-532	No API route to re-point mission current_version_id after a bad version	apps/website/api/src/handlers/missions.rs; apps/website/api/src/app.rs
+54	T-532	No API route to re-point mission current_version_id after a bad version	apps/website/api/src/handlers/missions.rs; apps/website/api/src/app.rs
 99	T-533	T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400	apps/website/api/tests/telemetry.rs; apps/website/api/src/handlers/telemetry.rs
 99	T-534	IT suites still seed fixed arma_ids via shared seed_user	apps/website/api/tests/common/mod.rs; apps/website/api/tests
 50	T-535	T-385 live IT positive terrain join	apps/website/api/tests/misc_integration.rs

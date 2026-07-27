@@ -9519,7 +9519,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3144,
       "stream": "web-platform",
       "targets": [
@@ -10614,7 +10614,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3197,
       "stream": "web-platform",
       "targets": [
@@ -13825,7 +13825,7 @@
         "api",
         "mission-authoring"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3372,
       "stream": "web-platform",
       "targets": [
