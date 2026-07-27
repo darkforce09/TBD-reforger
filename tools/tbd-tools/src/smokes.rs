@@ -76,11 +76,9 @@ impl Harness {
         api_proxy: Option<String>,
         init_scripts: &[&str],
     ) -> Result<Harness> {
-        // T-320 — pin the fontconfig cache before chromium starts. A cross-distro `~/.cache`
-        // leaves chromium with zero fonts, and the editor page's first fallback glyph then
-        // SIGABRTs the browser process (SkFontMgr_FontConfigInterface.cpp:163 `SK_ABORT`), which
-        // reaches the harness only as `cdp: ws call timed out`. See `doctor::ensure_gate_font_cache`.
-        crate::doctor::ensure_gate_font_cache();
+        // Font cache: `cdp::launch` pins `XDG_CACHE_HOME` on the chromium child (T-339 / T-362).
+        // Process-wide `ensure_gate_font_cache` still runs from `gate` main (T-354) for doctor
+        // inherit-path probes.
         let srv = start_server(
             ServeConfig {
                 dir: PathBuf::from(dist),
@@ -3075,6 +3073,10 @@ pub struct RenderCheckArgs {
     pub seed_auth: bool,
     pub port: u16,
     pub debug_port: u16,
+    /// Upstream for `/api` (T-339 / T-387). Without this, `--seed-auth` leaves a half-hydrated
+    /// session (`user` from localStorage, `/me` fails → `access_token` None → signed-out UI).
+    /// `None` defaults to [`BACKEND`] so probes reach a live API when one is on :8080.
+    pub api_proxy: Option<String>,
 }
 
 pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
@@ -3087,7 +3089,9 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
     if let Some(s) = seed.as_deref() {
         injects.push(s);
     }
-    let h = Harness::new(&a.dir, a.port, a.debug_port, None, None, &injects).await?;
+    // T-339 — thread a real proxy (CLI `--api-proxy`, else the standard :8080 backend).
+    let api_proxy = a.api_proxy.clone().or_else(|| Some(BACKEND.to_string()));
+    let h = Harness::new(&a.dir, a.port, a.debug_port, None, api_proxy, &injects).await?;
     let run = async {
         let url = h.url(&a.path);
         h.page.navigate(&url).await?;
