@@ -50,6 +50,100 @@ fn validated_thumbnail_url(raw: &str) -> Result<String, ApiError> {
     ))
 }
 
+/// Mission `title` write guard — **T-363**.
+///
+/// CREATE used to gate on bare `is_empty()` (whitespace-only passed); PATCH had **no** guard, so
+/// `""` clobbered a real title. There is no CHECK/trigger on `missions.title`, and a blank sorts
+/// first in the in-game mission browser. Trim once, reject empty — same accept set on both writers.
+/// Stores the trimmed form (repair is intentional here: the column is display text, not a join key).
+fn validated_mission_title(raw: &str) -> Result<String, ApiError> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err(ApiError::bad_request("title is required"));
+    }
+    Ok(trimmed.to_string())
+}
+
+/// SemVer 2.0.0 core + optional pre-release / build — **T-363**.
+///
+/// `mission_versions.semver` is a plain `text` unique key; without a parse, `' 0.1.0 '` and
+/// `'0.1.0'` are distinct btree values, so the duplicate-version 409 never fires and the padded
+/// row becomes `current_version_id`. Trim-only would still admit `"1"`, `"1.2"`, `"banana"`.
+///
+/// This REJECTS; it does not trim or canonicalise. Live census before enforce (dev DB
+/// `tbd_reforger`, 2026-07-27): **133** `mission_versions` rows, **0** fail this predicate
+/// (nine distinct values, all `MAJOR.MINOR.PATCH` with no leading zeros / padding).
+fn valid_semver(s: &str) -> bool {
+    let core = match s.split_once('+') {
+        Some((core, build)) => {
+            if !semver_build(build) {
+                return false;
+            }
+            core
+        }
+        None => s,
+    };
+    let (core, pre) = match core.split_once('-') {
+        Some((core, pre)) => (core, Some(pre)),
+        None => (core, None),
+    };
+    if let Some(pre) = pre
+        && !semver_prerelease(pre)
+    {
+        return false;
+    }
+    let mut parts = core.split('.');
+    let Some(maj) = parts.next() else {
+        return false;
+    };
+    let Some(min) = parts.next() else {
+        return false;
+    };
+    let Some(pat) = parts.next() else {
+        return false;
+    };
+    if parts.next().is_some() {
+        return false;
+    }
+    semver_numeric_id(maj) && semver_numeric_id(min) && semver_numeric_id(pat)
+}
+
+/// Numeric identifier: `0` or `[1-9][0-9]*` — no leading zeros (SemVer 2.0 §2).
+fn semver_numeric_id(s: &str) -> bool {
+    if s.is_empty() || !s.bytes().all(|b| b.is_ascii_digit()) {
+        return false;
+    }
+    s == "0" || !s.starts_with('0')
+}
+
+/// Pre-release: dot-separated identifiers, each numeric (`0` / `[1-9][0-9]*`) or
+/// alphanumeric-with-hyphen containing at least one non-digit (SemVer 2.0 §9).
+fn semver_prerelease(s: &str) -> bool {
+    if s.is_empty() {
+        return false;
+    }
+    s.split('.').all(|id| {
+        if id.is_empty() {
+            return false;
+        }
+        if id.bytes().all(|b| b.is_ascii_digit()) {
+            return semver_numeric_id(id);
+        }
+        id.bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+    })
+}
+
+/// Build metadata: dot-separated `[0-9a-zA-Z-]+` identifiers (SemVer 2.0 §10). Leading zeros OK.
+fn semver_build(s: &str) -> bool {
+    if s.is_empty() {
+        return false;
+    }
+    s.split('.').all(|id| {
+        !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
+    })
+}
+
 // --- enum validators (mirror Go valid*; empty weather → clear) ---
 
 fn valid_terrain(s: &str) -> Option<TerrainType> {
@@ -371,7 +465,9 @@ pub async fn create_mission(
     let Json(input) = body.map_err(|_| {
         ApiError::bad_request("title, terrain, game_mode and max_players are required")
     })?;
-    if input.title.is_empty() || input.terrain.is_empty() || input.game_mode.is_empty() {
+    // **T-363.** Title is trim+non-empty (whitespace-only used to pass bare `is_empty()`).
+    let title = validated_mission_title(&input.title)?;
+    if input.terrain.is_empty() || input.game_mode.is_empty() {
         return Err(ApiError::bad_request(
             "title, terrain, game_mode and max_players are required",
         ));
@@ -416,7 +512,7 @@ pub async fn create_mission(
          time_of_day, max_players, status, thumbnail_url, briefing, rejection_reason, created_at, updated_at) \
          VALUES ($1, $2, $3, $4, $5, $6, $7::time, $8, 'draft', '', $9, '', now(), now()) RETURNING id",
     )
-    .bind(&input.title)
+    .bind(&title)
     .bind(author)
     .bind(terrain)
     .bind(&input.custom_terrain_name)
@@ -494,8 +590,10 @@ pub async fn update_mission(
         .transpose()?;
 
     let mut qb = QueryBuilder::new("UPDATE missions SET updated_at = now()");
+    // **T-363.** PATCH previously bound `title` unbound — `""` / `"   "` clobbered a real title.
     if let Some(t) = &input.title {
-        qb.push(", title = ").push_bind(t.clone());
+        let title = validated_mission_title(t)?;
+        qb.push(", title = ").push_bind(title);
     }
     if let Some(t) = &input.terrain {
         let Some(terrain) = valid_terrain(t) else {
@@ -773,6 +871,14 @@ pub async fn create_version(
     let (Some(payload), false) = (&input.payload, input.semver.is_empty()) else {
         return Err(ApiError::bad_request("semver and payload are required"));
     };
+    // **T-363.** Real SemVer 2.0 parse — not trim-only. Padded `' 0.1.0 '` used to INSERT as a
+    // distinct unique key and become `current_version_id`. Live rows measured 0 failures before
+    // enforce (see [`valid_semver`]).
+    if !valid_semver(&input.semver) {
+        return Err(ApiError::bad_request(
+            "semver must be a valid SemVer 2.0 version (e.g. 1.2.3)",
+        ));
+    }
     let payload_str = payload.get();
     validate_payload(&state.pool, payload_str).await?;
 
@@ -1722,5 +1828,110 @@ mod tests {
         assert!(validated_thumbnail_url("javascript:alert(1)").is_err());
         assert!(validated_thumbnail_url("https://cdn.example/t.jpg").is_ok());
         assert_eq!(validated_thumbnail_url("").unwrap(), "");
+    }
+
+    /// T-363 — CREATE + PATCH title: trim+non-empty. Empty / whitespace-only reject; padded
+    /// non-empty stores trimmed.
+    ///
+    /// RED: delete the `validated_mission_title` call from `update_mission` — the source pin fails.
+    /// RED: change the helper to bare `is_empty()` — `"   "` would pass and recreate the CREATE hole.
+    #[test]
+    fn mission_title_rejects_blank_and_whitespace_only() {
+        assert!(validated_mission_title("").is_err());
+        assert!(validated_mission_title("   ").is_err());
+        assert!(validated_mission_title("\t\n").is_err());
+        assert_eq!(validated_mission_title("Op Red Dawn").unwrap(), "Op Red Dawn");
+        assert_eq!(validated_mission_title("  padded  ").unwrap(), "padded");
+    }
+
+    /// T-363 Class-R: both writers must call [`validated_mission_title`]. PATCH used to bind
+    /// unbound; CREATE used bare `is_empty()`.
+    #[test]
+    fn create_and_patch_both_guard_mission_title() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        let create = production
+            .split("pub async fn create_mission(")
+            .nth(1)
+            .and_then(|s| s.split("pub async fn update_mission(").next())
+            .expect("create_mission body");
+        assert!(
+            create.contains("validated_mission_title(&input.title)"),
+            "create_mission must validate title via validated_mission_title"
+        );
+        let update = production
+            .split("pub async fn update_mission(")
+            .nth(1)
+            .and_then(|s| s.split("pub async fn").next())
+            .expect("update_mission body");
+        assert!(
+            update.contains("validated_mission_title(t)"),
+            "update_mission must validate title via validated_mission_title; got a bare bind"
+        );
+        assert!(
+            !update.contains("qb.push(\", title = \").push_bind(t.clone())"),
+            "update_mission must not bind raw title (pre-T-363 clobber path)"
+        );
+    }
+
+    /// T-363 — SemVer 2.0 accept set. Live DB census (133 rows) was all `X.Y.Z` before enforce.
+    ///
+    /// RED: replace `valid_semver` with `!s.is_empty()` — padded / partial versions pass and the
+    /// unique-index hole reopens.
+    #[test]
+    fn semver_accepts_real_versions_only() {
+        for ok in [
+            "0.1.0",
+            "0.2.0",
+            "1.2.3",
+            "1.0.0-alpha",
+            "1.0.0-alpha.1",
+            "1.0.0-0.3.7",
+            "1.0.0+20130313144700",
+            "1.0.0-beta+exp.sha.5114f85",
+        ] {
+            assert!(valid_semver(ok), "expected accept {ok:?}");
+        }
+        for bad in [
+            "",
+            "   ",
+            " 0.1.0 ",
+            "0.1.0 ",
+            " 0.1.0",
+            "1",
+            "1.2",
+            "banana",
+            "01.2.3",
+            "1.02.3",
+            "1.2.03",
+            "v1.2.3",
+            "1.2.3.4",
+            "1.2.3-",
+            "1.2.3+",
+        ] {
+            assert!(!valid_semver(bad), "expected reject {bad:?}");
+        }
+    }
+
+    /// T-363 Class-R: `create_version` must call [`valid_semver`] before INSERT.
+    #[test]
+    fn create_version_guards_semver() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        let body = production
+            .split("pub async fn create_version(")
+            .nth(1)
+            .and_then(|s| s.split("pub async fn get_version(").next())
+            .expect("create_version body");
+        assert!(
+            body.contains("valid_semver(&input.semver)"),
+            "create_version must parse semver via valid_semver before INSERT"
+        );
     }
 }
