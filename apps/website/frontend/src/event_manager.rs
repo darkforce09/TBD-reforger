@@ -28,7 +28,7 @@
 #![allow(dead_code)]
 use crate::datefmt::format_local_datetime;
 use crate::dto::{EventHub, EventListItem, EventMissionDossier, MissionCard, Paginated};
-use crate::ui::{AdminGate, Dialog, MaterialIcon, badge_class, cn};
+use crate::ui::{badge_class, cn, AdminGate, Dialog, MaterialIcon};
 use leptos::prelude::*;
 use wasm_bindgen::JsCast;
 
