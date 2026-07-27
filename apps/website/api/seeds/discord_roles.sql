@@ -29,6 +29,12 @@
 --         priority = EXCLUDED.priority;
 --
 -- Then POST /api/v1/admin/roles/sync (or wait for the T-428 nightly resync).
+--
+-- T-487: clear the orphan placeholder from dirty DBs. INSERT no longer seeds it
+-- (T-428), but re-make seed must DELETE leftovers so Squad Leader/leader does not
+-- linger after a seed refresh.
+
+DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000';
 
 INSERT INTO discord_roles (discord_role_id, name, mapped_role, priority) VALUES
   ('1517285898817896559', 'Command Staff', 'admin',         100),
