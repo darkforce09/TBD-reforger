@@ -13164,7 +13164,7 @@
         "tests",
         "security"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3342,
       "stream": "web-platform",
       "targets": [
@@ -13675,7 +13675,7 @@
         "docs",
         "data"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3365,
       "stream": "web-platform",
       "targets": [
@@ -14223,7 +14223,7 @@
         "api",
         "events"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3390,
       "executor": "claude-code",
       "priority": 2,

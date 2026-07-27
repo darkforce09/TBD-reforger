@@ -300,7 +300,7 @@
 58	T-499	admin_field roles/sync demotes all users in IT	apps/website/api/tests/admin_field.rs
 58	T-500	mission_compile skips cargo wire_safety	apps/website/api/src/services/mission_compile.rs
 99	T-501	community-terrain soft-fail HTTP IT	apps/website/api/tests/telemetry.rs
-99	T-502	roles/sync IT empty-snapshot admin survive	apps/website/api/tests/admin_field.rs
+60	T-502	roles/sync IT empty-snapshot admin survive	apps/website/api/tests/admin_field.rs
 99	T-503	Arsenal no Save button auto-persist	apps/website/frontend/src/arsenal.rs
 99	T-504	silent no-garment cargo Arsenal	apps/website/frontend/src/arsenal.rs; apps/website/frontend/src/arsenal_rules.rs
 46	T-505	hydrate/row-mirror stomps title after T-375	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/mission_hydrate.rs; apps/website/api/src/handlers/missions.rs
@@ -323,7 +323,7 @@
 46	T-522	W46 hotfix: T-505 prefer-payload Class-R must run on native CI	apps/website/frontend/src/mission_hydrate.rs; apps/website/frontend/src/main.rs; apps/website/frontend/src/mission_title_prefer.rs
 46	T-523	W46 hotfix: T-515 db_migrate claim body must strip SQL comments	scripts/platform/wave.sh
 59	T-524	T-505 compile.rs title known-keys lockstep	crates/map-engine-core/src/mission/compile.rs
-99	T-525	content_golden obsolete two-seat comments after T-511	apps/website/api/seeds/content_golden.sql
+60	T-525	content_golden obsolete two-seat comments after T-511	apps/website/api/seeds/content_golden.sql
 46	T-526	W46 hotfix rustfmt mission_title_prefer after T-522	apps/website/frontend/src/mission_title_prefer.rs
 47	T-527	W47 hotfix rustfmt event_manager after T-332	apps/website/frontend/src/event_manager.rs
 47	T-528	W47 hotfix me.rs arma_linked whitespace after T-350	apps/website/api/src/handlers/me.rs; apps/website/api/tests/t528_me_whitespace_linked.rs
@@ -348,4 +348,4 @@
 57	T-547	datefmt format_uptime doc overclaims server-control sharing	apps/website/frontend/src/datefmt.rs; apps/website/frontend/src/server_control.rs
 57	T-548	missions.rs featured-card briefing still uses !b.is_empty() without trim	apps/website/frontend/src/missions.rs
 59	T-549	Live /compiled still uses empty CargoPhysCatalog	apps/website/api/src/handlers/missions.rs; apps/website/api/src/services/mission_compile.rs; apps/website/api/src/services/mod.rs; apps/website/api/tests/missions.rs
-99	T-550	Events roster still compiles with empty CargoPhysCatalog	apps/website/api/src/handlers/events.rs
+60	T-550	Events roster still compiles with empty CargoPhysCatalog	apps/website/api/src/handlers/events.rs
