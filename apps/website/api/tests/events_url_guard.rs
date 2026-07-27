@@ -73,8 +73,7 @@ async fn send(
 }
 
 fn future_start() -> String {
-    (Utc::now() + Duration::hours(24))
-        .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+    (Utc::now() + Duration::hours(24)).to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
 }
 
 #[tokio::test]
@@ -172,13 +171,12 @@ async fn patch_refuses_a_non_http_banner_and_leaves_the_stored_value_alone() {
             "PATCH rejected {bad:?} for the wrong reason: {msg:?}"
         );
 
-        let stored: String = sqlx::query_scalar(
-            "SELECT COALESCE(banner_image_url, '') FROM events WHERE id = $1",
-        )
-        .bind(uuid::Uuid::parse_str(&id).unwrap())
-        .fetch_one(&pool)
-        .await
-        .expect("re-read");
+        let stored: String =
+            sqlx::query_scalar("SELECT COALESCE(banner_image_url, '') FROM events WHERE id = $1")
+                .bind(uuid::Uuid::parse_str(&id).unwrap())
+                .fetch_one(&pool)
+                .await
+                .expect("re-read");
         assert_eq!(
             stored, GOOD,
             "PATCH overwrote the stored banner with {bad:?} despite 400-ing"

@@ -200,7 +200,9 @@ fn avatar(url: &str, username: &str, class: &str) -> impl IntoView {
             ]);
             view! { <span class=c>{initials(username)}</span> }.into_any()
         }
-        Some(src) => view! { <img src=src.to_string() alt="" class=class.to_string() /> }.into_any(),
+        Some(src) => {
+            view! { <img src=src.to_string() alt="" class=class.to_string() /> }.into_any()
+        }
     }
 }
 
