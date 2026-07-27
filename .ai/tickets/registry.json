@@ -12384,7 +12384,7 @@
       "impact": [
         "website"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3305,
       "stream": "web-platform",
       "targets": [
@@ -12429,7 +12429,7 @@
         "infra",
         "tests"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3307,
       "stream": "web-platform",
       "targets": [
@@ -12450,7 +12450,7 @@
       "impact": [
         "tests"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3308,
       "stream": "web-platform",
       "targets": [

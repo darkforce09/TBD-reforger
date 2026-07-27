@@ -13,3 +13,39 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-466 — CMS Content list fails closed to empty with no retry
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-466`
+- **Targets:** website
+- **Summary:** Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.
+
+Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.
+
+Cure: surface error + retry; do not set list_seeded on Err.
+
+## T-468 — No tripwire that ci.yml schema job stays on make ci-local-schema
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-468`
+- **Targets:** root
+- **Summary:** Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.
+
+Repro: change ci.yml schema step back to cargo run … schema validate only → CI green locally for enums hole until map-object-enums RED is noticed elsewhere.
+
+Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set.
+
+## T-469 — admin_field admin_token panics on missing LOCATION from dev-login
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-469`
+- **Targets:** website
+- **Summary:** Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
+
+Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
+
+Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic.

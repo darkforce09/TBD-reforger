@@ -2487,7 +2487,7 @@ Cure: add `/cms/announcements` to route_sweep() (admin list; drafts+published) w
 Repro: published-only SQL + bait comment → Class-R PASS; Effect docs.set(mock) → Class-R PASS.
 
 Cure: (A) IT POST draft then GET /cms/announcements must include it + public feed must not; non-admin GET → 401. (B) Harden Class-R: pin AdminUser on list handler; pin Effect docs.set(mapped) / filter_map(doc_from_announcement) chain so ignoring hydrate fails. RED→GREEN on verifier perturbations. |
-| T-466 | 3305 | deferred | platform | CMS Content list fails closed to empty with no retry | Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.
+| T-466 | 3305 | ready | platform | CMS Content list fails closed to empty with no retry | Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.
 
 Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.
 
@@ -2497,12 +2497,12 @@ Cure: surface error + retry; do not set list_seeded on Err. |
 Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
 
 Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin. |
-| T-468 | 3307 | deferred | platform | No tripwire that ci.yml schema job stays on make ci-local-schema | Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.
+| T-468 | 3307 | ready | platform | No tripwire that ci.yml schema job stays on make ci-local-schema | Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.
 
 Repro: change ci.yml schema step back to cargo run … schema validate only → CI green locally for enums hole until map-object-enums RED is noticed elsewhere.
 
 Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set. |
-| T-469 | 3308 | deferred | platform | admin_field admin_token panics on missing LOCATION from dev-login | Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
+| T-469 | 3308 | ready | platform | admin_field admin_token panics on missing LOCATION from dev-login | Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
 
 Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
 
