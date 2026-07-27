@@ -536,13 +536,19 @@ async fn register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats() {
     // `assigned_to`, not `slot_id`. Prove the structural guard: a second seat
     // for the same occupant must raise unique_violation (SQLSTATE 23505).
     assert_eq!(register(&emid, Some(&claim)).await, StatusCode::OK);
-    assert_eq!(seat(&slot0).await.as_deref(), Some(DEV_USER), "one seat held");
-    let dup = sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
-        .bind(DEV_USER)
-        .bind(slot1.parse::<uuid::Uuid>().unwrap())
-        .execute(&pool)
-        .await;
-    let err = dup.expect_err("second seat for same assigned_to must fail under idx_orbat_slots_em_assigned");
+    assert_eq!(
+        seat(&slot0).await.as_deref(),
+        Some(DEV_USER),
+        "one seat held"
+    );
+    let dup =
+        sqlx::query("UPDATE orbat_slots SET assigned_to = $1, assigned_at = now() WHERE id = $2")
+            .bind(DEV_USER)
+            .bind(slot1.parse::<uuid::Uuid>().unwrap())
+            .execute(&pool)
+            .await;
+    let err = dup
+        .expect_err("second seat for same assigned_to must fail under idx_orbat_slots_em_assigned");
     let db = err
         .as_database_error()
         .expect("sqlx DatabaseError for unique_violation");
