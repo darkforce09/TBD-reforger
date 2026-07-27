@@ -3127,9 +3127,45 @@ mod tests {
             .find(|z| z.id == "z_bounds")
             .expect("terrain boundary fallback");
         assert_eq!(bounds.kind, "boundary");
-        assert!(
-            matches!(bounds.shape, ModZoneShape::Polygon { .. }),
-            "fallback AO is a polygon, not another spawn disk"
+        // T-435: pin Everon 12800² ring (was kind-only before — soft green if synthesis shrank).
+        let ModZoneShape::Polygon { polygon } = &bounds.shape else {
+            panic!("fallback AO is a polygon, not another spawn disk");
+        };
+        assert_eq!(
+            polygon,
+            &vec![
+                [0.0, 0.0],
+                [12800.0, 0.0],
+                [12800.0, 12800.0],
+                [0.0, 12800.0],
+            ]
+        );
+    }
+
+    /// T-435: arland terrain_bounds → 4096² must reach z_bounds polygon (not only everon).
+    #[test]
+    fn terrain_boundary_fallback_uses_arland_4096_ring() {
+        let mut arland = meta();
+        arland.terrain = "arland".into();
+        let doc =
+            flatten_to_mod_document(&arland, &zones_test_payload("[]")).expect("compiles");
+        let bounds = doc
+            .zones
+            .iter()
+            .find(|z| z.id == "z_bounds")
+            .expect("terrain boundary fallback");
+        assert_eq!(bounds.kind, "boundary");
+        let ModZoneShape::Polygon { polygon } = &bounds.shape else {
+            panic!("arland fallback AO must be a polygon");
+        };
+        assert_eq!(
+            polygon,
+            &vec![
+                [0.0, 0.0],
+                [4096.0, 0.0],
+                [4096.0, 4096.0],
+                [0.0, 4096.0],
+            ]
         );
     }
 
