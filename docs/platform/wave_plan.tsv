@@ -84,7 +84,7 @@
 48	T-371	display_name() selects on an untrimmed is_empty, so a whitespace Discord name is stored verbatim	apps/website/api/src/services/discord.rs; apps/website/api/src/handlers/admin.rs
 0	T-370	Remove the 8 dead mark_adopted call sites — move the purge first	apps/website/frontend/src/mission_hydrate.rs
 0	T-368	The mission armory cannot be set from the UI at all — the endpoint has no frontend caller	apps/website/frontend/src/mission_overview.rs
-0	T-384	Re-pointing a match to another event leaves the first event marked attended	apps/website/api/src/handlers/telemetry.rs
+53	T-384	Re-pointing a match to another event leaves the first event marked attended	apps/website/api/src/handlers/telemetry.rs
 0	T-362	XDG_CACHE_HOME silently disables T-320's fontconfig fix, and this container sets it	tools/tbd-tools/src/doctor.rs
 0	T-363	PATCH /missions/:id title has no guard at all, and semver is never validated	apps/website/api/src/handlers/missions.rs
 0	T-360	DashboardResponse.server_status is the third read of one payload and still Option<Value>	apps/website/frontend/src/dashboard.rs; apps/website/frontend/src/dto.rs
@@ -215,7 +215,7 @@
 3	T-412	GET /members cannot return member 21; list_servers is N+1	apps/website/api/src/handlers/events.rs; apps/website/api/src/handlers/servers.rs
 3	T-413	Adopt the URL guard at the remaining writers and render sites	apps/website/api/src/handlers/missions.rs; apps/website/api/src/handlers/events.rs; apps/website/frontend/src/leaderboards.rs; apps/website/frontend/src/layout.rs; apps/website/frontend/src/settings.rs; apps/website/frontend/src/announcements.rs; apps/website/frontend/src/events.rs; apps/website/frontend/src/missions.rs; apps/website/frontend/src/event_hub.rs; apps/website/api/tests/events_url_guard.rs; apps/website/api/tests/missions_url_guard.rs
 3	T-414	approvals ordering has no unique tiebreaker	apps/website/api/src/handlers/approvals.rs; apps/website/api/tests/admin_field.rs
-4	T-415	Mod never checks it delivered the authored loadout; IsComplete has zero callers	apps/mod/tbd-framework/Scripts/Game/TBD/Loadout/TBD_LoadoutEquipHelper.c
+53	T-415	Mod never checks it delivered the authored loadout; IsComplete has zero callers	apps/mod/tbd-framework/Scripts/Game/TBD/Loadout/TBD_LoadoutEquipHelper.c
 4	T-416	Cargo capacity belongs in wire_safety.rs, covering save and compile	crates/map-engine-core/src/mission/wire_safety.rs; apps/website/api/src/contract/validate.rs; apps/website/api/src/handlers/missions.rs
 4	T-417	Compiled-export artifact re-sorts keys; 401 misdiagnosed as no-server-row	apps/website/frontend/src/mission_commands.rs; apps/website/frontend/src/main.rs
 4	T-418	map-engine-wasm is dead as a whole crate; compile_export briefing is a dead key	crates/map-engine-wasm/src/lib.rs; apps/website/frontend/src/mission_hydrate.rs
@@ -295,7 +295,7 @@
 99	T-494	trim source-ratchet + schedule briefing trim	apps/website/frontend/src/mission_overview.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/events.rs
 99	T-495	members IT offset exercise	apps/website/api/tests/events.rs
 52	T-496	T-410 library/bookmark Class-R residue-dependent	apps/website/api/tests/missions.rs
-99	T-497	mission mutators still AuthUser+can_edit	apps/website/api/src/handlers/missions.rs
+53	T-497	mission mutators still AuthUser+can_edit	apps/website/api/src/handlers/missions.rs
 99	T-498	Discord webhook title not formula-safe	apps/website/api/src/services/webhook.rs; apps/website/api/src/handlers/cms.rs
 99	T-499	admin_field roles/sync demotes all users in IT	apps/website/api/tests/admin_field.rs
 99	T-500	mission_compile skips cargo wire_safety	apps/website/api/src/services/mission_compile.rs
