@@ -13563,8 +13563,28 @@
         "website",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3360,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-521",
+      "title": "W46 hotfix: rustfmt missions.rs create_version after T-505",
+      "summary": "Wave 46 cold re-gate after T-520 still FAIL fmt (changed). apps/website/api/src/handlers/missions.rs else-branch UPDATE (no title mirror) fails rustfmt --check around create_version ~951. Cure: rustfmt that file only. Owns: apps/website/api/src/handlers/missions.rs.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "running",
+      "order": 3361,
       "stream": "web-platform",
       "targets": [
         "website"

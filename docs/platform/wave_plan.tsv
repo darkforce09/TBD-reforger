@@ -319,3 +319,4 @@
 99	T-518	T-517 Class-R one-sided denylist not bound to telemetry PLAYER_DISCORD	apps/website/api/tests/identity_link.rs; apps/website/api/tests/telemetry.rs
 99	T-519	R-api fixture goldens Member RegistryCompat FireSolution	apps/website/frontend/tests/fixtures/api/; apps/website/frontend/src/dto.rs
 46	T-520	W46 hotfix rustfmt events.rs after T-511	apps/website/api/tests/events.rs
+46	T-521	W46 hotfix rustfmt missions.rs after T-505	apps/website/api/src/handlers/missions.rs
