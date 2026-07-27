@@ -238,7 +238,7 @@
 99	T-435	Pin arland z_bounds polygon in flatten zone tests	crates/map-engine-core/src/mission/flatten.rs
 3	T-436	Harden deploy-website.sh path policy	scripts/deploy/deploy-website.sh; scripts/deploy/deploy.env.example
 99	T-437	Destroy-target inert diagnostics still claim entities[] never spawn	apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c; packages/tbd-schema/schema/mission.schema.json
-99	T-438	deploy-staging.sh still looks for docker-compose.staging.yml under apps/website/api	scripts/mod/deploy-staging.sh
+99	T-438	deploy-staging.sh still looks for docker-compose.staging.yml under apps/website/api	scripts/mod/deploy-staging.sh; scripts/mod/verify-t438-deploy-staging-compose-path.sh; docs/website/HOME_SERVER.md
 99	T-439	Objects palette aliases need prop:/comp: rows in mod Data/registry.json	apps/mod/tbd-framework/Data/registry.json; apps/website/frontend/src/asset_catalog.rs
 99	T-440	Cold/schema gates never apply make seed / faction_library.sql	Makefile; scripts/platform/wave.sh; apps/website/api/seeds/faction_library.sql
 4	T-441	null_tolerance OPTION_FIELDS for events.server_id/modpack_id	apps/website/api/tests/null_tolerance.rs
@@ -246,7 +246,7 @@
 99	T-445	Audit Load-more Class-R does not pin on_load_more UI wiring	apps/website/frontend/src/audit.rs
 99	T-446	CMS hero image upload needs web-sys FormData features	apps/website/frontend/Cargo.toml; apps/website/frontend/src/client.rs; apps/website/frontend/src/content.rs
 99	T-447	CMS content page still seeds from mock_docs; no GET /cms/announcements list	apps/website/frontend/src/content.rs; apps/website/api/src/handlers/cms.rs; apps/website/api/src/app.rs
-99	T-448	Personnel dossier Deployments stat has no API field (hardcoded em-dash)	apps/website/api/src/handlers/admin.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/personnel.rs
+99	T-448	Personnel dossier Deployments stat has no API field (hardcoded em-dash)	apps/website/api/src/handlers/admin.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/personnel.rs; apps/website/frontend/tests/fixtures/api/GET__admin__users.json
 99	T-449	Wire ./scripts/ticket check to .ai/tickets/schema.json	xtask/src/check.rs; .ai/tickets/schema.json; scripts/ticket
 99	T-450	Pin MISSION_FILE_MAX_BYTES (8MB) in mission schema	packages/tbd-schema/schema/mission.schema.json; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c; apps/website/api/src/contract/validate.rs; xtask/src/schema_gates.rs
 99	T-451	ticket set-status mutates without schema check preflight	xtask/src/cmds.rs; xtask/src/check.rs
@@ -259,3 +259,4 @@
 99	T-458	AdminGate still uses browse-mode has_min_role	apps/website/frontend/src/ui.rs; apps/website/frontend/src/auth.rs
 99	T-459	ticket advance-slice mutates without schema check preflight	xtask/src/cmds.rs; xtask/src/check.rs
 99	T-460	Class-R pins for T-456/T-458 are false-green	scripts/mod/verify-t456-mission-rest-size-gate.sh; apps/website/frontend/src/ui.rs; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
+99	T-461	Class-R pins for T-438/T-448 are false-green	scripts/mod/verify-t438-deploy-staging-compose-path.sh; scripts/mod/deploy-staging.sh; apps/website/frontend/src/personnel.rs; apps/website/api/src/handlers/admin.rs

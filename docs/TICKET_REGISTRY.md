@@ -2326,7 +2326,7 @@ Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegi
 Repro: author a destroy objective whose alias fails for zone/timing/registry reasons; inertReason still says the build does not spawn entities[] — misdiagnoses live failures.
 
 Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs out-of-zone; update schema prose. |
-| T-438 | 3277 | ready | platform | deploy-staging.sh still looks for docker-compose.staging.yml under apps/website/api | Residual from T-251 / wave 9 N1. T-251 placed apps/website/docker-compose.staging.yml, but scripts/mod/deploy-staging.sh:184 still cds to apps/website/api and runs docker compose -f docker-compose.staging.yml there.
+| T-438 | 3277 | shipped | platform | deploy-staging.sh still looks for docker-compose.staging.yml under apps/website/api | Residual from T-251 / wave 9 N1. T-251 placed apps/website/docker-compose.staging.yml, but scripts/mod/deploy-staging.sh:184 still cds to apps/website/api and runs docker compose -f docker-compose.staging.yml there.
 
 Repro: after T-251 land, follow game staging path that uses deploy-staging.sh compose step — file not found / wrong cwd.
 
@@ -2363,7 +2363,7 @@ Cure: extend apps/website/api/tests/content_read.rs (or sibling) with admin POST
 Repro: make db-up + make seed on empty DB; curl GET /api/v1/wiki → data:[]; vehicles have rows.
 
 Cure: extract wiki INSERT seed (or include content_golden wiki section) into seeds/ + Makefile seed line, same shape as vehicle_database.sql. |
-| T-445 | 3284 | ready | platform | Audit Load-more Class-R does not pin on_load_more UI wiring | Residual from T-266 / wave 13 adversarial MINOR. Class-R tests pin audit_logs_path / parse_next_cursor / merge_audit_page helpers, but nothing asserts on_load_more calls merge_audit_page. A replace bug (lines.set(page.data) instead of append) would keep those tests green while truncating the trail again.
+| T-445 | 3284 | shipped | platform | Audit Load-more Class-R does not pin on_load_more UI wiring | Residual from T-266 / wave 13 adversarial MINOR. Class-R tests pin audit_logs_path / parse_next_cursor / merge_audit_page helpers, but nothing asserts on_load_more calls merge_audit_page. A replace bug (lines.set(page.data) instead of append) would keep those tests green while truncating the trail again.
 
 Repro: change Load more to replace the vec; cargo test -p website-frontend audit::tests still PASS.
 
@@ -2378,7 +2378,7 @@ Cure: enable FormData/File features, wire multipart api helper, POST /cms/upload
 Repro: Publish announcement; reload /content → mock seed only.
 
 Cure: add list route if missing + FE LocalResource GET /cms/announcements. |
-| T-448 | 3287 | ready | platform | Personnel dossier Deployments stat has no API field | Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.
+| T-448 | 3287 | shipped | platform | Personnel dossier Deployments stat has no API field | Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.
 
 Repro: Personnel dossier → Deployments always —.
 
@@ -2453,6 +2453,14 @@ Repro T-456: move size if after ParseMissionJson but leave T-456 comment with MI
 Repro T-458: let _dead = has_min_role_authed(...); if true { children } → Class-R PASS.
 
 Cure: strip // comments before order assert; require non-comment IsMissionBodyWithinCap( before ParseMissionJson(; pin helper body to Length() <= MISSION_FILE_MAX_BYTES. Bind AdminGate Class-R to if has_min_role_authed(auth.user.get().map(\|u\| u.role), Role::Admin). |
+| T-461 | 3300 | shipped | platform | Class-R pins for T-438/T-448 are false-green | Residual from wave 23 adversarial. Live T-438/T-448 behavior holds, but Class-R pins accept stubs:
+(1) verify-t438-deploy-staging-compose-path.sh accepts apps/website/docker-compose.staging.yml anywhere (including comments) and only bans one exact cd .../api string — live can use apps/website/api/docker-compose.staging.yml while dry-run stays good and still PASS. Script also unwired from Makefile/CI/cold gate.
+(2) personnel dossier Class-R allows if total_deployments==0 { "—" } else { to_string() } because the bind needle remains; API SELECT can be 0::bigint AS total_deployments with no IT asserting real users.total_deployments.
+
+Repro T-438: keep good path in comment/dry-run; set live -f apps/website/api/docker-compose.staging.yml → verify PASS.
+Repro T-448: zero→em-dash conditional → dossier Class-R PASS; fake SELECT 0::bigint → check green.
+
+Cure: strip comments; require good compose path on both dry-run and live lines; reject apps/website/api/docker-compose.staging.yml; wire verify into slice/Makefile if natural. Forbid em-dash near Deployments / require exact single bind; pin/IT that roster total_deployments equals seeded users.total_deployments. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
