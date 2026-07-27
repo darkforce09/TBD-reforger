@@ -102,11 +102,26 @@ pub fn validate_mission_editor_payload(raw: &[u8]) -> Result<Vec<String>, Contra
     )
 }
 
+/// T-450 — mirrors `TBD_MissionLoader.MISSION_FILE_MAX_BYTES` (`8 * 1024 * 1024`) and
+/// `mission.schema.json` `x-tbd-missionFileMaxBytes`. JSON Schema cannot express whole-document
+/// byte size on an object, so this code-side check is the enforceable pin that keeps a
+/// schema-valid (but oversized) document from reaching the mod and dying at
+/// `LoadFromProfileFile`.
+const MISSION_FILE_MAX_BYTES: usize = 8 * 1024 * 1024;
+
 /// Validate a compiled mod mission document against `mission.schema.json` (the
 /// game-server contract served at `/missions/:id/compiled`).
 ///
 /// @contract mission.schema.json#/
 pub fn validate_mission_document(raw: &[u8]) -> Result<Vec<String>, ContractError> {
+    if raw.len() > MISSION_FILE_MAX_BYTES {
+        return Ok(vec![format!(
+            "/: document exceeds MISSION_FILE_MAX_BYTES ({} B > {} B) — \
+             TBD_MissionLoader.c LoadFromProfileFile would refuse this file",
+            raw.len(),
+            MISSION_FILE_MAX_BYTES
+        )]);
+    }
     static V: OnceLock<Result<Validator, String>> = OnceLock::new();
     run(&V, MISSION_SCHEMA, raw, "document is not valid JSON")
 }
@@ -194,5 +209,49 @@ mod tests {
         // Empty object violates the required keys → non-empty details, but compiles.
         let details = validate_mission_document(b"{}").expect("compiles");
         assert!(!details.is_empty(), "empty doc should be schema-invalid");
+    }
+
+    /// T-450 — a document that is schema-shaped can still be refused solely on raw byte size.
+    /// Pads `meta.author` (no maxLength) past `MISSION_FILE_MAX_BYTES`; the size finding must
+    /// fire before (or instead of) any schema finding, and must name the mod constant.
+    #[test]
+    fn oversized_mission_document_is_rejected_on_byte_ceiling() {
+        let mut doc: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../packages/tbd-schema/golden-missions/last-stand-at-montfort.json"
+        ))
+        .expect("golden");
+        // Keep the document structurally valid so a missing size check would pass schema alone.
+        let pad = "x".repeat(MISSION_FILE_MAX_BYTES);
+        doc["meta"]["author"] = serde_json::Value::String(pad);
+        let raw = serde_json::to_vec(&doc).expect("serialize");
+        assert!(
+            raw.len() > MISSION_FILE_MAX_BYTES,
+            "pad must push past the ceiling (got {} B)",
+            raw.len()
+        );
+
+        let details = validate_mission_document(&raw).expect("compiles");
+        assert_eq!(details.len(), 1, "{details:?}");
+        assert!(
+            details[0].starts_with("/: document exceeds MISSION_FILE_MAX_BYTES"),
+            "{details:?}"
+        );
+        assert!(
+            details[0].contains(&MISSION_FILE_MAX_BYTES.to_string()),
+            "{details:?}"
+        );
+    }
+
+    #[test]
+    fn schema_x_tbd_mission_file_max_bytes_matches_mod_constant() {
+        let schema: serde_json::Value =
+            serde_json::from_str(MISSION_SCHEMA).expect("mission.schema.json");
+        let pinned = schema["x-tbd-missionFileMaxBytes"]
+            .as_u64()
+            .expect("x-tbd-missionFileMaxBytes must be present on mission.schema.json");
+        assert_eq!(
+            pinned as usize, MISSION_FILE_MAX_BYTES,
+            "schema keyword drifted from validate_mission_document / TBD_MissionLoader"
+        );
     }
 }
