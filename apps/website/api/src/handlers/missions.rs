@@ -129,8 +129,7 @@ fn semver_prerelease(s: &str) -> bool {
         if id.bytes().all(|b| b.is_ascii_digit()) {
             return semver_numeric_id(id);
         }
-        id.bytes()
-            .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+        id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
     })
 }
 
@@ -139,9 +138,8 @@ fn semver_build(s: &str) -> bool {
     if s.is_empty() {
         return false;
     }
-    s.split('.').all(|id| {
-        !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')
-    })
+    s.split('.')
+        .all(|id| !id.is_empty() && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-'))
 }
 
 // --- enum validators (mirror Go valid*; empty weather → clear) ---
@@ -1840,7 +1838,10 @@ mod tests {
         assert!(validated_mission_title("").is_err());
         assert!(validated_mission_title("   ").is_err());
         assert!(validated_mission_title("\t\n").is_err());
-        assert_eq!(validated_mission_title("Op Red Dawn").unwrap(), "Op Red Dawn");
+        assert_eq!(
+            validated_mission_title("Op Red Dawn").unwrap(),
+            "Op Red Dawn"
+        );
         assert_eq!(validated_mission_title("  padded  ").unwrap(), "padded");
     }
 
@@ -1896,21 +1897,8 @@ mod tests {
             assert!(valid_semver(ok), "expected accept {ok:?}");
         }
         for bad in [
-            "",
-            "   ",
-            " 0.1.0 ",
-            "0.1.0 ",
-            " 0.1.0",
-            "1",
-            "1.2",
-            "banana",
-            "01.2.3",
-            "1.02.3",
-            "1.2.03",
-            "v1.2.3",
-            "1.2.3.4",
-            "1.2.3-",
-            "1.2.3+",
+            "", "   ", " 0.1.0 ", "0.1.0 ", " 0.1.0", "1", "1.2", "banana", "01.2.3", "1.02.3",
+            "1.2.03", "v1.2.3", "1.2.3.4", "1.2.3-", "1.2.3+",
         ] {
             assert!(!valid_semver(bad), "expected reject {bad:?}");
         }
