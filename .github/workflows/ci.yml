@@ -206,3 +206,6 @@ jobs:
         run: make verify-t438
       - name: T-456 mission REST size gate (make verify-t456)
         run: make verify-t456
+      # T-485: T-468 tripwire (hollow verify-t438/t456 recipes + ci-local-schema pin).
+      - name: T-468 CI schema parity + hollow recipe tripwire (make verify-t468)
+        run: make verify-t468
