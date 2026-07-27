@@ -866,19 +866,6 @@ Cure lives in API pagination / narrower endpoints + frontend DTO/client — outs
 Repro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.
 
 Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; assert no shared snowflake collision across parallel tests.
-- **T-486** (deferred) — Tripwire hollow make verify-t468 recipe body (self-pin) [CI, INFRA] — Wave 33 verifier NIT (T-485). verify-t468 pins t438/t456 recipe bodies but not its own. Hollow `verify-t468:\n\t@true` greens make verify-t468 / ci-local / ci.yml step; wave.sh cold gate still runs the bash script directly so cold gate stays honest.
-
-Repro: replace verify-t468 recipe with @true → make verify-t468 rc=0.
-
-Cure: extend verify-t468 (or sibling) to assert Makefile verify-t468 recipe invokes the real script.
-- **T-487** (deferred) — Seed DELETE for orphan Discord Squad Leader placeholder snowflake [DATA, API] — Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.
-
-Repro: DB with placeholder row; make seed; SELECT still returns the row.
-
-Cure: add DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000' (or equivalent) to discord_roles.sql before INSERT.
-- **T-488** (deferred) — Document ROLE_RESYNC_INTERVAL_SECS in .env.example [API] — Wave 33 residual (T-428). api.rs arms role resync via ROLE_RESYNC_INTERVAL_SECS (default 24h) but apps/website/api/.env.example only documents SERVER_STATUS_PUBLISH_INTERVAL_SECS and LEADERBOARD_REFRESH_INTERVAL_SECS.
-
-Cure: add commented ROLE_RESYNC_INTERVAL_SECS=86400 next to sibling interval knobs.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

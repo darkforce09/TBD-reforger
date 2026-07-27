@@ -2606,17 +2606,17 @@ Cure: trim().is_empty() (or reject trim-empty) for both; Class-R pins. |
 Repro: recipe `verify-t438:\n\t@true` → make verify-t438 rc=0; bash verify-t468 → FAIL.
 
 Cure: add Makefile verify-t468 (or fold pin into ci-local + ci.yml) so hollow recipes fail without waiting for wave.sh gate. |
-| T-486 | 3325 | deferred | platform | Tripwire hollow make verify-t468 recipe body (self-pin) | Wave 33 verifier NIT (T-485). verify-t468 pins t438/t456 recipe bodies but not its own. Hollow `verify-t468:\n\t@true` greens make verify-t468 / ci-local / ci.yml step; wave.sh cold gate still runs the bash script directly so cold gate stays honest.
+| T-486 | 3325 | ready | platform | Tripwire hollow make verify-t468 recipe body (self-pin) | Wave 33 verifier NIT (T-485). verify-t468 pins t438/t456 recipe bodies but not its own. Hollow `verify-t468:\n\t@true` greens make verify-t468 / ci-local / ci.yml step; wave.sh cold gate still runs the bash script directly so cold gate stays honest.
 
 Repro: replace verify-t468 recipe with @true → make verify-t468 rc=0.
 
 Cure: extend verify-t468 (or sibling) to assert Makefile verify-t468 recipe invokes the real script. |
-| T-487 | 3326 | deferred | platform | Seed DELETE for orphan Discord Squad Leader placeholder snowflake | Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.
+| T-487 | 3326 | ready | platform | Seed DELETE for orphan Discord Squad Leader placeholder snowflake | Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.
 
 Repro: DB with placeholder row; make seed; SELECT still returns the row.
 
 Cure: add DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000' (or equivalent) to discord_roles.sql before INSERT. |
-| T-488 | 3327 | deferred | platform | Document ROLE_RESYNC_INTERVAL_SECS in .env.example | Wave 33 residual (T-428). api.rs arms role resync via ROLE_RESYNC_INTERVAL_SECS (default 24h) but apps/website/api/.env.example only documents SERVER_STATUS_PUBLISH_INTERVAL_SECS and LEADERBOARD_REFRESH_INTERVAL_SECS.
+| T-488 | 3327 | ready | platform | Document ROLE_RESYNC_INTERVAL_SECS in .env.example | Wave 33 residual (T-428). api.rs arms role resync via ROLE_RESYNC_INTERVAL_SECS (default 24h) but apps/website/api/.env.example only documents SERVER_STATUS_PUBLISH_INTERVAL_SECS and LEADERBOARD_REFRESH_INTERVAL_SECS.
 
 Cure: add commented ROLE_RESYNC_INTERVAL_SECS=86400 next to sibling interval knobs. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |

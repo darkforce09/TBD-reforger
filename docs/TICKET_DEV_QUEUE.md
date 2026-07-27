@@ -13,3 +13,37 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-486 — Tripwire hollow make verify-t468 recipe body (self-pin)
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-486`
+- **Targets:** website
+- **Summary:** Wave 33 verifier NIT (T-485). verify-t468 pins t438/t456 recipe bodies but not its own. Hollow `verify-t468:\n\t@true` greens make verify-t468 / ci-local / ci.yml step; wave.sh cold gate still runs the bash script directly so cold gate stays honest.
+
+Repro: replace verify-t468 recipe with @true → make verify-t468 rc=0.
+
+Cure: extend verify-t468 (or sibling) to assert Makefile verify-t468 recipe invokes the real script.
+
+## T-487 — Seed DELETE for orphan Discord Squad Leader placeholder snowflake
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-487`
+- **Targets:** website
+- **Summary:** Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.
+
+Repro: DB with placeholder row; make seed; SELECT still returns the row.
+
+Cure: add DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000' (or equivalent) to discord_roles.sql before INSERT.
+
+## T-488 — Document ROLE_RESYNC_INTERVAL_SECS in .env.example
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-488`
+- **Targets:** website
+- **Summary:** Wave 33 residual (T-428). api.rs arms role resync via ROLE_RESYNC_INTERVAL_SECS (default 24h) but apps/website/api/.env.example only documents SERVER_STATUS_PUBLISH_INTERVAL_SECS and LEADERBOARD_REFRESH_INTERVAL_SECS.
+
+Cure: add commented ROLE_RESYNC_INTERVAL_SECS=86400 next to sibling interval knobs.

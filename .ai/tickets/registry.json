@@ -12822,7 +12822,7 @@
       "impact": [
         "website"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3325,
       "stream": "web-platform",
       "targets": [
@@ -12843,7 +12843,7 @@
       "impact": [
         "website"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3326,
       "stream": "web-platform",
       "targets": [
@@ -12863,7 +12863,7 @@
       "impact": [
         "website"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3327,
       "stream": "web-platform",
       "targets": [
