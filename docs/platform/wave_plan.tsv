@@ -92,7 +92,7 @@
 0	T-358	factions.rs defeats its own unique index, and both sweeps were structurally blind to it	apps/website/api/src/handlers/factions.rs; apps/website/api/tests/factions.rs
 0	T-356	The other side of the armory join has the identical defect, still open	crates/map-engine-core/src/mission/orbat.rs; apps/website/api/src/handlers/events.rs
 0	T-353	Four SPA gaps T-232 could not reach from its own files	apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/router.rs; apps/website/frontend/src/datefmt.rs
-0	T-364	COALESCE-on-None admits a third state, and a body-only PATCH leaves the snippet stale	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/handlers/cms.rs
+52	T-364	COALESCE-on-None admits a third state, and a body-only PATCH leaves the snippet stale	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/handlers/cms.rs
 47	T-350	Four sites report an identity as linked when it is whitespace	apps/website/api/src/handlers/auth.rs; apps/website/api/src/handlers/oauth.rs; apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/t350_whitespace_linked.rs
 0	T-351	Nothing pins the arma_id trim, and legacy whitespace rows are still in the tables	apps/website/api/tests/identity_link.rs; apps/website/api/migrations
 50	T-342	Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt	apps/website/frontend/src/personnel.rs
@@ -294,7 +294,7 @@
 99	T-493	T-397 Class-R blind to COALESCE(deaths,0)	apps/website/api/tests/telemetry.rs; apps/website/api/migrations/0014_nullable_match_player_stat_counters.sql
 99	T-494	trim source-ratchet + schedule briefing trim	apps/website/frontend/src/mission_overview.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/events.rs
 99	T-495	members IT offset exercise	apps/website/api/tests/events.rs
-99	T-496	T-410 library/bookmark Class-R residue-dependent	apps/website/api/tests/missions.rs
+52	T-496	T-410 library/bookmark Class-R residue-dependent	apps/website/api/tests/missions.rs
 99	T-497	mission mutators still AuthUser+can_edit	apps/website/api/src/handlers/missions.rs
 99	T-498	Discord webhook title not formula-safe	apps/website/api/src/services/webhook.rs; apps/website/api/src/handlers/cms.rs
 99	T-499	admin_field roles/sync demotes all users in IT	apps/website/api/tests/admin_field.rs
@@ -336,4 +336,4 @@
 50	T-535	T-385 live IT positive terrain join	apps/website/api/tests/misc_integration.rs
 51	T-536	touch_changed masks changed_rs porcelain failure	scripts/platform/wave.sh
 99	T-537	xtask empty/lossy write residuals outside T-383 owns	xtask/src/enf; tools/tbd-tools/src/world; tools/tbd-tools/src/map
-99	T-538	flatten-orbat-slots stdout path still drops loadout/uid	xtask/src/schema_gates.rs
+52	T-538	flatten-orbat-slots stdout path still drops loadout/uid	xtask/src/schema_gates.rs
