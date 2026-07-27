@@ -94,12 +94,20 @@ pub struct MatchPlayerStat {
     /// (T-228's migration directory) would close for good.
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub role_played: String,
-    pub kills: i64,
-    pub deaths: i64,
-    pub team_kills: i64,
-    pub longest_kill_m: i64,
-    pub vehicles_destroyed: i64,
-    pub is_command: bool,
+    /// `NULL` = not measured (T-397). A stored `0` is a scored zero; do not coalesce at read
+    /// sites that care about the distinction. `leaderboard_totals` SUMs ignore NULL.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub kills: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub deaths: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub team_kills: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub longest_kill_m: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub vehicles_destroyed: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub is_command: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub command_win: Option<bool>,
     pub source_event_id: String,

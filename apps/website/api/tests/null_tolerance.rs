@@ -125,6 +125,13 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
     // models::telemetry::MatchPlayerStat
     ("match_player_stats", "discord_id"),
     ("match_player_stats", "command_win"),
+    // T-397 — counters are Option: NULL = not measured (distinct from scored 0).
+    ("match_player_stats", "kills"),
+    ("match_player_stats", "deaths"),
+    ("match_player_stats", "team_kills"),
+    ("match_player_stats", "longest_kill_m"),
+    ("match_player_stats", "vehicles_destroyed"),
+    ("match_player_stats", "is_command"),
     // models::telemetry::ServerStatus / Server
     ("server_statuses", "current_match_id"),
     ("servers", "required_modpack_id"),

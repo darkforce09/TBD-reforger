@@ -28,7 +28,9 @@ pub struct LeaderboardRow {
     pub avatar_url: String,
     pub kills: i64,
     pub deaths: i64,
-    pub kd_ratio: f64,
+    /// `NULL` when no `match_player_stats` row for this player has a measured `deaths`
+    /// reading (T-397). Distinct from `0.0` (measured zero-death / flawless aggregate).
+    pub kd_ratio: Option<f64>,
     pub team_kills: i64,
     pub longest_kill_m: i64,
     pub vehicles_destroyed: i64,
@@ -130,7 +132,7 @@ pub async fn get_user_stats(
         avatar_url: user.avatar_url.clone(),
         kills: 0,
         deaths: 0,
-        kd_ratio: 0.0,
+        kd_ratio: None,
         team_kills: 0,
         longest_kill_m: 0,
         vehicles_destroyed: 0,
