@@ -9,6 +9,21 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-434** (3273) — CI schema job still only validate+citations while make schema-validate runs nine [ready] — Residual from T-420/T-422. Wave gate now runs the full schema-validate set (incl. per-context height-labels). .github/workflows/ci.yml schema job still only `xtask schema validate` + citations — same hole T-420 documented.
+
+Repro: compare ci.yml schema job vs Makefile schema-validate recipe / GATE_SCHEMA_VALIDATE_GATES in wave.sh.
+
+Cure: align CI with make schema-validate (or document intentional narrowing with a tripwire).
+- **T-447** (3286) — CMS content page still seeds from mock_docs; no GET list [ready] — Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.
+
+Repro: Publish announcement; reload /content → mock seed only.
+
+Cure: add list route if missing + FE LocalResource GET /cms/announcements.
+- **T-463** (3302) — verify-t438/t456 shell gates still unwired from wave cold gate [ready] — Residual from T-462 / wave 24. wave.sh now runs verify-t439 and verify-t444 after schema, but scripts/mod/verify-t438-deploy-staging-compose-path.sh and verify-t456-mission-rest-size-gate.sh remain agent-local only — cold gate never executes them.
+
+Repro: corrupt deploy-staging compose path or strip REST size check → wave.sh gate still PASS until those scripts are invoked manually.
+
+Cure: wire both into wave.sh gate_slice + cmd_gate next to the T-439/T-444 steps (same pattern).
 
 ## Next queued (top 10)
 

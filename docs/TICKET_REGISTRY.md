@@ -2304,7 +2304,7 @@ Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage 
 Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
 
 Cure: delete it or replace with a non-vacuous pin (handler/IT only). |
-| T-434 | 3273 | deferred | platform | CI schema job still only validate+citations while make schema-validate runs nine | Residual from T-420/T-422. Wave gate now runs the full schema-validate set (incl. per-context height-labels). .github/workflows/ci.yml schema job still only `xtask schema validate` + citations — same hole T-420 documented.
+| T-434 | 3273 | ready | platform | CI schema job still only validate+citations while make schema-validate runs nine | Residual from T-420/T-422. Wave gate now runs the full schema-validate set (incl. per-context height-labels). .github/workflows/ci.yml schema job still only `xtask schema validate` + citations — same hole T-420 documented.
 
 Repro: compare ci.yml schema job vs Makefile schema-validate recipe / GATE_SCHEMA_VALIDATE_GATES in wave.sh.
 
@@ -2373,7 +2373,7 @@ Cure: include_str! / source guard (T-264 style) that on_load_more uses merge_aud
 Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
 
 Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url. |
-| T-447 | 3286 | deferred | platform | CMS content page still seeds from mock_docs; no GET list | Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.
+| T-447 | 3286 | ready | platform | CMS content page still seeds from mock_docs; no GET list | Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.
 
 Repro: Publish announcement; reload /content → mock seed only.
 
@@ -2469,7 +2469,7 @@ Cure: strip comments; require good compose path on both dry-run and live lines; 
 Repro: remove wiki_pages.sql from Makefile seed → cold gate still PASS; corrupt a prop guid in mod registry → cargo green while verify-t439 would FAIL if run.
 
 Cure: Class-R/source guard that seed: recipe references seeds/wiki_pages.sql (optional seed↔content_golden wiki body hash); wire bash scripts/mod/verify-t439-….sh into wave.sh gate or an existing make verify target that cold gate runs; tighten event_hub Class-R to require the list+find id predicate. |
-| T-463 | 3302 | deferred | platform | verify-t438/t456 shell gates still unwired from wave cold gate | Residual from T-462 / wave 24. wave.sh now runs verify-t439 and verify-t444 after schema, but scripts/mod/verify-t438-deploy-staging-compose-path.sh and verify-t456-mission-rest-size-gate.sh remain agent-local only — cold gate never executes them.
+| T-463 | 3302 | ready | platform | verify-t438/t456 shell gates still unwired from wave cold gate | Residual from T-462 / wave 24. wave.sh now runs verify-t439 and verify-t444 after schema, but scripts/mod/verify-t438-deploy-staging-compose-path.sh and verify-t456-mission-rest-size-gate.sh remain agent-local only — cold gate never executes them.
 
 Repro: corrupt deploy-staging compose path or strip REST size check → wave.sh gate still PASS until those scripts are invoked manually.
 
