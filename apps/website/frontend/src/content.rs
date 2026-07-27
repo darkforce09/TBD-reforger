@@ -15,6 +15,10 @@
 //! T-466: list LocalResource keeps `Result` (no `.ok()`). Failed GET surfaces an actionable
 //! error + Retry in the master pane; `list_seeded` is set only on Ok so an error never looks
 //! like a permanent empty catalog.
+//!
+//! T-470: Class-R pins are order/window-sensitive — seed only inside the Ok arm (not before
+//! match, not in Err); Retry/error UI must sit in a reachable `if let Some(err) = list_error`
+//! branch (not behind `.filter(|_| false)`).
 #![allow(dead_code)]
 use crate::dto::Paginated;
 use crate::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
@@ -872,9 +876,13 @@ mod tests {
         );
     }
 
-    /// T-466 Class-R — list fetch must keep `Result` (no `.ok()`), seed only on Ok, and surface
-    /// an actionable error + Retry. RED: restore `.ok()` + `list_seeded.set(true)` before the
-    /// None/Err check → empty "No announcements yet" forever with no retry.
+    /// T-466 / T-470 Class-R — list fetch must keep `Result` (no `.ok()`), seed **only** inside
+    /// the Ok arm (order/window pin), and surface a **reachable** error + Retry.
+    ///
+    /// Wave 26 adversarial RED (presence-only pins were false-green):
+    /// 1. Move `list_seeded.set(true)` before match / outside Ok → must FAIL
+    /// 2. Also seed in Err → must FAIL (Retry then permanent empty)
+    /// 3. Error UI behind `.filter(|_| false)` with needles still in source → must FAIL
     #[test]
     fn content_list_error_does_not_seed_as_empty_success() {
         const SRC: &str = include_str!("content.rs");
@@ -899,41 +907,105 @@ mod tests {
             "list LocalResource must not .ok() the GET (perturbation: Err→None empty success)"
         );
 
-        // Success-only seed: list_seeded.set(true) must live inside the Ok arm, not before a
-        // None/Err early-return (the pre-T-466 "seed on None" pattern).
+        // Hydrate Effect window (one-shot seed + Err surface) — before retry_list.
+        let effect = prod
+            .split("Effect::new")
+            .nth(1)
+            .and_then(|s| s.split("let retry_list").next())
+            .expect("hydrate Effect must sit before retry_list");
         let seed = "list_seeded.set(true)";
+
+        // (1) Order pin — seed must not appear before Ok(page).
+        let before_ok = effect
+            .split("Ok(page)")
+            .next()
+            .expect("hydrate Effect must match on Ok(page)");
         assert!(
-            prod.contains(seed),
-            "success path must still set list_seeded"
+            !before_ok.contains(seed),
+            "list_seeded.set(true) must not run before Ok(page) \
+             (perturbation: seed before match / outside Ok)"
+        );
+
+        // Ok arm window: Ok(page) … Err(e)
+        let ok_arm = effect
+            .split("Ok(page)")
+            .nth(1)
+            .and_then(|s| s.split("Err(e)").next())
+            .expect("Ok(page) arm must precede Err(e)");
+        assert!(
+            ok_arm.contains(seed),
+            "Ok arm must set list_seeded (perturbation: drop success seed)"
+        );
+        assert_eq!(
+            ok_arm.matches(seed).count(),
+            1,
+            "Ok arm must set list_seeded exactly once"
+        );
+        let set_docs = format!("{}{}", "docs.set(", "mapped)");
+        assert!(
+            ok_arm.contains(&set_docs),
+            "Ok hydrate must `{set_docs}` inside the Ok arm"
+        );
+
+        // (2) Err arm must never set list_seeded (Retry would then look like empty success).
+        let err_arm = effect
+            .split("Err(e)")
+            .nth(1)
+            .expect("hydrate Effect must have Err(e) arm");
+        assert!(
+            !err_arm.contains(seed),
+            "Err arm must not set list_seeded (perturbation: also seed in Err)"
+        );
+        assert!(
+            err_arm.contains("Failed to load announcements") && err_arm.contains("list_error.set"),
+            "Err arm must write list_error with the actionable message"
+        );
+
+        // Exactly one seed in the whole hydrate Effect — and it is inside Ok (above).
+        assert_eq!(
+            effect.matches(seed).count(),
+            1,
+            "hydrate Effect must set list_seeded exactly once (inside Ok only)"
         );
         assert!(
             !prod.contains("list_seeded.set(true);\n        let Some(page) = opt else"),
             "must not seed then early-return on None (perturbation: restore seed-on-None)"
         );
-        assert!(
-            prod.contains("Ok(page)") && prod.contains(seed),
-            "list_seeded must be gated on Ok(page) (perturbation: seed outside Ok)"
-        );
-        // Ok arm must still apply mapped docs (success path pin).
-        let set_docs = format!("{}{}", "docs.set(", "mapped)");
-        assert!(prod.contains(&set_docs), "Ok hydrate must `{set_docs}`");
 
-        // Error UX — actionable message + Retry that refetches (not silent empty catalog).
+        // (3) Reachable error UI — needles in a dead `.filter(|_| false)` branch must FAIL.
+        let master = prod
+            .split("master=view!")
+            .nth(1)
+            .and_then(|s| s.split("detail=view!").next())
+            .expect("master pane must sit before detail");
         assert!(
-            prod.contains("Failed to load announcements")
-                && prod.contains("list_error")
-                && prod.contains("content-list-error"),
-            "master pane must surface list_error (perturbation: drop error UI)"
+            !master.contains("filter(|_| false)"),
+            "master pane must not gate UI behind .filter(|_| false) \
+             (perturbation: unreachable error UI)"
+        );
+        let err_bind = "if let Some(err) = list_error.get()";
+        let err_start = master
+            .find(err_bind)
+            .unwrap_or_else(|| panic!("master must bind list_error via `{err_bind}`"));
+        let empty_i = master
+            .find("\"No announcements yet.\"")
+            .expect("empty success copy must remain for true zero-row Ok responses");
+        assert!(
+            err_start < empty_i,
+            "reachable list_error if-let must precede empty success copy"
+        );
+        let err_window = &master[err_start..empty_i];
+        assert!(
+            err_window.contains("content-list-error")
+                && err_window.contains("content-list-retry")
+                && err_window.contains("\"Retry\"")
+                && err_window.contains("on:click=retry_list"),
+            "Retry/error UI must sit inside the reachable list_error if-let branch \
+             (perturbation: needles present but filtered unreachable)"
         );
         assert!(
-            prod.contains("\"Retry\"")
-                && prod.contains("content-list-retry")
-                && prod.contains("list_res.refetch()"),
-            "Retry must refetch the list Resource (perturbation: error with no retry)"
-        );
-        assert!(
-            prod.contains("\"No announcements yet.\""),
-            "empty success copy must remain for true zero-row Ok responses"
+            prod.contains("list_res.refetch()"),
+            "Retry handler must refetch the list Resource"
         );
     }
 
