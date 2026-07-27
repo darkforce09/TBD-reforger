@@ -1485,7 +1485,7 @@ Also fold in: `handlers/admin.rs:342-344` hand-rolls a duplicate of `handlers/mo
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-372 | 3188 | deferred | platform | POST /admin/roles/sync demotes every admin who never completed a Discord login | VERIFIED FROM THE COMMAND CENTER. One admin button press can lock every admin out of the platform, and that route is the only way back.
+| T-372 | 3188 | running | platform | POST /admin/roles/sync demotes every admin who never completed a Discord login | VERIFIED FROM THE COMMAND CENTER. One admin button press can lock every admin out of the platform, and that route is the only way back.
 
 services/role_sync.rs:65-67 — `resolve_role` returns `Ok(UserRole::Enlisted)` when `role_ids` is EMPTY. `resync_all_roles` (:38) walks EVERY user, reads their stored snowflakes, and writes the resolved role when it differs (:51 `UPDATE users SET role = $1 WHERE discord_id = $2`). **Absent stored data decodes as an affirmative `enlisted`.**
 
@@ -1707,7 +1707,7 @@ WORTH DOING AT THE SAME TIME, because it is why this bug was invisible: `ServerR
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-386 | 3202 | deferred | platform | render-check's exit code cannot fail a probe — every browser assertion has been decorative | THIRD INSTANCE OF THIS RUN'S SIGNATURE DEFECT, and it is in the harness every frontend slice used.
+| T-386 | 3202 | running | platform | render-check's exit code cannot fail a probe — every browser assertion has been decorative | THIRD INSTANCE OF THIS RUN'S SIGNATURE DEFECT, and it is in the harness every frontend slice used.
 
 tools/tbd-tools/src/smokes.rs:3112-3115:
     let assert_ok = assert_value.as_ref().map(\|v\| {
@@ -2123,7 +2123,7 @@ WHY IT IS BETTER: natively testable (the frontend seam is #![cfg(target_arch = \
 THE ONE REAL DESIGN QUESTION: it needs the registry for weights and capacities, which the API has and the pure core crate does not. Resolve that before building -- either thread a registry handle in, or split the rule so core holds the arithmetic and the API supplies the table.
 
 Once this lands, T-240's frontend block becomes a nicety on top rather than the only line of defence. |
-| T-417 | 3242 | deferred | platform | T-243's compiled-export artifact re-sorts keys, and its own comment says it does not | Two MINORs and a NIT from wave 4's adversarial verifier, plus two structural findings from T-240's agent. All in the frontend authoring surface.
+| T-417 | 3242 | running | platform | T-243's compiled-export artifact re-sorts keys, and its own comment says it does not | Two MINORs and a NIT from wave 4's adversarial verifier, plus two structural findings from T-240's agent. All in the frontend authoring surface.
 
 1. MINOR -- apps/website/frontend/src/mission_commands.rs:174-178. The shipped 'Export Compiled' file is NOT byte-identical to GET /compiled, and the comment claiming the difference is whitespace is FALSE. The code re-parses to serde_json::Value to pretty-print; Value::Object is a BTreeMap and `preserve_order` is enabled NOWHERE in the workspace (grep -rn preserve_order Cargo.lock apps/*/*/Cargo.toml crates/*/Cargo.toml -> empty), so the round trip RE-SORTS EVERY OBJECT'S KEYS ALPHABETICALLY.
    MEASURED on mission 6d291619-8182-4164-866d-4e165a5516af: /compiled = 2006 bytes, key order schemaVersion,meta,environment,factions,orbat,slots,radioPlan,zones,flow,winConditions. Export download = 3006 bytes, key order environment,factions,flow,meta,orbat,radioPlan,schemaVersion,slots,winConditions,zones. Deep-equal after recursive key sort: TRUE -- so the mod still loads it and nothing is lost.
