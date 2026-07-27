@@ -853,18 +853,43 @@ mod tests {
 
     #[test]
     fn dossier_deployments_binds_total_deployments_not_em_dash() {
-        // T-448: dossier used to hardcode stat("Deployments", "—") while the API column existed.
-        // Forbidden / required needles assembled so include_str cannot false-green off this test.
+        // T-448 / T-461: dossier used to hardcode stat("Deployments", "—") while the API
+        // column existed. Wave 23 adversarial: a conditional
+        // `if u.total_deployments == 0 { "—" } else { u.total_deployments.to_string() }`
+        // still contained the bind needle and false-greened. Require the exact live call
+        // (no conditional) and forbid any em-dash between Deployments and the next sibling.
         const SRC: &str = include_str!("personnel.rs");
-        let em_dash_stat = format!("{}{}", r#"stat("Deployments", ""#, r#"—".to_string())"#);
-        let bind = "u.total_deployments.to_string()";
-        assert!(
-            !SRC.contains(&em_dash_stat),
-            "dossier Deployments must not hardcode em-dash (perturbation: restore stat Deployments —)"
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source before tests module");
+
+        // Exact live bind — assembled so this test's own source cannot satisfy it.
+        let exact = format!(
+            "{}{}",
+            r#"stat("Deployments", "#, "u.total_deployments.to_string())"
         );
         assert!(
-            SRC.contains("stat(\"Deployments\"") && SRC.contains(bind),
-            "dossier Deployments must bind u.total_deployments.to_string()"
+            production.contains(&exact),
+            "dossier Deployments must be exactly `{exact}` (no conditional / no em-dash)"
+        );
+
+        let start = production
+            .find(r#"stat("Deployments""#)
+            .expect("Deployments stat call present");
+        let region = &production[start..];
+        let end = region
+            .find("Current Rank")
+            .expect("Current Rank sibling after Deployments");
+        let deployments_region = &region[..end];
+        assert!(
+            !deployments_region.contains('—'),
+            "Deployments/stat region must not contain em-dash (zero is a real count; \
+             conditional zero→— is a fail)"
+        );
+        assert!(
+            !deployments_region.contains("total_deployments == 0"),
+            "Deployments/stat region must not conditionalize on total_deployments == 0"
         );
     }
 
