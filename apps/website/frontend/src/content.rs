@@ -5,9 +5,10 @@
 //! T-267: Publish keeps the returned announcement id and re-Publish PATCHes that row (no duplicate
 //! POSTs). Delete / Discord re-push hit the live CMS routes. SOP has no `announcement_tag` variant
 //! (measured: `update|event|modpack_update|important` only) — mapped to closest tag `update`.
-//! Markdown toolbar inserts real markers into the body (no mock success toasts). Hero image upload
-//! needs multipart/`FormData` (web-sys features outside this file's owns) — honest error, not a
-//! fake success toast.
+//! Markdown toolbar inserts real markers into the body (no mock success toasts).
+//!
+//! T-446: Hero image upload POSTs multipart `file` to `/cms/uploads` via `api_upload_file`
+//! (`web-sys` FormData/File), then stores the returned `url` on the draft `thumbnail_url`.
 //!
 //! T-447: master list boots from `GET /cms/announcements` (admin drafts+published), not
 //! `mock_docs()`. Local New drafts still prepend into the RwSignal until first Publish.
@@ -35,6 +36,8 @@ struct Doc {
     published: bool,
     date: String,
     body: String,
+    /// CMS `thumbnail_url` — set by hero upload (`POST /cms/uploads`) and hydrated from the list.
+    thumbnail_url: String,
 }
 
 const BADGE_SUCCESS: &str = "inline-flex items-center gap-1 rounded border px-2 py-0.5 uppercase whitespace-nowrap border-success/30 bg-success/15 text-success";
@@ -77,6 +80,35 @@ fn announcement_id_path(id: &str) -> String {
 /// Manual Discord (re)push — `POST /api/v1/cms/announcements/{id}/push-discord`.
 fn announcement_push_path(id: &str) -> String {
     format!("/cms/announcements/{id}/push-discord")
+}
+
+/// Hero image multipart upload — `POST /api/v1/cms/uploads` (form field `"file"`).
+fn cms_uploads_path() -> &'static str {
+    "/cms/uploads"
+}
+
+/// Turn a `/uploads/…` response into an absolute http(s) URL so publish passes T-405
+/// `validated_thumbnail` (relative paths are rejected). Already-absolute URLs pass through.
+#[cfg(target_arch = "wasm32")]
+fn absolute_cms_upload_url(raw: &str) -> String {
+    let trimmed = raw.trim();
+    if trimmed.is_empty()
+        || trimmed.starts_with("http://")
+        || trimmed.starts_with("https://")
+    {
+        return trimmed.to_string();
+    }
+    let origin = web_sys::window()
+        .and_then(|w| w.location().origin().ok())
+        .unwrap_or_default();
+    if origin.is_empty() {
+        return trimmed.to_string();
+    }
+    if trimmed.starts_with('/') {
+        format!("{origin}{trimmed}")
+    } else {
+        format!("{origin}/{trimmed}")
+    }
 }
 
 /// Server-minted announcement ids are UUIDs (36 chars with hyphens). Local New-post ids
@@ -146,6 +178,7 @@ fn doc_from_announcement(v: &Value) -> Option<Doc> {
         published,
         date: date_ymd(&date_src),
         body: vstr(v, "body"),
+        thumbnail_url: vstr(v, "thumbnail_url"),
     })
 }
 
@@ -252,6 +285,7 @@ pub fn ContentManagerPage() -> impl IntoView {
                 published: false,
                 date: today_iso(),
                 body: String::new(),
+                thumbnail_url: String::new(),
             };
             docs.update(|d| d.insert(0, doc));
             selected_id.set(Some(id));
@@ -421,6 +455,7 @@ fn editor(
     let body = RwSignal::new(d.body.clone());
     let category = RwSignal::new(d.category.clone());
     let push_discord = RwSignal::new(true);
+    let thumbnail_url = RwSignal::new(d.thumbnail_url.clone());
 
     // Write the edited fields back into the local list; optionally retarget the list id when the
     // server mints a UUID on first Publish.
@@ -442,6 +477,7 @@ fn editor(
                 doc.category = category.get_untracked();
                 doc.published = published;
                 doc.date = today_iso();
+                doc.thumbnail_url = thumbnail_url.get_untracked();
             }
         });
         if let Some(nid) = new_id {
@@ -486,6 +522,7 @@ fn editor(
                 "title": t,
                 "body": b,
                 "tag": tag,
+                "thumbnail_url": thumbnail_url.get_untracked(),
                 "is_pinned": false,
                 "push_to_discord": push,
                 "status": "published",
@@ -596,10 +633,74 @@ fn editor(
     let handle_hero = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
-            // POST /cms/uploads is multipart (`file` field). Wiring it needs web-sys FormData/File
-            // features (Cargo.toml — outside content.rs owns). Honest refusal, not a success toast.
-            crate::toast::use_toasts()
-                .error("Hero image upload unavailable — multipart client not wired in this slice");
+            use wasm_bindgen::closure::Closure;
+            use wasm_bindgen::JsCast;
+
+            let toasts = crate::toast::use_toasts();
+            let Some(document) = web_sys::window().and_then(|w| w.document()) else {
+                toasts.error("Hero image upload failed — no document");
+                return;
+            };
+            let Ok(input) = document
+                .create_element("input")
+                .map_err(|_| ())
+                .and_then(|el| el.dyn_into::<web_sys::HtmlInputElement>().map_err(|_| ()))
+            else {
+                toasts.error("Hero image upload failed — could not open file picker");
+                return;
+            };
+            input.set_type("file");
+            input.set_accept("image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp");
+
+            let input_for_cb = input.clone();
+            let on_change = Closure::once(move |_ev: web_sys::Event| {
+                let Some(file) = input_for_cb.files().and_then(|list| list.item(0)) else {
+                    return;
+                };
+                leptos::task::spawn_local(async move {
+                    match crate::client::api_upload_file::<serde_json::Value>(
+                        store,
+                        cms_uploads_path(),
+                        file,
+                    )
+                    .await
+                    {
+                        Ok(resp) => {
+                            let raw = resp
+                                .get("url")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            if raw.is_empty() {
+                                toasts.error("Upload returned no url");
+                                return;
+                            }
+                            let url = absolute_cms_upload_url(&raw);
+                            thumbnail_url.set(url.clone());
+                            let id = doc_id.get_value();
+                            docs.update(|list| {
+                                if let Some(doc) = list.iter_mut().find(|x| x.id == id) {
+                                    doc.thumbnail_url = url;
+                                }
+                            });
+                            toasts.success("Hero image uploaded");
+                        }
+                        Err(e) => {
+                            toasts.error(crate::client::api_error_message(
+                                &e,
+                                "Hero upload failed",
+                            ));
+                        }
+                    }
+                });
+            });
+            let _ = input.add_event_listener_with_callback(
+                "change",
+                on_change.as_ref().unchecked_ref(),
+            );
+            // Keep the one-shot listener alive past this stack frame (picker is fire-and-forget).
+            on_change.forget();
+            input.click();
         }
     };
 
@@ -827,8 +928,9 @@ mod tests {
         );
         assert!(
             APP_RS.contains(r#""/cms/uploads""#),
-            "app.rs must still register POST /cms/uploads (orphan until multipart client)"
+            "app.rs must still register POST /cms/uploads"
         );
+        assert_eq!(cms_uploads_path(), "/cms/uploads");
     }
 
     /// T-447 / T-465 Class-R — boot must LocalResource GET the CMS list **and** the hydrate
@@ -1091,12 +1193,70 @@ mod tests {
             "markdown toolbar must mutate body via apply_md_tool"
         );
         assert!(
-            prod.contains("Hero image upload unavailable"),
-            "hero button must error honestly, not toast success"
+            !prod.contains("Hero image upload unavailable"),
+            "hero stub toast must be gone (perturbation: restore honest-refusal stub)"
         );
         assert!(
             !prod.contains("Hero image upload coming soon"),
             "old stub success toast must be gone"
+        );
+        assert!(
+            prod.contains("api_upload_file")
+                && prod.contains("cms_uploads_path()")
+                && prod.contains("thumbnail_url.set"),
+            "hero button must POST multipart via api_upload_file and set draft thumbnail_url \
+             (perturbation: restore stub toast / drop upload call)"
+        );
+        assert!(
+            prod.contains("\"thumbnail_url\": thumbnail_url.get_untracked()"),
+            "Publish payload must carry thumbnail_url (perturbation: omit from json!)"
+        );
+    }
+
+    /// T-446 Class-R — multipart hero path is wired end-to-end in owns files (Cargo features +
+    /// client helper + content handler). A regression that drops FormData/File or the helper
+    /// FAILS even if content.rs still looks "honest".
+    #[test]
+    fn hero_multipart_upload_is_wired_not_stubbed() {
+        const CARGO: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/Cargo.toml"));
+        const CLIENT: &str = include_str!("client.rs");
+        const SRC: &str = include_str!("content.rs");
+        let prod = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("content.rs must have a #[cfg(test)] module");
+        let client_prod = CLIENT
+            .split("#[cfg(test)]")
+            .next()
+            .expect("client.rs must have a #[cfg(test)] module");
+
+        assert!(
+            CARGO.contains("\"FormData\"") && CARGO.contains("\"File\""),
+            "Cargo.toml must enable web-sys FormData + File (perturbation: drop features)"
+        );
+        assert!(
+            CARGO.contains("\"FileList\""),
+            "Cargo.toml must enable FileList for HtmlInputElement::files()"
+        );
+        assert!(
+            client_prod.contains("pub async fn api_upload_file")
+                && client_prod.contains("FormData::new()")
+                && client_prod.contains("append_with_blob_and_filename(\"file\""),
+            "client must expose api_upload_file with FormData field \"file\" \
+             (perturbation: delete helper / rename field)"
+        );
+        assert!(
+            !prod.contains("Hero image upload unavailable — multipart client not wired"),
+            "content must not keep the T-267 honest-refusal stub"
+        );
+        assert!(
+            prod.contains("api_upload_file::<serde_json::Value>")
+                && prod.contains("success(\"Hero image uploaded\")"),
+            "handle_hero must upload and toast success on Ok"
+        );
+        assert!(
+            prod.contains("api_error_message") && prod.contains("Hero upload failed"),
+            "handle_hero must toast the real API error on Err"
         );
     }
 
