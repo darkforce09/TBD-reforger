@@ -924,11 +924,6 @@ Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegi
 Repro: author a destroy objective whose alias fails for zone/timing/registry reasons; inertReason still says the build does not spawn entities[] — misdiagnoses live failures.
 
 Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs out-of-zone; update schema prose.
-- **T-439** (deferred) — Objects palette aliases need prop:/comp: rows in mod Data/registry.json [MOD, FE] — Residual from T-254 / wave 9 N5. Editor synthesises prop:*/comp:* aliases for crate|other (~333 workbench kinds); mod Data/registry.json has 1 comp: (comp:checkpoint_small) and 0 prop: entries. SpawnMissionEntities warn+skips unknown aliases.
-
-Repro: place a non-checkpoint Objects leaf → compile entities[] → world-boot → spawn warns and skips; only checkpoint_small resolves.
-
-Cure: export/register prop: and comp: rows for Objects-eligible kinds (or narrow palette to known aliases until registry catches up).
 - **T-440** (deferred) — Cold/schema gates never apply make seed / faction_library.sql [INFRA, CI] — Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
 
 Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.
@@ -936,16 +931,6 @@ Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scrip
 Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.
 
 Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB).
-- **T-442** (deferred) — Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id [FE] — Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.
-
-Repro: create event with modpack_id set; Hub UI still shows global current pack.
-
-Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall back to /modpacks/current only when null.
-- **T-444** (deferred) — make seed does not apply wiki pages (content_golden only) [INFRA] — Residual from T-263 / wave 12 adversarial MINOR. make seed now applies vehicle_database.sql, but wiki manuals remain only in content_golden.sql (not in the seed recipe). Fresh seed DB → GET /wiki empty → SPA "No manuals yet." (explicit empty, not silent mock).
-
-Repro: make db-up + make seed on empty DB; curl GET /api/v1/wiki → data:[]; vehicles have rows.
-
-Cure: extract wiki INSERT seed (or include content_golden wiki section) into seeds/ + Makefile seed line, same shape as vehicle_database.sql.
 - **T-446** (deferred) — CMS hero image upload needs web-sys FormData features [FE] — Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.
 
 Repro: CMS Content → hero upload → error toast; /cms/uploads never called.

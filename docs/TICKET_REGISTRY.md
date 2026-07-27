@@ -2331,7 +2331,7 @@ Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs ou
 Repro: after T-251 land, follow game staging path that uses deploy-staging.sh compose step — file not found / wrong cwd.
 
 Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-compose.staging.yml; align STAGING-SERVER.md. |
-| T-439 | 3278 | deferred | platform | Objects palette aliases need prop:/comp: rows in mod Data/registry.json | Residual from T-254 / wave 9 N5. Editor synthesises prop:*/comp:* aliases for crate\|other (~333 workbench kinds); mod Data/registry.json has 1 comp: (comp:checkpoint_small) and 0 prop: entries. SpawnMissionEntities warn+skips unknown aliases.
+| T-439 | 3278 | ready | platform | Objects palette aliases need prop:/comp: rows in mod Data/registry.json | Residual from T-254 / wave 9 N5. Editor synthesises prop:*/comp:* aliases for crate\|other (~333 workbench kinds); mod Data/registry.json has 1 comp: (comp:checkpoint_small) and 0 prop: entries. SpawnMissionEntities warn+skips unknown aliases.
 
 Repro: place a non-checkpoint Objects leaf → compile entities[] → world-boot → spawn warns and skips; only checkpoint_small resolves.
 
@@ -2348,7 +2348,7 @@ Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts s
 Repro: after T-260 merge, wave.sh gate → null_tolerance FAIL on server_id/modpack_id without COALESCE.
 
 Cure: add ("events", "server_id") and ("events", "modpack_id") to OPTION_FIELDS (same claim as match_id). |
-| T-442 | 3281 | deferred | platform | Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id | Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.
+| T-442 | 3281 | ready | platform | Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id | Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.
 
 Repro: create event with modpack_id set; Hub UI still shows global current pack.
 
@@ -2358,7 +2358,7 @@ Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall ba
 Repro: delete .post(create_vehicle) from app.rs or stub create_vehicle to always 500; wave gate still PASS.
 
 Cure: extend apps/website/api/tests/content_read.rs (or sibling) with admin POST happy path + 400 on missing name/faction/armor_type + GET list contains the new row. Perturbation must RED if route/handler missing. |
-| T-444 | 3283 | deferred | platform | make seed does not apply wiki pages (content_golden only) | Residual from T-263 / wave 12 adversarial MINOR. make seed now applies vehicle_database.sql, but wiki manuals remain only in content_golden.sql (not in the seed recipe). Fresh seed DB → GET /wiki empty → SPA "No manuals yet." (explicit empty, not silent mock).
+| T-444 | 3283 | ready | platform | make seed does not apply wiki pages (content_golden only) | Residual from T-263 / wave 12 adversarial MINOR. make seed now applies vehicle_database.sql, but wiki manuals remain only in content_golden.sql (not in the seed recipe). Fresh seed DB → GET /wiki empty → SPA "No manuals yet." (explicit empty, not silent mock).
 
 Repro: make db-up + make seed on empty DB; curl GET /api/v1/wiki → data:[]; vehicles have rows.
 
