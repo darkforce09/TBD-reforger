@@ -1,5 +1,14 @@
 //! T-153 faction library CRUD gates: schema-validated writes, owner scoping, uniqueness,
 //! role tier. Skips unless `TEST_DATABASE_URL` points at a migrated DB (make db-up).
+//!
+//! # Fixture ownership (T-400)
+//!
+//! Pre-fix `setup` ran `DELETE FROM user_factions` with **no WHERE** (the only unscoped
+//! destructive statement in the IT corpus) and then `dev-login` as `mission_maker` followed
+//! by `enlisted` — leaving the shared [`common::DEV_LOGIN_USER`] row on `enlisted`. That
+//! wiped `null_tolerance`'s faction rows and made `misc_integration`'s `GET /me` role==admin
+//! assert fail under concurrent `cargo test -p website-api`. Actors and deletes are now
+//! owner-scoped; tokens come from [`common::access_token`] (no shared-row role rewrite).
 
 use axum::Router;
 use axum::body::{Body, to_bytes};
@@ -11,42 +20,53 @@ use website_api::config::Config;
 use website_api::state::AppState;
 use website_api::{app, db};
 
+mod common;
+
+/// Mission-maker owner of every row this suite creates.
+const MAKER: &str = "000000000000400011";
+/// Enlisted JWT subject for the 403 path (never touches the shared row).
+const ENLISTED: &str = "000000000000400012";
+/// Foreign owner used only for the owner-scoping 404 probe.
+const GHOST: &str = "000000000000400099";
+
 async fn setup() -> Option<(Router, PgPool, String, String)> {
     let url = std::env::var("TEST_DATABASE_URL").ok()?;
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
-    sqlx::query("DELETE FROM user_factions")
+
+    // Owner-scoped wipe only — never `DELETE FROM user_factions` bare.
+    sqlx::query("DELETE FROM user_factions WHERE owner_id = ANY($1)")
+        .bind(vec![
+            MAKER.to_string(),
+            ENLISTED.to_string(),
+            GHOST.to_string(),
+        ])
         .execute(&pool)
         .await
-        .expect("clean");
-    let app = app::router(AppState::new(
-        pool.clone(),
-        Config::for_tests(url, "factions-secret"),
-    ));
-    let maker = dev_login(&app, "mission_maker").await;
-    let enlisted = dev_login(&app, "enlisted").await;
-    Some((app, pool, maker, enlisted))
-}
+        .expect("clean suite-owned factions");
 
-async fn dev_login(app: &Router, role: &str) -> String {
-    let resp = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .uri(format!("/api/v1/auth/dev-login?role={role}"))
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    let loc = resp.headers()[header::LOCATION].to_str().unwrap();
-    loc.split_once('#')
-        .unwrap()
-        .1
-        .split('&')
-        .find_map(|p| p.strip_prefix("access_token="))
-        .unwrap()
-        .to_string()
+    common::seed_user(
+        &pool,
+        MAKER,
+        "Factions Maker",
+        "factions-arma-400011",
+        "mission_maker",
+    )
+    .await;
+    common::seed_user(
+        &pool,
+        ENLISTED,
+        "Factions Enlisted",
+        "factions-arma-400012",
+        "enlisted",
+    )
+    .await;
+
+    let state = AppState::new(pool.clone(), Config::for_tests(url, "factions-secret"));
+    let app = app::router(state.clone());
+    let maker = common::access_token(&state, "factions", MAKER, "mission_maker", true);
+    let enlisted = common::access_token(&state, "factions", ENLISTED, "enlisted", true);
+    Some((app, pool, maker, enlisted))
 }
 
 async fn req(
@@ -84,6 +104,23 @@ fn golden_doc() -> Value {
     ))
     .expect("read faction golden");
     serde_json::from_slice(&raw).unwrap()
+}
+
+/// Class-R: the unscoped wipe must not return; deletes stay owner-scoped (T-400).
+#[test]
+fn t400_factions_delete_is_owner_scoped() {
+    let src = include_str!("factions.rs");
+    assert!(
+        src.contains("DELETE FROM user_factions WHERE owner_id"),
+        "factions setup must scope DELETE FROM user_factions to owner_id (T-400)"
+    );
+    // The pre-fix defect: bare wipe with no WHERE clause inside the query string.
+    assert!(
+        !src.contains("sqlx::query(\"DELETE FROM user_factions\")"),
+        "unscoped DELETE FROM user_factions must not return (T-400)"
+    );
+    assert_ne!(MAKER, common::DEV_LOGIN_USER);
+    assert_ne!(ENLISTED, common::DEV_LOGIN_USER);
 }
 
 #[tokio::test]
@@ -152,17 +189,18 @@ async fn faction_library_crud_gates() {
 
     // T6 — owner scoping: a row owned by someone else is invisible (404 on get/update/delete).
     sqlx::query(
-        "INSERT INTO user_factions (owner_id, side, name, doc) VALUES ('someone-else', 'BLUFOR', 'Ghost', $1)",
+        "INSERT INTO user_factions (owner_id, side, name, doc) VALUES ($1, 'BLUFOR', 'Ghost', $2)",
     )
+    .bind(GHOST)
     .bind(sqlx::types::Json(golden_doc()))
     .execute(&pool)
     .await
     .unwrap();
-    let ghost: (uuid::Uuid,) =
-        sqlx::query_as("SELECT id FROM user_factions WHERE owner_id = 'someone-else'")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let ghost: (uuid::Uuid,) = sqlx::query_as("SELECT id FROM user_factions WHERE owner_id = $1")
+        .bind(GHOST)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     let (s, _) = req(
         &app,
         Method::GET,
