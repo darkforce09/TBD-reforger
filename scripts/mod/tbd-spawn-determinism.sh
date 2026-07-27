@@ -26,6 +26,8 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/gate-grep.sh
+source "$SCRIPT_DIR/lib/gate-grep.sh"
 WB_PORT="${ENFUSION_WORKBENCH_PORT:-5775}"
 
 PROTON_LOG_DIR="$HOME/.local/share/Steam/steamapps/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/logs"
@@ -171,14 +173,32 @@ for i in $(seq 1 "$RUNS"); do
   echo "$NEW" | extract /dev/stdin | normalize > "$NORM" || true
 
   # per-run assertions
-  if grep -qE "path=vanilla-fallthrough" "$RAW"; then echo "FAIL run $i: vanilla fall-through"; fail=1; fi
+  #
+  # T-556: these two are BANS — the thing being searched for is the failure — so the
+  # `if grep …; then fail=1; fi` shape reported a clean run for three different reasons
+  # and could only tell one of them apart: no match (genuinely clean), the log file
+  # missing (grep 2), and the search tool absent (grep 127) all took the same silent
+  # branch. The last two mean the assertion never ran, and a run this gate did not look
+  # at must not be counted as a run that passed — the digests below would then be
+  # compared across sessions nobody checked for crashes. Status read, not collapsed.
+  st="$(gate_probe_file "path=vanilla-fallthrough" "$RAW")"
+  case "$st" in
+  0) echo "FAIL run $i: vanilla fall-through"; fail=1 ;;
+  1) ;; # no match — clean, and we know it is clean because the search ran
+  *) echo "FAIL run $i: vanilla fall-through check did not execute (grep exited $st on $RAW)"; fail=1 ;;
+  esac
   # ANY script error fails the run — VM exceptions carry no [TBD] tag but their
   # stack traces implicate our code (measured: set.Remove-by-index crash was
   # invisible to a [TBD]-only grep for multiple gate runs).
-  if grep -qE "SCRIPT[[:space:]]*\(E\)|Virtual Machine Exception" "$RAW"; then
+  st="$(gate_probe_file "SCRIPT[[:space:]]*\(E\)|Virtual Machine Exception" "$RAW")"
+  case "$st" in
+  0)
     echo "FAIL run $i: script error lines:"; grep -E "SCRIPT[[:space:]]*\(E\)|Virtual Machine Exception" "$RAW" | head -5
     fail=1
-  fi
+    ;;
+  1) ;;
+  *) echo "FAIL run $i: script-error check did not execute (grep exited $st on $RAW)"; fail=1 ;;
+  esac
   # Vanilla respawn/faction churn (measured 2026-07-24: 138 engine "has switched from
   # faction" lines at ~1 s, cycling US/USSR/FIA/CIV, because the vanilla spawn logic hunted
   # a spawn point that slot bodies had replaced). Our own deploy sets affiliation once, so a

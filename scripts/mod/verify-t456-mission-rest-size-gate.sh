@@ -16,9 +16,20 @@
 #
 # OWNS WIDEN: wave_plan T-456 lists TBD_MissionLoader.c; this script is the Class-R
 # perturbation guard for the REST size gate. T-460 owns the script hardening.
+#
+# T-556: this gate was RED on merged main and had been for the whole wave. Three of its
+# checks called `rg`, which is installed NOWHERE — `command -v rg` only succeeds inside an
+# agent shell because Claude Code injects a shell FUNCTION of that name, and functions do
+# not survive into a subshell. So the gate's verdict depended on who invoked it, and CI
+# ran it on `ubuntu-latest` with no ripgrep install step. All three moved to `grep -E`
+# via scripts/mod/lib/gate-grep.sh, which also reads the exit STATUS rather than
+# collapsing it to a boolean. See that file's header for the four outcomes and why the
+# last two must fail closed.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=lib/gate-grep.sh
+source "$(cd "$(dirname "$0")" && pwd)/lib/gate-grep.sh"
 FILE="$ROOT/apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c"
 
 if [[ ! -f "$FILE" ]]; then
@@ -89,8 +100,8 @@ assert_rest_size_gate() {
 	# Cap constant must appear in the success handler (not only in the profile path).
 	# Comment-stripped so a lone comment mentioning the constant cannot satisfy this.
 	stripped="$(strip_c_comments <<<"$raw_body")"
-	if ! grep -q 'MISSION_FILE_MAX_BYTES' <<<"$stripped"; then
-		echo "FAIL ($label): OnBackendFetchSuccess has no non-comment MISSION_FILE_MAX_BYTES reference"
+	if ! gate_require_str "($label) OnBackendFetchSuccess has no non-comment MISSION_FILE_MAX_BYTES reference" \
+		-F 'MISSION_FILE_MAX_BYTES' "$stripped"; then
 		return 1
 	fi
 
@@ -112,31 +123,44 @@ assert_rest_size_gate() {
 
 	# Helper must exist and its body must actually compare Length() to the cap
 	# (signature-only + `return true;` is a false-green — T-460).
-	if ! rg -q 'protected static bool IsMissionBodyWithinCap\(string data\)' "$src"; then
-		echo "FAIL ($label): missing IsMissionBodyWithinCap(string) helper"
+	if ! gate_require "($label) missing IsMissionBodyWithinCap(string) helper" \
+		'protected static bool IsMissionBodyWithinCap\(string data\)' "$src"; then
 		return 1
 	fi
 	helper="$(extract_helper "$src")"
 	helper="$(strip_c_comments <<<"$helper")"
-	if ! grep -Eq 'Length\(\)[[:space:]]*<=[[:space:]]*MISSION_FILE_MAX_BYTES' <<<"$helper"; then
-		echo "FAIL ($label): IsMissionBodyWithinCap body does not compare Length() <= MISSION_FILE_MAX_BYTES"
+	if ! gate_require_str "($label) IsMissionBodyWithinCap body does not compare Length() <= MISSION_FILE_MAX_BYTES" \
+		'Length\(\)[[:space:]]*<=[[:space:]]*MISSION_FILE_MAX_BYTES' "$helper"; then
 		return 1
 	fi
 	# Reject an always-true stub that also happens to mention the compare in a dead branch.
-	if grep -Eq 'return[[:space:]]+true[[:space:]]*;' <<<"$helper" \
-		&& ! grep -Eq 'return[[:space:]]+data\.Length\(\)[[:space:]]*<=[[:space:]]*MISSION_FILE_MAX_BYTES[[:space:]]*;' <<<"$helper"; then
+	#
+	# This is a COMPOUND question — "has `return true;`" AND "lacks the real return" — and
+	# neither half is a failure alone, so it cannot use ban/require. The `grep A && ! grep B`
+	# chain it replaces short-circuited to clean the moment either grep could not run
+	# (T-556): a stubbed helper passed on a machine with no working search tool. Both
+	# statuses are read, and anything above 1 is a check that did not execute.
+	local st_true st_real
+	st_true="$(gate_probe_str 'return[[:space:]]+true[[:space:]]*;' "$helper")"
+	st_real="$(gate_probe_str 'return[[:space:]]+data\.Length\(\)[[:space:]]*<=[[:space:]]*MISSION_FILE_MAX_BYTES[[:space:]]*;' "$helper")"
+	if [[ "$st_true" -gt 1 || "$st_real" -gt 1 ]]; then
+		echo "FAIL ($label): always-true stub probe did not execute (grep exited $st_true / $st_real)."
+		echo "      Refusing to report OK on a check that never compared anything."
+		return 1
+	fi
+	if [[ "$st_true" -eq 0 && "$st_real" -ne 0 ]]; then
 		echo "FAIL ($label): IsMissionBodyWithinCap returns true without the Length() <= MISSION_FILE_MAX_BYTES return"
 		return 1
 	fi
 
-	if ! rg -q 'MISSION_FILE_MAX_BYTES = 8 \* 1024 \* 1024' "$src"; then
-		echo "FAIL ($label): MISSION_FILE_MAX_BYTES is not the pinned 8*1024*1024"
+	if ! gate_require "($label) MISSION_FILE_MAX_BYTES is not the pinned 8*1024*1024" \
+		'MISSION_FILE_MAX_BYTES = 8 \* 1024 \* 1024' "$src"; then
 		return 1
 	fi
 
 	# Profile path must still gate on the same constant (no drift).
-	if ! rg -q 'fileSize > MISSION_FILE_MAX_BYTES' "$src"; then
-		echo "FAIL ($label): LoadFromProfileFile no longer compares fileSize to MISSION_FILE_MAX_BYTES"
+	if ! gate_require "($label) LoadFromProfileFile no longer compares fileSize to MISSION_FILE_MAX_BYTES" \
+		-F 'fileSize > MISSION_FILE_MAX_BYTES' "$src"; then
 		return 1
 	fi
 
