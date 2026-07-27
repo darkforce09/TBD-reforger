@@ -18,9 +18,25 @@
 # OWNS WIDEN: wave_plan T-437 lists Objectives/* + mission.schema.json; this script is
 # the Class-R perturbation guard. Also covers TBD_MissionValidator.c (same lie class).
 # T-474 owns this script + TBD_ObjectiveRegistry.c (live code only if pinability requires).
+#
+# T-556 DIAGNOSIS. This gate was RED on merged main, and its trace was misleading: every
+# RED proof fired as designed and the GREEN proof printed PASS, yet it returned 1. The
+# cause was ONE line — the `rg` in assert_other_pins (below) — hit four times, and those
+# four failures print BEFORE the perturbation proofs, so anyone reading the tail of the
+# output saw only healthy lines and an unexplained exit 1. There is no second bug: with a
+# working search tool on PATH this script exits 0 unchanged. `rg` is installed nowhere;
+# it resolves only inside an agent shell that injects a function of that name. Moved to
+# `grep -F` via scripts/mod/lib/gate-grep.sh.
+#
+# Note which direction the old bug ran: `if ! rg …` is a PIN, so an absent tool (127)
+# inverted to true and failed LOUDLY. That is why this gate went red instead of quietly
+# green — the opposite of the fail-open bans in the sibling scripts. It was still wrong:
+# the message named a missing truth pin when the truth pin was there and the tool was not.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=lib/gate-grep.sh
+source "$(cd "$(dirname "$0")" && pwd)/lib/gate-grep.sh"
 
 REG="$ROOT/apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c"
 COMP="$ROOT/apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c"
@@ -235,14 +251,15 @@ PY
 assert_other_pins() {
 	local file="$1"
 	shift
-	local pin
+	local pin rc=0
 	for pin in "$@"; do
-		if ! rg -q --fixed-strings "$pin" "$file"; then
-			echo "FAIL: missing truth pin in ${file#"$ROOT"/}: $pin"
-			return 1
-		fi
+		# -F is the old `--fixed-strings`: these pins carry `[]`, backticks and `+`, and
+		# must stay literal. gate_require distinguishes "the pin is genuinely gone" from
+		# "the file moved" from "the search tool is absent" — the last two used to arrive
+		# here wearing the first one's message (T-556).
+		gate_require "missing truth pin in ${file#"$ROOT"/}: $pin" -F "$pin" "$file" || rc=1
 	done
-	return 0
+	return "$rc"
 }
 
 FAIL=0
