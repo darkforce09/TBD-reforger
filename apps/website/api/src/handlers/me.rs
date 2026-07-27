@@ -11,6 +11,7 @@ use serde_json::{Value, json};
 use crate::auth;
 use crate::db::refresh_leaderboard;
 use crate::error::ApiError;
+use crate::handlers::auth::arma_id_is_linked;
 use crate::handlers::{is_unique_violation, load_user};
 use crate::middleware::{AuthUser, ServiceAuth};
 use crate::models::AuditSeverity;
@@ -84,7 +85,8 @@ pub async fn get_me(
     let Some(u) = load_user(&state.pool, &user.discord_id).await? else {
         return Err(ApiError::not_found("user not found"));
     };
-    let arma_linked = u.arma_id.is_some();
+    // T-350 / T-528: whitespace-only arma_id is not linked (same rule as JWT mint).
+    let arma_linked = arma_id_is_linked(&u.arma_id);
     Ok(Json(json!({ "user": u, "arma_linked": arma_linked })))
 }
 
@@ -167,7 +169,7 @@ pub async fn link_status(
     .await?;
 
     Ok(Json(json!({
-        "linked": u.arma_id.is_some(),
+        "linked": arma_id_is_linked(&u.arma_id),
         "arma_id": u.arma_id,
         "arma_character": u.arma_character,
         "pending_code": pending > 0,
@@ -516,6 +518,29 @@ pub async fn ingest_link_confirm(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// T-528 Class-R — GET /me and /me/link/status must use [`arma_id_is_linked`],
+    /// not `Option::is_some()`. Whitespace-only `arma_id` is not linked (T-350).
+    ///
+    /// RED: either site reverts to `u.arma_id.is_some()`.
+    /// GREEN: both sites call `arma_id_is_linked(&u.arma_id)`.
+    #[test]
+    fn get_me_and_link_status_use_arma_id_is_linked() {
+        const SRC: &str = include_str!("me.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("me.rs must have a #[cfg(test)] module");
+        assert!(
+            !production.contains("arma_id.is_some()"),
+            "me.rs must not use arma_id.is_some() for linked flags — \
+             whitespace rows would report linked (T-528 / T-350)"
+        );
+        assert!(
+            production.matches("arma_id_is_linked(&u.arma_id)").count() >= 2,
+            "get_me and link_status must both call arma_id_is_linked(&u.arma_id)"
+        );
+    }
 
     /// T-431 / T-477 Class-R — identity-link attendance backfill must scope through
     /// `(event_id, mission_id)`, matching T-230 ingest. Playing one mission on a
