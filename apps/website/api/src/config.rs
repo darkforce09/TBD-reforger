@@ -111,7 +111,10 @@ impl Config {
         // disguised as an outage (T-248 secret/redirect; T-430 client id).
         // Development keeps blank Discord so `Config::for_tests` and dev-login work.
         if !self.is_development() {
-            if self.discord_client_id.is_empty() {
+            // T-481 — trim before Missing: `" "` is not empty to `is_empty()` but is
+            // not a configured Discord client id (same class as prior secret/redirect
+            // whitespace nits). Reject trim-empty; do not store a trimmed value.
+            if self.discord_client_id.trim().is_empty() {
                 return Err(ConfigError::Missing("DISCORD_CLIENT_ID"));
             }
             if self.discord_client_secret.is_empty() {
@@ -207,6 +210,26 @@ mod tests {
         match cfg.validate() {
             Err(ConfigError::Missing("DISCORD_CLIENT_ID")) => {}
             other => panic!("expected Missing(DISCORD_CLIENT_ID), got {other:?}"),
+        }
+    }
+
+    /// T-481 Class-R — production must reject whitespace-only `DISCORD_CLIENT_ID`.
+    /// Pre-fix: `is_empty()` only → `" "` validates Ok and later surfaces as
+    /// `oauth_unconfigured` instead of a boot-time Missing.
+    #[test]
+    fn production_rejects_whitespace_only_discord_client_id() {
+        let mut cfg = production_base();
+        cfg.discord_client_id = " ".into();
+        match cfg.validate() {
+            Err(ConfigError::Missing("DISCORD_CLIENT_ID")) => {}
+            other => panic!("expected Missing(DISCORD_CLIENT_ID), got {other:?}"),
+        }
+        // Tab / mixed whitespace are the same lie as a single space.
+        cfg = production_base();
+        cfg.discord_client_id = "\t  \n".into();
+        match cfg.validate() {
+            Err(ConfigError::Missing("DISCORD_CLIENT_ID")) => {}
+            other => panic!("expected Missing(DISCORD_CLIENT_ID) for mixed ws, got {other:?}"),
         }
     }
 
