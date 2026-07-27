@@ -1,12 +1,14 @@
-//! T-181.19 — turning the mission JSON's free-form `icon` string into something the engine will
-//! actually draw.
+//! T-181.19 — turning the mission JSON's authored `icon` string into something the engine will
+//! actually draw. T-276 closed the schema side: `#/$defs/marker.icon` is now an enum of the
+//! 64 Register() alias keys below (authored contract). Runtime still bridges to the engine.
 //!
 //! ── The problem ─────────────────────────────────────────────────────────────────────────────
-//! `#/$defs/marker.icon` is `{"type":"string"}` with no enum and no `minLength`. The website
-//! Mission Creator can therefore emit ANY string, including the empty one. Reforger's placed-marker
-//! system does not take a string: `SCR_MapMarkerBase.SetIconEntry(int)` takes an INDEX into the
-//! icon array authored in the vanilla `Configs/Map/MapMarkerConfig.conf`. Something has to bridge
-//! the two, and it has to fail visibly rather than silently.
+//! Reforger's placed-marker system does not take a string: `SCR_MapMarkerBase.SetIconEntry(int)`
+//! takes an INDEX into the icon array authored in the vanilla `Configs/Map/MapMarkerConfig.conf`.
+//! Something has to bridge the two. Authored missions that pass the schema validator already
+//! carry a known alias; FALLBACK still exists for empty/unknown strings that reach the loader
+//! without schema validation (hand-edits, engine quad names that are not in the authored enum,
+//! or a future game update that retires a name).
 //!
 //! ── Where the index vocabulary comes from (measured, not remembered) ────────────────────────
 //! Vanilla ships a named enum for exactly these indices and uses it itself —
@@ -103,8 +105,9 @@ class TBD_MarkerIcons
 	//! invented; the alias table is the fallback vocabulary, not the authority.
 	//!
 	//! Never fails: an unrecognised or empty string yields FALLBACK_ICON and `recognised` false, so
-	//! the caller can log once and still draw the marker. An empty `icon` is schema-legal (the key
-	//! is required, its CONTENT is not constrained), so it takes the same road as a typo.
+	//! the caller can log once and still draw the marker. Schema-validated missions (T-276) cannot
+	//! author an empty or unknown alias — the enum is the authored contract — but Resolve still
+	//! defends the runtime path for hand-edits and live engine quad names outside that enum.
 	static int Resolve(string authoredIcon, out bool recognised)
 	{
 		recognised = false;
@@ -150,10 +153,9 @@ class TBD_MarkerIcons
 
 		s_mReported.Set(key, true);
 
-		// An EMPTY icon is not a typo, it is an author who did not pick one — and it is a case that
-		// really occurs: `packages/tbd-schema/golden-missions/empty-warning-fields.json` carries a
-		// marker with `"icon": ""` and `"label": ""`, because the schema constrains neither. Treat
-		// it as information, not as a mistake, and do not bury the log in a 91-name dump for it.
+		// An EMPTY icon is not a typo, it is a document that bypassed schema validation (T-276
+		// forbids `""` in the authored enum). Treat it as information, not as a mistake, and do
+		// not bury the log in a 91-name dump for it.
 		if (key.IsEmpty())
 		{
 			TBD_Log.Event(TBD_MarkerService.CH_MARKERS,
