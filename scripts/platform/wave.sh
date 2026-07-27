@@ -1409,6 +1409,7 @@ gate_slice() {
   # T-468. Tripwire: ci.yml schema job must stay on `make ci-local-schema`.
   run "T-439 objects aliases" bash "$ROOT/scripts/mod/verify-t439-objects-registry-aliases.sh"
   run "T-444 wiki seed"       bash "$ROOT/scripts/mod/verify-t444-wiki-seed.sh"
+  run "T-440 faction library seed" bash "$ROOT/scripts/mod/verify-t440-faction-library-seed.sh"
   run "T-438 deploy-staging"  bash "$ROOT/scripts/mod/verify-t438-deploy-staging-compose-path.sh"
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
@@ -1552,6 +1553,7 @@ cmd_gate() {
   # T-468. Tripwire: ci.yml schema job must stay on `make ci-local-schema`.
   run "T-439 objects aliases" bash "$ROOT/scripts/mod/verify-t439-objects-registry-aliases.sh"
   run "T-444 wiki seed"       bash "$ROOT/scripts/mod/verify-t444-wiki-seed.sh"
+  run "T-440 faction library seed" bash "$ROOT/scripts/mod/verify-t440-faction-library-seed.sh"
   run "T-438 deploy-staging"  bash "$ROOT/scripts/mod/verify-t438-deploy-staging-compose-path.sh"
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
