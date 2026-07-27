@@ -2,7 +2,7 @@
 //! (T-271). Create / set-current / delete hit the matching write routes. No MOCK_MODPACKS.
 #![allow(dead_code)]
 use crate::dto::{DataEnvelope, ModpackDto};
-use crate::nav::Role;
+use crate::nav::{has_min_role_authed, Role};
 use crate::split_pane::{GlassSplit, ListDetailItem, SidebarSearch};
 use crate::ui::MaterialIcon;
 use leptos::prelude::*;
@@ -146,7 +146,9 @@ fn modpacks_board(
     packs_res: LocalResource<Option<DataEnvelope<ModpackDto>>>,
 ) -> impl IntoView {
     let store = expect_context::<crate::auth::AuthStore>();
-    let is_admin = store.has_min_role(Role::Admin);
+    // T-454 — reactive + authed: browse-mode `has_min_role(None)=>true` must NOT drive Create/Edit.
+    let is_admin =
+        Memo::new(move |_| has_min_role_authed(store.user.get().map(|u| u.role), Role::Admin));
     let selected_id = RwSignal::new(
         list.first()
             .map(|p| p.modpack.id.clone())
@@ -194,10 +196,10 @@ fn modpacks_board(
                         }
                             .into_any();
                     };
-                    if mode.get() == MpMode::Edit && is_admin {
+                    if mode.get() == MpMode::Edit && is_admin.get() {
                         editor(p, mode, packs_res, toasts).into_any()
                     } else {
-                        dossier(p, mode, is_admin, packs_res, toasts).into_any()
+                        dossier(p, mode, is_admin.get(), packs_res, toasts).into_any()
                     }
                 }}
             }
@@ -208,7 +210,7 @@ fn modpacks_board(
 
 fn master_header(
     search: RwSignal<String>,
-    is_admin: bool,
+    is_admin: Memo<bool>,
     create_busy: RwSignal<bool>,
     packs_res: LocalResource<Option<DataEnvelope<ModpackDto>>>,
     selected_id: RwSignal<String>,
@@ -219,62 +221,64 @@ fn master_header(
         <div class="w-full space-y-3">
             <div class="flex items-center justify-between gap-2">
                 <h1 class="text-headline-sm tracking-wide text-on-surface uppercase">"Modpacks"</h1>
-                {is_admin.then(|| {
-                    view! {
-                        <button
-                            type="button"
-                            disabled=move || create_busy.get()
-                            class="rounded-full border border-white/10 px-3 py-1 font-mono text-[11px] tracking-wider text-on-surface-variant uppercase transition hover:bg-white/5 disabled:opacity-50"
-                            on:click=move |_| {
-                                if create_busy.get_untracked() {
-                                    return;
-                                }
-                                create_busy.set(true);
-                                let body = json!({
-                                    "name": "New Modpack",
-                                    "version": "0.1.0",
-                                    "total_size_bytes": 0,
-                                    "workshop_url": "",
-                                    "is_current": false,
-                                    "mods": [],
-                                });
-                                #[cfg(target_arch = "wasm32")]
-                                {
-                                    leptos::task::spawn_local(async move {
-                                        match crate::client::api_post::<ModpackDto>(
-                                            store, "/modpacks", body,
-                                        )
-                                        .await
-                                        {
-                                            Ok(created) => {
-                                                selected_id.set(created.modpack.id.clone());
-                                                toasts.success(format!(
-                                                    "Created \"{}\"",
-                                                    created.modpack.name
-                                                ));
-                                                packs_res.refetch();
-                                            }
-                                            Err(e) => {
-                                                toasts.error(crate::client::api_error_message(
-                                                    &e,
-                                                    "Failed to create modpack",
-                                                ));
-                                            }
-                                        }
-                                        create_busy.set(false);
+                {move || {
+                    is_admin.get().then(|| {
+                        view! {
+                            <button
+                                type="button"
+                                disabled=move || create_busy.get()
+                                class="rounded-full border border-white/10 px-3 py-1 font-mono text-[11px] tracking-wider text-on-surface-variant uppercase transition hover:bg-white/5 disabled:opacity-50"
+                                on:click=move |_| {
+                                    if create_busy.get_untracked() {
+                                        return;
+                                    }
+                                    create_busy.set(true);
+                                    let body = json!({
+                                        "name": "New Modpack",
+                                        "version": "0.1.0",
+                                        "total_size_bytes": 0,
+                                        "workshop_url": "",
+                                        "is_current": false,
+                                        "mods": [],
                                     });
+                                    #[cfg(target_arch = "wasm32")]
+                                    {
+                                        leptos::task::spawn_local(async move {
+                                            match crate::client::api_post::<ModpackDto>(
+                                                store, "/modpacks", body,
+                                            )
+                                            .await
+                                            {
+                                                Ok(created) => {
+                                                    selected_id.set(created.modpack.id.clone());
+                                                    toasts.success(format!(
+                                                        "Created \"{}\"",
+                                                        created.modpack.name
+                                                    ));
+                                                    packs_res.refetch();
+                                                }
+                                                Err(e) => {
+                                                    toasts.error(crate::client::api_error_message(
+                                                        &e,
+                                                        "Failed to create modpack",
+                                                    ));
+                                                }
+                                            }
+                                            create_busy.set(false);
+                                        });
+                                    }
+                                    #[cfg(not(target_arch = "wasm32"))]
+                                    {
+                                        let _ = (store, body, packs_res, selected_id, toasts);
+                                        create_busy.set(false);
+                                    }
                                 }
-                                #[cfg(not(target_arch = "wasm32"))]
-                                {
-                                    let _ = (store, body, packs_res, selected_id, toasts);
-                                    create_busy.set(false);
-                                }
-                            }
-                        >
-                            {move || if create_busy.get() { "…" } else { "+ New" }}
-                        </button>
-                    }
-                })}
+                            >
+                                {move || if create_busy.get() { "…" } else { "+ New" }}
+                            </button>
+                        }
+                    })
+                }}
             </div>
             <SidebarSearch placeholder="Search packs & mods…" bind=search />
         </div>
@@ -824,5 +828,29 @@ fn editor(
                 </div>
             </div>
         </div>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    /// T-454 Class-R — modpack Create/Edit must not use browse-mode `has_min_role(None)=>true`.
+    #[test]
+    fn admin_affordance_uses_authed_reactive_role() {
+        const SRC: &str = include_str!("modpacks.rs");
+        assert!(
+            SRC.contains("has_min_role_authed"),
+            "modpacks admin gate must use has_min_role_authed (not browse-mode None=>true)"
+        );
+        assert!(
+            SRC.contains("Memo::new(move |_|")
+                && SRC
+                    .contains("has_min_role_authed(store.user.get().map(|u| u.role), Role::Admin)"),
+            "is_admin must be a Memo that re-reads AuthStore.user after bootstrap"
+        );
+        let one_shot = format!("store.has_min_role({}::Admin)", "Role");
+        assert!(
+            !SRC.contains(&one_shot),
+            "one-shot store.has_min_role(Admin) freezes pre-bootstrap None as admin"
+        );
     }
 }

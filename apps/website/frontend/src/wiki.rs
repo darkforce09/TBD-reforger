@@ -6,7 +6,7 @@
 //! typed WikiPage DTO consumer yet).
 #![allow(dead_code)]
 use crate::dto::DataEnvelope;
-use crate::nav::Role;
+use crate::nav::{has_min_role_authed, Role};
 use crate::split_pane::{GlassSplit, ListDetailItem, SidebarSearch};
 use leptos::prelude::*;
 use serde_json::Value;
@@ -317,7 +317,9 @@ fn wiki_board(
     pages_res: LocalResource<Option<DataEnvelope<Value>>>,
 ) -> impl IntoView {
     let store = expect_context::<crate::auth::AuthStore>();
-    let is_admin = store.has_min_role(Role::Admin);
+    // T-454 — reactive + authed: browse-mode `has_min_role(None)=>true` must NOT drive Edit/Save.
+    let is_admin =
+        Memo::new(move |_| has_min_role_authed(store.user.get().map(|u| u.role), Role::Admin));
     let params = leptos_router::hooks::use_params_map();
     let search = RwSignal::new(String::new());
     let mode = RwSignal::new(WikiMode::Read);
@@ -369,7 +371,7 @@ fn wiki_board(
                             drafts,
                             save_busy,
                             save_err,
-                            is_admin,
+                            is_admin.get(),
                             store,
                             pages_res,
                         )
@@ -690,5 +692,26 @@ mod tests {
     fn updated_day_takes_iso_prefix() {
         assert_eq!(updated_day("2026-07-14T10:12:00Z"), "2026-07-14");
         assert_eq!(updated_day(""), "—");
+    }
+
+    /// T-454 Class-R — wiki Edit/Save must not use browse-mode `has_min_role(None)=>true`.
+    #[test]
+    fn admin_affordance_uses_authed_reactive_role() {
+        const SRC: &str = include_str!("wiki.rs");
+        assert!(
+            SRC.contains("has_min_role_authed"),
+            "wiki admin gate must use has_min_role_authed (not browse-mode None=>true)"
+        );
+        assert!(
+            SRC.contains("Memo::new(move |_|")
+                && SRC
+                    .contains("has_min_role_authed(store.user.get().map(|u| u.role), Role::Admin)"),
+            "is_admin must be a Memo that re-reads AuthStore.user after bootstrap"
+        );
+        let one_shot = format!("store.has_min_role({}::Admin)", "Role");
+        assert!(
+            !SRC.contains(&one_shot),
+            "one-shot store.has_min_role(Admin) freezes pre-bootstrap None as admin"
+        );
     }
 }
