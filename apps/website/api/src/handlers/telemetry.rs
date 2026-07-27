@@ -469,10 +469,10 @@ pub struct PlayerStatInput {
     // These five keys used to live here, at the row's top level. Serde ignores unknown fields
     // (and must — denying them would 400 the shipping mod's extra `deaths`), so a sender still
     // using the pre-T-393 flat body would be *silently* accepted and write no counters at all:
-    // a fresh row would take the DDL zeros while the sender's 200 implied its scoreline landed.
-    // That is the T-316 failure mode wearing new clothes — a silent loss where the sender
+    // a fresh row would store NULL counters (T-397) while the sender's 200 implied its scoreline
+    // landed. That is the T-316 failure mode wearing new clothes — a silent loss where the sender
     // believes it stated something — so the flat shape is detected and rejected out loud by
-    // `reject_legacy_counter_shape` instead of being ignored into a zero row.
+    // `reject_legacy_counter_shape` instead of being ignored into an unmeasured row.
     //
     // `deaths` is deliberately **not** on this list even though it moved with the others: the
     // shipping `TBD_ResultsReporter.c` sends exactly `arma_id`/`role_played`/`deaths`/
@@ -694,19 +694,23 @@ pub async fn ingest_match_results(
         // arma_id, [so] linking later does not backfill": the key is exactly what makes both this
         // statement and T-326's backfill able to find the row again.
         //
-        // **T-393 — two statements, because "absent counters is not a write" has to be true of
-        // the SQL and not just of the struct.** The counters-absent statement does not name the
-        // counter columns *at all*: on a fresh row they take their DDL defaults (`0` / `false`
-        // / `NULL` — `0001_initial_schema.sql:251-265`), and on a conflict the `DO UPDATE SET`
-        // touches only `discord_id` and `role_played`, so a stored scoreline is not read, not
-        // rewritten, and not even locked against on those columns.
+        // **T-393 + T-397 — two statements, because "absent counters is not a write" has to be
+        // true of the SQL and not just of the struct.** On conflict the counters-absent
+        // `DO UPDATE SET` touches only `discord_id` and `role_played`, so a stored scoreline is
+        // not read, not rewritten, and not even locked against on those columns.
+        //
+        // **T-397 — INSERT half:** omitting the counter columns used to materialise DDL
+        // `DEFAULT 0` / `false` (`0001_initial_schema.sql:251-265`), and a stored 0 was
+        // indistinguishable from a scored 0 — `leaderboard_totals` summed it. Counters are now
+        // NULLable (`0014_nullable_match_player_stat_counters.sql`); the absent path binds
+        // explicit NULLs so a first insert stores "not measured", not zero.
         //
         // Deliberately **not** a read-modify-write (`SELECT` the current counters, re-bind
         // them): that is the same end state through a race. Two concurrent POSTs for one row —
         // a retry overlapping the original, which this endpoint's whole retry contract makes
         // routine — would each read the pre-update values and the later writer would restore
-        // the counters the earlier one had just replaced. Not naming a column cannot lose a
-        // write that way; re-binding its old value can.
+        // the counters the earlier one had just replaced. Not naming a column on UPDATE cannot
+        // lose a write that way; re-binding its old value can.
         match &p.counters {
             Some(c) => {
                 sqlx::query(
@@ -738,8 +742,9 @@ pub async fn ingest_match_results(
             None => {
                 sqlx::query(
                     "INSERT INTO match_player_stats \
-                     (match_id, arma_id, discord_id, role_played, source_event_id) \
-                     VALUES ($1, $2, $3, $4, $5) \
+                     (match_id, arma_id, discord_id, role_played, kills, deaths, team_kills, \
+                      longest_kill_m, vehicles_destroyed, is_command, command_win, source_event_id) \
+                     VALUES ($1, $2, $3, $4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $5) \
                      ON CONFLICT (match_id, arma_id, source_event_id) DO UPDATE SET \
                       discord_id = EXCLUDED.discord_id, role_played = EXCLUDED.role_played",
                 )

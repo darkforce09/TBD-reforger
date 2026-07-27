@@ -1359,12 +1359,22 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
         )
     );
 
-    // Both player rows exist with their identity core intact, and — the T-393 contract — with
-    // no counters written, because the payload states none. The zeros below are the table's
-    // DDL defaults on a fresh insert (`0001_initial_schema.sql:251-265`), NOT a decoded
-    // `#[serde(default)]`: on a *re*-ingest these columns are not named at all, which is what
+    // Both player rows exist with their identity core intact, and — the T-393/T-397 contract —
+    // with no counters written, because the payload states none. T-397 made the columns
+    // NULLable: a fresh insert stores NULL ("not measured"), not the old DDL `DEFAULT 0`.
+    // On a *re*-ingest these columns are not named in the UPDATE, which is what
     // `absent_counters_are_not_a_write_on_reingest` proves.
-    type Row = (String, String, i64, i64, i64, i64, i64, bool, Option<bool>);
+    type Row = (
+        String,
+        String,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<i64>,
+        Option<bool>,
+        Option<bool>,
+    );
     let rows: Vec<Row> = sqlx::query_as(
         "SELECT arma_id, role_played, kills, deaths, team_kills, longest_kill_m, \
          vehicles_destroyed, is_command, command_win FROM match_player_stats \
@@ -1377,21 +1387,44 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
     assert_eq!(
         rows,
         vec![
-            (A1.into(), "Squad Leader".into(), 0, 0, 0, 0, 0, false, None),
-            (A2.into(), "Rifleman".into(), 0, 0, 0, 0, 0, false, None),
+            (
+                A1.into(),
+                "Squad Leader".into(),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
+            (
+                A2.into(),
+                "Rifleman".into(),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None
+            ),
         ],
-        "identity + role stored; no counter claimed, so no counter written"
+        "identity + role stored; no counter claimed, so NULL not 0"
     );
 
     // **Named out loud because it is a real cost, not an oversight:** the mod's top-level
     // `"deaths":1` is an unknown field under the split contract and is ignored, so A1's stored
-    // `deaths` is 0 above rather than 1. `deaths` sits inside the counters block because
+    // `deaths` is NULL above rather than 1. `deaths` sits inside the counters block because
     // `leaderboard_totals.kd_ratio` is `sum(kills)/sum(deaths)` — a `deaths` writable without
     // `kills` is a `kd_ratio` corruptible by a low-fidelity re-ingest. Recovering that one
     // number is a mod-side change (emit a complete `counters` object); it is not a reason to
     // let one counter travel alone. The alternative — rejecting a top-level `deaths` — would
     // 400 this very payload, which is the defect this test exists to prevent.
-    assert_eq!(rows[0].3, 0, "top-level deaths is ignored, deliberately");
+    assert!(
+        rows[0].3.is_none(),
+        "top-level deaths is ignored; absent counters store NULL (T-397)"
+    );
 
     sqlx::query("DELETE FROM audit_logs WHERE target_id = $1")
         .bind(match_id.to_string())
@@ -1865,4 +1898,193 @@ async fn attendance_marks_only_the_played_event_mission() {
         .execute(&pool)
         .await
         .unwrap();
+}
+
+/// T-397 — INSERT without counters stores NULL, not 0.
+///
+/// Pre-fix the counters-absent statement omitted the columns and DDL `DEFAULT 0` filled
+/// them. A stored 0 was a scored 0. RED: restore the omit-columns INSERT (or re-add
+/// `NOT NULL DEFAULT 0`) and `deaths` comes back `Some(0)` — this test fails.
+#[tokio::test]
+async fn insert_without_counters_stores_null_not_zero() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA: &str = "t397-arma-null-insert";
+    const DISCORD: &str = "000000000000397101";
+    const SRC: &str = "m-t397-null-insert";
+    const EV: &str = "e-t397-null-insert";
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T397i', 't397i', '', $2, '[TBD] T397i', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(DISCORD)
+    .bind(ARMA)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+            .bind(SRC)
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    let (st, r) = call(
+        &app,
+        "POST",
+        "/api/v1/ingest/match-results",
+        None,
+        Some(SVC),
+        Some(&format!(
+            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}"}}]}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "identity-only insert: {r}");
+
+    #[derive(Debug, sqlx::FromRow)]
+    struct CountersNull {
+        kills: Option<i64>,
+        deaths: Option<i64>,
+        team_kills: Option<i64>,
+        longest_kill_m: Option<i64>,
+        vehicles_destroyed: Option<i64>,
+        is_command: Option<bool>,
+        command_win: Option<bool>,
+    }
+    let row: CountersNull = sqlx::query_as(
+        "SELECT kills, deaths, team_kills, longest_kill_m, vehicles_destroyed, is_command, command_win \
+         FROM match_player_stats WHERE arma_id = $1",
+    )
+    .bind(ARMA)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert!(
+        row.kills.is_none()
+            && row.deaths.is_none()
+            && row.team_kills.is_none()
+            && row.longest_kill_m.is_none()
+            && row.vehicles_destroyed.is_none()
+            && row.is_command.is_none()
+            && row.command_win.is_none(),
+        "absent counters must store NULL on first insert, not DEFAULT 0; got {row:?}"
+    );
+
+    clean(pool.clone()).await;
+}
+
+/// T-397 — `leaderboard_totals` ignores NULL deaths; it must not invent a measured zero.
+///
+/// Match A: counters absent → NULL deaths. Match B: full report 17/3. SUM(deaths) must be 3
+/// (NULL ignored), not 3+0. kd = 17/3 ≈ 5.67. RED: put `DEFAULT 0` back (or COALESCE NULL→0
+/// inside the MV sum) and a phantom death-zero re-enters the aggregate story.
+#[tokio::test]
+async fn leaderboard_mv_does_not_invent_deaths_from_null() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA: &str = "t397-arma-mv-null";
+    const DISCORD: &str = "000000000000397102";
+    const SRC_A: &str = "m-t397-mv-a";
+    const SRC_B: &str = "m-t397-mv-b";
+    const EV_A: &str = "e-t397-mv-a";
+    const EV_B: &str = "e-t397-mv-b";
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T397m', 't397m', '', $2, '[TBD] T397m', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(DISCORD)
+    .bind(ARMA)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = ANY($1)")
+            .bind(vec![SRC_A.to_string(), SRC_B.to_string()])
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    let post = |app: Router, body: String| async move {
+        call(
+            &app,
+            "POST",
+            "/api/v1/ingest/match-results",
+            None,
+            Some(SVC),
+            Some(&body),
+        )
+        .await
+    };
+
+    // Row A — mod path: identity only.
+    let (st, r) = post(
+        app.clone(),
+        format!(
+            r#"{{"match":{{"source_match_id":"{SRC_A}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV_A}"}}]}}"#
+        ),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "row A: {r}");
+
+    // Row B — full fidelity.
+    let (st, r) = post(
+        app.clone(),
+        format!(
+            r#"{{"match":{{"source_match_id":"{SRC_B}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV_B}","counters":{{"kills":17,"deaths":3,"team_kills":1,"longest_kill_m":842,"vehicles_destroyed":4,"is_command":true,"command_win":true}}}}]}}"#
+        ),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "row B: {r}");
+
+    let null_deaths: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM match_player_stats WHERE arma_id = $1 AND deaths IS NULL",
+    )
+    .bind(ARMA)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(null_deaths, 1, "exactly one unmeasured deaths row");
+
+    sqlx::query("REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_totals")
+        .execute(&pool)
+        .await
+        .ok();
+    let lb: (i64, i64, Option<f64>, i64) = sqlx::query_as(
+        "SELECT kills::int8, deaths::int8, kd_ratio::float8, missions_played::int8 \
+         FROM leaderboard_totals WHERE discord_id = $1",
+    )
+    .bind(DISCORD)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(lb.0, 17, "SUM(kills) ignores NULL");
+    assert_eq!(lb.1, 3, "SUM(deaths) ignores NULL — must not invent a 0");
+    assert_eq!(lb.3, 2, "both matches still count as played");
+    let kd = lb.2.expect("kd_ratio present when measured deaths exist");
+    assert!((kd - 5.67).abs() < 1e-9, "17/3 → 5.67, got {kd}");
+
+    clean(pool.clone()).await;
 }

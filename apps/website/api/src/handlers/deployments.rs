@@ -105,7 +105,9 @@ struct ServiceRecord {
 struct CombatTotals {
     kills: i64,
     deaths: i64,
-    kd_ratio: f64,
+    /// `NULL` when no measured `deaths` exist on any of this player's rows (T-397) — distinct
+    /// from a flawless measured aggregate (`sum(deaths)=0` → kd equals sum(kills)).
+    kd_ratio: Option<f64>,
     /// `NULL` when the player has never held a command slot: the view wraps the count in
     /// `NULLIF(count(*) FILTER (WHERE is_command), 0)`. That `NULL` is the **only** way to tell
     /// "never commanded" apart from "commanded and lost every time" — the view's own
@@ -247,7 +249,7 @@ pub async fn get_my_deployments(
     // `kd_ratio` is null for a player with no ingested matches, and is the flag the SPA gates the
     // whole combat block on. `command_win_rate` is null on top of that whenever the player has
     // never held a command slot, which is the common case for most of the roster.
-    let kd_ratio = combat.as_ref().map(|c| c.kd_ratio);
+    let kd_ratio = combat.as_ref().and_then(|c| c.kd_ratio);
     let command_win_rate = combat
         .as_ref()
         .filter(|c| c.command_games.is_some())
