@@ -13599,11 +13599,13 @@
       "program": "platform",
       "surfaces": [
         "FE",
+        "EDITOR",
         "tests"
       ],
       "impact": [
-        "infra",
-        "tests"
+        "frontend",
+        "tests",
+        "mission-creator"
       ],
       "status": "running",
       "order": 3362,
@@ -13625,6 +13627,7 @@
       ],
       "impact": [
         "infra",
+        "ci",
         "tests"
       ],
       "status": "running",
@@ -13642,10 +13645,13 @@
       "summary": "Wave 46 verifier NIT. After T-505, store.rs loads payload title and lists title as known, but crates/map-engine-core/src/mission/compile.rs still omits title from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS and retains stale T-375 comment that hydrate does not load title. Cure: add title to known keys + fix comment.",
       "program": "platform",
       "surfaces": [
-        "ENG"
+        "EDITOR",
+        "SCHEMA"
       ],
       "impact": [
-        "website"
+        "mission-creator",
+        "compiler",
+        "docs"
       ],
       "status": "deferred",
       "order": 3364,
@@ -13662,10 +13668,12 @@
       "summary": "Wave 46 verifier NIT. apps/website/api/seeds/content_golden.sql ~655\u2013656 still says orbat assigned partial unique deferred / events.rs still seeds two-seat \u2014 obsolete after 0017 + T-511 seed retirement. Cure: update seed comments to match live index.",
       "program": "platform",
       "surfaces": [
-        "API"
+        "API",
+        "DATA"
       ],
       "impact": [
-        "website"
+        "docs",
+        "data"
       ],
       "status": "deferred",
       "order": 3365,
