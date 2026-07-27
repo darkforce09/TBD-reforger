@@ -28,6 +28,7 @@ use crate::services::{
     OrbatSquadTemplate, flatten_to_mod_document, parse_orbat_template, write_audit,
 };
 use crate::state::AppState;
+use map_engine_core::mission::orbat::validate_faction_join_key;
 
 /// `events.banner_image_url`, validated at the write boundary. **T-413**, adopting T-405 /
 /// T-391's `is_http_url` on the remaining writer that still lacked it.
@@ -483,6 +484,10 @@ async fn load_em(pool: &PgPool, emid: &str) -> Result<EventMission, ApiError> {
 }
 
 /// Materialize parsed squads into OrbatSlot rows for one event mission.
+///
+/// **`faction` is stored verbatim (T-356).** [`add_event_mission`] already refused empty /
+/// whitespace-only / padded values via [`validate_faction_join_key`]. Do not `.trim()` here —
+/// trimming one side of the `orbat_slots` ↔ `mission_armories` join is how T-346 happened.
 async fn materialize_slots(
     tx: &mut sqlx::PgConnection,
     em_id: Uuid,
@@ -801,6 +806,17 @@ pub async fn add_event_mission(
                 "this mission's ORBAT describes no slots, so nobody could be seated — author its ORBAT and publish a version, or attach with an explicit `orbat`",
             )
         });
+    }
+
+    // ══ T-356 — ORBAT `faction` is the Event Hub join key (T-346's mirror) ═══════════════════
+    // Same shape as armory `faction`: require non-empty-after-trim; refuse a value that differs
+    // from its trimmed form; store verbatim in [`materialize_slots`]. Both doors into that
+    // writer meet here (request `orbat` and mission-payload derive), so one check closes both.
+    // A whitespace-only ORBAT faction is permanently unmatchable against T-346's armory refuse.
+    for (i, sq) in template.iter().enumerate() {
+        if let Err(msg) = validate_faction_join_key(&sq.faction) {
+            return Err(ApiError::bad_request(format!("orbat[{i}].{msg}")));
+        }
     }
 
     let mut tx = state.pool.begin().await?;
@@ -2606,5 +2622,59 @@ mod t412_members_pagination {
                 && collapsed.contains("\"offset\""),
             "search_members must return {{data,total,limit,offset}}"
         );
+    }
+}
+
+#[cfg(test)]
+mod t356_orbat_faction_join_key {
+    use map_engine_core::mission::orbat::validate_faction_join_key;
+
+    /// Class-R: `add_event_mission` must call the join-key guard, and `materialize_slots`
+    /// must bind `&sq.faction` verbatim (never `.trim()`).
+    #[test]
+    fn add_event_mission_refuses_and_materialize_stores_verbatim() {
+        const SRC: &str = include_str!("events.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source before tests module");
+
+        let add = production
+            .split("pub async fn add_event_mission")
+            .nth(1)
+            .expect("add_event_mission")
+            .split("\npub async fn ")
+            .next()
+            .expect("handler body");
+        assert!(
+            add.contains("validate_faction_join_key"),
+            "add_event_mission must refuse bad orbat[].faction before materialize"
+        );
+
+        let mat = production
+            .split("async fn materialize_slots")
+            .nth(1)
+            .expect("materialize_slots")
+            .split("\nasync fn ")
+            .next()
+            .expect("fn body");
+        let collapsed: String = mat.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(
+            collapsed.contains(".bind(&sq.faction)"),
+            "materialize_slots must bind faction verbatim"
+        );
+        assert!(
+            !collapsed.contains("sq.faction.trim()") && !collapsed.contains(".trim()"),
+            "materialize_slots must not trim faction (one-sided join bug)"
+        );
+    }
+
+    #[test]
+    fn join_key_helper_matches_t346_shape() {
+        assert!(validate_faction_join_key("").is_err());
+        assert!(validate_faction_join_key("\t").is_err());
+        assert!(validate_faction_join_key("  USA  ").is_err());
+        assert!(validate_faction_join_key("USA").is_ok());
+        assert!(validate_faction_join_key("US Army").is_ok());
     }
 }
