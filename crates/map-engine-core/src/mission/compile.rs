@@ -98,6 +98,16 @@ fn object_of(obj: &Value, key: &str) -> Value {
         .unwrap_or_else(|| Value::Object(Map::new()))
 }
 
+/// Non-blank trimmed `meta.title` — matches the strip commit guard
+/// (`eden_chrome`: `!v.trim().is_empty()` then `set_title(v.trim())`). Whitespace-only is not a
+/// title (T-375). Absent / non-string → `None`.
+fn meta_title_nonblank(meta: &Value) -> Option<&str> {
+    meta.get("title")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+}
+
 /// Compile the doc's by-id JSON into the `MissionPayload` superset (`compileMission` /
 /// `compileMissionWithProgress` + `assemblePayload`). `include_orbat` = the Export path (orbat
 /// derived + injected); `false` = the Save path (orbat key entirely absent — the server re-derives).
@@ -228,6 +238,17 @@ pub fn compile_payload(small_maps_json: &str, slots_json: &str, include_orbat: b
         },
     });
 
+    // T-375 — emit authored `meta.title` onto the wire payload. Save used to drop it (export
+    // already carried it via [`compile_export`]), so reload's `apply_row_meta` could only see the
+    // stale mission-row title. Blank / whitespace-only is omitted (non-blank guard spirit). Not
+    // added to `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS`: hydrate does not yet load `title` into
+    // `meta` (store.rs), so listing it as "known" would drop it instead of parking it.
+    if let Some(title) = meta_title_nonblank(&meta)
+        && let Some(obj) = payload.as_object_mut()
+    {
+        obj.insert("title".to_string(), json!(title));
+    }
+
     // Export path: derive orbat from the just-built editor graph and inject it (spread
     // `...(orbat ? { orbat } : {})` → key present only here; absent on Save).
     if include_orbat {
@@ -301,9 +322,9 @@ pub fn compile_export(
         .and_then(Value::as_str)
         .unwrap_or(mission_id)
         .to_string();
-    let title = meta
-        .get("title")
-        .and_then(Value::as_str)
+    // T-375 — same non-blank trim as [`compile_payload`]; whitespace-only falls through to the
+    // envelope default (export always emits the key; Save omits when blank).
+    let title = meta_title_nonblank(&meta)
         .unwrap_or("Untitled Mission")
         .to_string();
     let terrain = meta
@@ -940,5 +961,72 @@ mod tests {
         // object. Both would be a contract break against `build_mission_doc`.
         assert!(doc.get("briefings").is_none());
         assert!(!doc["briefing"].is_object());
+    }
+
+    // ── T-375 mission title on the compiled payload ─────────────────────────────────────────────
+
+    /// T-375 Class R — `compile_payload` must include `meta.title` when the doc has a real one.
+    /// Pre-fix: Save omitted the key entirely while Export carried it, so reload could only
+    /// re-apply the stale mission-row title.
+    #[test]
+    fn compile_payload_includes_title_when_doc_has_one() {
+        let small = json!({
+            "meta": { "title": "Bridgehead at Levie", "terrain": "everon" },
+            "factionsById": {},
+            "squadsById": {},
+            "loadoutsById": {},
+            "itemsById": {},
+            "objectivesById": {},
+            "vehiclesById": {},
+            "entitiesById": {},
+            "markersById": {},
+            "editorLayersById": {}
+        })
+        .to_string();
+
+        let save = compile_payload(&small, "{}", false);
+        assert_eq!(save["title"], json!("Bridgehead at Levie"));
+        assert!(save.get("orbat").is_none());
+
+        let export_payload = compile_payload(&small, "{}", true);
+        assert_eq!(export_payload["title"], json!("Bridgehead at Levie"));
+
+        // Export envelope stays consistent with the same non-blank trim helper.
+        let doc = compile_export(
+            &export_payload,
+            &small,
+            "smoke",
+            "0.1.0",
+            "1970-01-01T00:00:00.000Z",
+        );
+        assert_eq!(doc["title"], json!("Bridgehead at Levie"));
+    }
+
+    /// T-375 — blank / whitespace handling matches the strip's non-blank guard spirit
+    /// (`!v.trim().is_empty()`). Payload omits the key; export falls back to `Untitled Mission`.
+    #[test]
+    fn compile_payload_omits_blank_or_whitespace_title() {
+        for raw in ["", "   ", "\t\n"] {
+            let small = json!({ "meta": { "title": raw, "terrain": "everon" } }).to_string();
+            let p = compile_payload(&small, "{}", false);
+            assert!(
+                p.get("title").is_none(),
+                "whitespace-only title {raw:?} must not appear on the Save payload; got {:?}",
+                p.get("title")
+            );
+            let doc = compile_export(
+                &p,
+                &small,
+                "smoke",
+                "0.1.0",
+                "1970-01-01T00:00:00.000Z",
+            );
+            assert_eq!(doc["title"], json!("Untitled Mission"));
+        }
+
+        // Leading/trailing space is trimmed to the authored core (strip stores `v.trim()`).
+        let padded = json!({ "meta": { "title": "  Op Red Dawn  " } }).to_string();
+        let p = compile_payload(&padded, "{}", false);
+        assert_eq!(p["title"], json!("Op Red Dawn"));
     }
 }
