@@ -52,7 +52,8 @@ const MIGRATION: &str = include_str!("../migrations/0010_backfill_aar_replay_url
 const HISTORICAL_NULL_SCRUB: &str = "SET aar_replay_url = NULL";
 
 /// T-331-canonical scrub: empty string matches 0015 backfill + telemetry `COALESCE(..., '')`.
-const CANONICAL_EMPTY_SCRUB: &str = "SET aar_replay_url = '' /* T-508: T-331 NOT NULL; '' is canonical */";
+const CANONICAL_EMPTY_SCRUB: &str =
+    "SET aar_replay_url = '' /* T-508: T-331 NOT NULL; '' is canonical */";
 
 /// Re-run body for post-0015 databases: real 0010 file with the scrub line adapted so
 /// `include_str!` execution does not violate the NOT NULL constraint.
