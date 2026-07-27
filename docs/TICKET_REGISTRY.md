@@ -816,7 +816,7 @@ TWO CORRECTIONS. First, in T-338's favour: the first verifier called its '30 ass
 Second, against T-338: its claim that 'the RAM copies were DESTROYED, not hidden' is UNREPRODUCIBLE, and the RAM half of the purge is effectively dead code. The editor route is Chromeless (layout.rs:36), so it renders no user menu, and both routes into the editor are deliberate full page loads — so the instance that runs `clear_session` never populated LOCAL_BACKUPS, and `forget_owner` can only ever drop 0. Measured: on an authenticated `/`, `typeof window.__missionBackup === "undefined"`, and `any_href_into_editor: false` across all 18 same-origin hrefs. Not a leak — the SCOPING closes the same-page-load hole and the IDB purge removes the disk residue — but the claim as worded is fully explained by the IDB purge alone, and no probe artifact backing it exists.
 
 It also answered the runbook's open question: T-338's top-level-editor wedge does NOT reproduce on the drained build (T-354). `T1_top_level_editor_booted: true` at /missions/smoke/edit top-level. |
-| T-339 | 3155 | deferred | platform | Two gate-harness gaps T-320 could not reach from its own files | Both found and diagnosed by T-320, both left because the files were outside its ownership. Neither is red today; both are one small change.
+| T-339 | 3155 | running | platform | Two gate-harness gaps T-320 could not reach from its own files | Both found and diagnosed by T-320, both left because the files were outside its ownership. Neither is red today; both are one small change.
 
 1. **`vsuite.rs:366` launches its own chromium** and therefore does NOT get T-320's `ensure_gate_font_cache()`. It is green only because it renders ordinary routes, which survive a zero-font environment — the mission editor is the one route that reaches a per-character fallback and aborts. Moving `ensure_gate_font_cache()` into `cdp::launch` closes it for EVERY caller in one line. `cdp.rs` was not T-320's file. Do this one first; it is the durable form of the fix.
 
@@ -2768,14 +2768,14 @@ GET /missions/:id/compiled now loads load_cargo_phys_catalog. Events roster in h
 Cure: same wire as T-549 — load catalog → flatten_to_mod_document_with_catalog.
 
 Repro: rg flatten_to_mod_document apps/website/api/src/handlers/events.rs |
-| T-551 | 3391 | deferred | platform | T-550 Class-R only — no HTTP IT for events roster over-capacity omit | FOUND by W60 adversarial verifier (CLEAN MINOR) after T-550.
+| T-551 | 3391 | running | platform | T-550 Class-R only — no HTTP IT for events roster over-capacity omit | FOUND by W60 adversarial verifier (CLEAN MINOR) after T-550.
 
 ingest_event_roster loads cargo phys catalog and omits over-capacity missions from roster seating. Coverage is Class-R source pin only; no tests/events.rs IT.
 
 Cure: IT that seeds an over-capacity tip and asserts roster omit / error path.
 
 Repro: rg flatten_to_mod_document_with_catalog apps/website/api/tests/events.rs — no hit. |
-| T-552 | 3392 | deferred | platform | 0015 migration comment still narrates deferred two-seat (pre-0017 lore) | FOUND by W60 adversarial verifier (CLEAN MINOR outside T-525 owns) after T-525.
+| T-552 | 3392 | running | platform | 0015 migration comment still narrates deferred two-seat (pre-0017 lore) | FOUND by W60 adversarial verifier (CLEAN MINOR outside T-525 owns) after T-525.
 
 content_golden.sql comments fixed. Migration 0015 comments still claim tests/events.rs seeds legacy two-seat / index deferred — obsolete after 0017 + T-511.
 

@@ -96,7 +96,7 @@
 47	T-350	Four sites report an identity as linked when it is whitespace	apps/website/api/src/handlers/auth.rs; apps/website/api/src/handlers/oauth.rs; apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/t350_whitespace_linked.rs
 0	T-351	Nothing pins the arma_id trim, and legacy whitespace rows are still in the tables	apps/website/api/tests/identity_link.rs; apps/website/api/migrations
 50	T-342	Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt	apps/website/frontend/src/personnel.rs
-0	T-339	Two gate-harness gaps T-320 could not reach from its own files	tools/tbd-tools/src/cdp.rs; tools/tbd-tools/src/bin/gate.rs; tools/tbd-tools/src/vsuite.rs
+61	T-339	Two gate-harness gaps T-320 could not reach from its own files	tools/tbd-tools/src/cdp.rs; tools/tbd-tools/src/bin/gate.rs; tools/tbd-tools/src/vsuite.rs; tools/tbd-tools/src/smokes.rs
 47	T-337	Approving or rejecting a mission never touches updated_at	apps/website/api/src/handlers/approvals.rs
 49	T-355	An unparseable event_id silently becomes NULL and skips the attendance write	apps/website/api/src/handlers/telemetry.rs
 48	T-341	deployments.rs has a bare SELECT * and swallows decode errors, in the file held up as the good example	apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/dashboard_reads.rs; apps/website/api/src/handlers/dashboard.rs
@@ -349,5 +349,5 @@
 57	T-548	missions.rs featured-card briefing still uses !b.is_empty() without trim	apps/website/frontend/src/missions.rs
 59	T-549	Live /compiled still uses empty CargoPhysCatalog	apps/website/api/src/handlers/missions.rs; apps/website/api/src/services/mission_compile.rs; apps/website/api/src/services/mod.rs; apps/website/api/tests/missions.rs
 60	T-550	Events roster still compiles with empty CargoPhysCatalog	apps/website/api/src/handlers/events.rs
-99	T-551	T-550 Class-R only — no HTTP IT for events roster over-capacity omit	apps/website/api/tests/events.rs; apps/website/api/src/handlers/events.rs
-99	T-552	0015 migration comment still narrates deferred two-seat	apps/website/api/migrations
+61	T-551	T-550 Class-R only — no HTTP IT for events roster over-capacity omit	apps/website/api/tests/events.rs; apps/website/api/src/handlers/events.rs
+61	T-552	0015 migration comment still narrates deferred two-seat	apps/website/api/migrations
