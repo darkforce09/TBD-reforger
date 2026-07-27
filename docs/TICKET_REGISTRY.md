@@ -2289,7 +2289,7 @@ Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in
 | T-430 | 3269 | deferred | platform | Production Config::validate should require DISCORD_CLIENT_ID | Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
 
 Repro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured. |
-| T-431 | 3270 | ready | platform | Identity-link attendance backfill still marks every mission on the event | MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.
+| T-431 | 3270 | shipped | platform | Identity-link attendance backfill still marks every mission on the event | MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.
 
 Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.
 
@@ -2299,7 +2299,7 @@ Cure: same JOIN shape as T-230 telemetry ingest. |
 Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.
 
 Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage name. |
-| T-433 | 3272 | ready | platform | cms.rs announcement_body_persist_contract unit test is tautological | MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.
+| T-433 | 3272 | shipped | platform | cms.rs announcement_body_persist_contract unit test is tautological | MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.
 
 Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
 
@@ -2336,7 +2336,7 @@ Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-co
 Repro: place a non-checkpoint Objects leaf → compile entities[] → world-boot → spawn warns and skips; only checkpoint_small resolves.
 
 Cure: export/register prop: and comp: rows for Objects-eligible kinds (or narrow palette to known aliases until registry catches up). |
-| T-440 | 3279 | ready | platform | Cold/schema gates never apply make seed / faction_library.sql | Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
+| T-440 | 3279 | shipped | platform | Cold/schema gates never apply make seed / faction_library.sql | Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
 
 Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.
 
@@ -2550,7 +2550,7 @@ Cure: strip // and # comments (and TOML string-safe comment lines) before Cargo 
 Repro (hypothetical): replace verify-t438 recipe with `@true` → make verify-t438 PASS while script never runs.
 
 Cure: extend verify-t468-style (or sibling) tripwire to assert Makefile verify-t438/verify-t456 recipes invoke the real bash scripts (not echo/@true/#). |
-| T-477 | 3316 | ready | platform | T-431 Class-R greened on event-wide BACKFILL_ATTENDANCE shapes | Residual from wave 29 adversarial BLOCKER. Class-R in me.rs requires join pin `m.event_id = em.event_id AND m.mission_id = em.mission_id` and bans `WHERE em.event_id IN (` — but still PASS when:
+| T-477 | 3316 | shipped | platform | T-431 Class-R greened on event-wide BACKFILL_ATTENDANCE shapes | Residual from wave 29 adversarial BLOCKER. Class-R in me.rs requires join pin `m.event_id = em.event_id AND m.mission_id = em.mission_id` and bans `WHERE em.event_id IN (` — but still PASS when:
 (1) join pin present + UNION ALL event_id-only second arm
 (2) dead `(FALSE AND <join_pin> OR TRUE)` with event-only JOIN
 (3) `em.event_id = ANY (...)` + join pin only in SQL `--` comment inside the const
@@ -2560,7 +2560,7 @@ Live SQL today is correct; the gate is hollow. No behavioral IT for link-confirm
 Repro: rewrite BACKFILL_ATTENDANCE to event-wide via ANY/UNION while keeping join substring → unit test PASS.
 
 Cure: harden Class-R — strip SQL `--`/`/* */` comments before pins; require a single FROM event_missions … INNER JOIN matches with live ON containing both equalities (no UNION/ANY event-id-only arms); ban `em.event_id = ANY` / nested event_id-only IN/ANY. Prefer also a minimal behavioral IT if owns can widen to tests/; else structural-only with RED→GREEN on verifier shapes. |
-| T-478 | 3317 | ready | platform | T-440 verify greened on comment name + path-echo seed recipe | Residual from wave 29 adversarial MAJOR×2 (+ MINOR). verify-t440-faction-library-seed.sh:
+| T-478 | 3317 | shipped | platform | T-440 verify greened on comment name + path-echo seed recipe | Residual from wave 29 adversarial MAJOR×2 (+ MINOR). verify-t440-faction-library-seed.sh:
 (1) `'US Army 1980s'` is raw grep — SQL `-- US Army 1980s` + `SELECT 1;` PASS
 (2) recipe pin is path substring on any non-#-prefixed line — `echo seeds/faction_library.sql >/dev/null` PASS; psql -c SELECT with path in comment PASS
 (3) MINOR: script never pins wave.sh cold/slice `run "T-440…"` wiring
