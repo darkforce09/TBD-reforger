@@ -16,7 +16,7 @@ use tokio::task::JoinHandle;
 use uuid::Uuid;
 
 use crate::error::ApiError;
-use crate::handlers::PageParams;
+use crate::handlers::{PageParams, is_unique_violation};
 use crate::middleware::{AdminUser, AuthUser, LeaderUser, ServiceAuth};
 use crate::models::serde_helpers::go_time;
 use crate::models::{
@@ -726,6 +726,10 @@ pub struct AddMissionInput {
 
 /// `POST /api/v1/events/:id/missions` — attach a mission + auto-materialize ORBAT (admin).
 ///
+/// Re-attach after detach is the same path (T-332). `idx_event_mission` is unique on
+/// `(event_id, mission_id)` — a second attach of a mission still on the event is a **409**,
+/// not a 500 from an unmapped unique violation.
+///
 /// @route POST /api/v1/events/:id/missions
 pub async fn add_event_mission(
     State(state): State<AppState>,
@@ -820,7 +824,7 @@ pub async fn add_event_mission(
     }
 
     let mut tx = state.pool.begin().await?;
-    let em: EventMission = sqlx::query_as(
+    let em: EventMission = match sqlx::query_as(
         "INSERT INTO event_missions (event_id, mission_id, start_time, created_at, updated_at) \
          VALUES ($1, $2, $3, now(), now()) RETURNING id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at",
     )
@@ -828,7 +832,16 @@ pub async fn add_event_mission(
     .bind(mission_id)
     .bind(start_time)
     .fetch_one(&mut *tx)
-    .await?;
+    .await
+    {
+        Ok(em) => em,
+        Err(e) if is_unique_violation(&e) => {
+            return Err(ApiError::conflict(
+                "this mission is already attached to this event",
+            ));
+        }
+        Err(e) => return Err(e.into()),
+    };
     materialize_slots(&mut tx, em.id, &template).await?;
     tx.commit().await?;
 
@@ -1222,7 +1235,13 @@ pub struct PatchEventInput {
     start_time: Option<DateTime<Utc>>,
     max_slots: Option<i64>,
     name_override: Option<String>,
+    /// Text clear contract (T-332): key absent = leave alone; `""` = clear. Same shape the
+    /// Event Manager already posts when the briefing textarea is blanked — blessed, not a
+    /// workaround. JSON `null` is **not** a clear (unlike [`server_id`] / [`modpack_id`]);
+    /// string fields stay `Option<String>`, not `present_option`.
     briefing: Option<String>,
+    /// Text clear contract (T-332): key absent = leave alone; `""` = clear (after the same
+    /// http(s) trim/validate as create). Non-empty non-http values still 400 (T-413).
     banner_image_url: Option<String>,
     registration_locked: Option<bool>,
     status: Option<String>,
@@ -1243,6 +1262,12 @@ pub struct PatchEventInput {
 /// start time passed a minute ago is `live` even if the sweep has not written that yet, so
 /// `→ completed` is accepted (a legal `live → completed`) instead of being rejected
 /// against a stale `open`.
+///
+/// **Clearing briefing / banner (T-332).** Uuid bindings use explicit JSON `null` via
+/// [`present_option`]. String fields do not — an empty string is the clear signal:
+/// `{"briefing":""}` / `{"banner_image_url":""}` write empty (omitted on the wire by
+/// `skip_serializing_if = String::is_empty`), while omitting the key leaves the column
+/// untouched. The Event Manager diffs the form and posts `""` when the admin blanks a field.
 ///
 /// @route PATCH /api/v1/events/:id
 pub async fn update_event(
@@ -2676,5 +2701,51 @@ mod t356_orbat_faction_join_key {
         assert!(validate_faction_join_key("  USA  ").is_err());
         assert!(validate_faction_join_key("USA").is_ok());
         assert!(validate_faction_join_key("US Army").is_ok());
+    }
+}
+
+#[cfg(test)]
+mod t332_patch_clear_and_reattach {
+    /// Class-R: empty-string clear for briefing/banner is documented on the input, and
+    /// duplicate attach maps the unique index to 409 (not an unmapped 500).
+    #[test]
+    fn patch_documents_empty_string_clear_and_attach_maps_unique() {
+        const SRC: &str = include_str!("events.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source before tests module");
+
+        let patch = production
+            .split("pub struct PatchEventInput")
+            .nth(1)
+            .expect("PatchEventInput")
+            .split("pub async fn update_event")
+            .next()
+            .expect("struct body");
+        assert!(
+            patch.contains("T-332") && patch.contains("\"\""),
+            "PatchEventInput must document T-332 empty-string clear for briefing/banner"
+        );
+        // Doc comment sits *above* `pub async fn update_event`, so pin it on production text
+        // that includes that heading — not the function body alone.
+        assert!(
+            production.contains("**Clearing briefing / banner (T-332).**")
+                && production.contains("an empty string is the clear signal"),
+            "update_event docs must name the empty-string clear contract"
+        );
+
+        let add = production
+            .split("pub async fn add_event_mission")
+            .nth(1)
+            .expect("add_event_mission")
+            .split("\npub async fn ")
+            .next()
+            .expect("handler body");
+        assert!(
+            add.contains("is_unique_violation") && add.contains("already attached to this event"),
+            "add_event_mission must map idx_event_mission unique violations to a 409 \
+             (perturbation: drop is_unique_violation arm → 500 on duplicate attach)"
+        );
     }
 }

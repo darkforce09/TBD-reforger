@@ -2114,3 +2114,165 @@ async fn clear_slot_frees_assignment_and_events_have_no_match_id() {
         "GET event must omit match_id: {get}"
     );
 }
+
+/// T-332 — PATCH clears briefing/banner via `""`, and a mission can be re-attached after detach.
+///
+/// Before: empty-string clear worked by accident (undocumented); duplicate attach of a still-
+/// attached mission 500'd on `idx_event_mission`; after detach there was no FE caller for
+/// `POST /events/:id/missions` (covered by the FE Class-R). This IT pins the BE contracts.
+#[tokio::test]
+async fn patch_clears_briefing_banner_and_mission_reattach_works() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let admin = token(&app, "admin").await;
+
+    // ── 1. Create with briefing + banner, then clear both with "". ──
+    let (st, e) = call(
+        &app,
+        "POST",
+        "/api/v1/events",
+        &admin,
+        Some(concat!(
+            r#"{"start_time":"2027-11-01T19:00:00Z","name_override":"T332 clear","#,
+            r#""briefing":"ops brief","banner_image_url":"https://example.invalid/t332.png","max_slots":8}"#,
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "create: {e}");
+    assert_eq!(e["briefing"], "ops brief");
+    assert_eq!(e["banner_image_url"], "https://example.invalid/t332.png");
+    let event_id = e["id"].as_str().unwrap().to_string();
+
+    // Omitting the keys must leave them alone (perturbation: treating absent as clear).
+    let (st, e) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/events/{event_id}"),
+        &admin,
+        Some(r#"{"max_slots":9}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "patch other field: {e}");
+    assert_eq!(
+        e["briefing"], "ops brief",
+        "absent briefing must not clear: {e}"
+    );
+    assert_eq!(
+        e["banner_image_url"], "https://example.invalid/t332.png",
+        "absent banner must not clear: {e}"
+    );
+    assert_eq!(e["max_slots"], 9);
+
+    // Blessed clear: empty string.
+    let (st, e) = call(
+        &app,
+        "PATCH",
+        &format!("/api/v1/events/{event_id}"),
+        &admin,
+        Some(r#"{"briefing":"","banner_image_url":""}"#),
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "patch clear: {e}");
+    assert!(
+        e.get("briefing").is_none() || e["briefing"] == "",
+        "empty briefing must clear (omitted or \"\"): {e}"
+    );
+    assert!(
+        e.get("banner_image_url").is_none() || e["banner_image_url"] == "",
+        "empty banner must clear (omitted or \"\"): {e}"
+    );
+    let briefing: String =
+        sqlx::query_scalar("SELECT COALESCE(briefing, '') FROM events WHERE id = $1::uuid")
+            .bind(&event_id)
+            .fetch_one(&pool)
+            .await
+            .expect("briefing");
+    let banner: String =
+        sqlx::query_scalar("SELECT COALESCE(banner_image_url, '') FROM events WHERE id = $1::uuid")
+            .bind(&event_id)
+            .fetch_one(&pool)
+            .await
+            .expect("banner");
+    assert_eq!(briefing, "", "DB briefing must be empty after \"\" clear");
+    assert_eq!(banner, "", "DB banner must be empty after \"\" clear");
+
+    // ── 2. Attach → duplicate 409 → detach → re-attach 201. ──
+    let (st, m) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        &admin,
+        Some(
+            r#"{"title":"T332 Mission","terrain":"everon","game_mode":"pve_coop","max_players":16}"#,
+        ),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "mission: {m}");
+    let mission_id = m["id"].as_str().unwrap().to_string();
+
+    let attach_body = format!(
+        r#"{{"mission_id":"{mission_id}","start_time":"2027-11-01T19:00:00Z","orbat":[{{"faction":"USA","callsign":"A","squad":"T332","slots":[{{"role":"SL"}}]}}]}}"#
+    );
+    let (st, em) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/events/{event_id}/missions"),
+        &admin,
+        Some(&attach_body),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "first attach: {em}");
+    let emid = em["id"].as_str().unwrap().to_string();
+
+    let (st, dup) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/events/{event_id}/missions"),
+        &admin,
+        Some(&attach_body),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CONFLICT,
+        "duplicate attach must 409 (perturbation: drop unique map → 500): {dup}"
+    );
+    assert!(
+        dup["error"]
+            .as_str()
+            .unwrap_or("")
+            .contains("already attached"),
+        "duplicate attach message: {dup}"
+    );
+
+    let (st, _) = call(
+        &app,
+        "DELETE",
+        &format!("/api/v1/events/{event_id}/missions/{emid}"),
+        &admin,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::NO_CONTENT, "detach: {st}");
+
+    let (st, em2) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/events/{event_id}/missions"),
+        &admin,
+        Some(&attach_body),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CREATED,
+        "re-attach after detach must succeed: {em2}"
+    );
+    assert_ne!(
+        em2["id"].as_str().unwrap_or(""),
+        emid.as_str(),
+        "re-attach must mint a new event_mission id"
+    );
+}
