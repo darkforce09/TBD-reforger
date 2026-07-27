@@ -338,7 +338,9 @@ fn source_match_key(raw: &Option<String>) -> Result<Option<&str>, ApiError> {
 /// column `NOT NULL DEFAULT ''`, so `''` is storable — NOT NULL does not close this (T-379).
 fn require_role_played(raw: &str) -> Result<&str, ApiError> {
     match raw.trim() {
-        "" => Err(ApiError::bad_request("player role_played must not be blank")),
+        "" => Err(ApiError::bad_request(
+            "player role_played must not be blank",
+        )),
         role => Ok(role),
     }
 }
@@ -1228,7 +1230,10 @@ mod tests {
     #[test]
     fn non_blank_role_played_ok() {
         assert_eq!(require_role_played("SL").unwrap(), "SL");
-        assert_eq!(require_role_played("  Squad Leader  ").unwrap(), "Squad Leader");
+        assert_eq!(
+            require_role_played("  Squad Leader  ").unwrap(),
+            "Squad Leader"
+        );
         assert_eq!(require_role_played("Rifleman").unwrap(), "Rifleman");
     }
 }
