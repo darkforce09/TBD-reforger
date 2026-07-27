@@ -303,17 +303,17 @@
 99	T-502	roles/sync IT empty-snapshot admin survive	apps/website/api/tests/admin_field.rs
 99	T-503	Arsenal no Save button auto-persist	apps/website/frontend/src/arsenal.rs
 99	T-504	silent no-garment cargo Arsenal	apps/website/frontend/src/arsenal.rs; apps/website/frontend/src/arsenal_rules.rs
-99	T-505	hydrate/row-mirror stomps title after T-375	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/mission_hydrate.rs; apps/website/api/src/handlers/missions.rs
+46	T-505	hydrate/row-mirror stomps title after T-375	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/mission_hydrate.rs; apps/website/api/src/handlers/missions.rs
 99	T-506	T-379 Class-R helper-only (no ingest call-site pin)	apps/website/api/src/handlers/telemetry.rs
 99	T-507	FE faction_manager posts untrimmed name	apps/website/frontend/src/faction_manager.rs
 43	T-508	W43 hotfix aar_replay_url_backfill vs NOT NULL	apps/website/api/tests/aar_replay_url_backfill.rs; apps/website/api/migrations/0010_backfill_aar_replay_url_scheme.sql
 43	T-509	W43 hotfix CREATE empty weather → Clear	apps/website/api/src/handlers/missions.rs
 43	T-510	W43 hotfix null_tolerance vs missions timestamp NOT NULL	apps/website/api/tests/null_tolerance.rs
-99	T-511	orbat_slots assigned_to partial unique + events.rs two-seat	apps/website/api/migrations; apps/website/api/tests/events.rs
+46	T-511	orbat_slots assigned_to partial unique + events.rs two-seat	apps/website/api/migrations; apps/website/api/tests/events.rs
 99	T-512	HTTP IT blank weather PATCH + CREATE omit Clear	apps/website/api/tests/missions.rs
 44	T-513	W44 hotfix T-506 Class-R comment bait	apps/website/api/src/handlers/telemetry.rs
 44	T-514	W44 hotfix T-507 Class-R comment bait	apps/website/frontend/src/faction_manager.rs
-99	T-515	Cold gate hollow for SQL-only claim migrations	scripts/platform/wave.sh
+46	T-515	Cold gate hollow for SQL-only claim migrations	scripts/platform/wave.sh
 45	T-516	W45 hotfix identity_link arma_id seed race	apps/website/api/tests/identity_link.rs
 45	T-517	W45 hotfix PAD_ACTOR vs telemetry discord collision	apps/website/api/tests/identity_link.rs
 99	T-518	T-517 Class-R one-sided denylist not bound to telemetry PLAYER_DISCORD	apps/website/api/tests/identity_link.rs; apps/website/api/tests/telemetry.rs

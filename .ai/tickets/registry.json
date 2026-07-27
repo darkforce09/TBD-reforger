@@ -13232,7 +13232,7 @@
         "api",
         "frontend"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3345,
       "stream": "web-platform",
       "targets": [
@@ -13365,7 +13365,7 @@
         "website",
         "tests"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3351,
       "stream": "web-platform",
       "targets": [
@@ -13454,7 +13454,7 @@
         "infra",
         "tests"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3355,
       "stream": "web-platform",
       "targets": [
