@@ -5,25 +5,6 @@
 
 ## Running / Review
 
-- **T-353** (3169) — Four SPA gaps T-232 could not reach from its own files [running] — All found by T-232 while writing the populated render branches; each needs a file it did not own.
-
-1. **`event_hub.rs:182` `fn event_hub_view` is private.** The /events surface spec wants the full inline-ORBAT hub in the detail column. T-232 built a self-contained dossier summary plus a deep link instead. Making it `pub(crate)` gets events.rs to spec parity without duplicating anything.
-
-2. **No `/announcements/:id` route exists** (`router.rs`), so the dashboard intel feed row — spec element 20 — links to `/announcements` rather than deep-linking the post. Needs the route plus URL-driven selection in announcements.rs. Note T-232 deliberately left announcements.rs WITHOUT auto-selection, so a deep link is the intended way in.
-
-3. **`server_intel.rs:30` `format_uptime` is private**, so dashboard.rs now carries a duplicate. Wants a shared home in `datefmt.rs` — and `log_stamp` from audit.rs wants to go with it. Two definitions of a displayed timestamp drifting apart is the same class as the two definitions of 'a deployment' T-326 refused to create.
-
-4. **`POST /me/leave-requests` exists (`api/src/app.rs:100`) with NO CALLER in the SPA** — the deployments spec's LOA button, item 8. Identical shape to the dead PATCH/DELETE T-226 found and wired. T-232 correctly left it: that slice was render branches, not mutations.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-498** (3333) — Discord webhook title not CSV/formula-safe (sibling of T-408) [running] — Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord — user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R.
-- **T-543** (3383) — mcpd-bin.sh still echoes shared target/debug/mcpd path [running] — FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-328.
-
-mcp-daemon.sh correctly builds/execs from target-dev-mcpd and discards mcpd-bin.sh stdout. Residual footgun: scripts/mod/lib/mcpd-bin.sh still hardcodes echo $ROOT/target/debug/mcpd; mcp-call-selftest.sh still consumes that echo. Cure: honor CARGO_TARGET_DIR in mcpd-bin.sh echo path.
-
-Repro: rg 'target/debug/mcpd' scripts/mod/
 
 ## Ready
 

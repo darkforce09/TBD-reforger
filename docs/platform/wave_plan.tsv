@@ -343,3 +343,6 @@
 54	T-542	T-381 incomplete — wire require_test_database_url into every IT binary	apps/website/api/tests
 55	T-543	mcpd-bin.sh still echoes shared target/debug/mcpd path	scripts/mod/lib/mcpd-bin.sh; scripts/mod/mcp-call-selftest.sh
 99	T-544	T-532 Class-R only — no HTTP IT for set-current	apps/website/api/tests/missions.rs; apps/website/api/src/handlers/missions.rs
+99	T-545	mcp-daemon.sh comment still claims mcpd-bin ignores CARGO_TARGET_DIR	scripts/mod/mcp-daemon.sh
+99	T-546	T-498 Class-R only — no HTTP IT for Discord formula-title sanitize	apps/website/api/tests; apps/website/api/src/services/webhook.rs
+99	T-547	datefmt format_uptime doc overclaims server-control sharing	apps/website/frontend/src/datefmt.rs; apps/website/frontend/src/server_control.rs

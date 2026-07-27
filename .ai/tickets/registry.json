@@ -10036,7 +10036,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3169,
       "stream": "web-platform",
       "targets": [
@@ -13077,7 +13077,7 @@
         "security",
         "api"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3333,
       "stream": "web-platform",
       "targets": [
@@ -14069,7 +14069,7 @@
         "infra",
         "dx"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3383,
       "executor": "claude-code",
       "priority": 2,
@@ -14093,6 +14093,72 @@
       ],
       "status": "deferred",
       "order": 3384,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-545",
+      "title": "mcp-daemon.sh comment still claims mcpd-bin ignores CARGO_TARGET_DIR",
+      "summary": "FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-543.\n\nRuntime is correct (T-328/T-543). Residual: scripts/mod/mcp-daemon.sh comment still says mcpd-bin ignores CARGO_TARGET_DIR. Cure: update the comment to match live honor of CARGO_TARGET_DIR.\n\nRepro: rg 'ignores CARGO_TARGET_DIR' scripts/mod/",
+      "program": "platform",
+      "surfaces": [
+        "INFRA",
+        "MOD"
+      ],
+      "impact": [
+        "docs",
+        "dx"
+      ],
+      "status": "deferred",
+      "order": 3385,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-546",
+      "title": "T-498 Class-R only \u2014 no HTTP IT for Discord formula-title sanitize",
+      "summary": "FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-498.\n\nsanitize_discord_embed_field + include_str wire pins exist; no services_http / CMS IT asserts a leading '=title' becomes ZWSP-prefixed in the outbound embed JSON.\n\nRepro: rg sanitize_discord apps/website/api/tests \u2014 no hit.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "cms"
+      ],
+      "status": "deferred",
+      "order": 3386,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-547",
+      "title": "datefmt format_uptime doc overclaims server-control sharing",
+      "summary": "FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-353.\n\nGap 3 correctly shared format_uptime/log_stamp for dashboard/server_intel/audit. datefmt docs overclaim server-control uses the same HH:MM:SS helper; that page still has a different private helper. Cure: fix the doc comment or unify the helper.\n\nRepro: rg format_uptime apps/website/frontend/src/",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "docs"
+      ],
+      "impact": [
+        "docs",
+        "frontend"
+      ],
+      "status": "deferred",
+      "order": 3387,
       "executor": "claude-code",
       "priority": 2,
       "stream": "web-platform",

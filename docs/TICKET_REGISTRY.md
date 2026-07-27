@@ -1142,7 +1142,7 @@ Browser-verified: the only session key is u18:000000000000000001\|tbd-editor-ses
 IT DECLINED TO REMOVE THE 8 WRITE SITES, with a sequencing argument worth keeping: `purge_legacy_markers` is reachable ONLY via `mark_adopted`, so deleting those calls in the same release would STRAND the existing residue in users' localStorage permanently. Doing it safely means first moving the purge to a boot hook. Filed as T-370.
 
 PROCESS FAILURE ON MY SIDE, recorded because it nearly cost the work: I landed this agent's first two commits, dropped its worktree, and THEN resumed it. It found its own worktree and branch gone mid-session, its commits surviving only as unreferenced objects, and had to recreate the branch and restore the worktree itself before it could finish. It reported that rather than losing the work, which is the only reason it was noticed. `slice-worktree.sh drop` now REFUSES when the branch holds commits not on main (--force overrides), proven by probe. |
-| T-353 | 3169 | running | platform | Four SPA gaps T-232 could not reach from its own files | All found by T-232 while writing the populated render branches; each needs a file it did not own.
+| T-353 | 3169 | shipped | platform | Four SPA gaps T-232 could not reach from its own files | All found by T-232 while writing the populated render branches; each needs a file it did not own.
 
 1. **`event_hub.rs:182` `fn event_hub_view` is private.** The /events surface spec wants the full inline-ORBAT hub in the detail column. T-232 built a self-contained dossier summary plus a deep link instead. Making it `pub(crate)` gets events.rs to spec parity without duplicating anything.
 
@@ -2629,7 +2629,7 @@ Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/m
 | T-493 | 3332 | deferred | platform | T-397 Class-R blind to sum(COALESCE(deaths,0)) on leaderboard_totals | Wave 37 adversarial NIT. insert_without_counters_stores_null_not_zero holds. leaderboard_mv_does_not_invent_deaths_from_null went RED when INSERT bound 0, but poisoning the MV to sum(COALESCE(deaths,0)) with a mixed NULL+measured fixture still left the Class-R GREEN (0+3=3). Cure: pin all-NULL row set → kd_ratio IS NULL and/or source-ratchet migration 0014 / live MV for FILTER (WHERE deaths IS NOT NULL) / no COALESCE(deaths,0) in the aggregate. |
 | T-497 | 3332 | shipped | platform | Mission mutators still AuthUser+can_edit after T-408 PATCH tier fix | Wave 38 residual from T-408. update_mission now MissionMakerUser. Still AuthUser+can_edit only: delete_mission, submit_mission, create_version, set_armory in handlers/missions.rs. Demotion still leaves those paths open. Cure: same MissionMakerUser tier (or deliberate ownership-outlives-role Class-R per path). |
 | T-494 | 3333 | deferred | platform | mission_overview trim source-ratchet still allows !b.is_empty() match arm | Wave 37 adversarial NIT on T-407. dossier_body_uses_trim_aware_briefing_helper only bans .filter(\|b\| !b.is_empty()); a match-arm !b.is_empty() stayed GREEN while the behavioral trim test went RED. Also residual from T-407 report: schedule events.rs briefing still uses (!briefing.is_empty()) without trim (out of T-407 owns). Cure: widen source ratchet to ban non-trim empty checks on briefing paths; align schedule card trim with event_hub/mission_overview. |
-| T-498 | 3333 | running | platform | Discord webhook title not CSV/formula-safe (sibling of T-408) | Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord — user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R. |
+| T-498 | 3333 | shipped | platform | Discord webhook title not CSV/formula-safe (sibling of T-408) | Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord — user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R. |
 | T-495 | 3334 | deferred | platform | GET /members IT still only asserts data is_array (no offset exercise) | Wave 37 residual from T-412. Handler Class-R pins limit/offset + envelope. apps/website/api/tests/events.rs:~275 still only assert!(mem["data"].is_array()). Cure: seed >20 members on a cold IT DB and assert offset=20 returns member 21 / envelope total. |
 | T-499 | 3334 | deferred | platform | admin_field roles/sync still demotes all users in shared IT DB | Wave 38 residual from T-400. identity_link/factions/telemetry isolated. admin_field.rs POST /admin/roles/sync still loops every users row and demotes anyone without user_discord_roles — fires inside the suite against shared rows. Cure: scope sync to fixture actors or skip in IT / use private actors for asserts. |
 | T-500 | 3340 | deferred | platform | mission_compile does not run cargo wire_safety (Save-only refuse) | Wave 39 adversarial residual (CLEAN). T-416 wires Save Version via load_cargo_phys_catalog + validate_mission_editor_payload_with_catalog. Production mission_compile.rs does not call scan_cargo_capacity — pre-existing over-capacity versions can still compile until re-saved. Cure: pass CargoPhysCatalog into the compile gate (same table as Save) or document compile-as-trust-saved with a Class-R that compile path mentions the Save refuse. |
@@ -2724,7 +2724,7 @@ T-381 added common::require_test_database_url and wired it into factions.rs + id
 Cure: replace every IT setup's raw TEST_DATABASE_URL read with common::require_test_database_url() (or assert_test_database_url after a required read). Add Class-R in common that fails if any tests/*.rs still contains env::var("TEST_DATABASE_URL") outside common/mod.rs itself.
 
 Repro: rg 'env::var\("TEST_DATABASE_URL"\)' apps/website/api/tests — 22 hits outside common. |
-| T-543 | 3383 | running | platform | mcpd-bin.sh still echoes shared target/debug/mcpd path | FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-328.
+| T-543 | 3383 | shipped | platform | mcpd-bin.sh still echoes shared target/debug/mcpd path | FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-328.
 
 mcp-daemon.sh correctly builds/execs from target-dev-mcpd and discards mcpd-bin.sh stdout. Residual footgun: scripts/mod/lib/mcpd-bin.sh still hardcodes echo $ROOT/target/debug/mcpd; mcp-call-selftest.sh still consumes that echo. Cure: honor CARGO_TARGET_DIR in mcpd-bin.sh echo path.
 
@@ -2734,6 +2734,21 @@ Repro: rg 'target/debug/mcpd' scripts/mod/ |
 POST /missions/:id/versions/:vid/set-current is covered by in-handler Class-R source pins only. Cure: HTTP IT in tests/missions.rs that creates two versions, calls set-current to the older, asserts current_version_id + /compiled behavior.
 
 Repro: rg set_current_version apps/website/api/tests — no hit. |
+| T-545 | 3385 | deferred | platform | mcp-daemon.sh comment still claims mcpd-bin ignores CARGO_TARGET_DIR | FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-543.
+
+Runtime is correct (T-328/T-543). Residual: scripts/mod/mcp-daemon.sh comment still says mcpd-bin ignores CARGO_TARGET_DIR. Cure: update the comment to match live honor of CARGO_TARGET_DIR.
+
+Repro: rg 'ignores CARGO_TARGET_DIR' scripts/mod/ |
+| T-546 | 3386 | deferred | platform | T-498 Class-R only — no HTTP IT for Discord formula-title sanitize | FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-498.
+
+sanitize_discord_embed_field + include_str wire pins exist; no services_http / CMS IT asserts a leading '=title' becomes ZWSP-prefixed in the outbound embed JSON.
+
+Repro: rg sanitize_discord apps/website/api/tests — no hit. |
+| T-547 | 3387 | deferred | platform | datefmt format_uptime doc overclaims server-control sharing | FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-353.
+
+Gap 3 correctly shared format_uptime/log_stamp for dashboard/server_intel/audit. datefmt docs overclaim server-control uses the same HH:MM:SS helper; that page still has a different private helper. Cure: fix the doc comment or unify the helper.
+
+Repro: rg format_uptime apps/website/frontend/src/ |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
