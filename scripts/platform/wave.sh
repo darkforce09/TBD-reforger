@@ -1050,6 +1050,26 @@ gate_db_migrate_claim_body() {
 #     persist DB that lost its data would turn this step back into the thing it replaced.
 # The step also prints what it looked at — audited / pending / applied counts and the row floor —
 # because a verdict you cannot attribute to an input is not evidence.
+#
+# ── WHAT THIS STEP DOES NOT CATCH, MEASURED ──────────────────────────────────────────────────────
+#
+# The checksum half is absolute: from the second run onward, ANY edit to an applied migration is
+# caught, whatever the data.
+#
+# The DDL half is only ever as good as the rows this database happens to carry, and a VIRGIN
+# persist DB carries only what today's seed inserts. Measured 2026-07-27: bootstrap a fresh persist
+# DB with the current (T-331-fixed) content_golden and the PRE-T-555 0017, and it passes — because
+# the fixed seed no longer produces the duplicate seat that 0017 died on. The defect only
+# reproduces on a database that ran the OLD seed, which is what every real database did.
+#
+# So the value here compounds with age: DO NOT DROP tbd_gate_migrate_persist to "clean it up". Its
+# accumulated state — rows written by older seeds at older schema versions — is the asset, and it
+# is the only thing standing in for the shape of a production database. The recovery advice in the
+# `missing file` branch below is a last resort and it costs exactly that history.
+#
+# The strictly better version of this step seeds the persist DB from the OLDEST committed seed
+# rather than the current one, so a virgin bootstrap reproduces the historical shapes the current
+# seed has since fixed. That is left unfilled deliberately rather than half-built.
 gate_db_migrate_persist() {
   local mode="${1:-audit}"
   local db="${TBD_GATE_MIGRATE_PERSIST_DB:-tbd_gate_migrate_persist}"
