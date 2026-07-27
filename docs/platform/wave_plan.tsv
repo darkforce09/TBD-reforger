@@ -201,7 +201,7 @@
 2	T-405	Complete the URL guard: frontend sink, backfill, and the four remaining writers	apps/website/frontend/src/deployments.rs; apps/website/api/src/handlers/cms.rs; apps/website/api/src/handlers/oauth.rs; apps/website/api/src/services/discord.rs
 2	T-406	wave.sh residual hardening — the gate's remaining ways to be wrong about coverage	scripts/platform/wave.sh
 2	T-399	admin_field approvals assertion is a ratchet past 20 pending_approval rows	apps/website/api/tests/admin_field.rs
-3	T-397	Absent telemetry counters materialise as 0 on first INSERT; leaderboard sums it	apps/website/api/src/handlers/telemetry.rs
+3	T-397	Absent telemetry counters materialise as 0 on first INSERT; leaderboard sums it	apps/website/api/src/handlers/telemetry.rs; apps/website/api/migrations; apps/website/api/src/models/telemetry.rs
 3	T-400	Integration-test shared-fixture isolation — the 17 suites T-334 did not cover	apps/website/api/tests/identity_link.rs; apps/website/api/tests/factions.rs; apps/website/api/tests/telemetry.rs; apps/website/api/tests/common/mod.rs
 3	T-403	Golden corpus has vacuous fixtures — ArmoryFaction/ArmoryItem have zero coverage	apps/website/frontend/src/dto.rs; apps/website/frontend/tests/fixtures/api/GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json
 4	T-402	T-393 follow-ups: tripwire gaps and the unpinned terrain value space	apps/website/api/src/handlers/telemetry.rs
