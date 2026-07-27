@@ -14,6 +14,7 @@ use crate::handlers::{PageParams, username};
 use crate::middleware::AdminUser;
 use crate::models::{Announcement, AnnouncementStatus, AnnouncementTag, AuditSeverity};
 use crate::services::text::{cap_runes, is_http_url};
+use crate::services::webhook::sanitize_discord_embed_field;
 use crate::services::{snippet, write_audit};
 use crate::state::AppState;
 
@@ -93,6 +94,11 @@ fn snippet_from(explicit: &str, body: &str) -> String {
 }
 
 /// Push an announcement to the webhook; record the result. Returns success.
+///
+/// **T-498:** Discord embed sanitisation (formula prefixes / ASCII controls) lives in
+/// [`sanitize_discord_embed_field`] / `WebhookService::push_announcement` — the CMS path does
+/// not re-implement it. Failure audit messages still run the same helper so a control-char
+/// title cannot ride into the audit log via this format string.
 async fn push_to_discord(state: &AppState, a: &Announcement) -> bool {
     match state.webhook.push_announcement(a).await {
         Ok(msg_id) => {
@@ -106,6 +112,8 @@ async fn push_to_discord(state: &AppState, a: &Announcement) -> bool {
             true
         }
         Err(_) => {
+            // T-498: same sanitiser as the Discord sink — keep control/formula chars out of audit.
+            let safe_title = sanitize_discord_embed_field(&a.title);
             write_audit(
                 &state.pool,
                 AuditSeverity::Crit,
@@ -114,7 +122,7 @@ async fn push_to_discord(state: &AppState, a: &Announcement) -> bool {
                 "webhook.push_failed",
                 &format!(
                     "Webhook failed to push payload to Discord channel #announcements ('{}')",
-                    a.title
+                    safe_title
                 ),
                 "announcement",
                 &a.id.to_string(),
@@ -632,6 +640,53 @@ mod tests {
                 "get(handlers::cms::list_cms_announcements).post(handlers::cms::create_announcement)"
             ),
             "app.rs must MethodRouter GET+POST /cms/announcements"
+        );
+    }
+
+    /// T-498 Class-R: CMS Discord push must route through `webhook.push_announcement` (the
+    /// sanitised sink) and the failure-audit title must use `sanitize_discord_embed_field`.
+    ///
+    /// RED perturbations:
+    /// - call a raw HTTP client with `a.title` instead of `state.webhook.push_announcement` → FAIL
+    /// - restore bare `a.title` in the audit format string → FAIL
+    #[test]
+    fn push_to_discord_uses_sanitised_webhook_sink() {
+        const SRC: &str = include_str!("cms.rs");
+        let prod = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("cms.rs must have a #[cfg(test)] module");
+
+        let start = prod
+            .find("async fn push_to_discord")
+            .expect("push_to_discord must exist");
+        let after = &prod[start..];
+        let end = after[1..]
+            .find("\n#[derive")
+            .or_else(|| after[1..].find("\npub async fn "))
+            .map(|i| i + 1)
+            .unwrap_or(after.len());
+        let fn_body = &after[..end];
+
+        assert!(
+            fn_body.contains("webhook.push_announcement"),
+            "push_to_discord must call webhook.push_announcement (T-498 sink)"
+        );
+
+        let sanitize = format!("{}{}", "sanitize_discord_", "embed_field");
+        assert!(
+            fn_body.contains(&sanitize),
+            "failure-audit title must call `{sanitize}` (perturbation: raw a.title in format!)"
+        );
+        // Window pin: sanitize call must sit near the audit action, not a distant import bait.
+        let audit_arm = fn_body
+            .find("webhook.push_failed")
+            .expect("CRIT audit action webhook.push_failed must remain");
+        let win_start = audit_arm.saturating_sub(280);
+        let win = &fn_body[win_start..fn_body.len().min(audit_arm + 200)];
+        assert!(
+            win.contains(&sanitize),
+            "`{sanitize}` must sit in the push_failed audit window:\n{win}"
         );
     }
 }
