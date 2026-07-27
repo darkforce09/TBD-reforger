@@ -1,6 +1,6 @@
 //! Small UI helpers ported from lib/utils.ts (`cn`) + components/MaterialIcon.tsx + AuthGate.tsx.
 use crate::auth::AuthStore;
-use crate::nav::Role;
+use crate::nav::{has_min_role_authed, Role};
 use leptos::prelude::*;
 
 /// Neutral inline avatar (data URI) shown when a user has no Discord avatar — byte-identical to
@@ -240,6 +240,10 @@ pub fn Sheet(
 
 /// AdminGate — AuthGate + an admin-role check. Ported from components/AdminGate.tsx: authed
 /// non-admins see "Admin access required." instead of the children.
+///
+/// T-458: uses [`has_min_role_authed`] (`None=>false`), not browse-mode [`crate::nav::has_min_role`]
+/// / `AuthStore::has_min_role` (`None=>true`). The reactive `move ||` + `auth.user.get()` re-reads
+/// after bootstrap so a pre-session guest cannot flash admin children.
 #[component]
 pub fn AdminGate(children: ChildrenFn) -> impl IntoView {
     view! {
@@ -248,7 +252,7 @@ pub fn AdminGate(children: ChildrenFn) -> impl IntoView {
                 let children = children.clone();
                 move || {
                     let auth = expect_context::<AuthStore>();
-                    if auth.has_min_role(Role::Admin) {
+                    if has_min_role_authed(auth.user.get().map(|u| u.role), Role::Admin) {
                         children().into_any()
                     } else {
                         view! {
@@ -261,5 +265,76 @@ pub fn AdminGate(children: ChildrenFn) -> impl IntoView {
                 }
             }
         </AuthGate>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    /// Strip `//` / `/* */` so bans cannot false-red on doc comments (T-457 / T-458).
+    fn strip_rust_comments(src: &str) -> String {
+        let mut out = String::with_capacity(src.len());
+        let mut chars = src.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c == '/' {
+                match chars.peek() {
+                    Some('/') => {
+                        chars.next();
+                        while let Some(n) = chars.next() {
+                            if n == '\n' {
+                                out.push('\n');
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+                    Some('*') => {
+                        chars.next();
+                        while let Some(n) = chars.next() {
+                            if n == '*' && matches!(chars.peek(), Some('/')) {
+                                chars.next();
+                                break;
+                            }
+                        }
+                        continue;
+                    }
+                    _ => {}
+                }
+            }
+            out.push(c);
+        }
+        out
+    }
+
+    fn collapse_ws(s: &str) -> String {
+        s.split_whitespace().collect::<Vec<_>>().join(" ")
+    }
+
+    /// T-458 Class-R — AdminGate must not use browse-mode `has_min_role(None)=>true`.
+    /// Requires `has_min_role_authed` on the production path; bans the browse-mode one-shot.
+    #[test]
+    fn admin_gate_uses_authed_reactive_role() {
+        const SRC: &str = include_str!("ui.rs");
+        let production = SRC
+            .split("mod tests {")
+            .next()
+            .expect("tests module marker");
+        let code = collapse_ws(&strip_rust_comments(production));
+        assert!(
+            code.contains("has_min_role_authed(auth.user.get().map(|u| u.role), Role::Admin)"),
+            "AdminGate must gate via has_min_role_authed + reactive auth.user.get() \
+             (browse-mode None=>true is a fail)"
+        );
+        // Mask the authed helper so a free `has_min_role(` / one-shot store call stands out.
+        let masked = code.replace("has_min_role_authed", "HAS_MIN_ROLE_AUTHED");
+        assert!(
+            !masked.contains("has_min_role("),
+            "AdminGate production must not call browse-mode has_min_role( — use has_min_role_authed only"
+        );
+        // Split the needle so this assert's own source text cannot false-red the include_str scan.
+        let one_shot = format!("auth.has_min_role({}::Admin)", "Role");
+        assert!(
+            !code.contains(&one_shot),
+            "auth.has_min_role(Admin) is browse-mode None=>true (T-286/T-454 contract)"
+        );
     }
 }
