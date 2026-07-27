@@ -2461,6 +2461,10 @@ fn pair_slots(
 /// here instead of seating from an empty-catalog no-op. (`load_cargo_phys_catalog` is private
 /// in `missions.rs` — duplicated below; owns is events-only.)
 ///
+/// **T-551 — HTTP IT:** `tests/events.rs::roster_omits_over_capacity_mission_when_catalog_loaded`
+/// seeds an over-capacity tip (Save-bypass) and asserts the roster stays 200 with that
+/// mission's assignments omitted.
+///
 /// @route GET /api/v1/ingest/events/:id/roster
 pub async fn ingest_event_roster(
     State(state): State<AppState>,
