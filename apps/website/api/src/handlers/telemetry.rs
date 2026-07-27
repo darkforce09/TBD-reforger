@@ -1236,4 +1236,36 @@ mod tests {
         );
         assert_eq!(require_role_played("Rifleman").unwrap(), "Rifleman");
     }
+
+    /// Class-R (T-506): both `ingest_match_results` sites must invoke `require_role_played`.
+    /// Helper-only tests (`blank_role_played_is_rejected` / `non_blank_role_played_ok`) stay
+    /// green if the call sites are deleted — this pin fails that deletion.
+    #[test]
+    fn ingest_match_results_invokes_require_role_played_at_both_sites() {
+        const SRC: &str = include_str!("telemetry.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("telemetry.rs must have a #[cfg(test)] module");
+        let start = production
+            .find("pub async fn ingest_match_results")
+            .expect("ingest_match_results handler must exist");
+        let after = &production[start..];
+        // Next sibling fn is private `async fn upsert_match` (not `pub async fn`).
+        let end = after[1..]
+            .find("\nasync fn ")
+            .map(|i| i + 1)
+            .unwrap_or(after.len());
+        let handler = &after[..end];
+        let collapsed: String = handler.split_whitespace().collect::<Vec<_>>().join(" ");
+        // Assembled so a free-floating bait comment / this test's source cannot false-green
+        // with a bare `contains("require_role_played")` on the helper-only suite.
+        let call = format!("{}{}", "require_role_played(", "&p.role_played)");
+        assert_eq!(
+            collapsed.matches(&call).count(),
+            2,
+            "ingest_match_results must call require_role_played(&p.role_played) twice \
+             (pre-tx roster guard + UPSERT bind); helper-only tests do not cover this"
+        );
+    }
 }
