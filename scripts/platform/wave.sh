@@ -661,8 +661,12 @@ compiled_include_input_paths() {
 }
 
 touch_changed() {
-  local base="${1:-main...HEAD}" f listed=0 touched=0 d
-  for f in $(changed_rs "$base"); do
+  local base="${1:-main...HEAD}" files f listed=0 touched=0 d
+  # T-536: empty→listed=0→return 0 must not mask a failed changed_rs (e.g. git_porcelain_paths
+  # rc≠0). Same class as T-492 for fmt_changed/clippy_changed — `for f in $(changed_rs …)`
+  # discarded the rc and treated porcelain failure as an empty change list.
+  files="$(changed_rs "$base")" || return $?
+  for f in $files; do
     listed=$((listed+1))
     if [ -f "$f" ]; then
       touch "$f"
