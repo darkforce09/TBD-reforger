@@ -347,3 +347,4 @@
 99	T-546	T-498 Class-R only — no HTTP IT for Discord formula-title sanitize	apps/website/api/tests; apps/website/api/src/services/webhook.rs
 57	T-547	datefmt format_uptime doc overclaims server-control sharing	apps/website/frontend/src/datefmt.rs; apps/website/frontend/src/server_control.rs
 57	T-548	missions.rs featured-card briefing still uses !b.is_empty() without trim	apps/website/frontend/src/missions.rs
+99	T-549	Live /compiled still uses empty CargoPhysCatalog	apps/website/api/src/handlers/missions.rs; apps/website/api/src/services/mission_compile.rs

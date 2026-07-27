@@ -5,14 +5,6 @@
 
 ## Running / Review
 
-- **T-499** (3334) — admin_field roles/sync still demotes all users in shared IT DB [running] — Wave 38 residual from T-400. identity_link/factions/telemetry isolated. admin_field.rs POST /admin/roles/sync still loops every users row and demotes anyone without user_discord_roles — fires inside the suite against shared rows. Cure: scope sync to fixture actors or skip in IT / use private actors for asserts.
-- **T-500** (3340) — mission_compile does not run cargo wire_safety (Save-only refuse) [running] — Wave 39 adversarial residual (CLEAN). T-416 wires Save Version via load_cargo_phys_catalog + validate_mission_editor_payload_with_catalog. Production mission_compile.rs does not call scan_cargo_capacity — pre-existing over-capacity versions can still compile until re-saved. Cure: pass CargoPhysCatalog into the compile gate (same table as Save) or document compile-as-trust-saved with a Class-R that compile path mentions the Save refuse.
-- **T-537** (3377) — xtask empty/lossy write residuals outside T-383 owns (enf/world/map) [running] — FOUND as T-383 residual (W51 CLEAN). Owns fixed cmds/sync/schema_gates; still open:
-- enf/apidoc.rs header-only TSV overwrite exits 0
-- world/aux.rs:1009/1022/1050, world/build.rs:664/958
-- map/labels.rs:455, map/sap.rs:1007
-
-Same shape: success path writing structurally empty/lossy content over committed files. Cure: refuse_empty_write (or equivalent) at each site. Repro: see T-383 summary.
 
 ## Ready
 

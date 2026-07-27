@@ -13098,7 +13098,7 @@
       "impact": [
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3334,
       "stream": "web-platform",
       "targets": [
@@ -13120,7 +13120,7 @@
         "mission-creator",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3340,
       "stream": "web-platform",
       "targets": [
@@ -13935,7 +13935,7 @@
         "ci",
         "data-pipeline"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3377,
       "stream": "web-platform",
       "targets": [
@@ -14181,6 +14181,28 @@
       ],
       "status": "shipped",
       "order": 3388,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-549",
+      "title": "Live /compiled still uses empty CargoPhysCatalog (T-500 trust-saved residual)",
+      "summary": "FOUND by W58 adversarial verifier (CLEAN MINOR) after T-500.\n\nT-500 added flatten_to_mod_document_with_catalog + scan_cargo_capacity; the no-arg entry still uses an empty catalog (documented trust-Save). Live get_compiled_mission / events roster still call the no-arg path, so pre-T-416 over-capacity versions can still compile until re-saved.\n\nCure: load_cargo_phys_catalog in the compile handler(s) and call flatten_to_mod_document_with_catalog with the live table.\n\nRepro: rg flatten_to_mod_document apps/website/api/src/handlers",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "BE"
+      ],
+      "impact": [
+        "api",
+        "mission-authoring"
+      ],
+      "status": "deferred",
+      "order": 3389,
       "executor": "claude-code",
       "priority": 2,
       "stream": "web-platform",
