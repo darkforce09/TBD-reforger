@@ -104,7 +104,13 @@ GATE_TIMEOUT="${TBD_GATE_TIMEOUT:-1200}"
 # invisible to the gate that cleared their slices. ci.yml:66 and Makefile:123 both set the var, so CI
 # had real coverage; the hole was specific to the gate. Third-order instance of this run's signature
 # defect: reporting success on code never examined.
-GATE_DB="${TBD_GATE_DB:-postgres://tbd:tbd@localhost:5434/tbd_gate_it?sslmode=disable}"
+# Gate IT database (T-411). Default is per-wave — NOT the forever-dirty shared `tbd_gate_it`.
+# Residue used to ratchet forever on one DB (approvals page-1 ASC, missions NULL updated_at, …);
+# a timed/periodic wipe would make that intermittent (false-red / flake shape). Per-wave names
+# make a wave's verdict reproducible after the fact and shrink the concurrent-writer blast radius.
+# Escape hatches (unchanged): TEST_DATABASE_URL skips ensure entirely; TBD_GATE_DB pins a full URL
+# (create-if-missing that name, no wave prune). Wave number defaults to current_wave(); override
+# with TBD_GATE_WAVE when you need a specific w<N> without waiting on the plan.
 # The gate's PRIVATE trunk working set. Named here rather than buried in the sh -c string at the
 # call site, because gate_trunk_build asserts against them and the whole T-396 cure is that these
 # two are never the paths `trunk serve` owns. See gate_trunk_build for the measurement.
@@ -189,34 +195,93 @@ checkrun() { hostrun env "CARGO_TARGET_DIR=$GATE_CHECK_TARGET" "CARGO_INCREMENTA
 #
 # Its own DB, not the Makefile's `rust_it`: slice agents run `make test-it` concurrently, and that
 # target DROPs and recreates rust_it, so sharing it would make the gate race them.
+#
+# T-411: the IT database is per-wave (`tbd_gate_w<N>`), create-if-missing, with DBs older than the
+# last two waves dropped under the gate lock. NOT a per-run name (that leaks a DB every kill) and
+# NOT a timed wipe (that turns a permanent ratchet into an intermittent flake).
+gate_wave_number() {
+  local w
+  if [ -n "${TBD_GATE_WAVE:-}" ]; then
+    w="$TBD_GATE_WAVE"
+  else
+    w="$(current_wave)"
+    if [ "$w" = "done" ]; then
+      # All plan tickets shipped — pin to the highest wave number still in the plan.
+      w="$(plan_rows | awk -F'\t' '$1 ~ /^[0-9]+$/ {print $1}' | sort -n | tail -1)"
+    fi
+  fi
+  [[ "$w" =~ ^[0-9]+$ ]] || { echo "gate: cannot derive numeric wave for gate DB (got '${w:-<empty>}')" >&2; return 2; }
+  echo "$w"
+}
+
+# Drop tbd_gate_w* databases older than the last two waves (keep N and N-1). Only names matching
+# ^tbd_gate_w[0-9]+$ — never tbd_gate_it, tbd_gate_migrate, or operator TBD_GATE_DB names.
+prune_old_gate_wave_dbs() {
+  local wave="$1"
+  local keep_min=$((wave > 0 ? wave - 1 : 0))
+  # Listing needs -Atc (tuples-only); CREATE/DROP keep -qc. Same host-bridge rule as ensure_gate_db.
+  local list="podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -Atc"
+  local drop="podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc"
+  [ "$HOST_BRIDGE" = 1 ] && { list="distrobox-host-exec $list"; drop="distrobox-host-exec $drop"; }
+  local name n
+  while IFS= read -r name; do
+    [ -z "$name" ] && continue
+    n="${name#tbd_gate_w}"
+    [[ "$n" =~ ^[0-9]+$ ]] || continue
+    if [ "$n" -lt "$keep_min" ]; then
+      echo "gate: dropping stale wave DB $name (current wave $wave; keeping w${keep_min}+)"
+      $drop "DROP DATABASE IF EXISTS ${name} WITH (FORCE);" >/dev/null 2>&1 || true
+    fi
+  done < <($list "SELECT datname FROM pg_database WHERE datname ~ '^tbd_gate_w[0-9]+$';" 2>/dev/null || true)
+}
+
 ensure_gate_db() {
   [ -n "${TEST_DATABASE_URL:-}" ] && return 0          # operator override wins
   local psql="podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc"
   # Same host/container test as hostrun above, and for the same reason: `command -v` alone is TRUE
   # on the host, where prefixing this with the bridge makes every psql call exit 126.
   [ "$HOST_BRIDGE" = 1 ] && psql="distrobox-host-exec $psql"
-  $psql "CREATE DATABASE tbd_gate_it;" >/dev/null 2>&1 || true   # already-exists is fine
-  export TEST_DATABASE_URL="$GATE_DB"
+
+  local db_name url wave
+  if [ -n "${TBD_GATE_DB:-}" ]; then
+    # Operator-pinned full URL. Create-if-missing that database; do not prune wave DBs.
+    url="$TBD_GATE_DB"
+    db_name="${url##*/}"
+    db_name="${db_name%%\?*}"
+    if ! [[ "$db_name" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+      echo "gate: TBD_GATE_DB database name '$db_name' is not a safe SQL identifier — refusing."
+      return 2
+    fi
+    $psql "CREATE DATABASE ${db_name};" >/dev/null 2>&1 || true   # already-exists is fine
+    export TEST_DATABASE_URL="$url"
+  else
+    wave="$(gate_wave_number)" || return 2
+    db_name="tbd_gate_w${wave}"
+    url="postgres://tbd:tbd@localhost:5434/${db_name}?sslmode=disable"
+    $psql "CREATE DATABASE ${db_name};" >/dev/null 2>&1 || true   # already-exists is fine
+    export TEST_DATABASE_URL="$url"
+  fi
+
   # tests/db_migrate.rs takes a SECOND variable and its own database, because it exercises the
   # migration chain from empty — it cannot share a DB the other suites have already migrated.
   # Found only because gate_test_api refuses on any skip: with the first fix in, 28 of 30 skips
   # cleared and these two remained, naming a variable nothing had mentioned.
   #
-  # THE DROP BELOW IS DESTRUCTIVE AND IS ONLY SAFE UNDER THE GATE LOCK — read before moving this
+  # THE DROPS BELOW ARE DESTRUCTIVE AND ARE ONLY SAFE UNDER THE GATE LOCK — read before moving this
   # call, and before adding a fourth caller.
   #
-  # `DROP DATABASE ... WITH (FORCE)` terminates every session on tbd_gate_migrate. Grepped
-  # 2026-07-26: nothing else in the tree names that database or MIGRATE_TEST_DATABASE_URL except
-  # tests/db_migrate.rs and tests/models_fromrow.rs — i.e. the only thing it can ever kill is
-  # ANOTHER GATE'S test run. Gate B's startup force-drops the DB gate A's db_migrate is connected
-  # to. That is a third concurrency mechanism on top of the two the lock header names.
+  # `DROP DATABASE ... WITH (FORCE)` terminates every session on the target DB. Grepped
+  # 2026-07-26: nothing else in the tree names tbd_gate_migrate or MIGRATE_TEST_DATABASE_URL except
+  # tests/db_migrate.rs and tests/models_fromrow.rs — i.e. the only thing a migrate DROP can ever
+  # kill is ANOTHER GATE'S test run. Gate B's startup force-drops the DB gate A's db_migrate is
+  # connected to. That is a third concurrency mechanism on top of the two the lock header names.
   #
   # It is closed by the flock, not by anything here — which means it was only ever as good as the
   # lock ACTUALLY being held, and before T-406 it was not: take_gate_lock returned 0 after failing
   # to lock, so on a full disk (252 MB free, recorded in cmd_reclaim's header) this ran
-  # unserialised. Assert the invariant rather than assume it. Deliberately NOT a per-run database
-  # name: one mechanism that is checked beats two that are hoped for, and a per-run name leaks a
-  # database every time a gate is killed.
+  # unserialised. Assert the invariant rather than assume it. Migrate stays a single shared name
+  # under the lock (NOT per-run — that leaks a DB every kill). IT DBs are per-wave (T-411); pruning
+  # waves older than the last two is the same destructive class and sits under the same assert.
   # GATE_LOCK_HELD=1 is the normal path. GATE_UNSERIALISED=1 is the deliberate escape hatch
   # (TBD_GATE_ALLOW_UNSERIALISED=1): the operator accepted a degraded verdict, and the full gate
   # must still be able to reset its private migrate DB. T-409: the hatch used to return 0 from
@@ -231,6 +296,10 @@ ensure_gate_db() {
   if [ "${GATE_LOCK_HELD:-0}" != 1 ] && [ "${GATE_UNSERIALISED:-0}" = 1 ]; then
     echo "gate: WARNING — resetting tbd_gate_migrate WITHOUT the lock (TBD_GATE_ALLOW_UNSERIALISED)."
     echo "        A concurrent gate's db_migrate may be connected; WITH (FORCE) would kill it."
+  fi
+  # Prune only on the default per-wave path — never when the operator pinned TBD_GATE_DB.
+  if [ -z "${TBD_GATE_DB:-}" ] && [ -n "${wave:-}" ]; then
+    prune_old_gate_wave_dbs "$wave"
   fi
   $psql "DROP DATABASE IF EXISTS tbd_gate_migrate WITH (FORCE);" >/dev/null 2>&1 || true
   $psql "CREATE DATABASE tbd_gate_migrate;" >/dev/null 2>&1 || true
@@ -1217,7 +1286,8 @@ refuse_empty_range() {
 #   bounds the writers, the touch makes every workspace unit recompile from THIS tree, and neither
 #   is sufficient alone. The test steps above still carry the residue; that is not this ticket.
 #
-#   SHARED GATE DATABASE. ensure_gate_db hands every slice the same tbd_gate_it, while
+#   SHARED GATE DATABASE. Pre-T-411, ensure_gate_db handed every slice the same tbd_gate_it; T-411
+#   narrowed that to per-wave tbd_gate_w<N> (last two kept). Concurrent writers inside one wave remain:
 #   tests/registry_compat.rs:38-60 DELETEs and re-imports two FIXED modpack UUIDs. Re-measured here
 #   2026-07-26, two copies of one binary against tbd_gate_it: one panicked at registry_compat.rs:511
 #   with left (0, 5) / right (16, 7) while the other passed. Run alone it always passes.
