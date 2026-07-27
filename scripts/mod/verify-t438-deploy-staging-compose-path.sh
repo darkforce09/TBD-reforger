@@ -11,8 +11,9 @@
 # dry-run echo and the live ssh_cmd compose lines (paths must match), and
 # explicitly rejects apps/website/api/docker-compose.staging.yml on those lines.
 #
-# Gate: bash scripts/mod/verify-t438-deploy-staging-compose-path.sh
-# (No Makefile sibling — same shape as verify-t452 / verify-t456.)
+# Gate: make verify-t438
+#   (or: bash scripts/mod/verify-t438-deploy-staging-compose-path.sh)
+# Wired into ci-local + ci.yml mod-gates-hosted via `make verify-t438` (T-467).
 #
 # OWNS WIDEN: wave_plan T-438 lists only scripts/mod/deploy-staging.sh; this
 # script is the Class-R perturbation guard for that path contract. T-461 owns

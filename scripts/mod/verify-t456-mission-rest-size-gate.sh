@@ -10,8 +10,9 @@
 # IsMissionBodyWithinCap( call before ParseMissionJson(, and pins the helper body to
 # Length() <= MISSION_FILE_MAX_BYTES.
 #
-# Gate: bash scripts/mod/verify-t456-mission-rest-size-gate.sh
-# (No Makefile sibling hook — T-452/T-296 verify scripts are the same shape.)
+# Gate: make verify-t456
+#   (or: bash scripts/mod/verify-t456-mission-rest-size-gate.sh)
+# Wired into ci-local + ci.yml mod-gates-hosted via `make verify-t456` (T-467).
 #
 # OWNS WIDEN: wave_plan T-456 lists TBD_MissionLoader.c; this script is the Class-R
 # perturbation guard for the REST size gate. T-460 owns the script hardening.

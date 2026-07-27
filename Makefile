@@ -15,7 +15,7 @@ TBD_GIT_COMMON := $(shell git rev-parse --path-format=absolute --git-common-dir 
 TBD_REPO_ROOT := $(patsubst %/.git,%,$(TBD_GIT_COMMON))
 export CARGO_TARGET_DIR ?= $(TBD_REPO_ROOT)/target
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke mod-spawn-determinism mod-spawn-determinism-preflight ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat verify-cargo-target print-cargo-target-dir reclaim-target-ci
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-t438 verify-t456 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke mod-spawn-determinism mod-spawn-determinism-preflight ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat verify-cargo-target print-cargo-target-dir reclaim-target-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -287,6 +287,14 @@ verify-editorconfig: ## FMT-2: run editorconfig-checker from repo root (CODING_S
 verify-t180: ## T-180.10 Class-R coherency gate (ORBAT + Eden locks A–I)
 	@bash scripts/verify-t180-coherency.sh
 
+# T-467: Makefile + ci-local + ci.yml siblings for wave.sh-wired Class-R scripts
+# (T-463 wired them into the cold gate; pre-T-467 they had no make/CI authority).
+verify-t438: ## T-438/T-461 deploy-staging compose path (website/, not api/)
+	@bash scripts/mod/verify-t438-deploy-staging-compose-path.sh
+
+verify-t456: ## T-456/T-460 mission REST body size gate before ParseMissionJson
+	@bash scripts/mod/verify-t456-mission-rest-size-gate.sh
+
 verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
 	cargo run -q -p xtask -- schema terrain-manifest --terrain everon
 	cargo run -q -p xtask -- schema terrain-alignment --terrain everon
@@ -378,9 +386,10 @@ verify-no-node: ## T-165.10 hard gate — zero tracked .mjs/.cjs; node only as t
 	cargo run -q -p xtask -- verify no-node
 
 # ci-local mirrors .github/workflows/ci.yml (CODING_STANDARDS.md §0.3 CI-2, §11). Order:
-# editorconfig (FMT-2) -> rust backend -> coding standards -> Leptos SPA -> schema; each
-# sub-target is a separate $(MAKE) so a non-zero recipe halts the run (fail-fast). Node-free
-# since T-165 — every gate is cargo/bash (Node exists solely as the enfusion-mcp runtime).
+# editorconfig (FMT-2) -> rust backend -> coding standards -> Leptos SPA -> schema ->
+# T-438/T-456 Class-R (T-467); each sub-target is a separate $(MAKE) so a non-zero recipe
+# halts the run (fail-fast). Node-free since T-165 — every gate is cargo/bash (Node exists
+# solely as the enfusion-mcp runtime).
 ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` first)
 	$(MAKE) verify-editorconfig
 	$(MAKE) verify-no-python
@@ -389,6 +398,8 @@ ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` first)
 	$(MAKE) verify-coding-standards
 	$(MAKE) ci-local-leptos
 	$(MAKE) ci-local-schema
+	$(MAKE) verify-t438
+	$(MAKE) verify-t456
 
 ci-local-leptos: ## CI gate: Leptos SPA fmt + clippy(wasm32) + native tests + trunk release build (mirrors ci.yml website-frontend)
 	cargo fmt -p website-frontend --check
