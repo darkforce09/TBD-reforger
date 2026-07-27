@@ -14,7 +14,8 @@ pub mod webhook;
 pub use audit::write_audit;
 pub use discord::DiscordService;
 pub use mission_compile::{
-    CompileError, ModMissionDocument, ModSlot, flatten_to_mod_document, mission_terrain_key,
+    CompileError, ModMissionDocument, ModSlot, flatten_to_mod_document,
+    flatten_to_mod_document_with_catalog, mission_terrain_key,
 };
 // Ported to the shared crate (T-145 Phase 2); re-exported so `crate::services::…` callers are unchanged.
 pub use map_engine_core::mission::orbat::{

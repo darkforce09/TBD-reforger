@@ -41,13 +41,16 @@ pub use map_engine_core::mission::flatten::{
 /// exists to fix. This function is now purely the **row → [`MissionMeta`] adapter**; everything
 /// downstream of it is shared code, which is what makes the twin honest.
 ///
-/// **T-500 — cargo capacity.** Routes through [`flatten_to_mod_document_with_catalog`] with an
-/// **empty** catalog (cargo walk is a no-op — never invent limits). The live Save boundary
-/// (`handlers::missions::validate_payload` → `load_cargo_phys_catalog` →
-/// `validate_mission_editor_payload_with_catalog`) already refuses over-capacity before a version
-/// is stored, so API-written payloads that reach compile are cargo-clean. Callers that hold the
-/// same registry phys table Save loads must use [`flatten_to_mod_document_with_catalog`] so
-/// pre-T-416 stored rows (and any write that bypassed Save) cannot compile either.
+/// **T-500 / T-549 — cargo capacity.** Routes through [`flatten_to_mod_document_with_catalog`] with
+/// an **empty** catalog (cargo walk is a no-op — never invent limits). The no-arg entry is for
+/// unit tests and callers without a pool. Live boundaries that hold the registry phys table must
+/// call [`flatten_to_mod_document_with_catalog`] instead:
+///
+/// * Save — `handlers::missions::validate_payload` → `load_cargo_phys_catalog` →
+///   `validate_mission_editor_payload_with_catalog`
+/// * `GET /missions/:id/compiled` — `load_cargo_phys_catalog` → this catalogued gate (T-549)
+///
+/// so pre-T-416 stored rows (and any write that bypassed Save) cannot compile either.
 pub fn flatten_to_mod_document(
     m: &Mission,
     payload: &[u8],
@@ -886,9 +889,9 @@ mod tests {
         );
     }
 
-    /// T-500 Class-R — compile-as-trust-saved for the empty-catalog default: Save owns the live
-    /// refuse via `load_cargo_phys_catalog`. RED: Save drops the catalog load, or this adapter
-    /// stops documenting that dependency.
+    /// T-500 Class-R — compile-as-trust-saved for the empty-catalog default: Save and live
+    /// `/compiled` (T-549) own the refuse via `load_cargo_phys_catalog`. RED: Save drops the
+    /// catalog load, or this adapter stops documenting that dependency.
     #[test]
     fn compile_documents_save_cargo_refuse() {
         const COMPILE: &str = include_str!("mission_compile.rs");
@@ -903,6 +906,10 @@ mod tests {
         assert!(
             production.contains("validate_mission_editor_payload_with_catalog"),
             "compile adapter must name Save's catalogued validator"
+        );
+        assert!(
+            production.contains("GET /missions/:id/compiled"),
+            "compile adapter must name the live /compiled catalogued path (T-549)"
         );
 
         const HANDLER: &str = include_str!("../handlers/missions.rs");
@@ -921,6 +928,16 @@ mod tests {
         assert!(
             helper.contains("validate_mission_editor_payload_with_catalog"),
             "Save helper must call the catalogued validator"
+        );
+        let compiled = handler_prod
+            .split("pub async fn get_compiled_mission(")
+            .nth(1)
+            .and_then(|s| s.split("\nfn unreadable_stored_payload(").next())
+            .expect("get_compiled_mission body");
+        assert!(
+            compiled.contains("load_cargo_phys_catalog")
+                && compiled.contains("flatten_to_mod_document_with_catalog("),
+            "/compiled must load catalog + with_catalog (T-549); got:\n{compiled}"
         );
     }
 }
