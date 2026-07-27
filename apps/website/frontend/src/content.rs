@@ -456,6 +456,8 @@ fn editor(
     let category = RwSignal::new(d.category.clone());
     let push_discord = RwSignal::new(true);
     let thumbnail_url = RwSignal::new(d.thumbnail_url.clone());
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = &thumbnail_url;
 
     // Write the edited fields back into the local list; optionally retarget the list id when the
     // server mints a UUID on first Publish.
@@ -930,7 +932,7 @@ mod tests {
             APP_RS.contains(r#""/cms/uploads""#),
             "app.rs must still register POST /cms/uploads"
         );
-        assert_eq!(cms_uploads_path(), "/cms/uploads");
+        assert_eq!(super::cms_uploads_path(), "/cms/uploads");
     }
 
     /// T-447 / T-465 Class-R — boot must LocalResource GET the CMS list **and** the hydrate
@@ -1239,7 +1241,7 @@ mod tests {
             "Cargo.toml must enable FileList for HtmlInputElement::files()"
         );
         assert!(
-            client_prod.contains("pub async fn api_upload_file")
+            client_prod.contains("pub async fn api_upload_file<")
                 && client_prod.contains("FormData::new()")
                 && client_prod.contains("append_with_blob_and_filename(\"file\""),
             "client must expose api_upload_file with FormData field \"file\" \

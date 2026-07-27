@@ -585,7 +585,7 @@ mod tests {
             .next()
             .expect("client.rs must have a #[cfg(test)] module");
         assert!(
-            prod.contains("pub async fn api_upload_file"),
+            prod.contains("pub async fn api_upload_file<"),
             "api_upload_file must exist (perturbation: rename/delete)"
         );
         assert!(
