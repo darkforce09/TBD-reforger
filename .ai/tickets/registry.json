@@ -9786,7 +9786,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3157,
       "stream": "web-platform",
       "targets": [
@@ -10408,7 +10408,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3187,
       "stream": "web-platform",
       "targets": [
@@ -10634,7 +10634,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3198,
       "stream": "web-platform",
       "targets": [
@@ -13785,6 +13785,48 @@
       ],
       "status": "deferred",
       "order": 3370,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-531",
+      "title": "null_tolerance still lists deployments.* as KNOWN_OPEN after T-341",
+      "summary": "FOUND by W48 adversarial verifier (MINOR) after T-341 shipped.\n\n`apps/website/api/tests/null_tolerance.rs` still has `KNOWN_OPEN` entry `(\"src/handlers/deployments.rs\", \"*\", \"T-341 \u2014 open\")` and `BASELINE_CAP=1`, while deployments.rs no longer has bare `event_registrations.*`. Comments still claim \"BASELINE_CAP is now 0\" / \"T-341 takes this to 0\".\n\nThe stale path is `eprintln!` only today (not a hard fail); cold gate PASS saw it. Prune the entry, set `BASELINE_CAP=0`, fix the lying comments. Repro: `rg 'T-341 \u2014 open|BASELINE_CAP' apps/website/api/tests/null_tolerance.rs`.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3371,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-532",
+      "title": "No API route to re-point mission current_version_id after a bad version",
+      "summary": "FOUND as T-382 residual (W48). T-382 closed the *new* hole: vacuous `payload:{}` is rejected at create_version write time. Already-broken rows (and any future non-vacuous but unwanted tip) still cannot be re-pointed via API \u2014 only `psql` UPDATE of `missions.current_version_id`.\n\nNeeds a rollback / re-point handler in missions.rs **and** route registration in `app.rs` (out of T-382 owns). Repro: after a good version then a bad tip that somehow lands, there is no PATCH/POST to restore the prior version id; `/compiled` stays 409 NoSlots.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "api",
+        "missions"
+      ],
+      "status": "deferred",
+      "order": 3372,
       "stream": "web-platform",
       "targets": [
         "website"
