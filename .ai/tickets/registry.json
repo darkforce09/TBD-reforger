@@ -11642,7 +11642,7 @@
         "events",
         "telemetry"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3270,
       "stream": "web-platform",
       "targets": [
@@ -11683,7 +11683,7 @@
       "impact": [
         "cms"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3272,
       "stream": "web-platform",
       "targets": [
@@ -11829,7 +11829,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3279,
       "stream": "web-platform",
       "targets": [

@@ -892,28 +892,11 @@ Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in
 - **T-430** (deferred) — Production Config::validate should require DISCORD_CLIENT_ID [BE] — Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
 
 Repro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured.
-- **T-431** (deferred) — Identity-link attendance backfill still marks every mission on the event [BE] — MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.
-
-Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.
-
-Cure: same JOIN shape as T-230 telemetry ingest.
 - **T-432** (deferred) — Reserve or rename payloadExtras so authored wire keys cannot collide [FE] — MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.
 
 Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.
 
 Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage name.
-- **T-433** (deferred) — cms.rs announcement_body_persist_contract unit test is tautological [BE, tests] — MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.
-
-Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
-
-Cure: delete it or replace with a non-vacuous pin (handler/IT only).
-- **T-440** (deferred) — Cold/schema gates never apply make seed / faction_library.sql [INFRA, CI] — Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
-
-Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.
-
-Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.
-
-Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB).
 - **T-476** (deferred) — verify-t438/t456 Makefile recipes lack hollow-body tripwire [INFRA, tests] — NIT from wave 28 adversarial. T-467 wired real bash recipes into Makefile + ci-local + ci.yml, but there is no T-471/T-472-style recipe-body tripwire — a future hollow `@true` / `echo PASS` / `#fake` recipe would green until noticed.
 
 Repro (hypothetical): replace verify-t438 recipe with `@true` → make verify-t438 PASS while script never runs.

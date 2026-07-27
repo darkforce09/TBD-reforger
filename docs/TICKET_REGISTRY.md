@@ -2289,7 +2289,7 @@ Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in
 | T-430 | 3269 | deferred | platform | Production Config::validate should require DISCORD_CLIENT_ID | Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
 
 Repro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured. |
-| T-431 | 3270 | deferred | platform | Identity-link attendance backfill still marks every mission on the event | MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.
+| T-431 | 3270 | ready | platform | Identity-link attendance backfill still marks every mission on the event | MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.
 
 Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.
 
@@ -2299,7 +2299,7 @@ Cure: same JOIN shape as T-230 telemetry ingest. |
 Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.
 
 Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage name. |
-| T-433 | 3272 | deferred | platform | cms.rs announcement_body_persist_contract unit test is tautological | MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.
+| T-433 | 3272 | ready | platform | cms.rs announcement_body_persist_contract unit test is tautological | MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.
 
 Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
 
@@ -2336,7 +2336,7 @@ Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-co
 Repro: place a non-checkpoint Objects leaf → compile entities[] → world-boot → spawn warns and skips; only checkpoint_small resolves.
 
 Cure: export/register prop: and comp: rows for Objects-eligible kinds (or narrow palette to known aliases until registry catches up). |
-| T-440 | 3279 | deferred | platform | Cold/schema gates never apply make seed / faction_library.sql | Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
+| T-440 | 3279 | ready | platform | Cold/schema gates never apply make seed / faction_library.sql | Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
 
 Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.
 

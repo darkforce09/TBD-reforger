@@ -13,3 +13,41 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-431 — Identity-link attendance backfill still marks every mission on the event
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-431`
+- **Targets:** website
+- **Summary:** MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.
+
+Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.
+
+Cure: same JOIN shape as T-230 telemetry ingest.
+
+## T-433 — cms.rs announcement_body_persist_contract unit test is tautological
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-433`
+- **Targets:** website
+- **Summary:** MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.
+
+Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
+
+Cure: delete it or replace with a non-vacuous pin (handler/IT only).
+
+## T-440 — Cold/schema gates never apply make seed / faction_library.sql
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-440`
+- **Targets:** website
+- **Summary:** Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
+
+Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.
+
+Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.
+
+Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB).
