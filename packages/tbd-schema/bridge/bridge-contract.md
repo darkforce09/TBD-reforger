@@ -82,7 +82,7 @@ source of truth. For each net:
 | `net.id` | `id` | Stable channel key |
 | `net.label` | `label` | UI display name |
 | `net.freqMHz` | `freqMHz` | Tuning + same-frequency grouping |
-| `net.range` | (informs `radioClass` eligibility) | short/long radio gating |
+| `net.range` | (informs `radioClass` eligibility) | `short`/`long` radio gating (T-292: `any` retired — Enfusion has two classes only) |
 | role `radio[]` membership | `transmit` / `receive` | which nets a slot may use |
 
 A squad leader whose role lists `["net:cmd", "net:alpha"]` spawns with both nets

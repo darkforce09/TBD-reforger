@@ -242,8 +242,9 @@ class TBD_RadioTuner
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Every radio the player is carrying, handhelds first so a `range: any` net lands on the radio
-	//! everybody has rather than on a backpack only the RTO carries.
+	//! Every radio the player is carrying, handhelds first so a `range: short` net (and the
+	//! flag-0 path in general) lands on the radio everybody has rather than on a backpack only
+	//! the RTO carries. T-292 retired schema `any` — it was never a third hardware class.
 	protected static array<ref TBD_RadioSet> CollectRadios(notnull SCR_GadgetManagerComponent gadgets)
 	{
 		array<ref TBD_RadioSet> sets = {};
@@ -287,12 +288,13 @@ class TBD_RadioTuner
 	//! The radio a net of this range class should go into, or null when every transceiver is spoken
 	//! for.
 	//!
-	//! This is where `net.range` stops being a label and becomes hardware: a `long` net wants the
-	//! backpack set, a `short` net wants a handheld, and `any` takes whatever is free. The
-	//! preference is a PREFERENCE — a long-range net on a player who carries only a handheld goes
-	//! into the handheld rather than being dropped, because a squad that can hear command badly is
-	//! better off than one that cannot hear it at all. Enfusion has no ternary operator, so the two
-	//! passes are written out.
+	//! This is where `net.range` stops being a label and becomes hardware: a `long` net (flag 1)
+	//! wants the backpack set; a `short` net (flag 0) wants a handheld. Enfusion has only those
+	//! two gadget classes — there is no third `any` hardware path (T-292 narrowed the schema).
+	//! The preference is a PREFERENCE — a long-range net on a player who carries only a handheld
+	//! goes into the handheld rather than being dropped, because a squad that can hear command
+	//! badly is better off than one that cannot hear it at all. Enfusion has no ternary operator,
+	//! so the two passes are written out.
 	protected static TBD_RadioSet PickRadio(notnull array<ref TBD_RadioSet> sets, bool wantLongRange)
 	{
 		foreach (TBD_RadioSet radioSet : sets)

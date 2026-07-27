@@ -45,8 +45,9 @@ class TBD_MissionNetStruct
 	//! Non-empty = side-scoped intelligence, and `TBD_RadioService` will not serve it to anyone
 	//! else. `JsonLoadContext` leaves a missing string at its initializer, so empty means absent.
 	string faction;
-	//! `short` | `long` | `any`. Empty = absent, which the schema's own `default` says is `any`.
-	//! Decides WHICH radio a net is tuned into — see `TBD_RadioTuner`.
+	//! `short` | `long` (T-292; schema default `short`). Empty = absent → same handheld path as
+	//! `short` (`LongRangeFlag` → 0). Decides WHICH radio a net prefers — see `TBD_RadioTuner`.
+	//! Retired value `any` is schema-rejected; still treated as handheld if it somehow arrives.
 	string range;
 }
 

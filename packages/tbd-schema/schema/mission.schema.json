@@ -328,9 +328,9 @@
         "faction": { "$ref": "#/$defs/factionKey" },
         "range": {
           "type": "string",
-          "description": "Radio class that can use this net.",
-          "enum": ["short", "long", "any"],
-          "default": "any"
+          "description": "T-292: which radio class this net prefers. Enfusion exposes exactly two gadget types — EGadgetType.RADIO (handheld) and EGadgetType.RADIO_BACKPACK — and the mod wire is a 0/1 flag (TBD_RadioService.LongRangeFlag → m_aLongRange). short → handheld (flag 0); long → backpack (flag 1). There is no third hardware class, so the retired value any is rejected here rather than kept as a synonym that looked distinct while collapsing to the same flag as short.",
+          "enum": ["short", "long"],
+          "default": "short"
         }
       }
     },

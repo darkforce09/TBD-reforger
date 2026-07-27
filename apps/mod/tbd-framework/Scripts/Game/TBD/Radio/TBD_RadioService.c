@@ -203,9 +203,12 @@ class TBD_RadioService
 	//! parameter — and `array<int>` is proven in both oracles while `array<bool>` appears in
 	//! neither. See `TBD_RadioTuner.TunePlayer`.
 	//!
-	//! `short`, `any` and ABSENT all mean a handheld will do; only `long` asks for the backpack.
-	//! Absent is `any` by the schema's own `default`, and `JsonLoadContext` leaves a missing string
-	//! at its initializer, so empty is absent here.
+	//! T-292 — the schema admits exactly two values (`short` | `long`, default `short`), matching
+	//! Enfusion's two radio gadget classes. Only `long` returns 1 (backpack preference). `short`
+	//! and ABSENT (empty — `JsonLoadContext` leaves a missing string at its initializer; schema
+	//! default is `short`) return 0 (handheld preference). The retired value `any` is rejected by
+	//! `mission.schema.json` but still maps to 0 here so a pre-T-292 document that somehow skipped
+	//! schema validation does not flip into backpack mode by accident.
 	//!
 	//! Compared case-sensitively against the schema's own lowercase enum, deliberately: `ToLower()`
 	//! MUTATES IN PLACE AND RETURNS A COUNT in Enfusion, so the obvious normalising one-liner does
@@ -215,6 +218,11 @@ class TBD_RadioService
 	{
 		if (range == "long")
 			return 1;
+
+		// Explicit `short` (and empty / legacy `any`) → handheld. Named so the handheld path is not
+		// a silent fall-through that made `short` look discarded next to a three-value schema.
+		if (range == "short" || range.IsEmpty() || range == "any")
+			return 0;
 
 		return 0;
 	}
@@ -321,7 +329,7 @@ class TBD_RadioWire
 	ref array<string> m_aId = {};       //!< `net:<id>`, stable channel key.
 	ref array<string> m_aLabel = {};    //!< Display name, already length-capped.
 	ref array<int> m_aFreqKHz = {};     //!< Kilohertz — the unit the engine's radio API speaks.
-	ref array<int> m_aLongRange = {};   //!< 1 when `range: long` asked for the backpack set, else 0.
+	ref array<int> m_aLongRange = {};   //!< 1 when `range: long` (backpack); 0 when `range: short` / absent (handheld).
 
 	//! `TBD_ERadioTuneResult` by NAME, so the client can render the truth without importing the
 	//! enum's numeric values across a wire that would then be version-coupled to them.
