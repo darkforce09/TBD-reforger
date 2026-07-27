@@ -240,7 +240,7 @@
 99	T-437	Destroy-target inert diagnostics still claim entities[] never spawn	apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c; packages/tbd-schema/schema/mission.schema.json
 99	T-438	deploy-staging.sh still looks for docker-compose.staging.yml under apps/website/api	scripts/mod/deploy-staging.sh; scripts/mod/verify-t438-deploy-staging-compose-path.sh; docs/website/HOME_SERVER.md
 99	T-439	Objects palette aliases need prop:/comp: rows in mod Data/registry.json	apps/mod/tbd-framework/Data/registry.json; apps/website/frontend/src/asset_catalog.rs; scripts/mod/verify-t439-objects-registry-aliases.sh
-99	T-440	Cold/schema gates never apply make seed / faction_library.sql	Makefile; scripts/platform/wave.sh; apps/website/api/seeds/faction_library.sql
+99	T-440	Cold/schema gates never apply make seed / faction_library.sql	Makefile; scripts/platform/wave.sh; apps/website/api/seeds/faction_library.sql; scripts/mod/verify-t440-faction-library-seed.sh
 4	T-441	null_tolerance OPTION_FIELDS for events.server_id/modpack_id	apps/website/api/tests/null_tolerance.rs
 99	T-442	Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id	apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/dto.rs
 99	T-445	Audit Load-more Class-R does not pin on_load_more UI wiring	apps/website/frontend/src/audit.rs
