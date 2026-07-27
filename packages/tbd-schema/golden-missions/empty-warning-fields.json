@@ -91,7 +91,7 @@
       "situation": "",
       "mission": "",
       "execution": "",
-      "markers": [{ "x": 7615, "z": 4350, "icon": "", "label": "" }]
+      "markers": [{ "x": 7615, "z": 4350, "icon": "dot", "label": "" }]
     },
     "opfor": {}
   },
