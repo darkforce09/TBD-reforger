@@ -17,10 +17,18 @@
 //! its "Attached Missions" roster detaches through the same Aegis confirm the delete uses —
 //! detaching drops that mission's ORBAT slots *and* every registration on it, which is exactly as
 //! destructive as deleting the operation.
+//!
+//! T-332: two follow-ups that T-226 correctly left behind. (1) Empty-string clear on PATCH is
+//! the **blessed** contract for `briefing` / `banner_image_url` (key absent = leave alone;
+//! `""` = clear) — the edit save already posted `""` when a field was blanked; that is now the
+//! documented shape, not a workaround. (2) Re-attach after create/detach — `POST
+//! /events/:id/missions` had a caller only in the create flow; the Edit dialog's Attached
+//! Missions roster now has the matching Attach Mission dropdown so an admin who detaches the
+//! last mission does not have to delete and recreate the operation.
 #![allow(dead_code)]
 use crate::datefmt::format_local_datetime;
 use crate::dto::{EventHub, EventListItem, EventMissionDossier, MissionCard, Paginated};
-use crate::ui::{badge_class, cn, AdminGate, Dialog, MaterialIcon};
+use crate::ui::{AdminGate, Dialog, MaterialIcon, badge_class, cn};
 use leptos::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -304,6 +312,10 @@ fn EventManagerInner() -> impl IntoView {
     let detach_target = RwSignal::new(None::<(String, String)>);
     let detach_open = RwSignal::new(false);
     let detach_busy = RwSignal::new(false);
+    // T-332 — Edit-dialog attach dropdown (create's `attach_open` stages into the publish body;
+    // this one POSTs immediately to an existing event).
+    let edit_attach_open = RwSignal::new(false);
+    let attach_busy = RwSignal::new(false);
 
     // The attached-mission roster is NOT on the list row — `mission_count` is a number, and the
     // `event_mission_id` that `DELETE /events/:id/missions/:emid` keys on exists only on the hub
@@ -493,6 +505,7 @@ fn EventManagerInner() -> impl IntoView {
         edit_reg_open.set(!op.registration_locked);
         edit_status.set(op.status.clone());
         edit_orig.set(Some(op));
+        edit_attach_open.set(false);
         // Flipping this is what drives the `hub` Resource — measured in the browser: the hub GET
         // is in flight ~immediately after this set, on the first open as on every later one. No
         // manual refetch is needed here (one IS needed after a detach, where no source changes).
@@ -506,6 +519,10 @@ fn EventManagerInner() -> impl IntoView {
     // `start_time` is the value the backend's pre-start guard measures. Diffing keeps a rename a
     // rename. `status` is diffed for the same reason plus one more: `from == to` is a legal no-op
     // server-side, but leaving it out means a rename can never be the thing that trips a 409.
+    //
+    // T-332 clear contract: for `briefing` / `banner_image_url`, posting `""` clears (key absent
+    // = leave alone). Blanking a field here is intentional — empty string clears, not a
+    // workaround for a missing null path.
     let on_save_edit = move |_| {
         #[cfg(target_arch = "wasm32")]
         {
@@ -638,6 +655,52 @@ fn EventManagerInner() -> impl IntoView {
                 }
                 detach_busy.set(false);
             });
+        }
+    };
+
+    // T-332 — Attach Mission on an existing operation (the create flow's POST caller, for Edit).
+    // Uses the operation's saved `start_time` as the mission start (same default as publish).
+    // Duplicate attach is a backend 409 (`idx_event_mission`); the dropdown already filters
+    // missions present on the hub roster so the common path never hits it.
+    let on_attach_mission = move |mission_id: String, title: String| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let toasts = crate::toast::use_toasts();
+            let (Some(id), Some(orig)) =
+                (selected_event.get_untracked(), edit_orig.get_untracked())
+            else {
+                return;
+            };
+            if attach_busy.get_untracked() {
+                return;
+            }
+            attach_busy.set(true);
+            edit_attach_open.set(false);
+            let start = orig.start_time.clone();
+            leptos::task::spawn_local(async move {
+                match crate::client::api_post::<serde_json::Value>(
+                    store,
+                    &format!("/events/{id}/missions"),
+                    serde_json::json!({ "mission_id": mission_id, "start_time": start }),
+                )
+                .await
+                {
+                    Ok(_) => {
+                        toasts.success(format!("Attached {title}"));
+                        hub.refetch();
+                        events.refetch();
+                    }
+                    Err(e) => toasts.error(crate::client::api_error_message(
+                        &e,
+                        "Could not attach mission",
+                    )),
+                }
+                attach_busy.set(false);
+            });
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = (mission_id, title);
         }
     };
 
@@ -1199,8 +1262,8 @@ fn EventManagerInner() -> impl IntoView {
                     />
                 </div>
 
-                // Attached missions — the detach half of the ticket. `event_mission_id` is only
-                // on the hub payload, so this section is what the `hub` Resource exists for.
+                // Attached missions — detach (T-226) + re-attach (T-332). `event_mission_id` is
+                // only on the hub payload, so this section is what the `hub` Resource exists for.
                 <div class="mt-6">
                     <p class="mb-2 font-mono text-xs tracking-wider text-on-surface-variant/70 uppercase">
                         "Attached Missions"
@@ -1277,6 +1340,90 @@ fn EventManagerInner() -> impl IntoView {
                                         .into_any()
                                 }
                             }
+                        }}
+                    </div>
+
+                    // T-332 — Attach Mission on an existing operation (mirrors create's dropdown,
+                    // but POSTs immediately instead of staging for publish).
+                    <div class="relative mt-2">
+                        <button
+                            type="button"
+                            data-testid="edit-attach-mission"
+                            on:click=move |_| edit_attach_open.update(|o| *o = !*o)
+                            prop:disabled=move || attach_busy.get()
+                            class="flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2 text-sm text-on-surface transition hover:bg-white/5 disabled:opacity-50"
+                        >
+                            <MaterialIcon name="add" class="text-base" />
+                            {move || {
+                                if attach_busy.get() {
+                                    "Attaching…"
+                                } else {
+                                    "Attach Mission"
+                                }
+                            }}
+                        </button>
+                        {move || {
+                            edit_attach_open
+                                .get()
+                                .then(|| {
+                                    let current = selected_event.get();
+                                    let attached: Vec<String> = match hub.get() {
+                                        Some(Roster::Loaded(id, ms))
+                                            if Some(id.as_str()) == current.as_deref() =>
+                                        {
+                                            ms.into_iter().map(|m| m.mission_id).collect()
+                                        }
+                                        _ => Vec::new(),
+                                    };
+                                    let available: Vec<MissionCard> = missions
+                                        .get()
+                                        .flatten()
+                                        .map(|p| p.data)
+                                        .unwrap_or_default()
+                                        .into_iter()
+                                        .filter(|m| !attached.iter().any(|id| id == &m.id))
+                                        .collect();
+                                    view! {
+                                        <div class="absolute z-10 mt-2 max-h-64 w-full overflow-y-auto rounded-xl border border-white/10 bg-surface-container-high/95 p-1 shadow-2xl backdrop-blur-xl">
+                                            {if available.is_empty() {
+                                                view! {
+                                                    <p class="px-3 py-2 text-sm text-on-surface-variant">
+                                                        "No more missions in the library."
+                                                    </p>
+                                                }
+                                                    .into_any()
+                                            } else {
+                                                available
+                                                    .into_iter()
+                                                    .map(|m| {
+                                                        let id = m.id.clone();
+                                                        let title = m.title.clone();
+                                                        let terrain = terrain_label(&m.terrain);
+                                                        view! {
+                                                            <button
+                                                                type="button"
+                                                                on:click=move |_| {
+                                                                    on_attach_mission(
+                                                                        id.clone(),
+                                                                        title.clone(),
+                                                                    );
+                                                                }
+                                                                prop:disabled=move || attach_busy.get()
+                                                                class="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm text-on-surface transition hover:bg-white/5 disabled:opacity-50"
+                                                            >
+                                                                <span class="truncate">{m.title.clone()}</span>
+                                                                <span class="shrink-0 font-mono text-xs text-on-surface-variant">
+                                                                    {terrain}
+                                                                </span>
+                                                            </button>
+                                                        }
+                                                    })
+                                                    .collect_view()
+                                                    .into_any()
+                                            }}
+                                        </div>
+                                    }
+                                })
                         }}
                     </div>
                 </div>
@@ -1401,5 +1548,55 @@ fn EventManagerInner() -> impl IntoView {
                 </div>
             </Dialog>
         </div>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    /// T-332 Class-R — Edit dialog must be able to re-attach (POST) after detach, and the
+    /// briefing/banner clear path must keep posting empty string (the blessed contract).
+    #[test]
+    fn edit_dialog_reattach_and_empty_string_clear_are_wired() {
+        const SRC: &str = include_str!("event_manager.rs");
+        let production = SRC
+            .split("mod tests {")
+            .next()
+            .expect("tests module marker");
+
+        assert!(
+            production.contains("edit_attach_open"),
+            "Edit dialog must own an attach dropdown distinct from create's attach_open \
+             (perturbation: remove edit_attach_open)"
+        );
+        assert!(
+            production.contains("data-testid=\"edit-attach-mission\""),
+            "Edit Attach Mission control must be present \
+             (perturbation: remove data-testid=\"edit-attach-mission\")"
+        );
+        assert!(
+            production.contains("on_attach_mission")
+                && production.contains("&format!(\"/events/{id}/missions\")"),
+            "Edit attach must POST /events/{{id}}/missions \
+             (perturbation: drop on_attach_mission or the missions path)"
+        );
+        // Create also POSTs that path; require the Edit-specific success toast so a create-only
+        // caller cannot false-green the re-attach pin.
+        assert!(
+            production.contains("Attached {title}"),
+            "Edit attach success toast must be distinct from create's publish toast \
+             (perturbation: remove Attached {{title}} toast)"
+        );
+        assert!(
+            production.contains("T-332 clear contract")
+                && production.contains("empty string clears"),
+            "Edit save must document the blessed empty-string clear for briefing/banner \
+             (perturbation: drop the T-332 clear-contract comment)"
+        );
+        assert!(
+            production.contains("body.insert(\"briefing\".into(), br.into())")
+                && production.contains("body.insert(\"banner_image_url\".into(), bn.into())"),
+            "Edit save must still POST briefing/banner when changed — including \"\" clears \
+             (perturbation: stop inserting empty briefing/banner)"
+        );
     }
 }
