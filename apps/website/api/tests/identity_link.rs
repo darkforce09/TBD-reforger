@@ -44,17 +44,18 @@ static DB_LOCK: std::sync::LazyLock<tokio::sync::Mutex<()>> =
 const ACTOR: &str = "000000000000400001";
 /// Clash partner for the 409 path (same private range).
 const USER2: &str = "000000000000400002";
-/// T-351 padded-trim actor (same T-400 private range).
-const PAD_ACTOR: &str = "000000000000400003";
+/// T-351 padded-trim actor (T-400 private range). Must NOT be telemetry `PLAYER_DISCORD`
+/// (`…400003`) — that collision piles T-351 kills onto the telemetry leaderboard row (T-517).
+const PAD_ACTOR: &str = "000000000000400013";
 const ACTOR_ARMA: &str = "identity-link-arma-400001";
 /// Canonical (trimmed) Steam id for the T-351 pin.
-const PAD_ARMA: &str = "identity-link-arma-padded-400003";
+const PAD_ARMA: &str = "identity-link-arma-padded-400013";
 /// Wire form that must NOT land in `users.arma_id` — spaces around the id.
-const PAD_ARMA_PADDED: &str = "  identity-link-arma-padded-400003  ";
+const PAD_ARMA_PADDED: &str = "  identity-link-arma-padded-400013  ";
 /// Placeholders `seed_user` writes before the unlink step — must be released first (T-516).
 const SEED_ARMA_ACTOR: &str = "identity-link-seed-400001";
 const SEED_ARMA_USER2: &str = "identity-link-seed-400002";
-const SEED_ARMA_PAD: &str = "identity-link-seed-400003";
+const SEED_ARMA_PAD: &str = "identity-link-seed-400013";
 const SVC: &str = "test-service-token";
 
 async fn setup() -> Option<(Router, AppState, PgPool)> {
@@ -153,7 +154,8 @@ async fn call(
     )
 }
 
-/// Class-R: this suite must never authenticate as / mutate the shared dev-login snowflake.
+/// Class-R: this suite must never authenticate as / mutate the shared dev-login snowflake,
+/// and PAD_ACTOR must not collide with telemetry's PLAYER_DISCORD (T-517).
 #[test]
 fn t400_actor_is_not_shared_dev_login_user() {
     assert_ne!(
@@ -164,6 +166,14 @@ fn t400_actor_is_not_shared_dev_login_user() {
     );
     assert_ne!(USER2, common::DEV_LOGIN_USER);
     assert_ne!(PAD_ACTOR, common::DEV_LOGIN_USER);
+    // T-517: hard-code telemetry PLAYER_DISCORD so a future re-collision fails loudly.
+    assert_ne!(
+        PAD_ACTOR, "000000000000400003",
+        "PAD_ACTOR must not equal telemetry PLAYER_DISCORD (000000000000400003) — shared \
+         discord_id piles T-351 padded kills onto telemetry_ingest_closes_the_loop (T-517)"
+    );
+    assert_ne!(PAD_ACTOR, ACTOR, "PAD_ACTOR must be distinct from ACTOR");
+    assert_ne!(PAD_ACTOR, USER2, "PAD_ACTOR must be distinct from USER2");
     let src = include_str!("identity_link.rs");
     // Ban the pre-fix shared-row alias without matching this assertion's own prose.
     assert!(
