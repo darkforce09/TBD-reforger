@@ -69,7 +69,9 @@ pub async fn discord_login(State(state): State<AppState>) -> Response {
 /// the cookie is missing/invalid — or that has successfully consumed it — must
 /// emit this. T-248: the early `missing_code` / `invalid_state` returns used to
 /// skip it and leave the ten-minute cookie live for replay.
-const OAUTH_STATE_CLEAR: &str = "oauth_state=; Path=/; Max-Age=0; HttpOnly";
+/// Exact Set-Cookie value for clearing `oauth_state`. Pub so ITs can assert
+/// byte-equality (T-480) — soft `contains("Path=/")` greened a wrong Path=/api.
+pub const OAUTH_STATE_CLEAR: &str = "oauth_state=; Path=/; Max-Age=0; HttpOnly";
 
 /// CSRF pre-check for the Discord callback. `Some(resp)` is a finished error
 /// redirect that already clears `oauth_state`; `None` means state matched and

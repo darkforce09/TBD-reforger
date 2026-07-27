@@ -7,6 +7,7 @@ use axum::http::{Request, StatusCode, header};
 use axum::response::Response;
 use tower::ServiceExt;
 use website_api::config::Config;
+use website_api::handlers::oauth::OAUTH_STATE_CLEAR;
 use website_api::state::AppState;
 use website_api::{app, db};
 
@@ -26,27 +27,16 @@ fn location(resp: &Response) -> String {
         .to_string()
 }
 
-/// T-429 — CSRF reject responses must clear `oauth_state` the same way the
-/// live helper does (`oauth_state=; Path=/; Max-Age=0; HttpOnly`).
+/// T-429 / T-480 — CSRF reject responses must clear `oauth_state` with the
+/// exact live helper string (`OAUTH_STATE_CLEAR`). Soft `contains("Path=/")`
+/// greened a divergent Path=/api; Class-R requires byte equality.
 fn assert_oauth_state_cleared(resp: &Response) {
     let cookie = resp.headers()[header::SET_COOKIE]
         .to_str()
         .expect("CSRF reject must Set-Cookie oauth_state clear");
-    assert!(
-        cookie.starts_with("oauth_state="),
-        "clear cookie must name oauth_state: {cookie}"
-    );
-    assert!(
-        cookie.contains("Max-Age=0"),
-        "clear cookie must Max-Age=0: {cookie}"
-    );
-    assert!(
-        cookie.contains("Path=/"),
-        "clear cookie must Path=/: {cookie}"
-    );
-    assert!(
-        cookie.contains("HttpOnly"),
-        "clear cookie must HttpOnly: {cookie}"
+    assert_eq!(
+        cookie, OAUTH_STATE_CLEAR,
+        "clear cookie must equal OAUTH_STATE_CLEAR exactly"
     );
 }
 
