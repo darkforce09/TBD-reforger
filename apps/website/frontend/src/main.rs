@@ -60,6 +60,10 @@ mod mission_editor;
 // prompt on a local-vs-server conflict. wasm32-only (auth GET + doc), gated like the doc host.
 #[cfg(target_arch = "wasm32")]
 mod mission_hydrate;
+// T-522 — prefer-payload anti-stomp Class-R must run on native `cargo test -p website-frontend`
+// (cold gate). The live hydrate module stays wasm32-gated; the pure prefer helper + t505 pin live
+// here so a prefer→`&row.title` regression goes RED on the same native command CI uses.
+mod mission_title_prefer;
 // T-159.28 map-asset host (MVP: DEM hillshade) — fetch bytes + call the Rust dem core + engine
 // tex_layer. wasm32-only (fetch + engine), gated like the doc host.
 #[cfg(target_arch = "wasm32")]
