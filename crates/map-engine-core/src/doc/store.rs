@@ -1281,6 +1281,11 @@ impl MissionDocCore {
     /// the next Save. Without that, a server-first or migration field appears to persist, then
     /// vanishes on the next hydrate→compile cycle.
     ///
+    /// **T-432 — reserved side-channel name.** The key `payloadExtras` itself is treated as known
+    /// (reserved): an authored top-level `payloadExtras` object is **not** nested into the
+    /// side-channel and is **not** re-emitted onto the wire. Nested contents under that collision
+    /// are dropped (reserved-key policy), not renamed. Unrelated unknown keys still park.
+    ///
     /// **T-220 — known top-level fields that used to be drop-on-sight:**
     /// - `schemaVersion` is stored on `meta` (compile re-emits it; schema allows any integer).
     /// - the whole `map` object is stored on `meta.map` so non-`terrain` keys (and authored
@@ -2005,9 +2010,10 @@ fn remove_slots_in_txn(
     }
 }
 
-/// Keys `hydrate` / `compile_payload` already understand at the payload root (T-219).
-/// Must match `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS` in `mission/compile.rs` — duplicated here so
-/// the `doc` feature does not depend on `mission`.
+/// Keys `hydrate` / `compile_payload` already understand at the payload root (T-219), plus the
+/// reserved `payloadExtras` side-channel name (T-432 — never nest that key into itself / never
+/// re-emit it as a wire key). Must match `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS` in
+/// `mission/compile.rs` — duplicated here so the `doc` feature does not depend on `mission`.
 fn is_known_editor_payload_top_level(key: &str) -> bool {
     matches!(
         key,
@@ -2021,6 +2027,7 @@ fn is_known_editor_payload_top_level(key: &str) -> bool {
             | "markers"
             | "editor"
             | "orbat"
+            | "payloadExtras"
     )
 }
 
@@ -2940,6 +2947,71 @@ mod tests {
         );
         assert_eq!(recompiled["map"]["terrain"], serde_json::json!("everon"));
         assert_eq!(recompiled["schemaVersion"], serde_json::json!(1));
+    }
+
+    /// T-432 — Class R: an authored top-level wire key literally named `payloadExtras` must not
+    /// nest into the side-channel or reappear on the compiled wire. Policy: **reserved-key
+    /// collision** — nested contents are dropped (not renamed / re-parked). Unrelated unknown
+    /// keys still park and re-emit. Empty `payloadExtras` remains omitted from `small_maps_json`.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn authored_payload_extras_key_is_reserved_not_reemitted() {
+        let incoming = serde_json::json!({
+            "schemaVersion": 1,
+            "map": { "terrain": "everon" },
+            "environment": {},
+            "payloadExtras": { "nested": true },
+            "serverMigrationToken": "keep-me-v2",
+            "editor": {
+                "factions": [],
+                "squads": [],
+                "slots": [],
+                "editorLayers": []
+            }
+        });
+
+        let doc = MissionDocCore::new();
+        doc.hydrate(&incoming.to_string(), "lyr");
+
+        let small = small_maps(&doc);
+        assert!(
+            small
+                .get("payloadExtras")
+                .and_then(|e| e.get("payloadExtras"))
+                .is_none(),
+            "hydrate must not nest the reserved side-channel name into itself; got {:?}",
+            small.get("payloadExtras")
+        );
+        assert_eq!(
+            small["payloadExtras"]["serverMigrationToken"],
+            serde_json::json!("keep-me-v2"),
+            "unrelated unknown keys must still park"
+        );
+
+        let compiled = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        assert!(
+            compiled.get("payloadExtras").is_none(),
+            "compiled wire must not carry the side-channel name; got {:?}",
+            compiled.get("payloadExtras")
+        );
+        assert_eq!(
+            compiled["serverMigrationToken"],
+            serde_json::json!("keep-me-v2")
+        );
+        // Nested reserved contents dropped — not silently renamed under another key.
+        assert!(
+            compiled
+                .as_object()
+                .map(|o| !o
+                    .values()
+                    .any(|v| v == &serde_json::json!({ "nested": true })))
+                .unwrap_or(false),
+            "reserved nested object must not be re-emitted under another wire key; got {compiled:?}"
+        );
     }
 
     /// T-219 — a second hydrate without the extras must clear the parked map (no sticky ghosts).
