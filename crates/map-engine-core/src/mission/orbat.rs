@@ -19,9 +19,14 @@ pub struct OrbatSlotTemplate {
 }
 
 /// A squad + its ordered slot list (list position = its 1-based ORBAT number).
+///
+/// **`faction` is deliberately required — do not add `#[serde(default)]` (T-356).**
+/// It is the Event Hub join key against `mission_armories.faction` (T-346's mirror).
+/// An absent key used to decode as `""` and land in `orbat_slots.faction`, matching no
+/// armory group. Empty / whitespace-only / padded values are refused at the API write
+/// boundary via [`validate_faction_join_key`] — never trimmed, never silently normalised.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrbatSquadTemplate {
-    #[serde(default)]
     pub faction: String,
     #[serde(default)]
     pub callsign: String,
@@ -29,6 +34,22 @@ pub struct OrbatSquadTemplate {
     pub squad: String,
     #[serde(default)]
     pub slots: Vec<OrbatSlotTemplate>,
+}
+
+/// T-356 / T-346 mirror: `orbat_slots.faction` is a **join key**, matched byte-for-byte
+/// against `mission_armories.faction`. Require a non-empty value after trim; refuse a value
+/// that differs from its trimmed form; callers must **store the original bytes verbatim**.
+///
+/// Do NOT trim one side only — a unilateral trim breaks the case where ORBAT `"  USA  "` and
+/// armory `"  USA  "` agree today. Normalising both sides needs a migration for live rows.
+pub fn validate_faction_join_key(faction: &str) -> Result<(), &'static str> {
+    if faction.trim().is_empty() {
+        return Err("faction is required");
+    }
+    if faction != faction.trim() {
+        return Err("faction must not have leading or trailing whitespace");
+    }
+    Ok(())
 }
 
 /// Extract the ORBAT squad list: an explicit top-level `"orbat"` array wins;
@@ -304,5 +325,35 @@ mod tests {
         assert_eq!(got.len(), 1);
         assert_eq!(got[0].squad, "Alpha");
         assert_eq!(got[0].slots.len(), 1);
+    }
+
+    /// T-356 — join-key require-and-refuse (T-346 mirror). Empty / whitespace-only / padded
+    /// refuse; interior whitespace and clean keys pass. Callers store verbatim.
+    #[test]
+    fn faction_join_key_require_and_refuse() {
+        assert_eq!(validate_faction_join_key(""), Err("faction is required"));
+        assert_eq!(validate_faction_join_key("   "), Err("faction is required"));
+        assert_eq!(validate_faction_join_key("\t"), Err("faction is required"));
+        assert_eq!(
+            validate_faction_join_key("  USA  "),
+            Err("faction must not have leading or trailing whitespace")
+        );
+        assert_eq!(validate_faction_join_key("USA"), Ok(()));
+        // Over-rejection pin (T-346 `"US Army"`): interior whitespace is a legitimate key.
+        assert_eq!(validate_faction_join_key("US Army"), Ok(()));
+    }
+
+    /// T-356 — absent `faction` must not decode as `""` via `#[serde(default)]`.
+    #[test]
+    fn orbat_squad_faction_is_required_on_wire() {
+        let missing = r#"{"callsign":"HQ","squad":"Command","slots":[]}"#;
+        let err = serde_json::from_str::<OrbatSquadTemplate>(missing).unwrap_err();
+        assert!(
+            err.to_string().contains("faction"),
+            "absent faction must fail decode, not default to empty: {err}"
+        );
+        let present: OrbatSquadTemplate =
+            serde_json::from_str(r#"{"faction":"BLUFOR","squad":"Alpha","slots":[]}"#).unwrap();
+        assert_eq!(present.faction, "BLUFOR");
     }
 }
