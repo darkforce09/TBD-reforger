@@ -98,7 +98,7 @@
 0	T-342	Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt	apps/website/frontend/src/personnel.rs
 0	T-339	Two gate-harness gaps T-320 could not reach from its own files	tools/tbd-tools/src/cdp.rs; tools/tbd-tools/src/bin/gate.rs; tools/tbd-tools/src/vsuite.rs
 47	T-337	Approving or rejecting a mission never touches updated_at	apps/website/api/src/handlers/approvals.rs
-0	T-355	An unparseable event_id silently becomes NULL and skips the attendance write	apps/website/api/src/handlers/telemetry.rs
+49	T-355	An unparseable event_id silently becomes NULL and skips the attendance write	apps/website/api/src/handlers/telemetry.rs
 48	T-341	deployments.rs has a bare SELECT * and swallows decode errors, in the file held up as the good example	apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/dashboard_reads.rs; apps/website/api/src/handlers/dashboard.rs
 0	T-335	One-off backfill for players who linked before T-326 shipped	apps/website/api/migrations
 47	T-332	PATCH /events/:id cannot clear a briefing or banner, and a mission cannot be re-attached	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs; apps/website/api/tests/events.rs
@@ -277,7 +277,7 @@
 99	T-476	verify-t438/t456 Makefile recipes lack hollow-body tripwire	Makefile; scripts/mod/verify-t468-ci-schema-parity.sh
 99	T-477	T-431 Class-R greened on event-wide BACKFILL shapes	apps/website/api/src/handlers/me.rs
 99	T-478	T-440 verify comment name + path-echo seed recipe	scripts/mod/verify-t440-faction-library-seed.sh; scripts/platform/wave.sh; Makefile; apps/website/api/seeds/faction_library.sql
-99	T-479	Flaky events IT duplicate arma_id on seed_user	apps/website/api/tests/common/mod.rs; apps/website/api/tests/events.rs
+49	T-479	Flaky events IT duplicate arma_id on seed_user	apps/website/api/tests/common/mod.rs; apps/website/api/tests/events.rs
 99	T-480	Harden oauth_state clear IT to exact OAUTH_STATE_CLEAR	apps/website/api/tests/oauth_redirect.rs; apps/website/api/src/handlers/oauth.rs
 99	T-481	Reject whitespace-only DISCORD_CLIENT_ID in Config::validate	apps/website/api/src/config.rs
 99	T-482	T-423 vehicle-floor pin needs doc+mission features	scripts/verify-t180-coherency.sh
@@ -329,5 +329,5 @@
 47	T-528	W47 hotfix me.rs arma_linked whitespace after T-350	apps/website/api/src/handlers/me.rs; apps/website/api/tests/t528_me_whitespace_linked.rs
 99	T-529	events roster SQL whitespace arma_id no btrim	apps/website/api/src/handlers/events.rs
 99	T-530	T-332 Class-R partly pins doc comments	apps/website/api/src/handlers/events.rs; apps/website/frontend/src/event_manager.rs
-99	T-531	null_tolerance still lists deployments.* as KNOWN_OPEN after T-341	apps/website/api/tests/null_tolerance.rs
+49	T-531	null_tolerance still lists deployments.* as KNOWN_OPEN after T-341	apps/website/api/tests/null_tolerance.rs
 99	T-532	No API route to re-point mission current_version_id after a bad version	apps/website/api/src/handlers/missions.rs; apps/website/api/src/app.rs
