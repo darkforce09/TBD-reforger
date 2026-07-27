@@ -1257,7 +1257,12 @@ impl MissionDocCore {
     }
 
     /// Apply mission-row fields from `GET /missions/:id` (mirrors `ydoc.applyMissionRowMeta`): title
-    /// if non-empty; terrain only if valid; `time`/`weather` merged onto the existing environment.
+    /// if non-blank after trim (T-505 — whitespace-only is not a title); terrain only if valid;
+    /// `time`/`weather` merged onto the existing environment.
+    ///
+    /// Callers that also hydrate a compiled payload (T-375 emits top-level `title`) must prefer the
+    /// payload title over a stale row — see `mission_hydrate::adopt_payload`. This mutator writes
+    /// whatever non-blank title it is given.
     pub fn apply_row_meta(
         &self,
         title: &str,
@@ -1266,6 +1271,7 @@ impl MissionDocCore {
         weather: Option<String>,
     ) {
         let mut txn = self.begin();
+        let title = title.trim();
         if !title.is_empty() {
             self.meta.insert(&mut txn, "title", title);
         }
@@ -1327,6 +1333,10 @@ impl MissionDocCore {
     /// - `schemaVersion` is stored on `meta` (compile re-emits it; schema allows any integer).
     /// - the whole `map` object is stored on `meta.map` so non-`terrain` keys (and authored
     ///   `bounds`) survive; `meta.terrain` still tracks the live terrain id for the editor.
+    ///
+    /// **T-505 — top-level `title` (T-375 wire emit).** Non-blank trimmed string → `meta.title`.
+    /// Absent / blank / whitespace-only leaves `meta.title` cleared for this hydrate (no sticky
+    /// ghost from a prior doc); `apply_row_meta` / `adopt_payload` can still supply the row.
     pub fn hydrate(&self, payload_json: &str, default_layer_id: &str) {
         let Any::Map(payload) = json_str_to_any(payload_json) else {
             return;
@@ -1358,15 +1368,23 @@ impl MissionDocCore {
         ] {
             m.clear(&mut txn);
         }
-        // Drop prior authored map / schemaVersion so a second hydrate cannot leave sticky ghosts.
+        // Drop prior authored map / schemaVersion / title so a second hydrate cannot leave sticky ghosts.
         self.meta.remove(&mut txn, "map");
         self.meta.remove(&mut txn, "schemaVersion");
+        self.meta.remove(&mut txn, "title");
 
         if let Some(env) = payload.get("environment") {
             self.meta.insert(&mut txn, "environment", env.clone());
         }
         if let Some(sv) = payload.get("schemaVersion") {
             self.meta.insert(&mut txn, "schemaVersion", sv.clone());
+        }
+        // T-505 — load T-375's top-level authored title into meta (trim-aware, non-blank).
+        if let Some(Any::String(title)) = payload.get("title") {
+            let trimmed = title.trim();
+            if !trimmed.is_empty() {
+                self.meta.insert(&mut txn, "title", trimmed);
+            }
         }
         if let Some(map_val) = payload.get("map") {
             // Whole object — compile merges terrain + preserves other keys / authored bounds.
@@ -2057,6 +2075,10 @@ fn is_known_editor_payload_top_level(key: &str) -> bool {
         "schemaVersion"
             | "map"
             | "environment"
+            // T-505 — hydrate loads top-level `title` into meta (T-375 wire emit). Keep lockstep
+            // with `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS` in `mission/compile.rs` when that list
+            // is updated (out of this slice's owns if edited separately).
+            | "title"
             | "loadouts"
             | "objectives"
             | "vehicles"
@@ -3097,6 +3119,87 @@ mod tests {
             false,
         );
         assert!(compiled.get("serverMigrationToken").is_none());
+    }
+
+    /// T-505 Class R — hydrate loads T-375 top-level `title` into meta (trim-aware).
+    ///
+    /// Simulates cold adopt: hydrate payload, then `apply_row_meta` with the **preferred** title
+    /// (payload wins over stale row) — the same prefer rule `mission_hydrate::adopt_payload` uses.
+    ///
+    /// RED (perturbation): stop loading `title` in `hydrate` **and** pass only the stale row title
+    /// into `apply_row_meta` → assert equals `"Authored Bridgehead"`.
+    #[test]
+    fn t505_hydrate_and_prefer_payload_title_over_stale_row() {
+        let payload = serde_json::json!({
+            "schemaVersion": 1,
+            "title": "  Authored Bridgehead  ",
+            "map": { "terrain": "everon" },
+            "environment": {},
+            "editor": {
+                "factions": [],
+                "squads": [],
+                "slots": [],
+                "editorLayers": []
+            }
+        });
+        let doc = MissionDocCore::new();
+        doc.set_title("Stale Library Title");
+        doc.hydrate(&payload.to_string(), "lyr");
+        assert_eq!(
+            small_maps(&doc)["meta"]["title"],
+            "Authored Bridgehead",
+            "hydrate must load trimmed payload title into meta"
+        );
+        // Prefer-payload (adopt_payload rule): never hand the stale row title through when the
+        // payload carries a non-blank title.
+        let preferred = payload
+            .get("title")
+            .and_then(|t| t.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .unwrap_or("Stale Library Title");
+        doc.apply_row_meta(preferred, "everon", None, None);
+        assert_eq!(
+            small_maps(&doc)["meta"]["title"],
+            "Authored Bridgehead",
+            "prefer-payload title must survive apply_row_meta; got {:?}",
+            small_maps(&doc)["meta"]["title"]
+        );
+        assert!(
+            small_maps(&doc).get("payloadExtras").is_none()
+                || small_maps(&doc)["payloadExtras"].get("title").is_none(),
+            "title is a known hydrate key — must not park in payloadExtras"
+        );
+    }
+
+    /// T-505 — whitespace-only / absent payload title does not invent a meta title; row can fill.
+    #[test]
+    fn t505_hydrate_whitespace_title_ignored_row_can_fill() {
+        let payload = serde_json::json!({
+            "schemaVersion": 1,
+            "title": "   ",
+            "map": { "terrain": "everon" },
+            "environment": {},
+            "editor": {
+                "factions": [],
+                "squads": [],
+                "slots": [],
+                "editorLayers": []
+            }
+        });
+        let doc = MissionDocCore::new();
+        doc.set_title("Preexisting");
+        doc.hydrate(&payload.to_string(), "lyr");
+        assert!(
+            small_maps(&doc)["meta"].get("title").is_none(),
+            "whitespace-only payload title must clear sticky meta.title, not keep Preexisting"
+        );
+        doc.apply_row_meta("  Row Title  ", "everon", None, None);
+        assert_eq!(
+            small_maps(&doc)["meta"]["title"],
+            "Row Title",
+            "apply_row_meta must trim and accept a real row title when payload title is blank"
+        );
     }
 
     // ── T-220 — five silent hydrate→compile / edit / paste losses ───────────────────────────────

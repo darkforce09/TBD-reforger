@@ -1529,3 +1529,112 @@ async fn patch_blank_weather_rejects_and_preserves_dense_fog() {
         String::from_utf8_lossy(&b)
     );
 }
+
+/// T-505 — `create_version` mirrors a non-blank payload `title` onto `missions.title`.
+///
+/// Create with a stale library title, Save a version whose payload carries an authored title,
+/// then GET the mission row and assert the title moved. Whitespace-only payload title must NOT
+/// clobber the row.
+///
+/// Perturbation RED: drop the `title = $3` arm in `create_version` → first assert fails.
+///
+/// **Out-of-owns note:** this IT lives in `apps/website/api/tests/missions.rs` (not in the slice
+/// owns list). Called out deliberately — Class-R pins in `handlers/missions.rs` alone cannot
+/// prove the SQL UPDATE.
+#[tokio::test]
+async fn create_version_mirrors_authored_payload_title_onto_mission_row() {
+    let Some((app, _pool, maker, _admin)) = app_pool_and_tokens().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let stale = format!("T505-Stale-{stamp}");
+    let authored = format!("T505-Authored-{stamp}");
+    let (st, b) = call(
+        &app,
+        "POST",
+        "/api/v1/missions",
+        Some(&maker),
+        None,
+        Some(&format!(
+            r#"{{"title":"{stale}","terrain":"everon","game_mode":"pve_coop","max_players":16}}"#
+        )),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
+    let mid = json(&b)["id"].as_str().unwrap().to_string();
+    assert_eq!(json(&b)["title"], stale.as_str());
+
+    let ver = format!(
+        r#"{{"semver":"0.3.0","payload":{{"title":"  {authored}  ","schemaVersion":1,"map":{{"terrain":"everon"}},"environment":{{}},"editor":{{"factions":[],"squads":[],"slots":[],"editorLayers":[]}}}}}}"#
+    );
+    let (st, b) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/missions/{mid}/versions"),
+        Some(&maker),
+        None,
+        Some(&ver),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CREATED,
+        "version save: {}",
+        String::from_utf8_lossy(&b)
+    );
+
+    let (st, b) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/missions/{mid}"),
+        Some(&maker),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
+    assert_eq!(
+        json(&b)["title"],
+        authored.as_str(),
+        "create_version must mirror trimmed payload title onto missions.title; got {}",
+        String::from_utf8_lossy(&b)
+    );
+
+    // Whitespace-only payload title must leave the row alone (non-blank guard).
+    let ver_ws = r#"{"semver":"0.3.1","payload":{"title":"   ","schemaVersion":1,"map":{"terrain":"everon"},"environment":{},"editor":{"factions":[],"squads":[],"slots":[],"editorLayers":[]}}}"#;
+    let (st, b) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/missions/{mid}/versions"),
+        Some(&maker),
+        None,
+        Some(ver_ws),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CREATED,
+        "whitespace title save: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let (st, b) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/missions/{mid}"),
+        Some(&maker),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
+    assert_eq!(
+        json(&b)["title"],
+        authored.as_str(),
+        "whitespace-only payload title must not clobber missions.title"
+    );
+}
