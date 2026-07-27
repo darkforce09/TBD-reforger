@@ -160,9 +160,16 @@ fn valid_game_mode(s: &str) -> Option<GameMode> {
         _ => None,
     }
 }
+/// Weather enum for CREATE / PATCH. Blank is **not** Clear.
+///
+/// **T-377.** `"" | "clear"` used to coerce blank → `Clear`, so PATCH `{"weather":""}` silently
+/// rewrote a stored `dense_fog` to `clear` and answered 200. The compile/flatten path
+/// (`flatten::apply_authored_environment` / `WEATHER_PRESETS`) treats `""` as not-authored and
+/// keeps the row — the two halves disagreed. Dropping `""` from the clear arm makes both sides
+/// reject blank the same way: CREATE/PATCH → 400 `invalid weather`; compile → fall through to row.
 fn valid_weather(s: &str) -> Option<WeatherType> {
     match s {
-        "" | "clear" => Some(WeatherType::Clear),
+        "clear" => Some(WeatherType::Clear),
         "overcast" => Some(WeatherType::Overcast),
         "heavy_rain" => Some(WeatherType::HeavyRain),
         "dense_fog" => Some(WeatherType::DenseFog),
@@ -1920,6 +1927,67 @@ mod tests {
         assert!(
             body.contains("valid_semver(&input.semver)"),
             "create_version must parse semver via valid_semver before INSERT"
+        );
+    }
+
+    /// T-377 — blank weather is not Clear. PATCH `{"weather":""}` must not rewrite dense_fog→clear.
+    ///
+    /// Aligns with compile/flatten: `""` is not-authored, not a Clear preset.
+    ///
+    /// RED: restore `"" | "clear"` in [`valid_weather`] — this assert fails (Some(Clear)).
+    #[test]
+    fn blank_weather_is_not_clear() {
+        assert_eq!(
+            valid_weather(""),
+            None,
+            "empty string must not coerce to WeatherType::Clear (T-377 silent dense_fog→clear)"
+        );
+        assert_eq!(valid_weather("clear"), Some(WeatherType::Clear));
+        assert_eq!(valid_weather("overcast"), Some(WeatherType::Overcast));
+        assert_eq!(valid_weather("heavy_rain"), Some(WeatherType::HeavyRain));
+        assert_eq!(valid_weather("dense_fog"), Some(WeatherType::DenseFog));
+        assert_eq!(valid_weather("blizzard"), None);
+        assert_eq!(valid_weather("   "), None);
+    }
+
+    /// T-377 Class-R: the clear arm must not include `""`. Source pin so a match-arm typo cannot
+    /// reintroduce the silent rewrite without failing this test.
+    ///
+    /// RED: change the clear arm back to `"" | "clear"` — this pin fails.
+    #[test]
+    fn valid_weather_clear_arm_excludes_empty_string() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        let helper = production
+            .split("fn valid_weather(s: &str)")
+            .nth(1)
+            .and_then(|s| s.split("fn valid_time_of_day(").next())
+            .expect("valid_weather body");
+        assert!(
+            !helper.contains("\"\" | \"clear\""),
+            "valid_weather must not map \"\" to Clear (pre-T-377 silent rewrite); got:\n{helper}"
+        );
+        assert!(
+            helper.contains("\"clear\" => Some(WeatherType::Clear)"),
+            "valid_weather must still accept the clear enum string"
+        );
+        // Both writers must still go through valid_weather (create + PATCH).
+        assert!(
+            production.contains("valid_weather(&input.weather)")
+                || production.contains("let Some(weather) = valid_weather(&input.weather)"),
+            "create_mission must validate weather via valid_weather"
+        );
+        let update = production
+            .split("pub async fn update_mission(")
+            .nth(1)
+            .and_then(|s| s.split("pub async fn").next())
+            .expect("update_mission body");
+        assert!(
+            update.contains("valid_weather(w)"),
+            "update_mission must validate weather via valid_weather"
         );
     }
 }
