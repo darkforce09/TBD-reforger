@@ -310,6 +310,9 @@ class TBD_MissionLoader
 {
 	//! Hard cap on a profile mission file. A file over this would silently truncate in
 	//! Read() and then fail JSON parse with a misleading error — reject it up front (T-130.4 F1-16).
+	//! T-450: the SAME ceiling is pinned on mission.schema.json as `x-tbd-missionFileMaxBytes`
+	//! (8388608) and enforced by `validate_mission_document` before `/compiled` serves a body.
+	//! Do not change this constant without updating the schema keyword and the API/xtask checks.
 	protected static const int MISSION_FILE_MAX_BYTES = 8 * 1024 * 1024;
 
 	//! Cap on a backend error body echoed into the log (T-181.44). Print() discards a line over

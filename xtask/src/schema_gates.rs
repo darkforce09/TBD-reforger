@@ -1426,6 +1426,97 @@ pub fn validate_all() -> Result<u8> {
         check(&f, &v_mission, &read_json(&missions_dir.join(&f))?);
     }
 
+    // ── T-450 — MISSION_FILE_MAX_BYTES pin (schema keyword ↔ mod constant ↔ goldens) ─────────
+    // JSON Schema cannot express whole-document byte size. The ceiling lives on the schema as
+    // `x-tbd-missionFileMaxBytes` and must stay equal to `TBD_MissionLoader.MISSION_FILE_MAX_BYTES`
+    // (`8 * 1024 * 1024`). Without this gate a description-only comment would rot silently.
+    println!("Mission file byte ceiling (T-450):");
+    {
+        let mut bad: Vec<String> = Vec::new();
+        let mission_schema = schema("mission.schema.json")?;
+        let pinned = match mission_schema["x-tbd-missionFileMaxBytes"].as_u64() {
+            Some(n) => n as usize,
+            None => {
+                bad.push(
+                    "mission.schema.json missing x-tbd-missionFileMaxBytes — the enforceable \
+                     size pin is gone (description-only is not a pin)"
+                        .to_string(),
+                );
+                0
+            }
+        };
+        const EXPECTED: usize = 8 * 1024 * 1024;
+        if pinned != 0 && pinned != EXPECTED {
+            bad.push(format!(
+                "x-tbd-missionFileMaxBytes={pinned}, expected {EXPECTED} \
+                 (TBD_MissionLoader.MISSION_FILE_MAX_BYTES = 8 * 1024 * 1024)"
+            ));
+        }
+        let loader =
+            root.join("apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c");
+        let loader_src =
+            fs::read_to_string(&loader).with_context(|| format!("read {}", loader.display()))?;
+        if !loader_src.contains("MISSION_FILE_MAX_BYTES = 8 * 1024 * 1024") {
+            bad.push(
+                "TBD_MissionLoader.c no longer declares \
+                 `MISSION_FILE_MAX_BYTES = 8 * 1024 * 1024` — schema pin drifted from mod"
+                    .to_string(),
+            );
+        }
+        if !loader_src.contains("x-tbd-missionFileMaxBytes") {
+            bad.push(
+                "TBD_MissionLoader.c comment no longer cites schema \
+                 `x-tbd-missionFileMaxBytes` (T-450 cross-pin)"
+                    .to_string(),
+            );
+        }
+        for f in sorted_json_files(&missions_dir)? {
+            let bytes = fs::metadata(missions_dir.join(&f))
+                .with_context(|| format!("stat golden {f}"))?
+                .len() as usize;
+            if pinned != 0 && bytes > pinned {
+                bad.push(format!(
+                    "golden {f} is {bytes} B > x-tbd-missionFileMaxBytes={pinned}"
+                ));
+            }
+        }
+        // Synthetic: a schema-VALID document padded past the ceiling must exceed the pin.
+        // meta.author has no maxLength, so schema alone would accept it — that is exactly
+        // the pre-T-450 defect this gate exists to keep closed.
+        if pinned != 0 {
+            let mut doc = read_json(&missions_dir.join("last-stand-at-montfort.json"))?;
+            doc["meta"]["author"] = Value::String("x".repeat(pinned));
+            let raw = serde_json::to_vec(&doc)?;
+            if raw.len() <= pinned {
+                bad.push(format!(
+                    "synthetic pad failed to exceed ceiling ({} B ≤ {pinned})",
+                    raw.len()
+                ));
+            } else {
+                let schema_errs: Vec<_> = v_mission.iter_errors(&doc).collect();
+                if !schema_errs.is_empty() {
+                    bad.push(format!(
+                        "synthetic oversized doc is schema-invalid ({}); pad a field without \
+                         maxLength so this fixture isolates the byte check",
+                        schema_errs.len()
+                    ));
+                }
+            }
+        }
+        if bad.is_empty() {
+            println!(
+                "  PASS  x-tbd-missionFileMaxBytes={EXPECTED} matches TBD_MissionLoader; \
+                 goldens under ceiling; oversized synthetic exceeds pin"
+            );
+        } else {
+            failures.set(failures.get() + 1);
+            println!("  FAIL  mission file byte ceiling");
+            for b in &bad {
+                println!("        {b}");
+            }
+        }
+    }
+
     // ── T-181.36 — kit alias ↔ spawn registry cross-reference ────────────────────────────────
     // The check mission.schema.json structurally cannot do; see the KNOWN_UNRESOLVABLE_KITS
     // header for why a closed enum would be the wrong answer.
@@ -2194,6 +2285,23 @@ pub fn validate_file(target: &str) -> Result<u8> {
 
     let root = repo_root()?;
     let schema = read_json(&schema_root(&root).join("schema/mission.schema.json"))?;
+    // T-450 — whole-document byte ceiling (mirrors TBD_MissionLoader.MISSION_FILE_MAX_BYTES).
+    // Prefer the schema keyword so a drifted constant here fails closed rather than silently
+    // accepting an oversized file that the mod would refuse.
+    let max_bytes = schema["x-tbd-missionFileMaxBytes"]
+        .as_u64()
+        .map(|n| n as usize)
+        .unwrap_or(8 * 1024 * 1024);
+    let raw_bytes = raw.as_bytes();
+    if raw_bytes.len() > max_bytes {
+        eprintln!(
+            "/: document exceeds MISSION_FILE_MAX_BYTES ({} B > {} B) — \
+             TBD_MissionLoader.c LoadFromProfileFile would refuse this file",
+            raw_bytes.len(),
+            max_bytes
+        );
+        return Ok(1);
+    }
     let validator =
         jsonschema::validator_for(&schema).map_err(|e| anyhow::anyhow!("schema compile: {e}"))?;
     let errs: Vec<String> = validator
