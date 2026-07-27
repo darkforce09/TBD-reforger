@@ -1412,6 +1412,7 @@ gate_slice() {
   run "T-438 deploy-staging"  bash "$ROOT/scripts/mod/verify-t438-deploy-staging-compose-path.sh"
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
+  run "T-437 destroy inert"   bash "$ROOT/scripts/mod/verify-t437-destroy-inert-diagnostics.sh"
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "SLICE GATE"; return 1; }
   gate_verdict PASS "SLICE GATE"
@@ -1554,6 +1555,7 @@ cmd_gate() {
   run "T-438 deploy-staging"  bash "$ROOT/scripts/mod/verify-t438-deploy-staging-compose-path.sh"
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
+  run "T-437 destroy inert"   bash "$ROOT/scripts/mod/verify-t437-destroy-inert-diagnostics.sh"
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "GATE"; return 1; }
   gate_verdict PASS "GATE"

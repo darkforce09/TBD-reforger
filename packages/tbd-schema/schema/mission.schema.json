@@ -474,7 +474,7 @@
         },
         "targetAlias": {
           "$ref": "#/$defs/alias",
-          "description": "`objective_destroy`, and EFFECTIVELY REQUIRED there. Registry alias of the thing that must be destroyed (e.g. \"comp:ammo_cache\"). Read at TBD_ObjectiveRules.c:94, resolved at TBD_ObjectiveRegistry.c:568-575; an objective_destroy with no readable alias goes INERT because there is nothing to watch. Constrained to the same `#/$defs/alias` form as `entity.alias` — it is resolved through the same framework registry. NOTE: on today's build nothing spawns mission `entities[]`, so a destroy objective finds no target and says so; that is a placement gap, not a schema one."
+          "description": "`objective_destroy`, and EFFECTIVELY REQUIRED there. Registry alias of the thing that must be destroyed (e.g. \"comp:ammo_cache\"). Read at TBD_ObjectiveRules.c:94, resolved at TBD_ObjectiveRegistry.ArmDestroyTargets; an objective_destroy with no readable alias goes INERT because there is nothing to watch. Constrained to the same `#/$defs/alias` form as `entity.alias` — it is resolved through the same framework registry. T-254: `TBD_MissionDocumentStruct` models `entities[]` and `SpawnMissionEntities` places resolvable rows after parse; ArmDestroyTargets then AABB-queries the zone. INERT reasons distinguish unresolved registry alias vs no matching `entities[]` row vs out-of-zone authorship vs spawn/query miss (T-437) — never a 'build does not spawn entities[]' claim."
         },
         "targetCount": {
           "type": "integer",

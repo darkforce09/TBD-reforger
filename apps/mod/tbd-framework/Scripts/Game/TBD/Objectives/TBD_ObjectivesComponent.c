@@ -692,9 +692,9 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 	//! needs; this is only the announcement.
 	//!
 	//! Read `TBD_ObjectiveRegistry.ArmDestroyTargets` before trusting this: the destruction SIGNAL
-	//! is proven, but on today's build nothing spawns the mission document's `entities[]`, so an
-	//! authored destroy target is never actually placed in the world and the objective goes inert
-	//! with a diagnostic saying exactly that.
+	//! is proven, and T-254 spawns authored `entities[]` via `SpawnMissionEntities`. A destroy
+	//! objective still goes inert when the alias is unresolved, nothing matching sits in the zone,
+	//! or spawn/query missed — `m_sInertReason` names which (T-437).
 	protected void AdvanceDestroy(notnull TBD_Objective objective)
 	{
 		if (!TBD_ObjectiveRegistry.EvaluateDestroy(objective))

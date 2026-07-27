@@ -802,12 +802,13 @@ class TBD_MissionValidator
 	//! ══ WHAT THIS DELIBERATELY DOES NOT CLAIM ═══════════════════════════════════════════════════
 	//! This is a DOCUMENT check. It proves the mission carries the piece each trigger watches; it
 	//! cannot prove that piece will resolve at runtime. `objective_destroyed` is the live example:
-	//! `last-stand-at-montfort.json` authors a perfectly good `objective_destroy` zone, so this
-	//! passes it — and the objective still goes INERT at LIVE because the mod does not place the
-	//! document's `entities[]` and `comp:ammo_cache` is not in `Data/registry.json`.
-	//! `TBD_ObjectiveRegistry.ArmDestroyTargets` owns that verdict and states it in full. Restating
-	//! a build limitation here would hardcode, in the validator, a fact that becomes false the day
-	//! an entity-placement slice lands — the same drift this check exists to prevent.
+	//! `last-stand-at-montfort.json` can author a perfectly good `objective_destroy` zone and still
+	//! go INERT at LIVE when `rules.targetAlias` is unresolved in `Data/registry.json`, no matching
+	//! `entities[]` row sits in the zone, or spawn/query misses — `ArmDestroyTargets` (T-437) names
+	//! which. Restating a build limitation here would hardcode, in the validator, a fact that
+	//! becomes false the day the underlying cause changes — the same drift this check exists to
+	//! prevent. T-254 already models and spawns `entities[]`; do not revive the old "never spawn"
+	//! claim.
 	//!
 	//! T-181.13.1 — CONTENT, not non-null, here too. `mission.winConditions` is a `ref <class>`, so
 	//! `JsonLoadContext` allocates it whether or not the document authored the key (same landmine as
@@ -1131,12 +1132,17 @@ class TBD_MissionValidator
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-250 — keys the typed parser drops because `TBD_MissionDocumentStruct` does not model them.
+	//! T-250 — keys the typed parser drops because `TBD_MissionDocumentStruct` does not model them
+	//! (or models them but no runtime consumer applies them yet).
 	//!
 	//! `JsonLoadContext` maps JSON keys onto named class fields and silently ignores everything
-	//! else. An author can therefore ship a schema-valid mission whose `environment`, `settings`,
-	//! `entities`, `layers`, `factions[].tickets` or `orbat` `roles[].radio` blocks parse clean and
-	//! vanish before any consumer runs — the failure mode this slice closes.
+	//! else. An author can therefore ship a schema-valid mission whose `environment`, `layers`,
+	//! `factions[].tickets` or `orbat` `roles[].radio` blocks parse clean and vanish before any
+	//! consumer runs — the failure mode this slice closes.
+	//!
+	//! T-254 RETIRED the `entities` unconsumed warning: `TBD_MissionDocumentStruct.entities` is
+	//! modeled and `SpawnMissionEntities` places resolvable rows. T-259 modeled `settings` but the
+	//! warning remains until a consumer applies respawn/spectator/NVG policy at runtime.
 	//!
 	//! Presence is read from the raw JSON string captured at parse time
 	//! (`TBD_MissionLoader.GetRawJson`), because the parsed struct cannot answer "was this key
@@ -1169,12 +1175,8 @@ class TBD_MissionValidator
 				"authored but no code reads it — respawn policy, spectator rules and night-vision are not applied");
 		}
 
-		// T-250-UNCONSUMED-WARN: entities
-		if (JsonAuthoredKey(json, "entities"))
-		{
-			AddWarning("entities",
-				"authored but the mod does not spawn mission entities — placed props and vehicles in this block are discarded on load");
-		}
+		// T-254: entities[] is modeled + SpawnMissionEntities places resolvable rows — not unconsumed.
+		// (Former T-250-UNCONSUMED-WARN: entities retired — do not restore the "does not spawn" lie.)
 
 		// T-250-UNCONSUMED-WARN: layers
 		if (JsonAuthoredKey(json, "layers"))
