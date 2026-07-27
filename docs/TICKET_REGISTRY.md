@@ -2550,6 +2550,24 @@ Cure: strip // and # comments (and TOML string-safe comment lines) before Cargo 
 Repro (hypothetical): replace verify-t438 recipe with `@true` → make verify-t438 PASS while script never runs.
 
 Cure: extend verify-t468-style (or sibling) tripwire to assert Makefile verify-t438/verify-t456 recipes invoke the real bash scripts (not echo/@true/#). |
+| T-477 | 3316 | ready | platform | T-431 Class-R greened on event-wide BACKFILL_ATTENDANCE shapes | Residual from wave 29 adversarial BLOCKER. Class-R in me.rs requires join pin `m.event_id = em.event_id AND m.mission_id = em.mission_id` and bans `WHERE em.event_id IN (` — but still PASS when:
+(1) join pin present + UNION ALL event_id-only second arm
+(2) dead `(FALSE AND <join_pin> OR TRUE)` with event-only JOIN
+(3) `em.event_id = ANY (...)` + join pin only in SQL `--` comment inside the const
+
+Live SQL today is correct; the gate is hollow. No behavioral IT for link-confirm BACKFILL_ATTENDANCE (telemetry IT is T-230 ingest only).
+
+Repro: rewrite BACKFILL_ATTENDANCE to event-wide via ANY/UNION while keeping join substring → unit test PASS.
+
+Cure: harden Class-R — strip SQL `--`/`/* */` comments before pins; require a single FROM event_missions … INNER JOIN matches with live ON containing both equalities (no UNION/ANY event-id-only arms); ban `em.event_id = ANY` / nested event_id-only IN/ANY. Prefer also a minimal behavioral IT if owns can widen to tests/; else structural-only with RED→GREEN on verifier shapes. |
+| T-478 | 3317 | ready | platform | T-440 verify greened on comment name + path-echo seed recipe | Residual from wave 29 adversarial MAJOR×2 (+ MINOR). verify-t440-faction-library-seed.sh:
+(1) `'US Army 1980s'` is raw grep — SQL `-- US Army 1980s` + `SELECT 1;` PASS
+(2) recipe pin is path substring on any non-#-prefixed line — `echo seeds/faction_library.sql >/dev/null` PASS; psql -c SELECT with path in comment PASS
+(3) MINOR: script never pins wave.sh cold/slice `run "T-440…"` wiring
+
+Repro: comment-only starter name or echo-path recipe → verify-t440 PASS.
+
+Cure: strip SQL comments before name pin; require live INSERT INTO user_factions (or measured table) with name column value; require recipe line that actually redirects/applies the file to psql (same shape as verify-t444 if tighter); pin wave.sh both gate paths invoke the script. RED→GREEN on verifier perturbations. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

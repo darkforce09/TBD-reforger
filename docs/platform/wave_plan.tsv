@@ -275,3 +275,5 @@
 99	T-474	T-437 verify presence-only paraphrased lies	scripts/mod/verify-t437-destroy-inert-diagnostics.sh; apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c
 99	T-475	T-446 Class-R comment FormData + unpinned absolute URL	apps/website/frontend/src/content.rs
 99	T-476	verify-t438/t456 Makefile recipes lack hollow-body tripwire	Makefile; scripts/mod/verify-t468-ci-schema-parity.sh
+99	T-477	T-431 Class-R greened on event-wide BACKFILL shapes	apps/website/api/src/handlers/me.rs
+99	T-478	T-440 verify comment name + path-echo seed recipe	scripts/mod/verify-t440-faction-library-seed.sh; scripts/platform/wave.sh; Makefile; apps/website/api/seeds/faction_library.sql
