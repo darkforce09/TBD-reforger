@@ -1,7 +1,13 @@
 //! My Deployments (/deployments) — ported from pages/operations.tsx `DeploymentsPage`. `<AuthGate>`
 //! → `/deployments` Resource → `QueryState` → a two-pane service record: a left telemetry dossier
-//! (identity from the auth store + the mock K/D / win-rate / fav-loadout constants + total deploys)
-//! and a right pane (Active Orders banner + Combat History + Leave of Absence).
+//! (identity from the auth store + real `total_operations` + an honest empty state until personal
+//! telemetry counters land in T-397) and a right pane (Active Orders banner + Combat History +
+//! Leave of Absence).
+//!
+//! **T-407 — personal mock telemetry is gone.** The left pane used to invent identical K/D,
+//! win-rate, and favourite-loadout tiles for every operator beside the genuinely real
+//! `total_operations`. Until T-397 ships NULL-honest personal stats, those tiles are an empty
+//! state ("No telemetry recorded"), not invented numbers.
 //!
 //! **Empty-DB golden (unchanged):** with no upcoming and an empty history the "No Active Orders" +
 //! "No Service History Compiled" states and the always-on dossier still render byte-for-byte as
@@ -28,7 +34,7 @@ use crate::auth::AuthStore;
 use crate::datefmt::{countdown_label, format_local_datetime, format_short_date};
 use crate::dto::{CreateLeaveInput, DataEnvelope, Deployments, LeaveRequest, Paginated};
 use crate::nav::Role;
-use crate::ui::{badge_class, cn, MaterialIcon};
+use crate::ui::{badge_class, MaterialIcon};
 // T-405 — the AAR `<a href>` at the bottom of Combat History is the sink of the T-391 XSS.
 use crate::url_guard;
 use leptos::prelude::*;
@@ -136,13 +142,10 @@ fn slot_line(u: &Value) -> String {
         .join(" · ")
 }
 
-// Client-side constants (used until telemetry serves real numbers) — byte-identical to operations.tsx.
-const MOCK_KD: &str = "2.45";
-const MOCK_WIN_RATE: &str = "68%";
-const FAV_WEAPON_NAME: &str = "M4A1 Block II";
-const FAV_WEAPON_IMG: &str = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='56'><rect width='120' height='56' fill='%23242a3a'/><rect x='12' y='25' width='86' height='6' rx='2' fill='%23adc6ff'/><rect x='80' y='22' width='11' height='18' rx='2' fill='%233a4252'/><rect x='30' y='31' width='10' height='12' rx='2' fill='%233a4252'/></svg>";
-const FAV_ASSET_NAME: &str = "M1A2 Abrams";
-const FAV_ASSET_IMG: &str = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='56'><rect width='120' height='56' fill='%23242a3a'/><rect x='22' y='28' width='76' height='14' rx='3' fill='%233a4252'/><rect x='44' y='20' width='30' height='10' rx='2' fill='%233a4252'/><rect x='70' y='30' width='34' height='4' rx='2' fill='%23adc6ff'/><circle cx='36' cy='44' r='5' fill='%23adc6ff'/><circle cx='84' cy='44' r='5' fill='%23adc6ff'/></svg>";
+/// Affordance shown where personal K/D / win-rate / fav-loadout once pretended to be live.
+/// Kept as a named constant so Class-R can pin the empty copy without driving a `view!`.
+const NO_TELEMETRY_RECORDED: &str = "No telemetry recorded";
+
 const BANNER_IMG: &str = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200'><rect width='400' height='200' fill='%23151b2b'/><g stroke='%23adc6ff' stroke-width='0.5' opacity='0.5'><path d='M0 40 H400 M0 80 H400 M0 120 H400 M0 160 H400 M50 0 V200 M120 0 V200 M190 0 V200 M260 0 V200 M330 0 V200'/></g><circle cx='190' cy='100' r='26' fill='none' stroke='%23facc15' stroke-width='1.5'/><path d='M190 66 V134 M156 100 H224' stroke='%23facc15' stroke-width='1'/></svg>";
 
 #[component]
@@ -187,42 +190,6 @@ fn DeploymentsInner() -> impl IntoView {
     }
 }
 
-#[component]
-fn TelemetryStat(
-    label: &'static str,
-    value: &'static str,
-    #[prop(optional)] class: &'static str,
-) -> impl IntoView {
-    let p_class = cn(&["text-[5rem] font-bold leading-none tracking-tighter", class]);
-    view! {
-        <div>
-            <span class="font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-                {label}
-            </span>
-            <p class=p_class>{value}</p>
-        </div>
-    }
-}
-
-#[component]
-fn FavLoadout(label: &'static str, name: &'static str, img: &'static str) -> impl IntoView {
-    view! {
-        <div>
-            <span class="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
-                {label}
-            </span>
-            <div class="flex items-center gap-3 rounded-lg border border-white/10 bg-surface-container/50 p-2">
-                <img
-                    src=img
-                    alt=""
-                    class="h-10 w-20 shrink-0 rounded border border-white/10 object-cover"
-                />
-                <span class="font-mono text-sm text-on-surface">{name}</span>
-            </div>
-        </div>
-    }
-}
-
 fn dossier(d: Deployments) -> impl IntoView {
     let user = expect_context::<AuthStore>().user.get();
     let username = user
@@ -252,11 +219,7 @@ fn dossier(d: Deployments) -> impl IntoView {
                             {role}
                         </span>
                     </header>
-                    <div class="space-y-6">
-                        <TelemetryStat label="K/D Ratio" value=MOCK_KD class="text-primary" />
-                        <TelemetryStat label="Win Rate" value=MOCK_WIN_RATE class="text-success" />
-                    </div>
-                    <div class="space-y-5 border-t border-white/10 pt-6">
+                    <div class="space-y-5">
                         <div>
                             <span class="font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
                                 "Total Deployments"
@@ -265,8 +228,14 @@ fn dossier(d: Deployments) -> impl IntoView {
                                 {d.total_operations}
                             </p>
                         </div>
-                        <FavLoadout label="Fav Weapon" name=FAV_WEAPON_NAME img=FAV_WEAPON_IMG />
-                        <FavLoadout label="Fav Asset" name=FAV_ASSET_NAME img=FAV_ASSET_IMG />
+                        <div class="border-t border-white/10 pt-6">
+                            <span class="mb-2 block font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+                                "Personal Telemetry"
+                            </span>
+                            <p class="font-mono text-sm text-on-surface-variant">
+                                {NO_TELEMETRY_RECORDED}
+                            </p>
+                        </div>
                     </div>
                 </aside>
 
@@ -1116,5 +1085,44 @@ mod tests {
         assert_eq!(leave_status_variant("approved"), "success");
         assert_eq!(leave_status_variant("denied"), "error");
         assert_eq!(leave_status_variant("bogus"), "neutral");
+    }
+
+    /// T-407 — personal K/D / win-rate / fav-loadout were hardcoded beside real
+    /// `total_operations`. If any of these needles return, every operator sees the same
+    /// fabricated stats again. Needles are `concat!`-split so this test does not match itself.
+    /// Do not restate the banned literals in comments above — paraphrase, or this goes red.
+    #[test]
+    fn no_fabricated_personal_telemetry_survives_in_this_module() {
+        const SRC: &str = include_str!("deployments.rs");
+        let banned = [
+            concat!("MOCK_", "KD"),
+            concat!("MOCK_", "WIN_RATE"),
+            concat!("FAV_", "WEAPON_NAME"),
+            concat!("FAV_", "ASSET_NAME"),
+            concat!("FAV_", "WEAPON_IMG"),
+            concat!("FAV_", "ASSET_IMG"),
+            concat!("2.", "45"),
+            concat!("68", "%"),
+            concat!("M4A1 ", "Block II"),
+            concat!("M1A2 ", "Abrams"),
+            concat!("Telemetry", "Stat"),
+            concat!("Fav", "Loadout"),
+        ];
+        for needle in banned {
+            assert!(
+                !SRC.contains(needle),
+                "fabricated personal telemetry is back in deployments.rs: {needle:?}. \
+                 Until T-397, show the empty affordance — never invent numbers."
+            );
+        }
+        assert!(
+            SRC.contains(NO_TELEMETRY_RECORDED),
+            "the honest empty affordance must stay on the page"
+        );
+    }
+
+    #[test]
+    fn personal_telemetry_empty_copy_is_pinned() {
+        assert_eq!(NO_TELEMETRY_RECORDED, "No telemetry recorded");
     }
 }
