@@ -26,6 +26,30 @@ fn location(resp: &Response) -> String {
         .to_string()
 }
 
+/// T-429 — CSRF reject responses must clear `oauth_state` the same way the
+/// live helper does (`oauth_state=; Path=/; Max-Age=0; HttpOnly`).
+fn assert_oauth_state_cleared(resp: &Response) {
+    let cookie = resp.headers()[header::SET_COOKIE]
+        .to_str()
+        .expect("CSRF reject must Set-Cookie oauth_state clear");
+    assert!(
+        cookie.starts_with("oauth_state="),
+        "clear cookie must name oauth_state: {cookie}"
+    );
+    assert!(
+        cookie.contains("Max-Age=0"),
+        "clear cookie must Max-Age=0: {cookie}"
+    );
+    assert!(
+        cookie.contains("Path=/"),
+        "clear cookie must Path=/: {cookie}"
+    );
+    assert!(
+        cookie.contains("HttpOnly"),
+        "clear cookie must HttpOnly: {cookie}"
+    );
+}
+
 #[tokio::test]
 async fn discord_login_unconfigured_redirects_to_spa_error() {
     let resp = app()
@@ -56,6 +80,8 @@ async fn callback_missing_code_redirects_error() {
         .unwrap();
     assert_eq!(resp.status(), StatusCode::FOUND);
     assert!(location(&resp).contains("error=missing_code"));
+    // T-429 — missing_code goes through callback_csrf_reject → OAUTH_STATE_CLEAR.
+    assert_oauth_state_cleared(&resp);
 }
 
 #[tokio::test]
@@ -72,6 +98,8 @@ async fn callback_invalid_state_redirects_error() {
         .unwrap();
     assert_eq!(resp.status(), StatusCode::FOUND);
     assert!(location(&resp).contains("error=invalid_state"));
+    // T-429 — invalid_state goes through callback_csrf_reject → OAUTH_STATE_CLEAR.
+    assert_oauth_state_cleared(&resp);
 }
 
 #[tokio::test]
