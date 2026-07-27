@@ -10,6 +10,7 @@
 
 use crate::models::Mission;
 use map_engine_core::mission::flatten::{self, MissionMeta};
+use map_engine_core::mission::wire_safety::{self, CargoPhysCatalog};
 
 pub use map_engine_core::mission::flatten::{
     CompileError, ModMissionDocument, ModSlot, mission_terrain_key,
@@ -39,10 +40,39 @@ pub use map_engine_core::mission::flatten::{
 /// this rule over there would have let the preview disagree with this route on the one field T-192
 /// exists to fix. This function is now purely the **row → [`MissionMeta`] adapter**; everything
 /// downstream of it is shared code, which is what makes the twin honest.
+///
+/// **T-500 — cargo capacity.** Routes through [`flatten_to_mod_document_with_catalog`] with an
+/// **empty** catalog (cargo walk is a no-op — never invent limits). The live Save boundary
+/// (`handlers::missions::validate_payload` → `load_cargo_phys_catalog` →
+/// `validate_mission_editor_payload_with_catalog`) already refuses over-capacity before a version
+/// is stored, so API-written payloads that reach compile are cargo-clean. Callers that hold the
+/// same registry phys table Save loads must use [`flatten_to_mod_document_with_catalog`] so
+/// pre-T-416 stored rows (and any write that bypassed Save) cannot compile either.
 pub fn flatten_to_mod_document(
     m: &Mission,
     payload: &[u8],
 ) -> Result<ModMissionDocument, CompileError> {
+    flatten_to_mod_document_with_catalog(m, payload, &CargoPhysCatalog::new())
+}
+
+/// T-500 — same compile as [`flatten_to_mod_document`], but the T-416 cargo-capacity walk uses
+/// `catalog` (the same `resource_name →` phys table Save builds via `load_cargo_phys_catalog`).
+///
+/// Over-capacity findings become [`CompileError::Parse`] carrying the same `/editor/...` strings
+/// Save puts in its 400 `details` — one helper ([`wire_safety::scan_cargo_capacity`]), two
+/// boundaries. Empty catalog stays silent (never invent), matching Save.
+pub fn flatten_to_mod_document_with_catalog(
+    m: &Mission,
+    payload: &[u8],
+    catalog: &CargoPhysCatalog,
+) -> Result<ModMissionDocument, CompileError> {
+    if let Ok(instance) = serde_json::from_slice::<serde_json::Value>(payload) {
+        let findings = wire_safety::scan_cargo_capacity(&instance, catalog);
+        if !findings.is_empty() {
+            return Err(CompileError::Parse(findings.join("; ")));
+        }
+    }
+
     let mut meta = MissionMeta {
         id: m.id.to_string(),
         title: m.title.clone(),
@@ -60,9 +90,11 @@ pub fn flatten_to_mod_document(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::contract::validate::validate_mission_editor_payload_with_catalog;
     use crate::contract::validate_mission_document;
     use crate::models::{GameMode, MissionStatus, TerrainType, WeatherType};
     use chrono::Utc;
+    use map_engine_core::mission::wire_safety::CargoPhys;
     use serde_json::json;
     use uuid::Uuid;
 
@@ -722,5 +754,173 @@ mod tests {
         // A preview the mod would reject is not server truth either.
         let findings = validate_mission_document(&previewed).expect("schema compiles");
         assert!(findings.is_empty(), "schema violations: {findings:?}");
+    }
+
+    /* ───────────────────────── T-500 — cargo refuse at compile ───────────────────────── */
+
+    /// Same phys table + over-capacity numbers as Save's T-416 Class-R
+    /// (`handlers::missions::over_capacity_cargo_is_refused_at_save_with_catalog` /
+    /// `contract::validate::over_capacity_cargo_is_a_save_time_finding_with_catalog`).
+    fn cargo_phys_catalog_fixture() -> CargoPhysCatalog {
+        let mut catalog = CargoPhysCatalog::new();
+        catalog.insert(
+            "mag".into(),
+            CargoPhys {
+                display_name: "Mag".into(),
+                weight_kg: Some(0.5),
+                volume_cm3: Some(60.0),
+                ..CargoPhys::default()
+            },
+        );
+        catalog.insert(
+            "vest_rn".into(),
+            CargoPhys {
+                display_name: "Plate Carrier".into(),
+                max_weight_kg: Some(5.0),
+                max_volume_cm3: Some(200.0),
+                ..CargoPhys::default()
+            },
+        );
+        catalog
+    }
+
+    /// One placed slot (so flatten would otherwise succeed) carrying cargo qty against a vest.
+    fn cargo_slot_payload(qty: u32) -> String {
+        format!(
+            r#"{{
+              "schemaVersion": 1,
+              "editor": {{
+                "factions": [{{"id": "f1", "key": "BLUFOR", "name": "US Army", "squadIds": ["sq1"]}}],
+                "squads": [{{"id": "sq1", "factionId": "f1", "callsign": "Alpha", "slotIds": ["s1"]}}],
+                "slots": [{{
+                  "id": "s1", "squadId": "sq1", "index": 0, "role": "RFL",
+                  "position": {{"x": 100.0, "y": 200.0, "z": 0, "rotation": 0}},
+                  "loadout": {{"version": 2,
+                    "wear": {{"vest": "vest_rn"}}, "weapons": [],
+                    "cargo": [{{"container": "vest", "item": "mag", "qty": {qty}}}]}}
+                }}],
+                "editorLayers": []
+              }}
+            }}"#
+        )
+    }
+
+    /// T-500 — with the same catalog Save uses, compile refuses the same over-capacity finding.
+    ///
+    /// RED: delete the `scan_cargo_capacity` call from `flatten_to_mod_document_with_catalog`.
+    /// RED: invent a second cargo arithmetic that disagrees with Save's finding string.
+    #[test]
+    fn compile_with_catalog_refuses_over_capacity_like_save() {
+        let m = fixture_mission();
+        let catalog = cargo_phys_catalog_fixture();
+        let bad = cargo_slot_payload(4);
+        let ok = cargo_slot_payload(3);
+
+        // Save channel (exact helper CreateVersion uses after loading the catalog) + the shared
+        // scan itself — compile must refuse with the same strings, not a restated message.
+        let save_details =
+            validate_mission_editor_payload_with_catalog(bad.as_bytes(), &catalog).expect("schema");
+        let parsed: serde_json::Value = serde_json::from_str(&bad).unwrap();
+        let scan = wire_safety::scan_cargo_capacity(&parsed, &catalog);
+        assert!(
+            !scan.is_empty()
+                && scan
+                    .iter()
+                    .any(|d| d.contains("240 / 200 cm³") && d.contains("Plate Carrier")),
+            "shared scan must fire on this fixture: {scan:?}"
+        );
+        for d in &scan {
+            assert!(
+                save_details.iter().any(|s| s == d),
+                "Save details must include scan finding {d:?}; got {save_details:?}"
+            );
+        }
+
+        // Compile channel — same helper, same strings, Parse so `/compiled` cannot ship it.
+        let err = flatten_to_mod_document_with_catalog(&m, bad.as_bytes(), &catalog)
+            .expect_err("over-capacity must refuse at compile");
+        let CompileError::Parse(detail) = err else {
+            panic!("expected CompileError::Parse, got {err:?}");
+        };
+        for d in &scan {
+            assert!(
+                detail.contains(d.as_str()),
+                "compile refuse missing scan finding {d:?}; got {detail}"
+            );
+        }
+
+        flatten_to_mod_document_with_catalog(&m, ok.as_bytes(), &catalog)
+            .expect("under-capacity must compile");
+        flatten_to_mod_document_with_catalog(&m, bad.as_bytes(), &CargoPhysCatalog::new())
+            .expect("empty catalog must not invent a limit (matches Save silence)");
+    }
+
+    /// T-500 Class-R — the no-arg compile entry always routes through the catalogued gate
+    /// (empty catalog today). RED: `flatten_to_mod_document` bypasses `with_catalog` again.
+    #[test]
+    fn flatten_routes_through_catalogued_compile_gate() {
+        const SRC: &str = include_str!("mission_compile.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("mission_compile.rs must have a #[cfg(test)] module");
+        assert!(
+            production.contains("fn flatten_to_mod_document_with_catalog("),
+            "catalogued compile gate must exist"
+        );
+        assert!(
+            production.contains("wire_safety::scan_cargo_capacity"),
+            "compile gate must call the same cargo helper Save uses"
+        );
+        let no_arg = production
+            .split("pub fn flatten_to_mod_document(")
+            .nth(1)
+            .and_then(|s| {
+                s.split("pub fn flatten_to_mod_document_with_catalog(")
+                    .next()
+            })
+            .expect("flatten_to_mod_document must exist before with_catalog");
+        assert!(
+            no_arg.contains("flatten_to_mod_document_with_catalog("),
+            "no-arg flatten must delegate to the catalogued gate"
+        );
+    }
+
+    /// T-500 Class-R — compile-as-trust-saved for the empty-catalog default: Save owns the live
+    /// refuse via `load_cargo_phys_catalog`. RED: Save drops the catalog load, or this adapter
+    /// stops documenting that dependency.
+    #[test]
+    fn compile_documents_save_cargo_refuse() {
+        const COMPILE: &str = include_str!("mission_compile.rs");
+        let production = COMPILE
+            .split("#[cfg(test)]")
+            .next()
+            .expect("mission_compile.rs must have a #[cfg(test)] module");
+        assert!(
+            production.contains("load_cargo_phys_catalog"),
+            "compile adapter must name Save's catalog loader (trust-saved contract)"
+        );
+        assert!(
+            production.contains("validate_mission_editor_payload_with_catalog"),
+            "compile adapter must name Save's catalogued validator"
+        );
+
+        const HANDLER: &str = include_str!("../handlers/missions.rs");
+        let handler_prod = HANDLER
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        assert!(
+            handler_prod.contains("load_cargo_phys_catalog"),
+            "Save must still load registry phys into the catalog"
+        );
+        let helper = handler_prod
+            .split("fn validate_payload_with_catalog(")
+            .nth(1)
+            .expect("validate_payload_with_catalog must exist");
+        assert!(
+            helper.contains("validate_mission_editor_payload_with_catalog"),
+            "Save helper must call the catalogued validator"
+        );
     }
 }
