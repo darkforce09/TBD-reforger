@@ -31,7 +31,6 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use sha2::{Digest, Sha256};
 
-
 /// Minimum printable run to consider.
 ///
 /// Measured, and the reason this is not 2048: `class SCR_AIDangerReaction` lives in a run of
@@ -193,17 +192,21 @@ pub fn carve(game_root: &Path, out_dir: &Path) -> Result<CarveStats> {
         if run.len() >= MIN_BLOB {
             st.blobs_seen += 1;
             flush_blob(
-                &run, run_start, &pak_name, &dir, &mut made_dir, &mut seq, &mut seen,
-                &mut manifest, &mut st,
+                &run,
+                run_start,
+                &pak_name,
+                &dir,
+                &mut made_dir,
+                &mut seq,
+                &mut seen,
+                &mut manifest,
+                &mut st,
             )?;
         }
     }
 
     std::fs::write(out_dir.join("_MANIFEST.tsv"), manifest)?;
-    std::fs::write(
-        out_dir.join("REFERENCE-ONLY.md"),
-        REFERENCE_ONLY_MD,
-    )?;
+    std::fs::write(out_dir.join("REFERENCE-ONLY.md"), REFERENCE_ONLY_MD)?;
     Ok(st)
 }
 

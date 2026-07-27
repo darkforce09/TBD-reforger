@@ -177,8 +177,9 @@ rust-test-it: ## Run Rust integration tests against a fresh dedicated DB (needs 
 	-podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc "DROP DATABASE IF EXISTS rust_it WITH (FORCE);"
 	podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc "CREATE DATABASE rust_it;"
 	cd $(WEB) && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable cargo test
-rust-fmt: ## Check Rust formatting (FMT-1 analog)
+rust-fmt: ## Check Rust formatting (FMT-1 analog); workspace --all covers xtask/tbd-tools (T-297)
 	cd $(WEB) && cargo fmt --check
+	cargo fmt --all --check
 rust-clippy: ## Lint Rust with clippy (deny warnings; GO-2..8 analog)
 	cd $(WEB) && cargo clippy --all-targets -- -D warnings
 rust-sqlx-prepare: ## Refresh the committed sqlx offline query cache (.sqlx/)
