@@ -71,7 +71,7 @@
 0	T-386	render-check's exit code cannot fail a probe — every browser assertion has been decorative	tools/tbd-tools/src/smokes.rs
 0	T-387	render-check hard-codes api_proxy None, so no probe can reach a real session	tools/tbd-tools/src/smokes.rs; tools/tbd-tools/src/bin/gate.rs
 0	T-388	The adoption-residue purge is not guaranteed on a first editor open	apps/website/frontend/src/editor_session.rs
-0	T-385	Join matches.terrain into /servers so the theater readout can come back	apps/website/api/src/handlers/servers.rs
+50	T-385	Join matches.terrain into /servers so the theater readout can come back	apps/website/api/src/handlers/servers.rs
 0	T-372	POST /admin/roles/sync demotes every admin who never completed a Discord login	apps/website/api/src/services/role_sync.rs
 0	T-375	An authored mission title is dropped by Save and overwritten by the stale row on reload	crates/map-engine-core/src/mission/compile.rs
 0	T-376	The registry importer NULLs ten populated columns from a partial envelope	apps/website/api/src/services/registry_import.rs
@@ -95,7 +95,7 @@
 0	T-364	COALESCE-on-None admits a third state, and a body-only PATCH leaves the snippet stale	apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/handlers/cms.rs
 47	T-350	Four sites report an identity as linked when it is whitespace	apps/website/api/src/handlers/auth.rs; apps/website/api/src/handlers/oauth.rs; apps/website/api/src/handlers/deployments.rs; apps/website/api/tests/t350_whitespace_linked.rs
 0	T-351	Nothing pins the arma_id trim, and legacy whitespace rows are still in the tables	apps/website/api/tests/identity_link.rs; apps/website/api/migrations
-0	T-342	Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt	apps/website/frontend/src/personnel.rs
+50	T-342	Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt	apps/website/frontend/src/personnel.rs
 0	T-339	Two gate-harness gaps T-320 could not reach from its own files	tools/tbd-tools/src/cdp.rs; tools/tbd-tools/src/bin/gate.rs; tools/tbd-tools/src/vsuite.rs
 47	T-337	Approving or rejecting a mission never touches updated_at	apps/website/api/src/handlers/approvals.rs
 49	T-355	An unparseable event_id silently becomes NULL and skips the attendance write	apps/website/api/src/handlers/telemetry.rs
@@ -290,7 +290,7 @@
 99	T-489	Break T-486 circular verify-t468 self-pin (direct bash CI)	Makefile; .github/workflows/ci.yml; scripts/mod/verify-t468-ci-schema-parity.sh; apps/website/api/.env.example
 99	T-490	T-411 sticky gate DB on plan wave 3	scripts/platform/wave.sh; docs/platform/factory_pack_wave
 99	T-491	T-425 mixed drag two undo txns + untested pick/marquee	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; crates/map-engine-core/src/doc/store.rs
-99	T-492	fmt_changed/clippy_changed ignore changed_rs rc	scripts/platform/wave.sh
+50	T-492	fmt_changed/clippy_changed ignore changed_rs rc	scripts/platform/wave.sh
 99	T-493	T-397 Class-R blind to COALESCE(deaths,0)	apps/website/api/tests/telemetry.rs; apps/website/api/migrations/0014_nullable_match_player_stat_counters.sql
 99	T-494	trim source-ratchet + schedule briefing trim	apps/website/frontend/src/mission_overview.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/events.rs
 99	T-495	members IT offset exercise	apps/website/api/tests/events.rs
