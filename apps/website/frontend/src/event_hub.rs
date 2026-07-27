@@ -231,6 +231,10 @@ fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl IntoView {
         .unwrap_or_else(|| "Untitled Operation".into());
     let countdown = countdown_label(&ev.start_time);
     let when = format_local_datetime(&ev.start_time);
+    // T-407 — operation-level briefing is authorable (event_manager) and already shown on the
+    // schedule list card, but the hub hero never read `EventHub.briefing`. Reuse the same
+    // trim/empty rule as mission dossier briefings (`briefing_text`).
+    let operation_briefing = briefing_text(ev.briefing.as_deref());
     let missions = ev.missions;
     let has_missions = !missions.is_empty();
     view! {
@@ -244,6 +248,14 @@ fn event_hub_view(ev: EventHub, on_change: Callback<()>) -> impl IntoView {
                     {countdown}
                 </div>
                 <p class="text-on-surface-variant">{when}</p>
+                <div class="mt-1 max-w-prose">
+                    <span class="mb-2 block font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
+                        "Briefing"
+                    </span>
+                    <p class="whitespace-pre-line text-sm leading-relaxed text-on-surface-variant">
+                        {operation_briefing}
+                    </p>
+                </div>
                 <div class="mt-2 flex flex-wrap gap-3 text-label-md">
                     <span class="flex items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-container-high px-3 py-2">
                         <MaterialIcon name="headset_mic" class="text-primary" />
@@ -332,11 +344,11 @@ fn meta_badge(label: &'static str, value: String) -> impl IntoView {
 /// default, and writing one into authored data destroys the author's intent permanently. This
 /// only decides what to *show*; nothing here writes.
 ///
-/// The affordance string is `mission_overview.rs:894`'s verbatim — the sibling mission-dossier
-/// renderer, and the precedent the ticket named — rather than a new one invented for this page.
-/// The `trim()` is `approvals.rs:389`'s ("The author submitted no briefing."), which is the
-/// stricter of the two in-repo precedents: a briefing of `"\n\n "` is not authored content, and
-/// rendering it verbatim leaves a "Mission Briefing" heading over blank space.
+/// The affordance string is `mission_overview::tactical_briefing_text`'s verbatim — the sibling
+/// mission-dossier renderer — rather than a new one invented for this page. The `trim()` matches
+/// `approvals.rs:389` ("The author submitted no briefing."): a briefing of `"\n\n "` is not
+/// authored content, and rendering it verbatim leaves a briefing heading over blank space.
+/// T-407 aligned mission_overview to the same trim rule.
 fn briefing_text(briefing: Option<&str>) -> String {
     match briefing {
         Some(b) if !b.trim().is_empty() => b.to_string(),
@@ -1605,6 +1617,46 @@ mod tests {
         assert_eq!(
             briefing_text(m.briefing.as_deref()),
             "No briefing provided."
+        );
+    }
+
+    /// T-407 — operation-level `EventHub.briefing` must use the same empty/trim rule on the
+    /// hub hero that mission dossiers already use. The golden omits the event key too.
+    #[test]
+    fn operation_level_briefing_uses_the_same_empty_rule() {
+        let hub: EventHub = serde_json::from_str(EVENT_HUB_GOLDEN).expect("golden parses");
+        assert!(
+            hub.briefing.is_none(),
+            "fixture drifted: event-level briefing must be absent on the recorded wire"
+        );
+        assert_eq!(
+            briefing_text(hub.briefing.as_deref()),
+            "No briefing provided."
+        );
+        assert_eq!(
+            briefing_text(Some("Hold the LZ until QRF.")),
+            "Hold the LZ until QRF."
+        );
+        assert_eq!(
+            briefing_text(Some("\n\n  ")),
+            "No briefing provided.",
+            "whitespace-only operation briefing is not authored content"
+        );
+    }
+
+    /// T-407 — the hub hero must actually *read* `EventHub.briefing`. A pure call above is not
+    /// enough if the view never binds it; this pins the source seam.
+    #[test]
+    fn hub_hero_reads_event_briefing() {
+        const SRC: &str = include_str!("event_hub.rs");
+        assert!(
+            SRC.contains("briefing_text(ev.briefing.as_deref())"),
+            "event_hub hero must render EventHub.briefing via briefing_text — \
+             schedule cards already show it; the hub must too (T-407)"
+        );
+        assert!(
+            SRC.contains("operation_briefing"),
+            "operation_briefing binding must remain on the hub hero"
         );
     }
 

@@ -886,12 +886,19 @@ fn body(m: MissionDetail, ed: ArmoryEditor, editable: bool) -> impl IntoView {
 /// from the `/missions/:id` page. Note also that the faction tabs here are built from the armory's
 /// own rows, so they render whatever key is stored, joining or not; the Event Hub's are built from
 /// `orbat_slots` and do not. That asymmetry is why the editor derives its keys from the ORBAT.
+///
+/// **T-407 — briefing emptiness.** Whitespace-only briefings are not authored content (same rule
+/// as `approvals.rs` and `event_hub::briefing_text`). They take the empty affordance rather than
+/// a blank "Tactical Briefing" heading over empty `whitespace-pre-wrap` space.
+fn tactical_briefing_text(briefing: Option<&str>) -> String {
+    match briefing {
+        Some(b) if !b.trim().is_empty() => b.to_string(),
+        _ => "No briefing provided.".into(),
+    }
+}
+
 pub fn dossier_body(m: &MissionDetail) -> impl IntoView {
-    let briefing = m
-        .briefing
-        .clone()
-        .filter(|b| !b.is_empty())
-        .unwrap_or_else(|| "No briefing provided.".into());
+    let briefing = tactical_briefing_text(m.briefing.as_deref());
     let v_badge = m
         .current_version
         .as_ref()
@@ -1216,5 +1223,39 @@ mod tests {
         // Blank quantity is `null`, which the column reads as unlimited — not 0.
         assert_eq!(items[1]["quantity"], Value::Null);
         assert_eq!(items[1]["sort_order"], json!(1));
+    }
+
+    /// T-407 — whitespace-only briefings must not render as blank "authored" prose under
+    /// "Tactical Briefing". Same trim rule as `approvals.rs` / `event_hub::briefing_text`.
+    #[test]
+    fn tactical_briefing_trims_whitespace_only_to_empty_affordance() {
+        for cleared in [None, Some(""), Some("   \n\n  "), Some("\t")] {
+            assert_eq!(
+                tactical_briefing_text(cleared),
+                "No briefing provided.",
+                "whitespace-only briefing must take the empty affordance ({cleared:?})"
+            );
+        }
+        let authored = "Hold the ridge.\n\nSecond wave at H+20.";
+        assert_eq!(tactical_briefing_text(Some(authored)), authored);
+        // Leading/trailing space alone is not emptiness — only all-whitespace is.
+        assert_eq!(tactical_briefing_text(Some(" Hold. ")), " Hold. ");
+    }
+
+    /// Guard against reverting to the pre-T-407 emptiness check (is_empty without trim).
+    #[test]
+    fn dossier_body_uses_trim_aware_briefing_helper() {
+        const SRC: &str = include_str!("mission_overview.rs");
+        assert!(
+            SRC.contains("tactical_briefing_text(m.briefing.as_deref())"),
+            "dossier_body must route briefing through tactical_briefing_text"
+        );
+        // concat! so this test body does not match itself.
+        let old = concat!(".filter(|b| !b.", "is_empty())");
+        assert!(
+            !SRC.contains(old),
+            "the pre-T-407 is_empty-only filter must not return — whitespace-only \
+             briefings would blank the Tactical Briefing section again"
+        );
     }
 }
