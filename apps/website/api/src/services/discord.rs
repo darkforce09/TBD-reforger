@@ -121,8 +121,19 @@ fn is_cdn_path_segment(s: &str) -> bool {
 
 impl DiscordUser {
     /// Prefer the new global display name, falling back to username.
+    ///
+    /// **T-371 — the selection test is `trim().is_empty()`, not `is_empty()`.** This is a
+    /// *choice between two fields*, not a guard that should trim the winner. Discord's
+    /// `global_name` of `"   "` is present and non-empty, so the old `is_empty()` branch
+    /// stored it verbatim into `users.username` on every oauth login upsert. T-366 closed the
+    /// *read* side (whitespace no longer produces an anonymous audit line); this closes the
+    /// *write* side by making the selection test meaningful — whitespace-only `global_name`
+    /// falls through to `username`. A name that survives (`"  Dave  "`) is returned exactly as
+    /// Discord sent it: padding is cosmetic; namelessness is not. Same lever T-319 established
+    /// for this struct — a malformed upstream is not a client error, so the only control after
+    /// decode is what we select.
     pub fn display_name(&self) -> String {
-        if self.global_name.is_empty() {
+        if self.global_name.trim().is_empty() {
             self.username.clone()
         } else {
             self.global_name.clone()
@@ -404,6 +415,30 @@ mod tests {
         assert_eq!(legacy.display_name(), "bob");
         assert_eq!(legacy.handle(), "bob#1234");
         assert_eq!(legacy.avatar_url(), "");
+    }
+
+    /// **T-371 — whitespace-only `global_name` must not win field selection.**
+    ///
+    /// Pre-fix `global_name.is_empty()` let `"   "` win and oauth stored it verbatim into
+    /// `users.username`. The fix is the *selection test* (`trim().is_empty()` → fall through
+    /// to `username`), not trimming a meaningful winner. Tab/newline/NBSP also fall through
+    /// because `str::trim` is Unicode White_Space.
+    #[test]
+    fn whitespace_only_global_name_falls_through_to_username() {
+        let mk = |global_name: &str| DiscordUser {
+            id: "7".into(),
+            username: "sam".into(),
+            global_name: global_name.into(),
+            discriminator: "0".into(),
+            avatar: String::new(),
+        };
+        assert_eq!(mk("").display_name(), "sam");
+        assert_eq!(mk("   ").display_name(), "sam");
+        assert_eq!(mk("\t\n").display_name(), "sam");
+        assert_eq!(mk("\u{00A0}").display_name(), "sam"); // NBSP
+        // Meaningful name still wins — returned exactly as Discord sent it (no display trim).
+        assert_eq!(mk("Dave").display_name(), "Dave");
+        assert_eq!(mk("  Dave  ").display_name(), "  Dave  ");
     }
 
     #[test]
