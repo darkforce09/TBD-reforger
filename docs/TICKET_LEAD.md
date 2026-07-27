@@ -24,6 +24,13 @@ Cure: enable FormData/File features, wire multipart api helper, POST /cms/upload
 Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
 
 Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin.
+- **T-475** (3314) — T-446 Class-R greens comment-out FormData + unpinned absolute URL [ready] — Residual from wave 28 adversarial MAJOR×2 on T-446.
+(1) content.rs Class-R uses raw CARGO.contains("\"FormData\"") — commenting the feature line (`# "FormData",`) still PASS because the string remains in the file. Same comment-needle class as T-460/T-461.
+(2) Live handle_hero calls absolute_cms_upload_url(&raw) so Publish gets http(s) for T-405 validated_thumbnail, but Class-R never mentions absolute_cms_upload_url — replacing with `let url = raw;` still greens all content::tests (11/11).
+
+Repro: `# "FormData",` in Cargo.toml → hero_multipart_upload_is_wired_not_stubbed PASS; `let url = raw;` → content::tests PASS.
+
+Cure: strip // and # comments (and TOML string-safe comment lines) before Cargo FormData/File/FileList pins; require live prod call absolute_cms_upload_url(…) on the upload Ok path (not comment-only). RED→GREEN on both verifier perturbations.
 
 ## Next queued (top 10)
 
