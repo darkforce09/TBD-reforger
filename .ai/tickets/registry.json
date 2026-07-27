@@ -11601,7 +11601,7 @@
         "auth",
         "tests"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3268,
       "stream": "web-platform",
       "targets": [
@@ -11621,7 +11621,7 @@
       "impact": [
         "auth"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3269,
       "stream": "web-platform",
       "targets": [
@@ -11662,7 +11662,7 @@
       "impact": [
         "mission-creator"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3271,
       "stream": "web-platform",
       "targets": [
@@ -12676,6 +12676,48 @@
       ],
       "status": "deferred",
       "order": 3318,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-480",
+      "title": "Harden oauth_state clear IT to exact OAUTH_STATE_CLEAR equality",
+      "summary": "Wave 30 adversarial verifier (T-429): assert_oauth_state_cleared in apps/website/api/tests/oauth_redirect.rs uses contains(\"Path=/\") / contains(\"Max-Age=0\") soft checks, not equality to OAUTH_STATE_CLEAR (handlers/oauth.rs). A clear cookie with Path=/api or Max-Age=00 still passes.\n\nRepro: python3 -c 'c=\"oauth_state=; Path=/api; Max-Age=0; HttpOnly\"; print(c.startswith(\"oauth_state=\") and \"Max-Age=0\" in c and \"Path=/\" in c and \"HttpOnly\" in c)' → True while Path diverges from OAUTH_STATE_CLEAR.\n\nCure: assert Set-Cookie equals OAUTH_STATE_CLEAR (or parse and require Path=/ exact).",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "website",
+        "tests"
+      ],
+      "status": "deferred",
+      "order": 3319,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-481",
+      "title": "Reject whitespace-only DISCORD_CLIENT_ID in Config::validate",
+      "summary": "Wave 30 adversarial verifier (T-430): production validate guards discord_client_id.is_empty() only (config.rs). A whitespace-only id (\" \") with APP_ENV=production validates Ok and is not treated as oauth_unconfigured. Same pattern as prior secret/redirect whitespace nits.\n\nRepro: set discord_client_id=\" \" + env=production → validate() Ok.\n\nCure: trim (or reject if trim empty) before the Missing check; Class-R pin.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "website"
+      ],
+      "status": "deferred",
+      "order": 3320,
       "stream": "web-platform",
       "targets": [
         "website"

@@ -896,6 +896,16 @@ Cure: extend verify-t468-style (or sibling) tripwire to assert Makefile verify-t
 Repro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.
 
 Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; assert no shared snowflake collision across parallel tests.
+- **T-480** (deferred) — Harden oauth_state clear IT to exact OAUTH_STATE_CLEAR equality [API, tests] — Wave 30 adversarial verifier (T-429): assert_oauth_state_cleared in apps/website/api/tests/oauth_redirect.rs uses contains("Path=/") / contains("Max-Age=0") soft checks, not equality to OAUTH_STATE_CLEAR (handlers/oauth.rs). A clear cookie with Path=/api or Max-Age=00 still passes.
+
+Repro: python3 -c 'c="oauth_state=; Path=/api; Max-Age=0; HttpOnly"; print(c.startswith("oauth_state=") and "Max-Age=0" in c and "Path=/" in c and "HttpOnly" in c)' → True while Path diverges from OAUTH_STATE_CLEAR.
+
+Cure: assert Set-Cookie equals OAUTH_STATE_CLEAR (or parse and require Path=/ exact).
+- **T-481** (deferred) — Reject whitespace-only DISCORD_CLIENT_ID in Config::validate [API] — Wave 30 adversarial verifier (T-430): production validate guards discord_client_id.is_empty() only (config.rs). A whitespace-only id (" ") with APP_ENV=production validates Ok and is not treated as oauth_unconfigured. Same pattern as prior secret/redirect whitespace nits.
+
+Repro: set discord_client_id=" " + env=production → validate() Ok.
+
+Cure: trim (or reject if trim empty) before the Missing check; Class-R pin.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

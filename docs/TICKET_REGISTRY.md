@@ -2283,10 +2283,10 @@ Cure lives in API pagination / narrower endpoints + frontend DTO/client — outs
 | T-428 | 3267 | deferred | platform | Schedule Discord role resync; replace placeholder leader snowflake in seed | Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.
 
 Repro: grep apps/website/api and scripts for a timer/cron calling resync_all_roles — none. Seed row: ('1517290000000000000', 'Squad Leader', 'leader', 30). |
-| T-429 | 3268 | ready | platform | oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects | Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.
+| T-429 | 3268 | shipped | platform | oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects | Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.
 
 Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in handlers/oauth.rs cover the helper; IT does not. |
-| T-430 | 3269 | ready | platform | Production Config::validate should require DISCORD_CLIENT_ID | Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
+| T-430 | 3269 | shipped | platform | Production Config::validate should require DISCORD_CLIENT_ID | Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
 
 Repro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured. |
 | T-431 | 3270 | shipped | platform | Identity-link attendance backfill still marks every mission on the event | MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.
@@ -2294,7 +2294,7 @@ Repro: production Config with secret+redirect set and client_id empty — load s
 Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.
 
 Cure: same JOIN shape as T-230 telemetry ingest. |
-| T-432 | 3271 | ready | platform | Reserve or rename payloadExtras so authored wire keys cannot collide | MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.
+| T-432 | 3271 | shipped | platform | Reserve or rename payloadExtras so authored wire keys cannot collide | MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.
 
 Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.
 
@@ -2573,6 +2573,16 @@ Cure: strip SQL comments before name pin; require live INSERT INTO user_factions
 Repro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.
 
 Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; assert no shared snowflake collision across parallel tests. |
+| T-480 | 3319 | deferred | platform | Harden oauth_state clear IT to exact OAUTH_STATE_CLEAR equality | Wave 30 adversarial verifier (T-429): assert_oauth_state_cleared in apps/website/api/tests/oauth_redirect.rs uses contains("Path=/") / contains("Max-Age=0") soft checks, not equality to OAUTH_STATE_CLEAR (handlers/oauth.rs). A clear cookie with Path=/api or Max-Age=00 still passes.
+
+Repro: python3 -c 'c="oauth_state=; Path=/api; Max-Age=0; HttpOnly"; print(c.startswith("oauth_state=") and "Max-Age=0" in c and "Path=/" in c and "HttpOnly" in c)' → True while Path diverges from OAUTH_STATE_CLEAR.
+
+Cure: assert Set-Cookie equals OAUTH_STATE_CLEAR (or parse and require Path=/ exact). |
+| T-481 | 3320 | deferred | platform | Reject whitespace-only DISCORD_CLIENT_ID in Config::validate | Wave 30 adversarial verifier (T-430): production validate guards discord_client_id.is_empty() only (config.rs). A whitespace-only id (" ") with APP_ENV=production validates Ok and is not treated as oauth_unconfigured. Same pattern as prior secret/redirect whitespace nits.
+
+Repro: set discord_client_id=" " + env=production → validate() Ok.
+
+Cure: trim (or reject if trim empty) before the Missing check; Class-R pin. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

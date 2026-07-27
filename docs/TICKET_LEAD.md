@@ -9,17 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-429** (3268) — oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects [ready] — Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.
-
-Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in handlers/oauth.rs cover the helper; IT does not.
-- **T-430** (3269) — Production Config::validate should require DISCORD_CLIENT_ID [ready] — Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
-
-Repro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured.
-- **T-432** (3271) — Reserve or rename payloadExtras so authored wire keys cannot collide [ready] — MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.
-
-Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.
-
-Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage name.
 
 ## Next queued (top 10)
 
