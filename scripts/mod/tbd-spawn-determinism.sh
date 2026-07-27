@@ -1,28 +1,31 @@
 #!/usr/bin/env bash
-# Spawn/equip determinism gate (T-068 follow-up program).
+# Spawn/equip determinism gate (T-068 follow-up program; Makefile: make mod-spawn-determinism).
+# Hub: docs/mod/SPAWN_DETERMINISM.md · verify log: .ai/artifacts/spawn_determinism_verify_log.md
 #
 # Runs N Workbench play sessions of the currently open world and asserts the
 # spawn/equip outcome is IDENTICAL across every run:
 #   1. normalized [TBD] digests identical across runs
 #   2. zero `path=vanilla-fallthrough`
-#   3. settle census characters == players (when the [TBD][Audit] line exists — A2)
+#   3. settle census characters == bodies (when the [TBD][Audit] line exists)
 #   4. every issued gear line ends `equip OK` / `swapped` / `swap-skipped`
-#   5. exactly one `spawn requested` per player per run
-#   6. zero [TBD] SCRIPT (E) error lines
+#   5. exactly one bind per player per run; materialization + census present
+#   6. zero SCRIPT (E) / Virtual Machine Exception lines
 #
 # The Workbench is RESTARTED between runs: TBD_MissionLoader/RosterLoader statics
 # survive play sessions inside one WB process (measured, T-068.12 verify log), so
 # a same-process re-play does not exercise the fetch/settle path.
 #
-# Usage: tbd-spawn-determinism.sh [N-runs (default 5)] [world (default worlds/TBD_Dev_POC.ent)]
+# Usage:
+#   tbd-spawn-determinism.sh --preflight
+#   tbd-spawn-determinism.sh [N-runs (default 5)] [world (default worlds/TBD_Dev_POC.ent)]
 # Env: TBD_DET_KEEP=1 keeps per-run snapshots; TBD_DET_TIMEOUT (default 120) per-run seconds.
+#
+# Prerequisite: live Arma Reforger Workbench with Net API on :5775 (or
+# ENFUSION_WORKBENCH_PORT). Cannot run headless / in CI — preflight fails fast
+# (exit 2) with an actionable message instead of waiting minutes for a relaunch.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-RUNS="${1:-5}"
-WORLD="${2:-worlds/TBD_Dev_POC.ent}"
-TIMEOUT="${TBD_DET_TIMEOUT:-120}"
-OUT_DIR="$(mktemp -d /tmp/tbd-spawn-det.XXXXXX)"
 WB_PORT="${ENFUSION_WORKBENCH_PORT:-5775}"
 
 PROTON_LOG_DIR="$HOME/.local/share/Steam/steamapps/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/logs"
@@ -40,6 +43,37 @@ latest_log() {
 }
 
 port_open() { ss -tln 2>/dev/null | grep -q ":${WB_PORT} "; }
+
+# Fail in seconds when Workbench cannot run here (headless CI, no Steam session).
+# Does not launch Steam — that is the operator's job before make mod-spawn-determinism.
+preflight() {
+  if port_open; then
+    echo "preflight: Workbench Net API listening on :$WB_PORT"
+    return 0
+  fi
+  cat >&2 <<EOF
+FATAL: Workbench Net API not listening on :$WB_PORT — spawn-determinism cannot run.
+  Prerequisite: Arma Reforger Workbench with Net API enabled on this host.
+  Start Workbench (e.g. steam -applaunch 1874910), wait until :$WB_PORT is up,
+  then: make mod-spawn-determinism
+  Docs: docs/mod/SPAWN_DETERMINISM.md
+  This gate is NOT headless and is NOT part of make ci-local / wave.sh gates.
+  Offline MCP (no Workbench): make mcp-selftest
+EOF
+  return 2
+}
+
+if [ "${1:-}" = "--preflight" ]; then
+  preflight
+  exit $?
+fi
+
+RUNS="${1:-5}"
+WORLD="${2:-worlds/TBD_Dev_POC.ent}"
+TIMEOUT="${TBD_DET_TIMEOUT:-120}"
+OUT_DIR="$(mktemp -d /tmp/tbd-spawn-det.XXXXXX)"
+
+preflight || exit $?
 
 # One kill→relaunch cycle. Returns nonzero when the instance came up in the
 # "Can't initialize the game" state (Net API answers but the World Editor is dead
