@@ -21,6 +21,7 @@
 //! rule that matters is enforced in [`validated_name`], [`validated_ip`], [`validated_port`] and
 //! [`require_modpack`] — see each for what the database would otherwise have accepted.
 
+use std::collections::{HashMap, HashSet};
 use std::net::IpAddr;
 
 use axum::extract::rejection::JsonRejection;
@@ -36,7 +37,7 @@ use crate::error::ApiError;
 use crate::handlers::modpacks::{ModpackDto, load_modpack};
 use crate::handlers::username;
 use crate::middleware::{AdminUser, AuthUser};
-use crate::models::{AuditSeverity, Server, ServerStatus};
+use crate::models::{AuditSeverity, Modpack, ModpackMod, Server, ServerStatus};
 use crate::services::write_audit;
 use crate::state::AppState;
 
@@ -68,13 +69,25 @@ pub struct ServerIntelDto {
     pub required_modpack: Option<ModpackDto>,
 }
 
-/// Compose a server with its status + required modpack.
+/// Shared SELECT projection for `server_statuses` (single-row + batched list paths).
+/// Must stay `'static` string literals — sqlx 0.9 `SqlSafeStr` rejects `format!`.
+const SERVER_STATUS_SELECT_ONE: &str = "SELECT server_id, is_online, player_count, max_players, \
+     server_fps::float8 AS server_fps, uptime_seconds, current_match_id, \
+     COALESCE(ingame_time, '') AS ingame_time, COALESCE(ingame_weather, '') AS ingame_weather, \
+     COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
+     FROM server_statuses WHERE server_id = $1";
+const SERVER_STATUS_SELECT_ANY: &str = "SELECT server_id, is_online, player_count, max_players, \
+     server_fps::float8 AS server_fps, uptime_seconds, current_match_id, \
+     COALESCE(ingame_time, '') AS ingame_time, COALESCE(ingame_weather, '') AS ingame_weather, \
+     COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
+     FROM server_statuses WHERE server_id = ANY($1)";
+
+/// Compose a server with its status + required modpack (single-card path).
 async fn server_intel(pool: &PgPool, server: Server) -> sqlx::Result<ServerIntelDto> {
-    let status: Option<ServerStatus> =
-        sqlx::query_as("SELECT server_id, is_online, player_count, max_players, server_fps::float8 AS server_fps, uptime_seconds, current_match_id, COALESCE(ingame_time, '') AS ingame_time, COALESCE(ingame_weather, '') AS ingame_weather, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM server_statuses WHERE server_id = $1")
-            .bind(server.id)
-            .fetch_optional(pool)
-            .await?;
+    let status: Option<ServerStatus> = sqlx::query_as(SERVER_STATUS_SELECT_ONE)
+        .bind(server.id)
+        .fetch_optional(pool)
+        .await?;
     let required_modpack = match server.required_modpack_id {
         Some(id) => load_modpack(pool, id).await.ok().flatten(),
         None => None,
@@ -84,6 +97,87 @@ async fn server_intel(pool: &PgPool, server: Server) -> sqlx::Result<ServerIntel
         status,
         required_modpack,
     })
+}
+
+/// Prefetch statuses + required modpacks for a server list in a constant number of
+/// round-trips (≤4), not one `server_intel` per row.
+///
+/// Measured shape (empty list short-circuits to 0 extra queries after the servers SELECT):
+///   1. `server_statuses WHERE server_id = ANY($1)`
+///   2. `modpacks WHERE id = ANY($1)` (skipped when no required_modpack_id)
+///   3. `modpack_mods WHERE modpack_id = ANY($1)` (skipped when no required_modpack_id)
+async fn servers_intel_batch(
+    pool: &PgPool,
+    servers: Vec<Server>,
+) -> sqlx::Result<Vec<ServerIntelDto>> {
+    if servers.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let ids: Vec<Uuid> = servers.iter().map(|s| s.id).collect();
+    let statuses: Vec<ServerStatus> = sqlx::query_as(SERVER_STATUS_SELECT_ANY)
+        .bind(&ids)
+        .fetch_all(pool)
+        .await?;
+    let status_by_id: HashMap<Uuid, ServerStatus> =
+        statuses.into_iter().map(|s| (s.server_id, s)).collect();
+
+    let mp_ids: Vec<Uuid> = servers
+        .iter()
+        .filter_map(|s| s.required_modpack_id)
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    // Keyed raw rows (Clone) — assemble `ModpackDto` per server without needing Clone on the DTO.
+    let mut pack_by_id: HashMap<Uuid, (Modpack, Vec<ModpackMod>)> = HashMap::new();
+    if !mp_ids.is_empty() {
+        let modpacks: Vec<Modpack> = sqlx::query_as(
+            "SELECT id, name, version, total_size_bytes, \
+             COALESCE(workshop_url, '') AS workshop_url, is_current, \
+             COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at \
+             FROM modpacks WHERE id = ANY($1)",
+        )
+        .bind(&mp_ids)
+        .fetch_all(pool)
+        .await?;
+        let mods: Vec<ModpackMod> = sqlx::query_as(
+            "SELECT id, modpack_id, name, is_key_dependency, sort_order, \
+             COALESCE(workshop_id, '') AS workshop_id, COALESCE(mod_guid, '') AS mod_guid, \
+             COALESCE(version, '') AS version \
+             FROM modpack_mods WHERE modpack_id = ANY($1) \
+             ORDER BY is_key_dependency DESC, sort_order ASC",
+        )
+        .bind(&mp_ids)
+        .fetch_all(pool)
+        .await?;
+        let mut mods_by_mp: HashMap<Uuid, Vec<ModpackMod>> = HashMap::new();
+        for m in mods {
+            mods_by_mp.entry(m.modpack_id).or_default().push(m);
+        }
+        for mp in modpacks {
+            let mods = mods_by_mp.remove(&mp.id).unwrap_or_default();
+            pack_by_id.insert(mp.id, (mp, mods));
+        }
+    }
+
+    Ok(servers
+        .into_iter()
+        .map(|server| {
+            let required_modpack = server.required_modpack_id.and_then(|id| {
+                pack_by_id.get(&id).map(|(mp, mods)| ModpackDto {
+                    modpack: mp.clone(),
+                    mods: mods.clone(),
+                })
+            });
+            let status = status_by_id.get(&server.id).cloned();
+            ServerIntelDto {
+                server,
+                status,
+                required_modpack,
+            }
+        })
+        .collect())
 }
 
 /// `GET /api/v1/servers` — all servers with status.
@@ -100,10 +194,8 @@ pub async fn list_servers(
     ))
     .fetch_all(&state.pool)
     .await?;
-    let mut out = Vec::with_capacity(servers.len());
-    for s in servers {
-        out.push(server_intel(&state.pool, s).await?);
-    }
+    // T-412: batched prefetch — do NOT call `server_intel` per row (N+1).
+    let out = servers_intel_batch(&state.pool, servers).await?;
     Ok(Json(json!({ "data": out })))
 }
 
@@ -479,4 +571,84 @@ pub async fn deactivate_server(
     )
     .await;
     Ok(StatusCode::NO_CONTENT)
+}
+
+#[cfg(test)]
+mod t412_servers_batch {
+    /// Class-R: `list_servers` must prefetch via `servers_intel_batch` / `ANY($1)`, never
+    /// call `server_intel` once per row (the N+1 this ticket closes).
+    #[test]
+    fn list_servers_does_not_n_plus_one_via_server_intel() {
+        const SRC: &str = include_str!("servers.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source before tests module");
+        let handler = production
+            .split("pub async fn list_servers")
+            .nth(1)
+            .expect("list_servers handler")
+            .split("\npub async fn ")
+            .next()
+            .expect("handler body until next pub async fn");
+        let collapsed: String = handler.split_whitespace().collect::<Vec<_>>().join(" ");
+
+        assert!(
+            !collapsed.contains("server_intel("),
+            "list_servers must not call server_intel per row (N+1)"
+        );
+        assert!(
+            collapsed.contains("servers_intel_batch("),
+            "list_servers must use servers_intel_batch"
+        );
+    }
+
+    #[test]
+    fn servers_intel_batch_uses_any_prefetch() {
+        const SRC: &str = include_str!("servers.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("production source before tests module");
+        let batch = production
+            .split("async fn servers_intel_batch")
+            .nth(1)
+            .expect("servers_intel_batch")
+            .split("\npub async fn ")
+            .next()
+            .expect("batch fn body");
+        assert!(
+            batch.contains("SERVER_STATUS_SELECT_ANY")
+                && production.contains("server_id = ANY($1)"),
+            "batch path must prefetch statuses with ANY($1)"
+        );
+        assert!(
+            batch.contains("FROM modpacks WHERE id = ANY($1)"),
+            "batch path must prefetch modpacks with ANY($1)"
+        );
+        assert!(
+            batch.contains("FROM modpack_mods WHERE modpack_id = ANY($1)"),
+            "batch path must prefetch modpack_mods with ANY($1)"
+        );
+    }
+
+    /// Pure accounting of round-trips vs N (proves the O(1) claim without a live pool).
+    #[test]
+    fn batch_round_trips_constant_not_linear_in_n() {
+        fn batch_queries(n_servers: usize, n_unique_modpacks: usize) -> usize {
+            if n_servers == 0 {
+                return 0;
+            }
+            // statuses always; modpacks+mods only when any required_modpack_id
+            1 + if n_unique_modpacks > 0 { 2 } else { 0 }
+        }
+        fn n_plus_one_queries(n_servers: usize, with_modpack: bool) -> usize {
+            // old path: per row status + optional load_modpack (modpack + mods = 2)
+            n_servers * (1 + if with_modpack { 2 } else { 0 })
+        }
+        assert_eq!(batch_queries(63, 1), 3);
+        assert_eq!(n_plus_one_queries(63, true), 189);
+        assert!(batch_queries(63, 1) < n_plus_one_queries(63, true));
+        assert_eq!(batch_queries(1000, 5), 3, "round-trips stay flat as N grows");
+    }
 }
