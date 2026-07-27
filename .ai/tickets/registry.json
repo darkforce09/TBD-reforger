@@ -10428,7 +10428,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3188,
       "stream": "web-platform",
       "targets": [
@@ -10716,7 +10716,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3202,
       "stream": "web-platform",
       "targets": [
@@ -11354,7 +11354,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3242,
       "stream": "web-platform",
       "targets": [
@@ -13144,6 +13144,72 @@
       ],
       "status": "deferred",
       "order": 3341,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-502",
+      "title": "POST /admin/roles/sync IT does not prove empty-snapshot admin survives",
+      "summary": "Wave 40 residual from T-372. Class-R pins resync_ids_from_snapshot empty\u2192None. Existing roles/sync IT only asserts 200. Cure: cold IT \u2014 promote admin with zero user_discord_roles, POST sync, assert role still admin.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "CI"
+      ],
+      "impact": [
+        "tests",
+        "security"
+      ],
+      "status": "deferred",
+      "order": 3342,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-503",
+      "title": "Arsenal has no Save button \u2014 cargo persists immediately (T-417 structural)",
+      "summary": "Wave 40 residual from T-417. arsenal.rs persist_cargo\u2192set_loadout on every cargo mutation; export gate is the only client refusal. Cure: either add explicit Save UX or document intentional auto-persist with Class-R.",
+      "program": "platform",
+      "surfaces": [
+        "FE",
+        "MC"
+      ],
+      "impact": [
+        "mission-creator",
+        "frontend"
+      ],
+      "status": "deferred",
+      "order": 3343,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-504",
+      "title": "Silent no-garment cargo in Arsenal (T-417 structural)",
+      "summary": "Wave 40 residual from T-417. arsenal UI shows 'no garment worn' with total and no limit; arsenal_rules deliberate silence; mod TBD_LoadoutEquipHelper already degrades. Author never hears undeliverable cargo. Cure: authoring-time warning/refuse when cargo targets unworn container.",
+      "program": "platform",
+      "surfaces": [
+        "FE",
+        "MC"
+      ],
+      "impact": [
+        "mission-creator",
+        "frontend"
+      ],
+      "status": "deferred",
+      "order": 3344,
       "stream": "web-platform",
       "targets": [
         "website"
