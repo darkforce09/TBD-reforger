@@ -16,9 +16,10 @@
 //! error + Retry in the master pane; `list_seeded` is set only on Ok so an error never looks
 //! like a permanent empty catalog.
 //!
-//! T-470: Class-R pins are order/window-sensitive — seed only inside the Ok arm (not before
-//! match, not in Err); Retry/error UI must sit in a reachable `if let Some(err) = list_error`
-//! branch (not behind `.filter(|_| false)`).
+//! T-470 / T-473: Class-R pins are order/window-sensitive — seed only inside the Ok arm (not
+//! before match, not in Err); any `list_seeded.set(...)` form counts (whitespace-normalized).
+//! Retry/error UI must sit in a reachable `if let Some(err) = list_error` branch (not behind
+//! `.filter(|_| false)` or `if false { … }`).
 #![allow(dead_code)]
 use crate::dto::Paginated;
 use crate::split_pane::{ListDetailItem, SplitPane, SplitPaneEmpty};
@@ -876,13 +877,34 @@ mod tests {
         );
     }
 
-    /// T-466 / T-470 Class-R — list fetch must keep `Result` (no `.ok()`), seed **only** inside
-    /// the Ok arm (order/window pin), and surface a **reachable** error + Retry.
+    /// Strip all whitespace so `set( true )` and `set(true)` compare equal.
+    fn strip_ws(s: &str) -> String {
+        s.chars().filter(|c| !c.is_whitespace()).collect()
+    }
+
+    /// Count every `list_seeded.set(` call — any arg form, whitespace-insensitive.
+    fn count_list_seeded_sets(s: &str) -> usize {
+        strip_ws(s).matches("list_seeded.set(").count()
+    }
+
+    /// True-ish seed args after whitespace strip: `true`, `(true)`, `true as bool`, `{ true }`.
+    fn has_true_list_seed(s: &str) -> bool {
+        let t = strip_ws(s);
+        t.contains("list_seeded.set(true)")
+            || t.contains("list_seeded.set((true))")
+            || t.contains("list_seeded.set(trueasbool)")
+            || t.contains("list_seeded.set({true})")
+    }
+
+    /// T-466 / T-470 / T-473 Class-R — list fetch must keep `Result` (no `.ok()`), seed **only**
+    /// inside the Ok arm (order/window pin; all `list_seeded.set(...)` forms count), and surface
+    /// a **reachable** error + Retry.
     ///
-    /// Wave 26 adversarial RED (presence-only pins were false-green):
-    /// 1. Move `list_seeded.set(true)` before match / outside Ok → must FAIL
-    /// 2. Also seed in Err → must FAIL (Retry then permanent empty)
-    /// 3. Error UI behind `.filter(|_| false)` with needles still in source → must FAIL
+    /// Wave 26/27 adversarial RED (exact-string / filter-only pins were false-green):
+    /// 1. Early `list_seeded.set( true )` (spaced) while Ok keeps `set(true)` → must FAIL
+    /// 2. Err `set( true )` / `set((true))` / `set(true as bool)` / `set({ true })` /
+    ///    `let seed=true; set(seed)` → must FAIL
+    /// 3. Wrap Retry UI in `if false { … }` (no `.filter`) → must FAIL
     #[test]
     fn content_list_error_does_not_seed_as_empty_success() {
         const SRC: &str = include_str!("content.rs");
@@ -913,33 +935,33 @@ mod tests {
             .nth(1)
             .and_then(|s| s.split("let retry_list").next())
             .expect("hydrate Effect must sit before retry_list");
-        let seed = "list_seeded.set(true)";
 
-        // (1) Order pin — seed must not appear before Ok(page).
+        // (1) Order pin — any list_seeded.set(...) before Ok(page) must FAIL (incl. spaced).
         let before_ok = effect
             .split("Ok(page)")
             .next()
             .expect("hydrate Effect must match on Ok(page)");
-        assert!(
-            !before_ok.contains(seed),
-            "list_seeded.set(true) must not run before Ok(page) \
-             (perturbation: seed before match / outside Ok)"
+        assert_eq!(
+            count_list_seeded_sets(before_ok),
+            0,
+            "list_seeded.set(...) must not run before Ok(page) \
+             (perturbation: spaced/early seed before match / outside Ok)"
         );
 
-        // Ok arm window: Ok(page) … Err(e)
+        // Ok arm window: Ok(page) … Err(e) — exactly one true-ish seed.
         let ok_arm = effect
             .split("Ok(page)")
             .nth(1)
             .and_then(|s| s.split("Err(e)").next())
             .expect("Ok(page) arm must precede Err(e)");
         assert!(
-            ok_arm.contains(seed),
-            "Ok arm must set list_seeded (perturbation: drop success seed)"
+            has_true_list_seed(ok_arm),
+            "Ok arm must set list_seeded to true (perturbation: drop success seed)"
         );
         assert_eq!(
-            ok_arm.matches(seed).count(),
+            count_list_seeded_sets(ok_arm),
             1,
-            "Ok arm must set list_seeded exactly once"
+            "Ok arm must call list_seeded.set exactly once"
         );
         let set_docs = format!("{}{}", "docs.set(", "mapped)");
         assert!(
@@ -947,41 +969,51 @@ mod tests {
             "Ok hydrate must `{set_docs}` inside the Ok arm"
         );
 
-        // (2) Err arm must never set list_seeded (Retry would then look like empty success).
+        // (2) Err arm — any list_seeded.set form must FAIL (spaced / (true) / as bool / {{}} / seed).
         let err_arm = effect
             .split("Err(e)")
             .nth(1)
             .expect("hydrate Effect must have Err(e) arm");
-        assert!(
-            !err_arm.contains(seed),
-            "Err arm must not set list_seeded (perturbation: also seed in Err)"
+        assert_eq!(
+            count_list_seeded_sets(err_arm),
+            0,
+            "Err arm must not call list_seeded.set(...) \
+             (perturbation: spaced/indirect seed in Err)"
         );
         assert!(
             err_arm.contains("Failed to load announcements") && err_arm.contains("list_error.set"),
             "Err arm must write list_error with the actionable message"
         );
 
-        // Exactly one seed in the whole hydrate Effect — and it is inside Ok (above).
+        // Exactly one set in the whole hydrate Effect — and it is inside Ok (above).
         assert_eq!(
-            effect.matches(seed).count(),
+            count_list_seeded_sets(effect),
             1,
-            "hydrate Effect must set list_seeded exactly once (inside Ok only)"
+            "hydrate Effect must call list_seeded.set exactly once (inside Ok only)"
         );
         assert!(
-            !prod.contains("list_seeded.set(true);\n        let Some(page) = opt else"),
+            !strip_ws(prod).contains(&strip_ws(
+                "list_seeded.set(true);\n        let Some(page) = opt else"
+            )),
             "must not seed then early-return on None (perturbation: restore seed-on-None)"
         );
 
-        // (3) Reachable error UI — needles in a dead `.filter(|_| false)` branch must FAIL.
+        // (3) Reachable error UI — dead `.filter(|_| false)` OR `if false { … }` must FAIL.
         let master = prod
             .split("master=view!")
             .nth(1)
             .and_then(|s| s.split("detail=view!").next())
             .expect("master pane must sit before detail");
+        let master_ws = strip_ws(master);
         assert!(
-            !master.contains("filter(|_| false)"),
+            !master_ws.contains("filter(|_|false)"),
             "master pane must not gate UI behind .filter(|_| false) \
              (perturbation: unreachable error UI)"
+        );
+        assert!(
+            !master_ws.contains("iffalse"),
+            "master pane must not wrap UI in `if false` / `if false {{ … }}` \
+             (perturbation: unreachable Retry without .filter)"
         );
         let err_bind = "if let Some(err) = list_error.get()";
         let err_start = master
@@ -1001,7 +1033,11 @@ mod tests {
                 && err_window.contains("\"Retry\"")
                 && err_window.contains("on:click=retry_list"),
             "Retry/error UI must sit inside the reachable list_error if-let branch \
-             (perturbation: needles present but filtered unreachable)"
+             (perturbation: needles present but unreachable)"
+        );
+        assert!(
+            !strip_ws(err_window).contains("iffalse"),
+            "list_error if-let body must not nest `if false` around Retry"
         );
         assert!(
             prod.contains("list_res.refetch()"),
