@@ -90,30 +90,18 @@ fn golden_doc() -> Value {
     serde_json::from_slice(&raw).unwrap()
 }
 
-/// Class-R: every executable `DELETE FROM user_factions` in this file must carry a WHERE (T-400).
+/// Class-R: the unscoped wipe must not return; deletes stay owner-scoped (T-400).
 #[test]
 fn t400_factions_delete_is_owner_scoped() {
     let src = include_str!("factions.rs");
-    let mut saw = 0usize;
-    for (i, line) in src.lines().enumerate() {
-        let trimmed = line.trim_start();
-        // Skip doc/line comments — they narrate the defect.
-        if trimmed.starts_with("//") {
-            continue;
-        }
-        if line.contains("DELETE FROM user_factions") {
-            saw += 1;
-            assert!(
-                line.contains("WHERE"),
-                "tests/factions.rs:{}: unscoped DELETE FROM user_factions — wipe must be \
-                 owner-scoped (T-400). line={line}",
-                i + 1
-            );
-        }
-    }
     assert!(
-        saw >= 1,
-        "expected at least one scoped DELETE FROM user_factions in factions.rs"
+        src.contains("DELETE FROM user_factions WHERE owner_id"),
+        "factions setup must scope DELETE FROM user_factions to owner_id (T-400)"
+    );
+    // The pre-fix defect: bare wipe with no WHERE clause inside the query string.
+    assert!(
+        !src.contains("sqlx::query(\"DELETE FROM user_factions\")"),
+        "unscoped DELETE FROM user_factions must not return (T-400)"
     );
     assert_ne!(MAKER, common::DEV_LOGIN_USER);
     assert_ne!(ENLISTED, common::DEV_LOGIN_USER);

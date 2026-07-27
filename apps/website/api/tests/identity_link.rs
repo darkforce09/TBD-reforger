@@ -106,13 +106,19 @@ fn t400_actor_is_not_shared_dev_login_user() {
     );
     assert_ne!(USER2, common::DEV_LOGIN_USER);
     let src = include_str!("identity_link.rs");
+    // Ban the pre-fix shared-row alias without matching this assertion's own prose.
     assert!(
-        !src.contains("const DEV_ID"),
-        "identity_link must not reintroduce a DEV_ID alias for the shared snowflake"
+        !src.lines().any(|l| l.trim_start().starts_with("const DEV_ID")),
+        "identity_link must not reintroduce a shared-snowflake const alias"
     );
-    // The pre-fix swallowed cleanup that nulled the shared row (bind order: $3 = DEV_ID).
+    // Pre-fix swallowed cleanup nulled the shared row via bind $3. Needle is split so this
+    // assert's own source does not contain the forbidden SQL as one literal.
+    let forbidden = concat!(
+        "UPDATE users SET arma_id = NULL WHERE ",
+        "discord_id = $3"
+    );
     assert!(
-        !src.contains("UPDATE users SET arma_id = NULL WHERE discord_id = $3"),
+        !src.contains(forbidden),
         "must not null arma_id via the old shared-row cleanup bind"
     );
 }
