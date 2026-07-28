@@ -365,3 +365,6 @@
 66	T-564	T-561 Class-R hollow — dead let opt(&row.briefing) decoy	apps/website/frontend/src/mission_title_prefer.rs
 66	T-565	T-562 Class-R hollow — COALESCE in unrelated sqlx::query	apps/website/api/tests/common/mod.rs
 66	T-566	T-387 Class-R hollow — comment-arm / ignore-helper	apps/website/api/tests/misc_integration.rs
+99	T-567	T-564 Class-R hollow — if false apply_row_meta decoy	apps/website/frontend/src/mission_title_prefer.rs
+99	T-568	T-565 Class-R hollow — dead helper / SQL string decoy	apps/website/api/tests/common/mod.rs
+99	T-569	T-566 Class-R hollow — arms in raw-string decoys	apps/website/api/tests/misc_integration.rs
