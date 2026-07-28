@@ -419,9 +419,10 @@ fn t534_per_binary_database_name() {
 /// T-560: Class-R that greps raw source for `COALESCE(arma_id` is hollow — a comment
 /// alone keeps the pin green while the live UPDATE is gone. Always pin against this.
 ///
-/// T-562: comment strip alone is still hollow — string / `format!` decoys keep
-/// `contains("SET arma_id = COALESCE(arma_id")` green. Use
-/// [`sqlx_query_string_payloads`] for the COALESCE pin (only live `sqlx::query(` SQL).
+/// T-562 / T-565: comment strip alone is still hollow — string / `format!` decoys and
+/// unrelated `sqlx::query("SELECT … -- SET arma_id = COALESCE…")` payloads keep a naive
+/// `contains` green. Use [`sqlx_queries_have_arma_coalesce_update`] (direct `sqlx::query(`
+/// SQL that is the first-create UPDATE shape after SQL-comment strip).
 fn strip_rust_comments_outside_literals(src: &str) -> String {
     let bytes = src.as_bytes();
     let mut out = String::with_capacity(src.len());
@@ -469,6 +470,78 @@ fn strip_rust_comments_outside_literals(src: &str) -> String {
         i += 1;
     }
     out
+}
+
+/// Strip SQL `--` line and `/* */` block comments outside string literals.
+///
+/// T-565: a `sqlx::query("SELECT 1 -- SET arma_id = COALESCE…")` decoy kept the T-562
+/// pin green after the real UPDATE was deleted. Comment-strip the SQL payload before
+/// matching the first-create UPDATE shape.
+fn strip_sql_comments_outside_literals(sql: &str) -> String {
+    let bytes = sql.as_bytes();
+    let mut out = String::with_capacity(sql.len());
+    let mut i = 0;
+    let mut in_quote: Option<u8> = None;
+    while i < bytes.len() {
+        let c = bytes[i];
+        if let Some(q) = in_quote {
+            out.push(c as char);
+            if c == b'\\' && i + 1 < bytes.len() {
+                out.push(bytes[i + 1] as char);
+                i += 2;
+                continue;
+            }
+            if c == q {
+                in_quote = None;
+            }
+            i += 1;
+            continue;
+        }
+        if c == b'\'' || c == b'"' {
+            in_quote = Some(c);
+            out.push(c as char);
+            i += 1;
+            continue;
+        }
+        if c == b'-' && i + 1 < bytes.len() && bytes[i + 1] == b'-' {
+            i += 2;
+            while i < bytes.len() && bytes[i] != b'\n' {
+                i += 1;
+            }
+            continue;
+        }
+        if c == b'/' && i + 1 < bytes.len() && bytes[i + 1] == b'*' {
+            i += 2;
+            while i + 1 < bytes.len() && !(bytes[i] == b'*' && bytes[i + 1] == b'/') {
+                i += 1;
+            }
+            i = (i + 2).min(bytes.len());
+            continue;
+        }
+        out.push(c as char);
+        i += 1;
+    }
+    out
+}
+
+/// Collapse whitespace so `UPDATE  users\\nSET…` matches the product UPDATE shape.
+fn flatten_sql_ws(sql: &str) -> String {
+    sql.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// True when a direct `sqlx::query("…")` payload is the first-create arma UPDATE
+/// (`UPDATE users SET arma_id = COALESCE(arma_id…`), not a SELECT/comment/string decoy.
+///
+/// T-565: any-payload `contains("SET arma_id = COALESCE(arma_id")` was hollow — a SELECT
+/// with the needle in a SQL `--` comment stayed green. Require the UPDATE statement shape
+/// after SQL-comment strip.
+fn sqlx_payload_is_arma_coalesce_update(payload: &str) -> bool {
+    let flat = flatten_sql_ws(&strip_sql_comments_outside_literals(payload));
+    flat.contains("UPDATE users SET arma_id = COALESCE(arma_id")
+}
+
+fn sqlx_queries_have_arma_coalesce_update(payloads: &[String]) -> bool {
+    payloads.iter().any(|p| sqlx_payload_is_arma_coalesce_update(p))
 }
 
 /// Interiors of `"…"` / concatenated `"…" "…"` literals that are *direct* args to
@@ -555,10 +628,8 @@ fn t562_sqlx_query_payloads_ignore_string_and_format_decoys() {
     "#;
     let payloads = sqlx_query_string_payloads(live);
     assert!(
-        payloads
-            .iter()
-            .any(|p| p.contains("SET arma_id = COALESCE(arma_id")),
-        "live sqlx::query SQL must surface the COALESCE needle; got {payloads:?}"
+        sqlx_queries_have_arma_coalesce_update(&payloads),
+        "live sqlx::query UPDATE must surface the COALESCE needle; got {payloads:?}"
     );
 
     let decoy = r#"
@@ -568,19 +639,55 @@ fn t562_sqlx_query_payloads_ignore_string_and_format_decoys() {
     "#;
     let hollow = sqlx_query_string_payloads(decoy);
     assert!(
-        !hollow
-            .iter()
-            .any(|p| p.contains("SET arma_id = COALESCE(arma_id")),
+        !sqlx_queries_have_arma_coalesce_update(&hollow),
         "T-562: string/format! decoys must not count as live COALESCE; got {hollow:?}"
     );
 
     // format!-wrapped query arg is not a direct string literal to sqlx::query(
     let wrapped = r#"sqlx::query(&format!("SET arma_id = COALESCE(arma_id, {})", "x"));"#;
     assert!(
-        sqlx_query_string_payloads(wrapped)
-            .iter()
-            .all(|p| !p.contains("SET arma_id = COALESCE(arma_id")),
+        !sqlx_queries_have_arma_coalesce_update(&sqlx_query_string_payloads(wrapped)),
         "T-562: format!-wrapped sqlx::query must not satisfy the pin"
+    );
+}
+
+#[test]
+fn t565_sqlx_query_coalesce_requires_update_not_select_comment() {
+    // W65 DIRTY MAJOR: T-562 grepped any sqlx::query payload for the needle — a SELECT
+    // with the needle in a SQL `--` comment stayed green after the real UPDATE was deleted.
+    let select_comment = r#"
+        sqlx::query(
+            "SELECT 1 -- SET arma_id = COALESCE(arma_id, $2) decoy",
+        )
+        .execute(&state.pool);
+    "#;
+    let hollow = sqlx_query_string_payloads(select_comment);
+    assert!(
+        hollow
+            .iter()
+            .any(|p| p.contains("SET arma_id = COALESCE(arma_id")),
+        "fixture sanity: SELECT-comment decoy still embeds the raw needle in the payload"
+    );
+    assert!(
+        !sqlx_queries_have_arma_coalesce_update(&hollow),
+        "T-565: SELECT + SQL-comment decoy must not count as first-create UPDATE; got {hollow:?}"
+    );
+
+    let block_comment = r#"sqlx::query("SELECT 1 /* UPDATE users SET arma_id = COALESCE(arma_id, $2) */");"#;
+    assert!(
+        !sqlx_queries_have_arma_coalesce_update(&sqlx_query_string_payloads(block_comment)),
+        "T-565: SELECT + /* */ UPDATE decoy must not satisfy the pin"
+    );
+
+    let live = r#"
+        sqlx::query(
+            "UPDATE users SET arma_id = COALESCE(arma_id, $2), updated_at = now() \
+             WHERE discord_id = $1",
+        );
+    "#;
+    assert!(
+        sqlx_queries_have_arma_coalesce_update(&sqlx_query_string_payloads(live)),
+        "T-565: real first-create UPDATE must still satisfy the pin"
     );
 }
 
@@ -711,15 +818,17 @@ fn users_insert_arma_id_value(code: &str) -> Option<String> {
     vals.get(arma_idx).cloned()
 }
 
-/// Class-R (T-534 / T-557 / T-560 / T-562): prime literals match handler, and the handler
-/// keeps the race-free contract (NULL INSERT + live `SET arma_id = COALESCE(arma_id`
-/// first-create via `sqlx::query(` SQL — not a comment / string / `format!` decoy).
+/// Class-R (T-534 / T-557 / T-560 / T-562 / T-565): prime literals match handler, and the
+/// handler keeps the race-free contract (NULL INSERT + live
+/// `UPDATE users SET arma_id = COALESCE(arma_id` first-create via `sqlx::query(` SQL —
+/// not a Rust comment / string / `format!` decoy, and not a SELECT with the needle only
+/// in a SQL `--` / `/* */` comment).
 ///
 /// The prime seeds the same discord_id / arma_id the handler uses. If either literal
 /// drifts, this goes red. T-557 moved the stamp out of INSERT; T-560 closes comment +
-/// bind-INSERT hollow greps; T-562 closes string / `format!` decoys that kept
-/// comment-stripped `contains("SET arma_id = COALESCE(arma_id")` green while the live
-/// UPDATE was gone (both still raced `idx_users_arma_id`).
+/// bind-INSERT hollow greps; T-562 closes string / `format!` decoys; T-565 closes
+/// unrelated `sqlx::query("SELECT … -- SET arma_id = COALESCE…")` payloads that kept
+/// T-562 green while the live UPDATE was gone (both still raced `idx_users_arma_id`).
 #[test]
 fn t534_dev_login_prime_literals_still_match_handler() {
     let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/dev.rs");
@@ -740,18 +849,17 @@ fn t534_dev_login_prime_literals_still_match_handler() {
 
     let code = strip_rust_comments_outside_literals(&src);
 
-    // T-560 / T-562: require the *live* UPDATE SQL inside a direct `sqlx::query("…")`
-    // string arg. Comment-only (T-560) and string/`format!` decoys (T-562) must go red.
+    // T-560 / T-562 / T-565: require the first-create UPDATE shape inside a direct
+    // `sqlx::query("…")` string arg (after SQL-comment strip). Rust comment-only (T-560),
+    // string/`format!` decoys (T-562), and SELECT + SQL-comment decoys (T-565) must go red.
     let query_sql = sqlx_query_string_payloads(&code);
     assert!(
-        query_sql
-            .iter()
-            .any(|p| p.contains("SET arma_id = COALESCE(arma_id")),
-        "T-560/T-562: expected live `SET arma_id = COALESCE(arma_id` inside a direct \
-         sqlx::query(\"…\") string in comment-stripped src/handlers/dev.rs — a comment, \
-         `let _decoy = \"…\"`, or format!(\"…\") alone is not the first-create path; \
-         without the live UPDATE, concurrent cold inserts can 23505 on idx_users_arma_id \
-         again (payloads: {query_sql:?})"
+        sqlx_queries_have_arma_coalesce_update(&query_sql),
+        "T-560/T-562/T-565: expected live `UPDATE users SET arma_id = COALESCE(arma_id` \
+         inside a direct sqlx::query(\"…\") string in comment-stripped src/handlers/dev.rs — \
+         a Rust comment, `let _decoy = \"…\"`, format!(\"…\"), or SELECT with the needle only \
+         in a SQL `--`/`/* */` comment is not the first-create path; without the live UPDATE, \
+         concurrent cold inserts can 23505 on idx_users_arma_id again (payloads: {query_sql:?})"
     );
 
     // T-560: INSERT must leave arma_id NULL (not a `$N` bind stamp, not a quoted literal).
