@@ -5,14 +5,11 @@
 
 ## Running / Review
 
-- **T-387** (3203) — render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) [running] — NARROWED after W61 (T-339 shipped). The original api_proxy:None render-check hole is CLOSED by T-339 (CLI --api-proxy + default :8080).
+- **T-541** (3381) — SpawnManager never calls IsComplete after T-415 helper consume [running] — FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.
 
-Remaining from the original T-387 write-up (do not re-litigate api_proxy):
-- Dev-login / probe path still folds multiple roles onto a single Discord id in ways that half-hydrate or collide sessions (see original T-387 notes + T-361 SSE proxy sibling if overlapping).
+Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
 
-Measure live gate/smokes/dev-login before implementing; owns stay tools gate/smokes unless evidence moves the residual.
-
-== DEFERRED — residual after T-339 ==
+Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync.
 - **T-559** (3412) — T-554 Class-R soft contains — comment decoy opt(&row.briefing) stays green [running] — FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.
 
 hydrate_wires_row_briefing_into_apply_row_meta only asserts body.contains("opt(&row.briefing)").
