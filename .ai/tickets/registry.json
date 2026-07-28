@@ -14589,7 +14589,7 @@
         "tests",
         "mission-authoring"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3420,
       "executor": "claude-code",
       "priority": 2,
@@ -14611,7 +14611,7 @@
         "tests",
         "auth"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3421,
       "executor": "claude-code",
       "priority": 2,
@@ -14633,7 +14633,7 @@
         "tests",
         "auth"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3422,
       "executor": "claude-code",
       "priority": 2,

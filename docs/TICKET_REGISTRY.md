@@ -3034,17 +3034,17 @@ Repro: delete COALESCE UPDATE; add SELECT query string with needle in SQL commen
 t387_dev_login_roles_use_distinct_discord_ids stays GREEN if live match arms are moved into // comments and match collapses to DEV_USER_ID, or if discord_id = DEV_USER_ID while helpers remain as dead code. Live IT t387_dev_login_roles_do_not_rewrite_each_other goes RED on both (product covered when ITs run; Class-R is not).
 
 Repro: collapse discord_id_for_role to always DEV_USER_ID but leave old arms in comments; Class-R green; live IT red. |
-| T-567 | 3420 | deferred | platform | T-564 Class-R still hollow — unreachable if false { apply_row_meta(…opt) } | FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-564.
+| T-567 | 3420 | running | platform | T-564 Class-R still hollow — unreachable if false { apply_row_meta(…opt) } | FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-564.
 
 Dead let decoy now RED. `if false { apply_row_meta(…, opt(&row.briefing)) }` + live None args → hydrate pin stays GREEN. Pin accepts any apply_row_meta arg-list, including unreachable calls.
 
 Repro: live briefing args → None; add if false { apply_row_meta(…, opt(&row.briefing)) }; cargo test green. |
-| T-568 | 3421 | deferred | platform | T-565 Class-R still hollow — dead helper UPDATE / SQL string-literal decoy | FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-565.
+| T-568 | 3421 | running | platform | T-565 Class-R still hollow — dead helper UPDATE / SQL string-literal decoy | FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-565.
 
 SELECT -- comment decoy now RED. Still GREEN: (1) dead helper retaining COALESCE UPDATE while live path SET arma_id = $2; (2) SELECT … WHERE 'UPDATE users SET arma_id = COALESCE…' (needle inside SQL string literal survives comment strip).
 
 Repro: move COALESCE UPDATE into unused fn; live UPDATE uses $2; Class-R green. |
-| T-569 | 3422 | deferred | platform | T-566 Class-R still hollow — match arms only in raw-string decoys | FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-566.
+| T-569 | 3422 | running | platform | T-566 Class-R still hollow — match arms only in raw-string decoys | FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-566.
 
 // and /* */ arm comments now RED; ignore-helper DEV_USER_ID bind RED. Still GREEN: live match collapses to `_` while arms exist only inside r#" "enlisted" => … "# decoys (comment strip keeps string contents).
 

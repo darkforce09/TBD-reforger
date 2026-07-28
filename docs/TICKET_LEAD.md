@@ -5,6 +5,21 @@
 
 ## Running / Review
 
+- **T-567** (3420) — T-564 Class-R still hollow — unreachable if false { apply_row_meta(…opt) } [running] — FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-564.
+
+Dead let decoy now RED. `if false { apply_row_meta(…, opt(&row.briefing)) }` + live None args → hydrate pin stays GREEN. Pin accepts any apply_row_meta arg-list, including unreachable calls.
+
+Repro: live briefing args → None; add if false { apply_row_meta(…, opt(&row.briefing)) }; cargo test green.
+- **T-568** (3421) — T-565 Class-R still hollow — dead helper UPDATE / SQL string-literal decoy [running] — FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-565.
+
+SELECT -- comment decoy now RED. Still GREEN: (1) dead helper retaining COALESCE UPDATE while live path SET arma_id = $2; (2) SELECT … WHERE 'UPDATE users SET arma_id = COALESCE…' (needle inside SQL string literal survives comment strip).
+
+Repro: move COALESCE UPDATE into unused fn; live UPDATE uses $2; Class-R green.
+- **T-569** (3422) — T-566 Class-R still hollow — match arms only in raw-string decoys [running] — FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-566.
+
+// and /* */ arm comments now RED; ignore-helper DEV_USER_ID bind RED. Still GREEN: live match collapses to `_` while arms exist only inside r#" "enlisted" => … "# decoys (comment strip keeps string contents).
+
+Repro: park arms in raw-string decoy; match `_ => DEV_USER_ID`; Class-R green.
 
 ## Ready
 
