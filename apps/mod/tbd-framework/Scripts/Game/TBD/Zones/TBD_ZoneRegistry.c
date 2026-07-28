@@ -36,7 +36,9 @@ class TBD_ZoneRegistry
 	static const string TYPE_BOUNDARY         = "boundary";
 	static const string TYPE_BASE_PROTECTION  = "base_protection";
 
-	//! `rules.penalty` vocabulary. Additive under the schema's `additionalProperties: true`.
+	//! `rules.penalty` CLOSED vocabulary (`none`|`warn`|`kill`) under `#/$defs/zoneRules`
+	//! (`additionalProperties: false`, T-241). Undeclared keys fail schema validation — not an
+	//! open-object free-for-all. Adding a penalty value is an enum entry there PLUS a constant here.
 	static const string PENALTY_NONE = "none";
 	static const string PENALTY_WARN = "warn";
 	static const string PENALTY_KILL = "kill";
