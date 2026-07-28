@@ -2960,7 +2960,7 @@ can never disagree. T-534 pinned the current literals with a Class-R test
 (`t534_dev_login_prime_literals_still_match_handler`) that greps dev.rs for both the literals AND the
 `ON CONFLICT (discord_id) DO UPDATE` shape -- IT WILL GO RED when you change this, deliberately.
 Update it in the same commit rather than deleting it. |
-| T-558 | 3411 | deferred | platform | Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB | Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
+| T-558 | 3411 | running | platform | Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB | Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
 
 1. `apps/website/api/src/services/registry_import.rs:455` -- a THIRTIETH database consumer that the
    T-542 Class-R guard cannot see. An in-crate `#[tokio::test]` reads TEST_DATABASE_URL raw and
@@ -2983,13 +2983,13 @@ Update it in the same commit rather than deleting it. |
 4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`
    rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --
    recorded so nobody rediscovers it as new. |
-| T-559 | 3412 | deferred | platform | T-554 Class-R soft contains — comment decoy opt(&row.briefing) stays green | FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.
+| T-559 | 3412 | running | platform | T-554 Class-R soft contains — comment decoy opt(&row.briefing) stays green | FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.
 
 hydrate_wires_row_briefing_into_apply_row_meta only asserts body.contains("opt(&row.briefing)").
 W62 None mutation FAILS (good). Both wires → None + `// decoy opt(&row.briefing)` inside each fn → PASS.
 
 Repro: in mission_hydrate.rs replace both opt(&row.briefing) with None but leave a comment containing the substring in adopt_payload and apply_row; cargo test -p website-frontend hydrate_wires_row_briefing still green. |
-| T-560 | 3413 | deferred | platform | T-557 Class-R hollow — comment COALESCE / bind-form INSERT still races | FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.
+| T-560 | 3413 | running | platform | T-557 Class-R hollow — comment COALESCE / bind-form INSERT still races | FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.
 
 t534_dev_login_prime_literals_still_match_handler greps COALESCE(arma_id and bans only the literal '', 'dev-arma-…' stamp.
 Comment `// COALESCE(arma_id` + remove real UPDATE → PASS.

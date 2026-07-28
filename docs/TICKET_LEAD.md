@@ -5,6 +5,44 @@
 
 ## Running / Review
 
+- **T-558** (3411) — Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB [running] — Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
+
+1. `apps/website/api/src/services/registry_import.rs:455` -- a THIRTIETH database consumer that the
+   T-542 Class-R guard cannot see. An in-crate `#[tokio::test]` reads TEST_DATABASE_URL raw and
+   migrates the operator's BASE database. It is the only DB test in the lib target, self-cleaning and
+   idempotent, so it is deterministic today -- and it now has the base database entirely to itself
+   because T-534 moved everything else onto per-binary DBs. The real gap:
+   `t542_no_raw_test_database_url_reads_outside_common` scans only `tests/*.rs`. Extend it to `src/`
+   and this class stops being invisible.
+
+2. `make test-it` now leaves 25 `rust_it_<suite>_it` databases behind. They are recreated per run so
+   they do not grow, but nothing prunes them -- the Makefile drops only `rust_it`. `Makefile` was
+   outside T-534's scope. (The GATE path is handled: T-534 extended `prune_old_gate_wave_dbs` in
+   wave.sh to reap derived names on the same keep-N-and-N-1 policy.)
+
+3. `tests/db_migrate.rs` and `tests/models_fromrow.rs` still SHARE one `MIGRATE_TEST_DATABASE_URL`.
+   Two binaries, one database -- the exact shape T-534 removed everywhere else. Deterministic today
+   only because cargo runs targets sequentially and both use `>=`/count assertions the sibling's rows
+   do not move. It survives on ordering, which is what this program keeps paying for.
+
+4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`
+   rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --
+   recorded so nobody rediscovers it as new.
+- **T-559** (3412) — T-554 Class-R soft contains — comment decoy opt(&row.briefing) stays green [running] — FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.
+
+hydrate_wires_row_briefing_into_apply_row_meta only asserts body.contains("opt(&row.briefing)").
+W62 None mutation FAILS (good). Both wires → None + `// decoy opt(&row.briefing)` inside each fn → PASS.
+
+Repro: in mission_hydrate.rs replace both opt(&row.briefing) with None but leave a comment containing the substring in adopt_payload and apply_row; cargo test -p website-frontend hydrate_wires_row_briefing still green.
+- **T-560** (3413) — T-557 Class-R hollow — comment COALESCE / bind-form INSERT still races [running] — FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.
+
+t534_dev_login_prime_literals_still_match_handler greps COALESCE(arma_id and bans only the literal '', 'dev-arma-…' stamp.
+Comment `// COALESCE(arma_id` + remove real UPDATE → PASS.
+INSERT arma_id = $3 + comment COALESCE (no real UPDATE) → PASS; barrier probe 3× idx_users_arma_id hits.
+
+Product NULL+COALESCE path holds (0 race hits). Pin does not.
+
+Repro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again.
 
 ## Ready
 
