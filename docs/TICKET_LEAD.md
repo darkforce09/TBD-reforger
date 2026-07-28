@@ -5,30 +5,6 @@
 
 ## Running / Review
 
-- **T-387** (3203) — render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) [running] — NARROWED after W61 (T-339 shipped). api_proxy half-hydrate CLOSED (smokes.rs defaults api_proxy to :8080; gate --api-proxy).
-
-MEASURED residual (W64 attempt, STOP — owns collide with T-560):
-- apps/website/api/src/handlers/dev.rs:14 DEV_USER_ID fixed for all roles
-- ON CONFLICT updates role on same discord_id; issue_session does not revoke prior family
-- IT corpus documents landmine: misc_integration.rs:288-293, missions.rs:1105-1111
-
-Fix lives in handlers/dev.rs — sequence AFTER T-560 (same owns). Do not re-litigate api_proxy.
-Owns for the real fix: apps/website/api/src/handlers/dev.rs (+ ITs that assume one discord_id).
-- **T-561** (3414) — T-559 Class-R still hollow — block-comment / string decoy opt(&row.briefing) [running] — FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-559.
-
-strip_rust_line_comments only drops // lines. Both wires → None plus:
-- /* opt(&row.briefing) */ → PASS
-- let _ = "opt(&row.briefing)"; → PASS
-// decoy still RED (T-559 held).
-
-Repro: replace both opt(&row.briefing) with None; leave /* opt(&row.briefing) */ in adopt_payload and apply_row; cargo test hydrate_wires_row_briefing green.
-- **T-562** (3415) — T-560 Class-R still hollow — string/format! SET arma_id = COALESCE decoy [running] — FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-560.
-
-Comment strip works; contains("SET arma_id = COALESCE(arma_id") keeps string literals.
-Delete live UPDATE + leave needle in let _decoy = "…" or format!("…") → PASS while INSERT stays NULL.
-Claimed // + bind attacks still RED.
-
-Repro: remove COALESCE UPDATE; add string/format! decoy with the needle; Class-R green; concurrent cold race can return.
 
 ## Ready
 

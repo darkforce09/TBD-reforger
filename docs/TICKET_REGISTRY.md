@@ -1712,7 +1712,7 @@ Note the comment two lines above says 'The raw value is echoed in the verdict so
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-387 | 3203 | running | platform | render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) | NARROWED after W61 (T-339 shipped). api_proxy half-hydrate CLOSED (smokes.rs defaults api_proxy to :8080; gate --api-proxy).
+| T-387 | 3203 | shipped | platform | render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) | NARROWED after W61 (T-339 shipped). api_proxy half-hydrate CLOSED (smokes.rs defaults api_proxy to :8080; gate --api-proxy).
 
 MEASURED residual (W64 attempt, STOP — owns collide with T-560):
 - apps/website/api/src/handlers/dev.rs:14 DEV_USER_ID fixed for all roles
@@ -2999,7 +2999,7 @@ INSERT arma_id = $3 + comment COALESCE (no real UPDATE) → PASS; barrier probe 
 Product NULL+COALESCE path holds (0 race hits). Pin does not.
 
 Repro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again. |
-| T-561 | 3414 | running | platform | T-559 Class-R still hollow — block-comment / string decoy opt(&row.briefing) | FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-559.
+| T-561 | 3414 | shipped | platform | T-559 Class-R still hollow — block-comment / string decoy opt(&row.briefing) | FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-559.
 
 strip_rust_line_comments only drops // lines. Both wires → None plus:
 - /* opt(&row.briefing) */ → PASS
@@ -3007,7 +3007,7 @@ strip_rust_line_comments only drops // lines. Both wires → None plus:
 // decoy still RED (T-559 held).
 
 Repro: replace both opt(&row.briefing) with None; leave /* opt(&row.briefing) */ in adopt_payload and apply_row; cargo test hydrate_wires_row_briefing green. |
-| T-562 | 3415 | running | platform | T-560 Class-R still hollow — string/format! SET arma_id = COALESCE decoy | FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-560.
+| T-562 | 3415 | shipped | platform | T-560 Class-R still hollow — string/format! SET arma_id = COALESCE decoy | FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-560.
 
 Comment strip works; contains("SET arma_id = COALESCE(arma_id") keeps string literals.
 Delete live UPDATE + leave needle in let _decoy = "…" or format!("…") → PASS while INSERT stays NULL.
@@ -3019,6 +3019,21 @@ Repro: remove COALESCE UPDATE; add string/format! decoy with the needle; Class-R
 Automatic LOBBY entry is gated by loadout settle/IsComplete refuse. SetStage(LOBBY) via admin is not. Deploy still DENIED on m_bLoadoutDeliveryRefused; possession cannot proceed — stage chrome can open.
 
 Repro: refuse loadout delivery at spawn boundary; admin #stage LOBBY; UI stage advances; DeployPlayerInternal still DENIED. |
+| T-564 | 3417 | deferred | platform | T-561 Class-R still hollow — dead let _ = opt(&row.briefing) decoy | FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-561.
+
+Strip of // /* */ and strings works for those decoys. Replace both live apply_row_meta args with None and add dead `let _ = opt(&row.briefing);` in adopt_payload/apply_row → hydrate_wires_row_briefing_into_apply_row_meta stays GREEN. Pin greps substring, does not require it as an apply_row_meta argument.
+
+Repro: None both briefing args + dead let binding of opt(&row.briefing); cargo test green. |
+| T-565 | 3418 | deferred | platform | T-562 Class-R still hollow — COALESCE needle in unrelated sqlx::query string | FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-562.
+
+Drop the COALESCE UPDATE; replace with executed `sqlx::query("SELECT 1 -- SET arma_id = COALESCE(arma_id, $2) decoy")` → t534_dev_login_prime_literals_still_match_handler stays GREEN. Any sqlx::query("…") payload containing the needle is enough; need not be the first-create UPDATE.
+
+Repro: delete COALESCE UPDATE; add SELECT query string with needle in SQL comment; Class-R green. |
+| T-566 | 3419 | deferred | platform | T-387 Class-R hollow — comment-arm / ignore-helper still greens (live IT covers) | FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-387.
+
+t387_dev_login_roles_use_distinct_discord_ids stays GREEN if live match arms are moved into // comments and match collapses to DEV_USER_ID, or if discord_id = DEV_USER_ID while helpers remain as dead code. Live IT t387_dev_login_roles_do_not_rewrite_each_other goes RED on both (product covered when ITs run; Class-R is not).
+
+Repro: collapse discord_id_for_role to always DEV_USER_ID but leave old arms in comments; Class-R green; live IT red. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

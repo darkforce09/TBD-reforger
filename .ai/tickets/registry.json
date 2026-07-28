@@ -10736,7 +10736,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3203,
       "stream": "web-platform",
       "targets": [
@@ -14458,7 +14458,7 @@
         "tests",
         "mission-authoring"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3414,
       "executor": "claude-code",
       "priority": 2,
@@ -14480,7 +14480,7 @@
         "tests",
         "auth"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3415,
       "executor": "claude-code",
       "priority": 2,
@@ -14508,6 +14508,72 @@
       "stream": "web-platform",
       "targets": [
         "mod"
+      ]
+    },
+    {
+      "id": "T-564",
+      "title": "T-561 Class-R still hollow \u2014 dead let _ = opt(&row.briefing) decoy",
+      "summary": "FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-561.\n\nStrip of // /* */ and strings works for those decoys. Replace both live apply_row_meta args with None and add dead `let _ = opt(&row.briefing);` in adopt_payload/apply_row \u2192 hydrate_wires_row_briefing_into_apply_row_meta stays GREEN. Pin greps substring, does not require it as an apply_row_meta argument.\n\nRepro: None both briefing args + dead let binding of opt(&row.briefing); cargo test green.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "mission-authoring"
+      ],
+      "status": "deferred",
+      "order": 3417,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-565",
+      "title": "T-562 Class-R still hollow \u2014 COALESCE needle in unrelated sqlx::query string",
+      "summary": "FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-562.\n\nDrop the COALESCE UPDATE; replace with executed `sqlx::query(\"SELECT 1 -- SET arma_id = COALESCE(arma_id, $2) decoy\")` \u2192 t534_dev_login_prime_literals_still_match_handler stays GREEN. Any sqlx::query(\"\u2026\") payload containing the needle is enough; need not be the first-create UPDATE.\n\nRepro: delete COALESCE UPDATE; add SELECT query string with needle in SQL comment; Class-R green.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "auth"
+      ],
+      "status": "deferred",
+      "order": 3418,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-566",
+      "title": "T-387 Class-R hollow \u2014 comment-arm / ignore-helper still greens (live IT covers)",
+      "summary": "FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-387.\n\nt387_dev_login_roles_use_distinct_discord_ids stays GREEN if live match arms are moved into // comments and match collapses to DEV_USER_ID, or if discord_id = DEV_USER_ID while helpers remain as dead code. Live IT t387_dev_login_roles_do_not_rewrite_each_other goes RED on both (product covered when ITs run; Class-R is not).\n\nRepro: collapse discord_id_for_role to always DEV_USER_ID but leave old arms in comments; Class-R green; live IT red.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "auth"
+      ],
+      "status": "deferred",
+      "order": 3419,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
       ]
     }
   ]
