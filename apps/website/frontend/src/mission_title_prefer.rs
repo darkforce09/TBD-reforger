@@ -1,9 +1,13 @@
 //! T-522 / T-505 — prefer non-blank payload title over a stale missions-row title.
+//! T-554 — native Class-R ratchet for the FE hydrate→`apply_row_meta` briefing wire
+//! (`opt(&row.briefing)` in `adopt_payload` / `apply_row`).
 //!
 //! Pure helper extracted from `mission_hydrate` so Class-R runs on native
 //! `cargo test -p website-frontend` (cold gate). The live hydrate glue stays
 //! `#[cfg(target_arch = "wasm32")]`; without this module a prefer→`&row.title`
-//! regression stayed green on CI.
+//! regression stayed green on CI. The briefing pin lives here for the same reason
+//! (W62: both sites → `None` left website-frontend green while only core Class-R
+//! covered `apply_row_meta` itself).
 
 /// Non-blank trimmed top-level `title` from a compiled payload (T-375 wire emit).
 ///
@@ -79,6 +83,37 @@ mod t505_tests {
         assert!(
             !adopt.contains("&row.title,"),
             "adopt_payload must not pass &row.title straight into apply_row_meta (stomp); got:\n{adopt}"
+        );
+    }
+}
+
+#[cfg(test)]
+mod t554_tests {
+    /// Production body of `fn name(` … next top-level `fn ` (T-522 ratchet shape).
+    fn fn_body<'a>(production: &'a str, sig: &str) -> &'a str {
+        production
+            .split(sig)
+            .nth(1)
+            .and_then(|s| s.split("\nfn ").next())
+            .unwrap_or_else(|| panic!("{sig} body"))
+    }
+
+    /// T-554 Class-R: FE hydrate must pass `opt(&row.briefing)` into `apply_row_meta`.
+    ///
+    /// RED (W62 probe): replace both `opt(&row.briefing)` with `None` in mission_hydrate.rs.
+    #[test]
+    fn hydrate_wires_row_briefing_into_apply_row_meta() {
+        const SRC: &str = include_str!("mission_hydrate.rs");
+        let production = SRC.split("#[cfg(test)]").next().unwrap_or(SRC);
+        let adopt = fn_body(production, "fn adopt_payload(");
+        let apply = fn_body(production, "fn apply_row(");
+        assert!(
+            adopt.contains("opt(&row.briefing)"),
+            "adopt_payload must pass opt(&row.briefing) into apply_row_meta; got:\n{adopt}"
+        );
+        assert!(
+            apply.contains("opt(&row.briefing)"),
+            "apply_row must pass opt(&row.briefing) into apply_row_meta; got:\n{apply}"
         );
     }
 }

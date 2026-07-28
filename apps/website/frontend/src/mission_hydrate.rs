@@ -1016,5 +1016,7 @@ fn register_mission_backup(mission_id: String, doc: &DocHandle) {
     undo_restore_fn.forget();
 }
 
-// T-505 / T-522 Class-R moved to `mission_title_prefer` so it runs on native
+// T-505 / T-522 / T-554 Class-R live in `mission_title_prefer` so they run on native
 // `cargo test -p website-frontend` (this file is `#![cfg(target_arch = "wasm32")]`).
+// T-554 pins both briefing Option wires into apply_row_meta (W62: None at both sites
+// stayed green on website-frontend until this ratchet).
