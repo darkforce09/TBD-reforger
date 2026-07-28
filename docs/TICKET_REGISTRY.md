@@ -2838,7 +2838,7 @@ content_golden.sql comments fixed. Migration 0015 comments still claim tests/eve
 Cure: update 0015 comment block to historical past-tense or point at 0017.
 
 Repro: rg 'two-seat\|deferred' apps/website/api/migrations/0015* |
-| T-553 | 3393 | deferred | platform | TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual) | FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.
+| T-553 | 3393 | running | platform | TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual) | FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.
 
 T-419 closed open-schema lore in TBD_ObjectiveRules.c + TBD_MissionLoader.c, but TBD_ZoneRegistry.c:39 still says:
   //! `rules.penalty` vocabulary. Additive under the schema's `additionalProperties: true`.
@@ -2848,7 +2848,7 @@ Live pin: packages/tbd-schema/schema/mission.schema.json $defs.zoneRules.additio
 Repro:
   rg -n 'additionalProperties: true' apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
   # expect hit at line 39; schema says false. |
-| T-554 | 3394 | deferred | platform | T-418 FE hydrate→briefing wire has no Class-R pin (core only) | FOUND by W62 adversarial verifier (DIRTY MINOR) after T-418.
+| T-554 | 3394 | running | platform | T-418 FE hydrate→briefing wire has no Class-R pin (core only) | FOUND by W62 adversarial verifier (DIRTY MINOR) after T-418.
 
 mission_hydrate.rs threads MissionDetail.briefing into apply_row_meta via opt(&row.briefing). Core Class-R t418_apply_row_meta_threads_briefing_into_meta covers apply_row_meta/compile_export, not the FE call site.
 
@@ -2934,7 +2934,7 @@ SCOPE: verify-t456, verify-t437, verify-t296, verify-t452, plus a sweep of scrip
 and scripts/platform/*.sh for any other `rg` use or `if grep ...; then fail; fi` shape. Decide
 deliberately whether the two dead scripts get wired into the gate or deleted -- do not leave them
 dead AND broken. |
-| T-557 | 3410 | deferred | platform | dev-login 500s on concurrent first use: ON CONFLICT (discord_id) cannot arbitrate idx_users_arma_id | A REAL APPLICATION DEFECT, found by T-534 while chasing a flaky gate. T-534 removed it from the TEST
+| T-557 | 3410 | running | platform | dev-login 500s on concurrent first use: ON CONFLICT (discord_id) cannot arbitrate idx_users_arma_id | A REAL APPLICATION DEFECT, found by T-534 while chasing a flaky gate. T-534 removed it from the TEST
 path with a serialised prime; the handler is unchanged and a real client still hits it.
 
 `apps/website/api/src/handlers/dev.rs:41` INSERTs a user with a FIXED `arma_id`
