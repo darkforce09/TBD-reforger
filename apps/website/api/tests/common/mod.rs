@@ -419,10 +419,11 @@ fn t534_per_binary_database_name() {
 /// T-560: Class-R that greps raw source for `COALESCE(arma_id` is hollow — a comment
 /// alone keeps the pin green while the live UPDATE is gone. Always pin against this.
 ///
-/// T-562 / T-565: comment strip alone is still hollow — string / `format!` decoys and
-/// unrelated `sqlx::query("SELECT … -- SET arma_id = COALESCE…")` payloads keep a naive
-/// `contains` green. Use [`sqlx_queries_have_arma_coalesce_update`] (direct `sqlx::query(`
-/// SQL that is the first-create UPDATE shape after SQL-comment strip).
+/// T-562 / T-565 / T-568: comment strip alone is still hollow — string / `format!`
+/// decoys, SELECT + SQL-comment payloads, dead helpers retaining the COALESCE UPDATE,
+/// and needles parked inside SQL string literals keep a naive `contains` green. Use
+/// [`sqlx_queries_have_arma_coalesce_update`] on payloads from the live first-create
+/// fn ([`rust_fn_body`] of `dev_login`) after SQL-comment + string-literal strip.
 fn strip_rust_comments_outside_literals(src: &str) -> String {
     let bytes = src.as_bytes();
     let mut out = String::with_capacity(src.len());
@@ -524,9 +525,100 @@ fn strip_sql_comments_outside_literals(sql: &str) -> String {
     out
 }
 
+/// Blank interiors of SQL `'…'` / `"…"` literals (keep the delimiters).
+///
+/// T-568 W66 DIRTY MAJOR: after T-565's comment strip, a SELECT whose WHERE clause
+/// embeds `'UPDATE users SET arma_id = COALESCE…'` still matched the UPDATE needle —
+/// string-literal contents survive comment strip. Blank them before the shape check.
+fn blank_sql_string_literal_contents(sql: &str) -> String {
+    let bytes = sql.as_bytes();
+    let mut out = String::with_capacity(sql.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        let c = bytes[i];
+        if c == b'\'' || c == b'"' {
+            let q = c;
+            out.push(c as char);
+            i += 1;
+            while i < bytes.len() {
+                let d = bytes[i];
+                // SQL standard: doubled quote escapes inside the same delimiter.
+                if d == q && i + 1 < bytes.len() && bytes[i + 1] == q {
+                    i += 2;
+                    continue;
+                }
+                if d == b'\\' && i + 1 < bytes.len() {
+                    i += 2;
+                    continue;
+                }
+                if d == q {
+                    out.push(d as char);
+                    i += 1;
+                    break;
+                }
+                i += 1;
+            }
+            continue;
+        }
+        out.push(c as char);
+        i += 1;
+    }
+    out
+}
+
 /// Collapse whitespace so `UPDATE  users\\nSET…` matches the product UPDATE shape.
 fn flatten_sql_ws(sql: &str) -> String {
     sql.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// Brace-balanced body of `fn {name}` in comment-stripped source (opening `{` … matching `}`).
+///
+/// T-568: the COALESCE pin must bind to the live first-create path (`dev_login`), not a
+/// dead sibling helper that retains the UPDATE while the executed path uses `$2`.
+fn rust_fn_body<'a>(code: &'a str, name: &str) -> &'a str {
+    let marker = format!("fn {name}");
+    let start = code
+        .find(&marker)
+        .unwrap_or_else(|| panic!("T-568 Class-R: expected `{marker}` in comment-stripped source"));
+    let after = &code[start..];
+    let open = after
+        .find('{')
+        .unwrap_or_else(|| panic!("T-568 Class-R: `{marker}` has no opening brace"));
+    let bytes = after.as_bytes();
+    let mut depth = 0i32;
+    let mut i = open;
+    let mut in_string = false;
+    let mut string_delim = b'"';
+    while i < bytes.len() {
+        let c = bytes[i];
+        if in_string {
+            if c == b'\\' && i + 1 < bytes.len() {
+                i += 2;
+                continue;
+            }
+            if c == string_delim {
+                in_string = false;
+            }
+            i += 1;
+            continue;
+        }
+        if c == b'"' || c == b'\'' {
+            in_string = true;
+            string_delim = c;
+            i += 1;
+            continue;
+        }
+        if c == b'{' {
+            depth += 1;
+        } else if c == b'}' {
+            depth -= 1;
+            if depth == 0 {
+                return &after[open..=i];
+            }
+        }
+        i += 1;
+    }
+    panic!("T-568 Class-R: `{marker}` body not closed");
 }
 
 /// True when a direct `sqlx::query("…")` payload is the first-create arma UPDATE
@@ -535,8 +627,13 @@ fn flatten_sql_ws(sql: &str) -> String {
 /// T-565: any-payload `contains("SET arma_id = COALESCE(arma_id")` was hollow — a SELECT
 /// with the needle in a SQL `--` comment stayed green. Require the UPDATE statement shape
 /// after SQL-comment strip.
+///
+/// T-568: also blank SQL string-literal interiors — a SELECT with the needle inside
+/// `'UPDATE users SET arma_id = COALESCE…'` survived comment strip alone.
 fn sqlx_payload_is_arma_coalesce_update(payload: &str) -> bool {
-    let flat = flatten_sql_ws(&strip_sql_comments_outside_literals(payload));
+    let comments_gone = strip_sql_comments_outside_literals(payload);
+    let literals_blank = blank_sql_string_literal_contents(&comments_gone);
+    let flat = flatten_sql_ws(&literals_blank);
     flat.contains("UPDATE users SET arma_id = COALESCE(arma_id")
 }
 
@@ -694,6 +791,103 @@ fn t565_sqlx_query_coalesce_requires_update_not_select_comment() {
     );
 }
 
+#[test]
+fn t568_coalesce_pin_rejects_dead_helper_and_sql_string_literal() {
+    // W66 DIRTY MAJOR after T-565 — attack 1: COALESCE parked in an unused sibling fn
+    // while the live first-create path uses `SET arma_id = $2`. Whole-file payload scan
+    // stayed GREEN; pin must bind to `dev_login` only.
+    let dead_helper = r#"
+        fn unused_arma_coalesce_helper() {
+            let _ = sqlx::query(
+                "UPDATE users SET arma_id = COALESCE(arma_id, $2), updated_at = now() \
+                 WHERE discord_id = $1",
+            );
+        }
+        pub async fn dev_login() {
+            sqlx::query(
+                "UPDATE users SET arma_id = $2, updated_at = now() WHERE discord_id = $1",
+            );
+        }
+    "#;
+    let code = strip_rust_comments_outside_literals(dead_helper);
+    // Sanity: whole-file scan still sees the dead helper (the pre-T-568 hollow shape).
+    assert!(
+        sqlx_queries_have_arma_coalesce_update(&sqlx_query_string_payloads(&code)),
+        "fixture sanity: dead helper still embeds a COALESCE UPDATE payload at file scope"
+    );
+    let login_payloads = sqlx_query_string_payloads(rust_fn_body(&code, "dev_login"));
+    assert!(
+        !sqlx_queries_have_arma_coalesce_update(&login_payloads),
+        "T-568: dead-helper COALESCE + live `SET arma_id = $2` must go RED when pinned to \
+         dev_login; got {login_payloads:?}"
+    );
+
+    // Attack 2: needle inside a SQL string literal survives comment strip.
+    let string_lit = r#"
+        pub async fn dev_login() {
+            sqlx::query(
+                "SELECT 1 WHERE 'UPDATE users SET arma_id = COALESCE(arma_id, $2)' = 'x'",
+            );
+        }
+    "#;
+    let lit_code = strip_rust_comments_outside_literals(string_lit);
+    let lit_payloads = sqlx_query_string_payloads(rust_fn_body(&lit_code, "dev_login"));
+    assert!(
+        lit_payloads
+            .iter()
+            .any(|p| p.contains("UPDATE users SET arma_id = COALESCE(arma_id")),
+        "fixture sanity: SQL string-literal decoy still embeds the raw needle in the payload"
+    );
+    // Pre-blank hollow: comment-strip alone would still match (W66 measured).
+    assert!(
+        lit_payloads.iter().any(|p| {
+            let flat = flatten_sql_ws(&strip_sql_comments_outside_literals(p));
+            flat.contains("UPDATE users SET arma_id = COALESCE(arma_id")
+        }),
+        "fixture sanity: comment-strip alone still sees the string-literal needle (W66 hollow)"
+    );
+    assert!(
+        !sqlx_queries_have_arma_coalesce_update(&lit_payloads),
+        "T-568: SELECT with COALESCE needle inside a SQL string literal must go RED; \
+         got {lit_payloads:?}"
+    );
+
+    // T-565 SELECT -- comment decoy must remain RED under the hardened pin.
+    let select_comment = r#"
+        pub async fn dev_login() {
+            sqlx::query(
+                "SELECT 1 -- SET arma_id = COALESCE(arma_id, $2) decoy",
+            );
+        }
+    "#;
+    let sc = strip_rust_comments_outside_literals(select_comment);
+    assert!(
+        !sqlx_queries_have_arma_coalesce_update(&sqlx_query_string_payloads(rust_fn_body(
+            &sc,
+            "dev_login"
+        ))),
+        "T-568: T-565 SELECT -- comment decoy must stay RED"
+    );
+
+    // Live first-create path inside `dev_login` must stay GREEN.
+    let live = r#"
+        pub async fn dev_login() {
+            sqlx::query(
+                "UPDATE users SET arma_id = COALESCE(arma_id, $2), updated_at = now() \
+                 WHERE discord_id = $1",
+            );
+        }
+    "#;
+    let live_code = strip_rust_comments_outside_literals(live);
+    assert!(
+        sqlx_queries_have_arma_coalesce_update(&sqlx_query_string_payloads(rust_fn_body(
+            &live_code,
+            "dev_login"
+        ))),
+        "T-568: live COALESCE UPDATE inside dev_login must still satisfy the pin"
+    );
+}
+
 /// Split a SQL column/value list on top-level commas (parens + quotes aware).
 fn split_sql_list(s: &str) -> Vec<String> {
     let mut out = Vec::new();
@@ -821,17 +1015,19 @@ fn users_insert_arma_id_value(code: &str) -> Option<String> {
     vals.get(arma_idx).cloned()
 }
 
-/// Class-R (T-534 / T-557 / T-560 / T-562 / T-565): prime literals match handler, and the
-/// handler keeps the race-free contract (NULL INSERT + live
-/// `UPDATE users SET arma_id = COALESCE(arma_id` first-create via `sqlx::query(` SQL —
-/// not a Rust comment / string / `format!` decoy, and not a SELECT with the needle only
-/// in a SQL `--` / `/* */` comment).
+/// Class-R (T-534 / T-557 / T-560 / T-562 / T-565 / T-568): prime literals match handler,
+/// and the handler keeps the race-free contract (NULL INSERT + live
+/// `UPDATE users SET arma_id = COALESCE(arma_id` first-create via `sqlx::query(` SQL
+/// **inside `dev_login`** — not a Rust comment / string / `format!` decoy, not a SELECT
+/// with the needle only in a SQL `--` / `/* */` comment or string literal, and not a
+/// dead sibling helper retaining the UPDATE while the executed path uses `$2`).
 ///
 /// The prime seeds the same discord_id / arma_id the handler uses. If either literal
 /// drifts, this goes red. T-557 moved the stamp out of INSERT; T-560 closes comment +
 /// bind-INSERT hollow greps; T-562 closes string / `format!` decoys; T-565 closes
-/// unrelated `sqlx::query("SELECT … -- SET arma_id = COALESCE…")` payloads that kept
-/// T-562 green while the live UPDATE was gone (both still raced `idx_users_arma_id`).
+/// unrelated `sqlx::query("SELECT … -- SET arma_id = COALESCE…")` payloads; T-568 closes
+/// dead-helper COALESCE + SQL string-literal needles that kept T-565 green while the
+/// live UPDATE was gone (both still raced `idx_users_arma_id`).
 #[test]
 fn t534_dev_login_prime_literals_still_match_handler() {
     let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/dev.rs");
@@ -852,24 +1048,30 @@ fn t534_dev_login_prime_literals_still_match_handler() {
 
     let code = strip_rust_comments_outside_literals(&src);
 
-    // T-560 / T-562 / T-565: require the first-create UPDATE shape inside a direct
-    // `sqlx::query("…")` string arg (after SQL-comment strip). Rust comment-only (T-560),
-    // string/`format!` decoys (T-562), and SELECT + SQL-comment decoys (T-565) must go red.
-    let query_sql = sqlx_query_string_payloads(&code);
+    // T-560 / T-562 / T-565 / T-568: require the first-create UPDATE shape inside a direct
+    // `sqlx::query("…")` string arg **in `dev_login`** (after SQL-comment + string-literal
+    // strip). Rust comment-only (T-560), string/`format!` decoys (T-562), SELECT +
+    // SQL-comment decoys (T-565), dead helpers / SQL string-literal needles (T-568) must
+    // go red.
+    let login_body = rust_fn_body(&code, "dev_login");
+    let query_sql = sqlx_query_string_payloads(login_body);
     assert!(
         sqlx_queries_have_arma_coalesce_update(&query_sql),
-        "T-560/T-562/T-565: expected live `UPDATE users SET arma_id = COALESCE(arma_id` \
-         inside a direct sqlx::query(\"…\") string in comment-stripped src/handlers/dev.rs — \
-         a Rust comment, `let _decoy = \"…\"`, format!(\"…\"), or SELECT with the needle only \
-         in a SQL `--`/`/* */` comment is not the first-create path; without the live UPDATE, \
-         concurrent cold inserts can 23505 on idx_users_arma_id again (payloads: {query_sql:?})"
+        "T-560/T-562/T-565/T-568: expected live `UPDATE users SET arma_id = COALESCE(arma_id` \
+         inside a direct sqlx::query(\"…\") string in comment-stripped `dev_login` — \
+         a Rust comment, `let _decoy = \"…\"`, format!(\"…\"), SELECT with the needle only \
+         in a SQL `--`/`/* */` comment or string literal, or a dead sibling helper retaining \
+         the UPDATE while the executed path uses `$2`, is not the first-create path; without \
+         the live UPDATE, concurrent cold inserts can 23505 on idx_users_arma_id again \
+         (payloads: {query_sql:?})"
     );
 
     // T-560: INSERT must leave arma_id NULL (not a `$N` bind stamp, not a quoted literal).
-    let arma_val = users_insert_arma_id_value(&code).unwrap_or_else(|| {
+    // Scoped to `dev_login` so a dead helper INSERT cannot false-green the pin.
+    let arma_val = users_insert_arma_id_value(login_body).unwrap_or_else(|| {
         panic!(
             "T-560: could not parse INSERT INTO users (…) VALUES (…) arma_id slot in \
-             comment-stripped src/handlers/dev.rs"
+             comment-stripped `dev_login`"
         )
     });
     assert!(
