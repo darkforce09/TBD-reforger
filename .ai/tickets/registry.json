@@ -14024,7 +14024,7 @@
         "mod",
         "arsenal"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3381,
       "stream": "web-platform",
       "targets": [
@@ -14414,7 +14414,7 @@
         "tests",
         "mission-authoring"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3412,
       "executor": "claude-code",
       "priority": 2,
@@ -14436,13 +14436,78 @@
         "tests",
         "auth"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3413,
       "executor": "claude-code",
       "priority": 2,
       "stream": "web-platform",
       "targets": [
         "website"
+      ]
+    },
+    {
+      "id": "T-561",
+      "title": "T-559 Class-R still hollow \u2014 block-comment / string decoy opt(&row.briefing)",
+      "summary": "FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-559.\n\nstrip_rust_line_comments only drops // lines. Both wires \u2192 None plus:\n- /* opt(&row.briefing) */ \u2192 PASS\n- let _ = \"opt(&row.briefing)\"; \u2192 PASS\n// decoy still RED (T-559 held).\n\nRepro: replace both opt(&row.briefing) with None; leave /* opt(&row.briefing) */ in adopt_payload and apply_row; cargo test hydrate_wires_row_briefing green.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "mission-authoring"
+      ],
+      "status": "deferred",
+      "order": 3414,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-562",
+      "title": "T-560 Class-R still hollow \u2014 string/format! SET arma_id = COALESCE decoy",
+      "summary": "FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-560.\n\nComment strip works; contains(\"SET arma_id = COALESCE(arma_id\") keeps string literals.\nDelete live UPDATE + leave needle in let _decoy = \"\u2026\" or format!(\"\u2026\") \u2192 PASS while INSERT stays NULL.\nClaimed // + bind attacks still RED.\n\nRepro: remove COALESCE UPDATE; add string/format! decoy with the needle; Class-R green; concurrent cold race can return.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "auth"
+      ],
+      "status": "deferred",
+      "order": 3415,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-563",
+      "title": "T-541 admin #stage LOBBY bypasses TickRosterSettle loadout refuse",
+      "summary": "FOUND by W64 adversarial verifier (DIRTY MINOR|NIT) after T-541.\n\nAutomatic LOBBY entry is gated by loadout settle/IsComplete refuse. SetStage(LOBBY) via admin is not. Deploy still DENIED on m_bLoadoutDeliveryRefused; possession cannot proceed \u2014 stage chrome can open.\n\nRepro: refuse loadout delivery at spawn boundary; admin #stage LOBBY; UI stage advances; DeployPlayerInternal still DENIED.",
+      "program": "platform",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "mod",
+        "security"
+      ],
+      "status": "deferred",
+      "order": 3416,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "mod"
       ]
     }
   ]

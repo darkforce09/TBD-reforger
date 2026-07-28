@@ -5,26 +5,6 @@
 
 ## Running / Review
 
-- **T-541** (3381) — SpawnManager never calls IsComplete after T-415 helper consume [running] — FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.
-
-Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
-
-Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync.
-- **T-559** (3412) — T-554 Class-R soft contains — comment decoy opt(&row.briefing) stays green [running] — FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.
-
-hydrate_wires_row_briefing_into_apply_row_meta only asserts body.contains("opt(&row.briefing)").
-W62 None mutation FAILS (good). Both wires → None + `// decoy opt(&row.briefing)` inside each fn → PASS.
-
-Repro: in mission_hydrate.rs replace both opt(&row.briefing) with None but leave a comment containing the substring in adopt_payload and apply_row; cargo test -p website-frontend hydrate_wires_row_briefing still green.
-- **T-560** (3413) — T-557 Class-R hollow — comment COALESCE / bind-form INSERT still races [running] — FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.
-
-t534_dev_login_prime_literals_still_match_handler greps COALESCE(arma_id and bans only the literal '', 'dev-arma-…' stamp.
-Comment `// COALESCE(arma_id` + remove real UPDATE → PASS.
-INSERT arma_id = $3 + comment COALESCE (no real UPDATE) → PASS; barrier probe 3× idx_users_arma_id hits.
-
-Product NULL+COALESCE path holds (0 race hits). Pin does not.
-
-Repro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again.
 
 ## Ready
 

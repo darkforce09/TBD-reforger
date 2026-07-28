@@ -2769,7 +2769,7 @@ Cure: Class-R must exercise stdout entrypoint (or source-pin that stdout path ca
 ingest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1→EV2 and asserts EV1 returns to registered while EV2 is attended.
 
 Repro: rg retract_from apps/website/api — no IT exercises the path. |
-| T-541 | 3381 | running | platform | SpawnManager never calls IsComplete after T-415 helper consume | FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.
+| T-541 | 3381 | shipped | platform | SpawnManager never calls IsComplete after T-415 helper consume | FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.
 
 Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
 
@@ -2984,13 +2984,13 @@ Update it in the same commit rather than deleting it. |
 4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`
    rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --
    recorded so nobody rediscovers it as new. |
-| T-559 | 3412 | running | platform | T-554 Class-R soft contains — comment decoy opt(&row.briefing) stays green | FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.
+| T-559 | 3412 | shipped | platform | T-554 Class-R soft contains — comment decoy opt(&row.briefing) stays green | FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.
 
 hydrate_wires_row_briefing_into_apply_row_meta only asserts body.contains("opt(&row.briefing)").
 W62 None mutation FAILS (good). Both wires → None + `// decoy opt(&row.briefing)` inside each fn → PASS.
 
 Repro: in mission_hydrate.rs replace both opt(&row.briefing) with None but leave a comment containing the substring in adopt_payload and apply_row; cargo test -p website-frontend hydrate_wires_row_briefing still green. |
-| T-560 | 3413 | running | platform | T-557 Class-R hollow — comment COALESCE / bind-form INSERT still races | FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.
+| T-560 | 3413 | shipped | platform | T-557 Class-R hollow — comment COALESCE / bind-form INSERT still races | FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.
 
 t534_dev_login_prime_literals_still_match_handler greps COALESCE(arma_id and bans only the literal '', 'dev-arma-…' stamp.
 Comment `// COALESCE(arma_id` + remove real UPDATE → PASS.
@@ -2999,6 +2999,26 @@ INSERT arma_id = $3 + comment COALESCE (no real UPDATE) → PASS; barrier probe 
 Product NULL+COALESCE path holds (0 race hits). Pin does not.
 
 Repro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again. |
+| T-561 | 3414 | deferred | platform | T-559 Class-R still hollow — block-comment / string decoy opt(&row.briefing) | FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-559.
+
+strip_rust_line_comments only drops // lines. Both wires → None plus:
+- /* opt(&row.briefing) */ → PASS
+- let _ = "opt(&row.briefing)"; → PASS
+// decoy still RED (T-559 held).
+
+Repro: replace both opt(&row.briefing) with None; leave /* opt(&row.briefing) */ in adopt_payload and apply_row; cargo test hydrate_wires_row_briefing green. |
+| T-562 | 3415 | deferred | platform | T-560 Class-R still hollow — string/format! SET arma_id = COALESCE decoy | FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-560.
+
+Comment strip works; contains("SET arma_id = COALESCE(arma_id") keeps string literals.
+Delete live UPDATE + leave needle in let _decoy = "…" or format!("…") → PASS while INSERT stays NULL.
+Claimed // + bind attacks still RED.
+
+Repro: remove COALESCE UPDATE; add string/format! decoy with the needle; Class-R green; concurrent cold race can return. |
+| T-563 | 3416 | deferred | platform | T-541 admin #stage LOBBY bypasses TickRosterSettle loadout refuse | FOUND by W64 adversarial verifier (DIRTY MINOR\|NIT) after T-541.
+
+Automatic LOBBY entry is gated by loadout settle/IsComplete refuse. SetStage(LOBBY) via admin is not. Deploy still DENIED on m_bLoadoutDeliveryRefused; possession cannot proceed — stage chrome can open.
+
+Repro: refuse loadout delivery at spawn boundary; admin #stage LOBBY; UI stage advances; DeployPlayerInternal still DENIED. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
