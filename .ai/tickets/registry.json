@@ -10728,7 +10728,7 @@
     {
       "id": "T-387",
       "title": "render-check / gate residual after T-339: dev-login single Discord id (not api_proxy)",
-      "summary": "NARROWED after W61 (T-339 shipped). The original api_proxy:None render-check hole is CLOSED by T-339 (CLI --api-proxy + default :8080).\n\nRemaining from the original T-387 write-up (do not re-litigate api_proxy):\n- Dev-login / probe path still folds multiple roles onto a single Discord id in ways that half-hydrate or collide sessions (see original T-387 notes + T-361 SSE proxy sibling if overlapping).\n\nMeasure live gate/smokes/dev-login before implementing; owns stay tools gate/smokes unless evidence moves the residual.\n\n== DEFERRED \u2014 residual after T-339 ==",
+      "summary": "NARROWED after W61 (T-339 shipped). api_proxy half-hydrate CLOSED (smokes.rs defaults api_proxy to :8080; gate --api-proxy).\n\nMEASURED residual (W64 attempt, STOP \u2014 owns collide with T-560):\n- apps/website/api/src/handlers/dev.rs:14 DEV_USER_ID fixed for all roles\n- ON CONFLICT updates role on same discord_id; issue_session does not revoke prior family\n- IT corpus documents landmine: misc_integration.rs:288-293, missions.rs:1105-1111\n\nFix lives in handlers/dev.rs \u2014 sequence AFTER T-560 (same owns). Do not re-litigate api_proxy.\nOwns for the real fix: apps/website/api/src/handlers/dev.rs (+ ITs that assume one discord_id).",
       "program": "platform",
       "surfaces": [
         "CI"
@@ -10736,7 +10736,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "deferred",
       "order": 3203,
       "stream": "web-platform",
       "targets": [
@@ -14024,7 +14024,7 @@
         "mod",
         "arsenal"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3381,
       "stream": "web-platform",
       "targets": [

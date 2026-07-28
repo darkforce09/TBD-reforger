@@ -1712,14 +1712,15 @@ Note the comment two lines above says 'The raw value is echoed in the verdict so
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-387 | 3203 | running | platform | render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) | NARROWED after W61 (T-339 shipped). The original api_proxy:None render-check hole is CLOSED by T-339 (CLI --api-proxy + default :8080).
+| T-387 | 3203 | deferred | platform | render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) | NARROWED after W61 (T-339 shipped). api_proxy half-hydrate CLOSED (smokes.rs defaults api_proxy to :8080; gate --api-proxy).
 
-Remaining from the original T-387 write-up (do not re-litigate api_proxy):
-- Dev-login / probe path still folds multiple roles onto a single Discord id in ways that half-hydrate or collide sessions (see original T-387 notes + T-361 SSE proxy sibling if overlapping).
+MEASURED residual (W64 attempt, STOP — owns collide with T-560):
+- apps/website/api/src/handlers/dev.rs:14 DEV_USER_ID fixed for all roles
+- ON CONFLICT updates role on same discord_id; issue_session does not revoke prior family
+- IT corpus documents landmine: misc_integration.rs:288-293, missions.rs:1105-1111
 
-Measure live gate/smokes/dev-login before implementing; owns stay tools gate/smokes unless evidence moves the residual.
-
-== DEFERRED — residual after T-339 == |
+Fix lives in handlers/dev.rs — sequence AFTER T-560 (same owns). Do not re-litigate api_proxy.
+Owns for the real fix: apps/website/api/src/handlers/dev.rs (+ ITs that assume one discord_id). |
 | T-388 | 3204 | deferred | platform | The adoption-residue purge is not guaranteed on a first editor open | MINOR, from the behavioural probe of T-352. Its residue purge (`editor_session.rs:149 purge_legacy_markers`) is reachable ONLY via `mark_adopted`, and three paths reach the editor without calling it:
   mission_hydrate.rs:181-190 — the `is_empty && loaded_from_idb` branch calls `apply_row` and no `mark_adopted`;
   `Local::Diverged` (:236) defers to conflict resolution;
@@ -2768,7 +2769,7 @@ Cure: Class-R must exercise stdout entrypoint (or source-pin that stdout path ca
 ingest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1→EV2 and asserts EV1 returns to registered while EV2 is attended.
 
 Repro: rg retract_from apps/website/api — no IT exercises the path. |
-| T-541 | 3381 | deferred | platform | SpawnManager never calls IsComplete after T-415 helper consume | FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.
+| T-541 | 3381 | running | platform | SpawnManager never calls IsComplete after T-415 helper consume | FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.
 
 Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
 
