@@ -12,6 +12,9 @@
 //! T-559: the T-554 soft `body.contains("opt(&row.briefing)")` stayed green when both
 //! live wires became `None` but a `// … opt(&row.briefing)` decoy remained. Strip Rust
 //! line comments before the contains so only a live call-site can satisfy the pin.
+//!
+//! T-561: `//`-only strip still left `/* opt(&row.briefing) */` and
+//! `let _ = "opt(&row.briefing)";` green. Strip block comments + string literals too.
 
 /// Non-blank trimmed top-level `title` from a compiled payload (T-375 wire emit).
 ///
@@ -102,37 +105,96 @@ mod t554_tests {
             .unwrap_or_else(|| panic!("{sig} body"))
     }
 
-    /// Drop Rust `//` / `///` comments (whole-line and trailing) so a decoy substring
-    /// cannot false-green the briefing wire pin (T-559 / W63 DIRTY MAJOR).
+    /// Drop Rust `//` / `///` / `/* … */` comments and `"…"` / `r#…#` string literals so a
+    /// decoy substring cannot false-green the briefing wire pin (T-559 / T-561).
     ///
-    /// Naive: Class-R source pins do not need string-literal awareness for these bodies.
-    fn strip_rust_line_comments(src: &str) -> String {
+    /// Character scan (not line-naive): `//` inside a string must not truncate the literal,
+    /// and a block-comment / string decoy must not survive into the pin body.
+    fn strip_rust_comments_and_strings(src: &str) -> String {
+        let chars: Vec<char> = src.chars().collect();
         let mut out = String::with_capacity(src.len());
-        for line in src.lines() {
-            if line.trim_start().starts_with("//") {
+        let mut i = 0;
+        while i < chars.len() {
+            // Line comment `//…` → EOL
+            if chars[i] == '/' && i + 1 < chars.len() && chars[i + 1] == '/' {
+                i += 2;
+                while i < chars.len() && chars[i] != '\n' {
+                    i += 1;
+                }
                 continue;
             }
-            if let Some(idx) = line.find("//") {
-                out.push_str(&line[..idx]);
-            } else {
-                out.push_str(line);
+            // Block comment `/* … */`
+            if chars[i] == '/' && i + 1 < chars.len() && chars[i + 1] == '*' {
+                i += 2;
+                while i + 1 < chars.len() && !(chars[i] == '*' && chars[i + 1] == '/') {
+                    i += 1;
+                }
+                i = (i + 2).min(chars.len());
+                continue;
             }
-            out.push('\n');
+            // Raw string `r##"…"##` / `r"…"`
+            if chars[i] == 'r' {
+                let mut j = i + 1;
+                let mut hashes = 0usize;
+                while j < chars.len() && chars[j] == '#' {
+                    hashes += 1;
+                    j += 1;
+                }
+                if j < chars.len() && chars[j] == '"' {
+                    i = j + 1;
+                    loop {
+                        if i >= chars.len() {
+                            break;
+                        }
+                        if chars[i] == '"' {
+                            let mut k = 0usize;
+                            while k < hashes && i + 1 + k < chars.len() && chars[i + 1 + k] == '#' {
+                                k += 1;
+                            }
+                            if k == hashes {
+                                i += 1 + hashes;
+                                break;
+                            }
+                        }
+                        i += 1;
+                    }
+                    continue;
+                }
+            }
+            // Normal string `"…"` (with `\` escapes)
+            if chars[i] == '"' {
+                i += 1;
+                while i < chars.len() {
+                    if chars[i] == '\\' {
+                        i = (i + 2).min(chars.len());
+                        continue;
+                    }
+                    if chars[i] == '"' {
+                        i += 1;
+                        break;
+                    }
+                    i += 1;
+                }
+                continue;
+            }
+            out.push(chars[i]);
+            i += 1;
         }
         out
     }
 
-    /// T-554 / T-559 Class-R: FE hydrate must pass a *live* `opt(&row.briefing)` into
-    /// `apply_row_meta` (comments stripped — a `// decoy opt(&row.briefing)` is not enough).
+    /// T-554 / T-559 / T-561 Class-R: FE hydrate must pass a *live* `opt(&row.briefing)` into
+    /// `apply_row_meta` (comments + string literals stripped — decoys are not enough).
     ///
     /// RED (W62): replace both `opt(&row.briefing)` with `None`.
     /// RED (W63 decoy): both → `None` + leave `// … opt(&row.briefing)` in each fn body.
+    /// RED (W64 decoy): both → `None` + `/* opt(&row.briefing) */` or `let _ = "…";`.
     #[test]
     fn hydrate_wires_row_briefing_into_apply_row_meta() {
         const SRC: &str = include_str!("mission_hydrate.rs");
         let production = SRC.split("#[cfg(test)]").next().unwrap_or(SRC);
-        let adopt = strip_rust_line_comments(fn_body(production, "fn adopt_payload("));
-        let apply = strip_rust_line_comments(fn_body(production, "fn apply_row("));
+        let adopt = strip_rust_comments_and_strings(fn_body(production, "fn adopt_payload("));
+        let apply = strip_rust_comments_and_strings(fn_body(production, "fn apply_row("));
         assert!(
             adopt.contains("opt(&row.briefing)"),
             "adopt_payload must pass live opt(&row.briefing) into apply_row_meta; got:\n{adopt}"
