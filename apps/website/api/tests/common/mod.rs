@@ -418,6 +418,10 @@ fn t534_per_binary_database_name() {
 ///
 /// T-560: Class-R that greps raw source for `COALESCE(arma_id` is hollow — a comment
 /// alone keeps the pin green while the live UPDATE is gone. Always pin against this.
+///
+/// T-562: comment strip alone is still hollow — string / `format!` decoys keep
+/// `contains("SET arma_id = COALESCE(arma_id")` green. Use
+/// [`sqlx_query_string_payloads`] for the COALESCE pin (only live `sqlx::query(` SQL).
 fn strip_rust_comments_outside_literals(src: &str) -> String {
     let bytes = src.as_bytes();
     let mut out = String::with_capacity(src.len());
@@ -465,6 +469,120 @@ fn strip_rust_comments_outside_literals(src: &str) -> String {
         i += 1;
     }
     out
+}
+
+/// Interiors of `"…"` / concatenated `"…" "…"` literals that are *direct* args to
+/// `sqlx::query(`. Skips `format!("…")`, `let _decoy = "…"`, and `&format!(…)` wrappers.
+///
+/// T-562: the live COALESCE path is SQL text inside `sqlx::query("…")`. A decoy string
+/// or `format!` with the same needle must not satisfy the Class-R pin.
+fn sqlx_query_string_payloads(code: &str) -> Vec<String> {
+    let bytes = code.as_bytes();
+    let key = b"sqlx::query";
+    let mut out = Vec::new();
+    let mut i = 0usize;
+    while i + key.len() <= bytes.len() {
+        if &bytes[i..i + key.len()] != key {
+            i += 1;
+            continue;
+        }
+        let before_ok = i == 0
+            || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_');
+        let mut j = i + key.len();
+        // Reject `sqlx::query_as` / `sqlx::query_scalar` — only bare `sqlx::query(`.
+        if j < bytes.len() && (bytes[j].is_ascii_alphanumeric() || bytes[j] == b'_') {
+            i = j;
+            continue;
+        }
+        while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+            j += 1;
+        }
+        if !before_ok || j >= bytes.len() || bytes[j] != b'(' {
+            i += key.len();
+            continue;
+        }
+        j += 1; // past '('
+        let mut payload = String::new();
+        loop {
+            while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+                j += 1;
+            }
+            if j >= bytes.len() || bytes[j] != b'"' {
+                break;
+            }
+            j += 1; // opening "
+            while j < bytes.len() {
+                let c = bytes[j];
+                if c == b'\\' && j + 1 < bytes.len() {
+                    let n = bytes[j + 1];
+                    // Rust string line-continuation: `\` + newline (optional CR).
+                    if n == b'\n' {
+                        j += 2;
+                        continue;
+                    }
+                    if n == b'\r' && j + 2 < bytes.len() && bytes[j + 2] == b'\n' {
+                        j += 3;
+                        continue;
+                    }
+                    payload.push(n as char);
+                    j += 2;
+                    continue;
+                }
+                if c == b'"' {
+                    j += 1;
+                    break;
+                }
+                payload.push(c as char);
+                j += 1;
+            }
+        }
+        if !payload.is_empty() {
+            out.push(payload);
+        }
+        i = j.max(i + key.len());
+    }
+    out
+}
+
+#[test]
+fn t562_sqlx_query_payloads_ignore_string_and_format_decoys() {
+    let live = r#"
+        sqlx::query(
+            "UPDATE users SET arma_id = COALESCE(arma_id, $2), updated_at = now() \
+             WHERE discord_id = $1",
+        )
+        .bind(DEV_USER_ID)
+        .bind(DEV_ARMA_ID);
+    "#;
+    let payloads = sqlx_query_string_payloads(live);
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.contains("SET arma_id = COALESCE(arma_id")),
+        "live sqlx::query SQL must surface the COALESCE needle; got {payloads:?}"
+    );
+
+    let decoy = r#"
+        let _decoy = "UPDATE users SET arma_id = COALESCE(arma_id, $2), updated_at = now() WHERE discord_id = $1";
+        let _fmt = format!("SET arma_id = COALESCE(arma_id, {})", "x");
+        sqlx::query("INSERT INTO users (arma_id) VALUES (NULL)");
+    "#;
+    let hollow = sqlx_query_string_payloads(decoy);
+    assert!(
+        !hollow
+            .iter()
+            .any(|p| p.contains("SET arma_id = COALESCE(arma_id")),
+        "T-562: string/format! decoys must not count as live COALESCE; got {hollow:?}"
+    );
+
+    // format!-wrapped query arg is not a direct string literal to sqlx::query(
+    let wrapped = r#"sqlx::query(&format!("SET arma_id = COALESCE(arma_id, {})", "x"));"#;
+    assert!(
+        sqlx_query_string_payloads(wrapped)
+            .iter()
+            .all(|p| !p.contains("SET arma_id = COALESCE(arma_id")),
+        "T-562: format!-wrapped sqlx::query must not satisfy the pin"
+    );
 }
 
 /// Split a SQL column/value list on top-level commas (parens + quotes aware).
@@ -594,13 +712,15 @@ fn users_insert_arma_id_value(code: &str) -> Option<String> {
     vals.get(arma_idx).cloned()
 }
 
-/// Class-R (T-534 / T-557 / T-560): prime literals match handler, and the handler keeps the
-/// race-free contract (NULL INSERT + live `SET arma_id = COALESCE(arma_id` first-create).
+/// Class-R (T-534 / T-557 / T-560 / T-562): prime literals match handler, and the handler
+/// keeps the race-free contract (NULL INSERT + live `SET arma_id = COALESCE(arma_id`
+/// first-create via `sqlx::query(` SQL — not a comment / string / `format!` decoy).
 ///
 /// The prime seeds the same discord_id / arma_id the handler uses. If either literal
-/// drifts, this goes red. T-557 moved the stamp out of INSERT; T-560 closes the hollow
-/// greps: a `// COALESCE(arma_id` comment alone, or a bind-stamped `$N` in INSERT VALUES
-/// with the live UPDATE removed, must fail this pin (both still raced `idx_users_arma_id`).
+/// drifts, this goes red. T-557 moved the stamp out of INSERT; T-560 closes comment +
+/// bind-INSERT hollow greps; T-562 closes string / `format!` decoys that kept
+/// comment-stripped `contains("SET arma_id = COALESCE(arma_id")` green while the live
+/// UPDATE was gone (both still raced `idx_users_arma_id`).
 #[test]
 fn t534_dev_login_prime_literals_still_match_handler() {
     let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/dev.rs");
@@ -621,13 +741,18 @@ fn t534_dev_login_prime_literals_still_match_handler() {
 
     let code = strip_rust_comments_outside_literals(&src);
 
-    // T-560: require the *live* UPDATE statement (comment-stripped). A hollow
-    // `// COALESCE(arma_id` comment with the real UPDATE deleted must go red.
+    // T-560 / T-562: require the *live* UPDATE SQL inside a direct `sqlx::query("…")`
+    // string arg. Comment-only (T-560) and string/`format!` decoys (T-562) must go red.
+    let query_sql = sqlx_query_string_payloads(&code);
     assert!(
-        code.contains("SET arma_id = COALESCE(arma_id"),
-        "T-560: expected live `SET arma_id = COALESCE(arma_id` in comment-stripped \
-         src/handlers/dev.rs — a comment alone is not the first-create path; without the \
-         live UPDATE, concurrent cold inserts can 23505 on idx_users_arma_id again"
+        query_sql
+            .iter()
+            .any(|p| p.contains("SET arma_id = COALESCE(arma_id")),
+        "T-560/T-562: expected live `SET arma_id = COALESCE(arma_id` inside a direct \
+         sqlx::query(\"…\") string in comment-stripped src/handlers/dev.rs — a comment, \
+         `let _decoy = \"…\"`, or format!(\"…\") alone is not the first-create path; \
+         without the live UPDATE, concurrent cold inserts can 23505 on idx_users_arma_id \
+         again (payloads: {query_sql:?})"
     );
 
     // T-560: INSERT must leave arma_id NULL (not a `$N` bind stamp, not a quoted literal).
