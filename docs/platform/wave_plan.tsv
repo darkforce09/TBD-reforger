@@ -357,3 +357,5 @@
 3	T-556	Gate depends on rg, installed nowhere; two dead fail-open scripts	scripts/mod/verify-t456-mission-rest-size-gate.sh; scripts/mod/verify-t437-destroy-inert-diagnostics.sh; scripts/mod/verify-t296-results-reporter-identity-comments.sh; scripts/mod/verify-t452-player-identity-link-comments.sh
 63	T-557	dev-login 500s: ON CONFLICT cannot arbitrate idx_users_arma_id	apps/website/api/src/handlers/dev.rs; apps/website/api/tests/common/mod.rs
 3	T-558	Test-harness residue after T-534	apps/website/api/tests/db_migrate.rs; Makefile
+99	T-559	T-554 Class-R soft contains — comment decoy stays green	apps/website/frontend/src/mission_title_prefer.rs; apps/website/frontend/src/mission_hydrate.rs
+99	T-560	T-557 Class-R hollow — comment COALESCE / bind-form race	apps/website/api/tests/common/mod.rs; apps/website/api/src/handlers/dev.rs

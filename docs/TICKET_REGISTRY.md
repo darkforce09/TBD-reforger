@@ -2838,7 +2838,7 @@ content_golden.sql comments fixed. Migration 0015 comments still claim tests/eve
 Cure: update 0015 comment block to historical past-tense or point at 0017.
 
 Repro: rg 'two-seat\|deferred' apps/website/api/migrations/0015* |
-| T-553 | 3393 | running | platform | TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual) | FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.
+| T-553 | 3393 | shipped | platform | TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual) | FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.
 
 T-419 closed open-schema lore in TBD_ObjectiveRules.c + TBD_MissionLoader.c, but TBD_ZoneRegistry.c:39 still says:
   //! `rules.penalty` vocabulary. Additive under the schema's `additionalProperties: true`.
@@ -2848,7 +2848,7 @@ Live pin: packages/tbd-schema/schema/mission.schema.json $defs.zoneRules.additio
 Repro:
   rg -n 'additionalProperties: true' apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
   # expect hit at line 39; schema says false. |
-| T-554 | 3394 | running | platform | T-418 FE hydrate→briefing wire has no Class-R pin (core only) | FOUND by W62 adversarial verifier (DIRTY MINOR) after T-418.
+| T-554 | 3394 | shipped | platform | T-418 FE hydrate→briefing wire has no Class-R pin (core only) | FOUND by W62 adversarial verifier (DIRTY MINOR) after T-418.
 
 mission_hydrate.rs threads MissionDetail.briefing into apply_row_meta via opt(&row.briefing). Core Class-R t418_apply_row_meta_threads_briefing_into_meta covers apply_row_meta/compile_export, not the FE call site.
 
@@ -2934,7 +2934,7 @@ SCOPE: verify-t456, verify-t437, verify-t296, verify-t452, plus a sweep of scrip
 and scripts/platform/*.sh for any other `rg` use or `if grep ...; then fail; fi` shape. Decide
 deliberately whether the two dead scripts get wired into the gate or deleted -- do not leave them
 dead AND broken. |
-| T-557 | 3410 | running | platform | dev-login 500s on concurrent first use: ON CONFLICT (discord_id) cannot arbitrate idx_users_arma_id | A REAL APPLICATION DEFECT, found by T-534 while chasing a flaky gate. T-534 removed it from the TEST
+| T-557 | 3410 | shipped | platform | dev-login 500s on concurrent first use: ON CONFLICT (discord_id) cannot arbitrate idx_users_arma_id | A REAL APPLICATION DEFECT, found by T-534 while chasing a flaky gate. T-534 removed it from the TEST
 path with a serialised prime; the handler is unchanged and a real client still hits it.
 
 `apps/website/api/src/handlers/dev.rs:41` INSERTs a user with a FIXED `arma_id`
@@ -2983,6 +2983,21 @@ Update it in the same commit rather than deleting it. |
 4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`
    rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --
    recorded so nobody rediscovers it as new. |
+| T-559 | 3412 | deferred | platform | T-554 Class-R soft contains — comment decoy opt(&row.briefing) stays green | FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.
+
+hydrate_wires_row_briefing_into_apply_row_meta only asserts body.contains("opt(&row.briefing)").
+W62 None mutation FAILS (good). Both wires → None + `// decoy opt(&row.briefing)` inside each fn → PASS.
+
+Repro: in mission_hydrate.rs replace both opt(&row.briefing) with None but leave a comment containing the substring in adopt_payload and apply_row; cargo test -p website-frontend hydrate_wires_row_briefing still green. |
+| T-560 | 3413 | deferred | platform | T-557 Class-R hollow — comment COALESCE / bind-form INSERT still races | FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.
+
+t534_dev_login_prime_literals_still_match_handler greps COALESCE(arma_id and bans only the literal '', 'dev-arma-…' stamp.
+Comment `// COALESCE(arma_id` + remove real UPDATE → PASS.
+INSERT arma_id = $3 + comment COALESCE (no real UPDATE) → PASS; barrier probe 3× idx_users_arma_id hits.
+
+Product NULL+COALESCE path holds (0 race hits). Pin does not.
+
+Repro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

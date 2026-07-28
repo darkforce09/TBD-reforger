@@ -14288,7 +14288,7 @@
         "docs",
         "mod"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3393,
       "executor": "claude-code",
       "priority": 2,
@@ -14310,7 +14310,7 @@
         "tests",
         "mission-authoring"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3394,
       "executor": "claude-code",
       "priority": 2,
@@ -14372,7 +14372,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3410,
       "stream": "web-platform",
       "targets": [
@@ -14400,6 +14400,50 @@
       ],
       "executor": "claude-code",
       "priority": 2
+    },
+    {
+      "id": "T-559",
+      "title": "T-554 Class-R soft contains \u2014 comment decoy opt(&row.briefing) stays green",
+      "summary": "FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.\n\nhydrate_wires_row_briefing_into_apply_row_meta only asserts body.contains(\"opt(&row.briefing)\").\nW62 None mutation FAILS (good). Both wires \u2192 None + `// decoy opt(&row.briefing)` inside each fn \u2192 PASS.\n\nRepro: in mission_hydrate.rs replace both opt(&row.briefing) with None but leave a comment containing the substring in adopt_payload and apply_row; cargo test -p website-frontend hydrate_wires_row_briefing still green.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "mission-authoring"
+      ],
+      "status": "deferred",
+      "order": 3412,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-560",
+      "title": "T-557 Class-R hollow \u2014 comment COALESCE / bind-form INSERT still races",
+      "summary": "FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.\n\nt534_dev_login_prime_literals_still_match_handler greps COALESCE(arma_id and bans only the literal '', 'dev-arma-\u2026' stamp.\nComment `// COALESCE(arma_id` + remove real UPDATE \u2192 PASS.\nINSERT arma_id = $3 + comment COALESCE (no real UPDATE) \u2192 PASS; barrier probe 3\u00d7 idx_users_arma_id hits.\n\nProduct NULL+COALESCE path holds (0 race hits). Pin does not.\n\nRepro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "auth"
+      ],
+      "status": "deferred",
+      "order": 3413,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
     }
   ]
 }
