@@ -339,7 +339,7 @@
 52	T-538	flatten-orbat-slots stdout path still drops loadout/uid	xtask/src/schema_gates.rs
 52	T-539	T-538 Class-R must pin stdout flatten entrypoint	xtask/src/schema_gates.rs
 99	T-540	T-384 Class-R only — no IT for attendance retract on re-point	apps/website/api/tests/telemetry.rs; apps/website/api/src/handlers/telemetry.rs
-64	T-541	SpawnManager never calls IsComplete after T-415	apps/mod/tbd-framework/Scripts/Game/TBD; apps/website/frontend/src/arsenal_rules.rs
+64	T-541	SpawnManager never calls IsComplete after T-415	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c; apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c; apps/website/frontend/src/arsenal_rules.rs
 54	T-542	T-381 incomplete — wire require_test_database_url into every IT binary	apps/website/api/tests
 55	T-543	mcpd-bin.sh still echoes shared target/debug/mcpd path	scripts/mod/lib/mcpd-bin.sh; scripts/mod/mcp-call-selftest.sh
 56	T-544	T-532 Class-R only — no HTTP IT for set-current	apps/website/api/tests/missions.rs; apps/website/api/src/handlers/missions.rs
