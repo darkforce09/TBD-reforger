@@ -3019,17 +3019,17 @@ Repro: remove COALESCE UPDATE; add string/format! decoy with the needle; Class-R
 Automatic LOBBY entry is gated by loadout settle/IsComplete refuse. SetStage(LOBBY) via admin is not. Deploy still DENIED on m_bLoadoutDeliveryRefused; possession cannot proceed — stage chrome can open.
 
 Repro: refuse loadout delivery at spawn boundary; admin #stage LOBBY; UI stage advances; DeployPlayerInternal still DENIED. |
-| T-564 | 3417 | deferred | platform | T-561 Class-R still hollow — dead let _ = opt(&row.briefing) decoy | FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-561.
+| T-564 | 3417 | running | platform | T-561 Class-R still hollow — dead let _ = opt(&row.briefing) decoy | FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-561.
 
 Strip of // /* */ and strings works for those decoys. Replace both live apply_row_meta args with None and add dead `let _ = opt(&row.briefing);` in adopt_payload/apply_row → hydrate_wires_row_briefing_into_apply_row_meta stays GREEN. Pin greps substring, does not require it as an apply_row_meta argument.
 
 Repro: None both briefing args + dead let binding of opt(&row.briefing); cargo test green. |
-| T-565 | 3418 | deferred | platform | T-562 Class-R still hollow — COALESCE needle in unrelated sqlx::query string | FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-562.
+| T-565 | 3418 | running | platform | T-562 Class-R still hollow — COALESCE needle in unrelated sqlx::query string | FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-562.
 
 Drop the COALESCE UPDATE; replace with executed `sqlx::query("SELECT 1 -- SET arma_id = COALESCE(arma_id, $2) decoy")` → t534_dev_login_prime_literals_still_match_handler stays GREEN. Any sqlx::query("…") payload containing the needle is enough; need not be the first-create UPDATE.
 
 Repro: delete COALESCE UPDATE; add SELECT query string with needle in SQL comment; Class-R green. |
-| T-566 | 3419 | deferred | platform | T-387 Class-R hollow — comment-arm / ignore-helper still greens (live IT covers) | FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-387.
+| T-566 | 3419 | running | platform | T-387 Class-R hollow — comment-arm / ignore-helper still greens (live IT covers) | FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-387.
 
 t387_dev_login_roles_use_distinct_discord_ids stays GREEN if live match arms are moved into // comments and match collapses to DEV_USER_ID, or if discord_id = DEV_USER_ID while helpers remain as dead code. Live IT t387_dev_login_roles_do_not_rewrite_each_other goes RED on both (product covered when ITs run; Class-R is not).
 
