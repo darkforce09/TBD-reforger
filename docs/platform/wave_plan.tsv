@@ -364,4 +364,4 @@
 99	T-563	T-541 admin #stage LOBBY bypasses TickRosterSettle refuse	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c; apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c
 66	T-564	T-561 Class-R hollow — dead let opt(&row.briefing) decoy	apps/website/frontend/src/mission_title_prefer.rs
 66	T-565	T-562 Class-R hollow — COALESCE in unrelated sqlx::query	apps/website/api/tests/common/mod.rs
-66	T-566	T-387 Class-R hollow — comment-arm / ignore-helper	apps/website/api/tests/misc_integration.rs; apps/website/api/src/handlers/dev.rs
+66	T-566	T-387 Class-R hollow — comment-arm / ignore-helper	apps/website/api/tests/misc_integration.rs
