@@ -519,6 +519,10 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! starts async dress passes; entering LOBBY before IsComplete answers was the residual
 	//! that let incomplete delivery proceed to the lobby/deploy wave after T-415 only
 	//! ERROR-logged inside ReportVerdict. Incomplete refuse → stay in LOADING.
+	//!
+	//! T-563 — LOBBY refuse for loadout delivery / settle pending lives in
+	//! `TBD_SpawnManager.StageRefusalFor` → `SetStage`. Auto settle and admin `#stage LOBBY`
+	//! share that one gate (admin used to bypass the TickRosterSettle-only checks).
 	protected void TickRosterSettle()
 	{
 		m_iRosterSettleTicks++;
@@ -541,18 +545,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		Print(string.Format("[TBD][Spawn] roster settled=%1 assignments=%2",
 			TBD_RosterLoader.GetSettleReason(), TBD_RosterLoader.GetAssignmentCount()));
 
-		if (sm && sm.IsLoadoutDeliveryRefused())
-		{
-			Print("[TBD][Spawn] LOBBY REFUSED — loadout delivery incomplete at spawn boundary (IsComplete=0); staying in LOADING", LogLevel.ERROR);
-			return;
-		}
-
-		if (sm && sm.IsLoadoutSettlePending())
-		{
-			Print("[TBD][Spawn] LOBBY REFUSED — loadout settle still pending after roster wait ceiling; staying in LOADING", LogLevel.ERROR);
-			return;
-		}
-
+		// T-563 — refuse/pending handled inside SetStage via StageRefusalFor (same as admin).
 		SetStage(TBD_EGameStage.LOBBY);
 	}
 
