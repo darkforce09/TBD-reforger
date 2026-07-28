@@ -90,47 +90,59 @@ async fn dev_login_unknown_role_defaults_to_admin() {
     assert_eq!(v["user"]["role"], "admin");
 }
 
-/// T-566 / T-387: strip `//` and `/* */` outside string/char literals so Class-R cannot
-/// stay green when live match arms are moved into comments (W65 hollow).
+/// T-566 / T-387: strip `//` and `/* */` outside string/char/raw-string literals so Class-R
+/// cannot stay green when live match arms are moved into comments (W65 hollow).
 ///
 /// Local copy — `common::strip_rust_comments_outside_literals` is private (T-560/T-562 owns
 /// that module; do not widen).
+///
+/// T-569: lifetimes (`'static`) must not open a char-string span — that left `//` arms
+/// inside `fn … -> &'static str` bodies un-stripped (hollow green).
 fn t566_strip_rust_comments_outside_literals(src: &str) -> String {
     let bytes = src.as_bytes();
     let mut out = String::with_capacity(src.len());
     let mut i = 0;
-    let mut in_string = false;
-    let mut string_delim = b'"';
     while i < bytes.len() {
-        let c = bytes[i];
-        if in_string {
-            out.push(c as char);
-            if c == b'\\' && i + 1 < bytes.len() {
-                out.push(bytes[i + 1] as char);
-                i += 2;
+        // Raw / byte / plain strings — copy whole literal (no comment strip inside).
+        if let Some((_cs, _ce, full_end)) = t569_string_literal_span(bytes, i) {
+            out.push_str(&src[i..full_end]);
+            i = full_end;
+            continue;
+        }
+        // Lifetimes (`'static`, `'a`) — emit `'` only; do not enter char-lit mode.
+        if bytes[i] == b'\'' {
+            let next = bytes.get(i + 1).copied();
+            if next.is_some_and(|c| c.is_ascii_alphabetic() || c == b'_') {
+                out.push('\'');
+                i += 1;
                 continue;
             }
-            if c == string_delim {
-                in_string = false;
+            // Real char literal — copy through.
+            out.push('\'');
+            i += 1;
+            while i < bytes.len() {
+                let c = bytes[i];
+                out.push(c as char);
+                if c == b'\\' && i + 1 < bytes.len() {
+                    out.push(bytes[i + 1] as char);
+                    i += 2;
+                    continue;
+                }
+                i += 1;
+                if c == b'\'' {
+                    break;
+                }
             }
-            i += 1;
             continue;
         }
-        if c == b'"' || c == b'\'' {
-            in_string = true;
-            string_delim = c;
-            out.push(c as char);
-            i += 1;
-            continue;
-        }
-        if c == b'/' && i + 1 < bytes.len() && bytes[i + 1] == b'/' {
+        if bytes[i] == b'/' && i + 1 < bytes.len() && bytes[i + 1] == b'/' {
             i += 2;
             while i < bytes.len() && bytes[i] != b'\n' {
                 i += 1;
             }
             continue;
         }
-        if c == b'/' && i + 1 < bytes.len() && bytes[i + 1] == b'*' {
+        if bytes[i] == b'/' && i + 1 < bytes.len() && bytes[i + 1] == b'*' {
             i += 2;
             while i + 1 < bytes.len() && !(bytes[i] == b'*' && bytes[i + 1] == b'/') {
                 i += 1;
@@ -138,10 +150,150 @@ fn t566_strip_rust_comments_outside_literals(src: &str) -> String {
             i = (i + 2).min(bytes.len());
             continue;
         }
-        out.push(c as char);
+        out.push(bytes[i] as char);
         i += 1;
     }
     out
+}
+
+/// Span of a Rust string/raw-string/byte-string starting at `i`:
+/// `(content_start, content_end, full_end)` — content is exclusive of delimiters.
+///
+/// T-569: needed so `r#" "enlisted" => … "#` decoys are recognized as one literal
+/// (naive `"` scanning splits them and leaves arm text searchable).
+fn t569_string_literal_span(bytes: &[u8], i: usize) -> Option<(usize, usize, usize)> {
+    let n = bytes.len();
+    if i > 0 {
+        let prev = bytes[i - 1];
+        if prev.is_ascii_alphanumeric() || prev == b'_' {
+            // Mid-identifier (`foo_r`, `sr"…"`) — not a string prefix at `i`.
+            return None;
+        }
+    }
+    let mut p = i;
+    // Optional `b` / `c` prefix before `r` or `"`.
+    if p < n && matches!(bytes[p], b'b' | b'c' | b'B' | b'C') {
+        if p + 1 < n && matches!(bytes[p + 1], b'r' | b'R' | b'"') {
+            p += 1;
+        } else {
+            return None;
+        }
+    }
+    let mut raw = false;
+    if p < n && matches!(bytes[p], b'r' | b'R') {
+        raw = true;
+        p += 1;
+    }
+    let mut hashes = 0usize;
+    if raw {
+        while p < n && bytes[p] == b'#' {
+            hashes += 1;
+            p += 1;
+        }
+    }
+    if p >= n || bytes[p] != b'"' {
+        return None;
+    }
+    let content_start = p + 1;
+    if raw {
+        // Closer is `"` + the same number of `#`.
+        let mut q = content_start;
+        while q < n {
+            if bytes[q] == b'"' {
+                let mut h = 0usize;
+                while q + 1 + h < n && bytes[q + 1 + h] == b'#' {
+                    h += 1;
+                }
+                if h == hashes {
+                    return Some((content_start, q, q + 1 + hashes));
+                }
+            }
+            q += 1;
+        }
+        None
+    } else {
+        let mut q = content_start;
+        while q < n {
+            if bytes[q] == b'\\' && q + 1 < n {
+                q += 2;
+                continue;
+            }
+            if bytes[q] == b'"' {
+                return Some((content_start, q, q + 1));
+            }
+            q += 1;
+        }
+        None
+    }
+}
+
+/// T-569 / W66: blank interiors of string / raw-string literals **except** when the
+/// literal is a match-arm pattern (followed by `=>`).
+///
+/// Comment strip alone keeps Class-R green when live arms collapse to `_` and the
+/// old arms live only inside `r#" "enlisted" => … "#` decoys (string contents survive
+/// comment strip). Blanking non-pattern string interiors removes that hollow while
+/// keeping real `"enlisted" => DEV_…` arms searchable.
+fn t569_blank_string_contents_except_match_patterns(src: &str) -> String {
+    let bytes = src.as_bytes();
+    let mut out = String::with_capacity(src.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if let Some((content_start, content_end, full_end)) = t569_string_literal_span(bytes, i) {
+            let mut j = full_end;
+            while j < bytes.len() && bytes[j].is_ascii_whitespace() {
+                j += 1;
+            }
+            let is_match_pattern = j + 1 < bytes.len() && bytes[j] == b'=' && bytes[j + 1] == b'>';
+            if is_match_pattern {
+                out.push_str(&src[i..full_end]);
+            } else {
+                out.push_str(&src[i..content_start]);
+                for _ in content_start..content_end {
+                    out.push(' ');
+                }
+                out.push_str(&src[content_end..full_end]);
+            }
+            i = full_end;
+            continue;
+        }
+        // Char literals — copy through (match arms use `"…"` patterns).
+        // Lifetimes (`'static`, `'a`) look like a leading `'` + ident; do NOT swallow them
+        // as char lits (that would skip the rest of the fn and leave decoys unblanked).
+        if bytes[i] == b'\'' {
+            let next = bytes.get(i + 1).copied();
+            if next.is_some_and(|c| c.is_ascii_alphabetic() || c == b'_') {
+                out.push('\'');
+                i += 1;
+                continue;
+            }
+            out.push('\'');
+            i += 1;
+            while i < bytes.len() {
+                let c = bytes[i];
+                out.push(c as char);
+                if c == b'\\' && i + 1 < bytes.len() {
+                    out.push(bytes[i + 1] as char);
+                    i += 2;
+                    continue;
+                }
+                i += 1;
+                if c == b'\'' {
+                    break;
+                }
+            }
+            continue;
+        }
+        out.push(bytes[i] as char);
+        i += 1;
+    }
+    out
+}
+
+/// Fn-body view for match-arm Class-R: comment-stripped, then non-pattern string
+/// interiors blanked (T-569 raw-string decoy).
+fn t569_live_match_view(fn_body: &str) -> String {
+    t569_blank_string_contents_except_match_patterns(fn_body)
 }
 
 /// Brace-balanced body of `fn {name}` in comment-stripped source (opening `{` … matching `}`).
@@ -157,30 +309,36 @@ fn t566_fn_body<'a>(code: &'a str, name: &str) -> &'a str {
     let bytes = after.as_bytes();
     let mut depth = 0i32;
     let mut i = open;
-    let mut in_string = false;
-    let mut string_delim = b'"';
     while i < bytes.len() {
-        let c = bytes[i];
-        if in_string {
-            if c == b'\\' && i + 1 < bytes.len() {
-                i += 2;
+        // Skip whole string / raw-string literals (T-569: braces inside r#"…"#).
+        if let Some((_cs, _ce, full_end)) = t569_string_literal_span(bytes, i) {
+            i = full_end;
+            continue;
+        }
+        if bytes[i] == b'\'' {
+            let next = bytes.get(i + 1).copied();
+            if next.is_some_and(|c| c.is_ascii_alphabetic() || c == b'_') {
+                i += 1; // lifetime
                 continue;
             }
-            if c == string_delim {
-                in_string = false;
+            // Char literal.
+            i += 1;
+            while i < bytes.len() {
+                let c = bytes[i];
+                if c == b'\\' && i + 1 < bytes.len() {
+                    i += 2;
+                    continue;
+                }
+                i += 1;
+                if c == b'\'' {
+                    break;
+                }
             }
-            i += 1;
             continue;
         }
-        if c == b'"' || c == b'\'' {
-            in_string = true;
-            string_delim = c;
-            i += 1;
-            continue;
-        }
-        if c == b'{' {
+        if bytes[i] == b'{' {
             depth += 1;
-        } else if c == b'}' {
+        } else if bytes[i] == b'}' {
             depth -= 1;
             if depth == 0 {
                 return &after[open..=i];
@@ -197,9 +355,11 @@ fn t566_fn_body<'a>(code: &'a str, name: &str) -> &'a str {
 /// - delete a role-specific literal, OR
 /// - collapse `discord_id_for_role` / `arma_id_for_role` so a role arm no longer binds its
 ///   dedicated constant (dead literals alone must not keep this green — measured hollow), OR
-/// - move live match arms into `//` comments (T-566 W65 hollow — greps raw source), OR
+/// - move live match arms into `//` / `/* */` comments (T-566 W65 hollow — greps raw source), OR
 /// - bind `discord_id = DEV_USER_ID` / `arma_id = DEV_ARMA_ID` at the call site while helpers
-///   remain as dead code (T-566 ignore-helper hollow).
+///   remain as dead code (T-566 ignore-helper hollow), OR
+/// - park arms only inside `r#" "enlisted" => … "#` (or plain string) decoys while the live
+///   match collapses to `_` (T-569 W66 hollow — comment strip keeps string contents).
 ///
 /// Pre-T-387 a single `…001` / single arma literal was the measured fold.
 #[test]
@@ -244,18 +404,20 @@ fn t387_dev_login_roles_use_distinct_discord_ids() {
         "T-387: expected arma_id_for_role helper — literals alone are not the contract"
     );
 
-    // Live arms inside the helpers (comment-stripped) — commented-out arms must go red (T-566).
-    let discord_body = t566_fn_body(&code, "discord_id_for_role");
-    let arma_body = t566_fn_body(&code, "arma_id_for_role");
+    // Live arms inside the helpers — comment-stripped (T-566) then non-pattern string
+    // interiors blanked (T-569) so raw-string decoys cannot green.
+    let discord_live = t569_live_match_view(t566_fn_body(&code, "discord_id_for_role"));
+    let arma_live = t569_live_match_view(t566_fn_body(&code, "arma_id_for_role"));
     for arm in [
         "\"enlisted\" => DEV_USER_ID_ENLISTED",
         "\"leader\" => DEV_USER_ID_LEADER",
         "\"mission_maker\" => DEV_USER_ID_MISSION_MAKER",
     ] {
         assert!(
-            discord_body.contains(arm),
-            "T-387/T-566: expected live role arm `{arm}` inside comment-stripped \
-             discord_id_for_role — commented-out arms reintroduce the single-id fold"
+            discord_live.contains(arm),
+            "T-387/T-566/T-569: expected live role arm `{arm}` inside discord_id_for_role \
+             (comment-stripped + non-pattern strings blanked) — commented-out arms or \
+             r#\" … \"# decoys reintroduce the single-id fold"
         );
     }
     for arm in [
@@ -264,9 +426,10 @@ fn t387_dev_login_roles_use_distinct_discord_ids() {
         "\"mission_maker\" => DEV_ARMA_ID_MISSION_MAKER",
     ] {
         assert!(
-            arma_body.contains(arm),
-            "T-387/T-566: expected live role arm `{arm}` inside comment-stripped \
-             arma_id_for_role — commented-out arms reintroduce the single-id fold"
+            arma_live.contains(arm),
+            "T-387/T-566/T-569: expected live role arm `{arm}` inside arma_id_for_role \
+             (comment-stripped + non-pattern strings blanked) — commented-out arms or \
+             r#\" … \"# decoys reintroduce the single-id fold"
         );
     }
 
@@ -293,6 +456,82 @@ fn t387_dev_login_roles_use_distinct_discord_ids() {
     assert!(
         !src.contains("'', 'dev-arma-76561190000000001'"),
         "T-387: must not reintroduce fixed arma_id as INSERT VALUES literal"
+    );
+}
+
+/// T-569: raw-string (and plain-string) arm decoys must not satisfy the match-arm pin;
+/// live `"role" => CONST` arms must still be visible.
+#[test]
+fn t569_raw_string_arm_decoy_is_blanked_live_arms_kept() {
+    // Build the W66 hollow shape via concat! (nested raw strings break a surrounding r#").
+    let decoy = concat!(
+        "fn discord_id_for_role(role: &str) -> &'static str {\n",
+        "    let _decoy = r#\"\n",
+        "        \"enlisted\" => DEV_USER_ID_ENLISTED,\n",
+        "        \"leader\" => DEV_USER_ID_LEADER,\n",
+        "        \"mission_maker\" => DEV_USER_ID_MISSION_MAKER,\n",
+        "    \"#;\n",
+        "    match role {\n",
+        "        _ => DEV_USER_ID,\n",
+        "    }\n",
+        "}\n",
+    );
+    let live = concat!(
+        "fn discord_id_for_role(role: &str) -> &'static str {\n",
+        "    match role {\n",
+        "        \"enlisted\" => DEV_USER_ID_ENLISTED,\n",
+        "        \"leader\" => DEV_USER_ID_LEADER,\n",
+        "        \"mission_maker\" => DEV_USER_ID_MISSION_MAKER,\n",
+        "        _ => DEV_USER_ID,\n",
+        "    }\n",
+        "}\n",
+    );
+    let arms = [
+        "\"enlisted\" => DEV_USER_ID_ENLISTED",
+        "\"leader\" => DEV_USER_ID_LEADER",
+        "\"mission_maker\" => DEV_USER_ID_MISSION_MAKER",
+    ];
+
+    // Sanity: pre-T-569 comment-strip-only view stays hollow-green on the decoy.
+    for arm in arms {
+        assert!(
+            decoy.contains(arm),
+            "fixture sanity: decoy must embed `{arm}` before blanking"
+        );
+    }
+
+    let decoy_view = t569_live_match_view(decoy);
+    let live_view = t569_live_match_view(live);
+    for arm in arms {
+        assert!(
+            !decoy_view.contains(arm),
+            "T-569: raw-string arm decoy must go RED after blanking; still found `{arm}` in:\n{decoy_view}"
+        );
+        assert!(
+            live_view.contains(arm),
+            "T-569: live match arm `{arm}` must stay visible (do not false-red valid binds)"
+        );
+    }
+
+    // Comment-arm attack (T-566) still RED on the live-match view after comment strip.
+    let commented = concat!(
+        "fn discord_id_for_role(role: &str) -> &'static str {\n",
+        "    match role {\n",
+        "        // \"enlisted\" => DEV_USER_ID_ENLISTED,\n",
+        "        /* \"leader\" => DEV_USER_ID_LEADER, */\n",
+        "        _ => DEV_USER_ID,\n",
+        "    }\n",
+        "}\n",
+    );
+    let commented_view =
+        t569_live_match_view(&t566_strip_rust_comments_outside_literals(commented));
+    assert!(
+        !commented_view.contains("\"enlisted\" => DEV_USER_ID_ENLISTED"),
+        "T-566/T-569: // comment-arm must stay RED"
+    );
+    assert!(
+        !commented_view.contains("\"leader\" => DEV_USER_ID_LEADER"),
+        "T-566/T-569: /* */ comment-arm must stay RED"
     );
 }
 
