@@ -1,6 +1,6 @@
 //! T-522 / T-505 — prefer non-blank payload title over a stale missions-row title.
-//! T-554 / T-559 — native Class-R ratchet for the FE hydrate→`apply_row_meta` briefing wire
-//! (`opt(&row.briefing)` in `adopt_payload` / `apply_row`).
+//! T-554 / T-559 / T-561 / T-564 — native Class-R ratchet for the FE hydrate→
+//! `apply_row_meta` briefing wire (`opt(&row.briefing)` in `adopt_payload` / `apply_row`).
 //!
 //! Pure helper extracted from `mission_hydrate` so Class-R runs on native
 //! `cargo test -p website-frontend` (cold gate). The live hydrate glue stays
@@ -15,6 +15,9 @@
 //!
 //! T-561: `//`-only strip still left `/* opt(&row.briefing) */` and
 //! `let _ = "opt(&row.briefing)";` green. Strip block comments + string literals too.
+//!
+//! T-564: strip still left `let _ = opt(&row.briefing);` + `None` args green. Require the
+//! needle inside a live `apply_row_meta(…)` argument list, not anywhere in the fn body.
 
 /// Non-blank trimmed top-level `title` from a compiled payload (T-375 wire emit).
 ///
@@ -183,25 +186,63 @@ mod t554_tests {
         out
     }
 
-    /// T-554 / T-559 / T-561 Class-R: FE hydrate must pass a *live* `opt(&row.briefing)` into
-    /// `apply_row_meta` (comments + string literals stripped — decoys are not enough).
+    /// Collect paren-balanced argument lists of every `apply_row_meta(` call in `body`.
+    ///
+    /// Used so a dead `let _ = opt(&row.briefing);` cannot false-green the pin (T-564): the
+    /// needle must appear *inside* an `apply_row_meta(…)` argument list.
+    fn apply_row_meta_arg_lists(body: &str) -> Vec<&str> {
+        const CALL: &str = "apply_row_meta(";
+        let mut out = Vec::new();
+        let mut from = 0;
+        while let Some(rel) = body[from..].find(CALL) {
+            let args_start = from + rel + CALL.len();
+            let bytes = body.as_bytes();
+            let mut depth = 1usize;
+            let mut i = args_start;
+            while i < body.len() && depth > 0 {
+                match bytes[i] {
+                    b'(' => depth += 1,
+                    b')' => depth -= 1,
+                    _ => {}
+                }
+                i += 1;
+            }
+            if depth == 0 {
+                out.push(&body[args_start..i - 1]);
+            }
+            from = i;
+        }
+        out
+    }
+
+    fn live_apply_row_meta_arg_contains(body: &str, needle: &str) -> bool {
+        apply_row_meta_arg_lists(body)
+            .into_iter()
+            .any(|args| args.contains(needle))
+    }
+
+    /// T-554 / T-559 / T-561 / T-564 Class-R: FE hydrate must pass a *live*
+    /// `opt(&row.briefing)` as an `apply_row_meta` argument (comments + string literals
+    /// stripped; a dead `let _ = …` binding is not enough).
     ///
     /// RED (W62): replace both `opt(&row.briefing)` with `None`.
     /// RED (W63 decoy): both → `None` + leave `// … opt(&row.briefing)` in each fn body.
     /// RED (W64 decoy): both → `None` + `/* opt(&row.briefing) */` or `let _ = "…";`.
+    /// RED (W65 decoy): both → `None` + dead `let _ = opt(&row.briefing);`.
     #[test]
     fn hydrate_wires_row_briefing_into_apply_row_meta() {
         const SRC: &str = include_str!("mission_hydrate.rs");
         let production = SRC.split("#[cfg(test)]").next().unwrap_or(SRC);
         let adopt = strip_rust_comments_and_strings(fn_body(production, "fn adopt_payload("));
         let apply = strip_rust_comments_and_strings(fn_body(production, "fn apply_row("));
+        const NEEDLE: &str = "opt(&row.briefing)";
         assert!(
-            adopt.contains("opt(&row.briefing)"),
-            "adopt_payload must pass live opt(&row.briefing) into apply_row_meta; got:\n{adopt}"
+            live_apply_row_meta_arg_contains(&adopt, NEEDLE),
+            "adopt_payload must pass live opt(&row.briefing) as an apply_row_meta argument; got:\n{adopt}"
         );
         assert!(
-            apply.contains("opt(&row.briefing)"),
-            "apply_row must pass live opt(&row.briefing) into apply_row_meta; got:\n{apply}"
+            live_apply_row_meta_arg_contains(&apply, NEEDLE),
+            "apply_row must pass live opt(&row.briefing) as an apply_row_meta argument; got:\n{apply}"
         );
     }
 }
