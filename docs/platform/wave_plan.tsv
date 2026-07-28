@@ -371,3 +371,6 @@
 99	T-570	T-567 Class-R hollow — other unreachable shapes	apps/website/frontend/src/mission_title_prefer.rs
 99	T-571	T-568 Class-R hollow — nested dev_login / dollar-quote	apps/website/api/tests/common/mod.rs
 99	T-572	T-569 Class-R hollow — cfg(any()) match arms	apps/website/api/tests/misc_integration.rs
+99	T-573	Mixed drag vehicle GPU preview still slots-only	apps/website/frontend/src/mission_editor.rs; crates/map-engine-render
+99	T-574	T-491 host Class-R soft include_str	crates/map-engine-core/src/doc/store.rs
+99	T-575	wave.sh dead MIGRATE_TEST_DATABASE_URL	scripts/platform/wave.sh

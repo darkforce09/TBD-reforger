@@ -2617,7 +2617,7 @@ Repro:
   # observes 3 forever while wave-3 deferreds exist
 
 Cure: do not key default N solely on current_wave() while deferred residue can pin an old plan wave. Prefer (1) TBD_GATE_WAVE, (2) committed packing counter docs/platform/factory_pack_wave (integer; command center bumps on promote), (3) only then current_wave(). Seed factory_pack_wave to 35. Keep prune last-two + operator URL overrides. |
-| T-491 | 3330 | running | platform | T-425 mixed slot+vehicle drag commits two undo txns; pick/marquee untested | Wave 35 adversarial MAJOR (deferred). mission_editor Move commit calls move_entities(slots) then move_vehicles(vehs) — each its own yrs txn — so one mixed gesture needs two Ctrl+Z. New pick_slot_or_vehicle / marquee_* helpers have no unit tests (only flatten/kit Class-R). Vehicle drag also skips GPU set_drag preview (slots only).
+| T-491 | 3330 | shipped | platform | T-425 mixed slot+vehicle drag commits two undo txns; pick/marquee untested | Wave 35 adversarial MAJOR (deferred). mission_editor Move commit calls move_entities(slots) then move_vehicles(vehs) — each its own yrs txn — so one mixed gesture needs two Ctrl+Z. New pick_slot_or_vehicle / marquee_* helpers have no unit tests (only flatten/kit Class-R). Vehicle drag also skips GPU set_drag preview (slots only).
 
 Repro: select one slot + one vehicle, drag, undo once — only one kind moves back.
 
@@ -2961,7 +2961,7 @@ can never disagree. T-534 pinned the current literals with a Class-R test
 (`t534_dev_login_prime_literals_still_match_handler`) that greps dev.rs for both the literals AND the
 `ON CONFLICT (discord_id) DO UPDATE` shape -- IT WILL GO RED when you change this, deliberately.
 Update it in the same commit rather than deleting it. |
-| T-558 | 3411 | running | platform | Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB | Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
+| T-558 | 3411 | shipped | platform | Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB | Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
 
 1. `apps/website/api/src/services/registry_import.rs:455` -- a THIRTIETH database consumer that the
    T-542 Class-R guard cannot see. An in-crate `#[tokio::test]` reads TEST_DATABASE_URL raw and
@@ -3014,7 +3014,7 @@ Delete live UPDATE + leave needle in let _decoy = "…" or format!("…") → PA
 Claimed // + bind attacks still RED.
 
 Repro: remove COALESCE UPDATE; add string/format! decoy with the needle; Class-R green; concurrent cold race can return. |
-| T-563 | 3416 | running | platform | T-541 admin #stage LOBBY bypasses TickRosterSettle loadout refuse | FOUND by W64 adversarial verifier (DIRTY MINOR\|NIT) after T-541.
+| T-563 | 3416 | shipped | platform | T-541 admin #stage LOBBY bypasses TickRosterSettle loadout refuse | FOUND by W64 adversarial verifier (DIRTY MINOR\|NIT) after T-541.
 
 Automatic LOBBY entry is gated by loadout settle/IsComplete refuse. SetStage(LOBBY) via admin is not. Deploy still DENIED on m_bLoadoutDeliveryRefused; possession cannot proceed — stage chrome can open.
 
@@ -3064,6 +3064,27 @@ Repro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R gr
 r#/br#/concat decoys RED. Still GREEN: `#[cfg(any())] match { live arms }` + `#[cfg(not(any()))] match { _ }` or cfg on each role arm with live `_`.
 
 Repro: cfg-out live arms; leave `_ => DEV_USER_ID` live; Class-R green. |
+| T-573 | 3426 | deferred | platform | Mixed drag: vehicle GPU preview still slots-only (set_drag SoA) | FOUND by W68 adversarial verifier (CLEAN NIT) after T-491, and admitted by the slice agent.
+
+`move_entities_and_vehicles` commits mixed drag in one LOCAL yrs txn, but live drag preview still filters vehicles out of `engine.set_drag` (`mission_editor.rs` ~1125–1134). `set_drag` is slot-SoA only in map-engine-render (outside T-491 owns).
+
+Repro: select one slot + one vehicle; drag — vehicle glyph stays put until release; slot previews. Commit still moves both; undo is one step.
+
+Cure: extend drag preview / set_drag for vehicles (map-engine-render + host), or document as wontfix. |
+| T-574 | 3427 | deferred | platform | T-491 host Class-R soft include_str — comment-only move_entities_and_vehicles survives | FOUND by W68 adversarial verifier (CLEAN NIT) after T-491.
+
+`select_tool_and_mission_editor_delegate_to_atomic_mix_apis` (store.rs ~2912–2940) only string-presence / Move-arm absence checks via include_str. A comment-only `move_entities_and_vehicles` mention would keep the pin green; it also does not pin that mission_editor calls pick_slot_or_vehicle / marquee_* helpers.
+
+Behavioral one-undo Class-R is real and PASS. Soft host-delegation pin is the residue.
+
+Repro: replace live call with comment containing the symbol (or keep call but drop pick/marquee delegation asserts); soft pin stays green. |
+| T-575 | 3428 | deferred | platform | wave.sh still exports dead MIGRATE_TEST_DATABASE_URL after T-558 | FOUND by W68 adversarial verifier (CLEAN NIT) after T-558.
+
+Gate script still exports `MIGRATE_TEST_DATABASE_URL` (wave.sh ~341). `db_migrate` / `models_fromrow` now use per-binary provision and no longer read it. Harmless leftover — not a silent gate skip.
+
+Repro: rg MIGRATE_TEST_DATABASE_URL in wave.sh vs api tests; export is live, consumers gone.
+
+Cure: drop the dead export (and any docs that still describe the shared migrate URL). |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

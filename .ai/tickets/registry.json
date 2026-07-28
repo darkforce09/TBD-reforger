@@ -12928,7 +12928,7 @@
         "website",
         "tests"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3330,
       "stream": "web-platform",
       "targets": [
@@ -14392,7 +14392,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3411,
       "stream": "web-platform",
       "targets": [
@@ -14501,7 +14501,7 @@
         "mod",
         "security"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3416,
       "executor": "claude-code",
       "priority": 2,
@@ -14703,6 +14703,73 @@
       "order": 3425,
       "executor": "claude-code",
       "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-573",
+      "title": "Mixed drag: vehicle GPU preview still slots-only (set_drag SoA)",
+      "summary": "FOUND by W68 adversarial verifier (CLEAN NIT) after T-491, and admitted by the slice agent.\n\n`move_entities_and_vehicles` commits mixed drag in one LOCAL yrs txn, but live drag preview still filters vehicles out of `engine.set_drag` (`mission_editor.rs` ~1125\u20131134). `set_drag` is slot-SoA only in map-engine-render (outside T-491 owns).\n\nRepro: select one slot + one vehicle; drag \u2014 vehicle glyph stays put until release; slot previews. Commit still moves both; undo is one step.\n\nCure: extend drag preview / set_drag for vehicles (map-engine-render + host), or document as wontfix.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "MAP",
+        "VEH"
+      ],
+      "impact": [
+        "mission-authoring",
+        "ui"
+      ],
+      "status": "deferred",
+      "order": 3426,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-574",
+      "title": "T-491 host Class-R soft include_str \u2014 comment-only move_entities_and_vehicles survives",
+      "summary": "FOUND by W68 adversarial verifier (CLEAN NIT) after T-491.\n\n`select_tool_and_mission_editor_delegate_to_atomic_mix_apis` (store.rs ~2912\u20132940) only string-presence / Move-arm absence checks via include_str. A comment-only `move_entities_and_vehicles` mention would keep the pin green; it also does not pin that mission_editor calls pick_slot_or_vehicle / marquee_* helpers.\n\nBehavioral one-undo Class-R is real and PASS. Soft host-delegation pin is the residue.\n\nRepro: replace live call with comment containing the symbol (or keep call but drop pick/marquee delegation asserts); soft pin stays green.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "mission-authoring"
+      ],
+      "status": "deferred",
+      "order": 3427,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-575",
+      "title": "wave.sh still exports dead MIGRATE_TEST_DATABASE_URL after T-558",
+      "summary": "FOUND by W68 adversarial verifier (CLEAN NIT) after T-558.\n\nGate script still exports `MIGRATE_TEST_DATABASE_URL` (wave.sh ~341). `db_migrate` / `models_fromrow` now use per-binary provision and no longer read it. Harmless leftover \u2014 not a silent gate skip.\n\nRepro: rg MIGRATE_TEST_DATABASE_URL in wave.sh vs api tests; export is live, consumers gone.\n\nCure: drop the dead export (and any docs that still describe the shared migrate URL).",
+      "program": "platform",
+      "surfaces": [
+        "INFRA",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "ci"
+      ],
+      "status": "deferred",
+      "order": 3428,
+      "executor": "claude-code",
+      "priority": 3,
       "stream": "web-platform",
       "targets": [
         "website"
