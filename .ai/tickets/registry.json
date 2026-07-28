@@ -14589,7 +14589,7 @@
         "tests",
         "mission-authoring"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3420,
       "executor": "claude-code",
       "priority": 2,
@@ -14611,7 +14611,7 @@
         "tests",
         "auth"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3421,
       "executor": "claude-code",
       "priority": 2,
@@ -14633,8 +14633,74 @@
         "tests",
         "auth"
       ],
-      "status": "running",
+      "status": "shipped",
       "order": 3422,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-570",
+      "title": "T-567 Class-R still hollow \u2014 unreachable if true==false / loop-break / cfg(any())",
+      "summary": "FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.\n\nExact `if false { \u2026 }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply\u2026 }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(\u2026, opt(&row.briefing)).\n\nRepro: live briefing \u2192 None; wrap decoy call in `if true == false { \u2026 }`; pin green.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "mission-authoring"
+      ],
+      "status": "deferred",
+      "order": 3423,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-571",
+      "title": "T-568 Class-R still hollow \u2014 nested fn dev_login / PG dollar-quote COALESCE",
+      "summary": "FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-568.\n\nPlain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE\u2026COALESCE\u2026$decoy$ (blanker only handles '/\").\n\nRepro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R green.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "auth"
+      ],
+      "status": "deferred",
+      "order": 3424,
+      "executor": "claude-code",
+      "priority": 2,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-572",
+      "title": "T-569 Class-R still hollow \u2014 #[cfg(any())] match arms",
+      "summary": "FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-569.\n\nr#/br#/concat decoys RED. Still GREEN: `#[cfg(any())] match { live arms }` + `#[cfg(not(any()))] match { _ }` or cfg on each role arm with live `_`.\n\nRepro: cfg-out live arms; leave `_ => DEV_USER_ID` live; Class-R green.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "tests"
+      ],
+      "impact": [
+        "tests",
+        "auth"
+      ],
+      "status": "deferred",
+      "order": 3425,
       "executor": "claude-code",
       "priority": 2,
       "stream": "web-platform",
