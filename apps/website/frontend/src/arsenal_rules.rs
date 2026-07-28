@@ -799,13 +799,15 @@ pub fn cargo_garment<'a>(
 /// is stale by design, and the wording must not pretend otherwise.
 ///
 /// What *is* measured, and what justifies blocking rather than tinting: on a cargo unit the
-/// authored container rejects, `TBD_LoadoutEquipHelper.c:1108-1145` retries into *any* storage
-/// on the character, and if nothing accepts it deletes the entity and `break`s the row's qty
-/// loop — dropping **the whole remaining quantity of that row**, not one item. It logs, then
-/// spawns the body anyway; `bool IsComplete()` (:197-200) computes the answer to "did we
-/// deliver the authored JSON" and has **zero callers repo-wide**. The operator gets a body in
-/// the field missing kit they authored and nothing tells them.
-pub const CARGO_CAPACITY_CAVEAT: &str = "Capacity is a build-time catalogue figure the game never reads back, so treat it as an estimate, not a guarantee. The failure it points at is real: at spawn, cargo the character cannot hold is silently moved to another container or dropped — the rest of that row goes with it — and nothing reports it.";
+/// authored container rejects, `TBD_LoadoutEquipHelper.c` retries into *any* storage on the
+/// character, and if nothing accepts it deletes the entity and `break`s the row's qty loop —
+/// dropping **the whole remaining quantity of that row**, not one item. Completeness is then
+/// answered by `IsComplete()`: **T-415** `ReportVerdict` ERROR-refuses an incomplete pass, and
+/// **T-541** `TBD_SpawnManager` consumes the same answer at the spawn boundary (settle after
+/// `MaterializeSlotBodies`, refuse LOBBY/deploy when `IsComplete=0`). The website capacity
+/// check is still an estimate of a figure the game never reads back — it exists so authors
+/// see the likely drop *before* the mod refuses at spawn.
+pub const CARGO_CAPACITY_CAVEAT: &str = "Capacity is a build-time catalogue figure the game never reads back, so treat it as an estimate, not a guarantee. The failure it points at is real: at spawn, cargo the character cannot hold is moved to another container or dropped — the rest of that row goes with it — and incomplete delivery is refused (IsComplete at ReportVerdict and the SpawnManager spawn boundary).";
 
 /// T-240 — the over-capacity rows, in the same [`RowError`] shape the compat faults use, so a
 /// consumer that already refuses on `validate_loadout` refuses on these too.
@@ -1296,11 +1298,17 @@ mod tests {
         // The block rides stale-by-design data: `TBD_RegistryScan.c` `DeriveCargoGrid` (:896-909)
         // is a Workbench-time export the game never reads back, and the game has no runtime
         // capacity arithmetic to agree or disagree with it. So the wording must hedge the NUMBER
-        // while staying blunt about the measured CONSEQUENCE. Dropping either half fails here.
+        // while staying blunt about the measured CONSEQUENCE (drop + IsComplete refuse at spawn).
+        // Dropping either half fails here.
         let c = CARGO_CAPACITY_CAVEAT;
         assert!(c.contains("estimate, not a guarantee"), "{c}");
         assert!(c.contains("never reads back"), "{c}");
-        assert!(c.contains("silently"), "{c}");
+        assert!(c.contains("IsComplete"), "{c}");
+        assert!(c.contains("refused"), "{c}");
+        assert!(
+            !c.contains("zero callers"),
+            "T-415/T-541: IsComplete is consumed — caveat must not claim zero callers: {c}"
+        );
         for overclaim in [
             "will not fit",
             "guaranteed",
