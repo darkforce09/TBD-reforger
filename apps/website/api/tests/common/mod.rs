@@ -148,11 +148,12 @@ const SUITE: &str = env!("CARGO_CRATE_NAME");
 /// `TEST_DATABASE_URL` is unset (the suite-skip path).
 static PER_BINARY_URL: OnceLock<Option<String>> = OnceLock::new();
 
-/// The shared `dev-login` row's `arma_id`, pinned from `src/handlers/dev.rs:44`.
+/// The shared `dev-login` row's `arma_id`, pinned from `DEV_ARMA_ID` in `src/handlers/dev.rs`.
 ///
 /// Kept honest by [`t534_dev_login_prime_literals_still_match_handler`] — if the handler's
-/// literal changes and this one does not, that Class-R goes red instead of the race quietly
-/// coming back.
+/// literal changes and this one does not, that Class-R goes red instead of the fixture quietly
+/// drifting. T-557 moved the stamp out of the INSERT (COALESCE on first create) so the race
+/// is gone in the handler; the prime still seeds the same row so ITs match production shape.
 const DEV_LOGIN_ARMA_ID: &str = "dev-arma-76561190000000001";
 
 /// Derive this binary's private database name from the operator's base name.
@@ -329,33 +330,13 @@ async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) 
 
     // ── Prime the shared dev-login row. Read this before deleting it. ──
     //
-    // `dev_login` (src/handlers/dev.rs:41) upserts with `ON CONFLICT (discord_id)`, but the
-    // same INSERT writes a FIXED `arma_id`, and `arma_id` carries its own unique index
-    // (`idx_users_arma_id`). ON CONFLICT arbitrates the discord_id index ONLY. So when two
-    // parallel tests call dev-login on a database where the row does not exist yet, both
-    // take the INSERT path, the loser collides on `idx_users_arma_id` — an index the ON
-    // CONFLICT clause does not cover — and Postgres raises 23505 instead of falling through
-    // to DO UPDATE. The handler maps that to 500 and the test dies on
-    // `dev-login did not mint a session … status: 500`.
-    //
-    // MEASURED on this tree: `cargo test -p website-api --test admin_field` alone, on a
-    // fresh database, failed 2 of 15 runs that way — once on
-    // `ban_reason_survives_a_malformed_reban`, once on
-    // `empty_snapshot_admin_survives_roles_sync`. Those are exactly the two tests the ticket
-    // recorded as failing under the gate, and the ticket's premise that they "pass in
-    // isolation" is simply what one lucky run looks like.
-    //
-    // Per-binary databases make this WORSE, not better, if left alone: before, only the
-    // first binary of a run met an empty `users` table; now every binary does. So the fix
-    // ships with the isolation, not after it.
-    //
-    // Inserting the row here — once, serialised, before any test runs — means every
-    // dev-login the binary makes finds the row and takes the DO UPDATE branch, which never
-    // touches `arma_id`. Nothing is serialised at test time and no assertion changes.
-    //
-    // The right long-term fix is in the handler (arbitrate both indexes, or stop writing a
-    // fixed arma_id); that is application source and out of this slice's scope — reported,
-    // not silently patched.
+    // Pre-T-557, `dev_login` stamped a FIXED `arma_id` into an INSERT with
+    // `ON CONFLICT (discord_id)` only. Concurrent first-time calls raced
+    // `idx_users_arma_id` (23505 → 500). T-534 serialised this prime so the IT path
+    // never hit an empty `users` table; T-557 fixed the handler (NULL insert +
+    // `COALESCE(arma_id, …)` on first create). The prime stays: ITs still want the
+    // production row shape (linked arma_id) before any test runs, and it remains
+    // defense-in-depth if a future edit reintroduces the race shape (Class-R below).
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, \
          arma_character, role, is_banned, ban_reason, last_login_at, created_at, updated_at) \
@@ -433,12 +414,12 @@ fn t534_per_binary_database_name() {
     );
 }
 
-/// Class-R (T-534): the primed row must stay byte-identical to what `dev_login` writes.
+/// Class-R (T-534 / T-557): prime literals match handler, and the handler keeps the
+/// T-557 race-free contract (fixed `arma_id` via COALESCE first-create, not INSERT stamp).
 ///
-/// The prime above exists to stop `dev_login`'s first INSERT from ever racing itself. If the
-/// handler's snowflake or `arma_id` literal changes and the prime does not, the prime stops
-/// matching, the first dev-login inserts again, and the flake returns — silently. Pin both
-/// literals against the handler source so that change is a red test instead.
+/// The prime seeds the same discord_id / arma_id the handler uses. If either literal
+/// drifts, this goes red. T-557 also pins the COALESCE first-create shape and bans the
+/// pre-fix INSERT stamp (`'', 'dev-arma-…'`) that raced `idx_users_arma_id`.
 #[test]
 fn t534_dev_login_prime_literals_still_match_handler() {
     let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/dev.rs");
@@ -447,17 +428,26 @@ fn t534_dev_login_prime_literals_still_match_handler() {
     for needle in [DEV_LOGIN_USER, DEV_LOGIN_ARMA_ID] {
         assert!(
             src.contains(needle),
-            "T-534: src/handlers/dev.rs no longer contains `{needle}`. The dev-login prime in \
-             tests/common/mod.rs seeds that exact row so parallel dev-logins cannot race \
-             idx_users_arma_id; update both together or the flake comes back."
+            "T-534/T-557: src/handlers/dev.rs no longer contains `{needle}`. The dev-login \
+             prime in tests/common/mod.rs seeds that exact row; update both together."
         );
     }
-    // The prime is only sufficient while ON CONFLICT still arbitrates discord_id (so the
-    // second and later calls take DO UPDATE and never re-touch arma_id).
     assert!(
         src.contains("ON CONFLICT (discord_id) DO UPDATE"),
-        "T-534: dev_login's upsert changed shape — re-derive whether the prime still closes \
-         the idx_users_arma_id race"
+        "T-534/T-557: dev_login's upsert lost ON CONFLICT (discord_id) DO UPDATE — re-derive \
+         the race analysis before changing the prime"
+    );
+    // T-557 contract: arma_id is filled on first create, not stamped into INSERT VALUES.
+    assert!(
+        src.contains("COALESCE(arma_id"),
+        "T-557: expected COALESCE(arma_id, …) first-create path in dev_login — without it, \
+         concurrent cold inserts can 23505 on idx_users_arma_id again"
+    );
+    // Ban the pre-T-557 race shape: quoted fixed arma_id as an INSERT value after avatar ''.
+    assert!(
+        !src.contains("'', 'dev-arma-76561190000000001'"),
+        "T-557: fixed arma_id must not appear as an INSERT VALUES literal after empty \
+         avatar_url — that is the concurrent-first-use 23505 shape"
     );
 }
 
