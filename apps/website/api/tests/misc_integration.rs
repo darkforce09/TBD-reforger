@@ -90,12 +90,116 @@ async fn dev_login_unknown_role_defaults_to_admin() {
     assert_eq!(v["user"]["role"], "admin");
 }
 
+/// T-566 / T-387: strip `//` and `/* */` outside string/char literals so Class-R cannot
+/// stay green when live match arms are moved into comments (W65 hollow).
+///
+/// Local copy — `common::strip_rust_comments_outside_literals` is private (T-560/T-562 owns
+/// that module; do not widen).
+fn t566_strip_rust_comments_outside_literals(src: &str) -> String {
+    let bytes = src.as_bytes();
+    let mut out = String::with_capacity(src.len());
+    let mut i = 0;
+    let mut in_string = false;
+    let mut string_delim = b'"';
+    while i < bytes.len() {
+        let c = bytes[i];
+        if in_string {
+            out.push(c as char);
+            if c == b'\\' && i + 1 < bytes.len() {
+                out.push(bytes[i + 1] as char);
+                i += 2;
+                continue;
+            }
+            if c == string_delim {
+                in_string = false;
+            }
+            i += 1;
+            continue;
+        }
+        if c == b'"' || c == b'\'' {
+            in_string = true;
+            string_delim = c;
+            out.push(c as char);
+            i += 1;
+            continue;
+        }
+        if c == b'/' && i + 1 < bytes.len() && bytes[i + 1] == b'/' {
+            i += 2;
+            while i < bytes.len() && bytes[i] != b'\n' {
+                i += 1;
+            }
+            continue;
+        }
+        if c == b'/' && i + 1 < bytes.len() && bytes[i + 1] == b'*' {
+            i += 2;
+            while i + 1 < bytes.len() && !(bytes[i] == b'*' && bytes[i + 1] == b'/') {
+                i += 1;
+            }
+            i = (i + 2).min(bytes.len());
+            continue;
+        }
+        out.push(c as char);
+        i += 1;
+    }
+    out
+}
+
+/// Brace-balanced body of `fn {name}` in comment-stripped source (opening `{` … matching `}`).
+fn t566_fn_body<'a>(code: &'a str, name: &str) -> &'a str {
+    let marker = format!("fn {name}");
+    let start = code.find(&marker).unwrap_or_else(|| {
+        panic!("T-566 Class-R: expected `{marker}` in comment-stripped src/handlers/dev.rs")
+    });
+    let after = &code[start..];
+    let open = after
+        .find('{')
+        .unwrap_or_else(|| panic!("T-566 Class-R: `{marker}` has no opening brace"));
+    let bytes = after.as_bytes();
+    let mut depth = 0i32;
+    let mut i = open;
+    let mut in_string = false;
+    let mut string_delim = b'"';
+    while i < bytes.len() {
+        let c = bytes[i];
+        if in_string {
+            if c == b'\\' && i + 1 < bytes.len() {
+                i += 2;
+                continue;
+            }
+            if c == string_delim {
+                in_string = false;
+            }
+            i += 1;
+            continue;
+        }
+        if c == b'"' || c == b'\'' {
+            in_string = true;
+            string_delim = c;
+            i += 1;
+            continue;
+        }
+        if c == b'{' {
+            depth += 1;
+        } else if c == b'}' {
+            depth -= 1;
+            if depth == 0 {
+                return &after[open..=i];
+            }
+        }
+        i += 1;
+    }
+    panic!("T-566 Class-R: `{marker}` body not closed");
+}
+
 /// T-387 Class-R: each role must map to a distinct discord_id (and arma_id) in `dev.rs`.
 ///
 /// Perturbation RED:
 /// - delete a role-specific literal, OR
 /// - collapse `discord_id_for_role` / `arma_id_for_role` so a role arm no longer binds its
-///   dedicated constant (dead literals alone must not keep this green — measured hollow).
+///   dedicated constant (dead literals alone must not keep this green — measured hollow), OR
+/// - move live match arms into `//` comments (T-566 W65 hollow — greps raw source), OR
+/// - bind `discord_id = DEV_USER_ID` / `arma_id = DEV_ARMA_ID` at the call site while helpers
+///   remain as dead code (T-566 ignore-helper hollow).
 ///
 /// Pre-T-387 a single `…001` / single arma literal was the measured fold.
 #[test]
@@ -103,6 +207,8 @@ fn t387_dev_login_roles_use_distinct_discord_ids() {
     let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/dev.rs");
     let src = std::fs::read_to_string(&handler)
         .unwrap_or_else(|e| panic!("T-387 Class-R: read {}: {e}", handler.display()));
+    // T-566: pins below run on comment-stripped code so `// "enlisted" => …` cannot green.
+    let code = t566_strip_rust_comments_outside_literals(&src);
 
     let discord_ids = [
         "000000000000000001", // admin / default
@@ -118,43 +224,70 @@ fn t387_dev_login_roles_use_distinct_discord_ids() {
     ];
     for id in discord_ids {
         assert!(
-            src.contains(id),
+            code.contains(id),
             "T-387: src/handlers/dev.rs missing discord_id `{id}` — each role needs its own row"
         );
     }
     for id in arma_ids {
         assert!(
-            src.contains(id),
+            code.contains(id),
             "T-387: src/handlers/dev.rs missing arma_id `{id}` — per-role COALESCE must not race \
              idx_users_arma_id"
         );
     }
     assert!(
-        src.contains("fn discord_id_for_role"),
+        code.contains("fn discord_id_for_role"),
         "T-387: expected discord_id_for_role helper — literals alone are not the contract"
     );
     assert!(
-        src.contains("fn arma_id_for_role"),
+        code.contains("fn arma_id_for_role"),
         "T-387: expected arma_id_for_role helper — literals alone are not the contract"
     );
-    // Live arms — a collapse that keeps constants as dead code must go red here.
+
+    // Live arms inside the helpers (comment-stripped) — commented-out arms must go red (T-566).
+    let discord_body = t566_fn_body(&code, "discord_id_for_role");
+    let arma_body = t566_fn_body(&code, "arma_id_for_role");
     for arm in [
         "\"enlisted\" => DEV_USER_ID_ENLISTED",
         "\"leader\" => DEV_USER_ID_LEADER",
         "\"mission_maker\" => DEV_USER_ID_MISSION_MAKER",
+    ] {
+        assert!(
+            discord_body.contains(arm),
+            "T-387/T-566: expected live role arm `{arm}` inside comment-stripped \
+             discord_id_for_role — commented-out arms reintroduce the single-id fold"
+        );
+    }
+    for arm in [
         "\"enlisted\" => DEV_ARMA_ID_ENLISTED",
         "\"leader\" => DEV_ARMA_ID_LEADER",
         "\"mission_maker\" => DEV_ARMA_ID_MISSION_MAKER",
     ] {
         assert!(
-            src.contains(arm),
-            "T-387: expected live role arm `{arm}` in src/handlers/dev.rs — dead literals \
-             without the match arm reintroduce the single-id fold"
+            arma_body.contains(arm),
+            "T-387/T-566: expected live role arm `{arm}` inside comment-stripped \
+             arma_id_for_role — commented-out arms reintroduce the single-id fold"
         );
     }
-    // Keep T-557/T-560 shape: NULL insert + live COALESCE (do not re-introduce INSERT stamp).
+
+    // Call site must *use* the helpers (T-566 ignore-helper): dead helpers + DEV_USER_ID bind
+    // must go red. Exact `let … = …(role);` — not the `fn …(role: &str)` signature.
+    let login_body = t566_fn_body(&code, "dev_login");
     assert!(
-        src.contains("SET arma_id = COALESCE(arma_id"),
+        login_body.contains("let discord_id = discord_id_for_role(role);"),
+        "T-387/T-566: dev_login must bind `let discord_id = discord_id_for_role(role);` — \
+         `discord_id = DEV_USER_ID` with helpers left dead reintroduces the single-id fold"
+    );
+    assert!(
+        login_body.contains("let arma_id = arma_id_for_role(role);"),
+        "T-387/T-566: dev_login must bind `let arma_id = arma_id_for_role(role);` — \
+         `arma_id = DEV_ARMA_ID` with helpers left dead races idx_users_arma_id again"
+    );
+
+    // Keep T-557/T-560 shape: NULL insert + live COALESCE (do not re-introduce INSERT stamp).
+    // Soft pin here; T-560/T-562 in common/mod.rs own the sqlx::query-payload COALESCE gate.
+    assert!(
+        code.contains("SET arma_id = COALESCE(arma_id"),
         "T-387: must keep T-557/T-560 live COALESCE first-create path"
     );
     assert!(
