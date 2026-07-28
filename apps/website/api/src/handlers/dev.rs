@@ -13,6 +13,10 @@ use crate::state::AppState;
 /// Stable Discord snowflake for the local dev operator.
 const DEV_USER_ID: &str = "000000000000000001";
 
+/// Stable Arma id for the local dev operator. Applied only on first create (see
+/// [`dev_login`]) so concurrent cold inserts cannot race `idx_users_arma_id`.
+const DEV_ARMA_ID: &str = "dev-arma-76561190000000001";
+
 #[derive(Debug, Deserialize)]
 pub struct DevLoginQuery {
     #[serde(default)]
@@ -38,11 +42,16 @@ pub async fn dev_login(
 
     // Upsert the dev user. On conflict, only username/handle/role/last_login/updated
     // change (matching Go's DoUpdates); avatar/arma stay as first inserted.
+    //
+    // T-557: do NOT stamp a FIXED `arma_id` into this INSERT. `ON CONFLICT (discord_id)`
+    // arbitrates only that index; concurrent first-time inserts against a cold DB both
+    // take the INSERT path and the loser trips `idx_users_arma_id` (23505 → 500). NULL
+    // is allowed many times on that unique index, so the upsert itself cannot collide.
     sqlx::query(
         "INSERT INTO users \
          (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, \
           is_banned, ban_reason, last_login_at, created_at, updated_at) \
-         VALUES ($1, 'Dev Operator', 'devoperator', '', 'dev-arma-76561190000000001', \
+         VALUES ($1, 'Dev Operator', 'devoperator', '', NULL, \
           '[TBD] Dev Operator', $2::user_role, false, '', now(), now(), now()) \
          ON CONFLICT (discord_id) DO UPDATE SET \
           username = EXCLUDED.username, discord_handle = EXCLUDED.discord_handle, \
@@ -50,6 +59,16 @@ pub async fn dev_login(
     )
     .bind(DEV_USER_ID)
     .bind(role)
+    .execute(&state.pool)
+    .await?;
+
+    // First creator fills arma_id; concurrent losers keep whatever is already there.
+    sqlx::query(
+        "UPDATE users SET arma_id = COALESCE(arma_id, $2), updated_at = now() \
+         WHERE discord_id = $1",
+    )
+    .bind(DEV_USER_ID)
+    .bind(DEV_ARMA_ID)
     .execute(&state.pool)
     .await?;
 
