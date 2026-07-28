@@ -486,8 +486,7 @@ fn sqlx_query_string_payloads(code: &str) -> Vec<String> {
             i += 1;
             continue;
         }
-        let before_ok = i == 0
-            || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_');
+        let before_ok = i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_');
         let mut j = i + key.len();
         // Reject `sqlx::query_as` / `sqlx::query_scalar` — only bare `sqlx::query(`.
         if j < bytes.len() && (bytes[j].is_ascii_alphanumeric() || bytes[j] == b'_') {
