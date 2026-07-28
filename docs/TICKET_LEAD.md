@@ -5,6 +5,39 @@
 
 ## Running / Review
 
+- **T-491** (3330) — T-425 mixed slot+vehicle drag commits two undo txns; pick/marquee untested [running] — Wave 35 adversarial MAJOR (deferred). mission_editor Move commit calls move_entities(slots) then move_vehicles(vehs) — each its own yrs txn — so one mixed gesture needs two Ctrl+Z. New pick_slot_or_vehicle / marquee_* helpers have no unit tests (only flatten/kit Class-R). Vehicle drag also skips GPU set_drag preview (slots only).
+
+Repro: select one slot + one vehicle, drag, undo once — only one kind moves back.
+
+Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/marquee helpers; optional vehicle drag preview.
+- **T-558** (3411) — Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB [running] — Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
+
+1. `apps/website/api/src/services/registry_import.rs:455` -- a THIRTIETH database consumer that the
+   T-542 Class-R guard cannot see. An in-crate `#[tokio::test]` reads TEST_DATABASE_URL raw and
+   migrates the operator's BASE database. It is the only DB test in the lib target, self-cleaning and
+   idempotent, so it is deterministic today -- and it now has the base database entirely to itself
+   because T-534 moved everything else onto per-binary DBs. The real gap:
+   `t542_no_raw_test_database_url_reads_outside_common` scans only `tests/*.rs`. Extend it to `src/`
+   and this class stops being invisible.
+
+2. `make test-it` now leaves 25 `rust_it_<suite>_it` databases behind. They are recreated per run so
+   they do not grow, but nothing prunes them -- the Makefile drops only `rust_it`. `Makefile` was
+   outside T-534's scope. (The GATE path is handled: T-534 extended `prune_old_gate_wave_dbs` in
+   wave.sh to reap derived names on the same keep-N-and-N-1 policy.)
+
+3. `tests/db_migrate.rs` and `tests/models_fromrow.rs` still SHARE one `MIGRATE_TEST_DATABASE_URL`.
+   Two binaries, one database -- the exact shape T-534 removed everywhere else. Deterministic today
+   only because cargo runs targets sequentially and both use `>=`/count assertions the sibling's rows
+   do not move. It survives on ordering, which is what this program keeps paying for.
+
+4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`
+   rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --
+   recorded so nobody rediscovers it as new.
+- **T-563** (3416) — T-541 admin #stage LOBBY bypasses TickRosterSettle loadout refuse [running] — FOUND by W64 adversarial verifier (DIRTY MINOR|NIT) after T-541.
+
+Automatic LOBBY entry is gated by loadout settle/IsComplete refuse. SetStage(LOBBY) via admin is not. Deploy still DENIED on m_bLoadoutDeliveryRefused; possession cannot proceed — stage chrome can open.
+
+Repro: refuse loadout delivery at spawn boundary; admin #stage LOBBY; UI stage advances; DeployPlayerInternal still DENIED.
 
 ## Ready
 

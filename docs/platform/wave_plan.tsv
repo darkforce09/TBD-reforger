@@ -289,7 +289,7 @@
 99	T-488	Document ROLE_RESYNC_INTERVAL_SECS in .env.example	apps/website/api/.env.example
 99	T-489	Break T-486 circular verify-t468 self-pin (direct bash CI)	Makefile; .github/workflows/ci.yml; scripts/mod/verify-t468-ci-schema-parity.sh; apps/website/api/.env.example
 99	T-490	T-411 sticky gate DB on plan wave 3	scripts/platform/wave.sh; docs/platform/factory_pack_wave
-99	T-491	T-425 mixed drag two undo txns + untested pick/marquee	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; crates/map-engine-core/src/doc/store.rs
+68	T-491	T-425 mixed drag two undo txns + untested pick/marquee	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; crates/map-engine-core/src/doc/store.rs
 50	T-492	fmt_changed/clippy_changed ignore changed_rs rc	scripts/platform/wave.sh
 99	T-493	T-397 Class-R blind to COALESCE(deaths,0)	apps/website/api/tests/telemetry.rs; apps/website/api/migrations/0014_nullable_match_player_stat_counters.sql
 56	T-494	trim source-ratchet + schedule briefing trim	apps/website/frontend/src/mission_overview.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/events.rs
@@ -356,12 +356,12 @@
 3	T-555	Migrations untested against a populated DB; two live defects	apps/website/api/migrations/0009_role_played_not_null.sql; apps/website/api/migrations/0017_orbat_slots_assigned_partial_unique.sql; scripts/platform/wave.sh
 3	T-556	Gate depends on rg, installed nowhere; two dead fail-open scripts	scripts/mod/verify-t456-mission-rest-size-gate.sh; scripts/mod/verify-t437-destroy-inert-diagnostics.sh; scripts/mod/verify-t296-results-reporter-identity-comments.sh; scripts/mod/verify-t452-player-identity-link-comments.sh
 63	T-557	dev-login 500s: ON CONFLICT cannot arbitrate idx_users_arma_id	apps/website/api/src/handlers/dev.rs; apps/website/api/tests/common/mod.rs
-3	T-558	Test-harness residue after T-534	apps/website/api/tests/db_migrate.rs; Makefile
+68	T-558	Test-harness residue after T-534	apps/website/api/tests/db_migrate.rs; apps/website/api/tests/models_fromrow.rs; apps/website/api/tests/common/mod.rs; apps/website/api/src/services/registry_import.rs; Makefile
 64	T-559	T-554 Class-R soft contains — comment decoy stays green	apps/website/frontend/src/mission_title_prefer.rs; apps/website/frontend/src/mission_hydrate.rs
 64	T-560	T-557 Class-R hollow — comment COALESCE / bind-form race	apps/website/api/tests/common/mod.rs; apps/website/api/src/handlers/dev.rs
 65	T-561	T-559 Class-R hollow — block-comment/string decoy	apps/website/frontend/src/mission_title_prefer.rs
 65	T-562	T-560 Class-R hollow — string/format! COALESCE decoy	apps/website/api/tests/common/mod.rs
-99	T-563	T-541 admin #stage LOBBY bypasses TickRosterSettle refuse	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c; apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c
+68	T-563	T-541 admin #stage LOBBY bypasses TickRosterSettle refuse	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c; apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c
 66	T-564	T-561 Class-R hollow — dead let opt(&row.briefing) decoy	apps/website/frontend/src/mission_title_prefer.rs
 66	T-565	T-562 Class-R hollow — COALESCE in unrelated sqlx::query	apps/website/api/tests/common/mod.rs
 66	T-566	T-387 Class-R hollow — comment-arm / ignore-helper	apps/website/api/tests/misc_integration.rs

@@ -12928,7 +12928,7 @@
         "website",
         "tests"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3330,
       "stream": "web-platform",
       "targets": [
@@ -14392,7 +14392,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3411,
       "stream": "web-platform",
       "targets": [
@@ -14501,7 +14501,7 @@
         "mod",
         "security"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3416,
       "executor": "claude-code",
       "priority": 2,
