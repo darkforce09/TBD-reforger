@@ -1,5 +1,5 @@
 //! T-522 / T-505 — prefer non-blank payload title over a stale missions-row title.
-//! T-554 — native Class-R ratchet for the FE hydrate→`apply_row_meta` briefing wire
+//! T-554 / T-559 — native Class-R ratchet for the FE hydrate→`apply_row_meta` briefing wire
 //! (`opt(&row.briefing)` in `adopt_payload` / `apply_row`).
 //!
 //! Pure helper extracted from `mission_hydrate` so Class-R runs on native
@@ -8,6 +8,10 @@
 //! regression stayed green on CI. The briefing pin lives here for the same reason
 //! (W62: both sites → `None` left website-frontend green while only core Class-R
 //! covered `apply_row_meta` itself).
+//!
+//! T-559: the T-554 soft `body.contains("opt(&row.briefing)")` stayed green when both
+//! live wires became `None` but a `// … opt(&row.briefing)` decoy remained. Strip Rust
+//! line comments before the contains so only a live call-site can satisfy the pin.
 
 /// Non-blank trimmed top-level `title` from a compiled payload (T-375 wire emit).
 ///
@@ -98,22 +102,44 @@ mod t554_tests {
             .unwrap_or_else(|| panic!("{sig} body"))
     }
 
-    /// T-554 Class-R: FE hydrate must pass `opt(&row.briefing)` into `apply_row_meta`.
+    /// Drop Rust `//` / `///` comments (whole-line and trailing) so a decoy substring
+    /// cannot false-green the briefing wire pin (T-559 / W63 DIRTY MAJOR).
     ///
-    /// RED (W62 probe): replace both `opt(&row.briefing)` with `None` in mission_hydrate.rs.
+    /// Naive: Class-R source pins do not need string-literal awareness for these bodies.
+    fn strip_rust_line_comments(src: &str) -> String {
+        let mut out = String::with_capacity(src.len());
+        for line in src.lines() {
+            if line.trim_start().starts_with("//") {
+                continue;
+            }
+            if let Some(idx) = line.find("//") {
+                out.push_str(&line[..idx]);
+            } else {
+                out.push_str(line);
+            }
+            out.push('\n');
+        }
+        out
+    }
+
+    /// T-554 / T-559 Class-R: FE hydrate must pass a *live* `opt(&row.briefing)` into
+    /// `apply_row_meta` (comments stripped — a `// decoy opt(&row.briefing)` is not enough).
+    ///
+    /// RED (W62): replace both `opt(&row.briefing)` with `None`.
+    /// RED (W63 decoy): both → `None` + leave `// … opt(&row.briefing)` in each fn body.
     #[test]
     fn hydrate_wires_row_briefing_into_apply_row_meta() {
         const SRC: &str = include_str!("mission_hydrate.rs");
         let production = SRC.split("#[cfg(test)]").next().unwrap_or(SRC);
-        let adopt = fn_body(production, "fn adopt_payload(");
-        let apply = fn_body(production, "fn apply_row(");
+        let adopt = strip_rust_line_comments(fn_body(production, "fn adopt_payload("));
+        let apply = strip_rust_line_comments(fn_body(production, "fn apply_row("));
         assert!(
             adopt.contains("opt(&row.briefing)"),
-            "adopt_payload must pass opt(&row.briefing) into apply_row_meta; got:\n{adopt}"
+            "adopt_payload must pass live opt(&row.briefing) into apply_row_meta; got:\n{adopt}"
         );
         assert!(
             apply.contains("opt(&row.briefing)"),
-            "apply_row must pass opt(&row.briefing) into apply_row_meta; got:\n{apply}"
+            "apply_row must pass live opt(&row.briefing) into apply_row_meta; got:\n{apply}"
         );
     }
 }
