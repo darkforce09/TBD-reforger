@@ -175,9 +175,16 @@ rust-test: ## Run Rust unit tests (no DB)
 	cd $(WEB) && cargo test --lib --bins
 rust-test-it: ## Run Rust integration tests against a fresh dedicated DB (needs `make db-up` @ :5434)
 	@# A dedicated, Rust-migrated DB (the dev `tbd_reforger` predates sqlx tracking).
+	@# T-534 derives one `rust_it_<suite>_it` database per test binary from this base; T-558
+	@# prunes those leftovers after the run (pre-T-558 only dropped `rust_it` itself).
 	-podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc "DROP DATABASE IF EXISTS rust_it WITH (FORCE);"
 	podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc "CREATE DATABASE rust_it;"
 	cd $(WEB) && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable cargo test
+	@# T-558: reap base + every per-binary `rust_it_<suite>_it` left by T-534 provisioning.
+	@podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -Atc "SELECT datname FROM pg_database WHERE datname = 'rust_it' OR datname LIKE 'rust_it\_%\_it' ESCAPE '\'" | while read -r db; do \
+		[ -n "$$db" ] || continue; \
+		podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc "DROP DATABASE IF EXISTS $$db WITH (FORCE);" >/dev/null; \
+	done
 rust-fmt: ## Check Rust formatting (FMT-1 analog); workspace --all covers xtask/tbd-tools (T-297)
 	cd $(WEB) && cargo fmt --check
 	cargo fmt --all --check
