@@ -29,10 +29,8 @@ use crate::mission_doc::DocHandle;
 
 /// Motion (CSS px) separating a click from a drag — the React `useSelectTool` `DRAG_THRESHOLD`.
 pub const DRAG_THRESHOLD_PX: f64 = 4.0;
-/// Click pick radius (CSS px) — the React `slotSpatialIndex.pickNearest` default `radiusPx` (also 4).
-const PICK_RADIUS_PX: f64 = 4.0;
-/// `PointIndex` grid cell (world m) — the React `slotSpatialIndex` `GRID_CELL_M`.
-const GRID_CELL_M: f64 = 256.0;
+/// `PointIndex` grid cell (world m) — SoT on [`map_engine_core::doc::MissionDocCore::GRID_CELL_M`].
+const GRID_CELL_M: f64 = map_engine_core::doc::MissionDocCore::GRID_CELL_M;
 /// Everon bounds (matches `mission_editor.rs`/`mission_doc.rs`), for the frozen-camera target clamp.
 const TERRAIN_W: f64 = 12_800.0;
 const TERRAIN_H: f64 = 12_800.0;
@@ -97,19 +95,10 @@ pub fn frozen_camera(
     cam
 }
 
-/// World pick radius (m) for a screen radius (px) under a camera — deck/React `worldPickRadius`:
-/// `|unproject(px + r, py).x − unproject(px, py).x|`. Uniform ortho scale ⇒ the x-delta is the world
-/// distance a `radius_px` offset spans.
-fn world_pick_radius(cam: &OrthoCamera, px: f64, py: f64, radius_px: f64) -> f64 {
-    let c = cam.unproject_xy(px, py);
-    let e = cam.unproject_xy(px + radius_px, py);
-    (e[0] - c[0]).abs()
-}
-
 /// Argmin `dx²+dy²` over the handles a `PointIndex` returns for the ±`r` world box around `(qx,qy)`.
 /// This is the **box-nearest** primitive React's `slotSpatialIndex.pickNearest` uses (a square box +
 /// a min-distance loop) — NOT `PointIndex::pick_nearest`, whose cutoff is a *circle*. Shared by the
-/// live click path and the Class-S self-check so both prove the exact same query.
+/// Class-S self-check so both prove the exact same query.
 fn box_nearest(idx: &PointIndex, soa: &SlotSoa, qx: f64, qy: f64, r: f64) -> Option<u32> {
     let mut best: Option<(f64, u32)> = None;
     for h in idx.pick_rect(qx - r, qy - r, qx + r, qy + r) {
@@ -132,55 +121,28 @@ fn d2_to(soa: &SlotSoa, h: u32, qx: f64, qy: f64) -> f64 {
 
 /// Nearest slot id under a screen pixel, or `None`. Unprojects `(px,py)` against the frozen `cam`,
 /// then box-nearest over the doc SoA (see [`box_nearest`]); returns `soa.ids[handle]`.
+///
+/// T-491 — implementation lives on [`MissionDocCore::pick_slot`] (native Class-R); this wrapper
+/// keeps the select_tool call sites stable.
 #[must_use]
 pub fn pick(cam: &OrthoCamera, soa: &SlotSoa, px: f64, py: f64) -> Option<String> {
-    if soa.ids.is_empty() {
-        return None;
-    }
-    let c = cam.unproject_xy(px, py);
-    let (qx, qy) = (c[0], c[1]);
-    if !qx.is_finite() || !qy.is_finite() {
-        return None; // singular pixel matrix (deck would have warned) — no pick
-    }
-    let r = world_pick_radius(cam, px, py, PICK_RADIUS_PX);
-    let idx = PointIndex::build(soa.xs.clone(), soa.ys.clone(), GRID_CELL_M);
-    box_nearest(&idx, soa, qx, qy, r).map(|h| soa.ids[h as usize].clone())
+    map_engine_core::doc::MissionDocCore::pick_slot(cam, soa, px, py)
 }
 
 /// T-425 — nearest placed vehicle id under a screen pixel, or `None`.
 ///
 /// Vehicles are off the slot SoA (`vehicle_xy_flat` / `vehicles_bind`), so the slot [`pick`] path
 /// never sees them. `points` is `(id, world_x, world_y)` from [`crate::editor_ops::vehicle_points`].
+/// Delegates to [`map_engine_core::doc::MissionDocCore::pick_vehicle`] (Class-R SoT).
 #[must_use]
+#[allow(dead_code)] // public host helper; live path uses pick_slot_or_vehicle
 pub fn pick_vehicle(
     cam: &OrthoCamera,
     points: &[(String, f64, f64)],
     px: f64,
     py: f64,
 ) -> Option<String> {
-    if points.is_empty() {
-        return None;
-    }
-    let c = cam.unproject_xy(px, py);
-    let (qx, qy) = (c[0], c[1]);
-    if !qx.is_finite() || !qy.is_finite() {
-        return None;
-    }
-    let r = world_pick_radius(cam, px, py, PICK_RADIUS_PX);
-    let r2 = r * r;
-    let mut best: Option<(f64, &str)> = None;
-    for (id, x, y) in points {
-        let dx = x - qx;
-        let dy = y - qy;
-        let d2 = dx * dx + dy * dy;
-        if d2 > r2 {
-            continue;
-        }
-        if best.is_none_or(|(bd, _)| d2 < bd) {
-            best = Some((d2, id.as_str()));
-        }
-    }
-    best.map(|(_, id)| id.to_string())
+    map_engine_core::doc::MissionDocCore::pick_vehicle(cam, points, px, py)
 }
 
 /// T-425 — pick slot or vehicle; when both are in range, the closer world-distance wins.
@@ -192,40 +154,7 @@ pub fn pick_slot_or_vehicle(
     px: f64,
     py: f64,
 ) -> Option<String> {
-    let slot = pick(cam, soa, px, py);
-    let veh = pick_vehicle(cam, vehicle_points, px, py);
-    match (slot, veh) {
-        (None, v) => v,
-        (s, None) => s,
-        (Some(s), Some(v)) => {
-            let c = cam.unproject_xy(px, py);
-            let (qx, qy) = (c[0], c[1]);
-            let slot_d2 = soa
-                .ids
-                .iter()
-                .position(|id| *id == s)
-                .map(|i| {
-                    let dx = f64::from(soa.xs[i]) - qx;
-                    let dy = f64::from(soa.ys[i]) - qy;
-                    dx * dx + dy * dy
-                })
-                .unwrap_or(f64::INFINITY);
-            let veh_d2 = vehicle_points
-                .iter()
-                .find(|(id, _, _)| *id == v)
-                .map(|(_, x, y)| {
-                    let dx = x - qx;
-                    let dy = y - qy;
-                    dx * dx + dy * dy
-                })
-                .unwrap_or(f64::INFINITY);
-            if veh_d2 < slot_d2 {
-                Some(v)
-            } else {
-                Some(s)
-            }
-        }
-    }
+    map_engine_core::doc::MissionDocCore::pick_slot_or_vehicle(cam, soa, vehicle_points, px, py)
 }
 
 /// Apply a click to the selection set, matching React `useSelectTool` onPointerUp `pending-left`:
@@ -283,6 +212,8 @@ pub fn drag_delta(cam: &OrthoCamera, start_wx: f64, start_wy: f64, px: f64, py: 
 /// empty on `max < min`), then maps the returned handles to `soa.ids`. Mirrors React
 /// `slotSpatialIndex.pickRect(startWorld, endWorld)` (`useSelectTool.ts:293`). A singular pixel
 /// matrix (NaN unproject on either corner) yields no selection.
+///
+/// T-491 — implementation lives on [`MissionDocCore::marquee_slot_ids`].
 #[must_use]
 pub fn marquee_ids(
     cam: &OrthoCamera,
@@ -292,25 +223,15 @@ pub fn marquee_ids(
     end_px: f64,
     end_py: f64,
 ) -> Vec<String> {
-    if soa.ids.is_empty() {
-        return Vec::new();
-    }
-    let e = cam.unproject_xy(end_px, end_py);
-    let (ewx, ewy) = (e[0], e[1]);
-    if !ewx.is_finite() || !ewy.is_finite() || !start_wx.is_finite() || !start_wy.is_finite() {
-        return Vec::new();
-    }
-    let (min_x, max_x) = (start_wx.min(ewx), start_wx.max(ewx));
-    let (min_y, max_y) = (start_wy.min(ewy), start_wy.max(ewy));
-    let idx = PointIndex::build(soa.xs.clone(), soa.ys.clone(), GRID_CELL_M);
-    idx.pick_rect(min_x, min_y, max_x, max_y)
-        .into_iter()
-        .map(|h| soa.ids[h as usize].clone())
-        .collect()
+    map_engine_core::doc::MissionDocCore::marquee_slot_ids(
+        cam, soa, start_wx, start_wy, end_px, end_py,
+    )
 }
 
 /// T-425 — vehicle ids inside the marquee world AABB (same corners as [`marquee_ids`]).
+/// Delegates to [`map_engine_core::doc::MissionDocCore::marquee_vehicle_ids`] (Class-R SoT).
 #[must_use]
+#[allow(dead_code)] // public host helper; live path uses marquee_ids_with_vehicles
 pub fn marquee_vehicle_ids(
     cam: &OrthoCamera,
     points: &[(String, f64, f64)],
@@ -319,21 +240,9 @@ pub fn marquee_vehicle_ids(
     end_px: f64,
     end_py: f64,
 ) -> Vec<String> {
-    if points.is_empty() {
-        return Vec::new();
-    }
-    let e = cam.unproject_xy(end_px, end_py);
-    let (ewx, ewy) = (e[0], e[1]);
-    if !ewx.is_finite() || !ewy.is_finite() || !start_wx.is_finite() || !start_wy.is_finite() {
-        return Vec::new();
-    }
-    let (min_x, max_x) = (start_wx.min(ewx), start_wx.max(ewx));
-    let (min_y, max_y) = (start_wy.min(ewy), start_wy.max(ewy));
-    points
-        .iter()
-        .filter(|(_, x, y)| *x >= min_x && *x <= max_x && *y >= min_y && *y <= max_y)
-        .map(|(id, _, _)| id.clone())
-        .collect()
+    map_engine_core::doc::MissionDocCore::marquee_vehicle_ids(
+        cam, points, start_wx, start_wy, end_px, end_py,
+    )
 }
 
 /// T-425 — marquee over slots **and** placed vehicles (vehicles appended after slots).
@@ -347,16 +256,15 @@ pub fn marquee_ids_with_vehicles(
     end_px: f64,
     end_py: f64,
 ) -> Vec<String> {
-    let mut ids = marquee_ids(cam, soa, start_wx, start_wy, end_px, end_py);
-    ids.extend(marquee_vehicle_ids(
+    map_engine_core::doc::MissionDocCore::marquee_ids_with_vehicles(
         cam,
+        soa,
         vehicle_points,
         start_wx,
         start_wy,
         end_px,
         end_py,
-    ));
-    ids
+    )
 }
 
 /// Class-S self-check for the marquee (S3 parity, peer of [`pick_selfcheck`]): `PointIndex::pick_rect`
@@ -484,7 +392,7 @@ fn json_id_array(ids: &[String]) -> String {
 /// This **shrinks the search space; it does not weaken the property.** The result is still the
 /// argmax over candidates of the min distance to any projected slot, i.e. still empty — and the
 /// gate needs *an* empty px, not a specific one. Sufficiency is structural rather than incidental:
-/// `pick` hits within `PICK_RADIUS_PX` (4), while grid candidates are tens of px apart, so one slot
+/// `pick` hits within `MissionDocCore::PICK_RADIUS_PX` (4), while grid candidates are tens of px apart, so one slot
 /// can shadow at most one candidate; a handful of slots can never shadow all of them. Slots that
 /// project outside the region still count in the min-distance and only push the winner further out.
 fn farthest_empty_px(w: f64, h: f64, proj: &[(f64, f64)]) -> (f64, f64) {

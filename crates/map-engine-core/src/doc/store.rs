@@ -788,21 +788,25 @@ impl MissionDocCore {
     /// missing or that still have no `position` are skipped. Rotation is preserved.
     pub fn move_vehicles(&self, ids: &[String], dx: f64, dy: f64) {
         let mut txn = self.begin();
-        for id in ids {
-            let Some(Out::YMap(v)) = self.vehicles.get(&txn, id) else {
-                continue;
-            };
-            if v.get(&txn, "position").is_none() {
-                continue;
-            }
-            let (px, py, pz, prot) = read_position(&txn, &v);
-            let existing = read_position_map(&txn, &v);
-            v.insert(
-                &mut txn,
-                "position",
-                position_any_merged(existing, px + dx, py + dy, pz, prot),
-            );
-        }
+        move_vehicles_in_txn(&mut txn, &self.vehicles, ids, dx, dy);
+    }
+
+    /// T-491 — move slots **and** vehicles in **one** LOCAL yrs transaction (one undo step).
+    ///
+    /// The T-425 host path called [`Self::move_entities`] then [`Self::move_vehicles`] — two txns —
+    /// so a mixed slot+vehicle drag needed two Ctrl+Z. Prefer this for any drag that may include
+    /// both kinds. Slot `zs[i]` matches [`Self::move_entities`]; vehicle z/rotation are preserved.
+    pub fn move_entities_and_vehicles(
+        &self,
+        slot_ids: Vec<String>,
+        vehicle_ids: &[String],
+        dx: f64,
+        dy: f64,
+        zs: Vec<f64>,
+    ) {
+        let mut txn = self.begin();
+        move_entities_in_txn(&mut txn, &self.slots, &slot_ids, dx, dy, &zs);
+        move_vehicles_in_txn(&mut txn, &self.vehicles, vehicle_ids, dx, dy);
     }
 
     /// Overwrite a slot's `position` (mirrors `slot.set('position', {...})`).
@@ -999,18 +1003,7 @@ impl MissionDocCore {
     /// keeps byte-parity). Mirrors `ydoc.moveEntities` (`z = terrainZ(newX, newY)`).
     pub fn move_entities(&self, ids: Vec<String>, dx: f64, dy: f64, zs: Vec<f64>) {
         let mut txn = self.begin();
-        for (i, id) in ids.iter().enumerate() {
-            if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
-                let (px, py, _pz, prot) = read_position(&txn, &slot);
-                let z = zs.get(i).copied().unwrap_or(0.0);
-                let existing = read_position_map(&txn, &slot);
-                slot.insert(
-                    &mut txn,
-                    "position",
-                    position_any_merged(existing, px + dx, py + dy, z, prot),
-                );
-            }
-        }
+        move_entities_in_txn(&mut txn, &self.slots, &ids, dx, dy, &zs);
     }
 
     /// Remove several slots and detach them from their squad's `slotIds` and every layer's
@@ -1842,12 +1835,295 @@ impl MissionDocCore {
             || entities.len(&txn) > 0
             || markers.len(&txn) > 0
     }
+
+    // ── T-491 — pure pick / marquee math (host-shared; Class-R in this module) ───────────────────
+    // Associated fns (no `&self`) so `MissionDocCore::…` is reachable without widening `doc/mod.rs`.
+    // The Leptos `select_tool` wrappers call these — one implementation, native-tested.
+
+    /// Click pick radius (CSS px) — React `slotSpatialIndex.pickNearest` default / select_tool pin.
+    pub const PICK_RADIUS_PX: f64 = 4.0;
+    /// `PointIndex` grid cell (world m) — React / select_tool `GRID_CELL_M`.
+    pub const GRID_CELL_M: f64 = 256.0;
+
+    /// Nearest slot id under a screen pixel, or `None` (box-nearest over the SoA).
+    #[must_use]
+    pub fn pick_slot(
+        cam: &crate::camera::OrthoCamera,
+        soa: &SlotSoa,
+        px: f64,
+        py: f64,
+    ) -> Option<String> {
+        mix_pick_slot(cam, soa, px, py)
+    }
+
+    /// T-425 — nearest placed vehicle id under a screen pixel, or `None`.
+    #[must_use]
+    pub fn pick_vehicle(
+        cam: &crate::camera::OrthoCamera,
+        points: &[(String, f64, f64)],
+        px: f64,
+        py: f64,
+    ) -> Option<String> {
+        mix_pick_vehicle(cam, points, px, py)
+    }
+
+    /// T-425 / T-491 — pick slot or vehicle; when both are in range, the closer world-distance wins.
+    #[must_use]
+    pub fn pick_slot_or_vehicle(
+        cam: &crate::camera::OrthoCamera,
+        soa: &SlotSoa,
+        vehicle_points: &[(String, f64, f64)],
+        px: f64,
+        py: f64,
+    ) -> Option<String> {
+        mix_pick_slot_or_vehicle(cam, soa, vehicle_points, px, py)
+    }
+
+    /// Slot ids inside the marquee world AABB from press `(start_wx, start_wy)` + release px.
+    #[must_use]
+    pub fn marquee_slot_ids(
+        cam: &crate::camera::OrthoCamera,
+        soa: &SlotSoa,
+        start_wx: f64,
+        start_wy: f64,
+        end_px: f64,
+        end_py: f64,
+    ) -> Vec<String> {
+        mix_marquee_slot_ids(cam, soa, start_wx, start_wy, end_px, end_py)
+    }
+
+    /// T-425 — vehicle ids inside the marquee world AABB (same corners as [`Self::marquee_slot_ids`]).
+    #[must_use]
+    pub fn marquee_vehicle_ids(
+        cam: &crate::camera::OrthoCamera,
+        points: &[(String, f64, f64)],
+        start_wx: f64,
+        start_wy: f64,
+        end_px: f64,
+        end_py: f64,
+    ) -> Vec<String> {
+        mix_marquee_vehicle_ids(cam, points, start_wx, start_wy, end_px, end_py)
+    }
+
+    /// T-425 / T-491 — marquee over slots **and** placed vehicles (vehicles appended after slots).
+    #[must_use]
+    pub fn marquee_ids_with_vehicles(
+        cam: &crate::camera::OrthoCamera,
+        soa: &SlotSoa,
+        vehicle_points: &[(String, f64, f64)],
+        start_wx: f64,
+        start_wy: f64,
+        end_px: f64,
+        end_py: f64,
+    ) -> Vec<String> {
+        mix_marquee_ids_with_vehicles(cam, soa, vehicle_points, start_wx, start_wy, end_px, end_py)
+    }
 }
 
 impl Default for MissionDocCore {
     fn default() -> Self {
         Self::new()
     }
+}
+
+// ── T-491 mix pick/marquee (pure; used by [`MissionDocCore`] associated fns + Class-R) ───────────
+
+fn mix_world_pick_radius(
+    cam: &crate::camera::OrthoCamera,
+    px: f64,
+    py: f64,
+    radius_px: f64,
+) -> f64 {
+    let c = cam.unproject_xy(px, py);
+    let e = cam.unproject_xy(px + radius_px, py);
+    (e[0] - c[0]).abs()
+}
+
+fn mix_box_nearest(
+    idx: &crate::spatial::point_index::PointIndex,
+    soa: &SlotSoa,
+    qx: f64,
+    qy: f64,
+    r: f64,
+) -> Option<u32> {
+    let mut best: Option<(f64, u32)> = None;
+    for h in idx.pick_rect(qx - r, qy - r, qx + r, qy + r) {
+        let dx = f64::from(soa.xs[h as usize]) - qx;
+        let dy = f64::from(soa.ys[h as usize]) - qy;
+        let d2 = dx * dx + dy * dy;
+        if best.is_none_or(|(bd, _)| d2 < bd) {
+            best = Some((d2, h));
+        }
+    }
+    best.map(|(_, h)| h)
+}
+
+fn mix_pick_slot(
+    cam: &crate::camera::OrthoCamera,
+    soa: &SlotSoa,
+    px: f64,
+    py: f64,
+) -> Option<String> {
+    if soa.ids.is_empty() {
+        return None;
+    }
+    let c = cam.unproject_xy(px, py);
+    let (qx, qy) = (c[0], c[1]);
+    if !qx.is_finite() || !qy.is_finite() {
+        return None;
+    }
+    let r = mix_world_pick_radius(cam, px, py, MissionDocCore::PICK_RADIUS_PX);
+    let idx = crate::spatial::point_index::PointIndex::build(
+        soa.xs.clone(),
+        soa.ys.clone(),
+        MissionDocCore::GRID_CELL_M,
+    );
+    mix_box_nearest(&idx, soa, qx, qy, r).map(|h| soa.ids[h as usize].clone())
+}
+
+fn mix_pick_vehicle(
+    cam: &crate::camera::OrthoCamera,
+    points: &[(String, f64, f64)],
+    px: f64,
+    py: f64,
+) -> Option<String> {
+    if points.is_empty() {
+        return None;
+    }
+    let c = cam.unproject_xy(px, py);
+    let (qx, qy) = (c[0], c[1]);
+    if !qx.is_finite() || !qy.is_finite() {
+        return None;
+    }
+    let r = mix_world_pick_radius(cam, px, py, MissionDocCore::PICK_RADIUS_PX);
+    let r2 = r * r;
+    let mut best: Option<(f64, &str)> = None;
+    for (id, x, y) in points {
+        let dx = x - qx;
+        let dy = y - qy;
+        let d2 = dx * dx + dy * dy;
+        if d2 > r2 {
+            continue;
+        }
+        if best.is_none_or(|(bd, _)| d2 < bd) {
+            best = Some((d2, id.as_str()));
+        }
+    }
+    best.map(|(_, id)| id.to_string())
+}
+
+fn mix_pick_slot_or_vehicle(
+    cam: &crate::camera::OrthoCamera,
+    soa: &SlotSoa,
+    vehicle_points: &[(String, f64, f64)],
+    px: f64,
+    py: f64,
+) -> Option<String> {
+    let slot = mix_pick_slot(cam, soa, px, py);
+    let veh = mix_pick_vehicle(cam, vehicle_points, px, py);
+    match (slot, veh) {
+        (None, v) => v,
+        (s, None) => s,
+        (Some(s), Some(v)) => {
+            let c = cam.unproject_xy(px, py);
+            let (qx, qy) = (c[0], c[1]);
+            let slot_d2 = soa
+                .ids
+                .iter()
+                .position(|id| *id == s)
+                .map(|i| {
+                    let dx = f64::from(soa.xs[i]) - qx;
+                    let dy = f64::from(soa.ys[i]) - qy;
+                    dx * dx + dy * dy
+                })
+                .unwrap_or(f64::INFINITY);
+            let veh_d2 = vehicle_points
+                .iter()
+                .find(|(id, _, _)| *id == v)
+                .map(|(_, x, y)| {
+                    let dx = x - qx;
+                    let dy = y - qy;
+                    dx * dx + dy * dy
+                })
+                .unwrap_or(f64::INFINITY);
+            if veh_d2 < slot_d2 { Some(v) } else { Some(s) }
+        }
+    }
+}
+
+fn mix_marquee_slot_ids(
+    cam: &crate::camera::OrthoCamera,
+    soa: &SlotSoa,
+    start_wx: f64,
+    start_wy: f64,
+    end_px: f64,
+    end_py: f64,
+) -> Vec<String> {
+    if soa.ids.is_empty() {
+        return Vec::new();
+    }
+    let e = cam.unproject_xy(end_px, end_py);
+    let (ewx, ewy) = (e[0], e[1]);
+    if !ewx.is_finite() || !ewy.is_finite() || !start_wx.is_finite() || !start_wy.is_finite() {
+        return Vec::new();
+    }
+    let (min_x, max_x) = (start_wx.min(ewx), start_wx.max(ewx));
+    let (min_y, max_y) = (start_wy.min(ewy), start_wy.max(ewy));
+    let idx = crate::spatial::point_index::PointIndex::build(
+        soa.xs.clone(),
+        soa.ys.clone(),
+        MissionDocCore::GRID_CELL_M,
+    );
+    idx.pick_rect(min_x, min_y, max_x, max_y)
+        .into_iter()
+        .map(|h| soa.ids[h as usize].clone())
+        .collect()
+}
+
+fn mix_marquee_vehicle_ids(
+    cam: &crate::camera::OrthoCamera,
+    points: &[(String, f64, f64)],
+    start_wx: f64,
+    start_wy: f64,
+    end_px: f64,
+    end_py: f64,
+) -> Vec<String> {
+    if points.is_empty() {
+        return Vec::new();
+    }
+    let e = cam.unproject_xy(end_px, end_py);
+    let (ewx, ewy) = (e[0], e[1]);
+    if !ewx.is_finite() || !ewy.is_finite() || !start_wx.is_finite() || !start_wy.is_finite() {
+        return Vec::new();
+    }
+    let (min_x, max_x) = (start_wx.min(ewx), start_wx.max(ewx));
+    let (min_y, max_y) = (start_wy.min(ewy), start_wy.max(ewy));
+    points
+        .iter()
+        .filter(|(_, x, y)| *x >= min_x && *x <= max_x && *y >= min_y && *y <= max_y)
+        .map(|(id, _, _)| id.clone())
+        .collect()
+}
+
+fn mix_marquee_ids_with_vehicles(
+    cam: &crate::camera::OrthoCamera,
+    soa: &SlotSoa,
+    vehicle_points: &[(String, f64, f64)],
+    start_wx: f64,
+    start_wy: f64,
+    end_px: f64,
+    end_py: f64,
+) -> Vec<String> {
+    let mut ids = mix_marquee_slot_ids(cam, soa, start_wx, start_wy, end_px, end_py);
+    ids.extend(mix_marquee_vehicle_ids(
+        cam,
+        vehicle_points,
+        start_wx,
+        start_wy,
+        end_px,
+        end_py,
+    ));
+    ids
 }
 
 /// A `{x,y,z,rotation}` plain object as a `yrs` `Any::Map` (how Yjs stores `Slot.position`).
@@ -2020,6 +2296,56 @@ fn read_env_map<T: ReadTxn>(txn: &T, meta: &MapRef) -> HashMap<String, Any> {
     match meta.get(txn, "environment") {
         Some(Out::Any(Any::Map(m))) => (*m).clone(),
         _ => HashMap::new(),
+    }
+}
+
+/// T-491 — slot delta apply inside an existing txn (shared by [`MissionDocCore::move_entities`]
+/// and [`MissionDocCore::move_entities_and_vehicles`]).
+fn move_entities_in_txn(
+    txn: &mut TransactionMut,
+    slots: &MapRef,
+    ids: &[String],
+    dx: f64,
+    dy: f64,
+    zs: &[f64],
+) {
+    for (i, id) in ids.iter().enumerate() {
+        if let Some(Out::YMap(slot)) = slots.get(&*txn, id.as_str()) {
+            let (px, py, _pz, prot) = read_position(txn, &slot);
+            let z = zs.get(i).copied().unwrap_or(0.0);
+            let existing = read_position_map(txn, &slot);
+            slot.insert(
+                &mut *txn,
+                "position",
+                position_any_merged(existing, px + dx, py + dy, z, prot),
+            );
+        }
+    }
+}
+
+/// T-491 — vehicle delta apply inside an existing txn (shared by [`MissionDocCore::move_vehicles`]
+/// and [`MissionDocCore::move_entities_and_vehicles`]).
+fn move_vehicles_in_txn(
+    txn: &mut TransactionMut,
+    vehicles: &MapRef,
+    ids: &[String],
+    dx: f64,
+    dy: f64,
+) {
+    for id in ids {
+        let Some(Out::YMap(v)) = vehicles.get(&*txn, id.as_str()) else {
+            continue;
+        };
+        if v.get(&*txn, "position").is_none() {
+            continue;
+        }
+        let (px, py, pz, prot) = read_position(txn, &v);
+        let existing = read_position_map(txn, &v);
+        v.insert(
+            &mut *txn,
+            "position",
+            position_any_merged(existing, px + dx, py + dy, pz, prot),
+        );
     }
 }
 
@@ -2386,6 +2712,251 @@ mod tests {
             "undo 2 reverts move 1"
         );
         assert!(!doc.can_undo(), "the stack is now empty");
+    }
+
+    /// T-491 Class-R — the T-425 host defect: `move_entities` then `move_vehicles` is **two** LOCAL
+    /// txns, so one Ctrl+Z undoes only one kind. Pins the split-API shape that the host must not
+    /// call for a mixed drag (see [`MissionDocCore::move_entities_and_vehicles`]).
+    #[test]
+    fn mixed_slot_vehicle_two_calls_are_two_undo_steps() {
+        let mut doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_slot(
+            "s0", "sq", "lyr", 0, "Rifleman", None, None, 100.0, 200.0, 0.0, 0.0,
+        );
+        doc.add_vehicle(
+            "v0",
+            "Prefab/Vehicle.et",
+            Some(300.0),
+            Some(400.0),
+            Some(0.0),
+            Some(0.0),
+        );
+        doc.set_origin_init(false);
+        assert_eq!(doc.undo_depth(), 0);
+
+        doc.move_entities(vec!["s0".to_string()], 10.0, 20.0, vec![0.0]);
+        doc.move_vehicles(&["v0".to_string()], 10.0, 20.0);
+        assert_eq!(
+            doc.undo_depth(),
+            2,
+            "T-425 split path: two LOCAL txns for one mixed drag"
+        );
+
+        assert!(doc.undo());
+        let vehs = vehicles_of(&doc);
+        let slots = doc.materialize();
+        let i = row_of(&slots, "s0");
+        // One undo reverts ONLY the vehicle move — slot stays at the dragged position.
+        assert_eq!(
+            slots.xs[i], 110.0,
+            "slot still at post-drag x after one undo"
+        );
+        assert_eq!(
+            slots.ys[i], 220.0,
+            "slot still at post-drag y after one undo"
+        );
+        assert_eq!(vehs["v0"]["position"]["x"], 300.0, "vehicle undone");
+        assert_eq!(vehs["v0"]["position"]["y"], 400.0, "vehicle undone");
+        assert!(doc.can_undo(), "slot move still on the stack");
+    }
+
+    /// T-491 Class-R — one mixed drag = one LOCAL txn; one undo restores **both** slot and vehicle.
+    #[test]
+    fn mixed_slot_vehicle_atomic_move_is_one_undo_step() {
+        let mut doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_slot(
+            "s0", "sq", "lyr", 0, "Rifleman", None, None, 100.0, 200.0, 0.0, 0.0,
+        );
+        doc.add_vehicle(
+            "v0",
+            "Prefab/Vehicle.et",
+            Some(300.0),
+            Some(400.0),
+            Some(0.0),
+            Some(45.0),
+        );
+        doc.set_origin_init(false);
+
+        doc.move_entities_and_vehicles(
+            vec!["s0".to_string()],
+            &["v0".to_string()],
+            10.0,
+            20.0,
+            vec![1.5],
+        );
+        assert_eq!(doc.undo_depth(), 1, "one mixed drag = one undo step");
+
+        let slots = doc.materialize();
+        let i = row_of(&slots, "s0");
+        assert_eq!(slots.xs[i], 110.0);
+        assert_eq!(slots.ys[i], 220.0);
+        assert_eq!(slots.zs[i], 1.5, "slot z from zs[]");
+        let vehs = vehicles_of(&doc);
+        assert_eq!(vehs["v0"]["position"]["x"], 310.0);
+        assert_eq!(vehs["v0"]["position"]["y"], 420.0);
+        assert_eq!(vehs["v0"]["position"]["z"], 0.0, "vehicle z preserved");
+        assert_eq!(
+            vehs["v0"]["position"]["rotation"], 45.0,
+            "vehicle rotation preserved"
+        );
+
+        assert!(doc.undo());
+        assert_eq!(doc.undo_depth(), 0);
+        let slots = doc.materialize();
+        let i = row_of(&slots, "s0");
+        assert_eq!(slots.xs[i], 100.0, "slot restored");
+        assert_eq!(slots.ys[i], 200.0, "slot restored");
+        let vehs = vehicles_of(&doc);
+        assert_eq!(
+            vehs["v0"]["position"]["x"], 300.0,
+            "vehicle restored with slot"
+        );
+        assert_eq!(
+            vehs["v0"]["position"]["y"], 400.0,
+            "vehicle restored with slot"
+        );
+        assert_eq!(vehs["v0"]["position"]["rotation"], 45.0);
+        assert!(!doc.can_undo());
+    }
+
+    /// T-491 Class-R — `pick_slot_or_vehicle`: only a slot in range → slot id.
+    #[test]
+    fn pick_slot_or_vehicle_slot_only() {
+        let cam = mix_test_cam();
+        let soa = mix_test_soa(&[("s0", 6400.0, 6400.0)]);
+        let vehs: Vec<(String, f64, f64)> = vec![("v0".into(), 7000.0, 7000.0)]; // far
+        let hit = MissionDocCore::pick_slot_or_vehicle(&cam, &soa, &vehs, 400.0, 300.0);
+        assert_eq!(hit.as_deref(), Some("s0"));
+    }
+
+    /// T-491 Class-R — `pick_slot_or_vehicle`: only a vehicle in range → vehicle id.
+    #[test]
+    fn pick_slot_or_vehicle_vehicle_only() {
+        let cam = mix_test_cam();
+        let soa = mix_test_soa(&[("s0", 7000.0, 7000.0)]); // far
+        let vehs: Vec<(String, f64, f64)> = vec![("v0".into(), 6400.0, 6400.0)];
+        let hit = MissionDocCore::pick_slot_or_vehicle(&cam, &soa, &vehs, 400.0, 300.0);
+        assert_eq!(hit.as_deref(), Some("v0"));
+    }
+
+    /// T-491 Class-R — when both are in the pick radius, the closer world-distance wins.
+    #[test]
+    fn pick_slot_or_vehicle_closer_wins() {
+        let cam = mix_test_cam();
+        // Slot at camera target; vehicle 0.2 m east — both inside ~1 m world pick radius @ zoom 2.
+        let soa = mix_test_soa(&[("s0", 6400.0, 6400.0)]);
+        let vehs: Vec<(String, f64, f64)> = vec![("v0".into(), 6400.2, 6400.0)];
+        // Click the exact target → slot is closer (d=0).
+        assert_eq!(
+            MissionDocCore::pick_slot_or_vehicle(&cam, &soa, &vehs, 400.0, 300.0).as_deref(),
+            Some("s0"),
+            "exact center prefers the slot at the target"
+        );
+        // Pixel 1 px east of center: at scale=4, that is 0.25 m east — closer to the vehicle at +0.2 m.
+        assert_eq!(
+            MissionDocCore::pick_slot_or_vehicle(&cam, &soa, &vehs, 401.0, 300.0).as_deref(),
+            Some("v0"),
+            "offset toward the vehicle must pick the vehicle"
+        );
+    }
+
+    /// T-491 Class-R — marquee returns slots first, then vehicles (append order).
+    #[test]
+    fn marquee_ids_with_vehicles_appends_vehicles_after_slots() {
+        let cam = mix_test_cam();
+        let soa = mix_test_soa(&[("s0", 6400.0, 6400.0), ("s1", 6410.0, 6410.0)]);
+        let vehs: Vec<(String, f64, f64)> = vec![
+            ("v0".into(), 6405.0, 6405.0),
+            ("v_out".into(), 7000.0, 7000.0),
+        ];
+        // Press at world (6390,6390); release px that unprojects past (6420,6420).
+        let start_wx = 6390.0;
+        let start_wy = 6390.0;
+        // At zoom 2 / scale 4: world +30 m ≈ +120 px from center(400,300) → (520, …).
+        // flipY:false: screen +y is south in world? pan docs say screen +y ⇒ target north.
+        // Safer: use cam.unproject to find a px, or form the box via known unproject of corners.
+        // End px: unproject of (520, 180) — compute by inverting: we want world ~6420,6420.
+        // Center is 6400,6400 at (400,300). Δworld (+20,+20); scale=4 → Δpx (+80, -80) if +y screen = -y world.
+        let end_px = 400.0 + 20.0 * cam.scale();
+        let end_py = 300.0 - 20.0 * cam.scale(); // screen up → world +y under flipY:false
+        let ids = MissionDocCore::marquee_ids_with_vehicles(
+            &cam, &soa, &vehs, start_wx, start_wy, end_px, end_py,
+        );
+        assert!(
+            ids.iter().any(|id| id == "s0") && ids.iter().any(|id| id == "s1"),
+            "both slots in box: {ids:?}"
+        );
+        assert!(ids.iter().any(|id| id == "v0"), "vehicle in box: {ids:?}");
+        assert!(
+            !ids.iter().any(|id| id == "v_out"),
+            "far vehicle excluded: {ids:?}"
+        );
+        let first_veh = ids
+            .iter()
+            .position(|id| id.starts_with('v'))
+            .expect("a vehicle");
+        let last_slot = ids
+            .iter()
+            .rposition(|id| id.starts_with('s'))
+            .expect("a slot");
+        assert!(
+            last_slot < first_veh,
+            "vehicles appended after slots: {ids:?}"
+        );
+    }
+
+    /// T-491 — host wrappers must call the Class-R SoT (not a forked copy).
+    #[test]
+    fn select_tool_and_mission_editor_delegate_to_atomic_mix_apis() {
+        let select = include_str!("../../../../apps/website/frontend/src/select_tool.rs");
+        assert!(
+            select.contains("MissionDocCore::pick_slot_or_vehicle"),
+            "select_tool must delegate pick_slot_or_vehicle to MissionDocCore"
+        );
+        assert!(
+            select.contains("MissionDocCore::marquee_ids_with_vehicles"),
+            "select_tool must delegate marquee_ids_with_vehicles to MissionDocCore"
+        );
+        let editor = include_str!("../../../../apps/website/frontend/src/mission_editor.rs");
+        assert!(
+            editor.contains("move_entities_and_vehicles"),
+            "mission_editor Move commit must use the atomic mixed move"
+        );
+        // The split path must not remain on the Move commit (two-txn defect).
+        let move_arm = editor
+            .split("LG::Move { ids, dx, dy, .. }")
+            .nth(1)
+            .and_then(|s| s.split("LG::Marquee").next())
+            .expect("Move arm present");
+        assert!(
+            !move_arm.contains("core.move_entities("),
+            "Move arm must not call move_entities alone (two-txn defect)"
+        );
+        assert!(
+            !move_arm.contains("editor_ops::move_vehicles"),
+            "Move arm must not call editor_ops::move_vehicles (second txn)"
+        );
+    }
+
+    /// Camera centred on Everon mid-map @ zoom 2 (scale = 4 px/m). Centre px (400,300) → (6400,6400).
+    fn mix_test_cam() -> crate::camera::OrthoCamera {
+        let mut cam = crate::camera::OrthoCamera::new(800.0, 600.0, 6400.0, 6400.0, 2.0);
+        cam.set_bounds(0.0, 0.0, 12_800.0, 12_800.0);
+        cam
+    }
+
+    fn mix_test_soa(rows: &[(&str, f32, f32)]) -> SlotSoa {
+        let mut soa = SlotSoa::default();
+        for &(id, x, y) in rows {
+            soa.ids.push(id.to_string());
+            soa.xs.push(x);
+            soa.ys.push(y);
+            soa.xy.push(x);
+            soa.xy.push(y);
+        }
+        soa
     }
 
     /// The same boundary over the place path (`add_slot`), the second shape from the T-159.22 repro

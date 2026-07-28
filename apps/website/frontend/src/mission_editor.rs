@@ -1293,23 +1293,26 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 let _ = container.release_pointer_capture(ev.pointer_id());
                             }
                             if dx != 0.0 || dy != 0.0 {
-                                // Split slot vs vehicle ids — vehicles are off the slot SoA
-                                // (`move_entities` would no-op them; T-425 `move_vehicles` owns them).
+                                // T-491 — one LOCAL yrs txn for mixed slot+vehicle drag (T-425 split
+                                // `move_entities` then `move_vehicles` needed two Ctrl+Z).
                                 let (veh_ids, slot_ids): (Vec<String>, Vec<String>) = ids
                                     .iter()
                                     .cloned()
                                     .partition(|id| crate::editor_ops::is_vehicle_id(id));
-                                if !slot_ids.is_empty() {
+                                if !slot_ids.is_empty() || !veh_ids.is_empty() {
                                     let guard = doc.borrow();
                                     let Some(core) = guard.as_ref() else {
                                         return;
                                     };
                                     let n = slot_ids.len();
-                                    core.move_entities(slot_ids, dx, dy, vec![0.0; n]);
-                                }
-                                if !veh_ids.is_empty() {
-                                    let _ = crate::editor_ops::move_vehicles(veh_ids, dx, dy);
-                                } else {
+                                    core.move_entities_and_vehicles(
+                                        slot_ids,
+                                        &veh_ids,
+                                        dx,
+                                        dy,
+                                        vec![0.0; n],
+                                    );
+                                    drop(guard);
                                     crate::mission_history::after_local_edit();
                                 }
                             } else if let Some(e) = engine.borrow_mut().as_mut() {
