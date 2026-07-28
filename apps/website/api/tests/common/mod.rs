@@ -541,7 +541,9 @@ fn sqlx_payload_is_arma_coalesce_update(payload: &str) -> bool {
 }
 
 fn sqlx_queries_have_arma_coalesce_update(payloads: &[String]) -> bool {
-    payloads.iter().any(|p| sqlx_payload_is_arma_coalesce_update(p))
+    payloads
+        .iter()
+        .any(|p| sqlx_payload_is_arma_coalesce_update(p))
 }
 
 /// Interiors of `"…"` / concatenated `"…" "…"` literals that are *direct* args to
@@ -673,7 +675,8 @@ fn t565_sqlx_query_coalesce_requires_update_not_select_comment() {
         "T-565: SELECT + SQL-comment decoy must not count as first-create UPDATE; got {hollow:?}"
     );
 
-    let block_comment = r#"sqlx::query("SELECT 1 /* UPDATE users SET arma_id = COALESCE(arma_id, $2) */");"#;
+    let block_comment =
+        r#"sqlx::query("SELECT 1 /* UPDATE users SET arma_id = COALESCE(arma_id, $2) */");"#;
     assert!(
         !sqlx_queries_have_arma_coalesce_update(&sqlx_query_string_payloads(block_comment)),
         "T-565: SELECT + /* */ UPDATE decoy must not satisfy the pin"
