@@ -90,6 +90,163 @@ async fn dev_login_unknown_role_defaults_to_admin() {
     assert_eq!(v["user"]["role"], "admin");
 }
 
+/// T-387 Class-R: each role must map to a distinct discord_id (and arma_id) in `dev.rs`.
+///
+/// Perturbation RED:
+/// - delete a role-specific literal, OR
+/// - collapse `discord_id_for_role` / `arma_id_for_role` so a role arm no longer binds its
+///   dedicated constant (dead literals alone must not keep this green — measured hollow).
+///
+/// Pre-T-387 a single `…001` / single arma literal was the measured fold.
+#[test]
+fn t387_dev_login_roles_use_distinct_discord_ids() {
+    let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/dev.rs");
+    let src = std::fs::read_to_string(&handler)
+        .unwrap_or_else(|e| panic!("T-387 Class-R: read {}: {e}", handler.display()));
+
+    let discord_ids = [
+        "000000000000000001", // admin / default
+        "000000000000000002", // enlisted
+        "000000000000000003", // leader
+        "000000000000000004", // mission_maker
+    ];
+    let arma_ids = [
+        "dev-arma-76561190000000001",
+        "dev-arma-76561190000000002",
+        "dev-arma-76561190000000003",
+        "dev-arma-76561190000000004",
+    ];
+    for id in discord_ids {
+        assert!(
+            src.contains(id),
+            "T-387: src/handlers/dev.rs missing discord_id `{id}` — each role needs its own row"
+        );
+    }
+    for id in arma_ids {
+        assert!(
+            src.contains(id),
+            "T-387: src/handlers/dev.rs missing arma_id `{id}` — per-role COALESCE must not race \
+             idx_users_arma_id"
+        );
+    }
+    assert!(
+        src.contains("fn discord_id_for_role"),
+        "T-387: expected discord_id_for_role helper — literals alone are not the contract"
+    );
+    assert!(
+        src.contains("fn arma_id_for_role"),
+        "T-387: expected arma_id_for_role helper — literals alone are not the contract"
+    );
+    // Live arms — a collapse that keeps constants as dead code must go red here.
+    for arm in [
+        "\"enlisted\" => DEV_USER_ID_ENLISTED",
+        "\"leader\" => DEV_USER_ID_LEADER",
+        "\"mission_maker\" => DEV_USER_ID_MISSION_MAKER",
+        "\"enlisted\" => DEV_ARMA_ID_ENLISTED",
+        "\"leader\" => DEV_ARMA_ID_LEADER",
+        "\"mission_maker\" => DEV_ARMA_ID_MISSION_MAKER",
+    ] {
+        assert!(
+            src.contains(arm),
+            "T-387: expected live role arm `{arm}` in src/handlers/dev.rs — dead literals \
+             without the match arm reintroduce the single-id fold"
+        );
+    }
+    // Keep T-557/T-560 shape: NULL insert + live COALESCE (do not re-introduce INSERT stamp).
+    assert!(
+        src.contains("SET arma_id = COALESCE(arma_id"),
+        "T-387: must keep T-557/T-560 live COALESCE first-create path"
+    );
+    assert!(
+        !src.contains("'', 'dev-arma-76561190000000001'"),
+        "T-387: must not reintroduce fixed arma_id as INSERT VALUES literal"
+    );
+}
+
+/// T-387 live: enlisted then admin must not rewrite each other's row / collide identity.
+///
+/// Perturbation RED: restore a single shared `DEV_USER_ID` for every role → after enlisted
+/// login, admin login leaves one row whose role is admin, and enlisted's `/me` (JWT still
+/// carries the shared id) reports admin — or the two `/me` discord_ids equal.
+#[tokio::test]
+async fn t387_dev_login_roles_do_not_rewrite_each_other() {
+    let Some(app) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let url = common::require_test_database_url().expect("boot succeeded ⇒ URL set");
+    let pool = db::connect(&url).await.expect("connect");
+
+    async fn login_me(app: &Router, role: &str) -> (String, String, String) {
+        let resp = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri(format!("/api/v1/auth/dev-login?role={role}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::FOUND, "dev-login {role}");
+        let loc = resp.headers()[header::LOCATION]
+            .to_str()
+            .unwrap()
+            .to_string();
+        let tok = loc
+            .split_once('#')
+            .unwrap()
+            .1
+            .split('&')
+            .find_map(|p| p.strip_prefix("access_token="))
+            .unwrap()
+            .to_string();
+        let me = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/me")
+                    .header(header::AUTHORIZATION, format!("Bearer {tok}"))
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let body = to_bytes(me.into_body(), usize::MAX).await.unwrap();
+        let v: Value = serde_json::from_slice(&body).unwrap();
+        let discord_id = v["user"]["discord_id"].as_str().unwrap().to_string();
+        let reported_role = v["user"]["role"].as_str().unwrap().to_string();
+        (tok, discord_id, reported_role)
+    }
+
+    let (_e_tok, e_id, e_role) = login_me(&app, "enlisted").await;
+    assert_eq!(e_role, "enlisted");
+    assert_eq!(e_id, "000000000000000002");
+
+    let (_a_tok, a_id, a_role) = login_me(&app, "admin").await;
+    assert_eq!(a_role, "admin");
+    assert_eq!(a_id, "000000000000000001");
+    assert_ne!(e_id, a_id, "roles must not share a discord_id");
+
+    // Enlisted row must still be enlisted after admin login (the pre-T-387 rewrite).
+    let enlisted_db_role: String =
+        sqlx::query_scalar("SELECT role::text FROM users WHERE discord_id = $1")
+            .bind(&e_id)
+            .fetch_one(&pool)
+            .await
+            .expect("enlisted row");
+    assert_eq!(
+        enlisted_db_role, "enlisted",
+        "admin login must not rewrite the enlisted row's role"
+    );
+
+    let (_m_tok, m_id, m_role) = login_me(&app, "mission_maker").await;
+    assert_eq!(m_role, "mission_maker");
+    assert_eq!(m_id, "000000000000000004");
+    assert_ne!(m_id, e_id);
+    assert_ne!(m_id, a_id);
+}
+
 #[tokio::test]
 async fn request_id_echoed_and_honored() {
     let Some(app) = boot().await else { return };
@@ -287,13 +444,13 @@ async fn boot_servers(tag: &str) -> Option<(Router, PgPool, AppState)> {
 
 /// Mint a bearer token for `role` **without** going through `/auth/dev-login`.
 ///
-/// `dev_login` upserts ONE shared row (`dev.rs::DEV_USER_ID` = `000000000000000001`) and rewrites
-/// its `role` to whatever the query asked for. Measured: calling it for `enlisted` here made
-/// `dev_login_unknown_role_defaults_to_admin` (line 88 — it asserts `/me` reports admin) fail
-/// intermittently, because both tests live in this binary and cargo runs them on parallel threads.
-/// Minting directly writes nothing, so these tests cannot perturb anything else in the file — and
-/// it loses no coverage: `AdminUser` gates on the JWT's `role` claim (`middleware/auth.rs:80`),
-/// which is exactly what this signs.
+/// Pre-T-387, `dev_login` upserted ONE shared row (`…001`) and rewrote its `role`, so calling it
+/// for `enlisted` here made `dev_login_unknown_role_defaults_to_admin` (asserts `/me` reports
+/// admin) fail intermittently under parallel threads. T-387 gave each role its own discord_id,
+/// so that rewrite landmine is gone — but these server-CRUD tests still mint a private JWT
+/// (`…235`) that writes nothing, so they cannot perturb the real admin/enlisted/… rows. Coverage
+/// is unchanged: `AdminUser` gates on the JWT's `role` claim (`middleware/auth.rs:80`), which is
+/// exactly what this signs.
 fn token(state: &AppState, role: &str) -> String {
     state
         .jwt

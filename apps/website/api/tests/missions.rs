@@ -1102,13 +1102,12 @@ async fn armory_faction_is_the_event_hub_join_key() {
     assert_eq!(json(&b)["data"][0]["faction"], "US Army");
 }
 
-/// One app, one pool, and BOTH tokens — minted `mission_maker` first, `admin` second.
+/// One app, one pool, and BOTH tokens — `mission_maker` first, `admin` second.
 ///
-/// `dev-login` upserts a single user (`handlers/dev.rs:14`) and rewrites its role, so the order is
-/// load-bearing: the role lives in the JWT claims (`middleware/auth.rs:50`), never re-read from the
-/// DB, so the first token stays a `mission_maker` token after the second call promotes the row. Both
-/// tokens therefore address the SAME `discord_id` — which is why the non-author case below needs a
-/// mission inserted for a second author directly, and cannot be expressed with a second dev-login.
+/// T-387: each role has its own discord_id (`…004` maker, `…001` admin), so the second
+/// login no longer rewrites the first row's role. Both JWTs therefore address **distinct**
+/// users. A third author still needs a direct INSERT when the case needs a mission_maker
+/// who is neither the maker nor the admin under test.
 async fn app_pool_and_tokens() -> Option<(Router, sqlx::PgPool, String, String)> {
     let url = common::require_test_database_url()?;
     let (app, maker) = app_and_token("mission_maker").await?;
@@ -1290,8 +1289,8 @@ async fn mission_submit_is_the_only_door_into_the_approvals_queue() {
     );
 
     // --- authorisation + the remaining refused source states ---
-    // A second author, inserted directly: dev-login only ever mints the one user, so this is the
-    // only way to hold a token that is NOT the author's.
+    // A second author, inserted directly: we need a mission_maker who is neither the
+    // T-387 maker (`…004`) nor the admin (`…001`) under test.
     let other = "999000000000000009";
     sqlx::query(
         "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_character, role, \
@@ -1354,7 +1353,9 @@ async fn mission_submit_is_the_only_door_into_the_approvals_queue() {
     assert_eq!(st, StatusCode::OK, "{}", String::from_utf8_lossy(&b));
     assert_eq!(json(&b)["status"], "pending_approval");
 
-    let archived = seed("000000000000000001", "archived").await;
+    // T-387: maker is `…004`, not the admin `…001` — seed under the maker so submit reaches
+    // the archived-status guard (not a foreign-author 403).
+    let archived = seed("000000000000000004", "archived").await;
     let (st, _) = call(
         &app,
         "POST",
@@ -1867,7 +1868,7 @@ async fn t496_library_bookmark_lookup_survives_page1_overflow() {
     };
 
     const FILLERS: i32 = 21; // default list limit is 20
-    const AUTHOR: &str = "000000000000000001"; // dev-login discord_id
+    const AUTHOR: &str = "000000000000000004"; // T-387 mission_maker dev-login discord_id
 
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
