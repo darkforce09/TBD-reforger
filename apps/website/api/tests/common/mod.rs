@@ -414,12 +414,193 @@ fn t534_per_binary_database_name() {
     );
 }
 
-/// Class-R (T-534 / T-557): prime literals match handler, and the handler keeps the
-/// T-557 race-free contract (fixed `arma_id` via COALESCE first-create, not INSERT stamp).
+/// Strip `//` line and `/* */` block comments outside string/char literals.
+///
+/// T-560: Class-R that greps raw source for `COALESCE(arma_id` is hollow — a comment
+/// alone keeps the pin green while the live UPDATE is gone. Always pin against this.
+fn strip_rust_comments_outside_literals(src: &str) -> String {
+    let bytes = src.as_bytes();
+    let mut out = String::with_capacity(src.len());
+    let mut i = 0;
+    let mut in_string = false;
+    let mut string_delim = b'"';
+    while i < bytes.len() {
+        let c = bytes[i];
+        if in_string {
+            out.push(c as char);
+            if c == b'\\' && i + 1 < bytes.len() {
+                out.push(bytes[i + 1] as char);
+                i += 2;
+                continue;
+            }
+            if c == string_delim {
+                in_string = false;
+            }
+            i += 1;
+            continue;
+        }
+        if c == b'"' || c == b'\'' {
+            in_string = true;
+            string_delim = c;
+            out.push(c as char);
+            i += 1;
+            continue;
+        }
+        if c == b'/' && i + 1 < bytes.len() && bytes[i + 1] == b'/' {
+            i += 2;
+            while i < bytes.len() && bytes[i] != b'\n' {
+                i += 1;
+            }
+            continue;
+        }
+        if c == b'/' && i + 1 < bytes.len() && bytes[i + 1] == b'*' {
+            i += 2;
+            while i + 1 < bytes.len() && !(bytes[i] == b'*' && bytes[i + 1] == b'/') {
+                i += 1;
+            }
+            i = (i + 2).min(bytes.len());
+            continue;
+        }
+        out.push(c as char);
+        i += 1;
+    }
+    out
+}
+
+/// Split a SQL column/value list on top-level commas (parens + quotes aware).
+fn split_sql_list(s: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut cur = String::new();
+    let mut depth = 0i32;
+    let mut in_quote: Option<char> = None;
+    let mut chars = s.chars().peekable();
+    while let Some(c) = chars.next() {
+        if let Some(q) = in_quote {
+            cur.push(c);
+            if c == '\\' {
+                if let Some(n) = chars.next() {
+                    cur.push(n);
+                }
+                continue;
+            }
+            if c == q {
+                in_quote = None;
+            }
+            continue;
+        }
+        match c {
+            '\'' | '"' => {
+                in_quote = Some(c);
+                cur.push(c);
+            }
+            '(' => {
+                depth += 1;
+                cur.push(c);
+            }
+            ')' => {
+                depth -= 1;
+                cur.push(c);
+            }
+            ',' if depth == 0 => {
+                out.push(cur.trim().to_string());
+                cur.clear();
+            }
+            _ => cur.push(c),
+        }
+    }
+    let t = cur.trim();
+    if !t.is_empty() {
+        out.push(t.to_string());
+    }
+    out
+}
+
+/// Locate `INSERT INTO users (…) VALUES (…)` in comment-stripped handler source and
+/// return the `arma_id` VALUES expression (product must be `NULL`).
+fn users_insert_arma_id_value(code: &str) -> Option<String> {
+    // Collapse Rust string line-continuations so the SQL reads as one line.
+    let flat: String = code
+        .replace("\\\r\n", " ")
+        .replace("\\\n", " ")
+        .chars()
+        .map(|c| if c.is_whitespace() { ' ' } else { c })
+        .collect();
+    let insert_key = "INSERT INTO users";
+    let start = flat.find(insert_key)?;
+    let after_insert = &flat[start + insert_key.len()..];
+    let cols_open = after_insert.find('(')?;
+    let cols_close = {
+        let mut depth = 0i32;
+        let bytes: Vec<char> = after_insert.chars().collect();
+        let mut close = None;
+        for (i, &c) in bytes.iter().enumerate().skip(cols_open) {
+            match c {
+                '(' => depth += 1,
+                ')' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        close = Some(i);
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        close?
+    };
+    let cols = split_sql_list(&after_insert[cols_open + 1..cols_close]);
+    let arma_idx = cols.iter().position(|c| c == "arma_id")?;
+    let rest = &after_insert[cols_close + 1..];
+    let values_key = "VALUES";
+    let vpos = rest.find(values_key)?;
+    let after_values = &rest[vpos + values_key.len()..];
+    let v_open = after_values.find('(')?;
+    let v_close = {
+        let bytes: Vec<char> = after_values.chars().collect();
+        let mut depth = 0i32;
+        let mut close = None;
+        let mut in_quote: Option<char> = None;
+        let mut i = v_open;
+        while i < bytes.len() {
+            let c = bytes[i];
+            if let Some(q) = in_quote {
+                if c == '\\' && i + 1 < bytes.len() {
+                    i += 2;
+                    continue;
+                }
+                if c == q {
+                    in_quote = None;
+                }
+                i += 1;
+                continue;
+            }
+            match c {
+                '\'' | '"' => in_quote = Some(c),
+                '(' => depth += 1,
+                ')' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        close = Some(i);
+                        break;
+                    }
+                }
+                _ => {}
+            }
+            i += 1;
+        }
+        close?
+    };
+    let vals = split_sql_list(&after_values[v_open + 1..v_close]);
+    vals.get(arma_idx).cloned()
+}
+
+/// Class-R (T-534 / T-557 / T-560): prime literals match handler, and the handler keeps the
+/// race-free contract (NULL INSERT + live `SET arma_id = COALESCE(arma_id` first-create).
 ///
 /// The prime seeds the same discord_id / arma_id the handler uses. If either literal
-/// drifts, this goes red. T-557 also pins the COALESCE first-create shape and bans the
-/// pre-fix INSERT stamp (`'', 'dev-arma-…'`) that raced `idx_users_arma_id`.
+/// drifts, this goes red. T-557 moved the stamp out of INSERT; T-560 closes the hollow
+/// greps: a `// COALESCE(arma_id` comment alone, or a bind-stamped `$N` in INSERT VALUES
+/// with the live UPDATE removed, must fail this pin (both still raced `idx_users_arma_id`).
 #[test]
 fn t534_dev_login_prime_literals_still_match_handler() {
     let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/dev.rs");
@@ -437,13 +618,33 @@ fn t534_dev_login_prime_literals_still_match_handler() {
         "T-534/T-557: dev_login's upsert lost ON CONFLICT (discord_id) DO UPDATE — re-derive \
          the race analysis before changing the prime"
     );
-    // T-557 contract: arma_id is filled on first create, not stamped into INSERT VALUES.
+
+    let code = strip_rust_comments_outside_literals(&src);
+
+    // T-560: require the *live* UPDATE statement (comment-stripped). A hollow
+    // `// COALESCE(arma_id` comment with the real UPDATE deleted must go red.
     assert!(
-        src.contains("COALESCE(arma_id"),
-        "T-557: expected COALESCE(arma_id, …) first-create path in dev_login — without it, \
-         concurrent cold inserts can 23505 on idx_users_arma_id again"
+        code.contains("SET arma_id = COALESCE(arma_id"),
+        "T-560: expected live `SET arma_id = COALESCE(arma_id` in comment-stripped \
+         src/handlers/dev.rs — a comment alone is not the first-create path; without the \
+         live UPDATE, concurrent cold inserts can 23505 on idx_users_arma_id again"
     );
-    // Ban the pre-T-557 race shape: quoted fixed arma_id as an INSERT value after avatar ''.
+
+    // T-560: INSERT must leave arma_id NULL (not a `$N` bind stamp, not a quoted literal).
+    let arma_val = users_insert_arma_id_value(&code).unwrap_or_else(|| {
+        panic!(
+            "T-560: could not parse INSERT INTO users (…) VALUES (…) arma_id slot in \
+             comment-stripped src/handlers/dev.rs"
+        )
+    });
+    assert!(
+        arma_val.eq_ignore_ascii_case("NULL"),
+        "T-560: users INSERT must put NULL in the arma_id column (got `{arma_val}`). \
+         Bind-stamping `$N` or a fixed literal into INSERT VALUES races idx_users_arma_id \
+         on concurrent cold first-use — keep NULL + live COALESCE UPDATE"
+    );
+
+    // Keep the pre-T-557 quoted-literal ban (raw source) as defense-in-depth.
     assert!(
         !src.contains("'', 'dev-arma-76561190000000001'"),
         "T-557: fixed arma_id must not appear as an INSERT VALUES literal after empty \
