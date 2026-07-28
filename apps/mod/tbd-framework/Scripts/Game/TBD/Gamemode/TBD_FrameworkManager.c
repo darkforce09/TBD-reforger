@@ -514,6 +514,11 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//------------------------------------------------------------------------------------------------
 	//! A5 — wait for the roster to settle (loaded or failed), force-settle at the 2 s
 	//! deadline, then enter LOBBY exactly once.
+	//!
+	//! T-541 — also wait for SpawnManager's loadout IsComplete settle. MaterializeSlotBodies
+	//! starts async dress passes; entering LOBBY before IsComplete answers was the residual
+	//! that let incomplete delivery proceed to the lobby/deploy wave after T-415 only
+	//! ERROR-logged inside ReportVerdict. Incomplete refuse → stay in LOADING.
 	protected void TickRosterSettle()
 	{
 		m_iRosterSettleTicks++;
@@ -521,13 +526,32 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (!TBD_RosterLoader.IsLoaded() && m_iRosterSettleTicks < 4)
 			return;
 
-		GetGame().GetCallqueue().Remove(TickRosterSettle);
-
 		if (!TBD_RosterLoader.IsLoaded())
 			TBD_RosterLoader.ForceSettle();
 
+		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
+		// Loadout settle arm happens in the same OnMissionReady tick as BeginLoad; give it
+		// wall-clock room (roster force is 2 s; loadout wear verify alone can be ~3 s+).
+		// SpawnManager itself times out at LOADOUT_SETTLE_MAX_TICKS and sets refused.
+		if (sm && sm.IsLoadoutSettlePending() && m_iRosterSettleTicks < 24)
+			return;
+
+		GetGame().GetCallqueue().Remove(TickRosterSettle);
+
 		Print(string.Format("[TBD][Spawn] roster settled=%1 assignments=%2",
 			TBD_RosterLoader.GetSettleReason(), TBD_RosterLoader.GetAssignmentCount()));
+
+		if (sm && sm.IsLoadoutDeliveryRefused())
+		{
+			Print("[TBD][Spawn] LOBBY REFUSED — loadout delivery incomplete at spawn boundary (IsComplete=0); staying in LOADING", LogLevel.ERROR);
+			return;
+		}
+
+		if (sm && sm.IsLoadoutSettlePending())
+		{
+			Print("[TBD][Spawn] LOBBY REFUSED — loadout settle still pending after roster wait ceiling; staying in LOADING", LogLevel.ERROR);
+			return;
+		}
 
 		SetStage(TBD_EGameStage.LOBBY);
 	}

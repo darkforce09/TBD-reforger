@@ -271,6 +271,16 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	protected ref map<string, string> m_mBodyBoundTo;
 	protected int m_iRoundRobin;
 	protected bool m_bSlotBodiesMaterialized;
+	//! T-541 — true once MaterializeSlotBodies' loadout apps have all reached IsDone and
+	//! every one answered IsComplete(). False while settle is still polling OR after an
+	//! incomplete refuse (see m_bLoadoutDeliveryRefused). Deploy and LOBBY entry key off this.
+	protected bool m_bLoadoutSettlePending;
+	//! T-541 — spawn-boundary refuse: at least one slot loadout finished IsComplete()=0.
+	//! Materialized stays false; FrameworkManager must not advance to LOBBY; DeployPlayer
+	//! returns DENIED rather than spinning RETRY.
+	protected bool m_bLoadoutDeliveryRefused;
+	//! T-541 — CallLater tick counter for loadout settle (see TickLoadoutSettle).
+	protected int m_iLoadoutSettleTicks;
 	protected ref map<int, bool> m_mDeployRequested;
 	//! A1 — pull-path retry bookkeeping (transient RETRY results; cap = 20 × 500 ms).
 	protected ref map<int, int> m_mRetryCount;
@@ -324,6 +334,12 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! T-068.12 — strong refs to in-flight loadout applications (CallLater holds none);
 	//! pruned of completed apps whenever a new one starts.
 	protected ref array<ref TBD_LoadoutApplication> m_aLoadoutApps = {};
+
+	//! T-541 — loadout settle poll. Wear verify alone is VERIFY_MAX_ATTEMPTS × VERIFY_TICK_MS
+	//! (6 × 500 ms = 3 s) plus weapon phase (≤1 s) plus cargo/audit; 40 × 250 ms = 10 s is a
+	//! hard ceiling so a stuck CallLater cannot strand LOADING forever.
+	protected const int LOADOUT_SETTLE_TICK_MS = 250;
+	protected const int LOADOUT_SETTLE_MAX_TICKS = 40;
 
 	//------------------------------------------------------------------------------------------------
 	void TBD_SpawnManager(IEntityComponentSource src, IEntity ent, IEntity parent)
@@ -380,6 +396,23 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	bool AreSlotBodiesMaterialized()
 	{
 		return m_bSlotBodiesMaterialized;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-541 — true while MaterializeSlotBodies has started apps that have not yet all reached
+	//! IsDone(). FrameworkManager's roster settle waits on this so LOBBY cannot open on a
+	//! half-dressed lineup.
+	bool IsLoadoutSettlePending()
+	{
+		return m_bLoadoutSettlePending;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-541 — true after the spawn-boundary IsComplete gate refused at least one slot.
+	//! LOBBY must not open; DeployPlayerInternal returns DENIED.
+	bool IsLoadoutDeliveryRefused()
+	{
+		return m_bLoadoutDeliveryRefused;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -920,9 +953,15 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! Authority-only: materialize one slot BODY per mission slots[] entry at the exact
 	//! JSON transform — kit prefab, AI disabled (CRF pattern), Arsenal loadout applied.
 	//! The numbered lineup stands in the world through the lobby; deploy binds onto it.
+	//!
+	//! T-541 — IsComplete is the spawn-boundary gate. ReportVerdict already ERROR-refuses an
+	//! incomplete pass inside TBD_LoadoutApplication, but that alone used to let this function
+	//! flip m_bSlotBodiesMaterialized and FrameworkManager advance to LOBBY regardless. Apps
+	//! settle asynchronously (wear verify CallLater); we do NOT mark materialized until every
+	//! app IsDone() and IsComplete(), or we refuse and stay closed.
 	void MaterializeSlotBodies()
 	{
-		if (m_bSlotBodiesMaterialized)
+		if (m_bSlotBodiesMaterialized || m_bLoadoutSettlePending || m_bLoadoutDeliveryRefused)
 			return;
 
 		array<ref TBD_MissionSlotStruct> slots = TBD_MissionLoader.GetSlots();
@@ -963,9 +1002,6 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 				kitOnly++;
 		}
 
-		if (built > 0)
-			m_bSlotBodiesMaterialized = true;
-
 		// T-181.10 — kit-only slots are legal (the kit prefab dresses them), but a mission
 		// that meant to author loadouts and shipped none has to be visible at a glance, and
 		// a slot whose body never spawned is an outright error, not a quiet shortfall.
@@ -974,6 +1010,84 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (failed > 0)
 			Print(string.Format("[TBD][Slots] %1 of %2 slot bodies FAILED to materialize — see the kit resolve / prefab errors above",
 				failed, number), LogLevel.ERROR);
+
+		if (built <= 0)
+			return;
+
+		// T-541 — do NOT set m_bSlotBodiesMaterialized here. Every body has a
+		// TBD_LoadoutApplication (authored Run or kit worn-audit); open the settle poll so
+		// IsComplete is consumed at this boundary before LOBBY / deploy.
+		m_bLoadoutSettlePending = true;
+		m_iLoadoutSettleTicks = 0;
+		Print(string.Format("[TBD][Slots] loadout settle armed — waiting for %1 application(s) IsDone+IsComplete before spawn opens",
+			m_aLoadoutApps.Count()));
+		GetGame().GetCallqueue().CallLater(TickLoadoutSettle, LOADOUT_SETTLE_TICK_MS, true);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-541 — poll until every loadout application from MaterializeSlotBodies is IsDone(),
+	//! then call IsComplete() on each. Incomplete → refuse (materialized stays false,
+	//! m_bLoadoutDeliveryRefused = true). Complete → open spawn (m_bSlotBodiesMaterialized).
+	protected void TickLoadoutSettle()
+	{
+		if (!m_bLoadoutSettlePending)
+		{
+			GetGame().GetCallqueue().Remove(TickLoadoutSettle);
+			return;
+		}
+
+		m_iLoadoutSettleTicks++;
+
+		int pending = 0;
+		foreach (TBD_LoadoutApplication app : m_aLoadoutApps)
+		{
+			if (app && !app.IsDone())
+				pending++;
+		}
+
+		if (pending > 0 && m_iLoadoutSettleTicks < LOADOUT_SETTLE_MAX_TICKS)
+			return;
+
+		GetGame().GetCallqueue().Remove(TickLoadoutSettle);
+		m_bLoadoutSettlePending = false;
+
+		if (pending > 0)
+		{
+			m_bLoadoutDeliveryRefused = true;
+			Print(string.Format("[TBD][Slots] loadout settle TIMED OUT — %1 application(s) still in flight after %2 ms — spawn REFUSED (IsComplete never answered)",
+				pending, m_iLoadoutSettleTicks * LOADOUT_SETTLE_TICK_MS), LogLevel.ERROR);
+			return;
+		}
+
+		int incomplete = 0;
+		foreach (TBD_LoadoutApplication app : m_aLoadoutApps)
+		{
+			if (!app)
+				continue;
+			// Cancel() marks done without Fail/Degrade; IsComplete stays true. Only a finished
+			// pass that ReportVerdict already ERROR-refused (or would) fails the gate here.
+			if (!app.IsComplete())
+				incomplete++;
+		}
+
+		if (incomplete > 0)
+		{
+			m_bLoadoutDeliveryRefused = true;
+			Print(string.Format("[TBD][Slots] loadout delivery REFUSED at spawn boundary — %1 application(s) IsComplete=0 — LOBBY/deploy will not open (see loadout delivery REFUSED lines above)",
+				incomplete), LogLevel.ERROR);
+			return;
+		}
+
+		m_bSlotBodiesMaterialized = true;
+		Print(string.Format("[TBD][Slots] loadout settle complete — %1 application(s) IsComplete=1 — spawn open",
+			m_aLoadoutApps.Count()));
+		PruneDoneLoadoutApps();
+
+		// Roster settle may already have entered LOBBY while we were still dressing; kick the
+		// auto-deploy wave now that materialized is true (ScheduleDeployAllConnectedPlayers
+		// early-returned on the first LOBBY entry when we were still pending).
+		if (m_eStage == TBD_EGameStage.LOBBY)
+			ScheduleDeployAllConnectedPlayers();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1165,6 +1279,23 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			if (m_aLoadoutApps[i].IsDone())
 				m_aLoadoutApps.Remove(i);
 		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-541 — the in-flight (or just-finished) loadout application dressing this body, if any.
+	//! Used at the deploy boundary so a rematerialized body cannot be possessed before
+	//! IsComplete answers.
+	protected TBD_LoadoutApplication FindLoadoutAppFor(IEntity body)
+	{
+		if (!body)
+			return null;
+
+		foreach (TBD_LoadoutApplication app : m_aLoadoutApps)
+		{
+			if (app && app.GetCharacter() == body)
+				return app;
+		}
+		return null;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -2047,6 +2178,15 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			return TBD_EDeployResult.DENIED;
 		}
 
+		// T-541 — incomplete loadout delivery at materialize refused the spawn boundary.
+		// DENIED (not RETRY): spinning would hide the refuse behind a retry ladder.
+		if (m_bLoadoutDeliveryRefused)
+		{
+			Print(string.Format("[TBD][Spawn] deploy DENIED player=%1 — loadout delivery REFUSED at spawn boundary (IsComplete=0 on one or more slots)",
+				playerId), LogLevel.ERROR);
+			return TBD_EDeployResult.DENIED;
+		}
+
 		if (!m_bSlotBodiesMaterialized || !TBD_RosterLoader.IsLoaded())
 			return TBD_EDeployResult.RETRY;
 
@@ -2102,6 +2242,21 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 				return TBD_EDeployResult.FAILED;
 			m_mSlotBodies.Set(slot.Key(), body);
 			Print(string.Format("[TBD][Slots] rematerialized body for slot %1 (%2) — freshly dressed from mission JSON", slot.Key(), remakeReason));
+		}
+
+		// T-541 — rematerialize (and any still-settling standing body) must not possess until
+		// IsComplete answers. RETRY while the app is in flight; FAILED when it finished incomplete.
+		TBD_LoadoutApplication bodyApp = FindLoadoutAppFor(body);
+		if (bodyApp)
+		{
+			if (!bodyApp.IsDone())
+				return TBD_EDeployResult.RETRY;
+			if (!bodyApp.IsComplete())
+			{
+				Print(string.Format("[TBD][Spawn] deploy FAILED player=%1 slot=%2 — loadout IsComplete=0 at spawn boundary (authored loadout was not fully delivered)",
+					playerId, slot.Key()), LogLevel.ERROR);
+				return TBD_EDeployResult.FAILED;
+			}
 		}
 
 		SCR_PlayerController pc = SCR_PlayerController.Cast(
