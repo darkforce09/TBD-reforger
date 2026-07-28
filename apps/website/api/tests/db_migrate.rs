@@ -1,20 +1,25 @@
 //! Phase 1 gate — the sqlx migration runner reproduces the full schema.
 //!
-//! Skips unless `MIGRATE_TEST_DATABASE_URL` points at a **fresh** database (mirrors
-//! the Go `t.Skip` on missing `TEST_DATABASE_URL`). The byte-level parity vs the Go
-//! schema is proven separately by the G2 `pg_dump` diff; this proves sqlx's runner
-//! applies the frozen migration end-to-end and lands the expected object counts.
+//! Skips unless `TEST_DATABASE_URL` is set. T-558: this binary no longer shares
+//! `MIGRATE_TEST_DATABASE_URL` / `tbd_gate_migrate` with `models_fromrow.rs` — it goes
+//! through [`common::require_test_database_url`] so it gets its own
+//! `<base>_db_migrate_it` database (T-534 shape). Provision already migrates from empty;
+//! the assertions below pin object counts, and the second `migrate` call pins idempotency.
+//! The byte-level parity vs the Go schema is proven separately by the G2 `pg_dump` diff.
+
+mod common;
 
 use website_api::db;
 
 #[tokio::test]
 async fn migrate_creates_full_schema() {
-    let Ok(url) = std::env::var("MIGRATE_TEST_DATABASE_URL") else {
-        eprintln!("skip: MIGRATE_TEST_DATABASE_URL unset");
+    let Some(url) = common::require_test_database_url() else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
         return;
     };
 
     let pool = db::connect(&url).await.expect("connect");
+    // Provision already migrated; a second apply must be a no-op and leave counts intact.
     db::migrate(&pool).await.expect("migrate");
 
     // 30 base tables (29 Go-parity + registry_compat, T-068.9) + the sqlx

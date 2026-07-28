@@ -225,6 +225,15 @@ pub fn with_database_name(url: &str, database: &str) -> Option<String> {
 /// Two things this deliberately does NOT do. It does not serialise anything — tests still
 /// run in parallel inside a binary, at full speed. And it does not weaken a single
 /// assertion; the suites are unchanged.
+///
+/// # T-558 finding 4 — concurrent `cargo test` processes still race
+///
+/// Two concurrent `cargo test` invocations against the **same** operator base still race on
+/// `<base>_<suite>_it`: both binaries run [`provision`]'s `DROP DATABASE … WITH (FORCE)` /
+/// `CREATE DATABASE` for the same derived name. That is no worse than the pre-T-534 race on
+/// `<base>` itself. The wave gate's flock already serialises gate runs, so the gate path is
+/// covered. Fixing cross-process overlap (PID-suffixed names, or a cross-process provision
+/// lock) is outside this slice's `owns` — recorded here so it is not rediscovered as new.
 pub fn require_test_database_url() -> Option<String> {
     PER_BINARY_URL.get_or_init(resolve_and_provision).clone()
 }
@@ -1122,37 +1131,76 @@ fn t381_test_database_name_guard() {
     );
 }
 
-/// Class-R (T-542): only [`require_test_database_url`] may read `TEST_DATABASE_URL`.
+/// Class-R (T-542 / T-558): only [`require_test_database_url`] may read `TEST_DATABASE_URL`.
 ///
-/// Scans every top-level `tests/*.rs` binary (not this `common/` module). A raw
-/// `env::var("TEST_DATABASE_URL")` outside `common/mod.rs` is a regression — parallel
-/// IT against live `tbd_reforger` must panic, not mutate.
+/// Scans every top-level `tests/*.rs` binary (not this `common/` module) **and** every
+/// `src/**/*.rs` file (T-558). Pre-T-558 the scan was tests-only, so the in-crate
+/// `#[tokio::test]` in `src/services/registry_import.rs` could read the operator base raw
+/// and stay invisible. A raw `env::var("TEST_DATABASE_URL")` outside `common/mod.rs` is a
+/// regression — parallel IT against live `tbd_reforger` must panic, not mutate.
 #[test]
 fn t542_no_raw_test_database_url_reads_outside_common() {
     let needle = concat!("env::var(", "\"TEST_DATABASE_URL\")");
-    let tests_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests");
+    let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut offenders = Vec::new();
+
+    // Top-level IT binaries — `tests/common/` is not scanned.
+    let tests_dir = manifest.join("tests");
     let entries = std::fs::read_dir(&tests_dir)
         .unwrap_or_else(|e| panic!("T-542 Class-R: read_dir({}): {e}", tests_dir.display()));
     for entry in entries {
         let entry = entry.expect("T-542 Class-R: DirEntry");
         let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("rs") {
-            continue;
-        }
-        // Only top-level binaries — `tests/common/` is not scanned.
-        if !path.is_file() {
+        if path.extension().and_then(|e| e.to_str()) != Some("rs") || !path.is_file() {
             continue;
         }
         let src = std::fs::read_to_string(&path)
             .unwrap_or_else(|e| panic!("T-542 Class-R: read {}: {e}", path.display()));
         if src.contains(needle) {
-            offenders.push(path.file_name().unwrap().to_string_lossy().into_owned());
+            offenders.push(format!(
+                "tests/{}",
+                path.file_name().unwrap().to_string_lossy()
+            ));
         }
     }
+
+    // T-558: walk `src/` so lib-target DB tests cannot hide from this pin.
+    let src_dir = manifest.join("src");
+    fn walk_rs(
+        dir: &std::path::Path,
+        needle: &str,
+        offenders: &mut Vec<String>,
+        root: &std::path::Path,
+    ) {
+        let entries = std::fs::read_dir(dir)
+            .unwrap_or_else(|e| panic!("T-542/T-558 Class-R: read_dir({}): {e}", dir.display()));
+        for entry in entries {
+            let entry = entry.expect("T-542/T-558 Class-R: DirEntry");
+            let path = entry.path();
+            if path.is_dir() {
+                walk_rs(&path, needle, offenders, root);
+                continue;
+            }
+            if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+                continue;
+            }
+            let src = std::fs::read_to_string(&path)
+                .unwrap_or_else(|e| panic!("T-542/T-558 Class-R: read {}: {e}", path.display()));
+            if src.contains(needle) {
+                let rel = path
+                    .strip_prefix(root)
+                    .unwrap_or(&path)
+                    .display()
+                    .to_string();
+                offenders.push(rel);
+            }
+        }
+    }
+    walk_rs(&src_dir, needle, &mut offenders, manifest);
+
     assert!(
         offenders.is_empty(),
-        "T-542: these IT binaries still contain {needle} — use common::require_test_database_url \
+        "T-542/T-558: these paths still contain {needle} — use common::require_test_database_url \
          (only common/mod.rs may hold that literal): {offenders:?}"
     );
 }
