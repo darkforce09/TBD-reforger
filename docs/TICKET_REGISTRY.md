@@ -1712,7 +1712,7 @@ Note the comment two lines above says 'The raw value is echoed in the verdict so
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-387 | 3203 | deferred | platform | render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) | NARROWED after W61 (T-339 shipped). api_proxy half-hydrate CLOSED (smokes.rs defaults api_proxy to :8080; gate --api-proxy).
+| T-387 | 3203 | running | platform | render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) | NARROWED after W61 (T-339 shipped). api_proxy half-hydrate CLOSED (smokes.rs defaults api_proxy to :8080; gate --api-proxy).
 
 MEASURED residual (W64 attempt, STOP — owns collide with T-560):
 - apps/website/api/src/handlers/dev.rs:14 DEV_USER_ID fixed for all roles
@@ -2999,7 +2999,7 @@ INSERT arma_id = $3 + comment COALESCE (no real UPDATE) → PASS; barrier probe 
 Product NULL+COALESCE path holds (0 race hits). Pin does not.
 
 Repro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again. |
-| T-561 | 3414 | deferred | platform | T-559 Class-R still hollow — block-comment / string decoy opt(&row.briefing) | FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-559.
+| T-561 | 3414 | running | platform | T-559 Class-R still hollow — block-comment / string decoy opt(&row.briefing) | FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-559.
 
 strip_rust_line_comments only drops // lines. Both wires → None plus:
 - /* opt(&row.briefing) */ → PASS
@@ -3007,7 +3007,7 @@ strip_rust_line_comments only drops // lines. Both wires → None plus:
 // decoy still RED (T-559 held).
 
 Repro: replace both opt(&row.briefing) with None; leave /* opt(&row.briefing) */ in adopt_payload and apply_row; cargo test hydrate_wires_row_briefing green. |
-| T-562 | 3415 | deferred | platform | T-560 Class-R still hollow — string/format! SET arma_id = COALESCE decoy | FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-560.
+| T-562 | 3415 | running | platform | T-560 Class-R still hollow — string/format! SET arma_id = COALESCE decoy | FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-560.
 
 Comment strip works; contains("SET arma_id = COALESCE(arma_id") keeps string literals.
 Delete live UPDATE + leave needle in let _decoy = "…" or format!("…") → PASS while INSERT stays NULL.

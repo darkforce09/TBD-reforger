@@ -69,7 +69,7 @@
 0	T-366	time_of_day whitespace 500s, and username() lets a blank actor into every audit line	apps/website/api/src/handlers/mod.rs
 0	T-359	Server Intel always renders "Theater Unknown" — it reads a field the backend has no column for	apps/website/frontend/src/server_intel.rs
 0	T-386	render-check's exit code cannot fail a probe — every browser assertion has been decorative	tools/tbd-tools/src/smokes.rs
-99	T-387	render-check / gate residual after T-339: dev-login single Discord id (not api_p	tools/tbd-tools/src/smokes.rs; tools/tbd-tools/src/bin/gate.rs
+65	T-387	render-check / gate residual after T-339: dev-login single Discord id (not api_p	apps/website/api/src/handlers/dev.rs; apps/website/api/tests/misc_integration.rs; apps/website/api/tests/missions.rs
 0	T-388	The adoption-residue purge is not guaranteed on a first editor open	apps/website/frontend/src/editor_session.rs
 50	T-385	Join matches.terrain into /servers so the theater readout can come back	apps/website/api/src/handlers/servers.rs; apps/website/frontend/src/dto.rs; apps/website/frontend/src/server_intel.rs; apps/website/frontend/tests/fixtures/api/GET__servers.json; apps/website/api/tests/misc_integration.rs; apps/website/frontend/src/server_control.rs
 0	T-372	POST /admin/roles/sync demotes every admin who never completed a Discord login	apps/website/api/src/services/role_sync.rs
@@ -359,6 +359,6 @@
 3	T-558	Test-harness residue after T-534	apps/website/api/tests/db_migrate.rs; Makefile
 64	T-559	T-554 Class-R soft contains — comment decoy stays green	apps/website/frontend/src/mission_title_prefer.rs; apps/website/frontend/src/mission_hydrate.rs
 64	T-560	T-557 Class-R hollow — comment COALESCE / bind-form race	apps/website/api/tests/common/mod.rs; apps/website/api/src/handlers/dev.rs
-99	T-561	T-559 Class-R hollow — block-comment/string decoy	apps/website/frontend/src/mission_title_prefer.rs
-99	T-562	T-560 Class-R hollow — string/format! COALESCE decoy	apps/website/api/tests/common/mod.rs
+65	T-561	T-559 Class-R hollow — block-comment/string decoy	apps/website/frontend/src/mission_title_prefer.rs
+65	T-562	T-560 Class-R hollow — string/format! COALESCE decoy	apps/website/api/tests/common/mod.rs
 99	T-563	T-541 admin #stage LOBBY bypasses TickRosterSettle refuse	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c; apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c

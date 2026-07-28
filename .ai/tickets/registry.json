@@ -10736,7 +10736,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3203,
       "stream": "web-platform",
       "targets": [
@@ -14458,7 +14458,7 @@
         "tests",
         "mission-authoring"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3414,
       "executor": "claude-code",
       "priority": 2,
@@ -14480,7 +14480,7 @@
         "tests",
         "auth"
       ],
-      "status": "deferred",
+      "status": "running",
       "order": 3415,
       "executor": "claude-code",
       "priority": 2,
