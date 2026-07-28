@@ -1712,7 +1712,7 @@ Note the comment two lines above says 'The raw value is echoed in the verdict so
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-387 | 3203 | deferred | platform | render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) | NARROWED after W61 (T-339 shipped). The original api_proxy:None render-check hole is CLOSED by T-339 (CLI --api-proxy + default :8080).
+| T-387 | 3203 | running | platform | render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) | NARROWED after W61 (T-339 shipped). The original api_proxy:None render-check hole is CLOSED by T-339 (CLI --api-proxy + default :8080).
 
 Remaining from the original T-387 write-up (do not re-litigate api_proxy):
 - Dev-login / probe path still folds multiple roles onto a single Discord id in ways that half-hydrate or collide sessions (see original T-387 notes + T-361 SSE proxy sibling if overlapping).
@@ -2960,7 +2960,7 @@ can never disagree. T-534 pinned the current literals with a Class-R test
 (`t534_dev_login_prime_literals_still_match_handler`) that greps dev.rs for both the literals AND the
 `ON CONFLICT (discord_id) DO UPDATE` shape -- IT WILL GO RED when you change this, deliberately.
 Update it in the same commit rather than deleting it. |
-| T-558 | 3411 | running | platform | Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB | Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
+| T-558 | 3411 | deferred | platform | Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB | Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
 
 1. `apps/website/api/src/services/registry_import.rs:455` -- a THIRTIETH database consumer that the
    T-542 Class-R guard cannot see. An in-crate `#[tokio::test]` reads TEST_DATABASE_URL raw and
