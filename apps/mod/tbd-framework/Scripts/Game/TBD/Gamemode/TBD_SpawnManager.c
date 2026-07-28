@@ -1589,6 +1589,28 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-541 / T-563 — reason LOBBY must not open (loadout refuse or settle still pending), or empty.
+	//! Shared by automatic TickRosterSettle and admin SetStage(LOBBY) / #stage LOBBY via StageRefusalFor.
+	//! Prints the same ERROR lines the auto path historically used so the console diagnosis is one shape.
+	//! @authority server
+	protected string LoadoutLobbyRefusalReason()
+	{
+		if (m_bLoadoutDeliveryRefused)
+		{
+			Print("[TBD][Spawn] LOBBY REFUSED — loadout delivery incomplete at spawn boundary (IsComplete=0); staying in LOADING", LogLevel.ERROR);
+			return "LOBBY refused — loadout delivery incomplete at spawn boundary (IsComplete=0)";
+		}
+
+		if (m_bLoadoutSettlePending)
+		{
+			Print("[TBD][Spawn] LOBBY REFUSED — loadout settle still pending; staying in LOADING", LogLevel.ERROR);
+			return "LOBBY refused — loadout settle still pending";
+		}
+
+		return string.Empty;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! T-181.32 — THE HOOK `TBD_FrameworkManager.SetStage` CALLS. Empty string = the stage may be
 	//! entered; anything else is the reason it may not, already logged as a banner.
 	//!
@@ -1598,13 +1620,27 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! problem than this gate can express, and it already has an owner: PrintComponentRollCall
 	//! reports it at ERROR and `world-boot.sh` fails the wave gate on it. Blocking every stage
 	//! transition here would bury that diagnosis under a misleading one.
+	//!
+	//! T-563 — also refuses LOBBY while loadout delivery is refused or settle is still pending
+	//! (same gate TickRosterSettle used). Admin `#stage LOBBY` / SetStage(LOBBY) share that path;
+	//! DeployPlayerInternal already DENIED on m_bLoadoutDeliveryRefused — stage chrome must not open.
 	//! @authority server
 	static string StageRefusalFor(TBD_EGameStage stage)
 	{
+		TBD_SpawnManager spawn = GetInstance();
+
+		// T-563 — LOBBY loadout gate BEFORE the identity early-out (LOBBY does not require durable
+		// identity, so the old RequiresDurableIdentity short-circuit skipped this entirely).
+		if (stage == TBD_EGameStage.LOBBY && spawn)
+		{
+			string loadoutRefusal = spawn.LoadoutLobbyRefusalReason();
+			if (!loadoutRefusal.IsEmpty())
+				return loadoutRefusal;
+		}
+
 		if (!RequiresDurableIdentity(stage))
 			return string.Empty;
 
-		TBD_SpawnManager spawn = GetInstance();
 		if (!spawn)
 			return string.Empty;
 
