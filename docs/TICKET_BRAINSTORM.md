@@ -155,14 +155,6 @@ Note mission_hydrate.rs is assigned to T-191/T-223/T-338 in the wave plan, so ch
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-387** (deferred) — render-check / gate residual after T-339: dev-login single Discord id (not api_proxy) [CI] — NARROWED after W61 (T-339 shipped). The original api_proxy:None render-check hole is CLOSED by T-339 (CLI --api-proxy + default :8080).
-
-Remaining from the original T-387 write-up (do not re-litigate api_proxy):
-- Dev-login / probe path still folds multiple roles onto a single Discord id in ways that half-hydrate or collide sessions (see original T-387 notes + T-361 SSE proxy sibling if overlapping).
-
-Measure live gate/smokes/dev-login before implementing; owns stay tools gate/smokes unless evidence moves the residual.
-
-== DEFERRED — residual after T-339 ==
 - **T-388** (deferred) — The adoption-residue purge is not guaranteed on a first editor open [FRONTEND] — MINOR, from the behavioural probe of T-352. Its residue purge (`editor_session.rs:149 purge_legacy_markers`) is reachable ONLY via `mark_adopted`, and three paths reach the editor without calling it:
   mission_hydrate.rs:181-190 — the `is_empty && loaded_from_idb` branch calls `apply_row` and no `mark_adopted`;
   `Local::Diverged` (:236) defers to conflict resolution;
@@ -189,11 +181,6 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 == TWO MORE, from wave 2 ==
 4. `apps/website/frontend/src/event_hub.rs:411` — the comment justifying the objectives-panel deletion says the `objectivesById` root "is still the closed hydrate→emit loop with no mutator". `crates/map-engine-core/src/doc/store.rs:1102,1122,1130` show `hydrate()` calling `objectives.clear(&mut txn)` then `load_rows(...)` — that IS a mutator; what is absent is an INCREMENTAL, user-facing one. The deletion decision survives on the stronger ground the same comment already gives (the DTO carries no objectives field on either side of the wire, verified at handlers/events.rs:952-972 and dto.rs:781-800), so this is a wording defect in a load-bearing comment, not a wrong call.
 5. `docs/platform/frontend_data_provenance.md:41,62` — its event_hub.rs citations drifted by ~5-50 lines, and `:62` names `event_hub.rs:211` as an `events.briefing` render site when `:211` is the `name_override` fallback and the Event Hub never read the event briefing at all. The `:41` row is invalidated wholesale by T-392's removals. Same drift on its `orbat_selection.rs:90` citation.
-- **T-491** (deferred) — T-425 mixed slot+vehicle drag commits two undo txns; pick/marquee untested [tests] — Wave 35 adversarial MAJOR (deferred). mission_editor Move commit calls move_entities(slots) then move_vehicles(vehs) — each its own yrs txn — so one mixed gesture needs two Ctrl+Z. New pick_slot_or_vehicle / marquee_* helpers have no unit tests (only flatten/kit Class-R). Vehicle drag also skips GPU set_drag preview (slots only).
-
-Repro: select one slot + one vehicle, drag, undo once — only one kind moves back.
-
-Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/marquee helpers; optional vehicle drag preview.
 - **T-493** (deferred) — T-397 Class-R blind to sum(COALESCE(deaths,0)) on leaderboard_totals [API, DATA] — Wave 37 adversarial NIT. insert_without_counters_stores_null_not_zero holds. leaderboard_mv_does_not_invent_deaths_from_null went RED when INSERT bound 0, but poisoning the MV to sum(COALESCE(deaths,0)) with a mixed NULL+measured fixture still left the Class-R GREEN (0+3=3). Cure: pin all-NULL row set → kd_ratio IS NULL and/or source-ratchet migration 0014 / live MV for FILTER (WHERE deaths IS NOT NULL) / no COALESCE(deaths,0) in the aggregate.
 - **T-501** (deferred) — Community-terrain soft-fail has no match-ingest HTTP IT [API, CI] — Wave 39 residual from T-402. parse_terrain_opt + unit Class-R pin unknown terrain → None. No IT proves POST match ingest with terrain kolguyev/anizay returns 200 and stores NULL terrain. Cure: apps/website/api/tests/telemetry.rs case on cold DB.
 - **T-503** (deferred) — Arsenal has no Save button — cargo persists immediately (T-417 structural) [ATTR, DATA] — Wave 40 residual from T-417. arsenal.rs persist_cargo→set_loadout on every cargo mutation; export gate is the only client refusal. Cure: either add explicit Save UX or document intentional auto-persist with Class-R.
@@ -209,85 +196,47 @@ Repro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note
 ingest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1→EV2 and asserts EV1 returns to registered while EV2 is attended.
 
 Repro: rg retract_from apps/website/api — no IT exercises the path.
-- **T-541** (deferred) — SpawnManager never calls IsComplete after T-415 helper consume [MOD, FE] — FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.
-
-Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
-
-Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync.
 - **T-546** (deferred) — T-498 Class-R only — no HTTP IT for Discord formula-title sanitize [API, tests] — FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-498.
 
 sanitize_discord_embed_field + include_str wire pins exist; no services_http / CMS IT asserts a leading '=title' becomes ZWSP-prefixed in the outbound embed JSON.
 
 Repro: rg sanitize_discord apps/website/api/tests — no hit.
-- **T-553** (deferred) — TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual) [MOD] — FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.
+- **T-570** (deferred) — T-567 Class-R still hollow — unreachable if true==false / loop-break / cfg(any()) [FRONTEND, tests] — FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.
 
-T-419 closed open-schema lore in TBD_ObjectiveRules.c + TBD_MissionLoader.c, but TBD_ZoneRegistry.c:39 still says:
-  //! `rules.penalty` vocabulary. Additive under the schema's `additionalProperties: true`.
+Exact `if false { … }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply… }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(…, opt(&row.briefing)).
 
-Live pin: packages/tbd-schema/schema/mission.schema.json $defs.zoneRules.additionalProperties = false.
+Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pin green.
+- **T-571** (deferred) — T-568 Class-R still hollow — nested fn dev_login / PG dollar-quote COALESCE [API, tests] — FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-568.
 
-Repro:
-  rg -n 'additionalProperties: true' apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
-  # expect hit at line 39; schema says false.
-- **T-554** (deferred) — T-418 FE hydrate→briefing wire has no Class-R pin (core only) [FRONTEND, tests] — FOUND by W62 adversarial verifier (DIRTY MINOR) after T-418.
+Plain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE…COALESCE…$decoy$ (blanker only handles '/").
 
-mission_hydrate.rs threads MissionDetail.briefing into apply_row_meta via opt(&row.briefing). Core Class-R t418_apply_row_meta_threads_briefing_into_meta covers apply_row_meta/compile_export, not the FE call site.
+Repro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R green.
+- **T-572** (deferred) — T-569 Class-R still hollow — #[cfg(any())] match arms [API, tests] — FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-569.
 
-Mutation probe: replace both opt(&row.briefing) with None → cargo test -p website-frontend briefing|hydrate still PASS.
+r#/br#/concat decoys RED. Still GREEN: `#[cfg(any())] match { live arms }` + `#[cfg(not(any()))] match { _ }` or cfg on each role arm with live `_`.
 
-Repro:
-  # Temporarily return None for briefing in mission_hydrate RowMeta construction;
-  # website-frontend tests that mention briefing/hydrate still green;
-  # only map-engine-core Class-R fails if apply_row_meta itself is gutted.
-- **T-557** (deferred) — dev-login 500s on concurrent first use: ON CONFLICT (discord_id) cannot arbitrate idx_users_arma_id [API] — A REAL APPLICATION DEFECT, found by T-534 while chasing a flaky gate. T-534 removed it from the TEST
-path with a serialised prime; the handler is unchanged and a real client still hits it.
+Repro: cfg-out live arms; leave `_ => DEV_USER_ID` live; Class-R green.
+- **T-573** (deferred) — Mixed drag: vehicle GPU preview still slots-only (set_drag SoA) [FRONTEND, MAP, VEH] — FOUND by W68 adversarial verifier (CLEAN NIT) after T-491, and admitted by the slice agent.
 
-`apps/website/api/src/handlers/dev.rs:41` INSERTs a user with a FIXED `arma_id`
-(`dev-arma-76561190000000001`) and `ON CONFLICT (discord_id) DO UPDATE`. But `arma_id` carries its own
-unique index -- `idx_users_arma_id`, `apps/website/api/migrations/0001_initial_schema.sql:887`.
-ON CONFLICT arbitrates exactly ONE index. Two concurrent FIRST-TIME dev-logins against a cold database
-both take the INSERT path; the loser violates idx_users_arma_id, which the conflict clause does not
-cover, so Postgres raises 23505 instead of falling through to DO UPDATE. The handler maps it to 500.
+`move_entities_and_vehicles` commits mixed drag in one LOCAL yrs txn, but live drag preview still filters vehicles out of `engine.set_drag` (`mission_editor.rs` ~1125–1134). `set_drag` is slot-SoA only in map-engine-render (outside T-491 owns).
 
-MEASURED from the Postgres log, not inferred:
-    ERROR:  duplicate key value violates unique constraint "idx_users_arma_id"
-    DETAIL: Key (arma_id)=(dev-arma-76561190000000001) already exists.
-    STATEMENT: INSERT INTO users (..., arma_id, ...) ... ON CONFLICT (discord_id) DO UPDATE SET ...
-Symptom seen by the caller: `dev-login did not mint a session ... status: 500`.
+Repro: select one slot + one vehicle; drag — vehicle glyph stays put until release; slot previews. Commit still moves both; undo is one step.
 
-SCOPE NOTE: dev-login is development-only (`APP_ENV=development`), so this is not a production
-outage -- but it is the front door every agent, gate and operator uses to get a session, and it fails
-exactly when the database is cold, which is exactly when the gate runs.
+Cure: extend drag preview / set_drag for vehicles (map-engine-render + host), or document as wontfix.
+- **T-574** (deferred) — T-491 host Class-R soft include_str — comment-only move_entities_and_vehicles survives [FRONTEND, tests] — FOUND by W68 adversarial verifier (CLEAN NIT) after T-491.
 
-FIX DIRECTIONS: arbitrate both indexes (or drop the fixed `arma_id` from the INSERT and let it be set
-only on first create), or make the dev user's `arma_id` a function of `discord_id` so the two indexes
-can never disagree. T-534 pinned the current literals with a Class-R test
-(`t534_dev_login_prime_literals_still_match_handler`) that greps dev.rs for both the literals AND the
-`ON CONFLICT (discord_id) DO UPDATE` shape -- IT WILL GO RED when you change this, deliberately.
-Update it in the same commit rather than deleting it.
-- **T-558** (deferred) — Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB [INFRA] — Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
+`select_tool_and_mission_editor_delegate_to_atomic_mix_apis` (store.rs ~2912–2940) only string-presence / Move-arm absence checks via include_str. A comment-only `move_entities_and_vehicles` mention would keep the pin green; it also does not pin that mission_editor calls pick_slot_or_vehicle / marquee_* helpers.
 
-1. `apps/website/api/src/services/registry_import.rs:455` -- a THIRTIETH database consumer that the
-   T-542 Class-R guard cannot see. An in-crate `#[tokio::test]` reads TEST_DATABASE_URL raw and
-   migrates the operator's BASE database. It is the only DB test in the lib target, self-cleaning and
-   idempotent, so it is deterministic today -- and it now has the base database entirely to itself
-   because T-534 moved everything else onto per-binary DBs. The real gap:
-   `t542_no_raw_test_database_url_reads_outside_common` scans only `tests/*.rs`. Extend it to `src/`
-   and this class stops being invisible.
+Behavioral one-undo Class-R is real and PASS. Soft host-delegation pin is the residue.
 
-2. `make test-it` now leaves 25 `rust_it_<suite>_it` databases behind. They are recreated per run so
-   they do not grow, but nothing prunes them -- the Makefile drops only `rust_it`. `Makefile` was
-   outside T-534's scope. (The GATE path is handled: T-534 extended `prune_old_gate_wave_dbs` in
-   wave.sh to reap derived names on the same keep-N-and-N-1 policy.)
+Repro: replace live call with comment containing the symbol (or keep call but drop pick/marquee delegation asserts); soft pin stays green.
+- **T-575** (deferred) — wave.sh still exports dead MIGRATE_TEST_DATABASE_URL after T-558 [INFRA, tests] — FOUND by W68 adversarial verifier (CLEAN NIT) after T-558.
 
-3. `tests/db_migrate.rs` and `tests/models_fromrow.rs` still SHARE one `MIGRATE_TEST_DATABASE_URL`.
-   Two binaries, one database -- the exact shape T-534 removed everywhere else. Deterministic today
-   only because cargo runs targets sequentially and both use `>=`/count assertions the sibling's rows
-   do not move. It survives on ordering, which is what this program keeps paying for.
+Gate script still exports `MIGRATE_TEST_DATABASE_URL` (wave.sh ~341). `db_migrate` / `models_fromrow` now use per-binary provision and no longer read it. Harmless leftover — not a silent gate skip.
 
-4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`
-   rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --
-   recorded so nobody rediscovers it as new.
+Repro: rg MIGRATE_TEST_DATABASE_URL in wave.sh vs api tests; export is live, consumers gone.
+
+Cure: drop the dead export (and any docs that still describe the shared migrate URL).
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
