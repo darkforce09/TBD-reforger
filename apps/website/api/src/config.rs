@@ -388,7 +388,9 @@ mod tests {
     fn empty_bot_token_is_unconfigured_in_development_too() {
         let cfg = Config::for_tests("postgres://x/x", "jwt-secret");
         assert!(cfg.is_development());
-        let cfg = cfg.validate().expect("development empty bot token must load");
+        let cfg = cfg
+            .validate()
+            .expect("development empty bot token must load");
         assert!(!cfg.discord_bot_configured());
     }
 
