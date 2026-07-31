@@ -1,8 +1,10 @@
 //! Runtime configuration from environment — Rust port of `internal/config`.
 //!
-//! 16 env vars; `DATABASE_URL` and `JWT_SECRET` are always required (hard-fail).
-//! In non-development, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, and
-//! `DISCORD_REDIRECT_URL` are also required (T-248 / T-430) so blank OAuth
+//! 19 env vars (measured: 12 `env::var` + 5 `get_env` + 2 `get_env_int`; the
+//! header said 16 through T-279 and was already stale at 18 before T-595 added
+//! `GAME_AGENT_SOCKET`). `DATABASE_URL` and `JWT_SECRET` are always required
+//! (hard-fail). In non-development, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
+//! and `DISCORD_REDIRECT_URL` are also required (T-248 / T-430) so blank OAuth
 //! creds cannot load config and later surface as `oauth_unconfigured` /
 //! `discord_unreachable`. A `.env` file is loaded if present but optional.
 //!
@@ -11,8 +13,18 @@
 //! through [`Config::require_discord_bot_token`], which makes "unset" a named
 //! error rather than an empty `Bot ` header; a set-but-whitespace-bearing token
 //! is rejected at boot because it can never authenticate.
+//!
+//! `GAME_AGENT_SOCKET` (T-595) is **optional and lands with its consumer** —
+//! [`handlers::admin::send_rcon`] reads it through
+//! [`Config::require_game_agent_socket`] on every request. T-279's rule is that
+//! a var is added *with* the code that reads it, precisely so this file cannot
+//! accumulate another `DISCORD_BOT_TOKEN`: a setting nobody consumes, which
+//! looks configured and does nothing.
+//!
+//! [`handlers::admin::send_rcon`]: crate::handlers::admin::send_rcon
 
 use std::env;
+use std::path::Path;
 
 /// Default body cap for `POST /missions/:id/versions` (256 MB), matching Go.
 const DEFAULT_MISSION_VERSION_MAX_BODY_BYTES: i64 = 256 << 20;
@@ -57,6 +69,13 @@ pub struct Config {
 
     // Game-server ingest authentication
     pub service_token: String,
+
+    /// T-595 — absolute path of T-289's host control agent socket, e.g.
+    /// `/run/user/1000/tbd-reforger-agent.sock` (the systemd unit renders it as
+    /// `%t/tbd-reforger-agent.sock`). **Empty = no transport**, and
+    /// `send_rcon` keeps answering 503 rather than pretending. Read through
+    /// [`Config::require_game_agent_socket`].
+    pub game_agent_socket: String,
 }
 
 /// Configuration load error — a required variable was empty or unusable.
@@ -103,6 +122,7 @@ impl Config {
             discord_bot_token: env::var("DISCORD_BOT_TOKEN").unwrap_or_default(),
             discord_webhook_url: env::var("DISCORD_WEBHOOK_URL").unwrap_or_default(),
             service_token: env::var("SERVICE_TOKEN").unwrap_or_default(),
+            game_agent_socket: env::var("GAME_AGENT_SOCKET").unwrap_or_default(),
         };
 
         cfg.validate()
@@ -153,6 +173,36 @@ impl Config {
                 "contains whitespace",
             ));
         }
+        // T-595 — the agent socket is optional (empty = no transport, which
+        // `send_rcon` reports honestly as 503). But a *set* value that cannot
+        // work must die at boot, not at 03:00 when an admin clicks Restart.
+        //
+        // Two rules, both for failures that would otherwise arrive disguised as
+        // "the game server is unreachable":
+        //
+        // 1. Leading/trailing whitespace — the copy-paste / secrets-manager
+        //    newline. `"/run/user/1000/x.sock\n"` is a perfectly plausible
+        //    `.env` value and `connect(2)` on it is ENOENT, which this API would
+        //    correctly-but-uselessly report as an unreachable agent. Inner
+        //    spaces are legal in a path and are NOT rejected.
+        // 2. Not absolute — `UnixStream::connect` resolves a relative path
+        //    against the API process's CWD, which is a systemd/launcher detail
+        //    nobody sets deliberately. It would either miss (ENOENT) or, worse,
+        //    hit a different socket than intended.
+        if !self.game_agent_socket.is_empty() {
+            if self.game_agent_socket != self.game_agent_socket.trim() {
+                return Err(ConfigError::Malformed(
+                    "GAME_AGENT_SOCKET",
+                    "has leading or trailing whitespace",
+                ));
+            }
+            if !Path::new(&self.game_agent_socket).is_absolute() {
+                return Err(ConfigError::Malformed(
+                    "GAME_AGENT_SOCKET",
+                    "must be an absolute path",
+                ));
+            }
+        }
         Ok(self)
     }
 
@@ -180,6 +230,32 @@ impl Config {
             return Err(ConfigError::Missing("DISCORD_BOT_TOKEN"));
         }
         Ok(&self.discord_bot_token)
+    }
+
+    /// True when a game-agent socket path is configured at all (T-595).
+    ///
+    /// Same shape as [`Self::discord_bot_configured`]: an unconfigured channel must be
+    /// distinguishable from a broken one, or "nobody set this up" hides inside whatever
+    /// `connect(2)` happens to return.
+    pub fn game_agent_configured(&self) -> bool {
+        !self.game_agent_socket.is_empty()
+    }
+
+    /// The agent socket path, or a named [`ConfigError::Missing`] when unset.
+    ///
+    /// T-595 — the **only** supported way to read `GAME_AGENT_SOCKET`. The raw field is `""`
+    /// when unconfigured, and `Path::new("")` is a real path that `UnixStream::connect`
+    /// answers with ENOENT — indistinguishable at the call site from a game host whose agent
+    /// has crashed. Going through this accessor turns "nobody configured a transport" into a
+    /// named condition the handler can report as such.
+    ///
+    /// Validation guarantees the returned path is absolute and free of surrounding
+    /// whitespace.
+    pub fn require_game_agent_socket(&self) -> Result<&Path, ConfigError> {
+        if !self.game_agent_configured() {
+            return Err(ConfigError::Missing("GAME_AGENT_SOCKET"));
+        }
+        Ok(Path::new(&self.game_agent_socket))
     }
 
     /// Body cap (bytes) for `POST /missions/:id/versions`, falling back to 256 MB.
@@ -218,6 +294,9 @@ impl Config {
             discord_bot_token: String::new(),
             discord_webhook_url: String::new(),
             service_token: "test-service-token".into(),
+            // Unconfigured by default: a test that wants the RCON transport stands up its
+            // own socket and sets this, so no suite can accidentally reach a real agent.
+            game_agent_socket: String::new(),
         }
     }
 }
@@ -453,6 +532,103 @@ mod tests {
         match cfg.validate() {
             Err(ConfigError::Malformed("DISCORD_BOT_TOKEN", _)) => {}
             other => panic!("expected Malformed(DISCORD_BOT_TOKEN) in dev, got {other:?}"),
+        }
+    }
+
+    // ---- T-595 GAME_AGENT_SOCKET ----------------------------------------
+
+    /// Unset is legal — there is no agent on a developer's box — but it must not
+    /// read as a usable path. `Path::new("")` connects to nothing and reports
+    /// ENOENT, which at the call site is indistinguishable from a dead agent.
+    #[test]
+    fn unset_agent_socket_loads_but_is_not_readable() {
+        let cfg = production_base();
+        assert!(cfg.game_agent_socket.is_empty());
+        let cfg = cfg
+            .validate()
+            .expect("unset GAME_AGENT_SOCKET must not block boot");
+        assert!(!cfg.game_agent_configured());
+        match cfg.require_game_agent_socket() {
+            Err(ConfigError::Missing("GAME_AGENT_SOCKET")) => {}
+            other => panic!("expected Missing(GAME_AGENT_SOCKET), got {other:?}"),
+        }
+    }
+
+    /// The real deployment value round-trips (`%t/tbd-reforger-agent.sock`
+    /// expanded by systemd).
+    #[test]
+    fn configured_agent_socket_is_readable() {
+        let mut cfg = production_base();
+        cfg.game_agent_socket = "/run/user/1000/tbd-reforger-agent.sock".into();
+        let cfg = cfg.validate().expect("an absolute socket path must load");
+        assert!(cfg.game_agent_configured());
+        assert_eq!(
+            cfg.require_game_agent_socket().expect("readable"),
+            Path::new("/run/user/1000/tbd-reforger-agent.sock")
+        );
+    }
+
+    /// A trailing newline from a copy-paste or a secrets-manager read. Both
+    /// `is_empty()` and `is_absolute()` pass it, so only the trim rule catches
+    /// it — and uncaught it becomes ENOENT, reported to the operator as an
+    /// unreachable game host rather than as a typo in their `.env`.
+    #[test]
+    fn agent_socket_with_surrounding_whitespace_is_rejected() {
+        for bad in [
+            "/run/user/1000/tbd-reforger-agent.sock\n",
+            " /run/user/1000/tbd-reforger-agent.sock",
+            "/run/user/1000/tbd-reforger-agent.sock\r\n",
+            "\t/run/user/1000/tbd-reforger-agent.sock ",
+        ] {
+            let mut cfg = production_base();
+            cfg.game_agent_socket = bad.into();
+            match cfg.validate() {
+                Err(ConfigError::Malformed("GAME_AGENT_SOCKET", _)) => {}
+                other => panic!("expected Malformed(GAME_AGENT_SOCKET) for {bad:?}, got {other:?}"),
+            }
+        }
+    }
+
+    /// A relative path resolves against the API process's CWD — a systemd detail
+    /// nobody chose. Reject it at boot rather than connect somewhere unintended.
+    #[test]
+    fn relative_agent_socket_is_rejected() {
+        for bad in [
+            "tbd-reforger-agent.sock",
+            "run/user/1000/tbd-reforger-agent.sock",
+            "./agent.sock",
+        ] {
+            let mut cfg = production_base();
+            cfg.game_agent_socket = bad.into();
+            match cfg.validate() {
+                Err(ConfigError::Malformed("GAME_AGENT_SOCKET", _)) => {}
+                other => panic!("expected Malformed(GAME_AGENT_SOCKET) for {bad:?}, got {other:?}"),
+            }
+        }
+    }
+
+    /// Inner spaces are legal in a filesystem path and must NOT be swept up by
+    /// the trim rule — that would be a guard rejecting valid configuration,
+    /// which is its own kind of lie.
+    #[test]
+    fn agent_socket_may_contain_inner_spaces() {
+        let mut cfg = production_base();
+        cfg.game_agent_socket = "/run/user/1000/tbd agent.sock".into();
+        let cfg = cfg
+            .validate()
+            .expect("a path with an inner space is a legal path");
+        assert!(cfg.game_agent_configured());
+    }
+
+    /// Development is not a hole: an unusable path is unusable everywhere.
+    #[test]
+    fn bad_agent_socket_is_rejected_in_development_too() {
+        let mut cfg = Config::for_tests("postgres://x/x", "jwt-secret");
+        cfg.game_agent_socket = "relative.sock".into();
+        assert!(cfg.is_development());
+        match cfg.validate() {
+            Err(ConfigError::Malformed("GAME_AGENT_SOCKET", _)) => {}
+            other => panic!("expected Malformed(GAME_AGENT_SOCKET) in dev, got {other:?}"),
         }
     }
 }
