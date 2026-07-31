@@ -515,9 +515,13 @@ fn parse_rcon_command(action: &str, map: &str, command: &str) -> Result<RconComm
 ///
 /// # T-595 corrected the premise this constant used to state
 ///
-/// Through T-269 this doc comment opened with "The game server is a **separate host**
-/// (`scripts/deploy/deploy.env.example`: `TBD_SSH_HOST=sam@192.168.0.140`)". **T-289 refuted
-/// that and the refutation was independently re-verified.** `TBD_SSH_HOST` is separate from
+/// Through T-269 this doc comment opened by asserting the game server was a *different machine
+/// from the API*, citing `scripts/deploy/deploy.env.example`'s
+/// `TBD_SSH_HOST=sam@192.168.0.140` as the evidence. (Paraphrased, not quoted: the Class-R pin
+/// in this file's tests bans that sentence literally, and a pin that trips on the comment
+/// correcting it is a gate nobody can keep green honestly — the same lesson `strip_comments`
+/// below records.) **T-289 refuted it and the refutation was independently re-verified.**
+/// `TBD_SSH_HOST` names a host separate from
 /// the *developer's PC*, not from the API: one SSH host serves both deploy scripts,
 /// `docs/mod/STAGING-SERVER.md:3` is one box, `docs/website/HOME_SERVER.md:282` puts the API
 /// in `~/.config/systemd/user/`, `TBD_BACKEND_URL` is `http://127.0.0.1:8080` (loopback), and
@@ -572,8 +576,7 @@ const RCON_NO_TRANSPORT: &str = "rcon transport unavailable: the API could not r
 ///   perfect channel into the running server, this endpoint could not name **who** to kick.
 ///   That is a UI + model gap, and it must be closed before any transport question about
 ///   `kick` is even meaningful.
-const RCON_ACTION_UNSUPPORTED: &str =
-    "rcon action not supported on this deployment: the host agent controls the server process \
+const RCON_ACTION_UNSUPPORTED: &str = "rcon action not supported on this deployment: the host agent controls the server process \
      (restart) only. `change_map`/`custom` need a live admin channel into the running server; \
      `kick` additionally has no player field to name a target";
 
@@ -655,8 +658,7 @@ fn rcon_delivery(reply: &AgentReply) -> RconDelivery {
 }
 
 /// The command reached the host and the host said no.
-const RCON_DELIVERED_NOT_ACCEPTED: &str =
-    "rcon delivered but not accepted: the host agent ran the command and then re-read the unit, \
+const RCON_DELIVERED_NOT_ACCEPTED: &str = "rcon delivered but not accepted: the host agent ran the command and then re-read the unit, \
      which did not reach the intended state — see `details.state` and `details.detail`";
 
 /// The agent verb that carries this command, or `None` when nothing does.
@@ -1020,7 +1022,8 @@ mod tests {
              network fault over a unit fault"
         );
 
-        let unreachable = rcon_delivery(&reply(AgentResult::Unreachable, "unknown", "not installed"));
+        let unreachable =
+            rcon_delivery(&reply(AgentResult::Unreachable, "unknown", "not installed"));
         assert_eq!(unreachable.status, StatusCode::SERVICE_UNAVAILABLE);
         assert_eq!(unreachable.severity, AuditSeverity::Warn);
         assert!(!unreachable.delivered && !unreachable.accepted);
@@ -1083,7 +1086,10 @@ mod tests {
             agent_action_for(&RconCommand::ChangeMap("Everon".into())),
             None
         );
-        assert_eq!(agent_action_for(&RconCommand::Custom("#shutdown".into())), None);
+        assert_eq!(
+            agent_action_for(&RconCommand::Custom("#shutdown".into())),
+            None
+        );
 
         // And the two refusals must not read the same to a client.
         assert_ne!(
@@ -1104,6 +1110,11 @@ mod tests {
     /// loopback `TBD_BACKEND_URL`). The whole no-secret design rests on that, so a reader who
     /// believes the old sentence will build a network protocol nobody needs. This pin reads the
     /// **comments** (not the code) because the defect was a comment.
+    ///
+    /// It caught its own correction on the first run — the replacement doc originally quoted
+    /// the refuted sentence verbatim to explain what changed. The correction now *paraphrases*
+    /// it, for the same reason [`strip_comments`] exists: a check that cannot tell an assertion
+    /// from a quotation of it is one edit away from being permanently red or quietly satisfied.
     #[test]
     fn the_separate_host_premise_stays_refuted() {
         const SRC: &str = include_str!("admin.rs");
