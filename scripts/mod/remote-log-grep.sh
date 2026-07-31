@@ -113,9 +113,27 @@ PAT_LOBBY='\[TBD\]\[Stage\].*LOBBY|\[TBD\] Stage .*LOBBY'
 # [Player] returns zero lines on a fully working loadout pass, which reads exactly like "the
 # loadout never applied" — the single thing T-068.14 exists to confirm.
 PAT_LOADOUT='\[TBD\]\[Loadout\]\[Slot\]'
-# Player-join evidence. `assigned slot` is live (TBD_SpawnManager.c:675); the old companion
-# `spawn requested` is deleted and must not be re-added to this condition.
-PAT_ASSIGNED='\[TBD\] SpawnManager: assigned slot'
+# Player-join evidence. BOTH FORMATS, for exactly the reason PAT_LOBBY accepts both (T-614).
+#
+# This was the one line in this file that broke the file's own rule. It pinned
+# `[TBD] SpawnManager: assigned slot` — the LEGACY FLAT format plus three words of prose — inside
+# the file whose stated rule is "pin the prefix, never the sentence". TBD_SpawnManager.c has
+# already moved: counted 2026-08-01, 70 of its 74 Prints carry a `[TBD][Sub]` tag and only 8
+# flat `[TBD] SpawnManager: …` stragglers remain, `:675` among them, sitting among 13 siblings
+# that already print `[TBD][Spawn] player=%1 …`. So the reword is not hypothetical,
+# it is the direction the file is already travelling, and when it lands the seat event stops
+# matching — a healthy player-seated log drops from PASS to PARTIAL, "no player has joined yet",
+# on a server where one had. That fails safe and it is still wrong: it sends the operator looking
+# for a player who is already in the game.
+#
+# Matching the TAG plus the event key `assigned` covers the rewrite in advance and keeps the
+# current build passing. Checked against every Print in TBD_SpawnManager.c: no other
+# `[TBD][Spawn]` line contains the word (the failure case reads "could not be seated"), and the
+# only other `assigned slot` in the mod is TBD_SpectatorHost.c's refusal text, which carries the
+# `[TBD][spectator]` tag and therefore cannot match this. `.` `*` `|` `\[ \]` only — same meaning
+# in ugrep and GNU grep, per the ENGINE NOTE above; both tested.
+# The old companion `spawn requested` is deleted and must not be re-added to this condition.
+PAT_ASSIGNED='\[TBD\]\[Spawn\].*assigned|\[TBD\] SpawnManager: assigned'
 # Error classes. Kept broad on purpose: these are ENGINE strings, not our prose, so they are
 # far more stable than anything we Print.
 PAT_ERRORS='Can.t compile|Unknown class .TBD_|RequestSpawn failed'
@@ -280,6 +298,17 @@ selftest() {
 		echo "SCRIPT : [TBD][Validate] mission result=FAIL errors=3 warnings=0"
 	} >"$tmp/invalid.log"
 
+	# (d)+(e) T-614: THE SAME SEATED PLAYER IN BOTH SEAT-LINE FORMATS. Both MUST be PASS (0).
+	# (d) is TBD_SpawnManager.c:675 as it prints today; (e) is that Print reworded into the tagged
+	# vocabulary the rest of that file already uses. Before T-614, PAT_ASSIGNED pinned the flat
+	# sentence, so (e) came back PARTIAL — a healthy server with a player on it reported as empty.
+	# Two cases, not one: dropping (d) the day the reword lands would be how the pin silently
+	# stops covering the build that is actually deployed.
+	cp "$tmp/healthy.log" "$tmp/seated-flat.log"
+	echo "SCRIPT : [TBD] SpawnManager: assigned slot a:b:c:0 to player 2 at (1,3)" >>"$tmp/seated-flat.log"
+	cp "$tmp/healthy.log" "$tmp/seated-tagged.log"
+	echo "SCRIPT : [TBD][Spawn] player=2 assigned slot=a:b:c:0 at=(1,3)" >>"$tmp/seated-tagged.log"
+
 	expect() {
 		local name="$1" want="$2" file="$3"
 		check_log "$file" >/dev/null 2>&1 && rc=0 || rc=$?
@@ -294,6 +323,8 @@ selftest() {
 	expect "stale-1.0.1-must-fail" 1 "$tmp/stale.log"
 	expect "healthy-no-player-is-partial" 2 "$tmp/healthy.log"
 	expect "mission-invalid-must-fail" 1 "$tmp/invalid.log"
+	expect "seated-flat-format-is-pass" 0 "$tmp/seated-flat.log"
+	expect "seated-tagged-format-is-pass" 0 "$tmp/seated-tagged.log"
 
 	[ "$bad" -eq 0 ] || { echo "SELFTEST: FAIL"; return 1; }
 	echo "SELFTEST: PASS"

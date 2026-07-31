@@ -871,8 +871,23 @@ clippy_changed() {
     case "$c" in
       website-frontend)
         checkrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --quiet || return 1 ;;
-      # Not gated by CI and red on clean main — checking them would fail every slice that touches them.
-      tbd-tools|xtask) printf '(skipped %s: red on main, ungated by CI) ' "$c" ;;
+      # T-614 — tbd-tools AND xtask USED TO BE SKIPPED HERE, reason "red on main, ungated by CI".
+      # The first half was FALSE and contradicted by the header of this same function: T-603's
+      # re-measure found the 60 workspace errors are ALL website-frontend and called these two
+      # clean, and the wave gate has linted them by name since then (`clippy xtask+tbd-tools`,
+      # in cmd_gate). Re-verified 2026-08-01 through this very function, both directions: with
+      # the arm removed, a `format!("{}", "verify")` injected into tools/tbd-tools/src/enf/
+      # apidoc.rs and into xtask/src/sync.rs made clippy_changed return 1 naming each file and
+      # line in turn, and with the injections removed it returned 0 having actually compiled
+      # both crates. The old arm returned 0 with BOTH injections in place, printing
+      # `(skipped tbd-tools: …) (skipped xtask: …)` and compiling nothing.
+      # The second half is still true — the ci.yml change was comment-only — which is
+      # exactly why the skip had to go: nothing else lints them before merged main, so a slice
+      # editing ONLY these crates had its own gate examine none of its code and landed its lint at
+      # the wave gate, where it reads as somebody else's problem and blocks the whole group. That
+      # is the T-329 shape this function's header says it exists to prevent, and it was living in
+      # the function. They now fall through to the default arm below, like every other crate.
+      #
       # --features doc,mission is REQUIRED, for exactly the reason it is required for `cargo test`
       # thirty lines below. lib.rs:16,23,32 gate the whole doc/mission/world modules behind features,
       # so a featureless clippy COMPILES NONE OF THEM and reports success on code it never read.
@@ -1749,9 +1764,86 @@ refuse_empty_range() {
 # HEAD` returns HEAD — the vacuous range this function exists to refuse. Verified 2026-07-31:
 # `git rev-parse origin/main` == `git rev-parse HEAD` == efc3851c.
 #
-# The commit `wave --close` writes at the end of every wave. 32 in history, one format, varying
-# only after the word CLOSED: `wave 76 CLOSED — …`, `wave 75 CLOSED: …`.
-WAVE_CLOSE_MARKER_RE='^wave [0-9]+ CLOSED'
+# The commit `wave --close` writes at the end of every wave. 33 in history (waves 45-77, recounted
+# 2026-08-01), one format, varying only after the word CLOSED: `wave 76 CLOSED — …`,
+# `wave 75 CLOSED: …`. Nothing else has ever followed `CLOSED` in any of them.
+#
+# T-613 — THIS IS ANCHORED, AND THE ANCHOR IS HALF THE FIX. It used to accept ANYTHING after
+# `CLOSED`, so a subject that merely CONTINUES past the word became a wave base. Wave 77's verifier
+# proved it in a clone with `wave 76 CLOSED? reopened — reverting T-608 pending re-gate`: derivation
+# returned the fabricated commit, the gate range collapsed to ONE commit, and the entire wave sat
+# outside every change-scoped step — the wave-75 incident T-602 exists to prevent, reachable
+# through the front door.
+#
+# THE DELIMITER SET IS end-of-subject, `:`, ` —`, ` -` AND NOTHING ELSE. Reasoning, because the
+# next reader will want to widen it: `CLOSED` alone plus the two forms above are everything
+# `wave --close` and 33 real commits have produced, and the ASCII ` -` is admitted only because the
+# em dash is a keyboard hazard, not because anything writes it. Every widening admits a class of
+# English continuation — `CLOSED?`, `CLOSED,`, `CLOSED (partially)`, `CLOSEDish` — and each of
+# those is a plausible thing a hurried operator writes about a wave that DID NOT close. The cost of
+# being too strict is a wave-close commit that has to be reworded once; the cost of being too loose
+# is a gate reporting PASS over a wave it never read.
+#
+# This ERE is the PREFILTER ONLY. `git rev-list --grep` runs it through GIT's regex engine, not the
+# system grep, so the ugrep/GNU divergence noted inside prev_wave_close does not reach it. The
+# AUTHORITY is wave_close_subject_ok below, which is pure `case` and therefore the same program
+# under every shell here. Measured 2026-08-01: this pattern and the old loose one select exactly
+# the same 33 commits, so anchoring the prefilter cannot lose a real marker.
+WAVE_CLOSE_MARKER_RE='^wave [0-9]+ CLOSED([:]|$| —| -)'
+
+# Is this SUBJECT a wave-close marker? Pure `case`, no regex at all — see the note inside
+# prev_wave_close for why a glob and not grep, which T-613 preserves rather than replaces. The
+# number is validated as digits, so `wave 7x CLOSED` cannot become a boundary either.
+wave_close_subject_ok() {
+  local s="$1" rest n
+  case "$s" in wave\ *) ;; *) return 1 ;; esac
+  rest="${s#wave }"
+  n="${rest%% *}"
+  case "$n" in ''|*[!0-9]*) return 1 ;; esac
+  rest="${rest#"$n"}"
+  case "$rest" in
+    ' CLOSED')    return 0 ;;
+    ' CLOSED:'*)  return 0 ;;
+    ' CLOSED —'*) return 0 ;;
+    ' CLOSED -'*) return 0 ;;
+  esac
+  return 1
+}
+
+# The wave NUMBER a marker claims. Empty + rc 1 for anything that is not an anchored marker.
+wave_close_number() {
+  local s n
+  s="$(git log -1 --format=%s "$1" 2>/dev/null)" || return 1
+  wave_close_subject_ok "$s" || return 1
+  n="${s#wave }"; n="${n%% *}"
+  printf '%s\n' "$n"
+}
+
+# Has this wave-close been DISAVOWED by a later revert? Prints the reverting commit; rc 0 if so.
+#
+# T-613 (verifier F6). A reverted close still derived as the base, so a wave the operator had
+# explicitly taken back was never re-gated — narrow and silent, the same shape as everything else
+# on this page. Derivation now SKIPS a disavowed marker and falls through to the one before it,
+# which re-gates the disavowed wave's whole span. That is the over-broad direction, which this
+# file has already established is the safe one.
+#
+# The evidence is git's OWN trailer, `This reverts commit <full sha>.`, written by `git revert` and
+# by nothing in this repo. A hand-written revert that omits the trailer is NOT detectable here;
+# that limitation is printed by the caller rather than left for someone to discover.
+#
+# `--fixed-strings` keeps this cheap: git prefilters to the handful of commits that quote the sha
+# at all. Without it this forks `git log` once per commit in the range.
+wave_close_disavowed() {
+  local full c
+  full="$(git rev-parse --verify --quiet "$1^{commit}" 2>/dev/null)" || return 1
+  while read -r c; do
+    [ -z "$c" ] && continue
+    case "$(git log -1 --format=%B "$c" 2>/dev/null)" in
+      *"This reverts commit ${full}."*) printf '%s\n' "$c"; return 0 ;;
+    esac
+  done < <(git rev-list --fixed-strings --grep="This reverts commit ${full}." "$full..HEAD" 2>/dev/null)
+  return 1
+}
 
 # The previous wave's close commit = the SHA main was at when THIS wave opened.
 # Empty + rc 1 when no marker is reachable. That is a real state (a tree before wave 1) and the
@@ -1762,7 +1854,7 @@ WAVE_CLOSE_MARKER_RE='^wave [0-9]+ CLOSED'
 # reachable marker is always the previous wave's. Re-gating an already-closed tree therefore picks
 # the previous close again and re-gates that whole wave, rather than gating nothing.
 prev_wave_close() {
-  local head sha subj
+  local head sha subj rev
   head="$(git rev-parse HEAD 2>/dev/null)" || return 1
   while read -r sha; do
     [ -z "$sha" ] && continue
@@ -1771,13 +1863,195 @@ prev_wave_close() {
     # `wave --close` writes it as the SUBJECT, so confirm it there. A bash glob rather than grep on
     # purpose — see the note on this file's grep usage: `rg` does not exist under `bash -c` and the
     # two greps on this machine (ugrep interactively, GNU under `bash script.sh`) disagree on ERE
-    # details. A `case` glob is the same program under both.
+    # details. A `case` glob is the same program under both. T-613 keeps that reasoning and moves
+    # the glob into wave_close_subject_ok so derivation and verification share ONE definition of
+    # the format — they must not be able to disagree about what a marker is.
     subj="$(git log -1 --format=%s "$sha" 2>/dev/null)"
-    case "$subj" in
-      wave\ [0-9]*\ CLOSED*) printf '%s\n' "$sha"; return 0 ;;
-    esac
+    wave_close_subject_ok "$subj" || continue
+    # T-613 / F6: a close the operator reverted is not a boundary. Skipping it lands on the
+    # PREVIOUS close, which puts the disavowed wave back inside the gate range.
+    if rev="$(wave_close_disavowed "$sha")"; then
+      echo "gate: skipping wave-close $(git rev-parse --short "$sha") — reverted by $(git rev-parse --short "$rev")." >&2
+      echo "        $subj" >&2
+      echo "        That wave was disavowed, so its span is re-gated from the close before it." >&2
+      continue
+    fi
+    printf '%s\n' "$sha"; return 0
   done < <(git rev-list --extended-regexp --grep="$WAVE_CLOSE_MARKER_RE" HEAD 2>/dev/null)
   return 1
+}
+
+# ── T-613: DOES ANYTHING OTHER THAN THE MARKER AGREE? ────────────────────────────────────────────
+#
+# THE HONEST STATEMENT FIRST, because the ticket asked for an INDEPENDENT oracle and the truthful
+# answer is that a FULLY independent one DOES NOT EXIST in this repository today.
+#
+# A wave boundary is recorded in exactly ONE place: the subject of the commit left behind when a
+# wave closes. Everything else was checked, 2026-08-01, and none of it is anchored to a sha:
+#   * `.ai/artifacts/last-verified` is GITIGNORED (.gitignore:55) — one line, no history.
+#   * there are no wave tags: `git tag -l` is 100% `T-*` ticket tags, zero wave-shaped refs.
+#   * `slice/*` branches are never deleted — 17 of them survive, spanning waves 75 to 78, so a
+#     branch ref cannot say which wave is current.
+#   * `docs/platform/wave_plan.tsv` names TICKETS, not commits.
+# And structurally the two cases are twins: "the previous wave closed HERE" and "the previous wave
+# closed at HEAD~1" both look like `landings, boundary, landings` to the graph. So a checker that
+# can CONFIRM the boundary from other evidence cannot be written today, and asserting one would be
+# this program's signature defect wearing a new hat.
+#
+# WHAT CAN BE WRITTEN is a set of checks that can REFUSE, each drawing on evidence the commit under
+# test did not itself produce. That is strictly weaker than confirmation, and it is labelled as
+# such everywhere it prints. Three of them, and exactly what each proves:
+#
+#   1. MARKER LEDGER — wave_close_is_newest_wave. Evidence: the OTHER 32 markers. A derived
+#      boundary must claim a wave number strictly HIGHER than every other marker reachable from
+#      HEAD. Measured over all 33: strictly decreasing from 77 to 45, no repeats, no gaps. This is
+#      not independent of the marker FAMILY, but it is independent of the commit being checked —
+#      the constraint comes from commits the forger did not write, so a fake can no longer
+#      self-approve. It kills every replay/re-close shape ("wave 76 CLOSED — reopened and
+#      re-closed…"), which is the shape that survives the anchoring fix.
+#
+#   2. TICKET LEDGER — wave_close_ledger_says. Evidence: docs/platform/wave_plan.tsv plus
+#      .ai/tickets/registry.json, two tracked files that no commit subject can speak for. A marker
+#      claiming `wave N CLOSED` is contradicted if the plan lists wave N tickets that the registry
+#      says are NOT shipped. It CANNOT corroborate a wave the plan has never heard of, and the plan
+#      is demonstrably ragged (it carries `w76`/`w77` but nothing for 69-75 or 78), so silence here
+#      is common and is reported as silence — never as agreement.
+#
+#   3. SLICE SPAN — slice_span_check. Evidence: MERGE PARENTS. Reads no marker at all, which makes
+#      it the one genuinely marker-independent check here. Two clauses: a base may not BE a slice
+#      merge (a wave base is the previous close, never a landing), and no slice merge inside
+#      base..HEAD may fork from before the base (that would mean the range bisects a slice, so the
+#      gate reads half of somebody's work). Measured against all 33 waves of real history: 12 slice
+#      merges examined, 0 violations — it has never fired on a legitimate base. It catches the
+#      narrowing shapes (HEAD~1, mid-wave) on graph structure alone; it cannot catch a base placed
+#      AFTER the whole wave, which is why 1 and 2 exist.
+#
+# WHEN NOTHING CAN SPEAK, THE GATE REFUSES AND ASKS. There is no silent pass left on this path:
+# TBD_GATE_BASE_CONFIRM must name the exact sha, so confirming requires reading the sha.
+
+# Tickets the plan assigns to a wave, accepting both label spellings in the file (`77` and `w77`).
+wave_plan_tickets() {
+  plan_rows | awk -F'\t' -v n="$1" '{ w=$1; sub(/^w/,"",w); if (w==n) print $2 }'
+}
+
+# ORACLE 1. rc 0 = this marker claims the highest wave number reachable; rc 2 = contradicted.
+wave_close_is_newest_wave() {
+  local sha="$1" n other on
+  n="$(wave_close_number "$sha")" || return 2
+  while read -r other; do
+    [ -z "$other" ] && continue
+    [ "$other" = "$sha" ] && continue
+    on="$(wave_close_number "$other")" || continue
+    [ "$on" -lt "$n" ] && continue
+    # A DISAVOWED close is not part of the ledger, so it cannot outrank anything. Without this,
+    # this check and the F6 revert fix fight each other: derivation correctly steps back past a
+    # reverted `wave 76 CLOSED` to wave 75's, and then this refuses wave 75 for being older than
+    # the very marker that was just thrown away. Only consulted for markers that would actually
+    # refuse, so the normal path pays nothing for it.
+    wave_close_disavowed "$other" >/dev/null && continue
+    echo "gate: the derived wave base is CONTRADICTED by the marker ledger — refusing to run."
+    echo "        derived $(git rev-parse --short "$sha") claims wave $n"
+    echo "          $(git log -1 --format=%s "$sha")"
+    echo "        but $(git rev-parse --short "$other") also reachable from HEAD claims wave $on"
+    echo "          $(git log -1 --format=%s "$other")"
+    echo "        Wave numbers only ever go up: all 33 markers in history run 77 down to 45,"
+    echo "        strictly decreasing, no repeats. A newer marker claiming an equal or older wave"
+    echo "        means the newest one is not a wave boundary — it is a commit that looks like one,"
+    echo "        and gating from it would put a whole wave outside every change-scoped step."
+    echo "        If wave $n really was re-closed, revert the first close (git revert writes the"
+    echo "        trailer this script reads) rather than writing a second marker for it."
+    return 2
+  done < <(git rev-list --extended-regexp --grep="$WAVE_CLOSE_MARKER_RE" HEAD 2>/dev/null)
+  return 0
+}
+
+# ORACLE 2. rc 0 = ledger corroborates; rc 1 = ledger cannot speak; rc 2 = ledger contradicts.
+# Prints its own verdict either way — a check nobody sees the result of is not a check.
+wave_close_ledger_says() {
+  local sha="$1" n t known=0 open=""
+  n="$(wave_close_number "$sha")" || return 1
+  [ -f "$PLAN" ] || { echo "        ticket ledger: $PLAN is missing — cannot corroborate."; return 1; }
+  # is_shipped answers "not shipped" for a registry it cannot READ, so an unreadable registry would
+  # turn every wave into a contradiction and hard-refuse the gate. Cannot-read is cannot-speak.
+  [ -f .ai/tickets/registry.json ] || {
+    echo "        ticket ledger: .ai/tickets/registry.json is unreadable — cannot corroborate."
+    return 1; }
+  while read -r t; do
+    [ -z "$t" ] && continue
+    known=$((known + 1))
+    is_shipped "$t" || open="$open $t"
+  done < <(wave_plan_tickets "$n")
+  if [ "$known" -eq 0 ]; then
+    echo "        ticket ledger: $PLAN has NO rows for wave $n — it cannot corroborate this"
+    echo "                       boundary. (The plan is only maintained for some waves; this is"
+    echo "                       silence, not agreement.)"
+    return 1
+  fi
+  if [ -n "$open" ]; then
+    echo "gate: the derived wave base is CONTRADICTED by the ticket ledger — refusing to run."
+    echo "        $(git rev-parse --short "$sha") says wave $n CLOSED, but $PLAN assigns wave $n"
+    echo "        ticket(s) that .ai/tickets/registry.json does not call shipped:$open"
+    echo "        A wave with open tickets did not close, so this commit is not a wave boundary."
+    return 2
+  fi
+  echo "        ticket ledger: wave $n has $known ticket(s) in $PLAN, all shipped — corroborated."
+  return 0
+}
+
+# ORACLE 3. Marker-free. rc 0 = no objection; rc 2 = the base bisects the wave's landings.
+slice_span_check() {
+  local base="$1" m f
+  case "$(git log -1 --format=%s "$base" 2>/dev/null)" in
+    "Merge branch 'slice/"*)
+      echo "gate: base $(git rev-parse --short "$base") IS a slice merge — refusing to run."
+      echo "          $(git log -1 --format=%s "$base")"
+      echo "        A wave base is the commit the wave OPENED at, which is the previous wave's"
+      echo "        close — never a landing. Starting here excludes every slice that merged"
+      echo "        before it, and each of those is work this gate would report PASS over"
+      echo "        without reading. (Checked from merge structure alone; no marker consulted.)"
+      return 2 ;;
+  esac
+  while read -r m; do
+    [ -z "$m" ] && continue
+    case "$(git log -1 --format=%s "$m" 2>/dev/null)" in "Merge branch 'slice/"*) ;; *) continue ;; esac
+    f="$(git merge-base "$m^1" "$m^2" 2>/dev/null)" || continue
+    [ "$f" = "$(git rev-parse "$base")" ] && continue
+    git merge-base --is-ancestor "$f" "$base" 2>/dev/null || continue
+    echo "gate: base $(git rev-parse --short "$base") cuts through a slice — refusing to run."
+    echo "        $(git log -1 --format=%s "$m")   ($(git rev-parse --short "$m"))"
+    echo "        merged INSIDE the range but was branched at $(git rev-parse --short "$f"),"
+    echo "        which is BEFORE the base. So that slice's own commits are outside $base..HEAD"
+    echo "        while its merge is inside: the gate would examine part of one slice's work and"
+    echo "        report on all of it. Pass a base at or before $(git rev-parse --short "$f")."
+    echo "        (Checked from merge parents alone; no marker consulted.)"
+    return 2
+  done < <(git rev-list --merges "$base..HEAD" 2>/dev/null)
+  return 0
+}
+
+# Print the derived base loudly, then demand the operator name it. Used when NOTHING could
+# corroborate. Loud-and-blocked, not quiet-and-passed: the whole point of T-613.
+demand_base_confirmation() {
+  local bsha="$1" why="$2"
+  [ "${TBD_GATE_BASE_CONFIRM:-}" = "$bsha" ] && {
+    echo "        base confirmed by TBD_GATE_BASE_CONFIRM."
+    return 0; }
+  [ "${TBD_GATE_BASE_CONFIRM:-}" = "$(git rev-parse --short "$bsha")" ] && {
+    echo "        base confirmed by TBD_GATE_BASE_CONFIRM."
+    return 0; }
+  echo "gate: nothing could corroborate this wave base — refusing to run unconfirmed."
+  echo "        base   $bsha"
+  echo "               $(git log -1 --format='%s' "$bsha")"
+  echo "               $(git log -1 --format='%an, %ad' --date=short "$bsha")"
+  echo "        range  $(git rev-list --count "$bsha..HEAD" 2>/dev/null) commit(s) to HEAD $(git rev-parse --short HEAD)"
+  echo "        why    $why"
+  echo
+  echo "        This is NOT a claim that the base is wrong. It is a refusal to claim it is right."
+  echo "        Read the subject above. If that is genuinely where this wave opened, re-run with:"
+  echo "            TBD_GATE_BASE_CONFIRM=$bsha bash scripts/platform/wave.sh gate ..."
+  echo "        The better fix is to give the ledger something to say: add this wave's rows to"
+  echo "        $PLAN so the next gate can corroborate itself."
+  return 2
 }
 
 # Refuse a base that does not cover the whole wave.
@@ -1791,9 +2065,16 @@ prev_wave_close() {
 # 76 landed T-608 as a plain commit with no merge at all, and wave 74 landed three that way
 # (`c7a3ff78`, `bed4f269`, `0a1a53ac`). Enumerating merges would have called such a wave covered
 # while its non-merge landings sat outside the range — the same lie in a new place. The ancestor
-# test is landing-shape-independent.
+# test is landing-shape-independent. (slice_span_check above enumerates merges for a DIFFERENT
+# question — whether the range bisects one — where the shape is exactly what is being asked about.)
+#
+# T-613 — THE ANCESTOR TEST BELOW IS STILL ASKED OF prev_wave_close, THE FUNCTION THAT PRODUCED THE
+# ANSWER, and that cannot be fixed by moving the call: there is no second record of the boundary to
+# ask instead (see the block above). What changed is that the derived boundary must now survive
+# three cross-checks that do NOT come from it, and that a boundary nothing can corroborate is
+# refused rather than trusted.
 gate_base_covers_wave() {
-  local base="$1" bsha psha missed
+  local base="$1" bsha psha missed lrc
   bsha="$(git rev-parse --verify --quiet "${base}^{commit}" 2>/dev/null)" || return 2
   # A base off HEAD's history makes `base..HEAD` an unrelated set, not "this wave".
   if ! git merge-base --is-ancestor "$bsha" HEAD 2>/dev/null; then
@@ -1801,10 +2082,29 @@ gate_base_covers_wave() {
     echo "        '$base..HEAD' would describe a set of commits nobody asked about."
     return 2
   fi
-  # No marker to compare against: the caller supplied a base and there is nothing to check it
-  # with. refuse_empty_range still applies. Do not fabricate a verdict either way.
-  psha="$(prev_wave_close)" || return 0
-  git merge-base --is-ancestor "$bsha" "$psha" 2>/dev/null && return 0
+  # No marker to compare against. This used to `return 0` — an explicit base plus a silent pass,
+  # which is the shape this file exists to hunt. ORACLE 3 needs no marker, so it still speaks here;
+  # after that, say what could not be checked and make the operator name the sha.
+  if ! psha="$(prev_wave_close)"; then
+    slice_span_check "$bsha" || return 2
+    demand_base_confirmation "$bsha" "no 'wave N CLOSED' commit is reachable from HEAD, so the previous wave's close is unknown" || return 2
+    return 0
+  fi
+  # ORACLES 1 and 2, against the DERIVED boundary, before it is allowed to judge anything.
+  wave_close_is_newest_wave "$psha" || return 2
+  echo "gate: cross-checking derived wave base $(git rev-parse --short "$psha")"
+  wave_close_ledger_says "$psha"; lrc=$?
+  [ "$lrc" -eq 2 ] && return 2
+  if [ "$lrc" -eq 1 ]; then
+    demand_base_confirmation "$psha" \
+      "the marker ledger accepts it (wave $(wave_close_number "$psha") is the newest closed wave) but the ticket ledger has no rows for that wave, so only one family of evidence agrees" || return 2
+  fi
+  # The primary rule, with the message that names the exact cost. ORACLE 3 runs after it, not
+  # before, so a narrowing base is diagnosed by the check that can say how much it narrows by.
+  if git merge-base --is-ancestor "$bsha" "$psha" 2>/dev/null; then
+    slice_span_check "$bsha" || return 2
+    return 0
+  fi
   # psha..bsha, NOT bsha..psha. bsha is the NEWER of the two here (that is what makes it wrong), so
   # this counts the wave's commits that the base skips past — the ones every change-scoped step
   # would never see. Reversed, it is always 0, which is exactly the reassuring lie to avoid here.
