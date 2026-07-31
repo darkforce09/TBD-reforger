@@ -859,6 +859,8 @@ pub async fn delete_mission(
 ///
 /// **T-497 authz:** extractor is [`MissionMakerUser`] (same as PATCH) — demotion revokes submit.
 /// `can_edit` remains the author-or-admin gate on top of the role tier.
+///
+/// @route POST /api/v1/missions/:id/submit
 pub async fn submit_mission(
     State(state): State<AppState>,
     maker: MissionMakerUser,

@@ -6,14 +6,13 @@
 use axum::Router;
 use axum::body::{Body, to_bytes};
 use axum::http::{Method, Request, StatusCode, header};
-use axum::routing::{patch, post};
 use serde_json::{Value, json};
 use sqlx::PgPool;
 use tower::ServiceExt;
 use uuid::Uuid;
 use website_api::config::Config;
 use website_api::state::AppState;
-use website_api::{app, db, handlers};
+use website_api::{app, db};
 
 mod common;
 
@@ -699,86 +698,15 @@ async fn cors_reflects_allowed_origin_only() {
 // three test files, there was no POST/PUT/DELETE route and no seed, so `GET /servers` returned an
 // empty list on any production database forever and the Server Intel page had nothing to render.
 //
-// The constraint: `handlers/servers.rs` is T-235's; `src/app.rs` — where routes are registered —
-// is not. So the handoff is written into [`servers_crud_registration`] below as executable code
-// rather than prose, and [`servers_crud_registration_pending_in_app_rs`] is the tripwire that
-// fires the day it lands.
-
-/// **The `app.rs` registration this slice cannot land itself, as code.**
-///
-/// Copy these into `app::api_routes`. Line 62 of `app.rs` today reads
-///
-/// ```text
-///         .route("/servers", get(handlers::servers::list_servers))
-/// ```
-///
-/// and becomes
-///
-/// ```text
-///         .route(
-///             "/servers",
-///             get(handlers::servers::list_servers).post(handlers::servers::create_server),
-///         )
-///         .route(
-///             "/servers/{id}",
-///             axum::routing::patch(handlers::servers::update_server)
-///                 .delete(handlers::servers::deactivate_server),
-///         )
-/// ```
-///
-/// That is the whole change: two `.route(...)` entries, no imports beyond what `app.rs` already
-/// has (`get`/`post` are imported at `app.rs:9`; `patch`/`delete` are spelled `axum::routing::`
-/// inline exactly as the `/admin/leave-requests/{id}`, `/events/{id}` and `/cms/announcements/{id}`
-/// registrations already do), and **no auth wiring** — each handler takes an `AdminUser`
-/// extractor, so the tier travels with the handler (`app.rs:18`).
-///
-/// This fragment registers only the *delta* (the new methods), because merging it onto
-/// `app::router` is how the lifecycle tests reach the handlers while registration is pending:
-/// axum merges two method routers at the same path (`axum-0.8.9`
-/// `routing/path_router.rs:96` — "if we're adding a new `MethodRouter` to a route that already has
-/// one just merge them"), so `POST /servers` lands beside the existing `GET /servers`.
-///
-/// The merge is applied *after* `app::router`'s `.layer(...)` chain, so these routes run without
-/// request-id / logging / CORS / body-limit / rate-limit. That is deliberate and harmless here —
-/// the three tests below assert handler and database semantics, and the middleware chain has its
-/// own coverage in the four tests at the top of this file. It is also temporary: once the lines
-/// above are in `app.rs`, [`servers_crud_app`] stops merging and drives the production router.
-fn servers_crud_registration(state: AppState) -> Router {
-    Router::new()
-        .nest(
-            "/api/v1",
-            Router::new()
-                .route("/servers", post(handlers::servers::create_server))
-                .route(
-                    "/servers/{id}",
-                    patch(handlers::servers::update_server)
-                        .delete(handlers::servers::deactivate_server),
-                ),
-        )
-        .with_state(state)
-}
-
-/// Are the write routes already in `app.rs`?
-///
-/// Probed rather than assumed, because [`servers_crud_app`] must not merge on top of a real
-/// registration — axum's method-router merge *rejects* an overlapping method, and `Router::route`
-/// turns that into a panic. No bearer token is needed to tell the two apart: an unregistered
-/// `POST /api/v1/servers` is a **405** (the path exists, `GET`-only), a registered one is a 401
-/// from the `AdminUser` extractor.
-async fn servers_crud_registered(base: &Router) -> bool {
-    let resp = base
-        .clone()
-        .oneshot(
-            Request::builder()
-                .method(Method::POST)
-                .uri("/api/v1/servers")
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-    resp.status() != StatusCode::METHOD_NOT_ALLOWED
-}
+// The constraint at the time: `handlers/servers.rs` was T-235's; `src/app.rs` — where routes are
+// registered — was not. So the handoff was written as executable code (a `servers_crud_registration`
+// router merged in when the probe found the routes unregistered) plus an assert-absent tripwire.
+//
+// T-586 landed the two `.route(...)` entries in `app::api_routes`, the tripwire fired exactly once
+// as designed, and all three pieces — the merge shim, the `servers_crud_registered` probe and the
+// tripwire test — are deleted per its instructions. `boot_servers` now hands every test below the
+// production router, so these assertions additionally cover the request-id / logging / CORS /
+// body-limit / rate-limit chain that the merge deliberately bypassed.
 
 /// `(app, pool, state)` — mint whatever role tokens a test needs with [`token`].
 ///
@@ -805,12 +733,7 @@ async fn boot_servers(tag: &str) -> Option<(Router, PgPool, AppState)> {
         .expect("clean servers");
 
     let state = AppState::new(pool.clone(), Config::for_tests(url, "servers-secret"));
-    let base = app::router(state.clone());
-    let app = if servers_crud_registered(&base).await {
-        base
-    } else {
-        base.merge(servers_crud_registration(state.clone()))
-    };
+    let app = app::router(state.clone());
     Some((app, pool, state))
 }
 
@@ -1411,34 +1334,7 @@ async fn servers_write_validation_rejects_at_the_boundary() {
     assert_eq!(after["port"], 65535, "unchanged: {after}");
 }
 
-/// **Tripwire — assert-absent, deliberately, and it is meant to fail exactly once.**
-///
-/// It pins the measured fact the three tests above are built on: `app.rs` does not register the
-/// write routes, so they reach the handlers through [`servers_crud_registration`]'s merge. The day
-/// somebody pastes the two `.route(...)` entries from that function's doc comment into
-/// `app::api_routes`, this test fails and the message says what to delete.
-///
-/// Same contract as T-385's flipped `servers_golden_carries_terrain_from_match_join` (was T-359's
-/// assert-absent tripwire), and for the same reason: without it the merge shim outlives its purpose
-/// as a permanent second route table that nobody remembers is there, and the next reader cannot tell
-/// whether the handoff was ever applied.
-#[tokio::test]
-async fn servers_crud_registration_pending_in_app_rs() {
-    let Some(url) = common::require_test_database_url() else {
-        return;
-    };
-
-    let pool = db::connect(&url).await.expect("connect");
-    let base = app::router(AppState::new(
-        pool,
-        Config::for_tests(url, "servers-secret"),
-    ));
-    assert!(
-        !servers_crud_registered(&base).await,
-        "`app.rs` now registers POST /api/v1/servers — the T-235 handoff has landed. Two \
-         deletions finish it, both in this file: drop the `.merge(servers_crud_registration(state))\
-         ` branch in `boot_servers` (keep `base`), delete `servers_crud_registration` and \
-         `servers_crud_registered`, and delete this test. The lifecycle tests above then drive the \
-         production router unchanged."
-    );
-}
+// T-586: the tripwire `servers_crud_registration_pending_in_app_rs` lived here and fired, exactly
+// once, as designed. `app.rs` now registers the write routes, so the merge shim, the probe and the
+// tripwire are all deleted per its own failure message, and the lifecycle tests above drive the
+// PRODUCTION router — including the middleware chain the shim used to bypass.

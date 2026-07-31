@@ -625,7 +625,34 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
             "/modpacks/{id}/set-current",
             post(handlers::modpacks::set_current_modpack),
         )
-        .route("/servers", get(handlers::servers::list_servers))
+        // T-586: the T-235 admin write side, registered. The handlers, their validation, their
+        // audit writes and their lifecycle tests all landed in T-235 — only these two entries were
+        // missing, so `create_server` / `update_server` / `deactivate_server` each carried an
+        // `@route` tag to a door that was not in the wall. Nothing caught it because GO-7 (the
+        // `@route`-vs-router check) did not survive the Go→Rust rewrite;
+        // `scripts/verify-route-tags.sh` is that check, restored, and it fails on this file.
+        //
+        // The tier is per-handler (`AdminUser`), so it travels with the handler rather than with
+        // the registration. Admin and NOT `MissionMakerUser`: a `servers` row is infrastructure,
+        // not mission content, and the neighbours split on exactly that line — `/factions` writes
+        // are `MissionMakerUser` because a faction is authored content, while `/modpacks`,
+        // `/wiki/{slug}`, `/vehicle-database` and `/admin/servers/{id}/rcon` are all `AdminUser`.
+        // This row carries the `inet` + port that RCON dials and that the game-server ingest path
+        // keys off, so it belongs with the second group.
+        //
+        // The writes live at `/servers`, not `/admin/servers`: that is what the `@route` tags
+        // claim, and it is what the crate already does for every other admin write on a resource
+        // the whole authenticated site can read. `/admin/*` is reserved for resources only an admin
+        // may READ at all (users, audit-logs, leave-requests, rcon).
+        .route(
+            "/servers",
+            get(handlers::servers::list_servers).post(handlers::servers::create_server),
+        )
+        .route(
+            "/servers/{id}",
+            axum::routing::patch(handlers::servers::update_server)
+                .delete(handlers::servers::deactivate_server),
+        )
         .route(
             "/servers/{id}/status",
             get(handlers::servers::get_server_status),

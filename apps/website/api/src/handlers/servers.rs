@@ -559,9 +559,22 @@ pub async fn update_server(
 
     let actor = &admin.0.discord_id;
     let actor_name = username(&state.pool, actor).await;
+    // T-586, found while reviewing the audit surface this route was about to acquire. PATCH can
+    // take a server OUT OF SERVICE — `is_active` is writable here, which is exactly what makes
+    // [`deactivate_server`]'s soft delete reversible — and `DELETE /servers/{id}` audits that same
+    // end state at `Warn`. Logging the identical decommission at `Info` because it arrived by a
+    // different verb would let an admin filtering the audit console on `Warn` (the whole purpose of
+    // the severity column) miss half the ways a server leaves the fleet. Severity therefore tracks
+    // the IMPACT and matches `deactivate_server`; the action string still names the OPERATION
+    // (`server.update`, not `server.deactivate`), and the message already carries `active=`.
+    let severity = if input.is_active == Some(false) {
+        AuditSeverity::Warn
+    } else {
+        AuditSeverity::Info
+    };
     write_audit(
         &state.pool,
-        AuditSeverity::Info,
+        severity,
         Some(actor),
         &actor_name,
         "server.update",
