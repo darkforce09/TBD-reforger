@@ -15,7 +15,6 @@
 - **T-073** — Shift + map rotation (queued)
 - **T-075** — Spacebar flyTo vs widget (queued)
 - **T-090** — Map visualization program (ready)
-- **T-117** — Mission upload + validation UI (ready)
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)

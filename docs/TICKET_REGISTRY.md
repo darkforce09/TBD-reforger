@@ -98,7 +98,7 @@
 
 == CLOSED 2026-07-31 — ALREADY DONE, this row was a stale pointer ==
 The mod half shipped at T-181.13.1. This row tracked only the WEBSITE half, which its own summary says was folded into T-232 — and T-232 is SHIPPED ('Five pages render literally nothing when real data arrives'). Verified before closing. No work remains under this id; do not dispatch it. |
-| T-117 | 1170 | ready | platform | Mission upload + validation UI | Web UI for mission upload and schema validation (API exists). |
+| T-117 | 1170 | shipped | platform | Mission upload + validation UI | Web UI for mission upload and schema validation (API exists). |
 | T-118 | 1180 | shipped | platform | Event ORBAT + identity linking UI | SPLIT 2026-07-26. DONE: identity-link UI (settings.rs:6-9,74-94, T-159.25) and the ORBAT selector (event_hub.rs:520-572, T-159.25a). OPEN residual is tracked by T-226 (PATCH /events/{id} has no caller), T-284 (clear_slot unreachable, admin cannot free a claimed slot) and T-231 (identity last mile). This row is a pointer, not work.
 
 == CLOSED 2026-07-31 — ALREADY DONE, this row was a stale pointer ==
@@ -301,7 +301,7 @@ CORRECTION TO MY OWN BRIEF: the `doc` feature adds 54 lib tests, not ~155. A mis
 | T-219 | 2370 | shipped | eden | The editor silently deletes any top-level key it does not understand | mission-editor-payload.schema.json has no additionalProperties:false and no required, so the API stores arbitrary keys. But hydrate reads exactly seven paths (store.rs:1097-1158) and compile_payload rebuilds from a json! literal (compile.rs:85-99). A server-first field or migration will appear to work, persist, and be quietly erased on next Save. MissionDocCore::hydrate has zero unit tests. |
 | T-220 | 2380 | shipped | eden | Five more silent round-trip losses | schemaVersion is regenerated as literal 1 so a stored 2 downgrades; map.bounds is recomputed and other map.* keys dropped; array order is not preserved (preserve_order is on in xtask/tools but not in map-engine-core, frontend or api); position sub-keys die on first edit; copy/paste strips unknown slot fields. A hydrate-then-compile property test catches all of them. |
 | T-221 | 2390 | shipped | eden | IndexedDB is not user-scoped and survives sign-out | The key is the mission id alone (yrs_persist.rs:60-69). Sign-out clears auth but leaves the doc blob, adopted markers and session marker. On a shared machine user B opening the same mission restores user A's unsaved draft, and a Save posts it under B's account. |
-| T-222 | 2400 | idea | eden | CLIENT_ID is hardcoded to 1 for every peer | store.rs:26. Sound only because no peer updates ever arrive. Any sync transport must fix this first or merges will corrupt documents. Hard blocker on realtime collaboration. |
+| T-222 | 2400 | shipped | eden | CLIENT_ID is hardcoded to 1 for every peer | store.rs:26. Sound only because no peer updates ever arrive. Any sync transport must fix this first or merges will corrupt documents. Hard blocker on realtime collaboration. |
 | T-223 | 2410 | shipped | eden | Conflict detection is marker-based, not content-based | mission_hydrate.rs:88-99 compares only an adopted localStorage semver against the server's. has_content() exists with zero callers. Clearing site data produces a spurious conflict on an unmodified doc, and two people who both adopted the same semver and both edited will both silently take the trust-local branch with no warning. |
 | T-224 | 2420 | shipped | eden | Mission settings block — duration, respawn, spectator policy, NVG, tickets, JIP | Six contract fields with no control anywhere. flow is four hardcoded constants and tickets is a hardcoded 0. Ship the UI, doc fields and flatten emission together; half of settings also needs mod readers. |
 | T-225 | 2430 | shipped | platform | Event state machine and lifecycle automation | EventStatus has six values but the only writer is the caller-less PATCH /events/{id}, with no transition validation. Nothing auto-transitions on start_time, on results ingest or on any timer — the API's only background tasks are token purge and the audit poller. Registration therefore stays open forever after an op ends. |
@@ -3262,7 +3262,7 @@ immediately rather than a permanent 500 a game server discovers. Keep `rules` op
 
 CONFIRMED SOUND, do not re-audit: quantisation is otherwise faithful (1000.256->1000.3,
 175.789->175.8, vertex count and order preserved, verified over the real HTTP path). |
-| T-582 | 3431 | deferred | platform | The zone draw tool: T-211 shipped the document layer, nothing reaches it | T-211 delivered the `zones` document root, 11 mutators, and proof that authored zones reach the mod
+| T-582 | 3431 | shipped | platform | The zone draw tool: T-211 shipped the document layer, nothing reaches it | T-211 delivered the `zones` document root, 11 mutators, and proof that authored zones reach the mod
 through flatten. It did NOT deliver a product surface, and the commit carries the full ticket title
 "Zone and play-area draw tool" -- an overclaim the verifier called out.
 
@@ -3340,7 +3340,7 @@ weaker than they read.
    payloads (e.g. a yrs BigInt<->Number coercion across an editor change) would report unchanged rows
    as "edited". Unreachable today because both sides come from one pipeline, but the differ's whole
    value is not crying wolf. |
-| T-585 | 3440 | deferred | platform | Migration 0019: the three ingest-pointer FKs T-576 unblocked, plus the seed reorder they require | FULLY SPECIFIED BY T-576, which did not merely claim these are unblocked -- it REHEARSED them,
+| T-585 | 3440 | shipped | platform | Migration 0019: the three ingest-pointer FKs T-576 unblocked, plus the seed reorder they require | FULLY SPECIFIED BY T-576, which did not merely claim these are unblocked -- it REHEARSED them,
 creating all three constraints by hand on a scratch DB and driving them over HTTP. Each returns its
 400 with ZERO handler changes, because telemetry.rs is pre-armed with the constraint names and pinned
 by `fk_constant_names_follow_migration_convention`. Wave 71's verifier independently re-derived that
@@ -3385,7 +3385,7 @@ pointer is wrong, and upsert_match is idempotent on source_match_id, so a correc
 row. Weighed against today's behaviour (200, row stored with a dangling event_id, attendance then
 silently never marked) that is the better failure -- but it changes what the game-server bridge sees
 and should be announced, not slipped in. |
-| T-586 | 3441 | deferred | platform | The @route tag is unpoliced in the Rust era — three handlers point at routes that do not exist | Found by T-576 while scoping. `handlers/servers.rs` carries `@route` doc tags on THREE handlers that
+| T-586 | 3441 | shipped | platform | The @route tag is unpoliced in the Rust era — three handlers point at routes that do not exist | Found by T-576 while scoping. `handlers/servers.rs` carries `@route` doc tags on THREE handlers that
 are NOT WIRED INTO THE ROUTER: `create_server` (:433, POST /api/v1/servers), `update_server` (:500,
 PATCH), `deactivate_server` (:606, DELETE). Verified by the command center -- all three return 0 hits
 in app.rs. The entire admin server-CRUD triple is missing, so wiring only `create_server` would ship a
@@ -3458,6 +3458,85 @@ ALSO FROM T-285, same surface:
    `mission_id` on match ingest still INSERT SILENTLY today, because those FKs do not exist yet -- so
    they are neither 500 nor 400, they are unchanged. The ticket BODY is accurate; the headline is not.
    Resolved by T-585 landing the migration. |
+| T-589 | 3450 | deferred | platform | reclaim does not reap target-<SLICE> orphans — and the factory now tells agents to create them | Found 2026-07-31. `wave.sh reclaim` sweeps `/var/tmp/*` and (since T-426) reports `target-gate-*` /
+`dist-gate-*` behind `--gate-dirs`. It reaps **neither** `target-<SLICE>` nor `target-<slice>-api`.
+
+MEASURED: `target-T-454` — 2.7 GB, from a slice shipped weeks ago, no worktree, invisible to
+`reclaim` (which printed "reclaimed 0 MB" beside it). Removed by hand.
+
+**THIS IS NOW SELF-INFLICTED AND WILL RECUR.** After T-581 and T-582 were both served foreign
+binaries out of the shared `target/`, the factory brief template and PLATFORM_FACTORY's Known traps
+now INSTRUCT every slice agent to create a private `target-<slice>-api` when it builds a binary it
+then runs. Agents are told to delete it on cleanup and mostly do — T-585 reclaimed 8.0 GB itself —
+but a slice that is parked, rate-limited, or killed mid-run leaves one behind, and nothing reaps it.
+The volume already runs at 87%.
+
+WANTED: extend `cmd_reclaim`'s sweep to `$MAIN_ROOT/target-*` EXCLUDING the shared `target/` and the
+`target-gate-*` set, sparing any name matching a live worktree (the existing `live slices (spared)`
+logic already computes that list). Keep it behind the same opt-in as `--gate-dirs`, or default it —
+these are per-slice scratch, not warm shared caches, so the "expensive to rebuild" argument that
+justified `--gate-dirs` being opt-in does not apply. |
+| T-590 | 3451 | deferred | platform | Wave 72 residue: stale GO-7 documentation, drifted seed citations, and three prose comments now false | Documentation drift found across wave 72. None is a live defect; every one is a sentence that will
+mislead the next reader, and two of them are the sentences that let real defects rot.
+
+1. **`Makefile:304` still claims** the Rust GO-2..9 analogs are "enforced by clippy + the centralized
+   ApiError type + `cargo fmt`". GO-7 is now genuinely enforced by `scripts/verify-route-tags.sh`
+   (wired into both gates). **That sentence is the one that let GO-7 stay dead for the whole Go->Rust
+   rewrite** — three handlers carried `@route` tags to routes that did not exist, and one live route
+   carried no tag at all, because the Makefile said something was watching.
+2. **`docs/platform/CODING_STANDARDS.md:138-141 / 369 / 415`** point GO-7 at deleted Go artefacts
+   (`handlers.go Register()`, `verify-contract-citations.mjs`, "82 handlers"). Should read
+   `scripts/verify-route-tags.sh` and 102 handlers.
+3. **Three drifted `content_golden.sql` line citations** after T-585's reorder:
+   `apps/website/api/tests/events.rs:16` cites 162-167 -> now **174-180**;
+   `apps/website/api/src/handlers/events.rs:787` and `:1741`, plus
+   `apps/website/frontend/src/mission_overview.rs:118`, cite 605 -> now **638**.
+4. **`content_golden.sql` header** says `total_deployments` agrees with "the 17 match_player_stats
+   rows"; the file seeds **11**. Pre-existing, untouched by T-585.
+5. **`apps/website/frontend/src/mission_doc.rs:27` and `:51`** attribute encode stability to "the
+   core's fixed `CLIENT_ID`". T-222 made the id random. The asserted BEHAVIOUR still holds (same-doc
+   re-encode is byte-identical) but the stated REASONING is now wrong.
+6. **`crates/map-engine-core/src/lib.rs:5`** says "the JS boundary lives in the `map-engine-wasm`
+   shim". That crate was deleted at T-418. This sentence made the T-582 brief ask for a wasm binding
+   that could not exist — the agent had to discover the deletion itself. |
+| T-591 | 3452 | deferred | platform | Mission upload cannot reach the API's real ceiling, and there is no streaming route | From T-117, which shipped the upload UI and was precise about where it had to stop.
+
+1. **The SPA refuses at 32 MiB; the API accepts 256 MB.** `missions.rs:1354` `UPLOAD_MAX_BYTES =
+   32 << 20` vs `DEFAULT_MISSION_VERSION_MAX_BODY_BYTES = 256 << 20`. **A legitimate 32-256 MB export
+   is refused client-side even though the server would take it.** The client limit is honestly
+   argued, not arbitrary: `api_post` takes an owned `serde_json::Value`, so a document exists in the
+   tab FOUR times over (JS string -> Rust String -> Value tree -> re-serialised body) on wasm32.
+2. **`client.rs` has no raw-body POST.** An `api_post_raw(store, path, body: String)` would roughly
+   halve peak memory and let the budget rise materially. One function, outside T-117's scope.
+3. **No streaming or multipart mission route exists** — `/cms/uploads` is the only multipart endpoint
+   in the crate. This is the only real fix for the ~367k-slot / hundreds-of-MB missions in this
+   codebase's own history, which **cannot** come through a browser JSON parse however the button is
+   written.
+4. **`POST /missions` is capped at 1 MiB** (`middleware/mod.rs:23` `MAX_JSON_BODY`), so "import a
+   document as a NEW mission" is structurally impossible at scale — upload has to target an existing
+   mission and add a version.
+5. **`GET /missions/:id/versions` is still 405** (no list route). T-282 flagged it; T-117 sharpens the
+   case, because the upload panel now writes versions the dossier still cannot list. |
+| T-592 | 3453 | deferred | platform | Zones have no map-canvas outline, and the circle tool is two-click rather than drag | Both from T-582, which shipped the zone draw tool and named exactly what it could not reach.
+
+1. **No zone outlines on the map canvas.** `LaneRole` / `lane_role_from_u32` map only roles 0-9 and
+   all ten are taken; reusing SquadLinks or Marquee would collide. Drawing zone rings needs one enum
+   variant plus a lane in `crates/map-engine-render/{draw_order.rs,engine.rs}` — outside T-582's
+   files. Shipped instead: the dock list with selection, geometry summaries, and the existing
+   `set_place_preview` ghost tracking where the next click lands. **An author can create and edit a
+   zone but cannot see its footprint on the map**, which is the obvious next thing to want.
+2. **Circle is centre-click then rim-click, not press-drag-release.** The `has_pending()` seam hands
+   `editor_ops` the RELEASE point only; the press point is captured privately in
+   `mission_editor.rs`'s `left` gesture cell. True drag-to-radius needs a small hook there — not
+   T-582's file, and no sibling owned it. Two-click closes the r=0 hazard identically and avoids a
+   second pointer state machine racing the first, so this is a polish item, not a defect.
+3. **PRE-EXISTING, untouched:** `cancel_pending()` returns early on a release over chrome without
+   clearing `mission_editor.rs`'s `left` gesture cell, leaving a stale `Pending` that the next
+   `pointermove` can promote to a marquee. T-582 did not worsen it and did not own the file.
+4. **KNOWN LIMIT of the new route-tag gate**, recorded so nobody rediscovers it: a future sub-router
+   mounted via `.nest("/x", other_fn())` would false-red as an unwired tag, because the extractor
+   only reads `fn api_routes`'s body. The script header documents this and the crate uses one flat
+   `api_routes` today. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

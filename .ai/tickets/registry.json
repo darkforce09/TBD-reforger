@@ -2819,7 +2819,7 @@
         "website"
       ],
       "executor": "claude-code",
-      "status": "ready",
+      "status": "shipped",
       "surfaces": [
         "DATA"
       ],
@@ -7449,7 +7449,7 @@
       "impact": [
         "mc-integrity"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2400,
       "stream": "mission-creator",
       "targets": [
@@ -14911,7 +14911,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3431,
       "stream": "web-platform",
       "targets": [
@@ -14973,7 +14973,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3440,
       "stream": "web-platform",
       "targets": [
@@ -14994,7 +14994,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3441,
       "stream": "web-platform",
       "targets": [
@@ -15038,6 +15038,88 @@
       ],
       "status": "deferred",
       "order": 3443,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
+    },
+    {
+      "id": "T-589",
+      "title": "reclaim does not reap target-<SLICE> orphans — and the factory now tells agents to create them",
+      "summary": "Found 2026-07-31. `wave.sh reclaim` sweeps `/var/tmp/*` and (since T-426) reports `target-gate-*` /\n`dist-gate-*` behind `--gate-dirs`. It reaps **neither** `target-<SLICE>` nor `target-<slice>-api`.\n\nMEASURED: `target-T-454` — 2.7 GB, from a slice shipped weeks ago, no worktree, invisible to\n`reclaim` (which printed \"reclaimed 0 MB\" beside it). Removed by hand.\n\n**THIS IS NOW SELF-INFLICTED AND WILL RECUR.** After T-581 and T-582 were both served foreign\nbinaries out of the shared `target/`, the factory brief template and PLATFORM_FACTORY's Known traps\nnow INSTRUCT every slice agent to create a private `target-<slice>-api` when it builds a binary it\nthen runs. Agents are told to delete it on cleanup and mostly do — T-585 reclaimed 8.0 GB itself —\nbut a slice that is parked, rate-limited, or killed mid-run leaves one behind, and nothing reaps it.\nThe volume already runs at 87%.\n\nWANTED: extend `cmd_reclaim`'s sweep to `$MAIN_ROOT/target-*` EXCLUDING the shared `target/` and the\n`target-gate-*` set, sparing any name matching a live worktree (the existing `live slices (spared)`\nlogic already computes that list). Keep it behind the same opt-in as `--gate-dirs`, or default it —\nthese are per-slice scratch, not warm shared caches, so the \"expensive to rebuild\" argument that\njustified `--gate-dirs` being opt-in does not apply.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3450,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-590",
+      "title": "Wave 72 residue: stale GO-7 documentation, drifted seed citations, and three prose comments now false",
+      "summary": "Documentation drift found across wave 72. None is a live defect; every one is a sentence that will\nmislead the next reader, and two of them are the sentences that let real defects rot.\n\n1. **`Makefile:304` still claims** the Rust GO-2..9 analogs are \"enforced by clippy + the centralized\n   ApiError type + `cargo fmt`\". GO-7 is now genuinely enforced by `scripts/verify-route-tags.sh`\n   (wired into both gates). **That sentence is the one that let GO-7 stay dead for the whole Go->Rust\n   rewrite** — three handlers carried `@route` tags to routes that did not exist, and one live route\n   carried no tag at all, because the Makefile said something was watching.\n2. **`docs/platform/CODING_STANDARDS.md:138-141 / 369 / 415`** point GO-7 at deleted Go artefacts\n   (`handlers.go Register()`, `verify-contract-citations.mjs`, \"82 handlers\"). Should read\n   `scripts/verify-route-tags.sh` and 102 handlers.\n3. **Three drifted `content_golden.sql` line citations** after T-585's reorder:\n   `apps/website/api/tests/events.rs:16` cites 162-167 -> now **174-180**;\n   `apps/website/api/src/handlers/events.rs:787` and `:1741`, plus\n   `apps/website/frontend/src/mission_overview.rs:118`, cite 605 -> now **638**.\n4. **`content_golden.sql` header** says `total_deployments` agrees with \"the 17 match_player_stats\n   rows\"; the file seeds **11**. Pre-existing, untouched by T-585.\n5. **`apps/website/frontend/src/mission_doc.rs:27` and `:51`** attribute encode stability to \"the\n   core's fixed `CLIENT_ID`\". T-222 made the id random. The asserted BEHAVIOUR still holds (same-doc\n   re-encode is byte-identical) but the stated REASONING is now wrong.\n6. **`crates/map-engine-core/src/lib.rs:5`** says \"the JS boundary lives in the `map-engine-wasm`\n   shim\". That crate was deleted at T-418. This sentence made the T-582 brief ask for a wasm binding\n   that could not exist — the agent had to discover the deletion itself.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3451,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
+    },
+    {
+      "id": "T-591",
+      "title": "Mission upload cannot reach the API's real ceiling, and there is no streaming route",
+      "summary": "From T-117, which shipped the upload UI and was precise about where it had to stop.\n\n1. **The SPA refuses at 32 MiB; the API accepts 256 MB.** `missions.rs:1354` `UPLOAD_MAX_BYTES =\n   32 << 20` vs `DEFAULT_MISSION_VERSION_MAX_BODY_BYTES = 256 << 20`. **A legitimate 32-256 MB export\n   is refused client-side even though the server would take it.** The client limit is honestly\n   argued, not arbitrary: `api_post` takes an owned `serde_json::Value`, so a document exists in the\n   tab FOUR times over (JS string -> Rust String -> Value tree -> re-serialised body) on wasm32.\n2. **`client.rs` has no raw-body POST.** An `api_post_raw(store, path, body: String)` would roughly\n   halve peak memory and let the budget rise materially. One function, outside T-117's scope.\n3. **No streaming or multipart mission route exists** — `/cms/uploads` is the only multipart endpoint\n   in the crate. This is the only real fix for the ~367k-slot / hundreds-of-MB missions in this\n   codebase's own history, which **cannot** come through a browser JSON parse however the button is\n   written.\n4. **`POST /missions` is capped at 1 MiB** (`middleware/mod.rs:23` `MAX_JSON_BODY`), so \"import a\n   document as a NEW mission\" is structurally impossible at scale — upload has to target an existing\n   mission and add a version.\n5. **`GET /missions/:id/versions` is still 405** (no list route). T-282 flagged it; T-117 sharpens the\n   case, because the upload panel now writes versions the dossier still cannot list.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3452,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-592",
+      "title": "Zones have no map-canvas outline, and the circle tool is two-click rather than drag",
+      "summary": "Both from T-582, which shipped the zone draw tool and named exactly what it could not reach.\n\n1. **No zone outlines on the map canvas.** `LaneRole` / `lane_role_from_u32` map only roles 0-9 and\n   all ten are taken; reusing SquadLinks or Marquee would collide. Drawing zone rings needs one enum\n   variant plus a lane in `crates/map-engine-render/{draw_order.rs,engine.rs}` — outside T-582's\n   files. Shipped instead: the dock list with selection, geometry summaries, and the existing\n   `set_place_preview` ghost tracking where the next click lands. **An author can create and edit a\n   zone but cannot see its footprint on the map**, which is the obvious next thing to want.\n2. **Circle is centre-click then rim-click, not press-drag-release.** The `has_pending()` seam hands\n   `editor_ops` the RELEASE point only; the press point is captured privately in\n   `mission_editor.rs`'s `left` gesture cell. True drag-to-radius needs a small hook there — not\n   T-582's file, and no sibling owned it. Two-click closes the r=0 hazard identically and avoids a\n   second pointer state machine racing the first, so this is a polish item, not a defect.\n3. **PRE-EXISTING, untouched:** `cancel_pending()` returns early on a release over chrome without\n   clearing `mission_editor.rs`'s `left` gesture cell, leaving a stale `Pending` that the next\n   `pointermove` can promote to a marquee. T-582 did not worsen it and did not own the file.\n4. **KNOWN LIMIT of the new route-tag gate**, recorded so nobody rediscovers it: a future sub-router\n   mounted via `.nest(\"/x\", other_fn())` would false-red as an unwired tag, because the extractor\n   only reads `fn api_routes`'s body. The script header documents this and the crate uses one flat\n   `api_routes` today.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3453,
       "stream": "web-platform",
       "targets": [
         "website"

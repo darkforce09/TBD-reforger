@@ -175,8 +175,28 @@ record the correction in the ticket and tell the operator plainly.
   foreign `xtask` its own tree could not produce). T-421 fixed the gate via `touch_workspace`;
   **a slice agent's own manual loop is still exposed** — `touch` the file after restoring, and
   brief agents to check the file rather than believe the tool.
+- **`grep` IS NOT GNU grep in an agent shell — and this bites the FIX for the `rg` trap above.**
+  Measured 2026-07-31 (T-586). In an agent shell `grep` is a harness-injected **function** resolving
+  to **ugrep 7.5.0**; in a plain `bash script.sh` it is `/usr/bin/grep`, **GNU 3.8**. They disagree on
+  ERE braces:
+  ```
+  pattern '^GET /a/{id}$'   ugrep -> exit 2 "invalid repeat"   GNU -> exit 0
+  ```
+  **Every API route path contains `{id}`.** So a bare-brace pattern is green in one shell and a hard
+  error in the other, and a loop that reads exit 2 as "no match" is fail-open — T-586's own prototype
+  printed **50 false findings** that way before it was caught. Use `-F` literal for anything
+  route-shaped or brace-bearing, and read the exit status (0/1/2/127) rather than collapsing it to a
+  boolean. `scripts/mod/lib/gate-grep.sh` already does this; use it.
 - **`make` is not on the container PATH either**, alongside cargo/rustfmt/xtask. Route it through
   `distrobox-host-exec` like the rest. Only `wave.sh` runs directly, never wrapped.
+- **A slice agent running its own server instance needs a PRIVATE `CARGO_TARGET_DIR`.** Measured
+  twice in one wave (T-581, T-582): two slices building the same crate into the shared `target/`
+  served each other stale binaries. Symptom is `Blocking waiting for file lock on artifact
+  directory`, then `Finished` with **no `Compiling` line**, and the binary does not contain the
+  slice's code — one run reported `328 passed` while `--list` showed none of its own tests. It reads
+  exactly like a correct fix not working. Use `target-<slice>-api`, **grep the binary for a string
+  unique to your version before trusting any HTTP or test result**, and delete the dir on cleanup —
+  `wave.sh reclaim` does not reap `target-<SLICE>` orphans (one 2.7 GB stray survived weeks).
 - **`rg` DOES NOT EXIST — corrected 2026-07-27 (T-556). The earlier claim here that it was
   "container-only" was WRONG and this doc propagated it into a code comment.** ripgrep is installed
   nowhere: not in the container, not on the host, no rpm. `command -v rg` succeeds only because an

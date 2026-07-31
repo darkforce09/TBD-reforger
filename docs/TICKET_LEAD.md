@@ -9,7 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-117** (1170) — Mission upload + validation UI [ready] — Web UI for mission upload and schema validation (API exists).
 
 ## Next queued (top 10)
 
