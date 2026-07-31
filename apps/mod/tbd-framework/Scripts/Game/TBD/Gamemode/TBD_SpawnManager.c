@@ -272,12 +272,21 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	protected int m_iRoundRobin;
 	protected bool m_bSlotBodiesMaterialized;
 	//! T-541 — true once MaterializeSlotBodies' loadout apps have all reached IsDone and
-	//! every one answered IsComplete(). False while settle is still polling OR after an
-	//! incomplete refuse (see m_bLoadoutDeliveryRefused). Deploy and LOBBY entry key off this.
+	//! every one has been assessed. False while settle is still polling OR after a
+	//! blocking refuse (see m_bLoadoutDeliveryRefused). Deploy and LOBBY entry key off this.
 	protected bool m_bLoadoutSettlePending;
-	//! T-541 — spawn-boundary refuse: at least one slot loadout finished IsComplete()=0.
+	//! T-541 — spawn-boundary refuse: at least one slot loadout finished UNPLAYABLE.
 	//! Materialized stays false; FrameworkManager must not advance to LOBBY; DeployPlayer
 	//! returns DENIED rather than spinning RETRY.
+	//!
+	//! T-605 — THE PREDICATE CHANGED, THE MECHANISM DID NOT. This used to be set whenever any
+	//! application answered `IsComplete()=0`, which includes every DEGRADED item — an optic that
+	//! would not seat, a magazine that went to the backpack because the vest was full. That made
+	//! one misplaced item on one slot a session-wide outage for every connected client, and it had
+	//! never once run against a mission carrying gear or cargo (the only gated boot was
+	//! `--mission=bridgehead-at-levie`, 0 gear / 0 cargo). It now reads
+	//! TBD_LoadoutApplication.HasBlockingFailure(): the session is refused only for a slot body
+	//! nobody could play. Everything else opens the session and is reported — see TickLoadoutSettle.
 	protected bool m_bLoadoutDeliveryRefused;
 	//! T-541 — CallLater tick counter for loadout settle (see TickLoadoutSettle).
 	protected int m_iLoadoutSettleTicks;
@@ -408,7 +417,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-541 — true after the spawn-boundary IsComplete gate refused at least one slot.
+	//! T-541 — true after the spawn boundary refused at least one slot as UNPLAYABLE (T-605).
 	//! LOBBY must not open; DeployPlayerInternal returns DENIED.
 	bool IsLoadoutDeliveryRefused()
 	{
@@ -954,11 +963,11 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! JSON transform — kit prefab, AI disabled (CRF pattern), Arsenal loadout applied.
 	//! The numbered lineup stands in the world through the lobby; deploy binds onto it.
 	//!
-	//! T-541 — IsComplete is the spawn-boundary gate. ReportVerdict already ERROR-refuses an
-	//! incomplete pass inside TBD_LoadoutApplication, but that alone used to let this function
+	//! T-541 — the spawn boundary is gated on the loadout pass. ReportVerdict already refuses an
+	//! unplayable pass inside TBD_LoadoutApplication, but that alone used to let this function
 	//! flip m_bSlotBodiesMaterialized and FrameworkManager advance to LOBBY regardless. Apps
 	//! settle asynchronously (wear verify CallLater); we do NOT mark materialized until every
-	//! app IsDone() and IsComplete(), or we refuse and stay closed.
+	//! app IsDone(), and then only if none of them is unplayable (T-605 — see TickLoadoutSettle).
 	void MaterializeSlotBodies()
 	{
 		if (m_bSlotBodiesMaterialized || m_bLoadoutSettlePending || m_bLoadoutDeliveryRefused)
@@ -1016,18 +1025,47 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		// T-541 — do NOT set m_bSlotBodiesMaterialized here. Every body has a
 		// TBD_LoadoutApplication (authored Run or kit worn-audit); open the settle poll so
-		// IsComplete is consumed at this boundary before LOBBY / deploy.
+		// every pass is assessed at this boundary before LOBBY / deploy.
 		m_bLoadoutSettlePending = true;
 		m_iLoadoutSettleTicks = 0;
-		Print(string.Format("[TBD][Slots] loadout settle armed — waiting for %1 application(s) IsDone+IsComplete before spawn opens",
+		Print(string.Format("[TBD][Slots] loadout settle armed — waiting for %1 application(s) to finish before spawn opens",
 			m_aLoadoutApps.Count()));
 		GetGame().GetCallqueue().CallLater(TickLoadoutSettle, LOADOUT_SETTLE_TICK_MS, true);
 	}
 
 	//------------------------------------------------------------------------------------------------
 	//! T-541 — poll until every loadout application from MaterializeSlotBodies is IsDone(),
-	//! then call IsComplete() on each. Incomplete → refuse (materialized stays false,
-	//! m_bLoadoutDeliveryRefused = true). Complete → open spawn (m_bSlotBodiesMaterialized).
+	//! then assess each one. Unplayable → refuse (materialized stays false,
+	//! m_bLoadoutDeliveryRefused = true). Otherwise → open spawn (m_bSlotBodiesMaterialized).
+	//!
+	//! T-605 — WHAT "ASSESS" MEANS, AND WHY IT IS NOT IsComplete() ANY MORE.
+	//!
+	//! Two different questions were being answered by one call:
+	//!   * "did this slot get exactly what the JSON asked for?"  — IsComplete(). A delivery audit.
+	//!   * "can a human play this slot?"                          — the only thing a spawn boundary
+	//!     has any business refusing on.
+	//! T-541 wired the boundary to the first. The consequence, measured on the committed golden
+	//! `slot-loadout-coverage.json` (7 slots, real gear, real cargo) against this file before this
+	//! ticket: 3 of 7 applications answered IsComplete()=0 and the console read
+	//!   [TBD][Slots] loadout delivery REFUSED at spawn boundary — 3 application(s) IsComplete=0
+	//!   [TBD][Spawn] LOBBY REFUSED — loadout delivery incomplete at spawn boundary; staying in LOADING
+	//! — for a lineup in which every body was dressed, armed and carrying its ammunition. One of the
+	//! three (`blufor:Ranger:SL:0`) reported `gear=10/10 cargo=8/8`: NOTHING was missing, six
+	//! magazines had simply gone to the backpack because the authored vest was full.
+	//!
+	//! WHY THE AUTHORING SIDE CANNOT FIX IT INSTEAD. T-504 established — correctly — that the
+	//! Arsenal must WARN and not REFUSE when cargo targets an unworn container, because
+	//! TBD_LoadoutEquipHelper.IssueEquip retains the kit garment for an absent gear row, so "the
+	//! author picked no vest" does not mean "no vest is worn". A loadout that is legal to save can
+	//! therefore be DEGRADED at runtime, by design. The defect was never the author's; it was this
+	//! boundary treating degraded-for-one as fatal-for-all.
+	//!
+	//! SHORTFALLS ARE NOT SWALLOWED. Silence is how this class of bug is filed in the first place —
+	//! the author never hears that their cargo is undeliverable. Every non-blocking shortfall gets
+	//! (a) its own itemised WARNING lines from TBD_LoadoutApplication.ReportVerdict, (b) one
+	//! consolidated server-console WARNING here naming every affected slot, and (c) an entry in the
+	//! admin trail, so `#tbd audit` and the admin screen show it to somebody who is actually in the
+	//! session rather than only to whoever reads console.log afterwards.
 	protected void TickLoadoutSettle()
 	{
 		if (!m_bLoadoutSettlePending)
@@ -1054,33 +1092,67 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (pending > 0)
 		{
 			m_bLoadoutDeliveryRefused = true;
-			Print(string.Format("[TBD][Slots] loadout settle TIMED OUT — %1 application(s) still in flight after %2 ms — spawn REFUSED (IsComplete never answered)",
+			// T-605 — a timeout stays fatal-for-all, and deliberately so: an application that never
+			// finished never ran its nakedness audit either, so nothing here knows whether those
+			// bodies are dressed. This is the one case where refusing is the honest answer, because
+			// the alternative is opening the session on a lineup nobody has looked at.
+			Print(string.Format("[TBD][Slots] loadout settle TIMED OUT — %1 application(s) still in flight after %2 ms — spawn REFUSED (they never finished, so nothing has assessed those bodies)",
 				pending, m_iLoadoutSettleTicks * LOADOUT_SETTLE_TICK_MS), LogLevel.ERROR);
 			return;
 		}
 
-		int incomplete = 0;
+		int unplayable = 0;
+		string blockingSlots;
+		int shortfall = 0;
+		string shortfallSlots;
 		foreach (TBD_LoadoutApplication app : m_aLoadoutApps)
 		{
 			if (!app)
 				continue;
-			// Cancel() marks done without Fail/Degrade; IsComplete stays true. Only a finished
-			// pass that ReportVerdict already ERROR-refused (or would) fails the gate here.
-			if (!app.IsComplete())
-				incomplete++;
+			// Cancel() marks done without Fail/Degrade, so a cancelled pass has neither a blocking
+			// failure nor a shortfall and is invisible to both counters — unchanged from T-541.
+			if (app.HasBlockingFailure())
+			{
+				unplayable++;
+				if (!blockingSlots.IsEmpty())
+					blockingSlots += "; ";
+				blockingSlots += string.Format("%1 [%2]", app.GetLabel(), app.BlockingSummary());
+			}
+			else if (app.HasShortfall())
+			{
+				shortfall++;
+				if (!shortfallSlots.IsEmpty())
+					shortfallSlots += "; ";
+				shortfallSlots += string.Format("%1 [%2]", app.GetLabel(), app.ShortfallBrief());
+			}
 		}
 
-		if (incomplete > 0)
+		if (unplayable > 0)
 		{
 			m_bLoadoutDeliveryRefused = true;
-			Print(string.Format("[TBD][Slots] loadout delivery REFUSED at spawn boundary — %1 application(s) IsComplete=0 — LOBBY/deploy will not open (see loadout delivery REFUSED lines above)",
-				incomplete), LogLevel.ERROR);
+			Print(string.Format("[TBD][Slots] loadout delivery REFUSED at spawn boundary — %1 slot body(ies) are UNPLAYABLE — LOBBY/deploy will not open: %2",
+				unplayable, blockingSlots), LogLevel.ERROR);
+			// The admin is in the session and cannot read console.log; this is the one refusal they
+			// most need a reason for, because the symptom is a LOADING screen that never clears.
+			TBD_AdminAudit.Record(string.Format("LOADOUT: session REFUSED — %1 slot(s) unplayable: %2",
+				unplayable, blockingSlots), true);
 			return;
 		}
 
 		m_bSlotBodiesMaterialized = true;
-		Print(string.Format("[TBD][Slots] loadout settle complete — %1 application(s) IsComplete=1 — spawn open",
-			m_aLoadoutApps.Count()));
+		Print(string.Format("[TBD][Slots] loadout settle complete — %1 application(s), 0 unplayable, %2 with a shortfall — spawn open",
+			m_aLoadoutApps.Count(), shortfall));
+
+		// T-605 — REPORTED, NOT SWALLOWED. This runs AFTER spawn is open on purpose: the session is
+		// not held up for it, and the ordering in the log says so unambiguously.
+		if (shortfall > 0)
+		{
+			Print(string.Format("[TBD][Slots] loadout SHORTFALL on %1 of %2 slot(s) — the session IS open and these players are playable, but they are NOT carrying what the mission authored. Fix the mission's cargo or the kit: %3",
+				shortfall, m_aLoadoutApps.Count(), shortfallSlots), LogLevel.WARNING);
+			TBD_AdminAudit.Record(string.Format("LOADOUT: %1 slot(s) did not get the authored loadout (session opened anyway): %2",
+				shortfall, shortfallSlots), true);
+		}
+
 		PruneDoneLoadoutApps();
 
 		// Roster settle may already have entered LOBBY while we were still dressing; kick the
@@ -1284,7 +1356,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//------------------------------------------------------------------------------------------------
 	//! T-541 — the in-flight (or just-finished) loadout application dressing this body, if any.
 	//! Used at the deploy boundary so a rematerialized body cannot be possessed before
-	//! IsComplete answers.
+	//! the loadout pass has answered.
 	protected TBD_LoadoutApplication FindLoadoutAppFor(IEntity body)
 	{
 		if (!body)
@@ -1597,8 +1669,11 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	{
 		if (m_bLoadoutDeliveryRefused)
 		{
-			Print("[TBD][Spawn] LOBBY REFUSED — loadout delivery incomplete at spawn boundary (IsComplete=0); staying in LOADING", LogLevel.ERROR);
-			return "LOBBY refused — loadout delivery incomplete at spawn boundary (IsComplete=0)";
+			// T-605 — the words matter here because this banner IS the diagnosis an operator gets
+			// for a LOADING screen that never clears. "incomplete" used to be true of a magazine in
+			// the wrong pocket; it is now only ever true of a slot nobody can play.
+			Print("[TBD][Spawn] LOBBY REFUSED — one or more slot bodies are UNPLAYABLE (see the loadout delivery REFUSED lines above); staying in LOADING", LogLevel.ERROR);
+			return "LOBBY refused — one or more slot bodies are unplayable (blocking loadout failure)";
 		}
 
 		if (m_bLoadoutSettlePending)
@@ -2214,11 +2289,11 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			return TBD_EDeployResult.DENIED;
 		}
 
-		// T-541 — incomplete loadout delivery at materialize refused the spawn boundary.
+		// T-541 — a blocking loadout failure at materialize refused the spawn boundary.
 		// DENIED (not RETRY): spinning would hide the refuse behind a retry ladder.
 		if (m_bLoadoutDeliveryRefused)
 		{
-			Print(string.Format("[TBD][Spawn] deploy DENIED player=%1 — loadout delivery REFUSED at spawn boundary (IsComplete=0 on one or more slots)",
+			Print(string.Format("[TBD][Spawn] deploy DENIED player=%1 — one or more slot bodies are UNPLAYABLE (blocking loadout failure at the spawn boundary)",
 				playerId), LogLevel.ERROR);
 			return TBD_EDeployResult.DENIED;
 		}
@@ -2280,19 +2355,28 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			Print(string.Format("[TBD][Slots] rematerialized body for slot %1 (%2) — freshly dressed from mission JSON", slot.Key(), remakeReason));
 		}
 
-		// T-541 — rematerialize (and any still-settling standing body) must not possess until
-		// IsComplete answers. RETRY while the app is in flight; FAILED when it finished incomplete.
+		// T-541 — rematerialize (and any still-settling standing body) must not possess until the
+		// loadout pass has answered. RETRY while the app is in flight.
+		//
+		// T-605 — THIS IS THE PER-PLAYER HALF OF THE SAME GATE, and it had the same defect: a
+		// player whose optic would not seat was refused a body outright. Now only an UNPLAYABLE
+		// body is refused — a shortfall deploys, and the WARNING naming that player's missing item
+		// is already in the log from ReportVerdict. Note this refusal is correctly scoped to ONE
+		// player either way: nobody else's deploy runs through this body's application.
 		TBD_LoadoutApplication bodyApp = FindLoadoutAppFor(body);
 		if (bodyApp)
 		{
 			if (!bodyApp.IsDone())
 				return TBD_EDeployResult.RETRY;
-			if (!bodyApp.IsComplete())
+			if (bodyApp.HasBlockingFailure())
 			{
-				Print(string.Format("[TBD][Spawn] deploy FAILED player=%1 slot=%2 — loadout IsComplete=0 at spawn boundary (authored loadout was not fully delivered)",
-					playerId, slot.Key()), LogLevel.ERROR);
+				Print(string.Format("[TBD][Spawn] deploy FAILED player=%1 slot=%2 — this slot body is UNPLAYABLE: %3",
+					playerId, slot.Key(), bodyApp.BlockingSummary()), LogLevel.ERROR);
 				return TBD_EDeployResult.FAILED;
 			}
+			if (bodyApp.HasShortfall())
+				Print(string.Format("[TBD][Spawn] deploy player=%1 slot=%2 — deploying with a loadout SHORTFALL (playable, but not carrying what the mission authored): %3",
+					playerId, slot.Key(), bodyApp.ShortfallBrief()), LogLevel.WARNING);
 		}
 
 		SCR_PlayerController pc = SCR_PlayerController.Cast(

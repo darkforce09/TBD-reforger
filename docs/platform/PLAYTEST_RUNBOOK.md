@@ -121,10 +121,17 @@ callback. You should land logged in as an admin.
 ### 2.3 The mission (15 min, alone) — this is the T-068 half
 
 You need a mission whose slots carry **gear and cargo**. The mission the server seeds by default
-does **not**: `setup-server-profile.sh` copies `bridgehead-at-levie.json` in as `msn_8f3a2c`
-([`setup-server-profile.sh:92-100`](../../scripts/mod/setup-server-profile.sh)) and that golden has
-**18 slots, 0 gear, 0 cargo**. Running the session on it would close T-181.16 and prove nothing at
-all for T-068.14.
+now has them: `setup-server-profile.sh` copies `bridgehead-at-levie.json` in as `msn_8f3a2c`
+([`setup-server-profile.sh:92-100`](../../scripts/mod/setup-server-profile.sh)), and **T-605** gave
+that golden real loadouts on 4 of its 18 slots — full gear + cargo (`blufor:Alpha:SL:0`), gear only
+(`blufor:Alpha:AR:0`), cargo only aimed at a container the kit does **not** wear
+(`blufor:Alpha:RFL:0` — the degrade path), the other faction (`opfor:Grom:SL:0`), and 14 left
+kit-only. It really was **18 slots, 0 gear, 0 cargo** until then, which is exactly why the loadout
+half of the spawn path had never been booted by any gate.
+
+That covers T-181.16. It does **not** close T-068.14 on its own: that slice gates the **authoring**
+path — SPA → Save Version → `/compiled` — and a hand-written golden says nothing about the
+compiler. Author your own as well.
 
 **Author it in the SPA (the path T-068.14 actually gates):**
 
@@ -309,18 +316,32 @@ bash scripts/mod/world-boot.sh --mission=slot-loadout-coverage --keep-logs
 ```
 Then in the printed run directory:
 ```bash
-grep -E 'loadout settle|loadout delivery REFUSED|loadout pass complete|loadout DEGRADED|Stage →' <run-dir>/profile/logs/logs_*/console.log
+grep -E 'loadout settle|loadout delivery REFUSED|loadout SHORTFALL|loadout pass complete|loadout DEGRADED|Stage →' <run-dir>/profile/logs/logs_*/console.log
 ```
-- **WANT:** `[TBD][Slots] loadout settle complete — N application(s) IsComplete=1 — spawn open`
-  ([`TBD_SpawnManager.c:1082`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c))
-  followed by `[TBD] Stage → LOBBY`.
-- **STOP if you see:** `[TBD][Slots] loadout delivery REFUSED at spawn boundary — N application(s)
-  IsComplete=0 — LOBBY/deploy will not open`
-  ([`TBD_SpawnManager.c:1076`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
-  **`IsComplete()` is false if there is a single DEGRADED row anywhere**
-  ([`TBD_LoadoutEquipHelper.c:209-212`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c)),
-  and the refusal is mission-wide: one bad cargo row on one slot keeps **everybody** in LOADING.
+> **Raise the capture window or you will see none of this.** The loadout pass takes ~3–4 s to
+> settle (6 × 500 ms wear verify + weapon phase + cargo) and the harness kills the server
+> `TBD_WORLDBOOT_SETTLE` seconds (default **4**) after the `mission result=` line — which lands
+> *before* the bodies do. Prefix the command with `TBD_WORLDBOOT_SETTLE=25` for every check in this
+> section. At the default the log simply ends mid-pass and looks clean.
+
+- **WANT:** `[TBD][Slots] loadout settle complete — N application(s), 0 unplayable, M with a
+  shortfall — spawn open`
+  ([`TBD_SpawnManager.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c))
+  followed by `[TBD] Stage → LOBBY`. **A non-zero `M` is fine** — see the next bullet.
+- **NOT a stop:** `[TBD][Slots] loadout SHORTFALL on M of N slot(s) — the session IS open …`, and
+  the per-slot `loadout SHORTFALL` / `loadout DEGRADED` WARNINGs behind it. Those players are
+  dressed, armed and playable; they are carrying an item somewhere other than where the mission
+  put it, or fewer of it. `slot-loadout-coverage` produces **3 of 7** today (two full vests and
+  two optics that will not seat) and reaches LOBBY. Read them, note them, carry on.
+- **STOP if you see:** `[TBD][Slots] loadout delivery REFUSED at spawn boundary — N slot body(ies)
+  are UNPLAYABLE — LOBBY/deploy will not open`
+  ([`TBD_SpawnManager.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+  Since **T-605** this fires only for a body nobody could play — an authored prefab that does not
+  load, a storage or weapon slot the character does not have, a garment that would not go on — and
+  the line names the slot and the item. It is still mission-wide, deliberately: fix the document.
   See §6.1.
+- **Rule of thumb for the whole log:** a TBD loadout `SCRIPT (E)` means the session will not open;
+  a TBD loadout `SCRIPT (W)` means it will, carrying less than authored.
 
 Now do the same against **your** mission (`--compiled` fetches from the live API, so `make db-up` +
 `make api` must be running):
@@ -455,7 +476,7 @@ Run the §2.4 command. Watch for, in order:
 [TBD][Spawn] slot=<id> Y=… jsonY=… surfaceY=… delta=… heading=…       (× N)
 [TBD][Loadout][Slot] slot=<id> loadout pass complete gear=x/x cargo=y/y
 [TBD][Slots] materialized N/N bodies — A with a JSON loadout, B kit-only, 0 failed
-[TBD][Slots] loadout settle complete — N application(s) IsComplete=1 — spawn open
+[TBD][Slots] loadout settle complete — N application(s), 0 unplayable, M with a shortfall — spawn open
 [TBD][Stage] LOADING -> LOBBY
 [TBD] Stage → LOBBY
 [TBD][Spawn] LOBBY: auto-deploy wave OFF — the slot picker is the way in (admin override: '#tbd deploy <playerId>').
@@ -469,7 +490,10 @@ Run the §2.4 command. Watch for, in order:
   you authored. Fix the token/URL and restart.
 - `mission result=FAIL` → the server stays in LOADING on purpose. `#tbd validate` in chat replays the
   findings ([`TBD_MissionValidator.c:1353`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c)).
-- `loadout delivery REFUSED at spawn boundary` → **stop**. LOBBY will not open for anyone. §6.1.
+- `loadout delivery REFUSED at spawn boundary … UNPLAYABLE` → **stop**. LOBBY will not open for
+  anyone; the line names the slot and the offending item. §6.1.
+- `loadout SHORTFALL on M of N slot(s)` → **not** a stop. Those players are playable and the round
+  starts; they are carrying an item elsewhere, or fewer of it, than the mission authored. §6.1.
 - `LOBBY: auto-deploy wave ON` → the picker will open and close itself ~500 ms later and you will
   see no UI and no error. `m_bAutoDeploy` must be `0`; it is set to `0` on the prefab at
   [`TBD_GameMode.et:7`](../../apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et), so seeing
@@ -712,26 +736,28 @@ Negative control (T-068.14 P8): the test-NPC harness is **off by default**
 so any `[TBD][Loadout][TestNPC]` line in the log means something enabled it and your screenshot may
 be of an NPC. There should be none.
 
-**The no-garment degrade path.** This is the one T-068 behaviour you have to *provoke*, and it is
-also the most dangerous (§6.1). Do it **last**, on a **separate mission**, not the one you are
-running the session on:
+**The no-garment degrade path.** Since **T-605** you no longer have to provoke this — the seeded
+mission carries it. `blufor:Alpha:RFL:0` in `bridgehead-at-levie.json` is `kit:us_rifleman` (which
+wears no backpack) with a cargo row aimed at `backpack`, so every boot of the session mission runs
+the case. Confirm it in the log rather than building a second mission:
 
-1. In the SPA, clone/author a mission with one slot on `kit:us_rifleman` whose Arsenal has **no
-   backpack** but a **cargo row targeting `backpack`**. That is the exact case the code names.
-2. `bash scripts/mod/world-boot.sh --compiled=<that-mission-uuid> --keep-logs`
-3. **Should see:**
-   ```
-   [TBD][Loadout][Slot] slot=<id> cargo:backpack DEGRADED item=… — this slot's kit wears no backpack — mission/kit authoring mismatch, NOT a mod fault; the item is still inserted via the any-storage fallback
-   [TBD][Loadout][Slot] slot=<id> loadout delivery REFUSED gear=…/… cargo=…/… — IsComplete=0 …
-   [TBD][Slots] loadout delivery REFUSED at spawn boundary — 1 application(s) IsComplete=0 — LOBBY/deploy will not open
-   ```
-   ([`TBD_LoadoutEquipHelper.c:1121-1123`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c),
-   [`:1391`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c),
-   [`TBD_SpawnManager.c:1076`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
-4. **The behaviour to judge:** the item *is* inserted (nothing is lost), the message *does* name the
-   authoring mismatch — but the **whole mission is refused**. Record which of those three lines you
-   saw. If DEGRADED appears **without** the spawn-boundary refusal, the T-541 gate is not firing and
-   that is itself a finding.
+```
+[TBD][Loadout][Slot] slot=blufor:Alpha:RFL:0 cargo:backpack DEGRADED item=… — this slot's kit wears no backpack — mission/kit authoring mismatch, NOT a mod fault; the item is still inserted via the any-storage fallback
+[TBD][Loadout][Slot] slot=blufor:Alpha:RFL:0 loadout SHORTFALL gear=0/0 cargo=1/1 — the slot is playable and the session is NOT refused; …
+[TBD][Slots] loadout settle complete — 18 application(s), 0 unplayable, 2 with a shortfall — spawn open
+[TBD][Slots] loadout SHORTFALL on 2 of 18 slot(s) — the session IS open … blufor:Alpha:SL:0 [cargo:vest x2]; blufor:Alpha:RFL:0 [cargo:backpack x1]
+[TBD][Admin] LOADOUT: 2 slot(s) did not get the authored loadout (session opened anyway): …
+```
+
+**The behaviour to judge, in game:** open that player's inventory. The tourniquet **is** on them,
+in whatever storage would take it rather than in a backpack they do not have; the round started
+normally; and `#tbd audit` shows the admin entry naming the slot. If the session instead refuses,
+or if the DEGRADED line appears with no `SHORTFALL` roll-up and no admin entry, that is a finding.
+
+**The `SCRIPT (E)` case** — a slot the mod calls UNPLAYABLE — is the one that still keeps everyone
+in LOADING, and it is not reachable from the SPA (the Arsenal only offers registry items), so there
+is nothing to rehearse here. If you see `loadout delivery REFUSED at spawn boundary — N slot
+body(ies) are UNPLAYABLE`, the line names the slot and the item; fix the document.
 
 ---
 
@@ -954,23 +980,35 @@ same reason. Use the greps above.
 These are things that are **already known** to be broken, unbuilt, or unverifiable. None is a
 surprise; all of them can bite during the session.
 
-### 6.1 A single degraded cargo row refuses the LOBBY for everyone — **highest risk**
+### 6.1 A single degraded cargo row refuses the LOBBY for everyone — **FIXED (T-605)**
 
-`IsComplete()` is `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()`
-([`TBD_LoadoutEquipHelper.c:209-212`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c)) —
-**DEGRADED counts as incomplete**. T-541 then made incomplete a hard gate at the spawn boundary:
-one incomplete application anywhere sets `m_bLoadoutDeliveryRefused`, `m_bSlotBodiesMaterialized`
-stays false, and LOBBY refuses with
-`[TBD][Spawn] LOBBY REFUSED — loadout delivery incomplete at spawn boundary (IsComplete=0); staying in LOADING`
-([`TBD_SpawnManager.c:1600`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+Kept here rather than deleted, because it was this runbook's highest-risk entry and the shape of the
+fix is what you will be reading in the log.
 
-Degraded is easy to trigger by accident: a cargo row aimed at a container the kit does not wear, or
-a container that is simply full. And **this gate has never run against a loadout-carrying mission**
-— the wave gate only boots `--mission=bridgehead-at-levie`
-([`wave.sh:132`](../../scripts/mod/wave.sh)), which has **0 gear and 0 cargo**.
+**What it was.** `IsComplete()` is `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()`
+([`TBD_LoadoutEquipHelper.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c)),
+so **DEGRADED counted as incomplete**, and T-541 made incomplete a hard gate at the spawn boundary:
+one degraded item on one slot set `m_bLoadoutDeliveryRefused`, `m_bSlotBodiesMaterialized` stayed
+false, and **nobody** left LOADING. It was never a hypothetical — booted against the committed
+golden `slot-loadout-coverage.json`, 3 of its 7 slots refused the world, one of them
+(`blufor:Ranger:SL:0`) while reporting `gear=10/10 cargo=8/8`: nothing missing at all, six magazines
+simply displaced out of a full vest.
 
-**Mitigation:** §2.5 A. Run `world-boot.sh --compiled=$MID` before the friend arrives. If it refuses,
-simplify the mission's cargo until it does not, and file the refusal as a finding.
+**What it is now.** The boundary reads `HasBlockingFailure()`, not `IsComplete()`. It refuses only a
+body nobody could play — an authored prefab that will not load, a storage or weapon slot the
+character does not have, a garment that would not go on. A full container, an optic that will not
+seat, or a container the kit does not wear is a **SHORTFALL**: the session opens, that player plays,
+and the miss is reported per item (WARNING), per slot, once for the session, and in the admin trail
+(`#tbd audit`). Log level is the contract — loadout `SCRIPT (E)` = the session will not open,
+loadout `SCRIPT (W)` = it will, carrying less.
+
+**And the gate now runs it.** `bridgehead-at-levie.json` — the mission `wave.sh`'s `world boot
++mission` step boots and the one `setup-server-profile.sh` seeds — had **0 gear and 0 cargo**, which
+is why none of this had ever executed. T-605 gave it four real loadouts including the unworn-
+container degrade, so every wave gate from now on drives the path.
+
+**Still worth doing:** §2.5 A against your own mission before the friend arrives — a shortfall is not
+a stop, but you would rather know which players are short before they are standing in the AO.
 
 ### 6.2 Nothing in the repo starts a joinable server with the local mod
 
@@ -1064,8 +1102,9 @@ tail -f "$LOG" | grep --line-buffered -E \
 | `[TBD] roll-call: …=ok` ×9 | `TBD_FrameworkManager.c:409` | every component on `TBD_GameMode.et` instantiated |
 | `[TBD][Mission] loaded id=… source=backend` | `TBD_Log.c:75` | the API served the document (not the disk fallback) |
 | `[TBD][Validate] mission result=PASS` | `TBD_Log.c:85` | the mission is loadable |
-| `[TBD][Slots] loadout settle complete … IsComplete=1 — spawn open` | `TBD_SpawnManager.c:1082` | **every** authored loadout was fully delivered |
-| `[TBD][Slots] loadout delivery REFUSED at spawn boundary` | `TBD_SpawnManager.c:1076` | **stop** — nobody can leave LOADING |
+| `[TBD][Slots] loadout settle complete … 0 unplayable, M with a shortfall — spawn open` | `TBD_SpawnManager.TickLoadoutSettle` | the lineup is playable; `M`>0 means some of it is not what was authored |
+| `[TBD][Slots] loadout SHORTFALL on M of N slot(s)` | `TBD_SpawnManager.TickLoadoutSettle` | **not** a stop — names the slots carrying less/elsewhere than authored (§6.1) |
+| `[TBD][Slots] loadout delivery REFUSED at spawn boundary … UNPLAYABLE` | `TBD_SpawnManager.TickLoadoutSettle` | **stop** — nobody can leave LOADING; the line names the slot and the item |
 | `[TBD] Stage → LOBBY` | `TBD_FrameworkManager.c:794` | the lobby is open |
 | `[TBD][Spawn] LOBBY: auto-deploy wave OFF` | `TBD_SpawnManager.c:2094` | the picker is the way in (correct) |
 | `[TBD][Spawn] claim player=N slot=K` | `TBD_SpawnManager.c:785` | a seat was taken |
