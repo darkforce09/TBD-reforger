@@ -80,12 +80,41 @@ struct OpsCtx {
 /// The discriminant lives here, on the armed value, rather than on a separate "current tab" signal:
 /// the tab can change (or the dock can unmount) between the leaf's `pointerdown` and the canvas's
 /// `pointerup`, and a place must commit the entity the operator actually picked up.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 enum Pending {
     Character(PlacePayload),
     Vehicle(PlacePayload),
     /// T-254 — Objects chip → `entitiesById` row.
     Object(PlacePayload),
+    /// T-582 — an in-progress zone draw. Unlike the three above this is **multi-click**: it is not
+    /// consumed by the first canvas release, so [`place_at`] branches on it before its `take`.
+    Zone(ZoneDraft),
+}
+
+/// T-582 — the in-progress zone draw.
+///
+/// Lives on `ctx.pending` (rather than in a signal of its own) for the same reason the palette arms
+/// do: `has_pending()` is what makes `mission_editor`'s pointer handlers route a canvas release to
+/// [`place_at`] instead of the select/marquee machine, and re-deriving "is a draw in flight" from a
+/// second source is how the two get out of step.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ZoneDraft {
+    /// Schema `zone.type`, taken from `$defs/zone/properties/type/enum` by the dock — never typed.
+    pub kind: String,
+    pub shape: ZoneShape,
+    /// Circle: the centre, set by the first click. `None` until then.
+    pub centre: Option<(f64, f64)>,
+    /// Polygon: the ring so far, one vertex per click.
+    pub verts: Vec<(f64, f64)>,
+    /// T-582 — RESHAPE target. `None` creates a new zone (`add_*_zone`); `Some(id)` re-shapes that
+    /// existing one (`set_zone_circle` / `set_zone_polygon`).
+    ///
+    /// The two reshape mutators replace the WHOLE `shape` object, which is why a circle can become a
+    /// polygon and back: `$defs/shape` is a `oneOf`, so a row carrying both keys is schema-INVALID,
+    /// and a partial edit would leave exactly that. Re-shaping through them keeps every other
+    /// authored field — label, faction, and the opaque `rules` — untouched, which is the whole point
+    /// of offering reshape instead of delete-and-redraw.
+    pub target: Option<String>,
 }
 
 /// One slot's editable attributes, read from the materialized SoA for the Attributes modal.
@@ -1030,6 +1059,11 @@ fn arm(pending: Pending) {
             let ok = match &pending {
                 Pending::Object(_) => objects,
                 Pending::Character(_) | Pending::Vehicle(_) => !objects,
+                // T-582 — zones are not a palette arm and do not route through here
+                // ([`begin_zone_draw`] sets `pending` itself, because a zone is authorable under
+                // either chip: a play area is not a BLUFOR thing or an Objects thing). Rejecting
+                // rather than accepting keeps this function's contract "palette arms only".
+                Pending::Zone(_) => false,
             };
             if !ok {
                 *ctx.pending.borrow_mut() = None;
@@ -1051,10 +1085,22 @@ pub fn has_pending() -> bool {
 }
 
 /// Drop the armed place (release over chrome, or pointercancel).
+///
+/// **T-582 — a zone draw survives this.** The palette arms are one-shot, so a release over a dock
+/// means "I changed my mind" and dropping them is right. A zone draw is multi-click, and the chrome
+/// host stops `pointerdown` only — so every click on the Zones panel's own Close / Undo vertex /
+/// Cancel buttons ALSO bubbles a `pointerup` to the map container and lands here. Dropping the draft
+/// on those would make the Close control destroy the ring it is meant to commit. A zone draw is
+/// therefore ended only by finishing it or by [`cancel_zone_draw`], which the Cancel button calls
+/// explicitly.
 pub fn cancel_pending() {
     OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
-            *ctx.pending.borrow_mut() = None;
+            let mut p = ctx.pending.borrow_mut();
+            if matches!(*p, Some(Pending::Zone(_))) {
+                return;
+            }
+            *p = None;
         }
     });
 }
@@ -2143,6 +2189,11 @@ pub fn refile_slot(slot_id: String, dest_squad_id: String) -> bool {
 /// `z = 0.0` / `rotation = 0.0` match the T-159.19 drag commit's DEM-not-ready case (React's
 /// `terrainZ` on the flat map).
 pub fn place_at(x: f64, y: f64) -> bool {
+    // T-582 — a zone draw is MULTI-CLICK (circle: centre then rim; polygon: one vertex per click),
+    // so it must not reach the `take` below, which is written for the one-shot palette arms.
+    if zone_draw_armed() {
+        return advance_zone_draw(x, y);
+    }
     let placed = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -2165,6 +2216,10 @@ pub fn place_at(x: f64, y: f64) -> bool {
             let side = ctx.active_side.get_untracked();
             let id = mint_id(ctx, core);
             match pending {
+                // T-582 — unreachable: the zone branch at the top of this function returns before
+                // the `take` that produced `pending`. Written as an explicit refusal rather than a
+                // `_ =>` so that a fourth arm added later cannot fall silently into a slot place.
+                Pending::Zone(_) => return false,
                 Pending::Vehicle(payload) => {
                     if !place_vehicle_in_core(core, &side, &id, &payload.asset_id, x, y) {
                         return false;
@@ -2215,4 +2270,461 @@ pub fn place_at(x: f64, y: f64) -> bool {
         crate::mission_history::after_local_edit();
     }
     placed
+}
+
+/* ═══════════════════ T-582 — the zone draw tool (doc-mutating half) ═══════════════════ */
+
+// T-211 shipped `zones` + eleven mutators on `MissionDocCore`; NOTHING called them. This block is
+// the caller. The pure half — the schema-driven vocabularies, the 0.1 m grid, and the two shape
+// predicates — lives in `eden_chrome` because it compiles on the NATIVE target, where
+// `cargo test -p website-frontend` can run it; `MissionDocCore` is a wasm32-only dependency of this
+// crate (see Cargo.toml), so anything that touches it can only live here, where no test runs.
+//
+// The division is deliberate: every decision this file makes is delegated to a predicate over there
+// that IS tested (`circle_from_clicks`, `polygon_is_committable`, `zone_types`), so the untestable
+// half stays as close to pure plumbing as it can be.
+
+use crate::eden_chrome::{
+    circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
+};
+
+/// One authored zone, read back for the dock list and the Attributes panel.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ZoneRow {
+    pub id: String,
+    /// Schema `zone.type`.
+    pub kind: String,
+    pub label: Option<String>,
+    pub faction: Option<String>,
+    /// `rules` VERBATIM, as the opaque object the doc stores. Never parsed into named fields here —
+    /// see `set_zone_rules`' note in `doc/store.rs` for why a typed mirror would be the second
+    /// vocabulary T-241 exists to prevent.
+    pub rules: serde_json::Value,
+    /// `Some((x, z, r))` for a circle.
+    pub circle: Option<(f64, f64, f64)>,
+    /// The ring for a polygon.
+    pub polygon: Vec<(f64, f64)>,
+}
+
+impl ZoneRow {
+    /// A one-line geometry summary for the dock row.
+    #[must_use]
+    pub fn shape_summary(&self) -> String {
+        if let Some((x, z, r)) = self.circle {
+            format!("circle r {r:.1} m @ {x:.0}, {z:.0}")
+        } else if self.polygon.is_empty() {
+            "no shape".to_string()
+        } else {
+            format!("polygon, {} vertices", self.polygon.len())
+        }
+    }
+}
+
+/// Is a zone draw in flight?
+#[must_use]
+pub fn zone_draw_armed() -> bool {
+    OPS_CTX.with(|c| {
+        c.borrow()
+            .as_ref()
+            .is_some_and(|ctx| matches!(*ctx.pending.borrow(), Some(Pending::Zone(_))))
+    })
+}
+
+/// The in-flight draw, for the dock's live hint ("click the rim", "2 vertices — one more to close").
+#[must_use]
+pub fn zone_draft() -> Option<ZoneDraft> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let p = ctx.pending.borrow();
+        match &*p {
+            Some(Pending::Zone(d)) => Some(d.clone()),
+            _ => None,
+        }
+    })
+}
+
+/// Arm a zone draw. `kind` must come from [`zone_types`] — this refuses anything else rather than
+/// letting an invented `zone.type` reach the document, where it would save 201 and then 500
+/// `/compiled` forever (T-581 measured exactly that for `"capture"`).
+pub fn begin_zone_draw(kind: &str, shape: ZoneShape) -> bool {
+    if !zone_types().iter().any(|t| t == kind) {
+        return false;
+    }
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        *ctx.pending.borrow_mut() = Some(Pending::Zone(ZoneDraft {
+            kind: kind.to_string(),
+            shape,
+            centre: None,
+            verts: Vec::new(),
+            target: None,
+        }));
+        true
+    })
+}
+
+/// T-582 — arm a RESHAPE of an existing zone: the next clicks replace its `shape` through
+/// `set_zone_circle` / `set_zone_polygon` instead of minting a new row.
+///
+/// The gesture is identical to a fresh draw (circle: centre then rim; polygon: vertices then Close),
+/// so there is one geometry path and one set of guards — a reshape cannot produce the `r → 0.0`
+/// circle or the two-vertex ring any more than a create can. `kind` is read from the live document
+/// rather than taken from the caller: reshaping is a geometry edit, and silently retyping a zone
+/// because the dock's type picker had drifted would be a different, invisible edit.
+pub fn begin_zone_reshape(zone_id: &str, shape: ZoneShape) -> bool {
+    let Some(row) = zone_rows().into_iter().find(|r| r.id == zone_id) else {
+        return false;
+    };
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        *ctx.pending.borrow_mut() = Some(Pending::Zone(ZoneDraft {
+            kind: row.kind,
+            shape,
+            centre: None,
+            verts: Vec::new(),
+            target: Some(zone_id.to_string()),
+        }));
+        true
+    })
+}
+
+/// Abandon the in-flight draw without writing anything. The explicit counterpart to
+/// [`cancel_pending`], which a zone draw deliberately survives.
+pub fn cancel_zone_draw() {
+    OPS_CTX.with(|c| {
+        if let Some(ctx) = c.borrow().as_ref() {
+            let mut p = ctx.pending.borrow_mut();
+            if matches!(*p, Some(Pending::Zone(_))) {
+                *p = None;
+            }
+        }
+    });
+}
+
+/// Drop the last polygon vertex (the Undo-vertex control). Returns the remaining count.
+pub fn zone_draw_pop_vertex() -> usize {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return 0;
+        };
+        let mut p = ctx.pending.borrow_mut();
+        if let Some(Pending::Zone(d)) = p.as_mut() {
+            d.verts.pop();
+            return d.verts.len();
+        }
+        0
+    })
+}
+
+/// One canvas release while a zone draw is armed.
+///
+/// **Circle** — the first release sets the centre, the second is the rim and COMMITS. The radius is
+/// the distance between them, and [`circle_from_clicks`] refuses a rim that quantises the radius to
+/// zero, so the click-without-travel that produced `r = 0.04` cannot create a zone at all.
+///
+/// **Polygon** — every release appends a vertex and the draw stays armed; nothing is written until
+/// [`close_zone_polygon`], which enforces `minItems: 3`. The doc layer deliberately does not guard
+/// that (its own comment assigns it here), so a ring is never handed over short.
+fn advance_zone_draw(x: f64, z: f64) -> bool {
+    enum Commit {
+        Circle {
+            kind: String,
+            geom: (f64, f64, f64),
+            target: Option<String>,
+        },
+        None,
+    }
+    let commit = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return Commit::None;
+        };
+        let mut p = ctx.pending.borrow_mut();
+        let Some(Pending::Zone(d)) = p.as_mut() else {
+            return Commit::None;
+        };
+        match d.shape {
+            ZoneShape::Polygon => {
+                d.verts.push((x, z));
+                Commit::None
+            }
+            ZoneShape::Circle => match d.centre {
+                None => {
+                    d.centre = Some((x, z));
+                    Commit::None
+                }
+                Some((cx, cz)) => match circle_from_clicks(cx, cz, x, z) {
+                    // A rim that would quantise the radius to zero is NOT a commit and NOT a
+                    // cancel: the centre stays put so the author can simply drag further out.
+                    None => Commit::None,
+                    Some(geom) => {
+                        let (kind, target) = (d.kind.clone(), d.target.clone());
+                        *p = None;
+                        Commit::Circle { kind, geom, target }
+                    }
+                },
+            },
+        }
+    });
+    match commit {
+        Commit::Circle {
+            kind,
+            geom: (cx, cz, r),
+            target,
+        } => match target {
+            // Reshape: replaces the whole `shape` object, so label / faction / rules survive and
+            // the `oneOf` can never end up with both branches present.
+            Some(id) => edit_zone(|core| core.set_zone_circle(&id, cx, cz, r)),
+            None => write_zone(|core, id| core.add_circle_zone(id, &kind, cx, cz, r)),
+        },
+        // A vertex / centre landed but no document write happened yet. Report progress so the dock
+        // re-reads, without running the persist tail for a doc that did not change.
+        Commit::None => {
+            bump_doc_tick();
+            zone_draw_armed()
+        }
+    }
+}
+
+/// Close the in-flight ring. Refuses below three vertices — `$defs/polygon` is `minItems: 3` and a
+/// two-vertex ring is a document the schema rejects.
+pub fn close_zone_polygon() -> bool {
+    let taken = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let mut p = ctx.pending.borrow_mut();
+        let Some(Pending::Zone(d)) = p.as_ref() else {
+            return None;
+        };
+        if d.shape != ZoneShape::Polygon || !polygon_is_committable(&d.verts) {
+            return None;
+        }
+        let out = (d.kind.clone(), d.verts.clone(), d.target.clone());
+        *p = None;
+        Some(out)
+    });
+    let Some((kind, verts, target)) = taken else {
+        return false;
+    };
+    let flat = polygon_flat(&verts);
+    match target {
+        // Reshape — see [`begin_zone_reshape`]: whole-`shape` replacement, so a circle becomes a
+        // polygon without leaving both `oneOf` branches on the row.
+        Some(id) => edit_zone(|core| core.set_zone_polygon(&id, &flat)),
+        None => write_zone(|core, id| core.add_polygon_zone(id, &kind, &flat)),
+    }
+}
+
+/// Mint an unused zone id. `zones` is its OWN id namespace (`mint_id` proves uniqueness against the
+/// slot SoA, which does not contain zones), and uniqueness is proven against the live map rather
+/// than assumed — undo frees ids and an IDB restore can bring back a document that already used one.
+fn mint_zone_id(core: &MissionDocCore) -> String {
+    let existing: std::collections::HashSet<String> =
+        serde_json::from_str::<serde_json::Value>(&core.zones_json())
+            .ok()
+            .and_then(|v| {
+                v.as_object()
+                    .map(|m| m.keys().map(ToString::to_string).collect())
+            })
+            .unwrap_or_default();
+    (1u32..)
+        .map(|n| format!("z{n}"))
+        .find(|id| !existing.contains(id))
+        .unwrap_or_else(|| "z1".to_string())
+}
+
+/// Run a zone-creating mutator under a minted id, then the shared dirty tail. The write txn is
+/// scoped so it is gone before `after_local_edit` opens its read txn (the `mission_history` rule).
+fn write_zone(f: impl FnOnce(&MissionDocCore, &str)) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let id = mint_zone_id(core);
+        f(core, &id);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// Nudge the reactive doc tick so the Zones panel re-reads mid-draw. Cheaper and safer than
+/// `after_local_edit`, which schedules a persist for a document that has not changed yet.
+fn bump_doc_tick() {
+    OPS_CTX.with(|c| {
+        if let Some(ctx) = c.borrow().as_ref() {
+            let n = ctx.doc_tick.get_untracked();
+            ctx.doc_tick.set(n.wrapping_add(1));
+        }
+    });
+}
+
+/// Every authored zone, in `zones_json` map order, for the dock list.
+#[must_use]
+pub fn zone_rows() -> Vec<ZoneRow> {
+    OPS_CTX
+        .with(|c| {
+            let guard = c.borrow();
+            let ctx = guard.as_ref()?;
+            let d = ctx.doc.borrow();
+            let core = d.as_ref()?;
+            let map: serde_json::Value = serde_json::from_str(&core.zones_json()).ok()?;
+            let obj = map.as_object()?;
+            let mut rows: Vec<ZoneRow> = obj
+                .iter()
+                .map(|(id, z)| {
+                    let shape = z.get("shape");
+                    let circle = shape.and_then(|s| s.get("circle")).and_then(|c| {
+                        Some((
+                            c.get("x")?.as_f64()?,
+                            c.get("z")?.as_f64()?,
+                            c.get("r")?.as_f64()?,
+                        ))
+                    });
+                    let polygon = shape
+                        .and_then(|s| s.get("polygon"))
+                        .and_then(serde_json::Value::as_array)
+                        .map(|ring| {
+                            ring.iter()
+                                .filter_map(|p| {
+                                    let a = p.as_array()?;
+                                    Some((a.first()?.as_f64()?, a.get(1)?.as_f64()?))
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    ZoneRow {
+                        id: id.clone(),
+                        kind: z
+                            .get("type")
+                            .and_then(|t| t.as_str())
+                            .unwrap_or_default()
+                            .to_string(),
+                        label: z
+                            .get("label")
+                            .and_then(|l| l.as_str())
+                            .map(ToString::to_string),
+                        faction: z
+                            .get("faction")
+                            .and_then(|f| f.as_str())
+                            .map(ToString::to_string),
+                        rules: z.get("rules").cloned().unwrap_or(serde_json::Value::Null),
+                        circle,
+                        polygon,
+                    }
+                })
+                .collect();
+            // Map iteration order is not stable across a reload; sort so the dock list does not
+            // reshuffle under the author between sessions.
+            rows.sort_by(|a, b| a.id.cmp(&b.id));
+            Some(rows)
+        })
+        .unwrap_or_default()
+}
+
+/// Run a mutator against an existing zone, then the shared dirty tail.
+fn edit_zone(f: impl FnOnce(&MissionDocCore)) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        f(core);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// Attributes — schema `zone.type`. Refuses a value outside the schema enum, for the same reason
+/// [`begin_zone_draw`] does.
+pub fn set_zone_kind(id: &str, kind: &str) -> bool {
+    if !zone_types().iter().any(|t| t == kind) {
+        return false;
+    }
+    edit_zone(|core| core.set_zone_type(id, kind))
+}
+
+/// Attributes — schema `zone.label`. An EMPTY string and `None` are different authored states the
+/// schema allows on purpose: `Some("")` writes an empty label (which the mod reads as "use the
+/// PrettyZoneTitle fallback" and is a committed golden), `None` removes the key. The panel's Clear
+/// control sends `None`; typing and clearing the box sends `Some("")`.
+pub fn set_zone_label(id: &str, label: Option<String>) -> bool {
+    edit_zone(|core| core.set_zone_label(id, label.as_deref()))
+}
+
+/// Attributes — schema `zone.faction` (a `factionKey` slug). `None` makes the zone faction-neutral.
+pub fn set_zone_faction(id: &str, faction: Option<String>) -> bool {
+    edit_zone(|core| core.set_zone_faction(id, faction.as_deref()))
+}
+
+/// Attributes — set or clear ONE `rules` key, read-modify-write over the OPAQUE object.
+///
+/// The key is a `$defs/zoneRules` property name supplied by the schema-driven panel; this function
+/// never names one. `value: None` removes the key, and once the last key is gone the whole object
+/// goes with it — `set_zone_rules` treats `{}` as a removal on purpose, because "the author cleared
+/// every rule" and "the author never opened the panel" must stay the same document.
+pub fn set_zone_rule(id: &str, key: &str, value: Option<serde_json::Value>) -> bool {
+    let next = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let map: serde_json::Value = serde_json::from_str(&core.zones_json()).ok()?;
+        let mut rules = map
+            .get(id)?
+            .get("rules")
+            .and_then(|r| r.as_object().cloned())
+            .unwrap_or_default();
+        match value {
+            Some(v) => {
+                rules.insert(key.to_string(), v);
+            }
+            None => {
+                rules.remove(key);
+            }
+        }
+        Some(serde_json::Value::Object(rules).to_string())
+    });
+    let Some(next) = next else {
+        return false;
+    };
+    edit_zone(|core| core.set_zone_rules(id, Some(&next)))
+}
+
+/// Attributes — delete the zone.
+pub fn delete_zone(id: &str) -> bool {
+    edit_zone(|core| core.remove_zone(id))
+}
+
+/// How many zones the document declares — backs "does this mission define a play area?".
+#[must_use]
+pub fn zone_count() -> usize {
+    OPS_CTX.with(|c| {
+        c.borrow()
+            .as_ref()
+            .and_then(|ctx| ctx.doc.borrow().as_ref().map(MissionDocCore::zone_count))
+            .unwrap_or(0)
+    })
 }
