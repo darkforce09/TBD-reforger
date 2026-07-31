@@ -18,8 +18,11 @@
 //! Save with a dirty indicator and a discard path — and the answer from the rest of the SPA is no,
 //! twice over:
 //!
-//! * **Every other mission-document editor commits on the spot.** `editor_ops.rs` funnels 28 call
-//!   sites into `mission_history::after_local_edit`, and the Arsenal's `set_loadout`
+//! * **Every other mission-document editor commits on the spot.** `editor_ops.rs` funnels 26 call
+//!   sites into `mission_history::after_local_edit` — measured 2026-07-31; this line said 28 and
+//!   28 is the SPA-wide total. The other two are direct calls from `mission_hydrate.rs:496` and
+//!   `mission_editor.rs:1316`, neither of them an editor commit point, so the argument below is
+//!   unaffected by the correction. The Arsenal's `set_loadout`
 //!   (`editor_ops.rs:777`) is one of them. Its own siblings in this very modal are the clearest
 //!   case: Transform X/Y/Z/rotation (`attributes.rs:265`) and Identity role/tag/stance
 //!   (`attributes.rs:335`) commit on blur/Enter with no Save of their own — `attributes.rs:7` states

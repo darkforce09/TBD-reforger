@@ -425,7 +425,9 @@ fn marker_inner_is_vacuous(inner: &str) -> bool {
         .lines()
         .map(str::trim)
         .filter(|l| !l.is_empty())
-        .filter(|l| !(l.starts_with('#') && !l.contains("**")))
+        // De Morgan of `!(starts_with('#') && !contains("**"))`: keep a line unless it is a bare
+        // heading. A heading carrying bold body text is substantive and still counts.
+        .filter(|l| !l.starts_with('#') || l.contains("**"))
         .collect();
     substantive.is_empty()
 }

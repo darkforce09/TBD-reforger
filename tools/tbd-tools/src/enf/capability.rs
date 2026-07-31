@@ -85,7 +85,9 @@ pub fn load_rules(path: &Path) -> Result<Vec<Rule>> {
         });
     }
     // Longest prefix wins, so a specific file can override its directory.
-    out.sort_by(|a, b| b.prefix.len().cmp(&a.prefix.len()));
+    // `Reverse` rather than a flipped `cmp`: identical ordering (Reverse's Ord IS `other.cmp(self)`)
+    // and `sort_by`/`sort_by_key` are both stable, so equal-length prefixes keep file order.
+    out.sort_by_key(|r| std::cmp::Reverse(r.prefix.len()));
     Ok(out)
 }
 
@@ -133,8 +135,9 @@ pub fn build(files_tsv: &Path, symbols_tsv: &Path, rules: &[Rule]) -> Result<Rep
 
     let mut matrix = String::from("capability\tverdict\tfiles\tloc\tsymbols\tnote\n");
     // Heaviest capabilities first — that is the reading order that matters.
+    // `Reverse`, same reasoning as the prefix sort above: same order, same stability.
     let mut rows: Vec<_> = agg.into_iter().collect();
-    rows.sort_by(|a, b| b.1.loc.cmp(&a.1.loc));
+    rows.sort_by_key(|r| std::cmp::Reverse(r.1.loc));
     for (cap, a) in &rows {
         let _ = writeln!(
             matrix,

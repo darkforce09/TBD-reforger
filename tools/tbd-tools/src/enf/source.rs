@@ -49,7 +49,10 @@ fn detag(s: &str) -> String {
 /// Doxygen prefixes each line with its right-aligned number; drop it so the output is real
 /// source whose line numbers match the original file.
 fn strip_line_number(s: &str) -> &str {
-    let t = s.trim_start_matches(|c: char| c == ' ' || c == '\u{a0}');
+    // `[' ', '\u{a0}']` is a `Pattern` over the char set — same two characters as the closure it
+    // replaces (space and NBSP; Doxygen pads with the latter), no `\t` and no other whitespace,
+    // so this is deliberately NOT `char::is_whitespace`.
+    let t = s.trim_start_matches([' ', '\u{a0}']);
     let digits = t.len() - t.trim_start_matches(|c: char| c.is_ascii_digit()).len();
     if digits == 0 {
         return s;

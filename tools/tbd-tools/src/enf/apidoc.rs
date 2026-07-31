@@ -160,13 +160,19 @@ pub fn build(src: &Path, out: &Path) -> Result<ApiStats> {
                 continue;
             };
             // interfaceSCR__BaseGameMode.html -> SCR_BaseGameMode
+            //
+            // T-603: a `.replace('_', "_")` used to sit between the two lines below. Clippy's
+            // `no_effect_replace` is right that it is a no-op — `str::replace` returns a new
+            // String with each match swapped, and swapping "_" for "_" swaps nothing. It read as
+            // "and leave single underscores alone", which the sentinel already guarantees:
+            // Doxygen escapes a real `_` in a class name as `__`, so `__` is mapped out of the
+            // way first and only mapped back after. Deleted, not silenced.
             let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("");
             let class = stem
                 .trim_start_matches("interface")
                 .trim_start_matches("class")
                 .trim_start_matches("struct")
                 .replace("__", "\u{1}")
-                .replace('_', "_")
                 .replace('\u{1}', "_");
             for sig in parse_members(&html) {
                 let _ = writeln!(members_tsv, "{class}\t{sig}");
