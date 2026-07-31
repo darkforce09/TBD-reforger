@@ -374,3 +374,5 @@
 99	T-573	Mixed drag vehicle GPU preview still slots-only	apps/website/frontend/src/mission_editor.rs; crates/map-engine-render
 99	T-574	T-491 host Class-R soft include_str	crates/map-engine-core/src/doc/store.rs
 99	T-575	wave.sh dead MIGRATE_TEST_DATABASE_URL	scripts/platform/wave.sh
+3	T-303	Dev config guarantees the first live Discord login fails	apps/website/api/.env.example; apps/website/api/src/handlers/oauth.rs
+3	T-117	Mission upload + schema validation UI	apps/website/frontend/src/missions.rs

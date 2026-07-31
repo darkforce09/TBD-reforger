@@ -2796,7 +2796,7 @@
         "website"
       ],
       "executor": "human",
-      "status": "queued",
+      "status": "shipped",
       "surfaces": [
         "DATA"
       ],
@@ -2804,7 +2804,7 @@
         "api"
       ],
       "title": "Results POST to backend",
-      "summary": "SPLIT 2026-07-26. Mod half SHIPPED: TBD_ResultsReporter.c (682 lines, T-181.13.1) POSTs to /api/v1/ingest/match-results. Website half OPEN and folded into T-232 — event_hub.rs renders no result/outcome/match data at all. This row now tracks only the website half.",
+      "summary": "SPLIT 2026-07-26. Mod half SHIPPED: TBD_ResultsReporter.c (682 lines, T-181.13.1) POSTs to /api/v1/ingest/match-results. Website half OPEN and folded into T-232 — event_hub.rs renders no result/outcome/match data at all. This row now tracks only the website half.\n\n== CLOSED 2026-07-31 — ALREADY DONE, this row was a stale pointer ==\nThe mod half shipped at T-181.13.1. This row tracked only the WEBSITE half, which its own summary says was folded into T-232 — and T-232 is SHIPPED ('Five pages render literally nothing when real data arrives'). Verified before closing. No work remains under this id; do not dispatch it.",
       "milestone": "M1",
       "depends_on": [
         "T-115"
@@ -2819,7 +2819,7 @@
         "website"
       ],
       "executor": "claude-code",
-      "status": "queued",
+      "status": "ready",
       "surfaces": [
         "DATA"
       ],
@@ -2829,7 +2829,8 @@
       ],
       "title": "Mission upload + validation UI",
       "summary": "Web UI for mission upload and schema validation (API exists).",
-      "milestone": "M1"
+      "milestone": "M1",
+      "priority": 2
     },
     {
       "id": "T-118",
@@ -2840,7 +2841,7 @@
         "website"
       ],
       "executor": "claude-code",
-      "status": "queued",
+      "status": "shipped",
       "surfaces": [
         "ORBAT",
         "DATA"
@@ -2850,7 +2851,7 @@
         "api"
       ],
       "title": "Event ORBAT + identity linking UI",
-      "summary": "SPLIT 2026-07-26. DONE: identity-link UI (settings.rs:6-9,74-94, T-159.25) and the ORBAT selector (event_hub.rs:520-572, T-159.25a). OPEN residual is tracked by T-226 (PATCH /events/{id} has no caller), T-284 (clear_slot unreachable, admin cannot free a claimed slot) and T-231 (identity last mile). This row is a pointer, not work.",
+      "summary": "SPLIT 2026-07-26. DONE: identity-link UI (settings.rs:6-9,74-94, T-159.25) and the ORBAT selector (event_hub.rs:520-572, T-159.25a). OPEN residual is tracked by T-226 (PATCH /events/{id} has no caller), T-284 (clear_slot unreachable, admin cannot free a claimed slot) and T-231 (identity last mile). This row is a pointer, not work.\n\n== CLOSED 2026-07-31 — ALREADY DONE, this row was a stale pointer ==\nIts own summary says 'This row is a pointer, not work' and names the residual as T-226, T-284 and T-231. ALL THREE ARE SHIPPED (events edit/detach; clear_slot reachable; identity last mile). Verified before closing. No work remains under this id; do not dispatch it.",
       "milestone": "M1"
     },
     {
@@ -8359,7 +8360,7 @@
       "impact": [
         "platform-server"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2870,
       "stream": "web-platform",
       "targets": [
@@ -8569,7 +8570,7 @@
       "impact": [
         "infra"
       ],
-      "status": "idea",
+      "status": "ready",
       "order": 2980,
       "stream": "infra",
       "targets": [
@@ -8999,7 +9000,7 @@
     {
       "id": "T-303",
       "title": "Dev config guarantees the first live Discord login fails invalid_state",
-      "summary": "Found by T-207 while writing the OAuth runbook. apps/website/api/.env has FRONTEND_URL on 127.0.0.1 and DISCORD_REDIRECT_URL on localhost. The oauth_state cookie is host-only (no Domain attribute), and 127.0.0.1 and localhost are DIFFERENT cookie hosts — so the cookie set when the flow starts is never sent to the callback, and the very first live login fails with invalid_state. That error reads like CSRF tampering, not a misconfiguration, so it will be misdiagnosed. One-line fix: align the two to the same host. Worse, exchange_code and fetch_user errors are DROPPED rather than logged (T-207 corrected the earlier belief that they were logged), so the server log cannot distinguish a bad secret from a Discord outage — add tracing::error! to the callback's error paths so the runbook's diagnosis table can be simplified.\n\n== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==\nRecording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.\nThis is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+      "summary": "Found by T-207 while writing the OAuth runbook. apps/website/api/.env has FRONTEND_URL on 127.0.0.1 and DISCORD_REDIRECT_URL on localhost. The oauth_state cookie is host-only (no Domain attribute), and 127.0.0.1 and localhost are DIFFERENT cookie hosts — so the cookie set when the flow starts is never sent to the callback, and the very first live login fails with invalid_state. That error reads like CSRF tampering, not a misconfiguration, so it will be misdiagnosed. One-line fix: align the two to the same host. Worse, exchange_code and fetch_user errors are DROPPED rather than logged (T-207 corrected the earlier belief that they were logged), so the server log cannot distinguish a bad secret from a Discord outage — add tracing::error! to the callback's error paths so the runbook's diagnosis table can be simplified.\n\n== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==\nRecording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.\nThis is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.\n\n== CONFIRMED STILL LIVE 2026-07-31, and the operator's machine is PATCHED but the REPO IS NOT ==\napps/website/api/.env.example:24  FRONTEND_URL=http://127.0.0.1:3000\napps/website/api/.env.example:71  DISCORD_REDIRECT_URL=http://localhost:8080/api/v1/auth/discord/callback\nThe command center hand-edited the operator's local .env (gitignored) on 2026-07-27 to unblock testing, so THE BUG NO LONGER REPRODUCES ON THIS MACHINE. It reproduces for every new checkout. Do not conclude it is fixed because a live login works here.\nSecond half still open: handlers/oauth.rs:113,116 use `let Ok(..) = .. else` and DROP the exchange_code / fetch_user error, so a real Discord failure is indistinguishable from a config one.\nWANTED: align the two hosts in the committed example, log the dropped errors, and add a startup check that REFUSES TO BOOT when FRONTEND_URL and DISCORD_REDIRECT_URL disagree on host — a config that guarantees a broken first login should not start silently.",
       "program": "platform",
       "surfaces": [
         "CONN"
@@ -9007,13 +9008,14 @@
       "impact": [
         "discord"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 2303,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "priority": 1
     },
     {
       "id": "T-304",

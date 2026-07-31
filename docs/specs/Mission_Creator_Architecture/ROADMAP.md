@@ -15,12 +15,12 @@
 - **T-073** — Shift + map rotation (queued)
 - **T-075** — Spacebar flyTo vs widget (queued)
 - **T-090** — Map visualization program (ready)
-- **T-116** — Results POST to backend (queued)
-- **T-117** — Mission upload + validation UI (queued)
-- **T-118** — Event ORBAT + identity linking UI (queued)
+- **T-117** — Mission upload + validation UI (ready)
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
+- **T-303** — Dev config guarantees the first live Discord login fails invalid_state (ready)
+- **T-262** — Zero foreign keys in the entire schema (ready)
 <!-- ticket-sync:next:end -->
 
 ---

@@ -13,3 +13,54 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-117 — Mission upload + validation UI
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-117`
+- **Targets:** website
+- **Summary:** Web UI for mission upload and schema validation (API exists).
+
+## T-303 — Dev config guarantees the first live Discord login fails invalid_state
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-303`
+- **Targets:** website
+- **Summary:** Found by T-207 while writing the OAuth runbook. apps/website/api/.env has FRONTEND_URL on 127.0.0.1 and DISCORD_REDIRECT_URL on localhost. The oauth_state cookie is host-only (no Domain attribute), and 127.0.0.1 and localhost are DIFFERENT cookie hosts — so the cookie set when the flow starts is never sent to the callback, and the very first live login fails with invalid_state. That error reads like CSRF tampering, not a misconfiguration, so it will be misdiagnosed. One-line fix: align the two to the same host. Worse, exchange_code and fetch_user errors are DROPPED rather than logged (T-207 corrected the earlier belief that they were logged), so the server log cannot distinguish a bad secret from a Discord outage — add tracing::error! to the callback's error paths so the runbook's diagnosis table can be simplified.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+
+== CONFIRMED STILL LIVE 2026-07-31, and the operator's machine is PATCHED but the REPO IS NOT ==
+apps/website/api/.env.example:24  FRONTEND_URL=http://127.0.0.1:3000
+apps/website/api/.env.example:71  DISCORD_REDIRECT_URL=http://localhost:8080/api/v1/auth/discord/callback
+The command center hand-edited the operator's local .env (gitignored) on 2026-07-27 to unblock testing, so THE BUG NO LONGER REPRODUCES ON THIS MACHINE. It reproduces for every new checkout. Do not conclude it is fixed because a live login works here.
+Second half still open: handlers/oauth.rs:113,116 use `let Ok(..) = .. else` and DROP the exchange_code / fetch_user error, so a real Discord failure is indistinguishable from a config one.
+WANTED: align the two hosts in the committed example, log the dropped errors, and add a startup check that REFUSES TO BOOT when FRONTEND_URL and DISCORD_REDIRECT_URL disagree on host — a config that guarantees a broken first login should not start silently.
+
+## T-262 — Zero foreign keys in the entire schema
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-262`
+- **Targets:** website
+- **Summary:** Grep for FOREIGN KEY or REFERENCES across all seven migrations returns zero. Deleting a mission, event or user orphans every dependent row, and DELETE /events/{id} sets deleted_at only while the confirm dialog claims a cascade. assigned_to, discord_id and reserved_by are unconstrained free text.
+
+## T-269 — Real RCON transport — the current endpoint is a no-op that reports success
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-269`
+- **Targets:** website
+- **Summary:** POST /admin/servers/{id}/rcon (admin.rs:331-379) validates the action enum, explicitly discards the command at admin.rs:361, writes an audit row and returns 202 accepted:true. Grep for std::process, Command::new, tokio::process or ssh over the api returns zero hits.
+
+## T-280 — No observability, no backups, no durable rate limiting
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-280`
+- **Targets:** root
+- **Summary:** Zero prometheus, metrics, sentry or opentelemetry in the api. No /metrics endpoint; /healthz pings the database only. No pg_dump or pg_restore anywhere. Rate limiting is in-memory single-instance so it resets on every restart and cannot scale past one process.
