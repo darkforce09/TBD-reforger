@@ -1912,6 +1912,27 @@ gate_slice() {
   # have stopped T-244, whose diff is 0 .rs files — so every other step above it is change-scoped
   # down to nothing and its slice gate was green over a red `make schema-validate`. ~1.4 s warm.
   run "schema"       gate_schema
+  # T-583/T-594. The other half of the T-244 lesson above, and the half `schema` cannot reach.
+  #
+  # `gate_schema` validates the catalogue AS COMMITTED. It cannot tell you the committed catalogue
+  # disagrees with `packages/tbd-schema/rules/prefab-classify.json`, because a rule edit changes
+  # NOTHING until the catalogue is rebuilt — and until T-278 the only rebuild path needed a
+  # Workbench export that is gitignored and absent from every clone. So T-244's `vehicle` rules
+  # went in, every gate stayed green, and the shipped artifact was stale for four weeks. This step
+  # re-derives the classification lane from committed artifacts alone and exits 1 on disagreement;
+  # run on the day T-244 landed it would have gone RED immediately. ~12 s.
+  #
+  # `checkrun`, NOT `hostrun`: `hostrun` bakes in the SHARED CARGO_TARGET_DIR, and
+  # `tools/tbd-tools/src/serve.rs` `repo_root()` is `env!("CARGO_MANIFEST_DIR")` — a COMPILE-TIME
+  # constant. A shared dir can therefore hand this step a `world` binary that reads a DIFFERENT
+  # WORKTREE'S rules and catalogue while reporting on yours: the signature defect, with the two
+  # inputs the verdict is entirely about. `checkrun` pins $GATE_CHECK_TARGET, whose writers are
+  # bounded to gates serialised by the gate lock.
+  #
+  # And NOT folded into `make schema-validate`: gate_schema's drift tripwire parses that recipe for
+  # `xtask schema <name>` lines, and this is a `tbd-tools --bin world` call — it would either trip
+  # the tripwire or be silently skipped by it.
+  run "T-278 catalogue drift" checkrun make map-reclassify TERRAIN=everon
   # T-515. Class-R on 0016 claim UPDATE body — db_migrate.rs is schema-count-only;
   # a hollow claim migration stays green. Unconditional (wave.sh-only slices must hit it).
   run "db_migrate claim body" gate_db_migrate_claim_body
@@ -2086,6 +2107,11 @@ cmd_gate() {
   # fail-fast; every step runs and `fail` accumulates). Unconditional, never behind the frontend
   # `if`: wave 4's schema change was backend-only and would have skipped a conditional step.
   run "schema"           gate_schema
+  # T-583/T-594 — cold-path twin of the gate_slice step. Per T-556, a step wired into only one
+  # half drifts green: the half without it keeps printing PASS over the thing the other half is
+  # there to catch. Same `checkrun` (compile-time `repo_root()` — see the long note in gate_slice),
+  # same placement next to `schema`, deliberately NOT inside `make schema-validate`.
+  run "T-278 catalogue drift" checkrun make map-reclassify TERRAIN=everon
   run "ticket registry"  hostrun ./scripts/ticket check
   # T-462. Same shell Class-R as gate_slice — fail-fast actionable scripts next to
   # schema/ticket so a deleted wiki seed line or Objects guid mismatch cannot stay cargo-green.
