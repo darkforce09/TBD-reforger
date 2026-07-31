@@ -103,6 +103,46 @@
 # fix the compiler or the mod, because a rise on THIS row is a production outage in rehearsal.
 # `schemaVersion` is "1.1" (no slot carries elevation, the common editor case); `compiled` covers
 # the "1.2" branch, so do not "align" the two fixtures.
+#
+# ── T-609 (2026-07-31): the T-250 unconsumed-key family turned every row below red, silently ───
+# `CheckUnconsumedKeys` (T-250, 30be2f7f4) landed AFTER this file's last reconciliation (T-208,
+# d297f3a39) and warned on bare key PRESENCE — keys every golden deliberately authors. The
+# platform factory's wave gate (scripts/platform/wave.sh cmd_gate) has no world-boot step, so no
+# wave ran this ratchet: it has been red on main since T-250 while every wave gate reported green.
+#
+# T-609 made the checks precise instead of widening these budgets. Two families were firing on
+# authored values the framework already HONOURS, and those no longer warn:
+#   * settings         — modelled (T-259) AND consumed: ApplyMissionSettings applies
+#                        spectatorPolicy at load. Warns only on a value naming a system that does
+#                        not exist: respawn other than "none" (vanilla respawn is stood down;
+#                        one-life is the only mode), or nightVision=true. Proven still firing on
+#                        msn_2d91be (respawn='tickets').
+#   * factions.tickets — the schema itself says "0 = one-life, no respawn pool", which is exactly
+#                        what the framework does. Warns only on tickets > 0 (proven on
+#                        msn_2d91be: attackers tickets=40).
+#   * layers / radio   — content, not presence: an authored [] names nothing that could be
+#                        dropped (msn_0e77ab authors settings {}, layers [], tickets 0, radio []
+#                        — all four were false alarms and are silent now).
+#
+# What still fires is TRUE — authored data this build genuinely discards — and the rows below are
+# deliberately NOT raised to absorb it. The reds and their exact composition (measured 2026-07-31):
+#   msn_8f3a2c  0, boots 3   environment + layers(1 alias) + orbat.roles.radio
+#   msn_5c1de7  0, boots 2   environment + orbat.roles.radio
+#   msn_0e77ab  3, boots 4   the three budgeted above + environment
+#   msn_2d91be  1, boots 5   budgeted no-slots + environment + respawn='tickets' + tickets=40 + radio
+#   msn_4c7e1b… 0, boots 1   environment — flatten.rs emits the block on EVERY compiled document,
+#                            so this warning currently fires on every mission the website serves
+#   compiled    1, boots 2   budgeted T-299 + environment (measured against the live API; the
+#                            compiled document's tickets=0 is correctly silent)
+# DO NOT raise these numbers, and do not strip the keys from the goldens either — they pin the
+# authored contract the mod is still catching up to. The red clears key by key when a slice:
+#   * models `environment` and applies it (TimeAndWeatherManager) — clears every lane above;
+#   * loads `layers` (today: no consumer, zero `layer:` registry aliases) — clears msn_8f3a2c;
+#   * models role radio and role-scopes delivery (TBD_MissionOrbatRoleStruct + TBD_RadioService)
+#     — clears msn_8f3a2c / msn_5c1de7 / msn_2d91be;
+# or when T-290 (dead flatten outputs) settles that a key leaves the contract instead. Tighten
+# each row the day its keys are consumed — the boot now prints WHICH warnings fired, so the next
+# reconciliation will not need --keep-logs archaeology.
 msn_8f3a2c 0
 msn_0e77ab 3
 msn_5c1de7 0
