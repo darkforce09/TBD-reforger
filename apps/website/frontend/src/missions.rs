@@ -1332,26 +1332,58 @@ fn census_line(census: &[(&'static str, usize)]) -> String {
 // message that sends them looking in the wrong place. [`unwrap_export_envelope`] is what makes the
 // round-trip work; the same file with `.payload` lifted out is measured to answer 201.
 //
-// SIZE, deliberately. `api_post` takes an owned `serde_json::Value`, so a document must exist in
-// the tab as: the `File.text()` JS string, the Rust `String`, the parsed `Value` tree, and the
-// re-serialised request body. This SPA is `wasm32` — a 32-bit address space, and browsers grant
-// far less than its 4 GiB ceiling. A mission in this codebase's history reaches ~367k slots and
-// hundreds of MB, and that document **cannot** come through a browser JSON parse no matter how the
-// button is written. So [`UPLOAD_MAX_BYTES`] refuses over-budget files up front, by name and by
-// size, BEFORE reading a byte — an honest refusal beats a dead tab. The two ways to lift it both
-// live outside this file and are reported, not smuggled in: an `api_post_raw(…, body: String)` in
-// `client.rs` would remove the parse+reserialise pair, and a streaming/multipart mission route
-// would remove the ceiling entirely.
+// SIZE, deliberately. This SPA is `wasm32` — a 32-bit address space, and browsers grant far less
+// than its 4 GiB ceiling, on top of whatever the wgpu editor is already holding. A mission in this
+// codebase's history reaches ~367k slots and hundreds of MB, and that document **cannot** come
+// through a browser JSON parse no matter how the button is written. So [`UPLOAD_MAX_BYTES`]
+// refuses over-budget files up front, by name and by size, BEFORE reading a byte — an honest
+// refusal beats a dead tab.
+//
+// The cost is per-JSON-OBJECT, not per-byte (T-591: a parsed tree is several times its own source
+// text, because every object carries map overhead regardless of how few keys it has). So what sets
+// the ceiling is not the file size but **how many times the document is simultaneously resident**.
+// T-593 cut that from four copies to one:
+//
+//   1. the signal's stored `Value` — unavoidable, the panel is holding the document
+//   2. `up_doc.get_untracked()`'s clone         → REMOVED, `with_untracked` reads by reference
+//   3. `version_body`'s clone under `"payload"` → REMOVED, `version_body_to_writer` borrows
+//   4. `request`'s per-attempt `Body::Json`     → REMOVED, `api_post_raw` takes a `String`
+//
+// (The `File.text()` JS string and the Rust `String` both drop at parse and are not live at the
+// fetch.) MEASURED with a counting allocator over a 170k-slot document, x86_64 / `preserve_order`
+// — the numbers that justify the constant below:
+//
+//   32.07 MiB source, old path (api_post)          peak 1356.94 MiB   42.31x source
+//   32.07 MiB source, this path (to_writer + raw)  peak  285.98 MiB    8.92x source
+//   64.44 MiB source, this path (to_writer + raw)  peak  572.33 MiB    8.88x source
+//
+// The remaining fix is a streaming/multipart mission route (T-591 item 3), which is the only thing
+// that removes the ceiling rather than raising it — the document still has to be parsed to be
+// validated, and that parse is the 8.9x.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 /// Largest mission document this browser upload will accept, in bytes.
 ///
-/// Not a policy number — a memory one; see the module note above for the four simultaneous copies
-/// that make it so. The server's own cap is 256 MB (`config.rs:186`) and stays the authority: a
-/// file under this budget can still be refused by the server with a 413, and that message is
-/// surfaced verbatim rather than pre-empted here (this client does not get to invent the server's
-/// limit — T-585-era lesson, and `create_version` already words it precisely).
-const UPLOAD_MAX_BYTES: usize = 32 << 20;
+/// Not a policy number — a memory one; see the module note above for the copies that make it so.
+///
+/// **Anchored on the peak that already ships, not on a hoped-for one.** T-117 shipped 32 MiB
+/// through the old four-copy path, which measures a **1356.94 MiB** peak. 64 MiB through this
+/// path measures **572.33 MiB** — so doubling the ceiling still leaves the worst case at well
+/// under half of what the operator is already running. That is the whole argument: this is not a
+/// new risk being taken, it is an old one being paid down and partly spent.
+///
+/// **256 MB — the server's cap — is NOT reachable and this must not pretend otherwise.** At the
+/// measured 8.9x that is ~2.2 GiB of heap on x86_64, and while `wasm32`'s narrower pointers make
+/// the trees smaller, it stays far past what a 32-bit tab holding the wgpu editor can serve.
+/// Raising this number without cutting the amplification would only move an honest refusal into a
+/// dead tab, which is strictly worse: the refusal names the limit and the workaround, and a tab
+/// that dies during a parse tells the author nothing.
+///
+/// The server's own cap is 256 MB (`config.rs:186`) and stays the authority: a file under this
+/// budget can still be refused by the server with a 413, and that message is surfaced verbatim
+/// rather than pre-empted here (this client does not get to invent the server's limit — T-585-era
+/// lesson, and `create_version` already words it precisely).
+const UPLOAD_MAX_BYTES: usize = 64 << 20;
 
 /// Refuse an over-budget file before it is read. `None` = accept.
 ///
@@ -1896,10 +1928,10 @@ fn dossier_sheet_body(
             if up_busy.get_untracked() {
                 return;
             }
-            let Some(doc) = up_doc.get_untracked() else {
+            if up_doc.with_untracked(Option::is_none) {
                 up_status.set("Choose a mission document first.".to_string());
                 return;
-            };
+            }
             let semver = up_semver.get_untracked().trim().to_string();
             if semver.is_empty() {
                 up_status.set("A version number is required (e.g. 1.2.3).".to_string());
@@ -1912,12 +1944,52 @@ fn dossier_sheet_body(
             up_busy.set(true);
             up_findings.set(Vec::new());
             up_status.set(format!("Uploading v{semver}…"));
-            let body = map_engine_core::mission::compile::version_body(&semver, &notes, &doc);
+            // Serialise the request bytes straight out of the stored document — see
+            // [`UPLOAD_MAX_BYTES`] for why the copies this avoids set the ceiling.
+            //
+            // `with_untracked` reads the signal BY REFERENCE: `get_untracked()` would clone the
+            // whole parsed tree just to hand it to the builder. `version_body_to_writer` then
+            // walks that borrowed tree once, so the wrapper costs no second tree either, and
+            // `api_post_raw` takes the finished `String` so `request`'s per-attempt body clone
+            // never happens. One live tree at the fetch instead of four.
+            //
+            // The `Vec` is pre-sized from the picked file's size because the growth doubling is
+            // itself a transient copy of everything written so far — at these sizes that realloc
+            // is the peak. Compact re-serialisation is ~never larger than the source JSON, and
+            // the `Vec` still grows correctly if it is.
+            // Read outside the borrow below — nothing else should touch a signal while
+            // `up_doc`'s storage is held open.
+            let cap = up_size.get_untracked().saturating_add(1024);
+            let body = up_doc.with_untracked(|slot| {
+                let doc = slot.as_ref()?;
+                let mut buf: Vec<u8> = Vec::with_capacity(cap);
+                map_engine_core::mission::compile::version_body_to_writer(
+                    &mut buf, &semver, &notes, doc,
+                )
+                .ok()?;
+                String::from_utf8(buf).ok()
+            });
+            // Unreachable in practice (a `Value` always serialises, and serde_json always emits
+            // UTF-8) — but sending an empty body would earn a 400 the author would read as "my
+            // document is broken", so refuse in our own words instead.
+            let Some(body) = body else {
+                up_status.set(
+                    "That document could not be prepared for upload — nothing was sent."
+                        .to_string(),
+                );
+                up_busy.set(false);
+                return;
+            };
             let path = format!("/missions/{}/versions", id_sv.get_value());
             let toasts = crate::toast::use_toasts();
             leptos::task::spawn_local(async move {
-                match crate::client::api_post::<serde_json::Value>(store, &path, body).await {
-                    Ok(_) => {
+                // `api_post_raw`, not `api_post`: the 201 echoes the entire `json_payload` back
+                // (`models/mission.rs:128`), so a `T`-generic post would parse a whole extra tree
+                // out of the response — and the `Ok` arm below throws it away. Non-2xx bodies are
+                // still read and still fold `details` into the message (`client.rs:220`), which is
+                // what `upload_failure` needs.
+                match crate::client::api_post_raw(store, &path, body).await {
+                    Ok(()) => {
                         up_status.set(format!(
                             "Uploaded v{semver} — it is now this mission's current version."
                         ));
@@ -3242,13 +3314,18 @@ mod tests {
         );
         let refusal = oversize_refusal(UPLOAD_MAX_BYTES + 1).expect("over budget must be refused");
         assert!(
-            refusal.contains("33.6 MB") && refusal.contains("33.6 MB"),
-            "both the file size and the budget must be named; got {refusal:?}"
+            refusal.contains("67.1 MB"),
+            "the budget must be named; got {refusal:?}"
         );
         let huge = oversize_refusal(400 << 20).expect("400 MiB must be refused");
+        // BOTH numbers, and this is the case that can actually prove it: one byte over the budget
+        // rounds to the same text as the budget, so the assertion above cannot tell the two apart
+        // and must not be asked to. (It used to be written as `contains(X) && contains(X)` — the
+        // same needle twice — which read as a two-number check and was a one-number check.)
         assert!(
-            huge.contains("419.4 MB"),
-            "the author's own file size must be named; got {huge:?}"
+            huge.contains("419.4 MB") && huge.contains("67.1 MB"),
+            "both the author's file size and the budget must be named — 'too large' without them \
+             is unactionable; got {huge:?}"
         );
         assert!(
             huge.contains("Mission Creator"),
@@ -3372,9 +3449,24 @@ mod tests {
                 "the size gate must run on the picked file's size before the read",
             ),
             (
-                "version_body(&semver, &notes, &doc)",
-                "the wire body must be built by the same helper the editor's Save uses, so the \
-                 two doors onto create_version cannot drift",
+                "version_body_to_writer(",
+                "the wire body must be built by map-engine-core, not hand-rolled here, so the \
+                 two doors onto create_version cannot drift — `version_body_to_writer` and the \
+                 editor Save's `version_body` are both wrappers over one `VersionBody` struct, \
+                 and compile.rs's `both_doors_onto_create_version_serialise_identical_bytes` \
+                 pins them byte-identical",
+            ),
+            (
+                "api_post_raw(store, &path, body)",
+                "the upload must hand over an already-serialised String — `api_post` takes a \
+                 `Value` and clones it again per attempt, which is the amplification that sets \
+                 UPLOAD_MAX_BYTES",
+            ),
+            (
+                "up_doc.with_untracked(|slot|",
+                "the document must be read BY REFERENCE to build the body — `get_untracked()` \
+                 clones the whole parsed tree, and on wasm32 that clone is a whole extra copy of \
+                 the mission for no reason",
             ),
         ] {
             assert!(production.contains(needle), "{why} (missing: {needle})");
