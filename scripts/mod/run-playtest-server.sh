@@ -34,11 +34,27 @@
 #            (pak count: 1) to filesystem under name TBD_Framework
 #
 # A `-config`-only boot therefore looks completely healthy — it registers a room, it reaches
-# LOBBY — while running months-old script. Measured difference on the same mission: 7 `[TBD]`
-# log lines in the flat `[TBD] ...` format of June, versus 109 lines in the current
-# `[TBD][Subsystem] ...` format. That is this codebase's signature defect wearing the engine's
-# clothes, so `assert_local_addon_won` below is a HARD GATE, not a warning: if the packed
-# profile copy wins, this script kills the server and exits non-zero.
+# LOBBY — while running months-old script. The difference is the log FORMAT, not any one line:
+# June emits flat `[TBD] ...` with no subsystem tag, the current build tags every line
+# `[TBD][Subsystem] ...`. Measured on the same mission, 7 flat lines against many tagged ones.
+# That is this codebase's signature defect wearing the engine's clothes, so
+# `assert_local_addon_won` below is a HARD GATE, not a warning: if the packed profile copy wins,
+# this script kills the server and exits non-zero.
+#
+# COUNT THE FORMAT, NOT THE LINES (T-606). This comment used to assert **109** tagged lines and
+# `docs/mod/STAGING-SERVER.md` asserted **108** for the same claim. Neither was a typo. Measured
+# on this checkout 2026-07-31 with `world-boot.sh --keep-logs`:
+#
+#   slot-loadout-coverage (msn_5c1de7,  7 slots) -> 147 `[TBD][` lines
+#   bridgehead-at-levie   (msn_8f3a2c, 18 slots) -> 155 `[TBD][` lines
+#
+# msn_8f3a2c is the mission the 108/109 figures came from, and it now emits 155 — +47 on an
+# unchanged golden, because slices keep adding Prints. So the number rots even with the mission
+# held fixed, and it is not monotonic in slot count either. Any exact figure baked into a comment
+# or a check is wrong within a wave, which is exactly how the three stale greps T-606 fixed were
+# born. The stable discriminator is the discontinuity at ZERO: stale 1.0.1 emits
+# `grep -c '\[TBD\]\['` == 0, any current build emits many. `scripts/mod/remote-log-grep.sh`
+# implements that as a threshold, never an equality. Do not "correct" these numbers upward.
 #
 # ── EXIT CODES (same contract as world-boot.sh / compile.sh) ───────────────────────────────
 #   0  server booted, local addon won, backend room registered — join details printed
@@ -702,11 +718,20 @@ LAUNCHER=$!
 # measured here as a FAILED verdict 9 KB into a boot that was going fine. And it is checked
 # every 10 s rather than every tick because each probe spawns a bridge process.
 
-# The furthest milestone the log shows, newest first. Markers taken verbatim from a real boot.
-# `grep -F` on the ones containing `[` — those are character classes to both ugrep and GNU grep.
+# The furthest milestone the log shows, newest first.
+#
+# The TBD markers are matched as ESCAPED EREs (`\[TBD\]\[Stage\].*LOBBY`), not as `grep -F` on a
+# whole sentence (T-606). `-F` was originally chosen because `[` is a character class to both
+# ugrep and GNU grep — a real hazard, but the fix for it is to escape the brackets, not to pin
+# the entire English line. `-F '[TBD][Stage] LOADING -> LOBBY'` breaks if anyone changes the
+# arrow, renames a stage enum, or appends a clause; measured, changing `->` to `=>` alone drops
+# this from 1 match to 0, i.e. the launcher would report a server that IS in LOBBY as never
+# having got there. `.*LOBBY` also (correctly) still matches once the round advances past LOBBY.
+# The engine-owned markers below stay as plain strings: they are Bohemia's, not ours, and are
+# far more stable than anything we Print.
 boot_phase() {
   [ -f "$SRV_OUT" ] || { printf 'engine has not written anything yet'; return 0; }
-  if grep -qF '[TBD][Stage] LOADING -> LOBBY' "$SRV_OUT" 2>/dev/null; then
+  if grep -qE '\[TBD\]\[Stage\].*LOBBY' "$SRV_OUT" 2>/dev/null; then
     printf 'WORLD UP, mission already in LOBBY — the only thing missing is the backend room'
   elif grep -q 'Starting RPL server, listening on address' "$SRV_OUT" 2>/dev/null; then
     printf 'WORLD UP, replication listening — waiting on the backend room registration'
@@ -727,7 +752,7 @@ world_is_up() {
   [ -f "$SRV_OUT" ] || return 1
   grep -q 'Starting RPL server, listening on address' "$SRV_OUT" 2>/dev/null && return 0
   grep -q 'Game::LoadEntities took' "$SRV_OUT" 2>/dev/null && return 0
-  grep -qF '[TBD][Stage] LOADING -> LOBBY' "$SRV_OUT" 2>/dev/null && return 0
+  grep -qE '\[TBD\]\[Stage\].*LOBBY' "$SRV_OUT" 2>/dev/null && return 0
   return 1
 }
 
@@ -779,7 +804,11 @@ dump_engine_errors() {
     echo "     passing boot of this config carries ~79 of them; they are the floor, not a clue)" >&2
   fi
   # This one is (E) and looks alarming and is not the problem. Say so where it will be read.
-  if grep -qF '[TBD][Mission] backend refused the mission fetch' "$SRV_OUT" 2>/dev/null; then
+  # Matched on tag + the first structural words (`\[TBD\]\[Mission\].*backend refused`), not the
+  # whole sentence: the tail carries `— http=%1 body=%2` and is prose that will be reworded
+  # (TBD_MissionLoader.c:775). Missing this note only costs a diagnostic hint, but a hint that
+  # silently stops appearing is how operators end up chasing a benign (E) line for an hour.
+  if grep -qE '\[TBD\]\[Mission\].*backend refused' "$SRV_OUT" 2>/dev/null; then
     echo "    NOTE: '[TBD][Mission] backend refused the mission fetch — http=400' is BENIGN." >&2
     echo "          It means the mod could not fetch that id from the API and used the mission" >&2
     echo "          staged on disk instead — the --mission-file path working as designed. It is" >&2

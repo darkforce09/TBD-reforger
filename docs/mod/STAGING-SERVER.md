@@ -38,24 +38,46 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 >
 > It then registers a room, reaches LOBBY and looks completely healthy **while running months-old
 > script**. Same mission, same machine, measured both ways: **7** `[TBD]` lines in June's flat
-> format versus **108** in the current `[TBD][Subsystem]` format. `run-playtest-server.sh` treats
-> the packed copy winning as a hard failure and refuses to report the server up.
+> format versus **dozens to hundreds** in the current `[TBD][Subsystem]` format.
+> `run-playtest-server.sh` treats the packed copy winning as a hard failure and refuses to report
+> the server up.
 >
-> **3. The "Game log pass criteria" list further down is the STALE build's output.**
-> `[TBD] Mission loaded`, `[TBD] Registry loaded` and `[TBD] SpawnManager: built slot spawn` are
-> exactly what Workshop 1.0.1 prints. **If your log matches that old list, you are running the
-> stale mod, not your checkout.**
+> **3. The "Game log pass criteria" list further down WAS the STALE build's output** — it has been
+> corrected (T-606). `[TBD] Mission loaded` and `[TBD] SpawnManager: built slot spawn` are what
+> Workshop 1.0.1 prints; the first survives in the current build **only inside an ERROR string**
+> and the second was deleted. **If your log matches that old wording, you are running the stale
+> mod, not your checkout.**
 >
 > **The check to actually run is on the FORMAT, not on any one sentence** (T-608):
 >
 > ```bash
-> grep -c '\[TBD\]\[' "$LOG"     # current checkout: >100.  Stale Workshop 1.0.1: exactly 0.
+> grep -c '\[TBD\]\[' "$LOG"     # stale Workshop 1.0.1: exactly 0.  Any current build: many.
 > ```
 >
 > June's build logs flat `[TBD] …` lines and has no subsystem tag at all; every line the current
-> build emits is `[TBD][Subsystem] …`. Measured on the same mission, same machine, both ways:
-> **7** flat lines versus **109** tagged ones. A zero from that `grep` is unambiguous and it does
-> not depend on the wording of any individual `Print`.
+> build emits is `[TBD][Subsystem] …`. A zero from that `grep` is unambiguous and it does not
+> depend on the wording of any individual `Print`.
+>
+> **Compare against zero, not against a number** (T-606). This box previously asserted **108** in
+> one paragraph and **109** in another, as if one were a typo. Neither was a typo, and neither is
+> reusable, because the count drifts on **two** independent axes:
+>
+> | Boot (measured 2026-07-31, this checkout, `world-boot.sh --keep-logs`) | slots | `grep -c '\[TBD\]\['` |
+> |---|---|---|
+> | `slot-loadout-coverage` (`msn_5c1de7`) | 7 | **147** |
+> | `bridgehead-at-levie` (`msn_8f3a2c`) | 18 | **155** |
+>
+> The second row is the punchline: **`msn_8f3a2c` is the very mission the 108/109 figures were
+> measured on, and it now emits 155** — +47 on an unchanged golden, because slices keep adding
+> `Print`s. So the count rots even when the mission is held constant, and it is not monotonic in
+> slot count either (the 7-slot mission out-logs the 18-slot one on a per-slot basis, since
+> authored cargo and shortfalls dominate). Any exact figure written here is wrong within a wave.
+>
+> The only stable fact is the **discontinuity at zero**, because the two builds do not share a log
+> format at all. `remote-log-grep.sh` therefore hard-fails on `0` and treats everything else as a
+> pass, with a purely advisory floor (`TBD_MIN_TAGGED`, default 20) to flag a suspiciously quiet
+> boot. **Do not turn that floor into a pass criterion**, and do not "update" it to 147 or 155 —
+> that is how this defect is reintroduced.
 >
 > **Why the format check and not a quoted sentence.** This box originally pinned the check to
 > `[TBD][Slots] loadout settle complete — 18 application(s) IsComplete=1 — spawn open`. **T-605
@@ -69,12 +91,23 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 > |---|---|
 > | `[TBD][Mission] loaded id=` | name, slot count, `source=` |
 > | `[TBD][Validate] mission result=` | `PASS`/`FAIL`, error and warning counts |
-> | `[TBD][Slots] loadout settle complete` | the whole count summary — it has changed once already |
-> | `[TBD][Stage] LOADING -> LOBBY` | nothing; this one is a state-machine edge, not prose |
+> | `[TBD][Slots] Slot-` | slot id, `faction:squad:role:n`, kit alias, coordinates |
+> | `[TBD][Slots] loadout settle` | **everything** after `settle` — verdict word included |
+> | `[TBD][Loadout][Slot]` | all of it. The tag is `[Slot]`, **never** `[Player]` |
+> | `[TBD][Stage]` … `LOBBY` | the arrow and any suffix; match the tag and the target stage |
+>
+> **Cut the prefixes shorter than feels necessary** (T-606). The row above used to read
+> `[TBD][Slots] loadout settle complete` — still one word of prose, and that word is a verdict
+> that changes with the outcome. Measured: rewording the settle line's tail to
+> `loadout settle FINISHED: 7 apps, none unplayable, 3 short — deploy unlocked` breaks
+> `loadout settle complete` while `loadout settle` survives. Same for the stage row: it used to
+> pin `LOADING -> LOBBY`, so changing the arrow or appending a clause would have broken it.
+> A prefix is only stable up to the last **structural** token — a tag, a `key=`, an enum name.
+> The first English word after that is already a liability.
 >
 > For the record, the current build's full settle line, verbatim from a boot on `main`
 > 2026-07-31, is
-> `[TBD][Slots] loadout settle complete — 18 application(s), 0 unplayable, 2 with a shortfall — spawn open`
+> `[TBD][Slots] loadout settle complete — 7 application(s), 0 unplayable, 3 with a shortfall — spawn open`
 > — but **do not grep for that**, grep for the prefix. `PLAYTEST_RUNBOOK.md` §S1/§2.5A carries the
 > same string and the same rule.
 >
@@ -130,7 +163,9 @@ cd packages/tbd-schema && npm ci
 cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env   # fill SSH + token + paths
 ```
 
-Workbench spawn should already pass (`assigned slot` + `spawn requested` in Proton WB log).
+Workbench spawn should already pass (`[TBD] SpawnManager: assigned slot` in the Proton WB log).
+The old companion string `spawn requested` was deleted from the codebase and must not be
+re-added to any check — it matches nothing (T-606).
 
 ### Server 192.168.0.140 (one-time)
 
@@ -266,20 +301,54 @@ Flow: validate mission JSON → rsync → profile + addon symlink → Docker reb
 | V3 Roster | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/game/events/b0000000-0000-4000-8000-000000000001/roster` | **BLOCKED on T-092** — route not registered; currently 404 (target: HTTP 200) |
 | V4 Auth gate | SSH: unauthenticated compiled URL | **BLOCKED on T-092** — currently 404 (target: HTTP 401) |
 | V5 Game listening | SSH: `ss -ulnp \| grep -E '2001\|17777'` — **both** game (2001) and A2S (17777) bound | yes |
-| V6 Game logs | `bash scripts/mod/remote-log-grep.sh` | see below |
-| V7 Server healthy (not crashed) | log has `Stage → LOBBY` and **no** `Unable to start replication` | yes |
+| V6 Game logs | `bash scripts/mod/remote-log-grep.sh` | exit **0** (player seated) or **2** (booted, nobody joined yet). **1** = fail, **3** = log unreachable |
+| V7 Server healthy (not crashed) | log reaches LOBBY (`[TBD][Stage]` … `LOBBY`) and has **no** `Unable to start replication` | yes |
 | V8 Client join | `-config` + **Workshop** mod only (see "Client join"); log shows `Server registered with address:`, then Direct Connect `192.168.0.140:2001` | spawn at slot + kit |
 
 ### Game log pass criteria
 
-- `[TBD] Mission loaded`
-- `[TBD] Registry loaded`
-- 18× `[TBD] SpawnManager: built slot spawn`
-- `[TBD] Stage → LOBBY`
-- `[TBD] Roster loaded`
-- `[TBD] SpawnManager: assigned slot`
-- `[TBD] SpawnManager: spawn requested`
-- **No** `Can't compile`, `Unknown class`, `RequestSpawn failed`
+**Corrected 2026-07-31 (T-606) against a real boot.** The previous list on this line was Workshop
+1.0.1's output: it required `[TBD] Mission loaded` (which the current build emits **only** inside
+`TBD_FrameworkManager.c:488`'s ERROR string, `"[TBD] Mission loaded but invalid — staying in
+LOADING."`, so the criterion was satisfied only when the mission had **failed**), plus
+`built slot spawn` and `SpawnManager: spawn requested`, **neither of which exists in any `Print`
+today**. An operator following it on a healthy server got nothing back and concluded the mod was
+broken. Measured on `world-boot.sh --mission=slot-loadout-coverage`: mission validated `PASS`,
+7/7 bodies materialized, reached LOBBY — and 2 of the 3 required strings were absent.
+
+Match the **prefix**, not the sentence. Everything after each prefix is expected to vary.
+
+| Expect | Prefix to grep | Emitted by |
+|---|---|---|
+| mission document loaded | `[TBD][Mission] loaded id=` | `TBD_Log.MissionLoaded` |
+| mission passed validation | `[TBD][Validate] mission result=PASS` | `TBD_Log.ValidationResult` |
+| registry aliases loaded | `[TBD] Registry loaded` | `TBD_Registry.c:64` (still flat format) |
+| one line per slot body | `[TBD][Slots] Slot-` | `TBD_SpawnManager.c:1231` |
+| all bodies materialized | `[TBD][Slots] materialized` | `TBD_SpawnManager.c:1017` |
+| loadouts applied | `[TBD][Loadout][Slot]` | `TBD_SpawnManager.c:1251` tag |
+| spawn opened | `[TBD][Slots] loadout settle` | `TBD_SpawnManager.c:1143` |
+| reached LOBBY | `[TBD][Stage]` … `LOBBY` | `TBD_Log.Stage` |
+| a player was seated | `[TBD] SpawnManager: assigned slot` | `TBD_SpawnManager.c:675` |
+
+- **No** `Can't compile`, `Unknown class`, `RequestSpawn failed`.
+- The loadout tag is **`[TBD][Loadout][Slot]`**. It is **not** `[TBD][Loadout][Player]` — that
+  string appears in **no `Print` anywhere in the codebase**, although the T-068.14 spec
+  (`docs/specs/Mission_Creator_Architecture/t068_14_phase2_e2e_gate.md:43`) and
+  `TBD_LoadoutEquipComponent.c:17` both still name it. Grepping for `[Player]` returns **zero
+  lines on a fully working loadout pass** — measured 0 vs **93** `[Slot]` lines on the boot above.
+- Slot-count expectations (`18×`) are mission-specific; the golden that produced 18 is
+  `msn_8f3a2c`. Count against **your** mission's slot count, not a number copied from this page.
+- `[TBD] Roster loaded` only appears when an `eventId` is configured; an unconfigured host logs
+  `[TBD] RosterLoader: eventId not configured — using round-robin slot assignment.` instead.
+  That is **not** a failure.
+
+To check a log you already have (a downloaded `console.log`, or one from `world-boot.sh
+--keep-logs`) without SSH, run the same verdict locally:
+
+```bash
+bash scripts/mod/remote-log-grep.sh --file <path/to/console.log>
+bash scripts/mod/remote-log-grep.sh --selftest   # proves the verdict logic can FAIL
+```
 
 (`TBD_RegistryPocComponent` is not on `TBD_GameMode.et` — do not expect Registry POC spawn lines.)
 
@@ -344,8 +413,10 @@ first. It was measured on **`-addons`**, which is a hard fatal with `-config`
 with `-config` fine** — that is the whole of T-604. The Phase A `-server` + `-addons` launch is
 still correctly described: it loads the mod and reaches LOBBY but registers **no room**, so Direct
 Join answers "No server found". Verified again 2026-07-31: zero occurrences of
-`Server registered with address:` in that mode's log, against 108 `[TBD]` lines and a healthy
-`[TBD][Stage] LOADING -> LOBBY` in the same run. A healthy log is not a joinable server.
+`Server registered with address:` in that mode's log, against a log full of `[TBD]` lines and a
+healthy `[TBD][Stage] LOADING -> LOBBY` in the same run. A healthy log is not a joinable server.
+(The original note quoted "108 `[TBD]` lines" here; that mission emits 155 on the current
+checkout. The point was never the number — see "Compare against zero" above.)
 
 **Version:** client and server game versions must match (both report `1.7.0.x` in the A2S
 reply / `Creating game instance … version 1.7.0.x`). Note: Steam `buildid` differs between
@@ -368,9 +439,9 @@ on 0.0.0.0:2001` then immediately `NETWORK (E): Unable to start replication` →
 initialize the game` → `Game destroyed` (exits status 0, so `Restart=on-failure` does NOT
 restart it). Standard Reforger layout: **2001 game / 17777 A2S / 19999 RCON.**
 
-`-server` + `-addons` (local mod) is useful for headless **log verification** (mission load,
-18× slot spawn, `Stage → LOBBY`) but is **not joinable** — see the box above. Joining needs
-the `-config` + Workshop path.
+`-server` + `-addons` (local mod) is useful for headless **log verification**
+(`[TBD][Mission] loaded id=`, one `[TBD][Slots] Slot-` per slot, `[TBD][Stage]` … `LOBBY`) but is
+**not joinable** — see the box above. Joining needs the `-config` + Workshop path.
 
 ---
 
