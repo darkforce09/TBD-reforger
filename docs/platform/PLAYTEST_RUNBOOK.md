@@ -60,6 +60,11 @@ cd /home/Samuel/Projects/TBD-Reforger
 |---|---|---|---|
 | P1 | `make mod-compile` | exits 0, ~1.3 s | non-zero + `file:line` → a `.c` is broken; do not proceed |
 | P2 | `make mod-world-boot` | last line `WORLD BOOT: PASS` | `FAIL` → read `[TBD] roll-call:` in the printed log; a `=MISSING` name is a component that did not instantiate |
+
+> **"`FAIL` → do not proceed" has exactly one documented exception, and you will hit it.** §2.5A's
+> two boots both end `WORLD BOOT: FAIL` on `validator warnings rose:` — known, pre-existing, and
+> not about your session. §2.5A says how to tell it from a real failure and what to read instead.
+> That is the *only* `FAIL` this runbook tells you to walk past; treat every other one as real.
 | P3 | `git -c filter.lfs.process= status --short` | only files you expect | a dirty mod tree means you are testing something that is not `main` |
 
 `make mod-world-boot` prints a roll-call line of the form
@@ -203,8 +208,27 @@ legal: everybody falls to round-robin seating, and the lobby picker still works.
 > **UPDATED 2026-07-31 (T-604). There is now one command; do not hand-assemble this any more.**
 >
 > ```bash
-> bash scripts/mod/run-playtest-server.sh --mission-id=$MID --admin=<your-identityId>
+> bash scripts/mod/run-playtest-server.sh --mission-id=$MID
 > ```
+>
+> **Start it WITHOUT `--admin`. You do not have your identityId yet and cannot get it here**
+> (T-608). The engine only prints it when a client authenticates, so the value lives in the log
+> of a server you have already joined — that is **S3**, and it is a chicken-and-egg you would
+> otherwise hit on the very first command of the session. The flow is:
+>
+> | | |
+> |---|---|
+> | **here (§2.4)** | boot with no `--admin`. The script prints a `NOTE:` saying `#tbd` will answer "admin only" — that is correct and expected, not a fault |
+> | **S2** | join. That authentication is what mints the id |
+> | **S3** | grep the id out of the log, **stop this server**, restart with `--admin=<id>` |
+>
+> Everything up to S3 works fine without admin. Only `#tbd` and the S13 admin-respawn item need it.
+>
+> **Do not start a second one while the first is up.** Since T-608 it refuses rather than
+> orphaning the first — the run dir `$HOME/tbd-playtest` is fixed and shared, and the old
+> behaviour was to rewrite `server.json` under the running server, delete the pidfile that was
+> the only handle on it, and then die on port 2001. Stop the first, wait for
+> `==> stopped (process group confirmed gone)`, then start the next.
 >
 > It does every step 2.4.1–2.4.4 below (profile, backend config, addon symlink, `server.json`),
 > passes both flags, and then **waits for the room registration and asserts the local addon won**
@@ -346,6 +370,65 @@ none needs a client.
 
 **A — will a loadout-carrying mission even reach LOBBY?**
 
+> ### READ THIS FIRST — this step ends in `WORLD BOOT: FAIL` and that is EXPECTED (T-608)
+>
+> §2.1 P2 tells you "`FAIL` → do not proceed." **That rule does not apply to this step**, and if
+> nobody had said so you would have stopped here, on your highest-value solo pre-flight, over a
+> problem that has nothing to do with your session. Measured on `main` 2026-07-31, both boots in
+> this section end exactly like this:
+>
+> ```
+>   ok    mission validated: mission result=PASS errors=0 warnings=4
+>   FAIL  validator warnings rose: 4 > baseline 0 for msn_5c1de7
+> WORLD BOOT: FAIL
+> ```
+>
+> and `5 > 0 for msn_8f3a2c` for the bridgehead mission. Note the line above it: the mission
+> **validated**, `result=PASS errors=0`. The `FAIL` is the warning *ratchet*
+> ([`world-boot.sh:248-258`](../../scripts/mod/world-boot.sh)), not the validator.
+>
+> **How to tell this known FAIL from a real one — check all three:**
+>
+> 1. The failing line says **`validator warnings rose:`**. Any other `FAIL` line is real.
+> 2. The line above it says **`mission result=PASS errors=0`**.
+> 3. Every warning is from the **unconsumed-key family** — keys the mission document authors
+>    that the mod's structs do not model yet. There are exactly five, and no others are known:
+>
+>    | | |
+>    |---|---|
+>    | `environment` | weather / time of day not applied at load |
+>    | `settings` | respawn policy, spectator rules, night-vision not applied |
+>    | `layers` | decoration-layer aliases discarded on load |
+>    | `factions.tickets` | respawn pools not applied |
+>    | `orbat.roles.radio` | spawn net tuning not applied |
+>
+>    ```bash
+>    grep -F '[TBD][Validate] WARNING' <run-dir>/profile/logs/logs_*/console.log
+>    ```
+>
+>    `slot-loadout-coverage` produces four of them (no `layers`); `bridgehead-at-levie` produces
+>    all five. **A warning naming anything else is not this, and is worth stopping for.**
+>
+> **Why it is not fixed here.** Both the validator and
+> [`.world-boot-warning-baseline`](../../.world-boot-warning-baseline) predate this wave; the
+> warnings are pre-existing and cosmetic to the session. Widening the baseline to `4`/`5` would
+> silence a real ratchet to make a doc read nicer, so T-605 refused and so does T-608. The ratchet
+> is doing its job; the runbook was the thing that was wrong, by not warning you.
+>
+> **So what IS the pass signal for step A?** Not the exit code. These two lines, from the log:
+>
+> ```
+> [TBD][Slots] loadout settle complete — …  — spawn open
+> [TBD] Stage → LOBBY
+> ```
+>
+> If both are present, a loadout-carrying mission reached LOBBY and step A has passed. Match the
+> **prefix** `[TBD][Slots] loadout settle complete` — the counts after it are expected to vary and
+> their wording has already changed once (T-605). Verbatim from `main` 2026-07-31:
+> `[TBD][Slots] loadout settle complete — 7 application(s), 0 unplayable, 3 with a shortfall — spawn open`
+> for `slot-loadout-coverage`, and `18 application(s), 0 unplayable, 2 with a shortfall` for
+> `bridgehead-at-levie`.
+
 ```bash
 bash scripts/mod/world-boot.sh --mission=slot-loadout-coverage --keep-logs
 ```
@@ -384,13 +467,40 @@ Now do the same against **your** mission (`--compiled` fetches from the live API
 ```bash
 bash scripts/mod/world-boot.sh --compiled=$MID --keep-logs
 ```
-Same greps, same verdict. **This is the single highest-value pre-flight in the runbook** — it feeds
-the exact bytes the game server will get to the real Enfusion parser, with no client needed.
+Same greps, same verdict — **including the same expected `WORLD BOOT: FAIL`**, which on this lane
+is keyed `compiled` rather than `msn_…`. Apply the same three-part test from the box above: the
+failing line says `validator warnings rose:`, the line above it says `result=PASS errors=0`, and
+every warning belongs to the five-key family. **This is the single highest-value pre-flight in the
+runbook** — it feeds the exact bytes the game server will get to the real Enfusion parser, with no
+client needed. Judge it on `loadout settle complete` + `Stage → LOBBY`, not on the exit code.
 
 **B — will the second client be able to find the server?** `run-playtest-server.sh` now checks this
 for you: it will not print its "SERVER UP" banner at all unless `Server registered with address:`
 appeared in that boot, and the address it prints is parsed from that line rather than guessed. If
-it fails, it dumps the offending lines and exits 1.
+it fails, it names the phase the engine actually reached and exits 1.
+
+> **The one failure to know by name: a REGISTRATION HANG** (T-608, measured 2026-07-31). The world
+> comes up, the mod loads the mission, the bodies spawn, `Stage → LOBBY` appears — and the room
+> never registers. The script now says so in those words, prints every `BACKEND` line, and tells
+> you plainly that **no `(E)` line names this**: the engine logs nothing at all when the backend
+> handshake stalls, so the evidence is an absence. Its fingerprint is
+> `BACKEND : Attempting online Game Config instead.` with no BACKEND line after it.
+>
+> **It is not your mod and it is not your config, and the fix is to run the same command again.**
+> Measured: the identical command registered in **13 s** a few minutes after a boot where it never
+> registered across a full 300 s. Registration time is variable — the script no longer implies a
+> number, it reports the phase.
+>
+> Two things the script's own output settles for you, so do not go looking:
+> `[TBD][Mission] backend refused the mission fetch — http=400` is **benign** (it is the on-disk
+> fallback working, and it appears on passing boots too), and the ~79 `DEFAULT`/`MATERIAL`/
+> `RESOURCES` `(E)` lines are the vanilla floor, present when everything works. The script demotes
+> them and says how many it suppressed.
+>
+> **If you ever see a `STRAY SERVER` block, act on it before doing anything else.** It means the
+> script could not confirm the server died — it names the process group and the exact command.
+> Until that group is gone it holds 2001/17777 and your next boot fails on
+> `Unable to start replication`, which looks like a completely different bug.
 
 To check by hand (or against a server someone else started):
 ```bash
@@ -567,11 +677,30 @@ comma-separated list of them is what `game.admins[]` takes
 grep -iE 'identityId' "$LOG" | tail -5
 ```
 
-Then restart the server with it — the flag is repeatable:
+Then restart the server with it — the flag is repeatable. **STOP THE RUNNING SERVER FIRST**
+(T-608):
 
 ```bash
+# 1. In the terminal running the server: Ctrl-C. Wait for this exact line before going on —
+#    it is the script confirming the process group is gone, not assuming it:
+#        ==> stopped (process group confirmed gone)
+#
+#    If you get a STRAY SERVER block instead, run the command it prints and check
+#    `pgrep -af '[A]rmaReforgerServer'` comes back empty. Do not skip this: a survivor
+#    holds 2001/17777 and the next boot dies on `Unable to start replication`.
+#
+# 2. Only then:
 bash scripts/mod/run-playtest-server.sh --mission-id=$MID --admin=<your-identityId>
 ```
+
+> **Running it before stopping the first one used to break both servers**, and silently: the
+> second invocation deleted the pidfile that was the first one's only handle, so the first
+> printed "server exited" while its engine was still alive, and the second then died on the
+> port. Since T-608 the second invocation **refuses** — it names the live process group and
+> exits without touching anything. If you see that refusal, you skipped step 1.
+
+You will lose the connection and have to Direct Join again; the **Direct Join Code is re-minted
+on every boot**, so read the new one from the new run, not from your scrollback.
 
 > **The engine schema-validates this, and a bad value is a HARD FATAL** ~90 s into the boot, after
 > a full script compile — `BACKEND (E): JSON is invalid!` → `There are errors in server config!` →
@@ -1096,7 +1225,18 @@ So the failure mode is **not** "the mod does not load". It is:
 
 - **On the server, if you use `-config` without `-addonsDir`:** June's build runs and everything
   looks fine. Tell: **7** `[TBD]` lines in the old flat `[TBD] ...` format instead of ~108 in the
-  current `[TBD][Subsystem] ...` format. `run-playtest-server.sh` hard-fails on this.
+  current `[TBD][Subsystem] ...` format. `run-playtest-server.sh` hard-fails on this. To check any
+  log by hand, count the **format**, never a sentence (T-608):
+
+  ```bash
+  grep -c '\[TBD\]\[' "$LOG"     # current checkout: >100.  Stale Workshop 1.0.1: exactly 0.
+  ```
+
+  The stale build has no subsystem tag at all, so this holds no matter how the individual
+  `Print`s are worded. Pinning the check to one quoted sentence is what broke
+  [`STAGING-SERVER.md:48`](../mod/STAGING-SERVER.md): T-604 quoted the settle line, T-605 rewrote
+  that `Print` in the same wave, and for a week the stale-build detector told operators on the
+  *correct* build that their expected string was missing. Match prefixes, not sentences.
 - **On the friend's client, always:** it resolves `game.mods[]` from the Workshop and gets 1.0.1
   while the server runs your checkout. **Unverified — no second machine has connected to this
   combination.** It may refuse on a content mismatch, or it may join clean and run old script.

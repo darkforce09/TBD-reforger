@@ -43,11 +43,40 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 >
 > **3. The "Game log pass criteria" list further down is the STALE build's output.**
 > `[TBD] Mission loaded`, `[TBD] Registry loaded` and `[TBD] SpawnManager: built slot spawn` are
-> exactly what Workshop 1.0.1 prints. Current code prints
-> `[TBD][Mission] loaded id=… slots=18 source=…`, `[TBD][Validate] mission result=PASS errors=0`,
-> `[TBD][Slots] loadout settle complete — 18 application(s) IsComplete=1 — spawn open` and
-> `[TBD][Stage] LOADING -> LOBBY`. **If your log matches the old list, you are running the stale
-> mod, not your checkout.**
+> exactly what Workshop 1.0.1 prints. **If your log matches that old list, you are running the
+> stale mod, not your checkout.**
+>
+> **The check to actually run is on the FORMAT, not on any one sentence** (T-608):
+>
+> ```bash
+> grep -c '\[TBD\]\[' "$LOG"     # current checkout: >100.  Stale Workshop 1.0.1: exactly 0.
+> ```
+>
+> June's build logs flat `[TBD] …` lines and has no subsystem tag at all; every line the current
+> build emits is `[TBD][Subsystem] …`. Measured on the same mission, same machine, both ways:
+> **7** flat lines versus **109** tagged ones. A zero from that `grep` is unambiguous and it does
+> not depend on the wording of any individual `Print`.
+>
+> **Why the format check and not a quoted sentence.** This box originally pinned the check to
+> `[TBD][Slots] loadout settle complete — 18 application(s) IsComplete=1 — spawn open`. **T-605
+> then rewrote that exact `Print`** ([`TBD_SpawnManager.c:1143`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c))
+> and, because it did not own this file, the two merged in the same wave with the string dead.
+> For a week the stale-build detector told operators **on the correct build** that their expected
+> line was missing — which is precisely the class of defect T-607 was filed for, reintroduced by
+> the wave that named it. So: match prefixes, never whole sentences.
+>
+> | Match this stable prefix | Everything after it is expected to vary |
+> |---|---|
+> | `[TBD][Mission] loaded id=` | name, slot count, `source=` |
+> | `[TBD][Validate] mission result=` | `PASS`/`FAIL`, error and warning counts |
+> | `[TBD][Slots] loadout settle complete` | the whole count summary — it has changed once already |
+> | `[TBD][Stage] LOADING -> LOBBY` | nothing; this one is a state-machine edge, not prose |
+>
+> For the record, the current build's full settle line, verbatim from a boot on `main`
+> 2026-07-31, is
+> `[TBD][Slots] loadout settle complete — 18 application(s), 0 unplayable, 2 with a shortfall — spawn open`
+> — but **do not grep for that**, grep for the prefix. `PLAYTEST_RUNBOOK.md` §S1/§2.5A carries the
+> same string and the same rule.
 >
 > **4. NOT verified: what the joining client loads.** The server advertises
 > `game.mods[] = [B2C3D4E5F6A78901]`; a client resolves that id from the Workshop and gets 1.0.1
@@ -274,7 +303,15 @@ the rendered config and the exact command without booting, `--help` for the opti
 
 Measured end to end 2026-07-31: room registered, checkout loaded,
 `[TBD][Validate] mission result=PASS errors=0`, `[TBD][Slots] loadout settle complete — 18
-application(s) IsComplete=1 — spawn open`, `[TBD][Stage] LOADING -> LOBBY`.
+application(s), 0 unplayable, 2 with a shortfall — spawn open`, `[TBD][Stage] LOADING -> LOBBY`.
+(Quoted whole for the record. **When you check a log, match the prefixes in the correction box
+above, not these sentences** — the settle line's tail changed once already, at T-605.)
+
+**If it does not print a join banner, it does not exit quietly.** On a failed boot the script
+names the phase the engine actually reached, and it will not claim to have stopped a server it
+could not confirm was dead — if you see a **`STRAY SERVER`** block, a process group is still
+holding `2001`/`17777` and the block tells you the exact command to run (T-608). Two invocations
+cannot share `$HOME/tbd-playtest`: the second refuses rather than orphaning the first.
 
 **Second client:** Multiplayer → **Direct Join** → the `IP:port` the script prints (the room
 registers under `publicAddress`, which the script sets to this machine's LAN IP), or paste the
