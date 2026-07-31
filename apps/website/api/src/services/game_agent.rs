@@ -163,9 +163,9 @@ pub async fn send(sock: &Path, action: AgentAction) -> anyhow::Result<AgentReply
 
 /// The untimed round-trip. Split out so [`send`] can wrap exactly this in the timeout.
 async fn exchange(sock: &Path, action: AgentAction) -> anyhow::Result<String> {
-    let stream = UnixStream::connect(sock).await.map_err(|e| {
-        anyhow::anyhow!("cannot connect to game agent at {}: {e}", sock.display())
-    })?;
+    let stream = UnixStream::connect(sock)
+        .await
+        .map_err(|e| anyhow::anyhow!("cannot connect to game agent at {}: {e}", sock.display()))?;
     let (rd, mut wr) = stream.into_split();
 
     wr.write_all(action.verb().as_bytes()).await?;
