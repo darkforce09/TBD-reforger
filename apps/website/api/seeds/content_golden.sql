@@ -40,8 +40,20 @@
 --   4. THE DATES ARE FIXED, SO THEY EVENTUALLY GO STALE. /events?scope=upcoming
 --      and the dashboard's next_event filter on `start_time > now()`. The
 --      upcoming rows here run to 2027-02; past rows sit in 2026-06/07. When
---      "upcoming" stops being upcoming, bump §7/§8 and recapture — do not switch
+--      "upcoming" stops being upcoming, bump §6/§8 and recapture — do not switch
 --      to now(), that breaks rule 1.
+--
+--   5. SECTION ORDER IS A FOREIGN-KEY ORDER, NOT A NARRATIVE ONE (T-585). Every
+--      statement here is fed to psql INDIVIDUALLY, IN AUTOCOMMIT
+--      (`persist_seed`, wave.sh:1278), so a row may only name a parent that an
+--      EARLIER statement already inserted. `DEFERRABLE INITIALLY DEFERRED` does
+--      not help — there is no enclosing transaction to defer to. Two forward
+--      references lived here undetected until migration `0019` constrained the
+--      columns, and each broke every fresh environment:
+--        missions (§1, §6) → matches (§7) → servers (§3) → server_statuses (§7)
+--      Before moving a block, check what its ids point at. `\d <table>` lists
+--      the constraints; a violation looks like a seed that "suddenly stopped
+--      loading" and takes the whole environment with it.
 --
 -- Idempotent: every INSERT is ON CONFLICT DO UPDATE / DO NOTHING, so re-running
 -- converges instead of erroring.
@@ -60,7 +72,7 @@
 -- the login that mints the capture token, or GET__me.json will not reproduce.
 -- total_deployments / attendance_rate are the denormalized counters that
 -- GET /me/deployments reports as total_operations / attendance_rate; they are
--- set here to agree with the 17 match_player_stats rows seeded in §6.
+-- set here to agree with the 17 match_player_stats rows seeded in §7.
 INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character,
                    role, is_banned, total_deployments, attendance_rate,
                    last_login_at, created_at, updated_at)
@@ -200,8 +212,13 @@ ON CONFLICT (id) DO NOTHING;
 
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- §3  Servers + live telemetry. GET /servers is `{data:[{...server, status,
---     required_modpack}]}`.
+-- §3  Servers. GET /servers is `{data:[{...server, status, required_modpack}]}`.
+--
+--     THE `server_statuses` ROWS ARE IN §7, NOT HERE (rule 5, T-585). The
+--     primary server's status names a `matches` row, `matches` names a §6
+--     mission, and 0019 constrains both — so the status INSERT has to run after
+--     both, and it is the last statement of §7. The three servers stay here
+--     because they only reference §1's modpack.
 --
 --     server_fps IS A numeric(5,1) AND THE HANDLER CASTS IT ::float8. A real
 --     frame therefore serializes as `58.7`, NOT `58`. The seeded values are
@@ -215,31 +232,13 @@ INSERT INTO servers (id, name, ip, port, required_modpack_id, is_active) VALUES
    '203.0.113.24', 2001, '00000000-0000-4000-a000-000000000001', true),
   ('00000000-0000-4000-d000-000000000002', 'TBD Secondary — Arland',
    '203.0.113.25', 2011, '00000000-0000-4000-a000-000000000001', false),
-  -- No required modpack, and no server_statuses row at all (below): this is the
+  -- No required modpack, and no server_statuses row at all (§7): this is the
   -- server that renders with `required_modpack` omitted and `status: null`.
   ('00000000-0000-4000-d000-000000000003', 'TBD Staging — Sandbox',
    '198.51.100.7', 2021, NULL, false)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name, ip = EXCLUDED.ip, port = EXCLUDED.port,
     required_modpack_id = EXCLUDED.required_modpack_id, is_active = EXCLUDED.is_active;
-
-INSERT INTO server_statuses (server_id, is_online, player_count, max_players, server_fps,
-                             uptime_seconds, current_match_id, ingame_time, ingame_weather,
-                             updated_at)
-VALUES
-  -- Fully reporting, mid-operation. 58.7 fps is a healthy-but-not-round frame.
-  ('00000000-0000-4000-d000-000000000001', true, 47, 64, 58.7, 19_842,
-   '00000000-0000-4000-f000-000000000003', '06:42', 'overcast', '2026-07-26 05:00:00+00'),
-  -- Online but idle: no match, no simulated clock, no weather. The three nullable
-  -- columns COALESCE to '' in the handler and drop out of the JSON entirely.
-  ('00000000-0000-4000-d000-000000000002', true, 3, 48, 29.4, 421_066,
-   NULL, NULL, NULL, '2026-07-26 04:58:12+00')
-ON CONFLICT (server_id) DO UPDATE SET
-    is_online = EXCLUDED.is_online, player_count = EXCLUDED.player_count,
-    max_players = EXCLUDED.max_players, server_fps = EXCLUDED.server_fps,
-    uptime_seconds = EXCLUDED.uptime_seconds, current_match_id = EXCLUDED.current_match_id,
-    ingame_time = EXCLUDED.ingame_time, ingame_weather = EXCLUDED.ingame_weather,
-    updated_at = EXCLUDED.updated_at;
 
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -342,103 +341,15 @@ ON CONFLICT (id) DO UPDATE SET
 
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- §6  Matches + per-player stats. These are the ONLY source for two endpoints:
---     GET /leaderboards reads the leaderboard_totals materialized view built
---     over match_player_stats, and GET /me/deployments builds service_history
---     by joining these rows back to `matches`. Neither can be seeded directly.
---
---     The final statement in this file refreshes the MV; without it the
---     leaderboard stays empty no matter how many stat rows exist.
--- ═══════════════════════════════════════════════════════════════════════════
-
-INSERT INTO matches (id, source_match_id, event_id, mission_id, terrain, started_at, ended_at,
-                     outcome, winning_faction, aar_replay_url, created_at)
-VALUES
-  ('00000000-0000-4000-f000-000000000001', 'rf-match-20260620-01', NULL,
-   '512d8658-7025-4a70-94e9-a1b44a7aa155', 'everon',
-   '2026-06-20 19:05:00+00', '2026-06-20 21:48:00+00', 'success', 'BLUFOR',
-   'https://cdn.tbd-reforger.example/aar/20260620-01.json', '2026-06-20 21:48:30+00'),
-  ('00000000-0000-4000-f000-000000000002', 'rf-match-20260704-01', NULL,
-   '00000000-0000-4000-c000-000000000001', 'arland',
-   '2026-07-04 19:00:00+00', '2026-07-04 22:12:00+00', 'failure', 'OPFOR',
-   '', '2026-07-04 22:12:40+00'),
-  -- Still running: no ended_at, outcome pending, no replay. This is the match id
-  -- the primary server reports as current_match_id in §3.
-  -- '' (not NULL) for winning_faction / aar_replay_url — T-331 / 0009 comment: same
-  -- canonical empty as telemetry.rs COALESCE($8, '') so NOT NULL can land.
-  ('00000000-0000-4000-f000-000000000003', 'rf-match-20260726-01', NULL,
-   '512d8658-7025-4a70-94e9-a1b44a7aa155', 'everon',
-   '2026-07-26 04:32:00+00', NULL, 'pending', '', '', '2026-07-26 04:32:10+00')
-ON CONFLICT (id) DO UPDATE SET
-    source_match_id = EXCLUDED.source_match_id, event_id = EXCLUDED.event_id,
-    mission_id = EXCLUDED.mission_id, terrain = EXCLUDED.terrain,
-    started_at = EXCLUDED.started_at, ended_at = EXCLUDED.ended_at,
-    outcome = EXCLUDED.outcome, winning_faction = EXCLUDED.winning_faction,
-    aar_replay_url = EXCLUDED.aar_replay_url, created_at = EXCLUDED.created_at;
-
--- kd_ratio is round(sum(kills)/sum(deaths), 2) and command_win_rate is
--- round(command_wins/command_games, 3) — both deliberately land on values that
--- are NOT integers so the numeric formatting on the board is actually exercised.
-INSERT INTO match_player_stats (id, match_id, discord_id, arma_id, role_played, kills, deaths,
-                                team_kills, longest_kill_m, vehicles_destroyed, is_command,
-                                command_win, source_event_id, created_at)
-VALUES
-  -- Match 1 — successful assault on Everon.
-  ('00000000-0000-4000-9000-000000000001', '00000000-0000-4000-f000-000000000001',
-   '000000000000000001', 'dev-arma-76561190000000001', 'Platoon Leader',
-   9, 2, 0, 412, 1, true, true, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
-  ('00000000-0000-4000-9000-000000000002', '00000000-0000-4000-f000-000000000001',
-   '000000000000000002', '76561190000000002', 'Squad Leader',
-   14, 1, 0, 288, 2, true, true, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
-  ('00000000-0000-4000-9000-000000000003', '00000000-0000-4000-f000-000000000001',
-   '000000000000000003', '76561190000000003', 'Machine Gunner',
-   21, 3, 1, 194, 0, false, NULL, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
-  ('00000000-0000-4000-9000-000000000004', '00000000-0000-4000-f000-000000000001',
-   '000000000000000004', '76561190000000004', 'Rifleman',
-   4, 4, 0, 121, 0, false, NULL, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
-  ('00000000-0000-4000-9000-000000000005', '00000000-0000-4000-f000-000000000001',
-   '000000000000000005', '76561190000000005', 'Medic',
-   1, 5, 0, 42, 0, false, NULL, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
-  -- An unlinked player: discord_id NULL. The MV filters these out, so this row
-  -- proves telemetry from a non-member does not corrupt the leaderboard.
-  ('00000000-0000-4000-9000-000000000006', '00000000-0000-4000-f000-000000000001',
-   NULL, '76561190000000999', 'Rifleman',
-   2, 6, 0, 88, 0, false, NULL, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
-
-  -- Match 2 — a defeat on Arland. Command loss for the same two leaders, which
-  -- is what drags command_win_rate off 1.000 into 0.500.
-  ('00000000-0000-4000-9000-000000000007', '00000000-0000-4000-f000-000000000002',
-   '000000000000000001', 'dev-arma-76561190000000001', 'Platoon Leader',
-   6, 3, 0, 355, 0, true, false, 'rf-evt-20260704-01', '2026-07-04 22:12:00+00'),
-  ('00000000-0000-4000-9000-000000000008', '00000000-0000-4000-f000-000000000002',
-   '000000000000000002', '76561190000000002', 'Squad Leader',
-   11, 2, 0, 640, 1, true, false, 'rf-evt-20260704-01', '2026-07-04 22:12:00+00'),
-  ('00000000-0000-4000-9000-000000000009', '00000000-0000-4000-f000-000000000002',
-   '000000000000000003', '76561190000000003', 'Grenadier',
-   8, 5, 0, 210, 1, false, NULL, 'rf-evt-20260704-01', '2026-07-04 22:12:00+00'),
-  ('00000000-0000-4000-9000-000000000010', '00000000-0000-4000-f000-000000000002',
-   '000000000000000004', '76561190000000004', 'Automatic Rifleman',
-   7, 3, 0, 167, 0, false, NULL, 'rf-evt-20260704-01', '2026-07-04 22:12:00+00'),
-  -- Kessler's team-kills — the rows the ban in §2 and the audit trail in §10
-  -- both refer to.
-  ('00000000-0000-4000-9000-000000000011', '00000000-0000-4000-f000-000000000002',
-   '000000000000000006', '76561190000000006', 'Rifleman',
-   0, 7, 3, 35, 0, false, NULL, 'rf-evt-20260704-01', '2026-07-04 22:12:00+00')
-ON CONFLICT (id) DO UPDATE SET
-    match_id = EXCLUDED.match_id, discord_id = EXCLUDED.discord_id,
-    arma_id = EXCLUDED.arma_id, role_played = EXCLUDED.role_played,
-    kills = EXCLUDED.kills, deaths = EXCLUDED.deaths, team_kills = EXCLUDED.team_kills,
-    longest_kill_m = EXCLUDED.longest_kill_m, vehicles_destroyed = EXCLUDED.vehicles_destroyed,
-    is_command = EXCLUDED.is_command, command_win = EXCLUDED.command_win,
-    source_event_id = EXCLUDED.source_event_id, created_at = EXCLUDED.created_at;
-
-
--- ═══════════════════════════════════════════════════════════════════════════
--- §7  Missions. GET /missions default scope is
+-- §6  Missions. GET /missions default scope is
 --     `status='live' OR (author_id = caller AND status <> 'archived')`, so the
 --     caller sees every live mission plus their own drafts. GET /approvals is a
 --     separate query over `status='pending_approval'` — that queue is empty
---     unless at least one mission sits in that state, which is §7's other job.
+--     unless at least one mission sits in that state, which is §6's other job.
+--
+--     ORDERING (rule 5, T-585): this section used to be §7, AFTER the matches.
+--     `matches` names mission …c000-000000000001 from this block, and 0019
+--     constrains `matches.mission_id`, so the missions have to land first.
 --
 --     thumbnail_url and briefing are '' rather than NULL for the reason spelled
 --     out in §1: a NULL in either column 500s GET /events/:id for any event the
@@ -527,6 +438,126 @@ WHERE missions.id = v.mission_id;
 INSERT INTO mission_bookmarks (discord_id, mission_id)
 VALUES ('000000000000000001', '00000000-0000-4000-c000-000000000001')
 ON CONFLICT DO NOTHING;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- §7  Matches + per-player stats, and the live telemetry row that points at one.
+--     The matches are the ONLY source for two endpoints: GET /leaderboards reads
+--     the leaderboard_totals materialized view built over match_player_stats,
+--     and GET /me/deployments builds service_history by joining these rows back
+--     to `matches`. Neither can be seeded directly.
+--
+--     The final statement in this file refreshes the MV; without it the
+--     leaderboard stays empty no matter how many stat rows exist.
+--
+--     ORDERING (rule 5, T-585): this section used to be §6, ahead of the
+--     missions, and `server_statuses` used to sit in §3 beside the servers.
+--     Both were forward references, and 0019 turns both into hard errors:
+--       * `matches.mission_id` names a §6 mission → §6/§7 swapped.
+--       * `server_statuses.current_match_id` names …f000-000000000003 below →
+--         the status row moved down here, after the match it points at. The
+--         `servers` it also references stay in §3, well above.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+INSERT INTO matches (id, source_match_id, event_id, mission_id, terrain, started_at, ended_at,
+                     outcome, winning_faction, aar_replay_url, created_at)
+VALUES
+  ('00000000-0000-4000-f000-000000000001', 'rf-match-20260620-01', NULL,
+   '512d8658-7025-4a70-94e9-a1b44a7aa155', 'everon',
+   '2026-06-20 19:05:00+00', '2026-06-20 21:48:00+00', 'success', 'BLUFOR',
+   'https://cdn.tbd-reforger.example/aar/20260620-01.json', '2026-06-20 21:48:30+00'),
+  ('00000000-0000-4000-f000-000000000002', 'rf-match-20260704-01', NULL,
+   '00000000-0000-4000-c000-000000000001', 'arland',
+   '2026-07-04 19:00:00+00', '2026-07-04 22:12:00+00', 'failure', 'OPFOR',
+   '', '2026-07-04 22:12:40+00'),
+  -- Still running: no ended_at, outcome pending, no replay. This is the match id
+  -- the primary server reports as current_match_id — the `server_statuses`
+  -- INSERT that names it is the last statement in this section, below.
+  -- '' (not NULL) for winning_faction / aar_replay_url — T-331 / 0009 comment: same
+  -- canonical empty as telemetry.rs COALESCE($8, '') so NOT NULL can land.
+  ('00000000-0000-4000-f000-000000000003', 'rf-match-20260726-01', NULL,
+   '512d8658-7025-4a70-94e9-a1b44a7aa155', 'everon',
+   '2026-07-26 04:32:00+00', NULL, 'pending', '', '', '2026-07-26 04:32:10+00')
+ON CONFLICT (id) DO UPDATE SET
+    source_match_id = EXCLUDED.source_match_id, event_id = EXCLUDED.event_id,
+    mission_id = EXCLUDED.mission_id, terrain = EXCLUDED.terrain,
+    started_at = EXCLUDED.started_at, ended_at = EXCLUDED.ended_at,
+    outcome = EXCLUDED.outcome, winning_faction = EXCLUDED.winning_faction,
+    aar_replay_url = EXCLUDED.aar_replay_url, created_at = EXCLUDED.created_at;
+
+-- kd_ratio is round(sum(kills)/sum(deaths), 2) and command_win_rate is
+-- round(command_wins/command_games, 3) — both deliberately land on values that
+-- are NOT integers so the numeric formatting on the board is actually exercised.
+INSERT INTO match_player_stats (id, match_id, discord_id, arma_id, role_played, kills, deaths,
+                                team_kills, longest_kill_m, vehicles_destroyed, is_command,
+                                command_win, source_event_id, created_at)
+VALUES
+  -- Match 1 — successful assault on Everon.
+  ('00000000-0000-4000-9000-000000000001', '00000000-0000-4000-f000-000000000001',
+   '000000000000000001', 'dev-arma-76561190000000001', 'Platoon Leader',
+   9, 2, 0, 412, 1, true, true, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
+  ('00000000-0000-4000-9000-000000000002', '00000000-0000-4000-f000-000000000001',
+   '000000000000000002', '76561190000000002', 'Squad Leader',
+   14, 1, 0, 288, 2, true, true, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
+  ('00000000-0000-4000-9000-000000000003', '00000000-0000-4000-f000-000000000001',
+   '000000000000000003', '76561190000000003', 'Machine Gunner',
+   21, 3, 1, 194, 0, false, NULL, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
+  ('00000000-0000-4000-9000-000000000004', '00000000-0000-4000-f000-000000000001',
+   '000000000000000004', '76561190000000004', 'Rifleman',
+   4, 4, 0, 121, 0, false, NULL, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
+  ('00000000-0000-4000-9000-000000000005', '00000000-0000-4000-f000-000000000001',
+   '000000000000000005', '76561190000000005', 'Medic',
+   1, 5, 0, 42, 0, false, NULL, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
+  -- An unlinked player: discord_id NULL. The MV filters these out, so this row
+  -- proves telemetry from a non-member does not corrupt the leaderboard.
+  ('00000000-0000-4000-9000-000000000006', '00000000-0000-4000-f000-000000000001',
+   NULL, '76561190000000999', 'Rifleman',
+   2, 6, 0, 88, 0, false, NULL, 'rf-evt-20260620-01', '2026-06-20 21:48:00+00'),
+
+  -- Match 2 — a defeat on Arland. Command loss for the same two leaders, which
+  -- is what drags command_win_rate off 1.000 into 0.500.
+  ('00000000-0000-4000-9000-000000000007', '00000000-0000-4000-f000-000000000002',
+   '000000000000000001', 'dev-arma-76561190000000001', 'Platoon Leader',
+   6, 3, 0, 355, 0, true, false, 'rf-evt-20260704-01', '2026-07-04 22:12:00+00'),
+  ('00000000-0000-4000-9000-000000000008', '00000000-0000-4000-f000-000000000002',
+   '000000000000000002', '76561190000000002', 'Squad Leader',
+   11, 2, 0, 640, 1, true, false, 'rf-evt-20260704-01', '2026-07-04 22:12:00+00'),
+  ('00000000-0000-4000-9000-000000000009', '00000000-0000-4000-f000-000000000002',
+   '000000000000000003', '76561190000000003', 'Grenadier',
+   8, 5, 0, 210, 1, false, NULL, 'rf-evt-20260704-01', '2026-07-04 22:12:00+00'),
+  ('00000000-0000-4000-9000-000000000010', '00000000-0000-4000-f000-000000000002',
+   '000000000000000004', '76561190000000004', 'Automatic Rifleman',
+   7, 3, 0, 167, 0, false, NULL, 'rf-evt-20260704-01', '2026-07-04 22:12:00+00'),
+  -- Kessler's team-kills — the rows the ban in §2 and the audit trail in §10
+  -- both refer to.
+  ('00000000-0000-4000-9000-000000000011', '00000000-0000-4000-f000-000000000002',
+   '000000000000000006', '76561190000000006', 'Rifleman',
+   0, 7, 3, 35, 0, false, NULL, 'rf-evt-20260704-01', '2026-07-04 22:12:00+00')
+ON CONFLICT (id) DO UPDATE SET
+    match_id = EXCLUDED.match_id, discord_id = EXCLUDED.discord_id,
+    arma_id = EXCLUDED.arma_id, role_played = EXCLUDED.role_played,
+    kills = EXCLUDED.kills, deaths = EXCLUDED.deaths, team_kills = EXCLUDED.team_kills,
+    longest_kill_m = EXCLUDED.longest_kill_m, vehicles_destroyed = EXCLUDED.vehicles_destroyed,
+    is_command = EXCLUDED.is_command, command_win = EXCLUDED.command_win,
+    source_event_id = EXCLUDED.source_event_id, created_at = EXCLUDED.created_at;
+
+INSERT INTO server_statuses (server_id, is_online, player_count, max_players, server_fps,
+                             uptime_seconds, current_match_id, ingame_time, ingame_weather,
+                             updated_at)
+VALUES
+  -- Fully reporting, mid-operation. 58.7 fps is a healthy-but-not-round frame.
+  ('00000000-0000-4000-d000-000000000001', true, 47, 64, 58.7, 19_842,
+   '00000000-0000-4000-f000-000000000003', '06:42', 'overcast', '2026-07-26 05:00:00+00'),
+  -- Online but idle: no match, no simulated clock, no weather. The three nullable
+  -- columns COALESCE to '' in the handler and drop out of the JSON entirely.
+  ('00000000-0000-4000-d000-000000000002', true, 3, 48, 29.4, 421_066,
+   NULL, NULL, NULL, '2026-07-26 04:58:12+00')
+ON CONFLICT (server_id) DO UPDATE SET
+    is_online = EXCLUDED.is_online, player_count = EXCLUDED.player_count,
+    max_players = EXCLUDED.max_players, server_fps = EXCLUDED.server_fps,
+    uptime_seconds = EXCLUDED.uptime_seconds, current_match_id = EXCLUDED.current_match_id,
+    ingame_time = EXCLUDED.ingame_time, ingame_weather = EXCLUDED.ingame_weather,
+    updated_at = EXCLUDED.updated_at;
 
 
 -- ═══════════════════════════════════════════════════════════════════════════
