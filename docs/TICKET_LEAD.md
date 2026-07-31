@@ -64,6 +64,36 @@ thing that should happen BEFORE the playtest, not after.**
    Copy that check rather than re-deriving it.
 4. Consider whether an unlisted Workshop id colliding with the dev gproj GUID is wise at all.
 
+=== UPDATE 2026-07-31, OPERATOR: THE MOD HAS BEEN RE-PUBLISHED ===
+Step 1 is DONE. Sam published the updated mod to the Workshop. This closes the `executor: human` half
+of this ticket and removes the version-skew risk that hung over the playtest.
+
+**VERIFIED 2026-08-01 — SKEW IS CLOSED.** Cache cleared, `-config`-only boot re-fetched
+**version 1.0.2** (`data.pak` 570,489 B vs 1.0.1's 41,288) and emitted **151** current-format
+`[TBD][` lines vs 1.0.1's **0**. The client path now resolves the same code the server runs.
+Old 1.0.1 retained at `~/.cache/tbd-workshop-1.0.1-backup` (the only copy; the stale-build
+detectors were validated against it).
+
+**STILL TO DO (items 1 and 2 are now DONE):**
+1. **The stale copy is still cached locally and will be used in preference to the new publish.**
+   `~/tbd-playtest/profile/addons/TBDFramework_B2C3D4E5F6A78901` -- every manifest reads `_1.0.1_`,
+   `data.pak` is 41 KB, whole addon 76 KB. Backed up to `~/.cache/tbd-workshop-1.0.1-backup` (it is
+   the only local copy of 1.0.1, and T-604's and T-606's stale-build detectors were validated against
+   it). **Clear the cached dir so the engine fetches the new version**, then confirm.
+2. **VERIFY THE PUBLISH, do not assume it.** Boot with `-config` ONLY (no `-addonsDir`) and count
+   current-format tag lines. T-604's discriminator: the checkout emits `[TBD][Subsystem]`-format
+   lines in quantity; 1.0.1 emits **0**. T-606 measured 147 and 155 on the two goldens, and warns
+   the count drifts (+47 on an unchanged mission) -- so use **0 vs non-zero**, not a threshold.
+   If a `-config`-only boot now shows non-zero, the Workshop and the checkout agree and the skew
+   is genuinely closed.
+3. `deploy-staging.sh:1153` still omits `-addonsDir` in config mode, and `:1155` still registers no
+   room. Staging remains broken both ways -- T-604 fixed this only for the playtest launcher
+   (`scripts/mod/run-playtest-server.sh`, both flags together). Copy that shape.
+4. STAGING-SERVER.md's pass criteria: **already fixed by T-606** (wave 77), which also proved the old
+   `remote-log-grep.sh` had no reachable exit 0 and that its `Mission loaded` check was inverted --
+   SATISFIED on a broken log, MISSING on a healthy one.
+5. Still worth deciding: whether an unlisted Workshop id colliding with the dev gproj GUID is wise.
+
 ## Next queued (top 10)
 
 - **T-072** (720) — Ctrl multi-place [queued] — Hold Ctrl to place multiple copies without re-selecting asset.

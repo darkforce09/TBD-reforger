@@ -245,32 +245,6 @@ Cure: extend drag preview / set_drag for vehicles (map-engine-render + host), or
 Behavioral one-undo Class-R is real and PASS. Soft host-delegation pin is the residue.
 
 Repro: replace live call with comment containing the symbol (or keep call but drop pick/marquee delegation asserts); soft pin stays green.
-- **T-575** (deferred) — wave.sh still exports dead MIGRATE_TEST_DATABASE_URL after T-558 [INFRA, tests] — FOUND by W68 adversarial verifier (CLEAN NIT) after T-558.
-
-Gate script still exports `MIGRATE_TEST_DATABASE_URL` (wave.sh ~341). `db_migrate` / `models_fromrow` now use per-binary provision and no longer read it. Harmless leftover — not a silent gate skip.
-
-Repro: rg MIGRATE_TEST_DATABASE_URL in wave.sh vs api tests; export is live, consumers gone.
-
-Cure: drop the dead export (and any docs that still describe the shared migrate URL).
-- **T-584** (deferred) — Two weak test controls from wave 70 [API, FRONTEND] — Both NITs from wave 70's adversarial verifier. Neither is a live defect; both are tests that are
-weaker than they read.
-
-1. `apps/website/api/src/handlers/oauth.rs:934-954` (T-303) -- the no-secret-leak sentinel test has a
-   weak positive control. The three sentinel strings are never INPUTS to the rendered error, so the
-   assertions cannot fail regardless of how reqwest renders. The "positive control"
-   (`contains("127.0.0.1:1")`) controls only for an empty haystack, not for detector sensitivity.
-   THE GUARANTEE ITSELF IS FINE and is structural, not textual: `log_discord_call_failure` receives
-   only a stage label and the error; `q.code` / `access_token` / the secret are not in scope at any
-   log site; `cookie_state` logs length only. The verifier grepped a live probe's logs for the dummy
-   client id and secret -- clean. So: strengthen the test to feed a known secret through the real
-   rendering path, or delete it and rely on the structural argument. Do not leave a test that reads
-   stronger than it is.
-
-2. `apps/website/frontend/src/missions.rs` (T-282) -- `classify_row` compares with
-   `serde_json::Value` equality, where `100` != `100.0`. A representation flip between two stored
-   payloads (e.g. a yrs BigInt<->Number coercion across an editor change) would report unchanged rows
-   as "edited". Unreachable today because both sides come from one pipeline, but the differ's whole
-   value is not crying wolf.
 - **T-587** (deferred) — fire_missions cannot store a solution: no coordinates, no TOF, no charge [DATA, FRONTEND] — Surfaced by T-285, which wired the orphaned /fire-missions endpoints and had to work around the
 schema to do it.
 
@@ -294,55 +268,6 @@ ALSO FROM T-285, same surface:
    is dto.rs; `SavedFire` is currently pinned only by T-285's captured-live-response test.
  - `dto::FireSolution` has no `Debug` derive, so `SaveResponse` cannot have one. Cosmetic.
  - field_tools.rs:106-112 documents a now-unreachable guard and says it is safe to delete.
-- **T-588** (deferred) — Wave 71 residue: systemd templates fail verify as committed, backup verifier has no DB-identity check, mortar re-hydration overwrites unsaved edits [INFRA, FRONTEND] — Four NITs from wave 71's adversarial verifier. None is a live defect; all are worth closing.
-
-1. `scripts/deploy/tbd-website-backup.service:32` and `tbd-website-backup-drill.service:29` FAIL
-   `systemd-analyze verify --user` AS COMMITTED, because `WorkingDirectory=TBD_REPO_DIR_PLACEHOLDER`
-   is not an absolute path. Expected for a template -- the header documents the `sed` substitution and
-   the RENDERED units verify clean (all four, confirmed) -- but anyone verifying the committed file, or
-   naively `cp`-installing it, gets "Unit has a bad unit file setting".
-   Repro: `systemd-analyze verify --user scripts/deploy/tbd-website-backup.service` -> rc=1.
-   Fix: ship a `.in` extension, or an absolute default the sed overwrites.
-
-2. `scripts/deploy/lib/db-common.sh:241` -- the dump verifier has NO DATABASE-IDENTITY CHECK. It
-   accepts a structurally valid dump OF THE WRONG DATABASE, or one missing `_sqlx_migrations`. Not
-   exploitable in the backup path (it always dumps the whole correct DB) and the drill catches the
-   missing-migrations case, and `--min-rows 0` accepting a schema-only dump is an explicit opt-in --
-   so this is a contract limit, not a bug. Worth closing anyway: a restore is exactly when someone is
-   panicking and grabs the wrong file.
-
-3. `apps/website/frontend/src/mortar.rs:501` -- `hydrated_for` is a single-slot `StoredValue`, so
-   switching operation away and back RE-APPLIES that operation's saved solution over any unsaved
-   edits. No data loss (the saved rows are intact) but it silently discards in-progress work.
-
-4. T-576's TITLE overstates what shipped: "every foreign-key violation surfaces as a 500". The shipped
-   mapping live-fixes only the `server_id` heartbeat (500 -> 400). Bad `matches.event_id` /
-   `mission_id` on match ingest still INSERT SILENTLY today, because those FKs do not exist yet -- so
-   they are neither 500 nor 400, they are unchanged. The ticket BODY is accurate; the headline is not.
-   Resolved by T-585 landing the migration.
-- **T-590** (deferred) — Wave 72 residue: stale GO-7 documentation, drifted seed citations, and three prose comments now false [INFRA] — Documentation drift found across wave 72. None is a live defect; every one is a sentence that will
-mislead the next reader, and two of them are the sentences that let real defects rot.
-
-1. **`Makefile:304` still claims** the Rust GO-2..9 analogs are "enforced by clippy + the centralized
-   ApiError type + `cargo fmt`". GO-7 is now genuinely enforced by `scripts/verify-route-tags.sh`
-   (wired into both gates). **That sentence is the one that let GO-7 stay dead for the whole Go->Rust
-   rewrite** — three handlers carried `@route` tags to routes that did not exist, and one live route
-   carried no tag at all, because the Makefile said something was watching.
-2. **`docs/platform/CODING_STANDARDS.md:138-141 / 369 / 415`** point GO-7 at deleted Go artefacts
-   (`handlers.go Register()`, `verify-contract-citations.mjs`, "82 handlers"). Should read
-   `scripts/verify-route-tags.sh` and 102 handlers.
-3. **Three drifted `content_golden.sql` line citations** after T-585's reorder:
-   `apps/website/api/tests/events.rs:16` cites 162-167 -> now **174-180**;
-   `apps/website/api/src/handlers/events.rs:787` and `:1741`, plus
-   `apps/website/frontend/src/mission_overview.rs:118`, cite 605 -> now **638**.
-4. **`content_golden.sql` header** says `total_deployments` agrees with "the 17 match_player_stats
-   rows"; the file seeds **11**. Pre-existing, untouched by T-585.
-5. **`apps/website/frontend/src/mission_doc.rs:27` and `:51`** attribute encode stability to "the
-   core's fixed `CLIENT_ID`". T-222 made the id random. The asserted BEHAVIOUR still holds (same-doc
-   re-encode is byte-identical) but the stated REASONING is now wrong.
-6. **`crates/map-engine-core/src/lib.rs:5`** says "the JS boundary lives in the `map-engine-wasm`
-   shim". That crate was deleted at T-418. This sentence made the T-582 brief ask for a wasm binding
-   that could not exist — the agent had to discover the deletion itself.
 - **T-601** (deferred) — Class-R pin hollowness is systemic, not a bug in three pins [INFRA] — FOUND by wave 75's adversarial verifier (Fable 5), which defeated THREE separate pins shipped in that
 same wave — after each slice had proven its own pin against the attacks it knew about.
 
@@ -390,131 +315,6 @@ test's uniform: *a tool reports success over an input it never actually examined
 DO NOT respond to this ticket by blocklisting the specific shapes above. That is the fourth round of
 that game (T-517 -> T-567 -> T-570) and a fifth wrapper always exists. Fix the two patterns, then
 convert the ~20 siblings.
-- **T-602** (deferred) — wave.sh narrows its own scope by changed-file detection, and three of its comments are stale [INFRA] — FOUND by wave 75's verifier (F5/F6/F7), partly by the command center walking into it live.
-
-=== THE LIVE INCIDENT ===
-The command center ran `wave.sh gate` with NO base argument to close wave 75. It defaults to `HEAD~1`
-(`:1983`), which after FIVE merges saw only the last one -- `serve.rs`. GATE reported PASS 26/26 over
-a wave in which 4 of 5 slices changed the frontend. Re-running with the real base `2f0167b9` gave
-PASS 27/27 with `trunk build` actually running.
-
-`wave.sh:1977-1981` ALREADY documents this trap and already takes the base as an argument -- the fix
-exists, the default is the hazard. This is user error the tool invites.
-
-=== FOUR STEPS NARROW, NOT THE TWO FIRST BLAMED ===
-All change-scoped steps key off `$base`: `touch_changed` (`:2020`), `wasm32 (frontend)` (`:2036` ->
-`wasm_changed:573-586`), `fmt (changed)` (`:2037`), and the trunk conditional (`:2134`). With a wrong
-base, `wasm_changed` prints "frontend untouched" and PASSES; `touch_changed` invalidates no frontend
-fingerprints, re-exposing the T-421 cached-verdict hole. `test xtask+tbd-tools` (`:2130`) is
-unconditional as claimed. No other step narrows.
-
-=== THE SAME BUG, STILL LATENT ===
-`cmd_wave_close` gates against `HEAD~${WAVE_GATE_DEPTH:-40}` (`:2247`). A wave exceeding 40 commits
-silently narrows the same way. Wave 75 was 10 commits, so it did not bite. It will.
-
-FIX: make the base mandatory, or derive it (merge-base against `origin/main`), or refuse to run when
-the computed base does not contain every slice merge. A gate whose scope silently shrinks is the
-signature defect -- *a tool reports success over an input it never examined.*
-
-=== STALE COMMENTS, same file family, trivial ===
-- `arsenal.rs:21-22` claims `editor_ops.rs` funnels **28** sites into `after_local_edit`. Measured
-  **26** (the other 2 are direct calls in `mission_editor.rs` / `mission_hydrate.rs`). Conclusion
-  unaffected -- every cited sibling commit site is real and no staging counter-example exists.
-- `.github/workflows/ci.yml:39-40` claims CI shipped `tbd_reforger` "since T-534". `git log -S` puts
-  it at **T-145, 2026-07-06**; T-381 (07-27) made it refuse, T-534 (07-28) derived per-binary names.
-  The mechanism is right, the date is wrong.
-- `wave.sh:2126` says "81 tests"; measured **84** (T-361 added 3 serve tests).
-- **T-603** (deferred) — 9 clippy errors in tools/tbd-tools/src/enf/ and nothing lints those crates [INFRA] — Ground truth measured by wave 75's verifier (F8), after two slice agents reported conflicting counts.
-
-`cargo clippy -p xtask -p tbd-tools --all-targets -- -D warnings` -> **9 real errors, ALL in
-`tools/tbd-tools/src/enf/`**:
-    apidoc.rs:164, apidoc.rs:169      capability.rs:88, capability.rs:137
-    citations.rs:41, citations.rs:62  source.rs:52
-    symbols.rs:120, symbols.rs:169
-Breakdown: 4x collapsible-if, 2x sort_by_key, 1x consecutive `str::replace`, 1x manual char
-comparison, 1x replacing-text-with-itself. **`xtask` is clean.** All mechanical.
-
-T-361's agent reported "9 in src/enf/*" -- exact. T-597's reported "~11" -- it counted the two
-`could not compile` summary lines as errors. `wave.sh:2040-2044` cites "~45 errors" workspace-wide
-"almost all in tools/tbd-tools and xtask"; that figure is stale.
-
-CONTEXT THAT MAKES THIS WORTH DOING: T-597 established that **nothing** ran `cargo test` on these two
-crates -- `ci.yml:46`'s job-level `working-directory: apps/website/api` means the bare `cargo test` at
-`:71` selects only `website-api`. T-597 added a test step to the wave gate; there is still **no lint
-step**. Clean the 9, then add `clippy xtask+tbd-tools` alongside it. One small cleanup away.
-- **T-606** (deferred) — Three ops greps report a healthy server as broken, and the T-068.14 spec names a log tag that does not exist [MOD] — FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Individually trivial, together
-they guarantee a confusing playtest: the operator greps for what the docs say, gets nothing, and
-concludes the feature is broken when it worked.
-
-1. **The loadout tag is wrong in the spec.** `TBD_SpawnManager.c:1179` prints `[TBD][Loadout][Slot]`.
-   The T-068.14 spec AND `TBD_LoadoutEquipComponent.c:17` both say `[Player]` -- a string that appears
-   in **no `Print` anywhere in the codebase**. Following the spec returns zero lines and reads exactly
-   like "the loadout never applied", which is the single most important thing T-068.14 must confirm.
-
-2. **`scripts/mod/remote-log-grep.sh:48`** requires `Mission loaded`. That string now survives only
-   inside `TBD_FrameworkManager.c:488`'s **error** string -- so the health check passes only when
-   something failed.
-
-3. **`docs/mod/STAGING-SERVER.md:192-203`** requires `built slot spawn`, which has been **deleted**.
-
-`docs/platform/PLAYTEST_RUNBOOK.md` §5 already carries corrected greps for all three; this ticket is
-to fix them at the source so the runbook is not the only correct copy.
-
-ALSO, same family, documented in the runbook §6 rather than filed separately:
-- **Radio automatic tuning cannot work** -- `worlds/TBD_Dev_POC.ent` is a 62-byte bare SubScene with
-  no `RadioManagerEntity`. Net assignment and display work; tuning does not. Known limitation.
-- **`modded class SCR_PlayerController` runtime coexistence has never been observed at any N.** Six
-  blocks now exist and no gate can see it -- `world-boot.sh` boots with zero players. If one screen
-  works and another silently does nothing during the playtest, this is the first suspect.
-- **T-609** (deferred) — world-boot ratchet has been red for every golden mission since before wave 76 [MOD] — Surfaced by T-605 and independently confirmed by wave 76's verifier (F3 root cause). Both refused to
-widen the baseline, which was the right call -- this row exists so the decision is deliberate.
-
-`bash scripts/mod/world-boot.sh --mission=<any golden>` ends `WORLD BOOT: FAIL` on `main` today:
-    FAIL  validator warnings rose: 5 > baseline 0 for msn_8f3a2c   (bridgehead-at-levie)
-    FAIL  validator warnings rose: 4 > baseline 0 for msn_5c1de7   (slot-loadout-coverage)
-in both cases alongside `ok  mission validated: mission result=PASS errors=0` and `ok  no TBD script
-errors` -- the missions are fine; the WARNING RATCHET is stale.
-
-The warnings are one family, unconsumed authored keys: `environment`, `settings`, `layers`,
-`factions.tickets`, `orbat.roles.radio` -- "authored but the mission does not model it"
-(`TBD_MissionValidator.c:1168,1175,1185`). `.world-boot-warning-baseline` is 111 rows of
-`<mission-id> <budget>`, last touched at `d297f3a39`, a confirmed ancestor of wave 76's base; the
-validator sites likewise predate it. So this went red at some earlier commit and no gate noticed --
-`cmd_gate` has no world-boot step, so the wave gate has been green over it the whole time.
-
-DECIDE, do not just widen: either (a) the validator is right and those five keys genuinely are
-authored-but-unmodelled, in which case fix the missions or the modelling and the ratchet returns to 0;
-or (b) the warnings are noise, in which case fix the validator and explain why the family is benign.
-Widening the baseline to 5 makes the red go away while preserving whatever it was warning about, and
-guarantees the next real regression hides inside the new budget.
-
-RELATED: T-608 makes `PLAYTEST_RUNBOOK.md` §2.5A tell the operator this specific FAIL is known, so the
-playtest is not blocked on this ticket.
-- **T-610** (deferred) — Stale file:line citations across the runbook and arsenal_rules, and verify-citations does not cover them [INFRA] — FOUND by wave 76's verifier (F4). Individually trivial; the reason to record it is that
-`make verify-citations` passes (`Checked 41 @contract citation(s)`) while ~19 citations are wrong --
-the gate does not cover these forms, so the drift is real and silent.
-
-`docs/platform/PLAYTEST_RUNBOOK.md` sections S8-S13 + Appendix, ~17 cites all carrying pre-T-605 line
-numbers (the quoted log STRINGS are current; only the numbers moved):
-    TBD_LoadoutEquipHelper.c :1386->1572 (pass complete) · :1342->1392 (worn audit) · :610->770
-      (equip OK) · :1223/:1228 -> :1398/:1403 (NAKED / HALF-DRESSED)
-    TBD_SpawnManager.c :2094->2169 (auto-deploy) · :785/:780/:773 -> :794/:789/:782 (claim lines)
-      · :666->675 · :2381->2465 · :2549->2633 · :2710->2794 · :2878->2962 · :2280->2355
-      · :1161->1233 · :1496->1568
-`apps/website/frontend/src/arsenal_rules.rs`: `(:209-212)` for `IsComplete` (now 247-250) and
-`(:1121-1123)` for the unworn Degrade (now 1286-1288) -- **the first sits inside text T-605 newly
-wrote, so it was stale on arrival.**
-
-Also in this bucket, from the same report:
-- `run-playtest-server.sh:39` says **109** current-format `[TBD]` lines; `STAGING-SERVER.md` says
-  **108**; measured **108**.
-- The verifier could not reproduce the brief's "320 map-engine-core tests" figure -- the crate runs
-  **126** (all pass). Some doc or ticket is carrying a wrong number; find and fix it.
-- `make verify-no-crf-leak` exceeded a 480 s budget twice (it prints its FAIL early then keeps
-  going). Slow enough that agents time out before its PS-GUID scan; worth a look.
-
-FIX SHAPE: either extend `verify-citations` to cover bare `file.c:NNN` forms in docs, or stop citing
-line numbers in prose and cite stable symbol names instead. The second is cheaper and does not rot.
 - **T-611** (deferred) — verify-citations checks only .c files in a Rust repo, and prints a reassuring total while doing it [INFRA] — FOUND by T-610 (wave 77) while fixing the citations the gate could not see. The ticket assumed the
 gate simply "did not cover bare file.c:NNN forms in prose." The real scope is larger.
 
@@ -590,6 +390,65 @@ add a `--selftest` asserting stale->fail, healthy->pass, invalid->fail; and veri
 Also from T-606, worth heeding: **do not pin a tagged-line COUNT.** Measured 147 and 155 on the two
 goldens, having drifted **+47 on an unchanged mission**; it is not monotonic in slot count. Use
 0-vs-nonzero.
+- **T-613** (deferred) — wave.sh derives its gate base and verifies it with the SAME oracle, so a fake marker self-approves [INFRA] — FOUND by wave 77's adversarial verifier. **The signature defect of this codebase, sitting inside the
+fix for it.** Latent today; blocker-shaped if it ever fires.
+
+T-602 (wave 77) fixed the gate silently narrowing its scope: it now DERIVES the base from the
+`wave N CLOSED` marker and VERIFIES that base is an ancestor-or-equal of the previous close. Both
+halves work -- measured, `HEAD~1` and mid-wave bases are refused with exact missed-commit counts.
+
+**But derive and verify call the same function.** The subject confirm (`wave.sh:1754`,
+`case … wave\ [0-9]*\ CLOSED*`) and the prefilter ERE (`:1777`) both accept ANYTHING after
+`CLOSED`, and `gate_base_covers_wave` (`:1806`) verifies against `prev_wave_close()` -- the same
+oracle that just produced the answer. So a plausible-looking subject becomes the base AND
+self-verifies. Proven in a shared clone (fabricated commits; the real repo untouched):
+
+    $ git commit-tree … -m 'wave 76 CLOSED? reopened — reverting T-608 pending re-gate'
+    DERIVED: a0377522 wave 76 CLOSED? reopened — reverting T-608 pending re-gate
+    cover rc=0
+
+The gate range would be ONE commit; the entire real wave sits outside every change-scoped step
+(`touch_changed`, `wasm32`, `fmt (changed)`, the trunk conditional) -- which is precisely the
+wave-75 incident T-602 was written to prevent, re-achievable through the front door.
+
+**Why it is latent, not live:** all 32 historical `wave N` subjects were checked and none matches;
+`wave --close` writes the format itself. The comment at `:1770` defends only against the marker text
+appearing in a commit BODY (which this wave's own commits do), not against a subject that merely
+continues past `CLOSED`.
+
+RELATED, same family (verifier F6): **a REVERTED wave-close still derives as the base.** Clone-proven
+-- with `Revert "wave 76 CLOSED…"` on top, derivation still returned `efc3851c`, so a disavowed wave's
+span is never re-gated. Requires an operator revert; fails narrow-and-silent.
+
+FIX SHAPE: anchor the subject match (`CLOSED` at end, or `CLOSED:` / `CLOSED —` only), and give the
+verifier an INDEPENDENT oracle -- e.g. cross-check the derived base against the merge structure or
+the tag history rather than re-asking `prev_wave_close()`. A checker that consults the thing it is
+checking is not a check.
+- **T-614** (deferred) — Wave 77 residue: the slice gate lints none of a tooling slice, and two counts/pins are off [INFRA] — Three lesser findings from wave 77's adversarial verifier. None is a live defect.
+
+1. **`scripts/platform/wave.sh:875` -- the SLICE gate still skips clippy for `tbd-tools|xtask`**, giving
+   the reason "red on main, ungated by CI". **"Red on main" is now contradicted by lines 830-831 of the
+   same file** ("they are clean" -- T-603's own re-measure, independently confirmed: baseline
+   `clippy -p xtask -p tbd-tools --all-targets -- -D warnings` rc=0 from a cold dir, 50 real compile
+   units). So a slice that edits ONLY those crates has its own gate lint none of its code, and the lint
+   lands later at the wave gate -- the exact T-329 shape this function's header says it exists to
+   prevent. ("Ungated by CI" remains true: the ci.yml change was comment-only.)
+2. **Commit `d9c666e1` says "14 across 4 files"; it is 14 across EIGHT files.** Re-measured by reverting
+   `tools/ xtask/` to `efc3851cc` in a clone: plain run = 9, all in `tools/tbd-tools/src/enf/`
+   (truncation confirmed -- the failed lib blocks dependents from compiling at all, even with
+   `--keep-going`); with the lib fixed, 5 more -- `bin/enf.rs` 1, `xtask/src/schema_gates.rs` 3,
+   `xtask/src/sync.rs` 1. The lib's own 9 spread over FIVE files (apidoc 2, capability 2, citations 2,
+   source 1, symbols 2). Every lint type matches the commit's breakdown; only the file spread is wrong.
+3. **`scripts/mod/remote-log-grep.sh:118` -- `PAT_ASSIGNED` pins the legacy flat format plus prose** of
+   `TBD_SpawnManager.c:675`, in the very file whose own rule (line 34) is *"pin the prefix, never the
+   sentence."* Demonstrated: rewording that Print to the tagged vocabulary -- the file's own stated
+   direction of travel -- flips a healthy player-seated log from PASS to PARTIAL (`rc=2, was 0`). Fails
+   toward PARTIAL rather than false-PASS, and the header documents the dependency, so it is a nit.
+
+ALSO NOTED, deliberate and not a defect (verifier F5): `.world-boot-warning-baseline` budgets sit
+below boot reality on purpose, as a forcing function, so `world-boot.sh --mission=…` fails on clean
+main by design. Confirmed live (`5 > baseline 1 for msn_2d91be`). The cost, worth knowing: while a row
+is red, a NEW regression on it (5->6) is indistinguishable from the standing red. See T-609.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
