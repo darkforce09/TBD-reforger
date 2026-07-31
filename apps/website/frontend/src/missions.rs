@@ -13,6 +13,9 @@ use crate::nav::{has_min_role_authed, Role};
 use crate::ui::{badge_class, AuthGate, MaterialIcon, Sheet};
 use crate::url_guard;
 use leptos::prelude::*;
+// T-282 — the version differ indexes rows by id; these are its only two containers.
+use serde_json::Value;
+use std::collections::{HashMap, HashSet};
 
 const SELECT_CLASS: &str = "rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
 // SCOPES: (label, scope query value). Global is scopeIdx 0.
@@ -853,6 +856,497 @@ fn dossier_loading() -> impl IntoView {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// T-282 — MISSION VERSION HISTORY: the differ.
+//
+// `mission_versions` has stored an immutable full-JSON snapshot per semver since the initial
+// schema, so nothing here invents versioning; it surfaces what is already retained. The whole
+// question is **what a diff of two mission payloads should even compare**, and the answer is not
+// "the text".
+//
+// WHY STRUCTURAL AND NOT TEXTUAL. The stored payload is machine-serialised by
+// `map_engine_core::mission::compile::compile_payload`, and two properties of that function make a
+// text diff actively wrong rather than merely slow:
+//
+//   1. The collections are re-emitted from *unordered* yrs maps, ordered by whatever
+//      `entityOrder.slots` happened to hold (`mission/compile.rs:191`). Re-saving an untouched
+//      document can legitimately permute the arrays. A line/LCS diff would then report thousands of
+//      changes for a mission nobody edited — the exact false positive that makes a diff untrusted.
+//   2. `serde_json` here is built without `preserve_order`, so object keys are BTreeMap-sorted on
+//      the way out and carry no authorial meaning at all.
+//
+// So the diff is keyed on the one thing that IS stable and IS authored: the row `id`. Every
+// collection (`editor.slots`, `objectives`, `markers`, … and the `loadouts` id→row object) is
+// indexed by id, and each row lands in exactly one bucket: added / removed / moved / edited /
+// unchanged. That is also the vocabulary the author thinks in — "I added 12 slots and moved
+// Alpha 1-1", not "line 41,882 changed".
+//
+// PERFORMANCE, which is the real constraint. Missions in this codebase's own history reach ~367k
+// slots (`map_engine_core::mission::flatten` sizes its accumulator for exactly that, flatten.rs:492)
+// and the version POST route lifts the body cap because payloads run to hundreds of MB
+// (`api/src/app.rs:703`). Three decisions keep this out of the "hangs the tab" regime:
+//
+//   * **No pairwise comparison.** An LCS/text diff is O(n·m); this is one hash insert and one hash
+//     lookup per row, i.e. O(rows_a + rows_b). Against 367k slots that is the difference between
+//     linear and a quarter-trillion character comparisons.
+//   * **Nothing is cloned.** The index is `HashMap<&str, &Value>` borrowed straight out of the
+//     parsed payloads — ~24 bytes per row of transient index, versus a second copy of a
+//     hundreds-of-MB document.
+//   * **The RESULT is O(1) in document size.** Counts are exact and uncapped (they are free), but
+//     the human sample lines stop at [`DIFF_SAMPLE_CAP`] per collection. A 367k-slot rewrite
+//     produces the same size struct as a one-slot nudge, so nothing downstream — signal, DOM,
+//     memory — scales with the mission.
+//
+// The one thing this deliberately does NOT do is recurse into rows to render a field-level diff of
+// every changed slot. That output is unbounded by construction and no author reads 40,000 field
+// deltas; `edited` plus a bounded sample is the useful truth.
+//
+// WHAT AN AUTHOR CAN ACTUALLY REACH TODAY — read this before assuming the compare UI was forgotten.
+// `GET /missions/:id` embeds `current_version` *with its full `json_payload`*
+// (`api/src/handlers/missions.rs:513`), so the dossier already holds one complete snapshot. It
+// cannot hold a second, because **there is no list-versions endpoint**: `/missions/:id/versions` is
+// POST-only and `/missions/:id/versions/:vid` needs an id the SPA has no way to discover
+// (`api/src/app.rs:702-715`). So the timeline below renders the versions it can genuinely obtain —
+// one — and says so, rather than fetching a route that answers 405. The differ itself is fully
+// general A-vs-B and is exercised on real data today through [`version_census`], which is the same
+// code path with the empty document as the left-hand side.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/// How many changed rows one collection names before it stops naming them.
+///
+/// **Counts are exact and uncapped; only this list is bounded.** That is what makes a
+/// [`MissionDiff`] O(1) in the size of the mission — see the module note above.
+const DIFF_SAMPLE_CAP: usize = 6;
+
+/// The id-keyed collections of a mission editor payload, in the order an author reads them, as
+/// `(label, dotted path)`. Mirrors what `compile_payload` emits: the top-level arrays, the
+/// `loadouts` object (id → row), and the four `editor.*` arrays.
+const DIFF_COLLECTIONS: [(&str, &str); 9] = [
+    ("Slots", "editor.slots"),
+    ("Squads", "editor.squads"),
+    ("Factions", "editor.factions"),
+    ("Editor layers", "editor.editorLayers"),
+    ("Objectives", "objectives"),
+    ("Vehicles", "vehicles"),
+    ("Entities", "entities"),
+    ("Markers", "markers"),
+    ("Loadouts", "loadouts"),
+];
+
+/// Payload scalars worth naming one by one, as `(label, dotted path)`. `environment` is handled
+/// separately because its key set is open-ended.
+const DIFF_SCALARS: [(&str, &str); 4] = [
+    ("Title", "title"),
+    ("Terrain", "map.terrain"),
+    ("Map bounds", "map.bounds"),
+    ("Schema version", "schemaVersion"),
+];
+
+/// Placeholder for a value absent on one side of the diff.
+const DIFF_ABSENT: &str = "—";
+
+/// Resolve a dotted path (`"editor.slots"`, `"map.terrain"`) against a payload. Absent → `None`,
+/// which is how a whole collection missing on one side is represented.
+fn payload_node<'a>(payload: &'a Value, path: &str) -> Option<&'a Value> {
+    let mut cur = payload;
+    for seg in path.split('.') {
+        cur = cur.get(seg)?;
+    }
+    Some(cur)
+}
+
+/// Visit every row of a collection as `(id, row)`. Handles BOTH shapes `compile_payload` emits: an
+/// array of rows that carry their own `id`, and the `loadouts` object whose *key* is the id.
+/// Anything else (absent, null, a scalar) has no rows.
+///
+/// Takes a closure rather than returning an iterator so the two shapes need no boxing and no
+/// intermediate `Vec` — on a 367k-slot document that allocation is the whole cost.
+fn for_each_row<'a>(node: Option<&'a Value>, mut f: impl FnMut(Option<&'a str>, &'a Value)) {
+    match node {
+        Some(Value::Array(rows)) => {
+            for row in rows {
+                f(row.get("id").and_then(Value::as_str), row);
+            }
+        }
+        Some(Value::Object(map)) => {
+            for (id, row) in map {
+                f(Some(id.as_str()), row);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Shorten a display string, counting CHARACTERS (a mission title is user text and can be
+/// non-ASCII; byte slicing would panic mid-codepoint).
+fn ellipsize(s: &str, max: usize) -> String {
+    if s.chars().count() <= max {
+        return s.to_string();
+    }
+    let mut out: String = s.chars().take(max.saturating_sub(1)).collect();
+    out.push('…');
+    out
+}
+
+/// One-line rendering of a payload scalar for the "from → to" column.
+fn scalar_repr(v: Option<&Value>) -> String {
+    let Some(v) = v else {
+        return DIFF_ABSENT.to_string();
+    };
+    let rendered = match v {
+        Value::Null => DIFF_ABSENT.to_string(),
+        Value::Bool(b) => b.to_string(),
+        Value::Number(n) => n.to_string(),
+        // A blank string is emptiness, not a value — say so with the same glyph as absent, so the
+        // author is not shown `Title  "" → Bridgehead` and left to decode the quotes.
+        Value::String(s) if s.trim().is_empty() => DIFF_ABSENT.to_string(),
+        Value::String(s) => s.clone(),
+        Value::Array(a) => {
+            let inner: Vec<String> = a.iter().take(6).map(|e| scalar_repr(Some(e))).collect();
+            let more = if a.len() > 6 { ", …" } else { "" };
+            format!("[{}{}]", inner.join(", "), more)
+        }
+        Value::Object(o) => format!("{{{} keys}}", o.len()),
+    };
+    ellipsize(&rendered, 56)
+}
+
+/// The name an author would recognise a row by. Falls back to the id, which is always something.
+fn row_label(id: &str, row: &Value) -> String {
+    for key in ["name", "title", "label", "callsign", "role"] {
+        if let Some(s) = row.get(key).and_then(Value::as_str) {
+            if !s.trim().is_empty() {
+                return ellipsize(s.trim(), 40);
+            }
+        }
+    }
+    ellipsize(id, 40)
+}
+
+/// How one row changed between two versions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RowChange {
+    Same,
+    /// ONLY `position` differs. Worth its own bucket: dragging a squad across the map is the most
+    /// common edit in this editor and it is not the same event as re-roling a slot.
+    Moved,
+    Edited,
+}
+
+/// Classify a row that exists on both sides.
+///
+/// "Moved" requires identical key sets and equality on every key except `position` — the key the
+/// editor writes for slots, entities, vehicles and markers alike
+/// (`map_engine_core::mission::flatten`). A row that moved *and* changed something else is
+/// `Edited`, because that is the stronger and less dismissable claim.
+fn classify_row(a: &Value, b: &Value) -> RowChange {
+    if a == b {
+        return RowChange::Same;
+    }
+    match (a.as_object(), b.as_object()) {
+        (Some(ao), Some(bo)) => {
+            let same_keys = ao.len() == bo.len() && ao.keys().all(|k| bo.contains_key(k));
+            let only_position_differs = same_keys
+                && ao
+                    .iter()
+                    .all(|(k, v)| k == "position" || bo.get(k) == Some(v));
+            if only_position_differs {
+                RowChange::Moved
+            } else {
+                RowChange::Edited
+            }
+        }
+        _ => RowChange::Edited,
+    }
+}
+
+/// What happened to one collection between two versions.
+///
+/// `a_rows` / `b_rows` count everything present on each side, so the census and a "142 → 150"
+/// headline stay exact even when some rows could not be keyed. The invariant the tests pin is
+/// `b_rows == added + moved + edited + unchanged + unkeyed_b` (and its mirror for `a_rows`), which
+/// is what makes a silently-dropped row impossible to hide.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+struct CollectionDelta {
+    label: &'static str,
+    a_rows: usize,
+    b_rows: usize,
+    added: usize,
+    removed: usize,
+    moved: usize,
+    edited: usize,
+    unchanged: usize,
+    /// Rows with no usable string `id` — they cannot be matched to anything, so they are counted
+    /// and REPORTED rather than quietly dropped. A differ that silently ignores what it cannot
+    /// read is the "reports success over an input it never examined" failure in miniature.
+    unkeyed_a: usize,
+    unkeyed_b: usize,
+    /// The same id appearing twice within one side. `compile_payload` builds its arrays from an
+    /// id-keyed map so this cannot arise from the editor, but an imported payload can carry it and
+    /// the counts would be off by the duplicate — surfaced for the same reason as `unkeyed`.
+    duplicate_ids: usize,
+    samples: Vec<String>,
+}
+
+impl CollectionDelta {
+    fn changed(&self) -> usize {
+        self.added + self.removed + self.moved + self.edited
+    }
+    fn is_unchanged(&self) -> bool {
+        self.changed() == 0
+    }
+    /// Rows this differ could not account for — the honesty caveat the UI must surface.
+    fn unreadable(&self) -> usize {
+        self.unkeyed_a + self.unkeyed_b + self.duplicate_ids
+    }
+}
+
+/// One scalar that differs between two versions.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct FieldChange {
+    label: String,
+    from: String,
+    to: String,
+}
+
+/// The full answer to "what changed between these two versions".
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+struct MissionDiff {
+    fields: Vec<FieldChange>,
+    /// Every collection, changed or not — the view filters. Keeping the unchanged ones is what
+    /// lets [`version_census`] reuse this exact struct instead of a second row-counter that could
+    /// disagree with it.
+    collections: Vec<CollectionDelta>,
+}
+
+impl MissionDiff {
+    fn is_empty(&self) -> bool {
+        self.fields.is_empty() && self.collections.iter().all(CollectionDelta::is_unchanged)
+    }
+    /// The changed collections only, in payload order.
+    fn changed_collections(&self) -> impl Iterator<Item = &CollectionDelta> {
+        self.collections.iter().filter(|c| !c.is_unchanged())
+    }
+}
+
+/// Append a sample line while there is room. The cap is what keeps a diff's memory independent of
+/// the mission's size.
+fn push_sample(samples: &mut Vec<String>, line: String) {
+    if samples.len() < DIFF_SAMPLE_CAP {
+        samples.push(line);
+    }
+}
+
+/// Diff one id-keyed collection. Three linear passes over borrowed data; see the module note.
+fn diff_collection(label: &'static str, path: &str, a: &Value, b: &Value) -> CollectionDelta {
+    let mut d = CollectionDelta {
+        label,
+        ..Default::default()
+    };
+    let (a_node, b_node) = (payload_node(a, path), payload_node(b, path));
+
+    // Pass 1 — index the OLD side by id.
+    let mut left: HashMap<&str, &Value> = HashMap::new();
+    {
+        let dr = &mut d;
+        for_each_row(a_node, |id, row| {
+            dr.a_rows += 1;
+            match id.filter(|s| !s.is_empty()) {
+                Some(id) => {
+                    if left.insert(id, row).is_some() {
+                        dr.duplicate_ids += 1;
+                    }
+                }
+                None => dr.unkeyed_a += 1,
+            }
+        });
+    }
+
+    // Pass 2 — walk the NEW side, classifying against the index.
+    let mut seen: HashSet<&str> = HashSet::with_capacity(left.len());
+    {
+        let dr = &mut d;
+        let index = &left;
+        for_each_row(b_node, |id, row| {
+            dr.b_rows += 1;
+            let Some(id) = id.filter(|s| !s.is_empty()) else {
+                dr.unkeyed_b += 1;
+                return;
+            };
+            if !seen.insert(id) {
+                dr.duplicate_ids += 1;
+            }
+            match index.get(id) {
+                None => {
+                    dr.added += 1;
+                    push_sample(&mut dr.samples, format!("+ {}", row_label(id, row)));
+                }
+                Some(prev) => match classify_row(prev, row) {
+                    RowChange::Same => dr.unchanged += 1,
+                    RowChange::Moved => {
+                        dr.moved += 1;
+                        push_sample(&mut dr.samples, format!("~ {} moved", row_label(id, row)));
+                    }
+                    RowChange::Edited => {
+                        dr.edited += 1;
+                        push_sample(&mut dr.samples, format!("~ {} edited", row_label(id, row)));
+                    }
+                },
+            }
+        });
+    }
+
+    // Pass 3 — removals, walked in OLD-document order rather than by draining the HashMap, so the
+    // sample lines are deterministic. (HashMap iteration order is not, and a nondeterministic
+    // sample makes a flaky test, which teaches people to ignore the differ.)
+    {
+        let dr = &mut d;
+        let index = &mut left;
+        for_each_row(a_node, |id, row| {
+            let Some(id) = id.filter(|s| !s.is_empty()) else {
+                return;
+            };
+            // `remove` makes this exactly-once per unique id even if the OLD side repeats one.
+            if !seen.contains(id) && index.remove(id).is_some() {
+                dr.removed += 1;
+                push_sample(&mut dr.samples, format!("− {}", row_label(id, row)));
+            }
+        });
+    }
+    d
+}
+
+/// **The differ.** What changed between mission editor payload `a` (older) and `b` (newer).
+fn diff_mission_payloads(a: &Value, b: &Value) -> MissionDiff {
+    let mut fields = Vec::new();
+    for (label, path) in DIFF_SCALARS {
+        let (l, r) = (payload_node(a, path), payload_node(b, path));
+        if l != r {
+            fields.push(FieldChange {
+                label: label.to_string(),
+                from: scalar_repr(l),
+                to: scalar_repr(r),
+            });
+        }
+    }
+    // `environment` is an open map (weather, timeOfDay, wind…). Walk the UNION of both sides' keys:
+    // iterating only the new side would make a *deleted* environment key invisible, which is
+    // precisely the class of change an author most needs to be told about.
+    let (ea, eb) = (
+        payload_node(a, "environment"),
+        payload_node(b, "environment"),
+    );
+    let mut env_keys: Vec<&str> = Vec::new();
+    for node in [ea, eb] {
+        if let Some(Value::Object(o)) = node {
+            for k in o.keys() {
+                if !env_keys.contains(&k.as_str()) {
+                    env_keys.push(k.as_str());
+                }
+            }
+        }
+    }
+    env_keys.sort_unstable();
+    for k in env_keys {
+        let (l, r) = (ea.and_then(|o| o.get(k)), eb.and_then(|o| o.get(k)));
+        if l != r {
+            fields.push(FieldChange {
+                label: format!("Environment · {k}"),
+                from: scalar_repr(l),
+                to: scalar_repr(r),
+            });
+        }
+    }
+    let collections = DIFF_COLLECTIONS
+        .iter()
+        .map(|(label, path)| diff_collection(label, path, a, b))
+        .collect();
+    MissionDiff {
+        fields,
+        collections,
+    }
+}
+
+/// "What is in this version" — `(label, rows)` for every non-empty collection.
+///
+/// This is the SAME code path as the A-vs-B compare with the empty document on the left, not a
+/// second row-counter that could drift from it. It is also why the differ is live code in the
+/// shipped bundle rather than something only its own tests execute: the dossier holds exactly one
+/// real payload (`current_version.json_payload`), and this is the true thing that can be said about
+/// it without a second snapshot to compare against.
+fn version_census(payload: &Value) -> Vec<(&'static str, usize)> {
+    diff_mission_payloads(&Value::Null, payload)
+        .collections
+        .into_iter()
+        .filter(|c| c.b_rows > 0)
+        .map(|c| (c.label, c.b_rows))
+        .collect()
+}
+
+/// Render a census as `"142 slots · 8 objectives · 12 markers"`.
+fn census_line(census: &[(&'static str, usize)]) -> String {
+    census
+        .iter()
+        .map(|(label, n)| format!("{n} {}", label.to_lowercase()))
+        .collect::<Vec<_>>()
+        .join(" · ")
+}
+
+/// The dossier's version-history rail (T-282).
+///
+/// Renders the versions this SPA can genuinely obtain. Today that is exactly one — the mission
+/// detail's embedded `current_version` — because no list-versions route exists; see the module
+/// note. The closing line says so in the author's own terms instead of leaving them to conclude
+/// their history was lost.
+fn version_history_section(m: &MissionDetail) -> Option<impl IntoView + use<>> {
+    let v = m.current_version.as_ref()?;
+    let semver = v.semver.clone();
+    let saved = crate::datefmt::format_local_datetime(&v.created_at);
+    // `created_by` is a raw Discord snowflake, not a display name, and the dossier has no directory
+    // to resolve one against. Name the author when the ids match; otherwise say nothing rather than
+    // print an 18-digit number at them.
+    let by = (v.created_by == m.author_id).then(|| format!(" by {}", m.author_name));
+    let census = version_census(&v.json_payload);
+    let contents = if census.is_empty() {
+        // Reachable and true: a mission saved before the editor wrote any content, or the golden
+        // seed whose `json_payload` is literally `{}`. Saying so beats a blank line read as a bug.
+        "This version stores no editor content.".to_string()
+    } else {
+        census_line(&census)
+    };
+    Some(view! {
+        <section>
+            <h3 class="mb-2 font-mono text-label-md tracking-widest text-on-surface-variant uppercase">
+                "Version history"
+            </h3>
+            <ol class="border-l border-white/10 pl-5">
+                <li class="relative">
+                    <span class="absolute top-1.5 -left-[23px] size-2.5 rounded-full bg-primary ring-4 ring-surface-container-high"></span>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="font-mono text-label-lg font-semibold text-on-surface">
+                            {format!("v{semver}")}
+                        </span>
+                        <span class="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-mono text-label-sm tracking-widest text-primary uppercase">
+                            "Current"
+                        </span>
+                    </div>
+                    <p class="mt-1 font-mono text-label-sm text-on-surface-variant">
+                        {format!("Saved {saved}")}
+                        {by}
+                    </p>
+                    <p class="mt-1 text-label-md text-on-surface-variant">{contents}</p>
+                </li>
+            </ol>
+            <p class="mt-3 flex items-start gap-2 text-label-md text-on-surface-variant">
+                <MaterialIcon name="history" class="mt-0.5 shrink-0 text-[16px]" />
+                <span>
+                    "Earlier versions of this mission are kept, but the library cannot list them yet — it can load only the current one, so there is no earlier snapshot to compare against."
+                </span>
+            </p>
+        </section>
+    })
+}
+
 #[allow(clippy::too_many_arguments)]
 fn dossier_sheet_body(
     m: MissionDetail,
@@ -1177,6 +1671,10 @@ fn dossier_sheet_body(
                     })}
 
                 {crate::mission_overview::dossier_body(&m)}
+
+                // T-282 — the version rail. Above Collaboration because "what is in the saved
+                // version" is dossier fact, not a collaboration action.
+                {version_history_section(&m)}
 
                 <section>
                     <h3 class="mb-2 font-mono text-label-md tracking-widest text-on-surface-variant uppercase">
@@ -1570,6 +2068,360 @@ mod tests {
             wrong.len(),
             IS_HTTP_URL_CASES.len(),
             wrong.join("\n")
+        );
+    }
+
+    // ───────────────────────────────────────────────────────────────────────────────────────
+    // T-282 — the version differ.
+    //
+    // NON-VACUITY IS THE WHOLE POINT HERE. A differ that answers "nothing changed" to every
+    // question renders perfectly and passes any test that only asserts a section appears. So every
+    // test below names the SPECIFIC change it expects, and `differ_is_not_vacuous_on_identical_input`
+    // is its paired control: the same helper pair must also report *silence* when there is nothing
+    // to say, or "reports everything" would pass just as cheaply as "reports nothing".
+    // ───────────────────────────────────────────────────────────────────────────────────────
+    use super::{
+        census_line, classify_row, diff_mission_payloads, version_census, RowChange,
+        DIFF_SAMPLE_CAP,
+    };
+    use serde_json::Value;
+
+    /// Mission "Bridgehead at Levie" v0.1.0 — three slots in one squad, one objective, one
+    /// loadout. Shapes copied from `map_engine_core::mission::flatten`'s own fixtures so the
+    /// differ is tested against the rows this editor really writes.
+    fn levie_v1() -> Value {
+        json!({
+            "schemaVersion": 1,
+            "title": "Bridgehead at Levie",
+            "map": { "terrain": "everon", "bounds": [0, 0, 12800, 12800] },
+            "environment": { "timeOfDay": "dawn", "weather": "clear" },
+            "objectives": [{ "id": "o1", "name": "Seize the bridge" }],
+            "markers": [],
+            "vehicles": [],
+            "entities": [],
+            "loadouts": { "l1": { "primary": "L85A3" } },
+            "editor": {
+                "factions": [{ "id": "f1", "key": "BLUFOR", "name": "US Army" }],
+                "squads": [{ "id": "sq1", "factionId": "f1", "callsign": "Alpha", "name": "Alpha 1-1" }],
+                "slots": [
+                    { "id": "s1", "name": "Alpha SL",  "squadId": "sq1", "index": 0, "role": "SL",
+                      "position": { "x": 100.0, "y": 200.0, "z": 0.0, "rotation": 0.0 } },
+                    { "id": "s2", "name": "Alpha TL",  "squadId": "sq1", "index": 1, "role": "TL",
+                      "position": { "x": 110.0, "y": 200.0, "z": 0.0, "rotation": 0.0 } },
+                    { "id": "s3", "name": "Alpha RFL", "squadId": "sq1", "index": 2, "role": "RFL",
+                      "position": { "x": 120.0, "y": 200.0, "z": 0.0, "rotation": 0.0 } }
+                ],
+                "editorLayers": [{ "id": "L1", "name": "Default" }]
+            }
+        })
+    }
+
+    /// v0.2.0 — FIVE named changes against [`levie_v1`], and nothing else:
+    ///   1. `s1` **edited** (role SL → PL)
+    ///   2. `s2` **moved** (position only)
+    ///   3. `s3` **removed**
+    ///   4. `s4` **added**
+    ///   5. terrain everon → arland, `environment.timeOfDay` dawn → dusk, `environment.weather`
+    ///      **deleted**
+    /// The slot array is also written in a different order than v1, so any test that passes here
+    /// has also proved the diff is order-insensitive.
+    fn levie_v2() -> Value {
+        json!({
+            "schemaVersion": 1,
+            "title": "Bridgehead at Levie",
+            "map": { "terrain": "arland", "bounds": [0, 0, 12800, 12800] },
+            "environment": { "timeOfDay": "dusk" },
+            "objectives": [{ "id": "o1", "name": "Seize the bridge" }],
+            "markers": [],
+            "vehicles": [],
+            "entities": [],
+            "loadouts": { "l1": { "primary": "L85A3" } },
+            "editor": {
+                "factions": [{ "id": "f1", "key": "BLUFOR", "name": "US Army" }],
+                "squads": [{ "id": "sq1", "factionId": "f1", "callsign": "Alpha", "name": "Alpha 1-1" }],
+                "slots": [
+                    { "id": "s1", "name": "Alpha SL",  "squadId": "sq1", "index": 0, "role": "PL",
+                      "position": { "x": 100.0, "y": 200.0, "z": 0.0, "rotation": 0.0 } },
+                    { "id": "s2", "name": "Alpha TL",  "squadId": "sq1", "index": 1, "role": "TL",
+                      "position": { "x": 480.5, "y": 902.5, "z": 0.0, "rotation": 90.0 } },
+                    { "id": "s4", "name": "Alpha MED", "squadId": "sq1", "index": 3, "role": "MED",
+                      "position": { "x": 130.0, "y": 200.0, "z": 0.0, "rotation": 0.0 } }
+                ],
+                "editorLayers": [{ "id": "L1", "name": "Default" }]
+            }
+        })
+    }
+
+    fn slots_delta(d: &super::MissionDiff) -> &super::CollectionDelta {
+        d.collections
+            .iter()
+            .find(|c| c.label == "Slots")
+            .expect("Slots must be a diffed collection")
+    }
+
+    /// **The non-vacuity test.** Five known changes in, five specifically-named changes out.
+    /// Every number here is asserted exactly — `assert!(delta.changed() > 0)` would pass for a
+    /// differ that mislabelled all four slot events as the same thing.
+    #[test]
+    fn differ_names_the_specific_change_between_two_versions() {
+        let d = diff_mission_payloads(&levie_v1(), &levie_v2());
+        let slots = slots_delta(&d);
+
+        assert_eq!(slots.added, 1, "s4 was added: {slots:#?}");
+        assert_eq!(slots.removed, 1, "s3 was removed: {slots:#?}");
+        assert_eq!(slots.moved, 1, "s2 changed only its position: {slots:#?}");
+        assert_eq!(slots.edited, 1, "s1 changed its role: {slots:#?}");
+        assert_eq!(slots.unchanged, 0, "no slot survived untouched: {slots:#?}");
+        assert_eq!(slots.a_rows, 3);
+        assert_eq!(slots.b_rows, 3);
+
+        // The sample lines name the rows by the label an author would recognise, in document
+        // order on the new side, then removals in document order on the old side.
+        assert_eq!(
+            slots.samples,
+            vec![
+                "~ Alpha SL edited".to_string(),
+                "~ Alpha TL moved".to_string(),
+                "+ Alpha MED".to_string(),
+                "− Alpha RFL".to_string(),
+            ],
+            "the differ must name WHICH rows changed, not just how many"
+        );
+
+        // Untouched collections must stay silent — a differ that flags everything is as useless
+        // as one that flags nothing.
+        for c in &d.collections {
+            if c.label != "Slots" {
+                assert!(
+                    c.is_unchanged(),
+                    "{} reported a change and nothing in it changed: {c:#?}",
+                    c.label
+                );
+            }
+        }
+
+        // Scalars, including the DELETED environment key — the case a new-side-only walk misses.
+        let fields: Vec<(String, String, String)> = d
+            .fields
+            .iter()
+            .map(|f| (f.label.clone(), f.from.clone(), f.to.clone()))
+            .collect();
+        assert_eq!(
+            fields,
+            vec![
+                ("Terrain".into(), "everon".into(), "arland".into()),
+                (
+                    "Environment · timeOfDay".into(),
+                    "dawn".into(),
+                    "dusk".into()
+                ),
+                ("Environment · weather".into(), "clear".into(), "—".into()),
+            ],
+            "scalar changes must name the field and both values"
+        );
+    }
+
+    /// The paired control. Without this, "report every field as changed" would satisfy the test
+    /// above; with it, the differ has to be right in both directions.
+    #[test]
+    fn differ_is_not_vacuous_on_identical_input() {
+        let d = diff_mission_payloads(&levie_v1(), &levie_v1());
+        assert!(
+            d.is_empty(),
+            "a version compared with itself has no changes: {d:#?}"
+        );
+        assert_eq!(d.changed_collections().count(), 0);
+        assert_eq!(slots_delta(&d).unchanged, 3);
+    }
+
+    /// **The claim that justifies a structural diff over a textual one.** `compile_payload`
+    /// re-emits collections in whatever order `entityOrder` held, so a re-save can permute the
+    /// arrays with no authorial change. A line diff would scream; this must not.
+    #[test]
+    fn reordering_rows_is_not_a_change() {
+        let v1 = levie_v1();
+        let mut v2 = levie_v1();
+        let slots = v2["editor"]["slots"].as_array_mut().unwrap();
+        slots.reverse();
+        assert_ne!(
+            serde_json::to_string(&v1).unwrap(),
+            serde_json::to_string(&v2).unwrap(),
+            "the two payloads must differ TEXTUALLY, or this test proves nothing"
+        );
+        let d = diff_mission_payloads(&v1, &v2);
+        assert!(
+            d.is_empty(),
+            "permuting the emit order is not an edit — a textual diff would have reported 3 \
+             changed rows here: {d:#?}"
+        );
+    }
+
+    /// Moving a slot is not the same event as re-roling it, and the differ must not collapse them.
+    #[test]
+    fn position_only_change_is_moved_not_edited() {
+        let a = json!({ "id": "s1", "role": "SL", "position": { "x": 1.0, "y": 2.0 } });
+        let b = json!({ "id": "s1", "role": "SL", "position": { "x": 9.0, "y": 2.0 } });
+        assert_eq!(classify_row(&a, &b), RowChange::Moved);
+        // Same position, different role → edited.
+        let c = json!({ "id": "s1", "role": "PL", "position": { "x": 1.0, "y": 2.0 } });
+        assert_eq!(classify_row(&a, &c), RowChange::Edited);
+        // Moved AND re-roled → the stronger claim wins.
+        let e = json!({ "id": "s1", "role": "PL", "position": { "x": 9.0, "y": 2.0 } });
+        assert_eq!(classify_row(&a, &e), RowChange::Edited);
+        // A key appearing is an edit even though every shared key is equal.
+        let f =
+            json!({ "id": "s1", "role": "SL", "position": { "x": 1.0, "y": 2.0 }, "tag": "CMD" });
+        assert_eq!(classify_row(&a, &f), RowChange::Edited);
+        assert_eq!(classify_row(&a, &a), RowChange::Same);
+    }
+
+    /// Every row on each side lands in exactly one bucket. This is the invariant that makes a
+    /// silently-dropped row impossible: if the differ ever ignores an input, these sums stop
+    /// matching the raw row counts.
+    #[test]
+    fn every_row_is_accounted_for_on_both_sides() {
+        let d = diff_mission_payloads(&levie_v1(), &levie_v2());
+        for c in &d.collections {
+            assert_eq!(
+                c.b_rows,
+                c.added + c.moved + c.edited + c.unchanged + c.unkeyed_b,
+                "{} lost a NEW-side row between the walk and the counters: {c:#?}",
+                c.label
+            );
+            assert_eq!(
+                c.a_rows,
+                c.removed + c.moved + c.edited + c.unchanged + c.unkeyed_a,
+                "{} lost an OLD-side row between the walk and the counters: {c:#?}",
+                c.label
+            );
+        }
+    }
+
+    /// A row with no `id` cannot be matched to anything. It must be COUNTED and reported, never
+    /// dropped — dropping it is "a tool reports success over an input it never examined".
+    #[test]
+    fn unkeyed_rows_are_reported_not_silently_dropped() {
+        let mut v2 = levie_v1();
+        v2["editor"]["slots"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({ "name": "orphan", "role": "RFL" }));
+        let d = diff_mission_payloads(&levie_v1(), &v2);
+        let slots = slots_delta(&d);
+        assert_eq!(slots.b_rows, 4, "the id-less row is still a row");
+        assert_eq!(slots.unkeyed_b, 1);
+        assert_eq!(
+            slots.added, 0,
+            "an unkeyable row must not be guessed as added"
+        );
+        assert_eq!(
+            slots.unreadable(),
+            1,
+            "the UI needs a caveat count it can surface"
+        );
+    }
+
+    /// `loadouts` is the one collection whose id is the OBJECT KEY, not a field in the row. A
+    /// differ that only understands arrays would report it as permanently unchanged.
+    #[test]
+    fn object_keyed_loadouts_are_diffed_by_their_map_key() {
+        let mut v2 = levie_v1();
+        v2["loadouts"]["l1"]["primary"] = json!("M4A1");
+        v2["loadouts"]["l2"] = json!({ "primary": "AKM" });
+        let d = diff_mission_payloads(&levie_v1(), &v2);
+        let lo = d
+            .collections
+            .iter()
+            .find(|c| c.label == "Loadouts")
+            .expect("Loadouts must be a diffed collection");
+        assert_eq!(lo.edited, 1, "l1 changed its primary: {lo:#?}");
+        assert_eq!(lo.added, 1, "l2 is new: {lo:#?}");
+        assert_eq!(lo.a_rows, 1);
+        assert_eq!(lo.b_rows, 2);
+    }
+
+    /// **The performance contract, as an assertion.** Counts are exact at any size; the sample
+    /// list is what stays bounded. If this ever fails by `samples.len()` growing, a diff of the
+    /// 367k-slot missions this codebase really has would build a 367k-entry `Vec<String>`.
+    #[test]
+    fn counts_are_exact_at_scale_while_samples_stay_bounded() {
+        const N: usize = 5_000;
+        let mut big = levie_v1();
+        {
+            let slots = big["editor"]["slots"].as_array_mut().unwrap();
+            slots.clear();
+            for i in 0..N {
+                slots.push(json!({
+                    "id": format!("bulk-{i}"),
+                    "name": format!("Rifleman {i}"),
+                    "squadId": "sq1",
+                    "position": { "x": i as f64, "y": 0.0, "z": 0.0, "rotation": 0.0 }
+                }));
+            }
+        }
+        let empty = json!({});
+        let d = diff_mission_payloads(&empty, &big);
+        let slots = slots_delta(&d);
+        assert_eq!(slots.added, N, "every bulk row must be counted");
+        assert_eq!(slots.b_rows, N);
+        assert_eq!(
+            slots.samples.len(),
+            DIFF_SAMPLE_CAP,
+            "the sample list is the only thing allowed to grow with the document, and it must not"
+        );
+    }
+
+    /// The census must be the differ's own output, not a parallel row-counter that can drift.
+    #[test]
+    fn census_is_the_diff_from_the_empty_document() {
+        let census = version_census(&levie_v1());
+        assert_eq!(
+            census,
+            vec![
+                ("Slots", 3),
+                ("Squads", 1),
+                ("Factions", 1),
+                ("Editor layers", 1),
+                ("Objectives", 1),
+                ("Loadouts", 1),
+            ],
+            "census must list every non-empty collection, in payload order"
+        );
+        assert_eq!(
+            census_line(&census),
+            "3 slots · 1 squads · 1 factions · 1 editor layers · 1 objectives · 1 loadouts"
+        );
+        // Empty collections are omitted, not rendered as "0 markers".
+        assert!(!census.iter().any(|(l, _)| *l == "Markers"));
+        // The seeded golden mission's payload is literally `{}` — the dossier's empty state.
+        assert!(version_census(&json!({})).is_empty());
+    }
+
+    /// T-282 Class-R source ratchet. Pins the two structural decisions this slice exists to make,
+    /// so a later "simplification" into a whole-document string compare goes red here rather than
+    /// in a browser at 367k slots.
+    #[test]
+    fn differ_source_ratchet_is_structural_and_wired_into_the_dossier() {
+        const SRC: &str = include_str!("missions.rs");
+        assert!(
+            SRC.contains("let mut left: HashMap<&str, &Value> = HashMap::new();"),
+            "the id index must stay a BORROWED map — cloning rows doubles a hundreds-of-MB payload"
+        );
+        // concat! so this assertion does not match its own source text.
+        let textual = concat!("serde_json::to_string(a) ", "== serde_json::to_string(b)");
+        assert!(
+            !SRC.contains(textual),
+            "a whole-document string compare is O(n) memory and answers the wrong question — \
+             re-emit order is not an edit (see reordering_rows_is_not_a_change)"
+        );
+        assert!(
+            SRC.contains("{version_history_section(&m)}"),
+            "the version rail must be MOUNTED in the dossier — a differ nothing calls is dead \
+             code that #![allow(dead_code)] at the top of this file would hide"
+        );
+        assert!(
+            SRC.contains("fn version_census(payload: &Value) -> Vec<(&'static str, usize)> {\n    diff_mission_payloads(&Value::Null, payload)"),
+            "the census must route through the differ, not count rows a second way"
         );
     }
 }
