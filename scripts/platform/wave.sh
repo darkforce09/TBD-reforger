@@ -2051,11 +2051,22 @@ cmd_gate() {
   # the gate stricter than CI and red on arrival. The weakness is real but it is not this run's to
   # fix; filed separately.
   run "clippy frontend"  checkrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --quiet
-  # Scoped to CI's crates for the same reason clippy is: `cargo test --workspace` pulls in
-  # tools/tbd-tools, which CI never tests and which has a FAILING test on clean main
+  # Scoped per-crate rather than `--workspace`, mirroring clippy above. ci.yml tests website-api
+  # and website-frontend; map-engine is covered by its own job; xtask + tools/tbd-tools are covered
+  # by the `test xtask+tbd-tools` step added below.
+  #
+  # T-597 CORRECTION — this note used to end: "`cargo test --workspace` pulls in tools/tbd-tools,
+  # which CI never tests and which has a FAILING test on clean main
   # (density::tests::corner_partition_identity — pre-existing, filed as its own ticket). A gate that
-  # is red before any slice merges is a gate nothing can ever pass. ci.yml:68 tests website-api,
-  # :115 tests website-frontend; map-engine is covered by its own job.
+  # is red before any slice merges is a gate nothing can ever pass."
+  #
+  # Every clause of that was true. The CONCLUSION was the defect: it took a red test as a fixed
+  # property of the tree and scoped the gate around it, which is how a red test becomes permanent.
+  # That assertion had been red since T-176 (`a5940fad9`) moved the canopy grid from 32 m to 8 m and
+  # left the literal at 401; the test itself was correct and the number was four weeks stale. It is
+  # fixed at tools/tbd-tools/src/density.rs, and the two crates are gated below rather than routed
+  # around. Left in place rather than deleted because "scope the gate away from the red" is a
+  # reasonable-sounding move that someone will otherwise make again.
   # ensure_gate_db + the skip count check are what stop this step passing vacuously. A suite that
   # reports "ok" while every DB test printed `skip:` is worse than a red one: it is a green one.
   # rc honoured: ensure_gate_db now refuses to force-drop tbd_gate_migrate without the gate lock,
@@ -2091,6 +2102,33 @@ cmd_gate() {
   # step is worth the extra disk. Builds only this crate's tree, not the 609-crate workspace.
   run "test frontend"    hostrun env "CARGO_TARGET_DIR=$MAIN_ROOT/target-gate-frontend" \
                                   cargo test -p website-frontend --quiet
+  # T-597 — THE STRUCTURAL GAP. `xtask` and `tools/tbd-tools` were tested by NOTHING.
+  #
+  # The gate ran `test api`, `test map-engine`, `test frontend` and stopped. The assumption written
+  # above the `test api` step was that ci.yml covered the rest of the workspace, so a per-crate gate
+  # lost nothing. MEASURED 2026-07-31, and it does not: ci.yml's `test` step is a bare `cargo test`
+  # under the website-api job, whose `defaults.run.working-directory` is `apps/website/api`. Cargo
+  # with no `-p` selects the package in the CWD — `cargo pkgid` there returns `website-api@0.1.0`,
+  # and `cargo test --no-run` from that directory builds no tbd-tools or xtask test target at all.
+  # So both are workspace members that no gate and no workflow has ever run.
+  #
+  # What that cost: density::tests::corner_partition_identity sat red from T-176 (`a5940fad9`) to
+  # T-597 — four weeks — and the only machine that noticed was a `cargo test --workspace` nobody
+  # runs. The gate did not miss it; the gate was never pointed at it. Two crates that hold the
+  # ticket CLI, the schema gates, the map-asset pipeline and the world exporter is not a rounding
+  # error in coverage.
+  #
+  # PRIVATE TARGET DIR, same reason as `test api` and `test frontend` and not negotiable: this step
+  # BUILDS AND RUNS test binaries, and on the shared dir the binary that runs can be one another
+  # worktree built (same package + version = same artifact hash = clobbering). See the long headers
+  # on gate_test_api and on GATE SERIALISATION for the three independent measurements of that.
+  #
+  # Cost: 81 tests, ~0.1 s of actual running; the build is the whole of the wall clock and it is
+  # incremental after the first wave. Cheap enough that scoping it by change would buy nothing and
+  # would reintroduce exactly the "diffed against nothing, printed PASS" shape this file exists to
+  # prevent — so it is unconditional, like `schema`.
+  run "test xtask+tbd-tools" hostrun env "CARGO_TARGET_DIR=$MAIN_ROOT/target-gate-tools" "CARGO_INCREMENTAL=0" \
+                                  cargo test -p xtask -p tbd-tools --quiet
   # The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
   # when the wave actually touched the frontend — measured across the WHOLE wave, not the last merge.
   if git diff --name-only "$base..HEAD" 2>/dev/null | grep -q '^apps/website/frontend/'; then
@@ -2507,10 +2545,87 @@ cmd_revert() {
   echo "main is back at the $base tree. Slice branches were NOT deleted."
 }
 
+# ── T-599 — THE PUSH GUARD ASKS GIT WHICH FILES ARE LFS. IT DOES NOT MATCH THE PATH. ────────────
+#
+# git-lfs is not installed in this container (any checkout needing it dies with
+# `git-lfs filter-process: 1: git-lfs: not found`), so `--no-verify` is how work leaves this
+# machine at all. The guard is real: pushing --no-verify over genuine LFS content publishes commits
+# whose LFS objects were never uploaded, and every later clone breaks on them.
+#
+# WHAT THIS USED TO BE, AND WHY IT WAS WRONG:
+#
+#     if git diff --name-only origin/main..HEAD | grep -q '^packages/map-assets/'; then refuse
+#
+# It matched the DIRECTORY and assumed everything under it was LFS. `.gitattributes` has never said
+# that — LFS covers exactly three globs there:
+#
+#     packages/map-assets/**/*.png   **/*.r16   **/*.tbd-sat
+#
+# Everything else beneath that tree is ordinary bytes. MEASURED 2026-07-31 while closing wave 74: a
+# legitimate 19-commit push was refused, and all 30 files in the range resolved to
+# `filter: unspecified` — including T-594's regenerated `everon/objects/prefabs.json.gz` and
+# `everon/objects/type-inventory.json`, which are real content, not pointers. ZERO files in that
+# range were LFS. The operator overrode the guard by hand, correctly.
+#
+# THE OVERRIDE IS THE DAMAGE, not the lost minutes. A guard that is wrong about ordinary work
+# teaches whoever runs it that overriding is the normal way to push. The one time it is right, it
+# gets overridden by reflex too — and that is the push that breaks the remote. Precision here is a
+# safety property, not tidiness.
+#
+# So ask `git check-attr`, which consults the same .gitattributes git itself would, and refuse only
+# on a genuine `filter: lfs`. And NAME the offending files: the old message named a directory, which
+# the reader had no way to verify, so the only available responses were trust and override. A named
+# path can be checked in one command, which the message prints.
+#
+# FAIL CLOSED. Every error path refuses. A guard that cannot answer the LFS question must not answer
+# "go ahead" — that is the one direction where being wrong cannot be undone, because the remote is
+# shared. This is deliberately NOT symmetric with the false-positive fix above.
+
+# Print, one per line, every path in <range> that genuinely resolves to `filter: lfs`.
+# Empty output = nothing LFS in the range. rc 2 = COULD NOT TELL (never "nothing found").
+lfs_paths_in_range() {
+  local range="${1:-}" list attrs path value rc=0
+  [ -n "$range" ] || return 2
+  list="$(mktemp)" || return 2
+  attrs="$(mktemp)" || { rm -f "$list"; return 2; }
+  # -z end to end: NUL-separated paths, so a filename containing a space, a quote or a newline
+  # cannot split into two entries and get another file's attribute pinned on it.
+  #
+  # --diff-filter=d EXCLUDES deletions (lowercase excludes; uppercase D would select only them).
+  # MEASURED on b5c1a8f7c: 4 files total, 3 deleted, `d` yields 1 and none of the 3. Deleting an
+  # LFS file uploads nothing and so cannot leave a dangling object — counting deletions would
+  # reintroduce a false refusal of exactly the kind this function exists to remove. Getting this
+  # flag backwards is the one edit here that fails OPEN, which is why it is measured and not
+  # assumed.
+  if git diff -z --name-only --diff-filter=d "$range" >"$list" 2>/dev/null \
+     && git check-attr -z --stdin filter <"$list" >"$attrs" 2>/dev/null; then
+    # `check-attr -z` emits NUL-separated triples: <path> <attr-name> <value>.
+    while IFS= read -r -d '' path && IFS= read -r -d '' _ && IFS= read -r -d '' value; do
+      [ "$value" = "lfs" ] && printf '%s\n' "$path"
+    done <"$attrs"
+  else
+    rc=2
+  fi
+  rm -f "$list" "$attrs"
+  return "$rc"
+}
+
 cmd_push() {
-  if git diff --name-only origin/main..HEAD | grep -q '^packages/map-assets/'; then
-    echo "REFUSING --no-verify: this range touches packages/map-assets/ (the only LFS path)."
-    echo "Install git-lfs and push normally, or the remote will reference objects never uploaded."
+  local range="origin/main..HEAD" lfs rc n
+  lfs="$(lfs_paths_in_range "$range")"; rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "REFUSING --no-verify: could not determine LFS status for $range."
+    echo "        \`git diff\` or \`git check-attr\` failed, so this guard has no answer. It refuses"
+    echo "        rather than guessing — an unchecked --no-verify push is the unrecoverable one."
+    return 1
+  fi
+  if [ -n "$lfs" ]; then
+    n="$(printf '%s\n' "$lfs" | wc -l)"
+    echo "REFUSING --no-verify: $n file(s) in $range resolve to \`filter: lfs\`:"
+    printf '%s\n' "$lfs" | sed 's/^/          /'
+    echo "        Check any of them yourself:  git check-attr filter -- <path>"
+    echo "        git-lfs is absent here, so --no-verify would publish commits whose LFS objects"
+    echo "        are never uploaded. Install git-lfs and push normally."
     return 1
   fi
   git push --no-verify origin main

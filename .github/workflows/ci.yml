@@ -27,17 +27,36 @@ jobs:
     name: website-api (Rust 1.95 + Postgres 18)
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    # T-597: the service database is `rust_it`, NOT `tbd_reforger`. Read before renaming it.
+    #
+    # T-534 gives each test binary its own database, derived from whatever `TEST_DATABASE_URL`
+    # names (`<base>_<suite>_it`), and T-381's guard —
+    # `apps/website/api/tests/common/mod.rs:87 is_safe_test_database_name` — hard-REFUSES the
+    # literal name `tbd_reforger` before anything can connect, create or drop. That guard is
+    # correct and deliberate: it is the only thing standing between an exported
+    # `TEST_DATABASE_URL=…/tbd_reforger` and a wiped live dev database. It is not to be widened.
+    #
+    # So CI, which had shipped `tbd_reforger` in both the service env and TEST_DATABASE_URL since
+    # T-534, was the side that was wrong: every DB-backed website-api test panicked at
+    # `assert_test_database_url`, and the `test` step below has been RED on every push since.
+    # `rust_it` is the allow-list's first entry (`name == "rust_it"`) and is exactly what
+    # `make test-it` uses (Makefile:207), so CI and the local replay now name the same base.
+    #
+    # This name has to exist as a REAL database, not just a URL: `resolve_and_provision` connects
+    # to the base URL to issue `CREATE DATABASE <base>_<suite>_it`. Hence POSTGRES_DB and the
+    # health probe move with it — a URL pointing at a database the service never created would
+    # trade a guard panic for a connection error.
     services:
       db:
         image: postgres:18-alpine
         env:
           POSTGRES_USER: tbd
           POSTGRES_PASSWORD: tbd
-          POSTGRES_DB: tbd_reforger
+          POSTGRES_DB: rust_it
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U tbd -d tbd_reforger"
+          --health-cmd "pg_isready -U tbd -d rust_it"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
@@ -64,9 +83,11 @@ jobs:
         env:
           SQLX_OFFLINE: "true"
         run: cargo build --all-targets
+      # T-597: `rust_it`, matching the `services.db` POSTGRES_DB above and Makefile:207.
+      # The old `tbd_reforger` here is what T-381's guard refused — see the services block.
       - name: test (TEST-1 analog)
         env:
-          TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable
+          TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/rust_it?sslmode=disable
           SQLX_OFFLINE: "true"
         run: cargo test
 
