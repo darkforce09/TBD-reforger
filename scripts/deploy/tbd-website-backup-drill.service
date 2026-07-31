@@ -1,0 +1,49 @@
+; T-577 — weekly restore DRILL. Proves the backups can actually be recovered from.
+;
+; WHY THIS IS A SCHEDULED LANE AND NOT THE WAVE GATE — see the reasoning recorded in
+; scripts/deploy/backup-drill.sh and the T-577 report. Briefly: the drill's input is the
+; BACKUP FILE ON DISK, which no code change can alter, so running it per-wave would pay a
+; recurring cost to re-answer a question the diff cannot have changed. What decays here is
+; time and the environment — a full disk, a stopped timer, a rotated password, a migration
+; applied to production but not committed. Those are calendar events, so this is a calendar
+; job. The wave gate instead gets a ~0-cost STATIC check that the guards still exist in the
+; scripts, which is the regression a diff genuinely can cause.
+;
+; Install (as the deploy user, after tbd-website-backup.timer):
+;   sed 's|TBD_REPO_DIR_PLACEHOLDER|/home/sam/tbd/TBD-Reforger|' \
+;       scripts/deploy/tbd-website-backup-drill.service > ~/.config/systemd/user/tbd-website-backup-drill.service
+;   cp scripts/deploy/tbd-website-backup-drill.timer ~/.config/systemd/user/
+;   systemctl --user daemon-reload
+;   systemctl --user enable --now tbd-website-backup-drill.timer
+;
+; Read the result:  journalctl --user -u tbd-website-backup-drill.service -n 60
+; A FAILING drill means the backups are not recoverable. Treat it as a production incident.
+
+[Unit]
+Description=TBD website — weekly backup restore drill
+Documentation=file://TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-drill.sh
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=TBD_REPO_DIR_PLACEHOLDER
+
+Environment=TBD_BACKUP_DB=tbd_reforger
+Environment=TBD_BACKUP_DIR=%h/tbd-backups/website
+Environment=TBD_DB_CONTAINER=tbd_reforger_db
+; A dedicated scratch name inside the T-381 allow-list (`*_probe`). The drill re-checks it
+; through the same guard restore-db.sh uses, so this cannot be edited into the live DB.
+Environment=TBD_DRILL_DB=tbd_drill_probe
+
+; Deliberately NO --fresh: the drill must exercise the backup that is ACTUALLY ON DISK.
+; Taking a new dump first would prove this machine can dump right now, which is not the
+; question you have at 3am — "can I recover from what I already have" is.
+ExecStart=/usr/bin/env bash TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-drill.sh
+
+Restart=no
+TimeoutStartSec=3600
+UMask=0077
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,56 @@
+; T-577 — nightly verified database backup for the TBD website.
+;
+; A USER unit, not root cron, to match the API: deploy-website.sh:82 restarts
+; `tbd-website-api.service` via `systemctl --user`, and scripts/mod/deploy-staging.sh:280
+; installs its unit into ~/.config/systemd/user. Root cron would run as the wrong user,
+; would not see the deploy user's podman socket (rootless containers live in the user
+; session), and would write backups nobody else can read.
+;
+; Install (on the deploy host, as the deploy user):
+;   mkdir -p ~/.config/systemd/user
+;   sed 's|TBD_REPO_DIR_PLACEHOLDER|/home/sam/tbd/TBD-Reforger|' \
+;       scripts/deploy/tbd-website-backup.service > ~/.config/systemd/user/tbd-website-backup.service
+;   cp scripts/deploy/tbd-website-backup.timer ~/.config/systemd/user/
+;   systemctl --user daemon-reload
+;   systemctl --user enable --now tbd-website-backup.timer
+;   loginctl enable-linger $USER        # REQUIRED: without it the timer stops at logout
+;
+; Verify:  systemctl --user list-timers tbd-website-backup.timer
+;          journalctl --user -u tbd-website-backup.service -n 50
+
+[Unit]
+Description=TBD website — verified PostgreSQL backup
+Documentation=file://TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-db.sh
+; The dump goes through `podman exec`, so the container stack has to be up. This orders
+; against it when present and does not require it, because the backup script already
+; refuses loudly (and non-zero) when the container is missing or not running — a refusal
+; that is visible in the journal is better than a unit that silently never starts.
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=TBD_REPO_DIR_PLACEHOLDER
+
+; Retention is BY COUNT. 14 nightly dumps ~= two weeks of history that cannot be silently
+; emptied by a stopped timer — see the long comment in backup-db.sh. Override per host by
+; editing this line, not by adding a `find -mtime` sweep somewhere else.
+Environment=TBD_BACKUP_KEEP=14
+Environment=TBD_BACKUP_DB=tbd_reforger
+Environment=TBD_BACKUP_DIR=%h/tbd-backups/website
+Environment=TBD_DB_CONTAINER=tbd_reforger_db
+
+ExecStart=/usr/bin/env bash TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-db.sh
+
+; A failed backup must be loud and must NOT be retried into a tight loop — the timer will
+; come back tomorrow, and the common causes (container down, disk full) are not fixed by
+; retrying in 30 seconds.
+Restart=no
+TimeoutStartSec=1800
+
+; The backup contains every row in the database. Keep it to the owner.
+UMask=0077
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

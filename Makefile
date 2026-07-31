@@ -15,7 +15,7 @@ TBD_GIT_COMMON := $(shell git rev-parse --path-format=absolute --git-common-dir 
 TBD_REPO_ROOT := $(patsubst %/.git,%,$(TBD_GIT_COMMON))
 export CARGO_TARGET_DIR ?= $(TBD_REPO_ROOT)/target
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-t296 verify-t438 verify-t440 verify-t452 verify-t456 verify-t468 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke mod-spawn-determinism mod-spawn-determinism-preflight ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat verify-cargo-target print-cargo-target-dir reclaim-target-ci
+.PHONY: help db-up db-down db-logs seed db-backup db-restore db-backup-drill db-backup-verify registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-t296 verify-t438 verify-t440 verify-t452 verify-t456 verify-t468 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke mod-spawn-determinism mod-spawn-determinism-preflight ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat verify-cargo-target print-cargo-target-dir reclaim-target-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -81,6 +81,31 @@ seed: ## Apply data seeds (Discord roles + registry catalog + starter faction li
 	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/faction_library.sql
 	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/vehicle_database.sql
 	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/wiki_pages.sql
+
+# ── T-577 database backups ───────────────────────────────────────────────────────────
+# Before this, the repo had NO pg_dump/pg_restore tooling at all — no way back from a bad
+# migration, a dropped table or a disk failure. The scripts go through the compose
+# container because pg_dump exists on NEITHER the host NOR the dev container (measured);
+# only the postgres:18-alpine image ships it.
+#
+# db-backup VERIFIES the dump it writes by reading it back, and prunes BY COUNT.
+# db-restore carries the T-381 allow-list, so it cannot be pointed at `tbd_reforger` by a
+# typo. Read the header of scripts/deploy/lib/db-common.sh before changing either.
+
+db-backup: ## T-577: dump the DB through the container, VERIFY the file, prune by count (KEEP=14)
+	bash scripts/deploy/backup-db.sh $(if $(DB),--db $(DB),) $(if $(OUT),--out $(OUT),) $(if $(KEEP),--keep $(KEEP),)
+
+db-restore: ## T-577: verify a dump then pg_restore --clean into DB=<name> (T-381 allow-list). Usage: make db-restore DUMP=path DB=rust_it
+	@if [ -z "$(DUMP)" ]; then echo "usage: make db-restore DUMP=<file.dump> DB=<target> [CREATE=1]"; exit 2; fi
+	@if [ -z "$(DB)" ]; then echo "usage: make db-restore DUMP=<file.dump> DB=<target> [CREATE=1]"; exit 2; fi
+	bash scripts/deploy/restore-db.sh --db $(DB) $(if $(CREATE),--create,) $(DUMP)
+
+db-backup-drill: ## T-577: restore the newest backup into a scratch DB and prove it is recoverable + bootable
+	bash scripts/deploy/backup-drill.sh $(if $(DB),--db $(DB),) $(if $(OUT),--out $(OUT),) $(if $(FRESH),--fresh,)
+
+db-backup-verify: ## T-577: re-verify an existing dump without taking a new one. Usage: make db-backup-verify DUMP=path
+	@if [ -z "$(DUMP)" ]; then echo "usage: make db-backup-verify DUMP=<file.dump>"; exit 2; fi
+	bash scripts/deploy/backup-db.sh --verify-only $(DUMP)
 
 registry-import: ## Ingest the committed T-150 registry envelopes (items + compat) into the dev DB (T-068.9)
 	cd $(WEB) && cargo run --bin import-registry -- \
