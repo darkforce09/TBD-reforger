@@ -20,10 +20,23 @@ use yrs::{
 use super::soa::{Interner, NONE_IDX, STANCE_CROUCH, STANCE_PRONE, STANCE_STAND, SlotSoa};
 use crate::squad_links::SquadLinkInput;
 
-/// Fixed, deterministic client id — so `encode_state` and the undo/redo sequence are reproducible
-/// (parity for criteria 3/4). A client-id clash with an incoming peer update is harmless: `yrs`
-/// keys blocks by the *originating* client, and the spike doc never co-authors a slot with a peer.
-const CLIENT_ID: u64 = 1;
+/// T-222 — this file used to carry `const CLIENT_ID: u64 = 1`, handed to *every* document, with a
+/// comment asserting a client-id clash "is harmless". It was harmless only because no peer update
+/// could ever arrive. In a CRDT the client id is what makes concurrent edits *distinguishable*:
+/// `yrs` keys every block by `(client, clock)` and orders concurrent writes by that pair. Two live
+/// writers sharing one id emit overlapping `(1, 0..n)` ranges, so a receiver reads the peer's
+/// history as a continuation of its own, drops the blocks it believes it already has, and returns
+/// `Ok`. Silent data loss on every multi-peer merge — which is why this blocked four tickets.
+///
+/// [`MissionDocCore::new`] now takes a randomized id (see there for why that is wasm-correct with
+/// no new dependency), [`MissionDocCore::with_client_id`] is the deterministic escape hatch, and
+/// [`MissionDocCore::apply_update`] refuses a collision instead of corrupting quietly.
+///
+/// A `yrs` client id is **53-bit**: `ClientID::new` carries `debug_assert!(value & (u64::MAX << 53)
+/// == 0)`, so a debug build panics on a wider value and a release build silently truncates it.
+/// `0..2^53` is also exactly the JS `Number.MAX_SAFE_INTEGER` range `Y.Doc` uses, so staying inside
+/// it is what keeps the wire Yjs-compatible.
+const CLIENT_ID_BITS: u32 = 53;
 
 /// Transaction origins for undo scoping — mirror `ydoc.ts`'s `LOCAL_ORIGIN` / `INIT_ORIGIN`. Only
 /// `LOCAL` is undo-tracked (in `tracked_origins`); `INIT` (seed / hydrate / persistence restore) is
@@ -72,10 +85,68 @@ pub struct MissionDocCore {
 }
 
 impl MissionDocCore {
-    /// A fresh, empty document with the two tracked root maps + an undo manager scoped to both.
+    /// A fresh, empty document with the tracked root maps + an undo manager scoped to them, on a
+    /// **randomized client id** — the constructor every peer uses.
+    ///
+    /// # Where the id comes from, and why it works in wasm
+    ///
+    /// `Doc::new()` is `yrs`'s own randomized-identity constructor: it draws a 53-bit
+    /// `ClientID::random()` from `fastrand`. That is the same policy `Y.Doc` follows in JS, so the
+    /// wire stays Yjs-compatible.
+    ///
+    /// The reason this is the right source — and the thing worth checking before reaching for
+    /// anything else — is that it costs **no new dependency**. This crate is pure Rust and also
+    /// compiles to `wasm32-unknown-unknown`, a target with no ambient entropy: `getrandom` 0.3
+    /// hard-`compile_error!`s there unless its `wasm_js` backend is on, and this workspace sets no
+    /// `getrandom_backend` cfg. `yrs` has already solved that for us — it depends on
+    /// `fastrand` with the `js` feature, which turns on `getrandom/wasm_js` (i.e.
+    /// `crypto.getRandomValues`) for exactly the wasm targets. Verified with
+    /// `cargo tree -p website-frontend --target wasm32-unknown-unknown -e features`:
+    /// `fastrand "js"` → `fastrand "getrandom"` → `getrandom "wasm_js"` → `getrandom v0.3.4`.
+    /// Adding our own `rand`/`uuid`/`getrandom` would have put a *fourth* getrandom in a
+    /// workspace-wide lockfile that already carries three majors, for entropy we already have.
+    ///
+    /// **The hazard to know about:** that correctness rides on `fastrand`'s `js` feature staying
+    /// enabled. Turn it off (e.g. a `default-features = false` on `yrs`) and `fastrand` falls back
+    /// to a *hardcoded* `DEFAULT_RNG_SEED` on wasm with no compile error, so `ClientID::random()`
+    /// would return the same value in every browser — T-222 reborn wearing a "random" label. That
+    /// is a second reason [`Self::apply_update`]'s collision guard exists: it fails loudly if the
+    /// entropy ever silently degrades.
     #[must_use]
     pub fn new() -> Self {
-        let doc = Doc::with_client_id(CLIENT_ID);
+        Self::from_doc(Doc::new())
+    }
+
+    /// A fresh, empty document that identifies as `client_id` — the **deterministic** constructor.
+    ///
+    /// Use it when the identity must be reproducible (unit tests pinning a merge scenario) or when
+    /// a host wants to mint the id itself. Everyday code wants [`Self::new`].
+    ///
+    /// # The contract on `client_id`
+    ///
+    /// * **Unique across every writer that can concurrently edit the same document.** `yrs` orders
+    ///   concurrent blocks by `(client, clock)`; two live writers on one id produce overlapping
+    ///   ranges that no merge can separate. [`Self::apply_update`] rejects that rather than
+    ///   corrupting, but rejection is a backstop, not a plan.
+    /// * **At most [`CLIENT_ID_BITS`] (53) bits.** A wider value panics a debug build inside
+    ///   `yrs::ClientID::new` and is silently truncated in release.
+    /// * **Stable for the life of one document session** — from construction until this
+    ///   `MissionDocCore` is dropped. It must not change under the doc, because every clock already
+    ///   handed out is relative to it.
+    /// * **Not stable across sessions, deliberately.** A reload takes a fresh id; see
+    ///   [`Self::apply_update`] for why rehydration does not resurrect the persisted one.
+    #[must_use]
+    pub fn with_client_id(client_id: u64) -> Self {
+        debug_assert!(
+            client_id >> CLIENT_ID_BITS == 0,
+            "yrs client ids are {CLIENT_ID_BITS}-bit; {client_id} would be truncated"
+        );
+        Self::from_doc(Doc::with_client_id(client_id))
+    }
+
+    /// Shared body of the two constructors: bind the root maps and scope the undo manager. Split out
+    /// so `new` and `with_client_id` cannot drift — the identity is the only difference between them.
+    fn from_doc(doc: Doc) -> Self {
         let slots = doc.get_or_insert_map("slots");
         let squads = doc.get_or_insert_map("squads");
         let factions = doc.get_or_insert_map("factions");
@@ -131,6 +202,14 @@ impl MissionDocCore {
         }
     }
 
+    /// This document's client id — the identity every block it authors is keyed by. T-222; callers
+    /// that mint the id (and tests that assert two peers really are two peers) read it back here.
+    #[must_use]
+    pub fn client_id(&self) -> u64 {
+        // `yrs::ClientID` is a 53-bit newtype over NonZeroU64; `.get()` unwraps the plain value.
+        self.doc.client_id().get()
+    }
+
     /// Toggle init-mode: while true, mutators stamp `INIT` (untracked). The JS wrapper brackets boot /
     /// hydrate / default-seeding with `set_origin_init(true)` … `set_origin_init(false)` so a load is
     /// never an undo step (mirrors `ydoc.ts` running those under `INIT_ORIGIN`).
@@ -151,10 +230,65 @@ impl MissionDocCore {
 
     /// Apply a Yjs-wire (v1) update byte-stream — the exact bytes `Y.encodeStateAsUpdate(doc)` emits.
     ///
+    /// This is both the peer-sync seam and the **persistence restore** seam, and T-222 turns on the
+    /// difference between them:
+    ///
+    /// * **Restore into a fresh document** (the boot path — `mission_editor.rs` builds a new core and
+    ///   replays the IndexedDB blob into it) carries blocks authored by the *previous* session's
+    ///   client. We have authored nothing yet, so there is no overlap: the blob's history is adopted
+    ///   wholesale and the new session then authors under its own, new id. **A rehydrated document
+    ///   deliberately does not resurrect the persisted client id.** Two tabs of the same user restore
+    ///   the *same* blob from the same origin's IndexedDB; if the id rode along in it, both tabs
+    ///   would wake up as the same peer and then diverge under one identity — the T-222 bug reborn
+    ///   one layer down. Nothing is lost by taking a fresh id: replay reproduces the document exactly
+    ///   (`encode_decode_roundtrip_is_stable`), and this matches `Y.Doc`, which also mints a new
+    ///   client id on every construction and never restores one from y-indexeddb.
+    /// * **A concurrent writer that shares our client id** is the unrecoverable case. `yrs` would
+    ///   splice its blocks onto our own `(client, clock)` sequence and merge two authors into one
+    ///   history, silently and successfully. We refuse what we can detect of it instead: a *loud*
+    ///   failure the caller can surface beats a document that merges wrong and reports OK.
+    ///
+    /// # The collision guard, and exactly how far it reaches
+    ///
+    /// The predicate is **"the update claims my own client id has progressed past the last clock I
+    /// issued"** — `update.state_vector().get(&me) > my_clock`. Only another writer authoring as me
+    /// can produce that.
+    ///
+    /// It deliberately does *not* fire on the two legitimate cases that also carry our id:
+    /// * a **restore into a fresh doc**, where `my_clock == 0` and the blob simply gets adopted; and
+    /// * a **re-exchange**, where a peer echoes our own already-integrated blocks back at us. That
+    ///   is normal, idempotent traffic in any sync transport, and an earlier draft of this guard
+    ///   rejected it — caught by `two_peers_with_distinct_ids_merge_concurrent_edits`, which
+    ///   re-exchanges on purpose for exactly that reason.
+    ///
+    /// **What it cannot catch:** a colliding writer that is *behind* us on the shared id. Its blocks
+    /// sit inside a clock range we have already issued, so `yrs` discards them as "already seen" and
+    /// the wire format offers nothing to tell that apart from an echo — it is not a weak
+    /// implementation, it is undecidable from a v1 update. `yrs` says the same in `ClientID`'s own
+    /// docs: *"No two active peers are allowed to share the same ClientID. If that happens,
+    /// following updates may cause document store to be corrupted."* So this is a **backstop that
+    /// makes the common degradation loud, not a licence to reuse ids** — the real guarantee is that
+    /// [`Self::new`] draws a fresh 53-bit random id per document.
+    ///
     /// # Errors
-    /// Returns a message on a malformed update or an integration failure.
+    /// Returns a message on a malformed update, an integration failure, or a detected client-id
+    /// collision with a concurrent writer.
     pub fn apply_update(&self, bytes: &[u8]) -> Result<(), String> {
         let update = Update::decode_v1(bytes).map_err(|e| e.to_string())?;
+        let me = self.doc.client_id();
+        let my_clock = self.doc.transact().state_vector().get(&me);
+        let claimed = update.state_vector().get(&me);
+        // `my_clock == 0` is the fresh-doc restore: we have issued nothing, so the blob's history
+        // under our id is simply adopted as ours. Only a doc that has already authored can be
+        // *overtaken* by a second writer on the same id.
+        if my_clock != 0 && claimed > my_clock {
+            return Err(format!(
+                "client id collision: incoming update carries blocks authored by client {me} up to \
+                 clock {claimed}, but that is this document's own id and it has only issued {my_clock}. \
+                 Another writer is authoring as us; applying this would interleave two authors into \
+                 one history. Give every peer its own id — MissionDocCore::new() mints one."
+            ));
+        }
         // Always INIT (untracked) regardless of mode — a persistence restore / peer sync is never an
         // undo step. (`begin()` would honor init-mode, but forcing INIT keeps this correct off-boot.)
         let mut txn = self.doc.transact_mut_with(INIT_ORIGIN);
@@ -162,7 +296,10 @@ impl MissionDocCore {
     }
 
     /// Encode the whole document as a Yjs-wire (v1) update stream — the persistence blob (criterion 3)
-    /// and the seed a fresh peer replays. Deterministic given the fixed client id.
+    /// and the seed a fresh peer replays. Deterministic for a GIVEN document: re-encoding the same
+    /// doc twice is byte-identical, whatever its client id. It is NOT byte-comparable across docs —
+    /// a fresh peer that replayed this stream re-encodes different bytes (its own id keys the
+    /// blocks); only the *materialization* is equal. See `yrs_persist::slots_digest`.
     #[must_use]
     pub fn encode_state(&self) -> Vec<u8> {
         self.doc
@@ -3412,6 +3549,279 @@ mod tests {
         }
         // Re-encoding the same document twice is byte-identical (deterministic v1 encode + fixed id).
         assert_eq!(a.encode_state(), bytes);
+    }
+
+    // ── T-222 — client id is what makes two peers two peers ─────────────────────────────────────
+
+    /// **The test that matters.** Two peers edit the SAME document concurrently — same empty base,
+    /// neither having seen the other's write — then exchange updates. Both edits must survive on
+    /// both sides, and the two documents must converge.
+    ///
+    /// This is the property `const CLIENT_ID: u64 = 1` destroyed. With both peers on one id, each
+    /// writes its slot into blocks `(client 1, clock 0..n)`; when the peer's update arrives, `yrs`
+    /// compares it against the local state vector, sees clock range `0..n` for client `1` as
+    /// **already integrated**, and drops it. `apply_update` returns `Ok`. The slot is simply gone.
+    /// That is the T-222 corruption, and it is silent — which is why this asserts the *contents*
+    /// after the merge and not merely that the ids differ. (An assertion like "the id is not 1"
+    /// would pass on a constant `2`, and every peer would still collide.)
+    #[test]
+    fn two_peers_with_distinct_ids_merge_concurrent_edits() {
+        let a = MissionDocCore::with_client_id(0x00A1_A1A1);
+        let b = MissionDocCore::with_client_id(0x00B2_B2B2);
+        assert_ne!(a.client_id(), b.client_id(), "two peers, two identities");
+
+        // Concurrent: both author from the same empty base, neither has seen the other.
+        a.add_slot(
+            "from-a", "sq1", "lyr", 0, "Rifleman", None, None, 10.0, 20.0, 0.0, 90.0,
+        );
+        b.add_slot(
+            "from-b", "sq1", "lyr", 0, "Medic", None, None, 30.0, 40.0, 0.0, 180.0,
+        );
+
+        let ua = a.encode_state();
+        let ub = b.encode_state();
+
+        // Exchange. Each side integrates the other's concurrent write.
+        a.apply_update(&ub).expect("a integrates b");
+        b.apply_update(&ua).expect("b integrates a");
+
+        // Both edits survive on BOTH sides — the whole point of a distinguishable client id.
+        let sa = a.materialize();
+        let sb = b.materialize();
+        assert_eq!(
+            ids_sorted(&sa),
+            vec!["from-a".to_string(), "from-b".to_string()],
+            "peer A must hold both concurrent slots"
+        );
+        assert_eq!(
+            ids_sorted(&sb),
+            vec!["from-a".to_string(), "from-b".to_string()],
+            "peer B must hold both concurrent slots"
+        );
+
+        // …and the payloads are the authored ones, not a spliced hybrid of two histories.
+        for soa in [&sa, &sb] {
+            let ra = row_of(soa, "from-a");
+            assert_eq!(soa.xs[ra], 10.0_f32);
+            assert_eq!(soa.rotations[ra], 90.0_f32);
+            assert_eq!(soa.roles[soa.role_idx[ra] as usize], "Rifleman");
+            let rb = row_of(soa, "from-b");
+            assert_eq!(soa.xs[rb], 30.0_f32);
+            assert_eq!(soa.rotations[rb], 180.0_f32);
+            assert_eq!(soa.roles[soa.role_idx[rb] as usize], "Medic");
+        }
+
+        // Convergence: the two peers agree. Re-exchanging is a no-op (idempotent).
+        a.apply_update(&b.encode_state()).expect("a re-integrates");
+        b.apply_update(&a.encode_state()).expect("b re-integrates");
+        assert_eq!(ids_sorted(&a.materialize()), ids_sorted(&b.materialize()));
+    }
+
+    /// The collision that used to be silent is now loud — when it is detectable at all. Two peers
+    /// authoring under the SAME id (the exact T-222 defect, reproduced deliberately) cannot be
+    /// merged, so `apply_update` refuses instead of splicing them together.
+    #[test]
+    fn colliding_client_ids_are_rejected_not_merged() {
+        let a = MissionDocCore::with_client_id(7);
+        let b = MissionDocCore::with_client_id(7);
+        a.add_slot(
+            "from-a", "sq1", "lyr", 0, "Rifleman", None, None, 1.0, 2.0, 0.0, 0.0,
+        );
+        // B runs ahead of A on the shared id — the detectable shape of the collision.
+        for (i, id) in ["from-b1", "from-b2", "from-b3"].iter().enumerate() {
+            b.add_slot(
+                id,
+                "sq1",
+                "lyr",
+                u32::try_from(i).unwrap(),
+                "Medic",
+                None,
+                None,
+                3.0,
+                4.0,
+                0.0,
+                0.0,
+            );
+        }
+
+        let err = a
+            .apply_update(&b.encode_state())
+            .expect_err("a collision must not merge");
+        assert!(err.contains("client id collision"), "{err}");
+        // A refused merge leaves the document untouched — no half-integrated history.
+        assert_eq!(ids_sorted(&a.materialize()), vec!["from-a".to_string()]);
+    }
+
+    /// **Pins the documented limit of the guard, so nobody mistakes it for a proof.** A colliding
+    /// writer that is *behind* us on the shared id is undetectable: its blocks fall inside a clock
+    /// range we have already issued, `yrs` discards them as already-seen, and a v1 update carries
+    /// nothing that distinguishes that from a legitimate echo. The data is lost silently.
+    ///
+    /// This is precisely the T-222 corruption, and the only real defence against it is that
+    /// [`MissionDocCore::new`] gives every peer its own id — which
+    /// `two_default_constructed_peers_merge_concurrent_edits` proves it does.
+    #[test]
+    fn a_colliding_writer_behind_us_is_undetectable_and_silently_loses_its_edits() {
+        let a = MissionDocCore::with_client_id(9);
+        let b = MissionDocCore::with_client_id(9);
+        for (i, id) in ["a1", "a2", "a3"].iter().enumerate() {
+            a.add_slot(
+                id,
+                "sq1",
+                "lyr",
+                u32::try_from(i).unwrap(),
+                "Rifleman",
+                None,
+                None,
+                1.0,
+                2.0,
+                0.0,
+                0.0,
+            );
+        }
+        b.add_slot(
+            "b1", "sq1", "lyr", 0, "Medic", None, None, 3.0, 4.0, 0.0, 0.0,
+        );
+
+        // Reports success…
+        a.apply_update(&b.encode_state())
+            .expect("undetectable: reads as an echo");
+        // …and B's slot is simply gone. Documenting the hole, not condoning it.
+        assert_eq!(
+            ids_sorted(&a.materialize()),
+            vec!["a1".to_string(), "a2".to_string(), "a3".to_string()],
+            "b1 is lost — the silent corruption a shared client id causes"
+        );
+    }
+
+    /// Rehydration takes a FRESH client id and replays the persisted blob — it does not resurrect
+    /// the id the blob was authored under. The restore path builds an empty core, so the guard's
+    /// "I have already authored" precondition is false and the blob integrates cleanly even when
+    /// the ids happen to coincide; the restored doc then authors under its own identity.
+    #[test]
+    fn rehydration_replays_a_blob_into_a_fresh_peer_identity() {
+        let session1 = MissionDocCore::with_client_id(0x00C3_C3C3);
+        session1.add_slot(
+            "persisted",
+            "sq1",
+            "lyr",
+            0,
+            "Rifleman",
+            None,
+            None,
+            5.0,
+            6.0,
+            0.0,
+            45.0,
+        );
+        let blob = session1.encode_state();
+
+        // Reload: a NEW id, not the persisted one.
+        let session2 = MissionDocCore::with_client_id(0x00D4_D4D4);
+        assert_ne!(session2.client_id(), session1.client_id());
+        session2.apply_update(&blob).expect("restore ok");
+        assert_eq!(
+            ids_sorted(&session2.materialize()),
+            vec!["persisted".to_string()]
+        );
+
+        // The restored session is a first-class peer: its own edits merge with a third writer that
+        // also replayed the same blob — i.e. two tabs restoring one blob do NOT collide.
+        let other_tab = MissionDocCore::with_client_id(0x00E5_E5E5);
+        other_tab.apply_update(&blob).expect("restore ok");
+        session2.add_slot(
+            "tab-two", "sq1", "lyr", 1, "Medic", None, None, 7.0, 8.0, 0.0, 0.0,
+        );
+        other_tab.add_slot(
+            "tab-three",
+            "sq1",
+            "lyr",
+            2,
+            "Engineer",
+            None,
+            None,
+            9.0,
+            10.0,
+            0.0,
+            0.0,
+        );
+        other_tab
+            .apply_update(&session2.encode_state())
+            .expect("tabs merge");
+        assert_eq!(
+            ids_sorted(&other_tab.materialize()),
+            vec![
+                "persisted".to_string(),
+                "tab-three".to_string(),
+                "tab-two".to_string()
+            ]
+        );
+    }
+
+    /// The empty-peer replay the codebase actually relies on (`mission_doc::roundtrip_ok`,
+    /// `yrs_persist`'s corrupt-blob probe, the boot swap) keeps working even in the worst case: a
+    /// doc that has authored nothing adopts a blob authored by *its own* id rather than tripping
+    /// the collision guard. This is the case that would break if the guard were merely "does the
+    /// update mention my client id".
+    #[test]
+    fn fresh_peer_replays_a_same_id_blob_without_tripping_the_guard() {
+        let a = MissionDocCore::with_client_id(42);
+        a.add_slot(
+            "s1", "sq1", "lyr", 0, "Rifleman", None, None, 1.0, 2.0, 3.0, 4.0,
+        );
+        let probe = MissionDocCore::with_client_id(42); // same id, but has authored nothing
+        assert_eq!(probe.client_id(), a.client_id());
+        probe
+            .apply_update(&a.encode_state())
+            .expect("probe replays");
+        assert_eq!(ids_sorted(&probe.materialize()), vec!["s1".to_string()]);
+    }
+
+    /// `new()` — the constructor the editor actually calls — hands out a *different* identity every
+    /// time. Before T-222 it returned the constant `1` for every peer on every machine.
+    ///
+    /// Distinctness alone is a weak claim (a counter would satisfy it), so this also pins the two
+    /// properties that make the id usable as a CRDT identity: it is inside the 53-bit Yjs-compatible
+    /// range, and it is not the old hardcoded constant. The *merge* behaviour is proved separately
+    /// by `two_peers_with_distinct_ids_merge_concurrent_edits`.
+    #[test]
+    fn new_mints_a_distinct_client_id_per_document() {
+        let ids: Vec<u64> = (0..16).map(|_| MissionDocCore::new().client_id()).collect();
+        let unique: HashSet<u64> = ids.iter().copied().collect();
+        assert_eq!(
+            unique.len(),
+            ids.len(),
+            "16 fresh docs must have 16 distinct client ids, got {ids:?}"
+        );
+        for id in ids {
+            assert_ne!(id, 1, "the T-222 hardcode must not come back");
+            assert_eq!(
+                id >> CLIENT_ID_BITS,
+                0,
+                "{id} is not a 53-bit Yjs client id"
+            );
+        }
+    }
+
+    /// Two `new()` peers — no hand-picked ids anywhere — still merge concurrent edits. This is
+    /// `two_peers_with_distinct_ids_merge_concurrent_edits` run against the *production* path, so a
+    /// regression that only re-hardcodes `new()` cannot hide behind the explicit-id test.
+    #[test]
+    fn two_default_constructed_peers_merge_concurrent_edits() {
+        let a = MissionDocCore::new();
+        let b = MissionDocCore::new();
+        a.add_slot(
+            "from-a", "sq1", "lyr", 0, "Rifleman", None, None, 10.0, 20.0, 0.0, 90.0,
+        );
+        b.add_slot(
+            "from-b", "sq1", "lyr", 0, "Medic", None, None, 30.0, 40.0, 0.0, 180.0,
+        );
+        let (ua, ub) = (a.encode_state(), b.encode_state());
+        a.apply_update(&ub).expect("a integrates b");
+        b.apply_update(&ua).expect("b integrates a");
+        let want = vec!["from-a".to_string(), "from-b".to_string()];
+        assert_eq!(ids_sorted(&a.materialize()), want);
+        assert_eq!(ids_sorted(&b.materialize()), want);
     }
 
     #[test]
