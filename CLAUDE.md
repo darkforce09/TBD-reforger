@@ -158,7 +158,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-120** — Staging soak + golden mission smoke (`queued`)
 - **T-146** — Asset Browser Data Wiring (`queued`)
 - **T-170** — Prod default flip to Leptos SPA (`queued`)
-- **T-303** — Dev config guarantees the first live Discord login fails invalid_state (`ready`)
+- **T-581** — BLOCKS THE ZONE DRAW TOOL: a bad zone saves 201 then 500s /compiled forever (`ready`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.

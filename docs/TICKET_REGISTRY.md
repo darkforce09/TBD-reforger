@@ -209,7 +209,7 @@ BLOCKED ON WORKBENCH (2026-07-26). A slice agent took this and refused rather th
 | T-208 | 2260 | shipped | eden | Add a compiler-shaped golden mission | All four goldens author radioPlan, briefings, settings and multi-type zones — none resembles flatten output, so the mod's test corpus systematically over-represents what the website can emit. Add a golden containing exactly the nine blocks flatten produces. |
 | T-209 | 2270 | shipped | eden | Run the mod compile and world-boot gates in CI | compile.sh and world-boot.sh are the best regression instruments in the repo and grep of .github/workflows for mod-compile or mod-world-boot returns nothing. 29k lines of mod code have zero automated verification on push. |
 | T-210 | 2280 | cancelled | infra | In-game admin mission switch calls a route that does not exist | CANCELLED — premise fixed by T-181.51. TBD_MissionListLoader.c:38 now calls /api/v1/ingest/missions; the /api/missions path this ticket describes no longer exists. |
-| T-211 | 2290 | idea | eden | Zone and play-area draw tool | No draw tool, no circle, no polygon anywhere in the editor, and the doc has no zone root at all (store.rs:51-65). The mod already implements union semantics, per-faction boundaries, strictest-wins and base_protection. Needs a doc root, mutators, a map tool and an Attributes panel for rules. |
+| T-211 | 2290 | shipped | eden | Zone and play-area draw tool | No draw tool, no circle, no polygon anywhere in the editor, and the doc has no zone root at all (store.rs:51-65). The mod already implements union semantics, per-faction boundaries, strictest-wins and base_protection. Needs a doc root, mutators, a map tool and an Attributes panel for rules. |
 | T-296 | 2296 | shipped | infra | TBD_ResultsReporter banner now contradicts shipped code | TBD_ResultsReporter.c:23, :28-29 and :422-423 still state that identity linking is unimplemented and that 'there is no #tbd link command'. T-181.35 landed TBD_IdentityLink.c (780 lines) at 17:46 on 2026-07-25 and the command exists. The :422-423 line prints once per round into the operator log, so it actively misleads whoever reads the round output. Correct all three sites to describe what the results POST actually does today. |
 | T-297 | 2297 | shipped | infra | cargo fmt --all is ungated — 12 files drifted | tools/tbd-tools and xtask are workspace members (Cargo.toml:8-16) but no gate covers their formatting: Makefile:80 wasm-ci scopes to map-engine crates, Makefile:105 rust-fmt cds into apps/website/api, Makefile:284 ci-local-leptos scopes to website-frontend, and ci.yml:55 runs cargo fmt --check under working-directory apps/website/api. Nobody runs cargo fmt --all. Result: 12 files / 32 hunks are unformatted on main. Format them and add an --all check to the workspace gate so it cannot drift again. |
 | T-298 | 2298 | idea | infra | tbd-tools density::corner_partition_identity fails on main | `cargo test -p tbd-tools --lib density::` fails on clean main: corner_partition_identity asserts a partition invariant and gets 401 on the right-hand side. It is pre-existing and invisible because CI never tests this crate — ci.yml:68 runs website-api and :115 runs website-frontend, and the mod wave gate only runs `-p tbd-tools --lib enf::`, which excludes density. This is the density-grid code behind the map-object catalogue (625 TBDD grids, 8m cells), so a broken partition invariant is not cosmetic. Fix the test or the code, and add tbd-tools to a gate so it cannot rot again — pairs with T-297 (cargo fmt --all is ungated over the same crate). |
@@ -218,7 +218,7 @@ BLOCKED ON WORKBENCH (2026-07-26). A slice agent took this and refused rather th
 | T-300 | 2300 | idea | infra | Shared CARGO_TARGET_DIR lets a main-checkout build serve unmerged slice code | Found by T-192's agent during wave 1. scripts/platform/wave.sh points every worktree at the main checkout's target/ — necessary, because a per-worktree target is ~44GB and eight of them exhaust 129GB free by the third slice. The sharp edge: cargo considered a binary built inside a worktree fresh for a build launched from the main checkout, so `make api` came up on :8080 serving UNMERGED slice code. The agent caught it, ran `cargo clean -p website-api`, and verified :8080 served main again. Risk during an 8-wide wave: any gate or smoke that RUNS a binary (rather than check/test/clippy, which recompile per fingerprint) can execute another slice's unmerged work and report a result about code that is not on main. Options: give run-only binaries a separate target dir, use sccache instead of a shared dir, or make the preflight assert the running API's build hash matches main. Do not simply revert to per-worktree targets — that trades a subtle bug for a certain disk exhaustion. |
 | T-301 | 2301 | idea | eden | Briefing kit list shows 7 of 13 gear fields — an RPG is invisible on the planning screen | T-182 widened the gear vocabulary to thirteen fields (adding launcher/handgun/throwable), but TBD_BriefingData.BuildKit still lists seven. A player carrying a launcher, handgun or throwable will not see it on the briefing/planning screen. Note BuildKit already omits pants/boots/handwear deliberately as progressive disclosure, so this is a UI judgement call rather than a correctness break — decide whether secondary weapons belong in the planning view (they almost certainly do; a launcher changes what a squad can attempt) and add them. |
 | T-302 | 2302 | idea | eden | T-182's weapon equip is compiled and reasoned but never observed in game | T-182 implemented slot-indexed weapon equip using CanInsertItemInStorage/TryInsertItemInStorage with a CanReplaceItem/TryReplaceItem fallback, deliberately NOT WeaponSlotComponent.SetWeapon (no vanilla script calls it, so its inventory/replication bookkeeping is unproven). The reasoning is sound and cites vanilla precedent: SCR_InventoryStorageManagerComponent.EquipWeapon resolves its target from what the character is HOLDING rather than from the loadout, which is exactly the rifle-vs-launcher contention that made a blind equip dangerous. It also re-scoped incumbent capture and the worn-verify from 'the weapon in hand' to 'this slot', so four weapon rows cannot all claim the same incumbent and race to delete it. All of that compiles and passes the mod gate. NONE of it has been observed on a live body — no weapon has been seen landing in slot 1. Boot a mission with a four-weapon loadout and confirm all four are carried and none replaces another. |
-| T-303 | 2303 | ready | platform | Dev config guarantees the first live Discord login fails invalid_state | Found by T-207 while writing the OAuth runbook. apps/website/api/.env has FRONTEND_URL on 127.0.0.1 and DISCORD_REDIRECT_URL on localhost. The oauth_state cookie is host-only (no Domain attribute), and 127.0.0.1 and localhost are DIFFERENT cookie hosts — so the cookie set when the flow starts is never sent to the callback, and the very first live login fails with invalid_state. That error reads like CSRF tampering, not a misconfiguration, so it will be misdiagnosed. One-line fix: align the two to the same host. Worse, exchange_code and fetch_user errors are DROPPED rather than logged (T-207 corrected the earlier belief that they were logged), so the server log cannot distinguish a bad secret from a Discord outage — add tracing::error! to the callback's error paths so the runbook's diagnosis table can be simplified.
+| T-303 | 2303 | shipped | platform | Dev config guarantees the first live Discord login fails invalid_state | Found by T-207 while writing the OAuth runbook. apps/website/api/.env has FRONTEND_URL on 127.0.0.1 and DISCORD_REDIRECT_URL on localhost. The oauth_state cookie is host-only (no Domain attribute), and 127.0.0.1 and localhost are DIFFERENT cookie hosts — so the cookie set when the flow starts is never sent to the callback, and the very first live login fails with invalid_state. That error reads like CSRF tampering, not a misconfiguration, so it will be misdiagnosed. One-line fix: align the two to the same host. Worse, exchange_code and fetch_user errors are DROPPED rather than logged (T-207 corrected the earlier belief that they were logged), so the server log cannot distinguish a bad secret from a Discord outage — add tracing::error! to the callback's error paths so the runbook's diagnosis table can be simplified.
 
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
@@ -532,11 +532,11 @@ $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) wit
 | T-275 | 2930 | shipped | eden | Declare mod-enforced limits in the schema | The mod clamps values the schema is silent about: MAX_NETS=32 (TBD_RadioPlan.c:91), MAX_LABEL_CHARS=48 (:94), MAX_GRACE_SECONDS=3600 (TBD_ZoneRegistry.c:52), MAX_DURATION_SECONDS=21600 (TBD_ObjectiveRegistry.c:60), MISSION_FILE_MAX_BYTES=8MB. A document can validate and still be silently clamped. |
 | T-276 | 2940 | shipped | eden | Close the marker.icon vocabulary | mission.schema.json:446 is a bare string with no enum and no minLength. TBD_MarkerIcons.c:43-45,165 falls back to a dot and logs once. This is the exact degradation cargoContainer was closed to prevent. |
 | T-277 | 2950 | idea | eden | 27.4% of the shipped map catalogue is unclassified | 444 of 1,623 prefabs fall through to the fallback rule against only 66 classify rules. vegetation and utility are both zero despite P3_vegetation being listed as shipped, and the road census reports zero while roads.json.gz ships 888 segments across five classes. |
-| T-278 | 2960 | idea | eden | No paks-to-registry pipeline and no Makefile target to regenerate the catalogue | Data comes out of the game via Enfusion Workbench plugins, then a human copies two files by hand into packages/tbd-schema/registry/ and commits them. make registry-import ingests the committed artifacts. A PakVfs reader exists and is used for terrain, satellite and roads, but nothing in the repo parses .et prefab structure. |
-| T-279 | 2970 | idea | platform | Discord bot — greenfield | There is no bot skeleton at all. Grep for serenity, twilight, poise, discord.js, gateway, application command or ed25519 across every file type returns zero hits. DISCORD_BOT_TOKEN is loaded at config.rs:46,87 and never read by any consumer. No interactions endpoint, no signature verification, no inbound Discord surface. |
+| T-278 | 2960 | shipped | eden | No paks-to-registry pipeline and no Makefile target to regenerate the catalogue | Data comes out of the game via Enfusion Workbench plugins, then a human copies two files by hand into packages/tbd-schema/registry/ and commits them. make registry-import ingests the committed artifacts. A PakVfs reader exists and is used for terrain, satellite and roads, but nothing in the repo parses .et prefab structure. |
+| T-279 | 2970 | shipped | platform | Discord bot — greenfield | There is no bot skeleton at all. Grep for serenity, twilight, poise, discord.js, gateway, application command or ed25519 across every file type returns zero hits. DISCORD_BOT_TOKEN is loaded at config.rs:46,87 and never read by any consumer. No interactions endpoint, no signature verification, no inbound Discord surface. |
 | T-280 | 2980 | shipped | infra | No observability, no backups, no durable rate limiting | Zero prometheus, metrics, sentry or opentelemetry in the api. No /metrics endpoint; /healthz pings the database only. No pg_dump or pg_restore anywhere. Rate limiting is in-memory single-instance so it resets on every restart and cannot scale past one process. |
 | T-281 | 2990 | shipped | infra | apps/mod README falsely claims the compile route does not exist | apps/mod/tbd-framework/README.md:23 says the route is not in the current backend and cites the wrong path without /v1. Both are false — contradicted by app.rs:158-161 and TBD_MissionLoader.c:506. |
-| T-282 | 3000 | idea | eden | Mission version history — differ and timeline | mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning. Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled. Old versions are retained and unreachable from any UI. |
+| T-282 | 3000 | shipped | eden | Mission version history — differ and timeline | mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning. Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled. Old versions are retained and unreachable from any UI. |
 | T-283 | 3010 | idea | eden | Mission review and commenting workflow | No comments table in any migration. approvals.rs:274-284 is a reviewer comment box backed by a local signal, explicitly marked mock until a review-comments API lands, never POSTed. missions.rs:884-896 reads 'Comments coming soon'. Coarse approve/reject exists; the iterative loop does not. |
 | T-284 | 3020 | shipped | platform | events.match_id is dead weight and clear_slot is unreachable | events.match_id is selected in every event query and never written by any insert or update — the real link runs the other way via matches.event_id. Separately, clear_slot has no frontend caller, so an admin can never free a claimed slot. |
 | T-285 | 3030 | idea | platform | Field tools — solutions never persist and inject writes to a dead directory | POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads. |
@@ -3221,6 +3221,125 @@ Gate script still exports `MIGRATE_TEST_DATABASE_URL` (wave.sh ~341). `db_migrat
 Repro: rg MIGRATE_TEST_DATABASE_URL in wave.sh vs api tests; export is live, consumers gone.
 
 Cure: drop the dead export (and any docs that still describe the shared migrate URL). |
+| T-581 | 3430 | ready | platform | BLOCKS THE ZONE DRAW TOOL: a bad zone saves 201 then 500s /compiled forever | MAJOR, found by wave 70's adversarial verifier by driving the real HTTP path. **This must land BEFORE
+any zone authoring UI ships.** It is unreachable today only because T-211 shipped the document layer
+with no wasm binding and no UI (see T-582) -- the moment a draw tool exists, an author can brick a
+mission version permanently.
+
+THE DEFECT: zone vocabulary is enforced only at SERVE time, not at SAVE time.
+  doc/store.rs:915        set_zone_rules stores `rules` OPAQUE -- zero vocabulary check (deliberate;
+                          a typed mirror would be the second vocabulary T-241 exists to prevent)
+  mission/flatten.rs:1881 `rules: raw.rules.clone()` -- carried verbatim into the mod document
+  handlers/missions.rs:1462 validated_compiled_body 500s on the schema violation
+  mission-editor-payload.schema.json  has NO `zones` subschema; the root is open (verified)
+  the T-367 save-time precheck's `ZoneIn.rules: Option<serde_json::Value>` accepts anything
+
+EXECUTED REPRO (verifier):
+  POST /missions/:id/versions with a zone whose rules include {"notInT241Vocabulary": 1}
+    -> 201 Created
+  GET /missions/:id/compiled
+    -> 500  "'notInT241Vocabulary' was unexpected"
+  ...and FOREVER, because mission_versions rows are immutable. Same mechanism for `type` outside the
+  6-value enum: "capture" -> 201 -> 500.
+
+WHY IT MATTERS BEYOND THE 500: the game server asks for /compiled with only a mission id. The author
+who saved the bad zone sees success; the failure surfaces in front of a game server, at play time,
+with no human in the loop. That is the exact T-367 class this codebase built a save-time precheck to
+prevent -- and the precheck is the thing that lets it through.
+
+SECOND, SAME CLASS (verifier F2): the 0.1 m mod quantisation can MANUFACTURE a schema-invalid document
+from a schema-VALID authored zone. flatten.rs:1824-1851 checks `r > 0.0` BEFORE rounding, and
+round_coord(0.04) = 0.0, which violates $defs/circle.r exclusiveMinimum: 0.
+  EXECUTED: circle r=0.04 -> save 201 -> /compiled 500 "r\":0.0 ... not valid under oneOf"
+  A CLICK-WITHOUT-DRAG IN THE FUTURE DRAW TOOL PRODUCES EXACTLY THIS RADIUS, and r=0.04 is
+  schema-valid on the way in, so a naive save-time zone check would NOT catch it. Whatever validation
+  lands must run the post-quantisation shape, not the authored one.
+
+WANTED: validate zones at the SAVE boundary -- extend mission-editor-payload.schema.json with a
+`zones` subschema and/or tighten the T-367 precheck's ZoneIn, so a bad zone is a 400 the author sees
+immediately rather than a permanent 500 a game server discovers. Keep `rules` opaque in the DOCUMENT
+(T-211's reasoning is correct); the check belongs at the API boundary where the schema already lives.
+
+CONFIRMED SOUND, do not re-audit: quantisation is otherwise faithful (1000.256->1000.3,
+175.789->175.8, vertex count and order preserved, verified over the real HTTP path). |
+| T-582 | 3431 | deferred | platform | The zone draw tool: T-211 shipped the document layer, nothing reaches it | T-211 delivered the `zones` document root, 11 mutators, and proof that authored zones reach the mod
+through flatten. It did NOT deliver a product surface, and the commit carries the full ticket title
+"Zone and play-area draw tool" -- an overclaim the verifier called out.
+
+MEASURED: zero references to any zone mutator in `crates/map-engine-core/src/js.rs`, no wasm wrapper,
+no frontend caller anywhere in `apps/website/frontend/src`. **Zones are authorable only from native
+test code today.**
+
+DO NOT START THIS UNTIL T-581 LANDS. Without save-time validation, the first thing this UI does is
+let an author permanently 500 their own mission.
+
+TWO PIECES:
+1. `crates/map-engine-core/src/js.rs` -- wasm bindings for the 11 mutators. Polygons already cross as
+   a flat `&[f64]`.
+2. `eden_chrome.rs` + `editor_ops.rs` -- circle drag-to-radius, polygon click-to-place with
+   COMMIT-ON-CLOSE ONLY AT >=3 VERTICES (the doc layer deliberately does not guard this), zone
+   selection/render, and an Attributes panel over the 16 declared `rules` keys **driven by the
+   schema, not a hand-typed list** -- a hand-typed list is the second vocabulary T-241 exists to
+   prevent.
+
+BUDGET FOR THE 0.1 m QUANTISATION: the mod boundary rounds every vertex and radius
+(`flatten.rs` round_coord). A precision affordance finer than 0.1 m would be quietly wrong. See T-581
+for the r=0.04 -> r=0.0 edge that a click-without-drag produces.
+
+=== A LANDMINE, VERIFIED ARMED BY THE WAVE 70 VERIFIER ===
+`zones` is in store.rs's `is_known_editor_payload_top_level` but deliberately NOT in compile.rs's
+`KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS`. Today the round trip works via a projection into
+`payloadExtras.zones` that compile_payload promotes to the payload root (T-219).
+**ADDING "zones" TO compile.rs's KNOWN-KEYS LIST *ALONE* SILENTLY DROPS EVERY AUTHORED ZONE.**
+The verifier armed it deliberately: zones vanish from the wire and 4 tests fail loudly -- so the trap
+cannot be stepped on silently while tests run, but it CAN be stepped on by someone "tidying" the key
+list without running them.
+THE RETIREMENT IS TWO EDITS OR NEITHER: add `"zones"` to KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS **and**
+`"zones": values_of_ordered(&small, "zonesById", "zones")` to compile_payload's json!, then delete the
+projection block in small_maps_json. Do that first, in its own commit, before the UI work. |
+| T-583 | 3432 | deferred | platform | make map-reclassify: T-278's tool exists but is undiscoverable | T-278 built `tbd-tools world reclassify` -- rebuilds the map catalogue's classification lane from
+COMMITTED artifacts with no Workbench and no staging directory, read-only drift check by default.
+It did not add the Makefile target, correctly: `Makefile` was outside its owns.
+
+The ticket title it closed names "no Makefile target to regenerate the catalogue" as half the defect,
+and `grep reclassify Makefile` is still empty -- so the remediation is undiscoverable by this repo's
+own make-centric conventions.
+
+EXACT TARGET REQUESTED BY T-278 (add `map-reclassify` to the .PHONY at Makefile:360):
+
+map-reclassify: ## T-278 -- rebuild the catalogue's classification lane from COMMITTED artifacts (no Workbench/staging). Read-only drift check by default; exits 1 when a prefab-classify.json edit has gone latent. WRITE=1 applies it.
+	@test -n "$(TERRAIN)" \|\| (echo "map-reclassify: TERRAIN=<id> required"; exit 1)
+	cargo run -q -p tbd-tools --bin world -- reclassify --terrain "$(TERRAIN)" $(if $(WRITE),--write,)
+
+STRONGLY WORTH DOING AT THE SAME TIME: wire the no-WRITE form into the wave gate. Run on the day
+T-244 landed, it would have gone RED -- instead the vehicle lane sat latent for weeks and the only
+path to activating it would have PANICKED (build.rs `.expect("kind bucket")`, 8-kind array).
+
+RELATED, still blocking the regenerated artifact from landing (both verified by the verifier, both
+outside T-278's files): `packages/tbd-schema/schema/map-object-type-inventory.schema.json` byKind is
+`additionalProperties:false` with 8 required keys and rejects `vehicle`; `xtask/src/schema_gates.rs:428`
+INSTANCE_KINDS is an 8-element array feeding the I1 sum gate, which comes up short by exactly 176 --
+`byKind.vehicle.instances`. T-278 shipped an `instance_kinds_match_enums_schema` lockstep test that
+pins the fix against the enums schema. |
+| T-584 | 3433 | deferred | platform | Two weak test controls from wave 70 | Both NITs from wave 70's adversarial verifier. Neither is a live defect; both are tests that are
+weaker than they read.
+
+1. `apps/website/api/src/handlers/oauth.rs:934-954` (T-303) -- the no-secret-leak sentinel test has a
+   weak positive control. The three sentinel strings are never INPUTS to the rendered error, so the
+   assertions cannot fail regardless of how reqwest renders. The "positive control"
+   (`contains("127.0.0.1:1")`) controls only for an empty haystack, not for detector sensitivity.
+   THE GUARANTEE ITSELF IS FINE and is structural, not textual: `log_discord_call_failure` receives
+   only a stage label and the error; `q.code` / `access_token` / the secret are not in scope at any
+   log site; `cookie_state` logs length only. The verifier grepped a live probe's logs for the dummy
+   client id and secret -- clean. So: strengthen the test to feed a known secret through the real
+   rendering path, or delete it and rely on the structural argument. Do not leave a test that reads
+   stronger than it is.
+
+2. `apps/website/frontend/src/missions.rs` (T-282) -- `classify_row` compares with
+   `serde_json::Value` equality, where `100` != `100.0`. A representation flip between two stored
+   payloads (e.g. a yrs BigInt<->Number coercion across an editor change) would report unchanged rows
+   as "edited". Unreachable today because both sides come from one pipeline, but the differ's whole
+   value is not crying wolf. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

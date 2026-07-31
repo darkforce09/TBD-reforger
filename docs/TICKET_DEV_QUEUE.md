@@ -22,21 +22,50 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** website
 - **Summary:** Web UI for mission upload and schema validation (API exists).
 
-## T-303 — Dev config guarantees the first live Discord login fails invalid_state
+## T-581 — BLOCKS THE ZONE DRAW TOOL: a bad zone saves 201 then 500s /compiled forever
 
 - **Slice spec:** ``
 - **Program hub:** ``
-- **Branch:** `ticket/T-303`
+- **Branch:** `ticket/T-581`
 - **Targets:** website
-- **Summary:** Found by T-207 while writing the OAuth runbook. apps/website/api/.env has FRONTEND_URL on 127.0.0.1 and DISCORD_REDIRECT_URL on localhost. The oauth_state cookie is host-only (no Domain attribute), and 127.0.0.1 and localhost are DIFFERENT cookie hosts — so the cookie set when the flow starts is never sent to the callback, and the very first live login fails with invalid_state. That error reads like CSRF tampering, not a misconfiguration, so it will be misdiagnosed. One-line fix: align the two to the same host. Worse, exchange_code and fetch_user errors are DROPPED rather than logged (T-207 corrected the earlier belief that they were logged), so the server log cannot distinguish a bad secret from a Discord outage — add tracing::error! to the callback's error paths so the runbook's diagnosis table can be simplified.
+- **Summary:** MAJOR, found by wave 70's adversarial verifier by driving the real HTTP path. **This must land BEFORE
+any zone authoring UI ships.** It is unreachable today only because T-211 shipped the document layer
+with no wasm binding and no UI (see T-582) -- the moment a draw tool exists, an author can brick a
+mission version permanently.
 
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+THE DEFECT: zone vocabulary is enforced only at SERVE time, not at SAVE time.
+  doc/store.rs:915        set_zone_rules stores `rules` OPAQUE -- zero vocabulary check (deliberate;
+                          a typed mirror would be the second vocabulary T-241 exists to prevent)
+  mission/flatten.rs:1881 `rules: raw.rules.clone()` -- carried verbatim into the mod document
+  handlers/missions.rs:1462 validated_compiled_body 500s on the schema violation
+  mission-editor-payload.schema.json  has NO `zones` subschema; the root is open (verified)
+  the T-367 save-time precheck's `ZoneIn.rules: Option<serde_json::Value>` accepts anything
 
-== CONFIRMED STILL LIVE 2026-07-31, and the operator's machine is PATCHED but the REPO IS NOT ==
-apps/website/api/.env.example:24  FRONTEND_URL=http://127.0.0.1:3000
-apps/website/api/.env.example:71  DISCORD_REDIRECT_URL=http://localhost:8080/api/v1/auth/discord/callback
-The command center hand-edited the operator's local .env (gitignored) on 2026-07-27 to unblock testing, so THE BUG NO LONGER REPRODUCES ON THIS MACHINE. It reproduces for every new checkout. Do not conclude it is fixed because a live login works here.
-Second half still open: handlers/oauth.rs:113,116 use `let Ok(..) = .. else` and DROP the exchange_code / fetch_user error, so a real Discord failure is indistinguishable from a config one.
-WANTED: align the two hosts in the committed example, log the dropped errors, and add a startup check that REFUSES TO BOOT when FRONTEND_URL and DISCORD_REDIRECT_URL disagree on host — a config that guarantees a broken first login should not start silently.
+EXECUTED REPRO (verifier):
+  POST /missions/:id/versions with a zone whose rules include {"notInT241Vocabulary": 1}
+    -> 201 Created
+  GET /missions/:id/compiled
+    -> 500  "'notInT241Vocabulary' was unexpected"
+  ...and FOREVER, because mission_versions rows are immutable. Same mechanism for `type` outside the
+  6-value enum: "capture" -> 201 -> 500.
+
+WHY IT MATTERS BEYOND THE 500: the game server asks for /compiled with only a mission id. The author
+who saved the bad zone sees success; the failure surfaces in front of a game server, at play time,
+with no human in the loop. That is the exact T-367 class this codebase built a save-time precheck to
+prevent -- and the precheck is the thing that lets it through.
+
+SECOND, SAME CLASS (verifier F2): the 0.1 m mod quantisation can MANUFACTURE a schema-invalid document
+from a schema-VALID authored zone. flatten.rs:1824-1851 checks `r > 0.0` BEFORE rounding, and
+round_coord(0.04) = 0.0, which violates $defs/circle.r exclusiveMinimum: 0.
+  EXECUTED: circle r=0.04 -> save 201 -> /compiled 500 "r\":0.0 ... not valid under oneOf"
+  A CLICK-WITHOUT-DRAG IN THE FUTURE DRAW TOOL PRODUCES EXACTLY THIS RADIUS, and r=0.04 is
+  schema-valid on the way in, so a naive save-time zone check would NOT catch it. Whatever validation
+  lands must run the post-quantisation shape, not the authored one.
+
+WANTED: validate zones at the SAVE boundary -- extend mission-editor-payload.schema.json with a
+`zones` subschema and/or tighten the T-367 precheck's ZoneIn, so a bad zone is a 400 the author sees
+immediately rather than a permanent 500 a game server discovers. Keep `rules` opaque in the DOCUMENT
+(T-211's reasoning is correct); the check belongs at the API boundary where the schema already lives.
+
+CONFIRMED SOUND, do not re-audit: quantisation is otherwise faithful (1000.256->1000.3,
+175.789->175.8, vertex count and order preserved, verified over the real HTTP path).

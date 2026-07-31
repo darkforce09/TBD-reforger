@@ -7230,7 +7230,7 @@
       "impact": [
         "mc-authoring"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2290,
       "stream": "mission-creator",
       "targets": [
@@ -8532,7 +8532,7 @@
       "impact": [
         "data-pipeline"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2960,
       "stream": "mission-creator",
       "targets": [
@@ -8551,7 +8551,7 @@
       "impact": [
         "discord"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2970,
       "stream": "web-platform",
       "targets": [
@@ -8608,7 +8608,7 @@
       "impact": [
         "mc-collab"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3000,
       "stream": "mission-creator",
       "targets": [
@@ -9008,7 +9008,7 @@
       "impact": [
         "discord"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2303,
       "stream": "web-platform",
       "targets": [
@@ -14871,6 +14871,89 @@
       ],
       "status": "deferred",
       "order": 3424,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
+    },
+    {
+      "id": "T-581",
+      "title": "BLOCKS THE ZONE DRAW TOOL: a bad zone saves 201 then 500s /compiled forever",
+      "summary": "MAJOR, found by wave 70's adversarial verifier by driving the real HTTP path. **This must land BEFORE\nany zone authoring UI ships.** It is unreachable today only because T-211 shipped the document layer\nwith no wasm binding and no UI (see T-582) -- the moment a draw tool exists, an author can brick a\nmission version permanently.\n\nTHE DEFECT: zone vocabulary is enforced only at SERVE time, not at SAVE time.\n  doc/store.rs:915        set_zone_rules stores `rules` OPAQUE -- zero vocabulary check (deliberate;\n                          a typed mirror would be the second vocabulary T-241 exists to prevent)\n  mission/flatten.rs:1881 `rules: raw.rules.clone()` -- carried verbatim into the mod document\n  handlers/missions.rs:1462 validated_compiled_body 500s on the schema violation\n  mission-editor-payload.schema.json  has NO `zones` subschema; the root is open (verified)\n  the T-367 save-time precheck's `ZoneIn.rules: Option<serde_json::Value>` accepts anything\n\nEXECUTED REPRO (verifier):\n  POST /missions/:id/versions with a zone whose rules include {\"notInT241Vocabulary\": 1}\n    -> 201 Created\n  GET /missions/:id/compiled\n    -> 500  \"'notInT241Vocabulary' was unexpected\"\n  ...and FOREVER, because mission_versions rows are immutable. Same mechanism for `type` outside the\n  6-value enum: \"capture\" -> 201 -> 500.\n\nWHY IT MATTERS BEYOND THE 500: the game server asks for /compiled with only a mission id. The author\nwho saved the bad zone sees success; the failure surfaces in front of a game server, at play time,\nwith no human in the loop. That is the exact T-367 class this codebase built a save-time precheck to\nprevent -- and the precheck is the thing that lets it through.\n\nSECOND, SAME CLASS (verifier F2): the 0.1 m mod quantisation can MANUFACTURE a schema-invalid document\nfrom a schema-VALID authored zone. flatten.rs:1824-1851 checks `r > 0.0` BEFORE rounding, and\nround_coord(0.04) = 0.0, which violates $defs/circle.r exclusiveMinimum: 0.\n  EXECUTED: circle r=0.04 -> save 201 -> /compiled 500 \"r\\\":0.0 ... not valid under oneOf\"\n  A CLICK-WITHOUT-DRAG IN THE FUTURE DRAW TOOL PRODUCES EXACTLY THIS RADIUS, and r=0.04 is\n  schema-valid on the way in, so a naive save-time zone check would NOT catch it. Whatever validation\n  lands must run the post-quantisation shape, not the authored one.\n\nWANTED: validate zones at the SAVE boundary -- extend mission-editor-payload.schema.json with a\n`zones` subschema and/or tighten the T-367 precheck's ZoneIn, so a bad zone is a 400 the author sees\nimmediately rather than a permanent 500 a game server discovers. Keep `rules` opaque in the DOCUMENT\n(T-211's reasoning is correct); the check belongs at the API boundary where the schema already lives.\n\nCONFIRMED SOUND, do not re-audit: quantisation is otherwise faithful (1000.256->1000.3,\n175.789->175.8, vertex count and order preserved, verified over the real HTTP path).",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "ready",
+      "order": 3430,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-582",
+      "title": "The zone draw tool: T-211 shipped the document layer, nothing reaches it",
+      "summary": "T-211 delivered the `zones` document root, 11 mutators, and proof that authored zones reach the mod\nthrough flatten. It did NOT deliver a product surface, and the commit carries the full ticket title\n\"Zone and play-area draw tool\" -- an overclaim the verifier called out.\n\nMEASURED: zero references to any zone mutator in `crates/map-engine-core/src/js.rs`, no wasm wrapper,\nno frontend caller anywhere in `apps/website/frontend/src`. **Zones are authorable only from native\ntest code today.**\n\nDO NOT START THIS UNTIL T-581 LANDS. Without save-time validation, the first thing this UI does is\nlet an author permanently 500 their own mission.\n\nTWO PIECES:\n1. `crates/map-engine-core/src/js.rs` -- wasm bindings for the 11 mutators. Polygons already cross as\n   a flat `&[f64]`.\n2. `eden_chrome.rs` + `editor_ops.rs` -- circle drag-to-radius, polygon click-to-place with\n   COMMIT-ON-CLOSE ONLY AT >=3 VERTICES (the doc layer deliberately does not guard this), zone\n   selection/render, and an Attributes panel over the 16 declared `rules` keys **driven by the\n   schema, not a hand-typed list** -- a hand-typed list is the second vocabulary T-241 exists to\n   prevent.\n\nBUDGET FOR THE 0.1 m QUANTISATION: the mod boundary rounds every vertex and radius\n(`flatten.rs` round_coord). A precision affordance finer than 0.1 m would be quietly wrong. See T-581\nfor the r=0.04 -> r=0.0 edge that a click-without-drag produces.\n\n=== A LANDMINE, VERIFIED ARMED BY THE WAVE 70 VERIFIER ===\n`zones` is in store.rs's `is_known_editor_payload_top_level` but deliberately NOT in compile.rs's\n`KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS`. Today the round trip works via a projection into\n`payloadExtras.zones` that compile_payload promotes to the payload root (T-219).\n**ADDING \"zones\" TO compile.rs's KNOWN-KEYS LIST *ALONE* SILENTLY DROPS EVERY AUTHORED ZONE.**\nThe verifier armed it deliberately: zones vanish from the wire and 4 tests fail loudly -- so the trap\ncannot be stepped on silently while tests run, but it CAN be stepped on by someone \"tidying\" the key\nlist without running them.\nTHE RETIREMENT IS TWO EDITS OR NEITHER: add `\"zones\"` to KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS **and**\n`\"zones\": values_of_ordered(&small, \"zonesById\", \"zones\")` to compile_payload's json!, then delete the\nprojection block in small_maps_json. Do that first, in its own commit, before the UI work.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3431,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-583",
+      "title": "make map-reclassify: T-278's tool exists but is undiscoverable",
+      "summary": "T-278 built `tbd-tools world reclassify` -- rebuilds the map catalogue's classification lane from\nCOMMITTED artifacts with no Workbench and no staging directory, read-only drift check by default.\nIt did not add the Makefile target, correctly: `Makefile` was outside its owns.\n\nThe ticket title it closed names \"no Makefile target to regenerate the catalogue\" as half the defect,\nand `grep reclassify Makefile` is still empty -- so the remediation is undiscoverable by this repo's\nown make-centric conventions.\n\nEXACT TARGET REQUESTED BY T-278 (add `map-reclassify` to the .PHONY at Makefile:360):\n\nmap-reclassify: ## T-278 -- rebuild the catalogue's classification lane from COMMITTED artifacts (no Workbench/staging). Read-only drift check by default; exits 1 when a prefab-classify.json edit has gone latent. WRITE=1 applies it.\n\t@test -n \"$(TERRAIN)\" || (echo \"map-reclassify: TERRAIN=<id> required\"; exit 1)\n\tcargo run -q -p tbd-tools --bin world -- reclassify --terrain \"$(TERRAIN)\" $(if $(WRITE),--write,)\n\nSTRONGLY WORTH DOING AT THE SAME TIME: wire the no-WRITE form into the wave gate. Run on the day\nT-244 landed, it would have gone RED -- instead the vehicle lane sat latent for weeks and the only\npath to activating it would have PANICKED (build.rs `.expect(\"kind bucket\")`, 8-kind array).\n\nRELATED, still blocking the regenerated artifact from landing (both verified by the verifier, both\noutside T-278's files): `packages/tbd-schema/schema/map-object-type-inventory.schema.json` byKind is\n`additionalProperties:false` with 8 required keys and rejects `vehicle`; `xtask/src/schema_gates.rs:428`\nINSTANCE_KINDS is an 8-element array feeding the I1 sum gate, which comes up short by exactly 176 --\n`byKind.vehicle.instances`. T-278 shipped an `instance_kinds_match_enums_schema` lockstep test that\npins the fix against the enums schema.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3432,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-584",
+      "title": "Two weak test controls from wave 70",
+      "summary": "Both NITs from wave 70's adversarial verifier. Neither is a live defect; both are tests that are\nweaker than they read.\n\n1. `apps/website/api/src/handlers/oauth.rs:934-954` (T-303) -- the no-secret-leak sentinel test has a\n   weak positive control. The three sentinel strings are never INPUTS to the rendered error, so the\n   assertions cannot fail regardless of how reqwest renders. The \"positive control\"\n   (`contains(\"127.0.0.1:1\")`) controls only for an empty haystack, not for detector sensitivity.\n   THE GUARANTEE ITSELF IS FINE and is structural, not textual: `log_discord_call_failure` receives\n   only a stage label and the error; `q.code` / `access_token` / the secret are not in scope at any\n   log site; `cookie_state` logs length only. The verifier grepped a live probe's logs for the dummy\n   client id and secret -- clean. So: strengthen the test to feed a known secret through the real\n   rendering path, or delete it and rely on the structural argument. Do not leave a test that reads\n   stronger than it is.\n\n2. `apps/website/frontend/src/missions.rs` (T-282) -- `classify_row` compares with\n   `serde_json::Value` equality, where `100` != `100.0`. A representation flip between two stored\n   payloads (e.g. a yrs BigInt<->Number coercion across an editor change) would report unchanged rows\n   as \"edited\". Unreachable today because both sides come from one pipeline, but the differ's whole\n   value is not crying wolf.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3433,
       "stream": "web-platform",
       "targets": [
         "website"

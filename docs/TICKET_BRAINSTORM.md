@@ -32,7 +32,6 @@ BLOCKED ON WORKBENCH (2026-07-26). A slice agent took this and refused rather th
 - **T-206** (deferred) — Item data is 78% empty [REG] — BLOCKED, but PROVEN OBTAINABLE (2026-07-26, refused by its slice agent with measured evidence). The paks are readable offline and the data is there: all 1,857 registry prefabs resolve to a pak entry, zero misses, across 222,536 entries / 19,422 .et prefabs. Obtainable WITHOUT Workbench: weight_kg/volume_cm3 (+423 fillable, 103/107 weapons), magazine capacity, calibre and ammo type (113/125 magazines, from MagazineComponent), weapon-mag compat (88/107), attachment slots (99/107), arsenal_type (373/1857 via the EntityCatalog configs). NOT obtainable: icon_url — paks carry .edds assets, a served URL needs extraction/transcoding/hosting, which is an asset pipeline. CORRECTNESS CONTROL: on chains where exactly one component class serializes ItemPhysAttributes the extractor reproduced the existing Workbench value 323/323 EXACTLY; it disagrees only on the 66 ambiguous chains, and there the export is wrong. BLOCKED ON: (1) registry-items.schema.json is additionalProperties:false with no properties for ammo type, calibre, magazine capacity or attachment slots — a schema slice must land first; (2) the extractor has no in-tree home (verify-no-python bans .py repo-wide) so writing 455 hand-computed numbers into a file labelled a Workbench export would be an unreproducible artifact and would pre-empt T-278, the paks->registry pipeline. ORDER: fix pak.rs offset -> fix ReadPhysAttrsPass (workbench) -> schema slice -> build the T-278 extractor in Rust and regenerate. The extraction logic is proven; it needs a home that is not /tmp.
 
 BLOCKED ON WORKBENCH (2026-07-26). A slice agent took this and refused rather than guessing: the missing data is only obtainable from a Workbench export pass, which no agent can run. T-206's agent went further and proved the pak data IS obtainable, reproducing 323/323 rows exactly — so this is a data-acquisition task, not a code task. Executor flipped to `workbench` so it stops entering the dispatch set. Operator action required.
-- **T-211** (idea) — Zone and play-area draw tool [MAP, PLACE] — No draw tool, no circle, no polygon anywhere in the editor, and the doc has no zone root at all (store.rs:51-65). The mod already implements union semantics, per-faction boundaries, strictest-wins and base_protection. Needs a doc root, mutators, a map tool and an Attributes panel for rules.
 - **T-299** (idea) — Every single-faction compile ships a phantom, unplayable opfor [DATA] — Found by T-186's compiled->mod boot lane, the first time API compiler output was ever put in front of the real validator. flatten pads a stub opposing faction to satisfy the schema's >=2-factions rule (flatten.rs:583-598), and the validator correctly reports it: '[TBD][Validate] WARNING faction:opfor - declared but has no slots - nobody can play this side'. So every mission authored with one faction ships a side that appears in the briefing and the ORBAT and that no player can join. This is NOT the T-181.46 hard-reject (that was endOn, already fixed) - the document loads fine, it is just wrong. Decide whether the schema should permit a single faction, or whether the compiler should mark the stub as non-playable so the UI hides it.
 - **T-212** (idea) — Objectives authoring UI [MAP, PLACE] — objectivesById exists in the doc (store.rs:174) and compiles into the payload (compile.rs:91) but has no mutator and no control — a dead container. The mod's TBD_ObjectiveRegistry implements capture, destroy and hold-until with progress, ownership and completion, wired to winConditions.endOn.
 - **T-301** (idea) — Briefing kit list shows 7 of 13 gear fields — an RPG is invisible on the planning screen [MOD] — T-182 widened the gear vocabulary to thirteen fields (adding launcher/handgun/throwable), but TBD_BriefingData.BuildKit still lists seven. A player carrying a launcher, handgun or throwable will not see it on the briefing/planning screen. Note BuildKit already omits pants/boots/handwear deliberately as progressive disclosure, so this is a UI judgement call rather than a correctness break — decide whether secondary weapons belong in the planning view (they almost certainly do; a launcher changes what a squad can attempt) and add them.
@@ -52,8 +51,6 @@ WHAT IS STILL OPEN AND WAS NOT INVALIDATED: see T-216's schema deltas ($defs/slo
 $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) with no inventory model. The editor's vehicle row is {id,resourceName,position,squadId} (store.rs:527-548), also with no cargo. Vehicle inventory has no representation on any of the three surfaces.
 - **T-257** (idea) — Markers and objectives will be non-undoable the day they land [MAP, PLACE] — hydrate clears loadouts, items, objectives and markers (store.rs:1102-1120) but those four roots are not in the UndoManager expand_scope (store.rs:101-106). Harmless today because nothing mutates them — a silent trap for the marker and objective work.
 - **T-277** (idea) — 27.4% of the shipped map catalogue is unclassified [REG] — 444 of 1,623 prefabs fall through to the fallback rule against only 66 classify rules. vegetation and utility are both zero despite P3_vegetation being listed as shipped, and the road census reports zero while roads.json.gz ships 888 segments across five classes.
-- **T-278** (idea) — No paks-to-registry pipeline and no Makefile target to regenerate the catalogue [REG] — Data comes out of the game via Enfusion Workbench plugins, then a human copies two files by hand into packages/tbd-schema/registry/ and commits them. make registry-import ingests the committed artifacts. A PakVfs reader exists and is used for terrain, satellite and roads, but nothing in the repo parses .et prefab structure.
-- **T-282** (idea) — Mission version history — differ and timeline [SHELL] — mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning. Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled. Old versions are retained and unreachable from any UI.
 - **T-283** (idea) — Mission review and commenting workflow [SHELL] — No comments table in any migration. approvals.rs:274-284 is a reviewer comment box backed by a local signal, explicitly marked mock until a review-comments API lands, never POSTed. missions.rs:884-896 reads 'Comments coming soon'. Coarse approve/reject exists; the iterative loop does not.
 - **T-290** (idea) — Resolve nine dead-output fields flatten emits that the mod never reads [DATA] — meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only). Either add mod readers or annotate them non-consumed so the next audit does not re-derive this.
 - **T-291** (idea) — Resolve five schema fields implemented on no surface [DATA] — environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem.
@@ -91,7 +88,6 @@ $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) wit
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-279** (idea) — Discord bot — greenfield [CONN] — There is no bot skeleton at all. Grep for serenity, twilight, poise, discord.js, gateway, application command or ed25519 across every file type returns zero hits. DISCORD_BOT_TOKEN is loaded at config.rs:46,87 and never read by any consumer. No interactions endpoint, no signature verification, no inbound Discord surface.
 - **T-285** (idea) — Field tools — solutions never persist and inject writes to a dead directory [SHELL] — POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads.
 - **T-288** (idea) — Modpack to server-config renderer and push [SHELL] — The database modpack concept and the server's actual mod list are unconnected universes. deploy-staging.sh:258-260 hardcodes a single mod from an env var and never reads the modpacks table.
 - **T-289** (idea) — Server-host deploy agent for start, stop and status [SHELL] — The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive.
@@ -352,6 +348,84 @@ Gate script still exports `MIGRATE_TEST_DATABASE_URL` (wave.sh ~341). `db_migrat
 Repro: rg MIGRATE_TEST_DATABASE_URL in wave.sh vs api tests; export is live, consumers gone.
 
 Cure: drop the dead export (and any docs that still describe the shared migrate URL).
+- **T-582** (deferred) — The zone draw tool: T-211 shipped the document layer, nothing reaches it [FRONTEND, DATA] — T-211 delivered the `zones` document root, 11 mutators, and proof that authored zones reach the mod
+through flatten. It did NOT deliver a product surface, and the commit carries the full ticket title
+"Zone and play-area draw tool" -- an overclaim the verifier called out.
+
+MEASURED: zero references to any zone mutator in `crates/map-engine-core/src/js.rs`, no wasm wrapper,
+no frontend caller anywhere in `apps/website/frontend/src`. **Zones are authorable only from native
+test code today.**
+
+DO NOT START THIS UNTIL T-581 LANDS. Without save-time validation, the first thing this UI does is
+let an author permanently 500 their own mission.
+
+TWO PIECES:
+1. `crates/map-engine-core/src/js.rs` -- wasm bindings for the 11 mutators. Polygons already cross as
+   a flat `&[f64]`.
+2. `eden_chrome.rs` + `editor_ops.rs` -- circle drag-to-radius, polygon click-to-place with
+   COMMIT-ON-CLOSE ONLY AT >=3 VERTICES (the doc layer deliberately does not guard this), zone
+   selection/render, and an Attributes panel over the 16 declared `rules` keys **driven by the
+   schema, not a hand-typed list** -- a hand-typed list is the second vocabulary T-241 exists to
+   prevent.
+
+BUDGET FOR THE 0.1 m QUANTISATION: the mod boundary rounds every vertex and radius
+(`flatten.rs` round_coord). A precision affordance finer than 0.1 m would be quietly wrong. See T-581
+for the r=0.04 -> r=0.0 edge that a click-without-drag produces.
+
+=== A LANDMINE, VERIFIED ARMED BY THE WAVE 70 VERIFIER ===
+`zones` is in store.rs's `is_known_editor_payload_top_level` but deliberately NOT in compile.rs's
+`KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS`. Today the round trip works via a projection into
+`payloadExtras.zones` that compile_payload promotes to the payload root (T-219).
+**ADDING "zones" TO compile.rs's KNOWN-KEYS LIST *ALONE* SILENTLY DROPS EVERY AUTHORED ZONE.**
+The verifier armed it deliberately: zones vanish from the wire and 4 tests fail loudly -- so the trap
+cannot be stepped on silently while tests run, but it CAN be stepped on by someone "tidying" the key
+list without running them.
+THE RETIREMENT IS TWO EDITS OR NEITHER: add `"zones"` to KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS **and**
+`"zones": values_of_ordered(&small, "zonesById", "zones")` to compile_payload's json!, then delete the
+projection block in small_maps_json. Do that first, in its own commit, before the UI work.
+- **T-583** (deferred) — make map-reclassify: T-278's tool exists but is undiscoverable [INFRA] — T-278 built `tbd-tools world reclassify` -- rebuilds the map catalogue's classification lane from
+COMMITTED artifacts with no Workbench and no staging directory, read-only drift check by default.
+It did not add the Makefile target, correctly: `Makefile` was outside its owns.
+
+The ticket title it closed names "no Makefile target to regenerate the catalogue" as half the defect,
+and `grep reclassify Makefile` is still empty -- so the remediation is undiscoverable by this repo's
+own make-centric conventions.
+
+EXACT TARGET REQUESTED BY T-278 (add `map-reclassify` to the .PHONY at Makefile:360):
+
+map-reclassify: ## T-278 -- rebuild the catalogue's classification lane from COMMITTED artifacts (no Workbench/staging). Read-only drift check by default; exits 1 when a prefab-classify.json edit has gone latent. WRITE=1 applies it.
+	@test -n "$(TERRAIN)" || (echo "map-reclassify: TERRAIN=<id> required"; exit 1)
+	cargo run -q -p tbd-tools --bin world -- reclassify --terrain "$(TERRAIN)" $(if $(WRITE),--write,)
+
+STRONGLY WORTH DOING AT THE SAME TIME: wire the no-WRITE form into the wave gate. Run on the day
+T-244 landed, it would have gone RED -- instead the vehicle lane sat latent for weeks and the only
+path to activating it would have PANICKED (build.rs `.expect("kind bucket")`, 8-kind array).
+
+RELATED, still blocking the regenerated artifact from landing (both verified by the verifier, both
+outside T-278's files): `packages/tbd-schema/schema/map-object-type-inventory.schema.json` byKind is
+`additionalProperties:false` with 8 required keys and rejects `vehicle`; `xtask/src/schema_gates.rs:428`
+INSTANCE_KINDS is an 8-element array feeding the I1 sum gate, which comes up short by exactly 176 --
+`byKind.vehicle.instances`. T-278 shipped an `instance_kinds_match_enums_schema` lockstep test that
+pins the fix against the enums schema.
+- **T-584** (deferred) — Two weak test controls from wave 70 [API, FRONTEND] — Both NITs from wave 70's adversarial verifier. Neither is a live defect; both are tests that are
+weaker than they read.
+
+1. `apps/website/api/src/handlers/oauth.rs:934-954` (T-303) -- the no-secret-leak sentinel test has a
+   weak positive control. The three sentinel strings are never INPUTS to the rendered error, so the
+   assertions cannot fail regardless of how reqwest renders. The "positive control"
+   (`contains("127.0.0.1:1")`) controls only for an empty haystack, not for detector sensitivity.
+   THE GUARANTEE ITSELF IS FINE and is structural, not textual: `log_discord_call_failure` receives
+   only a stage label and the error; `q.code` / `access_token` / the secret are not in scope at any
+   log site; `cookie_state` logs length only. The verifier grepped a live probe's logs for the dummy
+   client id and secret -- clean. So: strengthen the test to feed a known secret through the real
+   rendering path, or delete it and rely on the structural argument. Do not leave a test that reads
+   stronger than it is.
+
+2. `apps/website/frontend/src/missions.rs` (T-282) -- `classify_row` compares with
+   `serde_json::Value` equality, where `100` != `100.0`. A representation flip between two stored
+   payloads (e.g. a yrs BigInt<->Number coercion across an editor change) would report unchanged rows
+   as "edited". Unreachable today because both sides come from one pipeline, but the differ's whole
+   value is not crying wolf.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
