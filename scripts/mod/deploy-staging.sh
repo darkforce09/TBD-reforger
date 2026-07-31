@@ -35,6 +35,8 @@ DRY_RUN=0
 RENDER_ONLY_OUT=""
 RENDER_AGENT_OUT=""
 AGENT_SELFTEST_OUT=""
+VERIFY_BOOT_LOG=""
+VERIFY_BOOT_SELFTEST=0
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -72,9 +74,25 @@ while [ "$#" -gt 0 ]; do
         exit 2
       fi
       ;;
+    --verify-boot)
+      # T-607: run the boot verdict over a console.log you already have — no ssh, no
+      # deploy.env, no staging host. Same split --render-only made for the server config:
+      # a check that only runs mid-deploy is a check nobody runs.
+      shift
+      VERIFY_BOOT_LOG="${1:-}"
+      if [ -z "$VERIFY_BOOT_LOG" ]; then
+        echo "--verify-boot requires a path to a console.log" >&2
+        exit 2
+      fi
+      ;;
+    --verify-boot-selftest)
+      # T-607: prove the boot verdict can FAIL. A gate never observed failing is not a gate.
+      VERIFY_BOOT_SELFTEST=1
+      ;;
     -h|--help)
       echo "Usage: deploy-staging.sh [--dry-run] [--render-only <path>]"
       echo "                         [--render-agent <dir>] [--agent-selftest <dir>]"
+      echo "                         [--verify-boot <console.log>] [--verify-boot-selftest]"
       exit 0
       ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
@@ -660,6 +678,397 @@ if [ -n "$AGENT_SELFTEST_OUT" ]; then
   exit 0
 fi
 
+# ── T-607: THE BOOT VERDICT ──────────────────────────────────────────────────
+#
+# WHAT WAS BROKEN. This script built two ExecStarts and neither gave a server that was
+# both correct and joinable:
+#
+#   config mode   -config, no -addonsDir   registers a room, resolves the mod from the
+#                                          WORKSHOP — not from the checkout it just rsynced
+#   addons mode   -addonsDir + -addons     loads the checkout, registers NO backend room
+#                 + -server
+#
+# The first is the expensive one and it is this program's signature defect wearing the
+# engine's clothes: **staging was validating a build it did not deploy.** `tbd-framework` is
+# published unlisted under the SAME id as the local gproj GUID (B2C3D4E5F6A78901), so
+# `game.mods[]` is satisfiable from the Workshop and the engine quietly does that. The deploy
+# rsyncs a checkout to the host, symlinks it into $TBD_ADDONS_STAGING (line ~1100), and then
+# launches a server that never looks at it. Every "staging is green" verdict since the June
+# publish was a true statement about the WRONG code.
+#
+# THE FIX is T-604's, not a new one: `-addonsDir <dir>` **plus** `-config <json>` does both at
+# once. See scripts/mod/run-playtest-server.sh, whose header carries the measured boot. The
+# 2026-06-14 "mutually exclusive" finding was measured on `-addons`, which really is fatal with
+# `-config`; `-addonsDir` is a different flag and combines with it fine.
+#
+# WHY THE ASSERTION BELOW IS NOT OPTIONAL, AND WHY IT MATTERS MORE HERE THAN IN THE PLAYTEST.
+# run-playtest-server.sh boots whatever is in your working tree, so a wrong answer there is
+# merely confusing. Staging deploys a SPECIFIC checkout and its whole job is to report on that
+# checkout, so "did the thing I deployed actually load" is the entire product. A green deploy
+# over the Workshop copy is worse than a failed one.
+#
+# ⚠ THE FORMAT CHECK NO LONGER DISCRIMINATES HERE. `remote-log-grep.sh` separates builds with
+# `grep -c '\[TBD\]\['` — stale Workshop 1.0.1 emits 0, any current build emits many. That was
+# sound while the Workshop copy was June's. The operator re-published on 2026-07-31, so the
+# Workshop now serves **1.0.2**, which is current-format: measured on a real `-config`-only boot
+# (2026-08-01 00:12, profile pak 570,489 B) that log carries **154** `[TBD][` lines and would
+# sail through the format threshold while running a pak the deploy never produced. The format
+# check answers "is this build ancient", which is a different question from "is this build the
+# one I just deployed". Only the gproj PATH answers the second, which is why it is asserted here
+# and why this assertion cannot be replaced by a line count. Do not "simplify" it into one.
+#
+# Pure functions over a log FILE on purpose: the deploy half needs ssh and a live host, and a
+# check that can only run during a real deploy is a check nobody runs. `--verify-boot` and
+# `--verify-boot-selftest` exercise every line of this logic with no ssh, no deploy.env and no
+# staging host, exactly as --render-only/--agent-selftest do for the other two artefacts.
+
+# The addon GUID, read from the gproj rather than trusted from deploy.env. A literal drifts
+# from the source silently; run-playtest-server.sh:566 and world-boot.sh:376 both read it.
+read_addon_guid() {
+  local gproj="$MONO_ROOT/apps/mod/tbd-framework/addon.gproj"
+  [ -f "$gproj" ] || return 1
+  grep -oE '^[[:space:]]*GUID[[:space:]]+"[0-9A-Fa-f]+"' "$gproj" | grep -oE '[0-9A-Fa-f]{8,}' | head -1
+}
+
+# THE HARD GATE. Did the addon we deployed win, or a packed copy from the Workshop?
+#
+# The discriminator is the gproj path the engine reports under `Loaded addons:` for OUR guid:
+#
+#   deployed checkout won   gproj: '<addonsDir>/tbd-framework/addon.gproj' guid: '<GUID>'
+#   Workshop copy won       gproj: '<profile>/addons/TBDFramework_<GUID>/addon.gproj' guid: '<GUID>'
+#
+# Both are `guid: '<GUID>'` and both look healthy. Only the path differs, so only the path is
+# checked. The last block wins: the engine prints `Loaded addons:` more than once per boot (once
+# before and once after addon resolution — measured, 2 blocks on both a passing and a failing
+# log) and the final one is the one that ran.
+assert_local_addon_won() {
+  local log="$1" guid="$2" addons_dir="$3"
+  local want="$addons_dir/tbd-framework/addon.gproj"
+
+  if [ ! -f "$log" ]; then
+    echo "FAIL: boot log not found: $log" >&2
+    echo "      The check did NOT run. This is not a pass." >&2
+    return 1
+  fi
+
+  # -F: the path may contain regex metacharacters, and `guid: '...'` is a literal.
+  local loaded
+  loaded="$(grep -A8 'Loaded addons:' "$log" | grep -F "guid: '$guid'" | tail -1)"
+  if [ -z "$loaded" ]; then
+    echo "FAIL: the engine never reported loading addon $guid at all." >&2
+    echo "      Neither copy won, so the mod is simply not running." >&2
+    grep -nE "Loaded addons:|gproj:" "$log" | head -20 >&2
+    return 1
+  fi
+
+  case "$loaded" in
+    *"$want"*)
+      echo "  PASS  deployed checkout won: $want"
+      return 0
+      ;;
+  esac
+
+  echo "FAIL: STAGING IS VALIDATING A BUILD IT DID NOT DEPLOY." >&2
+  echo "  loaded: $(printf '%s' "$loaded" | sed 's/^[[:space:]]*//')" >&2
+  echo "  wanted: $want" >&2
+  echo "" >&2
+  echo "  tbd-framework is published to the Workshop unlisted under the SAME id as the local" >&2
+  echo "  gproj GUID, so the engine can satisfy game.mods[] without ever reading the checkout" >&2
+  echo "  this deploy just rsynced. Every log line after this one would be a true statement" >&2
+  echo "  about the wrong code." >&2
+  echo "" >&2
+  echo "  Cause is almost always a missing -addonsDir on the ExecStart. Check the unit:" >&2
+  echo "      systemctl --user cat tbd-reforger.service | grep ExecStart" >&2
+  echo "  It must carry BOTH -addonsDir and -config (T-604)." >&2
+  return 1
+}
+
+# The other half of the ticket: addons mode loads the right code and registers no room, so a
+# server can be running the correct build and still be unjoinable. Assert the room, by the
+# engine's own line, not by inference from a healthy-looking log.
+assert_room_registered() {
+  local log="$1"
+  if [ ! -f "$log" ]; then
+    echo "FAIL: boot log not found: $log" >&2
+    return 1
+  fi
+  local reg
+  reg="$(grep -F 'Server registered with address:' "$log" | tail -1)"
+  if [ -z "$reg" ]; then
+    echo "FAIL: no backend room registered — the server is NOT joinable." >&2
+    echo "      Zero 'Server registered with address:' lines in $log." >&2
+    echo "      A healthy log is not a joinable server: -addonsDir + -addons + -server reaches" >&2
+    echo "      LOBBY with the mod loaded and never registers a room. Direct Join answers" >&2
+    echo "      'No server found'. Joinable needs -config, alongside -addonsDir (T-604)." >&2
+    return 1
+  fi
+  echo "  PASS  backend room registered: $(printf '%s' "$reg" | sed 's/.*Server registered/Server registered/')"
+  return 0
+}
+
+# `#tbd` resolves admins from vanilla's SCR_PlayerListedAdminManagerComponent, which is
+# populated ONLY from game.admins[] in the server config — TBD_AdminService.IsAdmin() defers to
+# it. addons mode has no config at all, so it can never have an admin; that is the second half
+# of "the two modes break different halves of the acceptance criteria". passwordAdmin is a
+# DIFFERENT mechanism and does not feed that list.
+#
+# What a log CAN prove is that the engine accepted the config carrying them. Whether a given id
+# maps to the human who connects is only observable when they connect, and this says so rather
+# than implying otherwise.
+assert_admins_configured() {
+  local log="$1" want_count="$2"
+  if [ ! -f "$log" ]; then
+    echo "FAIL: boot log not found: $log" >&2
+    return 1
+  fi
+  if ! grep -qF 'Server config loaded.' "$log"; then
+    echo "FAIL: the engine never loaded a server config — game.admins[] cannot exist." >&2
+    echo "      '#tbd' will answer 'TBD: admin only.' for everyone, whatever deploy.env says." >&2
+    return 1
+  fi
+  if ! grep -qF 'JSON is Valid' "$log"; then
+    echo "FAIL: the engine did not report the server config as schema-valid." >&2
+    grep -nE 'JSON Schema Validation|RegEx Pattern|errors in server config' "$log" | head -10 >&2
+    return 1
+  fi
+  if [ "$want_count" -eq 0 ]; then
+    echo "  WARN  config accepted, but game.admins[] is EMPTY (TBD_ADMIN_IDENTITY_IDS unset)."
+    echo "        Every '#tbd' command will answer 'TBD: admin only.' Set it in deploy.env."
+    return 0
+  fi
+  echo "  PASS  server config accepted by the engine, carrying $want_count admin id(s)"
+  echo "        (that the ENGINE took them; whether an id is the human who connects is only"
+  echo "         observable when they connect — check '#tbd' in chat)"
+  return 0
+}
+
+# The whole verdict over one log. Returns 1 if any half failed.
+# $5 (optional) = the -profile dir, so the rival check below can look at the DISK and not just
+# the log. Callers that can reach it should pass it; the verdict is weaker without it.
+# $6 (optional) = rival pak size in bytes, ALREADY MEASURED by the caller. The deploy path uses
+# this because $profile_dir there is a path on the staging host, and a local `[ -f ]` against a
+# remote path silently answers "absent" — which would downgrade a real contest to WEAK EVIDENCE
+# on every real deploy. "" = not measured, "0" = measured and absent.
+verify_boot_log() {
+  local log="$1" guid="$2" addons_dir="$3" admin_count="${4:-0}" profile_dir="${5:-}"
+  local rival_bytes="${6:-}"
+  local rc=0
+  echo "==> boot verdict: $log"
+  assert_local_addon_won "$log" "$guid" "$addons_dir" || rc=1
+  assert_room_registered "$log" || rc=1
+  assert_admins_configured "$log" "$admin_count" || rc=1
+
+  # ── NON-VACUITY, measured rather than assumed ──────────────────────────────
+  #
+  # "The checkout won a contest" and "the checkout was the only candidate on the machine" print
+  # the same PASS above and mean very different things. The second proves almost nothing, and an
+  # assertion that passes because the alternative does not exist on disk is precisely the defect
+  # this program keeps finding. So say which one happened.
+  #
+  # THE LOG ALONE IS NOT ENOUGH, and getting this wrong once is why this block reads the disk:
+  # when -addonsDir wins, the engine never mounts the packed copy, so a log-only check reports
+  # "no rival" on exactly the runs that pass. Measured on this boot — a 570,489 B version-1.0.2
+  # pak sat in <profile>/addons/ throughout and the console log never mentions it. Reporting
+  # that as "no rival to beat" would understate the strongest evidence the run produced, and
+  # would train the reader to ignore the line.
+  local pak="$profile_dir/addons/TBDFramework_$guid/data.pak"
+  if grep -qE "Adding package '[^']*TBDFramework_$guid/'" "$log"; then
+    echo "  NOTE  non-vacuous: a packed Workshop copy was MOUNTED this boot (per the log)."
+  elif grep -qE "Downloading $guid version" "$log"; then
+    echo "  NOTE  non-vacuous: the engine downloaded the Workshop copy this boot (per the log)."
+  elif [ -n "$rival_bytes" ] && [ "$rival_bytes" -gt 0 ] 2>/dev/null; then
+    echo "  NOTE  non-vacuous: a Workshop copy was on the server's disk and did NOT win —"
+    echo "        $pak ($rival_bytes bytes)"
+  elif [ -z "$rival_bytes" ] && [ -n "$profile_dir" ] && [ -f "$pak" ]; then
+    echo "  NOTE  non-vacuous: a Workshop copy was on disk and did NOT win —"
+    echo "        $pak ($(wc -c <"$pak" | tr -d ' ') bytes)"
+  elif [ -n "$rival_bytes" ] || [ -n "$profile_dir" ]; then
+    echo "  NOTE  WEAK EVIDENCE: no Workshop copy in the log and none at"
+    echo "        $pak"
+    echo "        so the addon-path assertion had nothing to beat. To make it a real contest,"
+    echo "        boot once with -config and NO -addonsDir to populate that path, then re-run."
+  else
+    echo "  NOTE  rival unknown — no profile dir given, so this could not check whether a"
+    echo "        Workshop copy even exists. Pass the -profile dir to strengthen the verdict."
+  fi
+
+  if [ "$rc" -ne 0 ]; then
+    echo "BOOT VERDICT: FAILED"
+  else
+    echo "BOOT VERDICT: PASS"
+  fi
+  return "$rc"
+}
+
+# --verify-boot-selftest: prove the verdict can FAIL. A gate that has never been observed
+# failing is not a gate. Every case here is a log the engine really can produce.
+verify_boot_selftest() {
+  local d pass=0 fail=0
+  d="$(mktemp -d "${TMPDIR:-/tmp}/tbd-verify-boot.XXXXXX")"
+  local guid="B2C3D4E5F6A78901"
+  local staging="/home/sam/tbd/addons"
+
+  # (a) THE DEFECT: -config only. Room registers, config valid, mod loads — from the profile
+  #     pak. Byte-shape copied from a real 2026-08-01 boot on this machine.
+  {
+    echo "00:12:47.281 BACKEND      : Addon Download started $guid - TBD Framework"
+    echo "00:12:47.281 BACKEND      : Downloading $guid version 1.0.2"
+    echo "00:12:51.113 ENGINE       : FileSystem: Adding package '/home/sam/tbd/profile/addons/TBDFramework_$guid/' (pak count: 1) to filesystem under name TBD_Framework"
+    echo "00:12:51.285  ENGINE       : Loaded addons:"
+    echo "00:12:51.285   ENGINE       : gproj: './addons/core/core.gproj' guid: '5614BBCCBB55ED1C'"
+    echo "00:12:51.285   ENGINE       : gproj: '/home/sam/tbd/profile/addons/TBDFramework_$guid/addon.gproj' guid: '$guid'"
+    echo "00:12:28.401  BACKEND      : Server config loaded."
+    echo "00:12:28.401   BACKEND      : JSON is Valid"
+    echo "00:12:58.689 BACKEND      : Server registered with address: 192.168.0.140:2001"
+    echo "00:12:58.689 SCRIPT       : [TBD][Stage] LOADING -> LOBBY"
+  } >"$d/config-only.log"
+
+  # (b) THE FIX: -addonsDir + -config. Same two healthy lines, different gproj path.
+  {
+    echo "00:20:30.385 ENGINE       : FileSystem: Adding relative directory '/home/sam/tbd/apps/mod/tbd-framework' to filesystem under name TBD_Framework"
+    echo "00:20:30.564  ENGINE       : Loaded addons:"
+    echo "00:20:30.564   ENGINE       : gproj: './addons/core/core.gproj' guid: '5614BBCCBB55ED1C'"
+    echo "00:20:30.564   ENGINE       : gproj: '$staging/tbd-framework/addon.gproj' guid: '$guid'"
+    echo "00:20:28.401  BACKEND      : Server config loaded."
+    echo "00:20:28.401   BACKEND      : JSON is Valid"
+    echo "00:20:58.689 BACKEND      : Server registered with address: 192.168.0.140:2001"
+  } >"$d/both-flags.log"
+
+  # (c) addons mode: right code, no room. The other broken half.
+  {
+    echo "21:52:30.564  ENGINE       : Loaded addons:"
+    echo "21:52:30.564   ENGINE       : gproj: '$staging/tbd-framework/addon.gproj' guid: '$guid'"
+    echo "21:52:36.933 SCRIPT       : [TBD][Validate] mission result=PASS errors=0 warnings=5"
+    echo "21:52:40.000 SCRIPT       : [TBD][Stage] LOADING -> LOBBY"
+  } >"$d/addons-only.log"
+
+  # (d) mod absent entirely.
+  {
+    echo "00:30:30.564  ENGINE       : Loaded addons:"
+    echo "00:30:30.564   ENGINE       : gproj: './addons/core/core.gproj' guid: '5614BBCCBB55ED1C'"
+    echo "00:30:28.401  BACKEND      : Server config loaded."
+    echo "00:30:28.401   BACKEND      : JSON is Valid"
+    echo "00:30:58.689 BACKEND      : Server registered with address: 192.168.0.140:2001"
+  } >"$d/no-mod.log"
+
+  # name | file | fn | expected rc
+  local -a cases=(
+    "-config only: WORKSHOP copy won -> must FAIL|config-only.log|addon|1"
+    "-addonsDir + -config: checkout won -> must PASS|both-flags.log|addon|0"
+    "addons mode: checkout won -> addon check PASSES|addons-only.log|addon|0"
+    "addons mode: no room -> must FAIL|addons-only.log|room|1"
+    "-config only: room registered -> room check PASSES|config-only.log|room|0"
+    "mod never loaded at all -> must FAIL|no-mod.log|addon|1"
+    "missing log file -> must FAIL (check did not run)|ABSENT.log|addon|1"
+    "missing log file -> room check must FAIL too|ABSENT.log|room|1"
+    "addons mode has no config -> admin check must FAIL|addons-only.log|admin|1"
+    "config accepted -> admin check PASSES|both-flags.log|admin|0"
+  )
+
+  local c name file fn want got
+  for c in "${cases[@]}"; do
+    IFS='|' read -r name file fn want <<< "$c"
+    got=0
+    case "$fn" in
+      addon) assert_local_addon_won "$d/$file" "$guid" "$staging" >/dev/null 2>&1 || got=$? ;;
+      room)  assert_room_registered "$d/$file"                     >/dev/null 2>&1 || got=$? ;;
+      admin) assert_admins_configured "$d/$file" 1                 >/dev/null 2>&1 || got=$? ;;
+    esac
+    if [ "$got" -eq "$want" ]; then
+      echo "  PASS  $name"
+      pass=$((pass + 1))
+    else
+      echo "  FAIL  $name (wanted rc=$want, got rc=$got)"
+      fail=$((fail + 1))
+    fi
+  done
+
+  # The two directions must not agree. If the same log both passes and fails the addon check,
+  # the check is reading nothing. This is the guard against a pattern that matches everything
+  # (or nothing) still printing ten green lines above.
+  if assert_local_addon_won "$d/both-flags.log" "$guid" "$staging" >/dev/null 2>&1 \
+     && ! assert_local_addon_won "$d/config-only.log" "$guid" "$staging" >/dev/null 2>&1; then
+    echo "  PASS  the addon check DISCRIMINATES (passes one log, fails the other)"
+    pass=$((pass + 1))
+  else
+    echo "  FAIL  the addon check does not discriminate — it is vacuous."
+    fail=$((fail + 1))
+  fi
+
+  # The format check that USED to be sufficient is not, and this proves it on the spot: the
+  # -config-only log is the stale SOURCE, yet a current-format Workshop build makes it
+  # indistinguishable by line count. Kept as an executable statement so nobody re-derives the
+  # format check as a substitute for the path check.
+  local tagged
+  tagged="$(grep -c '\[TBD\]\[' "$d/config-only.log" || true)"
+  if [ "$tagged" -gt 0 ]; then
+    echo "  PASS  format check alone would MISS this (log has $tagged '[TBD][' lines yet loaded"
+    echo "        the Workshop copy) — proves the path check is not redundant with it"
+    pass=$((pass + 1))
+  else
+    echo "  FAIL  fixture (a) should carry current-format tagged lines"
+    fail=$((fail + 1))
+  fi
+
+  # ── the non-vacuity reporter itself ────────────────────────────────────────
+  # It got this wrong once (log-only, so it cried "no rival" on exactly the passing runs).
+  # Pin all three ways it can learn about the rival, or the next edit reintroduces that.
+  mkdir -p "$d/profile/addons/TBDFramework_$guid"
+  head -c 4096 /dev/zero > "$d/profile/addons/TBDFramework_$guid/data.pak"
+  local out
+  # (i) rival on DISK, log silent about it — the shape a passing -addonsDir boot really has
+  out="$(verify_boot_log "$d/both-flags.log" "$guid" "$staging" 1 "$d/profile" 2>&1)"
+  case "$out" in
+    *"non-vacuous: a Workshop copy was on disk and did NOT win"*)
+      echo "  PASS  rival found on DISK when the log never mentions it"; pass=$((pass + 1)) ;;
+    *) echo "  FAIL  rival on disk not reported: $out"; fail=$((fail + 1)) ;;
+  esac
+  # (ii) caller pre-measured it (the remote-deploy path, where a local stat cannot work)
+  out="$(verify_boot_log "$d/both-flags.log" "$guid" "$staging" 1 "/nonexistent/remote" 570489 2>&1)"
+  case "$out" in
+    *"on the server's disk and did NOT win"*570489*)
+      echo "  PASS  caller-measured rival size is trusted over a local stat"; pass=$((pass + 1)) ;;
+    *) echo "  FAIL  pre-measured rival not reported: $out"; fail=$((fail + 1)) ;;
+  esac
+  # (iii) genuinely no rival -> must say the evidence is WEAK, not print a clean pass
+  out="$(verify_boot_log "$d/both-flags.log" "$guid" "$staging" 1 "/nonexistent/remote" 0 2>&1)"
+  case "$out" in
+    *"WEAK EVIDENCE"*)
+      echo "  PASS  absent rival is reported as WEAK EVIDENCE, not as a clean win"; pass=$((pass + 1)) ;;
+    *) echo "  FAIL  absent rival not flagged weak: $out"; fail=$((fail + 1)) ;;
+  esac
+
+  rm -rf "$d"
+  echo
+  if [ "$fail" -ne 0 ]; then
+    echo "BOOT VERDICT SELFTEST: $pass passed, $fail FAILED"
+    return 1
+  fi
+  echo "BOOT VERDICT SELFTEST: $pass passed, 0 failed"
+  return 0
+}
+
+if [ "$VERIFY_BOOT_SELFTEST" -eq 1 ]; then
+  echo "==> boot verdict selftest (local only, no deploy, no ssh)"
+  verify_boot_selftest
+  exit $?
+fi
+
+if [ -n "$VERIFY_BOOT_LOG" ]; then
+  # Deliberately does NOT source deploy.env: the point is to run against a log you already
+  # have, on a machine with no staging credentials.
+  _vb_guid="${TBD_ADDON_GUID:-$(read_addon_guid || echo B2C3D4E5F6A78901)}"
+  if [ -z "${TBD_ADDONS_STAGING:-}" ]; then
+    echo "--verify-boot needs TBD_ADDONS_STAGING (the -addonsDir the server was launched with)," >&2
+    echo "so it knows which path counts as 'the checkout we deployed'. Export it, e.g." >&2
+    echo "  TBD_ADDONS_STAGING=/home/sam/tbd/addons bash scripts/mod/deploy-staging.sh --verify-boot <log>" >&2
+    exit 2
+  fi
+  verify_boot_log "$VERIFY_BOOT_LOG" "$_vb_guid" "$TBD_ADDONS_STAGING" "${TBD_ADMIN_COUNT:-0}" \
+    "${TBD_PROFILE_DIR:-}"
+  exit $?
+fi
+
 if [ ! -f "$ENV_FILE" ]; then
   echo "Missing $ENV_FILE — copy from scripts/deploy/deploy.env.example" >&2
   exit 1
@@ -676,20 +1085,43 @@ source "$ENV_FILE"
 : "${TBD_EVENT_ID:=b0000000-0000-4000-8000-000000000001}"
 : "${TBD_BACKEND_URL:=http://127.0.0.1:8080}"
 : "${TBD_ADDON_GUID:=B2C3D4E5F6A78901}"
-: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/TBD_Dev_POC.conf}"
+# T-607: NOT `: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/...}"`. That idiom — which is what
+# this line was — is silently truncated by bash: the `}` of the ResourceGUID closes the
+# parameter expansion, so the default becomes `{69A85365FC09E2CA` and the rest of the line is
+# parsed as literal text and discarded. Measured:
+#   $ : "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/TBD_Dev_POC.conf}"; echo "[$TBD_SCENARIO]"
+#   [{69A85365FC09E2CA]
+# So every deploy that did NOT override TBD_SCENARIO in deploy.env rendered a config the engine
+# hard-rejects, and found out ~90 s into the boot, after a full rsync and script compile:
+#   BACKEND (E): Value of "#/game/scenarioId" does not match the required pattern.
+#                Value: "{69A85365FC09E2CA"
+#   BACKEND (E): There are errors in server config!  ->  ENGINE (E): Unable to initialize the game
+# A single-quoted assignment has no such parse. Do not "tidy" it back into the `:=` form.
+if [ -z "${TBD_SCENARIO:-}" ]; then
+  TBD_SCENARIO='{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'
+fi
 : "${TBD_BIND_IP:=192.168.0.140}"
 : "${TBD_SERVER_DIR:=/home/sam/steam/arma-reforger-server}"
 
 # Server launch mode:
-#   addons  — -server + -addons (local unpublished mod). Runs headless for log
-#             verification (mission load, 18x slot spawn, Stage -> LOBBY) but is
-#             NOT Direct-Joinable: -server+-addons registers no backend room.
-#   config  — -config (server config JSON). Registers a backend room ("Server
-#             registered with address:" / "Direct Join Code:") and IS joinable.
-#             Requires the mod to be PUBLISHED to the Workshop (config game.mods[]
-#             only loads Workshop content; -config is incompatible with -addons),
-#             so TBD_WORKSHOP_MOD_ID must be set to the real Workshop modId.
-: "${TBD_SERVER_MODE:=addons}"
+#   config  — -addonsDir + -config. THE DEFAULT, and the only mode that is both correct and
+#             joinable. Registers a backend room ("Server registered with address:" /
+#             "Direct Join Code:"), supplies game.admins[] so `#tbd` works, AND loads the
+#             checkout this deploy rsynced rather than the Workshop copy (T-604/T-607).
+#   addons  — -addonsDir + -addons + -server. Loads the checkout, registers NO backend room,
+#             and has no server config at all, so it has no admins either. Headless log
+#             verification ONLY. Direct Join answers "No server found" in this mode; that is
+#             the flag combination, not a fault.
+#
+# The default was `addons` and that was the wrong half to default to: the deploy's job is to
+# stand up something a human can join, and addons mode never can. config mode used to be worse
+# (it ran the Workshop copy), which is presumably why nobody flipped it. That is fixed above.
+#
+# NOTE the historical claim that config mode "requires the mod to be PUBLISHED to the Workshop"
+# is FALSE and was the root of this ticket. It was measured on `-addons`. With `-addonsDir` the
+# config-mode server loads local, unpublished content perfectly well; game.mods[] still names
+# the id (a joining CLIENT resolves that from the Workshop) but the SERVER does not need it.
+: "${TBD_SERVER_MODE:=config}"
 : "${TBD_WORKSHOP_MOD_ID:=}"
 : "${TBD_PUBLIC_ADDRESS:=${TBD_BIND_IP}}"
 : "${TBD_GAME_PORT:=2001}"
@@ -699,6 +1131,22 @@ source "$ENV_FILE"
 : "${TBD_MAX_PLAYERS:=64}"
 : "${TBD_ADMIN_IDENTITY_IDS:=}"   # comma-separated identityIds → in-game admins (#tbd commands)
 : "${TBD_SERVER_CONFIG_REMOTE:=$(dirname "$TBD_PROFILE_DIR")/server.config.json}"
+# T-607: how long to wait for the engine to reach a verdict before failing the deploy. Room
+# registration landed 14 s after start on a measured 2026-08-01 boot, but that number is not
+# reliable — run-playtest-server.sh:698 records the same binary and config registering in 13 s
+# on one boot and never across 300 s on another. This is a bound on patience, not an estimate.
+: "${TBD_BOOT_VERIFY_TIMEOUT:=180}"
+
+# T-607: the GUID is the join between the deployed checkout and game.mods[], and if deploy.env
+# drifts from the gproj the addon assertion starts checking the wrong id — it would then pass
+# only when the mod did NOT load. Cross-check rather than trust.
+_gproj_guid="$(read_addon_guid || true)"
+if [ -n "$_gproj_guid" ] && [ "$_gproj_guid" != "$TBD_ADDON_GUID" ]; then
+  echo "TBD_ADDON_GUID='$TBD_ADDON_GUID' does not match apps/mod/tbd-framework/addon.gproj" >&2
+  echo "  ('$_gproj_guid'). The gproj is the source of truth — fix deploy.env, or the boot" >&2
+  echo "  assertion will be checking an addon id this checkout does not publish." >&2
+  exit 1
+fi
 
 # ── T-288: where game.mods[] comes from ──────────────────────────────────────
 #
@@ -765,6 +1213,34 @@ case "$TBD_SERVER_MODE" in
     if [ "$TBD_A2S_PORT" = "$TBD_GAME_PORT" ]; then
       echo "TBD_A2S_PORT must differ from TBD_GAME_PORT (a2s/game can't share a UDP port)." >&2
       exit 1
+    fi
+    # T-607: validate admin ids against the ENGINE's own schema, here, before anything is
+    # rsynced. Both patterns copied verbatim out of the engine's rejection of a bad value
+    # (1.7.0.54, via run-playtest-server.sh:539):
+    #   BACKEND (E): RegEx Pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    #   BACKEND (E): RegEx Pattern: "^[0-9]{17}$"
+    # A bad entry is a HARD FATAL at boot ("There are errors in server config!" -> "Unable to
+    # initialize the game") reported ~90 s in, AFTER a full deploy and script compile. Failing
+    # here costs a millisecond and names the value instead of burning a deploy cycle.
+    if [ -n "$TBD_ADMIN_IDENTITY_IDS" ]; then
+      IFS=',' read -ra _admin_check <<< "$TBD_ADMIN_IDENTITY_IDS"
+      for _aid in "${_admin_check[@]}"; do
+        _aid="$(echo "$_aid" | xargs)"
+        [ -z "$_aid" ] && continue
+        if ! printf '%s' "$_aid" | grep -qE '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' \
+        && ! printf '%s' "$_aid" | grep -qE '^[0-9]{17}$'; then
+          echo "TBD_ADMIN_IDENTITY_IDS contains '$_aid', which is neither an identityId nor a SteamID." >&2
+          echo "  identityId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx  (lowercase hex)" >&2
+          echo "  SteamID:    17 digits" >&2
+          echo "  The engine rejects anything else and refuses to start; this is its schema, not ours." >&2
+          exit 1
+        fi
+      done
+    else
+      echo "NOTE: TBD_ADMIN_IDENTITY_IDS is empty, so game.admins[] will be []. Every '#tbd'"
+      echo "      command answers 'TBD: admin only.' — TBD_AdminService.IsAdmin() resolves from"
+      echo "      vanilla's SCR_PlayerListedAdminManagerComponent, which is populated ONLY from"
+      echo "      game.admins[]. 'passwordAdmin' is a different mechanism and does not feed it."
     fi
     ;;
   *)
@@ -912,7 +1388,7 @@ PY
 # script already documents at TBD_A2S_PORT).
 validate_server_config() {
   SERVER_CONFIG="$1" python3 - <<'PY'
-import json, os, sys
+import json, os, re, sys
 
 path = os.environ["SERVER_CONFIG"]
 try:
@@ -934,6 +1410,24 @@ for key in ("name", "passwordAdmin", "admins", "scenarioId", "maxPlayers", "mods
 a2s = doc.get("a2s") if isinstance(doc.get("a2s"), dict) else {}
 if a2s.get("port") is not None and a2s.get("port") == doc.get("bindPort"):
     errs.append("a2s.port == bindPort (%r) — replication cannot start" % doc.get("bindPort"))
+
+# T-607: scenarioId against the ENGINE's OWN schema, copied verbatim out of its rejection
+# (1.7.0.54):
+#   BACKEND (E): RegEx Pattern: "^\{[0-9A-F]{16}\}[a-zA-Z0-9_./ -]+$"
+#   BACKEND (E): Pattern Description: "Param must start with ResourceGUID enclosed in brackets."
+# Presence was checked above and that was not enough: a TRUNCATED scenarioId ("{69A85365FC09E2CA",
+# the bash-brace defect fixed at TBD_SCENARIO) is present, is a string, and is fatal. This
+# validator printed "config VALID" over exactly that config — a tool reporting success over an
+# input it never really examined, which is the defect this whole file is written against. The
+# engine finds it ~90 s into a boot, after the rsync and a full script compile; this finds it on
+# the dev machine before anything is pushed.
+scenario = game.get("scenarioId")
+if isinstance(scenario, str) and scenario:
+    if not re.match(r"^\{[0-9A-F]{16}\}[a-zA-Z0-9_./ -]+$", scenario):
+        errs.append(
+            "game.scenarioId %r is rejected by the engine's schema "
+            "(^\\{[0-9A-F]{16}\\}[a-zA-Z0-9_./ -]+$). A value that stops right after the "
+            "GUID means TBD_SCENARIO was truncated by brace parsing in the shell." % scenario)
 
 mods = game.get("mods")
 if not isinstance(mods, list) or not mods:
@@ -1148,9 +1642,25 @@ echo "V4 unauth: HTTP \$code"
 EOF
 fi
 
-# Build ExecStart per mode (NOTE: -config is mutually exclusive with -addons).
+# Build ExecStart per mode.
+#
+# `-config` is mutually exclusive with **`-addons`** — NOT with `-addonsDir`. Those are two
+# different flags and the distinction is the whole of T-604. `-addons <GUID>` asks the engine to
+# activate a mod id and is refused alongside `-config` ("-config cannot be used together with
+# addons!"); `-addonsDir <dir>` only tells it where to LOOK, and combines with `-config` fine.
+#
+# config mode therefore carries BOTH, which is what makes it simultaneously joinable and honest:
+# `-config` registers the backend room and supplies game.admins[], `-addonsDir` makes the
+# checkout this deploy just rsynced the copy that actually loads. Without `-addonsDir` the
+# engine satisfies game.mods[] from the Workshop instead — same GUID, different code — and
+# staging reports on a build it never deployed. assert_local_addon_won() proves which one won;
+# it is not decoration, it is the acceptance criterion.
+#
+# Flag ORDER matches run-playtest-server.sh:693 deliberately. The engine does not care, but two
+# launch lines that mean the same thing should read the same, or the next person diffs them and
+# finds a difference that isn't one.
 if [ "$TBD_SERVER_MODE" = "config" ]; then
-  EXECSTART="${TBD_SERVER_DIR}/ArmaReforgerServer -profile ${TBD_PROFILE_DIR} -config ${TBD_SERVER_CONFIG_REMOTE} -maxFPS 60 -logStats 30000 -nothrow"
+  EXECSTART="${TBD_SERVER_DIR}/ArmaReforgerServer -addonsDir ${TBD_ADDONS_STAGING} -config ${TBD_SERVER_CONFIG_REMOTE} -profile ${TBD_PROFILE_DIR} -maxFPS 60 -logStats 30000 -nothrow"
 else
   EXECSTART="${TBD_SERVER_DIR}/ArmaReforgerServer -profile ${TBD_PROFILE_DIR} -addonsDir ${TBD_ADDONS_STAGING} -addons ${TBD_ADDON_GUID} -server \"${TBD_SCENARIO}\" -bindIP 0.0.0.0 -bindPort ${TBD_GAME_PORT} -a2sPort ${TBD_A2S_PORT} -maxFPS 60 -logStats 30000 -nothrow"
 fi
@@ -1211,7 +1721,83 @@ systemctl --user daemon-reload
 systemctl --user enable tbd-reforger.service 2>/dev/null || true
 systemctl --user restart tbd-reforger.service 2>/dev/null || systemctl --user start tbd-reforger.service
 EOF
-  sleep 8
+
+  # ── T-607: assert the boot, do not assume it ───────────────────────────────
+  #
+  # `systemctl restart` exits 0 over a unit that is already dead — the same defect T-289's
+  # agent selftest exists for. And even a genuinely-running server proves nothing about WHICH
+  # mod it loaded. Until this block existed the deploy's last word was `sleep 8`, after which
+  # it printed a success banner regardless of what the engine did.
+  #
+  # This waits for the engine to get far enough to have decided (addon resolution and room
+  # registration both land inside ~20 s of start — measured: config load at +4 s, addons
+  # resolved at +7 s, room registered at +14 s on a 2026-08-01 boot), then pulls the log back
+  # and runs the same verdict --verify-boot runs locally. One implementation, two callers.
+  echo "==> waiting for the engine to reach a verdict"
+  _remote_log=""
+  _waited=0
+  while [ "$_waited" -lt "$TBD_BOOT_VERIFY_TIMEOUT" ]; do
+    _remote_log="$(ssh_cmd "ls -1d '$TBD_PROFILE_DIR'/logs/logs_* 2>/dev/null | tail -1" || true)"
+    if [ -n "$_remote_log" ] && \
+       ssh_cmd "grep -qF 'Server registered with address:' '$_remote_log/console.log' 2>/dev/null"; then
+      break
+    fi
+    sleep 10
+    _waited=$((_waited + 10))
+    echo "    ${_waited}s — no room registration yet (log: ${_remote_log:-none})"
+  done
+
+  if [ -z "$_remote_log" ]; then
+    echo "FAIL: the server produced no log directory under $TBD_PROFILE_DIR/logs after ${_waited}s." >&2
+    echo "      The unit may not have started at all. Check:" >&2
+    echo "        ssh $TBD_SSH_HOST systemctl --user status tbd-reforger.service" >&2
+    exit 1
+  fi
+
+  _local_log="$(mktemp -t tbd-staging-console.XXXXXX.log)"
+  ssh_cmd "cat '$_remote_log/console.log'" > "$_local_log" 2>/dev/null || true
+  if [ ! -s "$_local_log" ]; then
+    echo "FAIL: could not read $_remote_log/console.log off $TBD_SSH_HOST." >&2
+    echo "      Refusing to report the deploy OK over a log this script never examined." >&2
+    rm -f "$_local_log"
+    exit 1
+  fi
+
+  _admin_count=0
+  if [ -n "$TBD_ADMIN_IDENTITY_IDS" ]; then
+    _admin_count="$(printf '%s' "$TBD_ADMIN_IDENTITY_IDS" | tr ',' '\n' | grep -c '[^[:space:]]' || true)"
+  fi
+
+  echo "    pulled $_remote_log/console.log ($(wc -c <"$_local_log" | tr -d ' ') bytes)"
+
+  # Measure the rival ON THE HOST. $TBD_PROFILE_DIR is a remote path, so the local `[ -f ]`
+  # fallback inside verify_boot_log would answer "absent" for a pak that is really sitting
+  # there, and downgrade a genuine contest to WEAK EVIDENCE on every deploy.
+  _rival_bytes="$(ssh_cmd "wc -c < '$TBD_PROFILE_DIR/addons/TBDFramework_$TBD_ADDON_GUID/data.pak' 2>/dev/null || echo 0" | tr -d ' \r\n' || true)"
+  [ -n "$_rival_bytes" ] || _rival_bytes=0
+
+  if [ "$TBD_SERVER_MODE" = "config" ]; then
+    if ! verify_boot_log "$_local_log" "$TBD_ADDON_GUID" "$TBD_ADDONS_STAGING" "$_admin_count" \
+         "$TBD_PROFILE_DIR" "$_rival_bytes"; then
+      echo "" >&2
+      echo "DEPLOY FAILED ITS OWN ACCEPTANCE CHECK. The files are on the host and the unit may" >&2
+      echo "be running, but it is NOT serving what you deployed, or it is not joinable." >&2
+      echo "Full log kept at: $_local_log" >&2
+      exit 1
+    fi
+  else
+    # addons mode cannot register a room or hold admins by construction, so running the full
+    # verdict here would manufacture two guaranteed failures. Assert the half that IS
+    # meaningful and say plainly that the rest was not checked, rather than printing green.
+    echo "==> boot verdict: $_local_log (mode=addons — addon check only)"
+    if ! assert_local_addon_won "$_local_log" "$TBD_ADDON_GUID" "$TBD_ADDONS_STAGING"; then
+      echo "Full log kept at: $_local_log" >&2
+      exit 1
+    fi
+    echo "  SKIP  room + admin checks: addons mode registers no room and loads no server"
+    echo "        config. This server is NOT joinable and has NO admins. Use config mode."
+  fi
+  rm -f "$_local_log"
 fi
 
 # ── T-289: install the host control agent ────────────────────────────────────
@@ -1269,4 +1855,35 @@ if [ "$DRY_RUN" -eq 1 ]; then
   exit 0
 fi
 
+# T-607: READ THE EXIT CODE, do not just inherit it. remote-log-grep.sh is a FOUR-outcome
+# script and its header names deploy-staging.sh as the consumer that pinned `2`:
+#
+#   0 HEALTHY  ·  1 FAIL  ·  2 PARTIAL (booted, nobody joined yet)  ·  3 ENVIRONMENT
+#
+# This line used to be the last statement in the file, so under `set -e` the deploy simply
+# exited with whatever it returned. `2` is the NORMAL state immediately after a deploy — nobody
+# has had time to join — so every healthy deploy reported failure to any caller reading `!= 0`,
+# and the fix people reach for when a green run keeps "failing" is to stop believing the gate.
+# `3` is the opposite hazard and must never be soft: it means no log was examined at all, so it
+# says nothing about the mod and cannot be allowed to read as success.
+#
+# Same contract now applies to scripts/mod/mcp-wb-logs.sh and scripts/mod/tbd-spawn-verify.sh
+# (T-612) — both were inverted and passed ONLY on the stale June build. Do not build a staging
+# check on a `!= 0` reading of any of the three.
+set +e
 bash "$MOD_SCRIPTS/remote-log-grep.sh"
+_v6=$?
+set -e
+case "$_v6" in
+  0) echo "V6 HEALTHY — current build, mission loaded, reached LOBBY, a player was seated." ;;
+  2) echo "V6 PARTIAL — boot is healthy, no player has joined yet. This is the expected result"
+     echo "   for a fresh deploy and is NOT a failure." ;;
+  1) echo "V6 FAIL — a required structural line is missing, or an error class is present." >&2
+     exit 1 ;;
+  3) echo "V6 ENVIRONMENT — the log could not be obtained, so nothing was examined. This says" >&2
+     echo "   NOTHING about the mod, and is not a pass." >&2
+     exit 1 ;;
+  *) echo "V6 returned an unexpected status $_v6 — treating as failure rather than guessing." >&2
+     exit 1 ;;
+esac
+echo "==> deploy complete"
