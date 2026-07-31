@@ -1428,8 +1428,8 @@ fn parse_uploaded_document(text: &str) -> Result<Value, String> {
     if text.trim().is_empty() {
         return Err("That file is empty.".to_string());
     }
-    let doc: Value = serde_json::from_str(text)
-        .map_err(|e| format!("That file is not valid JSON — {e}."))?;
+    let doc: Value =
+        serde_json::from_str(text).map_err(|e| format!("That file is not valid JSON — {e}."))?;
     unwrap_export_envelope(doc)
 }
 
@@ -1452,11 +1452,9 @@ fn next_semver(current: Option<&str>) -> String {
     else {
         return FALLBACK.to_string();
     };
-    let (Ok(maj), Ok(min), Ok(patch)) = (
-        maj.parse::<u64>(),
-        min.parse::<u64>(),
-        patch.parse::<u64>(),
-    ) else {
+    let (Ok(maj), Ok(min), Ok(patch)) =
+        (maj.parse::<u64>(), min.parse::<u64>(), patch.parse::<u64>())
+    else {
         return FALLBACK.to_string();
     };
     format!("{maj}.{min}.{}", patch + 1)
@@ -1547,7 +1545,11 @@ fn diff_summary_lines(diff: &MissionDiff) -> Vec<String> {
     // Rows the differ could not key are counted in the totals but classified nowhere. Saying so is
     // the same honesty `CollectionDelta::unreadable` was added for: a summary that silently drops
     // what it could not read is a check reporting success over an input it never examined.
-    let unreadable: usize = diff.collections.iter().map(CollectionDelta::unreadable).sum();
+    let unreadable: usize = diff
+        .collections
+        .iter()
+        .map(CollectionDelta::unreadable)
+        .sum();
     if unreadable > 0 {
         out.push(format!(
             "{unreadable} row(s) have no usable id — they are counted in the totals above but \
@@ -1860,11 +1862,9 @@ fn dossier_sheet_body(
                                 Some(a) => {
                                     let d = diff_mission_payloads(a, &doc);
                                     if d.is_empty() {
-                                        vec![
-                                            "Identical to the current version — uploading it \
+                                        vec!["Identical to the current version — uploading it \
                                              would only add a version number."
-                                                .to_string(),
-                                        ]
+                                            .to_string()]
                                     } else {
                                         diff_summary_lines(&d)
                                     }
@@ -3192,7 +3192,10 @@ mod tests {
 
         let bad_payload = json!({ "exportFormatVersion": 1, "payload": [1, 2, 3] });
         let err = unwrap_export_envelope(bad_payload).expect_err("array payload must be refused");
-        assert!(err.contains("an array"), "the kind must be named; got {err:?}");
+        assert!(
+            err.contains("an array"),
+            "the kind must be named; got {err:?}"
+        );
 
         // A top-level array is the shape someone gets by exporting the wrong thing entirely.
         let err = unwrap_export_envelope(json!([1, 2])).expect_err("array doc must be refused");
@@ -3387,5 +3390,4 @@ mod tests {
             );
         }
     }
-
 }
