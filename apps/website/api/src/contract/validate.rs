@@ -13,7 +13,7 @@ use std::sync::OnceLock;
 
 use jsonschema::Validator;
 use map_engine_core::mission::wire_safety::{self, CargoPhysCatalog, MAX_REPORTED};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 const EDITOR_SCHEMA: &str =
     include_str!("../../../../../packages/tbd-schema/schema/mission-editor-payload.schema.json");
@@ -175,14 +175,13 @@ fn projected_shape(shape: &Value) -> Option<Value> {
     if polygon.is_some_and(|p| p.len() >= 3) {
         let mut ring: Vec<Value> = Vec::new();
         for pair in polygon.expect("checked above") {
-            let Some(pair) = pair.as_array() else { continue };
+            let Some(pair) = pair.as_array() else {
+                continue;
+            };
             if pair.len() != 2 {
                 continue;
             }
-            ring.push(json!([
-                quantised(pair.first())?,
-                quantised(pair.get(1))?
-            ]));
+            ring.push(json!([quantised(pair.first())?, quantised(pair.get(1))?]));
         }
         if ring.len() >= 3 {
             return Some(json!({ "polygon": ring }));
@@ -229,10 +228,10 @@ fn projected_zone(zone: &Value) -> Option<Value> {
         }
         _ => {}
     }
-    if let Some(rules) = zone.get("rules") {
-        if !rules.is_null() {
-            obj.insert("rules".into(), rules.clone());
-        }
+    if let Some(rules) = zone.get("rules")
+        && !rules.is_null()
+    {
+        obj.insert("rules".into(), rules.clone());
     }
     Some(out)
 }
@@ -663,16 +662,16 @@ mod tests {
     #[test]
     fn zones_the_compile_drops_are_not_refused() {
         for dropped in [
-            r#"[{}]"#,                                                     // nothing at all
-            r#"[{"id":"z1","type":"boundary"}]"#,                          // no shape
-            r#"[{"id":"","type":"boundary","shape":{"circle":{"r":9}}}]"#, // empty id
-            r#"[{"id":"z1","type":"","shape":{"circle":{"r":9}}}]"#,       // empty type
-            r#"[{"id":"z1","type":"boundary","shape":{"circle":{"r":0}}}]"#, // r not > 0
+            r#"[{}]"#,                                                              // nothing at all
+            r#"[{"id":"z1","type":"boundary"}]"#,                                   // no shape
+            r#"[{"id":"","type":"boundary","shape":{"circle":{"r":9}}}]"#,          // empty id
+            r#"[{"id":"z1","type":"","shape":{"circle":{"r":9}}}]"#,                // empty type
+            r#"[{"id":"z1","type":"boundary","shape":{"circle":{"r":0}}}]"#,        // r not > 0
             r#"[{"id":"z1","type":"boundary","shape":{"polygon":[[1,2],[3,4]]}}]"#, // < 3 vertices
-            r#"[]"#,                                                       // no zones
+            r#"[]"#,                                                                // no zones
         ] {
-            let details = validate_mission_editor_payload(&payload_with_zones(dropped))
-                .expect("compiles");
+            let details =
+                validate_mission_editor_payload(&payload_with_zones(dropped)).expect("compiles");
             assert!(
                 details.is_empty(),
                 "a zone the compile drops must not be refused at save: {dropped} -> {details:?}"
@@ -724,13 +723,19 @@ mod tests {
     fn zone_schema_resolves_the_real_defs() {
         let v = compile_zone_schema().expect("wrapper must compile");
         assert!(
-            v.is_valid(&json!({"id":"z1","type":"boundary","shape":{"circle":{"x":0,"z":0,"r":5}}})),
+            v.is_valid(
+                &json!({"id":"z1","type":"boundary","shape":{"circle":{"x":0,"z":0,"r":5}}})
+            ),
             "a good zone must validate"
         );
         // Each of these can only fail if a DIFFERENT $def was reached: zone → shape → circle,
         // zone → zoneRules.
-        assert!(!v.is_valid(&json!({"id":"z1","type":"nope","shape":{"circle":{"x":0,"z":0,"r":5}}})));
-        assert!(!v.is_valid(&json!({"id":"z1","type":"boundary","shape":{"circle":{"x":0,"z":0,"r":0}}})));
+        assert!(
+            !v.is_valid(&json!({"id":"z1","type":"nope","shape":{"circle":{"x":0,"z":0,"r":5}}}))
+        );
+        assert!(!v.is_valid(
+            &json!({"id":"z1","type":"boundary","shape":{"circle":{"x":0,"z":0,"r":0}}})
+        ));
         assert!(!v.is_valid(
             &json!({"id":"z1","type":"boundary","shape":{"circle":{"x":0,"z":0,"r":5}},
                     "rules":{"graceSeconds":-1}})
