@@ -1292,6 +1292,271 @@ fn census_line(census: &[(&'static str, usize)]) -> String {
         .join(" · ")
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// T-117 — MISSION DOCUMENT UPLOAD. Read this before touching anything below.
+//
+// The ticket says "(API exists)". It does — but NOT as a file upload, and the distinction decides
+// the whole design. Verified against the running dev API on 2026-07-31, not inferred:
+//
+//   * There is **no multipart mission route anywhere**. `/cms/uploads` is the only multipart
+//     endpoint in the crate. So "upload" here means POSTing a JSON mission document.
+//   * `POST /missions/:id/versions` takes `{semver, editor_notes, payload}`, validates `payload`
+//     against `mission-editor-payload.schema.json` + the wire-safety/cargo/zone scans, and on
+//     failure answers **400 `{"error":"invalid mission payload","details":[…]}`** — measured:
+//         /schemaVersion: "nope" is not of type "integer"
+//         /markers: "not-an-array" is not of type "array"
+//         /editor: this payload does not match the shape the mission compiler reads …
+//     A valid document answers **201** and becomes `current_version_id`, so it shows up in the
+//     library and in this dossier immediately. That is the whole feature.
+//   * It is also the **only** mission-write route that can carry a real payload: it is the one
+//     route with a lifted body cap (256 MB, `app.rs:703-706`). `POST /missions` runs under the
+//     global **1 MiB** `MAX_JSON_BODY`, so "create a new mission from a document" cannot work at
+//     mission scale through the API as it stands. Upload therefore targets an EXISTING mission,
+//     which is also the surface an author is already looking at when they have a document.
+//   * `GET /missions/:id/versions` is **405** — there is no list route (the T-282 note above says
+//     the same thing; it is still true).
+//
+// THE ENVELOPE TRAP, which is why this is not a two-line file picker. Both exporters in this
+// codebase — the editor's Export button (`map_engine_core::mission::compile::compile_export`) and
+// `GET /missions/:id/export` (`handlers/missions.rs::build_mission_doc`) — emit a WRAPPER:
+//
+//     {"exportFormatVersion":1,"missionId":…,"title":…,"payload":{ …the editor payload… },…}
+//
+// The editor payload the API validates is the value of `payload`, not the wrapper. Posting an
+// exported file verbatim is measured to answer:
+//
+//     400 {"error":"payload must include editor content (refusing empty payload as current version)"}
+//
+// — which is actively misleading, because the file is full of editor content one level down. So
+// the natural round-trip an author will try first (Export → Upload) fails, and fails with a
+// message that sends them looking in the wrong place. [`unwrap_export_envelope`] is what makes the
+// round-trip work; the same file with `.payload` lifted out is measured to answer 201.
+//
+// SIZE, deliberately. `api_post` takes an owned `serde_json::Value`, so a document must exist in
+// the tab as: the `File.text()` JS string, the Rust `String`, the parsed `Value` tree, and the
+// re-serialised request body. This SPA is `wasm32` — a 32-bit address space, and browsers grant
+// far less than its 4 GiB ceiling. A mission in this codebase's history reaches ~367k slots and
+// hundreds of MB, and that document **cannot** come through a browser JSON parse no matter how the
+// button is written. So [`UPLOAD_MAX_BYTES`] refuses over-budget files up front, by name and by
+// size, BEFORE reading a byte — an honest refusal beats a dead tab. The two ways to lift it both
+// live outside this file and are reported, not smuggled in: an `api_post_raw(…, body: String)` in
+// `client.rs` would remove the parse+reserialise pair, and a streaming/multipart mission route
+// would remove the ceiling entirely.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+/// Largest mission document this browser upload will accept, in bytes.
+///
+/// Not a policy number — a memory one; see the module note above for the four simultaneous copies
+/// that make it so. The server's own cap is 256 MB (`config.rs:186`) and stays the authority: a
+/// file under this budget can still be refused by the server with a 413, and that message is
+/// surfaced verbatim rather than pre-empted here (this client does not get to invent the server's
+/// limit — T-585-era lesson, and `create_version` already words it precisely).
+const UPLOAD_MAX_BYTES: usize = 32 << 20;
+
+/// Refuse an over-budget file before it is read. `None` = accept.
+///
+/// Names BOTH numbers, because "too large" without them is unactionable: the author cannot tell
+/// whether they need to trim one squad or that this door is closed to them entirely.
+fn oversize_refusal(bytes: usize) -> Option<String> {
+    (bytes > UPLOAD_MAX_BYTES).then(|| {
+        format!(
+            "That document is {} — this browser upload accepts up to {}. A mission that large has \
+             to be saved from the Mission Creator, which builds the payload in memory instead of \
+             parsing a file.",
+            crate::mission_size::format_bytes(bytes),
+            crate::mission_size::format_bytes(UPLOAD_MAX_BYTES)
+        )
+    })
+}
+
+/// Name a JSON value's kind for an error message an author can act on.
+fn json_kind(v: &Value) -> &'static str {
+    match v {
+        Value::Null => "null",
+        Value::Bool(_) => "a true/false value",
+        Value::Number(_) => "a number",
+        Value::String(_) => "a string",
+        Value::Array(_) => "an array",
+        Value::Object(_) => "an object",
+    }
+}
+
+/// Accept **both** shapes an author can plausibly have on disk and return the editor payload the
+/// API validates.
+///
+/// * An **export envelope** — anything carrying `exportFormatVersion`, which both exporters emit
+///   unconditionally (`compile_export` writes the literal key; `MissionJson` serialises
+///   `export_format_version`). Its `payload` is lifted out.
+/// * A **bare editor payload** — passed through untouched.
+///
+/// Keyed on `exportFormatVersion` rather than "has a `payload` key" on purpose: the editor payload
+/// schema has no top-level `payload` property, so both tests happen to work today, but only the
+/// version marker is a thing the producers promise. Guessing from shape is how a future top-level
+/// key would silently start eating documents.
+fn unwrap_export_envelope(doc: Value) -> Result<Value, String> {
+    let Value::Object(mut obj) = doc else {
+        return Err(format!(
+            "A mission document must be a JSON object; this file's top level is {}.",
+            json_kind(&doc)
+        ));
+    };
+    if !obj.contains_key("exportFormatVersion") {
+        return Ok(Value::Object(obj));
+    }
+    match obj.remove("payload") {
+        Some(payload @ Value::Object(_)) => Ok(payload),
+        Some(other) => Err(format!(
+            "This looks like an exported mission file, but its \"payload\" is {} rather than an \
+             object, so there is no editor document inside it to upload.",
+            json_kind(&other)
+        )),
+        None => Err(
+            "This looks like an exported mission file, but it has no \"payload\" — there is no \
+             editor document inside it to upload."
+                .to_string(),
+        ),
+    }
+}
+
+/// Parse a picked file into the editor payload to POST, or the reason it cannot be one.
+///
+/// The syntax error is kept verbatim: `serde_json`'s `Display` already ends in
+/// `at line L column C`, which is the single most useful thing anyone can be told about a broken
+/// 40 MB document, and the server's own message for the same file is a flat
+/// `payload is not valid JSON` with no position at all.
+fn parse_uploaded_document(text: &str) -> Result<Value, String> {
+    if text.trim().is_empty() {
+        return Err("That file is empty.".to_string());
+    }
+    let doc: Value = serde_json::from_str(text)
+        .map_err(|e| format!("That file is not valid JSON — {e}."))?;
+    unwrap_export_envelope(doc)
+}
+
+/// Suggested next version number: bump the patch of the mission's current version.
+///
+/// `create_version` enforces real SemVer 2.0 (T-363) and 409s on a duplicate, so the suggestion has
+/// to be both valid and unused — a patch bump of the current tip is the only value guaranteed to be
+/// neither of the mission's known-taken ones. Pre-release / build metadata on the current version is
+/// dropped rather than carried: `1.2.3-rc1` bumps to `1.2.4`, because incrementing inside a
+/// pre-release tag is a guess about the author's release scheme.
+fn next_semver(current: Option<&str>) -> String {
+    const FALLBACK: &str = "0.1.0";
+    let Some(cur) = current else {
+        return FALLBACK.to_string();
+    };
+    let core = cur.split(['-', '+']).next().unwrap_or("");
+    let mut parts = core.split('.');
+    let (Some(maj), Some(min), Some(patch), None) =
+        (parts.next(), parts.next(), parts.next(), parts.next())
+    else {
+        return FALLBACK.to_string();
+    };
+    let (Ok(maj), Ok(min), Ok(patch)) = (
+        maj.parse::<u64>(),
+        min.parse::<u64>(),
+        patch.parse::<u64>(),
+    ) else {
+        return FALLBACK.to_string();
+    };
+    format!("{maj}.{min}.{}", patch + 1)
+}
+
+/// Turn a failed upload into `(headline, findings)` — **the function that decides whether this
+/// feature is worth having.**
+///
+/// `create_version` answers 400 with the exact list of everything wrong with the document, and
+/// `client::error_body_message` has folded that `details` array into the error string as extra
+/// lines since T-181.44. Collapsing it back to one line is the whole failure mode this ticket
+/// exists to avoid: "invalid mission payload" names a verdict, not a cause, and an author who is
+/// told only the verdict cannot fix the file. So the generic arm ALWAYS returns the split rows, and
+/// the specific arms are only for the statuses that genuinely carry no findings.
+///
+/// The status-specific arms exist because those four failures are things the author does something
+/// different about — pick another version number, use the editor, sign in, check the connection —
+/// and none of them is a defect in the document they just picked.
+fn upload_failure(status: u16, msg: Option<&str>, semver: &str) -> (String, Vec<String>) {
+    let (head, rows) = crate::client::split_error_lines(msg);
+    let head = head.filter(|h| !h.trim().is_empty());
+    match status {
+        409 => (
+            format!(
+                "Version {semver} already exists on this mission. Versions are immutable — choose \
+                 a different number."
+            ),
+            Vec::new(),
+        ),
+        // The backend names its own limit in MB; echo it rather than restating a number this file
+        // would have to keep in sync with `MISSION_VERSION_MAX_BODY_BYTES`.
+        413 => (
+            head.unwrap_or_else(|| "The server refused the document as too large.".to_string()),
+            Vec::new(),
+        ),
+        401 => (
+            "Your session expired — sign in again and re-pick the document.".to_string(),
+            Vec::new(),
+        ),
+        0 => (
+            "The upload could not reach the server. Nothing was saved; try again.".to_string(),
+            Vec::new(),
+        ),
+        _ => match (&head, rows.len()) {
+            (Some(h), 0) => (format!("Rejected ({status}): {h}"), rows),
+            (Some(h), n) => (
+                format!("Rejected ({status}): {h} — {n} problem(s) listed below"),
+                rows,
+            ),
+            (None, _) => (format!("Upload failed ({status})."), rows),
+        },
+    }
+}
+
+/// What the picked document would do to this mission, in the author's vocabulary — the T-282
+/// differ, finally with two payloads to compare.
+///
+/// Until now the differ had exactly one snapshot to work with and could only be run against the
+/// empty document (see [`version_census`]); an uploaded file is the second side it was written for.
+/// Bounded by construction: the per-collection counts are exact, the named samples stop at
+/// [`DIFF_SAMPLE_CAP`], so this stays O(1) in the size of the mission (module note above).
+fn diff_summary_lines(diff: &MissionDiff) -> Vec<String> {
+    let mut out: Vec<String> = diff
+        .fields
+        .iter()
+        .map(|f| format!("{}: {} → {}", f.label, f.from, f.to))
+        .collect();
+    for c in diff.changed_collections() {
+        let mut parts: Vec<String> = Vec::new();
+        for (n, word) in [
+            (c.added, "added"),
+            (c.removed, "removed"),
+            (c.moved, "moved"),
+            (c.edited, "edited"),
+        ] {
+            if n > 0 {
+                parts.push(format!("{n} {word}"));
+            }
+        }
+        out.push(format!(
+            "{}: {} → {} ({})",
+            c.label,
+            c.a_rows,
+            c.b_rows,
+            parts.join(", ")
+        ));
+    }
+    // Rows the differ could not key are counted in the totals but classified nowhere. Saying so is
+    // the same honesty `CollectionDelta::unreadable` was added for: a summary that silently drops
+    // what it could not read is a check reporting success over an input it never examined.
+    let unreadable: usize = diff.collections.iter().map(CollectionDelta::unreadable).sum();
+    if unreadable > 0 {
+        out.push(format!(
+            "{unreadable} row(s) have no usable id — they are counted in the totals above but \
+             could not be matched to anything."
+        ));
+    }
+    out
+}
+
 /// The dossier's version-history rail (T-282).
 ///
 /// Renders the versions this SPA can genuinely obtain. Today that is exactly one — the mission
@@ -1349,7 +1614,7 @@ fn version_history_section(m: &MissionDetail) -> Option<impl IntoView + use<>> {
 
 #[allow(clippy::too_many_arguments)]
 fn dossier_sheet_body(
-    m: MissionDetail,
+    mut m: MissionDetail,
     id_sv: StoredValue<String>,
     can_edit: bool,
     can_manage: bool,
@@ -1368,6 +1633,39 @@ fn dossier_sheet_body(
     let status_busy = RwSignal::new(false);
     let delete_busy = RwSignal::new(false);
     let submit_busy = RwSignal::new(false);
+
+    // ── T-117 upload state ───────────────────────────────────────────────────────────────────
+    // Everything that needs the whole `&m` runs FIRST, so the current payload can then be MOVED
+    // out of `m` rather than cloned. That is not fussiness: `current_version.json_payload` is the
+    // one value in this SPA that reaches hundreds of MB, the T-282 differ went out of its way to
+    // borrow rather than copy it, and a `.clone()` here would double the dossier's peak for a
+    // panel that is idle until someone picks a file.
+    let overview_body = crate::mission_overview::dossier_body(&m);
+    let version_rail = version_history_section(&m);
+    // Suggested next version, derived from the tip so it is both valid SemVer (T-363) and not one
+    // of the mission's known-taken numbers. Read before the payload is moved out below.
+    let up_semver = RwSignal::new(next_semver(
+        m.current_version.as_ref().map(|v| v.semver.as_str()),
+    ));
+    let current_payload = StoredValue::new(m.current_version.take().map(|v| v.json_payload));
+    // The picked file's name — also the `editor_notes` provenance line on the stored version.
+    let up_name = RwSignal::new(Option::<String>::None);
+    let up_size = RwSignal::new(0usize);
+    // The parsed, envelope-unwrapped editor payload, held so a 409 can be retried with a different
+    // semver without making the author re-pick and re-parse the file.
+    let up_doc = RwSignal::new(Option::<Value>::None);
+    let up_busy = RwSignal::new(false);
+    let up_status = RwSignal::new(String::new());
+    // The backend's `details` rows, rendered as a persistent list. Deliberately NOT a toast: a
+    // schema finding is a work item an author reads while editing the document, and a toast that
+    // vanishes in four seconds is exactly the "swallowed the reason" failure this ticket is about.
+    let up_findings = RwSignal::new(Vec::<String>::new());
+    let up_preview = RwSignal::new(Vec::<String>::new());
+    // The upload pipeline is browser-only (file picker → Blob::text → POST); on the native test
+    // build these three are read by nothing. The pure functions behind them are what the suite
+    // exercises — see the tests at the foot of this file.
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = (current_payload, up_name, up_size);
     // T-264 — dossier star mirrors MissionDetail.bookmarked (named field, not extra).
     let bookmarked = RwSignal::new(m.bookmarked);
     let bookmark_busy = RwSignal::new(false);
@@ -1480,6 +1778,166 @@ fn dossier_sheet_body(
                     )),
                 }
                 status_busy.set(false);
+            });
+        }
+    };
+
+    // T-117 — pick a mission document. Same programmatic-picker idiom as the CMS hero upload
+    // (`content.rs:632`): an off-DOM `<input type=file>` + a one-shot `Closure`, so there is no
+    // dead control in the DOM when the author never uses it.
+    //
+    // Reading and parsing happen HERE rather than at Upload time, for two reasons: the author gets
+    // told the file is unusable before they have chosen a version number, and the preview diff
+    // below can tell them what the document would actually do while there is still time not to.
+    let pick_document = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            use wasm_bindgen::closure::Closure;
+            use wasm_bindgen::JsCast;
+
+            if up_busy.get_untracked() {
+                return;
+            }
+            let toasts = crate::toast::use_toasts();
+            let Some(document) = web_sys::window().and_then(|w| w.document()) else {
+                toasts.error("Could not open the file picker");
+                return;
+            };
+            let Ok(input) = document
+                .create_element("input")
+                .map_err(|_| ())
+                .and_then(|el| el.dyn_into::<web_sys::HtmlInputElement>().map_err(|_| ()))
+            else {
+                toasts.error("Could not open the file picker");
+                return;
+            };
+            input.set_type("file");
+            input.set_accept("application/json,.json");
+
+            let input_for_cb = input.clone();
+            let on_change = Closure::once(move |_ev: web_sys::Event| {
+                let Some(file) = input_for_cb.files().and_then(|list| list.item(0)) else {
+                    return;
+                };
+                let name = file.name();
+                // `File::size()` is f64 (JS Number). Clamp rather than cast blind: a negative or
+                // NaN size must not wrap into a huge usize and sail past the budget check.
+                let size = file.size().max(0.0).min(usize::MAX as f64) as usize;
+                up_findings.set(Vec::new());
+                up_preview.set(Vec::new());
+                up_doc.set(None);
+                up_name.set(Some(name.clone()));
+                up_size.set(size);
+                // Refuse BEFORE reading — see the module note. A tab that dies mid-read cannot
+                // tell anybody why.
+                if let Some(refusal) = oversize_refusal(size) {
+                    up_status.set(refusal);
+                    return;
+                }
+                up_status.set(format!("Reading {name}…"));
+                leptos::task::spawn_local(async move {
+                    // `Blob::text()` is a Promise: the browser reads off disk on its own thread and
+                    // this task is suspended, so the tab stays interactive through the read. The
+                    // parse that follows is synchronous — which is exactly why the budget above is
+                    // a hard gate and not a warning.
+                    let text = match wasm_bindgen_futures::JsFuture::from(file.text()).await {
+                        Ok(v) => v.as_string().unwrap_or_default(),
+                        Err(_) => {
+                            up_status.set(format!("Could not read {name}."));
+                            return;
+                        }
+                    };
+                    match parse_uploaded_document(&text) {
+                        Ok(doc) => {
+                            let census = census_line(&version_census(&doc));
+                            let census = if census.is_empty() {
+                                "no editor content".to_string()
+                            } else {
+                                census
+                            };
+                            // The T-282 differ, with a real second payload for the first time.
+                            let preview = current_payload.with_value(|cur| match cur {
+                                Some(a) => {
+                                    let d = diff_mission_payloads(a, &doc);
+                                    if d.is_empty() {
+                                        vec![
+                                            "Identical to the current version — uploading it \
+                                             would only add a version number."
+                                                .to_string(),
+                                        ]
+                                    } else {
+                                        diff_summary_lines(&d)
+                                    }
+                                }
+                                None => Vec::new(),
+                            });
+                            up_preview.set(preview);
+                            up_doc.set(Some(doc));
+                            up_status.set(format!("{name} — {census}. Ready to upload."));
+                        }
+                        Err(why) => up_status.set(why),
+                    }
+                });
+            });
+            let _ = input
+                .add_event_listener_with_callback("change", on_change.as_ref().unchecked_ref());
+            // One-shot listener outlives this frame — the picker is fire-and-forget (content.rs).
+            on_change.forget();
+            input.click();
+        }
+    };
+
+    // T-117 — POST the parsed document as a new version. Same wire shape as the editor's own Save
+    // (`mission_commands::save_now`), through the SAME `version_body` builder in map-engine-core, so
+    // the two doors onto `create_version` cannot drift into sending different JSON.
+    let upload_document = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            if up_busy.get_untracked() {
+                return;
+            }
+            let Some(doc) = up_doc.get_untracked() else {
+                up_status.set("Choose a mission document first.".to_string());
+                return;
+            };
+            let semver = up_semver.get_untracked().trim().to_string();
+            if semver.is_empty() {
+                up_status.set("A version number is required (e.g. 1.2.3).".to_string());
+                return;
+            }
+            let notes = up_name
+                .get_untracked()
+                .map(|n| format!("Uploaded from {n}"))
+                .unwrap_or_else(|| "Uploaded document".to_string());
+            up_busy.set(true);
+            up_findings.set(Vec::new());
+            up_status.set(format!("Uploading v{semver}…"));
+            let body = map_engine_core::mission::compile::version_body(&semver, &notes, &doc);
+            let path = format!("/missions/{}/versions", id_sv.get_value());
+            let toasts = crate::toast::use_toasts();
+            leptos::task::spawn_local(async move {
+                match crate::client::api_post::<serde_json::Value>(store, &path, body).await {
+                    Ok(_) => {
+                        up_status.set(format!(
+                            "Uploaded v{semver} — it is now this mission's current version."
+                        ));
+                        up_doc.set(None);
+                        up_name.set(None);
+                        up_size.set(0);
+                        up_preview.set(Vec::new());
+                        up_semver.set(next_semver(Some(&semver)));
+                        toasts.success("Mission document uploaded");
+                        // Re-read the dossier + the card grid so the rail shows the new tip rather
+                        // than the version this panel just replaced.
+                        changed.run(());
+                    }
+                    Err((status, msg)) => {
+                        let (head, rows) = upload_failure(status, msg.as_deref(), &semver);
+                        up_status.set(head);
+                        up_findings.set(rows);
+                    }
+                }
+                up_busy.set(false);
             });
         }
     };
@@ -1670,11 +2128,142 @@ fn dossier_sheet_body(
                         }
                     })}
 
-                {crate::mission_overview::dossier_body(&m)}
+                {overview_body}
 
                 // T-282 — the version rail. Above Collaboration because "what is in the saved
                 // version" is dossier fact, not a collaboration action.
-                {version_history_section(&m)}
+                {version_rail}
+
+                // T-117 — upload a mission document as the next version. Directly under the rail
+                // because that is what it writes; gated on `can_edit`, the same predicate
+                // `create_version` itself enforces (plus the MissionMakerUser tier), so nobody is
+                // shown a control guaranteed to answer 403.
+                {can_edit
+                    .then(|| {
+                        view! {
+                            <section data-testid="mission-upload-section">
+                                <h3 class="mb-2 font-mono text-label-md tracking-widest text-on-surface-variant uppercase">
+                                    "Upload mission document"
+                                </h3>
+                                <p class="mb-3 text-label-md text-on-surface-variant">
+                                    "Accepts an exported mission file or a bare editor payload. The document is validated before it is stored — if it is rejected you get the list of what is wrong with it, not just a refusal."
+                                </p>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button
+                                        type="button"
+                                        data-testid="mission-upload-pick"
+                                        on:click=pick_document
+                                        prop:disabled=move || up_busy.get()
+                                        class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-label-md text-on-surface transition-colors hover:bg-white/10 disabled:opacity-60"
+                                    >
+                                        <MaterialIcon name="upload_file" class="text-[16px]" />
+                                        "Choose document…"
+                                    </button>
+                                    <label class="text-label-md text-on-surface-variant" for="mission-upload-semver">
+                                        "Version"
+                                    </label>
+                                    <input
+                                        id="mission-upload-semver"
+                                        type="text"
+                                        data-testid="mission-upload-semver"
+                                        placeholder="1.2.3"
+                                        prop:value=move || up_semver.get()
+                                        on:input=move |ev| up_semver.set(event_target_value(&ev))
+                                        class="w-28 rounded-lg border border-white/10 bg-black/30 px-3 py-2 font-mono text-label-md text-on-surface outline-none transition-colors focus:border-primary/60"
+                                    />
+                                    <button
+                                        type="button"
+                                        data-testid="mission-upload-submit"
+                                        on:click=upload_document
+                                        prop:disabled=move || up_busy.get() || up_doc.with(Option::is_none)
+                                        class="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/15 px-4 py-2 text-label-md font-semibold text-primary transition-colors hover:bg-primary/25 disabled:opacity-40"
+                                    >
+                                        <MaterialIcon name="cloud_upload" class="text-[16px]" />
+                                        "Upload as new version"
+                                    </button>
+                                </div>
+
+                                // Status line — the headline of whatever just happened (read, parse
+                                // refusal, oversize refusal, upload verdict).
+                                {move || {
+                                    let s = up_status.get();
+                                    (!s.is_empty())
+                                        .then(|| {
+                                            view! {
+                                                <p
+                                                    data-testid="mission-upload-status"
+                                                    class="mt-3 text-label-md text-on-surface"
+                                                >
+                                                    {s}
+                                                </p>
+                                            }
+                                        })
+                                }}
+
+                                // The backend's `details` — the reason the document was refused,
+                                // one work item per row. Losing these is the defect this ticket
+                                // exists to prevent, so they render as their own labelled block.
+                                {move || {
+                                    let rows = up_findings.get();
+                                    (!rows.is_empty())
+                                        .then(|| {
+                                            view! {
+                                                <div
+                                                    data-testid="mission-upload-findings"
+                                                    class="mt-3 rounded-xl border border-error-alert/30 bg-error-alert/10 p-4"
+                                                >
+                                                    <p class="font-mono text-label-sm tracking-widest text-error-alert uppercase">
+                                                        "What is wrong with this document"
+                                                    </p>
+                                                    <ul class="mt-2 space-y-1">
+                                                        {rows
+                                                            .into_iter()
+                                                            .map(|r| {
+                                                                view! {
+                                                                    <li class="font-mono text-label-sm break-words text-on-surface">
+                                                                        {r}
+                                                                    </li>
+                                                                }
+                                                            })
+                                                            .collect_view()}
+                                                    </ul>
+                                                </div>
+                                            }
+                                        })
+                                }}
+
+                                // What uploading this file would change, before it is uploaded.
+                                {move || {
+                                    let rows = up_preview.get();
+                                    (!rows.is_empty())
+                                        .then(|| {
+                                            view! {
+                                                <div
+                                                    data-testid="mission-upload-preview"
+                                                    class="mt-3 rounded-xl border border-white/10 bg-white/5 p-4"
+                                                >
+                                                    <p class="font-mono text-label-sm tracking-widest text-on-surface-variant uppercase">
+                                                        "Against the current version"
+                                                    </p>
+                                                    <ul class="mt-2 space-y-1">
+                                                        {rows
+                                                            .into_iter()
+                                                            .map(|r| {
+                                                                view! {
+                                                                    <li class="text-label-md text-on-surface-variant">
+                                                                        {r}
+                                                                    </li>
+                                                                }
+                                                            })
+                                                            .collect_view()}
+                                                    </ul>
+                                                </div>
+                                            }
+                                        })
+                                }}
+                            </section>
+                        }
+                    })}
 
                 <section>
                     <h3 class="mb-2 font-mono text-label-md tracking-widest text-on-surface-variant uppercase">
