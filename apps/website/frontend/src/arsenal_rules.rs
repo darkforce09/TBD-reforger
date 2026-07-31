@@ -10,8 +10,8 @@
 //! T-240 checked whether the blanket `allow` below is still earned, because while it is on, the
 //! compiler cannot tell anyone that a rule in here has no caller — which is how `cargo_capacity_errors`
 //! could have shipped unwired and silent. **It is still earned, by exactly three items in the
-//! shipping (wasm32) build:** `PRIMARY_SUB_REGIONS` (:185), `DollRegion::kind` (:412) and
-//! `DOLL_REGIONS` (:479) — the paper-doll region model, whose consumer went away. A native
+//! shipping (wasm32) build:** `PRIMARY_SUB_REGIONS`, `DollRegion::kind` and
+//! `DOLL_REGIONS` — the paper-doll region model, whose consumer went away. A native
 //! `cargo check` lists more, but those are consumers behind `cfg(target_arch = "wasm32")`, not
 //! real deadness. Remove the `allow` the moment those three find a caller or go; do not delete
 //! them to get there.
@@ -792,7 +792,7 @@ pub fn cargo_garment<'a>(
 /// [`cargo_capacity_errors`] message.
 ///
 /// The honest provenance: `max_weight_kg` / `max_volume_cm3` reach the website from a
-/// Workbench-time scan (`TBD_RegistryScan.c` `DeriveCargoGrid`, :896-909 — `cells =
+/// Workbench-time scan (`TBD_RegistryScan.c` `DeriveCargoGrid` — `cells =
 /// Ceil(maxVolume/50)`, grid width hardcoded to 4), and **the game never reads that export
 /// back**. There is no runtime capacity arithmetic under `Scripts/Game/` at all: the equip
 /// helper pushes at the engine and reads a bool. So this model is a heuristic over data that
@@ -881,16 +881,16 @@ pub fn cargo_capacity_errors(
 ///
 /// What actually happens to the row, read out of `TBD_LoadoutEquipHelper.c` rather than guessed:
 /// the container is resolved **at spawn**, after the wear pass has settled, by `GarmentForContainer`
-/// → `SCR_CharacterInventoryStorageComponent.GetClothFromArea(…)` (:1047-1063) — i.e. from what the
+/// → `SCR_CharacterInventoryStorageComponent.GetClothFromArea(…)` — i.e. from what the
 /// body is *actually wearing*. Nothing worn there ⇒ `InsertCargo` raises
 /// `Degrade("cargo:<container>", …, "this slot's kit wears no <container> — mission/kit authoring
-/// mismatch, NOT a mod fault")` (:1121-1123) and the any-storage fallback re-homes the units
+/// mismatch, NOT a mod fault")` and the any-storage fallback re-homes the units
 /// somewhere else on the body.
 ///
 /// **T-605 — WHAT THAT DEGRADE COSTS, CORRECTED.** This block used to end "…and
 /// `TBD_SpawnManager` consumes that at the spawn boundary — `LOBBY refused … (IsComplete=0)`",
 /// which was true and was the bug: `IsComplete()` is
-/// `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (:209-212), so ONE such row on ONE slot kept
+/// `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()`, so ONE such row on ONE slot kept
 /// EVERY client in LOADING. T-504 (this rule) was right that the authoring side must not refuse,
 /// and T-605 established that the spawn side must not refuse either: a degrade means the item is
 /// on the body in a different container, which is a player who can play. The boundary now reads
@@ -903,7 +903,7 @@ pub fn cargo_capacity_errors(
 /// **Why it warns instead of refusing** (the export gate is deliberately not extended): "the
 /// loadout picks no garment here" is **not** the same claim as "nothing will be worn here".
 /// `TBD_LoadoutEquipHelper.IssueEquip` returns early on an empty gear field — *"absent gear slot —
-/// kit garment (if any) is deliberately retained"* (:407-408) — so a slot whose kit prefab ships a
+/// kit garment (if any) is deliberately retained"* — so a slot whose kit prefab ships a
 /// vest satisfies a `vest` cargo row with no `vest` pick anywhere in this editor. The website
 /// cannot see inside the kit prefab, so it cannot tell those two apart, and a refusal would stop
 /// authoring dead on loadouts that deliver perfectly. Weigh the two failures: a wrong refusal
@@ -1412,7 +1412,7 @@ mod tests {
 
     #[test]
     fn cargo_fault_wording_refuses_without_overclaiming() {
-        // The block rides stale-by-design data: `TBD_RegistryScan.c` `DeriveCargoGrid` (:896-909)
+        // The block rides stale-by-design data: `TBD_RegistryScan.c` `DeriveCargoGrid`
         // is a Workbench-time export the game never reads back, and the game has no runtime
         // capacity arithmetic to agree or disagree with it. So the wording must hedge the NUMBER
         // while staying blunt about the measured CONSEQUENCE. Dropping either half fails here.

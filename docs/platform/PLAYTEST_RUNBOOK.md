@@ -332,7 +332,7 @@ cat "$HOME/tbd-playtest/server.json"
 [`apps/mod/tbd-framework/addon.gproj`](../../apps/mod/tbd-framework/addon.gproj) — the same one
 `world-boot.sh` reads out of that file at `:376`. Ports stay **2001 game / 17777 A2S**; they must
 differ or the engine logs `NETWORK (E): Unable to start replication` and exits **status 0**
-([`STAGING-SERVER.md:246-250`](../mod/STAGING-SERVER.md)).
+([`STAGING-SERVER.md` § Game server CLI](../mod/STAGING-SERVER.md)).
 
 Open the ports:
 
@@ -756,7 +756,7 @@ try that before concluding chat is dead.
 ```
 [TBD][Spawn] player=N has NO durable identity (keyMode=NUMERIC) — … This is NOT a supported state …
 ```
-([`TBD_SpawnManager.c:1496`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)),
+([`TBD_SpawnManager.NoteIdentityDegraded`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)),
 then **`SAFE_START` and `LIVE` will be refused** and the session cannot reach the death step. Two
 options:
 
@@ -766,7 +766,7 @@ options:
    ```
    #tbd identity override I-ACCEPT-NO-ONE-LIFE
    ```
-   ([`TBD_SpawnManager.c:256`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+   ([`TBD_SpawnManager.IDENTITY_OVERRIDE_PHRASE`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
    Deaths will **not** survive a reconnect, so S13's respawn is still testable but the *durability*
    of one life is not. **Write it in the sign-off.** `#tbd identity enforce` undoes it.
 
@@ -841,16 +841,16 @@ regressed.
 1. You click a seat. **Should see:** it flips to **YOUR SEAT** immediately (optimistic), DEPLOY
    enables, footer reads "You hold ALPHA · TL. Click it again to give it up."
    **Server log:** `[TBD][Spawn] claim player=<id> slot=<key>`
-   ([`TBD_SpawnManager.c:785`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+   ([`TBD_SpawnManager.ClaimSlot`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
    Watch it for ~4 s: it must **not** flicker away and back. A flicker means the pending-intent
    reconciliation regressed and reads exactly like losing the seat.
 2. Friend clicks **the same seat**. **Should see:** refusal, with **your name** on the seat, cleared
    after ~5 s. **Server log:** `[TBD][Spawn] claim rejected player=<id> slot=<key> (held by another player)`
-   ([`TBD_SpawnManager.c:780`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+   ([`TBD_SpawnManager.ClaimSlot`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
    If the refusal names nobody, or names the wrong person, the refusal is not reading the authority's
    own roster — capture and file.
 3. You click your own seat again. **Should see:** it returns to OPEN, DEPLOY disables.
-   **Server log:** `[TBD][Spawn] release player=<id> slot=<key>` ([`:823`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+   **Server log:** `[TBD][Spawn] release player=<id> slot=<key>` ([`ReleaseSlot`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
 4. Re-claim it. Both of you end holding **different** seats — you on **slot A** (the fully-loaded
    one from §2.3), friend on **slot C** (cargo-only). This matters at S10.
 
@@ -887,18 +887,19 @@ Back to LOBBY (`#tbd stage LOBBY`) if you left it, then both of you press **DEPL
 [TBD] SpawnManager: bound player <n> to slot <key> body (kit <kit>)
 [TBD][Spawn] player=<n> possess request accepted
 ```
-([`:666`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c),
-[`:2381`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c),
-[`:2549`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+([`AssignSlotForPlayer`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c),
+[`DeployPlayerInternal`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c),
+[`PossessSlotBody`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
 
 **Position and heading** — for your slot, the earlier line
 `[TBD][Spawn] slot=<id> Y=… jsonY=… surfaceY=… delta=… heading=<deg>`
-([`:1161`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)) must match the
+([`SpawnSlotBody`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)) must match the
 X/Z/heading you authored, and `delta` must be small. A
-`jsonY=… deviates … m from surfaceY=…` warning at `:1131` means stale DEM or a mis-authored slot.
+`jsonY=… deviates … m from surfaceY=…` warning from the same function means stale DEM or a
+mis-authored slot.
 
 **The kit actually worn** — the tag is **`[TBD][Loadout][Slot]`**, set at
-[`TBD_SpawnManager.c:1179`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c).
+[`TBD_SpawnManager.SpawnSlotBody`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c).
 (The T-068.14 spec and the header comment at
 [`TBD_LoadoutEquipComponent.c:17`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c)
 both say `[TBD][Loadout][Player]`. **That string does not exist in any Print.** Grep for `[Slot]`.)
@@ -910,13 +911,13 @@ Per dressed slot you want:
 ```
 [TBD][Loadout][Slot] slot=<id> primary equip OK {…}Rifle_M16A2.et [ … ]
 [TBD][Loadout][Slot] slot=<id> cargo {…}Magazine_…et x6/6 -> vest
-[TBD][Loadout][Slot] slot=<id> worn-audit jacket=1 pants=1 boots=1 kit=<kit> (settled on attempt K of 6, T ms)
+[TBD][Loadout][Slot] slot=<id> worn-audit jacket=1 pants=1 boots=1 kit=<kit> (settled on attempt K of 4, T ms)
 [TBD][Loadout][Slot] slot=<id> loadout pass complete gear=10/10 cargo=8/8
 ```
-([`:610`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c),
-[`:1175`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c),
-[`:1342`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c),
-[`:1386`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c)).
+([`VerifyTick`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c),
+[`InsertCargo`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c),
+[`AuditTick`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c),
+[`ReportVerdict`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c)).
 
 **Then look with your eyes, because no log proves this:** open the inventory (`I`) and third-person
 if enabled. You must see, on the **player entity**, the uniform/vest/helmet/pants/boots/gloves you
@@ -986,18 +987,18 @@ Now have your friend die — once, terminally.
 ```
 [TBD][Spawn] player=<n> KILLED — one life spent (key=<key>), slot retained, awaiting admin
 ```
-([`TBD_SpawnManager.c:2710`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+([`TBD_SpawnManager.OnPlayerKilled`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
 Their client should go to **SPECTATOR** (`F` free cam, `←`/`→` next/prev, `TAB` roster, `V` view —
 [`Configs/System/Actions/`](../../apps/mod/tbd-framework/Configs/System/Actions)).
 
 **Then prove one life is real:** have them try to take another seat. **Should see**
 `[TBD][Spawn] claim rejected player=<n> slot=<key> (one life spent)`
-([`:773`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)) and
-`release rejected … (one life spent — slot retained)` ([`:808`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+([`ClaimSlot`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)) and
+`release rejected … (one life spent — slot retained)` ([`ReleaseSlot`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
 If they can claim a fresh seat, **one life is broken** — that is a headline finding.
 
-Instead of `re-armed for respawn (slot retained)` at `:2715`? That means `m_bOneLife` is off on the
-prefab and you are not testing the event configuration.
+Instead of `re-armed for respawn (slot retained)` — the other branch of the same handler? That means
+`m_bOneLife` is off on the prefab and you are not testing the event configuration.
 
 ---
 
@@ -1013,15 +1014,15 @@ prefab and you are not testing the event configuration.
 [TBD][Admin] respawn player=<n> by=<You(3)> result=<…>
 [TBD][Admin] respawn player=<n> by=<You(3)> — back in the world, life restored
 ```
-([`:2860`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c),
-[`:2878`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+([`AdminRespawn`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c),
+[`FinishAdminRespawn`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
 Their client leaves spectator and they are in a **freshly dressed** body — the slot body is
 rematerialised, so **check the loadout again**: `[TBD][Slots] rematerialized body for slot <key> (…)
-— freshly dressed from mission JSON` ([`:2280`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+— freshly dressed from mission JSON` ([`DeployPlayerInternal`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
 
-- `respawn REFUSED … — not dead` / `— disconnected` ([`:2839`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c), [`:2845`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)) — you named the wrong id; `#tbd dead` lists them.
-- `— RETRY queued, player stays DEAD until a body lands` ([`:2886`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)) — wait, then re-run the command.
-- `did NOT deploy (…) — player REMAINS dead, run '#tbd respawn <n>' again` ([`:2891`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)) — run it again; if it never lands, capture and file.
+- `respawn REFUSED … — not dead` / `— disconnected` ([`AdminRespawn`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c), [`AdminRespawn`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)) — you named the wrong id; `#tbd dead` lists them.
+- `— RETRY queued, player stays DEAD until a body lands` ([`FinishAdminRespawn`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)) — wait, then re-run the command.
+- `did NOT deploy (…) — player REMAINS dead, run '#tbd respawn <n>' again` ([`FinishAdminRespawn`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)) — run it again; if it never lands, capture and file.
 
 Then `#tbd audit` — the trail should carry both the death and your respawn.
 
@@ -1031,9 +1032,9 @@ Then `#tbd audit` — the trail should carry both the death and your respawn.
 again after dying.
 
 **Should see:**
-- alive: `[TBD][JIP] player=<n> left ALIVE — seat <key> released, reclaim recorded under key <k> keyMode=<mode>` ([`:3050`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c))
-- dead: `[TBD][JIP] player=<n> left DEAD — seat <key> retained under key <k> reclaimable=<0|1>` ([`:3047`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c))
-  and on rejoin `[TBD][Spawn] player=<n> rejoined on a spent life — slot <key> handed back (still dead)` ([`:719`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
+- alive: `[TBD][JIP] player=<n> left ALIVE — seat <key> released, reclaim recorded under key <k> keyMode=<mode>` ([`OnPlayerDisconnected`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c))
+- dead: `[TBD][JIP] player=<n> left DEAD — seat <key> retained under key <k> reclaimable=<0|1>` ([`OnPlayerDisconnected`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c))
+  and on rejoin `[TBD][Spawn] player=<n> rejoined on a spent life — slot <key> handed back (still dead)` ([`ReclaimDepartedSeat`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c)).
 
 If a dead player rejoins **alive**, one life did not survive the reconnect — expected only if you
 took the S4 waiver.
@@ -1163,7 +1164,7 @@ literals `Mission loaded` and `built slot spawn`
 ([`remote-log-grep.sh:48`](../../scripts/mod/remote-log-grep.sh)), and **neither is emitted by the
 current code** — `"Mission loaded"` survives only inside an error string
 (`TBD_FrameworkManager.c:488` "Mission loaded but invalid"), and `built slot spawn` exists nowhere.
-The pass-criteria list in [`STAGING-SERVER.md:192-203`](../mod/STAGING-SERVER.md) is stale for the
+The pass-criteria list in [`STAGING-SERVER.md` § Game log pass criteria](../mod/STAGING-SERVER.md) is stale for the
 same reason. Use the greps above.
 
 ---
@@ -1234,7 +1235,7 @@ So the failure mode is **not** "the mod does not load". It is:
 
   The stale build has no subsystem tag at all, so this holds no matter how the individual
   `Print`s are worded. Pinning the check to one quoted sentence is what broke
-  [`STAGING-SERVER.md:48`](../mod/STAGING-SERVER.md): T-604 quoted the settle line, T-605 rewrote
+  [`STAGING-SERVER.md`'s stale-build check](../mod/STAGING-SERVER.md): T-604 quoted the settle line, T-605 rewrote
   that `Print` in the same wave, and for a week the stale-build detector told operators on the
   *correct* build that their expected string was missing. Match prefixes, not sentences.
 - **On the friend's client, always:** it resolves `game.mods[]` from the Workshop and gets 1.0.1
@@ -1322,26 +1323,26 @@ tail -f "$LOG" | grep --line-buffered -E \
 
 | Line | Source | Means |
 |---|---|---|
-| `[TBD] roll-call: …=ok` ×9 | `TBD_FrameworkManager.c:409` | every component on `TBD_GameMode.et` instantiated |
-| `[TBD][Mission] loaded id=… source=backend` | `TBD_Log.c:75` | the API served the document (not the disk fallback) |
-| `[TBD][Validate] mission result=PASS` | `TBD_Log.c:85` | the mission is loadable |
+| `[TBD] roll-call: …=ok` ×9 | `TBD_FrameworkManager.PrintComponentRollCall` | every component on `TBD_GameMode.et` instantiated |
+| `[TBD][Mission] loaded id=… source=backend` | `TBD_Log.MissionLoaded` | the API served the document (not the disk fallback) |
+| `[TBD][Validate] mission result=PASS` | `TBD_Log.ValidationResult` | the mission is loadable |
 | `[TBD][Slots] loadout settle complete … 0 unplayable, M with a shortfall — spawn open` | `TBD_SpawnManager.TickLoadoutSettle` | the lineup is playable; `M`>0 means some of it is not what was authored |
 | `[TBD][Slots] loadout SHORTFALL on M of N slot(s)` | `TBD_SpawnManager.TickLoadoutSettle` | **not** a stop — names the slots carrying less/elsewhere than authored (§6.1) |
 | `[TBD][Slots] loadout delivery REFUSED at spawn boundary … UNPLAYABLE` | `TBD_SpawnManager.TickLoadoutSettle` | **stop** — nobody can leave LOADING; the line names the slot and the item |
-| `[TBD] Stage → LOBBY` | `TBD_FrameworkManager.c:794` | the lobby is open |
-| `[TBD][Spawn] LOBBY: auto-deploy wave OFF` | `TBD_SpawnManager.c:2094` | the picker is the way in (correct) |
-| `[TBD][Spawn] claim player=N slot=K` | `TBD_SpawnManager.c:785` | a seat was taken |
-| `[TBD][Spawn] claim rejected … (held by another player)` | `TBD_SpawnManager.c:780` | contention refused correctly |
-| `[TBD][Spawn] claim rejected … (one life spent)` | `TBD_SpawnManager.c:773` | one life is enforced |
-| `[TBD] SpawnManager: assigned slot … to player …` | `TBD_SpawnManager.c:666` | seated |
-| `[TBD][Spawn] slot=… Y=… jsonY=… heading=…` | `TBD_SpawnManager.c:1161` | authored transform applied |
-| `[TBD][Loadout][Slot] … loadout pass complete gear=x/x cargo=y/y` | `TBD_LoadoutEquipHelper.c:1386` | **the T-068 line** |
-| `[TBD][Loadout][Slot] … worn-audit jacket=1 pants=1 boots=1` | `TBD_LoadoutEquipHelper.c:1342` | actually dressed, not just "equip OK" |
-| `[TBD][Loadout][Slot] … NAKED …` / `HALF-DRESSED …` | `TBD_LoadoutEquipHelper.c:1223` / `:1228` | the nakedness guard fired |
-| `[TBD] SpawnManager: bound player … to slot … body (kit …)` | `TBD_SpawnManager.c:2381` | body handed over |
-| `[TBD][Spawn] player=N possess request accepted` | `TBD_SpawnManager.c:2549` | in the world |
-| `[TBD][Spawn] player=N KILLED — one life spent` | `TBD_SpawnManager.c:2710` | terminal death |
-| `[TBD][Admin] respawn player=N by=… — back in the world, life restored` | `TBD_SpawnManager.c:2878` | admin respawn worked |
-| `[TBD][Slots] rematerialized body for slot … — freshly dressed from mission JSON` | `TBD_SpawnManager.c:2280` | respawn re-applied the loadout |
+| `[TBD] Stage → LOBBY` | `TBD_FrameworkManager.SetStage` | the lobby is open |
+| `[TBD][Spawn] LOBBY: auto-deploy wave OFF` | `TBD_SpawnManager.OnStageChanged` | the picker is the way in (correct) |
+| `[TBD][Spawn] claim player=N slot=K` | `TBD_SpawnManager.ClaimSlot` | a seat was taken |
+| `[TBD][Spawn] claim rejected … (held by another player)` | `TBD_SpawnManager.ClaimSlot` | contention refused correctly |
+| `[TBD][Spawn] claim rejected … (one life spent)` | `TBD_SpawnManager.ClaimSlot` | one life is enforced |
+| `[TBD] SpawnManager: assigned slot … to player …` | `TBD_SpawnManager.AssignSlotForPlayer` | seated |
+| `[TBD][Spawn] slot=… Y=… jsonY=… heading=…` | `TBD_SpawnManager.SpawnSlotBody` | authored transform applied |
+| `[TBD][Loadout][Slot] … loadout pass complete gear=x/x cargo=y/y` | `TBD_LoadoutEquipHelper.ReportVerdict` | **the T-068 line** |
+| `[TBD][Loadout][Slot] … worn-audit jacket=1 pants=1 boots=1` | `TBD_LoadoutEquipHelper.ReportWornAudit` | actually dressed, not just "equip OK" |
+| `[TBD][Loadout][Slot] … NAKED …` / `HALF-DRESSED …` | `TBD_LoadoutEquipHelper.ReportWornAudit` | the nakedness guard fired |
+| `[TBD] SpawnManager: bound player … to slot … body (kit …)` | `TBD_SpawnManager.DeployPlayerInternal` | body handed over |
+| `[TBD][Spawn] player=N possess request accepted` | `TBD_SpawnManager.PossessSlotBody` | in the world |
+| `[TBD][Spawn] player=N KILLED — one life spent` | `TBD_SpawnManager.OnPlayerKilled` | terminal death |
+| `[TBD][Admin] respawn player=N by=… — back in the world, life restored` | `TBD_SpawnManager.FinishAdminRespawn` | admin respawn worked |
+| `[TBD][Slots] rematerialized body for slot … — freshly dressed from mission JSON` | `TBD_SpawnManager.DeployPlayerInternal` | respawn re-applied the loadout |
 | `WORLD (E): Unknown class '<Name>'` | engine | a prefab component's class does not resolve |
 | `GUI (E): Menu preset '<name>' not found!` | engine | a screen cannot open |
