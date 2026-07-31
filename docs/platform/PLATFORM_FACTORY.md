@@ -8,9 +8,20 @@ Do not start this program until **T-181 is finished**. Operator instruction.
 
 ---
 
-## ⏹ THE FACTORY STOPPED AFTER WAVE 76 — 2026-07-31. Read this before restarting it.
+## ⏹ THE FACTORY STOPPED AFTER WAVE 77 — 2026-08-01. Read this before restarting it.
 
-**349 platform tickets shipped. 47 open, and none of them are why this stopped.**
+**358 platform tickets shipped. 42 open. Zero P0. Zero P1.**
+
+**Wave 77 was the tooling wave** — nine tickets, all of them the project's own checks rather than
+anything a user meets. It exists because waves 75 and 76 kept tripping over instruments that lied:
+a gate that narrowed its own scope and reported 26/26, a health grep with no reachable exit 0, a
+validator ratchet red since before anyone looked, a sentinel test that could not fail, and a backup
+verifier that accepted the wrong database. All nine are fixed and adversarially verified.
+
+**The playtest is unblocked and the Workshop skew is closed — measured, on 2026-08-01.** The operator
+re-published the mod; the stale 1.0.1 was still cached locally and would have been preferred. Cleared
+it, booted `-config` only (the exact path a joining client takes), and the engine fetched **1.0.2**
+(`data.pak` 570,489 B vs 41,288) emitting **151** current-format `[TBD][` lines against 1.0.1's zero.
 
 The operator's call, and it was the right one: the active `ready`/`queued` lane is empty, nothing
 open is P0, and **the only thing left that can tell us whether the product actually works is a live
@@ -21,16 +32,21 @@ More waves was not the constraint. Contact with reality was.
 
 ### What to do next, in order
 
-1. **T-607 — re-publish `tbd-framework` from Workbench.** `executor: human`; no agent can do it.
-   Do this BEFORE the playtest, not after. The mod is on the Workshop unlisted under the **same GUID
-   as the local gproj**, pinned at a stale **1.0.1**. A joining client resolves that GUID and may load
-   June's code while the server runs the checkout. Nobody has ever connected a second machine to this
-   combination, so the skew is unverified in both directions. Same root cause has meant **staging has
-   been validating 1.0.1, not the checkout it deployed** — and STAGING-SERVER.md's pass criteria were
-   written against *that* build's strings, so the check passed **because** the mod was stale.
-2. **Run [`PLAYTEST_RUNBOOK.md`](PLAYTEST_RUNBOOK.md).** One session closes **T-181.16 and T-068.14** —
-   the last slices of the last two open programs. Start with `scripts/mod/run-playtest-server.sh`.
-3. Only then consider more waves.
+1. **Run [`PLAYTEST_RUNBOOK.md`](PLAYTEST_RUNBOOK.md).** Nothing blocks it any more. One session closes
+   **T-181.16 and T-068.14** — the last slices of the last two open programs. Start with
+   `scripts/mod/run-playtest-server.sh`. The remaining unknown is the friend's first Direct Join,
+   which nobody has ever exercised; §6.2's `#tbd` chat probe tells you in one line which mod the
+   client actually loaded.
+2. **Only then consider more waves.** And if you do, read the two entries below first — the tooling
+   is honest now, but it is not infallible.
+
+### Still open on staging (T-607, no longer playtest-blocking)
+
+`deploy-staging.sh:1153` omits `-addonsDir` in config mode and `:1155` registers no room, so staging
+is still broken both ways. Copy the shape T-604 proved in `scripts/mod/run-playtest-server.sh` —
+**both flags together**. STAGING-SERVER.md's pass criteria were already corrected by T-606. The old
+1.0.1 pak is kept at `~/.cache/tbd-workshop-1.0.1-backup`; it is the only copy, and the stale-build
+detectors were validated against it, so do not delete it casually.
 
 ### State of the two remaining programs
 
@@ -55,9 +71,13 @@ Three worth knowing about because they describe the *tools*, not the product:
 - **T-609 — the world-boot ratchet has been red for every golden mission** since before wave 76, and
   no gate noticed because `cmd_gate` has no world-boot step. Filed as *decide, don't widen*: widening
   the baseline makes the red go away while preserving whatever it was warning about.
-- **T-602 — `wave.sh gate` defaults its base to `HEAD~1`**, which after N merges silently narrows four
-  change-scoped steps. The command center walked into this closing wave 75 and got a green 26/26 over
-  a wave whose frontend was never built. **Always pass the real wave base.**
+- **T-613 — the gate's base derivation verifies itself with its own oracle.** T-602 (wave 77) fixed
+  `wave.sh gate` silently narrowing its scope — it now derives the base from the `wave N CLOSED`
+  marker and refuses a base that starts after the wave opened. But **derive and verify call the same
+  function**, so a commit subject that merely continues past `CLOSED` becomes the base *and*
+  self-approves. Proven in a clone. Latent — no historical subject matches and `wave --close` writes
+  the format — but it is the signature defect living inside the fix for it. **A checker that consults
+  the thing it is checking is not a check.**
 
 ### The one lesson worth carrying forward
 
