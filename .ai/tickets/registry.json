@@ -8227,7 +8227,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2800,
       "stream": "web-platform",
       "targets": [
@@ -8360,7 +8360,7 @@
       "impact": [
         "platform-server"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2870,
       "stream": "web-platform",
       "targets": [
@@ -8570,7 +8570,7 @@
       "impact": [
         "infra"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2980,
       "stream": "infra",
       "targets": [
@@ -8733,7 +8733,7 @@
     {
       "id": "T-289",
       "title": "Server-host deploy agent for start, stop and status",
-      "summary": "The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive.",
+      "summary": "The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive.\n\n== WHAT T-269 NEEDS FROM THIS TICKET (added 2026-07-31 after T-269 stopped at this boundary) ==\nT-269 could not build a real RCON transport and proved why rather than guessing: no RCON port is\nbound anywhere (`ss -lntu` shows only :8080/:3000/:5434), `deploy-staging.sh` renders server.config.json\nwith NO `rcon` block and `battlEye: false`, the `servers` table is six columns with no rcon port and\nno credential, `config.rs` declares 16 env vars and none are RCON, and traffic runs ONE WAY ONLY --\nthe mod POSTs to /api/v1/ingest/* and the API's only outbound client is Discord. It closed the lie\n(503 RCON_NO_TRANSPORT naming this ticket) and left the transport to you.\n\nTHIS TICKET MUST PROVIDE:\n - A channel openable from INSIDE the API process -- an authenticated agent on the game host or a\n   token-guarded local socket. NOT an SSH shell reachable from a session cookie: T-269 rejected that\n   as \"remote code execution with an admin checkbox in front of it\", and it is right.\n - Per-server addressing and a credential. `servers` has neither; needs a migration adding an agent\n   endpoint and a secret reference, resolvable from the row `send_rcon` already loads.\n - A DELIVERY RESULT, not fire-and-forget: accepted / rejected / unreachable, so the 503 can become a\n   real 202 only when something actually took the command, and the audit row records the OUTCOME\n   rather than the attempt.\n - SCOPE GAP TO DECIDE: this ticket's title covers start/stop/status only. RCON's four actions\n   include `change_map` and `custom`, which need a live admin channel INTO the running server --\n   strictly larger than process control. Decide whether those need a fifth scope or a mod-side\n   command sink. Related: `kick` has no target at all -- `RconInput` has no player field and\n   `server_control.rs:43` posts bare {\"action\":\"kick\"}, so even with a transport it cannot name who.",
       "program": "platform",
       "surfaces": [
         "SHELL"
@@ -14776,6 +14776,107 @@
       "targets": [
         "website"
       ]
+    },
+    {
+      "id": "T-576",
+      "title": "No 23503 handler: every foreign-key violation surfaces as a 500",
+      "summary": "Found by T-262 (filed-not-fixed) and independently confirmed by wave 69's adversarial verifier.\n\n`apps/website/api/src/handlers/mod.rs:51` defines `is_unique_violation` (23505) and NOTHING for\n23503 (foreign_key_violation). Since T-262 landed the schema's first 25 FKs in `0018`, any FK\nviolation now reaches the client as a **500 internal error** instead of a 4xx.\n\nLIVE REPRO (verifier, own API instance on a scratch DB):\n  POST /api/v1/ingest/server-status with a random server_id  ->  500 {\"error\":\"internal error\"}\n  same heartbeat for a REGISTERED server                     ->  200\nCause: `handlers/telemetry.rs:229` inserts into `server_statuses` with no existence check, and 0018\nconstraint 10 (server_statuses.server_id -> servers, CASCADE) now enforces it.\n\nWHY IT IS ONLY MINOR TODAY: those rows were invisible no-op orphans before 0018 -- no read path\nreturned them -- so this is not a legitimate happy-path write. The verifier drove the full happy\npath (version create, event attach + 16 slots, register, seat claim, squad reserve, bookmark,\narmory, fire mission, role resync, token refresh, registered-server heartbeat) and found ZERO FK\n500s. So this is a sharp edge, not a live outage.\n\nWHY IT MATTERS ANYWAY: it is the reason T-262 had to ABSTAIN from four otherwise-correct FKs\n(matches.event_id, matches.mission_id, server_statuses.current_match_id, fire_missions.event_id).\nThose all bind straight from a request body on ingest endpoints with no human in the loop, where a\n500 loses a scoreline. Add the 23503 mapping and those four become safe to constrain -- that is the\nreal prize here, not the error code.\n\nCOMPOUNDING, pre-existing: `handlers/servers.rs:456` `create_server` (@route POST /api/v1/servers)\nis NOT WIRED INTO THE ROUTER. Servers can only exist via seed or raw SQL, so there is no API to\nregister the server a heartbeat needs. Worth resolving in the same pass.\n\nWANTED: an `is_foreign_key_violation` sibling, mapped to 400/409 with a message naming the missing\nparent; then revisit T-262's four abstentions.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3420,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-577",
+      "title": "Database backups: none exist, and the spec is written",
+      "summary": "T-280 established there is no pg_dump/pg_restore tooling anywhere in the repo -- the only hits are\nthree comments describing the Go->Rust schema parity check. It stopped at the boundary because\nbackups live outside `app.rs`. This is that work, and T-280 already specified it precisely.\n\n1. `scripts/deploy/backup-db.sh` (new). Neither host has `pg_dump`, so go through the compose\n   container: `podman exec tbd_reforger_db pg_dump -U tbd -Fc -d \"$DB\" > \"$OUT/tbd_reforger-$(date -u +%Y%m%dT%H%M%SZ).dump\"`.\n   Custom format (-Fc) for parallel and selective restore. Retention BY COUNT, not `find -mtime` --\n   a stopped cron then silently keeps nothing fresh rather than keeping the last N.\n   **IT MUST VERIFY THE DUMP IT JUST WROTE** -- `pg_restore --list` over the file plus a non-zero-rows\n   check -- or it is this program's signature defect in a new hat: a backup script reporting success\n   over a file it never opened.\n2. `scripts/deploy/restore-db.sh` (new). `pg_restore --clean --if-exists -d`, carrying the SAME\n   T-381 allow-list guard the test harness uses (`tests/common/mod.rs:88`) so a restore can never be\n   pointed at the wrong database by a typo.\n3. `Makefile`: `db-backup` / `db-restore` targets beside `db-up`/`seed` (Makefile:69-83).\n4. A schedule. `deploy-website.sh:82` shows the API runs as a USER systemd unit\n   (`tbd-website-api.service`), so pair it with `tbd-website-backup.timer` + `.service` installed the\n   same way -- not root cron.\n5. **A restore DRILL in CI or the wave gate**: dump -> restore into a scratch DB -> run `db_migrate`\n   against it. Without this the backup is untested and you discover that during an incident.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3421,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-578",
+      "title": "Wire T-280's durable rate limiter — it is proven but inert",
+      "summary": "T-280 built `app::durable_ratelimit::PgRateLimiter` (a one-statement refill-and-spend token bucket;\n`ON CONFLICT DO UPDATE` takes the row lock so it is atomic across processes) and PROVED it with a\nperturbation that isolates durability from throttling: an in-process bucket still refuses at the\nlimit, and fails only on 'still refused after a restart'.\n\n**It is deliberately NOT WIRED.** Verified by wave 69's verifier: `PgRateLimiter` is unreferenced\nfrom `state.rs`, `bin/api.rs` and `middleware/`; the live limiter is still the in-memory `governor`\n`IpLimiter`; `rate_limit_buckets` is absent from the schema and created by no migration. It stopped\nbecause the table belongs in `migrations/`, which was T-262's file that wave, and it refused to\nself-provision DDL from the request path.\n\nTO WIRE IT: (a) a migration creating the table -- the DDL is already a `const RATE_LIMIT_BUCKETS_DDL`\nin `app.rs` specifically so the bytes the tests prove and the bytes the migration lands cannot\ndrift; (b) two lines of wiring, recorded in the module doc.\n\n**AN OPERATOR TRADE, NOT A SLICE AGENT'S CALL:** it adds ONE DATABASE WRITE PER REQUEST. T-280's own\nrecommendation is to keep the in-memory `IpLimiter` as an L1 in front so only near-limit traffic\nreaches Postgres. Get sign-off on the cost before wiring.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3422,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-579",
+      "title": "Post-wave-69 UI honesty: dead RCON success path, and a delete dialog that still lies",
+      "summary": "Two frontend items from wave 69, neither a regression, both cosmetic-but-dishonest.\n\n1. MINOR -- dead code after T-269 flipped RCON to 503. `frontend/src/server_control.rs:116`\n   `rcon_accepted_message` (\"RCON accepted ... transport pending T-269\"), the `Ok(resp)` arm at\n   `:313`, and the `RconAccepted` DTO at `:21` are all UNREACHABLE now that the API never returns\n   2xx for RCON. T-269's agent flagged this itself. VERIFIED SAFE by the verifier: `busy.set(false)`\n   runs on both branches (`:324`) so there is no stuck spinner, and the 503 message surfaces\n   honestly via a toast. Delete the dead path, or leave it and say why in a comment.\n\n2. NIT -- `frontend/src/event_manager.rs:985` still promises that deleting an event removes \"its\n   attached missions' ORBATs, and all registrations ... This cannot be undone.\" It does not:\n   `handlers/events.rs:1380` sets `deleted_at = now()` and nothing else. Driven by the verifier:\n   DELETE /events -> 204, `deleted_at` set, `event_missions` SURVIVE, CASCADE never fires.\n   Pre-existing. T-262's constraint 1 means the cascade is already correct for the day that handler\n   becomes a hard delete -- but today the dialog is wrong. Either fix the copy or make the handler\n   match it; decide which, do not leave both.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3423,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
+    },
+    {
+      "id": "T-580",
+      "title": "/healthz is unauthenticated and now reports version, uptime, pool depth and migration counts",
+      "summary": "T-280 extended `/healthz` with two independent failable checks -- a genuine improvement -- but it is\nUNAUTHENTICATED and exposed publicly through Caddy (`Caddyfile.website:27`).\n\nMEASURED LIVE by wave 69's verifier against `app.rs:1021`:\n    version=0.1.0  uptime=396  pool={connections:5, idle:4}  migrations.applied=18\nLow-risk fingerprinting / information disclosure: it tells an unauthenticated caller the exact build,\nhow recently it restarted, connection-pool depth, and how many migrations have run.\n\nDELIBERATE TENSION, do not \"fix\" it by simply adding auth: `/healthz` is probed WITHOUT credentials\nby `preflight.sh:140`, `Caddyfile.website:27`, `editor-gates.yml:95` and\n`tools/tbd-tools/src/smokes.rs:2714`. T-280 gated `/metrics` behind `X-Service-Token` and left\n`/healthz` open for exactly this reason.\n\nLIKELY ANSWER: keep the 200/503 + `status` field public (that is all any prober needs) and move the\ndetail behind the same `X-Service-Token` gate `/metrics` uses, or behind a `?verbose=1` that requires\nit. Confirm every listed prober still passes afterwards.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3424,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
     }
   ]
 }

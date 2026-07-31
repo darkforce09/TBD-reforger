@@ -40,27 +40,3 @@ apps/website/api/.env.example:71  DISCORD_REDIRECT_URL=http://localhost:8080/api
 The command center hand-edited the operator's local .env (gitignored) on 2026-07-27 to unblock testing, so THE BUG NO LONGER REPRODUCES ON THIS MACHINE. It reproduces for every new checkout. Do not conclude it is fixed because a live login works here.
 Second half still open: handlers/oauth.rs:113,116 use `let Ok(..) = .. else` and DROP the exchange_code / fetch_user error, so a real Discord failure is indistinguishable from a config one.
 WANTED: align the two hosts in the committed example, log the dropped errors, and add a startup check that REFUSES TO BOOT when FRONTEND_URL and DISCORD_REDIRECT_URL disagree on host — a config that guarantees a broken first login should not start silently.
-
-## T-262 — Zero foreign keys in the entire schema
-
-- **Slice spec:** ``
-- **Program hub:** ``
-- **Branch:** `ticket/T-262`
-- **Targets:** website
-- **Summary:** Grep for FOREIGN KEY or REFERENCES across all seven migrations returns zero. Deleting a mission, event or user orphans every dependent row, and DELETE /events/{id} sets deleted_at only while the confirm dialog claims a cascade. assigned_to, discord_id and reserved_by are unconstrained free text.
-
-## T-269 — Real RCON transport — the current endpoint is a no-op that reports success
-
-- **Slice spec:** ``
-- **Program hub:** ``
-- **Branch:** `ticket/T-269`
-- **Targets:** website
-- **Summary:** POST /admin/servers/{id}/rcon (admin.rs:331-379) validates the action enum, explicitly discards the command at admin.rs:361, writes an audit row and returns 202 accepted:true. Grep for std::process, Command::new, tokio::process or ssh over the api returns zero hits.
-
-## T-280 — No observability, no backups, no durable rate limiting
-
-- **Slice spec:** ``
-- **Program hub:** ``
-- **Branch:** `ticket/T-280`
-- **Targets:** root
-- **Summary:** Zero prometheus, metrics, sentry or opentelemetry in the api. No /metrics endpoint; /healthz pings the database only. No pg_dump or pg_restore anywhere. Rate limiting is in-memory single-instance so it resets on every restart and cannot scale past one process.

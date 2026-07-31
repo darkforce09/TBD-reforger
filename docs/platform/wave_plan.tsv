@@ -376,3 +376,8 @@
 99	T-575	wave.sh dead MIGRATE_TEST_DATABASE_URL	scripts/platform/wave.sh
 3	T-303	Dev config guarantees the first live Discord login fails	apps/website/api/.env.example; apps/website/api/src/handlers/oauth.rs
 3	T-117	Mission upload + schema validation UI	apps/website/frontend/src/missions.rs
+3	T-576	No 23503 handler: FK violations surface as 500	apps/website/api/src/handlers/mod.rs; apps/website/api/src/handlers/telemetry.rs
+3	T-577	Database backups: none exist	scripts/deploy/backup-db.sh; Makefile
+3	T-578	Wire T-280's durable rate limiter	apps/website/api/src/middleware/ratelimit.rs
+3	T-579	Dead RCON success path + delete dialog lies	apps/website/frontend/src/server_control.rs; apps/website/frontend/src/event_manager.rs
+3	T-580	/healthz unauthenticated detail leak	apps/website/api/src/app.rs

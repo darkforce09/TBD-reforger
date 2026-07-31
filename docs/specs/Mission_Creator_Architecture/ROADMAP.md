@@ -20,7 +20,6 @@
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
 - **T-303** — Dev config guarantees the first live Discord login fails invalid_state (ready)
-- **T-262** — Zero foreign keys in the entire schema (ready)
 <!-- ticket-sync:next:end -->
 
 ---

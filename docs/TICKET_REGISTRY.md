@@ -516,14 +516,14 @@ $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) wit
 | T-259 | 2770 | shipped | eden | The mod has no reader for the settings block | mission.schema.json:451-462 defines respawn, spectatorPolicy and nightVision. TBD_MissionDocumentStruct has no settings member and flatten has no settings field. The block appears only in the schema, the four hand-written goldens and one doc. |
 | T-260 | 2780 | shipped | platform | Events carry no server or modpack | Grep for server_id or modpack_id over events.rs and models/event.rs returns zero, and the events table has no such columns. The Event Hub modpack chip fetches the global /modpacks/current, so every event shows the same pack. |
 | T-261 | 2790 | shipped | platform | Leaderboard materialized view has no scheduled refresh | refresh_leaderboard has exactly one caller, inside results ingest. If ingest never fires the ladder is frozen at the WITH NO DATA state from migration 0002 forever. No cron, no interval, no admin refresh button. |
-| T-262 | 2800 | ready | platform | Zero foreign keys in the entire schema | Grep for FOREIGN KEY or REFERENCES across all seven migrations returns zero. Deleting a mission, event or user orphans every dependent row, and DELETE /events/{id} sets deleted_at only while the confirm dialog claims a cascade. assigned_to, discord_id and reserved_by are unconstrained free text. |
+| T-262 | 2800 | shipped | platform | Zero foreign keys in the entire schema | Grep for FOREIGN KEY or REFERENCES across all seven migrations returns zero. Deleting a mission, event or user orphans every dependent row, and DELETE /events/{id} sets deleted_at only while the confirm dialog claims a cascade. assigned_to, discord_id and reserved_by are unconstrained free text. |
 | T-263 | 2810 | shipped | platform | Wiki and Vehicle Database are fully hardcoded | wiki.rs makes zero API calls; content is a const and EDIT mode writes to a session signal with no Save button and no PUT. vehicles.rs likewise makes zero API calls. Meanwhile GET/PUT /wiki, GET /wiki/{slug} and GET /vehicle-database all exist and work. vehicle_databases also has no INSERT path and no seed. |
 | T-264 | 2820 | shipped | platform | Bookmarked tab with no bookmark button | missions.rs:21 ships a bookmarked scope with backend support, but there is no bookmark control anywhere in the SPA and POST/DELETE /missions/{id}/bookmark are orphaned, so the tab can only ever be empty. |
 | T-265 | 2830 | shipped | platform | Leave-of-Absence feature has zero UI | Four endpoints and the leave_requests table are fully implemented and tested, with no page, no nav entry and no caller. An entire shipped backend feature nobody can reach. |
 | T-266 | 2840 | shipped | platform | No pagination anywhere in the SPA | Every list endpoint returns data, total, limit and offset (audit uses next_cursor), but no page reads any of them — audit.rs fetches a cursor list and discards next_cursor. Every list is silently truncated at the default limit of 20. |
 | T-267 | 2850 | shipped | platform | CMS announcements can be created but never edited, deleted or re-pushed | content.rs makes exactly one API call and discards the returned id, so re-clicking Publish duplicates. PATCH, DELETE, uploads and push-discord are all orphaned. The SOP category never hits the API at all — it toasts success with no network call. Five markdown tools toast mock. |
 | T-268 | 2860 | shipped | platform | Personnel — Issue Warning is a mock over a working endpoint, and there is no unban | personnel.rs:379-382 toasts 'Warning issued (mock)' while POST /admin/users/{id}/warnings exists and works. DELETE ban (unban) has no control at all, so a ban is irreversible from the UI. Sort and Filter are stubs and the Deployments dossier stat is hardcoded. |
-| T-269 | 2870 | ready | platform | Real RCON transport — the current endpoint is a no-op that reports success | POST /admin/servers/{id}/rcon (admin.rs:331-379) validates the action enum, explicitly discards the command at admin.rs:361, writes an audit row and returns 202 accepted:true. Grep for std::process, Command::new, tokio::process or ssh over the api returns zero hits. |
+| T-269 | 2870 | shipped | platform | Real RCON transport — the current endpoint is a no-op that reports success | POST /admin/servers/{id}/rcon (admin.rs:331-379) validates the action enum, explicitly discards the command at admin.rs:361, writes an audit row and returns 202 accepted:true. Grep for std::process, Command::new, tokio::process or ssh over the api returns zero hits. |
 | T-270 | 2880 | shipped | platform | Wire the Server Control page — ten dead controls | server_control.rs is 312 lines with zero on: handlers, and selected is bound to MOCK_SERVERS[0] as a compile-time constant. Restart, Stop, Launch, four Quick Actions, the RCON input and send are all inert, and there is no Start control at all. The console renders a fabricated log including a fake RCON listener line. |
 | T-271 | 2890 | shipped | platform | Modpack CRUD plus workshop-id columns | /modpacks is get-only and the handler contains no DML; the only INSERT is the offline registry importer. modpack_mods has name, is_key_dependency and sort_order but no workshop_id, mod_guid or version, so it structurally cannot express a Reforger game.mods[] entry. The frontend page is fully mock and its Save writes to an in-memory map while toasting success. |
 | T-272 | 2900 | shipped | platform | Server-status producer — close the SSE loop | The whole SSE chain is built (realtime.rs hub, the stream route, sse.rs client) but the only publisher is inside POST /ingest/server-status, and nothing calls it. The stream connects, flips connected=true and delivers zero frames forever. |
@@ -534,7 +534,7 @@ $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) wit
 | T-277 | 2950 | idea | eden | 27.4% of the shipped map catalogue is unclassified | 444 of 1,623 prefabs fall through to the fallback rule against only 66 classify rules. vegetation and utility are both zero despite P3_vegetation being listed as shipped, and the road census reports zero while roads.json.gz ships 888 segments across five classes. |
 | T-278 | 2960 | idea | eden | No paks-to-registry pipeline and no Makefile target to regenerate the catalogue | Data comes out of the game via Enfusion Workbench plugins, then a human copies two files by hand into packages/tbd-schema/registry/ and commits them. make registry-import ingests the committed artifacts. A PakVfs reader exists and is used for terrain, satellite and roads, but nothing in the repo parses .et prefab structure. |
 | T-279 | 2970 | idea | platform | Discord bot — greenfield | There is no bot skeleton at all. Grep for serenity, twilight, poise, discord.js, gateway, application command or ed25519 across every file type returns zero hits. DISCORD_BOT_TOKEN is loaded at config.rs:46,87 and never read by any consumer. No interactions endpoint, no signature verification, no inbound Discord surface. |
-| T-280 | 2980 | ready | infra | No observability, no backups, no durable rate limiting | Zero prometheus, metrics, sentry or opentelemetry in the api. No /metrics endpoint; /healthz pings the database only. No pg_dump or pg_restore anywhere. Rate limiting is in-memory single-instance so it resets on every restart and cannot scale past one process. |
+| T-280 | 2980 | shipped | infra | No observability, no backups, no durable rate limiting | Zero prometheus, metrics, sentry or opentelemetry in the api. No /metrics endpoint; /healthz pings the database only. No pg_dump or pg_restore anywhere. Rate limiting is in-memory single-instance so it resets on every restart and cannot scale past one process. |
 | T-281 | 2990 | shipped | infra | apps/mod README falsely claims the compile route does not exist | apps/mod/tbd-framework/README.md:23 says the route is not in the current backend and cites the wrong path without /v1. Both are false — contradicted by app.rs:158-161 and TBD_MissionLoader.c:506. |
 | T-282 | 3000 | idea | eden | Mission version history — differ and timeline | mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning. Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled. Old versions are retained and unreachable from any UI. |
 | T-283 | 3010 | idea | eden | Mission review and commenting workflow | No comments table in any migration. approvals.rs:274-284 is a reviewer comment box backed by a local signal, explicitly marked mock until a review-comments API lands, never POSTed. missions.rs:884-896 reads 'Comments coming soon'. Coarse approve/reject exists; the iterative loop does not. |
@@ -543,7 +543,30 @@ $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) wit
 | T-286 | 3040 | shipped | platform | Dead scaffolding and a non-reactive role read | PageStub and ApiPage are defined and routed nowhere. missions.rs:87 is a one-shot non-reactive role read evaluated before AuthGate resolves; combined with nav.rs:41-46 returning true for None, a not-yet-bootstrapped session yields is_maker=true and never corrects. faction_manager.rs deletes with no confirmation dialog, unlike every sibling page. |
 | T-287 | 3050 | shipped | platform | SSE reader leaks one connection per SPA navigation | Self-documented at sse.rs:8-12: the stream is never torn down on route change because Leptos on_cleanup is Send-bound and AbortController is not. Harmless today only because the stream never emits. |
 | T-288 | 3060 | idea | platform | Modpack to server-config renderer and push | The database modpack concept and the server's actual mod list are unconnected universes. deploy-staging.sh:258-260 hardcodes a single mod from an env var and never reads the modpacks table. |
-| T-289 | 3070 | idea | platform | Server-host deploy agent for start, stop and status | The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive. |
+| T-289 | 3070 | idea | platform | Server-host deploy agent for start, stop and status | The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive.
+
+== WHAT T-269 NEEDS FROM THIS TICKET (added 2026-07-31 after T-269 stopped at this boundary) ==
+T-269 could not build a real RCON transport and proved why rather than guessing: no RCON port is
+bound anywhere (`ss -lntu` shows only :8080/:3000/:5434), `deploy-staging.sh` renders server.config.json
+with NO `rcon` block and `battlEye: false`, the `servers` table is six columns with no rcon port and
+no credential, `config.rs` declares 16 env vars and none are RCON, and traffic runs ONE WAY ONLY --
+the mod POSTs to /api/v1/ingest/* and the API's only outbound client is Discord. It closed the lie
+(503 RCON_NO_TRANSPORT naming this ticket) and left the transport to you.
+
+THIS TICKET MUST PROVIDE:
+ - A channel openable from INSIDE the API process -- an authenticated agent on the game host or a
+   token-guarded local socket. NOT an SSH shell reachable from a session cookie: T-269 rejected that
+   as "remote code execution with an admin checkbox in front of it", and it is right.
+ - Per-server addressing and a credential. `servers` has neither; needs a migration adding an agent
+   endpoint and a secret reference, resolvable from the row `send_rcon` already loads.
+ - A DELIVERY RESULT, not fire-and-forget: accepted / rejected / unreachable, so the 503 can become a
+   real 202 only when something actually took the command, and the audit row records the OUTCOME
+   rather than the attempt.
+ - SCOPE GAP TO DECIDE: this ticket's title covers start/stop/status only. RCON's four actions
+   include `change_map` and `custom`, which need a live admin channel INTO the running server --
+   strictly larger than process control. Decide whether those need a fifth scope or a mod-side
+   command sink. Related: `kick` has no target at all -- `RconInput` has no player field and
+   `server_control.rs:43` posts bare {"action":"kick"}, so even with a transport it cannot name who. |
 | T-290 | 3080 | idea | eden | Resolve nine dead-output fields flatten emits that the mod never reads | meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only). Either add mod readers or annotate them non-consumed so the next audit does not re-derive this. |
 | T-291 | 3090 | idea | eden | Resolve five schema fields implemented on no surface | environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem. |
 | T-292 | 3100 | shipped | eden | net.range short is parsed then discarded | TBD_RadioService.c:214-220 maps only long to a nonzero value; short and any both collapse to 0 and are behaviourally identical. The schema advertises a three-value enum (mission.schema.json:308) the runtime does not honour. |
@@ -3052,26 +3075,126 @@ Repro: collapse discord_id_for_role to always DEV_USER_ID but leave old arms in 
 Dead let decoy now RED. `if false { apply_row_meta(…, opt(&row.briefing)) }` + live None args → hydrate pin stays GREEN. Pin accepts any apply_row_meta arg-list, including unreachable calls.
 
 Repro: live briefing args → None; add if false { apply_row_meta(…, opt(&row.briefing)) }; cargo test green. |
+| T-576 | 3420 | deferred | platform | No 23503 handler: every foreign-key violation surfaces as a 500 | Found by T-262 (filed-not-fixed) and independently confirmed by wave 69's adversarial verifier.
+
+`apps/website/api/src/handlers/mod.rs:51` defines `is_unique_violation` (23505) and NOTHING for
+23503 (foreign_key_violation). Since T-262 landed the schema's first 25 FKs in `0018`, any FK
+violation now reaches the client as a **500 internal error** instead of a 4xx.
+
+LIVE REPRO (verifier, own API instance on a scratch DB):
+  POST /api/v1/ingest/server-status with a random server_id  ->  500 {"error":"internal error"}
+  same heartbeat for a REGISTERED server                     ->  200
+Cause: `handlers/telemetry.rs:229` inserts into `server_statuses` with no existence check, and 0018
+constraint 10 (server_statuses.server_id -> servers, CASCADE) now enforces it.
+
+WHY IT IS ONLY MINOR TODAY: those rows were invisible no-op orphans before 0018 -- no read path
+returned them -- so this is not a legitimate happy-path write. The verifier drove the full happy
+path (version create, event attach + 16 slots, register, seat claim, squad reserve, bookmark,
+armory, fire mission, role resync, token refresh, registered-server heartbeat) and found ZERO FK
+500s. So this is a sharp edge, not a live outage.
+
+WHY IT MATTERS ANYWAY: it is the reason T-262 had to ABSTAIN from four otherwise-correct FKs
+(matches.event_id, matches.mission_id, server_statuses.current_match_id, fire_missions.event_id).
+Those all bind straight from a request body on ingest endpoints with no human in the loop, where a
+500 loses a scoreline. Add the 23503 mapping and those four become safe to constrain -- that is the
+real prize here, not the error code.
+
+COMPOUNDING, pre-existing: `handlers/servers.rs:456` `create_server` (@route POST /api/v1/servers)
+is NOT WIRED INTO THE ROUTER. Servers can only exist via seed or raw SQL, so there is no API to
+register the server a heartbeat needs. Worth resolving in the same pass.
+
+WANTED: an `is_foreign_key_violation` sibling, mapped to 400/409 with a message naming the missing
+parent; then revisit T-262's four abstentions. |
 | T-568 | 3421 | shipped | platform | T-565 Class-R still hollow — dead helper UPDATE / SQL string-literal decoy | FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-565.
 
 SELECT -- comment decoy now RED. Still GREEN: (1) dead helper retaining COALESCE UPDATE while live path SET arma_id = $2; (2) SELECT … WHERE 'UPDATE users SET arma_id = COALESCE…' (needle inside SQL string literal survives comment strip).
 
 Repro: move COALESCE UPDATE into unused fn; live UPDATE uses $2; Class-R green. |
+| T-577 | 3421 | deferred | platform | Database backups: none exist, and the spec is written | T-280 established there is no pg_dump/pg_restore tooling anywhere in the repo -- the only hits are
+three comments describing the Go->Rust schema parity check. It stopped at the boundary because
+backups live outside `app.rs`. This is that work, and T-280 already specified it precisely.
+
+1. `scripts/deploy/backup-db.sh` (new). Neither host has `pg_dump`, so go through the compose
+   container: `podman exec tbd_reforger_db pg_dump -U tbd -Fc -d "$DB" > "$OUT/tbd_reforger-$(date -u +%Y%m%dT%H%M%SZ).dump"`.
+   Custom format (-Fc) for parallel and selective restore. Retention BY COUNT, not `find -mtime` --
+   a stopped cron then silently keeps nothing fresh rather than keeping the last N.
+   **IT MUST VERIFY THE DUMP IT JUST WROTE** -- `pg_restore --list` over the file plus a non-zero-rows
+   check -- or it is this program's signature defect in a new hat: a backup script reporting success
+   over a file it never opened.
+2. `scripts/deploy/restore-db.sh` (new). `pg_restore --clean --if-exists -d`, carrying the SAME
+   T-381 allow-list guard the test harness uses (`tests/common/mod.rs:88`) so a restore can never be
+   pointed at the wrong database by a typo.
+3. `Makefile`: `db-backup` / `db-restore` targets beside `db-up`/`seed` (Makefile:69-83).
+4. A schedule. `deploy-website.sh:82` shows the API runs as a USER systemd unit
+   (`tbd-website-api.service`), so pair it with `tbd-website-backup.timer` + `.service` installed the
+   same way -- not root cron.
+5. **A restore DRILL in CI or the wave gate**: dump -> restore into a scratch DB -> run `db_migrate`
+   against it. Without this the backup is untested and you discover that during an incident. |
 | T-569 | 3422 | shipped | platform | T-566 Class-R still hollow — match arms only in raw-string decoys | FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-566.
 
 // and /* */ arm comments now RED; ignore-helper DEV_USER_ID bind RED. Still GREEN: live match collapses to `_` while arms exist only inside r#" "enlisted" => … "# decoys (comment strip keeps string contents).
 
 Repro: park arms in raw-string decoy; match `_ => DEV_USER_ID`; Class-R green. |
+| T-578 | 3422 | deferred | platform | Wire T-280's durable rate limiter — it is proven but inert | T-280 built `app::durable_ratelimit::PgRateLimiter` (a one-statement refill-and-spend token bucket;
+`ON CONFLICT DO UPDATE` takes the row lock so it is atomic across processes) and PROVED it with a
+perturbation that isolates durability from throttling: an in-process bucket still refuses at the
+limit, and fails only on 'still refused after a restart'.
+
+**It is deliberately NOT WIRED.** Verified by wave 69's verifier: `PgRateLimiter` is unreferenced
+from `state.rs`, `bin/api.rs` and `middleware/`; the live limiter is still the in-memory `governor`
+`IpLimiter`; `rate_limit_buckets` is absent from the schema and created by no migration. It stopped
+because the table belongs in `migrations/`, which was T-262's file that wave, and it refused to
+self-provision DDL from the request path.
+
+TO WIRE IT: (a) a migration creating the table -- the DDL is already a `const RATE_LIMIT_BUCKETS_DDL`
+in `app.rs` specifically so the bytes the tests prove and the bytes the migration lands cannot
+drift; (b) two lines of wiring, recorded in the module doc.
+
+**AN OPERATOR TRADE, NOT A SLICE AGENT'S CALL:** it adds ONE DATABASE WRITE PER REQUEST. T-280's own
+recommendation is to keep the in-memory `IpLimiter` as an L1 in front so only near-limit traffic
+reaches Postgres. Get sign-off on the cost before wiring. |
 | T-570 | 3423 | deferred | platform | T-567 Class-R still hollow — unreachable if true==false / loop-break / cfg(any()) | FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.
 
 Exact `if false { … }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply… }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(…, opt(&row.briefing)).
 
 Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pin green. |
+| T-579 | 3423 | deferred | platform | Post-wave-69 UI honesty: dead RCON success path, and a delete dialog that still lies | Two frontend items from wave 69, neither a regression, both cosmetic-but-dishonest.
+
+1. MINOR -- dead code after T-269 flipped RCON to 503. `frontend/src/server_control.rs:116`
+   `rcon_accepted_message` ("RCON accepted ... transport pending T-269"), the `Ok(resp)` arm at
+   `:313`, and the `RconAccepted` DTO at `:21` are all UNREACHABLE now that the API never returns
+   2xx for RCON. T-269's agent flagged this itself. VERIFIED SAFE by the verifier: `busy.set(false)`
+   runs on both branches (`:324`) so there is no stuck spinner, and the 503 message surfaces
+   honestly via a toast. Delete the dead path, or leave it and say why in a comment.
+
+2. NIT -- `frontend/src/event_manager.rs:985` still promises that deleting an event removes "its
+   attached missions' ORBATs, and all registrations ... This cannot be undone." It does not:
+   `handlers/events.rs:1380` sets `deleted_at = now()` and nothing else. Driven by the verifier:
+   DELETE /events -> 204, `deleted_at` set, `event_missions` SURVIVE, CASCADE never fires.
+   Pre-existing. T-262's constraint 1 means the cascade is already correct for the day that handler
+   becomes a hard delete -- but today the dialog is wrong. Either fix the copy or make the handler
+   match it; decide which, do not leave both. |
 | T-571 | 3424 | deferred | platform | T-568 Class-R still hollow — nested fn dev_login / PG dollar-quote COALESCE | FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-568.
 
 Plain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE…COALESCE…$decoy$ (blanker only handles '/").
 
 Repro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R green. |
+| T-580 | 3424 | deferred | platform | /healthz is unauthenticated and now reports version, uptime, pool depth and migration counts | T-280 extended `/healthz` with two independent failable checks -- a genuine improvement -- but it is
+UNAUTHENTICATED and exposed publicly through Caddy (`Caddyfile.website:27`).
+
+MEASURED LIVE by wave 69's verifier against `app.rs:1021`:
+    version=0.1.0  uptime=396  pool={connections:5, idle:4}  migrations.applied=18
+Low-risk fingerprinting / information disclosure: it tells an unauthenticated caller the exact build,
+how recently it restarted, connection-pool depth, and how many migrations have run.
+
+DELIBERATE TENSION, do not "fix" it by simply adding auth: `/healthz` is probed WITHOUT credentials
+by `preflight.sh:140`, `Caddyfile.website:27`, `editor-gates.yml:95` and
+`tools/tbd-tools/src/smokes.rs:2714`. T-280 gated `/metrics` behind `X-Service-Token` and left
+`/healthz` open for exactly this reason.
+
+LIKELY ANSWER: keep the 200/503 + `status` field public (that is all any prober needs) and move the
+detail behind the same `X-Service-Token` gate `/metrics` uses, or behind a `?verbose=1` that requires
+it. Confirm every listed prober still passes afterwards. |
 | T-572 | 3425 | deferred | platform | T-569 Class-R still hollow — #[cfg(any())] match arms | FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-569.
 
 r#/br#/concat decoys RED. Still GREEN: `#[cfg(any())] match { live arms }` + `#[cfg(not(any()))] match { _ }` or cfg on each role arm with live `_`.

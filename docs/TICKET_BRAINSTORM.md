@@ -95,6 +95,29 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 - **T-285** (idea) — Field tools — solutions never persist and inject writes to a dead directory [SHELL] — POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads.
 - **T-288** (idea) — Modpack to server-config renderer and push [SHELL] — The database modpack concept and the server's actual mod list are unconnected universes. deploy-staging.sh:258-260 hardcodes a single mod from an env var and never reads the modpacks table.
 - **T-289** (idea) — Server-host deploy agent for start, stop and status [SHELL] — The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive.
+
+== WHAT T-269 NEEDS FROM THIS TICKET (added 2026-07-31 after T-269 stopped at this boundary) ==
+T-269 could not build a real RCON transport and proved why rather than guessing: no RCON port is
+bound anywhere (`ss -lntu` shows only :8080/:3000/:5434), `deploy-staging.sh` renders server.config.json
+with NO `rcon` block and `battlEye: false`, the `servers` table is six columns with no rcon port and
+no credential, `config.rs` declares 16 env vars and none are RCON, and traffic runs ONE WAY ONLY --
+the mod POSTs to /api/v1/ingest/* and the API's only outbound client is Discord. It closed the lie
+(503 RCON_NO_TRANSPORT naming this ticket) and left the transport to you.
+
+THIS TICKET MUST PROVIDE:
+ - A channel openable from INSIDE the API process -- an authenticated agent on the game host or a
+   token-guarded local socket. NOT an SSH shell reachable from a session cookie: T-269 rejected that
+   as "remote code execution with an admin checkbox in front of it", and it is right.
+ - Per-server addressing and a credential. `servers` has neither; needs a migration adding an agent
+   endpoint and a secret reference, resolvable from the row `send_rcon` already loads.
+ - A DELIVERY RESULT, not fire-and-forget: accepted / rejected / unreachable, so the 503 can become a
+   real 202 only when something actually took the command, and the audit row records the OUTCOME
+   rather than the attempt.
+ - SCOPE GAP TO DECIDE: this ticket's title covers start/stop/status only. RCON's four actions
+   include `change_map` and `custom`, which need a live admin channel INTO the running server --
+   strictly larger than process control. Decide whether those need a fifth scope or a mod-side
+   command sink. Related: `kick` has no target at all -- `RconInput` has no player field and
+   `server_control.rs:43` posts bare {"action":"kick"}, so even with a transport it cannot name who.
 - **T-327** (deferred) — `#tbd link` code is visible in chat before TBD can suppress it [MOD] — SPLIT FROM T-231 (b). The agent verified the load-bearing claim AT THE CALL SITE rather than trusting the header: TBD_AdminCommands.c:30-46 calls `super.OnNewMessage(...)` at line 32, BEFORE `TBD_IdentityLink.TryHandleChat(...)` at line 45. The message is already distributed by the time TBD sees it, so returning true suppresses NOTHING. There is no script-side fix.
 
 Existing mitigations are correct and complete for a chat surface and should NOT be redone: the usage text warns, every failure path emits NewCodeAdvice(), success consumes the code in the same transaction so a leaked code is single-use and already spent, and the code is never logged (the HTTP_CODE_NULL branch deliberately drops the body because GetData() returns the REQUEST on transport failure).
@@ -193,16 +216,116 @@ Repro: rg retract_from apps/website/api — no IT exercises the path.
 sanitize_discord_embed_field + include_str wire pins exist; no services_http / CMS IT asserts a leading '=title' becomes ZWSP-prefixed in the outbound embed JSON.
 
 Repro: rg sanitize_discord apps/website/api/tests — no hit.
+- **T-576** (deferred) — No 23503 handler: every foreign-key violation surfaces as a 500 [API] — Found by T-262 (filed-not-fixed) and independently confirmed by wave 69's adversarial verifier.
+
+`apps/website/api/src/handlers/mod.rs:51` defines `is_unique_violation` (23505) and NOTHING for
+23503 (foreign_key_violation). Since T-262 landed the schema's first 25 FKs in `0018`, any FK
+violation now reaches the client as a **500 internal error** instead of a 4xx.
+
+LIVE REPRO (verifier, own API instance on a scratch DB):
+  POST /api/v1/ingest/server-status with a random server_id  ->  500 {"error":"internal error"}
+  same heartbeat for a REGISTERED server                     ->  200
+Cause: `handlers/telemetry.rs:229` inserts into `server_statuses` with no existence check, and 0018
+constraint 10 (server_statuses.server_id -> servers, CASCADE) now enforces it.
+
+WHY IT IS ONLY MINOR TODAY: those rows were invisible no-op orphans before 0018 -- no read path
+returned them -- so this is not a legitimate happy-path write. The verifier drove the full happy
+path (version create, event attach + 16 slots, register, seat claim, squad reserve, bookmark,
+armory, fire mission, role resync, token refresh, registered-server heartbeat) and found ZERO FK
+500s. So this is a sharp edge, not a live outage.
+
+WHY IT MATTERS ANYWAY: it is the reason T-262 had to ABSTAIN from four otherwise-correct FKs
+(matches.event_id, matches.mission_id, server_statuses.current_match_id, fire_missions.event_id).
+Those all bind straight from a request body on ingest endpoints with no human in the loop, where a
+500 loses a scoreline. Add the 23503 mapping and those four become safe to constrain -- that is the
+real prize here, not the error code.
+
+COMPOUNDING, pre-existing: `handlers/servers.rs:456` `create_server` (@route POST /api/v1/servers)
+is NOT WIRED INTO THE ROUTER. Servers can only exist via seed or raw SQL, so there is no API to
+register the server a heartbeat needs. Worth resolving in the same pass.
+
+WANTED: an `is_foreign_key_violation` sibling, mapped to 400/409 with a message naming the missing
+parent; then revisit T-262's four abstentions.
+- **T-577** (deferred) — Database backups: none exist, and the spec is written [INFRA] — T-280 established there is no pg_dump/pg_restore tooling anywhere in the repo -- the only hits are
+three comments describing the Go->Rust schema parity check. It stopped at the boundary because
+backups live outside `app.rs`. This is that work, and T-280 already specified it precisely.
+
+1. `scripts/deploy/backup-db.sh` (new). Neither host has `pg_dump`, so go through the compose
+   container: `podman exec tbd_reforger_db pg_dump -U tbd -Fc -d "$DB" > "$OUT/tbd_reforger-$(date -u +%Y%m%dT%H%M%SZ).dump"`.
+   Custom format (-Fc) for parallel and selective restore. Retention BY COUNT, not `find -mtime` --
+   a stopped cron then silently keeps nothing fresh rather than keeping the last N.
+   **IT MUST VERIFY THE DUMP IT JUST WROTE** -- `pg_restore --list` over the file plus a non-zero-rows
+   check -- or it is this program's signature defect in a new hat: a backup script reporting success
+   over a file it never opened.
+2. `scripts/deploy/restore-db.sh` (new). `pg_restore --clean --if-exists -d`, carrying the SAME
+   T-381 allow-list guard the test harness uses (`tests/common/mod.rs:88`) so a restore can never be
+   pointed at the wrong database by a typo.
+3. `Makefile`: `db-backup` / `db-restore` targets beside `db-up`/`seed` (Makefile:69-83).
+4. A schedule. `deploy-website.sh:82` shows the API runs as a USER systemd unit
+   (`tbd-website-api.service`), so pair it with `tbd-website-backup.timer` + `.service` installed the
+   same way -- not root cron.
+5. **A restore DRILL in CI or the wave gate**: dump -> restore into a scratch DB -> run `db_migrate`
+   against it. Without this the backup is untested and you discover that during an incident.
+- **T-578** (deferred) — Wire T-280's durable rate limiter — it is proven but inert [API, INFRA] — T-280 built `app::durable_ratelimit::PgRateLimiter` (a one-statement refill-and-spend token bucket;
+`ON CONFLICT DO UPDATE` takes the row lock so it is atomic across processes) and PROVED it with a
+perturbation that isolates durability from throttling: an in-process bucket still refuses at the
+limit, and fails only on 'still refused after a restart'.
+
+**It is deliberately NOT WIRED.** Verified by wave 69's verifier: `PgRateLimiter` is unreferenced
+from `state.rs`, `bin/api.rs` and `middleware/`; the live limiter is still the in-memory `governor`
+`IpLimiter`; `rate_limit_buckets` is absent from the schema and created by no migration. It stopped
+because the table belongs in `migrations/`, which was T-262's file that wave, and it refused to
+self-provision DDL from the request path.
+
+TO WIRE IT: (a) a migration creating the table -- the DDL is already a `const RATE_LIMIT_BUCKETS_DDL`
+in `app.rs` specifically so the bytes the tests prove and the bytes the migration lands cannot
+drift; (b) two lines of wiring, recorded in the module doc.
+
+**AN OPERATOR TRADE, NOT A SLICE AGENT'S CALL:** it adds ONE DATABASE WRITE PER REQUEST. T-280's own
+recommendation is to keep the in-memory `IpLimiter` as an L1 in front so only near-limit traffic
+reaches Postgres. Get sign-off on the cost before wiring.
 - **T-570** (deferred) — T-567 Class-R still hollow — unreachable if true==false / loop-break / cfg(any()) [FRONTEND, tests] — FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.
 
 Exact `if false { … }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply… }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(…, opt(&row.briefing)).
 
 Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pin green.
+- **T-579** (deferred) — Post-wave-69 UI honesty: dead RCON success path, and a delete dialog that still lies [FRONTEND] — Two frontend items from wave 69, neither a regression, both cosmetic-but-dishonest.
+
+1. MINOR -- dead code after T-269 flipped RCON to 503. `frontend/src/server_control.rs:116`
+   `rcon_accepted_message` ("RCON accepted ... transport pending T-269"), the `Ok(resp)` arm at
+   `:313`, and the `RconAccepted` DTO at `:21` are all UNREACHABLE now that the API never returns
+   2xx for RCON. T-269's agent flagged this itself. VERIFIED SAFE by the verifier: `busy.set(false)`
+   runs on both branches (`:324`) so there is no stuck spinner, and the 503 message surfaces
+   honestly via a toast. Delete the dead path, or leave it and say why in a comment.
+
+2. NIT -- `frontend/src/event_manager.rs:985` still promises that deleting an event removes "its
+   attached missions' ORBATs, and all registrations ... This cannot be undone." It does not:
+   `handlers/events.rs:1380` sets `deleted_at = now()` and nothing else. Driven by the verifier:
+   DELETE /events -> 204, `deleted_at` set, `event_missions` SURVIVE, CASCADE never fires.
+   Pre-existing. T-262's constraint 1 means the cascade is already correct for the day that handler
+   becomes a hard delete -- but today the dialog is wrong. Either fix the copy or make the handler
+   match it; decide which, do not leave both.
 - **T-571** (deferred) — T-568 Class-R still hollow — nested fn dev_login / PG dollar-quote COALESCE [API, tests] — FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-568.
 
 Plain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE…COALESCE…$decoy$ (blanker only handles '/").
 
 Repro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R green.
+- **T-580** (deferred) — /healthz is unauthenticated and now reports version, uptime, pool depth and migration counts [API] — T-280 extended `/healthz` with two independent failable checks -- a genuine improvement -- but it is
+UNAUTHENTICATED and exposed publicly through Caddy (`Caddyfile.website:27`).
+
+MEASURED LIVE by wave 69's verifier against `app.rs:1021`:
+    version=0.1.0  uptime=396  pool={connections:5, idle:4}  migrations.applied=18
+Low-risk fingerprinting / information disclosure: it tells an unauthenticated caller the exact build,
+how recently it restarted, connection-pool depth, and how many migrations have run.
+
+DELIBERATE TENSION, do not "fix" it by simply adding auth: `/healthz` is probed WITHOUT credentials
+by `preflight.sh:140`, `Caddyfile.website:27`, `editor-gates.yml:95` and
+`tools/tbd-tools/src/smokes.rs:2714`. T-280 gated `/metrics` behind `X-Service-Token` and left
+`/healthz` open for exactly this reason.
+
+LIKELY ANSWER: keep the 200/503 + `status` field public (that is all any prober needs) and move the
+detail behind the same `X-Service-Token` gate `/metrics` uses, or behind a `?verbose=1` that requires
+it. Confirm every listed prober still passes afterwards.
 - **T-572** (deferred) — T-569 Class-R still hollow — #[cfg(any())] match arms [API, tests] — FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-569.
 
 r#/br#/concat decoys RED. Still GREEN: `#[cfg(any())] match { live arms }` + `#[cfg(not(any()))] match { _ }` or cfg on each role arm with live `_`.
