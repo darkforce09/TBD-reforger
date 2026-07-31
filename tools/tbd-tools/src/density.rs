@@ -26,7 +26,11 @@ pub const TBDD_HEADER_BYTES: usize = 16;
 pub const TBDD_FILE_BYTES: usize =
     TBDD_HEADER_BYTES + DENSITY_CHANNELS.len() * DENSITY_COLS as usize * DENSITY_ROWS as usize * 2;
 
-/// Global corner-grid side length for a square world (401 for Everon 12800).
+/// Global corner-grid side length for a square world (**1601** for Everon 12800).
+///
+/// T-597: this doc said `401` — the pre-T-176 value, from when `DENSITY_CELL_M` was 32 m.
+/// The 8 m migration (T-176 A2, `a5940fad9`) moved it to `12800/8 + 1 = 1601` and updated
+/// neither this line nor `corner_partition_identity` below.
 #[must_use]
 pub fn corner_grid_size(world_size_m: f64) -> usize {
     (world_size_m / f64::from(DENSITY_CELL_M)).floor() as usize + 1
@@ -155,6 +159,15 @@ mod tests {
         let (grid, _) = accumulate_corners(pts.iter().copied(), world);
         let sum: u64 = grid.iter().copied().map(u64::from).sum();
         assert_eq!(sum, 1000);
-        assert_eq!(corner_grid_size(world), 401);
+        // T-597: was `401`. The partition identity above (sum == count) is cell-size agnostic and
+        // was always correct; only this literal was stale. T-176 A2 (`a5940fad9`) took
+        // DENSITY_CELL_M from 32 m to 8 m, so corner_grid_size(12800) went 12800/32 + 1 = 401 to
+        // 12800/8 + 1 = 1601, and this assertion has been RED on every run since.
+        //
+        // Deliberately an INDEPENDENT literal and not `12800 / DENSITY_CELL_M as usize + 1`:
+        // spelling the formula here would just restate `corner_grid_size`'s body, so it would
+        // agree with any cell size including a wrong one — an assertion that cannot fail. A flat
+        // 1601 is the thing a reader can check against the T-178 Class-R pin of the same number.
+        assert_eq!(corner_grid_size(world), 1601);
     }
 }
