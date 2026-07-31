@@ -755,6 +755,10 @@ fn route_sweep(s: &Seed) -> Vec<(&'static str, String, bool)> {
     let (srv, fac, slug) = (s.server, s.faction, &s.wiki_slug);
     vec![
         ("/healthz", "/healthz".into(), false),
+        // T-280. Swept rather than listed in ROUTE_SWEEP_SKIP: `/metrics` reads no model,
+        // but it does run a live `SELECT 1` and read the pool, so the NULL blast is a free
+        // check that the scrape path cannot 5xx. Service-token gated (`ServiceAuth`).
+        ("/metrics", "/metrics".into(), true),
         ("/dashboard", "/api/v1/dashboard".into(), false),
         ("/me", "/api/v1/me".into(), false),
         ("/me/deployments", "/api/v1/me/deployments".into(), false),

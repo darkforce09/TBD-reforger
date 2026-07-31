@@ -1,11 +1,32 @@
 //! HTTP application assembly — the router + global middleware chain. Shared by the
 //! `api` binary and the test/differential harnesses so they exercise one router.
+//!
+//! # Observability (T-280)
+//!
+//! Before T-280 this crate had **no** metrics of any kind: zero prometheus /
+//! opentelemetry / sentry dependencies, no `/metrics` route, and a `/healthz` that
+//! pinged the database and nothing else. This module now carries three things:
+//!
+//! * [`metrics::Registry`] — a dependency-free Prometheus text-format registry, one
+//!   instance per [`router`] call (so tests are hermetic and there is no process-global
+//!   mutable state), scraped at `GET /metrics` behind the existing `X-Service-Token`.
+//! * [`observe`] — the middleware that feeds it, mounted **outside** the panic-catcher
+//!   and the rate limiter so a 500-from-panic and a 429-from-throttle are both counted.
+//! * [`healthz`] — now a multi-check report (database + migration state) that **can go
+//!   red on either check independently**. A health probe that cannot fail is worse than
+//!   none, so both checks are tested against a deliberately broken pool.
+//!
+//! [`durable_ratelimit`] is the second half of T-280 and is **not wired into
+//! [`router`]** — see that module's header for exactly what has to land first.
+
+use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use axum::Router;
-use axum::extract::{DefaultBodyLimit, State};
-use axum::http::StatusCode;
-use axum::middleware::{from_fn, from_fn_with_state};
-use axum::response::Json;
+use axum::extract::{DefaultBodyLimit, MatchedPath, Request, State};
+use axum::http::{StatusCode, header};
+use axum::middleware::{Next, from_fn, from_fn_with_state};
+use axum::response::{IntoResponse, Json, Response};
 use axum::routing::{get, post};
 use serde_json::json;
 use sqlx::PgPool;
@@ -14,6 +35,534 @@ use tower_http::services::{ServeDir, ServeFile};
 
 use crate::state::AppState;
 use crate::{handlers, middleware};
+
+/// Prometheus text-format metrics — registry, instrumentation, exposition (T-280).
+///
+/// # Why there is no metrics crate in `Cargo.toml`
+///
+/// The obvious move is `metrics` + `metrics-exporter-prometheus`. It was rejected, and
+/// the reasons are recorded so the trade can be re-made knowingly rather than re-argued:
+///
+/// 1. **Nothing in this family is in `Cargo.lock`** — not `metrics`, not `prometheus`,
+///    not `opentelemetry`, not `sentry`. Adding one is not a version bump, it is a new
+///    subtree (`metrics-util` → `crossbeam-*`, `sketches-ddsketch`, `hashbrown`) and a
+///    lockfile edit. `Cargo.lock` is shared with `website-frontend`, which builds to
+///    `wasm32-unknown-unknown`; the brief's "keep the wasm/frontend build unaffected" is
+///    *provably* satisfied by changing neither the lockfile nor the dependency graph.
+/// 2. **The surface actually needed is small and fully testable.** Counters, one
+///    histogram family, a handful of gauges, and the 0.0.4 text exposition — ~200 lines,
+///    every line covered by the tests at the bottom of this file, including the
+///    cardinality cap that a third-party recorder would not give us either.
+/// 3. **Cardinality is the real risk, not arithmetic.** It is handled here by
+///    construction: the `route` label is axum's [`MatchedPath`] template (`/missions/{id}`,
+///    never a UUID) plus [`Registry::MAX_SERIES`] as a hard backstop with its own
+///    `tbd_metrics_series_dropped_total` counter.
+///
+/// If a later slice needs OTLP export or handler-level instrumentation from modules that
+/// do not have the `Arc<Registry>`, that is the moment to take the dependency — and the
+/// natural home for the handle is an `AppState` field, i.e. `src/state.rs`, which is not
+/// this slice's file.
+pub mod metrics {
+    use std::collections::BTreeMap;
+    use std::fmt::Write as _;
+    use std::sync::RwLock;
+    use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
+    use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+    /// Number of latency histogram buckets (see [`LATENCY_BUCKETS_S`]).
+    pub const N_BUCKETS: usize = 12;
+
+    /// Histogram bucket upper bounds in **seconds**, ascending. Rendered cumulatively
+    /// (`le=`), as the exposition format requires, plus the implicit `+Inf` bucket.
+    pub const LATENCY_BUCKETS_S: [f64; N_BUCKETS] = [
+        0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
+    ];
+
+    /// `route` label for a request that matched no route template (404s, static
+    /// fallbacks). A literal, so an unrouted scan cannot mint one series per URL.
+    pub const UNMATCHED_ROUTE: &str = "<unmatched>";
+
+    /// The status a throttled request carries, mirrored into `tbd_http_rate_limited_total`.
+    const TOO_MANY_REQUESTS: u16 = 429;
+
+    /// Prometheus text exposition content type (format version 0.0.4).
+    pub const CONTENT_TYPE: &str = "text/plain; version=0.0.4; charset=utf-8";
+
+    /// A cumulative-bucket latency histogram. Buckets are incremented for every bound the
+    /// observation falls under, so rendering is a straight read with no prefix sum.
+    struct Histogram {
+        buckets: [AtomicU64; N_BUCKETS],
+        /// Sum in microseconds — integer atomics, converted to seconds at render.
+        sum_micros: AtomicU64,
+        count: AtomicU64,
+    }
+
+    impl Histogram {
+        fn new() -> Self {
+            Self {
+                buckets: std::array::from_fn(|_| AtomicU64::new(0)),
+                sum_micros: AtomicU64::new(0),
+                count: AtomicU64::new(0),
+            }
+        }
+
+        fn observe(&self, secs: f64) {
+            for (slot, upper) in self.buckets.iter().zip(LATENCY_BUCKETS_S) {
+                if secs <= upper {
+                    slot.fetch_add(1, Ordering::Relaxed);
+                }
+            }
+            self.sum_micros
+                .fetch_add((secs * 1_000_000.0) as u64, Ordering::Relaxed);
+            self.count.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
+    /// Every label-keyed family, behind one lock. Values are atomics so the hot path only
+    /// needs a **shared** read lock; the write lock is taken exactly once per new series.
+    #[derive(Default)]
+    struct Tables {
+        /// `tbd_http_requests_total{method,route,status}`
+        requests: BTreeMap<(String, String, u16), AtomicU64>,
+        /// `tbd_http_request_duration_seconds{method,route}`
+        latency: BTreeMap<(String, String), Histogram>,
+        /// `tbd_http_rate_limited_total{route}`
+        limited: BTreeMap<String, AtomicU64>,
+    }
+
+    /// Runtime values sampled at scrape time rather than accumulated (pool depth, a live
+    /// database ping). Passed to [`Registry::render`] so the registry stays I/O-free.
+    #[derive(Debug, Clone, Copy)]
+    pub struct Scrape {
+        /// 1 when a `SELECT 1` round-tripped within the probe budget, else 0.
+        pub db_up: bool,
+        /// How long that ping took. Meaningless when `db_up` is false.
+        pub db_ping: Duration,
+        /// `PgPool::size()` — connections currently owned by the pool.
+        pub pool_connections: u32,
+        /// `PgPool::num_idle()` — of those, how many are free.
+        pub pool_idle: usize,
+    }
+
+    /// One registry per [`super::router`] call.
+    ///
+    /// Deliberately **not** a `static`: a process-global recorder makes every test that
+    /// asserts a count depend on which other tests ran first, which is precisely the
+    /// "green over something it never examined" shape this ticket exists to avoid. The
+    /// cost is that only code holding the `Arc` can record — see the module header.
+    pub struct Registry {
+        start: Instant,
+        start_unix_s: u64,
+        tables: RwLock<Tables>,
+        in_flight: AtomicI64,
+        dropped: AtomicU64,
+    }
+
+    impl Default for Registry {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
+    impl Registry {
+        /// Hard ceiling on distinct label-sets **per family**. `route` is already a
+        /// bounded template set, so hitting this means something is minting labels;
+        /// dropping the sample and counting the drop beats unbounded memory growth.
+        pub const MAX_SERIES: usize = 1024;
+
+        pub fn new() -> Self {
+            Self {
+                start: Instant::now(),
+                start_unix_s: SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .map(|d| d.as_secs())
+                    .unwrap_or_default(),
+                tables: RwLock::new(Tables::default()),
+                in_flight: AtomicI64::new(0),
+                dropped: AtomicU64::new(0),
+            }
+        }
+
+        /// How long this router has been assembled.
+        pub fn uptime(&self) -> Duration {
+            self.start.elapsed()
+        }
+
+        /// Requests currently in the middleware stack.
+        pub fn in_flight(&self) -> i64 {
+            self.in_flight.load(Ordering::Relaxed)
+        }
+
+        /// Samples discarded because a family was already at [`Self::MAX_SERIES`].
+        pub fn dropped_series(&self) -> u64 {
+            self.dropped.load(Ordering::Relaxed)
+        }
+
+        /// Enter a request: bumps the in-flight gauge and returns a guard that decrements
+        /// on drop. A guard rather than a matching call because the panic path unwinds
+        /// through this middleware, and a leaked gauge climbs forever.
+        pub fn enter(self: &std::sync::Arc<Self>) -> InFlightGuard {
+            self.in_flight.fetch_add(1, Ordering::Relaxed);
+            InFlightGuard(self.clone())
+        }
+
+        /// Record one completed request.
+        pub fn record(&self, method: &str, route: &str, status: u16, elapsed: Duration) {
+            let req_key = (method.to_owned(), route.to_owned(), status);
+            let lat_key = (method.to_owned(), route.to_owned());
+            self.ensure_series(&req_key, &lat_key, route, status);
+
+            let t = self.read();
+            if let Some(c) = t.requests.get(&req_key) {
+                c.fetch_add(1, Ordering::Relaxed);
+            }
+            if let Some(h) = t.latency.get(&lat_key) {
+                h.observe(elapsed.as_secs_f64());
+            }
+            if status == TOO_MANY_REQUESTS
+                && let Some(l) = t.limited.get(route)
+            {
+                l.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+
+        /// Create any missing series, honouring [`Self::MAX_SERIES`]. Takes the write
+        /// lock only when at least one family is genuinely missing its key.
+        fn ensure_series(
+            &self,
+            req_key: &(String, String, u16),
+            lat_key: &(String, String),
+            route: &str,
+            status: u16,
+        ) {
+            {
+                let t = self.read();
+                let limited_ok = status != TOO_MANY_REQUESTS || t.limited.contains_key(route);
+                if t.requests.contains_key(req_key) && t.latency.contains_key(lat_key) && limited_ok
+                {
+                    return;
+                }
+            }
+            let mut t = self.write();
+            let mut dropped = 0u64;
+            if !t.requests.contains_key(req_key) {
+                if t.requests.len() < Self::MAX_SERIES {
+                    t.requests.insert(req_key.clone(), AtomicU64::new(0));
+                } else {
+                    dropped += 1;
+                }
+            }
+            if !t.latency.contains_key(lat_key) {
+                if t.latency.len() < Self::MAX_SERIES {
+                    t.latency.insert(lat_key.clone(), Histogram::new());
+                } else {
+                    dropped += 1;
+                }
+            }
+            if status == TOO_MANY_REQUESTS && !t.limited.contains_key(route) {
+                if t.limited.len() < Self::MAX_SERIES {
+                    t.limited.insert(route.to_owned(), AtomicU64::new(0));
+                } else {
+                    dropped += 1;
+                }
+            }
+            if dropped > 0 {
+                self.dropped.fetch_add(dropped, Ordering::Relaxed);
+            }
+        }
+
+        /// Current value of `tbd_http_requests_total` for one label-set (test/assertion
+        /// helper — the exposition text is the contract, this is the cheap read).
+        pub fn requests_total(&self, method: &str, route: &str, status: u16) -> u64 {
+            let key = (method.to_owned(), route.to_owned(), status);
+            self.read()
+                .requests
+                .get(&key)
+                .map(|c| c.load(Ordering::Relaxed))
+                .unwrap_or(0)
+        }
+
+        /// Current value of `tbd_http_rate_limited_total` for one route.
+        pub fn rate_limited_total(&self, route: &str) -> u64 {
+            self.read()
+                .limited
+                .get(route)
+                .map(|c| c.load(Ordering::Relaxed))
+                .unwrap_or(0)
+        }
+
+        /// Render the whole registry in Prometheus text exposition format 0.0.4.
+        pub fn render(&self, s: &Scrape) -> String {
+            let t = self.read();
+            let mut out = String::with_capacity(4096);
+
+            out.push_str("# HELP tbd_build_info Build metadata for the running API; always 1.\n");
+            out.push_str("# TYPE tbd_build_info gauge\n");
+            let _ = writeln!(
+                out,
+                "tbd_build_info{{version=\"{}\"}} 1",
+                esc(env!("CARGO_PKG_VERSION"))
+            );
+
+            out.push_str("# HELP tbd_process_start_time_seconds Unix start time of this router.\n");
+            out.push_str("# TYPE tbd_process_start_time_seconds gauge\n");
+            let _ = writeln!(out, "tbd_process_start_time_seconds {}", self.start_unix_s);
+
+            out.push_str("# HELP tbd_uptime_seconds Seconds since this router was assembled.\n");
+            out.push_str("# TYPE tbd_uptime_seconds gauge\n");
+            let _ = writeln!(out, "tbd_uptime_seconds {:.3}", self.uptime().as_secs_f64());
+
+            out.push_str("# HELP tbd_http_requests_in_flight Requests currently being served.\n");
+            out.push_str("# TYPE tbd_http_requests_in_flight gauge\n");
+            let _ = writeln!(out, "tbd_http_requests_in_flight {}", self.in_flight());
+
+            out.push_str("# HELP tbd_http_requests_total Completed HTTP requests.\n");
+            out.push_str("# TYPE tbd_http_requests_total counter\n");
+            for ((method, route, status), c) in &t.requests {
+                let _ = writeln!(
+                    out,
+                    "tbd_http_requests_total{{method=\"{}\",route=\"{}\",status=\"{}\"}} {}",
+                    esc(method),
+                    esc(route),
+                    status,
+                    c.load(Ordering::Relaxed)
+                );
+            }
+
+            out.push_str("# HELP tbd_http_request_duration_seconds Request latency.\n");
+            out.push_str("# TYPE tbd_http_request_duration_seconds histogram\n");
+            for ((method, route), h) in &t.latency {
+                let (m, r) = (esc(method), esc(route));
+                for (slot, upper) in h.buckets.iter().zip(LATENCY_BUCKETS_S) {
+                    let _ = writeln!(
+                        out,
+                        "tbd_http_request_duration_seconds_bucket{{method=\"{m}\",route=\"{r}\",le=\"{upper}\"}} {}",
+                        slot.load(Ordering::Relaxed)
+                    );
+                }
+                let count = h.count.load(Ordering::Relaxed);
+                let _ = writeln!(
+                    out,
+                    "tbd_http_request_duration_seconds_bucket{{method=\"{m}\",route=\"{r}\",le=\"+Inf\"}} {count}"
+                );
+                let _ = writeln!(
+                    out,
+                    "tbd_http_request_duration_seconds_sum{{method=\"{m}\",route=\"{r}\"}} {:.6}",
+                    h.sum_micros.load(Ordering::Relaxed) as f64 / 1_000_000.0
+                );
+                let _ = writeln!(
+                    out,
+                    "tbd_http_request_duration_seconds_count{{method=\"{m}\",route=\"{r}\"}} {count}"
+                );
+            }
+
+            out.push_str(
+                "# HELP tbd_http_rate_limited_total Requests refused by the rate limiter (429).\n",
+            );
+            out.push_str("# TYPE tbd_http_rate_limited_total counter\n");
+            for (route, c) in &t.limited {
+                let _ = writeln!(
+                    out,
+                    "tbd_http_rate_limited_total{{route=\"{}\"}} {}",
+                    esc(route),
+                    c.load(Ordering::Relaxed)
+                );
+            }
+
+            out.push_str("# HELP tbd_db_up 1 when the database answered SELECT 1 at scrape.\n");
+            out.push_str("# TYPE tbd_db_up gauge\n");
+            let _ = writeln!(out, "tbd_db_up {}", u8::from(s.db_up));
+
+            out.push_str("# HELP tbd_db_ping_seconds Duration of the scrape-time SELECT 1.\n");
+            out.push_str("# TYPE tbd_db_ping_seconds gauge\n");
+            let _ = writeln!(out, "tbd_db_ping_seconds {:.6}", s.db_ping.as_secs_f64());
+
+            out.push_str("# HELP tbd_db_pool_connections sqlx pool connections by state.\n");
+            out.push_str("# TYPE tbd_db_pool_connections gauge\n");
+            let idle = s.pool_idle as u64;
+            let in_use = u64::from(s.pool_connections).saturating_sub(idle);
+            let _ = writeln!(out, "tbd_db_pool_connections{{state=\"idle\"}} {idle}");
+            let _ = writeln!(out, "tbd_db_pool_connections{{state=\"in_use\"}} {in_use}");
+
+            out.push_str(
+                "# HELP tbd_metrics_series_dropped_total Samples dropped at the cardinality cap.\n",
+            );
+            out.push_str("# TYPE tbd_metrics_series_dropped_total counter\n");
+            let _ = writeln!(
+                out,
+                "tbd_metrics_series_dropped_total {}",
+                self.dropped_series()
+            );
+
+            out
+        }
+
+        /// A poisoned metrics lock must not take the API down — the data is a counter, not
+        /// an invariant. Recover the guard and carry on.
+        fn read(&self) -> std::sync::RwLockReadGuard<'_, Tables> {
+            self.tables.read().unwrap_or_else(|e| e.into_inner())
+        }
+
+        fn write(&self) -> std::sync::RwLockWriteGuard<'_, Tables> {
+            self.tables.write().unwrap_or_else(|e| e.into_inner())
+        }
+    }
+
+    /// Decrements `tbd_http_requests_in_flight` on drop — including on unwind.
+    pub struct InFlightGuard(std::sync::Arc<Registry>);
+
+    impl Drop for InFlightGuard {
+        fn drop(&mut self) {
+            self.0.in_flight.fetch_sub(1, Ordering::Relaxed);
+        }
+    }
+
+    /// Escape a Prometheus label value (`\`, `"`, newline). Our labels are HTTP methods
+    /// and route templates and contain none of these — this exists so that stays true by
+    /// enforcement rather than by assumption.
+    fn esc(v: &str) -> String {
+        let mut out = String::with_capacity(v.len());
+        for c in v.chars() {
+            match c {
+                '\\' => out.push_str("\\\\"),
+                '"' => out.push_str("\\\""),
+                '\n' => out.push_str("\\n"),
+                _ => out.push(c),
+            }
+        }
+        out
+    }
+}
+
+/// Durable, cross-process rate limiting on Postgres (T-280, **not yet wired**).
+///
+/// # The defect this addresses
+///
+/// `middleware/ratelimit.rs` is a `governor` keyed limiter held in `AppState`. It is
+/// in-memory and single-instance: every restart hands an abuser a fresh full bucket, and
+/// two API processes each enforce the limit separately, so N processes means N× the
+/// intended rate. Both are stated in that file's own header as known caveats.
+///
+/// # Why this is Postgres and not Redis
+///
+/// Redis is the usual answer and it is the wrong one here: this deployment already runs
+/// exactly one datastore (`scripts/deploy/tbd-reforger.service` + the compose Postgres on
+/// 5434), and a second one is a new process to run, monitor, back up and secure in order
+/// to hold a few hundred float counters. [`PgRateLimiter::check`] is one statement, and
+/// `ON CONFLICT DO UPDATE` takes the row lock, so the refill-and-spend is atomic across
+/// processes without an advisory lock or a transaction round trip.
+///
+/// # Why it is not wired into [`router`]
+///
+/// It needs [`RATE_LIMIT_BUCKETS_DDL`] to exist, which is a file in
+/// `apps/website/api/migrations/` — owned by a live sibling slice this wave (T-262).
+/// Rather than self-provision DDL from the request path (a migration smuggled into
+/// `app.rs`), the limiter ships **implemented and proven against a real database** and the
+/// wiring is left as a two-line change recorded at the bottom of this doc.
+///
+/// Wiring, once the migration lands:
+/// ```ignore
+/// // src/state.rs: replace the two `IpLimiter`s (or keep them as an L1 in front)
+/// pub rl_global: Arc<PgRateLimiter>,   // PgRateLimiter::new(pool.clone(), 20, 40)
+/// pub rl_strict: Arc<PgRateLimiter>,   // PgRateLimiter::new(pool.clone(), 1, 10)
+/// // src/middleware/ratelimit.rs: `limiter.check(&bucket_key(scope, ip)).await`
+/// ```
+/// and one `prune` tick alongside the leaderboard refresher in `src/bin/api.rs`.
+pub mod durable_ratelimit {
+    use std::net::IpAddr;
+    use std::time::Duration;
+
+    use sqlx::PgPool;
+
+    /// The table the limiter needs, verbatim, so the migration that lands it and the test
+    /// that proves the limiter are the same bytes.
+    ///
+    /// `tokens` is a float because the bucket refills continuously; `updated_at` carries
+    /// the last spend so refill is `elapsed * rate` with no background job. The index is
+    /// for [`PgRateLimiter::prune`], which is the only scan.
+    pub const RATE_LIMIT_BUCKETS_DDL: &str = "\
+CREATE TABLE IF NOT EXISTS public.rate_limit_buckets (
+    bucket_key  text PRIMARY KEY,
+    tokens      double precision NOT NULL,
+    updated_at  timestamptz      NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS rate_limit_buckets_updated_at_idx
+    ON public.rate_limit_buckets (updated_at);";
+
+    /// Refill-and-spend in one statement.
+    ///
+    /// `$1` key, `$2` burst (bucket capacity), `$3` refill tokens/second. The `WHERE` on
+    /// the `DO UPDATE` is what makes this a limiter rather than a counter: when the
+    /// refilled balance is under one token the update matches no row, `RETURNING` yields
+    /// nothing, and the caller sees a refusal. `ON CONFLICT DO UPDATE` holds the row lock
+    /// for the duration, so two processes cannot both spend the last token.
+    const SPEND_SQL: &str = "\
+INSERT INTO public.rate_limit_buckets AS b (bucket_key, tokens, updated_at)
+VALUES ($1, $2::float8 - 1, now())
+ON CONFLICT (bucket_key) DO UPDATE
+   SET tokens = LEAST($2::float8,
+                      b.tokens + EXTRACT(EPOCH FROM (now() - b.updated_at)) * $3::float8) - 1,
+       updated_at = now()
+ WHERE LEAST($2::float8,
+             b.tokens + EXTRACT(EPOCH FROM (now() - b.updated_at)) * $3::float8) >= 1
+RETURNING b.tokens";
+
+    /// A token bucket whose state lives in Postgres: survives restart, shared by every
+    /// process pointed at the same database.
+    #[derive(Clone)]
+    pub struct PgRateLimiter {
+        pool: PgPool,
+        burst: f64,
+        refill_per_second: f64,
+    }
+
+    impl PgRateLimiter {
+        /// `refill_per_second` sustained rate, `burst` bucket capacity — same units as
+        /// `IpLimiter::new`, so the existing 20/40 and 1/10 settings port unchanged.
+        pub fn new(pool: PgPool, refill_per_second: u32, burst: u32) -> Self {
+            Self {
+                pool,
+                burst: f64::from(burst.max(1)),
+                refill_per_second: f64::from(refill_per_second),
+            }
+        }
+
+        /// True when a token was available and has been spent.
+        ///
+        /// The error is deliberately **not** folded into `true`: a limiter that opens up
+        /// when its store is unreachable is a limiter that cannot refuse, which is the
+        /// same defect class as a health check that cannot fail. Callers decide, loudly.
+        pub async fn check(&self, key: &str) -> Result<bool, sqlx::Error> {
+            let row: Option<(f64,)> = sqlx::query_as(SPEND_SQL)
+                .bind(key)
+                .bind(self.burst)
+                .bind(self.refill_per_second)
+                .fetch_optional(&self.pool)
+                .await?;
+            Ok(row.is_some())
+        }
+
+        /// Drop buckets untouched for `older_than`. A full bucket is indistinguishable
+        /// from no bucket, so this is pure garbage collection — never a grant of quota.
+        /// Returns the number of rows removed.
+        pub async fn prune(&self, older_than: Duration) -> Result<u64, sqlx::Error> {
+            let res = sqlx::query(
+                "DELETE FROM public.rate_limit_buckets \
+                 WHERE updated_at < now() - make_interval(secs => $1)",
+            )
+            .bind(older_than.as_secs_f64())
+            .execute(&self.pool)
+            .await?;
+            Ok(res.rows_affected())
+        }
+    }
+
+    /// `scope|ip` — the scope keeps the strict and global buckets independent for one IP,
+    /// exactly as the two separate `IpLimiter`s do today.
+    pub fn bucket_key(scope: &str, ip: IpAddr) -> String {
+        format!("{scope}|{ip}")
+    }
+}
 
 /// The `/api/v1` route tree. Auth tiers are enforced per-handler by the extractor
 /// each takes (`AuthUser`, the role-gated newtypes, `ServiceAuth`). Grows per phase.
@@ -309,14 +858,42 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
     r
 }
 
-/// Build the application: `/healthz`, `/api/v1/*`, static `/uploads`, the optional Leptos SPA +
-/// `/map-assets` (T-159.29), and the global middleware chain (outermost first: request-id →
-/// logging → recovery → CORS → body-limit → rate-limit).
+/// Build the application: `/healthz`, `/metrics`, `/api/v1/*`, static `/uploads`, the optional
+/// Leptos SPA + `/map-assets` (T-159.29), and the global middleware chain (outermost first:
+/// request-id → logging → **metrics** → recovery → CORS → body-limit → rate-limit).
+///
+/// The metrics registry is created here, once per router, and shared by the `observe`
+/// middleware, `/metrics` and `/healthz` — see [`metrics::Registry`] for why it is not a
+/// `static`.
 pub fn router(state: AppState) -> Router {
     let dev = state.cfg.is_development();
     let version_limit = state.cfg.mission_version_body_limit() as usize;
+    let registry = Arc::new(metrics::Registry::new());
+
+    // `/metrics` and `/healthz` need the registry, which is not in `AppState` (that is
+    // `src/state.rs` — another slice's file), so both are closures over the `Arc`.
+    let reg_metrics = registry.clone();
+    let reg_health = registry.clone();
     let mut r = Router::new()
-        .route("/healthz", get(healthz))
+        .route(
+            "/healthz",
+            get(move |State(pool): State<PgPool>| {
+                let reg = reg_health.clone();
+                async move { healthz(&reg, &pool).await }
+            }),
+        )
+        // Scraping is gated on the SAME `X-Service-Token` the game-server ingest uses, and
+        // `ServiceAuth` fails closed when `SERVICE_TOKEN` is unset — so an unconfigured
+        // deployment answers 401, never a public dump of route templates and latencies.
+        .route(
+            "/metrics",
+            get(
+                move |_: middleware::ServiceAuth, State(pool): State<PgPool>| {
+                    let reg = reg_metrics.clone();
+                    async move { metrics_scrape(&reg, &pool).await }
+                },
+            ),
+        )
         .nest("/api/v1", api_routes(dev, version_limit))
         .nest_service("/uploads", ServeDir::new("uploads"));
 
@@ -358,18 +935,470 @@ pub fn router(state: AppState) -> Router {
         .layer(DefaultBodyLimit::max(middleware::MAX_JSON_BODY))
         .layer(from_fn_with_state(state.clone(), middleware::cors))
         .layer(CatchPanicLayer::new())
+        // OUTSIDE the panic-catcher and the rate limiter, INSIDE the logger. That position
+        // is the whole point: inside `CatchPanicLayer` a panicking handler would never
+        // reach `record` and the 500 would go uncounted, and inside `rate_limit` a throttled
+        // request would never reach it either — `tbd_http_rate_limited_total` would be a
+        // series that can only ever read 0. Both are checked by the tests below.
+        .layer(from_fn_with_state(registry, observe))
         .layer(from_fn(middleware::logging))
         .layer(from_fn(middleware::request_id))
         .with_state(state)
 }
 
-/// Liveness probe — pings the DB (mirrors the Go `/healthz`).
-async fn healthz(State(pool): State<PgPool>) -> (StatusCode, Json<serde_json::Value>) {
-    match sqlx::query("SELECT 1").execute(&pool).await {
-        Ok(_) => (StatusCode::OK, Json(json!({ "status": "ok" }))),
+/// Count every request: `tbd_http_requests_total`, the latency histogram, the in-flight
+/// gauge, and `tbd_http_rate_limited_total` on a 429.
+///
+/// The `route` label is axum's [`MatchedPath`] — the registered template, so
+/// `/api/v1/missions/{id}` is one series and not one per mission UUID. Requests that match
+/// nothing collapse to [`metrics::UNMATCHED_ROUTE`].
+async fn observe(State(reg): State<Arc<metrics::Registry>>, req: Request, next: Next) -> Response {
+    let method = req.method().as_str().to_owned();
+    let route = req
+        .extensions()
+        .get::<MatchedPath>()
+        .map(|m| m.as_str().to_owned())
+        .unwrap_or_else(|| metrics::UNMATCHED_ROUTE.to_owned());
+
+    let _in_flight = reg.enter();
+    let started = Instant::now();
+    let resp = next.run(req).await;
+    reg.record(&method, &route, resp.status().as_u16(), started.elapsed());
+    resp
+}
+
+/// Budget for the health/scrape database probe. Long enough for a loaded server, short
+/// enough that a wedged pool reports `down` instead of holding the probe open (the pool's
+/// own acquire timeout is 30 s — a health check that inherits it is a hung health check).
+const DB_PROBE_TIMEOUT: Duration = Duration::from_secs(2);
+
+/// `SELECT 1`, bounded. Returns how long it took, or the failure text.
+async fn probe_db(pool: &PgPool) -> (bool, Duration, Option<String>) {
+    let started = Instant::now();
+    match tokio::time::timeout(DB_PROBE_TIMEOUT, sqlx::query("SELECT 1").execute(pool)).await {
+        Ok(Ok(_)) => (true, started.elapsed(), None),
+        Ok(Err(e)) => (false, started.elapsed(), Some(e.to_string())),
         Err(_) => (
-            StatusCode::SERVICE_UNAVAILABLE,
-            Json(json!({ "status": "unavailable" })),
+            false,
+            started.elapsed(),
+            Some(format!("timed out after {DB_PROBE_TIMEOUT:?}")),
         ),
+    }
+}
+
+/// `GET /metrics` — Prometheus text exposition. Service-token gated at the route.
+async fn metrics_scrape(reg: &metrics::Registry, pool: &PgPool) -> Response {
+    let (db_up, db_ping, _) = probe_db(pool).await;
+    let body = reg.render(&metrics::Scrape {
+        db_up,
+        db_ping,
+        pool_connections: pool.size(),
+        pool_idle: pool.num_idle(),
+    });
+    (
+        StatusCode::OK,
+        [(header::CONTENT_TYPE, metrics::CONTENT_TYPE)],
+        body,
+    )
+        .into_response()
+}
+
+/// Liveness/readiness probe.
+///
+/// Was: one `SELECT 1`. Now two independent checks, **either of which can take the whole
+/// probe red** — a health check that cannot fail is worse than none:
+///
+/// * `database` — the same bounded `SELECT 1`. Red when the database is down, refusing
+///   connections, or slower than [`DB_PROBE_TIMEOUT`].
+/// * `migrations` — red when `_sqlx_migrations` is unreadable (the schema was never
+///   migrated, so the process is serving a database it does not match) or when any row
+///   records a failed migration. This is the state `db::migrate` on boot is supposed to
+///   guarantee and nothing was checking afterwards.
+///
+/// The top-level `status` string keeps its two legacy values (`ok` / `unavailable`) and
+/// the 200/503 split, because `scripts/platform/preflight.sh`, the Caddy health handler,
+/// `.github/workflows/editor-gates.yml` and `tools/tbd-tools` all read them.
+async fn healthz(reg: &metrics::Registry, pool: &PgPool) -> (StatusCode, Json<serde_json::Value>) {
+    let (db_up, db_ping, db_err) = probe_db(pool).await;
+
+    // Only meaningful if the database answered at all; skip the second round trip otherwise
+    // and report the same cause rather than a confusing second timeout.
+    let (mig_ok, mig_applied, mig_failed, mig_err) = if db_up {
+        match tokio::time::timeout(
+            DB_PROBE_TIMEOUT,
+            sqlx::query_as::<_, (i64, i64)>(
+                "SELECT count(*) FILTER (WHERE success), \
+                        count(*) FILTER (WHERE NOT success) \
+                 FROM _sqlx_migrations",
+            )
+            .fetch_one(pool),
+        )
+        .await
+        {
+            Ok(Ok((applied, failed))) => (failed == 0, applied, failed, None),
+            Ok(Err(e)) => (false, 0, 0, Some(e.to_string())),
+            Err(_) => (
+                false,
+                0,
+                0,
+                Some(format!("timed out after {DB_PROBE_TIMEOUT:?}")),
+            ),
+        }
+    } else {
+        (false, 0, 0, Some("database unavailable".to_owned()))
+    };
+
+    let healthy = db_up && mig_ok;
+    let code = if healthy {
+        StatusCode::OK
+    } else {
+        StatusCode::SERVICE_UNAVAILABLE
+    };
+    (
+        code,
+        Json(json!({
+            "status": if healthy { "ok" } else { "unavailable" },
+            "version": env!("CARGO_PKG_VERSION"),
+            "uptime_seconds": reg.uptime().as_secs(),
+            "checks": {
+                "database": {
+                    "status": if db_up { "up" } else { "down" },
+                    "latency_ms": db_ping.as_millis() as u64,
+                    "error": db_err,
+                },
+                "migrations": {
+                    "status": if mig_ok { "up" } else { "down" },
+                    "applied": mig_applied,
+                    "failed": mig_failed,
+                    "error": mig_err,
+                },
+            },
+            "pool": {
+                "connections": pool.size(),
+                "idle": pool.num_idle(),
+            },
+        })),
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use axum::body::{Body, to_bytes};
+    use axum::http::{Request as HttpRequest, StatusCode};
+    use sqlx::postgres::PgPoolOptions;
+    use tower::ServiceExt as _;
+
+    use super::metrics::{Registry, Scrape, UNMATCHED_ROUTE};
+    use super::*;
+    use crate::config::Config;
+
+    // ───────────────────────────── harness ─────────────────────────────
+
+    /// A pool that never reaches a server and gives up fast.
+    ///
+    /// `db::connect_lazy` bakes in the production 30 s acquire timeout, which would make
+    /// every "database is down" assertion below a 30 s wall — so these tests build their
+    /// own. The port is in the ephemeral range and nothing listens on it.
+    fn dead_pool() -> PgPool {
+        PgPoolOptions::new()
+            .max_connections(1)
+            .acquire_timeout(Duration::from_millis(250))
+            .connect_lazy("postgres://t280:t280@127.0.0.1:1/t280_no_such_db")
+            .expect("lazy pool")
+    }
+
+    fn app_with(pool: PgPool) -> Router {
+        let cfg = Config::for_tests("postgres://unused", "t280-test-secret");
+        router(AppState::new(pool, cfg))
+    }
+
+    async fn call(
+        app: &Router,
+        method: &str,
+        uri: &str,
+        service_token: bool,
+    ) -> (StatusCode, String) {
+        let mut b = HttpRequest::builder().method(method).uri(uri);
+        if service_token {
+            b = b.header("x-service-token", "test-service-token");
+        }
+        let resp = app
+            .clone()
+            .oneshot(b.body(Body::empty()).expect("request"))
+            .await
+            .expect("router call");
+        let status = resp.status();
+        let body = to_bytes(resp.into_body(), 1 << 20).await.expect("body");
+        (status, String::from_utf8_lossy(&body).into_owned())
+    }
+
+    /// One exposition line, or `None`. Matching the whole line (not `contains`) is
+    /// deliberate: `contains("tbd_http_requests_total")` is true of the `# TYPE` comment,
+    /// so a registry that recorded nothing at all would still pass a `contains` assertion.
+    fn line<'a>(body: &'a str, prefix: &str) -> Option<&'a str> {
+        body.lines().find(|l| l.starts_with(prefix))
+    }
+
+    fn value(body: &str, prefix: &str) -> Option<f64> {
+        line(body, prefix)?.rsplit(' ').next()?.parse().ok()
+    }
+
+    // ───────────────────── metrics: series that move ─────────────────────
+
+    /// The primary non-vacuity claim: `/metrics` does not merely answer 200 — every
+    /// series it names **changes in response to real traffic**, and the same scrape run
+    /// twice differs by exactly the traffic in between.
+    #[tokio::test]
+    async fn every_http_series_moves_with_real_traffic() {
+        let app = app_with(dead_pool());
+
+        // Scrape #1: the endpoint works, and the request families are empty of the route
+        // we are about to drive. (`/metrics` itself is counted, so it is not zero-length.)
+        let (st, first) = call(&app, "GET", "/metrics", true).await;
+        assert_eq!(st, StatusCode::OK);
+        assert!(
+            line(
+                &first,
+                "tbd_http_requests_total{method=\"GET\",route=\"/healthz\""
+            )
+            .is_none(),
+            "no /healthz traffic yet, but a /healthz series already exists:\n{first}"
+        );
+        assert_eq!(value(&first, "tbd_build_info").unwrap(), 1.0);
+
+        // Real traffic: three health probes. The pool is dead, so these are 503s — a real
+        // status, not a synthetic one.
+        for _ in 0..3 {
+            let (st, _) = call(&app, "GET", "/healthz", false).await;
+            assert_eq!(st, StatusCode::SERVICE_UNAVAILABLE);
+        }
+
+        let (_, second) = call(&app, "GET", "/metrics", true).await;
+        let key = "tbd_http_requests_total{method=\"GET\",route=\"/healthz\",status=\"503\"}";
+        assert_eq!(
+            value(&second, key),
+            Some(3.0),
+            "counter did not follow the three requests:\n{second}"
+        );
+
+        // Histogram: count tracks the counter, +Inf equals count, buckets are cumulative.
+        let lat = "tbd_http_request_duration_seconds";
+        let cnt = format!("{lat}_count{{method=\"GET\",route=\"/healthz\"}}");
+        assert_eq!(value(&second, &cnt), Some(3.0), "histogram count\n{second}");
+        let inf = format!("{lat}_bucket{{method=\"GET\",route=\"/healthz\",le=\"+Inf\"}}");
+        assert_eq!(value(&second, &inf), Some(3.0), "+Inf bucket\n{second}");
+        let mut prev = 0.0;
+        for ub in super::metrics::LATENCY_BUCKETS_S {
+            let p = format!("{lat}_bucket{{method=\"GET\",route=\"/healthz\",le=\"{ub}\"}}");
+            let v = value(&second, &p).unwrap_or_else(|| panic!("missing bucket {ub}\n{second}"));
+            assert!(v >= prev, "buckets not cumulative at le={ub}: {v} < {prev}");
+            prev = v;
+        }
+        assert!(
+            value(
+                &second,
+                &format!("{lat}_sum{{method=\"GET\",route=\"/healthz\"}}")
+            )
+            .unwrap()
+                > 0.0,
+            "latency sum stayed at zero — nothing was timed\n{second}"
+        );
+
+        // Gauges that reflect the world rather than a constant.
+        assert_eq!(
+            value(&second, "tbd_db_up"),
+            Some(0.0),
+            "dead pool must read db_up 0"
+        );
+        assert_eq!(
+            value(&second, "tbd_http_requests_in_flight"),
+            Some(1.0),
+            "the scrape itself"
+        );
+        assert_eq!(
+            value(&second, "tbd_metrics_series_dropped_total"),
+            Some(0.0)
+        );
+        assert!(value(&second, "tbd_uptime_seconds").unwrap() >= 0.0);
+    }
+
+    /// Route labels come from the matched template, so a thousand mission UUIDs are one
+    /// series and an unrouted scan is one more — this is the cardinality guarantee that
+    /// makes `MAX_SERIES` a backstop rather than the primary defence.
+    #[tokio::test]
+    async fn route_label_is_the_template_not_the_uri() {
+        let app = app_with(dead_pool());
+        for i in 0..4 {
+            let (st, _) = call(&app, "GET", &format!("/no/such/path/{i}"), false).await;
+            assert_eq!(st, StatusCode::NOT_FOUND);
+        }
+        let (_, body) = call(&app, "GET", "/metrics", true).await;
+        let key = format!(
+            "tbd_http_requests_total{{method=\"GET\",route=\"{UNMATCHED_ROUTE}\",status=\"404\"}}"
+        );
+        assert_eq!(
+            value(&body, &key),
+            Some(4.0),
+            "four 404s, one series:\n{body}"
+        );
+        assert!(
+            !body.contains("/no/such/path/"),
+            "a raw URI leaked into a label — unbounded cardinality:\n{body}"
+        );
+    }
+
+    /// `tbd_http_rate_limited_total` is the series most at risk of being decorative: if
+    /// the metrics layer sat inside the rate limiter it could only ever read 0. Drive the
+    /// strict limiter past its burst and watch the series move.
+    #[tokio::test]
+    async fn throttled_requests_are_counted() {
+        let app = app_with(dead_pool());
+        let uri = "/api/v1/auth/discord/login"; // strict prefix, touches no database
+        let mut refused = 0;
+        for _ in 0..14 {
+            let (st, _) = call(&app, "GET", uri, false).await;
+            if st == StatusCode::TOO_MANY_REQUESTS {
+                refused += 1;
+            }
+        }
+        assert!(
+            refused > 0,
+            "strict limiter (burst 10) refused nothing in 14 requests"
+        );
+
+        let (_, body) = call(&app, "GET", "/metrics", true).await;
+        let key = format!("tbd_http_rate_limited_total{{route=\"{uri}\"}}");
+        assert_eq!(
+            value(&body, &key),
+            Some(f64::from(refused)),
+            "counter disagrees with the {refused} observed 429s:\n{body}"
+        );
+    }
+
+    /// The in-flight gauge must come back down — including when a handler panics, which
+    /// unwinds straight through the metrics middleware.
+    #[test]
+    fn in_flight_guard_decrements_on_unwind() {
+        let reg = Arc::new(Registry::new());
+        assert_eq!(reg.in_flight(), 0);
+        let r = std::panic::catch_unwind({
+            let reg = reg.clone();
+            move || {
+                let _g = reg.enter();
+                assert_eq!(reg.in_flight(), 1);
+                panic!("handler exploded");
+            }
+        });
+        assert!(r.is_err());
+        assert_eq!(reg.in_flight(), 0, "gauge leaked across a panic");
+    }
+
+    /// The cardinality backstop actually drops, and says so.
+    #[test]
+    fn cardinality_cap_drops_and_counts() {
+        let reg = Registry::new();
+        for i in 0..(Registry::MAX_SERIES + 5) {
+            reg.record("GET", &format!("/r{i}"), 200, Duration::from_millis(1));
+        }
+        assert_eq!(
+            reg.requests_total("GET", "/r0", 200),
+            1,
+            "early series kept"
+        );
+        let over = format!("/r{}", Registry::MAX_SERIES + 1);
+        assert_eq!(
+            reg.requests_total("GET", &over, 200),
+            0,
+            "series past the cap must not exist"
+        );
+        assert!(
+            reg.dropped_series() >= 5,
+            "drops went uncounted: {}",
+            reg.dropped_series()
+        );
+    }
+
+    /// Scraping is not public. `ServiceAuth` fails closed, so an API with no
+    /// `SERVICE_TOKEN` configured answers 401 rather than publishing its route table.
+    #[tokio::test]
+    async fn metrics_requires_the_service_token() {
+        let app = app_with(dead_pool());
+        let (st, _) = call(&app, "GET", "/metrics", false).await;
+        assert_eq!(st, StatusCode::UNAUTHORIZED);
+
+        let mut cfg = Config::for_tests("postgres://unused", "s");
+        cfg.service_token = String::new();
+        let unconfigured = router(AppState::new(dead_pool(), cfg));
+        let (st, _) = call(&unconfigured, "GET", "/metrics", true).await;
+        assert_eq!(
+            st,
+            StatusCode::UNAUTHORIZED,
+            "empty SERVICE_TOKEN must fail closed"
+        );
+    }
+
+    /// Exposition sanity: every family declares its TYPE exactly once, before its samples.
+    #[tokio::test]
+    async fn exposition_declares_each_family_once() {
+        let app = app_with(dead_pool());
+        let _ = call(&app, "GET", "/healthz", false).await;
+        let (_, body) = call(&app, "GET", "/metrics", true).await;
+        let types: Vec<&str> = body.lines().filter(|l| l.starts_with("# TYPE ")).collect();
+        let mut names: Vec<&str> = types.iter().filter_map(|l| l.split(' ').nth(2)).collect();
+        let before = names.len();
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(
+            before,
+            names.len(),
+            "a family declared TYPE twice: {types:?}"
+        );
+        assert!(before >= 9, "only {before} families declared:\n{body}");
+    }
+
+    // ───────────────────── health: it can go red ─────────────────────
+
+    /// A health check that cannot fail is worse than none. With the database
+    /// unreachable both checks report down and the probe is 503.
+    #[tokio::test]
+    async fn healthz_goes_red_when_the_database_is_unreachable() {
+        let app = app_with(dead_pool());
+        let (st, body) = call(&app, "GET", "/healthz", false).await;
+        assert_eq!(st, StatusCode::SERVICE_UNAVAILABLE);
+        let v: serde_json::Value = serde_json::from_str(&body).expect("healthz json");
+        assert_eq!(v["status"], "unavailable", "legacy status string preserved");
+        assert_eq!(v["checks"]["database"]["status"], "down");
+        assert_eq!(v["checks"]["migrations"]["status"], "down");
+        assert!(
+            v["checks"]["database"]["error"]
+                .as_str()
+                .is_some_and(|e| !e.is_empty()),
+            "a down check must say why: {body}"
+        );
+    }
+
+    // ───────────────────── render unit checks ─────────────────────
+
+    /// Label escaping is enforced, not assumed.
+    #[test]
+    fn label_values_are_escaped() {
+        let reg = Registry::new();
+        reg.record("GET", "/weird\"\\path", 200, Duration::from_millis(2));
+        let out = reg.render(&Scrape {
+            db_up: true,
+            db_ping: Duration::from_millis(1),
+            pool_connections: 3,
+            pool_idle: 1,
+        });
+        assert!(
+            out.contains("route=\"/weird\\\"\\\\path\""),
+            "unescaped label value would produce unparseable exposition:\n{out}"
+        );
+        assert_eq!(
+            value(&out, "tbd_db_pool_connections{state=\"in_use\"}"),
+            Some(2.0)
+        );
     }
 }
