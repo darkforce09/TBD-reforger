@@ -238,7 +238,12 @@ schema-validate: ## Validate golden missions + T-090 map-object contracts (enums
 schema-codegen: ## Regenerate Rust contract types from packages/tbd-schema/schema via typify (T-165.3; loadout.rs is hand-maintained)
 	cargo run -q -p xtask -- schema codegen
 
-verify-citations: ## Verify @contract citations (DOCUMENTATION_STANDARDS §10; T-165.1 Rust port)
+# T-611 — SCOPE, stated because it is narrower than the target name. This resolves
+# `@contract <name>.schema.json[#pointer]` tags in .c/.go/.js/.mjs/.rs/.ts/.tsx files under
+# apps/, crates/ and packages/ — and nothing else. docs/ prose is NOT read: prose citations
+# are held by convention (cite stable symbol names, not line numbers — DOCUMENTATION_STANDARDS
+# §10). The gate prints its own scope on every run; believe that line, not this comment.
+verify-citations: ## Verify @contract citations in apps/ crates/ packages/ code — NOT docs/ prose (DOCUMENTATION_STANDARDS §10; T-165.1 Rust port, T-611 scope)
 	cargo run -q -p xtask -- schema citations
 
 enf-index: ## T-181.2 rebuild the CRF symbol index (.ai/artifacts/enf-index/crf_*.tsv)
