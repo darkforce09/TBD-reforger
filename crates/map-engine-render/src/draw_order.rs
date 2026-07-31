@@ -160,24 +160,34 @@ pub const ALL_LANES: [LaneRole; 31] = [
 ///
 /// **These are NOT a persisted wire format.** `map-engine-render` is a path dependency of
 /// `website-frontend`, so every caller is Rust compiled into the same wasm binary in the same
-/// cargo invocation — no JS calls these (verified: zero hits for the upload fns across `*.js`
-/// / `*.ts` / `*.html`), and no role id is ever written to disk, to the network, or into a
-/// mission document. Appending an id is therefore purely additive and renumbering could not
-/// break a stored artifact.
+/// cargo invocation, and no role id is ever written to disk, to the network, or into a mission
+/// document. Appending an id is therefore purely additive and renumbering could not break a
+/// stored artifact.
 ///
-/// The real hazard is **drift, not a panic**: callers hand-copy the integer into a private
-/// `const ROLE_*: u32` with no compile-time link back to this mapping, so a renumber would
-/// silently upload to the wrong lane rather than fail to build. There are **eight such copies
-/// across four files** — `world_assets/dem_vectors.rs` (ids 0, 2), `world_assets/world_host.rs`
-/// (1, 3, 4, 8), `world_assets/forest_mass.rs` (6) and `mission_history.rs` (9). This module
-/// exists so there is one definition to import instead of a ninth copy: the engine/frontend
-/// slice should use `role_id::MISSION_ZONES`, never a literal `10`.
+/// **No hand-written JS calls these** — but the sweep that proves it needs stating precisely.
+/// T-592 recorded "zero hits for the upload fns across `*.js` / `*.ts` / `*.html`". There ARE
+/// `*.js` hits: T-596 re-ran it and all four fns appear in the **gitignored, wasm-bindgen-
+/// GENERATED** glue under `apps/website/frontend/dist/` and `dist-debug/`, where `role` is a
+/// passthrough parameter forwarded straight to `wasm.renderengine_*` and never a hardcoded id.
+/// Zero hits in `*.ts`, `*.html`, or any tracked source. **The conclusion is unchanged** — role
+/// ids are not a wire value — but a future reader who greps and finds the dist glue should be
+/// able to see it was already accounted for rather than reopen a settled question.
 ///
-/// Not to be confused with the **texture-lane** role ids (`tex_layer_begin` / `tex_layer_commit`
-/// / `set_lane_opacity`, `0` basemap and `1` hillshade, e.g. `satellite.rs`'s `ROLE_BASEMAP`).
-/// That is a disjoint namespace over a fixed `[Option<PendingTex>; 2]` bucket with its own
-/// `idx > 1` guard — nothing here indexes it, and id `0` means `Sea` on this side but
-/// `Satellite` on that one.
+/// The hazard this module closes is **drift, not a panic**: a caller that hand-copies the
+/// integer into a private `const ROLE_*: u32` has no compile-time link back to this mapping, so
+/// a renumber silently uploads to the wrong lane rather than failing to build. T-592 counted
+/// **eight such copies across four frontend files**; **T-596 deleted all eight** — every
+/// `upload_*` / `clear_vector_lane` callsite in `website-frontend` now names a `role_id::*`
+/// constant directly (`world_assets/dem_vectors.rs`, `world_assets/world_host.rs`,
+/// `world_assets/forest_mass.rs`, `mission_history.rs`). **Keep it that way:** import the
+/// constant, never re-copy the integer. Measured on the pre-T-596 tree, renaming a constant here
+/// left `cargo check -p website-frontend --target wasm32-unknown-unknown` GREEN with eight stale
+/// literals behind it; after the change the same rename fails the build at every callsite.
+///
+/// Not to be confused with the **texture-lane** role ids — see [`tex_role_id`] and
+/// [`tex_lane_role_from_u32`]. That is a disjoint namespace over a fixed
+/// `[Option<PendingTex>; 2]` bucket; nothing here indexes it, and id `0` means `Sea` on this
+/// side but `Satellite` on that one.
 ///
 /// Ids are dense `0..=MAX` and pinned one-by-one by `wire_ids_are_pinned`.
 pub mod role_id {
@@ -271,12 +281,51 @@ pub fn lane_role_to_u32(role: LaneRole) -> Option<u32> {
     })
 }
 
+/// Public role ids for the **texture-lane API** (`tex_layer_begin` / `tex_layer_commit` /
+/// `tex_layer_clear` / `set_lane_opacity`). A **disjoint** namespace from [`role_id`]: these
+/// index a fixed `[Option<PendingTex>; 2]` bucket in the engine, and id `0` means `Satellite`
+/// here but `Sea` over there.
+///
+/// Two ids, and there is no third — the bucket is a fixed-size array, so `MAX` is a property of
+/// the engine's storage rather than a list that can grow by appending.
+pub mod tex_role_id {
+    /// Basemap lane — the satellite/Map cartographic texture (`satellite.rs`'s `ROLE_BASEMAP`).
+    pub const BASEMAP: u32 = 0;
+    /// Hillshade overlay lane (`world_assets/mod.rs::apply_hillshade`).
+    pub const HILLSHADE: u32 = 1;
+    /// Highest assigned id. `tex_lane_role_from_u32` returns `None` above this, and the engine's
+    /// `pending: [Option<PendingTex>; 2]` bucket is exactly `MAX + 1` long.
+    pub const MAX: u32 = HILLSHADE;
+}
+
+/// Map a texture-lane role u32 → [`LaneRole`]. `None` for anything that is not `0` or `1`.
+///
+/// **T-596 (diagnosis item 7) — this exists to close a fail-open.** `engine.rs::set_lane_opacity`
+/// resolved its role with `if role == 0 { Satellite } else { Hillshade }`, so **every** id from
+/// `1` to `u32::MAX` collapsed onto Hillshade — while `tex_layer_begin`, two functions away,
+/// rejected `idx > 1` explicitly. Latent, because the live callers only ever pass `0`
+/// (`satellite.rs::show_satellite_basemap`) and `1` (`world_assets/mod.rs`, twice); the defect
+/// was that the *next* caller would be silently misrouted instead of corrected.
+///
+/// Living here rather than in `engine.rs` is deliberate: `engine` is `#[cfg(target_arch =
+/// "wasm32")]` and `RenderEngine` needs a real GPU, so a guard written inline there **cannot be
+/// unit-tested at all**. `draw_order` compiles natively, so the decision is provable under plain
+/// `cargo test` — see `tex_wire_ids_are_pinned` / `unknown_tex_role_ids_are_none_not_hillshade`.
+pub fn tex_lane_role_from_u32(role: u32) -> Option<LaneRole> {
+    Some(match role {
+        tex_role_id::BASEMAP => LaneRole::Satellite,
+        tex_role_id::HILLSHADE => LaneRole::Hillshade,
+        _ => return None,
+    })
+}
+
 /// T-151.11.1 — lane-order pins (audit P-01/X-01). These relations ARE the layer contract;
 /// any renumbering that breaks Deck parity fails here before it can ship.
 #[cfg(test)]
 mod lane_order_pins {
     use super::{
         ALL_LANES, LaneRole as L, lane_order, lane_role_from_u32, lane_role_to_u32, role_id,
+        tex_lane_role_from_u32, tex_role_id,
     };
 
     /// T-592 — the role→u32→role round trip, proved **exhaustive in both directions** rather
@@ -340,9 +389,13 @@ mod lane_order_pins {
         }
     }
 
-    /// T-592 — each id pinned individually. The frontend hand-copies these integers into private
-    /// `const ROLE_*` values with no compile-time link to the mapping, so a silent renumber would
-    /// misroute an upload rather than fail the build; this is the tripwire for that.
+    /// T-592 — each id pinned individually, so a renumber has to be deliberate rather than a
+    /// side effect of editing the `role_id` block.
+    ///
+    /// T-596 removed the eight frontend hand-copies this originally guarded, so a renumber now
+    /// *propagates* to the callsites instead of leaving them stale. This test is still the
+    /// tripwire, but for a different failure: it is the one place a renumber must be typed out
+    /// twice, which is what stops an accidental one.
     #[test]
     fn wire_ids_are_pinned() {
         for (id, role) in [
@@ -365,6 +418,43 @@ mod lane_order_pins {
         assert_eq!(role_id::SQUAD_LINKS, 9);
         assert_eq!(role_id::MISSION_ZONES, 10);
         assert_eq!(role_id::MAX, 10);
+    }
+
+    /// T-596 (item 7) — the texture-lane ids, pinned the same way. Disjoint from `role_id`:
+    /// **id 0 is `Satellite` here and `Sea` there**, which is exactly the confusion the two
+    /// separate modules exist to prevent.
+    #[test]
+    fn tex_wire_ids_are_pinned() {
+        assert_eq!(tex_lane_role_from_u32(0), Some(L::Satellite));
+        assert_eq!(tex_lane_role_from_u32(1), Some(L::Hillshade));
+        assert_eq!(tex_role_id::BASEMAP, 0);
+        assert_eq!(tex_role_id::HILLSHADE, 1);
+        assert_eq!(tex_role_id::MAX, 1);
+        // The two namespaces disagree on 0 by design — pinned so a "helpful" future unification
+        // has to delete this line rather than silently merge them.
+        assert_eq!(lane_role_from_u32(0), Some(L::Sea));
+    }
+
+    /// T-596 (item 7) — the regression test for `set_lane_opacity`'s old fail-open. Before this
+    /// slice the engine ran `if role == 0 { Satellite } else { Hillshade }`, so every id below
+    /// would have resolved to `Hillshade` and re-tinted the wrong lane. `None` is the whole
+    /// point: it is what lets the caller distinguish "unknown id" from "id 1".
+    #[test]
+    fn unknown_tex_role_ids_are_none_not_hillshade() {
+        for id in [
+            tex_role_id::MAX + 1,
+            tex_role_id::MAX + 2,
+            role_id::MISSION_ZONES,
+            7,
+            99,
+            u32::MAX,
+        ] {
+            assert_eq!(
+                tex_lane_role_from_u32(id),
+                None,
+                "tex id {id} must be unknown, not silently Hillshade"
+            );
+        }
     }
 
     #[test]

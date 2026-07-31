@@ -163,7 +163,7 @@ impl BasemapMode {
 // T-151.11.1: `LaneRole` / `lane_order` / `lane_role_from_u32` moved to the pure
 // `crate::draw_order` module so the ordering contract is natively unit-tested
 // (this module is wasm32-gated — see lib.rs).
-use crate::draw_order::{LaneRole, lane_order, lane_role_from_u32};
+use crate::draw_order::{LaneRole, lane_order, lane_role_from_u32, tex_lane_role_from_u32};
 
 /// A textured-quad lane (basemap or hillshade): one GPU texture (mip chain for unified, single
 /// level for pyramid/hillshade) sampled trilinearly over a 1-instance world-rect quad; `color`
@@ -4651,14 +4651,35 @@ impl RenderEngine {
         self.device.limits().max_texture_dimension_2d
     }
 
-    /// Re-tint a committed lane's opacity in place + toggle its visibility (role 0 basemap,
-    /// 1 hillshade) — no texture rebuild (L6 cheap-memo / hybrid-style dim). The tint alpha is
-    /// `color[3]` at byte offset 16 of the 1-instance quad buffer.
+    /// Re-tint a committed lane's opacity in place + toggle its visibility
+    /// (`tex_role_id::BASEMAP` / `HILLSHADE`) — no texture rebuild (L6 cheap-memo / hybrid-style
+    /// dim). The tint alpha is `color[3]` at byte offset 16 of the 1-instance quad buffer.
+    ///
+    /// **T-596 (item 7) — an unknown role is an explicit, loud no-op.** This used to read
+    /// `if role == 0 { Satellite } else { Hillshade }`, so every id from `1` upward collapsed
+    /// onto Hillshade; `tex_layer_begin` two functions away already rejected `idx > 1`. The
+    /// resolution now goes through [`tex_lane_role_from_u32`], which is `None` outside `0..=1`.
+    ///
+    /// **Ignore-loudly rather than reject**, deliberately. Rejecting would mean returning
+    /// `Result<(), JsError>` like `tex_layer_begin` does, and that guard earns its `Err` because
+    /// it *allocates a texture into a fixed 2-slot bucket* — refusing is the only safe move.
+    /// This call allocates nothing: it re-tints an already-committed lane, so the worst an
+    /// unknown id can do is nothing at all. Against that, `Result` would ripple a signature
+    /// change into three callsites (`satellite.rs:307`, `world_assets/mod.rs:139` and `:241`)
+    /// whose bodies are `if let Some(e) = …` inside Leptos effects with nowhere to put an error,
+    /// and would turn a cosmetic opacity nudge into a thrown JS exception mid-effect. So: skip
+    /// the write, leave the committed opacity untouched, and `debug_assert!` — which fires in
+    /// every dev/test build and in `make leptos-debug`, so a new caller passing a bad id trips
+    /// immediately, while release wasm degrades to an inert no-op instead of corrupting the
+    /// hillshade lane with a value meant for something else.
     pub fn set_lane_opacity(&mut self, role: u32, opacity: f32, visible: bool) {
-        let want = if role == 0 {
-            LaneRole::Satellite
-        } else {
-            LaneRole::Hillshade
+        let Some(want) = tex_lane_role_from_u32(role) else {
+            debug_assert!(
+                false,
+                "set_lane_opacity: role must be 0 (basemap) or 1 (hillshade), got {role} — \
+                 ignored. Note this is NOT the vector-lane `role_id` namespace."
+            );
+            return;
         };
         let color = [1.0f32, 1.0, 1.0, opacity.clamp(0.0, 1.0)];
         let target = self.batches.iter_mut().find_map(|b| {

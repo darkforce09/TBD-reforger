@@ -31,15 +31,16 @@ use std::rc::Rc;
 use leptos::prelude::{GetUntracked, RwSignal, Set};
 use map_engine_core::doc::{MissionDocCore, SlotSoa};
 use map_engine_core::squad_links::build_squad_link_segments;
+// T-596 — `role_id::SQUAD_LINKS` is imported, not a hand-copied `const ROLE_SQUAD_LINKS: u32 = 9`:
+// the copy had no compile-time link to `lane_role_from_u32`, so a renumber would have drawn the
+// squad-leader hairlines into whatever lane 9 became rather than failing the build.
+use map_engine_render::draw_order::role_id;
 use map_engine_render::RenderEngine;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use crate::mission_doc::DocHandle;
 use crate::select_tool::{EngineHandle, SelectionHandle};
-
-/// T-180.4 — hairline role for squad leader→member lines (`lane_role_from_u32(9)`).
-const ROLE_SQUAD_LINKS: u32 = 9;
 
 /// Everything a history command needs, shared from `mission_editor::on_load`. `doc` is the same
 /// `Rc` the IDB restore swaps into, so undo/redo always see the live document. The four signals are
@@ -423,7 +424,7 @@ fn upload_squad_links(e: &mut RenderEngine, doc: &MissionDocCore, soa: &SlotSoa)
     let verts = build_squad_link_segments(&inputs, &xy_by_slot);
     #[allow(clippy::cast_possible_truncation)]
     let segment_count = (verts.len() / 12) as u32;
-    e.upload_hairline_segments(ROLE_SQUAD_LINKS, &verts, segment_count, true);
+    e.upload_hairline_segments(role_id::SQUAD_LINKS, &verts, segment_count, true);
 }
 
 /// Push the doc/selection state onto the HUD signals. `MissionDocCore` has no change subscription,

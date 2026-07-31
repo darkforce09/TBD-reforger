@@ -10,6 +10,9 @@ use map_engine_core::geometry::forest_mass::{
 use map_engine_core::geometry::tbdd::decode_tbdd;
 use map_engine_core::geometry::vector_compose::{compose_contour_hairlines, FOREST_OUTLINE_RGBA};
 use map_engine_core::world::class_visible;
+// T-596 — imported, not hand-copied: a private `const ROLE_FOREST_OUTLINE: u32 = 6` has no
+// compile-time link to `lane_role_from_u32`, so a renumber misroutes this upload silently.
+use map_engine_render::draw_order::role_id;
 
 use crate::select_tool::EngineHandle;
 
@@ -20,7 +23,6 @@ const FETCH_CONCURRENCY: usize = 12;
 const FETCH_RETRIES: usize = 3;
 const WORLD_M: f64 = 12_800.0;
 const CELL_M: f64 = 8.0;
-const ROLE_FOREST_OUTLINE: u32 = 6;
 
 pub struct ForestMassHost {
     asset_base: String,
@@ -150,7 +152,12 @@ impl ForestMassHost {
             {
                 return false;
             }
-            e.upload_hairline_segments(ROLE_FOREST_OUTLINE, &hair.verts, hair.segment_count, false);
+            e.upload_hairline_segments(
+                role_id::FOREST_OUTLINE,
+                &hair.verts,
+                hair.segment_count,
+                false,
+            );
             e.forest_outline_set_stored(hair.segment_count);
         }
         self.uploaded = true;
