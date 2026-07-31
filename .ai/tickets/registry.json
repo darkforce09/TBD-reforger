@@ -10203,7 +10203,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3177,
       "stream": "web-platform",
       "targets": [
@@ -13188,7 +13188,7 @@
         "mission-creator",
         "frontend"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3343,
       "stream": "web-platform",
       "targets": [
@@ -13210,7 +13210,7 @@
         "mission-creator",
         "frontend"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3344,
       "stream": "web-platform",
       "targets": [
@@ -14657,7 +14657,7 @@
         "tests",
         "mission-authoring"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3423,
       "executor": "claude-code",
       "priority": 2,
@@ -15220,7 +15220,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3470,
       "stream": "web-platform",
       "targets": [
@@ -15240,7 +15240,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3471,
       "stream": "web-platform",
       "targets": [
@@ -15260,7 +15260,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3472,
       "stream": "web-platform",
       "targets": [
@@ -15268,6 +15268,126 @@
       ],
       "executor": "claude-code",
       "priority": 2
+    },
+    {
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-601",
+      "title": "Class-R pin hollowness is systemic, not a bug in three pins",
+      "summary": "FOUND by wave 75's adversarial verifier (Fable 5), which defeated THREE separate pins shipped in that\nsame wave — after each slice had proven its own pin against the attacks it knew about.\n\n=== F2 (MAJOR) T-570's new executing pin, `mission_title_prefer.rs:442-499` `item()` ===\nThe extractor's anti-decoy ambiguity check counts only COLUMN-0 signature heads (`:453-465`), and its\n`cfg`-refusal scans only INSIDE the extracted `[start..=end]` span (`:489-496`). An attribute on the\nline ABOVE the signature is outside both. Demonstrated live: move the real `adopt_payload` into a\n`mod` with `pub use` re-export and cut its briefing (`opt(&row.briefing)` -> `None`), then plant a\npristine copy at column 0 under `#[cfg(any())]`. The wasm build ships the CUT wire; the pin extracts\nand executes the COMPILED-OUT decoy and reports ok. This defeats the pin's own stated defense at\n`:447-450`. NOTE the guard is otherwise strong -- `cfg_attr(target_arch…, cfg(any()))` INSIDE an item\nIS caught; the gap is strictly the pre-signature attribute.\n\n=== F3 (MAJOR) T-503's scrubber, `arsenal.rs:2641-2672` + `:2676-2720` ===\n`strip_cfg_any_items` matches the LITERAL `#[cfg(any())]`; `strip_const_false_blocks` whitelists 7\nconditions. Measured, running the scrubber verbatim:\n    cfg any with space   -> SURVIVES      if 1 > 2            -> SURVIVES\n    cfg spaced brackets  -> SURVIVES      if black_box(false) -> SURVIVES\n    while false          -> SURVIVES      baseline cfg exact  -> stripped\nA `set_loadout` decoy in any surviving shape greens `cargo_mutations_commit_without_a_staging_gate`\n(`:2801`) and `the_panel_states_the_persistence_contract` (`:2833`) over dead persistence wiring.\nDefeated by trivial spelling variation.\n\n=== F4 (MINOR) T-598's wiring pin, `server_control.rs:1051-1064` ===\nPolarity-blind. Swap the success/error arm bodies (undelivered -> green success toast) and all 11\nt270 tests stay GREEN. It proves the guard string exists and that there is exactly one\n`toasts.success(` -- not WHICH arm it sits in. Nothing native compiles the wasm-only block (`:402`).\n\n=== THE SCOPE, which is the real finding ===\nT-570's agent independently catalogued ~20 SIBLING pins sharing the identical `include_str!` +\n`contains()` shape, each walkable by the same dead-code decoys: `client.rs:642`, `content.rs:938`,\n`sse.rs:254`, `event_hub.rs:1663`, `mission_commands.rs:542`, and more. This is not three bugs. It is\none defect class with ~23 known instances, and it is the SIGNATURE DEFECT of this codebase wearing a\ntest's uniform: *a tool reports success over an input it never actually examined.*\n\n=== TWO PROVEN PATTERNS EXIST -- do not invent a third ===\n1. EXECUTE THE CODE (T-570, `mission_title_prefer.rs`): lift the items verbatim, compile them against\n   a recording stand-in, RUN them, assert on the arguments actually received. Dead code produces no\n   behaviour, so wrappers die by construction rather than by enumeration. Strongest; use for\n   high-value invariants. Fix F2's pre-signature-attribute gap before reusing it.\n2. SCRUB THEN GREP (T-503, `arsenal.rs`): strip comments, string literals, cfg'd items, constant-false\n   blocks and post-`break`/`return` dead code before matching, AND give the scrubber its own test so\n   it cannot go hollow silently. Cheap; use for bulk. Fix F3's literal-matching first.\n\nDO NOT respond to this ticket by blocklisting the specific shapes above. That is the fourth round of\nthat game (T-517 -> T-567 -> T-570) and a fifth wrapper always exists. Fix the two patterns, then\nconvert the ~20 siblings.",
+      "status": "deferred",
+      "priority": 2,
+      "order": 3482
+    },
+    {
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-602",
+      "title": "wave.sh narrows its own scope by changed-file detection, and three of its comments are stale",
+      "summary": "FOUND by wave 75's verifier (F5/F6/F7), partly by the command center walking into it live.\n\n=== THE LIVE INCIDENT ===\nThe command center ran `wave.sh gate` with NO base argument to close wave 75. It defaults to `HEAD~1`\n(`:1983`), which after FIVE merges saw only the last one -- `serve.rs`. GATE reported PASS 26/26 over\na wave in which 4 of 5 slices changed the frontend. Re-running with the real base `2f0167b9` gave\nPASS 27/27 with `trunk build` actually running.\n\n`wave.sh:1977-1981` ALREADY documents this trap and already takes the base as an argument -- the fix\nexists, the default is the hazard. This is user error the tool invites.\n\n=== FOUR STEPS NARROW, NOT THE TWO FIRST BLAMED ===\nAll change-scoped steps key off `$base`: `touch_changed` (`:2020`), `wasm32 (frontend)` (`:2036` ->\n`wasm_changed:573-586`), `fmt (changed)` (`:2037`), and the trunk conditional (`:2134`). With a wrong\nbase, `wasm_changed` prints \"frontend untouched\" and PASSES; `touch_changed` invalidates no frontend\nfingerprints, re-exposing the T-421 cached-verdict hole. `test xtask+tbd-tools` (`:2130`) is\nunconditional as claimed. No other step narrows.\n\n=== THE SAME BUG, STILL LATENT ===\n`cmd_wave_close` gates against `HEAD~${WAVE_GATE_DEPTH:-40}` (`:2247`). A wave exceeding 40 commits\nsilently narrows the same way. Wave 75 was 10 commits, so it did not bite. It will.\n\nFIX: make the base mandatory, or derive it (merge-base against `origin/main`), or refuse to run when\nthe computed base does not contain every slice merge. A gate whose scope silently shrinks is the\nsignature defect -- *a tool reports success over an input it never examined.*\n\n=== STALE COMMENTS, same file family, trivial ===\n- `arsenal.rs:21-22` claims `editor_ops.rs` funnels **28** sites into `after_local_edit`. Measured\n  **26** (the other 2 are direct calls in `mission_editor.rs` / `mission_hydrate.rs`). Conclusion\n  unaffected -- every cited sibling commit site is real and no staging counter-example exists.\n- `.github/workflows/ci.yml:39-40` claims CI shipped `tbd_reforger` \"since T-534\". `git log -S` puts\n  it at **T-145, 2026-07-06**; T-381 (07-27) made it refuse, T-534 (07-28) derived per-binary names.\n  The mechanism is right, the date is wrong.\n- `wave.sh:2126` says \"81 tests\"; measured **84** (T-361 added 3 serve tests).",
+      "status": "deferred",
+      "priority": 3,
+      "order": 3492
+    },
+    {
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-603",
+      "title": "9 clippy errors in tools/tbd-tools/src/enf/ and nothing lints those crates",
+      "summary": "Ground truth measured by wave 75's verifier (F8), after two slice agents reported conflicting counts.\n\n`cargo clippy -p xtask -p tbd-tools --all-targets -- -D warnings` -> **9 real errors, ALL in\n`tools/tbd-tools/src/enf/`**:\n    apidoc.rs:164, apidoc.rs:169      capability.rs:88, capability.rs:137\n    citations.rs:41, citations.rs:62  source.rs:52\n    symbols.rs:120, symbols.rs:169\nBreakdown: 4x collapsible-if, 2x sort_by_key, 1x consecutive `str::replace`, 1x manual char\ncomparison, 1x replacing-text-with-itself. **`xtask` is clean.** All mechanical.\n\nT-361's agent reported \"9 in src/enf/*\" -- exact. T-597's reported \"~11\" -- it counted the two\n`could not compile` summary lines as errors. `wave.sh:2040-2044` cites \"~45 errors\" workspace-wide\n\"almost all in tools/tbd-tools and xtask\"; that figure is stale.\n\nCONTEXT THAT MAKES THIS WORTH DOING: T-597 established that **nothing** ran `cargo test` on these two\ncrates -- `ci.yml:46`'s job-level `working-directory: apps/website/api` means the bare `cargo test` at\n`:71` selects only `website-api`. T-597 added a test step to the wave gate; there is still **no lint\nstep**. Clean the 9, then add `clippy xtask+tbd-tools` alongside it. One small cleanup away.",
+      "status": "deferred",
+      "priority": 3,
+      "order": 3502
+    },
+    {
+      "program": "platform",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-604",
+      "title": "Nothing in this repo starts a joinable server with the mod — the playtest cannot be run",
+      "summary": "FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). **This blocks T-181.16 and\nT-068.14, which are the only two things standing between this program and finished.**\n\n=== THE CATCH-22 ===\n`scripts/mod/deploy-staging.sh` has two modes and NEITHER produces a server two clients can join:\n- **`-addonsDir` mode (`:1155`)** registers no backend room -> Direct Join answers \"No server found\".\n- **`-config` mode (`:1153`)** omits `-addonsDir` entirely, so the local mod GUID in `game.mods[]`\n  cannot resolve -> the mod does not load.\nThe mod is **not published to the Workshop** (`TBD_WORKSHOP_MOD_ID` is commented out at\n`deploy.env.example:43`), so the normal third path does not exist either.\n\n`scripts/mod/run-dev-server.sh` looks like the answer and is not: 27 lines, `grep -c\nArmaReforgerServer` -> 1, and that single hit is a path variable. **It never launches anything.**\n\n=== KNOCK-ON: no admin means T-181.16 cannot pass ===\n`#tbd` admin commands require `game.admins[]`, which only exists in `-config` mode\n(`TBD_AdminService.c:60-70` defers to vanilla's listed-admin manager). No admin -> no `#tbd respawn`\n-> the ONE-LIFE admin-respawn acceptance item is unreachable. So the two modes each break a different\nhalf of the acceptance criteria.\n\n=== THE MEASURED-WORKING SHAPE (from `world-boot.sh:773-778`, engine 1.7.0.54) ===\n    ./ArmaReforgerServer -addonsDir \"$HOME/tbd-playtest/addons\" \\\n      -config \"$HOME/tbd-playtest/server.json\" -profile \"$HOME/tbd-playtest/profile\" \\\n      -maxFPS 60 -logStats 30000 -nothrow\nBoth flags together. Whether that actually registers a joinable room is UNVERIFIED -- `world-boot.sh`\nboots headless with zero players and has never been asked to accept a connection.\n\nFIX: one script that starts a joinable, mod-loaded, admin-capable dedicated server, and a documented\nanswer for how a second machine reaches it (LAN Direct Join vs backend room). Until this exists the\nplaytest is not runnable and both remaining programs stay blocked.",
+      "status": "ready",
+      "priority": 0,
+      "order": 3512
+    },
+    {
+      "program": "platform",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-605",
+      "title": "A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission",
+      "summary": "FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Second playtest blocker.\n\n`IsComplete()` = `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (`TBD_LoadoutEquipHelper.c:209-212`).\nT-541 turned that into a **hard gate at the spawn boundary** (`TBD_SpawnManager.c:1076`, `:1600`): if\nit returns false, `m_bSlotBodiesMaterialized` stays false and **NOBODY leaves LOADING** -- not just\nthe player whose loadout degraded. One bad cargo row bricks the session for every client.\n\n**That gate has never executed against a loadout-carrying mission.** `wave.sh:132` boots only\n`bridgehead-at-levie`, which has **0 gear and 0 cargo**, so every green boot to date has taken the\ntrivially-complete path. The first real exercise will be the playtest itself, with a second person\nwaiting.\n\nCompounding it, T-504 (shipped wave 75) establishes that the Arsenal **warns but does not refuse** on\ncargo targeting an unworn container -- deliberately and correctly, because\n`TBD_LoadoutEquipHelper.c:407-408` retains the kit garment so \"picks no vest\" != \"no vest worn\". So an\nauthor CAN save a loadout that the mod will later mark DEGRADED, and the authoring side is the wrong\nplace to stop it. The spawn side treating degraded-for-one as fatal-for-all is the defect.\n\nREPRO: author a mission with one slot whose cargo targets an unworn container; compile it; boot with\n`world-boot.sh --compiled=<MID>`; observe LOADING never clears for any client.\n\nFIX (design call, not obvious): degrade that ONE player's loadout and let the session start, log it\nloudly, and surface it to the admin -- rather than refusing the world. Whatever is chosen, run it\nagainst a loadout-carrying mission in the gate, which no current gate step does.",
+      "status": "ready",
+      "priority": 0,
+      "order": 3522
+    },
+    {
+      "program": "platform",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-606",
+      "title": "Three ops greps report a healthy server as broken, and the T-068.14 spec names a log tag that does not exist",
+      "summary": "FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Individually trivial, together\nthey guarantee a confusing playtest: the operator greps for what the docs say, gets nothing, and\nconcludes the feature is broken when it worked.\n\n1. **The loadout tag is wrong in the spec.** `TBD_SpawnManager.c:1179` prints `[TBD][Loadout][Slot]`.\n   The T-068.14 spec AND `TBD_LoadoutEquipComponent.c:17` both say `[Player]` -- a string that appears\n   in **no `Print` anywhere in the codebase**. Following the spec returns zero lines and reads exactly\n   like \"the loadout never applied\", which is the single most important thing T-068.14 must confirm.\n\n2. **`scripts/mod/remote-log-grep.sh:48`** requires `Mission loaded`. That string now survives only\n   inside `TBD_FrameworkManager.c:488`'s **error** string -- so the health check passes only when\n   something failed.\n\n3. **`docs/mod/STAGING-SERVER.md:192-203`** requires `built slot spawn`, which has been **deleted**.\n\n`docs/platform/PLAYTEST_RUNBOOK.md` §5 already carries corrected greps for all three; this ticket is\nto fix them at the source so the runbook is not the only correct copy.\n\nALSO, same family, documented in the runbook §6 rather than filed separately:\n- **Radio automatic tuning cannot work** -- `worlds/TBD_Dev_POC.ent` is a 62-byte bare SubScene with\n  no `RadioManagerEntity`. Net assignment and display work; tuning does not. Known limitation.\n- **`modded class SCR_PlayerController` runtime coexistence has never been observed at any N.** Six\n  blocks now exist and no gate can see it -- `world-boot.sh` boots with zero players. If one screen\n  works and another silently does nothing during the playtest, this is the first suspect.",
+      "status": "deferred",
+      "priority": 2,
+      "order": 3532
     }
   ]
 }

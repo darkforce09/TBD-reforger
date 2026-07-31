@@ -18,7 +18,8 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-597** — CI has been RED since T-534 and the wave gate cannot see it — two causes, one structural gap (ready)
+- **T-604** — Nothing in this repo starts a joinable server with the mod — the playtest cannot be run (ready)
+- **T-605** — A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission (ready)
 <!-- ticket-sync:next:end -->
 
 ---

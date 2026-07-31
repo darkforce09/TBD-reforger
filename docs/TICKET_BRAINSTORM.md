@@ -109,17 +109,6 @@ Deliberately deferred rather than done: it is a cross-cutting move that would ha
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-361** (deferred) — The gate cannot browser-test any SSE page — its proxy awaits the whole body [CI] — FOUND by T-306, which had to hand-roll a driver to verify its own fix.
-
-`gate serve`'s proxy does `upstream.bytes().await`, so it CANNOT proxy an endless event stream — the request never completes. Combined with `render-check` hardcoding `api_proxy: None` (T-339), there is no supported way to browser-test a page driven by Server-Sent Events. T-306 worked around it with a shim that replays captured frame bytes plus a close, so the body is finite; the bytes are real and the only deviation is the close, which the `\n\n` splitter is indifferent to.
-
-That workaround is sound for one slice but should not be the standing answer: the SSE hub is the realtime spine of Server Intel and the dashboard, and it is currently unverifiable by the gate. Make the proxy stream rather than buffer (`bytes_stream()` rather than `bytes()`), which also fixes it for any future long-poll or chunked endpoint.
-
-Sequence this with T-339, which threads `api_proxy` through `bin/gate.rs` -> RenderCheckArgs — without that, a streaming proxy still has no caller. Both are in tools/tbd-tools; do them together or T-339 first.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
 - **T-370** (deferred) — Remove the 8 dead mark_adopted call sites — but move the purge first [FRONTEND] — FOLLOW-UP from T-352, which deliberately left this and explained why. **The sequencing is the whole ticket; getting it wrong strands data in users' browsers permanently.**
 
 `mark_adopted` no longer writes anything — T-352 deleted the storage and made the function purge `tbd-editor-adopted:*` residue instead. Eight call sites remain: mission_hydrate.rs 187, 213, 226, 246, 279, 299, 888 and mission_commands.rs:141.
@@ -166,8 +155,6 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 5. `docs/platform/frontend_data_provenance.md:41,62` — its event_hub.rs citations drifted by ~5-50 lines, and `:62` names `event_hub.rs:211` as an `events.briefing` render site when `:211` is the `name_override` fallback and the Event Hub never read the event briefing at all. The `:41` row is invalidated wholesale by T-392's removals. Same drift on its `orbat_selection.rs:90` citation.
 - **T-493** (deferred) — T-397 Class-R blind to sum(COALESCE(deaths,0)) on leaderboard_totals [API, DATA] — Wave 37 adversarial NIT. insert_without_counters_stores_null_not_zero holds. leaderboard_mv_does_not_invent_deaths_from_null went RED when INSERT bound 0, but poisoning the MV to sum(COALESCE(deaths,0)) with a mixed NULL+measured fixture still left the Class-R GREEN (0+3=3). Cure: pin all-NULL row set → kd_ratio IS NULL and/or source-ratchet migration 0014 / live MV for FILTER (WHERE deaths IS NOT NULL) / no COALESCE(deaths,0) in the aggregate.
 - **T-501** (deferred) — Community-terrain soft-fail has no match-ingest HTTP IT [API, CI] — Wave 39 residual from T-402. parse_terrain_opt + unit Class-R pin unknown terrain → None. No IT proves POST match ingest with terrain kolguyev/anizay returns 200 and stores NULL terrain. Cure: apps/website/api/tests/telemetry.rs case on cold DB.
-- **T-503** (deferred) — Arsenal has no Save button — cargo persists immediately (T-417 structural) [ATTR, DATA] — Wave 40 residual from T-417. arsenal.rs persist_cargo→set_loadout on every cargo mutation; export gate is the only client refusal. Cure: either add explicit Save UX or document intentional auto-persist with Class-R.
-- **T-504** (deferred) — Silent no-garment cargo in Arsenal (T-417 structural) [ATTR, DATA] — Wave 40 residual from T-417. arsenal UI shows 'no garment worn' with total and no limit; arsenal_rules deliberate silence; mod TBD_LoadoutEquipHelper already degrades. Author never hears undeliverable cargo. Cure: authoring-time warning/refuse when cargo targets unworn container.
 - **T-518** (deferred) — T-517 Class-R denylists old telemetry id only (not live PLAYER_DISCORD) [API, tests] — Wave 45 verifier MINOR. identity_link.rs Class-R assert_ne!(PAD_ACTOR, "000000000000400003") REDs if PAD returns to 400003, but stays green if telemetry PLAYER_DISCORD moves onto live PAD (…400013) — pin is a hardcoded denylist, not bound to telemetry.rs. Original shared-discord_id failure class can return one-sided. Cure: include_str!/parse PLAYER_DISCORD from telemetry.rs in the Class-R test, or assert_ne against a shared test const both suites import. Repro: set PLAYER_DISCORD to 000000000000400013 in tests/telemetry.rs; cargo test -p website-api --test identity_link t400_actor_is_not_shared_dev_login_user -- --exact → ok (false green); restore after.
 - **T-533** (deferred) — T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400 [API, tests] — FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-355.
 
@@ -202,11 +189,6 @@ drift; (b) two lines of wiring, recorded in the module doc.
 **AN OPERATOR TRADE, NOT A SLICE AGENT'S CALL:** it adds ONE DATABASE WRITE PER REQUEST. T-280's own
 recommendation is to keep the in-memory `IpLimiter` as an L1 in front so only near-limit traffic
 reaches Postgres. Get sign-off on the cost before wiring.
-- **T-570** (deferred) — T-567 Class-R still hollow — unreachable if true==false / loop-break / cfg(any()) [FRONTEND, tests] — FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.
-
-Exact `if false { … }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply… }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(…, opt(&row.briefing)).
-
-Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pin green.
 - **T-579** (deferred) — Post-wave-69 UI honesty: dead RCON success path, and a delete dialog that still lies [FRONTEND] — Two frontend items from wave 69, neither a regression, both cosmetic-but-dishonest.
 
 1. MINOR -- dead code after T-269 flipped RCON to 503. `frontend/src/server_control.rs:116`
@@ -361,61 +343,129 @@ mislead the next reader, and two of them are the sentences that let real defects
 6. **`crates/map-engine-core/src/lib.rs:5`** says "the JS boundary lives in the `map-engine-wasm`
    shim". That crate was deleted at T-418. This sentence made the T-582 brief ask for a wasm binding
    that could not exist — the agent had to discover the deletion itself.
-- **T-598** (deferred) — T-579 revisited: the RCON toast now lies in the opposite direction [FRONTEND] — T-579 was filed when `send_rcon` always answered 503 and the SPA's success path was unreachable
-dead code. **T-595 made it reachable again**, and the same string is now wrong the other way.
+- **T-601** (deferred) — Class-R pin hollowness is systemic, not a bug in three pins [INFRA] — FOUND by wave 75's adversarial verifier (Fable 5), which defeated THREE separate pins shipped in that
+same wave — after each slice had proven its own pin against the attacks it knew about.
 
-`apps/website/frontend/src/server_control.rs:116` `rcon_accepted_message` reads
-    "RCON accepted action={} (audit queued; transport pending T-269)"
-The transport is no longer pending -- T-289 shipped the host agent and T-595 shipped the client. A
-202 now means the command was **delivered to a host agent that confirmed the unit's state**, which is
-a materially different claim from "queued, transport pending".
+=== F2 (MAJOR) T-570's new executing pin, `mission_title_prefer.rs:442-499` `item()` ===
+The extractor's anti-decoy ambiguity check counts only COLUMN-0 signature heads (`:453-465`), and its
+`cfg`-refusal scans only INSIDE the extracted `[start..=end]` span (`:489-496`). An attribute on the
+line ABOVE the signature is outside both. Demonstrated live: move the real `adopt_payload` into a
+`mod` with `pub use` re-export and cut its briefing (`opt(&row.briefing)` -> `None`), then plant a
+pristine copy at column 0 under `#[cfg(any())]`. The wasm build ships the CUT wire; the pin extracts
+and executes the COMPILED-OUT decoy and reports ok. This defeats the pin's own stated defense at
+`:447-450`. NOTE the guard is otherwise strong -- `cfg_attr(target_arch…, cfg(any()))` INSIDE an item
+IS caught; the gap is strictly the pre-signature attribute.
 
-**IT IS PINNED, SO THE STRING AND THE PIN MOVE TOGETHER**: a Class-R at `server_control.rs:788`
-asserts `SRC.contains("transport pending T-269")`. Change one without the other and the slice goes
-red for the wrong reason.
+=== F3 (MAJOR) T-503's scrubber, `arsenal.rs:2641-2672` + `:2676-2720` ===
+`strip_cfg_any_items` matches the LITERAL `#[cfg(any())]`; `strip_const_false_blocks` whitelists 7
+conditions. Measured, running the scrubber verbatim:
+    cfg any with space   -> SURVIVES      if 1 > 2            -> SURVIVES
+    cfg spaced brackets  -> SURVIVES      if black_box(false) -> SURVIVES
+    while false          -> SURVIVES      baseline cfg exact  -> stripped
+A `set_loadout` decoy in any surviving shape greens `cargo_mutations_commit_without_a_staging_gate`
+(`:2801`) and `the_panel_states_the_persistence_contract` (`:2833`) over dead persistence wiring.
+Defeated by trivial spelling variation.
 
-The 202 body now carries `accepted`, `action`, plus new `delivered` / `state` / `detail`. The existing
-`RconAccepted` DTO deserializes unchanged, but **the UI should surface `state`** -- that field is the
-whole point of T-289's design (the host is documented as exiting 0 over a dead server, so the agent
-re-reads `LoadState`/`ActiveState` and returns what it saw).
+=== F4 (MINOR) T-598's wiring pin, `server_control.rs:1051-1064` ===
+Polarity-blind. Swap the success/error arm bodies (undelivered -> green success toast) and all 11
+t270 tests stay GREEN. It proves the guard string exists and that there is exactly one
+`toasts.success(` -- not WHICH arm it sits in. Nothing native compiles the wasm-only block (`:402`).
 
-Also still open from T-579, unchanged: `event_manager.rs:985` still promises that deleting an event
-removes its missions' ORBATs and registrations, while `handlers/events.rs:1380` soft-deletes only.
+=== THE SCOPE, which is the real finding ===
+T-570's agent independently catalogued ~20 SIBLING pins sharing the identical `include_str!` +
+`contains()` shape, each walkable by the same dead-code decoys: `client.rs:642`, `content.rs:938`,
+`sse.rs:254`, `event_hub.rs:1663`, `mission_commands.rs:542`, and more. This is not three bugs. It is
+one defect class with ~23 known instances, and it is the SIGNATURE DEFECT of this codebase wearing a
+test's uniform: *a tool reports success over an input it never actually examined.*
 
-**SEQUENCING:** two operator steps must happen before any of this is exercisable end to end -- set
-`Environment=GAME_AGENT_SOCKET=%t/tbd-reforger-agent.sock` in the API's systemd unit, and run
-`TBD_INSTALL_AGENT=1` once. Both mutate the live host; no agent has run them.
-- **T-599** (deferred) — wave.sh push refuses on the LFS PATH, not on LFS attributes — a false positive that blocks a legitimate push [INFRA] — Hit for real on 2026-07-31 closing wave 74. `wave.sh push` refused:
+=== TWO PROVEN PATTERNS EXIST -- do not invent a third ===
+1. EXECUTE THE CODE (T-570, `mission_title_prefer.rs`): lift the items verbatim, compile them against
+   a recording stand-in, RUN them, assert on the arguments actually received. Dead code produces no
+   behaviour, so wrappers die by construction rather than by enumeration. Strongest; use for
+   high-value invariants. Fix F2's pre-signature-attribute gap before reusing it.
+2. SCRUB THEN GREP (T-503, `arsenal.rs`): strip comments, string literals, cfg'd items, constant-false
+   blocks and post-`break`/`return` dead code before matching, AND give the scrubber its own test so
+   it cannot go hollow silently. Cheap; use for bulk. Fix F3's literal-matching first.
 
-    REFUSING --no-verify: this range touches packages/map-assets/ (the only LFS path).
-    Install git-lfs and push normally, or the remote will reference objects never uploaded.
+DO NOT respond to this ticket by blocklisting the specific shapes above. That is the fourth round of
+that game (T-517 -> T-567 -> T-570) and a fifth wrapper always exists. Fix the two patterns, then
+convert the ~20 siblings.
+- **T-602** (deferred) — wave.sh narrows its own scope by changed-file detection, and three of its comments are stale [INFRA] — FOUND by wave 75's verifier (F5/F6/F7), partly by the command center walking into it live.
 
-**The refusal was a FALSE POSITIVE and it blocked a correct push of 19 commits.**
+=== THE LIVE INCIDENT ===
+The command center ran `wave.sh gate` with NO base argument to close wave 75. It defaults to `HEAD~1`
+(`:1983`), which after FIVE merges saw only the last one -- `serve.rs`. GATE reported PASS 26/26 over
+a wave in which 4 of 5 slices changed the frontend. Re-running with the real base `2f0167b9` gave
+PASS 27/27 with `trunk build` actually running.
 
-THE GUARD IS PATH-BASED. It matches `packages/map-assets/**` and assumes everything under it is LFS.
-`.gitattributes` says otherwise -- LFS covers exactly three globs there:
-    packages/map-assets/**/*.png      filter=lfs
-    packages/map-assets/**/*.r16      filter=lfs
-    packages/map-assets/**/*.tbd-sat  filter=lfs
-T-594 regenerated `everon/objects/prefabs.json.gz` (122 KB) and `type-inventory.json` (111 KB).
-Both are `git check-attr filter` -> **unspecified**, real bytes, not pointers. MEASURED across the
-whole 30-file range: **zero** files resolve to `filter: lfs`.
+`wave.sh:1977-1981` ALREADY documents this trap and already takes the base as an argument -- the fix
+exists, the default is the hazard. This is user error the tool invites.
 
-WHY IT MATTERS BEYOND THE INCONVENIENCE: the guard exists for a real reason (rule 5 -- pushing
-`--no-verify` over genuine LFS content leaves the remote referencing objects that were never
-uploaded, because git-lfs is absent from this container). A guard that cries wolf on legitimate
-pushes is how someone learns to override it reflexively -- and the one time it is RIGHT, they will
-override it too. That is the same failure this program has fixed repeatedly in the other direction.
+=== FOUR STEPS NARROW, NOT THE TWO FIRST BLAMED ===
+All change-scoped steps key off `$base`: `touch_changed` (`:2020`), `wasm32 (frontend)` (`:2036` ->
+`wasm_changed:573-586`), `fmt (changed)` (`:2037`), and the trunk conditional (`:2134`). With a wrong
+base, `wasm_changed` prints "frontend untouched" and PASSES; `touch_changed` invalidates no frontend
+fingerprints, re-exposing the T-421 cached-verdict hole. `test xtask+tbd-tools` (`:2130`) is
+unconditional as claimed. No other step narrows.
 
-FIX: ask git, do not pattern-match the path.
-    git diff --name-only <range> | while read f; do
-      [ "$(git check-attr filter -- "$f" | sed 's/.*filter: //')" = lfs ] && ...
-    done
-Refuse only when at least one file in the range genuinely resolves to `filter: lfs`. Keep the message
-naming WHICH files tripped it, so the next operator can verify rather than trust.
+=== THE SAME BUG, STILL LATENT ===
+`cmd_wave_close` gates against `HEAD~${WAVE_GATE_DEPTH:-40}` (`:2247`). A wave exceeding 40 commits
+silently narrows the same way. Wave 75 was 10 commits, so it did not bite. It will.
 
-The command center overrode it by hand this once, after confirming zero LFS files in the range --
-recorded here so the override is auditable rather than folklore.
+FIX: make the base mandatory, or derive it (merge-base against `origin/main`), or refuse to run when
+the computed base does not contain every slice merge. A gate whose scope silently shrinks is the
+signature defect -- *a tool reports success over an input it never examined.*
+
+=== STALE COMMENTS, same file family, trivial ===
+- `arsenal.rs:21-22` claims `editor_ops.rs` funnels **28** sites into `after_local_edit`. Measured
+  **26** (the other 2 are direct calls in `mission_editor.rs` / `mission_hydrate.rs`). Conclusion
+  unaffected -- every cited sibling commit site is real and no staging counter-example exists.
+- `.github/workflows/ci.yml:39-40` claims CI shipped `tbd_reforger` "since T-534". `git log -S` puts
+  it at **T-145, 2026-07-06**; T-381 (07-27) made it refuse, T-534 (07-28) derived per-binary names.
+  The mechanism is right, the date is wrong.
+- `wave.sh:2126` says "81 tests"; measured **84** (T-361 added 3 serve tests).
+- **T-603** (deferred) — 9 clippy errors in tools/tbd-tools/src/enf/ and nothing lints those crates [INFRA] — Ground truth measured by wave 75's verifier (F8), after two slice agents reported conflicting counts.
+
+`cargo clippy -p xtask -p tbd-tools --all-targets -- -D warnings` -> **9 real errors, ALL in
+`tools/tbd-tools/src/enf/`**:
+    apidoc.rs:164, apidoc.rs:169      capability.rs:88, capability.rs:137
+    citations.rs:41, citations.rs:62  source.rs:52
+    symbols.rs:120, symbols.rs:169
+Breakdown: 4x collapsible-if, 2x sort_by_key, 1x consecutive `str::replace`, 1x manual char
+comparison, 1x replacing-text-with-itself. **`xtask` is clean.** All mechanical.
+
+T-361's agent reported "9 in src/enf/*" -- exact. T-597's reported "~11" -- it counted the two
+`could not compile` summary lines as errors. `wave.sh:2040-2044` cites "~45 errors" workspace-wide
+"almost all in tools/tbd-tools and xtask"; that figure is stale.
+
+CONTEXT THAT MAKES THIS WORTH DOING: T-597 established that **nothing** ran `cargo test` on these two
+crates -- `ci.yml:46`'s job-level `working-directory: apps/website/api` means the bare `cargo test` at
+`:71` selects only `website-api`. T-597 added a test step to the wave gate; there is still **no lint
+step**. Clean the 9, then add `clippy xtask+tbd-tools` alongside it. One small cleanup away.
+- **T-606** (deferred) — Three ops greps report a healthy server as broken, and the T-068.14 spec names a log tag that does not exist [MOD] — FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Individually trivial, together
+they guarantee a confusing playtest: the operator greps for what the docs say, gets nothing, and
+concludes the feature is broken when it worked.
+
+1. **The loadout tag is wrong in the spec.** `TBD_SpawnManager.c:1179` prints `[TBD][Loadout][Slot]`.
+   The T-068.14 spec AND `TBD_LoadoutEquipComponent.c:17` both say `[Player]` -- a string that appears
+   in **no `Print` anywhere in the codebase**. Following the spec returns zero lines and reads exactly
+   like "the loadout never applied", which is the single most important thing T-068.14 must confirm.
+
+2. **`scripts/mod/remote-log-grep.sh:48`** requires `Mission loaded`. That string now survives only
+   inside `TBD_FrameworkManager.c:488`'s **error** string -- so the health check passes only when
+   something failed.
+
+3. **`docs/mod/STAGING-SERVER.md:192-203`** requires `built slot spawn`, which has been **deleted**.
+
+`docs/platform/PLAYTEST_RUNBOOK.md` §5 already carries corrected greps for all three; this ticket is
+to fix them at the source so the runbook is not the only correct copy.
+
+ALSO, same family, documented in the runbook §6 rather than filed separately:
+- **Radio automatic tuning cannot work** -- `worlds/TBD_Dev_POC.ent` is a 62-byte bare SubScene with
+  no `RadioManagerEntity`. Net assignment and display work; tuning does not. Known limitation.
+- **`modded class SCR_PlayerController` runtime coexistence has never been observed at any N.** Six
+  blocks now exist and no gate can see it -- `world-boot.sh` boots with zero players. If one screen
+  works and another silently does nothing during the playtest, this is the first suspect.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

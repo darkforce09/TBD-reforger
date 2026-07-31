@@ -9,42 +9,60 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-597** (3470) — CI has been RED since T-534 and the wave gate cannot see it — two causes, one structural gap [ready] — **The local loop everyone trusts is green while the remote job nobody watches is red.** Found by
-T-594, sharpened by the command center, and a second independent cause found by wave 74's verifier.
+- **T-604** (3512) — Nothing in this repo starts a joinable server with the mod — the playtest cannot be run [ready] — FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). **This blocks T-181.16 and
+T-068.14, which are the only two things standing between this program and finished.**
 
-=== CAUSE 1 — the command center did this, on 2026-07-28 ===
-`.github/workflows/ci.yml:69` sets
-    TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable
-T-534's guard `is_safe_test_database_name` (`apps/website/api/tests/common/mod.rs:88`) **hard-refuses
-the literal name `tbd_reforger`** -- its own comment says why: *"so an exported
-TEST_DATABASE_URL=…/tbd_reforger cannot wipe the live database."*
-So **every website-api DB suite panics at provision under CI.** The guard is CORRECT and must not be
-weakened; CI's env is what is wrong. Shipped in `c9730c24` (T-534), which the command center
-escalated to P0 and approved without checking CI's env against the new guard.
-The wave gate escaped it only because it points `TBD_GATE_DB` at `tbd_gate_w<N>_cold` names.
-FIX: give CI an allow-listed name (`rust_it`, `tbd_gate*`, `*_cold`, `*_it`, `*_probe`).
+=== THE CATCH-22 ===
+`scripts/mod/deploy-staging.sh` has two modes and NEITHER produces a server two clients can join:
+- **`-addonsDir` mode (`:1155`)** registers no backend room -> Direct Join answers "No server found".
+- **`-config` mode (`:1153`)** omits `-addonsDir` entirely, so the local mod GUID in `game.mods[]`
+  cannot resolve -> the mod does not load.
+The mod is **not published to the Workshop** (`TBD_WORKSHOP_MOD_ID` is commented out at
+`deploy.env.example:43`), so the normal third path does not exist either.
 
-=== CAUSE 2 — a stale literal that has been wrong since T-176 ===
-`tools/tbd-tools/src/density.rs:158` -- `corner_partition_identity` asserts a hardcoded grid size of
-**401**; the value is **1601**. T-176 (`a5940fad9`) migrated the canopy grid 32 m -> 8 m, which moved
-`corner_grid_size(12800)` from 401 to 1601, and never updated this test. The `sum == 1000` identity on
-the line above still passes -- only the size literal is stale.
-    cargo test -p tbd-tools --lib corner_partition_identity
-    -> assertion `left == right` failed: left 1601, right 401
-Pre-existing, verified untouched by wave 74.
+`scripts/mod/run-dev-server.sh` looks like the answer and is not: 27 lines, `grep -c
+ArmaReforgerServer` -> 1, and that single hit is a path variable. **It never launches anything.**
 
-=== THE STRUCTURAL GAP THAT HID BOTH ===
-**No gate step runs `cargo test -p xtask` or `-p tbd-tools`.** The wave gate runs only `test api`,
-`test map-engine` and `test frontend`. CI's bare workspace `cargo test` (`ci.yml:71`) DOES cover them
--- `xtask` and `tools/tbd-tools` are workspace members and there is no `default-members` override --
-so **81 tests** (xtask 33 + tbd-tools 48) execute ONLY in the job nobody reads.
-That gap is why T-278's `instance_kinds_match_enums_schema` never fired: **the pin existed and was
-never executed.** T-594 worked around it for its own case by moving the check to RUNTIME inside
-`type_inventory()`, which IS a gate step -- but the general hole is open.
+=== KNOCK-ON: no admin means T-181.16 cannot pass ===
+`#tbd` admin commands require `game.admins[]`, which only exists in `-config` mode
+(`TBD_AdminService.c:60-70` defers to vanilla's listed-admin manager). No admin -> no `#tbd respawn`
+-> the ONE-LIFE admin-respawn acceptance item is unreachable. So the two modes each break a different
+half of the acceptance criteria.
 
-FIX, in order: (1) correct CI's `TEST_DATABASE_URL`; (2) fix the stale `401`; (3) add
-`cargo test -p xtask -p tbd-tools` to the wave gate so the two crates stop being invisible locally.
-Do NOT do (3) before (2) or the gate lands red.
+=== THE MEASURED-WORKING SHAPE (from `world-boot.sh:773-778`, engine 1.7.0.54) ===
+    ./ArmaReforgerServer -addonsDir "$HOME/tbd-playtest/addons" \
+      -config "$HOME/tbd-playtest/server.json" -profile "$HOME/tbd-playtest/profile" \
+      -maxFPS 60 -logStats 30000 -nothrow
+Both flags together. Whether that actually registers a joinable room is UNVERIFIED -- `world-boot.sh`
+boots headless with zero players and has never been asked to accept a connection.
+
+FIX: one script that starts a joinable, mod-loaded, admin-capable dedicated server, and a documented
+answer for how a second machine reaches it (LAN Direct Join vs backend room). Until this exists the
+playtest is not runnable and both remaining programs stay blocked.
+- **T-605** (3522) — A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission [ready] — FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Second playtest blocker.
+
+`IsComplete()` = `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (`TBD_LoadoutEquipHelper.c:209-212`).
+T-541 turned that into a **hard gate at the spawn boundary** (`TBD_SpawnManager.c:1076`, `:1600`): if
+it returns false, `m_bSlotBodiesMaterialized` stays false and **NOBODY leaves LOADING** -- not just
+the player whose loadout degraded. One bad cargo row bricks the session for every client.
+
+**That gate has never executed against a loadout-carrying mission.** `wave.sh:132` boots only
+`bridgehead-at-levie`, which has **0 gear and 0 cargo**, so every green boot to date has taken the
+trivially-complete path. The first real exercise will be the playtest itself, with a second person
+waiting.
+
+Compounding it, T-504 (shipped wave 75) establishes that the Arsenal **warns but does not refuse** on
+cargo targeting an unworn container -- deliberately and correctly, because
+`TBD_LoadoutEquipHelper.c:407-408` retains the kit garment so "picks no vest" != "no vest worn". So an
+author CAN save a loadout that the mod will later mark DEGRADED, and the authoring side is the wrong
+place to stop it. The spawn side treating degraded-for-one as fatal-for-all is the defect.
+
+REPRO: author a mission with one slot whose cargo targets an unworn container; compile it; boot with
+`world-boot.sh --compiled=<MID>`; observe LOADING never clears for any client.
+
+FIX (design call, not obvious): degrade that ONE player's loadout and let the session start, log it
+loudly, and surface it to the admin -- rather than refusing the world. Whatever is chosen, run it
+against a loadout-carrying mission in the gate, which no current gate step does.
 
 ## Next queued (top 10)
 
