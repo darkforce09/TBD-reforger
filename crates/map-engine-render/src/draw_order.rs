@@ -5,7 +5,7 @@
 /// A batch's role — governs the fixed W1 draw order (basemap → hillshade → grid) via
 /// [`lane_order`] and lets the editor find/replace a lane in place on LOD / opacity change.
 /// `Stress`/`Calibration` are the T-151.0 spike batches (never mixed with the editor lanes).
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum LaneRole {
     Stress,
     Calibration,
@@ -40,6 +40,19 @@ pub enum LaneRole {
     WorldRoadLabels,
     /// T-152.8 town name labels (above road + height labels, below grid).
     WorldTownLabels,
+    /// T-592 — mission zone rings (under every other mission lane).
+    ///
+    /// **One lane carries both zone shapes.** A circle and a polygon differ only in how the
+    /// *author* edits them; on the GPU both reduce to the same primitive — a closed hairline
+    /// loop. `map-engine-core` tessellates a circle into an N-gon ring and a polygon into its
+    /// edge loop, and both arrive as one flat `[x,y,r,g,b,a]…` LineList upload, exactly like
+    /// `Contours` / `ForestOutline` / `SquadLinks`. Two lanes would buy two GPU buffers, two
+    /// upload round-trips and a tie-break rule for overlapping circle-vs-polygon rings that has
+    /// no answer (they are peers), in exchange for nothing — so the lane budget spends **one**.
+    ///
+    /// Order: above `Grid` (zones are mission data, not world chrome) and below `SquadLinks`,
+    /// so a zone ring can enclose the units it contains without ever occluding a slot marker.
+    MissionZones,
     /// T-180.4 — squad leader→member hairline links (under slot rings).
     SquadLinks,
     /// T-180.8 — mission vehicle discs (under slot rings; pick-safe, separate from Slots).
@@ -88,31 +101,166 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldRoadLabels => 19,
         LaneRole::WorldTownLabels => 20,
         LaneRole::Grid => 21,
-        LaneRole::SquadLinks => 22,
-        LaneRole::MissionVehicles => 23,
-        LaneRole::Slots => 24,
-        LaneRole::SlotPlacePreview => 25,
-        LaneRole::SlotDrag => 26,
-        LaneRole::Clusters => 27,
-        LaneRole::Marquee => 28,
-        LaneRole::MarqueeOutline => 29,
+        // T-592: zones open the mission block; everything below shifted +1. These integers are a
+        // pure in-memory sort key for `upsert_lane` — never serialized, never persisted — so a
+        // uniform shift is safe exactly as long as the `lane_order_pins` relations still hold.
+        LaneRole::MissionZones => 22,
+        LaneRole::SquadLinks => 23,
+        LaneRole::MissionVehicles => 24,
+        LaneRole::Slots => 25,
+        LaneRole::SlotPlacePreview => 26,
+        LaneRole::SlotDrag => 27,
+        LaneRole::Clusters => 28,
+        LaneRole::Marquee => 29,
+        LaneRole::MarqueeOutline => 30,
     }
 }
 
-/// Map a public role u32 (upload API) → [`LaneRole`]. Returns `None` for unknown ids.
+/// Every [`LaneRole`], listed once. `all_lanes_covers_every_variant` makes this impossible to
+/// leave stale: adding a variant breaks that test's exhaustive `match` at compile time, and the
+/// tag-set assertion then fails until the variant is listed here too. Tests that must consider
+/// *every* lane (e.g. `marquee_lanes_are_topmost_fill_then_border`) derive from this rather than
+/// a hand-kept copy — a hand-kept copy silently stops examining each new lane.
+pub const ALL_LANES: [LaneRole; 31] = [
+    LaneRole::Stress,
+    LaneRole::Calibration,
+    LaneRole::Satellite,
+    LaneRole::Sea,
+    LaneRole::Hillshade,
+    LaneRole::Landcover,
+    LaneRole::Contours,
+    LaneRole::WorldAirfieldApron,
+    LaneRole::RoadsCasing,
+    LaneRole::Roads,
+    LaneRole::WorldBuildings,
+    LaneRole::WorldBuildingsOutline,
+    LaneRole::WorldFences,
+    LaneRole::ForestFill,
+    LaneRole::ForestOutline,
+    LaneRole::WorldTrees,
+    LaneRole::WorldProps,
+    LaneRole::WorldBadges,
+    LaneRole::WorldLabels,
+    LaneRole::WorldRoadLabels,
+    LaneRole::WorldTownLabels,
+    LaneRole::Grid,
+    LaneRole::MissionZones,
+    LaneRole::SquadLinks,
+    LaneRole::MissionVehicles,
+    LaneRole::Slots,
+    LaneRole::SlotPlacePreview,
+    LaneRole::SlotDrag,
+    LaneRole::Clusters,
+    LaneRole::Marquee,
+    LaneRole::MarqueeOutline,
+];
+
+/// Public role ids for the **vector-lane upload API** (`upload_polygon_mesh`,
+/// `upload_strip_tris`, `upload_hairline_segments`, `clear_vector_lane`).
+///
+/// **These are NOT a persisted wire format.** `map-engine-render` is a path dependency of
+/// `website-frontend`, so every caller is Rust compiled into the same wasm binary in the same
+/// cargo invocation — no JS calls these (verified: zero hits for the upload fns across `*.js`
+/// / `*.ts` / `*.html`), and no role id is ever written to disk, to the network, or into a
+/// mission document. Appending an id is therefore purely additive and renumbering could not
+/// break a stored artifact.
+///
+/// The real hazard is **drift, not a panic**: callers currently hand-copy the integer into a
+/// private `const ROLE_*: u32` (six of them, in `world_assets/{dem_vectors,world_host,
+/// forest_mass}.rs` and `mission_history.rs`) with no compile-time link back to this mapping,
+/// so a renumber would silently upload to the wrong lane rather than fail to build. These
+/// constants exist so there is one definition to import instead of a seventh copy — the
+/// engine/frontend slice should use `ROLE_MISSION_ZONES`, never a literal `10`.
+///
+/// Ids are dense `0..=ROLE_MAX` and pinned one-by-one by `wire_ids_are_pinned`.
+pub mod role_id {
+    /// Sea underlay polygon mesh.
+    pub const SEA: u32 = 0;
+    /// Land-cover hull polygon mesh.
+    pub const LANDCOVER: u32 = 1;
+    /// DEM contour hairlines.
+    pub const CONTOURS: u32 = 2;
+    /// Road casing strip triangles.
+    pub const ROADS_CASING: u32 = 3;
+    /// Road centerline strip triangles.
+    pub const ROADS: u32 = 4;
+    /// Forest mass polygon mesh.
+    pub const FOREST_FILL: u32 = 5;
+    /// Forest mass outline hairlines.
+    pub const FOREST_OUTLINE: u32 = 6;
+    /// Selection marquee fill (drops `MarqueeOutline` with it on `clear_vector_lane`).
+    pub const MARQUEE: u32 = 7;
+    /// NW Everon airfield apron polygon mesh.
+    pub const AIRFIELD_APRON: u32 = 8;
+    /// T-180.4 squad leader→member hairlines.
+    pub const SQUAD_LINKS: u32 = 9;
+    /// T-592 mission zone rings — circles and polygons alike, as closed hairline loops.
+    pub const MISSION_ZONES: u32 = 10;
+    /// Highest assigned id. `lane_role_from_u32` returns `None` above this.
+    pub const MAX: u32 = MISSION_ZONES;
+}
+
+/// Map a public role u32 (upload API) → [`LaneRole`]. Returns `None` for unknown ids — the four
+/// `engine.rs` callsites all `let … else { return; }` on it, so an unknown id is an inert no-op
+/// and never an index into a fixed-size bucket. (The T-244 `.expect("kind bucket")` shape does
+/// exist in this engine — `tex_layer_begin`'s `pending: [Option<PendingTex>; 2]` — but that is a
+/// **disjoint** texture-lane namespace guarded by its own `idx > 1` check, and nothing here
+/// indexes it.)
 pub fn lane_role_from_u32(role: u32) -> Option<LaneRole> {
     Some(match role {
-        0 => LaneRole::Sea,
-        1 => LaneRole::Landcover,
-        2 => LaneRole::Contours,
-        8 => LaneRole::WorldAirfieldApron,
-        3 => LaneRole::RoadsCasing,
-        4 => LaneRole::Roads,
-        5 => LaneRole::ForestFill,
-        6 => LaneRole::ForestOutline,
-        7 => LaneRole::Marquee,
-        9 => LaneRole::SquadLinks,
+        role_id::SEA => LaneRole::Sea,
+        role_id::LANDCOVER => LaneRole::Landcover,
+        role_id::CONTOURS => LaneRole::Contours,
+        role_id::AIRFIELD_APRON => LaneRole::WorldAirfieldApron,
+        role_id::ROADS_CASING => LaneRole::RoadsCasing,
+        role_id::ROADS => LaneRole::Roads,
+        role_id::FOREST_FILL => LaneRole::ForestFill,
+        role_id::FOREST_OUTLINE => LaneRole::ForestOutline,
+        role_id::MARQUEE => LaneRole::Marquee,
+        role_id::SQUAD_LINKS => LaneRole::SquadLinks,
+        role_id::MISSION_ZONES => LaneRole::MissionZones,
         _ => return None,
+    })
+}
+
+/// Inverse of [`lane_role_from_u32`]. `None` for the engine-internal lanes that have no upload
+/// id (spike batches, textured lanes, residency-composed world lanes, the mission lanes fed by
+/// their own typed APIs). Exists so the round-trip can be proved exhaustive in both directions
+/// rather than spot-checked — see `wire_round_trip_is_exhaustive_both_ways`.
+pub fn lane_role_to_u32(role: LaneRole) -> Option<u32> {
+    Some(match role {
+        LaneRole::Sea => role_id::SEA,
+        LaneRole::Landcover => role_id::LANDCOVER,
+        LaneRole::Contours => role_id::CONTOURS,
+        LaneRole::WorldAirfieldApron => role_id::AIRFIELD_APRON,
+        LaneRole::RoadsCasing => role_id::ROADS_CASING,
+        LaneRole::Roads => role_id::ROADS,
+        LaneRole::ForestFill => role_id::FOREST_FILL,
+        LaneRole::ForestOutline => role_id::FOREST_OUTLINE,
+        LaneRole::Marquee => role_id::MARQUEE,
+        LaneRole::SquadLinks => role_id::SQUAD_LINKS,
+        LaneRole::MissionZones => role_id::MISSION_ZONES,
+        // No upload id — reached only through a typed engine API or the spike path.
+        LaneRole::Stress
+        | LaneRole::Calibration
+        | LaneRole::Satellite
+        | LaneRole::Hillshade
+        | LaneRole::WorldBuildings
+        | LaneRole::WorldBuildingsOutline
+        | LaneRole::WorldFences
+        | LaneRole::WorldTrees
+        | LaneRole::WorldProps
+        | LaneRole::WorldBadges
+        | LaneRole::WorldLabels
+        | LaneRole::WorldRoadLabels
+        | LaneRole::WorldTownLabels
+        | LaneRole::Grid
+        | LaneRole::MissionVehicles
+        | LaneRole::Slots
+        | LaneRole::SlotPlacePreview
+        | LaneRole::SlotDrag
+        | LaneRole::Clusters
+        | LaneRole::MarqueeOutline => return None,
     })
 }
 
@@ -120,7 +268,97 @@ pub fn lane_role_from_u32(role: u32) -> Option<LaneRole> {
 /// any renumbering that breaks Deck parity fails here before it can ship.
 #[cfg(test)]
 mod lane_order_pins {
-    use super::{LaneRole as L, lane_order};
+    use super::{
+        ALL_LANES, LaneRole as L, lane_order, lane_role_from_u32, lane_role_to_u32, role_id,
+    };
+
+    /// T-592 — the role→u32→role round trip, proved **exhaustive in both directions** rather
+    /// than spot-checked, over `ALL_LANES` (which cannot go stale).
+    #[test]
+    fn wire_round_trip_is_exhaustive_both_ways() {
+        // Forward: every lane that has an id round-trips to itself; every lane without one is
+        // genuinely unreachable from the upload API.
+        let mut with_id = 0;
+        for role in ALL_LANES {
+            match lane_role_to_u32(role) {
+                Some(id) => {
+                    assert_eq!(
+                        lane_role_from_u32(id),
+                        Some(role),
+                        "role {role:?} → id {id} did not round-trip"
+                    );
+                    with_id += 1;
+                }
+                None => assert!(
+                    !(0..=role_id::MAX).any(|i| lane_role_from_u32(i) == Some(role)),
+                    "{role:?} has no to_u32 id but is reachable from from_u32"
+                ),
+            }
+        }
+        // Backward: ids are dense over 0..=MAX and each maps back to itself.
+        for id in 0..=role_id::MAX {
+            let role = lane_role_from_u32(id).unwrap_or_else(|| {
+                panic!("id {id} is a hole in a dense 0..={} range", role_id::MAX)
+            });
+            assert_eq!(
+                lane_role_to_u32(role),
+                Some(id),
+                "id {id} did not round-trip"
+            );
+        }
+        // The two directions describe the same set — no id-less lane, no lane-less id.
+        assert_eq!(with_id, usize::try_from(role_id::MAX).unwrap() + 1);
+        assert_eq!(
+            with_id, 11,
+            "T-592 added id 10; 11 vector lanes carry an upload id"
+        );
+    }
+
+    /// T-592 / T-244 guard — an unknown id must be an inert `None`, never a panic and never an
+    /// index into a fixed-size bucket. `engine.rs` `let … else { return; }`s on every one of
+    /// these, so this is the whole out-of-range contract.
+    #[test]
+    fn unknown_role_ids_are_none_not_a_panic() {
+        for id in [
+            role_id::MAX + 1,
+            role_id::MAX + 2,
+            12,
+            99,
+            256,
+            65_536,
+            u32::MAX - 1,
+            u32::MAX,
+        ] {
+            assert_eq!(lane_role_from_u32(id), None, "id {id} must be unknown");
+        }
+    }
+
+    /// T-592 — each id pinned individually. The frontend hand-copies these integers into private
+    /// `const ROLE_*` values with no compile-time link to the mapping, so a silent renumber would
+    /// misroute an upload rather than fail the build; this is the tripwire for that.
+    #[test]
+    fn wire_ids_are_pinned() {
+        for (id, role) in [
+            (0, L::Sea),
+            (1, L::Landcover),
+            (2, L::Contours),
+            (3, L::RoadsCasing),
+            (4, L::Roads),
+            (5, L::ForestFill),
+            (6, L::ForestOutline),
+            (7, L::Marquee),
+            (8, L::WorldAirfieldApron),
+            (9, L::SquadLinks),
+            (10, L::MissionZones),
+        ] {
+            assert_eq!(lane_role_from_u32(id), Some(role), "id {id} moved");
+        }
+        // The named constants and the literals above must agree.
+        assert_eq!(role_id::SEA, 0);
+        assert_eq!(role_id::SQUAD_LINKS, 9);
+        assert_eq!(role_id::MISSION_ZONES, 10);
+        assert_eq!(role_id::MAX, 10);
+    }
 
     #[test]
     fn airfield_apron_sits_between_contours_and_roads() {
@@ -173,41 +411,81 @@ mod lane_order_pins {
         assert!(lane_order(L::MissionVehicles) < lane_order(L::Slots));
     }
 
+    /// T-592: derived from `ALL_LANES`, not a hand-kept copy. The previous hand-list would have
+    /// happily passed while never examining a newly added lane — the signature defect in
+    /// miniature. `ALL_LANES` cannot go stale (see `all_lanes_covers_every_variant`), so this
+    /// test now genuinely considers every lane that exists.
     #[test]
     fn marquee_lanes_are_topmost_fill_then_border() {
-        let max_non_marquee = [
-            L::Satellite,
-            L::Sea,
-            L::Hillshade,
-            L::Landcover,
-            L::Contours,
-            L::RoadsCasing,
-            L::Roads,
-            L::WorldBuildings,
-            L::WorldBuildingsOutline,
-            L::WorldFences,
-            L::ForestFill,
-            L::ForestOutline,
-            L::WorldTrees,
-            L::WorldProps,
-            L::WorldBadges,
-            L::WorldLabels,
-            L::WorldRoadLabels,
-            L::WorldTownLabels,
-            L::Grid,
-            L::SquadLinks,
-            L::MissionVehicles,
-            L::Slots,
-            L::SlotPlacePreview,
-            L::SlotDrag,
-            L::Clusters,
-        ]
-        .into_iter()
-        .map(lane_order)
-        .max()
-        .unwrap();
+        let max_non_marquee = ALL_LANES
+            .into_iter()
+            .filter(|r| !matches!(r, L::Marquee | L::MarqueeOutline))
+            .map(lane_order)
+            .max()
+            .unwrap();
         assert!(lane_order(L::Marquee) > max_non_marquee);
         assert!(lane_order(L::MarqueeOutline) > lane_order(L::Marquee));
+    }
+
+    /// `ALL_LANES` lists every variant exactly once, and cannot silently fall behind the enum:
+    /// adding a variant breaks the exhaustive `match` below at **compile time**, and the tag-set
+    /// assertion then fails until the variant is added to `ALL_LANES` and the count bumped.
+    #[test]
+    fn all_lanes_covers_every_variant() {
+        // Exhaustive, no `_` arm — a new variant is a compile error here.
+        fn tag(r: L) -> u8 {
+            match r {
+                L::Stress => 0,
+                L::Calibration => 1,
+                L::Satellite => 2,
+                L::Sea => 3,
+                L::Hillshade => 4,
+                L::Landcover => 5,
+                L::Contours => 6,
+                L::WorldAirfieldApron => 7,
+                L::RoadsCasing => 8,
+                L::Roads => 9,
+                L::WorldBuildings => 10,
+                L::WorldBuildingsOutline => 11,
+                L::WorldFences => 12,
+                L::ForestFill => 13,
+                L::ForestOutline => 14,
+                L::WorldTrees => 15,
+                L::WorldProps => 16,
+                L::WorldBadges => 17,
+                L::WorldLabels => 18,
+                L::WorldRoadLabels => 19,
+                L::WorldTownLabels => 20,
+                L::Grid => 21,
+                L::MissionZones => 22,
+                L::SquadLinks => 23,
+                L::MissionVehicles => 24,
+                L::Slots => 25,
+                L::SlotPlacePreview => 26,
+                L::SlotDrag => 27,
+                L::Clusters => 28,
+                L::Marquee => 29,
+                L::MarqueeOutline => 30,
+            }
+        }
+        let mut tags: Vec<u8> = ALL_LANES.into_iter().map(tag).collect();
+        tags.sort_unstable();
+        let expected: Vec<u8> = (0..31).collect();
+        assert_eq!(
+            tags, expected,
+            "ALL_LANES must list every variant exactly once"
+        );
+    }
+
+    /// T-592: zone rings open the mission block — above the grid (mission data outranks world
+    /// chrome), below every marker lane so a ring never occludes a unit it encloses.
+    #[test]
+    fn mission_zones_sit_between_grid_and_squad_links() {
+        assert!(lane_order(L::MissionZones) > lane_order(L::Grid));
+        assert!(lane_order(L::MissionZones) < lane_order(L::SquadLinks));
+        assert!(lane_order(L::MissionZones) < lane_order(L::MissionVehicles));
+        assert!(lane_order(L::MissionZones) < lane_order(L::Slots));
+        assert!(lane_order(L::MissionZones) < lane_order(L::Marquee));
     }
 
     #[test]
