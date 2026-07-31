@@ -5170,6 +5170,11 @@ mod tests {
     #[cfg(feature = "mission")]
     fn zones_fixture() -> MissionDocCore {
         let doc = MissionDocCore::new();
+        // A COMPLETE editor graph, not just a loose slot: `flatten_to_mod_document` answers
+        // `CompileError::NoSlots` on a faction/squad-less document, so a bare slot would fail the
+        // end-to-end test for a reason with nothing to do with zones.
+        doc.add_faction("f1", "BLUFOR", "US");
+        doc.add_squad("sq1", "f1", "Alpha", Some("Alpha".to_string()));
         doc.add_slot(
             "s1", "sq1", "lyr", 0, "Rifleman", None, None, 100.5, 200.5, 0.0, 0.0,
         );
@@ -5489,6 +5494,112 @@ mod tests {
         assert!(
             wire_zones(&compiled).is_empty(),
             "deleted zones must not survive on the wire: {compiled}"
+        );
+    }
+
+    /// **END TO END — a drawn zone reaches the MOD document.** Author → `compile_payload` →
+    /// `flatten_to_mod_document`, asserting the exact polygon and circle land in `ModZone`.
+    ///
+    /// This is the claim the ticket ultimately rests on, and the two preceding tests do not make
+    /// it: they prove the zone survives the editor's own save/reload loop, which is a closed
+    /// editor↔editor circuit. `flatten` is a THIRD reader with its own `ZoneIn` deserialiser, and a
+    /// payload can round-trip perfectly through hydrate while flatten drops it — `ZoneIn` is
+    /// `#[serde(default)]`, so a wrong-typed or misnamed field is silently defaulted rather than
+    /// refused. Only running the real compiler over the real bytes settles it.
+    ///
+    /// Note the assertion is on the geometry, not on `zones.len()`: `derive_zones` also synthesises
+    /// spawn circles and a terrain boundary, so a count check would be satisfied by zones this
+    /// document never authored.
+    ///
+    /// **MEASURED HERE — the mod boundary QUANTISES zone geometry to 0.1 m.**
+    /// `flatten::round_coord` (flatten.rs:1823-1825, `(v * 10.0).round() / 10.0`) is applied to
+    /// every polygon vertex and to a circle's `x`/`z`/`r`, deliberately, to match spawn-zone
+    /// synthesis and the historical TS flatten. So the drawn `1000.25` reaches the mod as `1000.3`
+    /// and `-3800.125` as `-3800.1`.
+    ///
+    /// The layering is correct and this test pins BOTH halves of it: the editor document and its
+    /// payload keep full f64 precision (`authored_zones_survive_compile_hydrate_compile_whole`
+    /// asserts `1000.25` exactly), and only the compiled mod document is rounded. The reason to
+    /// pin it rather than just tolerate it is that it is invisible from the editor side — a draw
+    /// tool that promised finer-than-decimetre vertex placement, or a downstream test that asserted
+    /// exact float equality at the mod boundary, would be wrong in a way nothing else reports.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn authored_zones_reach_the_mod_document_through_flatten() {
+        use crate::mission::flatten::{ModZoneShape, flatten_to_mod_document};
+
+        let doc = zones_fixture();
+        let compiled = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let bytes = serde_json::to_vec(&compiled).expect("serialise payload");
+
+        let meta = crate::mission::flatten::MissionMeta {
+            id: "11112222333344445555666677778888".into(),
+            title: "T-211 zones".into(),
+            author: "maker".into(),
+            terrain: "everon".into(),
+            custom_terrain_name: String::new(),
+            max_players: 64,
+            time_of_day: "05:30".into(),
+            weather_preset: "clear".into(),
+        };
+        let mod_doc = flatten_to_mod_document(&meta, &bytes).expect("mission compiles");
+
+        let ao = mod_doc
+            .zones
+            .iter()
+            .find(|z| z.id == "z_ao")
+            .expect("authored boundary zone never reached the mod document");
+        assert_eq!(ao.kind, "boundary");
+        assert_eq!(ao.label, "Area of Operations");
+        match &ao.shape {
+            // Drawn as .25 / .75 / .125; arrives quantised to 0.1 m by `round_coord`. The vertex
+            // COUNT and ORDER are unchanged — this is rounding, not resampling or truncation.
+            ModZoneShape::Polygon { polygon } => assert_eq!(
+                polygon,
+                &vec![
+                    [1000.3, -4210.8],
+                    [1600.5, -4210.8],
+                    [1600.5, -3800.1],
+                    [1000.3, -3800.1],
+                ],
+                "the polygon reached the mod with different vertices than were drawn \
+                 (expected only `round_coord`'s 0.1 m quantisation)"
+            ),
+            other => panic!("boundary zone lost its polygon on the way to the mod: {other:?}"),
+        }
+        assert_eq!(
+            ao.rules.as_ref().expect("rules reached the mod")["penalty"],
+            serde_json::json!("kill"),
+            "zoneRules must pass through flatten verbatim"
+        );
+
+        let obj = mod_doc
+            .zones
+            .iter()
+            .find(|z| z.id == "z_obj")
+            .expect("authored objective zone never reached the mod document");
+        assert_eq!(obj.kind, "objective_capture");
+        assert_eq!(obj.faction, "blufor");
+        match &obj.shape {
+            ModZoneShape::Circle { circle } => {
+                // Same 0.1 m quantisation, and it applies to the RADIUS too — a drawn 175.75 m
+                // circle is a 175.8 m circle in the mod.
+                assert_eq!(circle.x, 1234.5, "x was exact at 0.1 m already");
+                assert_eq!(circle.z, -3990.3, "z quantised from -3990.25");
+                assert_eq!(circle.r, 175.8, "r quantised from 175.75");
+            }
+            other => panic!("objective zone lost its circle on the way to the mod: {other:?}"),
+        }
+
+        // T-201's synthesis still runs alongside authored zones: the authored `boundary` suppresses
+        // the terrain fallback, and spawn circles are additive.
+        assert!(
+            !mod_doc.zones.iter().any(|z| z.id == "z_bounds"),
+            "an authored boundary must suppress the synthesised terrain fallback"
         );
     }
 
