@@ -5,6 +5,12 @@
 //! `DISCORD_REDIRECT_URL` are also required (T-248 / T-430) so blank OAuth
 //! creds cannot load config and later surface as `oauth_unconfigured` /
 //! `discord_unreachable`. A `.env` file is loaded if present but optional.
+//!
+//! `DISCORD_BOT_TOKEN` (T-279) is **optional** — no consumer reads it yet, so
+//! requiring it would fail boot for a feature that does not exist. It is read
+//! through [`Config::require_discord_bot_token`], which makes "unset" a named
+//! error rather than an empty `Bot ` header; a set-but-whitespace-bearing token
+//! is rejected at boot because it can never authenticate.
 
 use std::env;
 
@@ -53,11 +59,16 @@ pub struct Config {
     pub service_token: String,
 }
 
-/// Configuration load error — a required variable was empty.
+/// Configuration load error — a required variable was empty or unusable.
 #[derive(Debug, thiserror::Error)]
 pub enum ConfigError {
     #[error("{0} is required")]
     Missing(&'static str),
+    /// Set, non-empty, and still cannot work. Rejected at boot rather than at
+    /// first use, where it would surface as a *remote* error and read as an
+    /// outage (T-279) — the same disguise class as T-248 / T-481 / T-484.
+    #[error("{0} is malformed: {1}")]
+    Malformed(&'static str, &'static str),
 }
 
 impl Config {
@@ -124,7 +135,51 @@ impl Config {
                 return Err(ConfigError::Missing("DISCORD_REDIRECT_URL"));
             }
         }
+        // T-279 — the bot token is NOT required (no consumer yet; see
+        // `require_discord_bot_token`), so empty/absent stays legal in every env
+        // and means "the bot is not configured". But a *non-empty* token that
+        // carries whitespace can never authenticate: it goes out as the header
+        // `Authorization: Bot <token>`, and a stray `\n` from a copy-paste or a
+        // secrets manager either makes the header invalid (reqwest refuses to
+        // build it) or earns a flat 401 from Discord. Both read as "Discord is
+        // down" at the call site instead of "your token has a newline in it".
+        // Discord bot tokens are `.`-joined base64url segments — no valid token
+        // contains a whitespace character anywhere, so this rejects only lies.
+        if !self.discord_bot_token.is_empty()
+            && self.discord_bot_token.contains(char::is_whitespace)
+        {
+            return Err(ConfigError::Malformed(
+                "DISCORD_BOT_TOKEN",
+                "contains whitespace",
+            ));
+        }
         Ok(self)
+    }
+
+    /// True when a Discord bot token is configured at all.
+    ///
+    /// Mirrors `handlers::oauth::guild_configured` — an unconfigured integration
+    /// must be distinguishable from a broken one, or the misconfiguration hides
+    /// inside whatever the remote call happens to return.
+    pub fn discord_bot_configured(&self) -> bool {
+        !self.discord_bot_token.is_empty()
+    }
+
+    /// The bot token, or a named [`ConfigError::Missing`] when it is unset.
+    ///
+    /// T-279 — this is the ONLY supported way to read `DISCORD_BOT_TOKEN`. The
+    /// raw field is an empty `String` when unconfigured, and the failure mode
+    /// that matters is a caller sending `Authorization: Bot ` with nothing after
+    /// it: Discord answers 401, and a 401 from Discord is indistinguishable from
+    /// a revoked token or a real outage. Going through this accessor turns
+    /// "unset" into a boot-shaped, named error at the point of use instead.
+    ///
+    /// Validation guarantees the returned value is non-empty and whitespace-free.
+    pub fn require_discord_bot_token(&self) -> Result<&str, ConfigError> {
+        if !self.discord_bot_configured() {
+            return Err(ConfigError::Missing("DISCORD_BOT_TOKEN"));
+        }
+        Ok(&self.discord_bot_token)
     }
 
     /// Body cap (bytes) for `POST /missions/:id/versions`, falling back to 256 MB.
@@ -308,5 +363,94 @@ mod tests {
         production_base()
             .validate()
             .expect("production with Discord client id+secret+redirect must load");
+    }
+
+    // ---- T-279 DISCORD_BOT_TOKEN ----------------------------------------
+
+    /// Unset is legal (no consumer yet) but must NOT read as a usable token.
+    /// The whole point of the accessor: `""` can never escape as a `Bot `
+    /// header, it becomes a named error instead.
+    #[test]
+    fn unset_bot_token_loads_but_is_not_readable() {
+        let cfg = production_base();
+        assert!(cfg.discord_bot_token.is_empty());
+        let cfg = cfg.validate().expect("unset bot token must not block boot");
+        assert!(!cfg.discord_bot_configured());
+        match cfg.require_discord_bot_token() {
+            Err(ConfigError::Missing("DISCORD_BOT_TOKEN")) => {}
+            other => panic!("expected Missing(DISCORD_BOT_TOKEN), got {other:?}"),
+        }
+    }
+
+    /// `DISCORD_BOT_TOKEN=` in `.env` decodes to `Ok("")`, not absent — the live
+    /// `.env` is exactly this today, so it must stay bootable in every env.
+    #[test]
+    fn empty_bot_token_is_unconfigured_in_development_too() {
+        let cfg = Config::for_tests("postgres://x/x", "jwt-secret");
+        assert!(cfg.is_development());
+        let cfg = cfg.validate().expect("development empty bot token must load");
+        assert!(!cfg.discord_bot_configured());
+    }
+
+    /// A real token round-trips and is readable.
+    #[test]
+    fn configured_bot_token_is_readable() {
+        let mut cfg = production_base();
+        cfg.discord_bot_token = "MTIzNDU2.Nzg5MA.abcdefGHIJKL-_".into();
+        let cfg = cfg.validate().expect("a well-formed bot token must load");
+        assert!(cfg.discord_bot_configured());
+        assert_eq!(
+            cfg.require_discord_bot_token().expect("readable"),
+            "MTIzNDU2.Nzg5MA.abcdefGHIJKL-_"
+        );
+    }
+
+    /// Whitespace-only is the T-481/T-484 class-R lie applied to the bot token:
+    /// non-empty to `is_empty()`, unusable to Discord.
+    #[test]
+    fn whitespace_only_bot_token_is_rejected_at_boot() {
+        for bad in [" ", "\t", "\n", "\t  \n"] {
+            let mut cfg = production_base();
+            cfg.discord_bot_token = bad.into();
+            match cfg.validate() {
+                Err(ConfigError::Malformed("DISCORD_BOT_TOKEN", _)) => {}
+                other => panic!("expected Malformed(DISCORD_BOT_TOKEN) for {bad:?}, got {other:?}"),
+            }
+        }
+    }
+
+    /// The failure this actually prevents: a trailing newline from a copy-paste
+    /// or a secrets-manager read. `is_empty()` and `trim().is_empty()` BOTH pass
+    /// it, so only a whitespace-anywhere rule catches it — and uncaught it ships
+    /// an invalid `Authorization` header that Discord answers with 401.
+    #[test]
+    fn bot_token_with_surrounding_or_inner_whitespace_is_rejected() {
+        for bad in [
+            "MTIzNDU2.Nzg5MA.abcdef\n",
+            " MTIzNDU2.Nzg5MA.abcdef",
+            "MTIzNDU2.Nzg5MA.abcdef\r\n",
+            "MTIzNDU2 .Nzg5MA.abcdef",
+        ] {
+            let mut cfg = production_base();
+            cfg.discord_bot_token = bad.into();
+            match cfg.validate() {
+                Err(ConfigError::Malformed("DISCORD_BOT_TOKEN", _)) => {}
+                other => panic!("expected Malformed(DISCORD_BOT_TOKEN) for {bad:?}, got {other:?}"),
+            }
+        }
+    }
+
+    /// Development must not be a hole: an unusable token is unusable everywhere.
+    /// (Unlike the OAuth trio, this rule is env-independent — a whitespace token
+    /// is never a legitimate dev state, it is always a typo.)
+    #[test]
+    fn whitespace_bot_token_is_rejected_in_development_too() {
+        let mut cfg = Config::for_tests("postgres://x/x", "jwt-secret");
+        cfg.discord_bot_token = " ".into();
+        assert!(cfg.is_development());
+        match cfg.validate() {
+            Err(ConfigError::Malformed("DISCORD_BOT_TOKEN", _)) => {}
+            other => panic!("expected Malformed(DISCORD_BOT_TOKEN) in dev, got {other:?}"),
+        }
     }
 }
