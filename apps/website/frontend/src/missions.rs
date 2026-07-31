@@ -1957,10 +1957,12 @@ fn dossier_sheet_body(
             // itself a transient copy of everything written so far — at these sizes that realloc
             // is the peak. Compact re-serialisation is ~never larger than the source JSON, and
             // the `Vec` still grows correctly if it is.
+            // Read outside the borrow below — nothing else should touch a signal while
+            // `up_doc`'s storage is held open.
+            let cap = up_size.get_untracked().saturating_add(1024);
             let body = up_doc.with_untracked(|slot| {
                 let doc = slot.as_ref()?;
-                let mut buf: Vec<u8> =
-                    Vec::with_capacity(up_size.get_untracked().saturating_add(1024));
+                let mut buf: Vec<u8> = Vec::with_capacity(cap);
                 map_engine_core::mission::compile::version_body_to_writer(
                     &mut buf, &semver, &notes, doc,
                 )
