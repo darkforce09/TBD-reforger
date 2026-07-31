@@ -128,7 +128,10 @@ fn rebuild_row(rules: &Rules, classify: &mut Classifier, row: &Value) -> (Value,
 
     let mut ai = Map::new();
     ai.insert("summary".into(), new_rule["ai"]["summary"].clone());
-    ai.insert("taxonomyPath".into(), new_rule["ai"]["taxonomyPath"].clone());
+    ai.insert(
+        "taxonomyPath".into(),
+        new_rule["ai"]["taxonomyPath"].clone(),
+    );
     ai.insert("classificationSource".into(), json!("rules-v1/prefab-name"));
     ai.insert(
         "confidence".into(),
@@ -332,7 +335,11 @@ fn rebuild_inventory(committed: &Value, rules: &Rules, prefabs: &[Value], inst: 
     let sorted = |m: Map<String, Value>| -> Value {
         let mut keys: Vec<String> = m.keys().cloned().collect();
         keys.sort();
-        Value::Object(keys.into_iter().map(|k| (k.clone(), m[&k].clone())).collect())
+        Value::Object(
+            keys.into_iter()
+                .map(|k| (k.clone(), m[&k].clone()))
+                .collect(),
+        )
     };
 
     let mut out = committed.as_object().cloned().unwrap_or_default();
@@ -432,7 +439,10 @@ pub fn reclassify_terrain(terrain: &str, mode: Mode, out_base: Option<&Path>) ->
     let inv_path = objects.join("type-inventory.json");
     if inv_path.exists() {
         let committed_inv: Value = serde_json::from_str(&std::fs::read_to_string(&inv_path)?)?;
-        let prefab_rows: Vec<Value> = prefabs_doc["prefabs"].as_array().cloned().unwrap_or_default();
+        let prefab_rows: Vec<Value> = prefabs_doc["prefabs"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default();
         let mut inv = rebuild_inventory(&committed_inv, &rules, &prefab_rows, &inst);
         js_normalize(&mut inv);
         std::fs::write(
@@ -534,7 +544,10 @@ mod tests {
         let (rows, rep) = reclassify_rows(&rules(vec![wreck_rule()]), &committed()).expect("ok");
         assert_eq!(rep.drift.len(), 1, "{:?}", rep.drift);
         let d = &rep.drift[0];
-        assert_eq!((d.prefab_id, &*d.old_kind, &*d.new_kind), (1, "prop", "vehicle"));
+        assert_eq!(
+            (d.prefab_id, &*d.old_kind, &*d.new_kind),
+            (1, "prop", "vehicle")
+        );
         assert_eq!(rows[1]["kind"], json!("vehicle"));
         assert_eq!(rows[1]["class"], json!("armor"));
         assert_eq!(rep.new_kinds, vec!["vehicle".to_string()]);
@@ -565,7 +578,10 @@ mod tests {
         };
         let err = reclassify_rows(&empty, &committed()).expect_err("must refuse");
         let msg = format!("{err:#}");
-        assert!(msg.contains("refusing empty write (reclassify catalogue)"), "{msg}");
+        assert!(
+            msg.contains("refusing empty write (reclassify catalogue)"),
+            "{msg}"
+        );
         assert!(msg.contains("no prefab matched any rule"), "{msg}");
     }
 
@@ -578,7 +594,10 @@ mod tests {
     #[test]
     fn rule_lookup_falls_back_when_no_rule_owns_the_pair() {
         let r = rules(vec![]);
-        assert_eq!(rule_for_kind_class(&r, "building", "hut")["class"], json!("hut"));
+        assert_eq!(
+            rule_for_kind_class(&r, "building", "hut")["class"],
+            json!("hut")
+        );
         assert_eq!(
             rule_for_kind_class(&r, "prop", "unknown")["spatial"]["fallback"],
             json!(true),
