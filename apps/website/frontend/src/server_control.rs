@@ -2,9 +2,18 @@
 //!
 //! Live `GET /servers` list (typed [`ServerRowDto`]) + selectable master/detail. Header Restart and
 //! the RCON console / mapped Quick Actions POST `/admin/servers/{id}/rcon` with the live
-//! `action` enum (`restart` | `change_map` | `kick` | `custom`). Transport is still a no-op until
-//! T-269 — the UI shows the 202 `{accepted, action}` response honestly and never fabricates a
-//! process success or a fake console log.
+//! `action` enum (`restart` | `change_map` | `kick` | `custom`).
+//!
+//! # T-598 — the transport is no longer pending
+//!
+//! T-269 filed an endpoint that answered `202 {accepted:true}` over a command nothing carried and
+//! replaced it with an honest `503`; this page's success copy said "audit queued; transport
+//! pending T-269" because that was true. **T-289 shipped the host control agent and T-595 shipped
+//! the API client**, so a 202 is now a delivery the host confirmed by re-reading the unit — and
+//! the old copy became wrong in the opposite direction. The 202 body grew `delivered` / `state` /
+//! `detail` (`api/src/handlers/admin.rs:824`), and this page must *read* them: a toast that says
+//! "delivered" without consulting `delivered` is the same defect T-269 found, wearing a different
+//! hat. See [`rcon_accepted_message`] and [`rcon_reports_success`].
 //!
 //! Stop has no HTTP/RCON route → disabled with honest copy. Launch has no start endpoint → same
 //! client-side honesty as Server Intel ("requires the Reforger client"). Swap Modpack / Global
@@ -17,10 +26,38 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 
 /// 202 body from `POST /admin/servers/{id}/rcon` (`handlers/admin.rs::send_rcon`).
+///
+/// Mirrors the serializer at `apps/website/api/src/handlers/admin.rs:824-831` —
+/// `{action, accepted, delivered, state, detail, audited}`. `audited` is not modelled because
+/// nothing on this page renders it; the other five are the claim.
+///
+/// # Why every field is required
+///
+/// No `#[serde(default)]`, deliberately, mirroring the reasoning on the API's own
+/// [`AgentReply`](../../api/src/services/game_agent.rs): a body missing `delivered` must **fail
+/// the parse**, not default to `false`-that-reads-as-`true` or to an empty `state` this page
+/// would then format into a sentence nobody told it. `api_post` turns a deserialize failure into
+/// `Err((0, None))` (`client.rs:225`), so the page reports a failed RCON request instead of
+/// inventing an outcome — fail closed, same as the API does at its own edge.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 struct RconAccepted {
+    /// The unit was re-read in the state the action intended. On its own this is **not**
+    /// permission to report success — see [`rcon_reports_success`].
     accepted: bool,
     action: String,
+    /// The host agent took the command and ran the verb. **True even when `accepted` is false**
+    /// (the verb ran, the unit did not get where it was told): the API keeps those apart because
+    /// collapsing them sends an operator hunting a network fault over a unit fault.
+    delivered: bool,
+    /// systemd `ActiveState` re-read **after** the action: `active` | `inactive` | `failed` |
+    /// `activating` | `deactivating` | `reloading` | `unknown`. This is the point of T-289's
+    /// design — `systemctl restart` exits 0 over a dead Reforger server
+    /// (`docs/mod/STAGING-SERVER.md:246-250`), so the agent never trusts an exit status and
+    /// reports what it actually observed. Throwing it away here would throw away the only
+    /// evidence behind the word "delivered".
+    state: String,
+    /// The agent's human-readable note about that observation.
+    detail: String,
 }
 
 /// Path for the admin RCON route — must track `app.rs`.
@@ -112,12 +149,69 @@ fn pick_default_id(servers: &[ServerRowDto]) -> Option<String> {
         .map(|s| s.id.clone())
 }
 
-/// Console / toast line after a 202 — honest about audit-accept, not process success.
+/// Does this 202 body actually report a delivered, confirmed command?
+///
+/// Both fields, never one. `accepted` alone is the agent's verdict about the *unit* and
+/// `delivered` alone is about the *channel*; success is the conjunction, and reading either in
+/// isolation is how a green toast ends up over a command that never landed. A 2xx status is not
+/// consulted at all — the status got us into this arm, it is not evidence about the host.
+fn rcon_reports_success(resp: &RconAccepted) -> bool {
+    resp.delivered && resp.accepted
+}
+
+/// Console / toast line after a 202 — says only what the host agent reported observing.
+///
+/// # T-598: the same string, wrong in the opposite direction
+///
+/// This read `"RCON accepted action={} (audit queued; transport pending T-269)"`, which was true
+/// while `send_rcon` could not deliver anything. T-289 built the host agent and T-595 wired the
+/// API to it, so a 202 now means the command was carried to a host agent that re-read the unit
+/// and reported [`RconAccepted::state`]. "Audit queued, transport pending" is now an
+/// understatement in exactly the way "accepted" was once an overstatement — both are the page
+/// describing an outcome it did not look at.
+///
+/// # Why four arms and not one sentence
+///
+/// The message must not be able to lie in a third direction, so every combination of the two
+/// booleans gets its own wording and every arm interpolates the observed `state`:
+///
+/// | `delivered` | `accepted` | what the operator is told |
+/// |---|---|---|
+/// | true | true | delivered, and the host re-read the unit as `state` |
+/// | true | false | delivered, and the unit did **not** reach the expected state |
+/// | false | false | **not** delivered — nothing reached the host |
+/// | false | true | **not** delivered, over a body that contradicts itself → treat as failed |
+///
+/// The last row is not reachable through today's serializer: `admin.rs` only returns 202 when
+/// `delivery.accepted`, which is set solely on `AgentResult::Accepted`, which also sets
+/// `delivered: true`. It is written out anyway because it is precisely the shape this page must
+/// never render as success, and "the server currently cannot send it" is a property of the
+/// server, not of this function. The word *accepted* never appears unqualified in either
+/// `delivered == false` arm.
+///
+/// The 409 (delivered-not-accepted) and 503 (not delivered) answers reach the operator through
+/// the `Err` arm of [`post_rcon`] today. This function still handles both, because a client that
+/// only decodes the body shape its server happens to emit is trusting a status code to stand in
+/// for a payload it never read.
 fn rcon_accepted_message(resp: &RconAccepted) -> String {
-    format!(
-        "RCON accepted action={} (audit queued; transport pending T-269)",
-        resp.action
-    )
+    let (action, state, detail) = (&resp.action, &resp.state, &resp.detail);
+    match (resp.delivered, resp.accepted) {
+        (true, true) => format!(
+            "RCON delivered action={action} — host agent re-read the unit as state={state} ({detail})"
+        ),
+        (true, false) => format!(
+            "RCON delivered action={action} but the unit did NOT reach the expected state \
+             (state={state}; {detail})"
+        ),
+        (false, true) => format!(
+            "RCON NOT delivered action={action} — host reported acceptance of a command it never \
+             carried; treat as FAILED (state={state}; {detail})"
+        ),
+        (false, false) => format!(
+            "RCON NOT delivered action={action} — nothing reached the host agent \
+             (state={state}; {detail})"
+        ),
+    }
 }
 
 #[component]
@@ -312,8 +406,17 @@ fn post_rcon(
             match crate::client::api_post::<RconAccepted>(store, &path, body).await {
                 Ok(resp) => {
                     let msg = rcon_accepted_message(&resp);
-                    append_log(console_log, format!("RCON: {msg}"));
-                    toasts.success(msg);
+                    // T-598 — a 2xx is not a delivery. The console colours `RCON:` green
+                    // (`rcon_console`), so routing a `delivered:false` body down this branch
+                    // would paint a success over a command the host never carried. Branch on
+                    // the body, not on the status that got us here.
+                    if rcon_reports_success(&resp) {
+                        append_log(console_log, format!("RCON: {msg}"));
+                        toasts.success(msg);
+                    } else {
+                        append_log(console_log, format!("RCON error: {msg}"));
+                        toasts.error(msg);
+                    }
                 }
                 Err(e) => {
                     let msg = crate::client::api_error_message(&e, "RCON request failed");
@@ -656,7 +759,7 @@ fn rcon_console(
                         if lines.is_empty() {
                             return view! {
                                 <p class="text-on-surface-variant/50">
-                                    "No RCON traffic yet. Commands POST to /admin/servers/{id}/rcon (audit-only until T-269)."
+                                    "No RCON traffic yet. Commands POST to /admin/servers/{id}/rcon. Only restart has a host-agent verb — change_map, kick and custom answer 503."
                                 </p>
                             }
                                 .into_any();
@@ -784,9 +887,24 @@ mod t270 {
             !SRC.contains(&fake_ok),
             "must not toast fabricated process success"
         );
+        // T-598 Class-R — the toast copy must track the transport that actually exists.
+        //
+        // This replaces `SRC.contains("transport pending T-269")`, which pinned a claim that
+        // T-289 + T-595 made false. It is deliberately **not** another `SRC.contains`: the page
+        // now discusses T-269 in its module docs and in this very test file, so any source grep
+        // for the old or new wording would go green off prose that no operator ever sees.
+        // Calling the live formatter is the only assertion that provably reads the code path the
+        // `Ok` arm of `post_rcon` renders.
+        let toast = rcon_accepted_message(&accepted_reply());
         assert!(
-            SRC.contains("transport pending T-269"),
-            "accepted toast/console must admit transport is still pending"
+            !toast.contains("transport pending"),
+            "T-289 shipped the host agent and T-595 shipped the client — a 202 toast may no \
+             longer call the transport pending. Got: {toast}"
+        );
+        assert!(
+            toast.contains("delivered") && toast.contains("state=active"),
+            "a 202 toast must report the delivery and the state the host actually re-read, \
+             not a queued-audit placeholder. Got: {toast}"
         );
     }
 
@@ -821,15 +939,130 @@ mod t270 {
         );
     }
 
-    #[test]
-    fn rcon_accepted_message_is_honest() {
-        let msg = rcon_accepted_message(&RconAccepted {
+    /// The exact 202 body `admin.rs` emits for a restart the host agent confirmed — the same
+    /// literal `game_agent.rs::parses_the_agents_exact_replies` pins on the API side.
+    fn accepted_reply() -> RconAccepted {
+        RconAccepted {
             accepted: true,
             action: "restart".into(),
-        });
-        assert!(msg.contains("accepted") && msg.contains("restart"));
-        assert!(msg.contains("T-269"));
+            delivered: true,
+            state: "active".into(),
+            detail: "unit active after restart".into(),
+        }
+    }
+
+    #[test]
+    fn rcon_accepted_message_is_honest() {
+        let msg = rcon_accepted_message(&accepted_reply());
+        assert!(
+            msg.contains("delivered") && msg.contains("restart"),
+            "got: {msg}"
+        );
+        // The state is the evidence; a message that omits it is asserting, not reporting.
+        assert!(msg.contains("state=active"), "got: {msg}");
+        assert!(msg.contains("unit active after restart"), "got: {msg}");
         assert!(!msg.to_lowercase().contains("restarted successfully"));
+        assert!(
+            !msg.contains("T-269") && !msg.contains("pending"),
+            "the transport shipped in T-289/T-595 — this may not still call it pending: {msg}"
+        );
+    }
+
+    /// T-598 — the three non-success shapes must each read as their own failure.
+    ///
+    /// The signature defect this guards is a tool reporting success over an input it never
+    /// examined. Every assertion below is against the live formatter's output, so a message that
+    /// stopped consulting `delivered` / `accepted` fails here rather than shipping a green toast.
+    #[test]
+    fn rcon_message_never_reads_as_success_without_delivery() {
+        // Delivered, but the unit did not get there — T-289's whole reason to exist
+        // (`systemctl restart` exits 0 over a dead Reforger server).
+        let refused = rcon_accepted_message(&RconAccepted {
+            accepted: false,
+            action: "restart".into(),
+            delivered: true,
+            state: "failed".into(),
+            detail: "unit is failed after restart; systemctl rc=0".into(),
+        });
+        assert!(
+            refused.contains("NOT reach the expected state") && refused.contains("state=failed"),
+            "delivered-but-refused must name the state it did reach: {refused}"
+        );
+        assert!(
+            !refused.contains("re-read the unit as"),
+            "must not borrow the confirmed-delivery wording: {refused}"
+        );
+
+        // Nothing reached the host.
+        let undelivered = rcon_accepted_message(&RconAccepted {
+            accepted: false,
+            action: "restart".into(),
+            delivered: false,
+            state: "unknown".into(),
+            detail: "unit not installed: not-found".into(),
+        });
+        assert!(
+            undelivered.contains("NOT delivered") && undelivered.contains("state=unknown"),
+            "got: {undelivered}"
+        );
+
+        // A body that contradicts itself. `admin.rs` cannot emit this today — that is a property
+        // of the server, and this page does not get to assume it.
+        let contradictory = rcon_accepted_message(&RconAccepted {
+            accepted: true,
+            action: "restart".into(),
+            delivered: false,
+            state: "failed".into(),
+            detail: "agent said accepted over an undelivered verb".into(),
+        });
+        assert!(
+            contradictory.contains("NOT delivered") && contradictory.contains("FAILED"),
+            "`accepted` without `delivered` must never render as success: {contradictory}"
+        );
+
+        // And the shared predicate the toast branch keys on agrees with all three.
+        for (label, delivered, accepted) in [
+            ("delivered-not-accepted", true, false),
+            ("not-delivered", false, false),
+            ("contradictory", false, true),
+        ] {
+            let reply = RconAccepted {
+                accepted,
+                action: "restart".into(),
+                delivered,
+                state: "failed".into(),
+                detail: "x".into(),
+            };
+            assert!(
+                !rcon_reports_success(&reply),
+                "{label} must not be reported as a success"
+            );
+        }
+        assert!(rcon_reports_success(&accepted_reply()));
+    }
+
+    /// T-598 — the `Ok` arm must branch on the body, not on the 2xx that got it there.
+    ///
+    /// A source pin is the right tool here and only here: the branch lives inside a
+    /// `#[cfg(target_arch = "wasm32")]` block that this native test binary does not compile, so
+    /// there is no function to call. The needles are assembled from fragments so `include_str!`
+    /// cannot false-green off this test's own literals.
+    #[test]
+    fn ok_arm_toasts_success_only_when_the_body_says_delivered() {
+        const SRC: &str = include_str!("server_control.rs");
+        let guard = format!("{}{}", "if rcon_reports_success", "(&resp) {");
+        assert!(
+            SRC.contains(&guard),
+            "post_rcon's Ok arm must gate the success toast on the delivery fields"
+        );
+        // Exactly one success toast on the page, so the guard above provably covers all of them.
+        // A second one would be a success path nothing checked.
+        let success_toast = format!("{}{}", "toasts", ".success(");
+        assert_eq!(
+            SRC.matches(success_toast.as_str()).count(),
+            1,
+            "every success toast on this page must sit behind the delivery guard"
+        );
     }
 
     #[test]
