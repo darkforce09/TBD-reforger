@@ -344,7 +344,9 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
         Cmd::Dirs { index, depth, min } => {
             let hist = index::dir_histogram(&index, depth)?;
             let mut rows: Vec<_> = hist.into_iter().filter(|(_, n)| *n >= min).collect();
-            rows.sort_by(|a, b| b.1.cmp(&a.1));
+            // Busiest directory first. `Reverse` == the flipped `cmp` it replaces, and both sorts
+            // are stable, so equal counts keep dir_histogram's order.
+            rows.sort_by_key(|r| std::cmp::Reverse(r.1));
             for (dir, n) in rows {
                 println!("{n:>6}  {dir}");
             }

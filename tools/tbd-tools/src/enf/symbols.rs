@@ -117,10 +117,10 @@ fn method_name(line: &str) -> Option<String> {
         return None;
     }
     let paren = l.find('(')?;
-    if let Some(eq) = l.find('=') {
-        if eq < paren {
-            return None;
-        }
+    if let Some(eq) = l.find('=')
+        && eq < paren
+    {
+        return None;
     }
     // Reject control flow that also has parentheses.
     let head = &l[..paren];
@@ -166,15 +166,17 @@ pub fn scan_str(text: &str, rel: &str) -> FileScan {
         let t = code.trim();
 
         // ── attributes ───────────────────────────────────────────────────────────────
-        if t.starts_with('[') {
-            if let Some(p) = t.find("RplProp") {
-                saw_rpl_attr = true;
-                pending_rpl = t[p..]
-                    .find("onRplName")
-                    .and_then(|o| t[p + o..].find('"').map(|q| p + o + q + 1))
-                    .and_then(|s| t[s..].find('"').map(|e| t[s..s + e].to_string()));
-            }
-            // Attributes never change depth in practice; fall through to brace counting.
+        // Attributes never change depth in practice; this arm sets `pending_rpl` and falls through
+        // to brace counting either way, so collapsing the two `if`s changes nothing — the outer
+        // one had no `else` and no body beyond the inner one.
+        if t.starts_with('[')
+            && let Some(p) = t.find("RplProp")
+        {
+            saw_rpl_attr = true;
+            pending_rpl = t[p..]
+                .find("onRplName")
+                .and_then(|o| t[p + o..].find('"').map(|q| p + o + q + 1))
+                .and_then(|s| t[s..].find('"').map(|e| t[s..s + e].to_string()));
         }
 
         let enclosing_class = open

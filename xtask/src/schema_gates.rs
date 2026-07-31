@@ -445,6 +445,7 @@ pub fn map_object_enums() -> Result<u8> {
 ///     load-bearing one, because `xtask schema type-inventory` runs in every slice gate and every
 ///     wave gate via `gate_schema`;
 ///   * by `#[cfg(test)] instance_kind_lockstep_tests` for local `cargo test -p xtask` feedback.
+///
 /// A `#[test]` alone would have been decorative here for the same reason the tbd-tools one was.
 ///
 /// Order is `byKind`'s emitted key order (serde_json is built with `preserve_order`): `vehicle`
@@ -2917,7 +2918,7 @@ mod tests {
             after["schemaVersion"], "1.0",
             "in-place must not force-stamp schemaVersion 1.1 over deliberate 1.0"
         );
-        assert!(after["slots"].as_array().unwrap().len() >= 1);
+        assert!(!after["slots"].as_array().unwrap().is_empty());
     }
 
     #[test]
@@ -2996,7 +2997,7 @@ mod tests {
             after["schemaVersion"], "1.0",
             "stdout entrypoint must not force-stamp schemaVersion 1.1 over deliberate 1.0"
         );
-        assert!(after["slots"].as_array().unwrap().len() >= 1);
+        assert!(!after["slots"].as_array().unwrap().is_empty());
     }
 
     /// Defense-in-depth: apply-level still covered, but must not be the only stdout pin (T-539).

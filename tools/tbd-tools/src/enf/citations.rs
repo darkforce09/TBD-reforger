@@ -38,10 +38,10 @@ fn load_names(tsv: &Path, col: usize) -> HashSet<String> {
     let mut out = HashSet::new();
     if let Ok(text) = std::fs::read_to_string(tsv) {
         for line in text.lines().skip(1) {
-            if let Some(v) = line.split('\t').nth(col) {
-                if !v.is_empty() {
-                    out.insert(v.to_string());
-                }
+            if let Some(v) = line.split('\t').nth(col)
+                && !v.is_empty()
+            {
+                out.insert(v.to_string());
             }
         }
     }
@@ -59,15 +59,16 @@ pub fn extract(text: &str, file: &str) -> Vec<Citation> {
                 .chars()
                 .take_while(|c| c.is_alphanumeric() || *c == '_' || *c == '#')
                 .collect();
-            if let Some((lane, symbol)) = tok.split_once('#') {
-                if !lane.is_empty() && !symbol.is_empty() {
-                    out.push(Citation {
-                        file: file.to_string(),
-                        line: i + 1,
-                        lane: lane.to_string(),
-                        symbol: symbol.to_string(),
-                    });
-                }
+            if let Some((lane, symbol)) = tok.split_once('#')
+                && !lane.is_empty()
+                && !symbol.is_empty()
+            {
+                out.push(Citation {
+                    file: file.to_string(),
+                    line: i + 1,
+                    lane: lane.to_string(),
+                    symbol: symbol.to_string(),
+                });
             }
             rest = &after[tok.len().min(after.len())..];
         }

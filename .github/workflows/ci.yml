@@ -37,8 +37,12 @@ jobs:
     # `TEST_DATABASE_URL=…/tbd_reforger` and a wiped live dev database. It is not to be widened.
     #
     # So CI, which had shipped `tbd_reforger` in both the service env and TEST_DATABASE_URL since
-    # T-534, was the side that was wrong: every DB-backed website-api test panicked at
-    # `assert_test_database_url`, and the `test` step below has been RED on every push since.
+    # T-145 (`9cc7a161`, 2026-07-06 — this note said T-534, which is three weeks and two tickets
+    # off; `git log -S tbd_reforger -- .github/workflows/ci.yml` puts the name on the Rust job the
+    # day that job was created, T-534 only derived the per-binary `<base>_<suite>_it` names on top
+    # of it, and T-381 on 07-27 is what turned a working name into a refused one), was the side
+    # that was wrong: every DB-backed website-api test panicked at
+    # `assert_test_database_url`, and the `test` step below has been RED on every push since T-381.
     # `rust_it` is the allow-list's first entry (`name == "rust_it"`) and is exactly what
     # `make test-it` uses (Makefile:207), so CI and the local replay now name the same base.
     #

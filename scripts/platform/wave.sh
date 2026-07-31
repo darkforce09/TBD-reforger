@@ -27,7 +27,9 @@
 #
 #   bash scripts/platform/wave.sh status      # where are we? what is blocking?
 #   bash scripts/platform/wave.sh prep        # create worktrees for the next disjoint set
-#   bash scripts/platform/wave.sh gate        # full wave gate on the current tree
+#   bash scripts/platform/wave.sh gate        # full wave gate; base DERIVED from the last
+#                                             # `wave N CLOSED` commit — pass one only to widen,
+#                                             # never to narrow (T-602 refuses a narrowing base)
 #   bash scripts/platform/wave.sh gate --slice T-190   # cheap per-slice gate
 #   bash scripts/platform/wave.sh land        # merge every ready slice (no barrier)
 #   bash scripts/platform/wave.sh reclaim     # /var/tmp agent caches + repo-root target-<SLICE>
@@ -158,9 +160,11 @@ GATE_CHECK_TARGET="${TBD_GATE_CHECK_TARGET:-$MAIN_ROOT/target-gate-check}"
 in_container() { [ -f /run/.containerenv ] || [ -f /.dockerenv ] || [ -n "${container:-}" ]; }
 if command -v distrobox-host-exec >/dev/null 2>&1 && in_container; then
   HOST_BRIDGE=1
+  # T-575: MIGRATE_TEST_DATABASE_URL was forwarded here too and is gone with its consumer — see
+  # ensure_gate_db. Forwarding an unset variable is harmless; forwarding one that looks live is how
+  # a dead path survives four waves of readers.
   hostrun() { distrobox-host-exec timeout "$GATE_TIMEOUT" \
-                env "CARGO_TARGET_DIR=$CARGO_TARGET_DIR" "TEST_DATABASE_URL=${TEST_DATABASE_URL:-}" \
-                    "MIGRATE_TEST_DATABASE_URL=${MIGRATE_TEST_DATABASE_URL:-}" "$@"; }
+                env "CARGO_TARGET_DIR=$CARGO_TARGET_DIR" "TEST_DATABASE_URL=${TEST_DATABASE_URL:-}" "$@"; }
 else
   HOST_BRIDGE=0
   if command -v distrobox-host-exec >/dev/null 2>&1; then
@@ -299,48 +303,51 @@ ensure_gate_db() {
     export TEST_DATABASE_URL="$url"
   fi
 
-  # tests/db_migrate.rs takes a SECOND variable and its own database, because it exercises the
-  # migration chain from empty — it cannot share a DB the other suites have already migrated.
-  # Found only because gate_test_api refuses on any skip: with the first fix in, 28 of 30 skips
-  # cleared and these two remained, naming a variable nothing had mentioned.
+  # T-575 — THE SECOND VARIABLE AND ITS DATABASE ARE GONE. This block used to force-drop and
+  # recreate `tbd_gate_migrate` and export `MIGRATE_TEST_DATABASE_URL` at it, because
+  # tests/db_migrate.rs exercises the migration chain from empty and could not share a DB the other
+  # suites had already migrated. T-558 moved db_migrate.rs AND models_fromrow.rs onto
+  # `common::require_test_database_url`, so each gets its own `<base>_<suite>_it` off
+  # TEST_DATABASE_URL (the T-534 shape) and NEITHER reads the variable any more.
   #
-  # THE DROPS BELOW ARE DESTRUCTIVE AND ARE ONLY SAFE UNDER THE GATE LOCK — read before moving this
-  # call, and before adding a fourth caller.
+  # Verified repo-wide before deleting, not assumed: the only surviving mentions of
+  # MIGRATE_TEST_DATABASE_URL are the two `//!` doc comments in those same two test files recording
+  # that they no longer share it, plus ticket registry prose. `std::env::var` for it: zero hits.
+  # So the export named a variable nothing read, pointed at a database nothing opened, and the
+  # DROP ... WITH (FORCE) that preceded it could only ever have terminated sessions on a database
+  # with no legitimate user. Deleted rather than left as harmless: a live-looking destructive
+  # statement is exactly what a future reader will preserve on the assumption it matters.
   #
-  # `DROP DATABASE ... WITH (FORCE)` terminates every session on the target DB. Grepped
-  # 2026-07-26: nothing else in the tree names tbd_gate_migrate or MIGRATE_TEST_DATABASE_URL except
-  # tests/db_migrate.rs and tests/models_fromrow.rs — i.e. the only thing a migrate DROP can ever
-  # kill is ANOTHER GATE'S test run. Gate B's startup force-drops the DB gate A's db_migrate is
-  # connected to. That is a third concurrency mechanism on top of the two the lock header names.
+  # THE DROP BELOW IS DESTRUCTIVE AND IS ONLY SAFE UNDER THE GATE LOCK — read before moving this
+  # call, and before adding a fourth caller. It is now the per-wave IT DB prune alone
+  # (prune_old_gate_wave_dbs), which is the same destructive class the migrate reset was and keeps
+  # the same assert: `DROP DATABASE ... WITH (FORCE)` terminates every session on the target, and
+  # a tbd_gate_w<N> the prune considers stale can still be the DB ANOTHER GATE is testing against.
   #
   # It is closed by the flock, not by anything here — which means it was only ever as good as the
   # lock ACTUALLY being held, and before T-406 it was not: take_gate_lock returned 0 after failing
   # to lock, so on a full disk (252 MB free, recorded in cmd_reclaim's header) this ran
-  # unserialised. Assert the invariant rather than assume it. Migrate stays a single shared name
-  # under the lock (NOT per-run — that leaks a DB every kill). IT DBs are per-wave (T-411); pruning
-  # waves older than the last two is the same destructive class and sits under the same assert.
+  # unserialised. Assert the invariant rather than assume it. IT DBs are per-wave (T-411); pruning
+  # waves older than the last two sits under this assert.
   # GATE_LOCK_HELD=1 is the normal path. GATE_UNSERIALISED=1 is the deliberate escape hatch
   # (TBD_GATE_ALLOW_UNSERIALISED=1): the operator accepted a degraded verdict, and the full gate
-  # must still be able to reset its private migrate DB. T-409: the hatch used to return 0 from
+  # must still be able to prepare its databases. T-409: the hatch used to return 0 from
   # take_gate_lock without setting GATE_LOCK_HELD, so ensure_gate_db refused and every full-gate
   # run under the hatch printed GATE: FAIL — UNSERIALISED regardless of the code.
   if [ "${GATE_LOCK_HELD:-0}" != 1 ] && [ "${GATE_UNSERIALISED:-0}" != 1 ]; then
-    echo "gate: REFUSING to reset tbd_gate_migrate — the gate lock is NOT held, so a concurrent"
-    echo "        gate's db_migrate run may be connected to it and WITH (FORCE) would kill it."
+    echo "gate: REFUSING to prune stale wave databases — the gate lock is NOT held, so a concurrent"
+    echo "        gate may be connected to one of them and WITH (FORCE) would kill its test run."
     echo "        ensure_gate_db must be called after take_gate_lock."
     return 2
   fi
   if [ "${GATE_LOCK_HELD:-0}" != 1 ] && [ "${GATE_UNSERIALISED:-0}" = 1 ]; then
-    echo "gate: WARNING — resetting tbd_gate_migrate WITHOUT the lock (TBD_GATE_ALLOW_UNSERIALISED)."
-    echo "        A concurrent gate's db_migrate may be connected; WITH (FORCE) would kill it."
+    echo "gate: WARNING — pruning stale wave databases WITHOUT the lock (TBD_GATE_ALLOW_UNSERIALISED)."
+    echo "        A concurrent gate may be connected to one; WITH (FORCE) would kill it."
   fi
   # Prune only on the default per-wave path — never when the operator pinned TBD_GATE_DB.
   if [ -z "${TBD_GATE_DB:-}" ] && [ -n "${wave:-}" ]; then
     prune_old_gate_wave_dbs "$wave"
   fi
-  $psql "DROP DATABASE IF EXISTS tbd_gate_migrate WITH (FORCE);" >/dev/null 2>&1 || true
-  $psql "CREATE DATABASE tbd_gate_migrate;" >/dev/null 2>&1 || true
-  export MIGRATE_TEST_DATABASE_URL="${MIGRATE_TEST_DATABASE_URL:-postgres://tbd:tbd@localhost:5434/tbd_gate_migrate?sslmode=disable}"
 }
 
 plan_rows() { grep -v '^#' "$PLAN" 2>/dev/null | grep -v '^wave[[:space:]]' | sed '/^\s*$/d'; }
@@ -819,9 +826,11 @@ touch_workspace() {
 # the T-329 case.
 #
 # Scoped to changed crates rather than the workspace because `clippy --workspace -D warnings` is red on
-# clean main (~45 errors in tools/tbd-tools and xtask, which CI has never gated) — a gate nothing can
-# pass teaches agents that gate failures are noise. Frontend goes through wasm32 with NO -D, matching
-# ci.yml:113; everything else takes -D warnings, matching the wave gate.
+# clean main — a gate nothing can pass teaches agents that gate failures are noise. T-603 re-measured
+# 2026-07-31: 60 errors, ALL of them website-frontend linted natively, none in tools/tbd-tools or
+# xtask (this note used to blame those two; they are clean and the wave gate now lints them by name).
+# Frontend goes through wasm32 with NO -D, matching ci.yml:113; everything else takes -D warnings,
+# matching the wave gate.
 clippy_changed() {
   local base="${1:-main...HEAD}" files crates=() c d f pkg
   # T-492: propagate changed_rs failure — empty stdout + rc≠0 must not become SKIP.
@@ -1704,6 +1713,113 @@ refuse_empty_range() {
   return 2
 }
 
+# ── WAVE GATE BASE ───────────────────────────────────────────────────────────────────────────────
+#
+# T-602. THE FIX EXISTED; THE DEFAULT WAS THE HAZARD.
+#
+# `cmd_gate` took `${1:-HEAD~1}` and every change-scoped step keys off it, so omitting the argument
+# silently shrank the gate's scope to the last commit and the verdict still read PASS.
+#
+# OBSERVED, closing wave 75: the command center ran `wave.sh gate` with no base. After five merges
+# `HEAD~1` was the LAST MERGE ONLY. GATE reported PASS 26/26 over a wave in which 4 of 5 slices
+# changed the frontend and `trunk build` never ran; re-run against the real base it was 27/27 with
+# the trunk build actually building. REPRODUCED here on wave 76's committed history before fixing:
+#
+#     base HEAD~1     ->  wasm32 (frontend)  PASS   "frontend untouched"
+#                         trunk build        SKIP (frontend untouched this wave)
+#                         touch_changed      0 changed .rs file(s)
+#     base 1614c557   ->  apps/website/frontend/src/arsenal_rules.rs changed this wave
+#                         trunk build        WOULD RUN
+#                         touch_changed      1 changed .rs file(s)
+#
+# Four steps narrow, not the two first blamed: touch_changed, wasm32 (frontend), fmt (changed) and
+# the trunk conditional. `test xtask+tbd-tools` and the other unconditional steps are unaffected.
+#
+# WHY DERIVE-AND-VERIFY RATHER THAN "MAKE THE BASE MANDATORY".
+# Mandatory moves the computation to the operator — the same operator who got it wrong, and who has
+# no cheaper way to compute it than this function does. It would also have to be threaded through
+# `wave --close`, which already passes a base and already passes a WRONG one (see below). So:
+#   * with no argument, DERIVE the base from the wave-close marker. Exact, not a guess.
+#   * with or without an argument, VERIFY the base covers the whole wave and REFUSE if it does not.
+#     Verification is what catches an explicit base, which is the half a mandatory argument cannot.
+#   * never fall back to HEAD~1. There is no wave for which "the last commit" is a safe default.
+#
+# `origin/main` was the ticket's suggested derivation and it is measurably wrong here: main is
+# pushed at every wave close, so at gate time `origin/main` == HEAD and `git merge-base origin/main
+# HEAD` returns HEAD — the vacuous range this function exists to refuse. Verified 2026-07-31:
+# `git rev-parse origin/main` == `git rev-parse HEAD` == efc3851c.
+#
+# The commit `wave --close` writes at the end of every wave. 32 in history, one format, varying
+# only after the word CLOSED: `wave 76 CLOSED — …`, `wave 75 CLOSED: …`.
+WAVE_CLOSE_MARKER_RE='^wave [0-9]+ CLOSED'
+
+# The previous wave's close commit = the SHA main was at when THIS wave opened.
+# Empty + rc 1 when no marker is reachable. That is a real state (a tree before wave 1) and the
+# caller refuses on it — this function does not invent a fallback, because inventing one is how
+# `HEAD~1` got here.
+#
+# HEAD IS EXCLUDED DELIBERATELY. `wave --close` gates BEFORE writing its own marker, so the newest
+# reachable marker is always the previous wave's. Re-gating an already-closed tree therefore picks
+# the previous close again and re-gates that whole wave, rather than gating nothing.
+prev_wave_close() {
+  local head sha subj
+  head="$(git rev-parse HEAD 2>/dev/null)" || return 1
+  while read -r sha; do
+    [ -z "$sha" ] && continue
+    [ "$sha" = "$head" ] && continue
+    # git's --grep matches the WHOLE message, so a body line quoting the marker would false-match;
+    # `wave --close` writes it as the SUBJECT, so confirm it there. A bash glob rather than grep on
+    # purpose — see the note on this file's grep usage: `rg` does not exist under `bash -c` and the
+    # two greps on this machine (ugrep interactively, GNU under `bash script.sh`) disagree on ERE
+    # details. A `case` glob is the same program under both.
+    subj="$(git log -1 --format=%s "$sha" 2>/dev/null)"
+    case "$subj" in
+      wave\ [0-9]*\ CLOSED*) printf '%s\n' "$sha"; return 0 ;;
+    esac
+  done < <(git rev-list --extended-regexp --grep="$WAVE_CLOSE_MARKER_RE" HEAD 2>/dev/null)
+  return 1
+}
+
+# Refuse a base that does not cover the whole wave.
+#
+# One rule: THE BASE MUST BE AT OR BEFORE THE COMMIT THIS WAVE OPENED AT — i.e. it is an
+# ancestor-or-equal of the previous wave's close. A base OLDER than that passes on purpose:
+# over-broad gates more than it must, and over-broad has never been the failure mode here. Narrow
+# is, every time.
+#
+# NOT "every slice MERGE is inside base..HEAD", which is how the ticket phrased it. Measured: wave
+# 76 landed T-608 as a plain commit with no merge at all, and wave 74 landed three that way
+# (`c7a3ff78`, `bed4f269`, `0a1a53ac`). Enumerating merges would have called such a wave covered
+# while its non-merge landings sat outside the range — the same lie in a new place. The ancestor
+# test is landing-shape-independent.
+gate_base_covers_wave() {
+  local base="$1" bsha psha missed
+  bsha="$(git rev-parse --verify --quiet "${base}^{commit}" 2>/dev/null)" || return 2
+  # A base off HEAD's history makes `base..HEAD` an unrelated set, not "this wave".
+  if ! git merge-base --is-ancestor "$bsha" HEAD 2>/dev/null; then
+    echo "gate: base '$base' is not an ancestor of HEAD — refusing to run."
+    echo "        '$base..HEAD' would describe a set of commits nobody asked about."
+    return 2
+  fi
+  # No marker to compare against: the caller supplied a base and there is nothing to check it
+  # with. refuse_empty_range still applies. Do not fabricate a verdict either way.
+  psha="$(prev_wave_close)" || return 0
+  git merge-base --is-ancestor "$bsha" "$psha" 2>/dev/null && return 0
+  # psha..bsha, NOT bsha..psha. bsha is the NEWER of the two here (that is what makes it wrong), so
+  # this counts the wave's commits that the base skips past — the ones every change-scoped step
+  # would never see. Reversed, it is always 0, which is exactly the reassuring lie to avoid here.
+  missed="$(git rev-list --count "$psha..$bsha" 2>/dev/null || echo '?')"
+  echo "gate: base $(git rev-parse --short "$bsha") starts AFTER this wave opened — refusing to run."
+  echo "        this wave opened at $(git rev-parse --short "$psha")"
+  echo "          $(git log -1 --format=%s "$psha")"
+  echo "        $missed commit(s) of this wave sit OUTSIDE $base..HEAD. touch_changed, wasm32,"
+  echo "        fmt and the trunk build would each report PASS/SKIP without reading one of them,"
+  echo "        and the verdict would describe a fraction of the wave. That is T-602 verbatim."
+  echo "        Fix: run 'wave.sh gate' with NO base (it derives $(git rev-parse --short "$psha")),"
+  echo "             or pass a base at or before $(git rev-parse --short "$psha")."
+  return 2
+}
+
 # ── GATE SERIALISATION ───────────────────────────────────────────────────────────────────────────
 #
 # TWO GATES AT ONCE REPORT ON EACH OTHER'S CODE. Two independent mechanisms, one root cause: every
@@ -1978,9 +2094,24 @@ gate_slice() {
 #     LAST merge — so a frontend-touching slice merged first, followed by a backend slice, skipped
 #     the trunk build entirely and a frontend regression landed green.
 #   * anything else that needs to reason about "what this wave changed".
-# With no base argument it falls back to HEAD~1, which is correct only for a single-slice wave.
+# T-602: with no base argument it is DERIVED from the last wave-close commit and then VERIFIED to
+# cover the whole wave; an explicit base is verified the same way. It no longer falls back to
+# HEAD~1 — see the WAVE GATE BASE block above for the wave-75 incident that default caused, the
+# wave-76 reproduction, and why derive-and-verify rather than a mandatory argument.
 cmd_gate() {
-  local base="${1:-HEAD~1}"
+  local base="${1:-}"
+  if [ -z "$base" ]; then
+    base="$(prev_wave_close)" || {
+      echo "gate: no base given, and no 'wave N CLOSED' commit is reachable from HEAD."
+      echo "        There is nothing to derive the wave's base from, and HEAD~1 is not a safe"
+      echo "        guess — it is the exact default that reported PASS 26/26 over four unexamined"
+      echo "        frontend slices in wave 75. Pass the base explicitly:"
+      echo "        bash scripts/platform/wave.sh gate <sha main was at before this wave>"
+      return 2
+    }
+    echo "gate: no base given — derived $(git rev-parse --short "$base") from the last wave-close commit"
+    echo "        $(git log -1 --format=%s "$base")"
+  fi
   # A base git cannot resolve makes EVERY change-scoped step below diff against nothing:
   # touch_changed, wasm_changed, fmt_changed and the trunk build each see an empty file list and
   # print PASS/SKIP without examining a single line. That is this program's signature defect —
@@ -1997,13 +2128,18 @@ cmd_gate() {
     if [[ "$base" =~ ^T-[0-9] ]]; then
       echo "gate: '$base' is a ticket id, not a git base — the per-slice gate is a different command."
       echo "        per-slice:  bash scripts/platform/wave.sh gate --slice $base"
-      echo "        wave gate:  bash scripts/platform/wave.sh gate [<base>]   (default HEAD~1)"
+      echo "        wave gate:  bash scripts/platform/wave.sh gate [<base>]   (derived when omitted)"
     else
       echo "gate: base '$base' is not a resolvable commit — refusing to run."
       echo "        Every change-scoped step would diff against nothing and PASS without looking."
     fi
     return 2
   fi
+  # T-602. Resolvable is not the same as CORRECT. `gate HEAD~1` resolves, is an ancestor of HEAD,
+  # and contains changed files — it clears both the check above and refuse_empty_range below, and
+  # it is exactly what shrank wave 75's gate to one merge. This is the check that catches it, and
+  # it runs for a derived base and an explicit one alike. See gate_base_covers_wave.
+  gate_base_covers_wave "$base" || return 2
   # Resolving is not the same as containing anything — `gate HEAD` cleared the check above and
   # still gated an empty range. See refuse_empty_range.
   refuse_empty_range "$base..HEAD" \
@@ -2035,13 +2171,21 @@ cmd_gate() {
   run "cargo check"      checkrun cargo check --workspace --quiet
   run "wasm32 (frontend)" wasm_changed "$base..HEAD"
   run "fmt (changed)"    fmt_changed "$base..HEAD"
-  # Clippy is scoped to the crates CI actually gates, NOT --workspace.
+  # Clippy is scoped per-crate, NOT --workspace.
   #
-  # `cargo clippy --workspace --all-targets -- -D warnings` is red on clean main — ~45 errors, almost
-  # all in tools/tbd-tools and xtask, which have never been clippy-gated (exactly as they were never
-  # fmt-gated; that drift is T-297). A workspace-wide gate would therefore be red before a single
-  # slice merged, and nothing could ever land. ci.yml gates per-crate (:59 website-api, :91
-  # map-engine, :112 website-frontend on wasm32) and this mirrors it.
+  # `cargo clippy --workspace --all-targets -- -D warnings` is still red on clean main, so a
+  # workspace-wide gate would be red before a single slice merged and nothing could ever land.
+  #
+  # T-603 CORRECTION — THE REASON MOVED, AND THE NOTE HAD NOT. This used to read "~45 errors, almost
+  # all in tools/tbd-tools and xtask, which have never been clippy-gated". MEASURED 2026-07-31, that
+  # attribution is now exactly backwards: 60 errors in the bin target (61 with --all-targets), ALL
+  # SIXTY in `website-frontend` linted natively, and ZERO in tools/tbd-tools or xtask — those two
+  # are clean and are gated by the `clippy xtask+tbd-tools` step added below. The frontend residue
+  # is the same advisory-warnings case the `clippy frontend` note names, seen through a native
+  # target instead of wasm32; it is not this run's to fix.
+  #
+  # ci.yml gates per-crate (:59 website-api, :91 map-engine, :112 website-frontend on wasm32) and
+  # the three steps here mirror it; the fourth (below) covers what ci.yml has no job for at all.
   run "clippy api"       checkrun cargo clippy -p website-api --all-targets --quiet -- -D warnings
   # --features doc,mission for the same reason as the test step below: without them clippy compiles
   # neither doc nor mission and passes on code it never read. Measured blind on flatten.rs.
@@ -2123,12 +2267,44 @@ cmd_gate() {
   # worktree built (same package + version = same artifact hash = clobbering). See the long headers
   # on gate_test_api and on GATE SERIALISATION for the three independent measurements of that.
   #
-  # Cost: 81 tests, ~0.1 s of actual running; the build is the whole of the wall clock and it is
-  # incremental after the first wave. Cheap enough that scoping it by change would buy nothing and
-  # would reintroduce exactly the "diffed against nothing, printed PASS" shape this file exists to
-  # prevent — so it is unconditional, like `schema`.
+  # Cost: 84 tests, ~3.1 s of actual running (51 xtask + 33 tbd-tools; measured 2026-07-31 — T-597
+  # wrote 81 and T-361's three serve tests landed in the same wave). The build is the whole of the
+  # rest of the wall clock and it is incremental after the first wave. Cheap enough that scoping it
+  # by change would buy nothing and would reintroduce exactly the "diffed against nothing, printed
+  # PASS" shape this file exists to prevent — so it is unconditional, like `schema`.
   run "test xtask+tbd-tools" hostrun env "CARGO_TARGET_DIR=$MAIN_ROOT/target-gate-tools" "CARGO_INCREMENTAL=0" \
                                   cargo test -p xtask -p tbd-tools --quiet
+  # T-603 — THE OTHER HALF OF T-597's GAP. T-597 established that nothing ran `cargo test` on these
+  # two crates and added the step above. Nothing LINTED them either, and that half stayed open: the
+  # three clippy steps above name website-api, map-engine and website-frontend, and ci.yml's own
+  # clippy runs under `working-directory: apps/website/api`, so xtask and tools/tbd-tools were
+  # outside every lint the program has.
+  #
+  # What that cost, measured 2026-07-31: 14 errors on clean main under `-D warnings` — 10 in
+  # tools/tbd-tools (4 collapsible_if, 3 unnecessary_sort_by, collapsible_str_replace,
+  # no_effect_replace, manual_pattern_char_comparison) and 4 in xtask (nonminimal_bool, 2 len_zero,
+  # doc_lazy_continuation). All mechanical, none behavioural, and all of them older than the ticket
+  # that found them. They are fixed in the same commit that adds this step, because a gate step
+  # that is red the moment it lands teaches the next agent that gate failures are noise — the same
+  # reasoning the `clippy frontend` note above gives for not adding `-D warnings` there.
+  #
+  # NOTE ON THAT 14. The ticket that filed this reported NINE errors, "all in tools/tbd-tools/src/enf".
+  # That was a truncated reading, not a wrong one: `cargo clippy` aborts the remaining compilation
+  # units once one fails, so the tbd-tools LIB failure hid the `enf` BIN target and every xtask
+  # target behind it. The count only settles by re-running after each fix. Recorded because this
+  # file's subject is tools that report on inputs they did not fully examine, and the tool that
+  # measured this step's own workload was one of them.
+  #
+  # --all-targets, matching `clippy api` and `clippy map-engine`: without it the #[cfg(test)] code
+  # is not linted, and 2 of the 14 (both len_zero) were in test modules. -D warnings, same as those
+  # two steps — this is not the frontend's advisory case, there is no upstream CI job to stay in
+  # step with, so the gate sets the standard rather than mirroring one.
+  #
+  # `checkrun`, not `hostrun`: this is a check-class step and carries the T-421 shared-target-dir
+  # exposure verbatim, so it belongs on GATE_CHECK_TARGET with the other analysis steps rather than
+  # on the shared dir. The test step above needs its own private dir instead because it RUNS
+  # binaries; this one only reads.
+  run "clippy xtask+tbd-tools" checkrun cargo clippy -p xtask -p tbd-tools --all-targets --quiet -- -D warnings
   # The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
   # when the wave actually touched the frontend — measured across the WHOLE wave, not the last merge.
   if git diff --name-only "$base..HEAD" 2>/dev/null | grep -q '^apps/website/frontend/'; then
@@ -2243,10 +2419,18 @@ cmd_wave_close() {
   # CARGO_TARGET_DIR fix exists to protect. It also reproduced verbatim the failure documented at the
   # top of fmt_changed — "EMPTY on merged main, so without an explicit base this checked nothing
   # exactly where it mattered most".
-  local wbase
-  wbase="$(git rev-parse "HEAD~${WAVE_GATE_DEPTH:-40}" 2>/dev/null || git rev-list --max-parents=0 HEAD | tail -1)"
-  echo "gating wave $w against $(git rev-parse --short "$wbase") (not HEAD — that makes fmt/wasm/trunk vacuous)"
-  cmd_gate "$wbase" || { echo "REFUSED: wave gate is red on main"; return 1; }
+  #
+  # T-602 — THE SAME BUG LIVED HERE, LATENT. This used to pass
+  # `HEAD~${WAVE_GATE_DEPTH:-40}`, falling back to the root commit when HEAD had fewer than 40
+  # ancestors. A COUNT is not a wave boundary: any wave longer than 40 commits silently gated only
+  # its last 40 and every change-scoped step went narrow exactly as wave 75's did. Wave 75 was 10
+  # commits and wave 76 was 7, so it never bit — the whole defect was one long wave away, and the
+  # `WAVE_GATE_DEPTH` override made it one environment variable away. Both are gone: cmd_gate now
+  # derives the base from the wave-close marker itself, which is the boundary rather than a guess
+  # at where it might be, and REFUSES a base that starts after the wave opened. Passing no argument
+  # is now the correct call, not the dangerous one.
+  echo "gating wave $w against its own base (derived — not HEAD, which makes fmt/wasm/trunk vacuous)"
+  cmd_gate || { echo "REFUSED: wave gate is red on main"; return 1; }
   echo
   echo "WAVE $w CLOSED. Wave $((w+1)) may be dispatched."
 }
