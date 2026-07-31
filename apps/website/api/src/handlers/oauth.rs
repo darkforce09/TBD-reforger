@@ -515,8 +515,25 @@ fn log_discord_call_failure(stage: &'static str, e: &anyhow::Error) {
     // Full anyhow chain, not just the outermost Display — a wrapped transport error is
     // otherwise reduced to a summary that discards the actual cause.
     let detail = format!("{e:#}");
-    let transport = e.chain().find_map(|c| c.downcast_ref::<reqwest::Error>());
-    let (fault, guidance) = match transport {
+    let (fault, guidance) = classify_discord_failure(e);
+    tracing::error!(
+        stage = %stage,
+        fault = %fault,
+        error = %detail,
+        "discord {} failed [{}] — {}",
+        stage,
+        fault,
+        guidance
+    );
+}
+
+/// The verdict half of [`log_discord_call_failure`], split out so it is **testable**.
+///
+/// Left inline it would have been a branch whose only output is a log line — unassertable,
+/// therefore unfalsifiable, therefore exactly the kind of check this program is named after.
+/// Returns `(fault, guidance)`.
+fn classify_discord_failure(e: &anyhow::Error) -> (&'static str, &'static str) {
+    match e.chain().find_map(|c| c.downcast_ref::<reqwest::Error>()) {
         Some(re) if re.is_timeout() || re.is_connect() || re.is_request() => (
             "outage",
             "no usable answer came back from Discord (network, DNS, TLS or Discord itself). \
@@ -534,16 +551,7 @@ fn log_discord_call_failure(stage: &'static str, e: &anyhow::Error) {
              invalid_grant = wrong DISCORD_REDIRECT_URL, or a code already used or expired. \
              Pre-flight the credential pair with the curl in apps/website/api/.env.example.",
         ),
-    };
-    tracing::error!(
-        stage = %stage,
-        fault = %fault,
-        error = %detail,
-        "discord {} failed [{}] — {}",
-        stage,
-        fault,
-        guidance
-    );
+    }
 }
 
 /// Classify a `fetch_guild_member` outcome, logging loudly when Discord is unreachable.
@@ -853,6 +861,95 @@ mod tests {
         assert_eq!(
             oauth_host_mismatch("http://localhost:3000", ALIGNED_REDIRECT),
             None
+        );
+    }
+
+    /* ──── T-303 — telling a bad secret apart from a Discord outage ──── */
+
+    /// A wrong `DISCORD_CLIENT_SECRET` is the case the ticket names, and before this slice it
+    /// was logged as nothing at all. Discord answers 401 and `decode_2xx` turns that into a
+    /// plain `anyhow::bail!` with no `reqwest::Error` in the chain — so "no transport error"
+    /// is the typed signal that Discord *answered and refused*, i.e. a CONFIG fault.
+    #[test]
+    fn a_rejected_credential_classifies_as_config_not_outage() {
+        // Byte-shaped like services::discord::decode_2xx's real bail.
+        let e = anyhow::anyhow!(
+            "discord: status {}: {}",
+            401,
+            r#"{"error":"invalid_client"}"#
+        );
+        let (fault, _) = classify_discord_failure(&e);
+        assert_eq!(
+            fault, "config",
+            "a 401 from Discord must not be reported as an outage — conflating them is the \
+             whole defect T-303 exists to fix"
+        );
+    }
+
+    /// A **real** `reqwest::Error` of the exact type production produces, from a refused
+    /// loopback connection — nothing listens on port 1, and no external network is touched.
+    /// A hand-built stand-in would be free to diverge from the type the classifier downcasts
+    /// to, which is the one thing this must not do.
+    ///
+    /// The provider install mirrors `services::discord`'s own (discord.rs:23): the crate is
+    /// built with reqwest's `rustls-no-provider`, so constructing a `Client` panics without
+    /// it. Idempotent — `install_default` returns `Err` when one is already set.
+    async fn loopback_transport_error(path: &str) -> reqwest::Error {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        reqwest::Client::new()
+            .get(format!("http://127.0.0.1:1{path}"))
+            .send()
+            .await
+            .expect_err("nothing listens on loopback port 1")
+    }
+
+    /// The other half, and the one that keeps the classifier honest: without it, a
+    /// classifier that returned "config" unconditionally would still pass the test above.
+    #[tokio::test]
+    async fn a_refused_connection_classifies_as_outage_not_config() {
+        let e = anyhow::Error::new(loopback_transport_error("/oauth2/token").await);
+        let (fault, _) = classify_discord_failure(&e);
+        assert_eq!(
+            fault, "outage",
+            "a transport failure must not be reported as a config fault; the classifier would \
+             be vacuous if every input returned the same verdict"
+        );
+    }
+
+    /// The classification must survive `anyhow`'s `?` wrapping, which is how the error
+    /// actually arrives from `retry_429` — a downcast of only the outermost error would
+    /// silently relabel every wrapped outage as a config fault.
+    #[tokio::test]
+    async fn a_wrapped_transport_error_is_still_found_in_the_chain() {
+        let e = anyhow::Error::new(loopback_transport_error("/users/@me").await)
+            .context("discord: fetching the user profile");
+        assert_eq!(classify_discord_failure(&e).0, "outage");
+    }
+
+    /// The no-secret guarantee, asserted rather than asserted-in-a-comment. The values that
+    /// must never reach a log are the authorization code, the access token and the client
+    /// secret; none of them is even in scope at the log site, and the rendered chain of a
+    /// real transport error carries only the URL — which has no query string.
+    #[tokio::test]
+    async fn the_logged_error_chain_carries_no_credential() {
+        let re = loopback_transport_error("/oauth2/token").await;
+        let rendered = format!("{:#}", anyhow::Error::new(re));
+        for secret in [
+            "invalid-authorization-code",
+            "invalid-access-token",
+            "invalid-client-secret",
+        ] {
+            assert!(
+                !rendered.contains(secret),
+                "the rendered error chain must never carry a credential; found {secret} in \
+                 {rendered}"
+            );
+        }
+        // Positive control: the string really is non-empty and really does describe the call,
+        // so the three assertions above are not passing over an empty haystack.
+        assert!(
+            rendered.contains("127.0.0.1:1"),
+            "the chain must still identify the failed call: {rendered}"
         );
     }
 
