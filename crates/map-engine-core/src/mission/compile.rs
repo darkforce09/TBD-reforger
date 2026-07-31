@@ -371,15 +371,68 @@ pub fn compile_export(
     })
 }
 
+/// The wire shape of `POST /missions/:id/versions`, written down **exactly once**.
+///
+/// Two doors reach that route — the editor's Save (`mission_commands::save_now`) and the
+/// dossier's document upload (`missions.rs`) — and they must not drift into sending different
+/// JSON. They call different functions ([`version_body`] and [`version_body_to_writer`]) because
+/// they have different memory budgets, so "share one builder" is enforced *here* instead: both
+/// are thin wrappers over this one struct, and neither states a key name of its own.
+///
+/// Borrowed on every field, so serialising it copies nothing — `payload` stays a `&Value` all the
+/// way to the writer. Field order is the serialised key order (`serde_json` is built with
+/// `preserve_order`, so objects keep insertion order rather than sorting); it matches the `json!`
+/// literal this replaced, which is why `version_body_shape` still holds.
+#[derive(serde::Serialize)]
+struct VersionBody<'a> {
+    semver: &'a str,
+    editor_notes: &'a str,
+    payload: &'a Value,
+}
+
 /// The Save Version POST body: `{ semver, editor_notes, payload }` (React `buildVersionBlob`;
 /// the FE `notes` arg maps to the wire key `editor_notes`). Backend `CreateVersionInput`.
+///
+/// Materialises a `Value`, which means it **clones the whole payload tree** under `"payload"`.
+/// That is fine for the editor's Save, which compiles its payload locally and owns it anyway;
+/// it is not fine for the browser document upload, which already holds a parsed tree — that
+/// door uses [`version_body_to_writer`] instead.
 #[must_use]
 pub fn version_body(semver: &str, editor_notes: &str, payload: &Value) -> Value {
-    json!({
-        "semver": semver,
-        "editor_notes": editor_notes,
-        "payload": payload,
+    serde_json::to_value(VersionBody {
+        semver,
+        editor_notes,
+        payload,
     })
+    .unwrap_or_else(|_| Value::Null)
+}
+
+/// [`version_body`]'s JSON, serialised straight into `w` — **without building the `Value` first**.
+///
+/// This is the memory-critical door. `version_body` has to clone the payload tree to put it under
+/// the `"payload"` key, and on `wasm32` that second tree is the difference between an upload that
+/// lands and a dead tab: T-591 measured one parsed tree at **4.7x** the source document in a
+/// 32-bit linear heap, and the browser upload is already holding one. Serialising through the
+/// borrowed [`VersionBody`] never materialises a second: the document is visited once, in place,
+/// and only the output bytes are allocated.
+///
+/// Pair it with a `Vec<u8>` pre-sized from the source document (so the growth reallocs do not
+/// reintroduce a transient copy) and with `client::api_post_raw`, which takes the finished
+/// `String` and therefore also drops the request helper's per-attempt body clone.
+pub fn version_body_to_writer<W: std::io::Write>(
+    w: W,
+    semver: &str,
+    editor_notes: &str,
+    payload: &Value,
+) -> serde_json::Result<()> {
+    serde_json::to_writer(
+        w,
+        &VersionBody {
+            semver,
+            editor_notes,
+            payload,
+        },
+    )
 }
 
 #[cfg(test)]
@@ -559,6 +612,81 @@ mod tests {
         assert_eq!(
             body,
             json!({ "semver": "0.1.0", "editor_notes": "note", "payload": { "schemaVersion": 1 } })
+        );
+    }
+
+    /// **The anti-drift pin for the two doors onto `create_version`.**
+    ///
+    /// The editor's Save (`mission_commands::save_now`) builds its body with [`version_body`];
+    /// the dossier's document upload (`missions.rs`) builds it with [`version_body_to_writer`],
+    /// because it cannot afford the payload clone. Two functions is a drift risk, and the risk is
+    /// not hypothetical — a wrong key name here is a 400 the author reads as "my document is
+    /// broken". So demand the two produce **byte-identical** JSON, not merely equivalent JSON:
+    /// key order included, over inputs chosen to catch the ways a hand-written second
+    /// implementation would differ.
+    ///
+    /// Byte equality (rather than `Value` equality) is deliberate: `Value` comparison is
+    /// order-insensitive and would pass even if one door emitted its keys in a different order,
+    /// which is exactly the class of difference a derived-vs-literal split introduces.
+    ///
+    /// RED under perturbation: rename a field on `VersionBody`, reorder its fields, or give
+    /// either function a `json!`/`to_writer` body of its own that states a key name.
+    #[test]
+    fn both_doors_onto_create_version_serialise_identical_bytes() {
+        let payloads = [
+            // The everyday case.
+            json!({ "schemaVersion": 1, "editor": { "slots": [] } }),
+            // Empty, null and scalar payloads — a `json!` wrapper and a derived struct can
+            // disagree about `Option`/unit handling at exactly these edges.
+            json!({}),
+            Value::Null,
+            json!(0),
+            json!([]),
+            // Key order that is NOT alphabetical: with `preserve_order` these must come out in
+            // insertion order, and a builder that rebuilt the map would re-sort them.
+            json!({ "zulu": 1, "alpha": 2, "mike": 3 }),
+            // Escaping and non-ASCII, in both the payload and its keys.
+            json!({ "quote\"key": "line\nbreak\ttab", "unicode": "Ärland — Ω 🎖", "solidus": "a/b" }),
+            // Nesting deep enough that a shallow copy would show up.
+            json!({ "a": { "b": { "c": [1, 2, { "d": true, "e": Value::Null }] } } }),
+            // Floats and big integers — number re-encoding is a classic silent difference.
+            json!({ "f": 1.5, "neg": -0.000_25, "big": 9_007_199_254_740_993i64 }),
+        ];
+        // Notes/semver strings that themselves need escaping, so the wrapper keys are exercised
+        // too and not just the payload.
+        let metas = [
+            ("0.1.0", "note"),
+            ("", ""),
+            ("1.2.3-rc.1+build", "Uploaded from \"my mission\".json\nwith a newline"),
+            ("9.9.9", "Ω — em dash and 🎖"),
+        ];
+
+        for payload in &payloads {
+            for (semver, notes) in metas {
+                let via_value = serde_json::to_string(&version_body(semver, notes, payload))
+                    .expect("version_body's Value must serialise");
+                let mut via_writer: Vec<u8> = Vec::new();
+                version_body_to_writer(&mut via_writer, semver, notes, payload)
+                    .expect("version_body_to_writer must not fail writing to a Vec");
+                let via_writer =
+                    String::from_utf8(via_writer).expect("serde_json emits valid UTF-8");
+
+                assert_eq!(
+                    via_value, via_writer,
+                    "the two doors onto create_version must send the same bytes — they have \
+                     drifted for semver={semver:?} notes={notes:?} payload={payload}"
+                );
+            }
+        }
+
+        // And pin the literal wire text once, so "identical to each other" cannot degrade into
+        // "identically wrong". These are the three keys `CreateVersionInput` deserialises.
+        let mut buf: Vec<u8> = Vec::new();
+        version_body_to_writer(&mut buf, "0.1.0", "note", &json!({ "schemaVersion": 1 }))
+            .expect("write");
+        assert_eq!(
+            String::from_utf8(buf).expect("utf8"),
+            r#"{"semver":"0.1.0","editor_notes":"note","payload":{"schemaVersion":1}}"#
         );
     }
 
