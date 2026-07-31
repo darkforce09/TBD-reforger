@@ -165,14 +165,21 @@ pub const ALL_LANES: [LaneRole; 31] = [
 /// mission document. Appending an id is therefore purely additive and renumbering could not
 /// break a stored artifact.
 ///
-/// The real hazard is **drift, not a panic**: callers currently hand-copy the integer into a
-/// private `const ROLE_*: u32` (six of them, in `world_assets/{dem_vectors,world_host,
-/// forest_mass}.rs` and `mission_history.rs`) with no compile-time link back to this mapping,
-/// so a renumber would silently upload to the wrong lane rather than fail to build. These
-/// constants exist so there is one definition to import instead of a seventh copy — the
-/// engine/frontend slice should use `ROLE_MISSION_ZONES`, never a literal `10`.
+/// The real hazard is **drift, not a panic**: callers hand-copy the integer into a private
+/// `const ROLE_*: u32` with no compile-time link back to this mapping, so a renumber would
+/// silently upload to the wrong lane rather than fail to build. There are **eight such copies
+/// across four files** — `world_assets/dem_vectors.rs` (ids 0, 2), `world_assets/world_host.rs`
+/// (1, 3, 4, 8), `world_assets/forest_mass.rs` (6) and `mission_history.rs` (9). This module
+/// exists so there is one definition to import instead of a ninth copy: the engine/frontend
+/// slice should use `role_id::MISSION_ZONES`, never a literal `10`.
 ///
-/// Ids are dense `0..=ROLE_MAX` and pinned one-by-one by `wire_ids_are_pinned`.
+/// Not to be confused with the **texture-lane** role ids (`tex_layer_begin` / `tex_layer_commit`
+/// / `set_lane_opacity`, `0` basemap and `1` hillshade, e.g. `satellite.rs`'s `ROLE_BASEMAP`).
+/// That is a disjoint namespace over a fixed `[Option<PendingTex>; 2]` bucket with its own
+/// `idx > 1` guard — nothing here indexes it, and id `0` means `Sea` on this side but
+/// `Satellite` on that one.
+///
+/// Ids are dense `0..=MAX` and pinned one-by-one by `wire_ids_are_pinned`.
 pub mod role_id {
     /// Sea underlay polygon mesh.
     pub const SEA: u32 = 0;
