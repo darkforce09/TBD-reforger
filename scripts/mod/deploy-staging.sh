@@ -12,6 +12,10 @@
 #   # joinable server (after publishing tbd-framework to the Workshop):
 #   TBD_SERVER_MODE=config TBD_WORKSHOP_MOD_ID=<workshopModId> bash scripts/mod/deploy-staging.sh
 #
+#   # render server.config.json LOCALLY and exit — no rsync, no ssh, no deploy (T-288):
+#   TBD_SERVER_MODE=config TBD_MODPACK_JSON=pack.json \
+#     bash scripts/mod/deploy-staging.sh --render-only /tmp/server.config.json
+#
 # Never rsyncs to /home/sam/prairielearn/
 set -euo pipefail
 
@@ -20,16 +24,29 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/lib/paths.sh"
 ENV_FILE="$DEPLOY_ENV"
 DRY_RUN=0
+RENDER_ONLY_OUT=""
 
-for arg in "$@"; do
-  case "$arg" in
+while [ "$#" -gt 0 ]; do
+  case "$1" in
     --dry-run) DRY_RUN=1 ;;
+    --render-only)
+      # T-288: render the server config to a LOCAL path and exit 0 before any
+      # rsync/ssh runs. This is the only way to exercise the render half without
+      # touching a real server, and it is what the perturbation gate drives.
+      shift
+      RENDER_ONLY_OUT="${1:-}"
+      if [ -z "$RENDER_ONLY_OUT" ]; then
+        echo "--render-only requires an output path" >&2
+        exit 2
+      fi
+      ;;
     -h|--help)
-      echo "Usage: deploy-staging.sh [--dry-run]"
+      echo "Usage: deploy-staging.sh [--dry-run] [--render-only <path>]"
       exit 0
       ;;
-    *) echo "Unknown option: $arg" >&2; exit 2 ;;
+    *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
+  shift
 done
 
 if [ ! -f "$ENV_FILE" ]; then
@@ -72,6 +89,52 @@ source "$ENV_FILE"
 : "${TBD_ADMIN_IDENTITY_IDS:=}"   # comma-separated identityIds → in-game admins (#tbd commands)
 : "${TBD_SERVER_CONFIG_REMOTE:=$(dirname "$TBD_PROFILE_DIR")/server.config.json}"
 
+# ── T-288: where game.mods[] comes from ──────────────────────────────────────
+#
+# Before T-288 this script hardcoded ONE mod — `{"modId": "$TBD_WORKSHOP_MOD_ID",
+# "name": "TBD_Framework"}` — and never read the `modpacks` / `modpack_mods` tables.
+# A modpack authored on the website therefore had no path to a running server.
+#
+# THE SOURCE IS THE API, and specifically the bytes of
+#   GET /api/v1/modpacks/current   (apps/website/api/src/app.rs `/modpacks/current`
+#                                   -> handlers/modpacks.rs::get_current_modpack)
+# whose `mods[]` rows carry exactly the fields a Reforger `game.mods[]` entry needs —
+# `workshop_id`, `mod_guid`, `version` — added by T-271 in
+# apps/website/api/migrations/0012_modpack_mods_workshop.sql, whose header says
+# verbatim: "keep both so a future renderer (T-288) can choose".
+#
+# REJECTED — reading Postgres directly: this script is not a DB client (no psql, no
+# DATABASE_URL in scripts/deploy/deploy.env.example), the database lives inside docker
+# compose on the remote host, and hand-rolling the projection in bash would duplicate
+# the null-tolerant COALESCE read in handlers/modpacks.rs `mod_cols!()`. The next
+# migration would break the renderer silently. That is a second unconnected universe,
+# not a fix.
+# REJECTED — inventing a modpack file format of our own: that IS the defect this
+# ticket exists to remove.
+#
+# ⚠ THE CREDENTIAL DOES NOT EXIST YET — see the report on T-288.
+# `/modpacks/current` is gated by `AuthUser`, which is a **Bearer JWT** minted from a
+# Discord login (apps/website/api/src/middleware/auth.rs). This script's only secret is
+# TBD_GAME_SERVER_TOKEN, which is `SERVICE_TOKEN` (config.rs) and is checked by
+# `ServiceAuth` against the **X-Service-Token** header — a different auth tier, and no
+# ServiceAuth-guarded modpack read exists. So TBD_MODPACK_URL cannot be satisfied by
+# anything the deploy host holds today; it is wired and fails closed, ready for the day
+# a service-token modpack read (or a deploy JWT) ships.
+#
+#   TBD_MODPACK_JSON   path to a file holding a GET /modpacks/current response body.
+#                      Works TODAY: save the response (or the DB row shaped like it)
+#                      next to deploy.env. This is the supported path right now.
+#   TBD_MODPACK_URL    fetch that same document over HTTP. Needs TBD_MODPACK_TOKEN.
+#   TBD_MODPACK_TOKEN  Bearer JWT for the above. No such credential exists yet.
+#
+# Neither set → LEGACY single-mod render from TBD_WORKSHOP_MOD_ID (pre-T-288 behaviour,
+# kept so existing deploys do not break), but it now goes through the SAME renderer and
+# the SAME validator, so there is exactly one place that can emit game.mods[].
+: "${TBD_MODPACK_JSON:=}"
+: "${TBD_MODPACK_URL:=}"
+: "${TBD_MODPACK_TOKEN:=}"
+: "${TBD_WORKSHOP_MOD_NAME:=TBD_Framework}"   # legacy path's game.mods[0].name
+
 if [[ "$TBD_REMOTE_DIR" == *prairielearn* ]]; then
   echo "Refusing to deploy: TBD_REMOTE_DIR must not be under prairielearn/" >&2
   exit 1
@@ -80,9 +143,12 @@ fi
 case "$TBD_SERVER_MODE" in
   addons) ;;
   config)
-    if [ -z "$TBD_WORKSHOP_MOD_ID" ]; then
+    # T-288: TBD_WORKSHOP_MOD_ID is the LEGACY single-mod source and is only required
+    # when no modpack document is configured — a modpack carries its own workshop ids.
+    if [ -z "$TBD_WORKSHOP_MOD_ID" ] && [ -z "$TBD_MODPACK_JSON" ] && [ -z "$TBD_MODPACK_URL" ]; then
       echo "TBD_SERVER_MODE=config requires TBD_WORKSHOP_MOD_ID (publish tbd-framework" >&2
-      echo "to the Workshop first, then set its modId in deploy.env)." >&2
+      echo "to the Workshop first, then set its modId in deploy.env), or a modpack" >&2
+      echo "source: TBD_MODPACK_JSON=<file> / TBD_MODPACK_URL=<url> (T-288)." >&2
       exit 1
     fi
     if [ "$TBD_A2S_PORT" = "$TBD_GAME_PORT" ]; then
@@ -95,6 +161,260 @@ case "$TBD_SERVER_MODE" in
     exit 1
     ;;
 esac
+
+# ── T-288 render half ────────────────────────────────────────────────────────
+#
+# The render is now a LOCAL, pure function that writes a file. The push is a
+# separate step that copies that file. Before T-288 the two were fused into one
+# `ssh_cmd "cat > remote" <<EOF` heredoc, which meant the only way to see what this
+# script produces was to deploy it to a live server — so nothing ever checked it.
+#
+# json/parse work is python3 because `jq` is NOT installed here (measured) and
+# hand-rolled JSON in bash silently emits invalid documents. python3 is used by
+# scripts/platform/{wave,preflight}.sh and scripts/mod/verify-t438-*.sh already.
+# Required for config mode only; `addons` mode renders no config and is unaffected.
+require_python3() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "FAIL: python3 not found, and TBD_SERVER_MODE=config needs it to render and" >&2
+    echo "      validate game.mods[]. Refusing to emit an unvalidated server config —" >&2
+    echo "      a config nobody checked is how a wrong mod list reaches a live server." >&2
+    exit 1
+  fi
+}
+
+# Resolve the modpack document (GET /modpacks/current shape) into $1.
+resolve_modpack_doc() {
+  local out="$1"
+  if [ -n "$TBD_MODPACK_JSON" ]; then
+    if [ ! -f "$TBD_MODPACK_JSON" ]; then
+      echo "FAIL: TBD_MODPACK_JSON=$TBD_MODPACK_JSON does not exist." >&2
+      exit 1
+    fi
+    cat "$TBD_MODPACK_JSON" > "$out"
+    echo "  modpack source: file $TBD_MODPACK_JSON"
+  elif [ -n "$TBD_MODPACK_URL" ]; then
+    if [ -z "$TBD_MODPACK_TOKEN" ]; then
+      echo "FAIL: TBD_MODPACK_URL is set but TBD_MODPACK_TOKEN is empty." >&2
+      echo "      GET /api/v1/modpacks/current is gated by AuthUser (Bearer JWT," >&2
+      echo "      apps/website/api/src/middleware/auth.rs). TBD_GAME_SERVER_TOKEN is the" >&2
+      echo "      SERVICE_TOKEN checked on the X-Service-Token header by ServiceAuth and" >&2
+      echo "      will NOT authenticate this route. See T-288." >&2
+      exit 1
+    fi
+    local code
+    code="$(curl -sS -o "$out" -w '%{http_code}' \
+      -H "Authorization: Bearer $TBD_MODPACK_TOKEN" "$TBD_MODPACK_URL")" || {
+      echo "FAIL: could not reach $TBD_MODPACK_URL" >&2
+      exit 1
+    }
+    if [ "$code" != "200" ]; then
+      echo "FAIL: $TBD_MODPACK_URL returned HTTP $code (expected 200)." >&2
+      echo "      401/403 means the credential tier is wrong — see T-288." >&2
+      exit 1
+    fi
+    echo "  modpack source: $TBD_MODPACK_URL (HTTP 200)"
+  else
+    # LEGACY: synthesize the same document shape from the env var so there is one
+    # renderer and one validator, not two divergent code paths.
+    TBD_WORKSHOP_MOD_ID="$TBD_WORKSHOP_MOD_ID" \
+    TBD_WORKSHOP_MOD_NAME="$TBD_WORKSHOP_MOD_NAME" \
+    MODPACK_OUT="$out" python3 - <<'PY'
+import json, os
+json.dump({
+    "name": "(legacy TBD_WORKSHOP_MOD_ID env, not a database modpack)",
+    "version": "",
+    "mods": [{
+        "name": os.environ["TBD_WORKSHOP_MOD_NAME"],
+        "workshop_id": os.environ["TBD_WORKSHOP_MOD_ID"],
+        "version": "",
+    }],
+}, open(os.environ["MODPACK_OUT"], "w", encoding="utf-8"))
+PY
+    echo "  modpack source: LEGACY env TBD_WORKSHOP_MOD_ID (no modpack configured)"
+  fi
+}
+
+# Print the `game.mods[]` array (JSON) for the modpack document in $1, or fail closed.
+modpack_mods_json() {
+  MODPACK_DOC="$1" MODPACK_SRC="${2:-$1}" python3 - <<'PY'
+import json, os, sys
+
+path = os.environ["MODPACK_DOC"]
+src = os.environ.get("MODPACK_SRC") or path
+try:
+    with open(path, encoding="utf-8") as fh:
+        doc = json.load(fh)
+except json.JSONDecodeError as e:
+    sys.exit("FAIL: modpack document is not valid JSON (%s): %s" % (src, e))
+
+if not isinstance(doc, dict):
+    sys.exit("FAIL: modpack document must be a JSON object, got %s" % type(doc).__name__)
+
+mods = doc.get("mods")
+if mods is None:
+    sys.exit(
+        "FAIL: modpack document has no `mods` key. Expected the body of\n"
+        "      GET /api/v1/modpacks/current (ModpackDto = modpack fields + mods[])."
+    )
+if not isinstance(mods, list):
+    sys.exit("FAIL: `mods` must be an array, got %s" % type(mods).__name__)
+if not mods:
+    sys.exit(
+        "FAIL: modpack %r has zero mods. Rendering game.mods[] as [] would start a\n"
+        "      server with no content and silently disagree with the website."
+        % (doc.get("name") or "<unnamed>")
+    )
+
+out, seen = [], {}
+for i, m in enumerate(mods):
+    if not isinstance(m, dict):
+        sys.exit("FAIL: mods[%d] is not an object" % i)
+    name = str(m.get("name") or "").strip()
+    wid = str(m.get("workshop_id") or "").strip()
+    ver = str(m.get("version") or "").strip()
+    if not name:
+        sys.exit("FAIL: mods[%d].name is empty" % i)
+    if not wid:
+        sys.exit(
+            "FAIL: mods[%d] (%r) has an empty workshop_id.\n"
+            "      Reforger game.mods[].modId IS the Workshop id; an empty one renders\n"
+            '      "modId": "" and the server rejects the config. Populate\n'
+            "      modpack_mods.workshop_id (migration 0012_modpack_mods_workshop.sql)."
+            % (i, name)
+        )
+    if wid in seen:
+        sys.exit("FAIL: mods[%d] (%r) repeats modId %s, already used by %r"
+                 % (i, name, wid, seen[wid]))
+    seen[wid] = name
+    entry = {"modId": wid, "name": name}
+    if ver:
+        entry["version"] = ver
+    out.append(entry)
+
+text = json.dumps(out, indent=2)
+print("\n".join(ln if i == 0 else "    " + ln for i, ln in enumerate(text.splitlines())))
+PY
+}
+
+# Structural check of a rendered server config. NOT eyeballing: re-parses the file and
+# pins the invariants the Reforger server enforces (and the a2s/game port rule this
+# script already documents at TBD_A2S_PORT).
+validate_server_config() {
+  SERVER_CONFIG="$1" python3 - <<'PY'
+import json, os, sys
+
+path = os.environ["SERVER_CONFIG"]
+try:
+    with open(path, encoding="utf-8") as fh:
+        doc = json.load(fh)
+except json.JSONDecodeError as e:
+    sys.exit("FAIL: rendered server config is not valid JSON (%s): %s" % (path, e))
+
+errs = []
+for key in ("bindAddress", "bindPort", "publicAddress", "publicPort", "a2s", "game", "operating"):
+    if key not in doc:
+        errs.append("missing top-level key %r" % key)
+
+game = doc.get("game") if isinstance(doc.get("game"), dict) else {}
+for key in ("name", "passwordAdmin", "admins", "scenarioId", "maxPlayers", "mods"):
+    if key not in game:
+        errs.append("missing game.%s" % key)
+
+a2s = doc.get("a2s") if isinstance(doc.get("a2s"), dict) else {}
+if a2s.get("port") is not None and a2s.get("port") == doc.get("bindPort"):
+    errs.append("a2s.port == bindPort (%r) — replication cannot start" % doc.get("bindPort"))
+
+mods = game.get("mods")
+if not isinstance(mods, list) or not mods:
+    errs.append("game.mods[] must be a non-empty array")
+    mods = []
+for i, m in enumerate(mods):
+    if not isinstance(m, dict):
+        errs.append("game.mods[%d] is not an object" % i)
+        continue
+    if not str(m.get("modId") or "").strip():
+        errs.append("game.mods[%d].modId is empty" % i)
+    if not str(m.get("name") or "").strip():
+        errs.append("game.mods[%d].name is empty" % i)
+
+if errs:
+    sys.exit("FAIL: rendered server config is invalid:\n      " + "\n      ".join(errs))
+
+print("  config VALID: %d mod(s) -> %s" % (
+    len(mods), ", ".join("%s=%s" % (m["name"], m["modId"]) for m in mods)))
+PY
+}
+
+# Render the complete server config to the LOCAL path $1.
+render_server_config() {
+  local out="$1"
+  require_python3
+
+  local doc
+  doc="$(mktemp -t tbd-modpack.XXXXXX.json)"
+  # shellcheck disable=SC2064
+  trap "rm -f '$doc'" RETURN
+  resolve_modpack_doc "$doc"
+
+  local mods_json src_label
+  src_label="${TBD_MODPACK_JSON:-${TBD_MODPACK_URL:-LEGACY TBD_WORKSHOP_MOD_ID}}"
+  # exits non-zero (set -e) on any fail-closed case
+  mods_json="$(modpack_mods_json "$doc" "$src_label")"
+
+  # Build a JSON array of admin identityIds from the comma-separated env var.
+  local admins_json="" _aid
+  if [ -n "$TBD_ADMIN_IDENTITY_IDS" ]; then
+    local -a _admin_ids
+    IFS=',' read -ra _admin_ids <<< "$TBD_ADMIN_IDENTITY_IDS"
+    for _aid in "${_admin_ids[@]}"; do
+      _aid="$(echo "$_aid" | xargs)"
+      [ -n "$_aid" ] && admins_json="${admins_json:+$admins_json, }\"$_aid\""
+    done
+  fi
+
+  cat > "$out" <<EOF
+{
+  "bindAddress": "0.0.0.0",
+  "bindPort": ${TBD_GAME_PORT},
+  "publicAddress": "${TBD_PUBLIC_ADDRESS}",
+  "publicPort": ${TBD_GAME_PORT},
+  "a2s": { "address": "0.0.0.0", "port": ${TBD_A2S_PORT} },
+  "game": {
+    "name": "${TBD_SERVER_NAME}",
+    "password": "",
+    "passwordAdmin": "${TBD_ADMIN_PASSWORD}",
+    "admins": [${admins_json}],
+    "scenarioId": "${TBD_SCENARIO}",
+    "maxPlayers": ${TBD_MAX_PLAYERS},
+    "visible": true,
+    "crossPlatform": false,
+    "gameProperties": {
+      "battlEye": false,
+      "disableThirdPerson": false,
+      "fastValidation": false,
+      "VONDisableUI": false,
+      "VONDisableDirectSpeechUI": false
+    },
+    "mods": ${mods_json}
+  },
+  "operating": { "lobbyPlayerSynchronise": true }
+}
+EOF
+
+  validate_server_config "$out"
+}
+
+# --render-only: render locally, validate, exit. Reached BEFORE any cargo/rsync/ssh,
+# so it can never touch a server.
+if [ -n "$RENDER_ONLY_OUT" ]; then
+  if [ "$TBD_SERVER_MODE" != "config" ]; then
+    echo "--render-only requires TBD_SERVER_MODE=config (addons mode renders no config)." >&2
+    exit 2
+  fi
+  echo "==> render server config (local only, no deploy) -> $RENDER_ONLY_OUT"
+  render_server_config "$RENDER_ONLY_OUT"
+  exit 0
+fi
 
 SSH_BASE=(ssh -o StrictHostKeyChecking=no)
 if [ -n "${TBD_SSH_PASS:-}" ]; then
@@ -227,52 +547,33 @@ fi
 echo "==> systemd user service + restart game server (mode: $TBD_SERVER_MODE)"
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[dry-run] mode=$TBD_SERVER_MODE"
-  [ "$TBD_SERVER_MODE" = "config" ] && echo "[dry-run] render server config -> $TBD_SERVER_CONFIG_REMOTE (modId=$TBD_WORKSHOP_MOD_ID)"
+  if [ "$TBD_SERVER_MODE" = "config" ]; then
+    # T-288: name the ACTUAL mod-list source. "modId=$TBD_WORKSHOP_MOD_ID" was the only
+    # thing this ever printed, which read as "the mod list is fine" on a run whose mod
+    # list came from nowhere near the modpack the operator had authored.
+    if [ -n "$TBD_MODPACK_JSON" ]; then
+      _mod_src="modpack file $TBD_MODPACK_JSON"
+    elif [ -n "$TBD_MODPACK_URL" ]; then
+      _mod_src="modpack API $TBD_MODPACK_URL"
+    else
+      _mod_src="LEGACY single mod TBD_WORKSHOP_MOD_ID=$TBD_WORKSHOP_MOD_ID (no modpack configured)"
+    fi
+    echo "[dry-run] render server config -> $TBD_SERVER_CONFIG_REMOTE"
+    echo "[dry-run]   game.mods[] from: $_mod_src"
+    echo "[dry-run]   preview the exact bytes with: --render-only <path>"
+  fi
   echo "[dry-run] ExecStart=$EXECSTART"
   echo "[dry-run] install tbd-reforger.service and restart"
 else
-  # In config mode, render the server config JSON on the host (registers the
-  # backend room; the Workshop mod is downloaded from game.mods[]).
+  # In config mode, render the server config JSON LOCALLY, validate it, and only then
+  # push it (registers the backend room; the Workshop mods are downloaded from
+  # game.mods[]). T-288 split render from push: an invalid or empty mod list now fails
+  # here, on the dev machine, instead of landing on the server and failing at boot.
   if [ "$TBD_SERVER_MODE" = "config" ]; then
-    # Build a JSON array of admin identityIds from the comma-separated env var.
-    TBD_ADMINS_JSON=""
-    if [ -n "$TBD_ADMIN_IDENTITY_IDS" ]; then
-      IFS=',' read -ra _admin_ids <<< "$TBD_ADMIN_IDENTITY_IDS"
-      for _aid in "${_admin_ids[@]}"; do
-        _aid="$(echo "$_aid" | xargs)"
-        [ -n "$_aid" ] && TBD_ADMINS_JSON="${TBD_ADMINS_JSON:+$TBD_ADMINS_JSON, }\"$_aid\""
-      done
-    fi
-    ssh_cmd "cat > '$TBD_SERVER_CONFIG_REMOTE'" <<EOF
-{
-  "bindAddress": "0.0.0.0",
-  "bindPort": ${TBD_GAME_PORT},
-  "publicAddress": "${TBD_PUBLIC_ADDRESS}",
-  "publicPort": ${TBD_GAME_PORT},
-  "a2s": { "address": "0.0.0.0", "port": ${TBD_A2S_PORT} },
-  "game": {
-    "name": "${TBD_SERVER_NAME}",
-    "password": "",
-    "passwordAdmin": "${TBD_ADMIN_PASSWORD}",
-    "admins": [${TBD_ADMINS_JSON}],
-    "scenarioId": "${TBD_SCENARIO}",
-    "maxPlayers": ${TBD_MAX_PLAYERS},
-    "visible": true,
-    "crossPlatform": false,
-    "gameProperties": {
-      "battlEye": false,
-      "disableThirdPerson": false,
-      "fastValidation": false,
-      "VONDisableUI": false,
-      "VONDisableDirectSpeechUI": false
-    },
-    "mods": [
-      { "modId": "${TBD_WORKSHOP_MOD_ID}", "name": "TBD_Framework" }
-    ]
-  },
-  "operating": { "lobbyPlayerSynchronise": true }
-}
-EOF
+    TBD_SERVER_CONFIG_LOCAL="$(mktemp -t tbd-server.config.XXXXXX.json)"
+    render_server_config "$TBD_SERVER_CONFIG_LOCAL"
+    ssh_cmd "cat > '$TBD_SERVER_CONFIG_REMOTE'" < "$TBD_SERVER_CONFIG_LOCAL"
+    rm -f "$TBD_SERVER_CONFIG_LOCAL"
   fi
 
   ssh_cmd bash -s <<EOF
