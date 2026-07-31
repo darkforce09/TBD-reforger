@@ -100,7 +100,7 @@ curl -sS -H "X-Service-Token: $SERVICE_TOKEN" \
 |----|------|----------------|
 | M1 | Save mission in MC | Version 201 |
 | M2 | curl /compiled | `slots[]` length matches editor slot count |
-| M3 | Dedicated server load | `[TBD] SpawnManager: built slot spawn` × N |
+| M3 | Dedicated server load | `[TBD][Slots] Slot-` per-slot body line × N *(T-612: the old `built slot spawn` Print is deleted — grepping for it matches nothing on a healthy load)* |
 | M4 | Deploy test player | Position matches editor slot x/z within 2 m |
 
 ---

@@ -40,8 +40,22 @@ Phase 1 E2E (**T-068.6**) proved web JSON → **test NPC** only. Phase 2 adds co
 | P4 | Slotting | LOBBY: open slot picker; claim target slot |
 | P5 | Spawn | Deploy → spawn at slot position with correct kit alias |
 | P6 | **Visual** | **Screenshot: human player** wearing editor loadout (primary + uniform/vest/helmet as configured) |
-| P7 | Logs | `[TBD][Loadout][Player]` worn-verify PASS; `[TBD][Slotting]` claim line for same slot id |
+| P7 | Logs | `[TBD][Loadout][Slot]` worn-audit + `loadout pass complete` for the claimed slot; `[TBD] SpawnManager: assigned slot <id> to player …` claim line for the same slot id |
 | P8 | Negative | Confirm test-NPC harness is not the subject of P6 (player entity only) |
+
+> **Tag truth (T-612):** the loadout tag is **`[TBD][Loadout][Slot]`** (set at
+> `TBD_SpawnManager.SpawnSlotBody`; the dev harness logs `[TBD][Loadout][TestNPC]`).
+> `[TBD][Loadout][Player]` and `[TBD][Slotting]` appear in **no `Print` anywhere** — grepping
+> for either returns zero lines on a fully working loadout pass, which reads exactly like
+> "the loadout never applied", the one thing this gate exists to confirm. Slot-claim evidence
+> is `[TBD] SpawnManager: assigned slot …` and the per-slot body line `[TBD][Slots] Slot-…`.
+> Working greps for P7 (also in `docs/platform/PLAYTEST_RUNBOOK.md`, which this table now
+> agrees with):
+>
+> ```bash
+> grep -E '\[TBD\]\[Loadout\]\[Slot\]' "$LOG"
+> grep -E '\[TBD\] SpawnManager: assigned slot' "$LOG"
+> ```
 
 ---
 

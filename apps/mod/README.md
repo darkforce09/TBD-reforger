@@ -40,7 +40,11 @@ bash scripts/mod/setup-server-profile.sh      # default: .local-test-profile/
 bash scripts/mod/run-dev-server.sh            # -server + -addons (local mod)
 ```
 
-Watch logs for `[TBD] Mission loaded`, 18× `built slot spawn`, `assigned slot`, `spawn requested`.
+Watch logs for `[TBD][Mission] loaded id=…`, 18× `[TBD][Slots] Slot-…`, then — once a client
+joins — `[TBD] SpawnManager: assigned slot …`. (T-612: the old `[TBD] Mission loaded`,
+`built slot spawn` and `spawn requested` lines are deleted; the only `Mission loaded` still
+printed is the *failure* line `[TBD] Mission loaded but invalid — staying in LOADING.` Pin
+tags + event keys, never sentences — see `scripts/mod/remote-log-grep.sh`.)
 
 ### Staging server (192.168.0.140)
 

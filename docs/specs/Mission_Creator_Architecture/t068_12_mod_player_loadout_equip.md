@@ -28,7 +28,7 @@ Phase 1 (`TBD_LoadoutEquipComponent`) dresses a **server-spawned test NPC** from
 3. Parse loadout on `TBD_MissionLoader` into `TBD_MissionSlotStruct` (or companion struct).
 4. After successful player spawn for a slot, run shared equip logic (extract from `TBD_LoadoutEquipComponent` — `EquipCloth` / `EquipWeapon` + worn-verify) on the **player character entity**, not a dev NPC.
 5. After wear/weapons equip, **`InsertItem`** each cargo row into the matching container storage on the player (resolve `container` key → storage component; same API family as T-068.5.1 storage path).
-6. Log lines clearly tagged `[TBD][Loadout][Player]` vs `[TBD][Loadout][TestNPC]` so E2E evidence is unambiguous.
+6. Log lines clearly tagged `[TBD][Loadout][Slot]` (the slot-body path players receive) vs `[TBD][Loadout][TestNPC]` (dev harness) so E2E evidence is unambiguous. *(T-612: the tag that shipped is `[Slot]`, set in `TBD_SpawnManager.SpawnSlotBody` — `[TBD][Loadout][Player]` exists in no `Print`; grepping for it returns nothing on a fully working pass.)*
 7. Empty/null gear slots or empty cargo = skip (same as Phase 1).
 
 ---
@@ -87,7 +87,7 @@ bash scripts/mod/tbd-dev-bootstrap.sh
 |----|------|----------------|
 | M1 | Load mission with slot loadout block | Loader logs parsed gear ResourceNames for slot |
 | M2 | Deploy player on that slot (round-robin or forced slot id dev hook) | Player character shows primary + vest + helmet + jacket (**screenshot required**) |
-| M3 | Log proof | `[TBD][Loadout][Player]` worn-verify PASS lines; no false OK |
+| M3 | Log proof | `[TBD][Loadout][Slot]` worn-audit / `loadout pass complete` lines; no false OK |
 | M4 | Regression | Test-NPC harness (`TBD_LoadoutTest.json`) still works when enabled |
 
 ### Acceptance criteria
@@ -137,7 +137,7 @@ Implement **T-068.12** — Mod player loadout equip + InsertItem cargo.
   - Parse loadout.gear + loadout.cargo[] into mission slot structs
   - Post-spawn equip player via T-068.5.1 EquipCloth/EquipWeapon path
   - InsertItem cargo into resolved container storages
-  - Logs [TBD][Loadout][Player] · keep test-NPC harness
+  - Logs [TBD][Loadout][Slot] · keep test-NPC harness
   - Verify log + tag T-068.12
 
 ═══ DO NOT ═══
@@ -150,5 +150,5 @@ Implement **T-068.12** — Mod player loadout equip + InsertItem cargo.
   .ai/artifacts/t068_12_verify_log.md
 
 ═══ RETURN ═══
-  SHA + tag T-068.12 · log excerpt [Loadout][Player] · cargo InsertItem proof
+  SHA + tag T-068.12 · log excerpt [Loadout][Slot] · cargo InsertItem proof
 ```

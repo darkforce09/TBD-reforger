@@ -13,8 +13,11 @@
  * TBD_LoadoutApplication (TBD_LoadoutEquipHelper.c) so this dev harness and the
  * SpawnManager PLAYER path run identical code; this component keeps only the
  * $profile file read, the contract guards, and the test-NPC spawn. Its log
- * lines are tagged [TBD][Loadout][TestNPC] (the player path logs
- * [TBD][Loadout][Player]) so E2E evidence is unambiguous.
+ * lines are tagged [TBD][Loadout][TestNPC] (the production slot-body path players receive
+ * logs [TBD][Loadout][Slot] — the tag TBD_SpawnManager.SpawnSlotBody hands to
+ * TBD_LoadoutApplication) so E2E evidence is unambiguous. T-612: this comment used to name
+ * [TBD][Loadout][Player], which no Print has ever emitted — greps built from it match
+ * nothing on a working pass.
  *
  * T-199 — THIS READER NOW ACCEPTS THE FILE THE WEB ARSENAL ACTUALLY WRITES.
  * loadout-export.schema.json is a oneOf over loadoutVersion "1" and "2", and the Arsenal
