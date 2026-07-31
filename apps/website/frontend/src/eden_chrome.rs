@@ -2219,6 +2219,543 @@ fn placed_vehicles_panel(
     ().into_any()
 }
 
+/// T-582 — the Zones panel: draw controls, the authored-zone list, and the schema-driven
+/// Attributes panel.
+///
+/// The whole panel is one function rather than a component so the native shell can stub it with the
+/// same signature, exactly as [`placed_vehicles_panel`] does.
+#[cfg(target_arch = "wasm32")]
+fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<String>>) -> AnyView {
+    use crate::editor_ops as ops;
+
+    // The type the next draw will carry. Seeded from the schema, not typed here; `boundary` is the
+    // play area, which is the zone a mission is most likely to want first.
+    let types = zone_types();
+    let initial = types
+        .iter()
+        .find(|t| *t == "boundary")
+        .or_else(|| types.first())
+        .cloned()
+        .unwrap_or_default();
+    let draw_kind = RwSignal::new(initial);
+
+    let arm = move |shape: ZoneShape| {
+        let kind = draw_kind.get_untracked();
+        ops::begin_zone_draw(&kind, shape);
+        doc_tick.update(|n| *n = n.wrapping_add(1));
+    };
+
+    view! {
+        <div class="mt-2 flex items-center gap-2">
+            <h3 class="text-label-md font-semibold text-on-surface">"Zones"</h3>
+            // T-211's cheap count getter — "does this mission declare a play area?" without
+            // materialising every row.
+            <span class="font-mono text-code-md text-outline">
+                {move || {
+                    let _ = doc_tick.get();
+                    ops::zone_count()
+                }}
+            </span>
+        </div>
+        <p class="mt-0.5 text-label-sm normal-case text-outline">
+            "Play areas and objectives. Circle: click the centre, then click the rim. Polygon: click each vertex, then Close."
+        </p>
+
+        // ── Draw controls ──────────────────────────────────────────────────────────────────
+        <label class="mt-3 block text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+            "Type"
+        </label>
+        <select
+            aria-label="Zone type to draw"
+            class="mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
+            on:change=move |ev| draw_kind.set(event_target_value(&ev))
+        >
+            {zone_types()
+                .into_iter()
+                .map(|t| {
+                    let label = humanize_token(&t);
+                    view! {
+                        <option value=t.clone() selected=move || draw_kind.get() == t>
+                            {label}
+                        </option>
+                    }
+                })
+                .collect_view()}
+        </select>
+        <div class="mt-2 flex gap-1.5">
+            <button
+                type="button"
+                class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
+                on:click=move |_| arm(ZoneShape::Circle)
+            >
+                "Circle"
+            </button>
+            <button
+                type="button"
+                class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
+                on:click=move |_| arm(ZoneShape::Polygon)
+            >
+                "Polygon"
+            </button>
+        </div>
+
+        // ── Live draw state ────────────────────────────────────────────────────────────────
+        {move || {
+            let _ = doc_tick.get();
+            let Some(d) = ops::zone_draft() else {
+                return ().into_any();
+            };
+            let is_poly = d.shape == ZoneShape::Polygon;
+            let n = d.verts.len();
+            let hint = if is_poly {
+                match n {
+                    0 => "Click the first vertex.".to_string(),
+                    1 | 2 => {
+                        format!("{n} of 3 vertices — a ring needs at least three.")
+                    }
+                    _ => format!("{n} vertices. Close to commit."),
+                }
+            } else if d.centre.is_some() {
+                format!(
+                    "Centre set. Click the rim — a radius under {MIN_AUTHORABLE_RADIUS_M} m rounds to zero on the {ZONE_GRID_M} m grid and is refused."
+                )
+            } else {
+                "Click the centre.".to_string()
+            };
+            let can_close = is_poly && polygon_is_committable(&d.verts);
+            view! {
+                <div class="mt-3 rounded-md border border-primary/40 bg-primary/10 p-2">
+                    <p class="text-label-sm normal-case text-on-surface">
+                        {format!("Drawing {} {}", humanize_token(&d.kind), if is_poly { "polygon" } else { "circle" })}
+                    </p>
+                    <p class="mt-0.5 text-label-sm normal-case text-outline">{hint}</p>
+                    <div class="mt-1.5 flex gap-1.5">
+                        {is_poly
+                            .then(|| {
+                                view! {
+                                    <button
+                                        type="button"
+                                        disabled=!can_close
+                                        class="rounded-md bg-primary/25 px-2 py-1 text-label-sm text-on-surface transition-colors hover:bg-primary/40 disabled:opacity-30 disabled:hover:bg-primary/25"
+                                        on:click=move |_| {
+                                            ops::close_zone_polygon();
+                                            doc_tick.update(|n| *n = n.wrapping_add(1));
+                                        }
+                                    >
+                                        "Close ring"
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled=n == 0
+                                        class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 disabled:opacity-30"
+                                        on:click=move |_| {
+                                            ops::zone_draw_pop_vertex();
+                                            doc_tick.update(|n| *n = n.wrapping_add(1));
+                                        }
+                                    >
+                                        "Undo vertex"
+                                    </button>
+                                }
+                            })}
+                        <button
+                            type="button"
+                            class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10"
+                            on:click=move |_| {
+                                ops::cancel_zone_draw();
+                                doc_tick.update(|n| *n = n.wrapping_add(1));
+                            }
+                        >
+                            "Cancel"
+                        </button>
+                    </div>
+                </div>
+            }
+                .into_any()
+        }}
+
+        // ── Authored zones ─────────────────────────────────────────────────────────────────
+        {move || {
+            let _ = doc_tick.get();
+            let rows = ops::zone_rows();
+            if rows.is_empty() {
+                return view! {
+                    <p class="mt-3 text-label-sm normal-case text-outline">
+                        "No zones yet. This mission declares no play area."
+                    </p>
+                }
+                    .into_any();
+            }
+            view! {
+                <ul class="mt-3 flex flex-col gap-0.5" role="list" aria-label="Authored zones">
+                    {rows
+                        .into_iter()
+                        .map(|z| {
+                            let id = z.id.clone();
+                            let sel_id = z.id.clone();
+                            let sel_id2 = z.id.clone();
+                            let title = z
+                                .label
+                                .clone()
+                                .filter(|l| !l.is_empty())
+                                .unwrap_or_else(|| humanize_token(&z.kind));
+                            let summary = z.shape_summary();
+                            view! {
+                                <li>
+                                    <button
+                                        type="button"
+                                        aria-pressed=move || selected.get().as_deref() == Some(sel_id.as_str())
+                                        class=move || {
+                                            if selected.get().as_deref() == Some(sel_id2.as_str()) {
+                                                ROW_ACTIVE
+                                            } else {
+                                                ROW
+                                            }
+                                        }
+                                        on:click=move |_| selected.set(Some(id.clone()))
+                                    >
+                                        <MaterialIcon
+                                            name=if z.circle.is_some() {
+                                                "radio_button_unchecked"
+                                            } else {
+                                                "pentagon"
+                                            }
+                                            class="block text-sm"
+                                        />
+                                        <span class="truncate">{title}</span>
+                                        <span class="ml-auto shrink-0 font-mono text-code-md text-outline">
+                                            {summary}
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        })
+                        .collect_view()}
+                </ul>
+            }
+                .into_any()
+        }}
+
+        // ── Attributes for the selected zone ───────────────────────────────────────────────
+        {move || {
+            let _ = doc_tick.get();
+            let Some(id) = selected.get() else {
+                return ().into_any();
+            };
+            let Some(z) = ops::zone_rows().into_iter().find(|r| r.id == id) else {
+                // Deleted underneath us (undo, or a reload that dropped it).
+                return ().into_any();
+            };
+            zone_attributes(z, doc_tick, selected).into_any()
+        }}
+    }
+    .into_any()
+}
+
+/// T-582 — the Attributes panel for one zone. Identity comes from the six declared `zone` keys;
+/// the rules half is GENERATED from `$defs/zoneRules` by [`zone_rule_fields`].
+#[cfg(target_arch = "wasm32")]
+fn zone_attributes(
+    z: crate::editor_ops::ZoneRow,
+    doc_tick: RwSignal<u64>,
+    selected: RwSignal<Option<String>>,
+) -> AnyView {
+    use crate::editor_ops as ops;
+
+    let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
+    let zid = z.id.clone();
+    let input_class = "mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60";
+    let field_label = "mt-2 block text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant";
+
+    let (id_type, id_label, id_faction, id_delete) = (
+        zid.clone(),
+        zid.clone(),
+        zid.clone(),
+        zid.clone(),
+    );
+    let rules = z.rules.clone();
+
+    view! {
+        <div class="mt-3 border-t border-white/10 pt-2">
+            <h4 class="text-label-md font-semibold text-on-surface">
+                {format!("Attributes — {}", z.id)}
+            </h4>
+
+            <label class=field_label>"Type"</label>
+            <select
+                aria-label="Zone type"
+                class=input_class
+                on:change=move |ev| {
+                    ops::set_zone_kind(&id_type, &event_target_value(&ev));
+                    bump();
+                }
+            >
+                {
+                    let current = z.kind.clone();
+                    zone_types()
+                        .into_iter()
+                        .map(|t| {
+                            let is = t == current;
+                            let label = humanize_token(&t);
+                            view! { <option value=t selected=is>{label}</option> }
+                        })
+                        .collect_view()
+                }
+            </select>
+
+            // `label` is optional AND allows the empty string, which the mod reads as "use the
+            // PrettyZoneTitle fallback". Both states are reachable on purpose: typing nothing into
+            // the box writes `""`, and Clear removes the key.
+            <label class=field_label>"Label"</label>
+            <div class="flex items-center gap-1.5">
+                <input
+                    type="text"
+                    aria-label="Zone label"
+                    class=input_class
+                    prop:value=z.label.clone().unwrap_or_default()
+                    on:change=move |ev| {
+                        ops::set_zone_label(&id_label, Some(event_target_value(&ev)));
+                        bump();
+                    }
+                />
+                {
+                    let id_clear = zid.clone();
+                    view! {
+                        <button
+                            type="button"
+                            title="Remove the label key (not the same as an empty label)"
+                            class="mt-1 shrink-0 rounded-md px-1.5 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10"
+                            on:click=move |_| {
+                                ops::set_zone_label(&id_clear, None);
+                                bump();
+                            }
+                        >
+                            "Clear"
+                        </button>
+                    }
+                }
+            </div>
+
+            <label class=field_label>"Faction"</label>
+            <input
+                type="text"
+                aria-label="Zone faction"
+                placeholder="blufor (empty = neutral)"
+                class=input_class
+                prop:value=z.faction.clone().unwrap_or_default()
+                on:change=move |ev| {
+                    let v = event_target_value(&ev);
+                    let next = (!v.trim().is_empty()).then_some(v);
+                    ops::set_zone_faction(&id_faction, next);
+                    bump();
+                }
+            />
+
+            <h4 class="mt-3 text-label-md font-semibold text-on-surface">"Rules"</h4>
+            <p class="mt-0.5 text-label-sm normal-case text-outline">
+                "Every control below is generated from the mission schema's zoneRules vocabulary. Blank means the key is not authored and the mod's default applies."
+            </p>
+            {zone_rule_fields()
+                .into_iter()
+                .map(|f| zone_rule_control(zid.clone(), f, rules.clone(), doc_tick))
+                .collect_view()}
+
+            <button
+                type="button"
+                class="mt-3 w-full rounded-md border border-error/40 px-2 py-1.5 text-label-sm text-error transition-colors hover:bg-error/15"
+                on:click=move |_| {
+                    ops::delete_zone(&id_delete);
+                    selected.set(None);
+                    bump();
+                }
+            >
+                "Delete zone"
+            </button>
+        </div>
+    }
+    .into_any()
+}
+
+/// T-582 — ONE `$defs/zoneRules` property as a control. The `key` is the schema's, verbatim; this
+/// function never spells a rule name. Clearing a control removes the key (the mod's default returns)
+/// rather than writing a zero, because "authored 0" and "not authored" are different documents for
+/// every numeric key — the schema carries an ABSENT sentinel precisely to keep them apart.
+#[cfg(target_arch = "wasm32")]
+fn zone_rule_control(
+    zone_id: String,
+    f: ZoneRuleField,
+    rules: serde_json::Value,
+    doc_tick: RwSignal<u64>,
+) -> AnyView {
+    use crate::editor_ops as ops;
+
+    let current = rules.get(&f.key).cloned();
+    let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
+    let label = humanize_key(&f.key);
+    let doc = f.doc.clone();
+    let key = f.key.clone();
+    let row = "mt-2";
+    let ctl = "mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1 text-label-sm text-on-surface outline-none focus:border-primary/60";
+
+    let body = match f.kind {
+        ZoneRuleKind::Bool { default } => {
+            let checked = current.as_ref().and_then(serde_json::Value::as_bool);
+            let k = key.clone();
+            view! {
+                <label class="mt-2 flex items-center gap-2 text-label-sm text-on-surface">
+                    <input
+                        type="checkbox"
+                        aria-label=label.clone()
+                        prop:checked=checked.unwrap_or(default)
+                        prop:indeterminate=checked.is_none()
+                        on:change=move |ev| {
+                            let on = event_target_checked(&ev);
+                            ops::set_zone_rule(&zone_id, &k, Some(serde_json::Value::Bool(on)));
+                            bump();
+                        }
+                    />
+                    <span>{label.clone()}</span>
+                    <span class="ml-auto font-mono text-code-md text-outline">
+                        {format!("default {default}")}
+                    </span>
+                </label>
+            }
+            .into_any()
+        }
+        ZoneRuleKind::Choice { options, default } => {
+            let cur = current
+                .as_ref()
+                .and_then(|v| v.as_str())
+                .map(ToString::to_string);
+            let k = key.clone();
+            view! {
+                <div class=row>
+                    <label class="block text-label-sm text-on-surface">{label.clone()}</label>
+                    <select
+                        aria-label=label.clone()
+                        class=ctl
+                        on:change=move |ev| {
+                            let v = event_target_value(&ev);
+                            let next = (!v.is_empty()).then(|| serde_json::Value::String(v));
+                            ops::set_zone_rule(&zone_id, &k, next);
+                            bump();
+                        }
+                    >
+                        <option value="" selected=cur.is_none()>
+                            {default
+                                .as_ref()
+                                .map_or_else(
+                                    || "(not authored)".to_string(),
+                                    |d| format!("(not authored — default {d})"),
+                                )}
+                        </option>
+                        {options
+                            .into_iter()
+                            .map(|o| {
+                                let is = cur.as_deref() == Some(o.as_str());
+                                let l = humanize_token(&o);
+                                view! { <option value=o selected=is>{l}</option> }
+                            })
+                            .collect_view()}
+                    </select>
+                </div>
+            }
+            .into_any()
+        }
+        ZoneRuleKind::Number {
+            default,
+            minimum,
+            exclusive_minimum,
+            maximum,
+            integer,
+        } => {
+            let cur = current.as_ref().and_then(serde_json::Value::as_f64);
+            let k = key.clone();
+            // `min` on the control is the schema's, so the browser refuses out-of-range before the
+            // save does. `exclusiveMinimum` has no HTML equivalent, so it becomes the smallest
+            // representable step above the bound rather than being silently dropped.
+            let step = if integer { 1.0 } else { 0.1 };
+            let min_attr = minimum.or_else(|| exclusive_minimum.map(|m| m + step));
+            view! {
+                <div class=row>
+                    <label class="block text-label-sm text-on-surface">{label.clone()}</label>
+                    <input
+                        type="number"
+                        aria-label=label.clone()
+                        class=ctl
+                        step=step
+                        min=min_attr.map(|m| m.to_string())
+                        max=maximum.map(|m| m.to_string())
+                        placeholder=default
+                            .map_or_else(
+                                || "(not authored)".to_string(),
+                                |d| format!("(not authored — default {d})"),
+                            )
+                        prop:value=cur.map(|v| v.to_string()).unwrap_or_default()
+                        on:change=move |ev| {
+                            let raw = event_target_value(&ev);
+                            let next = if raw.trim().is_empty() {
+                                None
+                            } else {
+                                raw.trim()
+                                    .parse::<f64>()
+                                    .ok()
+                                    .and_then(serde_json::Number::from_f64)
+                                    .map(serde_json::Value::Number)
+                            };
+                            // A blank box removes the key; an unparseable one changes nothing.
+                            if next.is_some() || raw.trim().is_empty() {
+                                ops::set_zone_rule(&zone_id, &k, next);
+                                bump();
+                            }
+                        }
+                    />
+                </div>
+            }
+            .into_any()
+        }
+        ZoneRuleKind::Text { default, pattern } => {
+            let cur = current
+                .as_ref()
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+            let k = key.clone();
+            view! {
+                <div class=row>
+                    <label class="block text-label-sm text-on-surface">{label.clone()}</label>
+                    <input
+                        type="text"
+                        aria-label=label.clone()
+                        class=ctl
+                        pattern=pattern
+                        placeholder=default.unwrap_or_else(|| "(not authored)".to_string())
+                        prop:value=cur
+                        on:change=move |ev| {
+                            let v = event_target_value(&ev);
+                            let next = (!v.trim().is_empty())
+                                .then(|| serde_json::Value::String(v.trim().to_string()));
+                            ops::set_zone_rule(&zone_id, &k, next);
+                            bump();
+                        }
+                    />
+                </div>
+            }
+            .into_any()
+        }
+    };
+    view! {
+        <div title=doc>{body}</div>
+    }
+    .into_any()
+}
+
+/// Native shell: no document, so no zones. See the wasm sibling.
+#[cfg(not(target_arch = "wasm32"))]
+fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<String>>) -> AnyView {
+    let _ = (doc_tick, selected);
+    ().into_any()
+}
+
 /// Collect the folder ids whose `default_expanded` is false — the palette's initial collapsed
 /// set (`buildCatalogTree` rule 3: only depth-0 faction folders start open). T-172 B6.
 fn collapsed_seed(nodes: &[CatalogNode], out: &mut std::collections::HashSet<String>) {
@@ -2439,6 +2976,11 @@ pub fn DockRight(
     let object_search = RwSignal::new(String::new());
     // T-215 — which placed vehicles have their cargo editor open.
     let vehicle_expanded = RwSignal::new(std::collections::HashSet::<String>::new());
+    // T-582 — the selected zone (Attributes target). Its own selection, NOT `select_tool`'s: that
+    // one runs over the slot SoA and drives SEL/highlight, so putting a zone id in it would show
+    // `SEL 1` with nothing highlighted anywhere — the same reason `place_at` keeps vehicle and
+    // entity ids out of it.
+    let zone_selected = RwSignal::new(None::<String>);
     let tab_btn = move |i: usize, label: &'static str| {
         view! {
             <button
@@ -2462,6 +3004,9 @@ pub fn DockRight(
                 <div class="flex items-center gap-1">
                     {tab_btn(0, "Factions")}
                     {tab_btn(1, "Vehicles")}
+                    // T-582 — Zones sits before the Markers stub: it is a live surface and that
+                    // one is still a promise (T-069).
+                    {tab_btn(3, "Zones")}
                     {tab_btn(2, "Markers")}
                 </div>
                 <button
@@ -2748,6 +3293,9 @@ pub fn DockRight(
                     {move || placed_vehicles_panel(doc_tick, registry_items, vehicle_expanded)}
                 }
                     .into_any(),
+                // T-582 — the zone draw tool. T-211 shipped the document layer and eleven
+                // mutators; this is the first thing that calls them.
+                3 => zones_panel(doc_tick, zone_selected),
                 _ => view! {
                     <p class="mt-3 text-label-sm normal-case text-outline">
                         "Marker placement lands in T-069."
