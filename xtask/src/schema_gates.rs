@@ -515,7 +515,13 @@ fn instance_kinds_lockstep_failures(enums: &Value) -> Vec<String> {
                 .to_string(),
         ),
     }
-    if INSTANCE_KINDS != tbd_tools::world::INSTANCE_KINDS {
+    // Compared as SLICES, not arrays, and that is not a style choice. `[&str; N] == [&str; M]` for
+    // N != M is a hard type error (E0277), so an array-to-array comparison here turns the most
+    // likely drift — someone adds or drops a kind in one copy — into a raw "can't compare
+    // [&str; 8] with [&str; 9]" instead of the explanation below. Measured while perturbing this
+    // very check: the length-changing case never reached the assertion at all. Slices compare
+    // across lengths, so every drift shape lands on one legible message.
+    if INSTANCE_KINDS[..] != tbd_tools::world::INSTANCE_KINDS[..] {
         out.push(format!(
             "INSTANCE_KINDS (xtask/src/schema_gates.rs) {:?} != \
              tbd_tools::world::INSTANCE_KINDS {:?} — the two census kind lists must stay \
