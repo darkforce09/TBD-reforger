@@ -657,7 +657,10 @@ mod tests {
         let metas = [
             ("0.1.0", "note"),
             ("", ""),
-            ("1.2.3-rc.1+build", "Uploaded from \"my mission\".json\nwith a newline"),
+            (
+                "1.2.3-rc.1+build",
+                "Uploaded from \"my mission\".json\nwith a newline",
+            ),
             ("9.9.9", "Ω — em dash and 🎖"),
         ];
 
