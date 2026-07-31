@@ -414,10 +414,11 @@ pub async fn resync_roles(
 ///
 /// `action` is required, so it carries no `#[serde(default)]` (T-343) — same reasoning as
 /// [`UpdateUserInput`]. `map` and `command` keep theirs **deliberately**: they are genuinely
-/// optional (only `change_map` reads `map`, and `command` is reserved), so for those two the
-/// default really does mean "not supplied" rather than an affirmative empty answer. That is the
-/// distinction the T-185/T-317/T-343 rule turns on, and it is why this sweep does not simply
-/// delete every `#[serde(default)]` in the file.
+/// optional per-action (only `change_map` reads `map`, only `custom` reads `command`), so for
+/// those two the default really does mean "not supplied" rather than an affirmative empty
+/// answer. That is the distinction the T-185/T-317/T-343 rule turns on, and it is why this
+/// sweep does not simply delete every `#[serde(default)]` in the file. **T-269 changed what
+/// "not supplied" costs for `command`:** absent-and-required is now a 400, not a discard.
 #[derive(Debug, Deserialize)]
 pub struct RconInput {
     action: String,
@@ -427,7 +428,162 @@ pub struct RconInput {
     command: String,
 }
 
-/// `POST /api/v1/admin/servers/:id/rcon` — validate + audit an RCON command.
+/// One validated RCON request — the thing a transport would have to carry.
+///
+/// **This type exists because the previous handler had nowhere to put the command.** It parsed
+/// `action`, formatted an audit string, and dropped `command` on the floor at
+/// `let _ = &input.command;`. Modelling the request as a value means every field the operator
+/// supplied is either represented here or rejected at the boundary — there is no third
+/// "accepted and ignored" state, which is exactly the state that produced this ticket.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum RconCommand {
+    Restart,
+    /// Trimmed map name. Empty = supplied as whitespace-only, kept as a distinct case so the
+    /// T-343 degrade-to-bare-`change_map` behaviour below is preserved exactly.
+    ChangeMap(String),
+    Kick,
+    /// Trimmed, guaranteed non-empty — see [`parse_rcon_command`].
+    Custom(String),
+}
+
+impl RconCommand {
+    /// The wire `action` echoed back to the client. One of the four literals, never request
+    /// bytes (the exact-set match in [`parse_rcon_command`] is what guarantees that).
+    fn action(&self) -> &'static str {
+        match self {
+            RconCommand::Restart => "restart",
+            RconCommand::ChangeMap(_) => "change_map",
+            RconCommand::Kick => "kick",
+            RconCommand::Custom(_) => "custom",
+        }
+    }
+
+    /// What goes in the audit row — **including the operand**.
+    ///
+    /// Before T-269 this was the bare action name, so `{"action":"custom","command":"#shutdown"}`
+    /// persisted `issued RCON 'custom'`: an audit trail that could not tell a restart from a
+    /// shutdown. The audit log is currently the *only* place an RCON request lands at all, so
+    /// dropping the operand here meant the request was recorded nowhere in the system.
+    fn audit_detail(&self) -> String {
+        match self {
+            RconCommand::Restart => "restart".to_string(),
+            // T-343. `map` is the one field in this handler whose raw request bytes reach a
+            // persisted string, and its guard was `!input.map.is_empty()` — untrimmed.
+            // `{"action":"change_map","map":"   "}` wrote an audit row reading
+            // `issued RCON 'change_map ->    '`: a recorded map change naming no map. Trim
+            // once, test and emit the same value; whitespace-only degrades to the bare
+            // `change_map` line rather than inventing a destination.
+            RconCommand::ChangeMap(map) if map.is_empty() => "change_map".to_string(),
+            RconCommand::ChangeMap(map) => format!("change_map -> {map}"),
+            RconCommand::Kick => "kick".to_string(),
+            RconCommand::Custom(cmd) => format!("custom -> {cmd}"),
+        }
+    }
+}
+
+/// Validate a request body into an [`RconCommand`], or return the 400 message.
+///
+/// `action` is deliberately **untrimmed** (T-343): the exact-set match is what normalises it, so
+/// a whitespace-padded action fails closed with "unknown action" and anything downstream is
+/// guaranteed to be one of the four literals.
+///
+/// `custom` requires a non-blank `command`. That is the T-269 behaviour change with teeth: an
+/// operator typing a command into the console and getting a success back over a request the API
+/// never even looked at is the defect in miniature.
+fn parse_rcon_command(action: &str, map: &str, command: &str) -> Result<RconCommand, &'static str> {
+    if action.is_empty() {
+        return Err("action required");
+    }
+    match action {
+        "restart" => Ok(RconCommand::Restart),
+        "change_map" => Ok(RconCommand::ChangeMap(map.trim().to_string())),
+        "kick" => Ok(RconCommand::Kick),
+        "custom" => {
+            let cmd = command.trim();
+            if cmd.is_empty() {
+                return Err("command required for custom action");
+            }
+            Ok(RconCommand::Custom(cmd.to_string()))
+        }
+        _ => Err("unknown action"),
+    }
+}
+
+/// Why no validated [`RconCommand`] can be delivered on this deployment — **and it is the
+/// measured answer, not a stub.**
+///
+/// # What the deployment actually looks like
+///
+/// * The game server is a **separate host** (`scripts/deploy/deploy.env.example`:
+///   `TBD_SSH_HOST=sam@192.168.0.140`), run as a **systemd `--user` unit**
+///   (`scripts/deploy/tbd-reforger.service`). Every start/stop/restart in this repo is
+///   out-of-band bash over SSH from a developer's PC — `scripts/mod/deploy-staging.sh`
+///   (`systemctl --user restart tbd-reforger.service`). Nothing in the API participates.
+/// * **The servers do not open an RCON port.** Reforger's RCON is a top-level `rcon` block in
+///   `server.config.json`; the config this repo renders (`deploy-staging.sh`, `config` mode)
+///   has **no `rcon` key at all** and sets `"battlEye": false`. The default `addons` mode has
+///   no config file whatsoever, only CLI flags. `docs/mod/STAGING-SERVER.md:251` quotes the
+///   standard `2001 game / 17777 A2S / 19999 RCON` layout — but 19999 is never bound. Speaking
+///   BattlEye-RCON UDP at these servers would be speaking a protocol they do not answer.
+/// * **There is nowhere to keep an endpoint or a credential.** `servers` is six columns —
+///   `id, name, ip, port, required_modpack_id, is_active`
+///   (`migrations/0001_initial_schema.sql:493-500`); `port` is the *game* port. No
+///   `rcon_port`, no `rcon_password`, no host account. `Config` (`config.rs`) declares 16 env
+///   vars and not one is RCON-related.
+/// * **Traffic between the API and the game host runs one way only — inbound.** The mod POSTs
+///   `/api/v1/ingest/*` with `X-Service-Token` (`TBD_MissionListLoader.c`, `TBD_RosterLoader.c`,
+///   `TBD_ResultsReporter.c`). The API's only outbound client is `reqwest` to Discord. There is
+///   no API→game-host channel to reuse.
+///
+/// # What was rejected, and why
+///
+/// * **BattlEye/Reforger RCON over UDP** — nothing is listening (above), and the transport
+///   could not be exercised on this machine at all.
+/// * **An SSH/exec bridge** (`Command::new("ssh") … systemctl --user restart`) — this endpoint
+///   sits behind a Discord-OAuth session cookie. Handing that surface a shell on the game host,
+///   with a `custom` action whose payload is operator-supplied text, is remote code execution
+///   with an admin checkbox in front of it. Designing that channel properly *is* T-289.
+/// * **A queued-command table the mod polls** — needs a migration (owned by T-262 this wave)
+///   plus mod-side polling that does not exist. Also T-289.
+///
+/// So this slice stops at the boundary and makes the endpoint tell the truth. See
+/// [`send_rcon`] for the contract T-289 must satisfy.
+const RCON_NO_TRANSPORT: &str = "rcon transport not configured: this API has no channel to the game-server host, so the \
+     command was recorded but NOT delivered (blocked on T-289)";
+
+/// `POST /api/v1/admin/servers/:id/rcon` — validate, audit, and **refuse to claim delivery**.
+///
+/// # T-269 — this endpoint used to lie
+///
+/// It validated the action enum, ran `let _ = &input.command;` to discard the operand, wrote an
+/// audit row reading "issued RCON", and returned `202 {"accepted": true}`. An operator clicked
+/// Restart, got a green toast, and nothing happened anywhere — the platform's signature defect
+/// (a tool reporting success over an input it never examined) in product form.
+///
+/// Two things changed and both are load-bearing:
+///
+/// 1. **The command is examined.** `custom` without a command is a 400, and the operand is
+///    carried into the audit row, which is the only sink that exists.
+/// 2. **No success is claimed.** With no transport ([`RCON_NO_TRANSPORT`]) the request is
+///    audited at `warn` as *attempted, not delivered* and answered `503`. A refusal an operator
+///    can act on beats a green check they cannot.
+///
+/// # What T-289 must provide to turn this green
+///
+/// * **A channel** the API can open from inside the process — an authenticated agent on the
+///   game host, or a token-guarded local socket. Not an SSH shell reachable from a session
+///   cookie (see [`RCON_NO_TRANSPORT`]).
+/// * **Addressing and a credential, per server** — `servers` has neither today, so a migration
+///   adding (at minimum) an agent endpoint and a secret reference, or a config-side mapping
+///   from `servers.id`. Whatever names it must be resolvable from the `servers` row this
+///   handler already loads.
+/// * **A delivery result**, not a fire-and-forget — accepted / rejected / unreachable, so the
+///   `503` below can become a real `202` only when something actually took the command, and the
+///   audit row can record the outcome rather than the attempt.
+/// * **The four actions mapped to real operations** — `restart` and `kick` have no
+///   representation on the host beyond `systemctl --user restart tbd-reforger.service`;
+///   `change_map` and `custom` need a live admin channel into the running server, which is a
+///   strictly larger problem than process control.
 ///
 /// @route POST /api/v1/admin/servers/:id/rcon
 pub async fn send_rcon(
@@ -437,19 +593,8 @@ pub async fn send_rcon(
     body: Result<Json<RconInput>, JsonRejection>,
 ) -> Result<(StatusCode, Json<Value>), ApiError> {
     let Json(input) = body.map_err(|_| ApiError::bad_request("action required"))?;
-    // T-343 sweep — deliberately left untrimmed, same argument as `update_user`'s `role`: the
-    // `matches!` immediately below is an exact-set test, so a whitespace-padded action fails
-    // closed with 400 "unknown action", and it doubles as normalisation — anything that reaches
-    // the audit line below is guaranteed to be one of the four literals, never request bytes.
-    if input.action.is_empty() {
-        return Err(ApiError::bad_request("action required"));
-    }
-    if !matches!(
-        input.action.as_str(),
-        "restart" | "change_map" | "kick" | "custom"
-    ) {
-        return Err(ApiError::bad_request("unknown action"));
-    }
+    let cmd = parse_rcon_command(&input.action, &input.map, &input.command)
+        .map_err(ApiError::bad_request)?;
     let Ok(server_id) = uuid::Uuid::parse_str(&id) else {
         return Err(ApiError::not_found("server not found"));
     };
@@ -460,40 +605,153 @@ pub async fn send_rcon(
     let Some(srv_name) = srv_name else {
         return Err(ApiError::not_found("server not found"));
     };
-    let mut detail = input.action.clone();
-    // T-343. `map` is the one field in this handler whose raw request bytes reach a persisted
-    // string, and its guard was `!input.map.is_empty()` — untrimmed. `{"action":"change_map",
-    // "map":"   "}` therefore wrote an audit row reading `issued RCON 'change_map ->    '`: a
-    // recorded map change naming no map. `audit_logs.message` is a write like any other, so it
-    // gets the same treatment as `warnings.reason` above — trim once, test and emit the same
-    // value. A whitespace-only `map` now degrades to the bare `change_map` line rather than
-    // inventing a destination.
-    let map = input.map.trim();
-    if input.action == "change_map" && !map.is_empty() {
-        detail = format!("{detail} -> {map}");
-    }
-    let _ = &input.command; // reserved for the custom-command bridge (audited via action)
+    let detail = cmd.audit_detail();
     let actor = &admin.0.discord_id;
     let actor_name = username(&state.pool, actor).await;
+    // Audited even though it fails: an admin reaching for server control is worth recording
+    // whether or not the platform can honour it. `warn`, not `info` — this row is a request the
+    // system could not satisfy, and the wording says so rather than claiming it was "issued".
     write_audit(
         &state.pool,
-        AuditSeverity::Info,
+        AuditSeverity::Warn,
         Some(actor),
         &actor_name,
         "server.rcon",
-        &format!("{actor_name} issued RCON '{detail}' on {srv_name}"),
+        &format!(
+            "{actor_name} attempted RCON '{detail}' on {srv_name} — NOT delivered (no transport \
+             configured; T-289)"
+        ),
         "server",
         &id,
     )
     .await;
-    Ok((
-        StatusCode::ACCEPTED,
-        Json(json!({ "accepted": true, "action": input.action })),
+    Err(ApiError::with_details(
+        StatusCode::SERVICE_UNAVAILABLE,
+        RCON_NO_TRANSPORT,
+        json!({ "action": cmd.action(), "delivered": false, "audited": true }),
     ))
 }
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    /// T-269 — `custom` must not be accepted without a command.
+    ///
+    /// Pre-fix the handler ran `let _ = &input.command;`, so `{"action":"custom"}` and
+    /// `{"action":"custom","command":"#shutdown"}` were the *same request* to this API: both
+    /// 202 `accepted:true`. This is the smallest possible proof that the field is read.
+    #[test]
+    fn custom_action_requires_a_command() {
+        assert_eq!(
+            parse_rcon_command("custom", "", ""),
+            Err("command required for custom action"),
+            "custom with no command must be rejected, not silently accepted"
+        );
+        assert_eq!(
+            parse_rcon_command("custom", "", "   \t\n"),
+            Err("command required for custom action"),
+            "whitespace-only command is not a command"
+        );
+        assert_eq!(
+            parse_rcon_command("custom", "", "  #shutdown  "),
+            Ok(RconCommand::Custom("#shutdown".to_string())),
+            "a real command must survive parsing, trimmed"
+        );
+    }
+
+    /// T-269 — the operand must reach the audit row, the only sink that exists.
+    ///
+    /// Pre-fix the row read `issued RCON 'custom'` for **every** custom command, so the audit
+    /// trail could not distinguish a shutdown from a message-of-the-day. A test that only
+    /// checked the action name would have passed against the discarding handler.
+    #[test]
+    fn audit_detail_carries_the_command_operand() {
+        let detail = RconCommand::Custom("#shutdown 30".to_string()).audit_detail();
+        assert!(
+            detail.contains("#shutdown 30"),
+            "audit detail must name the command that was requested, got {detail:?}"
+        );
+        assert_eq!(
+            RconCommand::ChangeMap("Everon".to_string()).audit_detail(),
+            "change_map -> Everon"
+        );
+        // T-343 preserved: whitespace-only map degrades to the bare action, never invents a
+        // destination.
+        assert_eq!(
+            parse_rcon_command("change_map", "   ", "")
+                .expect("change_map parses")
+                .audit_detail(),
+            "change_map"
+        );
+        assert_eq!(RconCommand::Restart.audit_detail(), "restart");
+        assert_eq!(RconCommand::Kick.audit_detail(), "kick");
+    }
+
+    /// T-269 — the action enum is still an exact-set test, untrimmed (T-343).
+    #[test]
+    fn action_enum_still_fails_closed() {
+        assert_eq!(parse_rcon_command("", "", ""), Err("action required"));
+        assert_eq!(parse_rcon_command("nuke", "", ""), Err("unknown action"));
+        // Whitespace-padded actions are normalised by failing, not by trimming.
+        assert_eq!(
+            parse_rcon_command(" restart", "", ""),
+            Err("unknown action")
+        );
+        assert_eq!(
+            parse_rcon_command("restart", "", ""),
+            Ok(RconCommand::Restart)
+        );
+        assert_eq!(RconCommand::Restart.action(), "restart");
+        assert_eq!(RconCommand::Custom("x".into()).action(), "custom");
+    }
+
+    /// Drop `//`, `///` and `//!` lines so a source pin measures **code**, not prose.
+    ///
+    /// Written because the pin below caught its own documentation on the first run: the
+    /// `send_rcon` doc comment quotes the defect line verbatim to explain what T-269 fixed, and
+    /// an unstripped `contains` read that quotation as the defect itself. A source pin that
+    /// cannot tell a comment from a statement is one bad rename away from being either
+    /// permanently red or quietly satisfied by a comment — both are the "passing check that
+    /// looked at the wrong thing" this whole class of test exists to prevent.
+    fn strip_comments(src: &str) -> String {
+        src.lines()
+            .filter(|l| !l.trim_start().starts_with("//"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    /// T-269 Class-R — the two literal shapes of the defect must never come back.
+    ///
+    /// This pins the source, not the behaviour, because both regressions are one line each and
+    /// both look harmless in review: re-adding the discard, or restoring a `202 accepted:true`
+    /// over a command nothing carried. Run against `main` this assertion is RED on the first
+    /// clause — that is the point.
+    #[test]
+    fn rcon_handler_neither_discards_the_command_nor_claims_success() {
+        const SRC: &str = include_str!("admin.rs");
+        let production = strip_comments(
+            SRC.split("#[cfg(test)]")
+                .next()
+                .expect("production source before tests module"),
+        );
+
+        assert!(
+            !production.contains("let _ = &input.command"),
+            "T-269: the RCON handler must not discard `command` — that discard IS the ticket"
+        );
+        assert!(
+            !production.contains("\"accepted\": true"),
+            "T-269: the RCON endpoint must not report `accepted: true` while no transport \
+             exists to deliver the command"
+        );
+        // And the honest replacement must still be present.
+        assert!(
+            production.contains("StatusCode::SERVICE_UNAVAILABLE"),
+            "T-269: an undeliverable RCON command must fail closed with 503"
+        );
+    }
+
     /// T-448 / T-461 Class-R — `list_users` must SELECT the live `users.total_deployments`
     /// column. A literal `0::bigint AS total_deployments` alias would false-green the SPA
     /// bind while never reading the denormalized counter.
