@@ -382,7 +382,7 @@ verify-t090-spec-consistency: t090-spec-verify ## Alias — spec corpus cites th
 
 # T-090.3.1 — map export pipeline (data-only, Map Engine v2). map-export-all stays a stub until a
 # second terrain has a Workbench export.
-.PHONY: map-export map-export-all map-export-validate map-verify-phase map-census map-glyphs-build map-render-verify
+.PHONY: map-export map-export-all map-export-validate map-reclassify map-verify-phase map-census map-glyphs-build map-render-verify
 map-export: ## T-090.3.1 — classify staged Workbench export for TERRAIN=<id> PHASE=Pn (exit 2 = run the documented Workbench step first)
 	@test -n "$(TERRAIN)" || (echo "map-export: TERRAIN=<id> required"; exit 1)
 	@test -n "$(PHASE)" || (echo "map-export: PHASE=Pn required (e.g. PHASE=P1_buildings)"; exit 1)
@@ -391,6 +391,9 @@ map-export-all: ## T-090.3 stub — export every terrain in terrain-registry.jso
 	@echo "map-export-all: not implemented (T-090.3)"; exit 1
 map-export-validate: ## T-090.3.1 — validate committed export artifacts for every registry terrain (CI-safe)
 	cargo run -q -p tbd-tools --bin world -- validate-exports
+map-reclassify: ## T-278 — rebuild the catalogue's classification lane from COMMITTED artifacts (no Workbench/staging). Read-only drift check by default; exits 1 when a prefab-classify.json edit has gone latent. WRITE=1 applies it.
+	@test -n "$(TERRAIN)" || (echo "map-reclassify: TERRAIN=<id> required"; exit 1)
+	cargo run -q -p tbd-tools --bin world -- reclassify --terrain "$(TERRAIN)" $(if $(WRITE),--write,)
 map-verify-phase: ## T-090.3.1 — mathematical phase gate G1-G12 + P1-* + E6 for TERRAIN=<id> PHASE=Pn (needs staging)
 	@test -n "$(TERRAIN)" || (echo "map-verify-phase: TERRAIN=<id> required"; exit 1)
 	@test -n "$(PHASE)" || (echo "map-verify-phase: PHASE=Pn required"; exit 1)
