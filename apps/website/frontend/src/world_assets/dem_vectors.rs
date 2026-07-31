@@ -10,13 +10,15 @@ use map_engine_core::geometry::contours::{
 use map_engine_core::geometry::sea_band::{build_sea_band_geometry, sea_fill_alpha};
 use map_engine_core::geometry::vector_compose::{compose_contour_hairlines, compose_sea_mesh};
 use map_engine_core::world::{class_visible, contour_interval_for_zoom};
+// T-596 — the vector-lane ids are IMPORTED, never hand-copied. A private `const ROLE_SEA: u32 = 0`
+// has no compile-time link to `lane_role_from_u32`, so a renumber there misroutes this upload
+// silently instead of failing the build. Same rule for every `upload_*` / `clear_vector_lane` call.
+use map_engine_render::draw_order::role_id;
 
 use std::rc::Rc;
 
 use crate::select_tool::EngineHandle;
 
-const ROLE_SEA: u32 = 0;
-const ROLE_CONTOURS: u32 = 2;
 // T-175 A3 — contours were near-invisible: the old dark brown (luma ~72, α180) vanished over both
 // the dark satellite photo and the tan Map basemap. Raised to a lighter warm tan-brown at higher
 // alpha (luma ~155, α235) so the 1 px hairline reads on both basemaps. (wgpu draws contours as a
@@ -74,7 +76,7 @@ impl DemVectors {
         let alpha = sea_fill_alpha(zoom);
         if !class_visible("sea", zoom) || alpha <= 0.0 {
             if let Some(e) = engine.borrow_mut().as_mut() {
-                e.clear_vector_lane(ROLE_SEA);
+                e.clear_vector_lane(role_id::SEA);
             }
             self.sea_built_alpha = -1.0;
             return;
@@ -86,7 +88,7 @@ impl DemVectors {
         let mesh = compose_sea_mesh(&geo, alpha);
         if let Some(e) = engine.borrow_mut().as_mut() {
             e.upload_polygon_mesh(
-                ROLE_SEA,
+                role_id::SEA,
                 &mesh.positions,
                 &mesh.colors,
                 &mesh.indices,
@@ -100,7 +102,7 @@ impl DemVectors {
     fn push_contours(&mut self, engine: &EngineHandle, zoom: f64, grid: &DemVectorGrid) {
         if !class_visible("contour", zoom) {
             if let Some(e) = engine.borrow_mut().as_mut() {
-                e.clear_vector_lane(ROLE_CONTOURS);
+                e.clear_vector_lane(role_id::CONTOURS);
             }
             self.last_interval = 0.0;
             return;
@@ -117,7 +119,7 @@ impl DemVectors {
         let segs = contour_segments(&g, &levels);
         let hair = compose_contour_hairlines(&segs, CONTOUR_RGBA);
         if let Some(e) = engine.borrow_mut().as_mut() {
-            e.upload_hairline_segments(ROLE_CONTOURS, &hair.verts, hair.segment_count, true);
+            e.upload_hairline_segments(role_id::CONTOURS, &hair.verts, hair.segment_count, true);
         }
         self.last_interval = interval;
     }

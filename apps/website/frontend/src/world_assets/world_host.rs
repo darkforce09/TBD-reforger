@@ -7,6 +7,10 @@ use map_engine_core::geometry::vector_compose::{
     compose_landcover_mesh, compose_roads_mesh, LandcoverInput, PolyMeshGpu, RoadInput, RoadMeshGpu,
 };
 use map_engine_core::world::{WorldResidency, WorldStore};
+// T-596 — vector-lane ids come from the engine's `role_id`, never a hand-copied literal: a private
+// `const ROLE_AIRFIELD_APRON: u32 = 8` has no compile-time link to `lane_role_from_u32`, so a
+// renumber there silently uploads the apron to whatever lane 8 became instead of failing the build.
+use map_engine_render::draw_order::role_id;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 
@@ -15,11 +19,6 @@ use crate::select_tool::EngineHandle;
 use super::bridge::{publish_engine, BridgeHandle};
 use super::fetch::{fetch_bytes, fetch_text};
 
-const ROLE_LANDCOVER: u32 = 1;
-const ROLE_ROADS_CASING: u32 = 3;
-const ROLE_ROADS: u32 = 4;
-/// T-173 H6 — airfield apron polygon lane (matches `draw_order::lane_role_from_u32` 8).
-const ROLE_AIRFIELD_APRON: u32 = 8;
 const FETCH_CONCURRENCY: usize = 12;
 const ATLAS_WEBP: &str = "/map-assets/glyphs/atlas/world-glyphs.webp";
 const ATLAS_JSON: &str = "/map-assets/glyphs/atlas/world-glyphs.json";
@@ -236,7 +235,7 @@ impl WorldHost {
         }
         if let Some(e) = engine.borrow_mut().as_mut() {
             e.upload_polygon_mesh(
-                ROLE_AIRFIELD_APRON,
+                role_id::AIRFIELD_APRON,
                 &mesh.positions,
                 &mesh.colors,
                 &mesh.indices,
@@ -300,8 +299,8 @@ impl WorldHost {
         let mesh = &self.road_meshes[&sig];
         let vis = mesh.segment_count > 0;
         if let Some(e) = engine.borrow_mut().as_mut() {
-            e.upload_strip_tris(ROLE_ROADS_CASING, &mesh.casing, mesh.segment_count, vis);
-            e.upload_strip_tris(ROLE_ROADS, &mesh.centerline, mesh.segment_count, vis);
+            e.upload_strip_tris(role_id::ROADS_CASING, &mesh.casing, mesh.segment_count, vis);
+            e.upload_strip_tris(role_id::ROADS, &mesh.centerline, mesh.segment_count, vis);
         }
         true
     }
@@ -319,7 +318,7 @@ impl WorldHost {
         if !vis {
             self.landcover_shown = false;
             if let Some(e) = engine.borrow_mut().as_mut() {
-                e.clear_vector_lane(ROLE_LANDCOVER);
+                e.clear_vector_lane(role_id::LANDCOVER);
             }
             return true;
         }
@@ -328,7 +327,7 @@ impl WorldHost {
             // connected components whose filled outline paints interior clearings and blankets most
             // of the island (screens 01–03). The forest highlight now comes from the tight per-chunk
             // TBDD mass (roles 5/6, iso-contoured density) + tree glyphs, so drop `forest` here and
-            // keep only `field`/`waterBody` on lane role 1.
+            // keep only `field`/`waterBody` on the landcover lane.
             let inputs: Vec<LandcoverInput<'_>> = self
                 .store
                 .regions
@@ -346,7 +345,7 @@ impl WorldHost {
             if let Some(e) = engine.borrow_mut().as_mut() {
                 if mesh.polygon_count > 0 {
                     e.upload_polygon_mesh(
-                        ROLE_LANDCOVER,
+                        role_id::LANDCOVER,
                         &mesh.positions,
                         &mesh.colors,
                         &mesh.indices,
@@ -356,7 +355,7 @@ impl WorldHost {
                 } else {
                     // T-176 A2 — after dropping forest-kind, Everon has no field/waterBody regions,
                     // so the composed lane is empty; clear it rather than upload a zero-poly mesh.
-                    e.clear_vector_lane(ROLE_LANDCOVER);
+                    e.clear_vector_lane(role_id::LANDCOVER);
                 }
             }
         }
