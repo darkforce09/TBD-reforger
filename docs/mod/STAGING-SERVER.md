@@ -2,7 +2,59 @@
 
 Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Reforger dedicated server** on `sam@192.168.0.140`.
 
-**Join status (2026-06-14): WORKS.** The mod is published to the Workshop and staging runs **`-config` mode** (`TBD_SERVER_MODE=config` in `deploy.env`) — the only Direct-Joinable mode. The earlier local-`-addons` "Phase A" path runs the server but is **not** Direct-Joinable (no backend room) — see "Client join".
+> ## CORRECTED 2026-07-31 (T-604) — read this before the 2026-06-14 text
+>
+> Measured on engine **1.7.0.54**, by booting the binary, not by reasoning about it. Two claims
+> below this box are wrong, and the second is worse than wrong — it is silently dangerous.
+>
+> **1. A locally staged addon IS Direct-Joinable.** `-addonsDir <dir>` **plus** `-config <json>`
+> registers a backend room *and* loads the checkout. One boot, verbatim:
+>
+> ```
+> NETWORK      : Starting RPL server, listening on address 0.0.0.0:2001, fastValidation=true
+> BACKEND      : Server registered with address: 192.168.0.117:2001
+> BACKEND      : Direct Join Code: 0031768625
+> ENGINE       : Loaded addons:
+>   ENGINE     : gproj: '<addonsDir>/tbd-framework/addon.gproj' guid: 'B2C3D4E5F6A78901'
+> ENGINE       : FileSystem: Adding relative directory '<checkout>/apps/mod/tbd-framework'
+>                to filesystem under name TBD_Framework
+> ```
+>
+> The 2026-06-14 finding was measured on **`-addons`**, which really is mutually exclusive with
+> `-config`. It was never measured on **`-addonsDir`**, which is not. Use
+> **[`scripts/mod/run-playtest-server.sh`](../../scripts/mod/run-playtest-server.sh)**.
+>
+> **2. `tbd-framework` IS on the Workshop, unlisted and STALE, and `-config` alone silently runs it.**
+> It is published under the *same* id as the local gproj GUID `B2C3D4E5F6A78901`, pinned at
+> **version 1.0.1**. So a `-config`-only server does not fail loudly when the addon is missing
+> locally — on a clean profile with no `-addonsDir` the engine fetches it over the network:
+>
+> ```
+> BACKEND      : Addon Download started B2C3D4E5F6A78901 - TBD Framework
+> BACKEND      : Downloading B2C3D4E5F6A78901 version 1.0.1
+> ENGINE       : FileSystem: Adding package '<profile>/addons/TBDFramework_B2C3D4E5F6A78901/'
+>                (pak count: 1) to filesystem under name TBD_Framework
+> ```
+>
+> It then registers a room, reaches LOBBY and looks completely healthy **while running months-old
+> script**. Same mission, same machine, measured both ways: **7** `[TBD]` lines in June's flat
+> format versus **108** in the current `[TBD][Subsystem]` format. `run-playtest-server.sh` treats
+> the packed copy winning as a hard failure and refuses to report the server up.
+>
+> **3. The "Game log pass criteria" list further down is the STALE build's output.**
+> `[TBD] Mission loaded`, `[TBD] Registry loaded` and `[TBD] SpawnManager: built slot spawn` are
+> exactly what Workshop 1.0.1 prints. Current code prints
+> `[TBD][Mission] loaded id=… slots=18 source=…`, `[TBD][Validate] mission result=PASS errors=0`,
+> `[TBD][Slots] loadout settle complete — 18 application(s) IsComplete=1 — spawn open` and
+> `[TBD][Stage] LOADING -> LOBBY`. **If your log matches the old list, you are running the stale
+> mod, not your checkout.**
+>
+> **4. NOT verified: what the joining client loads.** The server advertises
+> `game.mods[] = [B2C3D4E5F6A78901]`; a client resolves that id from the Workshop and gets 1.0.1
+> while the server runs the checkout. Nobody has yet observed a second machine joining this
+> combination — see "Client join" below.
+
+**Join status (2026-06-14, superseded by the box above): WORKS.** The mod is published to the Workshop and staging runs **`-config` mode** (`TBD_SERVER_MODE=config` in `deploy.env`). The earlier local-`-addons` "Phase A" path runs the server but is **not** Direct-Joinable (no backend room) — see "Client join". **`-addons` is not `-addonsDir`, and that distinction is the whole fix (T-604).**
 
 > **Status (2026-07-02, T-128): gates V2–V4 are BLOCKED on T-092.** `GET /api/missions/:id/compiled` and `GET /api/game/events/:id/roster` existed only in the Phase-0 REST spike backend, since removed — the current backend serves `/api/v1` only, so those curls return **404** (not 200, and no 401 auth gate). The 2026-06-14 pass ran against the spike. Real game-server routes ship with **T-092** ([`t092_spawn_transform_program.md`](../specs/Mission_Creator_Architecture/t092_spawn_transform_program.md)); until then `deploy-staging.sh` **skips** the V2–V4 smoke unless `TBD_RUN_T092_SMOKE=1`. The mission **file fallback** (`$profile:missions/`) is unaffected.
 
@@ -204,30 +256,59 @@ Flow: validate mission JSON → rsync → profile + addon symlink → Docker reb
 
 ---
 
-## Client join — REQUIRES Workshop publish + `-config` (verified 2026-06-14)
+## Client join
 
-> **A local-`-addons` server is NOT Direct-Joinable.** Reforger's Direct Join resolves
-> servers through the **Bohemia backend room registry**, not a raw LAN A2S query. Only a
-> server launched with **`-config`** registers a joinable room (logs `Server registered
-> with address:` + `Direct Join Code:`). The Phase A `-server`+`-addons` launch starts a
-> server but registers **no room**, so Direct Join always returns "No server found" — even
-> when the server is healthy, A2S-reachable, and version-matched. And `-config` **cannot be
-> combined with `-addons`** (engine fatal: `-config cannot be used together with addons!`),
-> and a config `game.mods[]` entry only loads **Workshop-published** mods. So the mod must
-> be on the Workshop.
+### The one command (T-604, 2026-07-31)
 
-**To make the modded server joinable:**
+```bash
+bash scripts/mod/run-playtest-server.sh \
+  --mission-id=<compiled-mission-id> \
+  --admin=<your-identityId-or-17-digit-SteamID>
+```
 
-1. **Publish `tbd-framework` to the Workshop** (Workbench → Resource Manager → publish
-   `addon.gproj`; a Dev/unlisted version is fine). This mints a real **Workshop modId**
-   (≠ the local GUID `B2C3D4E5F6A78901`).
-2. In `scripts/tbd-staging-server.config.json`, set `game.mods[0].modId` to that Workshop
-   modId; keep `scenarioId` = `{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf` and `a2s.port`
-   **17777**.
-3. Run the server with **`-config <that json>`** (NO `-addons`). It downloads the mod and
-   registers a room.
-4. **Client:** Multiplayer → **V** Direct Join → IP `192.168.0.140`, port `2001` (or paste
-   the server's **Direct Join Code** from its log). Clients auto-download the Workshop mod.
+It stages the profile, points the mod at the API and your mission, symlinks the addon dir,
+renders `server.json`, launches with **both** flags, then **waits for and asserts** the room
+registration and that the *local* addon won before printing anything. On success it prints the
+join address and the Direct Join Code parsed out of that boot's own log. Add `--dry-run` to see
+the rendered config and the exact command without booting, `--help` for the options.
+
+Measured end to end 2026-07-31: room registered, checkout loaded,
+`[TBD][Validate] mission result=PASS errors=0`, `[TBD][Slots] loadout settle complete — 18
+application(s) IsComplete=1 — spawn open`, `[TBD][Stage] LOADING -> LOBBY`.
+
+**Second client:** Multiplayer → **Direct Join** → the `IP:port` the script prints (the room
+registers under `publicAddress`, which the script sets to this machine's LAN IP), or paste the
+**Direct Join Code**. The code is re-minted on every boot — read it from the run, never from a doc.
+
+> ### NOT VERIFIED — needs a second human on a second machine
+>
+> Everything above is server-side. **Nobody has yet watched a client connect to this
+> combination.** The specific risk is a *version skew*, not a missing mod: the server advertises
+> `game.mods[] = [B2C3D4E5F6A78901]`, the client resolves that id from the **Workshop**, and the
+> Workshop copy is pinned at **1.0.1** while the server runs the checkout. So the friend may get
+> a clean join running June's script against July's server, with no error anywhere.
+>
+> **What the second person must actually do, and report back:**
+> 1. Direct Join the printed `IP:port`. Say whether it connects, refuses, or hangs.
+> 2. If it refuses, quote the exact client-side message (a content/version mismatch reads
+>    differently from "No server found").
+> 3. If it connects, have them type `#tbd` in chat. The current build answers with the full
+>    command list; the stale build does not have that command at all. **That one line is the
+>    cheapest test of which mod the client is really running.**
+>
+> If the skew is real, the fix is to **re-publish `tbd-framework` from Workbench** (see "Dev loop"
+> below) so the Workshop copy matches the checkout, then re-run the script.
+
+### Why the old instructions were wrong (kept for the record)
+
+The 2026-06-14 text said a local addon could never be joinable and the mod had to be published
+first. It was measured on **`-addons`**, which is a hard fatal with `-config`
+(`-config cannot be used together with addons!`). **`-addonsDir` is a different flag and combines
+with `-config` fine** — that is the whole of T-604. The Phase A `-server` + `-addons` launch is
+still correctly described: it loads the mod and reaches LOBBY but registers **no room**, so Direct
+Join answers "No server found". Verified again 2026-07-31: zero occurrences of
+`Server registered with address:` in that mode's log, against 108 `[TBD]` lines and a healthy
+`[TBD][Stage] LOADING -> LOBBY` in the same run. A healthy log is not a joinable server.
 
 **Version:** client and server game versions must match (both report `1.7.0.x` in the A2S
 reply / `Creating game instance … version 1.7.0.x`). Note: Steam `buildid` differs between
