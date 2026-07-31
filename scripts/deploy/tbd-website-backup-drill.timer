@@ -1,0 +1,19 @@
+; T-577 — weekly schedule for tbd-website-backup-drill.service (USER timer, not root cron).
+
+[Unit]
+Description=TBD website — weekly backup restore drill
+Documentation=file://scripts/deploy/backup-drill.sh
+
+[Timer]
+; Sunday 04:10, ~50 minutes after the nightly backup, so it drills a dump that was just
+; written rather than racing the writer for the same file.
+OnCalendar=Sun *-*-* 04:10:00
+
+; Same reason as the backup timer: a drill that silently does not run leaves you believing
+; the backups are tested when nothing has tested them. Persistent=true means a week the
+; machine was off produces a late drill instead of no drill.
+Persistent=true
+RandomizedDelaySec=600
+
+[Install]
+WantedBy=timers.target

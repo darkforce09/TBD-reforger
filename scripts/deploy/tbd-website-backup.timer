@@ -1,0 +1,23 @@
+; T-577 — nightly schedule for tbd-website-backup.service (USER timer, not root cron).
+
+[Unit]
+Description=TBD website — nightly verified PostgreSQL backup
+Documentation=file://scripts/deploy/backup-db.sh
+
+[Timer]
+; 03:20 local, off the hour. Nothing else in this repo is scheduled, so the offset is only
+; to avoid the top-of-hour pile-up every other daemon on the box picks.
+OnCalendar=*-*-* 03:20:00
+
+; PERSISTENT IS THE POINT. Without it, a machine that was asleep or powered off at 03:20
+; simply skips that night and says nothing — the backup silently does not exist. With it,
+; the run fires as soon as the machine is back. This is the same failure the count-based
+; retention in backup-db.sh defends against, one layer up: a schedule that quietly does not
+; run is indistinguishable from one that runs and works, right until you need the backup.
+Persistent=true
+
+; Spread the start so a backup cannot collide with anything else that wakes at 03:20.
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
