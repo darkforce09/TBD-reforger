@@ -4,6 +4,7 @@ Cross-cutting docs for the TBD Reforger monorepo (not tied to a single app).
 
 | Doc | Purpose |
 |-----|---------|
+| [`PLAYTEST_RUNBOOK.md`](PLAYTEST_RUNBOOK.md) | **OPERATOR, ACTIVE** — the live two-client E2E that closes **T-181.16** + **T-068.14**, the last two open programs. Pre-flight, numbered session, PASS list, evidence capture, known limitations |
 | [`CODEBASE_AUDIT_2026.md`](CODEBASE_AUDIT_2026.md) | **T-122** audit findings + shipped/deferred log; **Fable S1–S6** @ T-126 |
 | [`known-bugs/`](known-bugs/README.md) | **Known bugs** — recorded/triaged defects not currently actioned (why + how to fix later). KB-001: MC selection-at-scale |
 | [`../../.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) | **Fable 5 living tracker** — all findings, status, ticket mapping |
