@@ -385,3 +385,7 @@
 3	T-582	The zone draw tool + wasm binding	crates/map-engine-core/src/js.rs; apps/website/frontend/src/eden_chrome.rs
 3	T-583	make map-reclassify target + gate wiring	Makefile
 3	T-584	Two weak test controls from wave 70	apps/website/api/src/handlers/oauth.rs
+3	T-585	Migration 0019: ingest-pointer FKs + seed reorder	apps/website/api/migrations; apps/website/api/seeds/content_golden.sql
+3	T-586	@route unpoliced; three unwired server handlers	scripts/verify-route-tags.sh; apps/website/api/src/app.rs
+3	T-587	fire_missions stores no coordinates or solution fields	apps/website/api/src/services/mortar.rs
+3	T-588	Wave 71 residue: systemd templates, verifier identity, mortar rehydrate	scripts/deploy/tbd-website-backup.service

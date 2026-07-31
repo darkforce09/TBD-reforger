@@ -88,8 +88,6 @@ $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) wit
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-- **T-285** (idea) — Field tools — solutions never persist and inject writes to a dead directory [SHELL] — POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads.
-- **T-288** (idea) — Modpack to server-config renderer and push [SHELL] — The database modpack concept and the server's actual mod list are unconnected universes. deploy-staging.sh:258-260 hardcodes a single mod from an env var and never reads the modpacks table.
 - **T-289** (idea) — Server-host deploy agent for start, stop and status [SHELL] — The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive.
 
 == WHAT T-269 NEEDS FROM THIS TICKET (added 2026-07-31 after T-269 stopped at this boundary) ==
@@ -212,56 +210,6 @@ Repro: rg retract_from apps/website/api — no IT exercises the path.
 sanitize_discord_embed_field + include_str wire pins exist; no services_http / CMS IT asserts a leading '=title' becomes ZWSP-prefixed in the outbound embed JSON.
 
 Repro: rg sanitize_discord apps/website/api/tests — no hit.
-- **T-576** (deferred) — No 23503 handler: every foreign-key violation surfaces as a 500 [API] — Found by T-262 (filed-not-fixed) and independently confirmed by wave 69's adversarial verifier.
-
-`apps/website/api/src/handlers/mod.rs:51` defines `is_unique_violation` (23505) and NOTHING for
-23503 (foreign_key_violation). Since T-262 landed the schema's first 25 FKs in `0018`, any FK
-violation now reaches the client as a **500 internal error** instead of a 4xx.
-
-LIVE REPRO (verifier, own API instance on a scratch DB):
-  POST /api/v1/ingest/server-status with a random server_id  ->  500 {"error":"internal error"}
-  same heartbeat for a REGISTERED server                     ->  200
-Cause: `handlers/telemetry.rs:229` inserts into `server_statuses` with no existence check, and 0018
-constraint 10 (server_statuses.server_id -> servers, CASCADE) now enforces it.
-
-WHY IT IS ONLY MINOR TODAY: those rows were invisible no-op orphans before 0018 -- no read path
-returned them -- so this is not a legitimate happy-path write. The verifier drove the full happy
-path (version create, event attach + 16 slots, register, seat claim, squad reserve, bookmark,
-armory, fire mission, role resync, token refresh, registered-server heartbeat) and found ZERO FK
-500s. So this is a sharp edge, not a live outage.
-
-WHY IT MATTERS ANYWAY: it is the reason T-262 had to ABSTAIN from four otherwise-correct FKs
-(matches.event_id, matches.mission_id, server_statuses.current_match_id, fire_missions.event_id).
-Those all bind straight from a request body on ingest endpoints with no human in the loop, where a
-500 loses a scoreline. Add the 23503 mapping and those four become safe to constrain -- that is the
-real prize here, not the error code.
-
-COMPOUNDING, pre-existing: `handlers/servers.rs:456` `create_server` (@route POST /api/v1/servers)
-is NOT WIRED INTO THE ROUTER. Servers can only exist via seed or raw SQL, so there is no API to
-register the server a heartbeat needs. Worth resolving in the same pass.
-
-WANTED: an `is_foreign_key_violation` sibling, mapped to 400/409 with a message naming the missing
-parent; then revisit T-262's four abstentions.
-- **T-577** (deferred) — Database backups: none exist, and the spec is written [INFRA] — T-280 established there is no pg_dump/pg_restore tooling anywhere in the repo -- the only hits are
-three comments describing the Go->Rust schema parity check. It stopped at the boundary because
-backups live outside `app.rs`. This is that work, and T-280 already specified it precisely.
-
-1. `scripts/deploy/backup-db.sh` (new). Neither host has `pg_dump`, so go through the compose
-   container: `podman exec tbd_reforger_db pg_dump -U tbd -Fc -d "$DB" > "$OUT/tbd_reforger-$(date -u +%Y%m%dT%H%M%SZ).dump"`.
-   Custom format (-Fc) for parallel and selective restore. Retention BY COUNT, not `find -mtime` --
-   a stopped cron then silently keeps nothing fresh rather than keeping the last N.
-   **IT MUST VERIFY THE DUMP IT JUST WROTE** -- `pg_restore --list` over the file plus a non-zero-rows
-   check -- or it is this program's signature defect in a new hat: a backup script reporting success
-   over a file it never opened.
-2. `scripts/deploy/restore-db.sh` (new). `pg_restore --clean --if-exists -d`, carrying the SAME
-   T-381 allow-list guard the test harness uses (`tests/common/mod.rs:88`) so a restore can never be
-   pointed at the wrong database by a typo.
-3. `Makefile`: `db-backup` / `db-restore` targets beside `db-up`/`seed` (Makefile:69-83).
-4. A schedule. `deploy-website.sh:82` shows the API runs as a USER systemd unit
-   (`tbd-website-api.service`), so pair it with `tbd-website-backup.timer` + `.service` installed the
-   same way -- not root cron.
-5. **A restore DRILL in CI or the wave gate**: dump -> restore into a scratch DB -> run `db_migrate`
-   against it. Without this the backup is untested and you discover that during an incident.
 - **T-578** (deferred) — Wire T-280's durable rate limiter — it is proven but inert [API, INFRA] — T-280 built `app::durable_ratelimit::PgRateLimiter` (a one-statement refill-and-spend token bucket;
 `ON CONFLICT DO UPDATE` takes the row lock so it is atomic across processes) and PROVED it with a
 perturbation that isolates durability from throttling: an in-process bucket still refuses at the
@@ -426,6 +374,124 @@ weaker than they read.
    payloads (e.g. a yrs BigInt<->Number coercion across an editor change) would report unchanged rows
    as "edited". Unreachable today because both sides come from one pipeline, but the differ's whole
    value is not crying wolf.
+- **T-585** (deferred) — Migration 0019: the three ingest-pointer FKs T-576 unblocked, plus the seed reorder they require [DATA, API] — FULLY SPECIFIED BY T-576, which did not merely claim these are unblocked -- it REHEARSED them,
+creating all three constraints by hand on a scratch DB and driving them over HTTP. Each returns its
+400 with ZERO handler changes, because telemetry.rs is pre-armed with the constraint names and pinned
+by `fk_constant_names_follow_migration_convention`. Wave 71's verifier independently re-derived that
+conventional auto-naming produces exactly those names.
+
+=== THE MIGRATION (0019_ingest_pointer_foreign_keys.sql) ===
+1. Three constraints, `DROP CONSTRAINT IF EXISTS` before each `ADD` (0018's idempotency rule),
+   VALIDATING not NOT VALID (0018's decision):
+     server_statuses_current_match_id_fkey -> matches(id)   ON DELETE SET NULL
+     matches_event_id_fkey                 -> events(id)    ON DELETE SET NULL
+     matches_mission_id_fkey               -> missions(id)  ON DELETE SET NULL
+2. **NAMES MUST BE EXACTLY `<table>_<column>_fkey`.** telemetry.rs branches on these literal strings;
+   any other name matches nothing and SILENTLY RESTORES THE 500.
+3. ON DELETE SET NULL for all three -- all three columns are nullable (verified). RESTRICT would make
+   deleting an event impossible once a match points at it; CASCADE would delete scorelines and a
+   server's live status row.
+4. ORPHAN PRE-CLEAN IS MANDATORY (0018:212 established the pattern). These columns have been
+   unconstrained since 0001, so live data may hold dangling pointers:
+     UPDATE matches SET event_id = NULL WHERE event_id IS NOT NULL AND event_id NOT IN (SELECT id FROM events)
+     ... same for mission_id, same for server_statuses.current_match_id
+
+=== THE SEED REORDER — THIS SLICE OWNS seeds/content_golden.sql TOO ===
+T-262 flagged ONE ordering blocker. T-576 measured a SECOND:
+    server_statuses (line 226) sets current_match_id = ...f000-000000000003, but `matches` is
+      inserted at line 354.
+    matches (line 354) names mission ...c000-000000000001, inserted at line 450.
+    matches.event_id is NULL in all three golden rows -> no blocker there.
+`persist_seed` feeds the file statement-by-statement in AUTOCOMMIT, so DEFERRABLE INITIALLY DEFERRED
+does not help. Required order: missions(104) -> missions(450) -> matches(354) -> servers(213) ->
+server_statuses(226). **Without this reorder every fresh environment fails to seed.**
+
+=== NOT UNBLOCKED, AND WHY ===
+The fourth abstention, `fire_missions.event_id`, is NOT covered. It is written in field_tools.rs:256
+and needs its own `foreign_key_error` arm first. T-576 also corrected the record: `save_fire` takes
+AuthUser (POST /api/v1/fire-missions), so it is a JWT-authenticated HUMAN route, not a
+no-human-in-the-loop service-token ingest -- a 500 there costs a fire-mission record, not a scoreline.
+
+=== A BRIDGE CONTRACT CHANGE THE OPERATOR MUST KNOW ABOUT ===
+For matches.event_id / mission_id the FK makes the write FAIL EITHER WAY -- a 400 does NOT save the
+scoreline T-262 was protecting. What it buys is a LEGIBLE, RETRIABLE failure: the bridge learns which
+pointer is wrong, and upsert_match is idempotent on source_match_id, so a corrected re-POST lands the
+row. Weighed against today's behaviour (200, row stored with a dangling event_id, attendance then
+silently never marked) that is the better failure -- but it changes what the game-server bridge sees
+and should be announced, not slipped in.
+- **T-586** (deferred) — The @route tag is unpoliced in the Rust era — three handlers point at routes that do not exist [API, INFRA] — Found by T-576 while scoping. `handlers/servers.rs` carries `@route` doc tags on THREE handlers that
+are NOT WIRED INTO THE ROUTER: `create_server` (:433, POST /api/v1/servers), `update_server` (:500,
+PATCH), `deactivate_server` (:606, DELETE). Verified by the command center -- all three return 0 hits
+in app.rs. The entire admin server-CRUD triple is missing, so wiring only `create_server` would ship a
+register-but-never-edit-or-retire API.
+
+=== THE ROOT CAUSE, AND IT IS THE INTERESTING PART ===
+T-125's GO-7 route-match verifier DID NOT SURVIVE THE Go->Rust REWRITE. There is no @route-vs-router
+check anywhere in `scripts/`, and Makefile:279 claims the GO-2..9 analogs are "enforced by clippy +
+ApiError + fmt" -- none of which can see this. THAT is how three handlers carried a route tag to a
+route that does not exist without anything going red. T-576 wrote a throwaway cross-check that found
+exactly the three.
+
+WANTED: (a) the ~20-line @route-vs-router cross-check, wired into the gate so this cannot recur;
+(b) a decision on the three handlers -- wire the CRUD triple with its auth tier and audit surface
+reviewed, or delete the tags. Note T-576's 400 message says "no server is registered with that id",
+which implies a remedy the API does not currently offer: server registration is seed or psql only
+(seeds/content_golden.sql:213 seeds two). That raises this ticket's priority.
+
+RELATED, same family, from T-285: `POST /missions/{id}/inject` is a DEAD ROUTE. field_tools.rs:23
+`MISSION_STAGE_DIR = "missions"` is RELATIVE (CWD-dependent), written at :320-322, and has NO READER
+-- zero `mission.json` references under apps/mod/tbd-framework/, and the mod's real path is
+GET /api/v1/missions/:id/compiled. No frontend caller either. Decide: delete the route, or point the
+mod at it.
+- **T-587** (deferred) — fire_missions cannot store a solution: no coordinates, no TOF, no charge [DATA, FRONTEND] — Surfaced by T-285, which wired the orphaned /fire-missions endpoints and had to work around the
+schema to do it.
+
+THE TABLE STORES NO COORDINATES. T-285 encodes the four inputs losslessly into the `fp_grid` /
+`target_grid` text columns (`fmt_grid`/`parse_grid` in mortar.rs) -- that encoding IS the persistence,
+which is why it carries the round-trip test. It works, and it is a workaround.
+
+NO `time_of_flight_s` / `charge` / `azimuth_mils` COLUMNS. So a freshly-saved solution shows full TOF
+(the POST response carries the live solution) while a RESTORED one shows an honest `—` rather than a
+fabricated 0.0 s. That asymmetry is visible to the operator and is the schema's fault, not the UI's.
+
+WANTED: a migration adding real numeric coordinate columns and the three solution fields, then retire
+the grid-string encoding. Note the grid strings are the CURRENT persistence format, so the migration
+must backfill from them rather than dropping them.
+
+ALSO FROM T-285, same surface:
+ - **No endpoint lists valid weapon systems.** `WEAPONS` in mortar.rs duplicates `charges_for` in
+   api/src/services/mortar.rs. Drift is asymmetric -- a missing tube is unofferable, an extra one
+   400s -- but `GET /fire-missions/weapons` would close it.
+ - `SavedFire` / `EventOption` live in mortar.rs, not dto.rs. Their proper home with an R-api golden
+   is dto.rs; `SavedFire` is currently pinned only by T-285's captured-live-response test.
+ - `dto::FireSolution` has no `Debug` derive, so `SaveResponse` cannot have one. Cosmetic.
+ - field_tools.rs:106-112 documents a now-unreachable guard and says it is safe to delete.
+- **T-588** (deferred) — Wave 71 residue: systemd templates fail verify as committed, backup verifier has no DB-identity check, mortar re-hydration overwrites unsaved edits [INFRA, FRONTEND] — Four NITs from wave 71's adversarial verifier. None is a live defect; all are worth closing.
+
+1. `scripts/deploy/tbd-website-backup.service:32` and `tbd-website-backup-drill.service:29` FAIL
+   `systemd-analyze verify --user` AS COMMITTED, because `WorkingDirectory=TBD_REPO_DIR_PLACEHOLDER`
+   is not an absolute path. Expected for a template -- the header documents the `sed` substitution and
+   the RENDERED units verify clean (all four, confirmed) -- but anyone verifying the committed file, or
+   naively `cp`-installing it, gets "Unit has a bad unit file setting".
+   Repro: `systemd-analyze verify --user scripts/deploy/tbd-website-backup.service` -> rc=1.
+   Fix: ship a `.in` extension, or an absolute default the sed overwrites.
+
+2. `scripts/deploy/lib/db-common.sh:241` -- the dump verifier has NO DATABASE-IDENTITY CHECK. It
+   accepts a structurally valid dump OF THE WRONG DATABASE, or one missing `_sqlx_migrations`. Not
+   exploitable in the backup path (it always dumps the whole correct DB) and the drill catches the
+   missing-migrations case, and `--min-rows 0` accepting a schema-only dump is an explicit opt-in --
+   so this is a contract limit, not a bug. Worth closing anyway: a restore is exactly when someone is
+   panicking and grabs the wrong file.
+
+3. `apps/website/frontend/src/mortar.rs:501` -- `hydrated_for` is a single-slot `StoredValue`, so
+   switching operation away and back RE-APPLIES that operation's saved solution over any unsaved
+   edits. No data loss (the saved rows are intact) but it silently discards in-progress work.
+
+4. T-576's TITLE overstates what shipped: "every foreign-key violation surfaces as a 500". The shipped
+   mapping live-fixes only the `server_id` heartbeat (500 -> 400). Bad `matches.event_id` /
+   `mission_id` on match ingest still INSERT SILENTLY today, because those FKs do not exist yet -- so
+   they are neither 500 nor 400, they are unchanged. The ticket BODY is accurate; the headline is not.
+   Resolved by T-585 landing the migration.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

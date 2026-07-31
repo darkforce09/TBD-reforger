@@ -172,7 +172,19 @@ FIRST TWO ACTIONS, before anything else:
   1. Run `pwd && git branch --show-current` and paste the output in your report. If it does not
      show the worktree path and slice/T-XXX, STOP and report that — do not start work.
   2. export CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target
-     It is unset in a fresh shell. A worktree building its own target/ costs ~40GB. Never override it.
+     It is unset in a fresh shell. A worktree building its own target/ costs ~40GB. Never override it
+     FOR ORDINARY BUILDS — but see the next paragraph before you run your own server instance.
+
+  3. IF YOU BUILD A BINARY YOU THEN RUN (an API instance, a CLI you exercise), USE A PRIVATE TARGET
+     DIR FOR IT: `CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target-<slice>-api`.
+     MEASURED 2026-07-31 (T-581): two slices in one wave both built `website-api` into the shared
+     `target/`. The second build printed "Blocking waiting for file lock" then "Finished" with NO
+     `Compiling` line, and `target/debug/api` DID NOT CONTAIN THAT SLICE'S CODE. A full HTTP proof
+     run then reported every case still broken — reading exactly like the slice's own correct fix
+     not working. It was caught only by grepping the binary for a string unique to that version.
+     The gate already has private dirs for this (T-421: `target-gate-api`, `target-gate-check`); a
+     slice agent running its own instance does not. **Verify binary provenance before trusting any
+     HTTP proof run**, and delete the private dir on cleanup.
 
 Read the full diagnosis — it is the handoff, there is no prior chat:
   cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/T-XXX

@@ -19,7 +19,6 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-581** — BLOCKS THE ZONE DRAW TOOL: a bad zone saves 201 then 500s /compiled forever (ready)
 <!-- ticket-sync:next:end -->
 
 ---
