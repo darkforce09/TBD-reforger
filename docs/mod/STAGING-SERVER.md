@@ -116,7 +116,88 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 > while the server runs the checkout. Nobody has yet observed a second machine joining this
 > combination — see "Client join" below.
 
-**Join status (2026-06-14, superseded by the box above): WORKS.** The mod is published to the Workshop and staging runs **`-config` mode** (`TBD_SERVER_MODE=config` in `deploy.env`). The earlier local-`-addons` "Phase A" path runs the server but is **not** Direct-Joinable (no backend room) — see "Client join". **`-addons` is not `-addonsDir`, and that distinction is the whole fix (T-604).**
+> ## CORRECTED 2026-08-01 (T-607) — staging, and why the count check is now blind
+>
+> T-604 fixed the *playtest* launcher. **Staging was still broken both ways**, and
+> `deploy-staging.sh` has now been fixed the same way. Measured on engine **1.7.0.54** by
+> booting it three times on one machine, same mission (`msn_8f3a2c`, 18 slots).
+>
+> **1. `-config` alone made staging validate a build it never deployed.** The deploy rsyncs a
+> checkout and symlinks it into `$TBD_ADDONS_STAGING`, then launched with `-config` and **no
+> `-addonsDir`** — so the engine satisfied `game.mods[]` from the Workshop and never read the
+> symlink. Verbatim, from a `-config`-only boot:
+>
+> ```
+> BACKEND      : Downloading B2C3D4E5F6A78901 version 1.0.2
+> ENGINE       : Loaded addons:
+>   ENGINE     : gproj: '<profile>/addons/TBDFramework_B2C3D4E5F6A78901/addon.gproj' guid: 'B2C3D4E5F6A78901'
+> BACKEND      : Server registered with address: 192.168.0.117:2001
+> ```
+>
+> Room registered, mission `PASS`, LOBBY reached — **every green line true about the wrong
+> code.** `deploy-staging.sh` now passes **`-addonsDir` and `-config` together** and the same
+> boot reads:
+>
+> ```
+> ENGINE       : Loaded addons:
+>   ENGINE     : gproj: '<addonsDir>/tbd-framework/addon.gproj' guid: 'B2C3D4E5F6A78901'
+> ENGINE       : FileSystem: Adding relative directory '<checkout>/apps/mod/tbd-framework'
+>                to filesystem under name TBD_Framework
+> BACKEND      : Server registered with address: 192.168.0.117:2001
+> BACKEND      : Direct Join Code: 0436141035
+> ```
+>
+> That was **not** a walkover: a 570,489-byte version-1.0.2 Workshop pak sat in
+> `<profile>/addons/` for the whole boot and lost. An assertion that passes because the
+> alternative is absent proves nothing, so the check reports which case it saw.
+>
+> **2. `-addonsDir` + `-addons` + `-server` still registers no room.** Confirmed again:
+> **zero** `Server registered with address:` lines, zero `Direct Join Code:`, zero
+> `Loading dedicated server config` — in a log that reached `[TBD][Stage] LOADING -> LOBBY`
+> with the correct addon loaded. **A healthy log is not a joinable server.** That mode also has
+> no server config at all, so it has no `game.admins[]` and therefore no working `#tbd`.
+>
+> **3. ⚠ THE `[TBD][` COUNT NO LONGER TELLS YOU WHICH BUILD IS RUNNING.** T-606's rule — compare
+> against **zero**, never against a number — is still right and still in force. What changed is
+> that **zero is no longer reachable**: the operator re-published on 2026-07-31, so the Workshop
+> now serves **1.0.2**, which emits the current `[TBD][Subsystem]` format. Measured, three boots,
+> same mission:
+>
+> | Boot | addon that won | joinable | `grep -c '\[TBD\]\['` |
+> |---|---|---|---|
+> | `-config` only | **Workshop 1.0.2** | yes | **154** |
+> | `-addonsDir` + `-config` | **the checkout** | yes | **151** |
+> | `-addonsDir` + `-addons` + `-server` | the checkout | **no** | **154** |
+>
+> All three are the same number to within noise, and the two that differ most in *correctness*
+> are identical at 154. The format check answers "is this build ancient" — a real question, and
+> `remote-log-grep.sh` should keep asking it. It does **not** answer "is this the build I just
+> deployed", and it never did; it only appeared to while the Workshop copy was June's.
+>
+> **The only thing that answers the second question is the gproj PATH**, which is why
+> `deploy-staging.sh` asserts it and fails the deploy on it:
+>
+> ```bash
+> bash scripts/mod/deploy-staging.sh --verify-boot <console.log>   # verdict on a log you have
+> bash scripts/mod/deploy-staging.sh --verify-boot-selftest        # proves the verdict can FAIL
+> ```
+>
+> Do not replace the path assertion with a line count, and do not "restore" a count threshold as
+> a pass criterion. Both were tried; the table above is what happened.
+>
+> **4. `TBD_SCENARIO`'s default was silently truncated** (fixed). The line read
+> `: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/TBD_Dev_POC.conf}"`, and bash ends the parameter
+> expansion at the `}` of the ResourceGUID — so the default was `{69A85365FC09E2CA` and the rest
+> was discarded. Any deploy that did not override `TBD_SCENARIO` in `deploy.env` rendered a config
+> the engine hard-rejects (`Value of "#/game/scenarioId" does not match the required pattern` →
+> `Unable to initialize the game`), ~90 s into a boot. The renderer now validates `scenarioId`
+> against the engine's own regex before anything is pushed.
+
+**Join status (2026-06-14, superseded by the boxes above).** Staging runs **`-config` mode**
+(`TBD_SERVER_MODE=config`, now the default in `deploy-staging.sh`) — but with `-addonsDir`
+alongside it, so it serves **the deployed checkout**, not the Workshop copy (T-607). The claim
+that config mode "requires a Workshop publish" is **false**: it was measured on `-addons`.
+**`-addons` is not `-addonsDir`, and that distinction is the whole fix (T-604).**
 
 > **Status (2026-07-02, T-128): gates V2–V4 are BLOCKED on T-092.** `GET /api/missions/:id/compiled` and `GET /api/game/events/:id/roster` existed only in the Phase-0 REST spike backend, since removed — the current backend serves `/api/v1` only, so those curls return **404** (not 200, and no 401 auth gate). The 2026-06-14 pass ran against the spike. Real game-server routes ship with **T-092** ([`t092_spawn_transform_program.md`](../specs/Mission_Creator_Architecture/t092_spawn_transform_program.md)); until then `deploy-staging.sh` **skips** the V2–V4 smoke unless `TBD_RUN_T092_SMOKE=1`. The mission **file fallback** (`$profile:missions/`) is unaffected.
 
@@ -301,9 +382,10 @@ Flow: validate mission JSON → rsync → profile + addon symlink → Docker reb
 | V3 Roster | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/game/events/b0000000-0000-4000-8000-000000000001/roster` | **BLOCKED on T-092** — route not registered; currently 404 (target: HTTP 200) |
 | V4 Auth gate | SSH: unauthenticated compiled URL | **BLOCKED on T-092** — currently 404 (target: HTTP 401) |
 | V5 Game listening | SSH: `ss -ulnp \| grep -E '2001\|17777'` — **both** game (2001) and A2S (17777) bound | yes |
-| V6 Game logs | `bash scripts/mod/remote-log-grep.sh` | exit **0** (player seated) or **2** (booted, nobody joined yet). **1** = fail, **3** = log unreachable |
+| V6 Game logs | `bash scripts/mod/remote-log-grep.sh` | exit **0** (player seated) or **2** (booted, nobody joined yet). **1** = fail, **3** = log unreachable. **2 is not a failure** — see the exit contract below |
 | V7 Server healthy (not crashed) | log reaches LOBBY (`[TBD][Stage]` … `LOBBY`) and has **no** `Unable to start replication` | yes |
-| V8 Client join | `-config` + **Workshop** mod only (see "Client join"); log shows `Server registered with address:`, then Direct Connect `192.168.0.140:2001` | spawn at slot + kit |
+| **V9 Right build, joinable, admin-capable** (T-607) | `bash scripts/mod/deploy-staging.sh --verify-boot <console.log>` — run automatically at the end of every config-mode deploy | exit **0**. Asserts the **deployed checkout** won (not the Workshop copy), a room registered, and the engine accepted the config carrying `game.admins[]` |
+| V8 Client join | `-addonsDir` + `-config` (no publish needed for the SERVER); log shows `Server registered with address:`, then Direct Connect `192.168.0.140:2001` | spawn at slot + kit |
 
 ### Game log pass criteria
 
@@ -441,27 +523,43 @@ restart it). Standard Reforger layout: **2001 game / 17777 A2S / 19999 RCON.**
 
 `-server` + `-addons` (local mod) is useful for headless **log verification**
 (`[TBD][Mission] loaded id=`, one `[TBD][Slots] Slot-` per slot, `[TBD][Stage]` … `LOBBY`) but is
-**not joinable** — see the box above. Joining needs the `-config` + Workshop path.
+**not joinable and has no admins** — measured again 2026-08-01: zero `Server registered with
+address:`, zero `Direct Join Code:`, zero `Loading dedicated server config`, in a log that
+reached LOBBY with the right addon loaded. Joining needs **`-config`** — alongside
+**`-addonsDir`**, which is what makes it serve your checkout rather than the Workshop copy.
+No Workshop publish is required for the server (T-604/T-607).
 
 ---
 
 ## Dev loop — updating the mod after a script change
 
-The config-mode server runs the **Workshop** copy, so script changes require a re-publish:
+**The SERVER no longer needs a re-publish** (T-607). Since config mode carries `-addonsDir`, the
+deployed checkout is what runs — so a script change reaches the server with a plain redeploy:
 
 1. **Verify compile in Workbench** (the local server's compile check skips new files — see
    Troubleshooting): MCP `wb_connect` → `wb_reload {scripts}` → grep the WB log for `Can't compile`.
-2. **Publish** in Workbench (File → Workshop Member Area → Publish; bumps the version, same modId
+2. **Redeploy:** `bash scripts/mod/deploy-staging.sh`. The rsynced checkout is what loads, and the
+   deploy now **asserts** that before reporting success (V9). `game.admins[]` comes from
+   `TBD_ADMIN_IDENTITY_IDS`.
+3. **Test:** Direct Join → play.
+
+**The CLIENT is the part that still needs a publish.** The server advertises
+`game.mods[] = [B2C3D4E5F6A78901]` and a joining client resolves that id from the **Workshop**, so
+a client can be running a different build from the server it is on — the version skew described
+under "Client join". Re-publish when a script change must reach *players*, not merely the server:
+
+1. **Publish** in Workbench (File → Workshop Member Area → Publish; bumps the version, same modId
    = gproj GUID `B2C3D4E5F6A78901`). ⚠️ Set the **License** to a real file, **not** a stray config
    (a PrairieLearn-secrets `license.txt` was leaked this way — see CLAUDE-CONTINUATION.md §6).
-3. **Clear the read-only** the publish causes: `rm tbd-framework/{data.pak,meta,ServerData.json,*_manifest.json}`
+2. **Clear the read-only** the publish causes: `rm tbd-framework/{data.pak,meta,ServerData.json,*_manifest.json}`
    (gitignored), restart the Launcher.
-4. **Redeploy:** `bash scripts/mod/deploy-staging.sh` (with `TBD_SERVER_MODE=config`) — the server
-   re-downloads the new version and applies `game.admins[]` from `TBD_ADMIN_IDENTITY_IDS`.
-5. **Test:** Direct Join → the client pulls the update → play.
 
-For fast iteration that doesn't need a publish, deploy in `TBD_SERVER_MODE=addons` (local mod,
-headless log verification only — not joinable).
+⚠️ **Publishing does not update the server, and it can mask a broken deploy.** After a publish the
+Workshop copy is current, so a server that resolved the mod from the Workshop instead of from your
+checkout would still *look* right. That is the trap V9 exists to catch — do not treat a green log
+after a publish as evidence that `-addonsDir` is working.
+
+`TBD_SERVER_MODE=addons` is for headless log verification only — **not joinable, no admins.**
 
 ---
 
@@ -479,6 +577,24 @@ bash scripts/mod/mcp-call.sh wb_stop '{}'
 
 Or: `bash scripts/mod/tbd-spawn-verify.sh`
 
+> **Exit contract — do not read `!= 0` as failure (T-612).** `mcp-wb-logs.sh` and
+> `tbd-spawn-verify.sh` (and `remote-log-grep.sh`, same four outcomes) return:
+>
+> | Code | Meaning |
+> |---|---|
+> | **0** | PASS |
+> | **2** | **PARTIAL** — healthy boot, just nothing to seat yet. **Not a failure.** |
+> | **1** | FAIL — a required line is missing, or an error class is present |
+> | **3** | ENVIRONMENT — no log was examined, so it says **nothing** about the mod |
+>
+> A `!= 0` test turns a correct headless **PARTIAL** into a break, and — worse — turns a **3**
+> into something a reader may wave through. Both scripts were **fully inverted** before T-612:
+> on a real healthy boot the old `mcp-wb-logs.sh` printed `FAIL: expected TBD spawn lines
+> missing` and exited 1, while on a stale June-era log it printed `PASS` and exited 0. It passed
+> **only** when the mod was wrong. That is the same defect T-607 fixed in `deploy-staging.sh`, and
+> staging runs these — so a deploy could go green on a check that only worked on a stale build.
+> `deploy-staging.sh` now switches on the code explicitly rather than inheriting it.
+
 `.cursor/mcp.json` should set `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH`, `ENFUSION_PROJECT_PATH` (parity with `.mcp.json`).
 
 ---
@@ -487,7 +603,10 @@ Or: `bash scripts/mod/tbd-spawn-verify.sh`
 
 | Symptom | Fix |
 |---------|-----|
-| **Direct Join "No server found"** | Expected with `-server`+`-addons` (no backend room). Direct Join needs a server launched with **`-config`** so it registers a room (`Server registered with address:` in the log). See "Client join" above — requires Workshop publish. |
+| **Direct Join "No server found"** | Expected with `-server`+`-addons` (no backend room). Direct Join needs **`-config`** so the server registers a room (`Server registered with address:` in the log). **No Workshop publish needed for the server** — pair `-config` with `-addonsDir` (T-604/T-607). |
+| **Staging "passes" but behaves like old code** | The server resolved the mod from the **Workshop**, not from your checkout — the `-addonsDir` flag is missing from the unit. Check `systemctl --user cat tbd-reforger.service \| grep ExecStart`; it must carry **both** `-addonsDir` and `-config`. Confirm with `deploy-staging.sh --verify-boot <console.log>`. A `[TBD][` line count will **not** catch this (T-607). |
+| **`#tbd` answers "TBD: admin only." for everyone** | `game.admins[]` is empty, or the server is in `addons` mode (which loads no config at all, so it can never have admins). Set `TBD_ADMIN_IDENTITY_IDS` in `deploy.env` and use config mode. `passwordAdmin` is a **different** mechanism and does not feed that list. |
+| **`Unable to initialize the game` right after `Server config loaded`** | Look for `does not match the required pattern` — usually `game.scenarioId`. If the value stops right after the GUID (`{69A85365FC09E2CA`), `TBD_SCENARIO` was truncated by brace parsing in the shell (fixed in T-607; the renderer now rejects it locally). |
 | Server dies with `Unable to start replication` | `a2sPort` equals `bindPort` (e.g. both `2001`). Set `-a2sPort 17777` (≠ game port) and restart. The `Starting RPL server … 2001` line is printed even on this failure — check for the `(E)` line right after. |
 | Server exits but systemd won't restart it | Failed init exits **status 0**, so `Restart=on-failure` ignores it. Fix the underlying error (usually the a2sPort collision above). |
 | WiFi server + LAN client | Not the issue if same subnet and `ping 192.168.0.140` works — a WiFi host just triggers a "High ping server" warning on join. |
@@ -522,21 +641,26 @@ grep -E 'SEARCHING_SERVER|SERVER_NOT_FOUND|MANUAL_CONNECT|connect' "$LOG"
 
 ---
 
-## Phase B — REQUIRED for any client join (no longer optional)
+## Phase B — what a client join actually needs
 
-Verified 2026-06-14: clients can only Direct Join a server that registers a backend room,
-which only `-config` mode does. So these are prerequisites to a playable client, not "nice
-to have later":
+**Rewritten 2026-08-01 (T-607).** The 2026-06-14 version of this section listed a Workshop
+publish as a prerequisite for a joinable server. That was measured on `-addons` and is **wrong**
+for `-addonsDir`. Still true: clients can only Direct Join a server that registers a backend
+room, and only `-config` does that.
 
-- **Workshop Dev publish** of `tbd-framework` → real Workshop modId (≠ local GUID).
-- **`-config` server mode** (`scripts/tbd-staging-server.config.json`) referencing that
-  Workshop modId; `a2s.port` 17777, `battlEye:false`. Switch `tbd-reforger.service` /
-  `deploy-staging.sh` from `-server`+`-addons` to `-config`.
-- Public internet / TLS / Discord OAuth on staging (still genuinely deferred).
+Current state:
+
+- ✅ **`-config` server mode** — done. `deploy-staging.sh` defaults to it and pairs it with
+  `-addonsDir`, so the server registers a room *and* runs the deployed checkout.
+- ✅ **Workshop publish is NOT required for the server.** It is still required for a **client** to
+  resolve `game.mods[]` — see the version-skew warning under "Client join".
+- ⏳ **A second machine actually joining has still never been observed.** Server-side is proven;
+  the client side is not. The cheapest discriminator once someone connects is `#tbd` in chat.
+- ⏳ Public internet / TLS / Discord OAuth on staging (still genuinely deferred).
 
 A vanilla `-config` server (Game Master Arland) was confirmed Direct-Joinable by IP from the
-Proton client on 2026-06-14 — proving the LAN, firewall, version, and backend connectivity
-are all fine; the only gap is publishing the mod.
+Proton client on 2026-06-14 — proving the LAN, firewall, version, and backend connectivity are
+all fine.
 
 ---
 
@@ -544,8 +668,9 @@ are all fine; the only gap is publishing the mod.
 
 | Script | Purpose |
 |--------|---------|
-| [`scripts/mod/deploy-staging.sh`](../../scripts/mod/deploy-staging.sh) | Full deploy pipeline |
-| [`scripts/mod/remote-log-grep.sh`](../../scripts/mod/remote-log-grep.sh) | SSH log verification |
+| [`scripts/mod/deploy-staging.sh`](../../scripts/mod/deploy-staging.sh) | Full deploy pipeline. Local-only entry points that touch no server: `--dry-run`, `--render-only <path>`, `--render-agent <dir>`, `--agent-selftest <dir>`, **`--verify-boot <console.log>`**, **`--verify-boot-selftest`** |
+| [`scripts/mod/run-playtest-server.sh`](../../scripts/mod/run-playtest-server.sh) | Boot a joinable, mod-loaded, admin-capable server **locally** (T-604). The reference for the `-addonsDir` + `-config` shape staging now uses |
+| [`scripts/mod/remote-log-grep.sh`](../../scripts/mod/remote-log-grep.sh) | SSH log verification. Four outcomes — **0 / 1 / 2=PARTIAL / 3=ENV**; `!= 0` is not "failed" |
 | [`scripts/mod/bootstrap-staging-server.sh`](../../scripts/mod/bootstrap-staging-server.sh) | Discovery + mkdir |
 | [`scripts/mod/setup-server-profile.sh`](../../scripts/mod/setup-server-profile.sh) | Profile + mission fallback |
 | [`scripts/mod/setup-client-addons.sh`](../../scripts/mod/setup-client-addons.sh) | Client mod symlink + Steam launch options |
