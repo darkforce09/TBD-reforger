@@ -423,6 +423,84 @@ fn t534_per_binary_database_name() {
     );
 }
 
+/// Index just past the Rust literal that opens at `bytes[i]`, or `None` when none does.
+///
+/// Handles `"…"`, `r"…"` / `r#"…"#` (any hash count), the `b` / `c` prefixes, and char
+/// literals `'x'` / `'\n'`. A `'` that introduces a **lifetime** (`&'static str`) opens
+/// nothing — that is the T-569 finding, and this module's own copy of the comment
+/// stripper still had the bug it names: on `src/handlers/dev.rs` the `'` of
+/// `-> &'static str` opened a char span that ran to the `'` of `'Dev Operator'` sixty
+/// lines later, so every `//` comment in between survived "comment-stripped" source and
+/// brace depth over that span was fiction. [`rust_fn_body`] now needs that depth to be
+/// real (T-571), so the lexing is shared rather than approximated twice.
+fn rust_literal_end(bytes: &[u8], i: usize) -> Option<usize> {
+    let n = bytes.len();
+    if i >= n {
+        return None;
+    }
+    // Char literal vs lifetime: `'a` / `'static` are lifetimes; `'x'` and `'\n'` are not.
+    if bytes[i] == b'\'' {
+        let escaped = bytes.get(i + 1) == Some(&b'\\');
+        let single = bytes.get(i + 2) == Some(&b'\'');
+        if !escaped && !single {
+            return None; // lifetime (or a lone quote) — consumes nothing
+        }
+        let mut j = i + 1;
+        while j < n {
+            if bytes[j] == b'\\' && j + 1 < n {
+                j += 2;
+                continue;
+            }
+            if bytes[j] == b'\'' {
+                return Some(j + 1);
+            }
+            j += 1;
+        }
+        return Some(n);
+    }
+    // Not mid-identifier (`foo_r"…"` is not a raw string at the `r`).
+    if i > 0 && (bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_') {
+        return None;
+    }
+    let mut p = i;
+    if matches!(bytes.get(p), Some(b'b' | b'c')) && matches!(bytes.get(p + 1), Some(b'r' | b'"')) {
+        p += 1;
+    }
+    let mut hashes = 0usize;
+    let raw = bytes.get(p) == Some(&b'r');
+    if raw {
+        p += 1;
+        while bytes.get(p) == Some(&b'#') {
+            hashes += 1;
+            p += 1;
+        }
+    }
+    if bytes.get(p) != Some(&b'"') {
+        return None;
+    }
+    let mut j = p + 1;
+    if raw {
+        while j < n {
+            if bytes[j] == b'"' && (1..=hashes).all(|h| bytes.get(j + h) == Some(&b'#')) {
+                return Some(j + 1 + hashes);
+            }
+            j += 1;
+        }
+        return Some(n);
+    }
+    while j < n {
+        if bytes[j] == b'\\' && j + 1 < n {
+            j += 2;
+            continue;
+        }
+        if bytes[j] == b'"' {
+            return Some(j + 1);
+        }
+        j += 1;
+    }
+    Some(n)
+}
+
 /// Strip `//` line and `/* */` block comments outside string/char literals.
 ///
 /// T-560: Class-R that greps raw source for `COALESCE(arma_id` is hollow — a comment
@@ -433,32 +511,21 @@ fn t534_per_binary_database_name() {
 /// and needles parked inside SQL string literals keep a naive `contains` green. Use
 /// [`sqlx_queries_have_arma_coalesce_update`] on payloads from the live first-create
 /// fn ([`rust_fn_body`] of `dev_login`) after SQL-comment + string-literal strip.
+///
+/// T-571: literal spans come from [`rust_literal_end`] now — raw strings are copied
+/// whole (a `//` inside `r#"…"#` is text, not a comment) and a lifetime no longer opens
+/// a sixty-line char span across the file.
 fn strip_rust_comments_outside_literals(src: &str) -> String {
     let bytes = src.as_bytes();
     let mut out = String::with_capacity(src.len());
     let mut i = 0;
-    let mut in_string = false;
-    let mut string_delim = b'"';
     while i < bytes.len() {
         let c = bytes[i];
-        if in_string {
-            out.push(c as char);
-            if c == b'\\' && i + 1 < bytes.len() {
-                out.push(bytes[i + 1] as char);
-                i += 2;
-                continue;
+        if let Some(end) = rust_literal_end(bytes, i) {
+            for &b in &bytes[i..end] {
+                out.push(b as char);
             }
-            if c == string_delim {
-                in_string = false;
-            }
-            i += 1;
-            continue;
-        }
-        if c == b'"' || c == b'\'' {
-            in_string = true;
-            string_delim = c;
-            out.push(c as char);
-            i += 1;
+            i = end;
             continue;
         }
         if c == b'/' && i + 1 < bytes.len() && bytes[i + 1] == b'/' {
@@ -482,11 +549,68 @@ fn strip_rust_comments_outside_literals(src: &str) -> String {
     out
 }
 
+/// Byte length of the PostgreSQL dollar-quote delimiter opening at `bytes[i]`
+/// (`$$` → 2, `$decoy$` → 7), or `None` when one does not open there.
+///
+/// **T-571.** `$$…$$` / `$tag$…$tag$` is a string literal in PostgreSQL exactly as `'…'`
+/// is, and [`blank_sql_string_literal_contents`] knew only about `'` and `"` — so
+/// `sqlx::query("SELECT $d$UPDATE users SET arma_id = COALESCE(arma_id, $2)$d$")` reached
+/// the needle match with its payload intact and kept the pin green over a SELECT.
+///
+/// The tag rule is PostgreSQL's own: empty, or `[A-Za-z_][A-Za-z0-9_]*`. That is what
+/// keeps the crate's real `$1` / `$2` bind placeholders from being read as delimiters —
+/// a digit cannot start a tag, so `$2), updated_at` is not an opener and the live UPDATE
+/// is unaffected.
+fn pg_dollar_delim_len(bytes: &[u8], i: usize) -> Option<usize> {
+    if bytes.get(i) != Some(&b'$') {
+        return None;
+    }
+    if bytes.get(i + 1) == Some(&b'$') {
+        return Some(2);
+    }
+    let mut j = i + 1;
+    if !bytes
+        .get(j)
+        .is_some_and(|c| c.is_ascii_alphabetic() || *c == b'_')
+    {
+        return None;
+    }
+    while bytes
+        .get(j)
+        .is_some_and(|c| c.is_ascii_alphanumeric() || *c == b'_')
+    {
+        j += 1;
+    }
+    if bytes.get(j) == Some(&b'$') {
+        Some(j + 1 - i)
+    } else {
+        None
+    }
+}
+
+/// End index (exclusive) of the dollar-quoted literal opening at `i`, or `None` when the
+/// delimiter is never repeated — an unclosed `$tag$` is not a literal, so it is left alone
+/// rather than swallowing the rest of the payload.
+fn pg_dollar_literal_end(bytes: &[u8], i: usize, delim_len: usize) -> Option<usize> {
+    let delim = &bytes[i..i + delim_len];
+    let mut j = i + delim_len;
+    while j + delim_len <= bytes.len() {
+        if &bytes[j..j + delim_len] == delim {
+            return Some(j + delim_len);
+        }
+        j += 1;
+    }
+    None
+}
+
 /// Strip SQL `--` line and `/* */` block comments outside string literals.
 ///
 /// T-565: a `sqlx::query("SELECT 1 -- SET arma_id = COALESCE…")` decoy kept the T-562
 /// pin green after the real UPDATE was deleted. Comment-strip the SQL payload before
 /// matching the first-create UPDATE shape.
+///
+/// T-571: dollar-quoted literals are copied whole, so a `--` *inside* one cannot eat its
+/// closing delimiter and leave the literal unrecognised by the blanker downstream.
 fn strip_sql_comments_outside_literals(sql: &str) -> String {
     let bytes = sql.as_bytes();
     let mut out = String::with_capacity(sql.len());
@@ -494,6 +618,16 @@ fn strip_sql_comments_outside_literals(sql: &str) -> String {
     let mut in_quote: Option<u8> = None;
     while i < bytes.len() {
         let c = bytes[i];
+        if in_quote.is_none()
+            && let Some(dl) = pg_dollar_delim_len(bytes, i)
+            && let Some(end) = pg_dollar_literal_end(bytes, i, dl)
+        {
+            for &b in &bytes[i..end] {
+                out.push(b as char);
+            }
+            i = end;
+            continue;
+        }
         if let Some(q) = in_quote {
             out.push(c as char);
             if c == b'\\' && i + 1 < bytes.len() {
@@ -534,17 +668,38 @@ fn strip_sql_comments_outside_literals(sql: &str) -> String {
     out
 }
 
-/// Blank interiors of SQL `'…'` / `"…"` literals (keep the delimiters).
+/// Blank interiors of SQL `'…'` / `"…"` / `$tag$…$tag$` literals (keep the delimiters).
 ///
 /// T-568 W66 DIRTY MAJOR: after T-565's comment strip, a SELECT whose WHERE clause
 /// embeds `'UPDATE users SET arma_id = COALESCE…'` still matched the UPDATE needle —
 /// string-literal contents survive comment strip. Blank them before the shape check.
+///
+/// T-571 W67 DIRTY MAJOR: the same decoy in PostgreSQL's *other* string-literal syntax
+/// walked straight through, because this function knew only the two quote characters.
+/// `$decoy$UPDATE users SET arma_id = COALESCE(arma_id, $2)$decoy$` inside a SELECT kept
+/// the pin green with no live UPDATE anywhere. Dollar quoting is handled here now (see
+/// [`pg_dollar_delim_len`] for why `$1` / `$2` binds are not delimiters).
 fn blank_sql_string_literal_contents(sql: &str) -> String {
     let bytes = sql.as_bytes();
     let mut out = String::with_capacity(sql.len());
     let mut i = 0;
     while i < bytes.len() {
         let c = bytes[i];
+        if let Some(dl) = pg_dollar_delim_len(bytes, i)
+            && let Some(end) = pg_dollar_literal_end(bytes, i, dl)
+        {
+            for &b in &bytes[i..i + dl] {
+                out.push(b as char);
+            }
+            for _ in i + dl..end - dl {
+                out.push(' ');
+            }
+            for &b in &bytes[end - dl..end] {
+                out.push(b as char);
+            }
+            i = end;
+            continue;
+        }
         if c == b'\'' || c == b'"' {
             let q = c;
             out.push(c as char);
@@ -580,15 +735,72 @@ fn flatten_sql_ws(sql: &str) -> String {
     sql.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
-/// Brace-balanced body of `fn {name}` in comment-stripped source (opening `{` … matching `}`).
+/// Brace-balanced body of the **file-scope** item `fn {name}` in comment-stripped source
+/// (opening `{` … matching `}`).
 ///
 /// T-568: the COALESCE pin must bind to the live first-create path (`dev_login`), not a
 /// dead sibling helper that retains the UPDATE while the executed path uses `$2`.
+///
+/// # T-571 — first textual match was not the item
+///
+/// W67 walked around T-568 with a *nested* definition:
+///
+/// ```text
+/// mod decoy { async fn dev_login() { sqlx::query("UPDATE users SET arma_id = COALESCE…"); } }
+/// pub async fn dev_login(…) { …live path uses `SET arma_id = $2`… }
+/// ```
+///
+/// `str::find` returns the decoy, so the pin read the decoy's body, found the needle, and
+/// reported success over source it never examined — with the live UPDATE gone. The fix is
+/// not a ban on the word `mod`: the pin *meant* the file-scope item all along, so this
+/// counts braces (skipping literals via [`rust_literal_end`]) and considers only markers at
+/// **depth 0**. Anything nested inside a `mod`, `impl`, `fn` or block is not the item the
+/// crate calls, by construction rather than by enumeration.
+///
+/// Requiring exactly one such definition costs nothing — two file-scope `fn dev_login`s do
+/// not compile — and turns "which one did it read?" into a named failure.
 fn rust_fn_body<'a>(code: &'a str, name: &str) -> &'a str {
     let marker = format!("fn {name}");
-    let start = code
-        .find(&marker)
-        .unwrap_or_else(|| panic!("T-568 Class-R: expected `{marker}` in comment-stripped source"));
+    let m = marker.as_bytes();
+    let bytes = code.as_bytes();
+    let mut depth = 0i32;
+    let mut i = 0usize;
+    let mut starts: Vec<usize> = Vec::new();
+    while i < bytes.len() {
+        if let Some(end) = rust_literal_end(bytes, i) {
+            i = end;
+            continue;
+        }
+        match bytes[i] {
+            b'{' => depth += 1,
+            b'}' => depth -= 1,
+            _ => {
+                if depth == 0
+                    && bytes[i..].starts_with(m)
+                    && (i == 0 || !(bytes[i - 1].is_ascii_alphanumeric() || bytes[i - 1] == b'_'))
+                    && bytes
+                        .get(i + m.len())
+                        .is_none_or(|c| !(c.is_ascii_alphanumeric() || *c == b'_'))
+                {
+                    starts.push(i);
+                }
+            }
+        }
+        i += 1;
+    }
+    let start = match starts.as_slice() {
+        [only] => *only,
+        [] => panic!(
+            "T-568/T-571 Class-R: no FILE-SCOPE `{marker}` in comment-stripped source. A \
+             definition nested in a `mod`/`impl`/block is not the item the crate calls — the \
+             pin binds to the top-level one on purpose."
+        ),
+        many => panic!(
+            "T-571 Class-R: {} file-scope `{marker}` definitions (offsets {many:?}) — a Rust \
+             file cannot have two, so this source is not what the crate compiles.",
+            many.len()
+        ),
+    };
     let after = &code[start..];
     let open = after
         .find('{')
@@ -596,30 +808,14 @@ fn rust_fn_body<'a>(code: &'a str, name: &str) -> &'a str {
     let bytes = after.as_bytes();
     let mut depth = 0i32;
     let mut i = open;
-    let mut in_string = false;
-    let mut string_delim = b'"';
     while i < bytes.len() {
-        let c = bytes[i];
-        if in_string {
-            if c == b'\\' && i + 1 < bytes.len() {
-                i += 2;
-                continue;
-            }
-            if c == string_delim {
-                in_string = false;
-            }
-            i += 1;
+        if let Some(end) = rust_literal_end(bytes, i) {
+            i = end;
             continue;
         }
-        if c == b'"' || c == b'\'' {
-            in_string = true;
-            string_delim = c;
-            i += 1;
-            continue;
-        }
-        if c == b'{' {
+        if bytes[i] == b'{' {
             depth += 1;
-        } else if c == b'}' {
+        } else if bytes[i] == b'}' {
             depth -= 1;
             if depth == 0 {
                 return &after[open..=i];
@@ -897,6 +1093,138 @@ fn t568_coalesce_pin_rejects_dead_helper_and_sql_string_literal() {
     );
 }
 
+/// T-571: the two W67 attacks the ticket names, and the two invented while fixing them.
+///
+/// Attacks 1 and 2 are **lexical** defects and are fixed here, because a lexer that mistakes
+/// a nested item for a file-scope one, or misses one of PostgreSQL's two string-literal
+/// syntaxes, is simply wrong about its input. Attacks 4 and 5 are **reachability** defects
+/// and are *not* fixed here — see [`t534_dev_login_prime_literals_still_match_handler`] for
+/// the shapes this pin still admits and for the runtime test that is the actual authority.
+#[test]
+fn t571_pin_binds_file_scope_dev_login_and_blanks_pg_dollar_quotes() {
+    // ── T-571 attack 1 (named): a nested `fn dev_login` decoy wins `str::find` ────────
+    let nested = r##"
+        mod decoy {
+            pub async fn dev_login() {
+                sqlx::query(
+                    "UPDATE users SET arma_id = COALESCE(arma_id, $2), updated_at = now() \
+                     WHERE discord_id = $1",
+                );
+            }
+        }
+        pub async fn dev_login() {
+            sqlx::query("UPDATE users SET arma_id = $2, updated_at = now() WHERE discord_id = $1");
+        }
+    "##;
+    let code = strip_rust_comments_outside_literals(nested);
+    let first = code
+        .find("fn dev_login")
+        .expect("fixture sanity: decoy present");
+    let live = code
+        .rfind("fn dev_login")
+        .expect("fixture sanity: live present");
+    assert!(first < live, "fixture sanity: the decoy is textually first");
+    // `code[first..live]` is exactly what the pre-T-571 `str::find` rule handed the scanner.
+    assert!(
+        sqlx_queries_have_arma_coalesce_update(&sqlx_query_string_payloads(&code[first..live])),
+        "fixture sanity: the first-match body is the decoy's and carries the COALESCE UPDATE \
+         (this is the measured W67 hollow green)"
+    );
+    let body = rust_fn_body(&code, "dev_login");
+    assert!(
+        body.contains("SET arma_id = $2"),
+        "T-571: rust_fn_body must bind the FILE-SCOPE item, not the nested decoy; got:\n{body}"
+    );
+    assert!(
+        !sqlx_queries_have_arma_coalesce_update(&sqlx_query_string_payloads(body)),
+        "T-571: nested `mod decoy {{ fn dev_login }}` + live `SET arma_id = $2` must go RED"
+    );
+
+    // ── T-571 attack 2 (named): PostgreSQL dollar-quoting hides the needle in a SELECT ─
+    let dollar = r##"
+        pub async fn dev_login() {
+            sqlx::query(
+                "SELECT 1 WHERE $decoy$UPDATE users SET arma_id = COALESCE(arma_id, $2)$decoy$ <> 'x'",
+            );
+        }
+    "##;
+    let code = strip_rust_comments_outside_literals(dollar);
+    let payloads = sqlx_query_string_payloads(rust_fn_body(&code, "dev_login"));
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.contains("UPDATE users SET arma_id = COALESCE(arma_id")),
+        "fixture sanity: the raw payload still embeds the needle (only the blanker removes it)"
+    );
+    assert!(
+        !sqlx_queries_have_arma_coalesce_update(&payloads),
+        "T-571: a `$tag$…$tag$` needle inside a SELECT must go RED; got {payloads:?}"
+    );
+    // `$$…$$` (empty tag) is the same literal syntax and must behave the same way.
+    let anon = r##"
+        pub async fn dev_login() {
+            sqlx::query("SELECT $$UPDATE users SET arma_id = COALESCE(arma_id, $2)$$");
+        }
+    "##;
+    let anon_code = strip_rust_comments_outside_literals(anon);
+    assert!(
+        !sqlx_queries_have_arma_coalesce_update(&sqlx_query_string_payloads(rust_fn_body(
+            &anon_code,
+            "dev_login"
+        ))),
+        "T-571: `$$…$$` must be blanked exactly like `$tag$…$tag$`"
+    );
+
+    // ── No false RED: the live first-create UPDATE must still satisfy the pin ─────────
+    let live_src = r#"
+        pub async fn dev_login() {
+            sqlx::query(
+                "UPDATE users SET arma_id = COALESCE(arma_id, $2), updated_at = now() \
+                 WHERE discord_id = $1",
+            );
+        }
+    "#;
+    let live_code = strip_rust_comments_outside_literals(live_src);
+    assert!(
+        sqlx_queries_have_arma_coalesce_update(&sqlx_query_string_payloads(rust_fn_body(
+            &live_code,
+            "dev_login"
+        ))),
+        "T-571: the live COALESCE UPDATE must stay GREEN — `$1`/`$2` binds are not dollar quotes"
+    );
+
+    // Delimiter rule, stated directly: a digit cannot start a tag, so binds are safe.
+    assert_eq!(pg_dollar_delim_len(b"$2), updated_at = now()", 0), None);
+    assert_eq!(pg_dollar_delim_len(b"$1", 0), None);
+    assert_eq!(pg_dollar_delim_len(b"$$x$$", 0), Some(2));
+    assert_eq!(pg_dollar_delim_len(b"$decoy$x$decoy$", 0), Some(7));
+    assert_eq!(pg_dollar_delim_len(b"$_t9$x$_t9$", 0), Some(5));
+    // An unclosed delimiter is not a literal and must not swallow the rest of the payload.
+    assert_eq!(pg_dollar_literal_end(b"$d$abc", 0, 3), None);
+    assert_eq!(pg_dollar_literal_end(b"$d$abc$d$", 0, 3), Some(9));
+
+    // ── The lifetime bug this module still carried (T-569 fixed only its sibling copy) ─
+    // Pre-fix, the `'` of `&'static str` opened a char span that ran to the next `'` in the
+    // file, so every comment in between survived "comment-stripped" source and brace depth
+    // over that span was fiction — which the depth-0 rule above depends on.
+    let lifetimes = "fn f() -> &'static str { /* SWALLOWED */ \"kept\" }\n// GONE\n";
+    let stripped = strip_rust_comments_outside_literals(lifetimes);
+    assert!(
+        !stripped.contains("SWALLOWED") && !stripped.contains("GONE"),
+        "T-571: a lifetime must not open a char span; got:\n{stripped}"
+    );
+    assert!(
+        stripped.contains("\"kept\""),
+        "T-571: real string literals must survive the strip; got:\n{stripped}"
+    );
+    // A `//` inside a raw string is text, not a comment.
+    let raw = "let s = r#\"a // not a comment\"#;\n";
+    assert!(
+        strip_rust_comments_outside_literals(raw).contains("not a comment"),
+        "T-571: raw-string contents must survive comment strip"
+    );
+}
+
 /// Split a SQL column/value list on top-level commas (parens + quotes aware).
 fn split_sql_list(s: &str) -> Vec<String> {
     let mut out = Vec::new();
@@ -1037,6 +1365,39 @@ fn users_insert_arma_id_value(code: &str) -> Option<String> {
 /// unrelated `sqlx::query("SELECT … -- SET arma_id = COALESCE…")` payloads; T-568 closes
 /// dead-helper COALESCE + SQL string-literal needles that kept T-565 green while the
 /// live UPDATE was gone (both still raced `idx_users_arma_id`).
+///
+/// # T-571 — what this pin is, and what it is NOT
+///
+/// Six generations of this pin have now been walked around (T-560 → T-562 → T-565 → T-568
+/// → T-571), and every walk-around was one of two kinds:
+///
+/// * **Lexical** — the scanner was wrong about its input. A comment, a Rust string, a SQL
+///   `--`, a `'…'` literal, a *nested* `fn dev_login`, a `$tag$…$tag$` literal. Each of
+///   those is a bug with a correct answer, and each is fixed
+///   ([`rust_fn_body`], [`blank_sql_string_literal_contents`], [`rust_literal_end`],
+///   [`t571_pin_binds_file_scope_dev_login_and_blanks_pg_dollar_quotes`]).
+/// * **Reachability** — the scanner read the right text and the text does not run. **No
+///   amount of scanning fixes this one**, and this pin does not pretend to. Deciding
+///   whether a call site executes, from its source, is the halting problem in a costume.
+///
+/// **Shapes this pin still admits — measured, not guessed** (each keeps it GREEN while the
+/// first-create UPDATE never executes):
+///
+/// 1. `#[cfg(any())]` on the live `sqlx::query(…)` statement inside `dev_login`.
+/// 2. Any other never-true `cfg` on it — `#[cfg(all(unix, any()))]`,
+///    `#[cfg(feature = "nope")]`. (A literal-`#[cfg(any())]` blocklist is beaten by the
+///    whitespace alone; do not add one.)
+/// 3. `if false { … }` / `const NEVER: bool = false; if NEVER { … }` /
+///    `if std::hint::black_box(false) { … }` around it.
+/// 4. An early `return` / `?` above it.
+/// 5. A macro, `include!`, or a shadowed `sqlx` module that expands to something else.
+///
+/// **The authority is a runtime test, not this one.**
+/// `tests/misc_integration.rs::t571_dev_login_first_create_coalesces_arma_id` drives
+/// `GET /auth/dev-login` against a real database and asserts the COALESCE *semantics* on
+/// the row: a NULL `arma_id` is stamped, and an already-linked one survives. Dead code
+/// stamps nothing, so all five shapes above fail there by construction. Keep this pin as
+/// the fast, readable first failure that names the literals — not as the guarantee.
 #[test]
 fn t534_dev_login_prime_literals_still_match_handler() {
     let handler = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/handlers/dev.rs");
