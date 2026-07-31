@@ -41,6 +41,7 @@
     },
     "byKind": {
       "type": "object",
+      "description": "One census bucket per instance kind — map-object-enums.schema.json $defs.kind minus $defs.regionKind (regions are counted under byRegionKind, not here). T-594: `vehicle` (added to the kind enum by T-244) is a property but deliberately NOT in `required`, because golden/map-objects/type-inventory-pending-everon.json is a hand-authored pre-export fixture frozen at the eight pre-T-244 buckets and validates against this schema. An absent bucket is still caught: I1 (xtask schema type-inventory) sums only the buckets present against levels.totalInstances, so dropping a populated kind comes up short and fails. Adding a kind here without adding it to xtask/src/schema_gates.rs INSTANCE_KINDS is what made T-244 latent for a month; that array is now pinned to this enum by type_inventory()'s own lockstep check.",
       "required": [
         "building",
         "tree",
@@ -60,6 +61,7 @@
         "prop": { "$ref": "#/$defs/kindBucket" },
         "utility": { "$ref": "#/$defs/kindBucket" },
         "water": { "$ref": "#/$defs/kindBucket" },
+        "vehicle": { "$ref": "#/$defs/kindBucket" },
         "road": { "$ref": "#/$defs/roadBucket" }
       }
     },
