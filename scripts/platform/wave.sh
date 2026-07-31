@@ -2581,32 +2581,82 @@ cmd_revert() {
 # "go ahead" — that is the one direction where being wrong cannot be undone, because the remote is
 # shared. This is deliberately NOT symmetric with the false-positive fix above.
 
+# ── T-600 — EVERY COMMIT IN THE RANGE, AND EACH COMMIT'S OWN .gitattributes. ────────────────────
+#
+# T-599 fixed WHICH question this asks (check-attr, not path matching). It kept the wrong INPUT:
+# `git diff --name-only origin/main..HEAD` is the ENDPOINT diff, so a file living only in an
+# INTERMEDIATE commit — added, then deleted or renamed before HEAD — was never examined at all.
+# MEASURED in a scratch repo with this function sourced verbatim: a `.tbd-sat` added in commit 2 of
+# 3 and deleted in commit 3 gave `rc=0` and empty output — the guard ALLOWED the push. The commit
+# publishing that pointer still reaches the remote, and every later checkout, bisect or
+# `lfs fetch --all` of it breaks. A tool reporting success over an input it never read is the exact
+# failure this guard exists to prevent, so it is not acceptable that it was pre-existing.
+#
+# So walk `git rev-list <range>` and diff EACH commit. Two flags are load-bearing:
+#   -c      plain `diff-tree` prints NOTHING for a merge commit — trading one blind spot for
+#           another (an evil merge that adds an LFS file in the merge itself). `-c` reports what a
+#           merge introduced beyond ALL its parents, and is an ordinary diff on non-merges.
+#           MEASURED: evil-merge case goes empty without it, names the file with it.
+#   --root  a range containing the initial commit is otherwise silently empty.
+#
+# WHICH .gitattributes — HEAD'S, OR THE COMMIT'S OWN? THE COMMIT'S OWN, deliberately.
+# `.gitattributes` can change inside the range. If `filter=lfs` was in force when the file landed
+# and is gone by HEAD, check-attr at HEAD answers `unspecified` and the guard allows the push —
+# MEASURED, the same blind spot in a second disguise. The commit's own rule is also the CORRECT
+# predicate, not just the safer one: that rule is what decided whether git-lfs's clean filter ran,
+# i.e. whether the blob in that commit is a pointer needing an uploaded object or ordinary bytes.
+# HEAD's opinion of a historical blob is hearsay.
+#
+# It cuts both ways, and that is intended. A file committed as ordinary bytes BEFORE some later
+# commit in the range adds an lfs rule is NOT refused: its blob is real content, nothing was ever
+# cleaned, nothing needs uploading. Refusing it would be a fresh false positive of exactly the kind
+# T-599 removed — and the false-positive fix is the reason the guard is believed at all.
+#
+# Git is 2.39 here, so `check-attr --source=<tree-ish>` (2.40+) does not exist. `--cached` does, and
+# reads attributes from the index ONLY — so a throwaway GIT_INDEX_FILE filled by `read-tree <c>` is
+# that answer. MEASURED: HEAD says `unspecified` for the Case-7 path, the temp index says `lfs`.
+#
 # Print, one per line, every path in <range> that genuinely resolves to `filter: lfs`.
 # Empty output = nothing LFS in the range. rc 2 = COULD NOT TELL (never "nothing found").
 lfs_paths_in_range() {
-  local range="${1:-}" list attrs path value rc=0
+  local range="${1:-}" commits list attrs found idx c path value rc=0
   [ -n "$range" ] || return 2
-  list="$(mktemp)" || return 2
-  attrs="$(mktemp)" || { rm -f "$list"; return 2; }
-  # -z end to end: NUL-separated paths, so a filename containing a space, a quote or a newline
-  # cannot split into two entries and get another file's attribute pinned on it.
-  #
-  # --diff-filter=d EXCLUDES deletions (lowercase excludes; uppercase D would select only them).
-  # MEASURED on b5c1a8f7c: 4 files total, 3 deleted, `d` yields 1 and none of the 3. Deleting an
-  # LFS file uploads nothing and so cannot leave a dangling object — counting deletions would
-  # reintroduce a false refusal of exactly the kind this function exists to remove. Getting this
-  # flag backwards is the one edit here that fails OPEN, which is why it is measured and not
-  # assumed.
-  if git diff -z --name-only --diff-filter=d "$range" >"$list" 2>/dev/null \
-     && git check-attr -z --stdin filter <"$list" >"$attrs" 2>/dev/null; then
-    # `check-attr -z` emits NUL-separated triples: <path> <attr-name> <value>.
-    while IFS= read -r -d '' path && IFS= read -r -d '' _ && IFS= read -r -d '' value; do
-      [ "$value" = "lfs" ] && printf '%s\n' "$path"
-    done <"$attrs"
+  commits="$(mktemp)" || return 2
+  list="$(mktemp)"  || { rm -f "$commits"; return 2; }
+  attrs="$(mktemp)" || { rm -f "$commits" "$list"; return 2; }
+  found="$(mktemp)" || { rm -f "$commits" "$list" "$attrs"; return 2; }
+  idx="$(mktemp)"   || { rm -f "$commits" "$list" "$attrs" "$found"; return 2; }
+  # A bad range dies here, before anything is examined — rc 2, not "nothing found".
+  if git rev-list "$range" >"$commits" 2>/dev/null; then
+    while IFS= read -r c; do
+      # -z end to end: NUL-separated paths, so a filename containing a space, a quote or a newline
+      # cannot split into two entries and get another file's attribute pinned on it.
+      #
+      # --diff-filter=d EXCLUDES deletions (lowercase excludes; uppercase D would select only
+      # them). MEASURED on b5c1a8f7c: 4 files total, 3 deleted, `d` yields 1 and none of the 3.
+      # Deleting an LFS file uploads nothing and so cannot leave a dangling object — counting
+      # deletions would reintroduce a false refusal of exactly the kind this function exists to
+      # remove. Getting this flag backwards is the one edit here that fails OPEN, which is why it
+      # is measured and not assumed.
+      git diff-tree -z --no-commit-id --name-only -r -c --root --diff-filter=d "$c" \
+        >"$list" 2>/dev/null || { rc=2; break; }
+      # Attributes AS OF $c: a fresh index holding that commit's tree, read with --cached so the
+      # working tree's (i.e. HEAD's) .gitattributes cannot answer for a historical commit.
+      rm -f "$idx" "$idx.lock"
+      GIT_INDEX_FILE="$idx" git read-tree "$c" 2>/dev/null || { rc=2; break; }
+      GIT_INDEX_FILE="$idx" git check-attr --cached -z --stdin filter \
+        <"$list" >"$attrs" 2>/dev/null || { rc=2; break; }
+      # `check-attr -z` emits NUL-separated triples: <path> <attr-name> <value>.
+      while IFS= read -r -d '' path && IFS= read -r -d '' _ && IFS= read -r -d '' value; do
+        [ "$value" = "lfs" ] && printf '%s\n' "$path" >>"$found"
+      done <"$attrs"
+    done <"$commits"
   else
     rc=2
   fi
-  rm -f "$list" "$attrs"
+  # One line per path even when several commits touched it; nothing at all if we could not tell.
+  [ "$rc" -eq 0 ] && { sort -u "$found" || rc=2; }
+  rm -f "$commits" "$list" "$attrs" "$found" "$idx" "$idx.lock"
   return "$rc"
 }
 
@@ -2615,15 +2665,20 @@ cmd_push() {
   lfs="$(lfs_paths_in_range "$range")"; rc=$?
   if [ "$rc" -ne 0 ]; then
     echo "REFUSING --no-verify: could not determine LFS status for $range."
-    echo "        \`git diff\` or \`git check-attr\` failed, so this guard has no answer. It refuses"
-    echo "        rather than guessing — an unchecked --no-verify push is the unrecoverable one."
+    echo "        One of \`git rev-list\` / \`diff-tree\` / \`read-tree\` / \`check-attr\` failed, so this"
+    echo "        guard has no answer. It refuses rather than guessing — an unchecked --no-verify"
+    echo "        push is the unrecoverable one."
     return 1
   fi
   if [ -n "$lfs" ]; then
     n="$(printf '%s\n' "$lfs" | wc -l)"
-    echo "REFUSING --no-verify: $n file(s) in $range resolve to \`filter: lfs\`:"
+    echo "REFUSING --no-verify: $n file(s) in the commits of $range resolve to \`filter: lfs\`:"
     printf '%s\n' "$lfs" | sed 's/^/          /'
-    echo "        Check any of them yourself:  git check-attr filter -- <path>"
+    echo "        Find the commit that publishes one:  git log --oneline $range -- <path>"
+    echo "        Ask HEAD about it:                   git check-attr filter -- <path>"
+    echo "        HEAD may answer \`unspecified\` and this guard still be right: it asks each commit's"
+    echo "        OWN .gitattributes, because that is the rule that decided whether the blob in that"
+    echo "        commit is an LFS pointer. See lfs_paths_in_range above."
     echo "        git-lfs is absent here, so --no-verify would publish commits whose LFS objects"
     echo "        are never uploaded. Install git-lfs and push normally."
     return 1
