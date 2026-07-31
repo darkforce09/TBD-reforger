@@ -2759,6 +2759,323 @@ pub fn DockRight(
     }
 }
 
+/* ══════════════════════ T-582 — the zone draw tool (document half is T-211) ══════════════════════ */
+
+// T-211 shipped `zones` + eleven mutators on `MissionDocCore` and proved authored zones reach the
+// mod through flatten. It shipped NO product surface: before this slice a zone was authorable only
+// from native test code. T-581 then made authoring SAFE by refusing at save what `/compiled` would
+// refuse at serve — without it the first thing this tool would do is let an author permanently 500
+// their own mission, which is why T-582 was blocked on it.
+//
+// This block is the tool's PURE half: the rules vocabulary, the type vocabulary, the 0.1 m grid and
+// the two shape predicates. It is deliberately NOT `#[cfg(target_arch = "wasm32")]` — everything
+// here is plain arithmetic and JSON, so it compiles and TESTS on the native target, where
+// `cargo test -p website-frontend` can actually run it. The doc-mutating half lives in `editor_ops`
+// (wasm-only, because `MissionDocCore` is a wasm32-only dependency of this crate — see Cargo.toml).
+
+/// `mission.schema.json`, embedded so the rules panel is GENERATED from the vocabulary rather than
+/// from a list typed here.
+///
+/// ═══ WHY THIS IS AN `include_str!` AND NOT SIXTEEN `const`s ═══
+///
+/// `$defs/zoneRules` is `additionalProperties: false` over exactly sixteen keys, and T-241 closed it
+/// that way *specifically* so its four consumer tickets would not each invent their own copy. The
+/// schema's own prose says why: both mod readers are TYPED, so a key they do not declare is
+/// INVISIBLE to them — not rejected, not logged — which makes the schema "the ONLY place a
+/// misspelled rule key can be caught". `doc/store.rs` `set_zone_rules` stores the object OPAQUE for
+/// the same reason, and T-581 validates saves against these same bytes rather than restating them.
+///
+/// A hand-typed list of the sixteen keys in this file would be the second vocabulary all three of
+/// those went out of their way to avoid: it would drift the moment a key is added, it would silently
+/// omit a rule the schema declares, and — per T-216 — emitting a key the schema does NOT declare
+/// 500s `/compiled` for every mission. So the panel reads the vocabulary at runtime and renders
+/// whatever it finds. Add a key to `$defs/zoneRules` and the control appears with no edit here;
+/// remove one and it disappears. `zone_rule_fields_cover_the_whole_vocabulary` pins that property.
+///
+/// Cost: ~40 KB of JSON in the bundle, uncompressed, once. The alternative costs correctness.
+const MISSION_SCHEMA: &str =
+    include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
+
+/// One authored `rules` control, derived from one `$defs/zoneRules` property.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ZoneRuleField {
+    /// The schema property name — this IS the wire key; never re-spelled.
+    pub key: String,
+    pub kind: ZoneRuleKind,
+    /// The schema `description`, shown as the control's help text (the mod call sites are in there).
+    pub doc: String,
+}
+
+/// How to render a `$defs/zoneRules` property, read from its declared type/enum/bounds.
+#[derive(Clone, Debug, PartialEq)]
+pub enum ZoneRuleKind {
+    /// `type: boolean`. The schema's own note: absent and `false` are indistinguishable to the mod,
+    /// so the default IS what the author gets by writing nothing.
+    Bool { default: bool },
+    /// `type: string` + `enum` → a fixed option list (`penalty`, `onEmpty`).
+    Choice {
+        options: Vec<String>,
+        default: Option<String>,
+    },
+    /// `type: string` with no enum, possibly behind a `$ref` (`targetAlias` → `$defs/alias`).
+    Text {
+        default: Option<String>,
+        pattern: Option<String>,
+    },
+    /// `type: number` / `integer`, carrying whichever bounds the schema declares.
+    Number {
+        default: Option<f64>,
+        /// `minimum` (inclusive) — the reader's own `< 0` error branch.
+        minimum: Option<f64>,
+        /// `exclusiveMinimum` — e.g. `warnEverySeconds`, where 0 would mean "warn every frame".
+        exclusive_minimum: Option<f64>,
+        /// `maximum` — T-275 pinned these to the mod's sanity ceilings.
+        maximum: Option<f64>,
+        integer: bool,
+    },
+}
+
+/// Resolve a one-hop `$ref` into `#/$defs/*`. `targetAlias` is declared as a `$ref` to `$defs/alias`
+/// rather than inline, so a resolver that ignored `$ref` would render it as an untyped control and
+/// drop the alias `pattern` — the exact silent-omission this whole approach exists to prevent.
+fn resolve_ref<'a>(
+    schema: &'a serde_json::Value,
+    node: &'a serde_json::Value,
+) -> &'a serde_json::Value {
+    let Some(r) = node.get("$ref").and_then(serde_json::Value::as_str) else {
+        return node;
+    };
+    r.strip_prefix("#/$defs/")
+        .and_then(|name| schema.get("$defs").and_then(|d| d.get(name)))
+        .unwrap_or(node)
+}
+
+/// The `rules` vocabulary as controls, in schema declaration order (which groups play-area keys
+/// before objective keys — the order the schema author chose, not one re-imposed here).
+///
+/// Returns empty only if the embedded schema stops having `$defs/zoneRules/properties`, which
+/// `zone_rule_fields_cover_the_whole_vocabulary` fails loudly on rather than rendering a blank panel.
+#[must_use]
+pub fn zone_rule_fields() -> Vec<ZoneRuleField> {
+    let Ok(schema) = serde_json::from_str::<serde_json::Value>(MISSION_SCHEMA) else {
+        return Vec::new();
+    };
+    let Some(props) = schema
+        .get("$defs")
+        .and_then(|d| d.get("zoneRules"))
+        .and_then(|z| z.get("properties"))
+        .and_then(serde_json::Value::as_object)
+    else {
+        return Vec::new();
+    };
+    props
+        .iter()
+        .map(|(key, raw)| {
+            let node = resolve_ref(&schema, raw);
+            // `description` is read from the AUTHORED property, not the resolved `$ref` target:
+            // `targetAlias` documents its own role ("objective_destroy, and EFFECTIVELY REQUIRED
+            // there"), which the shared `$defs/alias` blurb does not.
+            let doc = raw
+                .get("description")
+                .or_else(|| node.get("description"))
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let default = raw.get("default").or_else(|| node.get("default"));
+            let ty = node.get("type").and_then(serde_json::Value::as_str);
+            let enum_opts = node.get("enum").and_then(serde_json::Value::as_array);
+            let kind = match (ty, enum_opts) {
+                (Some("boolean"), _) => ZoneRuleKind::Bool {
+                    default: default.and_then(serde_json::Value::as_bool).unwrap_or(false),
+                },
+                (_, Some(opts)) => ZoneRuleKind::Choice {
+                    options: opts
+                        .iter()
+                        .filter_map(|o| o.as_str().map(ToString::to_string))
+                        .collect(),
+                    default: default
+                        .and_then(serde_json::Value::as_str)
+                        .map(ToString::to_string),
+                },
+                (Some("number" | "integer"), _) => ZoneRuleKind::Number {
+                    default: default.and_then(serde_json::Value::as_f64),
+                    minimum: node.get("minimum").and_then(serde_json::Value::as_f64),
+                    exclusive_minimum: node
+                        .get("exclusiveMinimum")
+                        .and_then(serde_json::Value::as_f64),
+                    maximum: node.get("maximum").and_then(serde_json::Value::as_f64),
+                    integer: ty == Some("integer"),
+                },
+                _ => ZoneRuleKind::Text {
+                    default: default
+                        .and_then(serde_json::Value::as_str)
+                        .map(ToString::to_string),
+                    pattern: node
+                        .get("pattern")
+                        .and_then(serde_json::Value::as_str)
+                        .map(ToString::to_string),
+                },
+            };
+            ZoneRuleField {
+                key: key.clone(),
+                kind,
+                doc,
+            }
+        })
+        .collect()
+}
+
+/// The six `zone.type` values, read from `$defs/zone/properties/type/enum` for the same reason the
+/// rules are: `set_zone_type` writes whatever it is handed, and a seventh value typed here would
+/// save 201 and then 500 `/compiled` forever (T-581's measured failure, from the other side).
+#[must_use]
+pub fn zone_types() -> Vec<String> {
+    let Ok(schema) = serde_json::from_str::<serde_json::Value>(MISSION_SCHEMA) else {
+        return Vec::new();
+    };
+    schema
+        .get("$defs")
+        .and_then(|d| d.get("zone"))
+        .and_then(|z| z.get("properties"))
+        .and_then(|p| p.get("type"))
+        .and_then(|t| t.get("enum"))
+        .and_then(serde_json::Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str().map(ToString::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// A human label for a schema key/value token (`objective_hold_until` → "Objective hold until").
+/// Presentation only — the token itself is what reaches the document, never this string.
+#[must_use]
+pub fn humanize_token(token: &str) -> String {
+    let mut out = String::with_capacity(token.len());
+    for (i, part) in token.split('_').enumerate() {
+        if i > 0 {
+            out.push(' ');
+        }
+        let mut cs = part.chars();
+        if let Some(f) = cs.next() {
+            if i == 0 {
+                out.extend(f.to_uppercase());
+            } else {
+                out.push(f);
+            }
+            out.push_str(cs.as_str());
+        }
+    }
+    out
+}
+
+/// A camelCase schema key as a label (`warnEverySeconds` → "Warn every seconds").
+#[must_use]
+pub fn humanize_key(key: &str) -> String {
+    let mut out = String::with_capacity(key.len() + 4);
+    for (i, c) in key.chars().enumerate() {
+        if c.is_ascii_uppercase() {
+            if i > 0 {
+                out.push(' ');
+            }
+            out.extend(c.to_lowercase());
+        } else if i == 0 {
+            out.extend(c.to_uppercase());
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// One-decimal metre quantisation. **Mirrors `mission::flatten::round_coord`**, which is private
+/// there, pinned against its source by `zone_quantisation_mirrors_flatten` — the same guarded-mirror
+/// idiom `api/src/contract/validate.rs` uses for this exact line, and for the same reason: the bug
+/// class is DISAGREEMENT between two sites, so the copy is made to go red on drift rather than
+/// avoided by discipline.
+fn round_coord(v: f64) -> f64 {
+    (v * 10.0).round() / 10.0
+}
+
+/// Does a circle of radius `r` still have area once the compile quantises it?
+///
+/// ═══ WHY THE TOOL ASKS THIS AT ALL ═══
+///
+/// `flatten.rs` `round_coord` hits a circle's x/z/**r**, so the authored radius is not the compiled
+/// one. `round_coord(0.04) == 0.0`, and `0.0` violates `$defs/circle.r`'s `exclusiveMinimum: 0` —
+/// a radius that is schema-VALID going in is schema-INVALID coming out. T-581 now catches that at
+/// save with a message telling the author to drag out a radius, so it can no longer 500 a mission.
+/// But a tool that lets an author build a zone the save will reject is still a tool that wastes
+/// their time, so this predicate refuses the shape at CREATION and the save-time check becomes the
+/// backstop it should be rather than the first line of defence.
+///
+/// Expressed as `round_coord(r) > 0.0` and not as a literal threshold on purpose: the threshold is a
+/// CONSEQUENCE of the grid (it works out to [`MIN_AUTHORABLE_RADIUS_M`]), and writing the
+/// consequence down instead of the cause is how the two drift apart when the grid changes.
+#[must_use]
+pub fn radius_survives_compile(r: f64) -> bool {
+    r.is_finite() && r > 0.0 && round_coord(r) > 0.0
+}
+
+/// The smallest radius that survives [`round_coord`] — documentation for the UI hint, ASSERTED
+/// against the predicate by `min_radius_is_the_grid_consequence` rather than trusted.
+pub const MIN_AUTHORABLE_RADIUS_M: f64 = 0.05;
+
+/// The mod's coordinate grid, in metres. Every polygon vertex and a circle's x/z/r land on it, so a
+/// precision affordance finer than this would be quietly wrong — the tool rounds its readouts here
+/// and offers no sub-decimetre control.
+pub const ZONE_GRID_M: f64 = 0.1;
+
+/// A circle authored as centre-click → rim-click, as the document will store it: `(x, z, r)`.
+///
+/// Returns `None` for a rim that coincides with the centre (the degenerate click-without-travel that
+/// produces the `r → 0.0` zone), and for any non-finite input (an unproject against a singular
+/// camera matrix reads as NaN, and NaN must not reach the document).
+///
+/// Note the argument names: the document's second axis is `z`, not `y`. `flatten.rs` writes
+/// `circle {x, z, r}` and the map's world `y` IS that `z` — naming it `z` here keeps the tool
+/// speaking the document's vocabulary rather than the viewport's.
+#[must_use]
+pub fn circle_from_clicks(cx: f64, cz: f64, rim_x: f64, rim_z: f64) -> Option<(f64, f64, f64)> {
+    if ![cx, cz, rim_x, rim_z].iter().all(|v| v.is_finite()) {
+        return None;
+    }
+    let r = (rim_x - cx).hypot(rim_z - cz);
+    radius_survives_compile(r).then_some((cx, cz, r))
+}
+
+/// May an in-progress polygon be COMMITTED?
+///
+/// `$defs/polygon` is `minItems: 3`, and `doc/store.rs` deliberately does not guard it: its own note
+/// says "the guard that an in-progress polygon needs (do not COMMIT a zone until the ring closes
+/// with ≥3 points) is the draw tool's". This is that guard. A two-vertex ring would be a document
+/// the schema refuses, so the Close control stays disabled until the third vertex lands.
+#[must_use]
+pub fn polygon_is_committable(verts: &[(f64, f64)]) -> bool {
+    verts.len() >= 3 && verts.iter().all(|(x, z)| x.is_finite() && z.is_finite())
+}
+
+/// The flat `[x0,z0,x1,z1,…]` ring the doc layer's `add_polygon_zone` / `set_zone_polygon` take.
+/// They cross as one `&[f64]` because that is the shape a wasm boundary carries cheaply — kept here
+/// even though this build has no such boundary, since the doc-layer signature is the contract.
+#[must_use]
+pub fn polygon_flat(verts: &[(f64, f64)]) -> Vec<f64> {
+    let mut out = Vec::with_capacity(verts.len() * 2);
+    for (x, z) in verts {
+        out.push(*x);
+        out.push(*z);
+    }
+    out
+}
+
+/// Which shape a zone draw is building.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ZoneShape {
+    Circle,
+    Polygon,
+}
+
 /// Bottom Toolbelt — Select (active) + Ruler/LoS disabled stubs, then the mono CUR X/Y/Z +
 /// SEL/OBJ readout.
 ///
@@ -3286,6 +3603,222 @@ mod tests {
         MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER, SETTINGS_UNREAD_NOTE, VEHICLE_CARGO_KINDS,
     };
     use leptos::prelude::*;
+
+    // ── T-582 — the zone draw tool's pure half ──────────────────────────────────────────────────
+
+    use super::{
+        circle_from_clicks, humanize_key, humanize_token, polygon_flat, polygon_is_committable,
+        radius_survives_compile, round_coord, zone_rule_fields, zone_types, ZoneRuleKind,
+        MIN_AUTHORABLE_RADIUS_M, MISSION_SCHEMA, ZONE_GRID_M,
+    };
+
+    /// The quantisation this file mirrors is `flatten::round_coord`, which is private there. Pin it
+    /// against that source so the mirror cannot drift silently — RED if `flatten.rs` changes its
+    /// grid without this file following. Same guard `api/src/contract/validate.rs` puts on its own
+    /// copy of the same line.
+    #[test]
+    fn zone_quantisation_mirrors_flatten() {
+        let flatten = include_str!("../../../../crates/map-engine-core/src/mission/flatten.rs");
+        let body = flatten
+            .split("fn round_coord(v: f64) -> f64 {")
+            .nth(1)
+            .expect("flatten::round_coord must exist");
+        let expr = body.split('}').next().expect("body").trim();
+        assert_eq!(
+            expr, "(v * 10.0).round() / 10.0",
+            "flatten::round_coord changed — update eden_chrome::round_coord to match"
+        );
+        // And the mirror agrees on the value that produced the defect T-581 documented.
+        assert_eq!(round_coord(0.04), 0.0);
+        assert_eq!(round_coord(0.05), 0.1);
+    }
+
+    /// The published minimum is a CONSEQUENCE of the grid, not an independent constant. If the grid
+    /// ever changes, this fails rather than letting the UI advertise a stale threshold.
+    #[test]
+    fn min_radius_is_the_grid_consequence() {
+        assert!(
+            radius_survives_compile(MIN_AUTHORABLE_RADIUS_M),
+            "the advertised minimum must itself survive the compile"
+        );
+        assert!(
+            !radius_survives_compile(MIN_AUTHORABLE_RADIUS_M - ZONE_GRID_M / 100.0),
+            "anything below the advertised minimum must be refused"
+        );
+        // The exact radius a click-without-travel produced before this tool existed (T-581).
+        assert!(!radius_survives_compile(0.04));
+        assert!(!radius_survives_compile(0.0));
+        assert!(!radius_survives_compile(-5.0));
+        assert!(!radius_survives_compile(f64::NAN));
+        assert!(radius_survives_compile(250.0));
+    }
+
+    /// A click without travel is the r=0.04 shape T-581 has to reject at save. The tool refuses to
+    /// CREATE it, so the save-time check is a backstop rather than the first line of defence.
+    #[test]
+    fn circle_refuses_the_click_without_drag() {
+        assert_eq!(circle_from_clicks(100.0, 200.0, 100.0, 200.0), None);
+        // 0.04 m of travel — schema-valid authored, schema-INVALID once quantised.
+        assert_eq!(circle_from_clicks(0.0, 0.0, 0.04, 0.0), None);
+        // A real drag survives, and carries the document's (x, z, r) — not the viewport's y.
+        let (x, z, r) = circle_from_clicks(10.0, 20.0, 13.0, 24.0).expect("a real drag commits");
+        assert!((x - 10.0).abs() < f64::EPSILON && (z - 20.0).abs() < f64::EPSILON);
+        assert!((r - 5.0).abs() < 1e-12, "3-4-5 triangle: r = 5, got {r}");
+        // NaN from a singular-matrix unproject must never reach the document.
+        assert_eq!(circle_from_clicks(f64::NAN, 0.0, 1.0, 1.0), None);
+    }
+
+    /// `$defs/polygon` is `minItems: 3` and the doc layer deliberately does not guard it — its own
+    /// comment assigns the guard to this tool. Two vertices must not be committable.
+    #[test]
+    fn polygon_commits_only_at_three_vertices() {
+        assert!(!polygon_is_committable(&[]));
+        assert!(!polygon_is_committable(&[(0.0, 0.0)]));
+        assert!(!polygon_is_committable(&[(0.0, 0.0), (10.0, 0.0)]));
+        assert!(polygon_is_committable(&[
+            (0.0, 0.0),
+            (10.0, 0.0),
+            (10.0, 10.0)
+        ]));
+        assert!(!polygon_is_committable(&[
+            (0.0, 0.0),
+            (10.0, 0.0),
+            (f64::NAN, 10.0)
+        ]));
+        assert_eq!(
+            polygon_flat(&[(1.0, 2.0), (3.0, 4.0), (5.0, 6.0)]),
+            vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            "the doc layer takes a FLAT ring"
+        );
+    }
+
+    /// ═══ THE ANTI-SECOND-VOCABULARY TEST ═══
+    ///
+    /// The panel must render whatever `$defs/zoneRules` declares. This reads the vocabulary a SECOND
+    /// way — straight out of the embedded JSON — and demands the two agree key-for-key. A panel
+    /// built from a hand-typed list would pass every "the panel renders" assertion while silently
+    /// omitting a key; this is the assertion that cannot.
+    #[test]
+    fn zone_rule_fields_cover_the_whole_vocabulary() {
+        let schema: serde_json::Value =
+            serde_json::from_str(MISSION_SCHEMA).expect("mission.schema.json parses");
+        let props = schema["$defs"]["zoneRules"]["properties"]
+            .as_object()
+            .expect("$defs/zoneRules/properties");
+        assert!(
+            !props.is_empty(),
+            "an empty vocabulary would make the panel vacuously correct"
+        );
+        assert_eq!(
+            schema["$defs"]["zoneRules"]["additionalProperties"],
+            serde_json::Value::Bool(false),
+            "the vocabulary must stay CLOSED — an open one would make this whole approach unsound"
+        );
+
+        let fields = zone_rule_fields();
+        let mut from_fields: Vec<&str> = fields.iter().map(|f| f.key.as_str()).collect();
+        let mut from_schema: Vec<&str> = props.keys().map(String::as_str).collect();
+        from_fields.sort_unstable();
+        from_schema.sort_unstable();
+        assert_eq!(
+            from_fields, from_schema,
+            "every declared rule key must reach the panel, and the panel must invent none"
+        );
+
+        // A control per declared kind, so a new key of an existing shape needs no code here.
+        let kind = |k: &str| {
+            fields
+                .iter()
+                .find(|f| f.key == k)
+                .unwrap_or_else(|| panic!("{k} missing"))
+                .kind
+                .clone()
+        };
+        assert!(matches!(kind("contestable"), ZoneRuleKind::Bool { default: true }));
+        match kind("penalty") {
+            ZoneRuleKind::Choice { options, default } => {
+                assert_eq!(options, vec!["none", "warn", "kill"]);
+                assert_eq!(default.as_deref(), Some("warn"));
+            }
+            other => panic!("penalty must be a Choice, got {other:?}"),
+        }
+        match kind("graceSeconds") {
+            ZoneRuleKind::Number {
+                default,
+                minimum,
+                maximum,
+                integer,
+                ..
+            } => {
+                assert_eq!(default, Some(30.0));
+                assert_eq!(minimum, Some(0.0));
+                // T-275 pinned this to TBD_ZoneRegistry.MAX_GRACE_SECONDS.
+                assert_eq!(maximum, Some(3600.0));
+                assert!(!integer);
+            }
+            other => panic!("graceSeconds must be a Number, got {other:?}"),
+        }
+        match kind("warnEverySeconds") {
+            ZoneRuleKind::Number {
+                exclusive_minimum, ..
+            } => assert_eq!(
+                exclusive_minimum,
+                Some(0.0),
+                "0 would mean 'warn every frame' — the reader requires > 0"
+            ),
+            other => panic!("warnEverySeconds must be a Number, got {other:?}"),
+        }
+        assert!(
+            matches!(kind("targetCount"), ZoneRuleKind::Number { integer: true, .. }),
+            "targetCount is the one integer"
+        );
+        // `targetAlias` is declared as a `$ref` — a resolver that ignored it would drop the pattern.
+        match kind("targetAlias") {
+            ZoneRuleKind::Text { pattern, .. } => assert_eq!(
+                pattern.as_deref(),
+                Some("^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$"),
+                "the $ref into $defs/alias must be resolved"
+            ),
+            other => panic!("targetAlias must resolve to Text, got {other:?}"),
+        }
+        // Every field carries the schema's prose, which names the mod call site.
+        assert!(
+            fields.iter().all(|f| !f.doc.is_empty()),
+            "each control shows the schema's own description"
+        );
+    }
+
+    /// The type picker is schema-driven for the same reason the rules are: `set_zone_type` writes
+    /// whatever it is handed, and an invented seventh value saves 201 then 500s `/compiled`.
+    #[test]
+    fn zone_types_come_from_the_schema() {
+        let schema: serde_json::Value =
+            serde_json::from_str(MISSION_SCHEMA).expect("mission.schema.json parses");
+        let declared: Vec<String> = schema["$defs"]["zone"]["properties"]["type"]["enum"]
+            .as_array()
+            .expect("$defs/zone/properties/type/enum")
+            .iter()
+            .map(|v| v.as_str().expect("string").to_string())
+            .collect();
+        assert_eq!(zone_types(), declared);
+        assert!(
+            zone_types().contains(&"boundary".to_string()),
+            "the play-area type must be offerable"
+        );
+    }
+
+    /// Labels are presentation only — the token itself is what reaches the document.
+    #[test]
+    fn labels_never_replace_tokens() {
+        assert_eq!(humanize_token("objective_hold_until"), "Objective hold until");
+        assert_eq!(humanize_token("spawn"), "Spawn");
+        assert_eq!(humanize_key("warnEverySeconds"), "Warn every seconds");
+        assert_eq!(humanize_key("penalty"), "Penalty");
+        // Round-trip safety: a label is never fed back as a key.
+        for f in zone_rule_fields() {
+            assert_ne!(humanize_key(&f.key), f.key, "label must differ from wire key");
+        }
+    }
 
     // ── T-215 — the Vehicles tab ────────────────────────────────────────────────────────────────
 
