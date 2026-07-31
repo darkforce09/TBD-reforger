@@ -1851,8 +1851,17 @@ wave_close_disavowed() {
 # `HEAD~1` got here.
 #
 # HEAD IS EXCLUDED DELIBERATELY. `wave --close` gates BEFORE writing its own marker, so the newest
-# reachable marker is always the previous wave's. Re-gating an already-closed tree therefore picks
-# the previous close again and re-gates that whole wave, rather than gating nothing.
+# reachable marker is always the previous wave's.
+#
+# WHAT THAT NO LONGER MEANS, corrected T-618 because the sentence that used to end this paragraph
+# promised behaviour the code now refuses. It said re-gating an already-closed tree "picks the
+# previous close again and re-gates that whole wave, rather than gating nothing". The picking still
+# happens — but T-613's ORACLE 1 then refuses the result, because the close sitting AT HEAD is
+# reachable and claims a HIGHER wave than the base just derived, which is exactly the contradiction
+# that oracle exists to report. Measured at b2afc99a (wave 78's own close, checked out): derives
+# 2b144b5d, then refuses with "CONTRADICTED by the marker ledger", rc 2. That is fail-CLOSED and it
+# is not this ticket's to change, but it is not "re-gates that whole wave" either, and a reader who
+# believes the old sentence will go hunting for a bug that is really a deliberate refusal.
 prev_wave_close() {
   local head sha subj rev
   head="$(git rev-parse HEAD 2>/dev/null)" || return 1
@@ -1898,24 +1907,52 @@ prev_wave_close() {
 # can CONFIRM the boundary from other evidence cannot be written today, and asserting one would be
 # this program's signature defect wearing a new hat.
 #
-# WHAT CAN BE WRITTEN is a set of checks that can REFUSE, each drawing on evidence the commit under
-# test did not itself produce. That is strictly weaker than confirmation, and it is labelled as
-# such everywhere it prints. Three of them, and exactly what each proves:
+# WHAT CAN BE WRITTEN is a set of checks that can REFUSE. Three of them, and exactly what each
+# proves — stated together with what it CANNOT prove, because a check that overstates its own reach
+# is worse than no check at all: the next reader stops looking. That is not hypothetical. The
+# sentence that used to stand here said each check drew on "evidence the commit under test did not
+# itself produce", and for check 2 it was FALSE. T-618 exists because it was believed.
 #
-#   1. MARKER LEDGER — wave_close_is_newest_wave. Evidence: the OTHER 32 markers. A derived
+#   1. MARKER LEDGER — wave_close_is_newest_wave. Evidence: the OTHER 33 markers. A derived
 #      boundary must claim a wave number strictly HIGHER than every other marker reachable from
-#      HEAD. Measured over all 33: strictly decreasing from 77 to 45, no repeats, no gaps. This is
-#      not independent of the marker FAMILY, but it is independent of the commit being checked —
-#      the constraint comes from commits the forger did not write, so a fake can no longer
-#      self-approve. It kills every replay/re-close shape ("wave 76 CLOSED — reopened and
-#      re-closed…"), which is the shape that survives the anchoring fix.
+#      HEAD, and NOT MORE THAN ONE higher. Measured 2026-08-01 over all 34: 78 down to 45, strictly
+#      decreasing, no repeats, NO GAPS — 33 steps of exactly 1 — so `highest other + 1` is an exact
+#      upper bound rather than a guess. This is not independent of the marker FAMILY, but it is
+#      independent of the commit being checked: the constraint comes from commits the forger did not
+#      write, so a fake cannot self-approve. The lower bound kills the replay/re-close shape ("wave
+#      76 CLOSED — reopened and re-closed…"); the upper bound kills the leap-ahead shape ("wave 99
+#      CLOSED"), which a bare "strictly higher" test waves straight through.
 #
-#   2. TICKET LEDGER — wave_close_ledger_says. Evidence: docs/platform/wave_plan.tsv plus
-#      .ai/tickets/registry.json, two tracked files that no commit subject can speak for. A marker
-#      claiming `wave N CLOSED` is contradicted if the plan lists wave N tickets that the registry
-#      says are NOT shipped. It CANNOT corroborate a wave the plan has never heard of, and the plan
-#      is demonstrably ragged (it carries `w76`/`w77` but nothing for 69-75 or 78), so silence here
-#      is common and is reported as silence — never as agreement.
+#   2. TICKET LEDGER — wave_close_ledger_says. THIS CHECK WAS THE HOLE T-618 CLOSES, and the hole
+#      was in this comment as much as in the code: it claimed independent evidence while reading
+#      docs/platform/wave_plan.tsv and .ai/tickets/registry.json OUT OF HEAD'S CHECKOUT — where a
+#      marker commit that edits both files in the same commit has already written the answer it is
+#      about to be graded on. Wave 78's verifier did exactly that, and the gate returned rc 0 over a
+#      range of 1 commit whose honest span was 9.
+#
+#      WHAT THESE TWO FILES ACTUALLY ARE, measured across the closes of waves 73-78:
+#        * registry.json is a RESULT, and `wave --close` IS WHAT WRITES IT. At the PARENT of every
+#          real close the wave's own tickets are still `deferred`/`ready` — wave 77's five were all
+#          `deferred` one commit before 2b144b5d flipped them to `shipped`. So the registry cannot
+#          be read from before the boundary: that would contradict, and hard-refuse, every
+#          legitimate wave close in this repository's history.
+#        * wave_plan.tsv is a SCHEDULE, and usually predates the close — w77's rows were filed by
+#          2a8b41e2, a separate ticket-filing commit. But not always: the real wave-78 close
+#          b2afc99a appended its own four w78 rows.
+#
+#      Hence the split this check now makes. MEMBERSHIP — which tickets wave N contains — is read
+#      with `git show` at the boundary's PARENT, a revision the commit under test cannot have
+#      written. COMPLETION — are they shipped — is read at the boundary itself, and is used ONLY to
+#      CONTRADICT, never as the corroborating leg. Corroboration therefore rests entirely on the leg
+#      that is independent; when the boundary filed its own plan rows, that leg is absent and this
+#      reports SILENCE, which the caller escalates to demand_base_confirmation.
+#
+#      WHAT IT STILL CANNOT DO, stated plainly so nobody re-derives it as a surprise: a forger who
+#      files the plan rows in a SEPARATE, EARLIER commit and flips the registry in the marker
+#      satisfies both legs. Measured in a scratch clone — that shape passes. It is not detectable
+#      here, because it is byte-for-byte the shape of a legitimate close (w77 was filed in exactly
+#      that order). Nothing but demand_base_confirmation stands behind it, and an operator naming
+#      the sha is the honest floor of this whole page.
 #
 #   3. SLICE SPAN — slice_span_check. Evidence: MERGE PARENTS. Reads no marker at all, which makes
 #      it the one genuinely marker-independent check here. Two clauses: a base may not BE a slice
@@ -1929,19 +1966,58 @@ prev_wave_close() {
 # WHEN NOTHING CAN SPEAK, THE GATE REFUSES AND ASKS. There is no silent pass left on this path:
 # TBD_GATE_BASE_CONFIRM must name the exact sha, so confirming requires reading the sha.
 
-# Tickets the plan assigns to a wave, accepting both label spellings in the file (`77` and `w77`).
-wave_plan_tickets() {
-  plan_rows | awk -F'\t' -v n="$1" '{ w=$1; sub(/^w/,"",w); if (w==n) print $2 }'
+# Tickets the plan assigns to a wave AS OF A REVISION, accepting both label spellings in the file
+# (`77` and `w77`).
+#
+# T-618: takes a rev because the checkout is not evidence. This has exactly one caller — oracle 2 —
+# and that caller must not be able to read a plan row the commit it is grading just wrote, so there
+# is deliberately NO checkout-reading variant of this function to reach for by mistake.
+#
+# The two filters are `plan_rows`' filters, repeated rather than reused, because plan_rows reads a
+# FILE and this reads a BLOB. They stay BRE `^#` / `^wave[[:space:]]`, which mean the same thing
+# under ugrep and GNU grep — see the engine note inside prev_wave_close.
+#
+# A `$PLAN` that TBD_WAVE_PLAN has pointed outside the repo is not a path `git show` can resolve;
+# that yields no rows, which this check reports as silence and the caller escalates. Fail-closed.
+wave_plan_tickets_at() {
+  git show "$1:$PLAN" 2>/dev/null |
+    grep -v '^#' | grep -v '^wave[[:space:]]' | sed '/^\s*$/d' |
+    awk -F'\t' -v n="$2" '{ w=$1; sub(/^w/,"",w); if (w==n) print $2 }'
 }
 
-# ORACLE 1. rc 0 = this marker claims the highest wave number reachable; rc 2 = contradicted.
+# Of these tickets, which does the registry AS OF A REVISION not call shipped (or cancelled)?
+# Prints them space-separated; rc 3 if the registry could not be read or parsed at that revision.
+#
+# One python3 for the whole list rather than is_shipped's one-per-ticket: the blob has to be
+# materialised anyway, and a cannot-read must be distinguishable from a clean list here. is_shipped
+# answers "not shipped" for a registry it cannot read, which is the right answer for a checkout and
+# the wrong one for this caller — it would turn an unreadable blob into a CONTRADICTION and
+# hard-refuse the gate over a file it never actually examined.
+wave_ledger_unshipped_at() {
+  local rev="$1"
+  shift
+  git show "$rev:$REGISTRY" 2>/dev/null | python3 -c '
+import json,sys
+try: r=json.load(sys.stdin)
+except Exception: sys.exit(3)
+by={x.get("id"):x.get("status") for x in r.get("tickets",[])}
+print(" ".join(t for t in sys.argv[1:] if by.get(t) not in ("shipped","cancelled")))
+' "$@"
+}
+
+# ORACLE 1. rc 0 = this marker claims the highest wave number reachable, by exactly one;
+# rc 2 = contradicted, from either direction.
 wave_close_is_newest_wave() {
-  local sha="$1" n other on
+  local sha="$1" n other on high=""
   n="$(wave_close_number "$sha")" || return 2
   while read -r other; do
     [ -z "$other" ] && continue
     [ "$other" = "$sha" ] && continue
     on="$(wave_close_number "$other")" || continue
+    # Highest number any OTHER marker claims, disavowed ones included. A reverted close still
+    # proves its wave number was reached, so it still bounds what the next one may claim; excluding
+    # it here would let a fake leap ahead through the very hole the F6 revert fix opened.
+    if [ -z "$high" ] || [ "$on" -gt "$high" ]; then high="$on"; fi
     [ "$on" -lt "$n" ] && continue
     # A DISAVOWED close is not part of the ledger, so it cannot outrank anything. Without this,
     # this check and the F6 revert fix fight each other: derivation correctly steps back past a
@@ -1954,7 +2030,7 @@ wave_close_is_newest_wave() {
     echo "          $(git log -1 --format=%s "$sha")"
     echo "        but $(git rev-parse --short "$other") also reachable from HEAD claims wave $on"
     echo "          $(git log -1 --format=%s "$other")"
-    echo "        Wave numbers only ever go up: all 33 markers in history run 77 down to 45,"
+    echo "        Wave numbers only ever go up: all 34 markers in history run 78 down to 45,"
     echo "        strictly decreasing, no repeats. A newer marker claiming an equal or older wave"
     echo "        means the newest one is not a wave boundary — it is a commit that looks like one,"
     echo "        and gating from it would put a whole wave outside every change-scoped step."
@@ -1962,39 +2038,89 @@ wave_close_is_newest_wave() {
     echo "        trailer this script reads) rather than writing a second marker for it."
     return 2
   done < <(git rev-list --extended-regexp --grep="$WAVE_CLOSE_MARKER_RE" HEAD 2>/dev/null)
+
+  # T-618, THE OTHER DIRECTION. "Strictly higher" alone never refuses a number that is higher by a
+  # MILE, so `wave 99 CLOSED` outranked all 34 real markers and sailed through. Wave numbers do not
+  # merely increase, they increase by ONE: measured 2026-08-01 across every marker reachable from
+  # HEAD, 78 down to 45, 33 steps, every one of them exactly 1. So the exact bound is
+  # `highest other + 1`, and anything above it is a number no wave has ever reached.
+  #
+  # Skipped when there is no other marker at all — the first wave ever closed has nothing to be
+  # one more than, and inventing a ceiling for it would refuse a legitimate tree.
+  if [ -n "$high" ] && [ "$n" -gt $((high + 1)) ]; then
+    echo "gate: the derived wave base claims a wave that never opened — refusing to run."
+    echo "        derived $(git rev-parse --short "$sha") claims wave $n"
+    echo "          $(git log -1 --format=%s "$sha")"
+    echo "        but the highest wave any other marker reachable from HEAD claims is $high, so the"
+    echo "        next wave to close can only be $((high + 1)). Wave numbers advance by exactly one:"
+    echo "        measured over all 34 markers, 78 down to 45, 33 steps of 1, no gaps and no repeats."
+    echo "        A marker $((n - high)) waves ahead of the ledger is not a boundary this history"
+    echo "        ever reached — and gating from it would put every wave in between outside the"
+    echo "        range, unread, while the verdict claimed to describe them."
+    return 2
+  fi
   return 0
 }
 
 # ORACLE 2. rc 0 = ledger corroborates; rc 1 = ledger cannot speak; rc 2 = ledger contradicts.
 # Prints its own verdict either way — a check nobody sees the result of is not a check.
+#
+# T-618. Read the block above for what changed and why. In one line: MEMBERSHIP comes from the
+# boundary's PARENT, COMPLETION from the boundary, and only the former can corroborate.
 wave_close_ledger_says() {
-  local sha="$1" n t known=0 open=""
+  local sha="$1" n par tickets known open rc
   n="$(wave_close_number "$sha")" || return 1
-  [ -f "$PLAN" ] || { echo "        ticket ledger: $PLAN is missing — cannot corroborate."; return 1; }
-  # is_shipped answers "not shipped" for a registry it cannot READ, so an unreadable registry would
-  # turn every wave into a contradiction and hard-refuse the gate. Cannot-read is cannot-speak.
-  [ -f .ai/tickets/registry.json ] || {
-    echo "        ticket ledger: .ai/tickets/registry.json is unreadable — cannot corroborate."
-    return 1; }
-  while read -r t; do
-    [ -z "$t" ] && continue
-    known=$((known + 1))
-    is_shipped "$t" || open="$open $t"
-  done < <(wave_plan_tickets "$n")
+  # No parent = no revision before this commit to ask, so there is nothing independent to ask it.
+  par="$(git rev-parse --verify --quiet "${sha}^1" 2>/dev/null)" || {
+    echo "        ticket ledger: $(git rev-parse --short "$sha") has no parent commit, so there is no"
+    echo "                       revision preceding it to read $PLAN from — cannot corroborate."
+    return 1
+  }
+  tickets="$(wave_plan_tickets_at "$par" "$n" | tr '\n' ' ')"
+  tickets="${tickets%"${tickets##*[! ]}"}"
+  known=0
+  [ -n "$tickets" ] && known="$(printf '%s\n' $tickets | wc -l)"
+
   if [ "$known" -eq 0 ]; then
-    echo "        ticket ledger: $PLAN has NO rows for wave $n — it cannot corroborate this"
-    echo "                       boundary. (The plan is only maintained for some waves; this is"
-    echo "                       silence, not agreement.)"
+    # THE T-618 CASE, and it deserves its own message rather than a generic silence: the plan has
+    # rows for wave $n at the boundary but NOT at its parent, which means this very commit filed
+    # them. That is self-corroboration, and it is what the forged wave-78 marker did.
+    if [ -n "$(wave_plan_tickets_at "$sha" "$n")" ]; then
+      echo "        ticket ledger: $(git rev-parse --short "$sha") ADDED wave $n's own rows to $PLAN"
+      echo "                       in the same commit that claims wave $n CLOSED. A commit cannot"
+      echo "                       corroborate itself, so this is silence, not agreement — the rows"
+      echo "                       are not there at its parent $(git rev-parse --short "$par")."
+      return 1
+    fi
+    echo "        ticket ledger: $PLAN has NO rows for wave $n at $(git rev-parse --short "$par") —"
+    echo "                       it cannot corroborate this boundary. (The plan is only maintained"
+    echo "                       for some waves; this is silence, not agreement.)"
+    return 1
+  fi
+
+  # COMPLETION, read at the boundary, because that is the only place it is ever true: `wave --close`
+  # is what flips these tickets to shipped. Used to CONTRADICT only — see the block above.
+  # shellcheck disable=SC2086
+  open="$(wave_ledger_unshipped_at "$sha" $tickets)"
+  rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "        ticket ledger: $REGISTRY could not be read at $(git rev-parse --short "$sha")"
+    echo "                       — cannot corroborate. (Cannot-read is cannot-speak: reporting a"
+    echo "                       contradiction over a file nobody parsed is the defect this whole"
+    echo "                       page exists to stop.)"
     return 1
   fi
   if [ -n "$open" ]; then
     echo "gate: the derived wave base is CONTRADICTED by the ticket ledger — refusing to run."
-    echo "        $(git rev-parse --short "$sha") says wave $n CLOSED, but $PLAN assigns wave $n"
-    echo "        ticket(s) that .ai/tickets/registry.json does not call shipped:$open"
+    echo "        $(git rev-parse --short "$sha") says wave $n CLOSED, and $PLAN at its parent"
+    echo "        $(git rev-parse --short "$par") assigns wave $n ticket(s) that $REGISTRY does not"
+    echo "        call shipped at that same commit: $open"
     echo "        A wave with open tickets did not close, so this commit is not a wave boundary."
     return 2
   fi
-  echo "        ticket ledger: wave $n has $known ticket(s) in $PLAN, all shipped — corroborated."
+  echo "        ticket ledger: wave $n has $known ticket(s) in $PLAN at $(git rev-parse --short "$par")"
+  echo "                       (the boundary's parent, which it cannot have written), all shipped"
+  echo "                       at $(git rev-parse --short "$sha") — corroborated."
   return 0
 }
 
@@ -2050,7 +2176,10 @@ demand_base_confirmation() {
   echo "        Read the subject above. If that is genuinely where this wave opened, re-run with:"
   echo "            TBD_GATE_BASE_CONFIRM=$bsha bash scripts/platform/wave.sh gate ..."
   echo "        The better fix is to give the ledger something to say: add this wave's rows to"
-  echo "        $PLAN so the next gate can corroborate itself."
+  echo "        $PLAN BEFORE the wave closes — in the commit that files its tickets, the way"
+  echo "        2a8b41e2 filed wave 77's. Rows appended by the closing commit itself corroborate"
+  echo "        nothing (T-618): oracle 2 reads the plan at the boundary's PARENT precisely so a"
+  echo "        commit cannot vouch for itself, so rows that arrive with the marker are not there."
   return 2
 }
 
@@ -2097,7 +2226,7 @@ gate_base_covers_wave() {
   [ "$lrc" -eq 2 ] && return 2
   if [ "$lrc" -eq 1 ]; then
     demand_base_confirmation "$psha" \
-      "the marker ledger accepts it (wave $(wave_close_number "$psha") is the newest closed wave) but the ticket ledger has no rows for that wave, so only one family of evidence agrees" || return 2
+      "the marker ledger accepts it (wave $(wave_close_number "$psha") is the newest closed wave) but the ticket ledger has no rows for that wave that the boundary did not write itself, so only one family of evidence agrees" || return 2
   fi
   # The primary rule, with the message that names the exact cost. ORACLE 3 runs after it, not
   # before, so a narrowing base is diagnosed by the check that can say how much it narrows by.
