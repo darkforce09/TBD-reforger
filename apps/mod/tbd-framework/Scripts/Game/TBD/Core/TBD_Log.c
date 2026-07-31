@@ -100,8 +100,11 @@ class TBD_Log
 
 	//------------------------------------------------------------------------------------------------
 	//! `[TBD][Stage] LOADING -> LOBBY`.
-	//! NOT yet wired: the only caller would be TBD_FrameworkManager.SetStage, which belongs to
-	//! another slice. The exact one-line hook is recorded in the T-181.14 slice report.
+	//! Wired at TBD_FrameworkManager.SetStage (T-181.17), logged before the subsystem fan-out so
+	//! the transition line precedes whatever the subsystems say about it. SetStage also keeps the
+	//! legacy `[TBD] Stage → …` Print verbatim (README.md and STAGING-SERVER.md quote it), so both
+	//! formats appear on every transition — detectors should accept either and never depend on the
+	//! non-ASCII arrow (see scripts/mod/remote-log-grep.sh PAT_LOBBY).
 	static void Stage(TBD_EGameStage from, TBD_EGameStage to)
 	{
 		Event(CH_STAGE, string.Format("%1 -> %2",

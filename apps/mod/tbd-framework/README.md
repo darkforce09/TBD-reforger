@@ -100,25 +100,33 @@ Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `
 
 ### Expected log lines
 
+Verified against a real boot (T-612, 2026-08-01). Everything after each tag/`key=` prefix is
+expected to vary — pin the prefix, never the sentence (`scripts/mod/remote-log-grep.sh:34`):
+
 ```
-[TBD] Mission loaded from backend: Bridgehead at Levie
-[TBD] Registry loaded
-[TBD] SpawnManager: built slot spawn ... (×18 for msn_8f3a2c)
+[TBD][Mission] loaded id=msn_8f3a2c name='Bridgehead at Levie' slots=18 source=backend
+[TBD] Registry loaded (21 aliases).
+[TBD][Slots] Slot-1 blufor:Alpha:SL:0 (blufor:Alpha:SL:0) kit kit:rifleman_m16 at <…>   ← ×18 for msn_8f3a2c
+[TBD][Loadout][Slot] slot=… primary equip OK {GUID}…Rifle_M16A2.et                      ← per authored gear item
+[TBD][Loadout][Slot] slot=… loadout pass complete gear=…/… cargo=…/…                    ← per dressed slot
+[TBD][Slots] materialized 18/18 bodies — … with a JSON loadout, … kit-only, 0 failed
+[TBD][Slots] loadout settle complete — … application(s), 0 unplayable, …
+[TBD][Stage] LOADING -> LOBBY
 [TBD] Stage → LOBBY
-[TBD] Roster loaded
-[TBD] SpawnManager: assigned slot blufor:Alpha:SL:0
-[TBD] SpawnManager: spawn requested
-[TBD][Loadout] Loaded TBD_LoadoutTest.json (version 1, modpack …)
-[TBD][Loadout] test spawn 0x… @ <6400, …, 6400>
-[TBD][Loadout] primary equip OK {GUID}…MG_M60.et
-[TBD][Loadout] uniform equip OK {GUID}…Jacket_US_BDU_rolledup.et
-[TBD][Loadout] vest    equip OK {GUID}…Vest_PASGT.et
-[TBD][Loadout] helmet  equip OK {GUID}…Helmet_PASGT_01_cover_w_goggles.et
-[TBD][Loadout] equip pass complete
 NETWORK : Starting RPL server, listening on address 0.0.0.0:2001
+[TBD] Roster loaded (… assignments).                                                    ← when a roster is configured
+[TBD] SpawnManager: assigned slot blufor:Alpha:SL:0 to player 1 at (…)                  ← once a client joins
+[TBD] SpawnManager: bound player 1 to slot blufor:Alpha:SL:0 body (kit …)
 ```
 
-**Important:** `[TBD][Loadout]` on test NPC = Phase 1 dev harness. **Human player** loadout = **T-068.12**; pick slot in LOBBY = **T-068.13**; production roster sync = **T-114**.
+**Gone since June (T-612 — do not grep for these):** `[TBD] Mission loaded from backend:`,
+`built slot spawn`, `spawn requested`, `[TBD][Loadout][Player]`. The only `Mission loaded`
+still printed is the **failure** line `[TBD] Mission loaded but invalid — staying in LOADING.`
+— a check satisfied by that string is passing on the error case.
+
+**Important:** `[TBD][Loadout][TestNPC]` = the Phase 1 dev harness (`$profile:TBD_LoadoutTest.json`).
+**`[TBD][Loadout][Slot]`** = the production slot-body path human players receive (**T-068.12**);
+pick slot in LOBBY = **T-068.13**; production roster sync = **T-114**.
 
 ---
 
