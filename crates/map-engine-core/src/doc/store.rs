@@ -60,6 +60,10 @@ pub struct MissionDocCore {
     /// Root `entities` map (`entitiesById` in [`Self::small_maps_json`]) — undo-scoped (T-254).
     /// Mission-placed world objects (props/crates/compositions) for schema `entities[]`.
     entities: MapRef,
+    /// Root `zones` map (`zonesById` in [`Self::small_maps_json`]) — undo-scoped (T-211).
+    /// Authored play-area / objective zones; each row is `mission.schema.json#/$defs/zone`
+    /// verbatim. See the T-211 mutator block ([`Self::add_circle_zone`]) for the field contract.
+    zones: MapRef,
     /// When true, mutators stamp `INIT` (untracked) instead of `LOCAL` — set around boot / hydrate /
     /// default-seeding so a load is not an undo step. Interior mutability: mutators take `&self`.
     init_mode: Cell<bool>,
@@ -79,6 +83,7 @@ impl MissionDocCore {
         let meta = doc.get_or_insert_map("meta");
         let vehicles = doc.get_or_insert_map("vehicles");
         let entities = doc.get_or_insert_map("entities");
+        let zones = doc.get_or_insert_map("zones");
 
         // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
         // stack item only when `last_change > 0 && now - last_change < capture_timeout_millis`
@@ -109,6 +114,7 @@ impl MissionDocCore {
         undo_mgr.expand_scope(&doc, &meta);
         undo_mgr.expand_scope(&doc, &vehicles);
         undo_mgr.expand_scope(&doc, &entities);
+        undo_mgr.expand_scope(&doc, &zones);
 
         Self {
             doc,
@@ -119,6 +125,7 @@ impl MissionDocCore {
             meta,
             vehicles,
             entities,
+            zones,
             init_mode: Cell::new(false),
             undo_mgr,
         }
@@ -174,13 +181,32 @@ impl MissionDocCore {
     ///
     /// **T-220 — `entityOrder`:** hydrate records authored array id-order here (yrs maps do not),
     /// so `compile_payload` can emit `editor.slots` / factions / … in the original sequence.
+    ///
+    /// **T-211 — `zonesById` + the transitional `payloadExtras.zones` projection.** Authored zones
+    /// are emitted twice, deliberately, and the two emits retire at different times:
+    ///
+    /// * `zonesById` is the CANONICAL by-id emit, shaped exactly like `entitiesById`. It is what
+    ///   `compile_payload` will read once it grows the sibling one-liner
+    ///   `"zones": values_of_ordered(&small, "zonesById", "zones")` (see this method's T-211 note in
+    ///   the report — `mission/compile.rs` is a different slice's file).
+    /// * `payloadExtras.zones` is the TRANSITIONAL wire route that closes the round trip TODAY.
+    ///   `compile_payload` promotes any `payloadExtras` key it neither knows nor already authored
+    ///   onto the wire root (T-219), and `zones` is currently both — so the array lands at the
+    ///   payload root, which is exactly where `flatten.rs`'s `EditorPayload.zones` (T-201) reads it.
+    ///
+    /// **This is self-healing, not a landmine.** The moment `compile_payload` authors `zones`
+    /// itself, its extras loop skips this key on BOTH of its guards (`is_known_editor_payload_top_
+    /// level(k)` once `zones` joins `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS`, and `obj.contains_key(k)`
+    /// regardless) — so the projection silently becomes dead weight to delete rather than a
+    /// double-emit or an override. The ordering below matches `values_of_ordered` so the two routes
+    /// cannot disagree about sequence during the overlap.
     #[must_use]
     pub fn small_maps_json(&self) -> String {
         // Grab the root handles before opening the read txn (`get_or_insert_map` takes `&self`).
         let meta = self.doc.get_or_insert_map("meta");
         let payload_extras = self.doc.get_or_insert_map("payloadExtras");
         let entity_order = self.doc.get_or_insert_map("entityOrder");
-        let named: [(&str, MapRef); 9] = [
+        let named: [(&str, MapRef); 10] = [
             ("factionsById", self.doc.get_or_insert_map("factions")),
             ("squadsById", self.doc.get_or_insert_map("squads")),
             ("loadoutsById", self.doc.get_or_insert_map("loadouts")),
@@ -188,6 +214,7 @@ impl MissionDocCore {
             ("objectivesById", self.doc.get_or_insert_map("objectives")),
             ("vehiclesById", self.doc.get_or_insert_map("vehicles")),
             ("entitiesById", self.doc.get_or_insert_map("entities")),
+            ("zonesById", self.doc.get_or_insert_map("zones")),
             ("markersById", self.doc.get_or_insert_map("markers")),
             (
                 "editorLayersById",
@@ -208,9 +235,32 @@ impl MissionDocCore {
         for (key, map) in &named {
             root.insert((*key).to_string(), map.to_json(&txn));
         }
+        // T-211 — project authored zones into the compile side-channel as the ordered `zones[]`
+        // array (see this method's doc comment for why, and for when this block retires). Built
+        // before the `payloadExtras` emit so the live doc always wins over a stale parked copy.
+        //
+        // Reads `self.zones` (the struct field), NOT `self.doc.get_or_insert_map("zones")`:
+        // `get_or_insert_map` opens its own transaction internally, and calling it while `txn` is
+        // alive DEADLOCKS. That is why every other handle in this method is hoisted above the
+        // `transact()` line. Measured here — four tests hung rather than failed, which is the
+        // worse symptom because a hang reads as a slow gate, not a defect.
+        let zone_rows = ordered_rows(&txn, &self.zones, &entity_order, "zones");
         // Omit when empty so a clean doc's snapshot shape stays unchanged.
-        if payload_extras.len(&txn) > 0 {
-            root.insert("payloadExtras".to_string(), payload_extras.to_json(&txn));
+        if payload_extras.len(&txn) > 0 || !zone_rows.is_empty() {
+            let mut extras: HashMap<String, Any> = match payload_extras.to_json(&txn) {
+                Any::Map(m) => (*m).clone(),
+                _ => HashMap::new(),
+            };
+            if zone_rows.is_empty() {
+                // A doc that authored zones and then deleted them all must not re-emit a stale
+                // parked array — absence has to be expressible, not just non-empty presence.
+                extras.remove("zones");
+            } else {
+                extras.insert("zones".to_string(), Any::Array(zone_rows.into()));
+            }
+            if !extras.is_empty() {
+                root.insert("payloadExtras".to_string(), Any::Map(Arc::new(extras)));
+            }
         }
         if entity_order.len(&txn) > 0 {
             root.insert("entityOrder".to_string(), entity_order.to_json(&txn));
@@ -743,6 +793,162 @@ impl MissionDocCore {
     pub fn remove_entity(&self, entity_id: &str) {
         let mut txn = self.begin();
         self.entities.remove(&mut txn, entity_id);
+    }
+
+    // ── T-211 — authored play-area / objective zones (`zonesById`) ──────────────────────────────
+    //
+    // ROW SHAPE IS `mission.schema.json#/$defs/zone` VERBATIM — six keys, no editor-only extras:
+    //
+    //   id       String, required, `$defs/wireSafeString` + minLength 1
+    //   type     String, required, one of spawn | objective_capture | objective_destroy |
+    //            objective_hold_until | boundary | base_protection
+    //   shape    Object, required, `$defs/shape` — EXACTLY ONE of `circle` {x,z,r} or
+    //            `polygon` [[x,z],…]. The `oneOf` is why the two shapes are separate setters:
+    //            a row carrying both keys is schema-INVALID, so no mutator can ever leave both.
+    //   label    String, optional, wireSafeString, empty allowed (means "use the mod's
+    //            PrettyZoneTitle fallback" — an empty label is a committed golden)
+    //   faction  String, optional, `$defs/factionKey` (`^[a-z][a-z0-9_]*$`)
+    //   rules    Object, optional, `$defs/zoneRules`
+    //
+    // WHY `rules` IS OPAQUE JSON AND NOT A TYPED RUST STRUCT. T-241 closed `zoneRules` to a
+    // 16-key vocabulary with `additionalProperties: false` specifically so its four consumer
+    // tickets would not each invent their own. A typed mirror here would BE a second vocabulary:
+    // it would have to be edited in lockstep with the schema, it would silently drop a key the
+    // schema declares but this struct forgot, and — per T-216 — emitting a key the schema does
+    // NOT declare 500s `/compiled` for every mission. So `set_zone_rules` takes the object whole
+    // and stores it opaquely, exactly as `update_slot_loadout` does. The schema stays the single
+    // declaration site and the single validator.
+    //
+    // WHY THESE MUTATORS DO NOT RANGE-CHECK. `$defs/circle.r` is `exclusiveMinimum: 0`,
+    // `$defs/polygon` is `minItems: 3`, and T-241/T-275 pinned the `zoneRules` minima and maxima.
+    // None of that is re-encoded here, on purpose: a second copy of a bound is a second thing that
+    // can drift from the schema, and a doc layer that silently clamps turns an authoring error
+    // into a wrong-but-valid mission. These write faithfully; the schema rejects. The guard that
+    // an in-progress polygon needs (do not COMMIT a zone until the ring closes with ≥3 points) is
+    // the draw tool's, and is specified in the T-211 follow-up rather than smeared across both.
+
+    /// T-211 — create a circle zone. `kind` is schema `zone.type`; `x`/`z` are world metres and
+    /// `r` the radius. Mirrors [`Self::add_entity`]'s row-construction idiom.
+    pub fn add_circle_zone(&self, id: &str, kind: &str, x: f64, z: f64, r: f64) {
+        let mut txn = self.begin();
+        let zone = self
+            .zones
+            .insert(&mut txn, id, MapPrelim::from([("id", id)]));
+        zone.insert(&mut txn, "type", kind);
+        zone.insert(&mut txn, "shape", circle_shape_any(x, z, r));
+    }
+
+    /// T-211 — create a polygon zone from a FLAT `[x0,z0,x1,z1,…]` ring (the wasm-boundary shape:
+    /// one `Vec<f64>` crosses cheaply where a `Vec<Vec<f64>>` does not). A trailing unpaired
+    /// coordinate is dropped rather than written as a malformed vertex.
+    pub fn add_polygon_zone(&self, id: &str, kind: &str, points_flat: &[f64]) {
+        let mut txn = self.begin();
+        let zone = self
+            .zones
+            .insert(&mut txn, id, MapPrelim::from([("id", id)]));
+        zone.insert(&mut txn, "type", kind);
+        zone.insert(&mut txn, "shape", polygon_shape_any(points_flat));
+    }
+
+    /// T-211 — reshape an existing zone to a circle (drag / resize). Replaces the whole `shape`
+    /// object, so a polygon becomes a circle without leaving both `oneOf` branches present.
+    pub fn set_zone_circle(&self, zone_id: &str, x: f64, z: f64, r: f64) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(zone)) = self.zones.get(&txn, zone_id) {
+            zone.insert(&mut txn, "shape", circle_shape_any(x, z, r));
+        }
+    }
+
+    /// T-211 — reshape an existing zone to a polygon (vertex edit). Same whole-`shape` replacement
+    /// as [`Self::set_zone_circle`], for the same `oneOf` reason.
+    pub fn set_zone_polygon(&self, zone_id: &str, points_flat: &[f64]) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(zone)) = self.zones.get(&txn, zone_id) {
+            zone.insert(&mut txn, "shape", polygon_shape_any(points_flat));
+        }
+    }
+
+    /// T-211 — schema `zone.type`. Retyping is a rules-preserving edit: the vocabulary is FLAT and
+    /// not narrowed by type (T-241), so a `captureSeconds` left on a retyped boundary zone parses
+    /// and is ignored exactly as it does today rather than failing the document.
+    pub fn set_zone_type(&self, zone_id: &str, kind: &str) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(zone)) = self.zones.get(&txn, zone_id) {
+            zone.insert(&mut txn, "type", kind);
+        }
+    }
+
+    /// T-211 — schema `zone.label` (optional). `None` REMOVES the key; `Some("")` writes an empty
+    /// label, which is a distinct authored state the schema allows on purpose (no `minLength`) and
+    /// which the mod reads as "fall back to type + id". Both are reachable, deliberately.
+    pub fn set_zone_label(&self, zone_id: &str, label: Option<&str>) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(zone)) = self.zones.get(&txn, zone_id) {
+            if let Some(l) = label {
+                zone.insert(&mut txn, "label", l);
+            } else {
+                zone.remove(&mut txn, "label");
+            }
+        }
+    }
+
+    /// T-211 — schema `zone.faction` (optional `factionKey` slug, e.g. `blufor`). `None` removes
+    /// the key, which is how a zone becomes faction-neutral again.
+    pub fn set_zone_faction(&self, zone_id: &str, faction: Option<&str>) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(zone)) = self.zones.get(&txn, zone_id) {
+            if let Some(f) = faction {
+                zone.insert(&mut txn, "faction", f);
+            } else {
+                zone.remove(&mut txn, "faction");
+            }
+        }
+    }
+
+    /// T-211 — schema `zone.rules` (optional `$defs/zoneRules`). Takes the object as JSON and
+    /// stores it opaquely; see the block comment above for why this is not a typed struct.
+    ///
+    /// `None`, malformed JSON, a non-object, and `{}` all REMOVE the key. That last one matters:
+    /// `rules` is optional as a whole and every key defaults, so "the author cleared every rule"
+    /// and "the author never opened the panel" are the same document — writing `"rules": {}` would
+    /// invent a third state the schema and the mod cannot tell apart.
+    pub fn set_zone_rules(&self, zone_id: &str, rules_json: Option<&str>) {
+        let mut txn = self.begin();
+        let Some(Out::YMap(zone)) = self.zones.get(&txn, zone_id) else {
+            return;
+        };
+        let parsed = rules_json.map(json_str_to_any);
+        match parsed {
+            Some(Any::Map(m)) if !m.is_empty() => {
+                zone.insert(&mut txn, "rules", Any::Map(m));
+            }
+            _ => {
+                zone.remove(&mut txn, "rules");
+            }
+        }
+    }
+
+    /// T-211 — delete an authored zone row.
+    pub fn remove_zone(&self, zone_id: &str) {
+        let mut txn = self.begin();
+        self.zones.remove(&mut txn, zone_id);
+    }
+
+    /// T-211 — the `zones` root as a JSON object (`zonesById`), for the draw tool's render read.
+    /// `small_maps_json` carries the same map; this is the narrow getter that does not pay for the
+    /// other nine.
+    #[must_use]
+    pub fn zones_json(&self) -> String {
+        let txn = self.doc.transact();
+        let mut buf = String::new();
+        self.zones.to_json(&txn).to_json(&mut buf);
+        buf
+    }
+
+    /// T-211 — authored zone count (cheap; backs "does this mission define a play area?").
+    #[must_use]
+    pub fn zone_count(&self) -> usize {
+        self.zones.len(&self.doc.transact()) as usize
     }
 
     /// Flat `[x0,y0,x1,y1,…]` for every vehicle that has a `position` (T-180.8 map bind).
@@ -1367,6 +1573,7 @@ impl MissionDocCore {
             &objectives,
             &vehicles,
             &entities,
+            &self.zones,
             &markers,
             &payload_extras,
             &entity_order,
@@ -1421,6 +1628,17 @@ impl MissionDocCore {
             payload.get("entities"),
             &entity_order,
             "entities",
+        );
+        // T-211 — top-level `zones[]` into the `zones` root, ordered like every sibling. This is
+        // also what takes `zones` OFF the `payloadExtras` parking path (see
+        // `is_known_editor_payload_top_level`): the root map becomes the single source of truth,
+        // and `small_maps_json` projects it back onto the wire.
+        load_rows_ordered(
+            &mut txn,
+            &self.zones,
+            payload.get("zones"),
+            &entity_order,
+            "zones",
         );
         load_rows_ordered(
             &mut txn,
@@ -1820,7 +2038,11 @@ impl MissionDocCore {
     }
 
     /// True if the doc holds authored content beyond seeded defaults — any faction / slot / objective
-    /// / vehicle / entity / marker. Backs `useMissionEditor.hasLocalContent` (the warm-session / conflict gate).
+    /// / vehicle / entity / zone / marker. Backs `useMissionEditor.hasLocalContent` (the warm-session
+    /// / conflict gate).
+    ///
+    /// **T-211 — zones count.** A mission whose only local edit is a drawn play area is a mission
+    /// with unsaved work; omitting `zones` here would let the conflict gate discard it silently.
     #[must_use]
     pub fn has_content(&self) -> bool {
         let objectives = self.doc.get_or_insert_map("objectives");
@@ -1833,6 +2055,7 @@ impl MissionDocCore {
             || objectives.len(&txn) > 0
             || vehicles.len(&txn) > 0
             || entities.len(&txn) > 0
+            || self.zones.len(&txn) > 0
             || markers.len(&txn) > 0
     }
 
@@ -2131,6 +2354,40 @@ fn position_any(x: f64, y: f64, z: f64, rotation: f64) -> Any {
     position_any_merged(HashMap::new(), x, y, z, rotation)
 }
 
+/// T-211 — `$defs/shape` circle branch: `{ "circle": { x, z, r } }`.
+///
+/// `Any::Number` (not `Any::BigInt`) for all three even when the value is integral. Yjs encodes
+/// integer-valued numbers as `BigInt` and `value_to_any` reproduces that on the hydrate side, so a
+/// zone authored at x=4200.0 comes BACK as `BigInt(4200)`. Both serialise to the same JSON token
+/// `4200`, which is what the wire and the schema see, so the round trip is stable at the payload
+/// level — the variant asymmetry is internal and is exactly why the round-trip test asserts on the
+/// compiled JSON rather than on `Any` equality.
+fn circle_shape_any(x: f64, z: f64, r: f64) -> Any {
+    let circle: HashMap<String, Any> = HashMap::from([
+        ("x".to_string(), Any::Number(x)),
+        ("z".to_string(), Any::Number(z)),
+        ("r".to_string(), Any::Number(r)),
+    ]);
+    Any::Map(Arc::new(HashMap::from([(
+        "circle".to_string(),
+        Any::Map(Arc::new(circle)),
+    )])))
+}
+
+/// T-211 — `$defs/shape` polygon branch: `{ "polygon": [[x,z],…] }` from a flat `[x0,z0,x1,z1,…]`.
+/// `chunks_exact(2)` drops a trailing unpaired coordinate rather than emitting a 1-element vertex,
+/// which `$defs/polygon`'s `minItems: 2 / maxItems: 2` per point would reject.
+fn polygon_shape_any(points_flat: &[f64]) -> Any {
+    let ring: Vec<Any> = points_flat
+        .chunks_exact(2)
+        .map(|p| Any::Array(vec![Any::Number(p[0]), Any::Number(p[1])].into()))
+        .collect();
+    Any::Map(Arc::new(HashMap::from([(
+        "polygon".to_string(),
+        Any::Array(ring.into()),
+    )])))
+}
+
 /// T-220 — write position coords while keeping any unknown sub-keys already on the map
 /// (`heading`, `source`, …). Replacing the whole map with only the four known keys was the
 /// "position sub-keys die on first edit" loss.
@@ -2407,6 +2664,22 @@ fn remove_slots_in_txn(
 /// reserved `payloadExtras` side-channel name (T-432 — never nest that key into itself / never
 /// re-emit it as a wire key). Must match `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS` in
 /// `mission/compile.rs` — duplicated here so the `doc` feature does not depend on `mission`.
+///
+/// **T-211 — `zones` is in THIS list and deliberately NOT (yet) in compile.rs's.** The two lists
+/// answer different questions and this is the one window where the answers differ:
+///
+/// * here it means "hydrate UNDERSTANDS this key", and it does — `hydrate` loads `zones[]` into
+///   the `zones` root map. Parking it in `payloadExtras` as well would give the wire two sources
+///   for one key, and the stale parked copy would beat every edit made after load.
+/// * in `compile.rs` it means "compile AUTHORS this key, so never promote it from extras". Compile
+///   does not author `zones` yet, so it MUST stay absent there or the projection
+///   `small_maps_json` writes would be skipped and every authored zone would be dropped on save.
+///
+/// The divergence is therefore load-bearing in exactly one direction, and it closes itself: the
+/// companion `compile.rs` change adds `zones` to that list AND emits it from `zonesById` in the
+/// same edit, at which point both lists agree and the projection retires. Do not "fix" the
+/// asymmetry by adding `zones` to compile.rs's list alone — that combination drops authored zones
+/// silently, which is the one failure mode this whole arrangement exists to avoid.
 fn is_known_editor_payload_top_level(key: &str) -> bool {
     matches!(
         key,
@@ -2421,6 +2694,9 @@ fn is_known_editor_payload_top_level(key: &str) -> bool {
             | "objectives"
             | "vehicles"
             | "entities"
+            // T-211 — hydrate loads top-level `zones[]` into the `zones` root. See this fn's note
+            // on why compile.rs's twin list does NOT list this key yet.
+            | "zones"
             | "markers"
             | "editor"
             | "orbat"
@@ -2457,6 +2733,61 @@ fn value_to_any(v: &serde_json::Value) -> Any {
             Any::Map(Arc::new(m))
         }
     }
+}
+
+/// T-211 — a yrs by-id root map as an ordered row array, replaying `entityOrder[order_key]` first
+/// and appending anything that order does not name.
+///
+/// This is the `Any` twin of `mission/compile.rs`'s `values_of_ordered`, and it is deliberately a
+/// SEPARATE implementation rather than a shared one: `doc` must not depend on `mission` (the same
+/// reason `is_known_editor_payload_top_level` is duplicated). The two must agree on ORDER, and the
+/// three-part contract they share is (1) `entityOrder` names the authored sequence, (2) ids in that
+/// order but absent from the map are skipped, (3) ids in the map but absent from the order are
+/// appended in map-iteration order. `zonesById_and_extras_projection_agree_on_order` pins that.
+fn ordered_rows(
+    txn: &impl ReadTxn,
+    map: &MapRef,
+    entity_order: &MapRef,
+    order_key: &str,
+) -> Vec<Any> {
+    let by_id: HashMap<String, Any> = map
+        .iter(txn)
+        .map(|(id, out)| (id.to_string(), out.to_json(txn)))
+        .collect();
+    if by_id.is_empty() {
+        return Vec::new();
+    }
+    let order: Option<Vec<String>> = match entity_order.get(txn, order_key) {
+        Some(Out::Any(Any::Array(arr))) => Some(
+            arr.iter()
+                .filter_map(|v| match v {
+                    Any::String(s) => Some(s.to_string()),
+                    _ => None,
+                })
+                .collect(),
+        ),
+        _ => None,
+    };
+    let Some(order) = order else {
+        // No authored order — map-iteration order, exactly like `values_of_ordered`'s early return.
+        return map.iter(txn).map(|(_, out)| out.to_json(txn)).collect();
+    };
+
+    let mut seen: HashSet<&str> = HashSet::new();
+    let mut out: Vec<Any> = Vec::with_capacity(by_id.len());
+    for id in &order {
+        if let Some(row) = by_id.get(id.as_str())
+            && seen.insert(id.as_str())
+        {
+            out.push(row.clone());
+        }
+    }
+    for (id, row) in map.iter(txn) {
+        if !seen.contains(id) {
+            out.push(row.to_json(txn));
+        }
+    }
+    out
 }
 
 /// T-220 — load an array of entity rows into `map` and record the authored id sequence on
@@ -4823,5 +5154,588 @@ mod tests {
             "{:?}",
             doc_json["briefings"]
         );
+    }
+
+    // ── T-211 — authored zones: round trip, shape fidelity, wire reach ──────────────────────────
+
+    /// A doc carrying one slot (so `compile_payload` has a mission to compile) plus one polygon
+    /// and one circle zone, authored through the mutators exactly as a draw tool would.
+    ///
+    /// **Coordinates are deliberately NON-INTEGRAL.** Yjs encodes integer-valued numbers as
+    /// `Any::BigInt` and non-integers as `Any::Number`, so an all-integer fixture would round-trip
+    /// identically under a bug that coerced every coordinate to an integer — it would pass over a
+    /// polygon silently snapped to a 1 m grid. `-4210.75` cannot survive that, so the fixture can
+    /// tell "the geometry came back" from "a number-shaped thing came back". Same reason T-219's
+    /// fixture uses `42.5`.
+    #[cfg(feature = "mission")]
+    fn zones_fixture() -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        // A COMPLETE editor graph, not just a loose slot: `flatten_to_mod_document` answers
+        // `CompileError::NoSlots` on a faction/squad-less document, so a bare slot would fail the
+        // end-to-end test for a reason with nothing to do with zones.
+        doc.add_faction("f1", "BLUFOR", "US");
+        doc.add_squad("sq1", "f1", "Alpha", Some("Alpha".to_string()));
+        doc.add_slot(
+            "s1", "sq1", "lyr", 0, "Rifleman", None, None, 100.5, 200.5, 0.0, 0.0,
+        );
+        doc.add_polygon_zone(
+            "z_ao",
+            "boundary",
+            &[
+                1000.25, -4210.75, 1600.5, -4210.75, 1600.5, -3800.125, 1000.25, -3800.125,
+            ],
+        );
+        doc.set_zone_label("z_ao", Some("Area of Operations"));
+        doc.set_zone_rules(
+            "z_ao",
+            Some(r#"{"graceSeconds":45.5,"penalty":"kill","warnEverySeconds":7.25}"#),
+        );
+        doc.add_circle_zone("z_obj", "objective_capture", 1234.5, -3990.25, 175.75);
+        doc.set_zone_faction("z_obj", Some("blufor"));
+        doc.set_zone_rules("z_obj", Some(r#"{"captureSeconds":180.5}"#));
+        doc
+    }
+
+    /// Pull the zones array off a compiled wire payload, whichever route put it there. Once
+    /// `compile_payload` authors `zones` itself this reads the authored key instead of the
+    /// promoted one, with no test change — which is the point.
+    #[cfg(feature = "mission")]
+    fn wire_zones(payload: &serde_json::Value) -> Vec<serde_json::Value> {
+        payload
+            .get("zones")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// **THE ROUND TRIP — author → persist → reload → identical, geometry included.**
+    ///
+    /// This is the test the ticket turns on, and it asserts on the WHOLE zone object, not on the
+    /// presence of a `zones` key. A test that checked `payload["zones"].is_array()` — or even that
+    /// the ids survived — would pass green over a zone whose `shape` was dropped, whose polygon was
+    /// truncated to its first vertex, or whose `rules` were replaced with `{}`. Comparing the full
+    /// row by value is what makes the geometry non-optional.
+    ///
+    /// The cycle is run TWICE (`compile → hydrate → compile`) because one pass cannot distinguish
+    /// "the doc stored it" from "the doc round-tripped it": a value merely echoed out of the parked
+    /// side-channel survives one compile and dies on the second, which is precisely the T-219 class.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn authored_zones_survive_compile_hydrate_compile_whole() {
+        let doc = zones_fixture();
+
+        let compiled = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let first = wire_zones(&compiled);
+        assert_eq!(
+            first.len(),
+            2,
+            "both authored zones must reach the wire payload: {compiled}"
+        );
+
+        // Full-value expectation — every schema key, geometry included, spelled out.
+        let expect_ao = serde_json::json!({
+            "id": "z_ao",
+            "type": "boundary",
+            "label": "Area of Operations",
+            "shape": { "polygon": [
+                [1000.25, -4210.75],
+                [1600.5,  -4210.75],
+                [1600.5,  -3800.125],
+                [1000.25, -3800.125]
+            ]},
+            "rules": { "graceSeconds": 45.5, "penalty": "kill", "warnEverySeconds": 7.25 }
+        });
+        let expect_obj = serde_json::json!({
+            "id": "z_obj",
+            "type": "objective_capture",
+            "faction": "blufor",
+            "shape": { "circle": { "x": 1234.5, "z": -3990.25, "r": 175.75 } },
+            "rules": { "captureSeconds": 180.5 }
+        });
+
+        let by_id = |rows: &[serde_json::Value], id: &str| -> serde_json::Value {
+            rows.iter()
+                .find(|r| r["id"] == id)
+                .unwrap_or_else(|| panic!("zone {id} missing from {rows:?}"))
+                .clone()
+        };
+
+        assert_eq!(
+            by_id(&first, "z_ao"),
+            expect_ao,
+            "compile #1 dropped part of z_ao"
+        );
+        assert_eq!(
+            by_id(&first, "z_obj"),
+            expect_obj,
+            "compile #1 dropped part of z_obj"
+        );
+
+        // Reload from the persisted payload, exactly as the editor does.
+        let reloaded = save_and_reload(&doc);
+        assert_eq!(reloaded.zone_count(), 2, "hydrate must restore both zones");
+
+        let recompiled = crate::mission::compile::compile_payload(
+            &reloaded.small_maps_json(),
+            &reloaded.slots_json(),
+            false,
+        );
+        let second = wire_zones(&recompiled);
+        assert_eq!(
+            by_id(&second, "z_ao"),
+            expect_ao,
+            "z_ao did not survive save→reload→save WHOLE"
+        );
+        assert_eq!(
+            by_id(&second, "z_obj"),
+            expect_obj,
+            "z_obj did not survive save→reload→save WHOLE"
+        );
+
+        // And the side-channel name itself never becomes a wire key (T-432 still holds).
+        assert!(
+            recompiled.get("payloadExtras").is_none(),
+            "payloadExtras must not reach the wire: {recompiled}"
+        );
+    }
+
+    /// The zones the round trip carries must be a document the DECLARED schema accepts, so the
+    /// fixture is pinned against `$defs/zone` key by key. This is a vocabulary check, not a second
+    /// validator: it asserts the doc layer emits nothing `additionalProperties: false` would
+    /// reject, and that `rules` only ever carries keys T-241 declared.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn authored_zone_rows_use_only_declared_schema_keys() {
+        // `mission.schema.json#/$defs/zone` — the six declared properties.
+        const ZONE_KEYS: &[&str] = &["id", "type", "shape", "label", "faction", "rules"];
+        // `$defs/zone.type` — the six declared enum values.
+        const ZONE_TYPES: &[&str] = &[
+            "spawn",
+            "objective_capture",
+            "objective_destroy",
+            "objective_hold_until",
+            "boundary",
+            "base_protection",
+        ];
+        // `$defs/zoneRules` — T-241's closed 16-key vocabulary, verbatim.
+        const RULE_KEYS: &[&str] = &[
+            "graceSeconds",
+            "warnEverySeconds",
+            "penalty",
+            "captureSeconds",
+            "neutralizeSeconds",
+            "contestable",
+            "onEmpty",
+            "decayRate",
+            "holdSeconds",
+            "pauseOnEnemy",
+            "resetOnEnemy",
+            "requireHolderPresent",
+            "targetAlias",
+            "targetCount",
+            "points",
+            "announceEverySeconds",
+        ];
+
+        let doc = zones_fixture();
+        let compiled = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let rows = wire_zones(&compiled);
+        assert!(!rows.is_empty(), "fixture authored no zones");
+
+        for row in &rows {
+            let obj = row.as_object().expect("zone row is an object");
+            for k in obj.keys() {
+                assert!(
+                    ZONE_KEYS.contains(&k.as_str()),
+                    "undeclared zone key `{k}` — `$defs/zone` is additionalProperties:false, so \
+                     this row cannot validate: {row}"
+                );
+            }
+            // The three `required` keys.
+            for k in ["id", "type", "shape"] {
+                assert!(obj.contains_key(k), "zone missing required `{k}`: {row}");
+            }
+            assert!(
+                ZONE_TYPES.contains(&row["type"].as_str().unwrap_or_default()),
+                "zone type outside the declared enum: {row}"
+            );
+
+            // `$defs/shape` is a oneOf — exactly one branch, never both, never neither.
+            let shape = row["shape"].as_object().expect("shape object");
+            let has_circle = shape.contains_key("circle");
+            let has_polygon = shape.contains_key("polygon");
+            assert!(
+                has_circle ^ has_polygon,
+                "`$defs/shape` is oneOf(circle|polygon) — this row satisfies {} branches: {row}",
+                usize::from(has_circle) + usize::from(has_polygon)
+            );
+            assert_eq!(shape.len(), 1, "shape carries an undeclared sibling: {row}");
+
+            if has_circle {
+                let c = shape["circle"].as_object().expect("circle object");
+                let mut ks: Vec<&str> = c.keys().map(String::as_str).collect();
+                ks.sort_unstable();
+                assert_eq!(ks, ["r", "x", "z"], "circle is closed to x/z/r: {row}");
+                assert!(
+                    c["r"].as_f64().unwrap_or_default() > 0.0,
+                    "circle.r is exclusiveMinimum 0: {row}"
+                );
+            } else {
+                let ring = shape["polygon"].as_array().expect("polygon array");
+                assert!(ring.len() >= 3, "polygon minItems is 3: {row}");
+                for p in ring {
+                    let pt = p.as_array().expect("polygon vertex is an array");
+                    assert_eq!(pt.len(), 2, "vertex is min/maxItems 2: {row}");
+                    assert!(
+                        pt.iter().all(serde_json::Value::is_number),
+                        "vertex is numeric: {row}"
+                    );
+                }
+            }
+
+            if let Some(rules) = row.get("rules") {
+                let r = rules.as_object().expect("rules object");
+                assert!(
+                    !r.is_empty(),
+                    "an empty `rules` must be omitted, not written: {row}"
+                );
+                for k in r.keys() {
+                    assert!(
+                        RULE_KEYS.contains(&k.as_str()),
+                        "`{k}` is outside T-241's closed zoneRules vocabulary — \
+                         additionalProperties:false would reject this document: {row}"
+                    );
+                }
+            }
+        }
+    }
+
+    /// The two emit routes `small_maps_json` writes (canonical `zonesById`, transitional
+    /// `payloadExtras.zones`) must describe the same zones in the same ORDER, or the compile.rs
+    /// companion change would silently reorder every mission's zones the day it lands.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn zones_by_id_and_extras_projection_agree_on_order() {
+        // Hydrate establishes an authored order that is NOT the map's own iteration order.
+        let incoming = serde_json::json!({
+            "schemaVersion": 1,
+            "map": { "terrain": "everon" },
+            "environment": {},
+            "zones": [
+                { "id": "z_c", "type": "boundary",  "shape": { "circle": { "x": 3.5, "z": 4.5, "r": 5.5 } } },
+                { "id": "z_a", "type": "spawn",     "shape": { "circle": { "x": 1.5, "z": 2.5, "r": 6.5 } } },
+                { "id": "z_b", "type": "base_protection", "shape": { "circle": { "x": 7.5, "z": 8.5, "r": 9.5 } } }
+            ],
+            "editor": { "factions": [], "squads": [], "slots": [], "editorLayers": [] }
+        });
+        let doc = MissionDocCore::new();
+        doc.hydrate(&incoming.to_string(), "lyr");
+
+        let small = small_maps(&doc);
+        let projected: Vec<&str> = small["payloadExtras"]["zones"]
+            .as_array()
+            .expect("projected zones array")
+            .iter()
+            .map(|z| z["id"].as_str().expect("id"))
+            .collect();
+        assert_eq!(
+            projected,
+            ["z_c", "z_a", "z_b"],
+            "the projection must replay hydrate's authored order, not map order"
+        );
+
+        // Every projected row is the same object the canonical by-id map holds.
+        for id in &projected {
+            assert_eq!(
+                small["zonesById"][id],
+                *small["payloadExtras"]["zones"]
+                    .as_array()
+                    .expect("arr")
+                    .iter()
+                    .find(|z| z["id"] == *id)
+                    .expect("row"),
+                "zonesById and the projection disagree about {id}"
+            );
+        }
+        assert_eq!(
+            small["zonesById"].as_object().expect("zonesById").len(),
+            3,
+            "canonical by-id emit is missing rows"
+        );
+    }
+
+    /// Deleting every zone must clear the wire, not leave the last-saved array parked. Without the
+    /// explicit `extras.remove("zones")`, a reload-then-delete-all doc would keep re-emitting the
+    /// zones it no longer has — a mission the author cannot un-fence.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn deleting_every_zone_clears_them_from_the_wire() {
+        let doc = zones_fixture();
+        let reloaded = save_and_reload(&doc);
+        assert_eq!(reloaded.zone_count(), 2);
+
+        reloaded.remove_zone("z_ao");
+        reloaded.remove_zone("z_obj");
+        assert_eq!(reloaded.zone_count(), 0);
+
+        let compiled = crate::mission::compile::compile_payload(
+            &reloaded.small_maps_json(),
+            &reloaded.slots_json(),
+            false,
+        );
+        assert!(
+            wire_zones(&compiled).is_empty(),
+            "deleted zones must not survive on the wire: {compiled}"
+        );
+    }
+
+    /// **END TO END — a drawn zone reaches the MOD document.** Author → `compile_payload` →
+    /// `flatten_to_mod_document`, asserting the exact polygon and circle land in `ModZone`.
+    ///
+    /// This is the claim the ticket ultimately rests on, and the two preceding tests do not make
+    /// it: they prove the zone survives the editor's own save/reload loop, which is a closed
+    /// editor↔editor circuit. `flatten` is a THIRD reader with its own `ZoneIn` deserialiser, and a
+    /// payload can round-trip perfectly through hydrate while flatten drops it — `ZoneIn` is
+    /// `#[serde(default)]`, so a wrong-typed or misnamed field is silently defaulted rather than
+    /// refused. Only running the real compiler over the real bytes settles it.
+    ///
+    /// Note the assertion is on the geometry, not on `zones.len()`: `derive_zones` also synthesises
+    /// spawn circles and a terrain boundary, so a count check would be satisfied by zones this
+    /// document never authored.
+    ///
+    /// **MEASURED HERE — the mod boundary QUANTISES zone geometry to 0.1 m.**
+    /// `flatten::round_coord` (flatten.rs:1823-1825, `(v * 10.0).round() / 10.0`) is applied to
+    /// every polygon vertex and to a circle's `x`/`z`/`r`, deliberately, to match spawn-zone
+    /// synthesis and the historical TS flatten. So the drawn `1000.25` reaches the mod as `1000.3`
+    /// and `-3800.125` as `-3800.1`.
+    ///
+    /// The layering is correct and this test pins BOTH halves of it: the editor document and its
+    /// payload keep full f64 precision (`authored_zones_survive_compile_hydrate_compile_whole`
+    /// asserts `1000.25` exactly), and only the compiled mod document is rounded. The reason to
+    /// pin it rather than just tolerate it is that it is invisible from the editor side — a draw
+    /// tool that promised finer-than-decimetre vertex placement, or a downstream test that asserted
+    /// exact float equality at the mod boundary, would be wrong in a way nothing else reports.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn authored_zones_reach_the_mod_document_through_flatten() {
+        use crate::mission::flatten::{ModZoneShape, flatten_to_mod_document};
+
+        let doc = zones_fixture();
+        let compiled = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let bytes = serde_json::to_vec(&compiled).expect("serialise payload");
+
+        let meta = crate::mission::flatten::MissionMeta {
+            id: "11112222333344445555666677778888".into(),
+            title: "T-211 zones".into(),
+            author: "maker".into(),
+            terrain: "everon".into(),
+            custom_terrain_name: String::new(),
+            max_players: 64,
+            time_of_day: "05:30".into(),
+            weather_preset: "clear".into(),
+        };
+        let mod_doc = flatten_to_mod_document(&meta, &bytes).expect("mission compiles");
+
+        let ao = mod_doc
+            .zones
+            .iter()
+            .find(|z| z.id == "z_ao")
+            .expect("authored boundary zone never reached the mod document");
+        assert_eq!(ao.kind, "boundary");
+        assert_eq!(ao.label, "Area of Operations");
+        match &ao.shape {
+            // Drawn as .25 / .75 / .125; arrives quantised to 0.1 m by `round_coord`. The vertex
+            // COUNT and ORDER are unchanged — this is rounding, not resampling or truncation.
+            ModZoneShape::Polygon { polygon } => assert_eq!(
+                polygon,
+                &vec![
+                    [1000.3, -4210.8],
+                    [1600.5, -4210.8],
+                    [1600.5, -3800.1],
+                    [1000.3, -3800.1],
+                ],
+                "the polygon reached the mod with different vertices than were drawn \
+                 (expected only `round_coord`'s 0.1 m quantisation)"
+            ),
+            other => panic!("boundary zone lost its polygon on the way to the mod: {other:?}"),
+        }
+        assert_eq!(
+            ao.rules.as_ref().expect("rules reached the mod")["penalty"],
+            serde_json::json!("kill"),
+            "zoneRules must pass through flatten verbatim"
+        );
+
+        let obj = mod_doc
+            .zones
+            .iter()
+            .find(|z| z.id == "z_obj")
+            .expect("authored objective zone never reached the mod document");
+        assert_eq!(obj.kind, "objective_capture");
+        assert_eq!(obj.faction, "blufor");
+        match &obj.shape {
+            ModZoneShape::Circle { circle } => {
+                // Same 0.1 m quantisation, and it applies to the RADIUS too — a drawn 175.75 m
+                // circle is a 175.8 m circle in the mod.
+                assert_eq!(circle.x, 1234.5, "x was exact at 0.1 m already");
+                assert_eq!(circle.z, -3990.3, "z quantised from -3990.25");
+                assert_eq!(circle.r, 175.8, "r quantised from 175.75");
+            }
+            other => panic!("objective zone lost its circle on the way to the mod: {other:?}"),
+        }
+
+        // T-201's synthesis still runs alongside authored zones: the authored `boundary` suppresses
+        // the terrain fallback, and spawn circles are additive.
+        assert!(
+            !mod_doc.zones.iter().any(|z| z.id == "z_bounds"),
+            "an authored boundary must suppress the synthesised terrain fallback"
+        );
+    }
+
+    /// Reshaping replaces the whole `shape` — a polygon retyped to a circle must not leave BOTH
+    /// `oneOf` branches on the row (which is schema-invalid), and vice versa.
+    #[test]
+    fn reshaping_a_zone_leaves_exactly_one_oneof_branch() {
+        let doc = MissionDocCore::new();
+        doc.add_polygon_zone("z", "boundary", &[0.5, 0.5, 10.5, 0.5, 10.5, 10.5]);
+        doc.set_zone_circle("z", 50.5, 60.5, 25.5);
+
+        let zones: serde_json::Value = serde_json::from_str(&doc.zones_json()).expect("zones_json");
+        let shape = zones["z"]["shape"].as_object().expect("shape");
+        assert!(
+            shape.contains_key("circle"),
+            "reshape did not take: {shape:?}"
+        );
+        assert!(
+            !shape.contains_key("polygon"),
+            "the polygon branch survived a reshape to circle — row is oneOf-invalid: {shape:?}"
+        );
+
+        doc.set_zone_polygon("z", &[1.5, 1.5, 2.5, 1.5, 2.5, 2.5]);
+        let zones: serde_json::Value = serde_json::from_str(&doc.zones_json()).expect("zones_json");
+        let shape = zones["z"]["shape"].as_object().expect("shape");
+        assert!(shape.contains_key("polygon"));
+        assert!(
+            !shape.contains_key("circle"),
+            "the circle branch survived a reshape to polygon: {shape:?}"
+        );
+    }
+
+    /// Optional keys must be REMOVABLE, and an empty `rules` must vanish rather than persist as
+    /// `{}` — the doc has to be able to express "unauthored", not just "authored something".
+    #[test]
+    fn clearing_optional_zone_fields_removes_the_keys() {
+        let doc = MissionDocCore::new();
+        doc.add_circle_zone("z", "objective_hold_until", 5.5, 6.5, 7.5);
+        doc.set_zone_label("z", Some("Hill 402"));
+        doc.set_zone_faction("z", Some("opfor"));
+        doc.set_zone_rules("z", Some(r#"{"holdSeconds":600.5}"#));
+
+        let row = |d: &MissionDocCore| -> serde_json::Value {
+            serde_json::from_str::<serde_json::Value>(&d.zones_json()).expect("zones_json")["z"]
+                .clone()
+        };
+        let r = row(&doc);
+        assert_eq!(r["label"], "Hill 402");
+        assert_eq!(r["faction"], "opfor");
+        assert_eq!(r["rules"]["holdSeconds"], 600.5);
+
+        doc.set_zone_label("z", None);
+        doc.set_zone_faction("z", None);
+        doc.set_zone_rules("z", None);
+        let r = row(&doc);
+        assert!(r.get("label").is_none(), "label not removed: {r}");
+        assert!(r.get("faction").is_none(), "faction not removed: {r}");
+        assert!(r.get("rules").is_none(), "rules not removed: {r}");
+
+        // An empty rules object is "unauthored", not a third state.
+        doc.set_zone_rules("z", Some("{}"));
+        assert!(
+            row(&doc).get("rules").is_none(),
+            "empty rules must not be written"
+        );
+        // Malformed JSON clears rather than writing a scalar into an object-typed key.
+        doc.set_zone_rules("z", Some(r#"{"holdSeconds":1.5}"#));
+        doc.set_zone_rules("z", Some("not json"));
+        assert!(
+            row(&doc).get("rules").is_none(),
+            "malformed rules must clear the key"
+        );
+
+        // An empty label is authorable and distinct from absent (schema has no minLength).
+        doc.set_zone_label("z", Some(""));
+        assert_eq!(
+            row(&doc)["label"],
+            "",
+            "empty label must be a writable state"
+        );
+    }
+
+    /// Zones are undo-scoped like every other root, and a hydrate (INIT) is not an undo step.
+    #[test]
+    fn zone_edits_are_undoable_and_hydrate_is_not() {
+        let mut doc = MissionDocCore::new();
+        doc.add_circle_zone("z1", "boundary", 1.5, 2.5, 3.5);
+        assert_eq!(doc.zone_count(), 1);
+        assert!(doc.can_undo(), "a drawn zone must be undoable");
+        assert!(doc.undo());
+        assert_eq!(doc.zone_count(), 0, "undo did not remove the zone");
+        assert!(doc.redo());
+        assert_eq!(doc.zone_count(), 1, "redo did not restore the zone");
+
+        // A load is not a user gesture.
+        let fresh = MissionDocCore::new();
+        fresh.set_origin_init(true);
+        fresh.hydrate(
+            &serde_json::json!({
+                "zones": [ { "id": "z", "type": "spawn",
+                             "shape": { "circle": { "x": 1.5, "z": 2.5, "r": 3.5 } } } ],
+                "editor": { "factions": [], "squads": [], "slots": [], "editorLayers": [] }
+            })
+            .to_string(),
+            "lyr",
+        );
+        fresh.set_origin_init(false);
+        assert_eq!(fresh.zone_count(), 1);
+        assert!(!fresh.can_undo(), "hydrate must not create an undo step");
+    }
+
+    /// A zone-only document has unsaved content — the conflict gate must not discard it.
+    #[test]
+    fn a_zone_alone_counts_as_local_content() {
+        let doc = MissionDocCore::new();
+        assert!(!doc.has_content(), "fresh doc has no content");
+        doc.add_circle_zone("z", "base_protection", 10.5, 20.5, 30.5);
+        assert!(
+            doc.has_content(),
+            "a drawn play area is authored work and must count as local content"
+        );
+    }
+
+    /// A flat ring with an odd coordinate count drops the unpaired tail rather than writing a
+    /// 1-element vertex, which `$defs/polygon` (`minItems: 2`, `maxItems: 2`) would reject.
+    #[test]
+    fn an_unpaired_trailing_coordinate_is_dropped() {
+        let doc = MissionDocCore::new();
+        doc.add_polygon_zone("z", "boundary", &[0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]);
+        let zones: serde_json::Value = serde_json::from_str(&doc.zones_json()).expect("zones_json");
+        let ring = zones["z"]["shape"]["polygon"]
+            .as_array()
+            .expect("polygon array");
+        assert_eq!(ring.len(), 3, "expected 3 whole vertices: {ring:?}");
+        for pt in ring {
+            assert_eq!(pt.as_array().expect("vertex").len(), 2, "{pt:?}");
+        }
     }
 }
