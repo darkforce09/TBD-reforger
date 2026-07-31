@@ -926,30 +926,111 @@ mod tests {
         assert_eq!(classify_discord_failure(&e).0, "outage");
     }
 
-    /// The no-secret guarantee, asserted rather than asserted-in-a-comment. The values that
-    /// must never reach a log are the authorization code, the access token and the client
-    /// secret; none of them is even in scope at the log site, and the rendered chain of a
-    /// real transport error carries only the URL — which has no query string.
+    /* ──── T-584 — the no-secret guarantee, made able to FAIL ──── */
+
+    /// The three values that must never reach a log: the authorization code, the access token
+    /// and the client secret. Deliberately distinctive strings — a substring search for them
+    /// cannot collide with anything reqwest, anyhow or `tracing` emits on its own.
+    const CREDENTIAL_SENTINELS: [&str; 3] = [
+        "invalid-authorization-code",
+        "invalid-access-token",
+        "invalid-client-secret",
+    ];
+    /// The detector both tests below are asserted with — ONE function, so the positive control
+    /// proves the sensitivity of the exact code that returns the verdict.
+    fn credential_in(haystack: &str) -> Option<&'static str> {
+        CREDENTIAL_SENTINELS
+            .into_iter()
+            .find(|s| haystack.contains(s))
+    }
+
+    /// Everything [`log_discord_call_failure`] actually emits, captured as a `tracing` layer
+    /// sees it — the whole event, not just the `error` field.
+    ///
+    /// This is what makes the guarantee cover the LOG rather than a private re-render of the
+    /// error inside the test. The old test asserted over its own `format!("{:#}")`; a log site
+    /// that grew a fourth field carrying a credential would not have moved that string at all.
+    ///
+    /// `with_default` installs the subscriber on THIS THREAD only, and `#[tokio::test]` runs a
+    /// current-thread runtime, so there is no global subscriber and no bleed into the other
+    /// tests `cargo test` runs in parallel.
+    fn capture_call_failure_log(stage: &'static str, e: &anyhow::Error) -> String {
+        #[derive(Clone, Default)]
+        struct SharedBuf(std::sync::Arc<std::sync::Mutex<Vec<u8>>>);
+        impl std::io::Write for SharedBuf {
+            fn write(&mut self, b: &[u8]) -> std::io::Result<usize> {
+                self.0.lock().unwrap().extend_from_slice(b);
+                Ok(b.len())
+            }
+            fn flush(&mut self) -> std::io::Result<()> {
+                Ok(())
+            }
+        }
+        let buf = SharedBuf::default();
+        let subscriber = tracing_subscriber::fmt()
+            .with_writer({
+                let b = buf.clone();
+                move || b.clone()
+            })
+            .with_ansi(false)
+            .finish();
+        tracing::subscriber::with_default(subscriber, || log_discord_call_failure(stage, e));
+        let bytes = buf.0.lock().unwrap().clone();
+        String::from_utf8(bytes).expect("tracing writes UTF-8")
+    }
+
+    /// **The positive control, and the reason the guarantee below can fail at all.**
+    ///
+    /// Before T-584 this pair was a single test that asserted three strings were absent from a
+    /// haystack they had never been put into. No rendering of `reqwest::Error` could have made
+    /// those assertions fail — a "no credential leaked" verdict over an input that never
+    /// contained one, which is the shape of defect this program is named after. The stated
+    /// positive control (`contains("127.0.0.1:1")`) only ruled out an EMPTY haystack; it said
+    /// nothing about whether the detector could see a credential that was really there.
+    ///
+    /// So: same `loopback_transport_error`, same `reqwest::Error` type, same
+    /// `log_discord_call_failure`, same capture, same `credential_in` — the ONE difference is
+    /// that the credential is a genuine input, carried in the failing URL's query string.
+    /// Measured: reqwest renders the full URL, query included, so this is a real leak path and
+    /// not a hypothetical one.
+    ///
+    /// If reqwest ever stops rendering the URL, or the capture silently stops capturing, or
+    /// `credential_in` is weakened, THIS test goes red — and the guarantee below is exposed as
+    /// vacuous instead of quietly becoming so.
     #[tokio::test]
-    async fn the_logged_error_chain_carries_no_credential() {
-        let re = loopback_transport_error("/oauth2/token").await;
-        let rendered = format!("{:#}", anyhow::Error::new(re));
-        for secret in [
-            "invalid-authorization-code",
-            "invalid-access-token",
-            "invalid-client-secret",
-        ] {
-            assert!(
-                !rendered.contains(secret),
-                "the rendered error chain must never carry a credential; found {secret} in \
-                 {rendered}"
+    async fn a_credential_in_the_failing_url_does_reach_the_log() {
+        for secret in CREDENTIAL_SENTINELS {
+            let e = anyhow::Error::new(
+                loopback_transport_error(&format!("/oauth2/token?leaked={secret}")).await,
+            );
+            let logged = capture_call_failure_log("token_exchange", &e);
+            assert_eq!(
+                credential_in(&logged),
+                Some(secret),
+                "the detector must SEE a credential that is genuinely in the log line; if it \
+                 cannot, the no-leak assertion is vacuous. Captured: {logged}"
             );
         }
-        // Positive control: the string really is non-empty and really does describe the call,
-        // so the three assertions above are not passing over an empty haystack.
+    }
+
+    /// The guarantee itself, on the real path. `log_discord_call_failure` is handed only a
+    /// stage label and the error — `q.code`, the access token and the client secret are not in
+    /// scope at the log site, and the production call carries them in the POST **body**, which
+    /// no `reqwest::Error` renders. This asserts that end-to-end over the emitted event.
+    #[tokio::test]
+    async fn the_logged_call_failure_carries_no_credential() {
+        let e = anyhow::Error::new(loopback_transport_error("/oauth2/token").await);
+        let logged = capture_call_failure_log("token_exchange", &e);
+        assert_eq!(
+            credential_in(&logged),
+            None,
+            "a logged Discord failure must never carry a credential. Captured: {logged}"
+        );
+        // Still the operator-facing contract: the line has to identify the failed call and its
+        // verdict, or it is clean only because it is useless.
         assert!(
-            rendered.contains("127.0.0.1:1"),
-            "the chain must still identify the failed call: {rendered}"
+            logged.contains("127.0.0.1:1") && logged.contains("outage"),
+            "the log line must still name the failed call and its fault class: {logged}"
         );
     }
 

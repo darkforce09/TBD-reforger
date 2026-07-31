@@ -71,8 +71,19 @@
 -- last_login_at/updated_at with the wall clock, so this UPDATE must run AFTER
 -- the login that mints the capture token, or GET__me.json will not reproduce.
 -- total_deployments / attendance_rate are the denormalized counters that
--- GET /me/deployments reports as total_operations / attendance_rate; they are
--- set here to agree with the 17 match_player_stats rows seeded in §7.
+-- GET /me/deployments reports as total_operations / attendance_rate.
+--
+-- T-590: this used to say they were "set here to agree with the 17
+-- match_player_stats rows seeded in §7". That was wrong twice over. §7 seeds
+-- ELEVEN match_player_stats rows (lines 491-543), and only TWO of them belong to
+-- this user -- which is why service_history in the captured
+-- GET__me__deployments.json golden has exactly two entries. total_deployments is
+-- a standalone denormalized career counter; it is NOT derived from the seeded
+-- stats and does not agree with any count in this file.
+--
+-- DO NOT "fix" the 17 to match a row count: it is pinned by
+-- apps/website/frontend/tests/fixtures/api/GET__me__deployments.json
+-- ("total_operations":17). Changing it here fails that golden.
 INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character,
                    role, is_banned, total_deployments, attendance_rate,
                    last_login_at, created_at, updated_at)

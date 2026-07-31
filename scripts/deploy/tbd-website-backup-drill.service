@@ -10,7 +10,7 @@
 ; scripts, which is the regression a diff genuinely can cause.
 ;
 ; Install (as the deploy user, after tbd-website-backup.timer):
-;   sed 's|TBD_REPO_DIR_PLACEHOLDER|/home/sam/tbd/TBD-Reforger|' \
+;   sed 's|/TBD_REPO_DIR_PLACEHOLDER|/home/sam/tbd/TBD-Reforger|' \
 ;       scripts/deploy/tbd-website-backup-drill.service > ~/.config/systemd/user/tbd-website-backup-drill.service
 ;   cp scripts/deploy/tbd-website-backup-drill.timer ~/.config/systemd/user/
 ;   systemctl --user daemon-reload
@@ -18,15 +18,20 @@
 ;
 ; Read the result:  journalctl --user -u tbd-website-backup-drill.service -n 60
 ; A FAILING drill means the backups are not recoverable. Treat it as a production incident.
+;
+; T-588: the placeholder is deliberately an ABSOLUTE path (`/TBD_REPO_DIR_PLACEHOLDER`) so that
+; this committed template passes `systemd-analyze verify --user` as-is. The full reasoning, and
+; what a naive `cp`-install without the `sed` does instead, is in tbd-website-backup.service.
+; Do not "tidy up" the leading slash.
 
 [Unit]
 Description=TBD website — weekly backup restore drill
-Documentation=file://TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-drill.sh
+Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-drill.sh
 After=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=TBD_REPO_DIR_PLACEHOLDER
+WorkingDirectory=/TBD_REPO_DIR_PLACEHOLDER
 
 Environment=TBD_BACKUP_DB=tbd_reforger
 Environment=TBD_BACKUP_DIR=%h/tbd-backups/website
@@ -38,7 +43,7 @@ Environment=TBD_DRILL_DB=tbd_drill_probe
 ; Deliberately NO --fresh: the drill must exercise the backup that is ACTUALLY ON DISK.
 ; Taking a new dump first would prove this machine can dump right now, which is not the
 ; question you have at 3am — "can I recover from what I already have" is.
-ExecStart=/usr/bin/env bash TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-drill.sh
+ExecStart=/usr/bin/env bash /TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-drill.sh
 
 Restart=no
 TimeoutStartSec=3600

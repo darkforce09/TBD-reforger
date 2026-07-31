@@ -784,7 +784,7 @@ pub async fn add_event_mission(
     //   * Nothing else inserts `orbat_slots`. `assign_slot` / `clear_slot` only move
     //     `assigned_to` on rows that already exist; `reserve_squad` / `release_squad` touch
     //     `orbat_reservations`. The only other writer in the tree is the dev seed
-    //     (`seeds/content_golden.sql:605`), inserting directly.
+    //     (`seeds/content_golden.sql:638`), inserting directly.
     //   * So a zero-slot `event_missions` row can NEVER gain slots. The sole recovery is
     //     `DELETE /events/:id/missions/:emid` and re-attach — which an admin has to know to do,
     //     having just been told the attach succeeded.
@@ -1738,7 +1738,7 @@ pub async fn register_for_event_mission(
     // cannot move. 409 says the true thing.
     //
     // [`add_event_mission`] now refuses to create this state at all, so reaching it means the
-    // rows predate that fix or were seeded directly (`seeds/content_golden.sql:605`). Both are
+    // rows predate that fix or were seeded directly (`seeds/content_golden.sql:638`). Both are
     // real: this is the guard for the data, the attach refusal is the guard for the door.
     if capacity == 0 {
         return Err(ApiError::conflict(

@@ -24,8 +24,17 @@ use wasm_bindgen::prelude::*;
 pub type DocHandle = Rc<RefCell<Option<MissionDocCore>>>;
 
 /// Deterministic seed size. The `seed_random` generator writes exactly this many slots into the
-/// `slots` map (no faction/squad/layer needed) in one transaction; with the core's fixed `CLIENT_ID`
-/// this makes `encode_state()` byte-stable — the golden recorded in the verify log (spec D3).
+/// `slots` map (no faction/squad/layer needed) in one transaction, so the SLOT CONTENT is
+/// reproducible run to run.
+///
+/// T-590: this used to add "with the core's fixed `CLIENT_ID` this makes `encode_state()`
+/// byte-stable — the golden recorded in the verify log (spec D3)". There is no fixed `CLIENT_ID`
+/// any more: T-222 deleted `const CLIENT_ID: u64 = 1` because one id shared by every document
+/// silently dropped peer blocks on merge, and `MissionDocCore::new` now randomizes it
+/// (`doc/store.rs`). So the encoded bytes are NOT stable across runs and no cross-run byte golden
+/// is asserted anywhere. What `roundtrip_ok` below actually pins is unchanged and still true:
+/// re-encoding the SAME document is byte-identical, and a fresh peer replaying the update
+/// materializes the same slot set.
 const SEED_N: u32 = 8;
 /// Fixed LCG seed — any change re-rolls the golden encode bytes.
 const SEED: u64 = 0x0071_5916;
@@ -48,7 +57,8 @@ pub fn new_seeded_doc() -> DocHandle {
 /// `encode_decode_roundtrip_is_stable`, run against the seeded hosted doc. It asserts exactly the two
 /// properties that test proves:
 ///   1. **Re-encode stability** — encoding the *same* document twice is byte-identical (deterministic
-///      v1 encode + fixed client id).
+///      v1 encode; the client id is randomized per document since T-222, but it is the same id
+///      within one document, which is all this property needs).
 ///   2. **Round-trip result-set equality (Class S)** — a fresh peer that replays the update
 ///      materializes the same slot set (matched by id; SoA row order is arbitrary) with equal x/rot.
 fn roundtrip_ok(core: &MissionDocCore) -> bool {

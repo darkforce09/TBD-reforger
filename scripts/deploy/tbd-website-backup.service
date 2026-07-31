@@ -8,7 +8,7 @@
 ;
 ; Install (on the deploy host, as the deploy user):
 ;   mkdir -p ~/.config/systemd/user
-;   sed 's|TBD_REPO_DIR_PLACEHOLDER|/home/sam/tbd/TBD-Reforger|' \
+;   sed 's|/TBD_REPO_DIR_PLACEHOLDER|/home/sam/tbd/TBD-Reforger|' \
 ;       scripts/deploy/tbd-website-backup.service > ~/.config/systemd/user/tbd-website-backup.service
 ;   cp scripts/deploy/tbd-website-backup.timer ~/.config/systemd/user/
 ;   systemctl --user daemon-reload
@@ -17,10 +17,29 @@
 ;
 ; Verify:  systemctl --user list-timers tbd-website-backup.timer
 ;          journalctl --user -u tbd-website-backup.service -n 50
+;
+; ── T-588 — why the placeholder is an ABSOLUTE path (the leading `/`) ─────────────────
+; It used to be the bare token `TBD_REPO_DIR_PLACEHOLDER`, which made this committed file
+; FAIL `systemd-analyze verify --user` with "WorkingDirectory= path is not absolute" — a
+; hard error on an artefact that is correct for what it is. Verifying the template and
+; verifying an installation gave the same red, so the honest signal and the noise were
+; indistinguishable, and the documented answer was "ignore it", which is how a check stops
+; being read at all.
+;
+; `/TBD_REPO_DIR_PLACEHOLDER` is a syntactically valid absolute path, so the committed
+; template verifies clean; the `sed` above matches the leading slash too, so the rendered
+; unit is byte-identical to what it was before.
+;
+; This does NOT let a naive `cp`-install pass silently. The unit starts, fails at once, and
+; names the placeholder in the journal:
+;   Changing to the requested working directory "/TBD_REPO_DIR_PLACEHOLDER": No such file
+;   or directory
+; — louder and more self-explanatory than the old failure, and raised at the point where it
+; is actionable. Do not "tidy up" the leading slash.
 
 [Unit]
 Description=TBD website — verified PostgreSQL backup
-Documentation=file://TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-db.sh
+Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-db.sh
 ; The dump goes through `podman exec`, so the container stack has to be up. This orders
 ; against it when present and does not require it, because the backup script already
 ; refuses loudly (and non-zero) when the container is missing or not running — a refusal
@@ -29,7 +48,7 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=TBD_REPO_DIR_PLACEHOLDER
+WorkingDirectory=/TBD_REPO_DIR_PLACEHOLDER
 
 ; Retention is BY COUNT. 14 nightly dumps ~= two weeks of history that cannot be silently
 ; emptied by a stopped timer — see the long comment in backup-db.sh. Override per host by
@@ -39,7 +58,7 @@ Environment=TBD_BACKUP_DB=tbd_reforger
 Environment=TBD_BACKUP_DIR=%h/tbd-backups/website
 Environment=TBD_DB_CONTAINER=tbd_reforger_db
 
-ExecStart=/usr/bin/env bash TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-db.sh
+ExecStart=/usr/bin/env bash /TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-db.sh
 
 ; A failed backup must be loud and must NOT be retried into a tight loop — the timer will
 ; come back tomorrow, and the common causes (container down, disk full) are not fixed by

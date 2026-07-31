@@ -1039,8 +1039,51 @@ enum RowChange {
 /// editor writes for slots, entities, vehicles and markers alike
 /// (`map_engine_core::mission::flatten`). A row that moved *and* changed something else is
 /// `Edited`, because that is the stronger and less dismissable claim.
+/// Two JSON numbers are equal when they denote the same VALUE, not the same representation.
+///
+/// T-584 — `serde_json::Number`'s `PartialEq` is representational: `100` and `100.0` deserialize
+/// to different variants (`PosInt` vs `Float`) and compare unequal. Both sides of this differ come
+/// from one pipeline today, so it is not reachable yet; but a representation flip between two
+/// stored payloads (a `yrs` BigInt↔Number coercion across an editor change, a serializer swap)
+/// would make the differ report untouched rows as "edited". A differ that cries wolf is worth
+/// nothing, which is the whole reason it exists.
+///
+/// Integers are compared exactly and never widened through `f64` — that would make two distinct
+/// `u64`s above 2^53 compare equal, trading a false "edited" for a false "unchanged". A silent
+/// "unchanged" is the strictly worse failure, so the widening only happens when a float is
+/// genuinely involved.
+fn number_eq(x: &serde_json::Number, y: &serde_json::Number) -> bool {
+    if let (Some(p), Some(q)) = (x.as_i64(), y.as_i64()) {
+        return p == q;
+    }
+    if let (Some(p), Some(q)) = (x.as_u64(), y.as_u64()) {
+        return p == q;
+    }
+    match (x.as_f64(), y.as_f64()) {
+        (Some(p), Some(q)) => p == q,
+        _ => x == y,
+    }
+}
+
+/// Deep equality that uses [`number_eq`] at every numeric leaf. Structural for arrays and objects;
+/// falls through to `Value`'s own `PartialEq` for null/bool/string, where representation IS value.
+fn json_eq(a: &Value, b: &Value) -> bool {
+    match (a, b) {
+        (Value::Number(x), Value::Number(y)) => number_eq(x, y),
+        (Value::Array(x), Value::Array(y)) => {
+            x.len() == y.len() && x.iter().zip(y.iter()).all(|(p, q)| json_eq(p, q))
+        }
+        (Value::Object(x), Value::Object(y)) => {
+            x.len() == y.len()
+                && x.iter()
+                    .all(|(k, v)| y.get(k).is_some_and(|w| json_eq(v, w)))
+        }
+        _ => a == b,
+    }
+}
+
 fn classify_row(a: &Value, b: &Value) -> RowChange {
-    if a == b {
+    if json_eq(a, b) {
         return RowChange::Same;
     }
     match (a.as_object(), b.as_object()) {
@@ -1049,7 +1092,7 @@ fn classify_row(a: &Value, b: &Value) -> RowChange {
             let only_position_differs = same_keys
                 && ao
                     .iter()
-                    .all(|(k, v)| k == "position" || bo.get(k) == Some(v));
+                    .all(|(k, v)| k == "position" || bo.get(k).is_some_and(|w| json_eq(v, w)));
             if only_position_differs {
                 RowChange::Moved
             } else {
@@ -2940,6 +2983,45 @@ mod tests {
             json!({ "id": "s1", "role": "SL", "position": { "x": 1.0, "y": 2.0 }, "tag": "CMD" });
         assert_eq!(classify_row(&a, &f), RowChange::Edited);
         assert_eq!(classify_row(&a, &a), RowChange::Same);
+    }
+
+    /// T-584 — a representation flip is not an edit.
+    ///
+    /// `serde_json` parses `100` as `PosInt` and `100.0` as `Float`, and `Value`'s own `PartialEq`
+    /// calls those unequal. Before this fix `classify_row` inherited that, so a payload whose
+    /// integers had been re-serialized as floats (a `yrs` BigInt↔Number coercion across an editor
+    /// change) reported every touched row as **edited** while nothing had changed.
+    #[test]
+    fn a_number_representation_flip_is_not_an_edit() {
+        // Positive control FIRST: the two payloads really do differ under `Value`'s equality, so
+        // this test is exercising the flip and not comparing a value with itself.
+        let int = json!({ "id": "s1", "count": 100, "position": { "x": 1, "y": 2 } });
+        let float = json!({ "id": "s1", "count": 100.0, "position": { "x": 1.0, "y": 2.0 } });
+        assert_ne!(
+            int, float,
+            "serde_json must still consider these unequal, or this test proves nothing"
+        );
+
+        assert_eq!(
+            classify_row(&int, &float),
+            RowChange::Same,
+            "100 and 100.0 are the same number; reporting an edit here is crying wolf"
+        );
+        // And a flip confined to `position` must not read as a MOVE either.
+        let moved = json!({ "id": "s1", "count": 100, "position": { "x": 9.0, "y": 2.0 } });
+        assert_eq!(classify_row(&int, &moved), RowChange::Moved);
+
+        // The negative half: widening must not swallow a real difference, including two distinct
+        // u64s above 2^53 that would collide if compared as f64.
+        let other = json!({ "id": "s1", "count": 101.0, "position": { "x": 1, "y": 2 } });
+        assert_eq!(classify_row(&int, &other), RowChange::Edited);
+        let big_a = json!({ "id": "s1", "count": 9_007_199_254_740_993_u64 });
+        let big_b = json!({ "id": "s1", "count": 9_007_199_254_740_992_u64 });
+        assert_eq!(
+            classify_row(&big_a, &big_b),
+            RowChange::Edited,
+            "two distinct u64s above 2^53 must not be collapsed by an f64 comparison"
+        );
     }
 
     /// Every row on each side lands in exactly one bucket. This is the invariant that makes a

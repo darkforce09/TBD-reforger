@@ -115,7 +115,7 @@ struct FactionKey {
 ///    branch here would offer keys from one source while the server materialises from the other.
 ///
 /// **What this does NOT cover, honestly:** `orbat_slots` rows already materialised from a
-/// *superseded* version, or inserted directly by a seed (`seeds/content_golden.sql:605` does exactly
+/// *superseded* version, or inserted directly by a seed (`seeds/content_golden.sql:638` does exactly
 /// that, for a mission whose `json_payload` is `{}`). Those keys are not in the current payload and
 /// there is no mission-scoped route that returns them — `orbat_slots` is keyed on
 /// `event_mission_id`, which this page does not know. `handlers/events.rs:2009` already tells an

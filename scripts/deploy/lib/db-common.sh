@@ -228,19 +228,53 @@ EOF
 # ──────────────────────────────── dump verification ──────────────────────────────────
 #
 # The single most important function in T-577. It must open the file it is asked about.
-# Four independent checks, each catching something the one before it cannot:
+# Five independent checks, each catching something the one before it cannot:
 #
 #   1. exists + non-empty        catches "the redirect never wrote anything"
 #   2. PGDMP magic header        catches "this is not a custom-format archive at all"
 #   3. pg_restore --list         catches a destroyed TOC (and gives us the header)
-#   4. pg_restore --data-only    THE ONE THAT MATTERS — decompresses every data block,
-#                                catching truncation and corruption that (3) passes,
-#                                and yielding the row count FROM THE FILE.
+#   4. IDENTITY (T-588)          catches "structurally perfect dump OF THE WRONG DATABASE"
+#   5. pg_restore --data-only    decompresses every data block, catching truncation and
+#                                corruption that (3) passes, and yielding the row count
+#                                FROM THE FILE.
 #
+# ── T-588 — why (4) had to exist ─────────────────────────────────────────────────────
+#
+# Checks 1/2/3/5 answer "is this a readable archive with rows in it". NONE of them answers
+# "is this an archive of the database you are about to overwrite". MEASURED before the fix,
+# with the verifier asked for `tbd_reforger`:
+#
+#   fixture                                     rows    verdict
+#   dump of tbd_reforger                       13471    rc=0   (correct)
+#   dump of tbd_gate_it  (WRONG DATABASE)      18231    rc=0   <-- !
+#   dump with no _sqlx_migrations                 50    rc=0   <-- !
+#
+# Both wrong files were accepted because the verifier never looked at what database the
+# archive came from — this program's signature defect, success reported over an input the
+# tool never examined, in the very function written to end it. Not exploitable in the
+# BACKUP path (it always dumps the whole correct DB), but restore-db.sh runs
+# `pg_restore --clean --if-exists`, which DROPS EVERY OBJECT FIRST. A restore is exactly
+# the moment someone is panicking and grabs the wrong file out of a directory of them.
+#
+# Two facts, because either alone is weak:
+#   a. the archive header's `dbname:` — what pg_dump recorded it dumped
+#   b. an `_sqlx_migrations` TOC entry — that it really is a TBD-Reforger schema and not
+#      some unrelated database that happens to carry the right name
+# Both come out of the ONE `pg_restore --list` already run for check 3, so identity costs
+# nothing and is checked BEFORE the expensive full-body read.
+#
+# `expect_db` is the database the archive must have been DUMPED FROM — NOT the restore
+# target. They legitimately differ: backup-drill.sh restores a `tbd_reforger` dump into
+# `tbd_drill_probe`. Passing the target here would fail every drill.
+#
+# Empty `expect_db` skips (4) and says so on stderr. A verdict must never read as more
+# than what was actually checked, so silence is not an option.
+#
+# Usage:  tbd_verify_dump <file> [min_rows] [expect_db]
 # Emits the row count on stdout when it succeeds. Returns non-zero on any failure.
 tbd_verify_dump() {
-	local file="$1" min_rows="${2:-1}"
-	local size rows magic rc
+	local file="$1" min_rows="${2:-1}" expect_db="${3:-}"
+	local size rows magic rc toc
 
 	if [ ! -f "$file" ]; then
 		echo "VERIFY FAIL: '$file' does not exist or is not a regular file." >&2
@@ -260,13 +294,59 @@ tbd_verify_dump() {
 		return 1
 	fi
 
-	# 3. TOC readable.
-	if ! tbd_ct_i pg_restore --list <"$file" >/dev/null 2>&1; then
+	# 3. TOC readable. Captured, not discarded — check 4 reads the same TOC this validated,
+	#    so identity is established from the bytes that were actually parsed.
+	if ! toc="$(tbd_ct_i pg_restore --list <"$file" 2>/dev/null)" || [ -z "$toc" ]; then
 		echo "VERIFY FAIL: '$file' — \`pg_restore --list\` could not read the archive table of contents." >&2
 		return 1
 	fi
 
-	# 4. Full body read. Decompresses every data block; this is the check `--list` cannot
+	# 4. IDENTITY (T-588). See the header for why this is not optional on the restore path.
+	if [ -n "$expect_db" ]; then
+		local dbname sqlx_status
+		# The header line is `;     dbname: <name>`. sed, not grep, because this extracts a
+		# value rather than asking a yes/no question.
+		dbname="$(printf '%s\n' "$toc" |
+			sed -n 's/^;[[:space:]]*dbname:[[:space:]]*\(.*\)$/\1/p' | head -1)"
+		dbname="${dbname%"${dbname##*[![:space:]]}"}"
+		if [ -z "$dbname" ]; then
+			echo "VERIFY FAIL: '$file' — the archive header carries no \`dbname:\` line, so the source" >&2
+			echo "             database cannot be established. Refusing to vouch for an archive whose" >&2
+			echo "             identity is unknown; expected '$expect_db'." >&2
+			return 1
+		fi
+		if [ "$dbname" != "$expect_db" ]; then
+			echo "VERIFY FAIL: '$file' is a dump of database '$dbname', but '$expect_db' was expected." >&2
+			echo "             This archive is structurally VALID — it is simply the wrong database." >&2
+			echo "             Restoring it would \`pg_restore --clean\` the target and repopulate it" >&2
+			echo "             from the wrong source. If you meant this, pass the real source name." >&2
+			return 1
+		fi
+		# Right name is not enough: an unrelated database could carry it. `_sqlx_migrations`
+		# is the schema fingerprint that says this really is a TBD-Reforger database. Present
+		# in schema-only dumps too, so this stays compatible with `--min-rows 0`.
+		sqlx_status="$(gate_probe_str -F '_sqlx_migrations' "$toc")"
+		case "$sqlx_status" in
+		0) : ;;
+		1)
+			echo "VERIFY FAIL: '$file' names database '$dbname' but its TOC has no \`_sqlx_migrations\`" >&2
+			echo "             table. Every TBD-Reforger database carries one; an archive without it is" >&2
+			echo "             not a backup of this platform's schema, whatever it is named." >&2
+			return 1
+			;;
+		*)
+			echo "VERIFY FAIL: '$file' — the identity check could not RUN (grep status $sqlx_status)." >&2
+			echo "             A check that did not execute is not a pass. Failing closed." >&2
+			return 1
+			;;
+		esac
+	else
+		echo "VERIFY NOTE: no expected database name was given, so '$file' was NOT checked for" >&2
+		echo "             database identity — a valid dump of a DIFFERENT database would pass" >&2
+		echo "             everything below. Pass a third argument to close that gap." >&2
+	fi
+
+	# 5. Full body read. Decompresses every data block; this is the check `--list` cannot
 	#    make. Row count is parsed out of the COPY blocks in the decompressed stream, so
 	#    it counts rows that are ACTUALLY IN THE FILE — not TABLE DATA headings, which
 	#    pg_dump emits for empty tables too (measured).

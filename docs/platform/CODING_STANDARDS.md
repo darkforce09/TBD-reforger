@@ -10,11 +10,18 @@
 > §3 TypeScript/React below — and every GO-\*/TS-\*/FMT-1/FMT-3 / golangci / `npm run` gate row
 > marked "live" in §10 — are RETIRED historical record.** Do not treat them as current.
 >
+> **One exception, and it is a real one: GO-7 (`@route` ⇄ router) is LIVE.** It was ported to the
+> Axum crate at T-586 as [`scripts/verify-route-tags.sh`](../../scripts/verify-route-tags.sh) and is
+> run by `make verify-coding-standards` and both `scripts/platform/wave.sh` gate lanes. Its §2 and
+> §10 rows are current, not historical. GO-7 spent the whole Go→Rust rewrite dead precisely because
+> a blanket "that's all retired" reading was easier than checking — see the §2 note (T-590).
+>
 > **Live layout:** `apps/website/api/` (`website-api`) · `apps/website/frontend/` (`website-frontend`).
 > CI jobs: `website-api` / `website-frontend`. Conventions: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
 >
 > **Live enforcement:** `cargo fmt --check` + `cargo clippy -D warnings` + `make wasm-ci` +
 > `make ci-local-leptos` + `make leptos-gates` + `make verify-no-python` + schema/citations +
+> `make verify-coding-standards` (file length, doc layout, no `SELECT *`, **GO-7 route tags**) +
 > editorconfig — all via **`make ci-local`** / `ci.yml`. §4 (HTTP contract), §5 (Enfusion),
 > §6–§9 (testing/formatting/size/logging principles) remain in force, language-neutral.
 >
@@ -109,7 +116,15 @@ Every rule serves one primary pillar — the *why*. The rule is the *what*; §10
 > Historical: the Go backend (Gin + GORM) was rewritten in Rust (Axum + sqlx) at T-145 and no Go
 > remains in the repo. The architectural intent carries over 1:1 — handlers are the HTTP edge,
 > `src/services/` the logic core, `src/models/` the snake_case DB/API contract — enforced today by
-> `cargo clippy -D warnings` + the centralized `ApiError` type + `cargo fmt`.
+> `cargo clippy -D warnings` + the centralized `ApiError` type + `cargo fmt`, **except GO-7**, which
+> none of those three can see and which is enforced by
+> [`scripts/verify-route-tags.sh`](../../scripts/verify-route-tags.sh) instead (T-586/T-590).
+>
+> The exception is called out because leaving it implicit is what let GO-7 stay dead: `Makefile:304`
+> carried this same sentence with no carve-out, so for the entire Go→Rust rewrite three handlers in
+> `handlers/servers.rs` carried `@route` tags to routes that did not exist and one live route carried
+> no tag at all, and nothing went red. `@route` lives in a doc comment; clippy does not read doc
+> comments and `cargo fmt` only reflows them.
 
 **REQUIRED**
 
@@ -135,10 +150,16 @@ Every rule serves one primary pillar — the *why*. The rule is the *what*; §10
 - **GO-6 (Readability) — Every exported identifier MUST carry a Godoc comment starting with its name.**
   Owned by [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §4. Gate: **CI-BLOCK** (golangci
   `revive` `exported`); **T-125.2** removes `only-new-issues`, making it a full-repo gate.
-- **GO-7 (Readability) — Every exported handler func SHALL carry `@route` in its Godoc, and the tag
-  MUST match the wired route in `handlers.go` `Register()` (method + path).** The three-way
-  triangulation of DOCUMENTATION_STANDARDS.md §3. Gate: **CI-SCRIPT** —
-  `verify-contract-citations.mjs` GO-7 pass (presence **and** Register route-match on all 82 handlers).
+- **GO-7 (Readability) — Every exported handler fn SHALL carry `@route` in its doc comment, and the
+  tag MUST match the wired route in [`apps/website/api/src/app.rs`](../../apps/website/api/src/app.rs)
+  (method + path).** The three-way triangulation of DOCUMENTATION_STANDARDS.md §3. Gate:
+  **CI-SCRIPT** — [`scripts/verify-route-tags.sh`](../../scripts/verify-route-tags.sh), checked in
+  **both** directions (every `@route` tag resolves to a registered route, **and** every registered
+  route carries a matching tag) across all **102** handlers, keyed on (method, path, handler fn).
+  Wired into `make verify-coding-standards` and both `scripts/platform/wave.sh` gate lanes.
+  **T-590:** this rule cited `handlers.go` `Register()` and `verify-contract-citations.mjs` until
+  now. T-145 deleted both, and GO-7 was unenforced for the whole rewrite — see the note under
+  §Backend above for what that cost.
 - **GO-8 (Debuggability) — `staticcheck` (all checks) SHALL be enabled.** Generated
   `internal/contract/**` is excluded via `issues.exclude-rules`. Gate: **CI-BLOCK** (`.golangci.yml`).
 - **GO-9 (Scalability) — The `handlers` package SHALL import only `services`, `models`, `middleware`,
@@ -181,7 +202,7 @@ Every rule serves one primary pillar — the *why*. The rule is the *what*; §10
   (presence).** Owned by [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §5. Gate:
   **CI-BLOCK** (eslint-plugin-jsdoc `require-jsdoc`, live in [`eslint.config.js`](../../apps/website/frontend/eslint.config.js)).
 - **TS-6 (Readability) — Cross-boundary exports MUST include `@contract` or `@model` content (not just
-  a block).** Gate: **CI-SCRIPT** — `verify-contract-citations.mjs` requires the tag on exported
+  a block).** Gate: **CI-SCRIPT** — `cargo run -p xtask -- schema citations` requires the tag on exported
   `interface`/`type` in `types/`, `api/`, `hooks/` (live @ **T-125.3**; generic envelopes like
   `Paginated<T>` exempt).
 - **TS-7 (Usability) — Empty or log-only `catch` blocks are FORBIDDEN.** A catch must surface,
@@ -246,7 +267,7 @@ This section covers Enfusion **code** behaviour. The networked-code **tags**
   RplMode.Client) return;` carries a `// Authority only — <reason>` line. Gate: **MANUAL** (same
   Enforce-Script no-static-analyser reason as ENF-1).
 - **ENF-3 (Readability) — Networked-code tags MUST resolve.** `@contract`/`@authority` (per
-  DOCUMENTATION_STANDARDS.md §6–§7) on `.c` files. Gate: **CI-SCRIPT** (`verify-contract-citations.mjs`).
+  DOCUMENTATION_STANDARDS.md §6–§7) on `.c` files. Gate: **CI-SCRIPT** (`cargo run -p xtask -- schema citations`).
 - **ENF-4 (Usability) — Every JSON-parsed DTO MUST have a golden fixture that validates.** Gate:
   **CI-SCRIPT** — the Enfusion DTO branch of [`validate.mjs`](../../packages/tbd-schema/scripts/validate.mjs)
   (10 Backend `@contract` DTOs → `packages/tbd-schema/enfusion/*.sample.json`; live @ **T-125.4**).
@@ -366,7 +387,7 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **GO-4** | De | Wrap propagated errors with `%w` | CI-BLOCK | golangci `errorlint` | `golangci-lint run ./...` | T-125.2 | live |
 | **GO-5** | Us | Dup key → 409 via SQLSTATE `23505` | CI-BLOCK | IT `TestDuplicateSemver_409` + `staticcheck` | `make test-it` | T-125.4 | live |
 | **GO-6** | Re | Exported Godoc starts with name | CI-BLOCK | golangci `revive` `exported` (no `only-new-issues`) | `golangci-lint run ./...` | T-125.2 | live |
-| **GO-7** | Re | Handler `@route` matches `Register()` route | CI-SCRIPT | `verify-contract-citations.mjs` GO-7 pass (82 handlers) | `make verify-citations` | T-125.4 | live |
+| **GO-7** | Re | Handler `@route` matches the `app.rs` route | CI-SCRIPT | [`scripts/verify-route-tags.sh`](../../scripts/verify-route-tags.sh), both directions (102 handlers) | `make verify-coding-standards` | T-586/T-590 | live |
 | **GO-8** | De | `staticcheck` on; `internal/contract/**` excluded | CI-BLOCK | `.golangci.yml`: `staticcheck` + `linters.exclusions.rules` path | `golangci-lint run ./...` | T-125.2 | live |
 | **GO-9** | Sc | `handlers` imports ⊆ allowed + structural allowlist | CI-SCRIPT | `scripts/website/verify-handler-imports.sh` (import allowlist) | `bash …/verify-handler-imports.sh` | T-125.4 | live |
 | **TS-1** | De | `tsconfig.*.json` `strict:true` (`tsc -b`) | CI-BLOCK | `tsc -b` | `npm run build` | T-125.3 | live |
@@ -374,7 +395,7 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **TS-3** | De | No `any` / unsafe `!` on contract data | CI-BLOCK | eslint `no-explicit-any` + `no-non-null-assertion` | `npm run lint` | T-125.3 | live |
 | **TS-4** | Us | API errors surfaced to user | CI-BLOCK | eslint `no-empty {allowEmptyCatch:false}` (mech = TS-7) | `npm run lint` | T-125.3 | live |
 | **TS-5** | Re | Contract-layer export has TSDoc block | CI-BLOCK | `eslint-plugin-jsdoc` `require-jsdoc` | `npm run lint` | — | live |
-| **TS-6** | Re | Cross-boundary export has `@contract`/`@model` | CI-SCRIPT | `verify-contract-citations.mjs` (tag-content) | `make verify-citations` | T-125.3 | live |
+| **TS-6** | Re | Cross-boundary export has `@contract`/`@model` | CI-SCRIPT | `cargo run -p xtask -- schema citations` (tag-content) | `make verify-citations` | T-125.3 | live |
 | **TS-7** | Us | Empty/log-only `catch` FORBIDDEN | CI-BLOCK | eslint `no-empty` + `no-empty-function` | `npm run lint` | T-125.3 | live |
 | **ERR-1** | Us | Body = `{error}` (+`details[]`) | CI-BLOCK | IT body-shape asserts on 400/404/409/413 | `make test-it` | T-125.4 | planned |
 | **ERR-2** | Us | Status codes per §4 table | CI-BLOCK | IT status-matrix subtests | `make test-it` | T-125.4 | planned |
@@ -382,7 +403,7 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **ERR-5** | Us | One named IT per status class per resource | CI-BLOCK | `make test-it` (`Test*_400/404/409/413`) | `make test-it` | T-125.4 | planned |
 | **ENF-1** | De | Log policy; dev toggles default off | MANUAL | Enfusion runtime — no Enforce-Script static analyser | Workbench pass | T-125.4 | manual |
 | **ENF-2** | De | `// Authority only — <reason>` on gates | MANUAL | Enfusion runtime — no Enforce-Script static analyser | Workbench pass | — | manual |
-| **ENF-3** | Re | `@contract`/`@authority` resolve on `.c` | CI-SCRIPT | `verify-contract-citations.mjs` | `make verify-citations` | T-125.4 | live |
+| **ENF-3** | Re | `@contract`/`@authority` resolve on `.c` | CI-SCRIPT | `cargo run -p xtask -- schema citations` | `make verify-citations` | T-125.4 | live |
 | **ENF-4** | Us | DTO has validating golden fixture | CI-SCRIPT | `validate.mjs` Enfusion DTO branch (10 fixtures) | `make schema-validate` | T-125.4 | live |
 | **TEST-1** | De | Handler change ⇒ `make test-it` green | CI-BLOCK | `ci.yml` backend (PG18) | `make test-it` | T-125.1 | live |
 | **TEST-2** | De | features hooks/utils ⇒ vitest | CI-BLOCK | `ci.yml` frontend | `npm test` | T-125.1 | live |
@@ -411,8 +432,8 @@ Enforcement artefacts in the repo (T-125.1–.4). Primary workflow:
 | Script / artefact | Rules it satisfies | Slice | Status |
 |-------------------|--------------------|:-----:|:------:|
 | [`verify-ci1.sh`](../../scripts/website/verify-ci1.sh) | CI-1 | T-125.2 | live |
-| [`verify-contract-citations.mjs`](../../packages/tbd-schema/scripts/verify-contract-citations.mjs) — TS-6 FE `@model`/`@contract` | TS-6 | T-125.3 | live |
-| [`verify-contract-citations.mjs`](../../packages/tbd-schema/scripts/verify-contract-citations.mjs) — GO-7 `@route` route-match (82 handlers) | GO-7, ENF-3 | T-125.4 | live |
+| `cargo run -p xtask -- schema citations` — TS-6 / ENF-3 `@contract`/`@model`/`@authority` citations (T-165.1 Rust port; the old `verify-contract-citations.mjs` is deleted) | TS-6, ENF-3 | T-125.3 | live |
+| [`verify-route-tags.sh`](../../scripts/verify-route-tags.sh) — GO-7 `@route` ⇄ `app.rs` router match, both directions (102 handlers) | GO-7 | T-586/T-590 | live |
 | [`verify-handler-imports.sh`](../../scripts/website/verify-handler-imports.sh) | GO-1, GO-9 | T-125.4 | live |
 | [`verify-error-envelope.sh`](../../scripts/website/verify-error-envelope.sh) | ERR-4 | T-125.4 | live |
 | [`verify-handler-logging.sh`](../../scripts/website/verify-handler-logging.sh) | LOG-3 | T-125.4 | live |
