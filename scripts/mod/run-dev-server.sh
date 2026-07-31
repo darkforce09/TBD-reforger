@@ -1,27 +1,50 @@
 #!/usr/bin/env bash
-# Launch the TBD Dev POC on the native Linux Arma Reforger dedicated server.
+# run-dev-server.sh — DELEGATES to run-playtest-server.sh. Kept only so the name still works.
+#
+# ── What this file used to be (T-604) ──────────────────────────────────────────────────────
+# 27 lines that resolved a path, checked the binary existed, checked the profile existed, and
+# then ENDED. `grep -c ArmaReforgerServer` returned 1 and that one hit was the path variable.
+# It never launched a server. It was cited in three places as the way to start one, and the
+# only symptom was that nothing happened — no error, no server, exit 0.
+#
+# That is this codebase's signature defect: a tool reporting success over an input it never
+# examined. None of it is preserved here. Everything below either execs the real launcher or
+# fails loudly with a pointer.
+#
+# The real launcher is scripts/mod/run-playtest-server.sh. It needs a mission id, because a
+# server with no mission never leaves LOADING — which is the OTHER way this script used to
+# look like it worked.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# shellcheck source=lib/paths.sh
-source "$SCRIPT_DIR/lib/paths.sh"
+REAL="$SCRIPT_DIR/run-playtest-server.sh"
 
-SERVER_DIR="$HOME/.local/share/Steam/steamapps/common/Arma Reforger Server"
-SERVER_BIN="$SERVER_DIR/ArmaReforgerServer"
-PROFILE="$MOD_ROOT/.local-test-profile"
-ADDON_GUID="B2C3D4E5F6A78901"
-SCENARIO="{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf"
-ADDONS_STAGING="$HOME/.local/share/tbd-server-addons"
-
-if [ ! -x "$SERVER_BIN" ]; then
-  echo "Arma Reforger Server not found at:" >&2
-  echo "  $SERVER_BIN" >&2
-  echo "Install it from Steam (appid 1890870):" >&2
-  echo "  steam steam://install/1890870" >&2
-  exit 1
+if [ ! -x "$REAL" ]; then
+  echo "run-dev-server.sh: the real launcher is missing at $REAL" >&2
+  echo "  This shim starts nothing on its own — it never did." >&2
+  exit 3
 fi
 
-if [ ! -f "$PROFILE/profile/TBD_BackendConfig.json" ]; then
-  echo "Profile not prepared — run: bash scripts/mod/setup-server-profile.sh" >&2
-  exit 1
+# No arguments is exactly the case that used to silently do nothing. Say what to run instead.
+if [ "$#" -eq 0 ]; then
+  cat >&2 <<'EOF'
+run-dev-server.sh starts nothing on its own — it is a shim for run-playtest-server.sh,
+which has to be told WHICH mission to serve.
+
+  bash scripts/mod/run-playtest-server.sh --mission-id=<id> [--admin=<identityId>]
+
+  --mission-id   the mission the mod loads. Without it the stage machine never leaves
+                 LOADING and the server looks healthy while being unplayable.
+  --admin        your identityId (UUID) or 17-digit SteamID. Without it every '#tbd'
+                 command answers "TBD: admin only." and T-181.16 cannot pass.
+
+  bash scripts/mod/run-playtest-server.sh --help    for the rest
+  docs/mod/STAGING-SERVER.md                        for what the second client needs
+
+Offline? Add --mission-file=packages/tbd-schema/golden-missions/bridgehead-at-levie.json
+to serve a golden from disk with no API running.
+EOF
+  exit 2
 fi
+
+exec "$REAL" "$@"

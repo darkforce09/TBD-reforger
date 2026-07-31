@@ -191,24 +191,59 @@ Expect `{"eventId":"…","missionId":"…","assignments":{…}}`
 `users.arma_id` — **it will be empty until someone links their game identity** (S6). An empty map is
 legal: everybody falls to round-robin seating, and the lobby picker still works.
 
-### 2.4 The dedicated server (15 min, alone)
+### 2.4 The dedicated server (2 min, alone)
 
-**There is no committed script that starts a joinable, playable server. You assemble one.** The two
-that look like they would, do not:
+> **UPDATED 2026-07-31 (T-604). There is now one command; do not hand-assemble this any more.**
+>
+> ```bash
+> bash scripts/mod/run-playtest-server.sh --mission-id=$MID --admin=<your-identityId>
+> ```
+>
+> It does every step 2.4.1–2.4.4 below (profile, backend config, addon symlink, `server.json`),
+> passes both flags, and then **waits for the room registration and asserts the local addon won**
+> before printing anything. It prints the join address and Direct Join Code from that boot's own
+> log. `--dry-run` shows the rendered config and the exact command; `--help` lists the options.
+> `--mission-file=<path>` stages a golden on disk so you can run with no API up.
+>
+> Three things it knows that the hand-assembly below did not:
+>
+> * **`game.admins[]` is schema-validated by the engine**, and a bad entry is a hard fatal ~90 s
+>   into the boot, after a full script compile. The value must match `^[0-9]{17}$` (SteamID) or
+>   `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$` (identityId) — both patterns
+>   quoted verbatim out of the engine's own rejection. The script checks before booting.
+> * **`tbd-framework` IS published to the Workshop**, unlisted, under the same id as the local
+>   gproj GUID, at a stale **1.0.1**. §6.2's "not published to the Workshop" was wrong. This means
+>   `-config` alone does *not* fail loudly — it quietly downloads and runs June's build. The
+>   script hard-fails if that copy wins.
+> * **`-profile <dir>` must not be the same tree you point `-addonsDir` at.** The engine unpacks
+>   the Workshop copy into `<profile>/addons/TBDFramework_<GUID>/` on every boot; with
+>   `-addonsDir` present the live source still wins, and the script proves it did rather than
+>   assuming.
+>
+> The manual steps below are kept because they are the anatomy of what the script does, and
+> because you will need them if you are debugging the script itself.
 
-- [`scripts/mod/run-dev-server.sh`](../../scripts/mod/run-dev-server.sh) is **27 lines and never
-  launches anything** — it does two preflight checks and ends. `grep -c ArmaReforgerServer` on it
-  returns 1, and that one hit is the path variable.
+**Why there was no script (the original text, now fixed).** The two that looked like they would
+start a server, did not:
+
+- [`scripts/mod/run-dev-server.sh`](../../scripts/mod/run-dev-server.sh) was **27 lines and never
+  launched anything** — two preflight checks, then it ended. It is now a shim that execs
+  `run-playtest-server.sh` or exits 2 with a pointer; it can no longer look like it worked.
 - [`scripts/mod/deploy-staging.sh:1153`](../../scripts/mod/deploy-staging.sh) builds the `config`-mode
-  ExecStart **without `-addonsDir`**, so a local (unpublished) addon in `game.mods[]` cannot resolve.
-  Its `addons`-mode branch at `:1155` does pass `-addonsDir`, but that mode registers no backend room
-  and is **not Direct-Joinable** ([`STAGING-SERVER.md:207-217`](../mod/STAGING-SERVER.md)).
+  ExecStart **without `-addonsDir`**, so the local addon in `game.mods[]` is not what loads — the
+  stale Workshop copy is. Its `addons`-mode branch at `:1155` does pass `-addonsDir`, but with
+  `-addons`/`-server` instead of `-config`, and that mode registers no backend room: re-measured
+  2026-07-31, **zero** `Server registered with address:` lines against a healthy
+  `[TBD][Stage] LOADING -> LOBBY` in the same log. Both branches are still wrong; T-604 did not
+  touch `deploy-staging.sh`.
 
 The combination that **is measured to work** is `-addonsDir <dir>` **plus** `-config <json>`, with
 the addon listed in the config's `game.mods[]` keyed by the GUID from `addon.gproj`
-([`world-boot.sh:11-27`](../../scripts/mod/world-boot.sh), engine 1.7.0.54, 2026-07-25). `-config`
-and `-addons` together are a hard fatal; `-addons` + `-scenarioId` with no `-config` prints
-"Game successfully created" and then never hosts.
+([`world-boot.sh:11-27`](../../scripts/mod/world-boot.sh), engine 1.7.0.54). Confirmed 2026-07-31 to
+register a **joinable room** as well as load the mod — which `world-boot.sh` had never been asked
+to check, since it boots headless with zero players. `-config` and `-addons` together are a hard
+fatal; `-addons` + `-scenarioId` with no `-config` prints "Game successfully created" and then
+never hosts.
 
 Stage it once:
 
@@ -331,17 +366,24 @@ bash scripts/mod/world-boot.sh --compiled=$MID --keep-logs
 Same greps, same verdict. **This is the single highest-value pre-flight in the runbook** — it feeds
 the exact bytes the game server will get to the real Enfusion parser, with no client needed.
 
-**B — will the second client be able to find the server?** Start the server (§2.4), then from
-another machine on the LAN:
-```bash
-ping -c2 <server-lan-ip>
-```
-and in the server log look for the room registration:
+**B — will the second client be able to find the server?** `run-playtest-server.sh` now checks this
+for you: it will not print its "SERVER UP" banner at all unless `Server registered with address:`
+appeared in that boot, and the address it prints is parsed from that line rather than guessed. If
+it fails, it dumps the offending lines and exits 1.
+
+To check by hand (or against a server someone else started):
 ```bash
 grep -E 'Server registered with address|Direct Join Code' "$LOG"
 ```
 No registration line means Direct Join will answer "No server found" no matter how healthy the
-server is ([`STAGING-SERVER.md:207-217`](../mod/STAGING-SERVER.md)). See §6.2.
+server is. Also confirm the friend can reach you at all — `ping -c2 <server-lan-ip>` from their
+machine — and that the room advertised your **LAN** address, not a container or loopback one:
+```bash
+grep -E 'Server registered with address' "$LOG"    # must show your 192.168.x.x, not 127.0.0.1
+```
+Ports: this machine had `1025-65535/tcp 1025-65535/udp` already open (`firewall-cmd --list-ports`),
+so 2001/17777 needed nothing. Check yours before blaming the mod. See §6.2 — **registration is not
+the same question as whether the client loads the right mod**, and only the first one is settled.
 
 **C — can the mod parse and validate the mission?**
 ```bash
@@ -501,14 +543,36 @@ comma-separated list of them is what `game.admins[]` takes
 grep -iE 'identityId' "$LOG" | tail -5
 ```
 
-Add it to `game.admins[]` and restart the server:
+Then restart the server with it — the flag is repeatable:
 
 ```bash
-python3 - "$HOME/tbd-playtest/server.json" "<your-identity-uuid>" <<'PY'
-import json,sys
-p,i=sys.argv[1:3]; c=json.load(open(p)); c["game"]["admins"]=[i]; json.dump(c,open(p,"w"),indent=2)
-PY
+bash scripts/mod/run-playtest-server.sh --mission-id=$MID --admin=<your-identityId>
 ```
+
+> **The engine schema-validates this, and a bad value is a HARD FATAL** ~90 s into the boot, after
+> a full script compile — `BACKEND (E): JSON is invalid!` → `There are errors in server config!` →
+> `ENGINE (E): Unable to initialize the game`. It must match **one** of these two, quoted verbatim
+> out of the engine's own rejection (1.7.0.54):
+>
+> * `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$` — identityId, **lowercase** hex
+> * `^[0-9]{17}$` — SteamID, exactly 17 digits
+>
+> `run-playtest-server.sh` rejects anything else before booting, so you find out in a millisecond
+> instead of a minute and a half.
+
+> **`passwordAdmin` is a different mechanism and does NOT make you a `#tbd` admin.** `TBD_AdminService.IsAdmin`
+> reads `SCR_PlayerListedAdminManagerComponent.IsPlayerOnAdminList`, whose list is populated only in
+> `OnPlayerAuditSuccess` from the native `BackendApi.IsListedServerAdmin(playerId)` — i.e. from
+> `game.admins[]` at connect time
+> ([`SCR_PlayerListedAdminManagerComponent.c:26-40`](../../apps/mod/vanilla_reference/Source/SCR_PlayerListedAdminManagerComponent.c)).
+> Logging in with `#login <passwordAdmin>` never touches that array. `game.admins[]` is the only route.
+
+> **Ignore this warning; it is not about you.** A combined-mode boot logs
+> `BACKEND (W): !!! JsonApi Array name="admins" found in JSON - which missing adequate script
+> declaration, items will be skipped!` — it comes from a *scripted* mirror of the config, not from
+> the native path the admin manager reads, and it fires identically for `disableNavmeshStreaming`,
+> which is a fully supported engine key. The native side accepted the array: it is what
+> schema-validated your id in the first place.
 
 **Verify:** type `#tbd` in game chat.
 
@@ -972,19 +1036,38 @@ a container that is simply full. And **this gate has never run against a loadout
 **Mitigation:** §2.5 A. Run `world-boot.sh --compiled=$MID` before the friend arrives. If it refuses,
 simplify the mission's cargo until it does not, and file the refusal as a finding.
 
-### 6.2 Nothing in the repo starts a joinable server with the local mod
+### 6.2 The client may silently load a STALE mod — **FIXED server-side, open client-side**
 
-`run-dev-server.sh` never launches; `deploy-staging.sh`'s `config` branch omits `-addonsDir`
-([`:1153`](../../scripts/mod/deploy-staging.sh)) so `game.mods[{modId:"B2C3D4E5F6A78901"}]` cannot
-resolve; its `addons` branch is not Direct-Joinable. `tbd-framework` is **not published to the
-Workshop** (`TBD_WORKSHOP_MOD_ID` is commented out at
-[`deploy.env.example:43`](../../scripts/deploy/deploy.env.example) and no value exists anywhere in
-the tree). §2.4 assembles the working combination by hand.
+**Server side: closed by T-604.** [`scripts/mod/run-playtest-server.sh`](../../scripts/mod/run-playtest-server.sh)
+starts a joinable, mod-loaded, admin-capable server in one command, and refuses to report success
+unless the room registered *and* your checkout is the copy that loaded. `run-dev-server.sh` is now
+a shim that execs it. `deploy-staging.sh`'s two branches are both still wrong at
+[`:1153`](../../scripts/mod/deploy-staging.sh) / [`:1155`](../../scripts/mod/deploy-staging.sh) —
+T-604 did not touch that file.
 
-**If §2.5 B shows no `Server registered with address:` line**, the fallbacks, in order of cost:
-publish `tbd-framework` to the Workshop as an unlisted Dev version and use its real modId in
-`game.mods[]`; or run both clients on the same LAN and accept whatever Direct Join gives you.
-There is no third option that has ever been observed to work.
+**Client side: still open, and this is the live risk for the session.** The premise this section
+used to rest on was wrong: **`tbd-framework` IS published to the Workshop.** Unlisted, under the
+*same* id as the local gproj GUID `B2C3D4E5F6A78901`, pinned at **version 1.0.1** (2026-06-14).
+`TBD_WORKSHOP_MOD_ID` being commented out at
+[`deploy.env.example:43`](../../scripts/deploy/deploy.env.example) meant only that nobody wrote the
+id down — not that no publish exists. Measured 2026-07-31 on a clean profile with no `-addonsDir`:
+the engine printed `BACKEND: Addon Download started B2C3D4E5F6A78901 - TBD Framework` /
+`Downloading B2C3D4E5F6A78901 version 1.0.1` and pulled it over the network.
+
+So the failure mode is **not** "the mod does not load". It is:
+
+- **On the server, if you use `-config` without `-addonsDir`:** June's build runs and everything
+  looks fine. Tell: **7** `[TBD]` lines in the old flat `[TBD] ...` format instead of ~108 in the
+  current `[TBD][Subsystem] ...` format. `run-playtest-server.sh` hard-fails on this.
+- **On the friend's client, always:** it resolves `game.mods[]` from the Workshop and gets 1.0.1
+  while the server runs your checkout. **Unverified — no second machine has connected to this
+  combination.** It may refuse on a content mismatch, or it may join clean and run old script.
+
+**First thing to check when the friend connects:** have them type `#tbd` in chat. The current
+build answers with the full command list; 1.0.1 does not have that command. If they get nothing
+and you get the list, you have the skew — **re-publish `tbd-framework` from Workbench**
+([`STAGING-SERVER.md` §Dev loop](../mod/STAGING-SERVER.md)) so the Workshop copy matches the
+checkout, and restart. Same test doubles as §6.4's first probe.
 
 ### 6.3 Radio automatic tuning cannot work on this world
 
