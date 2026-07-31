@@ -100,9 +100,10 @@ struct SavedFire {
 
 /// `POST /fire-missions` 201 body — `{solution, fire_mission}` (`field_tools.rs:272-275`).
 ///
-/// Both halves are used: `solution` is the live full-fidelity answer that populates the card
-/// (TOF included), `fire_mission` is the row that just landed in the table and goes straight into
-/// the saved list without a refetch race.
+/// Both halves are used: `solution` is the live full-fidelity answer that populates the card (TOF
+/// included, which no later read of the row can produce), and `fire_mission.created_at` is what
+/// lets the card say "Saved" on the authority of a row that exists rather than on the authority of
+/// a 2xx.
 // No `Debug`: `dto::FireSolution` deliberately does not derive it (its siblings do not either),
 // and adding one there is a `dto.rs` edit this slice does not own.
 #[derive(Clone, PartialEq, Deserialize)]
@@ -420,19 +421,43 @@ fn MortarInner() -> impl IntoView {
         }
     });
 
+    // Reconcile the remembered operation against the live schedule.
+    //
+    // **`fire_missions.event_id` has no foreign key** — T-262 abstained on it deliberately, because
+    // there is no 23503 handler and a 500 on an ingest path loses data. So a stale id out of
+    // `localStorage` is not rejected by anything: `POST /fire-missions` would happily write the row
+    // against an operation that no longer exists, and `GET /events/{id}/fire-missions` would
+    // happily return `{"data":[]}` for it. The fire mission would be saved, reported saved, and
+    // unreachable — the exact failure this ticket exists to close, reintroduced through the back
+    // door. Nothing validates the id for us, so this does.
+    Effect::new(move |_| {
+        let Some(Some(rows)) = events.get() else {
+            return;
+        };
+        let Some(want) = event_id.get() else { return };
+        if !rows.iter().any(|e| e.id == want) {
+            write_event_pref(None);
+            event_id.set(None);
+        }
+    });
+
     // Hydrate the card from the newest saved fire mission, ONCE per operation. The latch is what
     // stops the refetch after a save from overwriting the fresh full-fidelity card (which has a
     // TOF) with the row that was just written (which does not), and stops any later refetch from
     // yanking coordinates out from under someone mid-edit.
     let hydrated_for = StoredValue::new(None::<String>);
     Effect::new(move |_| {
-        let Some(rows) = saved.get() else { return };
+        // Only latch on a fetch that actually answered. Latching on a failed load would make the
+        // page's one hydration attempt the one that read nothing.
+        let Some(Some(rows)) = saved.get() else {
+            return;
+        };
         let Some(ev) = event_id.get() else { return };
         if hydrated_for.get_value().as_deref() == Some(ev.as_str()) {
             return;
         }
         hydrated_for.set_value(Some(ev));
-        let Some(row) = rows.as_deref().and_then(<[SavedFire]>::last) else {
+        let Some(row) = rows.last() else {
             return;
         };
         if let Some(r) = restore(row) {
