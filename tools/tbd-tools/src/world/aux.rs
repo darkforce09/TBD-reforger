@@ -108,16 +108,10 @@ pub fn verify_spike_k1(terrain: &str) -> Result<u8> {
 
 /* ─────────────────────────── census-spike ─────────────────────────── */
 
-const ALL_KINDS: [&str; 8] = [
-    "building",
-    "tree",
-    "vegetation",
-    "rock",
-    "prop",
-    "utility",
-    "water",
-    "road",
-];
+/// T-278 — was a local 8-kind array missing T-244's `vehicle`; `census_spike` does
+/// `by_kind.get_mut(kind).unwrap_or_else(|| panic!("kind {kind}"))`, so one wreck prefab inside
+/// the spike region panicked the census. Single source now.
+const ALL_KINDS: [&str; 9] = super::INSTANCE_KINDS;
 
 pub fn census_spike(terrain: &str) -> Result<u8> {
     let staging = repo_root()

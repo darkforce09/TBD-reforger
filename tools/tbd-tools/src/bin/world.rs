@@ -6,7 +6,7 @@ use std::process::ExitCode;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use tbd_tools::world::{aux, build, edds, gates, pak::PakVfs, topo};
+use tbd_tools::world::{aux, build, edds, gates, pak::PakVfs, reclassify, topo};
 
 #[derive(Parser)]
 #[command(name = "world", about = "T-090 world-export pipeline (Rust)")]
@@ -102,6 +102,19 @@ enum Cmd {
     /// T-176 A2 — regenerate the golden S13 density fixture (bin + expectedCorners) at the current
     /// DENSITY_CELL_M. Run after a cell-size change so `make schema-validate` (S13) stays green.
     GenDensityFixture,
+    /// T-278 — rebuild the catalogue's classification lane from COMMITTED artifacts + the current
+    /// prefab-classify.json. No Workbench, no staging, no game install. Default is a read-only
+    /// drift check that exits 1 when a rule edit has gone latent; `--write` applies it.
+    Reclassify {
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+        /// Apply the rebuild instead of only reporting drift.
+        #[arg(long)]
+        write: bool,
+        /// Write under this base instead of packages/map-assets/<terrain> (relative = repo root).
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
     /// verify-phase.mjs port: G1-G12 + P-gates + D/F + E6 determinism
     VerifyPhase {
         #[arg(long)]
@@ -169,6 +182,23 @@ fn run() -> anyhow::Result<ExitCode> {
         Cmd::GenDensityFixture => {
             build::gen_density_fixture()?;
             Ok(ExitCode::SUCCESS)
+        }
+        Cmd::Reclassify {
+            terrain,
+            write,
+            out,
+        } => {
+            let mode = if write {
+                reclassify::Mode::Write
+            } else {
+                reclassify::Mode::Check
+            };
+            let base = reclassify::resolve_out_base(out.as_deref());
+            Ok(ExitCode::from(reclassify::reclassify_terrain(
+                &terrain,
+                mode,
+                base.as_deref(),
+            )?))
         }
         Cmd::VerifyPhase { terrain, phase } => {
             Ok(ExitCode::from(gates::verify_phase(&terrain, &phase)?))
