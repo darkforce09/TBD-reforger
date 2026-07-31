@@ -50,6 +50,26 @@
  *  POLLS to decency rather than firing once after a chosen delay, because a false NAKED is a
  *  TBD-owned script ERROR and those hard-fail world-boot.sh for everyone.
  *
+ * T-605 — THREE SEVERITIES, BECAUSE TWO WERE ONE TOO FEW.
+ *  The file had FAILED (never reached the character) and DEGRADED (reached it, wrong place), and
+ *  `IsComplete()` = neither. T-415 consumed that answer here; T-541 then wired it to the SPAWN
+ *  BOUNDARY, where `IsComplete()=0` on ONE slot kept EVERY client in LOADING. The split is real —
+ *  a degraded item is provably on the body — but it is the wrong AXIS for a gate, because
+ *  `m_aFailures` mixes "the mission named a prefab that does not exist" with "the soldier had no
+ *  room for the fifth magazine", and those are not the same kind of problem at all.
+ *
+ *  So FAILED now carries `blocking`: the BLOCKING subset (`m_aBlocking`) is the ones that leave the
+ *  slot unplayable, and it is the only list the spawn boundary reads. Log level follows it, which
+ *  makes a genuinely useful invariant true — a TBD loadout `SCRIPT (E)` means the session will not
+ *  open, a `SCRIPT (W)` means it will and somebody is carrying less than the mission said.
+ *  `IsComplete()` is untouched and still answers the delivery question it was written for.
+ *
+ *  MEASURED, on the committed golden `slot-loadout-coverage.json` (7 slots, real gear, real cargo)
+ *  before the change: 3 of 7 applications refused the world, one of them (`blufor:Ranger:SL:0`)
+ *  while reporting `gear=10/10 cargo=8/8` — nothing missing, six magazines simply displaced out of
+ *  a full vest. That golden had never been booted by the wave gate, which boots only
+ *  `bridgehead-at-levie` (0 gear, 0 cargo) — so the whole gate had never executed.
+ *
  * The whole file is server-authority code: it spawns entities and mutates inventories.
  * @authority server
  */
@@ -173,6 +193,15 @@ class TBD_LoadoutApplication : Managed
 	protected bool m_bWeaponSwapRetried;
 	protected ref array<string> m_aFailures = {};  //!< item never reached the character
 	protected ref array<string> m_aDegraded = {};  //!< item reached the character, wrong place
+	//! T-605 — the BLOCKING subset of m_aFailures: the ones that make this slot body unplayable.
+	//! Strictly a subset (every entry here is also in m_aFailures), so the delivery accounting and
+	//! IsComplete() are untouched by its existence. This is the ONLY list the spawn boundary reads.
+	//! See Fail()'s `blocking` parameter for the rule and why it defaults to true.
+	protected ref array<string> m_aBlocking = {};
+	//! T-605 — the LABEL ("vest", "optic", "cargo:backpack") of every non-blocking shortfall, one
+	//! entry per occurrence, in the order they happened. Recorded at the call site rather than
+	//! parsed back out of the issue strings, so ShortfallBrief() survives any rewording of them.
+	protected ref array<string> m_aShortfallLabels = {};
 	protected int m_iGearRequested;
 	protected int m_iGearApplied;
 	protected int m_iCargoRequested;
@@ -203,12 +232,98 @@ class TBD_LoadoutApplication : Managed
 	//! T-181.10 — true when the finished pass delivered everything the JSON asked for.
 	//! Meaningless before IsDone().
 	//!
-	//! T-415 — CONSUMED by ReportVerdict (was zero callers). Incomplete → `loadout delivery
-	//! REFUSED` ERROR. External readers (SpawnManager / harness) may also call this; the helper
-	//! itself must never finish an incomplete pass without that refuse line.
+	//! T-415 — CONSUMED by ReportVerdict (was zero callers). External readers may call it too.
+	//!
+	//! T-605 — THIS IS A DELIVERY QUESTION, NOT A GATE. It answers "did the character get exactly
+	//! what the JSON asked for, in the place it asked for", and it is exactly right for that. It is
+	//! the WRONG predicate for "may the session open", and T-541 wired it to that boundary anyway:
+	//! `m_bSlotBodiesMaterialized` stayed false unless every slot answered true, so ONE misplaced
+	//! magazine on ONE slot kept EVERY client in LOADING. Measured on the committed golden
+	//! `slot-loadout-coverage.json`, which does exactly that today — `blufor:Ranger:SL:0` reported
+	//! `gear=10/10 cargo=8/8` (every single item delivered) and still refused the world, because six
+	//! rifle magazines landed in the backpack instead of the vest that had no room left for them.
+	//!
+	//! The spawn boundary now reads HasBlockingFailure(). This stays as the honest delivery verdict.
 	bool IsComplete()
 	{
 		return m_aFailures.IsEmpty() && m_aDegraded.IsEmpty();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-605 — THE SPAWN-BOUNDARY PREDICATE: is this body unplayable?
+	//!
+	//! True only when the pass hit something that leaves the slot unusable — an authored asset that
+	//! does not exist, a storage or weapon slot that does not exist on this character, or a garment
+	//! that would not go on. Everything else (a full vest, an optic that would not seat, a container
+	//! the kit does not wear) is a SHORTFALL: the player is dressed, armed and can play, just not
+	//! with the exact placement or the exact quantity the JSON wrote down.
+	//!
+	//! Meaningless before IsDone(), same as IsComplete().
+	bool HasBlockingFailure()
+	{
+		return !m_aBlocking.IsEmpty();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-605 — true when the pass delivered a PLAYABLE body that is nonetheless not what was
+	//! authored. The complement of the gate: never refuses anything, must never be silent.
+	bool HasShortfall()
+	{
+		return !IsComplete() && !HasBlockingFailure();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-605 — one line naming every blocking failure, for the spawn-boundary refusal banner.
+	string BlockingSummary()
+	{
+		return JoinIssues(m_aBlocking);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-605 — the shortfall in a form a human can read in one glance: `cargo:vest x6, optic x1`.
+	//!
+	//! DELIBERATELY NOT THE FULL ITEMISATION. The per-item detail is already on the console, one
+	//! WARNING per item plus the `loadout DEGRADED` / `loadout INCOMPLETE` roll-up, and it is long:
+	//! a six-magazine overflow produces six near-identical lines each carrying a 90-character
+	//! ResourceName. Feeding that into a session-wide summary — and from there into an in-game chat
+	//! reply capped at a dozen lines — produces something nobody reads, which is functionally the
+	//! same as not reporting it. So the summary answers WHICH SLOT and WHAT KIND, and the console
+	//! answers exactly which item.
+	//!
+	//! Counts labels rather than parsing the stored issue strings, so it cannot be broken by
+	//! reformatting a Fail()/Degrade() message.
+	string ShortfallBrief()
+	{
+		array<string> labels = {};
+		array<int> counts = {};
+		foreach (string label : m_aShortfallLabels)
+		{
+			int at = labels.Find(label);
+			if (at >= 0)
+			{
+				counts[at] = counts[at] + 1;
+				continue;
+			}
+			labels.Insert(label);
+			counts.Insert(1);
+		}
+
+		string brief;
+		for (int i = 0; i < labels.Count(); i++)
+		{
+			if (i > 0)
+				brief += ", ";
+			brief += string.Format("%1 x%2", labels[i], counts[i]);
+		}
+		return brief;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-605 — the slot id / harness label this pass ran for. The SpawnManager needs it to name the
+	//! offending slot in the consolidated report without keeping a parallel map of its own.
+	string GetLabel()
+	{
+		return m_sLabel;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -239,19 +354,64 @@ class TBD_LoadoutApplication : Managed
 	//! HONEST FAILURE (T-181.10): the item never made it onto the character. One line,
 	//! naming the slot AND the offending item AND why, plus a counted entry that the
 	//! end-of-pass verdict repeats so a failure can never scroll away unnoticed.
-	protected void Fail(string label, string resName, string reason)
+	//!
+	//! T-605 — `blocking` says whether this failure makes the SLOT UNPLAYABLE, which is a different
+	//! question from whether the item arrived. It is the only input to the spawn-boundary gate.
+	//!
+	//! THE RULE, so a future call site does not have to guess:
+	//!   BLOCKING  — the mission named something that DOES NOT EXIST (a prefab that will not load),
+	//!               or the character does not have the storage / weapon slot the row needs, or a
+	//!               garment would not go on. None of these fix themselves on the next life; every
+	//!               one of them either leaves the body undressed/unarmed or means the document is
+	//!               wrong. An operator has to change something before this slot is playable.
+	//!   NON-BLOCKING — the item exists and spawned, and the CHARACTER simply had no room for it
+	//!               (or no rail to seat it on). The body is dressed and armed; it carries less than
+	//!               the JSON asked for. Refusing a session over this is the T-605 defect: measured
+	//!               on `slot-loadout-coverage.json`, `opfor:Ural:SL:0` lost the 5th of 5 magazines
+	//!               to a full character and that alone kept everybody in LOADING.
+	//!
+	//! DEFAULTS TO BLOCKING — fail-closed, deliberately. A Fail() added later without thinking about
+	//! this parameter refuses the world, which is the safe direction to be wrong in: someone notices
+	//! immediately. The opposite default would let a genuinely broken slot ship quietly.
+	//!
+	//! LOG LEVEL FOLLOWS BLOCKING, and that is a contract, not cosmetics: `world-boot.sh` fails on
+	//! any TBD-owned `SCRIPT (E)`, so after this ticket a loadout ERROR means EXACTLY "the session
+	//! will not open" and a loadout WARNING means "it will, carrying less". Before it, a full vest
+	//! produced an ERROR and a green mission could not exist.
+	protected void Fail(string label, string resName, string reason, bool blocking = true)
 	{
-		Print(string.Format("%1 slot=%2 %3 FAILED item=%4 — %5", m_sTag, m_sLabel, label, resName, reason), LogLevel.ERROR);
-		m_aFailures.Insert(string.Format("%1=%2 (%3)", label, resName, reason));
+		string entry = string.Format("%1=%2 (%3)", label, resName, reason);
+		m_aFailures.Insert(entry);
+
+		if (blocking)
+		{
+			m_aBlocking.Insert(entry);
+			Print(string.Format("%1 slot=%2 %3 FAILED item=%4 — %5", m_sTag, m_sLabel, label, resName, reason), LogLevel.ERROR);
+			return;
+		}
+
+		m_aShortfallLabels.Insert(label);
+		Print(string.Format("%1 slot=%2 %3 NOT DELIVERED item=%4 — %5 — the slot is still playable, so this does NOT refuse the session",
+			m_sTag, m_sLabel, label, resName, reason), LogLevel.WARNING);
 	}
 
 	//------------------------------------------------------------------------------------------------
 	//! The item IS on the character but not where the JSON put it (e.g. an optic that
 	//! would not mount and had to be stowed loose). Loud, counted, but not fatal.
+	//!
+	//! T-605 — "not fatal" is now TRUE. It was prose: T-415 made IsComplete() the spawn-boundary
+	//! gate and IsComplete() reads this array, so a single Degrade() anywhere in a mission kept
+	//! every client in LOADING. Nothing here changed; the boundary stopped reading it.
+	//!
+	//! A degraded item is always ON the character — every one of the four Degrade() sites either
+	//! stows the item elsewhere on the same body or resolves it to a different container — so a
+	//! degraded player is dressed and armed by construction, and the nakedness audit at the tail of
+	//! this pass is the independent check on the dressed half.
 	protected void Degrade(string label, string resName, string reason)
 	{
 		Print(string.Format("%1 slot=%2 %3 DEGRADED item=%4 — %5", m_sTag, m_sLabel, label, resName, reason), LogLevel.WARNING);
 		m_aDegraded.Insert(string.Format("%1=%2 (%3)", label, resName, reason));
+		m_aShortfallLabels.Insert(label);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -866,7 +1026,9 @@ class TBD_LoadoutApplication : Managed
 		BaseInventoryStorageComponent storage = WeaponStorageOf(m_PrimaryWeapon);
 		if (!storage)
 		{
-			Fail(label, resName, string.Format("primary weapon %1 has no attachment storage", PrefabOf(m_PrimaryWeapon)));
+			// T-605 NON-BLOCKING: the weapon is in the player's hands and the character is dressed;
+			// what is missing is a rail/well to hang this accessory on. The slot plays, with irons.
+			Fail(label, resName, string.Format("primary weapon %1 has no attachment storage", PrefabOf(m_PrimaryWeapon)), false);
 			return;
 		}
 
@@ -1017,7 +1179,10 @@ class TBD_LoadoutApplication : Managed
 			if (stowed)
 				Degrade(straggler.label, straggler.resName, "would not mount on the primary — stowed loose in the character's inventory");
 			else
-				Fail(straggler.label, straggler.resName, "would not mount on the primary and would not fit in the inventory");
+				// T-605 NON-BLOCKING: this is the CAPACITY end of the same story as the Degrade()
+				// above it — the item exists, it just would not seat and the character was too full
+				// to carry it loose either. The player still has the weapon and the clothes.
+				Fail(straggler.label, straggler.resName, "would not mount on the primary and would not fit in the inventory", false);
 		}
 		m_aWeaponPending.Clear();
 
@@ -1124,6 +1289,11 @@ class TBD_LoadoutApplication : Managed
 
 			int inserted = 0;
 			string stopReason;
+			// T-605 — the two ways this row can stop are NOT the same severity, and one `stopReason`
+			// string used to flatten them into one ERROR. A prefab that will not load is a document
+			// naming an asset that does not exist (blocking); a character with no room left is a
+			// full soldier (not blocking). This flag is what keeps them apart at the Fail() below.
+			bool stopBlocking = true;
 			for (int u = 0; u < row.qty; u++)
 			{
 				IEntity item = SpawnAtCharacter(row.item);
@@ -1159,6 +1329,11 @@ class TBD_LoadoutApplication : Managed
 				else
 				{
 					SCR_EntityHelper.DeleteEntityAndChildren(item);
+					// T-605 — CAPACITY, not a broken document: the prefab loaded and the entity
+					// spawned; the character has nowhere left to put it. The units already inserted
+					// stay on the body, so the player is carrying less than authored and nothing
+					// else. Not blocking.
+					stopBlocking = false;
 					if (storage)
 						stopReason = string.Format(
 							"authored container refused unit %1/%2 (CanInsertItemInStorage=0) and no other storage would accept it — deleted; remaining qty of this row abandoned",
@@ -1174,7 +1349,7 @@ class TBD_LoadoutApplication : Managed
 			m_iCargoInserted += inserted;
 			Print(string.Format("%1 slot=%2 cargo %3 x%4/%5 -> %6", m_sTag, m_sLabel, row.item, inserted, row.qty, row.container));
 			if (!stopReason.IsEmpty())
-				Fail("cargo:" + row.container, row.item, stopReason);
+				Fail("cargo:" + row.container, row.item, stopReason, stopBlocking);
 		}
 	}
 
@@ -1371,11 +1546,22 @@ class TBD_LoadoutApplication : Managed
 	//! for? Complete passes log a single OK line; anything less repeats every offending
 	//! item so the verdict is self-contained.
 	//!
-	//! T-415 — IsComplete() is the BRANCH, not dead code. Before this ticket the answer was
+	//! T-415 — IsComplete() is the BRANCH, not dead code. Before that ticket the answer was
 	//! computed and discarded (zero callers repo-wide); ReportVerdict re-checked the arrays by
 	//! hand and a DEGRADED-only pass stayed at WARNING — soft enough that world-boot's
-	//! TBD-ERROR gate never saw it. Now a non-complete pass always emits
-	//! `loadout delivery REFUSED` at ERROR, then the per-issue detail lines.
+	//! TBD-ERROR gate never saw it.
+	//!
+	//! T-605 — THREE VERDICTS, NOT TWO, because there are three outcomes and the middle one was
+	//! being reported as the worst one. `REFUSED` now means REFUSED — the spawn boundary really
+	//! will keep the session in LOADING for it — and it is reserved for a blocking failure. A pass
+	//! that delivered a playable body carrying less than the JSON asked for gets its own verdict at
+	//! WARNING, which says outright that the session is NOT refused for it, so an operator reading
+	//! the log is never left guessing whether the round is about to start.
+	//!
+	//! The severity split is load-bearing for the boot gate, not decoration: `world-boot.sh` fails
+	//! on any TBD-owned `SCRIPT (E)`, so if a full vest still emitted ERROR here, no mission with
+	//! realistic cargo could ever produce a green boot — which is precisely why this file's one
+	//! gated mission had 0 gear and 0 cargo.
 	protected void ReportVerdict()
 	{
 		string counts = string.Format("gear=%1/%2 cargo=%3/%4",
@@ -1387,13 +1573,31 @@ class TBD_LoadoutApplication : Managed
 			return;
 		}
 
-		// Loud refuse — IsComplete() answered; do not let incomplete look like success.
-		Print(string.Format("%1 slot=%2 loadout delivery REFUSED %3 — IsComplete=0 (authored loadout was not fully delivered)",
-			m_sTag, m_sLabel, counts), LogLevel.ERROR);
+		if (HasBlockingFailure())
+		{
+			Print(string.Format("%1 slot=%2 loadout delivery REFUSED %3 — this slot is UNPLAYABLE and the session will stay in LOADING: %4",
+				m_sTag, m_sLabel, counts, JoinIssues(m_aBlocking)), LogLevel.ERROR);
+		}
+		else
+		{
+			// The T-605 case: everything that matters arrived, some of it in the wrong place or in
+			// smaller quantity. Loud, itemised, and explicitly NOT a refusal.
+			Print(string.Format("%1 slot=%2 loadout SHORTFALL %3 — the slot is playable and the session is NOT refused; it carries less/elsewhere than authored — fix the mission or the kit",
+				m_sTag, m_sLabel, counts), LogLevel.WARNING);
+		}
 
+		// The detail lines are unconditional and keep their old wording, so an operator (and every
+		// grep in docs/platform/PLAYTEST_RUNBOOK.md) still finds `loadout INCOMPLETE` / `loadout
+		// DEGRADED` where they always were. Only the SEVERITY of the non-blocking half moved.
 		if (!m_aFailures.IsEmpty())
-			Print(string.Format("%1 slot=%2 loadout INCOMPLETE %3 — failed: %4",
-				m_sTag, m_sLabel, counts, JoinIssues(m_aFailures)), LogLevel.ERROR);
+		{
+			if (HasBlockingFailure())
+				Print(string.Format("%1 slot=%2 loadout INCOMPLETE %3 — failed: %4",
+					m_sTag, m_sLabel, counts, JoinIssues(m_aFailures)), LogLevel.ERROR);
+			else
+				Print(string.Format("%1 slot=%2 loadout INCOMPLETE %3 — not delivered: %4",
+					m_sTag, m_sLabel, counts, JoinIssues(m_aFailures)), LogLevel.WARNING);
+		}
 
 		if (!m_aDegraded.IsEmpty())
 			Print(string.Format("%1 slot=%2 loadout DEGRADED %3 — %4",

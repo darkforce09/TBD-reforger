@@ -801,13 +801,21 @@ pub fn cargo_garment<'a>(
 /// What *is* measured, and what justifies blocking rather than tinting: on a cargo unit the
 /// authored container rejects, `TBD_LoadoutEquipHelper.c` retries into *any* storage on the
 /// character, and if nothing accepts it deletes the entity and `break`s the row's qty loop —
-/// dropping **the whole remaining quantity of that row**, not one item. Completeness is then
-/// answered by `IsComplete()`: **T-415** `ReportVerdict` ERROR-refuses an incomplete pass, and
-/// **T-541** `TBD_SpawnManager` consumes the same answer at the spawn boundary (settle after
-/// `MaterializeSlotBodies`, refuse LOBBY/deploy when `IsComplete=0`). The website capacity
-/// check is still an estimate of a figure the game never reads back — it exists so authors
-/// see the likely drop *before* the mod refuses at spawn.
-pub const CARGO_CAPACITY_CAVEAT: &str = "Capacity is a build-time catalogue figure the game never reads back, so treat it as an estimate, not a guarantee. The failure it points at is real: at spawn, cargo the character cannot hold is moved to another container or dropped — the rest of that row goes with it — and incomplete delivery is refused (IsComplete at ReportVerdict and the SpawnManager spawn boundary).";
+/// dropping **the whole remaining quantity of that row**, not one item.
+///
+/// **T-605 CORRECTED THE CONSEQUENCE, AND THIS TEXT WITH IT.** T-415 had `ReportVerdict`
+/// ERROR-refuse any pass that was not `IsComplete()`, and T-541 wired that same answer to the
+/// SPAWN BOUNDARY — so one dropped magazine kept *every* client in LOADING, not just its owner.
+/// That was the defect, and it is fixed in the mod: the spawn boundary now refuses only a body
+/// that is UNPLAYABLE (an asset that does not exist, a storage or weapon slot that does not
+/// exist, a garment that would not go on — `TBD_LoadoutApplication.HasBlockingFailure`). A
+/// character that simply ran out of room is a SHORTFALL: the session opens, that player plays,
+/// and the mod reports the missing items on the console and in the admin trail.
+///
+/// So this caveat must no longer threaten a refusal — that would be a false threat, and the next
+/// author to hit it would learn the warning lies. The real cost is the one it always described:
+/// the player does not get the items, and the author here is the only person who can fix it.
+pub const CARGO_CAPACITY_CAVEAT: &str = "Capacity is a build-time catalogue figure the game never reads back, so treat it as an estimate, not a guarantee. The failure it points at is real: at spawn, cargo the character cannot hold is moved to another container or dropped — the rest of that row goes with it. The round still starts and the player is still playable, but they will not be carrying these items and only you can fix that, here.";
 
 /// T-240 — the over-capacity rows, in the same [`RowError`] shape the compat faults use, so a
 /// consumer that already refuses on `validate_loadout` refuses on these too.
@@ -877,11 +885,20 @@ pub fn cargo_capacity_errors(
 /// body is *actually wearing*. Nothing worn there ⇒ `InsertCargo` raises
 /// `Degrade("cargo:<container>", …, "this slot's kit wears no <container> — mission/kit authoring
 /// mismatch, NOT a mod fault")` (:1121-1123) and the any-storage fallback re-homes the units
-/// somewhere else on the body. That degrade is not cosmetic: `IsComplete()` is
-/// `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (:209-212), so **one** such row makes the whole
-/// pass incomplete, and `TBD_SpawnManager` consumes that at the spawn boundary — `LOBBY refused …
-/// (IsComplete=0)` and `deploy DENIED … (IsComplete=0 …)`. The mod already says all of this out
-/// loud; the author, who is here and not reading server logs, never hears it. That is the gap.
+/// somewhere else on the body.
+///
+/// **T-605 — WHAT THAT DEGRADE COSTS, CORRECTED.** This block used to end "…and
+/// `TBD_SpawnManager` consumes that at the spawn boundary — `LOBBY refused … (IsComplete=0)`",
+/// which was true and was the bug: `IsComplete()` is
+/// `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (:209-212), so ONE such row on ONE slot kept
+/// EVERY client in LOADING. T-504 (this rule) was right that the authoring side must not refuse,
+/// and T-605 established that the spawn side must not refuse either: a degrade means the item is
+/// on the body in a different container, which is a player who can play. The boundary now reads
+/// `HasBlockingFailure()` and this row is not one. The session opens; the mod logs the row and
+/// records it in the admin trail; the placement the author asked for is still not what they get.
+///
+/// So the author is now the ONLY person who will ever act on this, which raises the stakes on
+/// this message rather than lowering them — nothing downstream will stop the mission any more.
 ///
 /// **Why it warns instead of refusing** (the export gate is deliberately not extended): "the
 /// loadout picks no garment here" is **not** the same claim as "nothing will be worn here".
@@ -890,9 +907,9 @@ pub fn cargo_capacity_errors(
 /// vest satisfies a `vest` cargo row with no `vest` pick anywhere in this editor. The website
 /// cannot see inside the kit prefab, so it cannot tell those two apart, and a refusal would stop
 /// authoring dead on loadouts that deliver perfectly. Weigh the two failures: a wrong refusal
-/// blocks work that would have shipped, while an ignored warning lands on a defect the mod
-/// **already** refuses loudly at spawn. Warn, count it, never block.
-pub const CARGO_UNWORN_CAVEAT: &str = "The Arsenal only sees the wear this loadout picks, so if the slot's kit prefab wears one of its own the cargo still lands correctly — which is why this warns instead of refusing. If nothing wears it, the mod re-homes the items into whatever storage will take them and counts the row as degraded, and a degraded pass is refused at the spawn boundary (IsComplete=0 → LOBBY/deploy will not open).";
+/// blocks work that would have shipped, while an ignored warning lands on a row the mod delivers
+/// somewhere else and reports. Warn, count it, never block.
+pub const CARGO_UNWORN_CAVEAT: &str = "The Arsenal only sees the wear this loadout picks, so if the slot's kit prefab wears one of its own the cargo still lands correctly — which is why this warns instead of refusing. If nothing wears it, the mod re-homes the items into whatever storage will take them and reports the row as degraded on the server and in the admin trail. The round still starts, so nothing downstream will catch this for you: if the placement matters, fix it here.";
 
 /// The edge type carrying a character prefab's own carried items — the seed source
 /// ([`cargo_defaults_by_character`]) and the vouching evidence [`cargo_unworn_container_errors`]
@@ -1398,17 +1415,22 @@ mod tests {
         // The block rides stale-by-design data: `TBD_RegistryScan.c` `DeriveCargoGrid` (:896-909)
         // is a Workbench-time export the game never reads back, and the game has no runtime
         // capacity arithmetic to agree or disagree with it. So the wording must hedge the NUMBER
-        // while staying blunt about the measured CONSEQUENCE (drop + IsComplete refuse at spawn).
-        // Dropping either half fails here.
+        // while staying blunt about the measured CONSEQUENCE. Dropping either half fails here.
         let c = CARGO_CAPACITY_CAVEAT;
         assert!(c.contains("estimate, not a guarantee"), "{c}");
         assert!(c.contains("never reads back"), "{c}");
-        assert!(c.contains("IsComplete"), "{c}");
-        assert!(c.contains("refused"), "{c}");
-        assert!(
-            !c.contains("zero callers"),
-            "T-415/T-541: IsComplete is consumed — caveat must not claim zero callers: {c}"
-        );
+        // The consequence is the DROP, and it must still be stated plainly.
+        assert!(c.contains("dropped"), "{c}");
+        assert!(c.contains("only you can fix that"), "{c}");
+        // T-605 — and it must NOT threaten a session refusal any more. The spawn boundary refuses
+        // an unplayable body, not a full one, so "the round will not start" would be a false
+        // threat; an author who tests it once and finds it untrue stops believing the warning.
+        for stale in ["IsComplete", "refused", "LOBBY", "will not open"] {
+            assert!(
+                !c.contains(stale),
+                "T-605: over-capacity no longer refuses the spawn boundary — drop `{stale}`: {c}"
+            );
+        }
         for overclaim in [
             "will not fit",
             "guaranteed",
@@ -1579,10 +1601,20 @@ mod tests {
         // clothing is invisible to this editor, so "unworn here" is not "unworn at spawn".
         assert!(c.contains("kit prefab"), "{c}");
         assert!(c.contains("warns instead of refusing"), "{c}");
-        // …and the measured consequence when the kit does NOT save it (helper Degrade →
-        // IsComplete=0 → SpawnManager refuses). Dropping this half turns a real defect into a shrug.
-        assert!(c.contains("IsComplete=0"), "{c}");
-        assert!(c.contains("LOBBY/deploy"), "{c}");
+        // …and the measured consequence when the kit does NOT save it: the helper Degrades the row
+        // and re-homes the items. Dropping this half turns a real defect into a shrug.
+        assert!(c.contains("re-homes"), "{c}");
+        assert!(c.contains("degraded"), "{c}");
+        // T-605 — the author is now the LAST line of defence on this row, and the text has to say
+        // so. It must NOT claim the spawn boundary refuses a degraded pass: it did, that was the
+        // T-605 defect (one degraded row kept every client in LOADING), and it no longer does.
+        assert!(c.contains("fix it here"), "{c}");
+        for stale in ["IsComplete", "LOBBY/deploy", "will not open"] {
+            assert!(
+                !c.contains(stale),
+                "T-605: a degraded row no longer refuses the spawn boundary — drop `{stale}`: {c}"
+            );
+        }
         for overclaim in ["will be dropped", "cannot be delivered", "guaranteed"] {
             assert!(
                 !c.contains(overclaim),
