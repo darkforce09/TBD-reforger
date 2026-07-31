@@ -50,7 +50,6 @@ WHAT IS STILL OPEN AND WAS NOT INVALIDATED: see T-216's schema deltas ($defs/slo
 $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) with no inventory model. The editor's vehicle row is {id,resourceName,position,squadId} (store.rs:527-548), also with no cargo. Vehicle inventory has no representation on any of the three surfaces.
 - **T-257** (idea) — Markers and objectives will be non-undoable the day they land [MAP, PLACE] — hydrate clears loadouts, items, objectives and markers (store.rs:1102-1120) but those four roots are not in the UndoManager expand_scope (store.rs:101-106). Harmless today because nothing mutates them — a silent trap for the marker and objective work.
 - **T-277** (idea) — 27.4% of the shipped map catalogue is unclassified [REG] — 444 of 1,623 prefabs fall through to the fallback rule against only 66 classify rules. vegetation and utility are both zero despite P3_vegetation being listed as shipped, and the road census reports zero while roads.json.gz ships 888 segments across five classes.
-- **T-283** (idea) — Mission review and commenting workflow [SHELL] — No comments table in any migration. approvals.rs:274-284 is a reviewer comment box backed by a local signal, explicitly marked mock until a review-comments API lands, never POSTed. missions.rs:884-896 reads 'Comments coming soon'. Coarse approve/reject exists; the iterative loop does not.
 - **T-290** (idea) — Resolve nine dead-output fields flatten emits that the mod never reads [DATA] — meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only). Either add mod readers or annotate them non-consumed so the next audit does not re-derive this.
 - **T-291** (idea) — Resolve five schema fields implemented on no surface [DATA] — environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem.
 - **T-294** (idea) — Only one of two registered terrains has object data [REG] — terrain-registry.json declares everon (active, all five phases shipped) and arland (queued, P1 only) but arland has only a 756-byte manifest and zero object data.
@@ -362,83 +361,30 @@ mislead the next reader, and two of them are the sentences that let real defects
 6. **`crates/map-engine-core/src/lib.rs:5`** says "the JS boundary lives in the `map-engine-wasm`
    shim". That crate was deleted at T-418. This sentence made the T-582 brief ask for a wasm binding
    that could not exist — the agent had to discover the deletion itself.
-- **T-595** (deferred) — The API side of the game-server agent: T-289 built the channel, nothing calls it [API] — T-289 shipped a token-guarded UNIX-socket agent in `scripts/mod/deploy-staging.sh` (660 insertions,
-0 deletions) serving four process verbs. **The API cannot reach it yet.** This is the other half, and
-T-289 wrote the spec in-file under §WHAT THE API SLICE MUST BUILD.
+- **T-598** (deferred) — T-579 revisited: the RCON toast now lies in the opposite direction [FRONTEND] — T-579 was filed when `send_rcon` always answered 503 and the SPA's success path was unreachable
+dead code. **T-595 made it reachable again**, and the same string is now wrong the other way.
 
-=== WHY THE SECURITY MODEL IS WHAT IT IS — do not redesign it ===
-T-289 REFUTED the premise in `admin.rs:517` ("the game server is a **separate host**"). Independently
-re-verified by wave 73's verifier: `deploy.env.example:17` and both deploy scripts use one
-`TBD_SSH_HOST=sam@192.168.0.140`; `STAGING-SERVER.md:3` is one box; `HOME_SERVER.md:282` puts the API
-in `~/.config/systemd/user/`; `TBD_BACKEND_URL=http://127.0.0.1:8080` is LOOPBACK; compose `api` is
-behind an opt-in `--profile api`.
-So the API and game server are SIBLING `systemctl --user` UNITS UNDER ONE UID, and **the OS is the
-credential** -- `SocketMode=0600` in `$XDG_RUNTIME_DIR` admits exactly one uid. That collapses the
-per-server addressing + secret migration T-269 asked for: there is no secret to store.
-**Update `admin.rs:517`'s comment in this slice** -- it states the refuted premise.
+`apps/website/frontend/src/server_control.rs:116` `rcon_accepted_message` reads
+    "RCON accepted action={} (audit queued; transport pending T-269)"
+The transport is no longer pending -- T-289 shipped the host agent and T-595 shipped the client. A
+202 now means the command was **delivered to a host agent that confirmed the unit's state**, which is
+a materially different claim from "queued, transport pending".
 
-=== WHAT TO BUILD ===
-1. `GAME_AGENT_SOCKET` in `config.rs` (T-279's file precedent: add the var WITH its consumer).
-2. `services/game_agent.rs` over `tokio::net::UnixStream` -- no new dependency.
-   **THE TIMEOUT MUST EXCEED THE AGENT'S 8s DWELL**, or an honest slow answer reads as unreachable.
-3. `send_rcon` (`handlers/admin.rs`) maps Accepted -> 202 / Rejected -> 409 / Unreachable -> 503,
-   replacing T-269's unconditional 503 `RCON_NO_TRANSPORT`.
-   **Write the audit row AFTER the answer, recording the OUTCOME** -- today it records the attempt.
-4. The SPA's dead success path is then reachable again: `frontend/src/server_control.rs:116`
-   `rcon_accepted_message`, the `Ok(resp)` arm at `:313`, and the `RconAccepted` DTO (see T-579).
+**IT IS PINNED, SO THE STRING AND THE PIN MOVE TOGETHER**: a Class-R at `server_control.rs:788`
+asserts `SRC.contains("transport pending T-269")`. Change one without the other and the slice goes
+red for the wrong reason.
 
-=== SCOPE GAPS T-289 DECIDED, carry them forward ===
- - `change_map` / `custom` need a SEPARATE ticket: the agent's safety rests on accepting no free text
-   and filtering to a fixed 4-verb set. Do not widen it to get them.
- - `kick` is UNBUILDABLE until `RconInput` gains a player field -- `admin.rs:422-428` has none and
-   `server_control.rs:44` posts a bare `{"action":"kick"}`. Even with a channel it cannot name who.
- - The agent NEVER trusts the systemctl exit status (`STAGING-SERVER.md:246-250` documents this host
-   exiting 0 over a dead server). The API must not re-introduce that trust by reading only a status
-   code -- consume the agent's `result`/`state`, which is why it returns both.
- - Install is opt-in behind `TBD_INSTALL_AGENT=1` because it mutates the live host. Someone has to
-   run it before any of this works end to end.
-- **T-596** (deferred) — Wave 73 residue: a reclaim crash on newline names, two fail-open harness checks, and eight hand-copied role ids [INFRA, FRONTEND] — Small items from wave 73, none live.
+The 202 body now carries `accepted`, `action`, plus new `delivered` / `state` / `detail`. The existing
+`RconAccepted` DTO deserializes unchanged, but **the UI should surface `state`** -- that field is the
+whole point of T-289's design (the host is documented as exiting 0 over a dead server, so the agent
+re-reads `LoadState`/`ActiveState` and returns what it saw).
 
-1. MINOR -- `scripts/platform/wave.sh:2312` (and `:2322`): a `target-*` directory whose name contains a
-   NEWLINE crashes `cmd_reclaim` under `set -u`. `du -sm` emits a second line, `sz` becomes `"0\nb"`,
-   and `$((unknown_mb + $sz))` treats the trailing token as an unbound variable.
-   REPRO: `mkdir "$MAIN_ROOT/target-zz"$'\n'"b"; wave.sh reclaim` -> `line 2312: b: unbound variable`.
-   Fail-closed and it aborts on the SPARED branch before any `rm`, so it cannot mis-delete -- but a
-   destructive sweep aborting mid-run should be hardened (quote/strip `sz`).
-2. NIT -- by design, flagged because it is the one place positive-ID surprises: `target-T-999-api-backup`
-   IS reaped, parsing as slice `T-999` + suffix `-api-backup`. A human naming a manual backup like a
-   slice dir loses it. The contract documents "ticket first, optional suffix"; consider refusing names
-   containing `backup`/`keep`, or just leave it and know.
-3. NIT -- `deploy-staging.sh` `--agent-selftest <path>`: socket cases false-FAIL with `AF_UNIX path too
-   long` when the path exceeds ~108 chars. Harness only; real deploy uses a short `$XDG_RUNTIME_DIR`.
-4. NIT -- same file: the `systemd-analyze verify` check SKIPS SILENTLY when the tool is absent, while
-   the socket checks fail closed. Inconsistent, and skip-on-absent is the shape this program keeps
-   paying for (T-556).
-5. NIT -- `crates/map-engine-render/src/draw_order.rs`: T-592's doc says "zero hits for the upload fns
-   across *.js/*.ts". There ARE hits -- in gitignored, wasm-bindgen-GENERATED `dist/*.js` glue where
-   `role` is a passthrough parameter, never a hardcoded id. **The conclusion holds** (role ids are not
-   a wire value); the wording is imprecise and should be corrected so a future reader does not
-   "discover" the dist hits and reopen a settled question.
-6. The 8 hand-copied `const ROLE_*` u32 literals (`world_assets/dem_vectors.rs:18,19`,
-   `world_host.rs:18,19,20,22`, `forest_mass.rs:23`, `mission_history.rs:42`) should import T-592's new
-   `role_id::*`. Mechanical, 4 files. Until then a renumber silently misroutes an upload rather than
-   failing the build -- which is precisely why T-592 created the module.
-7. `engine.rs:4657` `set_lane_opacity` is FAIL-OPEN: `if role == 0 { Satellite } else { Hillshade }` --
-   any non-zero id silently becomes Hillshade, unlike `tex_layer_begin`'s explicit `idx > 1` rejection
-   two functions away. Latent (only ever called with 0).
-8. PRE-EXISTING shell bug, `scripts/mod/deploy-staging.sh:679`:
-   `: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/...}"` -- the `}` inside the default TERMINATES the
-   expansion, so the fallback is the truncated `{69A85365FC09E2CA`. Masked only because
-   `deploy.env.example:35` sets it explicitly.
-9. DOC CONFLICT: `STAGING-SERVER.md:3` says "API + Postgres (Docker)", but `deploy-website.sh` only
-   runs `compose up -d postgres` and the compose `api` service is behind `--profile api`. **If the API
-   were ever moved into that container the T-289 socket becomes unreachable** -- T-595 depends on the
-   API staying host-side. Fix the doc so nobody containerises it by following it.
-10. `dist-<slice>` has no reclaim sweep. Nothing instructs agents to create one today
-    (`FACTORY_FOR_CURSOR.md:179` names only `target-<slice>-api`), so widening was speculative -- but if
-    a slice ever writes a private `dist-`, it leaks exactly as `target-<SLICE>` did. Also a residual
-    window: sparing keys off worktree existence, so a slice whose worktree is removed while its agent
-    is still PARKED has its dir eligible. An age guard would close it.
+Also still open from T-579, unchanged: `event_manager.rs:985` still promises that deleting an event
+removes its missions' ORBATs and registrations, while `handlers/events.rs:1380` soft-deletes only.
+
+**SEQUENCING:** two operator steps must happen before any of this is exercisable end to end -- set
+`Environment=GAME_AGENT_SOCKET=%t/tbd-reforger-agent.sock` in the API's systemd unit, and run
+`TBD_INSTALL_AGENT=1` once. Both mutate the live host; no agent has run them.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

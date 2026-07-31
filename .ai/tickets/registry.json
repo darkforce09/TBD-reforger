@@ -8627,7 +8627,7 @@
       "impact": [
         "mc-collab"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3010,
       "stream": "mission-creator",
       "targets": [
@@ -15130,7 +15130,7 @@
     {
       "id": "T-593",
       "title": "Wire api_post_raw — it ships with no caller and is dead code until this lands",
-      "summary": "T-591 shipped `api_post_raw` in `apps/website/frontend/src/client.rs` and FLAGGED IT HONESTLY: it has\nno caller, carries `#[allow(dead_code)]`, and the agent cited `map-engine-wasm` by name — the entire\ncrate whose consumer was deleted and which cost a ticket to discover. **If this follow-up is not\nscheduled, revert T-591 rather than leave dead code.** It is scheduled; do it.\n\n=== THE MEASUREMENT THAT JUSTIFIES IT ===\nT-591 measured the real amplification with a counting allocator over a 33.55 MiB / 170k-slot payload:\n  one parsed Value tree = 235.87 MiB for 33.55 MiB source = 7.03x   (x86_64, MEASURED)\n  derived wasm32 tree                                     = 4.70x\nROOT CAUSE: `serde_json::Map` is a BTreeMap and each `LeafNode<String,Value>` holds ELEVEN slots\nregardless of key count -- 408 B/object on wasm32. 340,658 objects account for 205 of 236 MiB.\n**The cost is per-JSON-OBJECT, not per-byte.**\nThe ticket's \"four times over\" was the right verdict with the wrong inventory: the JS string and the\nRust String both drop at parse. What is live at the fetch call is THREE full Value trees --\n`up_doc`'s stored value, `version_body`'s `json!` clone, and `request()`'s per-attempt clone.\n  today (api_post(Value))            16.10x\n  raw + to_string(version_body(..))  11.40x\n  raw + streaming caller              6.70x\n\n=== TWO CALL-SITE SHAPES, BOTH COMPILE-VERIFIED BY T-591 ===\nMINIMAL (2 lines, wasm32 clean, zero test churn) -- replaces missions.rs:1915 + :1919:\n    let body = serde_json::to_string(\n        &map_engine_core::mission::compile::version_body(&semver, &notes, &doc),\n    ).unwrap_or_default();\n    match crate::client::api_post_raw(store, &path, body).await { Ok(()) => {\n18.2x -> 12.8x. The `version_body(&semver, &notes, &doc)` literal survives inside `to_string(...)`, so\nthe anti-drift pin at missions.rs:3390 still holds.\n\nSTREAMING (reaches 7.4x) BREAKS `the_upload_panel_is_wired_to_the_versions_route` -- and **that\nfailure is CORRECT**: hand-streaming the wrapper genuinely abandons the shared builder, which is what\nthe pin exists to prevent.\n**RECOMMENDED SHAPE:** add `version_body_to_writer(w, semver, notes, payload)` to\n`crates/map-engine-core/src/mission/compile.rs` beside `version_body`, have BOTH doors onto\n`create_version` use it, and re-point the pin at the new name. That gets 7.4x AND keeps the\nanti-drift property. Two files: `compile.rs` + `missions.rs`.\n\n=== THE HONEST CEILING — DO NOT OVERCLAIM IT ===\n256 MB is NOT reachable: 256 x 6.70 = 1.72 GiB of wasm32 linear heap on top of the wgpu editor.\nAnchoring on T-117's shipped 32 MiB (implying ~540 MiB survivable) and taking the WORSE\nloadout-bearing ratio: ~40 MiB minimal, ~72 MiB streaming. Recommend `UPLOAD_MAX_BYTES = 64 << 20`\nwith the streaming call site. The streaming/multipart route (T-591 item 3) remains the only fix for\ngenuinely large missions.\n\nALSO FOUND: the 201 response echoes the whole `json_payload` back (`models/mission.rs:128`), so\n`api_post::<serde_json::Value>` parses a FOURTH tree out of the response that `missions.rs:1920`'s\n`Ok(_)` discards. `api_post_raw` returns `Ok(())` deliberately to avoid exactly that.",
+      "summary": "T-591 shipped `api_post_raw` in `apps/website/frontend/src/client.rs` and FLAGGED IT HONESTLY: it has\nno caller, carries `#[allow(dead_code)]`, and the agent cited `map-engine-wasm` by name — the entire\ncrate whose consumer was deleted and which cost a ticket to discover. **If this follow-up is not\nscheduled, revert T-591 rather than leave dead code.** It is scheduled; do it.\n\n=== THE MEASUREMENT THAT JUSTIFIES IT ===\nT-591 measured the real amplification with a counting allocator over a 33.55 MiB / 170k-slot payload:\n  one parsed Value tree = 235.87 MiB for 33.55 MiB source = 7.03x   (x86_64, MEASURED)\n  derived wasm32 tree                                     = 4.70x\nROOT CAUSE: `serde_json::Map` is a BTreeMap and each `LeafNode<String,Value>` holds ELEVEN slots\nregardless of key count -- 408 B/object on wasm32. 340,658 objects account for 205 of 236 MiB.\n**The cost is per-JSON-OBJECT, not per-byte.**\nThe ticket's \"four times over\" was the right verdict with the wrong inventory: the JS string and the\nRust String both drop at parse. What is live at the fetch call is THREE full Value trees --\n`up_doc`'s stored value, `version_body`'s `json!` clone, and `request()`'s per-attempt clone.\n  today (api_post(Value))            16.10x\n  raw + to_string(version_body(..))  11.40x\n  raw + streaming caller              6.70x\n\n=== TWO CALL-SITE SHAPES, BOTH COMPILE-VERIFIED BY T-591 ===\nMINIMAL (2 lines, wasm32 clean, zero test churn) -- replaces missions.rs:1915 + :1919:\n    let body = serde_json::to_string(\n        &map_engine_core::mission::compile::version_body(&semver, &notes, &doc),\n    ).unwrap_or_default();\n    match crate::client::api_post_raw(store, &path, body).await { Ok(()) => {\n18.2x -> 12.8x. The `version_body(&semver, &notes, &doc)` literal survives inside `to_string(...)`, so\nthe anti-drift pin at missions.rs:3390 still holds.\n\nSTREAMING (reaches 7.4x) BREAKS `the_upload_panel_is_wired_to_the_versions_route` -- and **that\nfailure is CORRECT**: hand-streaming the wrapper genuinely abandons the shared builder, which is what\nthe pin exists to prevent.\n**RECOMMENDED SHAPE:** add `version_body_to_writer(w, semver, notes, payload)` to\n`crates/map-engine-core/src/mission/compile.rs` beside `version_body`, have BOTH doors onto\n`create_version` use it, and re-point the pin at the new name. That gets 7.4x AND keeps the\nanti-drift property. Two files: `compile.rs` + `missions.rs`.\n\n=== THE HONEST CEILING — DO NOT OVERCLAIM IT ===\n256 MB is NOT reachable: 256 x 6.70 = 1.72 GiB of wasm32 linear heap on top of the wgpu editor.\nAnchoring on T-117's shipped 32 MiB (implying ~540 MiB survivable) and taking the WORSE\nloadout-bearing ratio: ~40 MiB minimal, ~72 MiB streaming. Recommend `UPLOAD_MAX_BYTES = 64 << 20`\nwith the streaming call site. The streaming/multipart route (T-591 item 3) remains the only fix for\ngenuinely large missions.\n\nALSO FOUND: the 201 response echoes the whole `json_payload` back (`models/mission.rs:128`), so\n`api_post::<serde_json::Value>` parses a FOURTH tree out of the response that `missions.rs:1920`'s\n`Ok(_)` discards. `api_post_raw` returns `Ok(())` deliberately to avoid exactly that.\n\n== CORRECTED BY THE SLICE 2026-07-31 — T-591's diagnosis was wrong twice, and the command center\n   repeated both into this ticket ==\n1. **THE ROOT CAUSE CITED ABOVE IS WRONG FOR THIS BUILD.** `serde_json` is pinned with\n   `preserve_order` (`crates/map-engine-core/Cargo.toml:38` and `:49`, from T-220, so JSON floats\n   round-trip like V8's JSON.parse), and `indexmap` is in the lockfile. **`Map` is an IndexMap, not\n   a BTreeMap**, so the \"eleven-slot LeafNode, 408 B/object\" mechanism does not describe what ships.\n   The per-OBJECT conclusion survives; the cited cause does not. Verified by the command center.\n2. **THE AMPLIFICATION WAS UNDERCOUNTED.** T-591 counted three live Value trees and missed a\n   fourth: `up_doc.get_untracked()` at `missions.rs:1899` clones the entire tree. Measured with a\n   counting allocator over a 170k-slot document:\n       today (api_post)            1356.94 MiB = 42.31x   (NOT 16.10x)\n       minimal 2-line change        688.87 MiB = 29.55x\n       shipped (to_writer + raw)    285.98 MiB =  8.92x\n   So the 32 MiB that ALREADY SHIPS peaks near 1357 MiB, not the ~515 MiB this ticket's ceiling\n   arithmetic assumed.\n3. **CEILING SHIPPED: `UPLOAD_MAX_BYTES = 64 << 20`**, anchored on the peak already in production —\n   64 MiB through the new path measures 572.33 MiB, against 1356.94 MiB for the 32 MiB shipping\n   today. Doubling the limit leaves the worst case at well under half of what the operator already\n   runs. **256 MB stays unreachable** (~2.2 GiB at 8.9x) and the doc comment says so.\n4. **ANTI-DRIFT IS NOW STRUCTURAL, not conventional.** Rather than \"both doors call one function\",\n   a single borrowed `VersionBody` struct (`compile.rs:374`) is the ONLY place the wire keys are\n   written; `version_body` and `version_body_to_writer` are thin wrappers over it, pinned by a\n   byte-equality test over 36 adversarial input pairs. `mission_commands.rs:301` (the editor's Save)\n   still pays `version_body`'s clone — safe, drift-proof via the shared struct, and outside scope.",
       "program": "platform",
       "surfaces": [
         "FRONTEND"
@@ -15138,7 +15138,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3460,
       "stream": "web-platform",
       "targets": [
@@ -15159,7 +15159,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3461,
       "stream": "web-platform",
       "targets": [
@@ -15179,7 +15179,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3462,
       "stream": "web-platform",
       "targets": [
@@ -15200,7 +15200,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3463,
       "stream": "web-platform",
       "targets": [
@@ -15208,6 +15208,46 @@
       ],
       "executor": "claude-code",
       "priority": 3
+    },
+    {
+      "id": "T-597",
+      "title": "CI has been RED since T-534 and the wave gate cannot see it — two causes, one structural gap",
+      "summary": "**The local loop everyone trusts is green while the remote job nobody watches is red.** Found by\nT-594, sharpened by the command center, and a second independent cause found by wave 74's verifier.\n\n=== CAUSE 1 — the command center did this, on 2026-07-28 ===\n`.github/workflows/ci.yml:69` sets\n    TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable\nT-534's guard `is_safe_test_database_name` (`apps/website/api/tests/common/mod.rs:88`) **hard-refuses\nthe literal name `tbd_reforger`** -- its own comment says why: *\"so an exported\nTEST_DATABASE_URL=…/tbd_reforger cannot wipe the live database.\"*\nSo **every website-api DB suite panics at provision under CI.** The guard is CORRECT and must not be\nweakened; CI's env is what is wrong. Shipped in `c9730c24` (T-534), which the command center\nescalated to P0 and approved without checking CI's env against the new guard.\nThe wave gate escaped it only because it points `TBD_GATE_DB` at `tbd_gate_w<N>_cold` names.\nFIX: give CI an allow-listed name (`rust_it`, `tbd_gate*`, `*_cold`, `*_it`, `*_probe`).\n\n=== CAUSE 2 — a stale literal that has been wrong since T-176 ===\n`tools/tbd-tools/src/density.rs:158` -- `corner_partition_identity` asserts a hardcoded grid size of\n**401**; the value is **1601**. T-176 (`a5940fad9`) migrated the canopy grid 32 m -> 8 m, which moved\n`corner_grid_size(12800)` from 401 to 1601, and never updated this test. The `sum == 1000` identity on\nthe line above still passes -- only the size literal is stale.\n    cargo test -p tbd-tools --lib corner_partition_identity\n    -> assertion `left == right` failed: left 1601, right 401\nPre-existing, verified untouched by wave 74.\n\n=== THE STRUCTURAL GAP THAT HID BOTH ===\n**No gate step runs `cargo test -p xtask` or `-p tbd-tools`.** The wave gate runs only `test api`,\n`test map-engine` and `test frontend`. CI's bare workspace `cargo test` (`ci.yml:71`) DOES cover them\n-- `xtask` and `tools/tbd-tools` are workspace members and there is no `default-members` override --\nso **81 tests** (xtask 33 + tbd-tools 48) execute ONLY in the job nobody reads.\nThat gap is why T-278's `instance_kinds_match_enums_schema` never fired: **the pin existed and was\nnever executed.** T-594 worked around it for its own case by moving the check to RUNTIME inside\n`type_inventory()`, which IS a gate step -- but the general hole is open.\n\nFIX, in order: (1) correct CI's `TEST_DATABASE_URL`; (2) fix the stale `401`; (3) add\n`cargo test -p xtask -p tbd-tools` to the wave gate so the two crates stop being invisible locally.\nDo NOT do (3) before (2) or the gate lands red.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "ready",
+      "order": 3470,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 0
+    },
+    {
+      "id": "T-598",
+      "title": "T-579 revisited: the RCON toast now lies in the opposite direction",
+      "summary": "T-579 was filed when `send_rcon` always answered 503 and the SPA's success path was unreachable\ndead code. **T-595 made it reachable again**, and the same string is now wrong the other way.\n\n`apps/website/frontend/src/server_control.rs:116` `rcon_accepted_message` reads\n    \"RCON accepted action={} (audit queued; transport pending T-269)\"\nThe transport is no longer pending -- T-289 shipped the host agent and T-595 shipped the client. A\n202 now means the command was **delivered to a host agent that confirmed the unit's state**, which is\na materially different claim from \"queued, transport pending\".\n\n**IT IS PINNED, SO THE STRING AND THE PIN MOVE TOGETHER**: a Class-R at `server_control.rs:788`\nasserts `SRC.contains(\"transport pending T-269\")`. Change one without the other and the slice goes\nred for the wrong reason.\n\nThe 202 body now carries `accepted`, `action`, plus new `delivered` / `state` / `detail`. The existing\n`RconAccepted` DTO deserializes unchanged, but **the UI should surface `state`** -- that field is the\nwhole point of T-289's design (the host is documented as exiting 0 over a dead server, so the agent\nre-reads `LoadState`/`ActiveState` and returns what it saw).\n\nAlso still open from T-579, unchanged: `event_manager.rs:985` still promises that deleting an event\nremoves its missions' ORBATs and registrations, while `handlers/events.rs:1380` soft-deletes only.\n\n**SEQUENCING:** two operator steps must happen before any of this is exercisable end to end -- set\n`Environment=GAME_AGENT_SOCKET=%t/tbd-reforger-agent.sock` in the API's systemd unit, and run\n`TBD_INSTALL_AGENT=1` once. Both mutate the live host; no agent has run them.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3471,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
     }
   ]
 }

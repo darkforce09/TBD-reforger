@@ -18,8 +18,7 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-593** — Wire api_post_raw — it ships with no caller and is dead code until this lands (ready)
-- **T-594** — Activate T-244's vehicle lane: two blockers plus T-583's gate step, all in one slice (ready)
+- **T-597** — CI has been RED since T-534 and the wave gate cannot see it — two causes, one structural gap (ready)
 <!-- ticket-sync:next:end -->
 
 ---

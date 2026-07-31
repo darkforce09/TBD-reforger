@@ -396,4 +396,6 @@
 3	T-593	Wire api_post_raw + version_body_to_writer	crates/map-engine-core/src/mission/compile.rs; apps/website/frontend/src/missions.rs
 3	T-594	Activate T-244's vehicle lane: blockers + gate step	packages/tbd-schema/schema/map-object-type-inventory.schema.json; xtask/src/schema_gates.rs; scripts/platform/wave.sh
 3	T-595	API side of the game-server agent	apps/website/api/src/services/game_agent.rs; apps/website/api/src/handlers/admin.rs; apps/website/api/src/config.rs
-3	T-596	Wave 73 residue	crates/map-engine-render/src/engine.rs
+3	T-596	Wave 73 residue	crates/map-engine-render/src/engine.rs; crates/map-engine-render/src/world_assets/dem_vectors.rs; crates/map-engine-render/src/world_host.rs; crates/map-engine-render/src/forest_mass.rs; crates/map-engine-render/src/mission_history.rs; crates/map-engine-render/src/draw_order.rs
+3	T-597	CI red since T-534; xtask/tbd-tools tests ungated	.github/workflows/ci.yml; tools/tbd-tools/src/density.rs; scripts/platform/wave.sh
+3	T-598	RCON toast lies in the opposite direction now	apps/website/frontend/src/server_control.rs

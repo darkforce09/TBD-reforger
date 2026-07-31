@@ -196,7 +196,17 @@ record the correction in the ticket and tell the operator plainly.
   slice's code — one run reported `328 passed` while `--list` showed none of its own tests. It reads
   exactly like a correct fix not working. Use `target-<slice>-api`, **grep the binary for a string
   unique to your version before trusting any HTTP or test result**, and delete the dir on cleanup —
-  `wave.sh reclaim` does not reap `target-<SLICE>` orphans (one 2.7 GB stray survived weeks).
+  `wave.sh reclaim` reaps `target-<SLICE>` orphans since T-589, but only if the worktree is gone.
+- **`cargo check` ITSELF can report PASS over source that does not compile.** Measured 2026-07-31
+  (T-596): under sibling contention on the shared target dir, `cargo check -p website-frontend
+  --target wasm32-unknown-unknown` printed `Finished ... in 8.73s`, **exit 0**, while the tree still
+  had two unresolved identifiers. Clippy caught it seconds later. **The tell is the absence of the
+  `Checking <crate>` line** — the green run showed only `Blocking waiting for file lock on build
+  directory` and a replayed warning, i.e. a *cached verdict* rather than a build.
+  **So: assert on the `Checking <crate>` line, or use a private target dir.** Note the gate's own
+  step is `cargo check --workspace --quiet`, and `--quiet` SUPPRESSES that line — the gate is safe
+  only because T-421 gave it a private `target-gate-check`; a slice agent running `cargo check` by
+  hand has neither protection. This is the signature defect inside the tool used to verify against it.
 - **`rg` DOES NOT EXIST — corrected 2026-07-27 (T-556). The earlier claim here that it was
   "container-only" was WRONG and this doc propagated it into a code comment.** ripgrep is installed
   nowhere: not in the container, not on the host, no rpm. `command -v rg` succeeds only because an

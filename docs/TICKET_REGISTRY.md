@@ -537,7 +537,7 @@ $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) wit
 | T-280 | 2980 | shipped | infra | No observability, no backups, no durable rate limiting | Zero prometheus, metrics, sentry or opentelemetry in the api. No /metrics endpoint; /healthz pings the database only. No pg_dump or pg_restore anywhere. Rate limiting is in-memory single-instance so it resets on every restart and cannot scale past one process. |
 | T-281 | 2990 | shipped | infra | apps/mod README falsely claims the compile route does not exist | apps/mod/tbd-framework/README.md:23 says the route is not in the current backend and cites the wrong path without /v1. Both are false — contradicted by app.rs:158-161 and TBD_MissionLoader.c:506. |
 | T-282 | 3000 | shipped | eden | Mission version history — differ and timeline | mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning. Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled. Old versions are retained and unreachable from any UI. |
-| T-283 | 3010 | idea | eden | Mission review and commenting workflow | No comments table in any migration. approvals.rs:274-284 is a reviewer comment box backed by a local signal, explicitly marked mock until a review-comments API lands, never POSTed. missions.rs:884-896 reads 'Comments coming soon'. Coarse approve/reject exists; the iterative loop does not. |
+| T-283 | 3010 | shipped | eden | Mission review and commenting workflow | No comments table in any migration. approvals.rs:274-284 is a reviewer comment box backed by a local signal, explicitly marked mock until a review-comments API lands, never POSTed. missions.rs:884-896 reads 'Comments coming soon'. Coarse approve/reject exists; the iterative loop does not. |
 | T-284 | 3020 | shipped | platform | events.match_id is dead weight and clear_slot is unreachable | events.match_id is selected in every event query and never written by any insert or update — the real link runs the other way via matches.event_id. Separately, clear_slot has no frontend caller, so an admin can never free a claimed slot. |
 | T-285 | 3030 | shipped | platform | Field tools — solutions never persist and inject writes to a dead directory | POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads. |
 | T-286 | 3040 | shipped | platform | Dead scaffolding and a non-reactive role read | PageStub and ApiPage are defined and routed nowhere. missions.rs:87 is a one-shot non-reactive role read evaluated before AuthGate resolves; combined with nav.rs:41-46 returning true for None, a not-yet-bootstrapped session yields is_maker=true and never corrects. faction_manager.rs deletes with no confirmation dialog, unlike every sibling page. |
@@ -3537,7 +3537,7 @@ mislead the next reader, and two of them are the sentences that let real defects
    mounted via `.nest("/x", other_fn())` would false-red as an unwired tag, because the extractor
    only reads `fn api_routes`'s body. The script header documents this and the crate uses one flat
    `api_routes` today. |
-| T-593 | 3460 | ready | platform | Wire api_post_raw — it ships with no caller and is dead code until this lands | T-591 shipped `api_post_raw` in `apps/website/frontend/src/client.rs` and FLAGGED IT HONESTLY: it has
+| T-593 | 3460 | shipped | platform | Wire api_post_raw — it ships with no caller and is dead code until this lands | T-591 shipped `api_post_raw` in `apps/website/frontend/src/client.rs` and FLAGGED IT HONESTLY: it has
 no caller, carries `#[allow(dead_code)]`, and the agent cited `map-engine-wasm` by name — the entire
 crate whose consumer was deleted and which cost a ticket to discover. **If this follow-up is not
 scheduled, revert T-591 rather than leave dead code.** It is scheduled; do it.
@@ -3582,8 +3582,33 @@ genuinely large missions.
 
 ALSO FOUND: the 201 response echoes the whole `json_payload` back (`models/mission.rs:128`), so
 `api_post::<serde_json::Value>` parses a FOURTH tree out of the response that `missions.rs:1920`'s
-`Ok(_)` discards. `api_post_raw` returns `Ok(())` deliberately to avoid exactly that. |
-| T-594 | 3461 | ready | platform | Activate T-244's vehicle lane: two blockers plus T-583's gate step, all in one slice | **THESE MUST LAND TOGETHER.** T-583 shipped `make map-reclassify` and specified the gate step, but the
+`Ok(_)` discards. `api_post_raw` returns `Ok(())` deliberately to avoid exactly that.
+
+== CORRECTED BY THE SLICE 2026-07-31 — T-591's diagnosis was wrong twice, and the command center
+   repeated both into this ticket ==
+1. **THE ROOT CAUSE CITED ABOVE IS WRONG FOR THIS BUILD.** `serde_json` is pinned with
+   `preserve_order` (`crates/map-engine-core/Cargo.toml:38` and `:49`, from T-220, so JSON floats
+   round-trip like V8's JSON.parse), and `indexmap` is in the lockfile. **`Map` is an IndexMap, not
+   a BTreeMap**, so the "eleven-slot LeafNode, 408 B/object" mechanism does not describe what ships.
+   The per-OBJECT conclusion survives; the cited cause does not. Verified by the command center.
+2. **THE AMPLIFICATION WAS UNDERCOUNTED.** T-591 counted three live Value trees and missed a
+   fourth: `up_doc.get_untracked()` at `missions.rs:1899` clones the entire tree. Measured with a
+   counting allocator over a 170k-slot document:
+       today (api_post)            1356.94 MiB = 42.31x   (NOT 16.10x)
+       minimal 2-line change        688.87 MiB = 29.55x
+       shipped (to_writer + raw)    285.98 MiB =  8.92x
+   So the 32 MiB that ALREADY SHIPS peaks near 1357 MiB, not the ~515 MiB this ticket's ceiling
+   arithmetic assumed.
+3. **CEILING SHIPPED: `UPLOAD_MAX_BYTES = 64 << 20`**, anchored on the peak already in production —
+   64 MiB through the new path measures 572.33 MiB, against 1356.94 MiB for the 32 MiB shipping
+   today. Doubling the limit leaves the worst case at well under half of what the operator already
+   runs. **256 MB stays unreachable** (~2.2 GiB at 8.9x) and the doc comment says so.
+4. **ANTI-DRIFT IS NOW STRUCTURAL, not conventional.** Rather than "both doors call one function",
+   a single borrowed `VersionBody` struct (`compile.rs:374`) is the ONLY place the wire keys are
+   written; `version_body` and `version_body_to_writer` are thin wrappers over it, pinned by a
+   byte-equality test over 36 adversarial input pairs. `mission_commands.rs:301` (the editor's Save)
+   still pays `version_body`'s clone — safe, drift-proof via the shared struct, and outside scope. |
+| T-594 | 3461 | shipped | platform | Activate T-244's vehicle lane: two blockers plus T-583's gate step, all in one slice | **THESE MUST LAND TOGETHER.** T-583 shipped `make map-reclassify` and specified the gate step, but the
 step was DELIBERATELY NOT WIRED because the tree is in drift TODAY -- wiring it alone would turn every
 slice gate red. Verified by the command center: `make map-reclassify TERRAIN=everon` exits 1 with
 `DRIFT — 16 prefab(s) classify differently than the committed catalogue`.
@@ -3619,7 +3644,7 @@ Placement: immediately after `run "schema" gate_schema`, in BOTH `gate_slice()` 
    `map-reclassify` is a `tbd-tools --bin world` call -- it would trip or silently miss it.
  - Cost ~12 s.
 Run on the day T-244 landed, this step would have gone RED immediately. |
-| T-595 | 3462 | deferred | platform | The API side of the game-server agent: T-289 built the channel, nothing calls it | T-289 shipped a token-guarded UNIX-socket agent in `scripts/mod/deploy-staging.sh` (660 insertions,
+| T-595 | 3462 | shipped | platform | The API side of the game-server agent: T-289 built the channel, nothing calls it | T-289 shipped a token-guarded UNIX-socket agent in `scripts/mod/deploy-staging.sh` (660 insertions,
 0 deletions) serving four process verbs. **The API cannot reach it yet.** This is the other half, and
 T-289 wrote the spec in-file under §WHAT THE API SLICE MUST BUILD.
 
@@ -3654,7 +3679,7 @@ per-server addressing + secret migration T-269 asked for: there is no secret to 
    code -- consume the agent's `result`/`state`, which is why it returns both.
  - Install is opt-in behind `TBD_INSTALL_AGENT=1` because it mutates the live host. Someone has to
    run it before any of this works end to end. |
-| T-596 | 3463 | deferred | platform | Wave 73 residue: a reclaim crash on newline names, two fail-open harness checks, and eight hand-copied role ids | Small items from wave 73, none live.
+| T-596 | 3463 | shipped | platform | Wave 73 residue: a reclaim crash on newline names, two fail-open harness checks, and eight hand-copied role ids | Small items from wave 73, none live.
 
 1. MINOR -- `scripts/platform/wave.sh:2312` (and `:2322`): a `target-*` directory whose name contains a
    NEWLINE crashes `cmd_reclaim` under `set -u`. `du -sm` emits a second line, `sz` becomes `"0\nb"`,
@@ -3696,6 +3721,66 @@ per-server addressing + secret migration T-269 asked for: there is no secret to 
     a slice ever writes a private `dist-`, it leaks exactly as `target-<SLICE>` did. Also a residual
     window: sparing keys off worktree existence, so a slice whose worktree is removed while its agent
     is still PARKED has its dir eligible. An age guard would close it. |
+| T-597 | 3470 | ready | platform | CI has been RED since T-534 and the wave gate cannot see it — two causes, one structural gap | **The local loop everyone trusts is green while the remote job nobody watches is red.** Found by
+T-594, sharpened by the command center, and a second independent cause found by wave 74's verifier.
+
+=== CAUSE 1 — the command center did this, on 2026-07-28 ===
+`.github/workflows/ci.yml:69` sets
+    TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable
+T-534's guard `is_safe_test_database_name` (`apps/website/api/tests/common/mod.rs:88`) **hard-refuses
+the literal name `tbd_reforger`** -- its own comment says why: *"so an exported
+TEST_DATABASE_URL=…/tbd_reforger cannot wipe the live database."*
+So **every website-api DB suite panics at provision under CI.** The guard is CORRECT and must not be
+weakened; CI's env is what is wrong. Shipped in `c9730c24` (T-534), which the command center
+escalated to P0 and approved without checking CI's env against the new guard.
+The wave gate escaped it only because it points `TBD_GATE_DB` at `tbd_gate_w<N>_cold` names.
+FIX: give CI an allow-listed name (`rust_it`, `tbd_gate*`, `*_cold`, `*_it`, `*_probe`).
+
+=== CAUSE 2 — a stale literal that has been wrong since T-176 ===
+`tools/tbd-tools/src/density.rs:158` -- `corner_partition_identity` asserts a hardcoded grid size of
+**401**; the value is **1601**. T-176 (`a5940fad9`) migrated the canopy grid 32 m -> 8 m, which moved
+`corner_grid_size(12800)` from 401 to 1601, and never updated this test. The `sum == 1000` identity on
+the line above still passes -- only the size literal is stale.
+    cargo test -p tbd-tools --lib corner_partition_identity
+    -> assertion `left == right` failed: left 1601, right 401
+Pre-existing, verified untouched by wave 74.
+
+=== THE STRUCTURAL GAP THAT HID BOTH ===
+**No gate step runs `cargo test -p xtask` or `-p tbd-tools`.** The wave gate runs only `test api`,
+`test map-engine` and `test frontend`. CI's bare workspace `cargo test` (`ci.yml:71`) DOES cover them
+-- `xtask` and `tools/tbd-tools` are workspace members and there is no `default-members` override --
+so **81 tests** (xtask 33 + tbd-tools 48) execute ONLY in the job nobody reads.
+That gap is why T-278's `instance_kinds_match_enums_schema` never fired: **the pin existed and was
+never executed.** T-594 worked around it for its own case by moving the check to RUNTIME inside
+`type_inventory()`, which IS a gate step -- but the general hole is open.
+
+FIX, in order: (1) correct CI's `TEST_DATABASE_URL`; (2) fix the stale `401`; (3) add
+`cargo test -p xtask -p tbd-tools` to the wave gate so the two crates stop being invisible locally.
+Do NOT do (3) before (2) or the gate lands red. |
+| T-598 | 3471 | deferred | platform | T-579 revisited: the RCON toast now lies in the opposite direction | T-579 was filed when `send_rcon` always answered 503 and the SPA's success path was unreachable
+dead code. **T-595 made it reachable again**, and the same string is now wrong the other way.
+
+`apps/website/frontend/src/server_control.rs:116` `rcon_accepted_message` reads
+    "RCON accepted action={} (audit queued; transport pending T-269)"
+The transport is no longer pending -- T-289 shipped the host agent and T-595 shipped the client. A
+202 now means the command was **delivered to a host agent that confirmed the unit's state**, which is
+a materially different claim from "queued, transport pending".
+
+**IT IS PINNED, SO THE STRING AND THE PIN MOVE TOGETHER**: a Class-R at `server_control.rs:788`
+asserts `SRC.contains("transport pending T-269")`. Change one without the other and the slice goes
+red for the wrong reason.
+
+The 202 body now carries `accepted`, `action`, plus new `delivered` / `state` / `detail`. The existing
+`RconAccepted` DTO deserializes unchanged, but **the UI should surface `state`** -- that field is the
+whole point of T-289's design (the host is documented as exiting 0 over a dead server, so the agent
+re-reads `LoadState`/`ActiveState` and returns what it saw).
+
+Also still open from T-579, unchanged: `event_manager.rs:985` still promises that deleting an event
+removes its missions' ORBATs and registrations, while `handlers/events.rs:1380` soft-deletes only.
+
+**SEQUENCING:** two operator steps must happen before any of this is exercisable end to end -- set
+`Environment=GAME_AGENT_SOCKET=%t/tbd-reforger-agent.sock` in the API's systemd unit, and run
+`TBD_INSTALL_AGENT=1` once. Both mutate the live host; no agent has run them. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

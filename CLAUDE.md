@@ -145,7 +145,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 > the lowest-ordered `ready` program, not the program in flight.
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-592**
+**Latest shipped:** **T-596**
 
 **ACTIVE NOW:** **T-090** — T-090.6 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md`.
 
@@ -157,8 +157,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-120** — Staging soak + golden mission smoke (`queued`)
 - **T-146** — Asset Browser Data Wiring (`queued`)
 - **T-170** — Prod default flip to Leptos SPA (`queued`)
-- **T-593** — Wire api_post_raw — it ships with no caller and is dead code until this lands (`ready`)
-- **T-594** — Activate T-244's vehicle lane: two blockers plus T-583's gate step, all in one slice (`ready`)
+- **T-597** — CI has been RED since T-534 and the wave gate cannot see it — two causes, one structural gap (`ready`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
