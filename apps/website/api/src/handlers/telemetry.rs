@@ -13,6 +13,7 @@ use uuid::Uuid;
 
 use crate::db::refresh_leaderboard;
 use crate::error::ApiError;
+use crate::handlers::{is_foreign_key_violation, violated_constraint};
 use crate::middleware::ServiceAuth;
 use crate::models::{AuditSeverity, MissionOutcome, ServerStatus, TerrainType};
 use crate::realtime::publish_server_status;
@@ -21,6 +22,62 @@ use crate::services::write_audit;
 use crate::state::AppState;
 
 const LOW_FPS_THRESHOLD: f64 = 20.0;
+
+/// `0018` constraint 10 — the one foreign key on an ingest pointer that T-262 *did* land, and the
+/// one this ticket was filed for. A heartbeat naming an unregistered server trips it.
+const FK_STATUS_SERVER: &str = "server_statuses_server_id_fkey";
+
+/// The three foreign keys T-262 abstained from that are written by **this file**
+/// (`0018:151-169`, abstention (iv)). They do not exist yet — adding them is a migration, and a
+/// migration is not this slice's file.
+///
+/// **The arms below are armed for them anyway, deliberately.** T-262's stated reason for
+/// abstaining was that a violation would surface as a 500; the whole point of T-576 is to remove
+/// that reason. If the mapping only covered the constraint that exists today, the migration that
+/// lifts the abstention would re-open the exact defect this ticket closes — for `current_match_id`
+/// on *the same INSERT statement* as `server_id`, where a 23503 carrying a different constraint
+/// name falls straight through to the 500 arm. Naming them here makes that migration pure SQL.
+///
+/// **Not speculative — rehearsed.** All three were created by hand on a scratch database and
+/// driven over HTTP; each returns its 400 (T-576 perturbation evidence). The names follow
+/// `0018`'s `<table>_<column>_fkey` convention, which all 25 of its constraints use; a migration
+/// that names them anything else silently reverts these arms to 500, so `t576_fk_violation`
+/// below pins the convention as the contract rather than a hope.
+const FK_STATUS_MATCH: &str = "server_statuses_current_match_id_fkey";
+const FK_MATCH_EVENT: &str = "matches_event_id_fkey";
+const FK_MATCH_MISSION: &str = "matches_mission_id_fkey";
+
+/// Map a foreign-key violation onto the 4xx that names the parent the request asked for and the
+/// database could not find, or hand the error back untouched.
+///
+/// **Returns `Option` on purpose: the fallthrough must stay a 500.** A helper that answered
+/// "4xx" for every `sqlx::Error` — or even for every 23503 — would be worse than no mapping at
+/// all, because it would tell a game-server bridge that a connection reset, a NOT NULL breach or
+/// a numeric overflow were its own fault and it should stop retrying. Only the constraints named
+/// above are claimed; anything else returns `None` and the caller's `Err(e) => e.into()` arm
+/// logs it and answers 500 exactly as before.
+///
+/// **400, not 409.** 409 is already this crate's answer for 23505 (`missions.rs:1017` version
+/// conflict, `events.rs:839` duplicate attach) and it means "the state you would create collides
+/// with state that exists". This is the opposite: the state the body points at is *absent*. The
+/// caller cannot resolve it by retrying unchanged, which is precisely what 400 tells it and 409
+/// does not, and `ingest_server_status` already answers 400 for `invalid server_id` /
+/// `server_id required` — the same class of unusable body, reached one layer deeper. 404 was
+/// considered and rejected: the route exists, and a bridge that reads 404 as "endpoint gone" is
+/// a plausible way to lose telemetry for a whole deployment.
+fn foreign_key_error(e: &sqlx::Error) -> Option<ApiError> {
+    if !is_foreign_key_violation(e) {
+        return None;
+    }
+    let msg = match violated_constraint(e)? {
+        FK_STATUS_SERVER => "unknown server_id — no server is registered with that id",
+        FK_STATUS_MATCH => "unknown current_match_id — no match exists with that id",
+        FK_MATCH_EVENT => "unknown event_id — no event exists with that id",
+        FK_MATCH_MISSION => "unknown mission_id — no mission exists with that id",
+        _ => return None,
+    };
+    Some(ApiError::bad_request(msg))
+}
 
 /// How many unresolved `arma_id`s the T-229 audit row names before it summarises the rest.
 ///
@@ -258,7 +315,12 @@ pub async fn ingest_server_status(
     .bind(set_match_id)
     .bind(now)
     .fetch_one(&state.pool)
-    .await?;
+    // **T-576 — the statement this ticket was filed for.** `server_id` is bound straight from
+    // the body with no existence check, and since `0018` constraint 10 enforces it a heartbeat
+    // for an unregistered server was a 500. Both pointers on this INSERT are covered:
+    // `server_id` today, `current_match_id` the moment its constraint lands.
+    .await
+    .map_err(|e| foreign_key_error(&e).unwrap_or_else(|| e.into()))?;
 
     // Time-series sample — only when the heartbeat actually measured something the series
     // records. A context-only heartbeat (weather, current match) is not a new data point,
@@ -271,6 +333,13 @@ pub async fn ingest_server_status(
         .bind(server_id)
         .bind(eff.player_count)
         .bind(eff.server_fps)
+        // **Deliberately NOT mapped (T-576).** `server_status_histories_server_id_fkey` names the
+        // same parent as the statement above, which just succeeded — so by the time this runs the
+        // server provably existed, and the only way to reach a 23503 here is a deregistration
+        // landing between the two statements. That is a race in the platform's own state, not a
+        // bad body: answering 400 "unknown server_id" would tell the bridge to stop sending a
+        // payload that was correct when it was sent. A 500 for a genuine race is the honest
+        // answer, and an arm no test can reach is an arm no perturbation can prove.
         .execute(&state.pool)
         .await?;
     }
@@ -1130,8 +1199,12 @@ async fn upsert_match(
             .bind(coalesce_str(&m.winning_faction))
             .bind(aar_replay_url)
             .bind(id)
+            // T-576: `event_id` / `mission_id` are `COALESCE($n, <stored>)`, so this statement can
+            // trip their constraints too once they land — a correction re-POST is exactly where a
+            // wrong pointer arrives. Same mapping as the create path below.
             .fetch_one(&mut *tx)
-            .await?;
+            .await
+            .map_err(|e| foreign_key_error(&e).unwrap_or_else(|| e.into()))?;
             let retract_from = match (prior_event, prior_mission) {
                 (Some(old_e), Some(old_m)) if merged != (Some(old_e), Some(old_m)) => {
                     Some((old_e, old_m))
@@ -1166,8 +1239,17 @@ async fn upsert_match(
     .bind(outcome)
     .bind(coalesce_str(&m.winning_faction))
     .bind(aar_replay_url)
+    // T-576 — abstentions (iv) `matches.event_id` / `matches.mission_id`. Note what the mapping
+    // does and does not buy: the FK makes the write fail either way, so a 400 does not save the
+    // scoreline that T-262 was protecting. What it buys is that the failure is *legible and
+    // retriable* — the bridge learns which pointer is wrong instead of reading "internal error",
+    // and `upsert_match` is idempotent on `source_match_id`, so a corrected re-POST lands the row
+    // through the UPDATE path above. Weighed against the status quo, which is a match stored with
+    // a dangling `event_id` whose attendance is then silently never marked (T-230/T-369), that is
+    // the better failure — but it IS a bridge-contract change and the migration must say so.
     .fetch_one(&mut *tx)
-    .await?;
+    .await
+    .map_err(|e| foreign_key_error(&e).unwrap_or_else(|| e.into()))?;
     // Create has no prior pair to retract from (T-384).
     Ok((row.0, None))
 }
@@ -1660,6 +1742,121 @@ mod tests {
         assert!(
             up_collapsed.contains("Ok((row.0, None))"),
             "create path must return no retract_from"
+        );
+    }
+
+    /// Class-R (T-576): the FK constraint names this file branches on must follow `0018`'s
+    /// `<table>_<column>_fkey` convention.
+    ///
+    /// Three of the four are for constraints that do not exist yet, so nothing at runtime can
+    /// catch a typo in them — a misspelled name simply never matches and the endpoint quietly
+    /// goes back to 500 the day the migration lands. That is the failure this pins: derive the
+    /// expected name from the table and column and compare, so the constant cannot drift from
+    /// the convention the migration will use.
+    #[test]
+    fn fk_constant_names_follow_migration_convention() {
+        for (table, column, actual) in [
+            ("server_statuses", "server_id", FK_STATUS_SERVER),
+            ("server_statuses", "current_match_id", FK_STATUS_MATCH),
+            ("matches", "event_id", FK_MATCH_EVENT),
+            ("matches", "mission_id", FK_MATCH_MISSION),
+        ] {
+            assert_eq!(
+                actual,
+                format!("{table}_{column}_fkey"),
+                "0018 names every one of its 25 foreign keys <table>_<column>_fkey; a constant \
+                 that disagrees matches nothing and silently restores the 500"
+            );
+        }
+    }
+
+    /// Class-R (T-576): the mapping must **discriminate**, not blanket-4xx the database.
+    ///
+    /// `foreign_key_error` is the only thing standing between "a foreign key was violated" and
+    /// "every `sqlx::Error` is the caller's fault". Asserted here on the source rather than only
+    /// over HTTP, because the dangerous edit — widening the guard to `is_foreign_key_violation`
+    /// alone, or worse to any `Err` — leaves every happy-path test green while turning connection
+    /// resets and NOT NULL breaches into 400s that tell a game-server bridge to stop retrying.
+    /// Perturbation: delete the `_ => return None` arm and this goes red.
+    #[test]
+    fn foreign_key_error_falls_through_to_500() {
+        const SRC: &str = include_str!("telemetry.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("telemetry.rs must have a #[cfg(test)] module");
+        let start = production
+            .find("fn foreign_key_error")
+            .expect("T-576 foreign_key_error must exist");
+        let after = &production[start..];
+        let end = after[1..]
+            .find("\n/// ")
+            .or_else(|| after[1..].find("\npub async fn "))
+            .map(|i| i + 1)
+            .unwrap_or(after.len());
+        let body = strip_rust_comments(&after[..end]);
+        let collapsed: String = body.split_whitespace().collect::<Vec<_>>().join(" ");
+
+        assert!(
+            collapsed.contains("if !is_foreign_key_violation(e) { return None; }"),
+            "must return None for any SQLSTATE that is not 23503 — a 4xx for a connection \
+             reset or a NOT NULL breach is worse than the 500 it replaced"
+        );
+        assert!(
+            collapsed.contains("_ => return None,"),
+            "must return None for a 23503 raised by an unrecognised constraint — the message \
+             names a parent, and it cannot name one it did not identify"
+        );
+        assert!(
+            collapsed.contains("ApiError::bad_request"),
+            "T-576 maps a named foreign-key violation to 400"
+        );
+        assert!(
+            !collapsed.contains("ApiError::internal"),
+            "the 500 must come from the caller's untouched `e.into()`, not be re-minted here"
+        );
+    }
+
+    /// Class-R (T-576): the heartbeat's `server_statuses` write must route its error through
+    /// `foreign_key_error`, and the fallthrough must still be `e.into()`.
+    ///
+    /// The helper being correct proves nothing if the call site never calls it — that is the
+    /// signature defect this program keeps finding, so pin the wiring, not just the helper.
+    /// Perturbation: restore the bare `.await?` on that statement and this goes red (measured —
+    /// it is how the 500 was reproduced).
+    #[test]
+    fn heartbeat_status_write_maps_foreign_key_violations() {
+        const SRC: &str = include_str!("telemetry.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("telemetry.rs must have a #[cfg(test)] module");
+        let hb_start = production
+            .find("pub async fn ingest_server_status")
+            .expect("ingest_server_status must exist");
+        let hb_after = &production[hb_start..];
+        let hb_end = hb_after[1..]
+            .find("\npub async fn ")
+            .map(|i| i + 1)
+            .unwrap_or(hb_after.len());
+        let hb = strip_rust_comments(&hb_after[..hb_end]);
+        let collapsed: String = hb.split_whitespace().collect::<Vec<_>>().join(" ");
+
+        assert!(
+            collapsed.contains("INSERT INTO server_statuses"),
+            "guard on the right handler"
+        );
+        // Asserted as fragments, not one literal: rustfmt is free to re-wrap the closure, and a
+        // pin that only matches today's line breaks fails for a reason that has nothing to do
+        // with the defect.
+        assert!(
+            collapsed.contains("foreign_key_error(&e)"),
+            "the server_statuses write must route its error through foreign_key_error \
+             (perturbation: bare `.await?` → 500 on an unregistered server_id, the T-576 repro)"
+        );
+        assert!(
+            collapsed.contains("e.into()"),
+            "…and must still hand anything foreign_key_error declines to the 500 path"
         );
     }
 }
