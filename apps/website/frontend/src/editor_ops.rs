@@ -2397,10 +2397,7 @@ pub fn zone_draw_pop_vertex() -> usize {
 /// that (its own comment assigns it here), so a ring is never handed over short.
 fn advance_zone_draw(x: f64, z: f64) -> bool {
     enum Commit {
-        Circle {
-            kind: String,
-            geom: (f64, f64, f64),
-        },
+        Circle { kind: String, geom: (f64, f64, f64) },
         None,
     }
     let commit = OPS_CTX.with(|c| {

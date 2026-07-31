@@ -2464,14 +2464,11 @@ fn zone_attributes(
     let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
     let zid = z.id.clone();
     let input_class = "mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60";
-    let field_label = "mt-2 block text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant";
+    let field_label =
+        "mt-2 block text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant";
 
-    let (id_type, id_label, id_faction, id_delete) = (
-        zid.clone(),
-        zid.clone(),
-        zid.clone(),
-        zid.clone(),
-    );
+    let (id_type, id_label, id_faction, id_delete) =
+        (zid.clone(), zid.clone(), zid.clone(), zid.clone());
     let rules = z.rules.clone();
 
     view! {
@@ -3434,7 +3431,9 @@ pub fn zone_rule_fields() -> Vec<ZoneRuleField> {
             let enum_opts = node.get("enum").and_then(serde_json::Value::as_array);
             let kind = match (ty, enum_opts) {
                 (Some("boolean"), _) => ZoneRuleKind::Bool {
-                    default: default.and_then(serde_json::Value::as_bool).unwrap_or(false),
+                    default: default
+                        .and_then(serde_json::Value::as_bool)
+                        .unwrap_or(false),
                 },
                 (_, Some(opts)) => ZoneRuleKind::Choice {
                     options: opts
@@ -4282,7 +4281,10 @@ mod tests {
                 .kind
                 .clone()
         };
-        assert!(matches!(kind("contestable"), ZoneRuleKind::Bool { default: true }));
+        assert!(matches!(
+            kind("contestable"),
+            ZoneRuleKind::Bool { default: true }
+        ));
         match kind("penalty") {
             ZoneRuleKind::Choice { options, default } => {
                 assert_eq!(options, vec!["none", "warn", "kill"]);
@@ -4317,7 +4319,10 @@ mod tests {
             other => panic!("warnEverySeconds must be a Number, got {other:?}"),
         }
         assert!(
-            matches!(kind("targetCount"), ZoneRuleKind::Number { integer: true, .. }),
+            matches!(
+                kind("targetCount"),
+                ZoneRuleKind::Number { integer: true, .. }
+            ),
             "targetCount is the one integer"
         );
         // `targetAlias` is declared as a `$ref` — a resolver that ignored it would drop the pattern.
@@ -4358,13 +4363,20 @@ mod tests {
     /// Labels are presentation only — the token itself is what reaches the document.
     #[test]
     fn labels_never_replace_tokens() {
-        assert_eq!(humanize_token("objective_hold_until"), "Objective hold until");
+        assert_eq!(
+            humanize_token("objective_hold_until"),
+            "Objective hold until"
+        );
         assert_eq!(humanize_token("spawn"), "Spawn");
         assert_eq!(humanize_key("warnEverySeconds"), "Warn every seconds");
         assert_eq!(humanize_key("penalty"), "Penalty");
         // Round-trip safety: a label is never fed back as a key.
         for f in zone_rule_fields() {
-            assert_ne!(humanize_key(&f.key), f.key, "label must differ from wire key");
+            assert_ne!(
+                humanize_key(&f.key),
+                f.key,
+                "label must differ from wire key"
+            );
         }
     }
 
