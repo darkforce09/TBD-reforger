@@ -30,8 +30,10 @@
 #   bash scripts/platform/wave.sh gate        # full wave gate on the current tree
 #   bash scripts/platform/wave.sh gate --slice T-190   # cheap per-slice gate
 #   bash scripts/platform/wave.sh land        # merge every ready slice (no barrier)
-#   bash scripts/platform/wave.sh reclaim     # /var/tmp agent caches (live slices spared)
-#   bash scripts/platform/wave.sh reclaim --gate-dirs  # opt-in: repo-root target-gate-* / dist-gate-*
+#   bash scripts/platform/wave.sh reclaim     # /var/tmp agent caches + repo-root target-<SLICE>
+#                                             # orphans (live slices spared)
+#   bash scripts/platform/wave.sh reclaim --gate-dirs      # opt-in: repo-root target-gate-* / dist-gate-*
+#   bash scripts/platform/wave.sh reclaim --no-slice-dirs  # opt out of the target-<SLICE> sweep
 #   bash scripts/platform/wave.sh push        # push main
 set -uo pipefail
 
@@ -2200,8 +2202,12 @@ cmd_wave_close() {
 # Default reclaim does NOT touch them; opt in with --gate-dirs. Optional --gate-dirs-older-than-days N
 # only removes gate dirs whose directory mtime is older than N days (age-based sweep without nuking
 # a cache that was used today).
+#
+# T-589: PER-SLICE private dirs (target-<SLICE>, target-<SLICE>-api) ALSO live at MAIN_ROOT, and
+# until now nothing reaped them at all. See the block inside for why they are swept BY DEFAULT
+# while T-426's gate set stayed opt-in — the two look alike and are opposites.
 cmd_reclaim() {
-  local live="" w t freed=0 sz gate_dirs=0 gate_min_age_days=0 a
+  local live="" w t freed=0 sz gate_dirs=0 gate_min_age_days=0 a slice_dirs=1
   while [ $# -gt 0 ]; do
     case "$1" in
       --gate-dirs) gate_dirs=1 ;;
@@ -2209,13 +2215,23 @@ cmd_reclaim() {
         gate_dirs=1
         gate_min_age_days="${2:-0}"
         shift ;;
+      --no-slice-dirs) slice_dirs=0 ;;
       *)
-        echo "reclaim: refusing unknown argument '$1' (expected --gate-dirs and/or --gate-dirs-older-than-days N)" >&2
+        echo "reclaim: refusing unknown argument '$1' (expected --gate-dirs, --gate-dirs-older-than-days N and/or --no-slice-dirs)" >&2
         return 2 ;;
     esac
     shift
   done
-  for w in $(git worktree list | tail -n +2 | awk '{print $1}'); do
+  # THE SPARED SET IS LOAD-BEARING, SO ITS ABSENCE MUST BE DISTINGUISHABLE FROM ITS EMPTINESS.
+  # `for w in $(git worktree list | ...)` cannot tell "no other worktrees" (legitimately empty)
+  # from "git did not answer" (unknown) — both leave $live empty, and the second one turns every
+  # live slice's dir into an apparent orphan. For /var/tmp that has always been the standing risk;
+  # for the MAIN_ROOT sweep below it would delete a running agent's build cache, so capture the
+  # exit status and let that sweep refuse rather than guess.
+  local wt_list live_ok=1
+  wt_list="$(git worktree list 2>/dev/null)" || live_ok=0
+  [ -z "$wt_list" ] && live_ok=0
+  for w in $(printf '%s\n' "$wt_list" | tail -n +2 | awk '{print $1}'); do
     live="$live $(basename "$w" | tr 'A-Z' 'a-z' | tr -d '-')"
   done
   echo "live slices (spared):${live:- none}"
@@ -2228,6 +2244,76 @@ cmd_reclaim() {
     sz="$(du -sm "$d" 2>/dev/null | cut -f1)"
     rm -rf "$d" 2>/dev/null && freed=$((freed + ${sz:-0})) && printf '  removed %-44s %s MB\n' "$d" "${sz:-?}"
   done
+
+  # T-589 — PER-SLICE PRIVATE TARGET DIRS AT MAIN_ROOT. Swept by DEFAULT. Here is why, since the
+  # sibling set two blocks down is deliberately opt-in and the two are easy to confuse.
+  #
+  # T-426 made target-gate-* opt-in for one reason: it is a WARM SHARED cache. Every future slice
+  # gate hits target-gate-api (24 GB today), and T-421 measured cold 23.4 s vs warm 9.3 s — so
+  # deleting it bills work that has not happened yet, to everyone, invisibly. That argument does
+  # not survive translation to a target-<SLICE> dir, which is the opposite on every axis: exactly
+  # one slice ever hits it, that slice is gone, and nothing will ever hit it again. Its entire
+  # remaining function is to occupy disk. `target-T-454` did that for weeks at 2.7 GB while this
+  # very command printed "reclaimed 0 MB" standing next to it (measured 2026-07-31), and the volume
+  # runs at 87%. Opt-in housekeeping that nobody opts into is not housekeeping. `--no-slice-dirs`
+  # turns it off for the one operator who wants a look before a sweep.
+  #
+  # The leak is also SELF-INFLICTED and structural, which is what makes "just tell agents to clean
+  # up" insufficient: PLATFORM_FACTORY's Known traps and the brief template now INSTRUCT every
+  # slice agent to build its own runnable binary into target-<slice>-api (T-581/T-582 were served
+  # each other's binaries out of the shared target/). Agents are told to delete it and mostly do —
+  # T-585 reclaimed 8.0 GB itself — but "mostly" is the wrong verb for a slice that gets parked,
+  # rate-limited or killed mid-run, and those are the ones that leave a dir behind.
+  #
+  # SELECTION IS POSITIVE IDENTIFICATION, NOT A BLOCKLIST. A dir is removed only when its own name
+  # says which slice owns it: `target-<TICKET>` with the ticket FIRST, optional suffix after. A
+  # blocklist here fails open — the one unlisted name is the one that gets deleted — and this
+  # function's blast radius is `rm -rf` on a directory. Measured at MAIN_ROOT today, three dirs
+  # that a looser rule would have eaten:
+  #     target/                  67 GB  the shared CARGO_TARGET_DIR for every worktree
+  #     target-dev-api          3.6 GB  the operator's live `make api` cache — no ticket in the name
+  #     target-gate-schema-T422 1.7 GB  a GATE dir that CONTAINS a ticket id
+  # The last one is why the ticket must be the first component after `target-`: anchoring there
+  # means no target-gate-* name can be read as a slice dir even if the explicit exclusion below
+  # were deleted. A name the pattern cannot parse (target-ci, target-T-068.13-api) is SPARED, not
+  # guessed at — and printed with its size, because a silent skip is the same defect as the
+  # "0 MB" report that produced this ticket, just wearing a quieter hat.
+  if [ "$slice_dirs" -eq 0 ]; then
+    echo "slice dirs at $MAIN_ROOT: not swept (--no-slice-dirs)"
+  elif [ "$live_ok" -ne 1 ]; then
+    echo "slice dirs at $MAIN_ROOT: REFUSED — 'git worktree list' did not answer, so the spared set"
+    echo "  is unknown and every dir here would look like an orphan. Nothing swept. Run from the repo."
+  else
+    local unknown_mb=0 unknown_n=0 sd sbase stok skey sskip l
+    echo "slice dirs at $MAIN_ROOT:"
+    sz="$(du -sm "$MAIN_ROOT/target" 2>/dev/null | cut -f1)"
+    printf '  spared  %-44s %s MB  (shared CARGO_TARGET_DIR — never reclaimed)\n' "$MAIN_ROOT/target" "${sz:-?}"
+    for sd in "$MAIN_ROOT"/target-*; do
+      [ -d "$sd" ] || continue
+      sbase="$(basename "$sd")"
+      # `target` cannot come out of a target-* glob and target-gate-* cannot parse as a slice dir;
+      # both arms are asserted anyway rather than reasoned about, because the cost of being wrong
+      # once is 67 GB or a red gate, and the cost of the arm is a string compare.
+      case "$sbase" in
+        target|target-gate-*) continue ;;
+      esac
+      if ! [[ "$sbase" =~ ^target-([Tt]-?[0-9]+)(-.*)?$ ]]; then
+        sz="$(du -sm "$sd" 2>/dev/null | cut -f1)"
+        unknown_mb=$((unknown_mb + ${sz:-0})); unknown_n=$((unknown_n + 1))
+        printf '  spared  %-44s %s MB  (no ticket id in the name — no owner to check)\n' "$sd" "${sz:-?}"
+        continue
+      fi
+      stok="${BASH_REMATCH[1]}"
+      skey="$(printf '%s' "$stok" | tr 'A-Z' 'a-z' | tr -d '-')"
+      sskip=0
+      for l in $live; do [ "$skey" = "$l" ] && sskip=1; done
+      [ "$sskip" -eq 1 ] && { printf '  spared  %-44s (live slice %s)\n' "$sd" "$stok"; continue; }
+      sz="$(du -sm "$sd" 2>/dev/null | cut -f1)"
+      rm -rf "$sd" 2>/dev/null && freed=$((freed + ${sz:-0})) && printf '  removed %-44s %s MB\n' "$sd" "${sz:-?}"
+    done
+    [ "$unknown_n" -gt 0 ] && echo "  ${unknown_mb} MB in ${unknown_n} unparseable dir(s) NOT reclaimed — rename to target-<TICKET>-* to make them reapable"
+  fi
+
   if [ "$gate_dirs" -eq 1 ]; then
     echo "gate dirs (--gate-dirs${gate_min_age_days:+, min age ${gate_min_age_days}d}):"
     for d in "$MAIN_ROOT"/target-gate-* "$MAIN_ROOT"/dist-gate-*; do
