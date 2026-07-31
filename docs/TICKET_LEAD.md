@@ -63,6 +63,58 @@ REPRO: author a mission with one slot whose cargo targets an unworn container; c
 FIX (design call, not obvious): degrade that ONE player's loadout and let the session start, log it
 loudly, and surface it to the admin -- rather than refusing the world. Whatever is chosen, run it
 against a loadout-carrying mission in the gate, which no current gate step does.
+- **T-607** (3542) — Staging has been validating a stale Workshop build since June, and its pass criteria are that build’s strings [ready] — FOUND by T-604 (wave 76) while making a joinable server work. This is the signature defect of this
+codebase -- *a tool reports success over an input it never actually examined* -- at its most expensive.
+
+=== THE MECHANISM ===
+`tbd-framework` **IS published to the Workshop** -- unlisted, under the SAME id as the local gproj
+GUID `B2C3D4E5F6A78901`, pinned at a stale **1.0.1**. (T-604's ticket and `deploy.env.example:43`
+both assumed it was unpublished. Wrong.)
+
+`scripts/mod/deploy-staging.sh:1153` (`-config` mode) omits `-addonsDir`. Without it the engine does
+not fail -- it resolves the GUID from the Workshop and **downloads 1.0.1 over the network**:
+    Addon Download started B2C3D4E5F6A78901
+    Downloading ... version 1.0.1
+The server then registers a room, reaches LOBBY, and looks perfectly healthy **while running June's
+code**. Measured on one box, same mission: **7 `[TBD]` lines in the old flat format vs 108 in the
+current `[TBD][Subsystem]` format.**
+
+**So every staging deploy since the Workshop publish has validated the stale build, not the checkout
+it deployed.**
+
+=== AND THE GATE CANNOT SEE IT, BECAUSE THE GATE WAS WRITTEN AGAINST THE STALE BUILD ===
+`docs/mod/STAGING-SERVER.md` "Game log pass criteria" required:
+    [TBD] Mission loaded  ·  [TBD] Registry loaded  ·  [TBD] SpawnManager: built slot spawn
+Those are **exactly the strings 1.0.1 emits**. The current build emits none of them (`Mission loaded`
+now survives only inside `TBD_FrameworkManager.c:488`'s ERROR string; `built slot spawn` was deleted).
+**The staging check passed BECAUSE the mod was stale.** Had the correct build ever loaded, the gate
+would have gone red. Partially covered by T-606, which found the same three greps from the other
+direction without knowing why they were stale.
+
+=== SECOND FAILURE MODE, STILL OPEN ===
+`deploy-staging.sh:1155` (`-addonsDir` mode) loads the right code but registers no backend room --
+**zero** `Server registered with address:` lines against 108 healthy `[TBD]` lines. Not joinable.
+So one mode is joinable-but-stale and the other is current-but-unjoinable. T-604 fixed this for the
+playtest launcher (`scripts/mod/run-playtest-server.sh`, both flags together) but did NOT touch
+`deploy-staging.sh` -- staging is still broken both ways.
+
+=== KNOCK-ON: THE PLAYTEST CLIENT MAY LOAD THE WRONG MOD ===
+The server advertises `game.mods[] = [B2C3D4E5F6A78901]`. A joining client resolves that from the
+Workshop and gets **1.0.1**, while the server runs the checkout. No second machine has connected to
+this combination, so the skew is unverified in both directions.
+CHEAPEST TEST, from the runbook: after joining, type `#tbd` in chat. The current build answers with
+the full command list; 1.0.1 has no such command. One line tells you which mod the client is on.
+FIX IF SKEWED: re-publish the mod from Workbench so Workshop and checkout agree.
+
+=== WHAT TO DO ===
+1. Re-publish `tbd-framework` to the Workshop so `B2C3D4E5F6A78901` resolves to current code.
+2. Give `deploy-staging.sh` both `-addonsDir` and `-config` (the shape T-604 proved at
+   `scripts/mod/run-playtest-server.sh`), so staging runs what it deployed AND is joinable.
+3. Rewrite STAGING-SERVER.md's pass criteria against the CURRENT build's strings, and add a positive
+   assertion that the loaded addon is the local one -- T-604's launcher already self-tests this
+   (it fails on both `-config`-only logs and passes only with the local copy genuinely winning).
+   Copy that check rather than re-deriving it.
+4. Consider whether an unlisted Workshop id colliding with the dev gproj GUID is wise at all.
 
 ## Next queued (top 10)
 

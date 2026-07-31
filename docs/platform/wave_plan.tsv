@@ -400,3 +400,5 @@
 3	T-597	CI red since T-534; xtask/tbd-tools tests ungated	.github/workflows/ci.yml; tools/tbd-tools/src/density.rs; scripts/platform/wave.sh
 3	T-598	RCON toast lies in the opposite direction now	apps/website/frontend/src/server_control.rs
 3	T-599	wave.sh push refuses on LFS path not LFS attributes	scripts/platform/wave.sh
+w76	T-604	-	scripts/mod/deploy-staging.sh; scripts/mod/run-dev-server.sh; docs/mod/STAGING-SERVER.md
+w76	T-605	-	apps/mod/tbd-framework/scripts/Game/TBD/TBD_SpawnManager.c; apps/mod/tbd-framework/scripts/Game/TBD/TBD_LoadoutEquipHelper.c
