@@ -114,7 +114,9 @@ if [ -n "$VERIFY_ONLY" ]; then
 	tbd_require_container
 	tbd_require_pg_tool pg_restore >/dev/null
 	info "verifying $VERIFY_ONLY"
-	if rows="$(tbd_verify_dump "$VERIFY_ONLY" "$MIN_ROWS")"; then
+	# T-588: identity is checked against --db (default $TBD_BACKUP_DB). Re-verifying a dump
+	# of some OTHER database is a legitimate thing to do — pass --db with that name.
+	if rows="$(tbd_verify_dump "$VERIFY_ONLY" "$MIN_ROWS" "$DB")"; then
 		echo "OK: $VERIFY_ONLY verified — $rows data row(s), TOC and full archive body read back."
 		exit 0
 	fi
@@ -177,7 +179,9 @@ rm -f "$DUMP_ERR"
 
 # ── VERIFY BEFORE PROMOTING. This is the line the ticket is about. ──────────────────
 info "verifying the file just written…"
-if ! ROWS="$(tbd_verify_dump "$PART" "$MIN_ROWS")"; then
+# T-588: "$DB" is the database this script just dumped, so the archive must name it. Costs
+# nothing here and makes the backup path assert its own output rather than assume it.
+if ! ROWS="$(tbd_verify_dump "$PART" "$MIN_ROWS" "$DB")"; then
 	echo "FAIL: the dump did NOT verify — refusing to promote it to $FINAL." >&2
 	echo "      The partial file has been removed. THERE IS NO NEW BACKUP; the previous ones are untouched." >&2
 	exit 1

@@ -39,6 +39,11 @@ DUMP=""
 JOBS="${TBD_RESTORE_JOBS:-1}"
 MIN_ROWS="${TBD_RESTORE_MIN_ROWS:-1}"
 CREATE=0
+# T-588 — the database the DUMP must have been taken FROM. NOT the restore target: those
+# legitimately differ (backup-drill.sh restores a tbd_reforger dump into tbd_drill_probe),
+# so conflating them would fail every drill. Set `--expect-db ''` to opt out, which the
+# verifier then says out loud rather than passing quietly.
+EXPECT_DB="${TBD_RESTORE_EXPECT_DB:-${TBD_BACKUP_DB:-tbd_reforger}}"
 
 usage() {
 	cat <<'EOF'
@@ -51,6 +56,9 @@ Usage: restore-db.sh (--db NAME | --url URL) [options] <dump-file>
   --create        create the target database first if it does not exist
   --jobs N        parallel restore workers (pg_restore -j; default 1)
   --min-rows N    require the dump to hold >= N data rows before restoring (default 1)
+  --expect-db N   the database the dump must have been TAKEN FROM (default $TBD_BACKUP_DB,
+                  or tbd_reforger). This is the source, not the target: restoring a
+                  tbd_reforger dump into a scratch DB is normal. Pass '' to skip the check.
   --i-understand-this-destroys=NAME
                   required to target a database outside the T-381 allow-list.
                   NAME must exactly equal the target — a typo cannot satisfy both.
@@ -79,6 +87,11 @@ while [ $# -gt 0 ]; do
 		;;
 	--min-rows)
 		MIN_ROWS="${2:?--min-rows needs a value}"
+		shift 2
+		;;
+	--expect-db)
+		[ $# -ge 2 ] || die "--expect-db needs a value (pass '' to skip the identity check)"
+		EXPECT_DB="$2"
 		shift 2
 		;;
 	--create)
@@ -142,7 +155,7 @@ tbd_require_pg_tool psql >/dev/null
 
 # ── VERIFY THE ARCHIVE BEFORE DROPPING ANYTHING ─────────────────────────────────────
 info "verifying $DUMP before touching '$DB'"
-if ! ROWS="$(tbd_verify_dump "$DUMP" "$MIN_ROWS")"; then
+if ! ROWS="$(tbd_verify_dump "$DUMP" "$MIN_ROWS" "$EXPECT_DB")"; then
 	echo "FAIL: refusing to restore — the archive did not verify. Database '$DB' is UNTOUCHED." >&2
 	echo "      \`--clean\` drops before it restores, so restoring an unreadable archive would" >&2
 	echo "      have destroyed '$DB' and put nothing back." >&2

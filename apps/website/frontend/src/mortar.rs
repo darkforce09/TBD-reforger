@@ -38,6 +38,7 @@ use crate::ui::{AuthGate, PageHeader};
 use leptos::prelude::*;
 use serde::Deserialize;
 use serde_json::{json, Value};
+use std::collections::HashSet;
 
 // OpsCard cn(base,'glass',className) results, tailwind-merged (deferred Rust tw_merge):
 //  · inputs card: className "grid …" → grid beats base `flex` (display), `gap-4` beats `gap-3`.
@@ -309,15 +310,21 @@ fn restore(row: &SavedFire) -> Option<Restored> {
 /// row's grids are not this module's encoding. Latching over an empty operation is deliberate: it
 /// is a real answer ("nothing saved here"), and re-asking on every refetch is how a later save gets
 /// clobbered.
+///
+/// T-588 — `already_hydrated` is a SET, not the last operation seen. It used to be a single
+/// `Option<&str>` slot, which made "once per operation" true only for the most recent one:
+/// switching away from an operation and back re-hydrated it, silently replacing whatever the
+/// operator had typed since with the saved solution. The rows were never lost, so nothing looked
+/// broken — the in-progress edit just quietly vanished. A latch that forgets is not a latch.
 fn hydration_step(
     batch: &SavedFor,
     want: &str,
-    already_hydrated: Option<&str>,
+    already_hydrated: &HashSet<String>,
 ) -> Option<Option<Restored>> {
     if batch.event_id.as_deref() != Some(want) {
         return None;
     }
-    if already_hydrated == Some(want) {
+    if already_hydrated.contains(want) {
         return None;
     }
     Some(batch.rows.last().and_then(restore))
@@ -498,7 +505,7 @@ fn MortarInner() -> impl IntoView {
     });
 
     // Hydrate the card from the newest saved fire mission, ONCE per operation.
-    let hydrated_for = StoredValue::new(None::<String>);
+    let hydrated_for = StoredValue::new(HashSet::<String>::new());
     Effect::new(move |_| {
         // Only act on a fetch that actually answered. Latching on a failed load would make the
         // page's one hydration attempt the one that read nothing.
@@ -506,11 +513,12 @@ fn MortarInner() -> impl IntoView {
             return;
         };
         let Some(ev) = event_id.get() else { return };
-        let Some(restored) = hydration_step(&batch, &ev, hydrated_for.get_value().as_deref())
-        else {
+        let Some(restored) = hydration_step(&batch, &ev, &hydrated_for.get_value()) else {
             return;
         };
-        hydrated_for.set_value(Some(ev));
+        hydrated_for.update_value(|seen| {
+            seen.insert(ev);
+        });
         if let Some(r) = restored {
             fp_x.set(r.fp.0);
             fp_y.set(r.fp.1);
@@ -1083,7 +1091,7 @@ mod tests {
             rows: Vec::new(),
         };
         assert_eq!(
-            hydration_step(&stale, want, None),
+            hydration_step(&stale, want, &HashSet::new()),
             None,
             "a batch fetched for another operation must not hydrate AND must not latch"
         );
@@ -1094,21 +1102,73 @@ mod tests {
             event_id: Some(want.to_string()),
             rows: vec![row],
         };
-        let applied = hydration_step(&fresh, want, None)
+        let applied = hydration_step(&fresh, want, &HashSet::new())
             .expect("the batch for this operation must be acted on")
             .expect("its newest row must restore");
         assert_eq!(applied.fp, (1000.0, 2000.0));
         assert_eq!(applied.shown.distance_m, 1217);
 
         // Once done it is done — a refetch after a save must not clobber the fresh card.
-        assert_eq!(hydration_step(&fresh, want, Some(want)), None);
+        assert_eq!(
+            hydration_step(&fresh, want, &HashSet::from([want.to_string()])),
+            None
+        );
 
         // An operation with nothing saved is a real answer: latch, restore nothing.
         let empty = SavedFor {
             event_id: Some(want.to_string()),
             rows: Vec::new(),
         };
-        assert_eq!(hydration_step(&empty, want, None), Some(None));
+        assert_eq!(hydration_step(&empty, want, &HashSet::new()), Some(None));
+    }
+
+    /// T-588 — switching operation away and back must NOT re-hydrate.
+    ///
+    /// The latch used to be a single `Option<String>` slot holding the last operation hydrated, so
+    /// it only ever remembered one. Sequence A → B → A: hydrating B overwrote the memory of A, and
+    /// returning to A hydrated it a second time, dropping whatever the operator had typed in the
+    /// meantime over the saved solution. No data was lost from the server's point of view, which is
+    /// exactly why it went unnoticed.
+    ///
+    /// Revert `already_hydrated` to a single slot and the final assertion here goes red.
+    #[test]
+    fn returning_to_an_operation_does_not_re_hydrate_over_unsaved_edits() {
+        let row = serde_json::from_str::<DataEnvelope<SavedFire>>(LIVE_LIST)
+            .unwrap()
+            .data
+            .remove(0);
+        let a = "c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7";
+        let b = "00000000-0000-4000-7000-000000000001";
+        let batch_a = SavedFor {
+            event_id: Some(a.to_string()),
+            rows: vec![row],
+        };
+        let batch_b = SavedFor {
+            event_id: Some(b.to_string()),
+            rows: Vec::new(),
+        };
+
+        // This is the real effect's state, threaded by hand.
+        let mut seen: HashSet<String> = HashSet::new();
+
+        // 1. Land on A: it hydrates, and A is latched.
+        assert!(
+            hydration_step(&batch_a, a, &seen).is_some(),
+            "the first visit to an operation must hydrate"
+        );
+        seen.insert(a.to_string());
+
+        // 2. Switch to B: it hydrates (nothing saved), and B is latched.
+        assert_eq!(hydration_step(&batch_b, b, &seen), Some(None));
+        seen.insert(b.to_string());
+
+        // 3. Back to A, now with unsaved edits on the card. The old single-slot latch held only
+        //    B here, so this returned `Some(..)` and clobbered them.
+        assert_eq!(
+            hydration_step(&batch_a, a, &seen),
+            None,
+            "returning to an already-hydrated operation must not re-apply its saved solution —              that silently discards in-progress edits"
+        );
     }
 
     /// The weapon list duplicates `api/src/services/mortar.rs::charges_for`. Nothing can check

@@ -301,10 +301,26 @@ mod-world-boot-selftest: ## T-181.17 prove the world-boot verdict logic can FAIL
 mod-world-boot-compiled: ## T-186 boot an API-COMPILED mission document (needs make db-up + make api) — the only gate that feeds compiler output to the real Enfusion parser
 	bash scripts/mod/world-boot.sh --compiled
 
-verify-coding-standards: ## SIZE file length + doc layout (CODING_STANDARDS §11). Rust GO-2..9/ERR-4/LOG-3 analogs are enforced by clippy + the centralized ApiError type + `cargo fmt`.
+# CODING_STANDARDS §11. The Rust GO-2..9 / ERR-4 / LOG-3 analogs are covered by clippy, the
+# centralized ApiError type and `cargo fmt` — EXCEPT GO-7, which not one of them can see.
+#
+# T-590: this line used to claim that list covered GO-2..9 with no exception, and the omission
+# was load-bearing. `@route` lives in a doc comment: clippy does not read doc comments and
+# `cargo fmt` only reflows them, so neither can tell whether a tag matches a registered route.
+# The T-145 Go→Rust rewrite deleted `Register()` and verify-contract-citations.mjs and GO-7
+# died with them — but this help text still said something was watching, so nobody looked.
+# Measured consequence (T-586, found via T-576): for the whole rewrite THREE handlers in
+# handlers/servers.rs carried `@route` tags to routes app.rs never registered, and the live
+# `submit_mission` route carried no tag at all, with nothing anywhere going red.
+#
+# T-586 rebuilt the check as scripts/verify-route-tags.sh. It is invoked HERE, not merely
+# cited, so this target ENFORCES the sentence instead of asserting it — and so `make ci-local`
+# covers GO-7 the same way the wave gate (scripts/platform/wave.sh) already does.
+verify-coding-standards: ## SIZE file length + doc layout + GO-7 @route/router match (CODING_STANDARDS §11)
 	$(MAKE) verify-doc-layout
 	@cargo run -q -p xtask -- verify file-length
 	@bash scripts/website/verify-no-select-star.sh
+	@bash scripts/verify-route-tags.sh
 
 verify-doc-layout: ## DOCUMENTATION_STANDARDS §8.2: no markdown spec trees under apps/**/docs or packages/**/docs
 	@! find apps packages -type f -path '*/docs/*.md' ! -path '*/node_modules/*' 2>/dev/null | grep -q . || \

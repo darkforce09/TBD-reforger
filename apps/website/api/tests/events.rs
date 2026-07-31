@@ -13,7 +13,7 @@
 //! `tests/telemetry.rs`'s `PLAYER_DISCORD` (`telemetry.rs:17`), whose seed carries
 //! `ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id` — i.e. one binary
 //! rewriting the other's fixture row mid-run. Both ids are also the dev seed's own
-//! (`seeds/content_golden.sql:162-167`).
+//! (`seeds/content_golden.sql:174-180`).
 //!
 //! The dev-login extractor now lives in [`common::dev_login_token`], which reports the
 //! status, the body and the asking suite on failure instead of panicking on a missing
