@@ -3911,7 +3911,7 @@ CONTEXT THAT MAKES THIS WORTH DOING: T-597 established that **nothing** ran `car
 crates -- `ci.yml:46`'s job-level `working-directory: apps/website/api` means the bare `cargo test` at
 `:71` selects only `website-api`. T-597 added a test step to the wave gate; there is still **no lint
 step**. Clean the 9, then add `clippy xtask+tbd-tools` alongside it. One small cleanup away. |
-| T-604 | 3512 | ready | platform | Nothing in this repo starts a joinable server with the mod — the playtest cannot be run | FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). **This blocks T-181.16 and
+| T-604 | 3512 | shipped | platform | Nothing in this repo starts a joinable server with the mod — the playtest cannot be run | FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). **This blocks T-181.16 and
 T-068.14, which are the only two things standing between this program and finished.**
 
 === THE CATCH-22 ===
@@ -3941,7 +3941,7 @@ boots headless with zero players and has never been asked to accept a connection
 FIX: one script that starts a joinable, mod-loaded, admin-capable dedicated server, and a documented
 answer for how a second machine reaches it (LAN Direct Join vs backend room). Until this exists the
 playtest is not runnable and both remaining programs stay blocked. |
-| T-605 | 3522 | ready | platform | A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission | FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Second playtest blocker.
+| T-605 | 3522 | shipped | platform | A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission | FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Second playtest blocker.
 
 `IsComplete()` = `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (`TBD_LoadoutEquipHelper.c:209-212`).
 T-541 turned that into a **hard gate at the spawn boundary** (`TBD_SpawnManager.c:1076`, `:1600`): if
@@ -4033,6 +4033,8 @@ the full command list; 1.0.1 has no such command. One line tells you which mod t
 FIX IF SKEWED: re-publish the mod from Workbench so Workshop and checkout agree.
 
 === WHAT TO DO ===
+**STEP 1 IS `executor: human` — a Workbench re-publish. No agent can do it, and it is the one
+thing that should happen BEFORE the playtest, not after.**
 1. Re-publish `tbd-framework` to the Workshop so `B2C3D4E5F6A78901` resolves to current code.
 2. Give `deploy-staging.sh` both `-addonsDir` and `-config` (the shape T-604 proved at
    `scripts/mod/run-playtest-server.sh`), so staging runs what it deployed AND is joinable.
@@ -4041,6 +4043,99 @@ FIX IF SKEWED: re-publish the mod from Workbench so Workshop and checkout agree.
    (it fails on both `-config`-only logs and passes only with the local copy genuinely winning).
    Copy that check rather than re-deriving it.
 4. Consider whether an unlisted Workshop id colliding with the dev gproj GUID is wise at all. |
+| T-608 | 3552 | shipped | platform | Playtest launcher can orphan its own server, and the runbook strands the operator at three steps | FOUND by wave 76's adversarial verifier (Fable 5), whose verdict on the runbook was: **"NO, would not
+survive a real session."** BEING FIXED IN-WAVE -- this row records the diagnosis.
+
+=== F1 (MAJOR) the FAILED path exits leaving the server running ===
+`scripts/mod/run-playtest-server.sh:280-290` (`kill_run`), `:321-348`.
+MEASURED once: script printed `FAILED: the server never registered a backend room.`, exited 1, engine
+still alive on 2001. Killed by hand afterwards: `kill -TERM -- -3870163` -> `KILLED-STRAY`.
+Mechanism: the engine honours TERM at steady state but IGNORED it during world load, which is when
+`kill_run` fired; escalation then failed silently because each aliveness probe is a separate
+host-bridge process whose **failure is indistinguishable from process death** --
+`hostrun kill -0 ... \|\| return 0` returns as if gone, skipping `kill -9` (itself `\|\| true`).
+Consequence chain: orphan holds 2001/17777 -> retry hits `Unable to start replication` -> retry's
+`rm -f "$PIDFILE"` (`:273`) destroys the only handle (kill-by-name deliberately unused, `:277-279`).
+**This is the signature defect surviving in the failure branch of the script written to kill it:** the
+happy path no longer reports a dead server as up; the sad path reports a live server as down.
+Same run, lesser: 30x `still booting (~95 s)` while the world was up and only registration pending;
+the `--- offending lines ---` dump blamed vanilla noise plus the BENIGN http=400 fallback line while
+the real cause (silent registration hang) appears in no `(E)` line; and the "~95 s measured, 300 s
+generous" comment is wrong -- registration took **13 s** passing, **never** failing, same machine.
+
+=== F2 (MAJOR) merge skew reintroduced T-607's own defect class ===
+`docs/mod/STAGING-SERVER.md:48,276-277`. T-604's anti-stale-build detector quotes the current build as
+printing `… 18 application(s) IsComplete=1 — spawn open`. **T-605 rewrote that Print**
+(`TBD_SpawnManager.c:1143`); merged main prints `… 18 application(s), 0 unplayable, 2 with a shortfall
+— spawn open`. T-604 merged first and did not own the file T-605 changed. So the detector now tells an
+operator on the CORRECT build that their expected string is missing. `PLAYTEST_RUNBOOK.md` carries the
+new string, so the two docs disagree.
+
+=== F3 (MODERATE, pre-existing root) §2.5A's own commands return FAIL ===
+`docs/platform/PLAYTEST_RUNBOOK.md:349-388`. Both solo pre-flight boots end `WORLD BOOT: FAIL` --
+`validator warnings rose: 5 > baseline 0 for msn_8f3a2c` (4 for slot-loadout-coverage), the
+unconsumed-key family (`environment`, `settings`, `layers`, `factions.tickets`, `orbat.roles.radio`).
+Validator and `.world-boot-warning-baseline` BOTH predate the wave base -- pre-existing. T-605 refused
+to widen the baseline; correct, that would rubber-stamp someone else's regression. But §2.1 P2 teaches
+"FAIL -> do not proceed", so the operator stops at his highest-value solo step. NOTE the baseline is
+111 lines of `<mission-id> <budget>`; the earlier `:127-131` citation was wrong.
+
+=== F5 (MINOR, session-costing) two flow traps ===
+`PLAYTEST_RUNBOOK.md:206` gives the first boot as `--admin=<your-identityId>` -- but the identityId is
+only discoverable at S3 (`:560-573`) from the log of a server you already joined. Chicken-and-egg on
+the first command; the script tolerates omission, the runbook never says to omit.
+And S3's "restart with it": run the new command before Ctrl-C'ing the old and `:273`'s `rm -f
+"$PIDFILE"` orphans the running group (the old instance then reads no pidfile and exits "server
+exited" while alive); the new boot dies on the port. No lock, fixed run dir. |
+| T-609 | 3562 | deferred | platform | world-boot ratchet has been red for every golden mission since before wave 76 | Surfaced by T-605 and independently confirmed by wave 76's verifier (F3 root cause). Both refused to
+widen the baseline, which was the right call -- this row exists so the decision is deliberate.
+
+`bash scripts/mod/world-boot.sh --mission=<any golden>` ends `WORLD BOOT: FAIL` on `main` today:
+    FAIL  validator warnings rose: 5 > baseline 0 for msn_8f3a2c   (bridgehead-at-levie)
+    FAIL  validator warnings rose: 4 > baseline 0 for msn_5c1de7   (slot-loadout-coverage)
+in both cases alongside `ok  mission validated: mission result=PASS errors=0` and `ok  no TBD script
+errors` -- the missions are fine; the WARNING RATCHET is stale.
+
+The warnings are one family, unconsumed authored keys: `environment`, `settings`, `layers`,
+`factions.tickets`, `orbat.roles.radio` -- "authored but the mission does not model it"
+(`TBD_MissionValidator.c:1168,1175,1185`). `.world-boot-warning-baseline` is 111 rows of
+`<mission-id> <budget>`, last touched at `d297f3a39`, a confirmed ancestor of wave 76's base; the
+validator sites likewise predate it. So this went red at some earlier commit and no gate noticed --
+`cmd_gate` has no world-boot step, so the wave gate has been green over it the whole time.
+
+DECIDE, do not just widen: either (a) the validator is right and those five keys genuinely are
+authored-but-unmodelled, in which case fix the missions or the modelling and the ratchet returns to 0;
+or (b) the warnings are noise, in which case fix the validator and explain why the family is benign.
+Widening the baseline to 5 makes the red go away while preserving whatever it was warning about, and
+guarantees the next real regression hides inside the new budget.
+
+RELATED: T-608 makes `PLAYTEST_RUNBOOK.md` §2.5A tell the operator this specific FAIL is known, so the
+playtest is not blocked on this ticket. |
+| T-610 | 3572 | deferred | platform | Stale file:line citations across the runbook and arsenal_rules, and verify-citations does not cover them | FOUND by wave 76's verifier (F4). Individually trivial; the reason to record it is that
+`make verify-citations` passes (`Checked 41 @contract citation(s)`) while ~19 citations are wrong --
+the gate does not cover these forms, so the drift is real and silent.
+
+`docs/platform/PLAYTEST_RUNBOOK.md` sections S8-S13 + Appendix, ~17 cites all carrying pre-T-605 line
+numbers (the quoted log STRINGS are current; only the numbers moved):
+    TBD_LoadoutEquipHelper.c :1386->1572 (pass complete) · :1342->1392 (worn audit) · :610->770
+      (equip OK) · :1223/:1228 -> :1398/:1403 (NAKED / HALF-DRESSED)
+    TBD_SpawnManager.c :2094->2169 (auto-deploy) · :785/:780/:773 -> :794/:789/:782 (claim lines)
+      · :666->675 · :2381->2465 · :2549->2633 · :2710->2794 · :2878->2962 · :2280->2355
+      · :1161->1233 · :1496->1568
+`apps/website/frontend/src/arsenal_rules.rs`: `(:209-212)` for `IsComplete` (now 247-250) and
+`(:1121-1123)` for the unworn Degrade (now 1286-1288) -- **the first sits inside text T-605 newly
+wrote, so it was stale on arrival.**
+
+Also in this bucket, from the same report:
+- `run-playtest-server.sh:39` says **109** current-format `[TBD]` lines; `STAGING-SERVER.md` says
+  **108**; measured **108**.
+- The verifier could not reproduce the brief's "320 map-engine-core tests" figure -- the crate runs
+  **126** (all pass). Some doc or ticket is carrying a wrong number; find and fix it.
+- `make verify-no-crf-leak` exceeded a 480 s budget twice (it prints its FAIL early then keeps
+  going). Slow enough that agents time out before its PS-GUID scan; worth a look.
+
+FIX SHAPE: either extend `verify-citations` to cover bare `file.c:NNN` forms in docs, or stop citing
+line numbers in prose and cite stable symbol names instead. The second is cheaper and does not rot. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

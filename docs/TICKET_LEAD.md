@@ -9,60 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-604** (3512) — Nothing in this repo starts a joinable server with the mod — the playtest cannot be run [ready] — FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). **This blocks T-181.16 and
-T-068.14, which are the only two things standing between this program and finished.**
-
-=== THE CATCH-22 ===
-`scripts/mod/deploy-staging.sh` has two modes and NEITHER produces a server two clients can join:
-- **`-addonsDir` mode (`:1155`)** registers no backend room -> Direct Join answers "No server found".
-- **`-config` mode (`:1153`)** omits `-addonsDir` entirely, so the local mod GUID in `game.mods[]`
-  cannot resolve -> the mod does not load.
-The mod is **not published to the Workshop** (`TBD_WORKSHOP_MOD_ID` is commented out at
-`deploy.env.example:43`), so the normal third path does not exist either.
-
-`scripts/mod/run-dev-server.sh` looks like the answer and is not: 27 lines, `grep -c
-ArmaReforgerServer` -> 1, and that single hit is a path variable. **It never launches anything.**
-
-=== KNOCK-ON: no admin means T-181.16 cannot pass ===
-`#tbd` admin commands require `game.admins[]`, which only exists in `-config` mode
-(`TBD_AdminService.c:60-70` defers to vanilla's listed-admin manager). No admin -> no `#tbd respawn`
--> the ONE-LIFE admin-respawn acceptance item is unreachable. So the two modes each break a different
-half of the acceptance criteria.
-
-=== THE MEASURED-WORKING SHAPE (from `world-boot.sh:773-778`, engine 1.7.0.54) ===
-    ./ArmaReforgerServer -addonsDir "$HOME/tbd-playtest/addons" \
-      -config "$HOME/tbd-playtest/server.json" -profile "$HOME/tbd-playtest/profile" \
-      -maxFPS 60 -logStats 30000 -nothrow
-Both flags together. Whether that actually registers a joinable room is UNVERIFIED -- `world-boot.sh`
-boots headless with zero players and has never been asked to accept a connection.
-
-FIX: one script that starts a joinable, mod-loaded, admin-capable dedicated server, and a documented
-answer for how a second machine reaches it (LAN Direct Join vs backend room). Until this exists the
-playtest is not runnable and both remaining programs stay blocked.
-- **T-605** (3522) — A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission [ready] — FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Second playtest blocker.
-
-`IsComplete()` = `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (`TBD_LoadoutEquipHelper.c:209-212`).
-T-541 turned that into a **hard gate at the spawn boundary** (`TBD_SpawnManager.c:1076`, `:1600`): if
-it returns false, `m_bSlotBodiesMaterialized` stays false and **NOBODY leaves LOADING** -- not just
-the player whose loadout degraded. One bad cargo row bricks the session for every client.
-
-**That gate has never executed against a loadout-carrying mission.** `wave.sh:132` boots only
-`bridgehead-at-levie`, which has **0 gear and 0 cargo**, so every green boot to date has taken the
-trivially-complete path. The first real exercise will be the playtest itself, with a second person
-waiting.
-
-Compounding it, T-504 (shipped wave 75) establishes that the Arsenal **warns but does not refuse** on
-cargo targeting an unworn container -- deliberately and correctly, because
-`TBD_LoadoutEquipHelper.c:407-408` retains the kit garment so "picks no vest" != "no vest worn". So an
-author CAN save a loadout that the mod will later mark DEGRADED, and the authoring side is the wrong
-place to stop it. The spawn side treating degraded-for-one as fatal-for-all is the defect.
-
-REPRO: author a mission with one slot whose cargo targets an unworn container; compile it; boot with
-`world-boot.sh --compiled=<MID>`; observe LOADING never clears for any client.
-
-FIX (design call, not obvious): degrade that ONE player's loadout and let the session start, log it
-loudly, and surface it to the admin -- rather than refusing the world. Whatever is chosen, run it
-against a loadout-carrying mission in the gate, which no current gate step does.
 - **T-607** (3542) — Staging has been validating a stale Workshop build since June, and its pass criteria are that build’s strings [ready] — FOUND by T-604 (wave 76) while making a joinable server work. This is the signature defect of this
 codebase -- *a tool reports success over an input it never actually examined* -- at its most expensive.
 
@@ -107,6 +53,8 @@ the full command list; 1.0.1 has no such command. One line tells you which mod t
 FIX IF SKEWED: re-publish the mod from Workbench so Workshop and checkout agree.
 
 === WHAT TO DO ===
+**STEP 1 IS `executor: human` — a Workbench re-publish. No agent can do it, and it is the one
+thing that should happen BEFORE the playtest, not after.**
 1. Re-publish `tbd-framework` to the Workshop so `B2C3D4E5F6A78901` resolves to current code.
 2. Give `deploy-staging.sh` both `-addonsDir` and `-config` (the shape T-604 proved at
    `scripts/mod/run-playtest-server.sh`), so staging runs what it deployed AND is joinable.

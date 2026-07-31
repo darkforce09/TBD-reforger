@@ -466,6 +466,55 @@ ALSO, same family, documented in the runbook §6 rather than filed separately:
 - **`modded class SCR_PlayerController` runtime coexistence has never been observed at any N.** Six
   blocks now exist and no gate can see it -- `world-boot.sh` boots with zero players. If one screen
   works and another silently does nothing during the playtest, this is the first suspect.
+- **T-609** (deferred) — world-boot ratchet has been red for every golden mission since before wave 76 [MOD] — Surfaced by T-605 and independently confirmed by wave 76's verifier (F3 root cause). Both refused to
+widen the baseline, which was the right call -- this row exists so the decision is deliberate.
+
+`bash scripts/mod/world-boot.sh --mission=<any golden>` ends `WORLD BOOT: FAIL` on `main` today:
+    FAIL  validator warnings rose: 5 > baseline 0 for msn_8f3a2c   (bridgehead-at-levie)
+    FAIL  validator warnings rose: 4 > baseline 0 for msn_5c1de7   (slot-loadout-coverage)
+in both cases alongside `ok  mission validated: mission result=PASS errors=0` and `ok  no TBD script
+errors` -- the missions are fine; the WARNING RATCHET is stale.
+
+The warnings are one family, unconsumed authored keys: `environment`, `settings`, `layers`,
+`factions.tickets`, `orbat.roles.radio` -- "authored but the mission does not model it"
+(`TBD_MissionValidator.c:1168,1175,1185`). `.world-boot-warning-baseline` is 111 rows of
+`<mission-id> <budget>`, last touched at `d297f3a39`, a confirmed ancestor of wave 76's base; the
+validator sites likewise predate it. So this went red at some earlier commit and no gate noticed --
+`cmd_gate` has no world-boot step, so the wave gate has been green over it the whole time.
+
+DECIDE, do not just widen: either (a) the validator is right and those five keys genuinely are
+authored-but-unmodelled, in which case fix the missions or the modelling and the ratchet returns to 0;
+or (b) the warnings are noise, in which case fix the validator and explain why the family is benign.
+Widening the baseline to 5 makes the red go away while preserving whatever it was warning about, and
+guarantees the next real regression hides inside the new budget.
+
+RELATED: T-608 makes `PLAYTEST_RUNBOOK.md` §2.5A tell the operator this specific FAIL is known, so the
+playtest is not blocked on this ticket.
+- **T-610** (deferred) — Stale file:line citations across the runbook and arsenal_rules, and verify-citations does not cover them [INFRA] — FOUND by wave 76's verifier (F4). Individually trivial; the reason to record it is that
+`make verify-citations` passes (`Checked 41 @contract citation(s)`) while ~19 citations are wrong --
+the gate does not cover these forms, so the drift is real and silent.
+
+`docs/platform/PLAYTEST_RUNBOOK.md` sections S8-S13 + Appendix, ~17 cites all carrying pre-T-605 line
+numbers (the quoted log STRINGS are current; only the numbers moved):
+    TBD_LoadoutEquipHelper.c :1386->1572 (pass complete) · :1342->1392 (worn audit) · :610->770
+      (equip OK) · :1223/:1228 -> :1398/:1403 (NAKED / HALF-DRESSED)
+    TBD_SpawnManager.c :2094->2169 (auto-deploy) · :785/:780/:773 -> :794/:789/:782 (claim lines)
+      · :666->675 · :2381->2465 · :2549->2633 · :2710->2794 · :2878->2962 · :2280->2355
+      · :1161->1233 · :1496->1568
+`apps/website/frontend/src/arsenal_rules.rs`: `(:209-212)` for `IsComplete` (now 247-250) and
+`(:1121-1123)` for the unworn Degrade (now 1286-1288) -- **the first sits inside text T-605 newly
+wrote, so it was stale on arrival.**
+
+Also in this bucket, from the same report:
+- `run-playtest-server.sh:39` says **109** current-format `[TBD]` lines; `STAGING-SERVER.md` says
+  **108**; measured **108**.
+- The verifier could not reproduce the brief's "320 map-engine-core tests" figure -- the crate runs
+  **126** (all pass). Some doc or ticket is carrying a wrong number; find and fix it.
+- `make verify-no-crf-leak` exceeded a 480 s budget twice (it prints its FAIL early then keeps
+  going). Slow enough that agents time out before its PS-GUID scan; worth a look.
+
+FIX SHAPE: either extend `verify-citations` to cover bare `file.c:NNN` forms in docs, or stop citing
+line numbers in prose and cite stable symbol names instead. The second is cheaper and does not rot.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.

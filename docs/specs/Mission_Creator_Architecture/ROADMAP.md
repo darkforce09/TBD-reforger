@@ -18,8 +18,6 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-604** — Nothing in this repo starts a joinable server with the mod — the playtest cannot be run (ready)
-- **T-605** — A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission (ready)
 - **T-607** — Staging has been validating a stale Workshop build since June, and its pass criteria are that build’s strings (ready)
 <!-- ticket-sync:next:end -->
 

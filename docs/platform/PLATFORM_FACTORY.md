@@ -8,6 +8,68 @@ Do not start this program until **T-181 is finished**. Operator instruction.
 
 ---
 
+## ⏹ THE FACTORY STOPPED AFTER WAVE 76 — 2026-07-31. Read this before restarting it.
+
+**349 platform tickets shipped. 47 open, and none of them are why this stopped.**
+
+The operator's call, and it was the right one: the active `ready`/`queued` lane is empty, nothing
+open is P0, and **the only thing left that can tell us whether the product actually works is a live
+two-client playtest.** Waves were producing roughly −5 shipped / +2 filed each, because every wave
+ends with an adversarial verifier whose entire job is finding bugs and whose standing triage rule is
+*document, don't fix.* That converges, but slowly, and it never reaches zero while the verifier runs.
+More waves was not the constraint. Contact with reality was.
+
+### What to do next, in order
+
+1. **T-607 — re-publish `tbd-framework` from Workbench.** `executor: human`; no agent can do it.
+   Do this BEFORE the playtest, not after. The mod is on the Workshop unlisted under the **same GUID
+   as the local gproj**, pinned at a stale **1.0.1**. A joining client resolves that GUID and may load
+   June's code while the server runs the checkout. Nobody has ever connected a second machine to this
+   combination, so the skew is unverified in both directions. Same root cause has meant **staging has
+   been validating 1.0.1, not the checkout it deployed** — and STAGING-SERVER.md's pass criteria were
+   written against *that* build's strings, so the check passed **because** the mod was stale.
+2. **Run [`PLAYTEST_RUNBOOK.md`](PLAYTEST_RUNBOOK.md).** One session closes **T-181.16 and T-068.14** —
+   the last slices of the last two open programs. Start with `scripts/mod/run-playtest-server.sh`.
+3. Only then consider more waves.
+
+### State of the two remaining programs
+
+Both are one slice from done and it is the **same** slice: a live two-client E2E on a dedicated
+server. T-181 (54 slices shipped; the mod boots, all five screens open, objectives/radio/play-area/
+briefings/markers run) and T-068 (cargo ladder shipped through .12). Neither is agent-actionable.
+
+### What the 47 open tickets are
+
+15 with no priority, 15 P3, 16 P2, **1 P1** (T-607), **0 P0**. Roughly 29 are `deferred` — bugs that
+are already found, diagnosed, and written down with repro steps. That was a deliberate trade, made
+repeatedly and on the record: *recording them is the value; fixing them now is optional.* About half
+predate this run entirely, some from the T-085–088 era. **Do not treat the pile as a debt to burn
+down.** Promote a ticket when it blocks something real.
+
+Three worth knowing about because they describe the *tools*, not the product:
+
+- **T-601 — Class-R pin hollowness is systemic**, ~23 known instances of one defect class. Wave 76's
+  verifier defeated three pins shipped in that same wave. Two proven cures exist; the ticket names
+  both. **Do not respond by blocklisting dead-code shapes** — that is the fourth round of that game
+  (T-517 → T-567 → T-570) and a fifth wrapper always exists.
+- **T-609 — the world-boot ratchet has been red for every golden mission** since before wave 76, and
+  no gate noticed because `cmd_gate` has no world-boot step. Filed as *decide, don't widen*: widening
+  the baseline makes the red go away while preserving whatever it was warning about.
+- **T-602 — `wave.sh gate` defaults its base to `HEAD~1`**, which after N merges silently narrows four
+  change-scoped steps. The command center walked into this closing wave 75 and got a green 26/26 over
+  a wave whose frontend was never built. **Always pass the real wave base.**
+
+### The one lesson worth carrying forward
+
+The recurring defect in this codebase has a single shape: **a tool reports success over an input it
+never actually examined.** It showed up this run as a gate step that never ran, a `cargo check`
+replaying a cached verdict, a test greping a string in its own assertion, a launcher that printed
+SERVER UP and launched nothing, a staging check that passed *because* the mod was stale, and — most
+instructively — inside the failure branch of the very script written to eliminate it. Treat any
+green you did not watch fail first as unproven.
+
+---
+
 ## COLD START — a fresh command-center session, first five minutes
 
 The command center is **deliberately a short-lived chat**. Once a session has been compacted a
