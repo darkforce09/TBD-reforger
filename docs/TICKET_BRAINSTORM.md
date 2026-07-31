@@ -385,6 +385,37 @@ removes its missions' ORBATs and registrations, while `handlers/events.rs:1380` 
 **SEQUENCING:** two operator steps must happen before any of this is exercisable end to end -- set
 `Environment=GAME_AGENT_SOCKET=%t/tbd-reforger-agent.sock` in the API's systemd unit, and run
 `TBD_INSTALL_AGENT=1` once. Both mutate the live host; no agent has run them.
+- **T-599** (deferred) — wave.sh push refuses on the LFS PATH, not on LFS attributes — a false positive that blocks a legitimate push [INFRA] — Hit for real on 2026-07-31 closing wave 74. `wave.sh push` refused:
+
+    REFUSING --no-verify: this range touches packages/map-assets/ (the only LFS path).
+    Install git-lfs and push normally, or the remote will reference objects never uploaded.
+
+**The refusal was a FALSE POSITIVE and it blocked a correct push of 19 commits.**
+
+THE GUARD IS PATH-BASED. It matches `packages/map-assets/**` and assumes everything under it is LFS.
+`.gitattributes` says otherwise -- LFS covers exactly three globs there:
+    packages/map-assets/**/*.png      filter=lfs
+    packages/map-assets/**/*.r16      filter=lfs
+    packages/map-assets/**/*.tbd-sat  filter=lfs
+T-594 regenerated `everon/objects/prefabs.json.gz` (122 KB) and `type-inventory.json` (111 KB).
+Both are `git check-attr filter` -> **unspecified**, real bytes, not pointers. MEASURED across the
+whole 30-file range: **zero** files resolve to `filter: lfs`.
+
+WHY IT MATTERS BEYOND THE INCONVENIENCE: the guard exists for a real reason (rule 5 -- pushing
+`--no-verify` over genuine LFS content leaves the remote referencing objects that were never
+uploaded, because git-lfs is absent from this container). A guard that cries wolf on legitimate
+pushes is how someone learns to override it reflexively -- and the one time it is RIGHT, they will
+override it too. That is the same failure this program has fixed repeatedly in the other direction.
+
+FIX: ask git, do not pattern-match the path.
+    git diff --name-only <range> | while read f; do
+      [ "$(git check-attr filter -- "$f" | sed 's/.*filter: //')" = lfs ] && ...
+    done
+Refuse only when at least one file in the range genuinely resolves to `filter: lfs`. Keep the message
+naming WHICH files tripped it, so the next operator can verify rather than trust.
+
+The command center overrode it by hand this once, after confirming zero LFS files in the range --
+recorded here so the override is auditable rather than folklore.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
