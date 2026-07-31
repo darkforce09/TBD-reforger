@@ -8741,7 +8741,7 @@
       "impact": [
         "platform-server"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 3070,
       "stream": "web-platform",
       "targets": [
@@ -14931,7 +14931,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3432,
       "stream": "web-platform",
       "targets": [
@@ -15056,7 +15056,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3450,
       "stream": "web-platform",
       "targets": [
@@ -15097,7 +15097,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3452,
       "stream": "web-platform",
       "targets": [
@@ -15118,8 +15118,90 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3453,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 3
+    },
+    {
+      "id": "T-593",
+      "title": "Wire api_post_raw — it ships with no caller and is dead code until this lands",
+      "summary": "T-591 shipped `api_post_raw` in `apps/website/frontend/src/client.rs` and FLAGGED IT HONESTLY: it has\nno caller, carries `#[allow(dead_code)]`, and the agent cited `map-engine-wasm` by name — the entire\ncrate whose consumer was deleted and which cost a ticket to discover. **If this follow-up is not\nscheduled, revert T-591 rather than leave dead code.** It is scheduled; do it.\n\n=== THE MEASUREMENT THAT JUSTIFIES IT ===\nT-591 measured the real amplification with a counting allocator over a 33.55 MiB / 170k-slot payload:\n  one parsed Value tree = 235.87 MiB for 33.55 MiB source = 7.03x   (x86_64, MEASURED)\n  derived wasm32 tree                                     = 4.70x\nROOT CAUSE: `serde_json::Map` is a BTreeMap and each `LeafNode<String,Value>` holds ELEVEN slots\nregardless of key count -- 408 B/object on wasm32. 340,658 objects account for 205 of 236 MiB.\n**The cost is per-JSON-OBJECT, not per-byte.**\nThe ticket's \"four times over\" was the right verdict with the wrong inventory: the JS string and the\nRust String both drop at parse. What is live at the fetch call is THREE full Value trees --\n`up_doc`'s stored value, `version_body`'s `json!` clone, and `request()`'s per-attempt clone.\n  today (api_post(Value))            16.10x\n  raw + to_string(version_body(..))  11.40x\n  raw + streaming caller              6.70x\n\n=== TWO CALL-SITE SHAPES, BOTH COMPILE-VERIFIED BY T-591 ===\nMINIMAL (2 lines, wasm32 clean, zero test churn) -- replaces missions.rs:1915 + :1919:\n    let body = serde_json::to_string(\n        &map_engine_core::mission::compile::version_body(&semver, &notes, &doc),\n    ).unwrap_or_default();\n    match crate::client::api_post_raw(store, &path, body).await { Ok(()) => {\n18.2x -> 12.8x. The `version_body(&semver, &notes, &doc)` literal survives inside `to_string(...)`, so\nthe anti-drift pin at missions.rs:3390 still holds.\n\nSTREAMING (reaches 7.4x) BREAKS `the_upload_panel_is_wired_to_the_versions_route` -- and **that\nfailure is CORRECT**: hand-streaming the wrapper genuinely abandons the shared builder, which is what\nthe pin exists to prevent.\n**RECOMMENDED SHAPE:** add `version_body_to_writer(w, semver, notes, payload)` to\n`crates/map-engine-core/src/mission/compile.rs` beside `version_body`, have BOTH doors onto\n`create_version` use it, and re-point the pin at the new name. That gets 7.4x AND keeps the\nanti-drift property. Two files: `compile.rs` + `missions.rs`.\n\n=== THE HONEST CEILING — DO NOT OVERCLAIM IT ===\n256 MB is NOT reachable: 256 x 6.70 = 1.72 GiB of wasm32 linear heap on top of the wgpu editor.\nAnchoring on T-117's shipped 32 MiB (implying ~540 MiB survivable) and taking the WORSE\nloadout-bearing ratio: ~40 MiB minimal, ~72 MiB streaming. Recommend `UPLOAD_MAX_BYTES = 64 << 20`\nwith the streaming call site. The streaming/multipart route (T-591 item 3) remains the only fix for\ngenuinely large missions.\n\nALSO FOUND: the 201 response echoes the whole `json_payload` back (`models/mission.rs:128`), so\n`api_post::<serde_json::Value>` parses a FOURTH tree out of the response that `missions.rs:1920`'s\n`Ok(_)` discards. `api_post_raw` returns `Ok(())` deliberately to avoid exactly that.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "ready",
+      "order": 3460,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-594",
+      "title": "Activate T-244's vehicle lane: two blockers plus T-583's gate step, all in one slice",
+      "summary": "**THESE MUST LAND TOGETHER.** T-583 shipped `make map-reclassify` and specified the gate step, but the\nstep was DELIBERATELY NOT WIRED because the tree is in drift TODAY -- wiring it alone would turn every\nslice gate red. Verified by the command center: `make map-reclassify TERRAIN=everon` exits 1 with\n`DRIFT — 16 prefab(s) classify differently than the committed catalogue`.\n\nT-244 added a `vehicle` kind and classify rules weeks ago. The change has been LATENT ever since --\nthe rules changed, the committed artifact did not, and T-278 later measured that regenerating would\nhave PANICKED (`.expect(\"kind bucket\")` against an 8-element array with no `vehicle`).\n\n=== THE TWO BLOCKERS, both confirmed still blocking by wave 73's verifier ===\n1. `packages/tbd-schema/schema/map-object-type-inventory.schema.json:54` -- `byKind` is\n   `additionalProperties: false` with 8 required keys and no `vehicle`. A regenerated inventory\n   carrying `byKind.vehicle` is REJECTED.\n2. `xtask/src/schema_gates.rs:428` -- `INSTANCE_KINDS: [&str; 8]`, no `vehicle`, feeding the I1 sum\n   gate, which then comes up short by exactly 176 (= `byKind.vehicle.instances`).\n   **AND IT HAS NO LOCKSTEP TEST.** Its twin at `tools/tbd-tools/src/world/mod.rs:34` is `[&str; 9]`\n   WITH `vehicle` and IS pinned by `instance_kinds_match_enums_schema`. Same name, same purpose, and\n   the UNGUARDED copy is the one feeding the gate. Pin it in the same commit or it drifts again.\n\n=== THE ORDER ===\n(a) fix both blockers; (b) `make map-reclassify TERRAIN=everon WRITE=1` to regenerate the catalogue --\n16 rows change, 13 -> vehicle/{armor,car,truck,boat} and 3 -> prop/debris, 1607 of 1623 byte-identical;\n(c) confirm `make map-reclassify TERRAIN=everon` now exits 0; (d) ONLY THEN wire the gate step.\n\n=== T-583's EXACT GATE STEP, and three load-bearing details ===\n    run \"T-278 catalogue drift\" checkrun make map-reclassify TERRAIN=everon\nPlacement: immediately after `run \"schema\" gate_schema`, in BOTH `gate_slice()` (~wave.sh:1917) and\n`cmd_gate()` (~wave.sh:2086) -- per T-556, a step in only one half drifts green.\n - **`checkrun`, NOT `hostrun`.** `hostrun` bakes in the SHARED CARGO_TARGET_DIR, and\n   `tools/tbd-tools/src/serve.rs:326` `repo_root()` is `env!(\"CARGO_MANIFEST_DIR\")` -- a COMPILE-TIME\n   constant. A shared target dir can therefore serve a `world` binary that reads a DIFFERENT\n   WORKTREE'S rules and catalogue while reporting on yours. `checkrun` pins `$GATE_CHECK_TARGET`.\n - **Not into `schema-validate`**: `gate_schema`'s tripwire parses `xtask schema <name>` lines and\n   `map-reclassify` is a `tbd-tools --bin world` call -- it would trip or silently miss it.\n - Cost ~12 s.\nRun on the day T-244 landed, this step would have gone RED immediately.",
+      "program": "platform",
+      "surfaces": [
+        "DATA",
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "ready",
+      "order": 3461,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-595",
+      "title": "The API side of the game-server agent: T-289 built the channel, nothing calls it",
+      "summary": "T-289 shipped a token-guarded UNIX-socket agent in `scripts/mod/deploy-staging.sh` (660 insertions,\n0 deletions) serving four process verbs. **The API cannot reach it yet.** This is the other half, and\nT-289 wrote the spec in-file under §WHAT THE API SLICE MUST BUILD.\n\n=== WHY THE SECURITY MODEL IS WHAT IT IS — do not redesign it ===\nT-289 REFUTED the premise in `admin.rs:517` (\"the game server is a **separate host**\"). Independently\nre-verified by wave 73's verifier: `deploy.env.example:17` and both deploy scripts use one\n`TBD_SSH_HOST=sam@192.168.0.140`; `STAGING-SERVER.md:3` is one box; `HOME_SERVER.md:282` puts the API\nin `~/.config/systemd/user/`; `TBD_BACKEND_URL=http://127.0.0.1:8080` is LOOPBACK; compose `api` is\nbehind an opt-in `--profile api`.\nSo the API and game server are SIBLING `systemctl --user` UNITS UNDER ONE UID, and **the OS is the\ncredential** -- `SocketMode=0600` in `$XDG_RUNTIME_DIR` admits exactly one uid. That collapses the\nper-server addressing + secret migration T-269 asked for: there is no secret to store.\n**Update `admin.rs:517`'s comment in this slice** -- it states the refuted premise.\n\n=== WHAT TO BUILD ===\n1. `GAME_AGENT_SOCKET` in `config.rs` (T-279's file precedent: add the var WITH its consumer).\n2. `services/game_agent.rs` over `tokio::net::UnixStream` -- no new dependency.\n   **THE TIMEOUT MUST EXCEED THE AGENT'S 8s DWELL**, or an honest slow answer reads as unreachable.\n3. `send_rcon` (`handlers/admin.rs`) maps Accepted -> 202 / Rejected -> 409 / Unreachable -> 503,\n   replacing T-269's unconditional 503 `RCON_NO_TRANSPORT`.\n   **Write the audit row AFTER the answer, recording the OUTCOME** -- today it records the attempt.\n4. The SPA's dead success path is then reachable again: `frontend/src/server_control.rs:116`\n   `rcon_accepted_message`, the `Ok(resp)` arm at `:313`, and the `RconAccepted` DTO (see T-579).\n\n=== SCOPE GAPS T-289 DECIDED, carry them forward ===\n - `change_map` / `custom` need a SEPARATE ticket: the agent's safety rests on accepting no free text\n   and filtering to a fixed 4-verb set. Do not widen it to get them.\n - `kick` is UNBUILDABLE until `RconInput` gains a player field -- `admin.rs:422-428` has none and\n   `server_control.rs:44` posts a bare `{\"action\":\"kick\"}`. Even with a channel it cannot name who.\n - The agent NEVER trusts the systemctl exit status (`STAGING-SERVER.md:246-250` documents this host\n   exiting 0 over a dead server). The API must not re-introduce that trust by reading only a status\n   code -- consume the agent's `result`/`state`, which is why it returns both.\n - Install is opt-in behind `TBD_INSTALL_AGENT=1` because it mutates the live host. Someone has to\n   run it before any of this works end to end.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3462,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-596",
+      "title": "Wave 73 residue: a reclaim crash on newline names, two fail-open harness checks, and eight hand-copied role ids",
+      "summary": "Small items from wave 73, none live.\n\n1. MINOR -- `scripts/platform/wave.sh:2312` (and `:2322`): a `target-*` directory whose name contains a\n   NEWLINE crashes `cmd_reclaim` under `set -u`. `du -sm` emits a second line, `sz` becomes `\"0\\nb\"`,\n   and `$((unknown_mb + $sz))` treats the trailing token as an unbound variable.\n   REPRO: `mkdir \"$MAIN_ROOT/target-zz\"$'\\n'\"b\"; wave.sh reclaim` -> `line 2312: b: unbound variable`.\n   Fail-closed and it aborts on the SPARED branch before any `rm`, so it cannot mis-delete -- but a\n   destructive sweep aborting mid-run should be hardened (quote/strip `sz`).\n2. NIT -- by design, flagged because it is the one place positive-ID surprises: `target-T-999-api-backup`\n   IS reaped, parsing as slice `T-999` + suffix `-api-backup`. A human naming a manual backup like a\n   slice dir loses it. The contract documents \"ticket first, optional suffix\"; consider refusing names\n   containing `backup`/`keep`, or just leave it and know.\n3. NIT -- `deploy-staging.sh` `--agent-selftest <path>`: socket cases false-FAIL with `AF_UNIX path too\n   long` when the path exceeds ~108 chars. Harness only; real deploy uses a short `$XDG_RUNTIME_DIR`.\n4. NIT -- same file: the `systemd-analyze verify` check SKIPS SILENTLY when the tool is absent, while\n   the socket checks fail closed. Inconsistent, and skip-on-absent is the shape this program keeps\n   paying for (T-556).\n5. NIT -- `crates/map-engine-render/src/draw_order.rs`: T-592's doc says \"zero hits for the upload fns\n   across *.js/*.ts\". There ARE hits -- in gitignored, wasm-bindgen-GENERATED `dist/*.js` glue where\n   `role` is a passthrough parameter, never a hardcoded id. **The conclusion holds** (role ids are not\n   a wire value); the wording is imprecise and should be corrected so a future reader does not\n   \"discover\" the dist hits and reopen a settled question.\n6. The 8 hand-copied `const ROLE_*` u32 literals (`world_assets/dem_vectors.rs:18,19`,\n   `world_host.rs:18,19,20,22`, `forest_mass.rs:23`, `mission_history.rs:42`) should import T-592's new\n   `role_id::*`. Mechanical, 4 files. Until then a renumber silently misroutes an upload rather than\n   failing the build -- which is precisely why T-592 created the module.\n7. `engine.rs:4657` `set_lane_opacity` is FAIL-OPEN: `if role == 0 { Satellite } else { Hillshade }` --\n   any non-zero id silently becomes Hillshade, unlike `tex_layer_begin`'s explicit `idx > 1` rejection\n   two functions away. Latent (only ever called with 0).\n8. PRE-EXISTING shell bug, `scripts/mod/deploy-staging.sh:679`:\n   `: \"${TBD_SCENARIO:={69A85365FC09E2CA}Missions/...}\"` -- the `}` inside the default TERMINATES the\n   expansion, so the fallback is the truncated `{69A85365FC09E2CA`. Masked only because\n   `deploy.env.example:35` sets it explicitly.\n9. DOC CONFLICT: `STAGING-SERVER.md:3` says \"API + Postgres (Docker)\", but `deploy-website.sh` only\n   runs `compose up -d postgres` and the compose `api` service is behind `--profile api`. **If the API\n   were ever moved into that container the T-289 socket becomes unreachable** -- T-595 depends on the\n   API staying host-side. Fix the doc so nobody containerises it by following it.\n10. `dist-<slice>` has no reclaim sweep. Nothing instructs agents to create one today\n    (`FACTORY_FOR_CURSOR.md:179` names only `target-<slice>-api`), so widening was speculative -- but if\n    a slice ever writes a private `dist-`, it leaks exactly as `target-<SLICE>` did. Also a residual\n    window: sparing keys off worktree existence, so a slice whose worktree is removed while its agent\n    is still PARKED has its dir eligible. An age guard would close it.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA",
+        "FRONTEND"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3463,
       "stream": "web-platform",
       "targets": [
         "website"
