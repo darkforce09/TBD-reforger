@@ -27,8 +27,8 @@
       "instances": 307431
     },
     "prop": {
-      "prefabTypes": 1179,
-      "instances": 400387
+      "prefabTypes": 1166,
+      "instances": 400211
     },
     "utility": {
       "prefabTypes": 0,
@@ -37,6 +37,10 @@
     "water": {
       "prefabTypes": 53,
       "instances": 2299
+    },
+    "vehicle": {
+      "prefabTypes": 13,
+      "instances": 176
     },
     "road": {
       "prefabTypes": 0,
