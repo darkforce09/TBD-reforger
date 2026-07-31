@@ -256,6 +256,19 @@ assess_log() {
     else
       echo "  ok    validator warnings at baseline ($warns)"
     fi
+
+    # T-609: name WHICH warnings fired, not just how many. A bare count over budget sent every
+    # reader of this gate into --keep-logs archaeology for a fact the log already held — and a
+    # ratchet that shows only a number is how five T-250 warnings sat unexamined for five waves.
+    # Printed whenever any warning fired (not only on a rise): the at-baseline list is what a
+    # tightening decision is made from, and the subjects are the evidence either way.
+    if [ "${warns:-0}" -gt 0 ]; then
+      grep -oE '\[TBD\]\[Validate\] WARNING .*' "$log" | sed 's/^\[TBD\]\[Validate\] WARNING /        warn  /' | head -10
+      n_shown="$(grep -cE '\[TBD\]\[Validate\] WARNING ' "$log" || true)"
+      if [ "${n_shown:-0}" -gt 10 ]; then
+        echo "        … and $((n_shown - 10)) more (see console.log)"
+      fi
+    fi
   fi
 
   return "$rc"

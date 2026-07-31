@@ -1132,23 +1132,72 @@ class TBD_MissionValidator
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-250 — keys the typed parser drops because `TBD_MissionDocumentStruct` does not model them
-	//! (or models them but no runtime consumer applies them yet).
+	//! T-250 / T-609 — keys the typed parser drops, or models but the runtime does not honour.
 	//!
 	//! `JsonLoadContext` maps JSON keys onto named class fields and silently ignores everything
-	//! else. An author can therefore ship a schema-valid mission whose `environment`, `layers`,
-	//! `factions[].tickets` or `orbat` `roles[].radio` blocks parse clean and vanish before any
-	//! consumer runs — the failure mode this slice closes.
+	//! else. An author can therefore ship a schema-valid mission whose blocks parse clean and
+	//! vanish before any consumer runs — the failure mode T-250 closed, with blanket "was the key
+	//! authored at all?" probes.
+	//!
+	//! T-609 replaced blanket presence with the question that matters: **was something authored
+	//! that this build will NOT honour?** A presence probe also fires on authored values the
+	//! framework already honours (`tickets: 0`, `respawn: "none"`, an empty `layers: []`), and a
+	//! warning that fires on every well-formed document is wallpaper, not a signal — the
+	//! world-boot warning ratchet sat red for five waves on exactly that. Per key, the measured
+	//! state of this build (2026-07-31):
+	//!
+	//!   * `environment`       NOT modelled, NO consumer anywhere in `Scripts/Game/TBD/**` —
+	//!                         weather, date/time and wind are discarded for every mission, and
+	//!                         the website compiler emits the block on every compiled document
+	//!                         (flatten.rs; see golden `compiler-shaped-two-faction.json`).
+	//!                         Warns on PRESENCE until a slice models it and applies it through
+	//!                         the world's TimeAndWeatherManager. Flatten-side inventory: T-290.
+	//!   * `settings`          Modelled (T-259) AND consumed: `TBD_MissionLoader.
+	//!                         ApplyMissionSettings` hands `spectatorPolicy` to
+	//!                         `TBD_SpectatorTargets` at load, so the old "no code reads it" text
+	//!                         was false. What is still unhonoured is a VALUE naming a system
+	//!                         that does not exist: `respawn` other than "none" (the framework
+	//!                         stands vanilla respawn down — `TBD_SCR_RespawnSystemComponent` —
+	//!                         and implements no pool), and `nightVision: true` (no NVG seam).
+	//!                         Only those warn now, read off the PRIMARY parse.
+	//!   * `layers`            NOT modelled, NO consumer, and `Data/registry.json` carries zero
+	//!                         `layer:` aliases. Warns on CONTENT (>= 1 alias): an authored `[]`
+	//!                         names nothing that could be dropped
+	//!                         (`empty-warning-fields.json` authors exactly that shape).
+	//!   * `factions.tickets`  NOT modelled — but mission.schema.json#/$defs/faction defines
+	//!                         `0 = one-life, no respawn pool`, and one-life IS this framework's
+	//!                         only mode, so an authored 0 is honoured, not discarded. Warns per
+	//!                         faction on `tickets > 0`: a pool no code implements.
+	//!   * `orbat.roles.radio` NOT modelled (`TBD_MissionOrbatRoleStruct` has no field), and net
+	//!                         delivery is FACTION-scoped: `TBD_RadioService.BuildForPlayer`
+	//!                         derives a player's nets from the slot's faction alone
+	//!                         (`TBD_RadioPlan.GetNetsForFaction`), so the schema's contract for
+	//!                         this key — "Net ids this role spawns tuned to" — is not honoured
+	//!                         for any role authoring a narrower set. The old text claimed "spawn
+	//!                         net tuning is not applied", which T-181.40/T-293 made false:
+	//!                         tuning is applied, per faction. Warns on CONTENT (>= 1 role with a
+	//!                         non-empty list): a role authoring `[]` names no net to drop.
 	//!
 	//! T-254 RETIRED the `entities` unconsumed warning: `TBD_MissionDocumentStruct.entities` is
-	//! modeled and `SpawnMissionEntities` places resolvable rows. T-259 modeled `settings` but the
-	//! warning remains until a consumer applies respawn/spectator/NVG policy at runtime.
+	//! modeled and `SpawnMissionEntities` places resolvable rows.
 	//!
-	//! Presence is read from the raw JSON string captured at parse time
-	//! (`TBD_MissionLoader.GetRawJson`), because the parsed struct cannot answer "was this key
-	//! authored?" for a field it never declared. The probe is deliberately dumb — a quoted key
-	//! followed by `:` — which is exact for this contract: each watched key appears at most once per
-	//! logical slot (`radio` is `"radio":`, not `"radioPlan":`).
+	//! ── How presence/content is read ────────────────────────────────────────────────────────
+	//! `environment` keeps the raw-string probe (`JsonAuthoredKey` — a quoted key followed by
+	//! `:`, exact for this contract since `"radio":` cannot match `"radioPlan":`): any content in
+	//! that block is unconsumed, so presence IS the honest test. `layers` / `tickets` / `radio`
+	//! need VALUES the primary struct never declares, so they are read by a SECOND
+	//! `JsonLoadContext` pass over the same raw JSON with a validator-local struct — the exact
+	//! pattern, and the exact rationale, of `TBD_ObjectiveRulesReader`: `Backend/`'s primary
+	//! parser stays the single source of truth for consumed fields, and this vocabulary lives
+	//! next to its one consumer. A `ref array<>` field is NULL when its key was absent (measured
+	//! 2026-07-25; .world-boot-warning-baseline), so array content tests can tell absent from
+	//! authored-empty from authored.
+	//!
+	//! ── Fail-closed ─────────────────────────────────────────────────────────────────────────
+	//! If the second pass cannot parse — it cannot, for a document the primary parser just
+	//! accepted, but that is asserted rather than assumed — the three second-pass keys fall back
+	//! to the T-250 blanket presence probes: toward warning, never toward silence. A checker that
+	//! answers "fine" about an input it never examined is the defect this file exists to prevent.
 	//!
 	//! Host gate: `make schema-validate` greps this file for the `T-250-UNCONSUMED-WARN:` markers
 	//! below and for `CheckUnconsumedKeys` being wired from `Run()`.
@@ -1161,43 +1210,141 @@ class TBD_MissionValidator
 		if (json.IsEmpty())
 			return;
 
-		// T-250-UNCONSUMED-WARN: environment
+		// T-250-UNCONSUMED-WARN: environment — presence: the whole block is unconsumed.
 		if (JsonAuthoredKey(json, "environment"))
 		{
 			AddWarning("environment",
 				"authored but TBD_MissionDocumentStruct does not model it — weather and time of day are not applied at load");
 		}
 
-		// T-250-UNCONSUMED-WARN: settings
-		if (JsonAuthoredKey(json, "settings"))
+		// T-250-UNCONSUMED-WARN: settings — T-609: modelled (T-259) and consumed
+		// (ApplyMissionSettings applies spectatorPolicy at load), so presence proves nothing.
+		// The reference is ALWAYS allocated after a parse (JsonLoadContext) — test field content.
+		TBD_MissionSettingsStruct settings = mission.settings;
+		if (settings)
 		{
-			AddWarning("settings",
-				"authored but no code reads it — respawn policy, spectator rules and night-vision are not applied");
+			if (!settings.respawn.IsEmpty() && settings.respawn != "none")
+			{
+				AddWarning("settings", string.Format(
+					"respawn='%1' authored but the framework implements no respawn pool — vanilla respawn is stood down (TBD_SCR_RespawnSystemComponent), one-life is the only mode, and the value is not honoured",
+					settings.respawn));
+			}
+
+			if (settings.nightVision)
+			{
+				AddWarning("settings",
+					"nightVision=true authored but no NVG policy seam exists — the value is not honoured");
+			}
 		}
 
 		// T-254: entities[] is modeled + SpawnMissionEntities places resolvable rows — not unconsumed.
 		// (Former T-250-UNCONSUMED-WARN: entities retired — do not restore the "does not spawn" lie.)
 
-		// T-250-UNCONSUMED-WARN: layers
-		if (JsonAuthoredKey(json, "layers"))
+		TBD_ValidatorSecondPassStruct raw = ParseSecondPass(json);
+		if (!raw)
 		{
-			AddWarning("layers",
-				"authored but decoration layers are not loaded — tier-2 layer aliases in this block are discarded on load");
+			// Fail-closed fallback: the T-250 blanket presence probes, plus a note saying which
+			// probe answered so a fallback firing is distinguishable from the precise check.
+			if (JsonAuthoredKey(json, "layers"))
+			{
+				AddWarning("layers",
+					"authored but decoration layers are not loaded — the block is discarded on load (second-pass parse failed; presence probe)");
+			}
+
+			if (JsonAuthoredKey(json, "tickets"))
+			{
+				AddWarning("factions.tickets",
+					"authored but TBD_MissionFactionStruct does not model tickets — respawn pools are not applied (second-pass parse failed; presence probe)");
+			}
+
+			if (JsonAuthoredKey(json, "radio"))
+			{
+				AddWarning("orbat.roles.radio",
+					"authored but TBD_MissionOrbatRoleStruct does not model radio — role-scoped net assignment is not applied (second-pass parse failed; presence probe)");
+			}
+
+			return;
 		}
 
-		// T-250-UNCONSUMED-WARN: tickets
-		if (JsonAuthoredKey(json, "tickets"))
+		// T-250-UNCONSUMED-WARN: layers — T-609: content, not presence. Absent -> null array
+		// (measured), authored [] -> zero aliases discarded; neither warns.
+		if (raw.layers && raw.layers.Count() > 0)
 		{
-			AddWarning("factions.tickets",
-				"authored on one or more factions but TBD_MissionFactionStruct does not model tickets — respawn pools are not applied");
+			AddWarning("layers", string.Format(
+				"%1 decoration layer alias(es) authored but decoration layers are not loaded — the block is discarded on load",
+				raw.layers.Count()));
 		}
 
-		// T-250-UNCONSUMED-WARN: radio
-		if (JsonAuthoredKey(json, "radio"))
+		// T-250-UNCONSUMED-WARN: tickets — T-609: an authored 0 is the schema's own spelling of
+		// one-life ("0 = one-life, no respawn pool"), which is what this framework does — it is
+		// honoured, not discarded. Only a positive pool names a system no code implements.
+		// JsonLoadContext leaves an absent int at its initializer (0), so absent and authored-0
+		// coincide here — deliberately: both mean one-life and neither warrants a warning.
+		if (raw.factions)
 		{
-			AddWarning("orbat.roles.radio",
-				"authored on one or more ORBAT roles but TBD_MissionOrbatRoleStruct does not model radio — spawn net tuning is not applied");
+			foreach (TBD_ValidatorRawFactionStruct rawFaction : raw.factions)
+			{
+				if (!rawFaction || rawFaction.tickets <= 0)
+					continue;
+
+				string factionName = rawFaction.key;
+				if (factionName.IsEmpty())
+					factionName = "(no key)";
+
+				AddWarning("factions.tickets", string.Format(
+					"faction '%1' authors tickets=%2 but TBD_MissionFactionStruct does not model tickets — no respawn pool will exist (an authored 0 would be one-life, which IS the implemented behaviour)",
+					factionName, rawFaction.tickets));
+			}
 		}
+
+		// T-250-UNCONSUMED-WARN: radio — T-609: content, not presence. Only a role naming >= 1
+		// net has authored something the faction-wide delivery can fail to honour; `"radio": []`
+		// names no net that could be dropped.
+		if (raw.orbat)
+		{
+			int rolesWithNets = 0;
+			foreach (string factionKey, TBD_ValidatorRawOrbatFactionStruct side : raw.orbat)
+			{
+				if (!side || !side.groups)
+					continue;
+
+				foreach (TBD_ValidatorRawGroupStruct group : side.groups)
+				{
+					if (!group || !group.roles)
+						continue;
+
+					foreach (TBD_ValidatorRawRoleStruct role : group.roles)
+					{
+						if (role && role.radio && role.radio.Count() > 0)
+							rolesWithNets++;
+					}
+				}
+			}
+
+			if (rolesWithNets > 0)
+			{
+				AddWarning("orbat.roles.radio", string.Format(
+					"%1 ORBAT role(s) author radio[] net ids but TBD_MissionOrbatRoleStruct does not model radio — net delivery is faction-wide (TBD_RadioService.BuildForPlayer), so role-scoped assignments are not honoured",
+					rolesWithNets));
+			}
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-609 — the validator's second typed pass over the raw mission JSON, for values the
+	//! primary `TBD_MissionDocumentStruct` deliberately does not declare. Null when the string
+	//! does not parse, which CheckUnconsumedKeys treats as "fall back to presence probes".
+	protected static TBD_ValidatorSecondPassStruct ParseSecondPass(string json)
+	{
+		JsonLoadContext ctx = new JsonLoadContext();
+		if (!ctx.LoadFromString(json))
+			return null;
+
+		TBD_ValidatorSecondPassStruct doc = new TBD_ValidatorSecondPassStruct();
+		if (!ctx.ReadValue("", doc))
+			return null;
+
+		return doc;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1353,4 +1500,59 @@ class TBD_MissionValidator
 			"MISSION REJECTED — %1 error(s). The server stays in LOADING until the mission is fixed. Admins: '#tbd validate'.",
 			s_aErrors.Count()), true);
 	}
+}
+
+//! ══ T-609 — second-pass structs for CheckUnconsumedKeys ═══════════════════════════════════════
+//! Declares ONLY the unmodelled values the unconsumed-key checks need — `layers`,
+//! `factions[].tickets`, `orbat.*.groups[].roles[].radio` — and nothing the primary parser
+//! already owns. Same pattern and same rationale as `TBD_ObjectiveRulesReader`
+//! (Objectives/TBD_ObjectiveRules.c): `JsonLoadContext` ignores JSON keys no field declares, so
+//! this pass is structurally blind to everything else in the document, and `Backend/`'s
+//! `TBD_MissionDocumentStruct` stays the single source of truth for every CONSUMED field. When a
+//! slice models one of these keys for real, delete its field here and move the check onto the
+//! primary struct — this pass exists precisely because these keys have no consumer yet.
+//!
+//! Field names must equal the JSON keys. `ref array<>` fields come back NULL when the key was
+//! absent (measured 2026-07-25 — the CheckSlotLoadout finding recorded in
+//! .world-boot-warning-baseline), which is what lets the checks tell absent from authored-empty.
+//! `tickets` carries no ABSENT sentinel on purpose: absent and authored-0 both mean one-life
+//! (mission.schema.json#/$defs/faction: "0 = one-life, no respawn pool") and neither warns, so
+//! the initializer 0 is not a presence flag here — it is the honoured default.
+
+//! One `orbat.*.groups[].roles[]` entry, radio only.
+//! @contract mission.schema.json#/$defs/role (subset: radio)
+class TBD_ValidatorRawRoleStruct
+{
+	ref array<string> radio; //!< Null = key absent; empty = authored `[]`; else authored net ids.
+}
+
+//! One `orbat.*.groups[]` entry, roles only.
+//! @contract mission.schema.json#/$defs/group (subset: roles)
+class TBD_ValidatorRawGroupStruct
+{
+	ref array<ref TBD_ValidatorRawRoleStruct> roles;
+}
+
+//! One faction's ORBAT, groups only.
+//! @contract mission.schema.json#/$defs/orbatFaction (subset: groups)
+class TBD_ValidatorRawOrbatFactionStruct
+{
+	ref array<ref TBD_ValidatorRawGroupStruct> groups;
+}
+
+//! One `factions[]` entry: the key (so a finding can name the side) and the unmodelled tickets.
+//! @contract mission.schema.json#/$defs/faction (subset: key, tickets)
+class TBD_ValidatorRawFactionStruct
+{
+	string key;
+	int tickets = 0; //!< Absent reads 0 — deliberately identical to authored one-life. See header.
+}
+
+//! Document root for the second pass: the three unmodelled vocabularies, nothing else.
+//! @contract mission.schema.json#/ (subset: layers, factions, orbat)
+class TBD_ValidatorSecondPassStruct
+{
+	ref array<string> layers; //!< Null = key absent; empty = authored `[]`.
+	ref array<ref TBD_ValidatorRawFactionStruct> factions;
+	ref map<string, ref TBD_ValidatorRawOrbatFactionStruct> orbat;
 }
