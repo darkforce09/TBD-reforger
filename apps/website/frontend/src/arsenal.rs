@@ -10,8 +10,39 @@
 //! live in [`crate::arsenal_rules`] (pure, native-tested). This module is the UI + the persisted
 //! serialization ([`picks_to_loadout`] / [`loadout_to_picks`]: optic/magazine ride `weapons[0]` as
 //! sticky sub-fields; attachments ride their own weapon's `attachments[]`).
+//!
+//! # Persistence — there is no Save button here, and that is the design (T-503)
+//!
+//! Every pick and every cargo edit calls [`crate::editor_ops::set_loadout`] the moment it happens.
+//! Nothing stages. T-503 asked whether that is a bug — whether the Arsenal should grow an explicit
+//! Save with a dirty indicator and a discard path — and the answer from the rest of the SPA is no,
+//! twice over:
+//!
+//! * **Every other mission-document editor commits on the spot.** `editor_ops.rs` funnels 28 call
+//!   sites into `mission_history::after_local_edit`, and the Arsenal's `set_loadout`
+//!   (`editor_ops.rs:777`) is one of them. Its own siblings in this very modal are the clearest
+//!   case: Transform X/Y/Z/rotation (`attributes.rs:265`) and Identity role/tag/stance
+//!   (`attributes.rs:335`) commit on blur/Enter with no Save of their own — `attributes.rs:7` states
+//!   the contract in as many words ("rebind + persist + one undo step per commit"). Same for the
+//!   outliner, the ORBAT manager (`orbat_manager.rs:1301`) and the top-strip title
+//!   (`eden_chrome.rs:1057`). A Save button in the Arsenal would make it the only editor in the
+//!   application with a second commit point, and would break the one-undo-step-per-pick contract
+//!   the module header above is built on.
+//! * **The editor already has exactly one commit point, and it is not per-panel.**
+//!   `after_local_edit` sets `HistoryCtx::dirty` (`mission_history.rs:62`), a debounced IDB persist
+//!   keeps the work across a reload, `register_unload_guard` (T-189) refuses to let the tab close
+//!   over it, and **Save Version** publishes it to the server and clears the flag. Undo is Ctrl+Z,
+//!   not a per-panel discard button.
+//!
+//! What *was* wrong is that the author could not tell any of this from inside the Arsenal. The one
+//! platform-wide "your work is not saved yet" signal is the `•` next to the mission title
+//! (`eden_chrome.rs:1066`) — and this tab renders under a full-viewport `bg-black/50
+//! backdrop-blur-sm` scrim (`attributes.rs:88`) that dims and blurs precisely that indicator while
+//! the Arsenal is open. So the fix is not a Save button; it is saying it here, in the panel, next
+//! to the verdict badge — see the `data-arsenal-persist` line at the bottom of [`ArsenalTab`]. The
+//! wiring is pinned by `tests::t503`, so a future slice that quietly introduces staging goes red.
 #![allow(dead_code)]
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use leptos::prelude::*;
 
@@ -22,6 +53,41 @@ use crate::arsenal_rules::{
 use crate::dto::RegistryItem;
 
 const CONTROL: &str = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
+
+/// T-503 — the persistence contract as the **author** reads it, not as the module doc reads it.
+///
+/// The Arsenal has no Save button (see the module header for why the rest of the SPA says it should
+/// not), and until this line existed nothing in the panel said so: an author who made a pick and
+/// closed the modal had no way to tell whether the pick had been kept. This is the answer, and it
+/// is unconditional because the behaviour is.
+const PERSIST_ALWAYS: &str = "Every pick and cargo edit here is written to the mission document the moment you make it — the Arsenal has no Save button by design, and Ctrl+Z undoes one pick.";
+
+/// The half of the persistence line that reads the live `mission_history` dirty flag: the mission
+/// itself has nothing waiting for the server. Paired with [`PERSIST_UNSAVED`].
+const PERSIST_CLEAN: &str = "The mission has no unsaved changes.";
+
+/// The dirty half: the doc holds work no server version carries yet. This is the same state the top
+/// strip's `•` reports — which this modal's backdrop is busy blurring, hence the repeat here.
+const PERSIST_UNSAVED: &str =
+    "The mission has unsaved changes — Save Version publishes them to the server.";
+
+/// Does the live mission document hold work the server has not seen?
+///
+/// `mission_history` is `cfg(target_arch = "wasm32")` (it drives the hosted doc), so the native view
+/// shell answers `false`: there is no editor mounted there and therefore nothing unsaved. The read
+/// itself is `try_get_untracked`, so the persistence line below tracks a local commit counter to
+/// re-run — the modal scrim means an Arsenal commit is the only edit that can happen while this is
+/// on screen.
+fn mission_has_unsaved_work() -> bool {
+    #[cfg(target_arch = "wasm32")]
+    {
+        crate::mission_history::is_dirty()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        false
+    }
+}
 
 /// A loadout row: the pick key (matches `arsenalRules` `LoadoutKey`), its label, the registry kind
 /// it sources from, and whether it is a weapon slot (→ `weapons[]`) or wear (→ `wear{}`).
@@ -184,23 +250,83 @@ fn attachment_errors(picks: &HashMap<String, String>, feed: &CompatFeed) -> Vec<
 }
 
 /// T-240 — every fault on this loadout, in one list: the compat edge rows
-/// ([`validate_loadout`]), the stranded attachments ([`attachment_errors`]), and the
-/// over-capacity cargo containers ([`rules::cargo_capacity_errors`]).
+/// ([`validate_loadout`]), the stranded attachments ([`attachment_errors`]), the over-capacity
+/// cargo containers ([`rules::cargo_capacity_errors`]) and — T-504 — the cargo authored against a
+/// container this loadout wears nothing in ([`rules::cargo_unworn_container_errors`]).
 ///
-/// This is what the verdict badge counts and what the per-row error line reads. All three
-/// sources are keyed on the row whose pick the author must change, and all three degrade to
-/// empty when the compat feed never arrived — a feed we did not receive must never fail a
-/// loadout. (Capacity does not need the feed at all; it reads the registry.)
+/// This is what the verdict badge counts and what the per-row error line reads. Every source is
+/// keyed on the row whose pick the author must change, and the feed-fed ones degrade to empty when
+/// the compat feed never arrived — a feed we did not receive must never fail a loadout. (Capacity
+/// does not need the feed at all; it reads the registry. The unworn check needs neither: worn-or-not
+/// is a fact about `picks`.)
+///
+/// T-504 — the "Loadout valid" badge was the tool reporting success over an input it had never
+/// examined. Undeliverable cargo produced no fault anywhere, so a loadout whose mags were headed
+/// for a vest nobody wears was badged valid, exported clean, and only failed on a server the author
+/// does not read. The fault belongs **here** and not in [`try_export`]: this list warns, that one
+/// refuses, and [`rules::CARGO_UNWORN_CAVEAT`] sets out why refusing would be wrong. `kit_defaults`
+/// is the vouching evidence — [`kit_default_items`] builds it, `None` keeps the rule silent.
 fn loadout_faults(
     picks: &HashMap<String, String>,
     cargo: &[rules::CargoRow],
     feed: &CompatFeed,
     idx: &HashMap<String, &RegistryItem>,
+    kit_defaults: Option<&HashSet<String>>,
 ) -> Vec<rules::RowError> {
     let mut errs = validate_loadout(picks, feed.ready_graph(), feed.status);
     errs.extend(attachment_errors(picks, feed));
     errs.extend(rules::cargo_capacity_errors(picks, cargo, idx));
+    errs.extend(rules::cargo_unworn_container_errors(
+        picks,
+        cargo,
+        kit_defaults,
+    ));
     errs
+}
+
+/// T-504 — what the slot's character prefab is catalogued as already carrying, keyed on its
+/// `assetId`. This is the evidence [`rules::cargo_unworn_container_errors`] needs to tell a seeded
+/// row (delivered by the kit) from one the author aimed at nothing.
+///
+/// The `character_default_cargo` edges are already in the feed the Arsenal holds — `CompatGraph`
+/// keeps their adjacency in both directions, so a lookup keyed on the character returns its items.
+/// (The *containers* are in the edges' `evidence`, which the graph drops, which is why the vouching
+/// is by item.)
+///
+/// `None` — the honest "no evidence" answer — whenever the feed is not `Ready` or the slot has no
+/// `assetId` to key on, so the rule stays silent rather than guessing.
+fn kit_default_items(feed: &CompatFeed, asset_id: Option<&str>) -> Option<HashSet<String>> {
+    let graph = feed.ready_graph()?;
+    let rn = asset_id?;
+    Some(
+        graph
+            .items_for(rn, rules::CHARACTER_DEFAULT_CARGO_EDGE)
+            .into_iter()
+            .collect(),
+    )
+}
+
+/// The slot's `assetId` (its character prefab) straight off the live document.
+///
+/// Read through the existing public `editor_ops::slots_json` rather than a new accessor — this
+/// slice does not own `editor_ops`. Native has no hosted document, so there is no `assetId` and
+/// [`kit_default_items`] answers `None`.
+fn slot_asset_id(slot_id: &str) -> Option<String> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let json = crate::editor_ops::slots_json()?;
+        let map: serde_json::Value = serde_json::from_str(&json).ok()?;
+        map.get(slot_id)?
+            .get("assetId")?
+            .as_str()
+            .filter(|s| !s.is_empty())
+            .map(str::to_string)
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = slot_id;
+        None
+    }
 }
 
 /// `loadoutToPicks` — read the slot's `SlotLoadoutV2` JSON into a per-key `resource_name` map. An
@@ -474,6 +600,14 @@ fn export_modpack_id(items: &[RegistryItem]) -> String {
 /// what it flags is kit the game will silently drop on the way to the field, so the file is a lie
 /// about the soldier it describes.
 ///
+/// T-504 — the unworn-container fault ([`rules::cargo_unworn_container_errors`]) is deliberately
+/// **not** added to this gate either, and for a stronger reason than "nobody measured it": this
+/// module cannot see the slot's kit prefab, whose own clothing is what the mod actually resolves
+/// the container against, so a refusal here would block Save/Export on loadouts that deliver
+/// perfectly — including freshly seeded ones nobody has touched. It warns in [`loadout_faults`]
+/// instead. Full argument on [`rules::CARGO_UNWORN_CAVEAT`]; pinned by
+/// `tests::t504::undeliverable_cargo_fails_the_verdict_but_never_the_export`.
+///
 /// Structured to lift: the `Err` arm is already a list of independent findings, the same shape
 /// `validate_mission_editor_payload` returns, for when this rule moves server-side.
 pub fn try_export(
@@ -509,6 +643,9 @@ pub fn ArsenalTab(
     // so this render uses it without a re-read.
     #[cfg(target_arch = "wasm32")]
     let loadout_json = crate::editor_ops::seed_slot_cargo(&slot_id).or(loadout_json);
+    // T-504 — the slot's character prefab, read once: it cannot change while the modal is open, and
+    // it keys the kit-default evidence the undeliverable-cargo rule needs.
+    let asset_id = StoredValue::new(slot_asset_id(&slot_id));
     let id = StoredValue::new(slot_id);
     // Reactive picks so the doll, weight, validation, and dependent edge rows all re-render live.
     let picks = RwSignal::new(loadout_to_picks(loadout_json.as_deref()));
@@ -522,7 +659,14 @@ pub fn ArsenalTab(
     #[cfg(not(target_arch = "wasm32"))]
     let _ = (id, cargo_present);
 
+    // T-503 — commits made in this tab, purely so the persistence line below can re-run: the dirty
+    // flag it reads is `try_get_untracked` and therefore not reactive on its own.
+    let commits = RwSignal::new(0u32);
     // Persist the current picks + cargo as the canonical V2 loadout (one undo step). wasm-only.
+    //
+    // T-503 — this is THE commit, and it runs on every mutation with nothing staged in between.
+    // That is deliberate and matches every other mission-document editor in the SPA; the module
+    // header sets out the evidence, and `tests::t503` pins the wiring.
     let persist = move |map: &HashMap<String, String>, items: &[RegistryItem]| {
         #[cfg(target_arch = "wasm32")]
         {
@@ -536,6 +680,7 @@ pub fn ArsenalTab(
         }
         #[cfg(not(target_arch = "wasm32"))]
         let _ = (map, items);
+        commits.update(|n| *n = n.wrapping_add(1));
     };
     // Cargo edits mark the key present, then persist through the same path.
     let persist_cargo = move |items: &[RegistryItem]| {
@@ -724,7 +869,10 @@ pub fn ArsenalTab(
                                     // they surface on the row whose pick the author must change.
                                     // T-240 — over-capacity cargo joins them, keyed on the garment
                                     // row backing the container.
-                                    let err = loadout_faults(&map, &cargo.get(), &feed, &idx)
+                                    // T-504 — and cargo with nowhere known to go, keyed on the
+                                    // container's own wear row, which is the pick that fixes it.
+                                    let kit = kit_default_items(&feed, asset_id.get_value().as_deref());
+                                    let err = loadout_faults(&map, &cargo.get(), &feed, &idx, kit.as_ref())
                                         .into_iter()
                                         .find(|e| e.key == row.key)
                                         .map(|e| e.message);
@@ -826,7 +974,10 @@ pub fn ArsenalTab(
                                 // T-197 — a stranded attachment is a real loadout fault; the
                                 // verdict badge counts it alongside the edge-row faults.
                                 // T-240 — and over-capacity cargo alongside both.
-                                let errs = loadout_faults(&map, &cargo.get(), &feed, &index_by_name(&its));
+                                // T-504 — and cargo the kit has nowhere to put, so the badge stops
+                                // saying "Loadout valid" over rows nothing was going to deliver.
+                                let kit = kit_default_items(&feed, asset_id.get_value().as_deref());
+                                let errs = loadout_faults(&map, &cargo.get(), &feed, &index_by_name(&its), kit.as_ref());
                                 if errs.is_empty() {
                                     view! {
                                         <span
@@ -918,6 +1069,36 @@ pub fn ArsenalTab(
                                 </button>
                             </div>
                         </div>
+                        // T-503 — the persistence contract, said in the panel. The platform's one
+                        // "not saved yet" signal is the `•` beside the mission title, and this tab
+                        // renders under a full-viewport blur scrim that dims exactly that. So the
+                        // Arsenal repeats it here rather than leaving the author to guess whether a
+                        // pick stuck. `data-arsenal-persist` carries the state for the gate harness.
+                        {move || {
+                            commits.track();
+                            let unsaved = mission_has_unsaved_work();
+                            let (marker, cls, state) = if unsaved {
+                                (
+                                    "unsaved",
+                                    "flex items-start gap-1.5 text-label-sm normal-case text-tactical-yellow",
+                                    PERSIST_UNSAVED,
+                                )
+                            } else {
+                                (
+                                    "saved",
+                                    "flex items-start gap-1.5 text-label-sm normal-case text-outline",
+                                    PERSIST_CLEAN,
+                                )
+                            };
+                            view! {
+                                <p data-arsenal-persist=marker class=cls>
+                                    <span class="material-symbols-outlined shrink-0 text-[14px]">
+                                        {if unsaved { "cloud_upload" } else { "check_circle" }}
+                                    </span>
+                                    <span>{PERSIST_ALWAYS} " " {state}</span>
+                                </p>
+                            }
+                        }}
                         <p class="text-label-sm normal-case text-outline">
                             "Weapon attachments are multi-select in the compat panel — pick a weapon region on the rail to see what it accepts. Container cargo (mags, medical, throwables) lives in the Cargo panel above — seeded from the character's engine defaults. Dedicated equipment wear rows (binoculars, radios, glasses) come with the equipment slice."
                         </p>
@@ -2184,7 +2365,14 @@ mod tests {
             pack_attachments(&["res://supp".into()]),
         );
 
-        let faults = loadout_faults(&p, &[row("vest", "res://mag_stanag", 4)], &feed, &idx);
+        let kit = kit(&[]);
+        let faults = loadout_faults(
+            &p,
+            &[row("vest", "res://mag_stanag", 4)],
+            &feed,
+            &idx,
+            Some(&kit),
+        );
         assert_eq!(
             faults.len(),
             2,
@@ -2195,8 +2383,528 @@ mod tests {
         assert!(keys.contains(&"vest"), "{keys:?}");
 
         // Empty the cargo and the capacity fault goes with it — the attachment one stays.
-        let faults = loadout_faults(&p, &[], &feed, &idx);
+        let faults = loadout_faults(&p, &[], &feed, &idx, Some(&kit));
         assert_eq!(faults.len(), 1);
         assert_eq!(faults[0].key, "primary");
+    }
+
+    /* ═════════ T-504 — cargo with nowhere known to go ═════════ */
+
+    /// The kit-default vouching set, as [`kit_default_items`] would build it.
+    fn kit(items: &[&str]) -> HashSet<String> {
+        items.iter().map(|s| (*s).to_string()).collect()
+    }
+
+    #[test]
+    fn undeliverable_cargo_fails_the_verdict_but_never_the_export() {
+        let items = capacity_catalog();
+        let idx = index_by_name(&items);
+        let feed = attachment_feed(&[]);
+        // Three magazines into a vest: no vest picked, and a kit not catalogued as carrying them.
+        // 180 cm³ is comfortably inside any rig, so capacity has nothing to say — and before T-504
+        // neither did anything else: the badge read "Loadout valid" over cargo it had never checked
+        // was deliverable.
+        let bare = picks(&[]);
+        let rows = vec![row("vest", "res://mag_stanag", 3)];
+        let empty_kit = kit(&[]);
+        assert!(
+            rules::cargo_capacity_errors(&bare, &rows, &idx).is_empty(),
+            "capacity must stay out of this — that is the point"
+        );
+
+        let faults = loadout_faults(&bare, &rows, &feed, &idx, Some(&empty_kit));
+        assert_eq!(faults.len(), 1, "the verdict must count it: {faults:?}");
+        assert_eq!(faults[0].key, "vest", "keyed on the row that fixes it");
+        assert!(
+            faults[0].message.contains("nowhere known to go"),
+            "{faults:?}"
+        );
+        assert!(
+            faults[0].message.ends_with(rules::CARGO_UNWORN_CAVEAT),
+            "the warning must carry its own kit-prefab caveat: {faults:?}"
+        );
+
+        // …and it must NOT reach the export gate. The kit prefab this editor cannot see may wear
+        // the vest itself, so refusing would block a loadout that delivers perfectly.
+        assert!(
+            try_export(&bare, &rows, &items, "mp").is_ok(),
+            "a warning must never become a refusal"
+        );
+
+        // Pick a vest and the fault goes; the rule reads picks, not the registry, so an
+        // uncatalogued rig satisfies it exactly as well as a catalogued one.
+        for rn in ["res://chest_rig", "res://ghost_rig"] {
+            let worn = picks(&[("vest", rn)]);
+            assert!(
+                loadout_faults(&worn, &rows, &feed, &idx, Some(&empty_kit)).is_empty(),
+                "a worn {rn} must clear it"
+            );
+        }
+
+        // A kit catalogued as carrying that magazine vouches for the container — this is the seeded
+        // path, and faulting it would put an issue on essentially every untouched slot.
+        assert!(
+            loadout_faults(&bare, &rows, &feed, &idx, Some(&kit(&["res://mag_stanag"]))).is_empty(),
+            "the kit's own default cargo must never fault"
+        );
+    }
+
+    #[test]
+    fn the_kit_evidence_comes_off_the_live_compat_feed() {
+        // `kit_default_items` is the seam between the UI and the pure rule, so it gets its own
+        // test: the vouching set must come from the character's `character_default_cargo` edges,
+        // and must answer `None` — "no evidence", the silent case — whenever it cannot.
+        let edges: Vec<crate::dto::RegistryCompatEdge> = ["res://mag_stanag", "res://bandage"]
+            .iter()
+            .enumerate()
+            .map(|(i, item)| crate::dto::RegistryCompatEdge {
+                id: i.to_string(),
+                modpack_id: "mp".into(),
+                from_node: (*item).into(),
+                to_node: "kit:us_rifleman".into(),
+                edge_type: rules::CHARACTER_DEFAULT_CARGO_EDGE.into(),
+                evidence: "TargetStorage=Vest/Mags".into(),
+                qty: 1,
+                created_at: String::new(),
+                updated_at: String::new(),
+            })
+            .collect();
+        let ready = CompatFeed {
+            status: rules::CompatStatus::Ready,
+            graph: rules::CompatGraph::from_edges(&edges),
+        };
+
+        let found = kit_default_items(&ready, Some("kit:us_rifleman")).expect("ready + assetId");
+        assert!(found.contains("res://mag_stanag"), "{found:?}");
+        assert!(found.contains("res://bandage"), "{found:?}");
+        // A character with no edges is real evidence (an empty set), not an absence of it.
+        assert_eq!(
+            kit_default_items(&ready, Some("kit:unknown")),
+            Some(HashSet::new())
+        );
+        // No assetId → no key to look up → no evidence.
+        assert_eq!(kit_default_items(&ready, None), None);
+        // Feed not ready → no evidence, so the rule stays silent instead of faulting every slot
+        // in the window before the registry lands.
+        for status in [
+            rules::CompatStatus::Loading,
+            rules::CompatStatus::Unavailable,
+        ] {
+            let pending = CompatFeed {
+                status,
+                graph: rules::CompatGraph::from_edges(&edges),
+            };
+            assert_eq!(kit_default_items(&pending, Some("kit:us_rifleman")), None);
+        }
+        // Native has no hosted document, so there is no assetId to read.
+        assert_eq!(slot_asset_id("slot-1"), None);
+    }
+
+    /* ═══════════ T-503 — the Arsenal commits on the spot, and now says so ═══════════ */
+
+    /// arsenal.rs with everything **unreachable** removed, so a source pin cannot be greened by a
+    /// needle that no running build can reach. Strips, in order: comments, string/char literals,
+    /// `#[cfg(any())]` items, constant-false `if` blocks, and everything after an unconditional
+    /// `break;` / `continue;` / `return;`. The test module is cut off first, so a pin can never
+    /// read its own assertion.
+    ///
+    /// This exists because a pin that greps raw text is worthless — the needle sits in a comment or
+    /// a dead block and the pin greens over a broken code path. Each pin below records the decoys
+    /// that were actually run against it.
+    fn live_production_src() -> String {
+        const SRC: &str = include_str!("arsenal.rs");
+        let production = SRC.split("#[cfg(test)]").next().unwrap_or(SRC);
+        strip_after_unconditional_jump(&strip_const_false_blocks(&strip_cfg_any_items(
+            &strip_comments_and_literals(production),
+        )))
+    }
+
+    fn ident_char(c: char) -> bool {
+        c.is_ascii_alphanumeric() || c == '_'
+    }
+
+    /// Word-boundary check for a keyword starting at `i`.
+    fn kw_at(chars: &[char], i: usize, kw: &str) -> bool {
+        let k: Vec<char> = kw.chars().collect();
+        if i + k.len() > chars.len() || chars[i..i + k.len()] != k[..] {
+            return false;
+        }
+        (i == 0 || !ident_char(chars[i - 1]))
+            && (i + k.len() >= chars.len() || !ident_char(chars[i + k.len()]))
+    }
+
+    /// Drop `//` / `/* */` (nesting) comments and `"…"` / `r#"…"#` / `'c'` literals, replacing each
+    /// with a space so tokens cannot fuse. Lifetimes (`'static`) survive — only real char literals
+    /// are eaten.
+    fn strip_comments_and_literals(src: &str) -> String {
+        let c: Vec<char> = src.chars().collect();
+        let mut out = String::with_capacity(src.len());
+        let mut i = 0;
+        while i < c.len() {
+            // line comment
+            if c[i] == '/' && i + 1 < c.len() && c[i + 1] == '/' {
+                while i < c.len() && c[i] != '\n' {
+                    i += 1;
+                }
+                out.push(' ');
+                continue;
+            }
+            // block comment (nesting, as rustc allows)
+            if c[i] == '/' && i + 1 < c.len() && c[i + 1] == '*' {
+                let mut depth = 1usize;
+                i += 2;
+                while i < c.len() && depth > 0 {
+                    if c[i] == '/' && i + 1 < c.len() && c[i + 1] == '*' {
+                        depth += 1;
+                        i += 2;
+                    } else if c[i] == '*' && i + 1 < c.len() && c[i + 1] == '/' {
+                        depth -= 1;
+                        i += 2;
+                    } else {
+                        i += 1;
+                    }
+                }
+                out.push(' ');
+                continue;
+            }
+            // raw string: r"…" / r#"…"# / r##"…"##
+            if c[i] == 'r' && (i == 0 || !ident_char(c[i - 1])) {
+                let mut j = i + 1;
+                let mut hashes = 0usize;
+                while j < c.len() && c[j] == '#' {
+                    hashes += 1;
+                    j += 1;
+                }
+                if j < c.len() && c[j] == '"' {
+                    j += 1;
+                    while j < c.len() {
+                        if c[j] == '"' {
+                            let closed = (1..=hashes).all(|k| j + k < c.len() && c[j + k] == '#');
+                            if closed {
+                                j += hashes + 1;
+                                break;
+                            }
+                        }
+                        j += 1;
+                    }
+                    out.push(' ');
+                    i = j;
+                    continue;
+                }
+            }
+            // normal string
+            if c[i] == '"' {
+                i += 1;
+                while i < c.len() {
+                    if c[i] == '\\' {
+                        i += 2;
+                        continue;
+                    }
+                    if c[i] == '"' {
+                        i += 1;
+                        break;
+                    }
+                    i += 1;
+                }
+                out.push(' ');
+                continue;
+            }
+            // char literal vs lifetime
+            if c[i] == '\'' {
+                let escaped = i + 1 < c.len() && c[i + 1] == '\\';
+                let single = i + 2 < c.len() && c[i + 2] == '\'';
+                if escaped || single {
+                    i += 1;
+                    while i < c.len() {
+                        if c[i] == '\\' {
+                            i += 2;
+                            continue;
+                        }
+                        if c[i] == '\'' {
+                            i += 1;
+                            break;
+                        }
+                        i += 1;
+                    }
+                    out.push(' ');
+                    continue;
+                }
+            }
+            out.push(c[i]);
+            i += 1;
+        }
+        out
+    }
+
+    /// Skip past the item a `#[cfg(any())]` attribute annotates: to the end of its balanced `{…}`
+    /// body, or to its terminating `;`, whichever comes first.
+    fn strip_cfg_any_items(src: &str) -> String {
+        const ATTR: &str = "#[cfg(any())]";
+        let mut out = String::with_capacity(src.len());
+        let mut rest = src;
+        while let Some(at) = rest.find(ATTR) {
+            out.push_str(&rest[..at]);
+            out.push(' ');
+            let after: Vec<char> = rest[at + ATTR.len()..].chars().collect();
+            let mut i = 0;
+            while i < after.len() && after[i] != '{' && after[i] != ';' {
+                i += 1;
+            }
+            if i < after.len() && after[i] == '{' {
+                let mut depth = 1usize;
+                i += 1;
+                while i < after.len() && depth > 0 {
+                    match after[i] {
+                        '{' => depth += 1,
+                        '}' => depth -= 1,
+                        _ => {}
+                    }
+                    i += 1;
+                }
+            } else if i < after.len() {
+                i += 1; // the `;`
+            }
+            rest =
+                &rest[at + ATTR.len() + after[..i].iter().map(|c| c.len_utf8()).sum::<usize>()..];
+        }
+        out.push_str(rest);
+        out
+    }
+
+    /// Drop `if <constant false> { … }` blocks (brace-balanced), leaving any `else` arm — so a
+    /// decoy parked in `if false { … }` or `if true == false { … }` cannot green a pin.
+    fn strip_const_false_blocks(src: &str) -> String {
+        const DEAD: &[&str] = &[
+            "false",
+            "true==false",
+            "false==true",
+            "1==0",
+            "0==1",
+            "!true",
+            "cfg!(any())",
+        ];
+        let c: Vec<char> = src.chars().collect();
+        let mut out = String::with_capacity(src.len());
+        let mut i = 0;
+        while i < c.len() {
+            if kw_at(&c, i, "if") {
+                // Read the condition up to the block's opening brace.
+                let mut j = i + 2;
+                let mut cond = String::new();
+                while j < c.len() && c[j] != '{' {
+                    if !c[j].is_ascii_whitespace() {
+                        cond.push(c[j]);
+                    }
+                    j += 1;
+                }
+                if j < c.len() && DEAD.contains(&cond.as_str()) {
+                    let mut depth = 1usize;
+                    j += 1;
+                    while j < c.len() && depth > 0 {
+                        match c[j] {
+                            '{' => depth += 1,
+                            '}' => depth -= 1,
+                            _ => {}
+                        }
+                        j += 1;
+                    }
+                    out.push(' ');
+                    i = j;
+                    continue;
+                }
+            }
+            out.push(c[i]);
+            i += 1;
+        }
+        out
+    }
+
+    /// Drop everything between a bare `break;` / `continue;` / `return;` and the `}` that closes
+    /// the block it sits in — so a decoy parked after `loop { break; … }` cannot green a pin.
+    fn strip_after_unconditional_jump(src: &str) -> String {
+        let c: Vec<char> = src.chars().collect();
+        let mut out = String::with_capacity(src.len());
+        let mut i = 0;
+        while i < c.len() {
+            let jump = ["break", "continue", "return"]
+                .iter()
+                .find(|k| kw_at(&c, i, k))
+                .copied();
+            if let Some(kw) = jump {
+                let mut j = i + kw.len();
+                while j < c.len() && c[j].is_ascii_whitespace() {
+                    j += 1;
+                }
+                if j < c.len() && c[j] == ';' {
+                    out.push_str(kw);
+                    out.push(';');
+                    j += 1;
+                    // Skip to the first unmatched `}` — the end of the enclosing block.
+                    let mut depth = 0i32;
+                    while j < c.len() {
+                        match c[j] {
+                            '{' => depth += 1,
+                            '}' if depth == 0 => break,
+                            '}' => depth -= 1,
+                            _ => {}
+                        }
+                        j += 1;
+                    }
+                    out.push(' ');
+                    i = j;
+                    continue;
+                }
+            }
+            out.push(c[i]);
+            i += 1;
+        }
+        out
+    }
+
+    /// The balanced `{…}` body of the first item matching `marker`. Panics rather than returning
+    /// an empty string, so a renamed function fails loudly instead of vacuously passing.
+    fn fn_body<'a>(src: &'a str, marker: &str) -> &'a str {
+        let at = src
+            .find(marker)
+            .unwrap_or_else(|| panic!("live source has no `{marker}` — did it get renamed?"));
+        let tail = &src[at + marker.len()..];
+        let open = tail
+            .find('{')
+            .unwrap_or_else(|| panic!("`{marker}` has no body"));
+        let bytes = tail.as_bytes();
+        let mut depth = 1usize;
+        let mut i = open + 1;
+        while i < tail.len() && depth > 0 {
+            match bytes[i] {
+                b'{' => depth += 1,
+                b'}' => depth -= 1,
+                _ => {}
+            }
+            i += 1;
+        }
+        assert_eq!(depth, 0, "`{marker}` body is unbalanced");
+        &tail[open + 1..i - 1]
+    }
+
+    /// T-503 Class-R: every cargo mutation in the panel must commit through `on_change`, and the
+    /// commit must reach `editor_ops::set_loadout`. Staging — a mutation that updates the local
+    /// signal and waits for a Save button — goes red here.
+    ///
+    /// RED (staging): delete the `on_change(&items.get_value());` after the qty `+` handler in
+    /// `cargo_panel` → "every cargo mutation must commit: 4 `cargo.update(` vs 3 `on_change(`".
+    /// RED (decoy, `if true == false`): move `crate::editor_ops::set_loadout(…)` inside
+    /// `if true == false { … }` → "ArsenalTab must reach editor_ops::set_loadout".
+    /// RED (decoy, `#[cfg(any())]`): park the call in an `#[cfg(any())] fn dead_persist() { … }`
+    /// → same failure.
+    /// RED (decoy, `loop { break; … }`): park the call after a bare `break;` → same failure.
+    #[test]
+    fn cargo_mutations_commit_without_a_staging_gate() {
+        let live = live_production_src();
+        let panel = fn_body(&live, "fn cargo_panel(");
+        let mutations = panel.matches("cargo.update(").count();
+        let commits = panel.matches("on_change(").count();
+        assert!(
+            mutations >= 4,
+            "cargo_panel should still own the qty -/+, remove and add mutations; found {mutations}"
+        );
+        assert!(
+            commits >= mutations,
+            "every cargo mutation must commit: {mutations} `cargo.update(` vs {commits} `on_change(`"
+        );
+
+        let tab = fn_body(&live, "pub fn ArsenalTab(");
+        assert!(
+            tab.contains("crate::editor_ops::set_loadout("),
+            "ArsenalTab must reach editor_ops::set_loadout on a live path"
+        );
+        assert!(
+            tab.contains("persist(&picks.get_untracked(), items)"),
+            "persist_cargo must forward to the same commit the pick path uses"
+        );
+    }
+
+    /// T-503 Class-R: the panel must state the persistence contract, because the platform's only
+    /// unsaved indicator (the top-strip `•`) sits behind this modal's blur scrim.
+    ///
+    /// RED (removed): delete the `data-arsenal-persist` block from the view → "the Arsenal must
+    /// carry a data-arsenal-persist line".
+    /// RED (decoy): re-add it inside `if true == false { … }` → same failure.
+    #[test]
+    fn the_panel_states_the_persistence_contract() {
+        let live = live_production_src();
+        let tab = fn_body(&live, "pub fn ArsenalTab(");
+        assert!(
+            tab.contains("data-arsenal-persist"),
+            "the Arsenal must carry a data-arsenal-persist line the author can read"
+        );
+        for needle in [
+            "PERSIST_ALWAYS",
+            "PERSIST_CLEAN",
+            "PERSIST_UNSAVED",
+            "mission_has_unsaved_work()",
+        ] {
+            assert!(
+                tab.contains(needle),
+                "the persistence line must render {needle} on a live path"
+            );
+        }
+        // The verdict badge and the per-row line both read `loadout_faults`, which is where the
+        // T-504 warning lands — if either stops, the warning stops being visible.
+        assert!(
+            tab.matches("loadout_faults(").count() >= 2,
+            "both the per-row line and the verdict badge must read loadout_faults"
+        );
+
+        // The shipped copy has to answer the question the author actually has ("did that stick?")
+        // without claiming the mission is on the server, which is a different promise.
+        assert!(
+            PERSIST_ALWAYS.contains("no Save button"),
+            "{PERSIST_ALWAYS}"
+        );
+        assert!(PERSIST_ALWAYS.contains("Ctrl+Z"), "{PERSIST_ALWAYS}");
+        assert!(
+            PERSIST_UNSAVED.contains("Save Version"),
+            "{PERSIST_UNSAVED}"
+        );
+        assert!(
+            PERSIST_CLEAN.contains("no unsaved changes"),
+            "{PERSIST_CLEAN}"
+        );
+        assert!(!mission_has_unsaved_work(), "native shell hosts no editor");
+    }
+
+    /// The scrubber is load-bearing for both pins above, so it gets its own test: each decoy shape
+    /// the pins claim to defeat is fed through and must come out empty.
+    #[test]
+    fn the_scrubber_actually_removes_every_decoy_shape() {
+        let cases = [
+            ("line comment", "// set_loadout(x)\nlet a = 1;"),
+            ("block comment", "/* set_loadout(x) */ let a = 1;"),
+            ("nested block comment", "/* a /* set_loadout(x) */ b */ x"),
+            ("string literal", "let s = \"set_loadout(x)\";"),
+            ("raw string", "let s = r#\"set_loadout(x)\"#;"),
+            ("if false", "if false { set_loadout(x); }"),
+            ("if true == false", "if true == false { set_loadout(x); }"),
+            ("cfg(any())", "#[cfg(any())] fn d() { set_loadout(x); }"),
+            ("after break", "loop { break; set_loadout(x); }"),
+            ("after return", "fn f() { return; set_loadout(x); }"),
+        ];
+        for (label, src) in cases {
+            let scrubbed = strip_after_unconditional_jump(&strip_const_false_blocks(
+                &strip_cfg_any_items(&strip_comments_and_literals(src)),
+            ));
+            assert!(
+                !scrubbed.contains("set_loadout"),
+                "{label}: decoy survived scrubbing — pins built on this are hollow: {scrubbed}"
+            );
+        }
+        // …and it must not eat live code while it is at it.
+        let live = "if x { set_loadout(a); } else { set_loadout(b); }";
+        let kept = strip_after_unconditional_jump(&strip_const_false_blocks(&strip_cfg_any_items(
+            &strip_comments_and_literals(live),
+        )));
+        assert_eq!(kept.matches("set_loadout(").count(), 2, "{kept}");
+        // A lifetime is not a char literal.
+        assert!(strip_comments_and_literals("fn f<'a>(x: &'a str) {}").contains("'a"));
     }
 }

@@ -818,8 +818,12 @@ pub const CARGO_CAPACITY_CAVEAT: &str = "Capacity is a build-time catalogue figu
 ///
 /// Deliberately silent in two cases, both "never invent capacity":
 /// * the garment has no `max_weight_kg` / `max_volume_cm3` — the scan had nothing to say;
-/// * no garment is worn at all — there is no container to overflow. Cargo authored against a
-///   bare container key is a separate defect and is **not** decided here.
+/// * no garment is worn at all — there is no container to overflow.
+///
+/// T-504 — that second case is still not *this* function's business (a container with no capacity
+/// cannot be over it), but it is no longer nobody's: cargo authored against a container the loadout
+/// does not wear is now named by [`cargo_unworn_container_errors`], which **warns and never
+/// blocks**. Keep the two apart — this one gates the export, that one must not.
 pub fn cargo_capacity_errors(
     picks: &HashMap<String, String>,
     rows: &[CargoRow],
@@ -856,6 +860,102 @@ pub fn cargo_capacity_errors(
             message: format!(
                 "{container} cargo is over the catalogued capacity of {garment_label} — {}. {CARGO_CAPACITY_CAVEAT}",
                 dims.join(" · ")
+            ),
+        });
+    }
+    errs
+}
+
+/* ───── T-504 — cargo with nowhere known to go ───── */
+
+/// Why an unworn-container fault is a **warning and not a refusal**, appended to every
+/// [`cargo_unworn_container_errors`] message.
+///
+/// What actually happens to the row, read out of `TBD_LoadoutEquipHelper.c` rather than guessed:
+/// the container is resolved **at spawn**, after the wear pass has settled, by `GarmentForContainer`
+/// → `SCR_CharacterInventoryStorageComponent.GetClothFromArea(…)` (:1047-1063) — i.e. from what the
+/// body is *actually wearing*. Nothing worn there ⇒ `InsertCargo` raises
+/// `Degrade("cargo:<container>", …, "this slot's kit wears no <container> — mission/kit authoring
+/// mismatch, NOT a mod fault")` (:1121-1123) and the any-storage fallback re-homes the units
+/// somewhere else on the body. That degrade is not cosmetic: `IsComplete()` is
+/// `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (:209-212), so **one** such row makes the whole
+/// pass incomplete, and `TBD_SpawnManager` consumes that at the spawn boundary — `LOBBY refused …
+/// (IsComplete=0)` and `deploy DENIED … (IsComplete=0 …)`. The mod already says all of this out
+/// loud; the author, who is here and not reading server logs, never hears it. That is the gap.
+///
+/// **Why it warns instead of refusing** (the export gate is deliberately not extended): "the
+/// loadout picks no garment here" is **not** the same claim as "nothing will be worn here".
+/// `TBD_LoadoutEquipHelper.IssueEquip` returns early on an empty gear field — *"absent gear slot —
+/// kit garment (if any) is deliberately retained"* (:407-408) — so a slot whose kit prefab ships a
+/// vest satisfies a `vest` cargo row with no `vest` pick anywhere in this editor. The website
+/// cannot see inside the kit prefab, so it cannot tell those two apart, and a refusal would stop
+/// authoring dead on loadouts that deliver perfectly. Weigh the two failures: a wrong refusal
+/// blocks work that would have shipped, while an ignored warning lands on a defect the mod
+/// **already** refuses loudly at spawn. Warn, count it, never block.
+pub const CARGO_UNWORN_CAVEAT: &str = "The Arsenal only sees the wear this loadout picks, so if the slot's kit prefab wears one of its own the cargo still lands correctly — which is why this warns instead of refusing. If nothing wears it, the mod re-homes the items into whatever storage will take them and counts the row as degraded, and a degraded pass is refused at the spawn boundary (IsComplete=0 → LOBBY/deploy will not open).";
+
+/// The edge type carrying a character prefab's own carried items — the seed source
+/// ([`cargo_defaults_by_character`]) and the vouching evidence [`cargo_unworn_container_errors`]
+/// uses. `from_node` is the item, `to_node` the character, so a [`CompatGraph`] lookup keyed on the
+/// character returns its default items.
+pub const CHARACTER_DEFAULT_CARGO_EDGE: &str = "character_default_cargo";
+
+/// T-504 — cargo rows the website can find **no evidence** will be delivered, in the same
+/// [`RowError`] shape the compat and capacity faults use, keyed on the wear row the author would
+/// pick to fix it (`vest` / `jacket` / `pants` / `backpack` are all [`LOADOUT_ROWS`] keys).
+///
+/// # What counts as evidence, and why the naive rule is wrong
+///
+/// "This loadout picks no vest" is not enough on its own. The mod keeps the kit prefab's own
+/// garment for any wear slot the loadout leaves empty (see [`CARGO_UNWORN_CAVEAT`]), and — decisive
+/// for the shape of this rule — the **open-time seed fills cargo into exactly those kit-worn
+/// containers**: `character_default_cargo` is a Workbench scan of what the character prefab already
+/// carries, 16k+ edges of it in the shipped registry, keyed `TargetStorage=Vest/…`, `Pants/…`,
+/// `Jacket/…`, `Back/…`. A rule that faulted every unpicked container with rows would therefore
+/// fire on essentially every freshly opened Arsenal, and a verdict badge that is wrong that often
+/// is a verdict badge nobody reads.
+///
+/// So `kit_defaults` carries the character's own default items, and a row whose item is one of them
+/// is **vouched**: the scan found that item inside that container on the prefab, so the prefab wears
+/// it. Only the rows left over — cargo the author added, into a container this loadout does not
+/// pick and the kit is not known to carry anything in — are named.
+///
+/// `None` means the evidence was unavailable (compat feed not ready, or a slot with no `assetId`)
+/// and the rule stays **silent**, the same degradation [`validate_loadout`] makes: a feed we never
+/// received must not fail a loadout. An empty-but-present set is real evidence — a kit that carries
+/// nothing by default vouches for nothing.
+///
+/// Residual, stated rather than hidden: a kit can wear an *empty* vest, which leaves no default-cargo
+/// edge to vouch with, so an author-added row there is still named. That is the honest limit of a
+/// build-time scan, and it is why this warns instead of refusing.
+///
+/// Feeds `arsenal::loadout_faults` (the verdict badge + the per-row line). It must **not** feed
+/// [`cargo_capacity_errors`] or the export refusal.
+pub fn cargo_unworn_container_errors(
+    picks: &HashMap<String, String>,
+    rows: &[CargoRow],
+    kit_defaults: Option<&HashSet<String>>,
+) -> Vec<RowError> {
+    let Some(kit_defaults) = kit_defaults else {
+        return Vec::new();
+    };
+    let mut errs = Vec::new();
+    for container in CARGO_CONTAINERS {
+        let container: &'static str = container;
+        if cargo_garment(picks, container).is_some() {
+            continue;
+        }
+        let n = rows
+            .iter()
+            .filter(|r| r.container == container && !kit_defaults.contains(&r.item))
+            .count();
+        if n == 0 {
+            continue;
+        }
+        errs.push(RowError {
+            key: container,
+            message: format!(
+                "{n} {container} cargo row(s) have nowhere known to go — this loadout picks no {container}, and the slot's kit is not catalogued as carrying anything there. Pick a {container} here, or move the cargo to a container this loadout wears. {CARGO_UNWORN_CAVEAT}"
             ),
         });
     }
@@ -1318,6 +1418,175 @@ mod tests {
             assert!(
                 !c.contains(overclaim),
                 "capacity wording must not promise certainty it does not have: {overclaim}"
+            );
+        }
+    }
+
+    /* ───── T-504 — cargo with nowhere known to go ───── */
+
+    /// The kit's catalogued default items (what `character_default_cargo` vouches for).
+    fn kit(items: &[&str]) -> HashSet<String> {
+        items.iter().map(|s| (*s).to_string()).collect()
+    }
+
+    #[test]
+    fn unworn_container_cargo_is_named_not_silent() {
+        // Magazines and a brick into a vest, with no vest picked and a kit that is catalogued as
+        // carrying neither. Before T-504 this produced no fault at all: the panel said "vest — no
+        // garment worn", the export gate passed it, and the author first heard about it from a
+        // server log they were never going to read.
+        let rows = vec![
+            cargo("vest", "mag", 4),
+            cargo("vest", "brick", 1),
+            cargo("backpack", "mag", 2),
+        ];
+        let p = picks(&[("backpack", "pack_rn")]);
+        let errs = cargo_unworn_container_errors(&p, &rows, Some(&kit(&[])));
+        assert_eq!(
+            errs.len(),
+            1,
+            "only the unvouched container faults: {errs:?}"
+        );
+        // Keyed on the row the author would pick to fix it — the same convention the compat and
+        // capacity faults use, so the message lands next to the control that resolves it.
+        assert_eq!(errs[0].key, "vest");
+        assert!(LOADOUT_ROWS.iter().any(|r| r.key == errs[0].key));
+        let head = errs[0]
+            .message
+            .strip_suffix(CARGO_UNWORN_CAVEAT)
+            .expect("every unworn-container fault carries the caveat verbatim");
+        // Counts the undeliverable ROWS (2), not their units — the author fixes rows.
+        assert!(head.contains("2 vest cargo row(s)"), "{head}");
+        assert!(head.contains("nowhere known to go"), "{head}");
+    }
+
+    #[test]
+    fn a_worn_container_is_silent_including_the_armored_vest_alias() {
+        let rows = vec![cargo("vest", "mag", 4)];
+        let none = kit(&[]);
+        // Plain vest pick backs the container.
+        let p = picks(&[("vest", "vest_rn")]);
+        assert!(cargo_unworn_container_errors(&p, &rows, Some(&none)).is_empty());
+        // …and so does `armoredVest`, which shares the `vest` container (the spike-locked alias).
+        // Getting this wrong would fault every armoured loadout in the library.
+        let p = picks(&[("armoredVest", "av")]);
+        assert!(cargo_unworn_container_errors(&p, &rows, Some(&none)).is_empty());
+        // An empty-string pick is not a pick (`cargo_garment` filters it) → still a fault.
+        let p = picks(&[("vest", "")]);
+        assert_eq!(
+            cargo_unworn_container_errors(&p, &rows, Some(&none)).len(),
+            1
+        );
+        // A container with nothing to deliver has nothing to warn about.
+        assert!(cargo_unworn_container_errors(&picks(&[]), &[], Some(&none)).is_empty());
+        assert_eq!(
+            cargo_unworn_container_errors(&picks(&[]), &rows, Some(&none)).len(),
+            1,
+            "…but one row is enough"
+        );
+    }
+
+    #[test]
+    fn the_kits_own_default_cargo_is_never_faulted() {
+        // THE false positive this rule exists to avoid. `character_default_cargo` is a scan of what
+        // the character prefab already carries — 16k+ edges in the shipped registry, keyed
+        // `TargetStorage=Vest/…` etc — and `seed_cargo` fills the Arsenal from it at open time. Those
+        // containers are worn BY THE KIT, and the mod keeps a kit garment for any wear slot the
+        // loadout leaves empty. Faulting them would put "N issue(s)" on every untouched slot in the
+        // library, and a badge that is wrong that often is a badge nobody reads.
+        let edges = vec![
+            {
+                let mut e = edge("mag", "kit:us_rifleman", "character_default_cargo");
+                e.evidence = "TargetStorage=Vest/Mags".into();
+                e
+            },
+            {
+                let mut e = edge("bandage", "kit:us_rifleman", "character_default_cargo");
+                e.evidence = "TargetStorage=Pants/Left".into();
+                e
+            },
+        ];
+        // The seed the Arsenal actually opens with…
+        let seeded = cargo_defaults_by_character(&edges)
+            .remove("kit:us_rifleman")
+            .expect("the character has defaults");
+        assert_eq!(seeded.len(), 2, "{seeded:?}");
+        // …and the vouching set the UI derives from the same edge type, keyed on the character.
+        let vouched: HashSet<String> = CompatGraph::from_edges(&edges)
+            .items_for("kit:us_rifleman", CHARACTER_DEFAULT_CARGO_EDGE)
+            .into_iter()
+            .collect();
+        assert!(
+            vouched.contains("mag") && vouched.contains("bandage"),
+            "{vouched:?}"
+        );
+
+        // An untouched, freshly seeded Arsenal picks no wear at all — and must be silent.
+        assert!(
+            cargo_unworn_container_errors(&picks(&[]), &seeded, Some(&vouched)).is_empty(),
+            "a seeded loadout must not fault"
+        );
+        // Add one row the kit is not catalogued as carrying, and only THAT row is named.
+        let mut rows = seeded.clone();
+        rows.push(cargo("vest", "brick", 1));
+        let errs = cargo_unworn_container_errors(&picks(&[]), &rows, Some(&vouched));
+        assert_eq!(errs.len(), 1, "{errs:?}");
+        assert_eq!(errs[0].key, "vest");
+        assert!(errs[0].message.contains("1 vest cargo row(s)"), "{errs:?}");
+    }
+
+    #[test]
+    fn no_evidence_means_silence_not_a_guess() {
+        // `None` = the compat feed never became ready, or the slot carries no `assetId`, so the
+        // vouching set could not be built. Same degradation `validate_loadout` makes: a feed we
+        // never received must not fail a loadout. Guessing here would fault every seeded slot
+        // during the window before the registry lands.
+        let rows = vec![cargo("vest", "mag", 4)];
+        assert!(cargo_unworn_container_errors(&picks(&[]), &rows, None).is_empty());
+        // An empty-but-present set is real evidence — a kit catalogued as carrying nothing
+        // vouches for nothing — so it still faults.
+        assert_eq!(
+            cargo_unworn_container_errors(&picks(&[]), &rows, Some(&kit(&[]))).len(),
+            1
+        );
+    }
+
+    #[test]
+    fn the_unworn_warning_never_becomes_an_export_refusal() {
+        // The whole point of the warn/refuse split: `cargo_capacity_errors` gates the export, and
+        // T-504 must not sneak into it. A container with no garment has no capacity to exceed, so
+        // the block stays empty over the exact input the warning fires on. If a later slice folds
+        // the unworn rule into the capacity call, Save/Export starts refusing loadouts the kit
+        // prefab would have carried fine — and this goes red first.
+        let items = capacity_fixture();
+        let idx = index_by_name(&items);
+        let rows = vec![cargo("vest", "mag", 400)];
+        let bare = picks(&[]);
+        assert_eq!(
+            cargo_unworn_container_errors(&bare, &rows, Some(&kit(&[]))).len(),
+            1
+        );
+        assert!(
+            cargo_capacity_errors(&bare, &rows, &idx).is_empty(),
+            "unworn containers must not reach the export refusal"
+        );
+    }
+
+    #[test]
+    fn unworn_wording_states_the_consequence_without_claiming_certainty() {
+        let c = CARGO_UNWORN_CAVEAT;
+        // The escape hatch that makes this a warning and not a refusal: the kit prefab's own
+        // clothing is invisible to this editor, so "unworn here" is not "unworn at spawn".
+        assert!(c.contains("kit prefab"), "{c}");
+        assert!(c.contains("warns instead of refusing"), "{c}");
+        // …and the measured consequence when the kit does NOT save it (helper Degrade →
+        // IsComplete=0 → SpawnManager refuses). Dropping this half turns a real defect into a shrug.
+        assert!(c.contains("IsComplete=0"), "{c}");
+        assert!(c.contains("LOBBY/deploy"), "{c}");
+        for overclaim in ["will be dropped", "cannot be delivered", "guaranteed"] {
+            assert!(
+                !c.contains(overclaim),
+                "unworn wording must not promise a failure it cannot see: {overclaim}"
             );
         }
     }
