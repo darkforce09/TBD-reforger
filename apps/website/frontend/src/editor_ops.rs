@@ -106,6 +106,15 @@ pub struct ZoneDraft {
     pub centre: Option<(f64, f64)>,
     /// Polygon: the ring so far, one vertex per click.
     pub verts: Vec<(f64, f64)>,
+    /// T-582 — RESHAPE target. `None` creates a new zone (`add_*_zone`); `Some(id)` re-shapes that
+    /// existing one (`set_zone_circle` / `set_zone_polygon`).
+    ///
+    /// The two reshape mutators replace the WHOLE `shape` object, which is why a circle can become a
+    /// polygon and back: `$defs/shape` is a `oneOf`, so a row carrying both keys is schema-INVALID,
+    /// and a partial edit would leave exactly that. Re-shaping through them keeps every other
+    /// authored field — label, faction, and the opaque `rules` — untouched, which is the whole point
+    /// of offering reshape instead of delete-and-redraw.
+    pub target: Option<String>,
 }
 
 /// One slot's editable attributes, read from the materialized SoA for the Attributes modal.
@@ -2352,6 +2361,35 @@ pub fn begin_zone_draw(kind: &str, shape: ZoneShape) -> bool {
             shape,
             centre: None,
             verts: Vec::new(),
+            target: None,
+        }));
+        true
+    })
+}
+
+/// T-582 — arm a RESHAPE of an existing zone: the next clicks replace its `shape` through
+/// `set_zone_circle` / `set_zone_polygon` instead of minting a new row.
+///
+/// The gesture is identical to a fresh draw (circle: centre then rim; polygon: vertices then Close),
+/// so there is one geometry path and one set of guards — a reshape cannot produce the `r → 0.0`
+/// circle or the two-vertex ring any more than a create can. `kind` is read from the live document
+/// rather than taken from the caller: reshaping is a geometry edit, and silently retyping a zone
+/// because the dock's type picker had drifted would be a different, invisible edit.
+pub fn begin_zone_reshape(zone_id: &str, shape: ZoneShape) -> bool {
+    let Some(row) = zone_rows().into_iter().find(|r| r.id == zone_id) else {
+        return false;
+    };
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        *ctx.pending.borrow_mut() = Some(Pending::Zone(ZoneDraft {
+            kind: row.kind,
+            shape,
+            centre: None,
+            verts: Vec::new(),
+            target: Some(zone_id.to_string()),
         }));
         true
     })
@@ -2397,7 +2435,11 @@ pub fn zone_draw_pop_vertex() -> usize {
 /// that (its own comment assigns it here), so a ring is never handed over short.
 fn advance_zone_draw(x: f64, z: f64) -> bool {
     enum Commit {
-        Circle { kind: String, geom: (f64, f64, f64) },
+        Circle {
+            kind: String,
+            geom: (f64, f64, f64),
+            target: Option<String>,
+        },
         None,
     }
     let commit = OPS_CTX.with(|c| {
@@ -2424,9 +2466,9 @@ fn advance_zone_draw(x: f64, z: f64) -> bool {
                     // cancel: the centre stays put so the author can simply drag further out.
                     None => Commit::None,
                     Some(geom) => {
-                        let kind = d.kind.clone();
+                        let (kind, target) = (d.kind.clone(), d.target.clone());
                         *p = None;
-                        Commit::Circle { kind, geom }
+                        Commit::Circle { kind, geom, target }
                     }
                 },
             },
@@ -2436,7 +2478,13 @@ fn advance_zone_draw(x: f64, z: f64) -> bool {
         Commit::Circle {
             kind,
             geom: (cx, cz, r),
-        } => write_zone(|core, id| core.add_circle_zone(id, &kind, cx, cz, r)),
+            target,
+        } => match target {
+            // Reshape: replaces the whole `shape` object, so label / faction / rules survive and
+            // the `oneOf` can never end up with both branches present.
+            Some(id) => edit_zone(|core| core.set_zone_circle(&id, cx, cz, r)),
+            None => write_zone(|core, id| core.add_circle_zone(id, &kind, cx, cz, r)),
+        },
         // A vertex / centre landed but no document write happened yet. Report progress so the dock
         // re-reads, without running the persist tail for a doc that did not change.
         Commit::None => {
@@ -2459,15 +2507,20 @@ pub fn close_zone_polygon() -> bool {
         if d.shape != ZoneShape::Polygon || !polygon_is_committable(&d.verts) {
             return None;
         }
-        let out = (d.kind.clone(), d.verts.clone());
+        let out = (d.kind.clone(), d.verts.clone(), d.target.clone());
         *p = None;
         Some(out)
     });
-    let Some((kind, verts)) = taken else {
+    let Some((kind, verts, target)) = taken else {
         return false;
     };
     let flat = polygon_flat(&verts);
-    write_zone(|core, id| core.add_polygon_zone(id, &kind, &flat))
+    match target {
+        // Reshape — see [`begin_zone_reshape`]: whole-`shape` replacement, so a circle becomes a
+        // polygon without leaving both `oneOf` branches on the row.
+        Some(id) => edit_zone(|core| core.set_zone_polygon(&id, &flat)),
+        None => write_zone(|core, id| core.add_polygon_zone(id, &kind, &flat)),
+    }
 }
 
 /// Mint an unused zone id. `zones` is its OWN id namespace (`mint_id` proves uniqueness against the

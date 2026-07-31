@@ -2326,7 +2326,13 @@ fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<String>>) -> A
             view! {
                 <div class="mt-3 rounded-md border border-primary/40 bg-primary/10 p-2">
                     <p class="text-label-sm normal-case text-on-surface">
-                        {format!("Drawing {} {}", humanize_token(&d.kind), if is_poly { "polygon" } else { "circle" })}
+                        {
+                            let shape = if is_poly { "polygon" } else { "circle" };
+                            d.target.as_ref().map_or_else(
+                                || format!("Drawing {} {shape}", humanize_token(&d.kind)),
+                                |id| format!("Reshaping {id} as a {shape} — label, faction and rules are kept"),
+                            )
+                        }
                     </p>
                     <p class="mt-0.5 text-label-sm normal-case text-outline">{hint}</p>
                     <div class="mt-1.5 flex gap-1.5">
@@ -2546,6 +2552,39 @@ fn zone_attributes(
                     bump();
                 }
             />
+
+            // Reshape — `set_zone_circle` / `set_zone_polygon` replace the whole `shape`, so the
+            // label, faction and rules above survive. Delete-and-redraw would lose all three.
+            <label class=field_label>"Shape"</label>
+            <div class="flex gap-1.5">
+                {
+                    let (a, b) = (zid.clone(), zid.clone());
+                    view! {
+                        <button
+                            type="button"
+                            title="Redraw this zone as a circle — click the centre, then the rim"
+                            class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
+                            on:click=move |_| {
+                                ops::begin_zone_reshape(&a, ZoneShape::Circle);
+                                bump();
+                            }
+                        >
+                            "Redraw circle"
+                        </button>
+                        <button
+                            type="button"
+                            title="Redraw this zone as a polygon — click each vertex, then Close"
+                            class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
+                            on:click=move |_| {
+                                ops::begin_zone_reshape(&b, ZoneShape::Polygon);
+                                bump();
+                            }
+                        >
+                            "Redraw polygon"
+                        </button>
+                    }
+                }
+            </div>
 
             <h4 class="mt-3 text-label-md font-semibold text-on-surface">"Rules"</h4>
             <p class="mt-0.5 text-label-sm normal-case text-outline">
@@ -4357,6 +4396,47 @@ mod tests {
         assert!(
             zone_types().contains(&"boundary".to_string()),
             "the play-area type must be offerable"
+        );
+    }
+
+    /// ═══ THE TICKET, AS AN ASSERTION ═══
+    ///
+    /// T-582's measurement was "zero references to any zone mutator in the frontend — zones are
+    /// authorable only from native test code". This is that measurement, inverted and kept: every
+    /// one of T-211's eleven mutators must have a caller.
+    ///
+    /// Source inspection, following `vehicles_tab_places_instead_of_promising`'s precedent, because
+    /// the thing under test is a wasm-only module (`editor_ops` is `#![cfg(target_arch = "wasm32")]`)
+    /// that no native test can link. A behavioural test is impossible here; a source assertion is
+    /// not, and the alternative is no assertion at all.
+    #[test]
+    fn every_t211_mutator_has_a_caller() {
+        const OPS: &str = include_str!("editor_ops.rs");
+        // The eleven, verbatim from `doc/store.rs`'s T-211 block.
+        for m in [
+            "add_circle_zone",
+            "add_polygon_zone",
+            "set_zone_circle",
+            "set_zone_polygon",
+            "set_zone_type",
+            "set_zone_label",
+            "set_zone_faction",
+            "set_zone_rules",
+            "remove_zone",
+            "zones_json",
+            "zone_count",
+        ] {
+            assert!(
+                OPS.contains(&format!("core.{m}("))
+                    || OPS.contains(&format!("MissionDocCore::{m}")),
+                "T-211 mutator `{m}` still has no caller — that was the whole T-582 defect"
+            );
+        }
+        // And the reshape pair specifically: they are the two that are easy to leave unwired,
+        // because create-only looks finished.
+        assert!(
+            OPS.contains("begin_zone_reshape"),
+            "reshape must be reachable, not just create"
         );
     }
 
