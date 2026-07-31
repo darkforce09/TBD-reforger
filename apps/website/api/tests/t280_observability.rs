@@ -134,10 +134,26 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
     assert_eq!(v["status"], "ok", "legacy status string preserved");
     assert_eq!(v["checks"]["database"]["status"], "up");
     assert_eq!(v["checks"]["migrations"]["status"], "up");
+    // Not `> 0`: an `applied` that is merely positive is satisfied by a hard-coded 1, and
+    // "a tool reporting success over an input it never examined" is the defect this
+    // program is built around. Pin it to the migration directory the database was built
+    // from, so the check has to be reading `_sqlx_migrations` to pass.
+    let on_disk =
+        std::fs::read_dir(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations"))
+            .expect("read migrations dir")
+            .filter_map(Result::ok)
+            .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("sql"))
+            .count() as i64;
     assert!(
-        v["checks"]["migrations"]["applied"].as_i64().unwrap_or(0) > 0,
-        "the migration check reported zero applied migrations against a migrated database, \
-         so it is not reading _sqlx_migrations: {body}"
+        on_disk > 0,
+        "no migration files found — this pin would be vacuous"
+    );
+    assert_eq!(
+        v["checks"]["migrations"]["applied"].as_i64(),
+        Some(on_disk),
+        "healthz reports {:?} applied migrations but {on_disk} exist on disk — the check is \
+         not reading _sqlx_migrations: {body}",
+        v["checks"]["migrations"]["applied"]
     );
     assert_eq!(v["checks"]["migrations"]["failed"], 0);
     assert!(v["uptime_seconds"].is_number());
