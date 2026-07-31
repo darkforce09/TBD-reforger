@@ -472,6 +472,101 @@ STUB_EOF
     fi
   fi
 
+  # ── The socket half ────────────────────────────────────────────────────────
+  #
+  # Everything above drives the agent as a stdin/stdout filter, which proves the LOGIC and
+  # nothing about the CHANNEL. This block opens a real AF_UNIX socket, activates the agent
+  # through it exactly as `Accept=yes` + `StandardInput=socket` will on the host, and reads
+  # the reply back off the wire. Without it, "the agent works" would be a claim about a
+  # program nobody ever connected to.
+  #
+  # FAIL CLOSED on a missing tool rather than skipping. systemd-socket-activate ships in
+  # the base systemd package, and this script installs systemd units for a living — an
+  # environment without it cannot validate this artefact, and should say so rather than
+  # print a green line about a check that did not execute.
+  if ! command -v systemd-socket-activate >/dev/null 2>&1; then
+    echo "  FAIL  socket round-trip — systemd-socket-activate not found."
+    echo "        Refusing to report the channel OK without ever opening it."
+    fail=$((fail + 1))
+  elif ! command -v python3 >/dev/null 2>&1; then
+    echo "  FAIL  socket round-trip — python3 (the test client) not found."
+    fail=$((fail + 1))
+  elif ! command -v setsid >/dev/null 2>&1; then
+    echo "  FAIL  socket round-trip — setsid not found (see the note below on why it is required)."
+    fail=$((fail + 1))
+  else
+    # name | STUB_ACTIVE | request | expected result | expected state
+    local -a sock_cases=(
+      "socket round-trip, healthy unit|active|restart|accepted|active"
+      "socket round-trip, systemctl exits 0 over a DEAD unit|failed|restart|rejected|failed"
+    )
+    local sc sock_name sock_active sock_req sock_want_r sock_want_s sock_path reply
+    local i=0
+    for sc in "${sock_cases[@]}"; do
+      IFS='|' read -r sock_name sock_active sock_req sock_want_r sock_want_s <<< "$sc"
+      i=$((i + 1))
+      sock_path="$d/agent-$i.sock"
+      rm -f "$sock_path"
+      # setsid is LOAD-BEARING, not tidiness. `systemd-socket-activate` re-broadcasts a
+      # received SIGTERM to its whole process group, so a plain `kill $!` from here kills
+      # THIS SCRIPT TOO — measured: the selftest exited 143 with the socket cases never
+      # reported. Its own session means the teardown below can only reach the listener.
+      setsid systemd-socket-activate --listen="$sock_path" --accept --inetd \
+        -E "PATH=$d/bin:$PATH" -E "TBD_AGENT_UNIT=$TBD_AGENT_UNIT" \
+        -E "STUB_LOAD=loaded" -E "STUB_ACTIVE=$sock_active" -E "STUB_VERB_RC=0" \
+        -E "TBD_AGENT_DWELL_S=0" \
+        -- bash "$d/tbd-reforger-agent.sh" >"$d/activate-$i.log" 2>&1 &
+      local sa_pid=$!
+      # Wait for the listener rather than sleeping a guess.
+      local waited=0
+      while [ ! -S "$sock_path" ] && [ "$waited" -lt 50 ]; do
+        sleep 0.1
+        waited=$((waited + 1))
+      done
+      reply="$(SOCK="$sock_path" REQ="$sock_req" python3 -c '
+import os, socket, sys
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.settimeout(30)
+try:
+    s.connect(os.environ["SOCK"])
+    s.sendall(os.environ["REQ"].encode() + b"\n")
+    s.shutdown(socket.SHUT_WR)
+    sys.stdout.write(s.recv(4096).decode().strip())
+except OSError as e:
+    sys.stdout.write("CLIENT-ERROR %s" % e)
+' 2>/dev/null)"
+      # `|| true` on BOTH: `wait` returns the job's status, which for a SIGTERMed listener is
+      # 143, and under `set -e` that aborts the selftest before it can report anything. Also
+      # measured — the run exited 143 with zero socket lines printed.
+      kill "$sa_pid" 2>/dev/null || true
+      wait "$sa_pid" 2>/dev/null || true
+      got_result="$(printf '%s' "$reply" | sed -n 's/.*"result":"\([a-z]*\)".*/\1/p')"
+      got_state="$(printf '%s' "$reply" | sed -n 's/.*"state":"\([a-z-]*\)".*/\1/p')"
+      if [ "$got_result" = "$sock_want_r" ] && [ "$got_state" = "$sock_want_s" ]; then
+        echo "  PASS  $sock_name -> $got_result/$got_state"
+        pass=$((pass + 1))
+      else
+        echo "  FAIL  $sock_name"
+        echo "        want result=$sock_want_r state=$sock_want_s"
+        echo "        got  result=$got_result state=$got_state"
+        echo "        raw  $reply"
+        fail=$((fail + 1))
+      fi
+    done
+  fi
+
+  # The rendered units must be units systemd itself accepts, not just files that grep right.
+  if command -v systemd-analyze >/dev/null 2>&1; then
+    if systemd-analyze verify --user "$d/tbd-reforger-agent.socket" >"$d/analyze.log" 2>&1; then
+      echo "  PASS  systemd-analyze verify accepts the rendered socket unit"
+      pass=$((pass + 1))
+    else
+      echo "  FAIL  systemd-analyze rejected the rendered socket unit:"
+      sed 's/^/        /' "$d/analyze.log"
+      fail=$((fail + 1))
+    fi
+  fi
+
   echo
   if [ "$fail" -ne 0 ]; then
     echo "AGENT SELFTEST: $pass passed, $fail FAILED"
@@ -480,6 +575,77 @@ STUB_EOF
   echo "AGENT SELFTEST: $pass passed, 0 failed"
   validate_agent_files "$d"
 }
+
+# ── WHAT THE API SLICE MUST BUILD ────────────────────────────────────────────
+#
+# apps/website/api/** is NOT this slice's to touch, and no sibling owns it this wave. The
+# host half above is complete and proven; the API half is mechanical from here.
+#
+# 1. CONFIG — one new var in apps/website/api/src/config.rs (which today declares 18 and
+#    not one that names a game host):
+#       game_agent_socket: env::var("GAME_AGENT_SOCKET").unwrap_or_default()
+#    Empty = no transport, and `send_rcon` keeps answering 503. Fail closed, like
+#    TBD_MODPACK_URL does above. Populate it in the API's systemd unit
+#    (docs/website/HOME_SERVER.md:282) as %t/tbd-reforger-agent.sock.
+#
+# 2. CLIENT — new apps/website/api/src/services/game_agent.rs. No new dependency: tokio is
+#    already in the tree and `tokio::net::UnixStream` is all this needs.
+#       pub enum AgentAction { Status, Start, Stop, Restart }   // Display -> the wire verb
+#       #[derive(Deserialize)] pub struct AgentReply {
+#           pub ok: bool, pub action: String, pub result: AgentResult,
+#           pub state: String, pub detail: String }
+#       #[derive(Deserialize)] #[serde(rename_all="lowercase")]
+#       pub enum AgentResult { Accepted, Rejected, Unreachable }
+#       pub async fn send(sock: &Path, a: AgentAction) -> anyhow::Result<AgentReply>
+#    Body: connect, write "<verb>\n", read exactly one line, serde_json::from_str.
+#    TIMEOUT MUST EXCEED THE DWELL — the agent sleeps TBD_AGENT_DWELL_S (default 8) before
+#    answering start/restart, on purpose. Use 20s. A timeout shorter than the dwell would
+#    turn every honest slow answer into a false "unreachable".
+#
+# 3. HANDLER — apps/website/api/src/handlers/admin.rs `send_rcon` (currently ends in the
+#    unconditional `Err(ApiError::with_details(SERVICE_UNAVAILABLE, RCON_NO_TRANSPORT, …))`
+#    at :628). Map the validated RconCommand, then map the reply — and note the mapping is
+#    three-way, because that is the delivery result T-269 asked for:
+#       RconCommand::Restart          -> AgentAction::Restart
+#       RconCommand::Kick / ChangeMap / Custom -> STILL 503, unchanged (see §SCOPE GAP)
+#       AgentResult::Accepted   -> 202 {"accepted":true,"delivered":true,"state":<state>}
+#       AgentResult::Rejected   -> 409 — the agent ran it and the unit did NOT get there
+#                                  (the a2sPort-clash case; `state` says which)
+#       AgentResult::Unreachable-> 503 RCON_NO_TRANSPORT (socket absent / unit not installed)
+#       transport error/timeout -> 503, same shape
+#    THE AUDIT ROW MUST RECORD THE OUTCOME, NOT THE ATTEMPT — that is the specific defect
+#    T-269 called out. Write it AFTER the agent answers, with severity Info on Accepted and
+#    Warn otherwise, and put the observed `state` in the detail. A row saying "attempted"
+#    when the thing succeeded is the same class of lie as one saying "issued" when it did not.
+#
+# 4. ADDRESSING — for THIS deployment nothing is needed in the `servers` table: one host,
+#    one socket, path from config. T-269 asked for a migration because it assumed a network
+#    hop; across a same-uid socket the OS is the credential (see the header). The migration
+#    becomes REQUIRED the moment a second game host exists, and then it is:
+#       ALTER TABLE servers ADD COLUMN agent_socket text;   -- local socket path, or
+#       ALTER TABLE servers ADD COLUMN agent_endpoint text; -- host:port for a remote agent
+#    plus a real credential column for the remote case, because the OS stops vouching for
+#    the peer the moment the channel leaves the box. `send_rcon` already loads the `servers`
+#    row (`SELECT name FROM servers WHERE id = $1`, admin.rs:601) — widen that select.
+#
+# ── SCOPE GAP, DECIDED ───────────────────────────────────────────────────────
+#
+# T-269 asked this ticket to decide whether change_map/custom need a fifth scope. They do,
+# and it is a DIFFERENT TICKET, because they are not process control:
+#
+# * `restart` / `start` / `stop` / `status` are the unit's lifecycle. The agent covers them
+#   completely and safely, and only these four are reachable over the socket.
+# * `change_map` and `custom` need a live admin channel INTO a running server. Nothing in
+#   this repo has one. Adding it means either enabling Reforger RCON (a new port, an admin
+#   password in server.config.json, and a protocol we cannot exercise here) or a mod-side
+#   command sink (a route the mod polls + a handler in tbd-framework). Either is strictly
+#   larger than this ticket and must not be smuggled into the agent — the agent's safety
+#   argument rests entirely on it accepting no free text.
+# * `kick` CANNOT BE BUILT AT ALL YET, for a reason upstream of transport: `RconInput` has
+#   no player field (admin.rs:422-428 — action/map/command only), so
+#   apps/website/frontend/src/server_control.rs:44 posts a bare {"action":"kick"} that names
+#   nobody. (T-269's summary cites :43; re-measured on main it is :44.) That is a UI + model
+#   gap, and it must be fixed before any transport question about kick is even meaningful.
 
 if [ -n "$RENDER_AGENT_OUT" ]; then
   echo "==> render host control agent (local only, no deploy) -> $RENDER_AGENT_OUT"
@@ -1046,6 +1212,55 @@ systemctl --user enable tbd-reforger.service 2>/dev/null || true
 systemctl --user restart tbd-reforger.service 2>/dev/null || systemctl --user start tbd-reforger.service
 EOF
   sleep 8
+fi
+
+# ── T-289: install the host control agent ────────────────────────────────────
+#
+# OFF BY DEFAULT (TBD_INSTALL_AGENT=1 to opt in). The render above is proven by
+# --agent-selftest; THIS step is not, because exercising it means mutating the live
+# staging host, which T-289 was not permitted to touch. It also buys nothing until the
+# API side lands — nothing would connect to the socket. Turn it on when the API slice
+# is ready, with someone watching the first run.
+#
+# The agent is enabled via its SOCKET, never its service: socket activation means the
+# agent process only exists for the lifetime of one connection, so there is no long-lived
+# listener to leak, wedge, or restart.
+echo "==> host control agent (T-289)"
+if [ "$TBD_INSTALL_AGENT" != "1" ]; then
+  echo "[SKIP] agent install — TBD_INSTALL_AGENT=1 to enable."
+  echo "       Preview the exact bytes with: --render-agent <dir>"
+  echo "       Prove the behaviour with:     --agent-selftest <dir>"
+elif [ "$DRY_RUN" -eq 1 ]; then
+  echo "[dry-run] render agent, scp -> $TBD_AGENT_REMOTE_PATH"
+  echo "[dry-run]   unit under control: $TBD_AGENT_UNIT"
+  echo "[dry-run]   socket: \$XDG_RUNTIME_DIR/$TBD_AGENT_SOCKET (SocketMode=0600)"
+  echo "[dry-run] systemctl --user enable --now tbd-reforger-agent.socket"
+else
+  # Render LOCALLY and validate BEFORE anything is pushed — the T-288 posture: a broken
+  # artefact fails here, on the dev machine, not after it has landed on the server.
+  TBD_AGENT_LOCAL="$(mktemp -d -t tbd-agent.XXXXXX)"
+  render_agent_files "$TBD_AGENT_LOCAL"
+  validate_agent_files "$TBD_AGENT_LOCAL"
+  ssh_cmd "mkdir -p \"\$HOME/.config/systemd/user\" && cat > '$TBD_AGENT_REMOTE_PATH' && chmod 0700 '$TBD_AGENT_REMOTE_PATH'" \
+    < "$TBD_AGENT_LOCAL/tbd-reforger-agent.sh"
+  ssh_cmd "cat > \"\$HOME/.config/systemd/user/tbd-reforger-agent.socket\"" \
+    < "$TBD_AGENT_LOCAL/tbd-reforger-agent.socket"
+  ssh_cmd "cat > \"\$HOME/.config/systemd/user/tbd-reforger-agent@.service\"" \
+    < "$TBD_AGENT_LOCAL/tbd-reforger-agent@.service"
+  rm -rf "$TBD_AGENT_LOCAL"
+  ssh_cmd bash -s <<'AGENTINSTALL'
+set -euo pipefail
+systemctl --user daemon-reload
+systemctl --user enable --now tbd-reforger-agent.socket
+# Same rule the agent itself follows: do not trust the enable, go look. A socket that
+# did not come up must fail the deploy rather than be reported as installed.
+state="$(systemctl --user show -p ActiveState --value tbd-reforger-agent.socket 2>/dev/null || true)"
+if [ "$state" != "active" ] && [ "$state" != "listening" ]; then
+  echo "FAIL: tbd-reforger-agent.socket is '$state', not listening." >&2
+  exit 1
+fi
+echo "  agent socket listening at \${XDG_RUNTIME_DIR}/tbd-reforger-agent.sock"
+AGENTINSTALL
 fi
 
 echo "==> V6 remote log grep"
