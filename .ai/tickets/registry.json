@@ -15468,6 +15468,46 @@
       "surfaces": [
         "INFRA"
       ]
+    },
+    {
+      "id": "T-611",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "deferred",
+      "priority": 2,
+      "order": 3582,
+      "title": "verify-citations checks only .c files in a Rust repo, and prints a reassuring total while doing it",
+      "summary": "FOUND by T-610 (wave 77) while fixing the citations the gate could not see. The ticket assumed the\ngate simply \"did not cover bare file.c:NNN forms in prose.\" The real scope is larger.\n\n=== WHAT IT ACTUALLY CHECKS ===\n`verify-citations` matches only `@contract <name>.schema.json`, in extensions `.go/.ts/.tsx/.c/.mjs/.js`,\nunder scan roots `apps/` and `packages/`. Consequences, all measured:\n- **`docs/` is never read.** `PLAYTEST_RUNBOOK.md`'s ~19 stale citations were invisible by construction\n  -- the gate was never going to catch them, in any form.\n- **`rs` is not in `CODE_EXTS`, and `crates/` is not a scan root.** So **16 `@contract` tags in\n  `apps/**/*.rs` and 2 in `crates/` are unverified.**\n- **All 41 citations it does check live in `.c` files** -- in a repo that went **Go -> Rust at T-145**\n  and **React -> Leptos at T-159.29.3**. The verifier still reflects the pre-rewrite codebase.\n\nAnd it reports:\n    Checked 41 @contract citation(s)\n    All @contract citations resolve.\n**The number is true and the confidence it creates is false** -- the signature defect of this\ncodebase, in the tool whose entire job is checking that claims match reality.\n\n=== WHY IT MATTERS BEYOND TIDINESS ===\nThis is the third instance in three waves of a check that passes because it is looking at the wrong\nthing: T-607 (staging validated a stale Workshop build, and its pass criteria were that build's\nstrings), T-606 (a health grep that matches only an ERROR string), and now this. Each one produced a\ngreen that a human reasonably trusted.\n\n=== FIX ===\n1. Add `rs` to `CODE_EXTS` and `crates/` to the scan roots; expect the 18 currently-unverified tags to\n   need resolution.\n2. Decide whether prose citations in `docs/` are in scope. T-610 chose the cheaper cure -- cite stable\n   **symbol names** rather than line numbers, which does not rot and needs no gate. If that convention\n   holds, the gate does not need to read `docs/` at all; write the convention down instead.\n3. Make the summary line state its own scope: \"Checked 41 @contract citation(s) in .c/.ts under\n   apps/, packages/\" is honest; \"All @contract citations resolve\" is not.\n\nOwner note: `Makefile` + the xtask verifier. T-610 owned neither and correctly reported instead of\nbuilding."
+    },
+    {
+      "id": "T-612",
+      "program": "platform",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "deferred",
+      "priority": 2,
+      "order": 3592,
+      "title": "Four more scripts and six docs still gate on log strings the mod stopped printing",
+      "summary": "FOUND by T-606 (wave 77), which fixed the three sites its ticket named and measured the rest. Same\ndefect class as T-606/T-607/T-611: **a check pinned on a log string someone later reworded.**\n\n=== SCRIPTS THAT STILL GATE ON DEAD STRINGS ===\n- `scripts/mod/mcp-wb-logs.sh:7,41` -- gates on `built slot spawn` (**deleted** from the codebase)\n- `scripts/mod/tbd-spawn-verify.sh:9` -- same dead string\n- `scripts/mod/tbd-spawn-determinism.sh:141` -- extracts on `Mission loaded`, which now survives only\n  inside `TBD_FrameworkManager.c`'s **error** string. T-606 proved the same pattern in\n  `remote-log-grep.sh` was not merely stale but **inverted**: on a log containing only\n  `[TBD] Mission loaded but invalid — staying in LOADING.` the check reported SATISFIED, and on a\n  healthy log it reported MISSING. Check whether this site has the same inversion.\n\n=== DOCS QUOTING STRINGS THE BUILD NO LONGER EMITS ===\n- `apps/mod/README.md:43`\n- `apps/mod/tbd-framework/README.md:104-106`\n- `docs/specs/Mission_Creator_Architecture/t092_2_mod_compile_route.md:103`\n- `docs/specs/Mission_Creator_Architecture/t068_12_mod_player_loadout_equip.md:31,90,140,153`\n- `docs/specs/Mission_Creator_Architecture/t068_14_phase2_e2e_gate.md:43` -- names BOTH\n  `[TBD][Loadout][Player]` and `[TBD][Slotting]`, **neither of which exists anywhere**. The real tags\n  are `[TBD][Loadout][Slot]` and `[TBD][Slots]`. Measured on a fully working loadout pass:\n  **0** `[Player]` lines vs **93** `[Slot]` lines (69 vs 0 on the second golden). This is the file a\n  human follows to run T-068.14 -- following it returns nothing and reads exactly like\n  \"the loadout never applied\", which is the one thing that gate exists to confirm.\n- `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c:17` -- same dead tag\n  in an in-code comment.\n- `apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c:103-104` -- comment says the `[TBD][Stage]`\n  helper is \"NOT yet wired\"; **T-181.17 wired it** at `TBD_FrameworkManager.c:779`.\n\n`docs/platform/PLAYTEST_RUNBOOK.md:904` already documents the correct tag -- so the runbook and the\nT-068.14 spec currently disagree, and the runbook is the one that is right.\n\n=== FIX SHAPE -- copy T-606, do not re-derive ===\nT-606 established the working pattern and proved it: cut each pin to the last **structural** token\n(tag, `key=`, enum) and never the first English word; verify against a real log rather than by reading;\nadd a `--selftest` asserting stale->fail, healthy->pass, invalid->fail; and verify every pattern under\n**both** ugrep 7.5.0 and GNU grep 3.8, which disagree on bare `{}` in an ERE.\nAlso from T-606, worth heeding: **do not pin a tagged-line COUNT.** Measured 147 and 155 on the two\ngoldens, having drifted **+47 on an unchanged mission**; it is not monotonic in slot count. Use\n0-vs-nonzero."
     }
   ]
 }

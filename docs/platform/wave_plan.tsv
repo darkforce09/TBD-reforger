@@ -402,3 +402,8 @@
 3	T-599	wave.sh push refuses on LFS path not LFS attributes	scripts/platform/wave.sh
 w76	T-604	-	scripts/mod/deploy-staging.sh; scripts/mod/run-dev-server.sh; docs/mod/STAGING-SERVER.md
 w76	T-605	-	apps/mod/tbd-framework/scripts/Game/TBD/TBD_SpawnManager.c; apps/mod/tbd-framework/scripts/Game/TBD/TBD_LoadoutEquipHelper.c
+w77	T-602	-	scripts/platform/wave.sh; tools/tbd-tools/src/enf; .github/workflows/ci.yml; apps/website/frontend/src/arsenal.rs
+w77	T-609	-	scripts/mod/world-boot.sh; .world-boot-warning-baseline; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c
+w77	T-606	-	scripts/mod/remote-log-grep.sh; docs/mod/STAGING-SERVER.md; scripts/mod/run-playtest-server.sh
+w77	T-610	-	docs/platform/PLAYTEST_RUNBOOK.md; apps/website/frontend/src/arsenal_rules.rs
+w77	T-584	-	apps/website/api/src/handlers/oauth.rs; scripts/deploy; Makefile; docs/platform/CODING_STANDARDS.md

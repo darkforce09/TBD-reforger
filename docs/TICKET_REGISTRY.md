@@ -4136,6 +4136,81 @@ Also in this bucket, from the same report:
 
 FIX SHAPE: either extend `verify-citations` to cover bare `file.c:NNN` forms in docs, or stop citing
 line numbers in prose and cite stable symbol names instead. The second is cheaper and does not rot. |
+| T-611 | 3582 | deferred | platform | verify-citations checks only .c files in a Rust repo, and prints a reassuring total while doing it | FOUND by T-610 (wave 77) while fixing the citations the gate could not see. The ticket assumed the
+gate simply "did not cover bare file.c:NNN forms in prose." The real scope is larger.
+
+=== WHAT IT ACTUALLY CHECKS ===
+`verify-citations` matches only `@contract <name>.schema.json`, in extensions `.go/.ts/.tsx/.c/.mjs/.js`,
+under scan roots `apps/` and `packages/`. Consequences, all measured:
+- **`docs/` is never read.** `PLAYTEST_RUNBOOK.md`'s ~19 stale citations were invisible by construction
+  -- the gate was never going to catch them, in any form.
+- **`rs` is not in `CODE_EXTS`, and `crates/` is not a scan root.** So **16 `@contract` tags in
+  `apps/**/*.rs` and 2 in `crates/` are unverified.**
+- **All 41 citations it does check live in `.c` files** -- in a repo that went **Go -> Rust at T-145**
+  and **React -> Leptos at T-159.29.3**. The verifier still reflects the pre-rewrite codebase.
+
+And it reports:
+    Checked 41 @contract citation(s)
+    All @contract citations resolve.
+**The number is true and the confidence it creates is false** -- the signature defect of this
+codebase, in the tool whose entire job is checking that claims match reality.
+
+=== WHY IT MATTERS BEYOND TIDINESS ===
+This is the third instance in three waves of a check that passes because it is looking at the wrong
+thing: T-607 (staging validated a stale Workshop build, and its pass criteria were that build's
+strings), T-606 (a health grep that matches only an ERROR string), and now this. Each one produced a
+green that a human reasonably trusted.
+
+=== FIX ===
+1. Add `rs` to `CODE_EXTS` and `crates/` to the scan roots; expect the 18 currently-unverified tags to
+   need resolution.
+2. Decide whether prose citations in `docs/` are in scope. T-610 chose the cheaper cure -- cite stable
+   **symbol names** rather than line numbers, which does not rot and needs no gate. If that convention
+   holds, the gate does not need to read `docs/` at all; write the convention down instead.
+3. Make the summary line state its own scope: "Checked 41 @contract citation(s) in .c/.ts under
+   apps/, packages/" is honest; "All @contract citations resolve" is not.
+
+Owner note: `Makefile` + the xtask verifier. T-610 owned neither and correctly reported instead of
+building. |
+| T-612 | 3592 | deferred | platform | Four more scripts and six docs still gate on log strings the mod stopped printing | FOUND by T-606 (wave 77), which fixed the three sites its ticket named and measured the rest. Same
+defect class as T-606/T-607/T-611: **a check pinned on a log string someone later reworded.**
+
+=== SCRIPTS THAT STILL GATE ON DEAD STRINGS ===
+- `scripts/mod/mcp-wb-logs.sh:7,41` -- gates on `built slot spawn` (**deleted** from the codebase)
+- `scripts/mod/tbd-spawn-verify.sh:9` -- same dead string
+- `scripts/mod/tbd-spawn-determinism.sh:141` -- extracts on `Mission loaded`, which now survives only
+  inside `TBD_FrameworkManager.c`'s **error** string. T-606 proved the same pattern in
+  `remote-log-grep.sh` was not merely stale but **inverted**: on a log containing only
+  `[TBD] Mission loaded but invalid — staying in LOADING.` the check reported SATISFIED, and on a
+  healthy log it reported MISSING. Check whether this site has the same inversion.
+
+=== DOCS QUOTING STRINGS THE BUILD NO LONGER EMITS ===
+- `apps/mod/README.md:43`
+- `apps/mod/tbd-framework/README.md:104-106`
+- `docs/specs/Mission_Creator_Architecture/t092_2_mod_compile_route.md:103`
+- `docs/specs/Mission_Creator_Architecture/t068_12_mod_player_loadout_equip.md:31,90,140,153`
+- `docs/specs/Mission_Creator_Architecture/t068_14_phase2_e2e_gate.md:43` -- names BOTH
+  `[TBD][Loadout][Player]` and `[TBD][Slotting]`, **neither of which exists anywhere**. The real tags
+  are `[TBD][Loadout][Slot]` and `[TBD][Slots]`. Measured on a fully working loadout pass:
+  **0** `[Player]` lines vs **93** `[Slot]` lines (69 vs 0 on the second golden). This is the file a
+  human follows to run T-068.14 -- following it returns nothing and reads exactly like
+  "the loadout never applied", which is the one thing that gate exists to confirm.
+- `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c:17` -- same dead tag
+  in an in-code comment.
+- `apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c:103-104` -- comment says the `[TBD][Stage]`
+  helper is "NOT yet wired"; **T-181.17 wired it** at `TBD_FrameworkManager.c:779`.
+
+`docs/platform/PLAYTEST_RUNBOOK.md:904` already documents the correct tag -- so the runbook and the
+T-068.14 spec currently disagree, and the runbook is the one that is right.
+
+=== FIX SHAPE -- copy T-606, do not re-derive ===
+T-606 established the working pattern and proved it: cut each pin to the last **structural** token
+(tag, `key=`, enum) and never the first English word; verify against a real log rather than by reading;
+add a `--selftest` asserting stale->fail, healthy->pass, invalid->fail; and verify every pattern under
+**both** ugrep 7.5.0 and GNU grep 3.8, which disagree on bare `{}` in an ERE.
+Also from T-606, worth heeding: **do not pin a tagged-line COUNT.** Measured 147 and 155 on the two
+goldens, having drifted **+47 on an unchanged mission**; it is not monotonic in slot count. Use
+0-vs-nonzero. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
