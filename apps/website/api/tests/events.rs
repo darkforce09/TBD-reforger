@@ -1523,22 +1523,37 @@ async fn zero_slot_attach_is_refused_with_the_reason_it_was_zero() {
         "missing version must say so: {b}"
     );
 
-    // ── 2. `current_version_id` naming a row that does not exist. The column has NO foreign key
-    // (`0001_initial_schema.sql:370`), so this is reachable — and it is OUR data that is wrong,
-    // which makes it a logged 500 and not something to blame on the caller. This is the
-    // in-suite half of "a database problem must never be silent"; the other half (a genuine
-    // sqlx failure) is now a plain `?` and rides the same `From<sqlx::Error>` 500. ──
+    // ── 2. `current_version_id` naming a row that does not exist.
+    //
+    // T-262 CHANGED WHAT THIS SECTION CAN PROVE, AND THE CHANGE IS THE POINT. This used to
+    // write a `gen_random_uuid()` into `missions.current_version_id` and assert the attach
+    // answered **500** — "it is OUR data that is wrong, so it must not be quiet". That was the
+    // right assertion while the column had no foreign key; the original comment cited
+    // `0001_initial_schema.sql:370` as a bare `uuid` and called the state "reachable".
+    //
+    // It is not reachable any more. `0018_foreign_keys.sql` adds
+    // `missions_current_version_id_fkey … ON DELETE SET NULL`, so Postgres refuses the write
+    // that used to create the dangling pointer. Asserting the 500 here would mean asserting
+    // that a defect still exists.
+    //
+    // So the assertion moves down a layer to the thing that now guarantees it: the UPDATE is
+    // **rejected with SQLSTATE 23503**. That is strictly stronger — the old test proved the
+    // handler survives bad data, this proves the bad data cannot be written. The handler's
+    // 500 arm (`orbat_template_for_mission`, `handlers/events.rs`) is deliberately left in
+    // place as defence in depth: it still covers a row that predates this migration on a
+    // database restored from an old dump, and constraint 18's backfill NULLs exactly those.
     let m = mission("T227 dangling").await;
-    sqlx::query("UPDATE missions SET current_version_id = gen_random_uuid() WHERE id = $1::uuid")
-        .bind(&m)
-        .execute(&pool)
-        .await
-        .unwrap();
-    let (st, b) = attach(&m, "").await;
+    let err = sqlx::query(
+        "UPDATE missions SET current_version_id = gen_random_uuid() WHERE id = $1::uuid",
+    )
+    .bind(&m)
+    .execute(&pool)
+    .await
+    .expect_err("T-262: missions.current_version_id must not accept a version that is absent");
     assert_eq!(
-        st,
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "dangling version id must not read as 'no ORBAT': {b}"
+        err.as_database_error().and_then(|d| d.code()).as_deref(),
+        Some("23503"),
+        "a dangling current_version_id must be a foreign-key violation, not {err:?}"
     );
 
     // ── 3. An `orbat` that cannot be read. Pre-fix this did not merely vanish — it fell through

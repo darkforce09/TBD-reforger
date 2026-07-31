@@ -238,31 +238,37 @@ async fn editor_only_orbat_derivation() {
     assert_eq!(orbat["data"][0]["slots"][0]["role"], "SL");
 }
 
+/// T-262 renamed and re-aimed this test. It was `export_dangling_version_is_500`, and it
+/// pointed `missions.current_version_id` at a `gen_random_uuid()` before asserting the export
+/// answered 500 rather than a silent empty file.
+///
+/// `0018_foreign_keys.sql` adds `missions_current_version_id_fkey`, so that UPDATE is now
+/// refused by Postgres and the dangling state cannot be created through any path. The
+/// assertion therefore moves to the guarantee that replaced it — the write is rejected with
+/// SQLSTATE **23503** — which is stronger than the old one: the export cannot be silently
+/// empty because the data it would read cannot be wrong in the first place.
+///
+/// `handlers/missions.rs`'s 500 arm is intentionally NOT removed. It still covers a row that
+/// predates this migration on a database restored from an older dump, and 0018's own backfill
+/// is what NULLs exactly those rows on the way in.
 #[tokio::test]
-async fn export_dangling_version_is_500() {
+async fn export_dangling_version_is_refused_by_the_foreign_key() {
     let Some((app, pool)) = boot().await else {
         return;
     };
     let t = tok(&app, "admin").await;
     let id = mk_mission(&app, &t).await;
     // Point current_version_id at a version that does not exist.
-    sqlx::query("UPDATE missions SET current_version_id = gen_random_uuid() WHERE id = $1")
-        .bind(id.parse::<Uuid>().unwrap())
-        .execute(&pool)
-        .await
-        .unwrap();
-    let (st, _) = call(
-        &app,
-        "GET",
-        &format!("/api/v1/missions/{id}/export"),
-        &t,
-        None,
-    )
-    .await;
+    let err =
+        sqlx::query("UPDATE missions SET current_version_id = gen_random_uuid() WHERE id = $1")
+            .bind(id.parse::<Uuid>().unwrap())
+            .execute(&pool)
+            .await
+            .expect_err("T-262: current_version_id must not accept an absent mission_versions row");
     assert_eq!(
-        st,
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "dangling version must 500, never a silent empty export"
+        err.as_database_error().and_then(|d| d.code()).as_deref(),
+        Some("23503"),
+        "dangling version must be a foreign-key violation, never a stored value: {err:?}"
     );
 }
 
@@ -345,6 +351,17 @@ async fn purge_removes_only_long_expired_tokens() {
 
     let fresh = format!("hash-fresh-{}", Uuid::new_v4());
     let stale = format!("hash-stale-{}", Uuid::new_v4());
+    // T-262: `refresh_tokens.discord_id` now REFERENCES `users(discord_id)` ON DELETE CASCADE,
+    // so the owner has to exist before a token can. This fixture used to invent
+    // `000000000000000007` out of thin air; the id is arbitrary to the purge window this test
+    // is actually about, so the fix is to make it real rather than to weaken the constraint.
+    sqlx::query(
+        "INSERT INTO users (discord_id, username) VALUES ('000000000000000007', 'purge fixture') \
+         ON CONFLICT (discord_id) DO NOTHING",
+    )
+    .execute(&pool)
+    .await
+    .unwrap();
     // Fresh (future expiry) + stale (expired > 7 days ago).
     for (h, days) in [(&fresh, 1i64), (&stale, -8i64)] {
         sqlx::query(
