@@ -80,7 +80,33 @@ fn pointer_resolves(doc: &Value, pointer: &str) -> bool {
     true
 }
 
-const CODE_EXTS: [&str; 6] = ["go", "ts", "tsx", "c", "mjs", "js"];
+/// Extensions scanned for `@contract` tags.
+///
+/// T-611: `rs` was missing until now. The repo went **Go → Rust at T-145** and
+/// **React → Leptos at T-159.29.3**, so every citation this gate could see lived in a `.c`
+/// file while 18 tags in Rust were never read — and the gate still printed
+/// "All @contract citations resolve". The dead pre-rewrite extensions are kept because an
+/// extension that matches nothing cannot cause a false green (only a *missing* one can), and
+/// the per-extension breakdown in the summary makes their zeros visible evidence that the
+/// Go/Node eradication still holds.
+const CODE_EXTS: [&str; 7] = ["c", "go", "js", "mjs", "rs", "ts", "tsx"];
+/// Directory roots scanned for `@contract` tags. T-611 added `crates/`.
+///
+/// `docs/` is deliberately absent, and this is a decision rather than an oversight — MEASURED
+/// at T-611 by temporarily adding `docs/` + `md` here and running the gate:
+///
+/// > 73 citations (md=9), **5 dangling — and all 5 were false**. In prose the tag is written
+/// > inline as `` `@contract registry-items.schema.json#/$defs/item`. `` and the pointer
+/// > capture group swallows the closing backtick and the trailing comma or period, so a
+/// > perfectly correct citation resolves to a pointer that does not exist. Zero true findings.
+///
+/// Gating prose would therefore mean teaching this matcher markdown (strip fences, backticks
+/// and trailing punctuation) and *still* leaving it unable to tell §3.1's grammar template
+/// `@contract <schema-basename>#<json-pointer>` from a live citation — the doc that defines
+/// the vocabulary is mostly examples of it. The cheaper cure holds instead: prose cites stable
+/// **symbol names**, never line numbers, so it cannot rot and needs no gate
+/// (DOCUMENTATION_STANDARDS §10). Re-run the experiment before overturning this.
+const SCAN_ROOTS: [&str; 3] = ["apps", "crates", "packages"];
 const IGNORE_DIRS: [&str; 6] = [
     "node_modules",
     "dist",
@@ -90,18 +116,56 @@ const IGNORE_DIRS: [&str; 6] = [
     "vendor",
 ];
 
-pub fn citations() -> Result<u8> {
-    let root = repo_root()?;
-    let schema_dir = schema_root(&root).join("schema");
+/// The gate's own scope, rendered from the constants above so the printed claim cannot drift
+/// from what the walker actually reads (T-611: the old summary was a hardcoded sentence that
+/// outlived its configuration by two full-codebase rewrites).
+fn citation_scope() -> String {
+    let exts: Vec<String> = CODE_EXTS.iter().map(|e| format!(".{e}")).collect();
+    let roots: Vec<String> = SCAN_ROOTS.iter().map(|r| format!("{r}/")).collect();
+    format!("{} under {}", exts.join("/"), roots.join(", "))
+}
+
+/// One pass over the `@contract` corpus.
+///
+/// `problems` are dangling citations; `scope_errors` are reasons the scan itself cannot be
+/// trusted (a root that was never read, an empty corpus). They are separate because "0
+/// problems over 0 files" is not a pass — it is the absence of a verdict.
+#[derive(Debug, Default)]
+struct CitationScan {
+    citations: usize,
+    files_read: usize,
+    per_ext: BTreeMap<&'static str, usize>,
+    problems: Vec<String>,
+    scope_errors: Vec<String>,
+}
+
+/// Walk `root`'s [`SCAN_ROOTS`] for `@contract` tags and resolve each against `schema_dir`.
+///
+/// Split out of [`citations`] at T-611 so the scope contract — which extensions, which roots,
+/// and what counts as "no verdict" — is testable against a fixture tree rather than only
+/// against the live repo. `rs` and `crates/` sat unscanned through two full-codebase rewrites
+/// while the gate reported green; the tests below exist so that cannot recur silently.
+fn scan_citations(root: &Path, schema_dir: &Path) -> Result<CitationScan> {
     let tag_re = regex::Regex::new(r#"@contract\s+([A-Za-z0-9_.\-]+\.schema\.json)(#[^\s)"']*)?"#)?;
 
     let mut schema_cache: HashMap<String, Option<Value>> = HashMap::new();
     let mut citations = 0usize;
+    let mut per_ext: BTreeMap<&'static str, usize> =
+        CODE_EXTS.iter().map(|e| (*e, 0usize)).collect();
+    let mut files_read = 0usize;
     let mut problems: Vec<String> = Vec::new();
+    let mut scope_errors: Vec<String> = Vec::new();
 
-    for scan in ["apps", "packages"] {
+    for scan in SCAN_ROOTS {
         let base = root.join(scan);
         if !base.exists() {
+            // T-611: this used to `continue` in silence, so renaming a scan root would have
+            // produced "Checked 0 @contract citation(s) … All resolve" and exit 0 — a pass
+            // over a tree the gate never opened. That is the defect this gate exists to catch.
+            scope_errors.push(format!(
+                "scan root {scan}/ does not exist under {} — the gate cannot vouch for a tree it never read",
+                root.display()
+            ));
             continue;
         }
         for entry in walkdir::WalkDir::new(&base)
@@ -113,24 +177,28 @@ pub fn citations() -> Result<u8> {
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file())
         {
-            let ext = entry
+            let raw_ext = entry
                 .path()
                 .extension()
                 .map(|e| e.to_string_lossy().to_string())
                 .unwrap_or_default();
-            if !CODE_EXTS.contains(&ext.as_str()) {
+            // Resolve to the `'static` entry so the per-extension tally keys off the config
+            // itself, not a per-file String.
+            let Some(ext) = CODE_EXTS.iter().find(|e| **e == raw_ext) else {
                 continue;
-            }
+            };
             let Ok(text) = fs::read_to_string(entry.path()) else {
                 continue;
             };
+            files_read += 1;
             for cap in tag_re.captures_iter(&text) {
                 citations += 1;
+                *per_ext.entry(ext).or_default() += 1;
                 let name = cap.get(1).unwrap().as_str();
                 let pointer = cap.get(2).map(|m| m.as_str()).unwrap_or("");
                 let rel = entry
                     .path()
-                    .strip_prefix(&root)
+                    .strip_prefix(root)
                     .unwrap_or(entry.path())
                     .display();
                 let doc = schema_cache
@@ -152,10 +220,66 @@ pub fn citations() -> Result<u8> {
         }
     }
 
-    println!("Checked {citations} @contract citation(s) across apps, packages.");
-    if problems.is_empty() {
-        println!("All @contract citations resolve.");
-    } else {
+    // A scan that read nothing is not a pass. This guard exists because the failure mode the
+    // gate is meant to prevent is a green over an unexamined input (cf. T-606, T-607): if the
+    // matcher, the extension list or the roots ever break, the count silently goes to 0 and
+    // every citation "resolves". T-611.
+    if citations == 0 && scope_errors.is_empty() {
+        scope_errors.push(format!(
+            "0 @contract citation(s) found across {files_read} file(s) — the matcher, the \
+             extension list or the scan roots are wrong; refusing to report a pass over an \
+             empty scan"
+        ));
+    }
+
+    Ok(CitationScan {
+        citations,
+        files_read,
+        per_ext,
+        problems,
+        scope_errors,
+    })
+}
+
+pub fn citations() -> Result<u8> {
+    let root = repo_root()?;
+    let schema_dir = schema_root(&root).join("schema");
+    let CitationScan {
+        citations,
+        files_read,
+        per_ext,
+        problems,
+        scope_errors,
+    } = scan_citations(&root, &schema_dir)?;
+
+    // T-611 — the summary states its own scope. The old two lines ("Checked N …" +
+    // "All @contract citations resolve.") were a broad claim over a narrow scan: true count,
+    // false confidence. Every clause below is generated from CODE_EXTS / SCAN_ROOTS.
+    let breakdown = per_ext
+        .iter()
+        .map(|(e, n)| format!("{e}={n}"))
+        .collect::<Vec<_>>()
+        .join(" ");
+    println!(
+        "Checked {citations} @contract citation(s) in {files_read} file(s) — scope: {}.",
+        citation_scope()
+    );
+    println!("  by extension: {breakdown}");
+    println!(
+        "  NOT scanned: anything outside that scope. Prose citations in docs/ are governed by\n  \
+         convention (cite stable symbol names, not line numbers — DOCUMENTATION_STANDARDS §10),\n  \
+         not by this gate."
+    );
+
+    if !scope_errors.is_empty() {
+        eprintln!("\n{} scope failure(s):", scope_errors.len());
+        for e in &scope_errors {
+            eprintln!("  {e}");
+        }
+    }
+    if problems.is_empty() && scope_errors.is_empty() {
+        println!("All {citations} @contract citation(s) in that scope resolve.");
+    } else if !problems.is_empty() {
         eprintln!("\n{} dangling citation(s):", problems.len());
         for p in &problems {
             eprintln!("  {p}");
@@ -167,7 +291,157 @@ pub fn citations() -> Result<u8> {
     println!(
         "GO-7 retired: Go handlers removed at the T-145 Rust cutover (axum routes are compile-checked)."
     );
-    Ok(if problems.is_empty() { 0 } else { 1 })
+    Ok(if problems.is_empty() && scope_errors.is_empty() {
+        0
+    } else {
+        1
+    })
+}
+
+/// T-611 — the scope contract, pinned against a fixture tree.
+///
+/// The defect this gate shipped with was not a bad count; it was a broad claim over a narrow
+/// scan. These tests fail if `rs` leaves [`CODE_EXTS`], if `crates/` leaves [`SCAN_ROOTS`], or
+/// if the walker ever reports a clean verdict over a tree it did not read.
+#[cfg(test)]
+mod citation_scope_tests {
+    use super::*;
+    use serde_json::json;
+
+    fn fixture_dir(name: &str) -> PathBuf {
+        let dir =
+            std::env::temp_dir().join(format!("t611-citations-{}-{name}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).expect("fixture root");
+        dir
+    }
+
+    fn write(root: &Path, rel: &str, body: &str) {
+        let path = root.join(rel);
+        fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+        fs::write(&path, body).expect("write");
+    }
+
+    /// A schema dir with one real schema carrying one real `$defs`.
+    fn schema_dir(root: &Path) -> PathBuf {
+        let dir = root.join("schema");
+        fs::create_dir_all(&dir).expect("schema dir");
+        fs::write(
+            dir.join("good.schema.json"),
+            serde_json::to_string(&json!({"$defs": {"item": {"type": "object"}}})).unwrap(),
+        )
+        .expect("write schema");
+        dir
+    }
+
+    /// The red proof, as a test: a dangling `@contract` in `apps/**/*.rs` and a bad pointer in
+    /// `crates/**/*.rs` are both caught. Before T-611 neither file was opened.
+    #[test]
+    fn rust_under_apps_and_crates_is_scanned_and_can_fail() {
+        let root = fixture_dir("apps-crates-rs");
+        let schemas = schema_dir(&root);
+        write(
+            &root,
+            "apps/website/api/src/handlers/x.rs",
+            "//! @contract nope.schema.json#/\n",
+        );
+        write(
+            &root,
+            "crates/map-engine-core/src/mission/y.rs",
+            "// @contract good.schema.json#/$defs/absent\n",
+        );
+        write(
+            &root,
+            "apps/mod/tbd-framework/Scripts/z.c",
+            "//! @contract good.schema.json#/\n",
+        );
+        write(
+            &root,
+            "packages/tbd-schema/w.ts",
+            " * @contract good.schema.json#/$defs/item\n",
+        );
+
+        let scan = scan_citations(&root, &schemas).expect("scan");
+        assert_eq!(scan.citations, 4, "one tag per fixture file");
+        assert_eq!(scan.per_ext["rs"], 2, "rs must be scanned (T-611)");
+        assert_eq!(scan.per_ext["c"], 1);
+        assert_eq!(scan.per_ext["ts"], 1);
+        assert_eq!(scan.scope_errors, Vec::<String>::new());
+        assert_eq!(scan.problems.len(), 2, "got: {:?}", scan.problems);
+        assert!(
+            scan.problems.iter().any(
+                |p| p.contains("apps/website/api/src/handlers/x.rs") && p.contains("not found")
+            ),
+            "missing-schema in apps/**/*.rs must fail: {:?}",
+            scan.problems
+        );
+        assert!(
+            scan.problems
+                .iter()
+                .any(|p| p.contains("crates/map-engine-core/src/mission/y.rs")
+                    && p.contains("pointer")),
+            "bad pointer in crates/**/*.rs must fail: {:?}",
+            scan.problems
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// A scan root that is not there is not "nothing to report" — it is no verdict.
+    #[test]
+    fn missing_scan_root_is_a_scope_failure_not_a_pass() {
+        let root = fixture_dir("missing-root");
+        let schemas = schema_dir(&root);
+        write(&root, "apps/a.rs", "//! @contract good.schema.json#/\n");
+
+        let scan = scan_citations(&root, &schemas).expect("scan");
+        assert!(scan.problems.is_empty(), "the one citation resolves");
+        assert_eq!(scan.scope_errors.len(), 2, "crates/ and packages/ absent");
+        assert!(
+            scan.scope_errors
+                .iter()
+                .any(|e| e.starts_with("scan root crates/"))
+        );
+        assert!(
+            scan.scope_errors
+                .iter()
+                .any(|e| e.starts_with("scan root packages/"))
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// Zero citations means the matcher or the config broke, not that everything resolves.
+    #[test]
+    fn empty_corpus_is_a_scope_failure_not_a_pass() {
+        let root = fixture_dir("empty-corpus");
+        let schemas = schema_dir(&root);
+        for r in SCAN_ROOTS {
+            fs::create_dir_all(root.join(r)).expect("root");
+        }
+        write(&root, "apps/a.rs", "// no tags here\n");
+
+        let scan = scan_citations(&root, &schemas).expect("scan");
+        assert_eq!(scan.citations, 0);
+        assert_eq!(scan.scope_errors.len(), 1, "got: {:?}", scan.scope_errors);
+        assert!(scan.scope_errors[0].contains("0 @contract citation(s)"));
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// The printed scope sentence is generated, so it cannot drift from the walker's config.
+    #[test]
+    fn scope_line_is_generated_from_the_constants() {
+        let scope = citation_scope();
+        for e in CODE_EXTS {
+            assert!(scope.contains(&format!(".{e}")), "{scope} omits .{e}");
+        }
+        for r in SCAN_ROOTS {
+            assert!(scope.contains(&format!("{r}/")), "{scope} omits {r}/");
+        }
+        assert!(CODE_EXTS.contains(&"rs"), "T-611: rs must stay scanned");
+        assert!(
+            SCAN_ROOTS.contains(&"crates"),
+            "T-611: crates/ must stay scanned"
+        );
+    }
 }
 
 /* ─────────────────────────── n6 / n10 ─────────────────────────── */
