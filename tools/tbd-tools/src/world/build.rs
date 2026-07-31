@@ -570,16 +570,10 @@ pub fn build_world_objects_opt(
             inst_by_prefab[row.0] += 1;
         }
     }
-    let kind_order = [
-        "building",
-        "tree",
-        "vegetation",
-        "rock",
-        "prop",
-        "utility",
-        "water",
-        "road",
-    ];
+    // T-278: this was a local 8-kind array missing T-244's `vehicle`, so the
+    // `expect("kind bucket")` below panicked on the first wreck prefab — the reason re-running
+    // the export could not have activated the vehicle lane. Single source now.
+    let kind_order = super::INSTANCE_KINDS;
     let mut by_kind: Map<String, Value> = kind_order
         .iter()
         .map(|k| {
