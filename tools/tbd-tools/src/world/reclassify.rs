@@ -57,6 +57,7 @@ pub struct Drift {
 }
 
 /// What a reclassify pass found. `kinds_*` are ordered histograms for the report.
+#[derive(Debug)]
 pub struct Report {
     pub rows: usize,
     pub matched: usize,
