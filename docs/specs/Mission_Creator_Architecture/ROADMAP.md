@@ -18,7 +18,9 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-607** — Staging has been validating a stale Workshop build since June, and its pass criteria are that build’s strings (ready)
+- **T-615** — DOCUMENTATION_STANDARDS.md is the most rotted example of the convention it defines — 7 dead links inside it (ready)
+- **T-618** — The gate base can still self-approve: the ticket ledger reads files the forging commit wrote (ready)
+- **T-619** — PAT_ASSIGNED diverged between two sibling scripts that both claim ONE shared definition (ready)
 <!-- ticket-sync:next:end -->
 
 ---

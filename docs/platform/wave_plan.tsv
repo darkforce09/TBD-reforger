@@ -407,3 +407,7 @@ w77	T-609	-	scripts/mod/world-boot.sh; .world-boot-warning-baseline; apps/mod/tb
 w77	T-606	-	scripts/mod/remote-log-grep.sh; docs/mod/STAGING-SERVER.md; scripts/mod/run-playtest-server.sh
 w77	T-610	-	docs/platform/PLAYTEST_RUNBOOK.md; apps/website/frontend/src/arsenal_rules.rs
 w77	T-584	-	apps/website/api/src/handlers/oauth.rs; scripts/deploy; Makefile; docs/platform/CODING_STANDARDS.md
+w78	T-613	-	scripts/platform/wave.sh; scripts/mod/remote-log-grep.sh
+w78	T-611	-	Makefile; xtask/src
+w78	T-612	-	scripts/mod/mcp-wb-logs.sh; scripts/mod/tbd-spawn-verify.sh; scripts/mod/tbd-spawn-determinism.sh; apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c; apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c; docs/specs/Mission_Creator_Architecture; apps/mod/README.md; apps/mod/tbd-framework/README.md
+w78	T-607	-	scripts/mod/deploy-staging.sh; docs/mod/STAGING-SERVER.md

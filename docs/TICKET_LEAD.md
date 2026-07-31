@@ -9,90 +9,126 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-607** (3542) — Staging has been validating a stale Workshop build since June, and its pass criteria are that build’s strings [ready] — FOUND by T-604 (wave 76) while making a joinable server work. This is the signature defect of this
-codebase -- *a tool reports success over an input it never actually examined* -- at its most expensive.
+- **T-615** (3622) — DOCUMENTATION_STANDARDS.md is the most rotted example of the convention it defines — 7 dead links inside it [ready] — FOUND by T-611 (wave 78) while deciding whether `verify-citations` should read `docs/`. Doc-owned,
+so T-611 reported rather than fixed.
 
-=== THE MECHANISM ===
-`tbd-framework` **IS published to the Workshop** -- unlisted, under the SAME id as the local gproj
-GUID `B2C3D4E5F6A78901`, pinned at a stale **1.0.1**. (T-604's ticket and `deploy.env.example:43`
-both assumed it was unpublished. Wrong.)
+=== THE IRONY, AND THE POINT ===
+`docs/platform/DOCUMENTATION_STANDARDS.md` defines the "turn a comment into a checked link"
+convention. **Seven of the eight dead relative links in the repo are inside that document**, and every
+one is a prose citation *with a line number* pointing at a file deleted during the big cutovers:
 
-`scripts/mod/deploy-staging.sh:1153` (`-config` mode) omits `-addonsDir`. Without it the engine does
-not fail -- it resolves the GUID from the Workshop and **downloads 1.0.1 over the network**:
-    Addon Download started B2C3D4E5F6A78901
-    Downloading ... version 1.0.1
-The server then registers a room, reaches LOBBY, and looks perfectly healthy **while running June's
-code**. Measured on one box, same mission: **7 `[TBD]` lines in the old flat format vs 108 in the
-current `[TBD][Subsystem]` format.**
+- `:139, :152, :197, :198` -> `apps/website/internal/{models/registry.go, handlers/registry.go,
+  models/mission.go, handlers/handlers.go}` -- Go, **deleted at T-145**
+- `:162, :222, :223` -> `apps/website/frontend/src/types/{models/registry.ts, models/user.ts,
+  api/index.ts}` -- React, **deleted at T-159.29.3**
+- `docs/specs/Mission_Creator_Architecture/t123_documentation_standards_rollout.md:119` ->
+  `apps/website/internal/contract/validate.go`
 
-**So every staging deploy since the Workshop publish has validated the stale build, not the checkout
-it deployed.**
+Plus non-link prose pointing at files that no longer exist: `t123:72` cites
+`apps/website/frontend/tsdoc.json`; `t123:136` cites
+`packages/tbd-schema/scripts/verify-contract-citations.mjs` **as the live citation gate** -- it has
+been xtask since T-165.1.
 
-=== AND THE GATE CANNOT SEE IT, BECAUSE THE GATE WAS WRITTEN AGAINST THE STALE BUILD ===
-`docs/mod/STAGING-SERVER.md` "Game log pass criteria" required:
-    [TBD] Mission loaded  ·  [TBD] Registry loaded  ·  [TBD] SpawnManager: built slot spawn
-Those are **exactly the strings 1.0.1 emits**. The current build emits none of them (`Mission loaded`
-now survives only inside `TBD_FrameworkManager.c:488`'s ERROR string; `built slot spawn` was deleted).
-**The staging check passed BECAUSE the mod was stale.** Had the correct build ever loaded, the gate
-would have gone red. Partially covered by T-606, which found the same three greps from the other
-direction without knowing why they were stale.
+This is the best available argument for the convention T-610 adopted (cite stable **symbol names**,
+never line numbers) and it is failing inside the document that should be making it.
 
-=== SECOND FAILURE MODE, STILL OPEN ===
-`deploy-staging.sh:1155` (`-addonsDir` mode) loads the right code but registers no backend room --
-**zero** `Server registered with address:` lines against 108 healthy `[TBD]` lines. Not joinable.
-So one mode is joinable-but-stale and the other is current-but-unjoinable. T-604 fixed this for the
-playtest launcher (`scripts/mod/run-playtest-server.sh`, both flags together) but did NOT touch
-`deploy-staging.sh` -- staging is still broken both ways.
+=== ALSO: ADD §10.1, TEXT ALREADY DRAFTED ===
+T-611 measured the `docs/`-scanning question rather than assuming: temporarily adding `docs/` + `md`
+to the gate gave **73 citations, 5 dangling, ALL 5 FALSE** -- in prose the tag is inline as
+`` `@contract registry-items.schema.json#/$defs/item`. `` and the pointer capture swallows the closing
+backtick and trailing punctuation. Zero true findings, five ways to go red on correct citations. A
+markdown-aware matcher still could not tell §3.1's grammar template from a live citation, because that
+document is mostly examples of it. **Decision: the gate stays out of `docs/`; prose is held by
+convention.** That rationale is now recorded on `SCAN_ROOTS` in `xtask/src/schema_gates.rs` so nobody
+re-litigates it from intuition.
 
-=== KNOCK-ON: THE PLAYTEST CLIENT MAY LOAD THE WRONG MOD ===
-The server advertises `game.mods[] = [B2C3D4E5F6A78901]`. A joining client resolves that from the
-Workshop and gets **1.0.1**, while the server runs the checkout. No second machine has connected to
-this combination, so the skew is unverified in both directions.
-CHEAPEST TEST, from the runbook: after joining, type `#tbd` in chat. The current build answers with
-the full command list; 1.0.1 has no such command. One line tells you which mod the client is on.
-FIX IF SKEWED: re-publish the mod from Workbench so Workshop and checkout agree.
+T-611 drafted the exact replacement for the §10 table row at `:420` and a new §10.1 section to insert
+after the keystone paragraph at `:426`. **The full text is in T-611's slice report** -- use it verbatim
+rather than re-deriving; it carries the measured numbers.
 
-=== WHAT TO DO ===
-**STEP 1 IS `executor: human` — a Workbench re-publish. No agent can do it, and it is the one
-thing that should happen BEFORE the playtest, not after.**
-1. Re-publish `tbd-framework` to the Workshop so `B2C3D4E5F6A78901` resolves to current code.
-2. Give `deploy-staging.sh` both `-addonsDir` and `-config` (the shape T-604 proved at
-   `scripts/mod/run-playtest-server.sh`), so staging runs what it deployed AND is joinable.
-3. Rewrite STAGING-SERVER.md's pass criteria against the CURRENT build's strings, and add a positive
-   assertion that the loaded addon is the local one -- T-604's launcher already self-tests this
-   (it fails on both `-config`-only logs and passes only with the local copy genuinely winning).
-   Copy that check rather than re-deriving it.
-4. Consider whether an unlisted Workshop id colliding with the dev gproj GUID is wise at all.
+Summary of §10.1: prose cites stable symbol names, never line numbers (`TBD_SpawnManager.ClaimSlot`
+survives an edit above it; `TBD_SpawnManager.c:2094` does not -- T-610 found ~19 rotted in one
+runbook); a repo-relative path with no line number when a symbol will not do; `@contract` in prose is
+**illustrative, not a checked link**; anything that genuinely must be machine-checked belongs in code
+or in its own index gate (cf. `make verify-oracle` for `@idx`). And: the gate prints its own scope on
+every run -- trust that line over the doc if they disagree.
 
-=== UPDATE 2026-07-31, OPERATOR: THE MOD HAS BEEN RE-PUBLISHED ===
-Step 1 is DONE. Sam published the updated mod to the Workshop. This closes the `executor: human` half
-of this ticket and removes the version-skew risk that hung over the playtest.
+=== WHILE YOU ARE THERE ===
+`verify-citations` now prints its scope generated from its own constants, so the printed claim can no
+longer outlive the config. Any doc sentence that restates the scope in prose should defer to that line
+instead of duplicating it -- duplicated scope claims are how this ticket happened.
+- **T-618** (3652) — The gate base can still self-approve: the ticket ledger reads files the forging commit wrote [ready] — FOUND by wave 78's adversarial verifier. **Third round of the same defect** (T-602 -> T-613 -> here),
+and the fix this time is small and specific -- do not redesign the oracles.
 
-**VERIFIED 2026-08-01 — SKEW IS CLOSED.** Cache cleared, `-config`-only boot re-fetched
-**version 1.0.2** (`data.pak` 570,489 B vs 1.0.1's 41,288) and emitted **151** current-format
-`[TBD][` lines vs 1.0.1's **0**. The client path now resolves the same code the server runs.
-Old 1.0.1 retained at `~/.cache/tbd-workshop-1.0.1-backup` (the only copy; the stale-build
-detectors were validated against it).
+=== THE ATTACK, measured in a scratch clone ===
+ONE commit defeats all three cross-checks for a **silent PASS**. Subject `wave 78 CLOSED …`; **in the
+same commit** append wave-78 rows to `docs/platform/wave_plan.tsv` and mark them `shipped` in
+`.ai/tickets/registry.json`; place it after the last slice merge.
 
-**STILL TO DO (items 1 and 2 are now DONE):**
-1. **The stale copy is still cached locally and will be used in preference to the new publish.**
-   `~/tbd-playtest/profile/addons/TBDFramework_B2C3D4E5F6A78901` -- every manifest reads `_1.0.1_`,
-   `data.pak` is 41 KB, whole addon 76 KB. Backed up to `~/.cache/tbd-workshop-1.0.1-backup` (it is
-   the only local copy of 1.0.1, and T-604's and T-606's stale-build detectors were validated against
-   it). **Clear the cached dir so the engine fetches the new version**, then confirm.
-2. **VERIFY THE PUBLISH, do not assume it.** Boot with `-config` ONLY (no `-addonsDir`) and count
-   current-format tag lines. T-604's discriminator: the checkout emits `[TBD][Subsystem]`-format
-   lines in quantity; 1.0.1 emits **0**. T-606 measured 147 and 155 on the two goldens, and warns
-   the count drifts (+47 on an unchanged mission) -- so use **0 vs non-zero**, not a threshold.
-   If a `-config`-only boot now shows non-zero, the Workshop and the checkout agree and the skew
-   is genuinely closed.
-3. `deploy-staging.sh:1153` still omits `-addonsDir` in config mode, and `:1155` still registers no
-   room. Staging remains broken both ways -- T-604 fixed this only for the playtest launcher
-   (`scripts/mod/run-playtest-server.sh`, both flags together). Copy that shape.
-4. STAGING-SERVER.md's pass criteria: **already fixed by T-606** (wave 77), which also proved the old
-   `remote-log-grep.sh` had no reachable exit 0 and that its `Mission loaded` check was inverted --
-   SATISFIED on a broken log, MISSING on a healthy one.
-5. Still worth deciding: whether an unlisted Workshop id colliding with the dev gproj GUID is wise.
+    Variant A (marker AFTER wave + plan/registry edited in the same commit):
+      ticket ledger: wave 78 has 2 ticket(s) ... all shipped — corroborated.
+      RC=0        <-- SILENT PASS; range gated = 1 commit, honest range = 11
+    Variant B (marker, NO ledger edits):  refusing to run unconfirmed.  RC=2
+    Variant C (marker mid-wave + plan edit): base cuts through a slice.  RC=2  (oracle 3 catches it)
+
+- **Oracle 1** (`wave_close_is_newest_wave:1938`) never refuses a HIGHER wave number -- 78 beats all
+  of 45-77, so it passes silently.
+- **Oracle 2** (`wave_close_ledger_says:1970`) is the hole. It reads `wave_plan.tsv` and
+  `registry.json` **from HEAD's checkout**, and the forging commit's edits are IN HEAD's tree. The
+  independence claim written at `wave.sh:1901` -- that each check draws on "evidence the commit under
+  test did not itself produce" -- **is false for oracle 2**, because a slice may edit both files.
+- **Oracle 3** (`slice_span_check:2002`) is genuinely marker-free and does catch the mid-wave variant,
+  but its own comment admits it "cannot catch a base placed AFTER the whole wave".
+- The backstop `demand_base_confirmation:2034` fires in variant B but is **bypassed** in A, precisely
+  because editing the two files flips oracle 2 to rc0.
+
+Net effect: the gate runs `base..HEAD` = 1 commit and reports PASS/SKIP over an entire unread wave --
+the wave-75 defect, reintroduced through the derivation oracle.
+
+=== THE FIX (small, specific) ===
+**Read the ledger from OUTSIDE the range being validated.** Oracle 2 must not consult HEAD's tree; it
+should read `wave_plan.tsv` / `registry.json` at the **candidate base's parent**, or at the previous
+close, via `git show <rev>:<path>` -- a revision the forging commit cannot have written. That single
+change restores the independence the comment already claims and kills variant A.
+
+Then **correct the comment at `:1901`** to describe what is actually true. A false independence claim
+in a security-shaped check is worse than no claim, because the next reader stops looking.
+
+Consider also giving oracle 1 an upper bound (a boundary claiming a wave number far beyond the
+highest ticket in the plan is suspicious), but the oracle-2 fix is the load-bearing one.
+
+=== FAIR WEIGHTING, so the next agent does not over-build ===
+This needs a **deliberately forged commit**, not a natural mistake -- but that is exactly T-613's
+stated threat model ("the gate base can no longer approve itself"), it requires no operator
+interaction, and the design only half-discloses the gap: it admits "no fully independent oracle
+exists" while making a specific false independence claim about oracle 2. Fix the read, fix the
+comment, stop.
+- **T-619** (3662) — PAT_ASSIGNED diverged between two sibling scripts that both claim ONE shared definition [ready] — FOUND by wave 78's adversarial verifier -- the cross-slice class that wave 77 also shipped (T-604's
+detector quoted a Print T-605 reworded).
+
+`scripts/mod/mcp-wb-logs.sh:44` states: *"The check vocabulary — shared with remote-log-grep.sh.
+**ONE definition per pattern**."* Five of the six shared patterns match. `PAT_ASSIGNED` does not:
+
+    mcp-wb-logs.sh:57   '\[TBD\] SpawnManager: assigned slot'                          # flat only
+    remote-log-grep.sh:136 '\[TBD\]\[Spawn\].*assigned|\[TBD\] SpawnManager: assigned'  # both formats
+
+They are **not sourced from a common lib** -- the "one definition" is a claim, not a mechanism.
+T-614 broadened the sibling THIS WAVE, with the reasoning that `TBD_SpawnManager.c` is 70/74 tagged
+and `:675` is a flat straggler, so *"the reword is the direction the file is already travelling."*
+
+**When `:675` moves to `[TBD][Spawn]`, `mcp-wb-logs.sh` reports PARTIAL over a boot where a player
+really was seated** -- measured:
+
+    $ bash scripts/mod/mcp-wb-logs.sh --file tagged_seat.log   # player WAS seated (tagged format)
+      exit=2  (PARTIAL: slot bodies built; no player has deployed yet.)
+
+That is the latent false-amber T-614 inoculated its own file against, and a partial regression of the
+inversion T-612 had just fixed in this same file.
+
+FIX: broaden `mcp-wb-logs.sh:57` to match its sibling -- **or better, make the claim true** by
+extracting the six shared patterns into one sourced file (`scripts/mod/lib/` already exists;
+`gate-grep.sh` lives there from T-556). A comment asserting a shared definition, over two divergent
+copies, is the signature defect in miniature: it reports agreement it never checked.
 
 ## Next queued (top 10)
 

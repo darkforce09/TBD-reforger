@@ -145,7 +145,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 > the lowest-ordered `ready` program, not the program in flight.
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-610**
+**Latest shipped:** **T-614**
 
 **ACTIVE NOW:** **T-090** — T-090.6 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md`.
 
@@ -157,7 +157,9 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-120** — Staging soak + golden mission smoke (`queued`)
 - **T-146** — Asset Browser Data Wiring (`queued`)
 - **T-170** — Prod default flip to Leptos SPA (`queued`)
-- **T-607** — Staging has been validating a stale Workshop build since June, and its pass criteria are that build’s strings (`ready`)
+- **T-615** — DOCUMENTATION_STANDARDS.md is the most rotted example of the convention it defines — 7 dead links inside it (`ready`)
+- **T-618** — The gate base can still self-approve: the ticket ledger reads files the forging commit wrote (`ready`)
+- **T-619** — PAT_ASSIGNED diverged between two sibling scripts that both claim ONE shared definition (`ready`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.

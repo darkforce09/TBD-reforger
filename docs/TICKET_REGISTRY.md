@@ -3989,7 +3989,7 @@ ALSO, same family, documented in the runbook §6 rather than filed separately:
 - **`modded class SCR_PlayerController` runtime coexistence has never been observed at any N.** Six
   blocks now exist and no gate can see it -- `world-boot.sh` boots with zero players. If one screen
   works and another silently does nothing during the playtest, this is the first suspect. |
-| T-607 | 3542 | ready | platform | Staging has been validating a stale Workshop build since June, and its pass criteria are that build’s strings | FOUND by T-604 (wave 76) while making a joinable server work. This is the signature defect of this
+| T-607 | 3542 | shipped | platform | Staging has been validating a stale Workshop build since June, and its pass criteria are that build’s strings | FOUND by T-604 (wave 76) while making a joinable server work. This is the signature defect of this
 codebase -- *a tool reports success over an input it never actually examined* -- at its most expensive.
 
 === THE MECHANISM ===
@@ -4166,7 +4166,7 @@ Also in this bucket, from the same report:
 
 FIX SHAPE: either extend `verify-citations` to cover bare `file.c:NNN` forms in docs, or stop citing
 line numbers in prose and cite stable symbol names instead. The second is cheaper and does not rot. |
-| T-611 | 3582 | deferred | platform | verify-citations checks only .c files in a Rust repo, and prints a reassuring total while doing it | FOUND by T-610 (wave 77) while fixing the citations the gate could not see. The ticket assumed the
+| T-611 | 3582 | shipped | platform | verify-citations checks only .c files in a Rust repo, and prints a reassuring total while doing it | FOUND by T-610 (wave 77) while fixing the citations the gate could not see. The ticket assumed the
 gate simply "did not cover bare file.c:NNN forms in prose." The real scope is larger.
 
 === WHAT IT ACTUALLY CHECKS ===
@@ -4202,7 +4202,7 @@ green that a human reasonably trusted.
 
 Owner note: `Makefile` + the xtask verifier. T-610 owned neither and correctly reported instead of
 building. |
-| T-612 | 3592 | deferred | platform | Four more scripts and six docs still gate on log strings the mod stopped printing | FOUND by T-606 (wave 77), which fixed the three sites its ticket named and measured the rest. Same
+| T-612 | 3592 | shipped | platform | Four more scripts and six docs still gate on log strings the mod stopped printing | FOUND by T-606 (wave 77), which fixed the three sites its ticket named and measured the rest. Same
 defect class as T-606/T-607/T-611: **a check pinned on a log string someone later reworded.**
 
 === SCRIPTS THAT STILL GATE ON DEAD STRINGS ===
@@ -4241,7 +4241,7 @@ add a `--selftest` asserting stale->fail, healthy->pass, invalid->fail; and veri
 Also from T-606, worth heeding: **do not pin a tagged-line COUNT.** Measured 147 and 155 on the two
 goldens, having drifted **+47 on an unchanged mission**; it is not monotonic in slot count. Use
 0-vs-nonzero. |
-| T-613 | 3602 | deferred | platform | wave.sh derives its gate base and verifies it with the SAME oracle, so a fake marker self-approves | FOUND by wave 77's adversarial verifier. **The signature defect of this codebase, sitting inside the
+| T-613 | 3602 | shipped | platform | wave.sh derives its gate base and verifies it with the SAME oracle, so a fake marker self-approves | FOUND by wave 77's adversarial verifier. **The signature defect of this codebase, sitting inside the
 fix for it.** Latent today; blocker-shaped if it ever fires.
 
 T-602 (wave 77) fixed the gate silently narrowing its scope: it now DERIVES the base from the
@@ -4275,7 +4275,7 @@ FIX SHAPE: anchor the subject match (`CLOSED` at end, or `CLOSED:` / `CLOSED —
 verifier an INDEPENDENT oracle -- e.g. cross-check the derived base against the merge structure or
 the tag history rather than re-asking `prev_wave_close()`. A checker that consults the thing it is
 checking is not a check. |
-| T-614 | 3612 | deferred | platform | Wave 77 residue: the slice gate lints none of a tooling slice, and two counts/pins are off | Three lesser findings from wave 77's adversarial verifier. None is a live defect.
+| T-614 | 3612 | shipped | platform | Wave 77 residue: the slice gate lints none of a tooling slice, and two counts/pins are off | Three lesser findings from wave 77's adversarial verifier. None is a live defect.
 
 1. **`scripts/platform/wave.sh:875` -- the SLICE gate still skips clippy for `tbd-tools\|xtask`**, giving
    the reason "red on main, ungated by CI". **"Red on main" is now contradicted by lines 830-831 of the
@@ -4300,6 +4300,170 @@ ALSO NOTED, deliberate and not a defect (verifier F5): `.world-boot-warning-base
 below boot reality on purpose, as a forcing function, so `world-boot.sh --mission=…` fails on clean
 main by design. Confirmed live (`5 > baseline 1 for msn_2d91be`). The cost, worth knowing: while a row
 is red, a NEW regression on it (5->6) is indistinguishable from the standing red. See T-609. |
+| T-615 | 3622 | ready | platform | DOCUMENTATION_STANDARDS.md is the most rotted example of the convention it defines — 7 dead links inside it | FOUND by T-611 (wave 78) while deciding whether `verify-citations` should read `docs/`. Doc-owned,
+so T-611 reported rather than fixed.
+
+=== THE IRONY, AND THE POINT ===
+`docs/platform/DOCUMENTATION_STANDARDS.md` defines the "turn a comment into a checked link"
+convention. **Seven of the eight dead relative links in the repo are inside that document**, and every
+one is a prose citation *with a line number* pointing at a file deleted during the big cutovers:
+
+- `:139, :152, :197, :198` -> `apps/website/internal/{models/registry.go, handlers/registry.go,
+  models/mission.go, handlers/handlers.go}` -- Go, **deleted at T-145**
+- `:162, :222, :223` -> `apps/website/frontend/src/types/{models/registry.ts, models/user.ts,
+  api/index.ts}` -- React, **deleted at T-159.29.3**
+- `docs/specs/Mission_Creator_Architecture/t123_documentation_standards_rollout.md:119` ->
+  `apps/website/internal/contract/validate.go`
+
+Plus non-link prose pointing at files that no longer exist: `t123:72` cites
+`apps/website/frontend/tsdoc.json`; `t123:136` cites
+`packages/tbd-schema/scripts/verify-contract-citations.mjs` **as the live citation gate** -- it has
+been xtask since T-165.1.
+
+This is the best available argument for the convention T-610 adopted (cite stable **symbol names**,
+never line numbers) and it is failing inside the document that should be making it.
+
+=== ALSO: ADD §10.1, TEXT ALREADY DRAFTED ===
+T-611 measured the `docs/`-scanning question rather than assuming: temporarily adding `docs/` + `md`
+to the gate gave **73 citations, 5 dangling, ALL 5 FALSE** -- in prose the tag is inline as
+`` `@contract registry-items.schema.json#/$defs/item`. `` and the pointer capture swallows the closing
+backtick and trailing punctuation. Zero true findings, five ways to go red on correct citations. A
+markdown-aware matcher still could not tell §3.1's grammar template from a live citation, because that
+document is mostly examples of it. **Decision: the gate stays out of `docs/`; prose is held by
+convention.** That rationale is now recorded on `SCAN_ROOTS` in `xtask/src/schema_gates.rs` so nobody
+re-litigates it from intuition.
+
+T-611 drafted the exact replacement for the §10 table row at `:420` and a new §10.1 section to insert
+after the keystone paragraph at `:426`. **The full text is in T-611's slice report** -- use it verbatim
+rather than re-deriving; it carries the measured numbers.
+
+Summary of §10.1: prose cites stable symbol names, never line numbers (`TBD_SpawnManager.ClaimSlot`
+survives an edit above it; `TBD_SpawnManager.c:2094` does not -- T-610 found ~19 rotted in one
+runbook); a repo-relative path with no line number when a symbol will not do; `@contract` in prose is
+**illustrative, not a checked link**; anything that genuinely must be machine-checked belongs in code
+or in its own index gate (cf. `make verify-oracle` for `@idx`). And: the gate prints its own scope on
+every run -- trust that line over the doc if they disagree.
+
+=== WHILE YOU ARE THERE ===
+`verify-citations` now prints its scope generated from its own constants, so the printed claim can no
+longer outlive the config. Any doc sentence that restates the scope in prose should defer to that line
+instead of duplicating it -- duplicated scope claims are how this ticket happened. |
+| T-616 | 3632 | deferred | platform | wave_plan.tsv mixes bare-number and wN wave labels, so current_wave() sorts the recent ones as zero | FOUND by T-613 (wave 78). Cosmetic today, wrong in a way that will mislead.
+
+`docs/platform/wave_plan.tsv` column 1 carries **two incompatible label formats**: bare numbers
+(`0`-`11`, `43`-`68`, `99`) from the original packing, and `w76`/`w77`/`w78` from the recent waves.
+`current_wave()` sorts with `sort -n`, under which **`w78` evaluates to 0**, so the newest waves sort
+below the oldest. T-613 measured `current_wave` returning **3** from its worktree, with
+`wave.sh wave` printing "wave 3 is OPEN".
+
+**It reads correctly on `main` right now** (`wave w78 — 0/4 shipped`) because the w78 rows exist and
+whatever tiebreak applies lands on the right answer -- so this is latent, not live. It is filed
+because the underlying mix is real and the next person to add a differently-shaped label gets a
+different wrong answer.
+
+It also feeds `gate_wave_number`'s fallback. That path is guarded by `factory_pack_wave`, so the gate
+DB naming is unaffected -- verified by T-613, not assumed.
+
+FIX: pick one format and migrate the file, or make `current_wave()` strip a leading `w` before the
+numeric sort. Prefer migrating the data -- a parser that tolerates two formats invites a third.
+
+NOTE the new wave-78 base-derivation cross-checks read `wave_plan.tsv` as one of their oracles
+(`ticket ledger`). They key on the `wN` form and worked correctly this wave ("wave 77 has 5
+ticket(s)… all shipped — corroborated"), but anything that normalises these labels must keep that
+check working -- see T-613's implementation before touching the format. |
+| T-617 | 3642 | deferred | platform | TBD_Dev_POC.conf tells players to watch for two log strings that no longer exist | FOUND by T-612 (wave 78) after it corrected the four scripts and six docs its own ticket named.
+One more site, missed by the original sweep because it is a mission config rather than a doc or script.
+
+`apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf:5` -- `m_sDescription` still instructs players to
+watch for **`built slot spawn`** (deleted from the codebase) and **`spawn requested`** (appears in
+**zero** `Print` statements anywhere). This is player-facing text inside the dev mission, so it is
+read by exactly the person least equipped to know it is wrong.
+
+Current vocabulary, measured live on a 421-line healthy boot (`slot-loadout-coverage`,
+`TBD_WORLDBOOT_SETTLE=25`): **145** `[TBD][` lines, **7** `[TBD][Slots] Slot-`, **93**
+`[TBD][Loadout][Slot]`, and `[TBD][Mission] loaded id=`. Zero matches for either dead string.
+
+FIX SHAPE, established and proved by T-606 and T-612: pin the last **structural** token (tag, `key=`,
+enum), never the first English word; verify against a real log rather than by reading; and do not pin
+a tagged-line count (measured 147 and 155 on two goldens, drifting +47 on an unchanged mission).
+`scripts/mod/remote-log-grep.sh` is the reference implementation and carries the rule at its line 34.
+
+CONTEXT for why a description string is worth a ticket: T-612 proved `mcp-wb-logs.sh` had **no
+reachable exit 0 or exit 2** and was fully inverted -- it printed PASS on a stale June log and FAIL on
+a real healthy boot -- because it was built on these same two dead strings. The strings have a track
+record of turning into false verdicts wherever they are copied. |
+| T-618 | 3652 | ready | platform | The gate base can still self-approve: the ticket ledger reads files the forging commit wrote | FOUND by wave 78's adversarial verifier. **Third round of the same defect** (T-602 -> T-613 -> here),
+and the fix this time is small and specific -- do not redesign the oracles.
+
+=== THE ATTACK, measured in a scratch clone ===
+ONE commit defeats all three cross-checks for a **silent PASS**. Subject `wave 78 CLOSED …`; **in the
+same commit** append wave-78 rows to `docs/platform/wave_plan.tsv` and mark them `shipped` in
+`.ai/tickets/registry.json`; place it after the last slice merge.
+
+    Variant A (marker AFTER wave + plan/registry edited in the same commit):
+      ticket ledger: wave 78 has 2 ticket(s) ... all shipped — corroborated.
+      RC=0        <-- SILENT PASS; range gated = 1 commit, honest range = 11
+    Variant B (marker, NO ledger edits):  refusing to run unconfirmed.  RC=2
+    Variant C (marker mid-wave + plan edit): base cuts through a slice.  RC=2  (oracle 3 catches it)
+
+- **Oracle 1** (`wave_close_is_newest_wave:1938`) never refuses a HIGHER wave number -- 78 beats all
+  of 45-77, so it passes silently.
+- **Oracle 2** (`wave_close_ledger_says:1970`) is the hole. It reads `wave_plan.tsv` and
+  `registry.json` **from HEAD's checkout**, and the forging commit's edits are IN HEAD's tree. The
+  independence claim written at `wave.sh:1901` -- that each check draws on "evidence the commit under
+  test did not itself produce" -- **is false for oracle 2**, because a slice may edit both files.
+- **Oracle 3** (`slice_span_check:2002`) is genuinely marker-free and does catch the mid-wave variant,
+  but its own comment admits it "cannot catch a base placed AFTER the whole wave".
+- The backstop `demand_base_confirmation:2034` fires in variant B but is **bypassed** in A, precisely
+  because editing the two files flips oracle 2 to rc0.
+
+Net effect: the gate runs `base..HEAD` = 1 commit and reports PASS/SKIP over an entire unread wave --
+the wave-75 defect, reintroduced through the derivation oracle.
+
+=== THE FIX (small, specific) ===
+**Read the ledger from OUTSIDE the range being validated.** Oracle 2 must not consult HEAD's tree; it
+should read `wave_plan.tsv` / `registry.json` at the **candidate base's parent**, or at the previous
+close, via `git show <rev>:<path>` -- a revision the forging commit cannot have written. That single
+change restores the independence the comment already claims and kills variant A.
+
+Then **correct the comment at `:1901`** to describe what is actually true. A false independence claim
+in a security-shaped check is worse than no claim, because the next reader stops looking.
+
+Consider also giving oracle 1 an upper bound (a boundary claiming a wave number far beyond the
+highest ticket in the plan is suspicious), but the oracle-2 fix is the load-bearing one.
+
+=== FAIR WEIGHTING, so the next agent does not over-build ===
+This needs a **deliberately forged commit**, not a natural mistake -- but that is exactly T-613's
+stated threat model ("the gate base can no longer approve itself"), it requires no operator
+interaction, and the design only half-discloses the gap: it admits "no fully independent oracle
+exists" while making a specific false independence claim about oracle 2. Fix the read, fix the
+comment, stop. |
+| T-619 | 3662 | ready | platform | PAT_ASSIGNED diverged between two sibling scripts that both claim ONE shared definition | FOUND by wave 78's adversarial verifier -- the cross-slice class that wave 77 also shipped (T-604's
+detector quoted a Print T-605 reworded).
+
+`scripts/mod/mcp-wb-logs.sh:44` states: *"The check vocabulary — shared with remote-log-grep.sh.
+**ONE definition per pattern**."* Five of the six shared patterns match. `PAT_ASSIGNED` does not:
+
+    mcp-wb-logs.sh:57   '\[TBD\] SpawnManager: assigned slot'                          # flat only
+    remote-log-grep.sh:136 '\[TBD\]\[Spawn\].*assigned\|\[TBD\] SpawnManager: assigned'  # both formats
+
+They are **not sourced from a common lib** -- the "one definition" is a claim, not a mechanism.
+T-614 broadened the sibling THIS WAVE, with the reasoning that `TBD_SpawnManager.c` is 70/74 tagged
+and `:675` is a flat straggler, so *"the reword is the direction the file is already travelling."*
+
+**When `:675` moves to `[TBD][Spawn]`, `mcp-wb-logs.sh` reports PARTIAL over a boot where a player
+really was seated** -- measured:
+
+    $ bash scripts/mod/mcp-wb-logs.sh --file tagged_seat.log   # player WAS seated (tagged format)
+      exit=2  (PARTIAL: slot bodies built; no player has deployed yet.)
+
+That is the latent false-amber T-614 inoculated its own file against, and a partial regression of the
+inversion T-612 had just fixed in this same file.
+
+FIX: broaden `mcp-wb-logs.sh:57` to match its sibling -- **or better, make the claim true** by
+extracting the six shared patterns into one sourced file (`scripts/mod/lib/` already exists;
+`gate-grep.sh` lives there from T-556). A comment asserting a shared definition, over two divergent
+copies, is the signature defect in miniature: it reports agreement it never checked. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

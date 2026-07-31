@@ -315,140 +315,50 @@ test's uniform: *a tool reports success over an input it never actually examined
 DO NOT respond to this ticket by blocklisting the specific shapes above. That is the fourth round of
 that game (T-517 -> T-567 -> T-570) and a fifth wrapper always exists. Fix the two patterns, then
 convert the ~20 siblings.
-- **T-611** (deferred) — verify-citations checks only .c files in a Rust repo, and prints a reassuring total while doing it [INFRA] — FOUND by T-610 (wave 77) while fixing the citations the gate could not see. The ticket assumed the
-gate simply "did not cover bare file.c:NNN forms in prose." The real scope is larger.
+- **T-616** (deferred) — wave_plan.tsv mixes bare-number and wN wave labels, so current_wave() sorts the recent ones as zero [INFRA] — FOUND by T-613 (wave 78). Cosmetic today, wrong in a way that will mislead.
 
-=== WHAT IT ACTUALLY CHECKS ===
-`verify-citations` matches only `@contract <name>.schema.json`, in extensions `.go/.ts/.tsx/.c/.mjs/.js`,
-under scan roots `apps/` and `packages/`. Consequences, all measured:
-- **`docs/` is never read.** `PLAYTEST_RUNBOOK.md`'s ~19 stale citations were invisible by construction
-  -- the gate was never going to catch them, in any form.
-- **`rs` is not in `CODE_EXTS`, and `crates/` is not a scan root.** So **16 `@contract` tags in
-  `apps/**/*.rs` and 2 in `crates/` are unverified.**
-- **All 41 citations it does check live in `.c` files** -- in a repo that went **Go -> Rust at T-145**
-  and **React -> Leptos at T-159.29.3**. The verifier still reflects the pre-rewrite codebase.
+`docs/platform/wave_plan.tsv` column 1 carries **two incompatible label formats**: bare numbers
+(`0`-`11`, `43`-`68`, `99`) from the original packing, and `w76`/`w77`/`w78` from the recent waves.
+`current_wave()` sorts with `sort -n`, under which **`w78` evaluates to 0**, so the newest waves sort
+below the oldest. T-613 measured `current_wave` returning **3** from its worktree, with
+`wave.sh wave` printing "wave 3 is OPEN".
 
-And it reports:
-    Checked 41 @contract citation(s)
-    All @contract citations resolve.
-**The number is true and the confidence it creates is false** -- the signature defect of this
-codebase, in the tool whose entire job is checking that claims match reality.
+**It reads correctly on `main` right now** (`wave w78 — 0/4 shipped`) because the w78 rows exist and
+whatever tiebreak applies lands on the right answer -- so this is latent, not live. It is filed
+because the underlying mix is real and the next person to add a differently-shaped label gets a
+different wrong answer.
 
-=== WHY IT MATTERS BEYOND TIDINESS ===
-This is the third instance in three waves of a check that passes because it is looking at the wrong
-thing: T-607 (staging validated a stale Workshop build, and its pass criteria were that build's
-strings), T-606 (a health grep that matches only an ERROR string), and now this. Each one produced a
-green that a human reasonably trusted.
+It also feeds `gate_wave_number`'s fallback. That path is guarded by `factory_pack_wave`, so the gate
+DB naming is unaffected -- verified by T-613, not assumed.
 
-=== FIX ===
-1. Add `rs` to `CODE_EXTS` and `crates/` to the scan roots; expect the 18 currently-unverified tags to
-   need resolution.
-2. Decide whether prose citations in `docs/` are in scope. T-610 chose the cheaper cure -- cite stable
-   **symbol names** rather than line numbers, which does not rot and needs no gate. If that convention
-   holds, the gate does not need to read `docs/` at all; write the convention down instead.
-3. Make the summary line state its own scope: "Checked 41 @contract citation(s) in .c/.ts under
-   apps/, packages/" is honest; "All @contract citations resolve" is not.
+FIX: pick one format and migrate the file, or make `current_wave()` strip a leading `w` before the
+numeric sort. Prefer migrating the data -- a parser that tolerates two formats invites a third.
 
-Owner note: `Makefile` + the xtask verifier. T-610 owned neither and correctly reported instead of
-building.
-- **T-612** (deferred) — Four more scripts and six docs still gate on log strings the mod stopped printing [MOD] — FOUND by T-606 (wave 77), which fixed the three sites its ticket named and measured the rest. Same
-defect class as T-606/T-607/T-611: **a check pinned on a log string someone later reworded.**
+NOTE the new wave-78 base-derivation cross-checks read `wave_plan.tsv` as one of their oracles
+(`ticket ledger`). They key on the `wN` form and worked correctly this wave ("wave 77 has 5
+ticket(s)… all shipped — corroborated"), but anything that normalises these labels must keep that
+check working -- see T-613's implementation before touching the format.
+- **T-617** (deferred) — TBD_Dev_POC.conf tells players to watch for two log strings that no longer exist [MOD] — FOUND by T-612 (wave 78) after it corrected the four scripts and six docs its own ticket named.
+One more site, missed by the original sweep because it is a mission config rather than a doc or script.
 
-=== SCRIPTS THAT STILL GATE ON DEAD STRINGS ===
-- `scripts/mod/mcp-wb-logs.sh:7,41` -- gates on `built slot spawn` (**deleted** from the codebase)
-- `scripts/mod/tbd-spawn-verify.sh:9` -- same dead string
-- `scripts/mod/tbd-spawn-determinism.sh:141` -- extracts on `Mission loaded`, which now survives only
-  inside `TBD_FrameworkManager.c`'s **error** string. T-606 proved the same pattern in
-  `remote-log-grep.sh` was not merely stale but **inverted**: on a log containing only
-  `[TBD] Mission loaded but invalid — staying in LOADING.` the check reported SATISFIED, and on a
-  healthy log it reported MISSING. Check whether this site has the same inversion.
+`apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf:5` -- `m_sDescription` still instructs players to
+watch for **`built slot spawn`** (deleted from the codebase) and **`spawn requested`** (appears in
+**zero** `Print` statements anywhere). This is player-facing text inside the dev mission, so it is
+read by exactly the person least equipped to know it is wrong.
 
-=== DOCS QUOTING STRINGS THE BUILD NO LONGER EMITS ===
-- `apps/mod/README.md:43`
-- `apps/mod/tbd-framework/README.md:104-106`
-- `docs/specs/Mission_Creator_Architecture/t092_2_mod_compile_route.md:103`
-- `docs/specs/Mission_Creator_Architecture/t068_12_mod_player_loadout_equip.md:31,90,140,153`
-- `docs/specs/Mission_Creator_Architecture/t068_14_phase2_e2e_gate.md:43` -- names BOTH
-  `[TBD][Loadout][Player]` and `[TBD][Slotting]`, **neither of which exists anywhere**. The real tags
-  are `[TBD][Loadout][Slot]` and `[TBD][Slots]`. Measured on a fully working loadout pass:
-  **0** `[Player]` lines vs **93** `[Slot]` lines (69 vs 0 on the second golden). This is the file a
-  human follows to run T-068.14 -- following it returns nothing and reads exactly like
-  "the loadout never applied", which is the one thing that gate exists to confirm.
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c:17` -- same dead tag
-  in an in-code comment.
-- `apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c:103-104` -- comment says the `[TBD][Stage]`
-  helper is "NOT yet wired"; **T-181.17 wired it** at `TBD_FrameworkManager.c:779`.
+Current vocabulary, measured live on a 421-line healthy boot (`slot-loadout-coverage`,
+`TBD_WORLDBOOT_SETTLE=25`): **145** `[TBD][` lines, **7** `[TBD][Slots] Slot-`, **93**
+`[TBD][Loadout][Slot]`, and `[TBD][Mission] loaded id=`. Zero matches for either dead string.
 
-`docs/platform/PLAYTEST_RUNBOOK.md:904` already documents the correct tag -- so the runbook and the
-T-068.14 spec currently disagree, and the runbook is the one that is right.
+FIX SHAPE, established and proved by T-606 and T-612: pin the last **structural** token (tag, `key=`,
+enum), never the first English word; verify against a real log rather than by reading; and do not pin
+a tagged-line count (measured 147 and 155 on two goldens, drifting +47 on an unchanged mission).
+`scripts/mod/remote-log-grep.sh` is the reference implementation and carries the rule at its line 34.
 
-=== FIX SHAPE -- copy T-606, do not re-derive ===
-T-606 established the working pattern and proved it: cut each pin to the last **structural** token
-(tag, `key=`, enum) and never the first English word; verify against a real log rather than by reading;
-add a `--selftest` asserting stale->fail, healthy->pass, invalid->fail; and verify every pattern under
-**both** ugrep 7.5.0 and GNU grep 3.8, which disagree on bare `{}` in an ERE.
-Also from T-606, worth heeding: **do not pin a tagged-line COUNT.** Measured 147 and 155 on the two
-goldens, having drifted **+47 on an unchanged mission**; it is not monotonic in slot count. Use
-0-vs-nonzero.
-- **T-613** (deferred) — wave.sh derives its gate base and verifies it with the SAME oracle, so a fake marker self-approves [INFRA] — FOUND by wave 77's adversarial verifier. **The signature defect of this codebase, sitting inside the
-fix for it.** Latent today; blocker-shaped if it ever fires.
-
-T-602 (wave 77) fixed the gate silently narrowing its scope: it now DERIVES the base from the
-`wave N CLOSED` marker and VERIFIES that base is an ancestor-or-equal of the previous close. Both
-halves work -- measured, `HEAD~1` and mid-wave bases are refused with exact missed-commit counts.
-
-**But derive and verify call the same function.** The subject confirm (`wave.sh:1754`,
-`case … wave\ [0-9]*\ CLOSED*`) and the prefilter ERE (`:1777`) both accept ANYTHING after
-`CLOSED`, and `gate_base_covers_wave` (`:1806`) verifies against `prev_wave_close()` -- the same
-oracle that just produced the answer. So a plausible-looking subject becomes the base AND
-self-verifies. Proven in a shared clone (fabricated commits; the real repo untouched):
-
-    $ git commit-tree … -m 'wave 76 CLOSED? reopened — reverting T-608 pending re-gate'
-    DERIVED: a0377522 wave 76 CLOSED? reopened — reverting T-608 pending re-gate
-    cover rc=0
-
-The gate range would be ONE commit; the entire real wave sits outside every change-scoped step
-(`touch_changed`, `wasm32`, `fmt (changed)`, the trunk conditional) -- which is precisely the
-wave-75 incident T-602 was written to prevent, re-achievable through the front door.
-
-**Why it is latent, not live:** all 32 historical `wave N` subjects were checked and none matches;
-`wave --close` writes the format itself. The comment at `:1770` defends only against the marker text
-appearing in a commit BODY (which this wave's own commits do), not against a subject that merely
-continues past `CLOSED`.
-
-RELATED, same family (verifier F6): **a REVERTED wave-close still derives as the base.** Clone-proven
--- with `Revert "wave 76 CLOSED…"` on top, derivation still returned `efc3851c`, so a disavowed wave's
-span is never re-gated. Requires an operator revert; fails narrow-and-silent.
-
-FIX SHAPE: anchor the subject match (`CLOSED` at end, or `CLOSED:` / `CLOSED —` only), and give the
-verifier an INDEPENDENT oracle -- e.g. cross-check the derived base against the merge structure or
-the tag history rather than re-asking `prev_wave_close()`. A checker that consults the thing it is
-checking is not a check.
-- **T-614** (deferred) — Wave 77 residue: the slice gate lints none of a tooling slice, and two counts/pins are off [INFRA] — Three lesser findings from wave 77's adversarial verifier. None is a live defect.
-
-1. **`scripts/platform/wave.sh:875` -- the SLICE gate still skips clippy for `tbd-tools|xtask`**, giving
-   the reason "red on main, ungated by CI". **"Red on main" is now contradicted by lines 830-831 of the
-   same file** ("they are clean" -- T-603's own re-measure, independently confirmed: baseline
-   `clippy -p xtask -p tbd-tools --all-targets -- -D warnings` rc=0 from a cold dir, 50 real compile
-   units). So a slice that edits ONLY those crates has its own gate lint none of its code, and the lint
-   lands later at the wave gate -- the exact T-329 shape this function's header says it exists to
-   prevent. ("Ungated by CI" remains true: the ci.yml change was comment-only.)
-2. **Commit `d9c666e1` says "14 across 4 files"; it is 14 across EIGHT files.** Re-measured by reverting
-   `tools/ xtask/` to `efc3851cc` in a clone: plain run = 9, all in `tools/tbd-tools/src/enf/`
-   (truncation confirmed -- the failed lib blocks dependents from compiling at all, even with
-   `--keep-going`); with the lib fixed, 5 more -- `bin/enf.rs` 1, `xtask/src/schema_gates.rs` 3,
-   `xtask/src/sync.rs` 1. The lib's own 9 spread over FIVE files (apidoc 2, capability 2, citations 2,
-   source 1, symbols 2). Every lint type matches the commit's breakdown; only the file spread is wrong.
-3. **`scripts/mod/remote-log-grep.sh:118` -- `PAT_ASSIGNED` pins the legacy flat format plus prose** of
-   `TBD_SpawnManager.c:675`, in the very file whose own rule (line 34) is *"pin the prefix, never the
-   sentence."* Demonstrated: rewording that Print to the tagged vocabulary -- the file's own stated
-   direction of travel -- flips a healthy player-seated log from PASS to PARTIAL (`rc=2, was 0`). Fails
-   toward PARTIAL rather than false-PASS, and the header documents the dependency, so it is a nit.
-
-ALSO NOTED, deliberate and not a defect (verifier F5): `.world-boot-warning-baseline` budgets sit
-below boot reality on purpose, as a forcing function, so `world-boot.sh --mission=…` fails on clean
-main by design. Confirmed live (`5 > baseline 1 for msn_2d91be`). The cost, worth knowing: while a row
-is red, a NEW regression on it (5->6) is indistinguishable from the standing red. See T-609.
+CONTEXT for why a description string is worth a ticket: T-612 proved `mcp-wb-logs.sh` had **no
+reachable exit 0 or exit 2** and was fully inverted -- it printed PASS on a stale June log and FAIL on
+a real healthy boot -- because it was built on these same two dead strings. The strings have a track
+record of turning into false verdicts wherever they are copied.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
