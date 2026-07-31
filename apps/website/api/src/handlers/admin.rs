@@ -548,8 +548,7 @@ fn parse_rcon_command(action: &str, map: &str, command: &str) -> Result<RconComm
 ///
 /// So this slice stops at the boundary and makes the endpoint tell the truth. See
 /// [`send_rcon`] for the contract T-289 must satisfy.
-const RCON_NO_TRANSPORT: &str =
-    "rcon transport not configured: this API has no channel to the game-server host, so the \
+const RCON_NO_TRANSPORT: &str = "rcon transport not configured: this API has no channel to the game-server host, so the \
      command was recorded but NOT delivered (blocked on T-289)";
 
 /// `POST /api/v1/admin/servers/:id/rcon` — validate, audit, and **refuse to claim delivery**.
@@ -695,8 +694,14 @@ mod tests {
         assert_eq!(parse_rcon_command("", "", ""), Err("action required"));
         assert_eq!(parse_rcon_command("nuke", "", ""), Err("unknown action"));
         // Whitespace-padded actions are normalised by failing, not by trimming.
-        assert_eq!(parse_rcon_command(" restart", "", ""), Err("unknown action"));
-        assert_eq!(parse_rcon_command("restart", "", ""), Ok(RconCommand::Restart));
+        assert_eq!(
+            parse_rcon_command(" restart", "", ""),
+            Err("unknown action")
+        );
+        assert_eq!(
+            parse_rcon_command("restart", "", ""),
+            Ok(RconCommand::Restart)
+        );
         assert_eq!(RconCommand::Restart.action(), "restart");
         assert_eq!(RconCommand::Custom("x".into()).action(), "custom");
     }
