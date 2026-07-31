@@ -210,9 +210,19 @@ info "VERIFIED  $FINAL ($(stat -c%s "$FINAL") bytes, $ROWS data rows)"
 # Sorted by FILENAME, not mtime: the names carry a UTC ISO-8601 stamp, which sorts
 # lexicographically in exactly chronological order, and unlike mtime it cannot be
 # rewritten by a copy, an rsync, or a `touch`.
+#
+# Built by an explicit loop, NOT `mapfile < <(printf '%s\n' glob | sort)`: with nullglob and
+# no matches, `printf '%s\n'` receives no arguments and STILL PRINTS ONE EMPTY LINE, so the
+# array reads as length 1 holding "" and the empty case below becomes unreachable. Measured
+# in backup-drill.sh, where it turned "there are no backups at all" — the loudest result the
+# tooling can produce — into a confusing restore error.
 shopt -s nullglob
-mapfile -t ALL < <(printf '%s\n' "$OUT/${DB}-"*.dump | LC_ALL=C sort -r)
+ALL=()
+for _f in "$OUT/${DB}-"*.dump; do [ -f "$_f" ] && ALL+=("$_f"); done
 shopt -u nullglob
+if [ "${#ALL[@]}" -gt 1 ]; then
+	mapfile -t ALL < <(printf '%s\n' "${ALL[@]}" | LC_ALL=C sort -r)
+fi
 
 if [ "${#ALL[@]}" -eq 0 ]; then
 	warn "retention found no dumps matching ${DB}-*.dump — expected at least the one just written."
