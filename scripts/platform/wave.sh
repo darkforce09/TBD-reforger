@@ -2296,11 +2296,21 @@ cmd_reclaim() {
       # once is 67 GB or a red gate, and the cost of the arm is a string compare.
       case "$sbase" in
         target|target-gate-*) continue ;;
+        # NOT a safety arm — the ticket-first rule below already spares this, and did so on its own
+        # in this sweep's first real run. It is a REPORTING arm: target-dev-api is the operator's
+        # live `make api` cache (Makefile:134,196), permanent by design, and the generic line below
+        # filed it under "unparseable" and advised RENAMING IT so it could be reaped. Naming one
+        # known-permanent dir is cheaper than printing that about the cache behind the API the
+        # operator is using right now.
+        target-dev-api)
+          sz="$(du -sm "$sd" 2>/dev/null | cut -f1)"
+          printf '  spared  %-44s %s MB  (operator dev API cache — permanent, Makefile owns it)\n' "$sd" "${sz:-?}"
+          continue ;;
       esac
       if ! [[ "$sbase" =~ ^target-([Tt]-?[0-9]+)(-.*)?$ ]]; then
         sz="$(du -sm "$sd" 2>/dev/null | cut -f1)"
         unknown_mb=$((unknown_mb + ${sz:-0})); unknown_n=$((unknown_n + 1))
-        printf '  spared  %-44s %s MB  (no ticket id in the name — no owner to check)\n' "$sd" "${sz:-?}"
+        printf '  spared  %-44s %s MB  (name carries no ticket id — no owner to check)\n' "$sd" "${sz:-?}"
         continue
       fi
       stok="${BASH_REMATCH[1]}"
@@ -2311,7 +2321,7 @@ cmd_reclaim() {
       sz="$(du -sm "$sd" 2>/dev/null | cut -f1)"
       rm -rf "$sd" 2>/dev/null && freed=$((freed + ${sz:-0})) && printf '  removed %-44s %s MB\n' "$sd" "${sz:-?}"
     done
-    [ "$unknown_n" -gt 0 ] && echo "  ${unknown_mb} MB in ${unknown_n} unparseable dir(s) NOT reclaimed — rename to target-<TICKET>-* to make them reapable"
+    [ "$unknown_n" -gt 0 ] && echo "  ${unknown_mb} MB in ${unknown_n} unattributed dir(s) NOT reclaimed — reclaim removes only what it can attribute to a slice"
   fi
 
   if [ "$gate_dirs" -eq 1 ]; then
