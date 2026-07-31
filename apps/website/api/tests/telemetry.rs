@@ -1306,6 +1306,9 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
     const EV: &str = "9f0f4c6e-1d3a-4e2b-8c77-2a5b6d4e9011";
     const MISSION: &str = "3c1d5b7a-8e42-4f19-9a6d-71b0c2e8f455";
     const SRC: &str = "3c1d5b7a-8e42-4f19-9a6d-71b0c2e8f455@2026-07-26T20:03:11Z#183472";
+    /// Author of the two rows below. Private to this test (`…393002`) so no other suite's
+    /// `DELETE FROM missions WHERE author_id = $1` sweep can take them out from under it.
+    const AUTHOR: &str = "000000000000393002";
 
     let clean = |pool: PgPool| async move {
         sqlx::query("DELETE FROM match_player_stats WHERE arma_id = ANY($1)")
@@ -1320,6 +1323,49 @@ async fn the_shipping_mod_payload_is_accepted_verbatim() {
             .unwrap();
     };
     clean(pool.clone()).await;
+
+    // T-585 — `0019_ingest_pointer_foreign_keys.sql` constrains `matches.event_id` and
+    // `matches.mission_id`, so the two ids the mod sends must now name rows that exist. Before
+    // it, this test posted pointers to nothing, got a 200, and stored a match whose `event_id`
+    // dangled — the exact silent-attribution-loss 0019 was written to end.
+    //
+    // **THE PAYLOAD BELOW IS UNCHANGED, DELIBERATELY.** The fix is to make its parents real, not
+    // to re-aim the literal: the literal IS the contract this test guards, and editing it to
+    // pass is precisely the move the doc comment above forbids. Both rows are therefore pinned
+    // to `EV` / `MISSION` rather than taking `RETURNING id`, which also keeps `SRC` honest —
+    // it is `BuildSourceMatchId`'s `missionId@startedAt#tick`, so its leading uuid has to stay
+    // the mission's.
+    //
+    // `ON CONFLICT DO NOTHING`: each test binary provisions its own database, but a re-run
+    // against a surviving one must converge rather than collide on the pinned primary key.
+    // The rows are left behind on purpose — a parent that outlives the match is the normal
+    // shape, and deleting them here would exercise 0019's `ON DELETE SET NULL` instead of the
+    // ingest path this test is about.
+    //
+    // No `users` row is minted for `AUTHOR`: `missions.author_id` / `events.created_by` carry no
+    // foreign key (0018 abstention (ii) — authorship is an open policy decision), and the two
+    // `arma_id`s must stay unlinked for the `unlinked: 2` assertion below. If an authorship FK
+    // ever lands, this is one of the call sites that needs a real user.
+    sqlx::query(
+        "INSERT INTO missions (id, title, author_id, terrain, game_mode, max_players, status, created_at, updated_at) \
+         VALUES ($1, 'T393 Shipping Mod Mission', $2, 'everon', 'pve_coop', 32, 'live', now(), now()) \
+         ON CONFLICT (id) DO NOTHING",
+    )
+    .bind(Uuid::parse_str(MISSION).expect("MISSION is a uuid literal"))
+    .bind(AUTHOR)
+    .execute(&pool)
+    .await
+    .expect("seed the mission the shipping payload names");
+    sqlx::query(
+        "INSERT INTO events (id, name_override, start_time, status, created_by, created_at, updated_at) \
+         VALUES ($1, 'T393 Shipping Mod Event', now() - interval '2 hours', 'open', $2, now(), now()) \
+         ON CONFLICT (id) DO NOTHING",
+    )
+    .bind(Uuid::parse_str(EV).expect("EV is a uuid literal"))
+    .bind(AUTHOR)
+    .execute(&pool)
+    .await
+    .expect("seed the event the shipping payload names");
 
     // ---- BEGIN golden payload — TBD_ResultsReporter.c BuildPayload + BuildPlayerRow ----
     let golden = format!(
