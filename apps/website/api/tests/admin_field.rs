@@ -468,6 +468,10 @@ async fn admin_approvals_cms_field() {
     assert_eq!(st, StatusCode::OK, "roles/sync: {sync_body}");
     restore_user_roles(&pool, &role_snap).await;
     assert_roles_match_snapshot(&pool, &role_snap).await;
+    // T-269 — the RCON endpoint must not report success over a command it cannot deliver.
+    // Until T-289 supplies a channel to the game-server host there is no transport, so a
+    // syntactically valid request is audited and refused with 503, never 202 `accepted:true`.
+    // This assertion was `StatusCode::ACCEPTED` and was itself pinning the defect.
     let (st, r) = call(
         &app,
         "POST",
@@ -476,8 +480,9 @@ async fn admin_approvals_cms_field() {
         Some(r#"{"action":"restart"}"#),
     )
     .await;
-    assert_eq!(st, StatusCode::ACCEPTED);
-    assert_eq!(r["action"], "restart");
+    assert_eq!(st, StatusCode::SERVICE_UNAVAILABLE, "rcon restart: {r}");
+    assert_eq!(r["details"]["action"], "restart");
+    assert_eq!(r["details"]["delivered"], false);
     let (st, _) = call(
         &app,
         "POST",
@@ -487,6 +492,60 @@ async fn admin_approvals_cms_field() {
     )
     .await;
     assert_eq!(st, StatusCode::BAD_REQUEST);
+
+    // T-269 — `custom` with no command is a 400. Pre-fix the handler discarded `command`
+    // entirely (`let _ = &input.command;`), so this body was indistinguishable from a real
+    // one and returned 202.
+    let (st, r) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/admin/servers/{server_id}/rcon"),
+        &t,
+        Some(r#"{"action":"custom","command":"   "}"#),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::BAD_REQUEST,
+        "blank custom command must 400: {r}"
+    );
+
+    // T-269 — and a real command must reach the audit row, which is the ONLY place an RCON
+    // request lands at all today. Pre-fix every custom command persisted the bare string
+    // `issued RCON 'custom'`, so the trail could not tell a shutdown from anything else.
+    // This is the assertion that fails against the discarding handler.
+    let marker = format!("#tbd-t269-probe-{server_id}");
+    let (st, r) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/admin/servers/{server_id}/rcon"),
+        &t,
+        Some(&format!(r#"{{"action":"custom","command":"{marker}"}}"#)),
+    )
+    .await;
+    assert_eq!(st, StatusCode::SERVICE_UNAVAILABLE, "rcon custom: {r}");
+    let audited: Option<String> = sqlx::query_scalar(
+        "SELECT message FROM audit_logs WHERE action = 'server.rcon' AND target_id = $1 \
+         ORDER BY created_at DESC LIMIT 1",
+    )
+    .bind(server_id.to_string())
+    .fetch_optional(&pool)
+    .await
+    .unwrap();
+    let audited = audited.expect("T-269: an RCON attempt must still be audited");
+    assert!(
+        audited.contains(&marker),
+        "T-269: the audit row must record the command that was requested, got {audited:?}"
+    );
+    assert!(
+        !audited.contains("issued RCON"),
+        "T-269: the audit row must not claim the command was issued, got {audited:?}"
+    );
+    sqlx::query("DELETE FROM audit_logs WHERE action = 'server.rcon' AND target_id = $1")
+        .bind(server_id.to_string())
+        .execute(&pool)
+        .await
+        .unwrap();
 
     // --- approvals + inject ---
     let (_, m) = call(
