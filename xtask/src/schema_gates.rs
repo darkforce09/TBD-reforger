@@ -10,7 +10,7 @@
 //!   Leptos contract layer is Rust (`dto.rs`) gated by R-api golden tests.
 //! - GO-7 @route match — the Go handlers were retired at the T-145 Rust cutover; axum wires
 //!   routes through typed fns, so a rename is a compile error, not doc rot.
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -425,7 +425,31 @@ pub fn map_object_enums() -> Result<u8> {
 
 /* ─────────────────────────── type inventory (I1–I7) ─────────────────────────── */
 
-const INSTANCE_KINDS: [&str; 8] = [
+/// The census kinds the I1 sum gate adds up — `map-object-enums.schema.json` `$defs.kind` minus
+/// `$defs.regionKind`, which is exactly `byKind`'s property set.
+///
+/// T-594. This array was `[&str; 8]` and missing `vehicle` for a month after T-244 added that kind
+/// to the enums schema and to `prefab-classify.json`. Nothing compared the two, and the shortfall
+/// was not merely cosmetic: I1 sums ONLY the kinds named here, so a regenerated Everon inventory
+/// carrying `byKind.vehicle.instances = 176` came up short by exactly 176 and the gate read as a
+/// data fault in the artifact rather than as a hole in the gate.
+///
+/// Its twin `tools/tbd-tools/src/world/INSTANCE_KINDS` had already been corrected to nine and
+/// pinned by `instance_kinds_match_enums_schema` — but that test lives in `tbd-tools`, which
+/// **neither the wave gate nor CI runs** (`cargo test --workspace` is red on clean main, so the
+/// gate tests `website-api` / `map-engine-*` / `website-frontend` only). So the guarded copy was
+/// the one that did not feed the gate, and the copy that fed the gate was unguarded.
+///
+/// It is pinned two ways now, deliberately:
+///   * at RUNTIME inside `type_inventory()` (see `instance_kinds_lockstep_failures`) — that is the
+///     load-bearing one, because `xtask schema type-inventory` runs in every slice gate and every
+///     wave gate via `gate_schema`;
+///   * by `#[cfg(test)] instance_kind_lockstep_tests` for local `cargo test -p xtask` feedback.
+/// A `#[test]` alone would have been decorative here for the same reason the tbd-tools one was.
+///
+/// Order is `byKind`'s emitted key order (serde_json is built with `preserve_order`): `vehicle`
+/// goes after `water`, `road` stays last, matching the twin and every committed inventory.
+const INSTANCE_KINDS: [&str; 9] = [
     "building",
     "tree",
     "vegetation",
@@ -433,8 +457,81 @@ const INSTANCE_KINDS: [&str; 8] = [
     "prop",
     "utility",
     "water",
+    "vehicle",
     "road",
 ];
+
+/// The lockstep invariant for `INSTANCE_KINDS`, as a list of failure strings (empty = OK).
+///
+/// Shared by the runtime gate and the unit test so the two can never disagree about what "in
+/// lockstep" means. `enums` is a parsed `map-object-enums.schema.json`.
+///
+/// Two comparisons, because they fail differently:
+///   1. against `$defs.kind` minus `$defs.regionKind` — the single source of truth. This is what
+///      catches the NEXT kind addition on the day it lands.
+///   2. against `tbd_tools::world::INSTANCE_KINDS`, order included — the two copies exist because
+///      `xtask` stays dependency-light and `tbd-tools` owns the export pipeline, and a divergence
+///      between them is precisely the T-244 defect. Order matters: it is the emitted `byKind` key
+///      order, so a reordering here would silently change the artifact on the next rebuild.
+///
+/// Missing enum `$defs` are a FAILURE, not a skip: a schema that could not be read must not let
+/// this report "in lockstep" over a comparison it never made.
+fn instance_kinds_lockstep_failures(enums: &Value) -> Vec<String> {
+    let mut out = Vec::new();
+    let names = |k: &str| -> Option<HashSet<String>> {
+        enums["$defs"][k]["enum"].as_array().map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
+    };
+    match (names("kind"), names("regionKind")) {
+        (Some(all), Some(regions)) if !all.is_empty() && !regions.is_empty() => {
+            let expected: BTreeSet<&String> = all.difference(&regions).collect();
+            let actual: BTreeSet<String> =
+                INSTANCE_KINDS.iter().map(|s| (*s).to_string()).collect();
+            let actual_ref: BTreeSet<&String> = actual.iter().collect();
+            if actual_ref != expected {
+                let missing: Vec<&str> = expected
+                    .difference(&actual_ref)
+                    .map(|s| s.as_str())
+                    .collect();
+                let spurious: Vec<&str> = actual_ref
+                    .difference(&expected)
+                    .map(|s| s.as_str())
+                    .collect();
+                out.push(format!(
+                    "INSTANCE_KINDS (xtask/src/schema_gates.rs) drifted from \
+                     map-object-enums.schema.json $defs.kind minus $defs.regionKind — \
+                     missing {missing:?}, spurious {spurious:?}. I1 sums only the kinds named \
+                     there, so a missing bucket makes the sum come up short by that bucket's \
+                     instances and reads as a bad artifact instead of a stale gate (T-244/T-594)"
+                ));
+            }
+        }
+        _ => out.push(
+            "INSTANCE_KINDS lockstep: map-object-enums.schema.json $defs.kind / $defs.regionKind \
+             missing or empty — refusing to report lockstep over a comparison never made"
+                .to_string(),
+        ),
+    }
+    // Compared as SLICES, not arrays, and that is not a style choice. `[&str; N] == [&str; M]` for
+    // N != M is a hard type error (E0277), so an array-to-array comparison here turns the most
+    // likely drift — someone adds or drops a kind in one copy — into a raw "can't compare
+    // [&str; 8] with [&str; 9]" instead of the explanation below. Measured while perturbing this
+    // very check: the length-changing case never reached the assertion at all. Slices compare
+    // across lengths, so every drift shape lands on one legible message.
+    if INSTANCE_KINDS[..] != tbd_tools::world::INSTANCE_KINDS[..] {
+        out.push(format!(
+            "INSTANCE_KINDS (xtask/src/schema_gates.rs) {:?} != \
+             tbd_tools::world::INSTANCE_KINDS {:?} — the two census kind lists must stay \
+             identical INCLUDING ORDER (it is the emitted byKind key order)",
+            INSTANCE_KINDS,
+            tbd_tools::world::INSTANCE_KINDS
+        ));
+    }
+    out
+}
 
 pub fn type_inventory() -> Result<u8> {
     let root = repo_root()?;
@@ -445,6 +542,14 @@ pub fn type_inventory() -> Result<u8> {
     let enums = read_json(&sroot.join("schema/map-object-enums.schema.json"))?;
 
     let mut failures: Vec<String> = Vec::new();
+
+    // T-594. The lockstep pin for INSTANCE_KINDS, RUN rather than merely written down. It is here
+    // and not only in a #[test] because nothing runs xtask's tests: the wave gate tests
+    // website-api / map-engine-* / website-frontend, and CI mirrors that. `xtask schema
+    // type-inventory` is in GATE_SCHEMA_VALIDATE_GATES, so this executes in both gate halves.
+    // First, before any inventory is examined — if the kind list is wrong then every I1 verdict
+    // below it is computed over the wrong set of buckets and must not be believed.
+    failures.extend(instance_kinds_lockstep_failures(&enums));
 
     let check = |label: &str, inv: &Value, manifest: Option<&Value>, failures: &mut Vec<String>| {
         let errs: Vec<String> = validator
@@ -639,6 +744,73 @@ pub fn type_inventory() -> Result<u8> {
     }
 
     Ok(verdict("verify-type-inventory", "", &failures))
+}
+
+/// T-594 — the developer-feedback half of the `INSTANCE_KINDS` pin. The gate-enforced half is the
+/// `instance_kinds_lockstep_failures` call inside `type_inventory()`; both call the same function,
+/// so neither can drift from the other's idea of the invariant.
+#[cfg(test)]
+mod instance_kind_lockstep_tests {
+    use super::{INSTANCE_KINDS, instance_kinds_lockstep_failures, read_json, repo_root};
+
+    fn enums() -> serde_json::Value {
+        read_json(
+            &repo_root()
+                .expect("repo root")
+                .join("packages/tbd-schema/schema/map-object-enums.schema.json"),
+        )
+        .expect("enums schema")
+    }
+
+    /// The guard that would have caught T-244 the day it landed, on the copy that feeds I1.
+    #[test]
+    fn instance_kinds_match_enums_schema_and_tbd_tools() {
+        let f = instance_kinds_lockstep_failures(&enums());
+        assert!(f.is_empty(), "INSTANCE_KINDS is not in lockstep:\n  {f:#?}");
+    }
+
+    /// Non-vacuity: prove the comparison above actually compares. A schema whose `kind` enum has
+    /// lost a member this array still carries MUST fail — otherwise the assertion is decorative.
+    #[test]
+    fn lockstep_reds_when_the_enum_and_the_array_disagree() {
+        let mut doc = enums();
+        let kinds = doc["$defs"]["kind"]["enum"]
+            .as_array()
+            .expect("kind enum")
+            .clone();
+        let dropped: Vec<serde_json::Value> = kinds
+            .into_iter()
+            .filter(|v| v.as_str() != Some("vehicle"))
+            .collect();
+        doc["$defs"]["kind"]["enum"] = serde_json::Value::Array(dropped);
+        let f = instance_kinds_lockstep_failures(&doc);
+        assert!(
+            f.iter()
+                .any(|m| m.contains("spurious") && m.contains("vehicle")),
+            "removing `vehicle` from the kind enum must red the lockstep check; got {f:#?}"
+        );
+    }
+
+    /// Same non-vacuity proof for the missing-`$defs` branch: an unreadable enum set is a FAIL,
+    /// never a silent pass.
+    #[test]
+    fn lockstep_reds_when_the_enums_are_unreadable() {
+        let f = instance_kinds_lockstep_failures(&serde_json::json!({}));
+        assert!(
+            f.iter().any(|m| m.contains("refusing to report lockstep")),
+            "an absent kind enum must fail closed; got {f:#?}"
+        );
+    }
+
+    /// `road` last, `vehicle` after `water` — this array is the emitted `byKind` key order, so a
+    /// reorder silently rewrites the committed artifact on the next rebuild.
+    #[test]
+    fn instance_kinds_order_is_the_emitted_bykind_order() {
+        assert_eq!(INSTANCE_KINDS.last(), Some(&"road"));
+        let water = INSTANCE_KINDS.iter().position(|k| *k == "water");
+        let vehicle = INSTANCE_KINDS.iter().position(|k| *k == "vehicle");
+        assert_eq!(vehicle, water.map(|i| i + 1), "vehicle must follow water");
+    }
 }
 
 /* ─────────────────────────── terrain manifest ─────────────────────────── */
