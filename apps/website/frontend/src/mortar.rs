@@ -112,6 +112,26 @@ struct SaveResponse {
     fire_mission: SavedFire,
 }
 
+/// A `GET /events/{id}/fire-missions` result, tagged with the operation it was fetched for.
+///
+/// **The tag is not bookkeeping — without it the load-time hydration is a race it loses.**
+/// `LocalResource` keeps serving its PREVIOUS value while the next key is in flight, so the instant
+/// the operator picks an operation the effect below sees `{new operation, old operation's rows}`.
+/// Measured in a real browser against the live API on 2026-07-31: a cold session picked its
+/// operation, the once-per-operation latch fired against the empty list belonging to *no*
+/// operation, and the real rows that landed 40 ms later were then correctly ignored as
+/// already-hydrated. The page showed "Enter coordinates and calculate" over a saved fire mission
+/// it had in hand — this ticket's own defect, one layer up.
+///
+/// `events.rs` hit the identical shape on its hub Resource and answers it the identical way
+/// (`Hub::Loaded(got, ev)` + `if got == want`, with the comment "the value in hand is the one asked
+/// for"). Same fix here rather than a new one.
+#[derive(Clone, Debug, PartialEq)]
+struct SavedFor {
+    event_id: Option<String>,
+    rows: Vec<SavedFire>,
+}
+
 /// One `/events` row, narrowed to what the operation picker needs.
 ///
 /// Deliberately *not* [`crate::dto::EventListItem`]: that DTO models the whole schedule card
@@ -273,6 +293,36 @@ fn restore(row: &SavedFire) -> Option<Restored> {
     })
 }
 
+/// Decide what the load-time hydration should do with a fetched batch.
+///
+/// Pure, and separate from the effect that drives it, because the two ways this goes wrong are
+/// both invisible from a rendered page:
+///
+/// * **acting on a stale batch** — the [`SavedFor`] race above, which reads as "nothing was ever
+///   saved" while the rows sit one tick away;
+/// * **acting more than once** — the refetch after a save re-runs the effect, and re-hydrating
+///   there would replace the fresh full-fidelity card (TOF and all) with the TOF-less row that was
+///   just written, and would yank coordinates out from under anyone mid-edit.
+///
+/// `None` means do nothing at all. `Some(restored)` means latch this operation as hydrated and
+/// apply `restored` — itself `None` when the operation has nothing saved yet, or when the newest
+/// row's grids are not this module's encoding. Latching over an empty operation is deliberate: it
+/// is a real answer ("nothing saved here"), and re-asking on every refetch is how a later save gets
+/// clobbered.
+fn hydration_step(
+    batch: &SavedFor,
+    want: &str,
+    already_hydrated: Option<&str>,
+) -> Option<Option<Restored>> {
+    if batch.event_id.as_deref() != Some(want) {
+        return None;
+    }
+    if already_hydrated == Some(want) {
+        return None;
+    }
+    Some(batch.rows.last().and_then(restore))
+}
+
 /// Project FP and TGT into the preview box as `(left%, top%)` pairs.
 ///
 /// **This is the whole of the claim-2 fix**, so it is a pure function with a test rather than
@@ -409,14 +459,20 @@ fn MortarInner() -> impl IntoView {
                     )
                     .await
                     .ok()
-                    .map(|d| d.data),
-                    None => Some(Vec::new()),
+                    .map(|d| SavedFor {
+                        event_id: Some(id),
+                        rows: d.data,
+                    }),
+                    None => Some(SavedFor {
+                        event_id: None,
+                        rows: Vec::new(),
+                    }),
                 }
             }
             #[cfg(not(target_arch = "wasm32"))]
             {
                 let _ = (store, ev);
-                None::<Vec<SavedFire>>
+                None::<SavedFor>
             }
         }
     });
@@ -441,26 +497,21 @@ fn MortarInner() -> impl IntoView {
         }
     });
 
-    // Hydrate the card from the newest saved fire mission, ONCE per operation. The latch is what
-    // stops the refetch after a save from overwriting the fresh full-fidelity card (which has a
-    // TOF) with the row that was just written (which does not), and stops any later refetch from
-    // yanking coordinates out from under someone mid-edit.
+    // Hydrate the card from the newest saved fire mission, ONCE per operation.
     let hydrated_for = StoredValue::new(None::<String>);
     Effect::new(move |_| {
-        // Only latch on a fetch that actually answered. Latching on a failed load would make the
+        // Only act on a fetch that actually answered. Latching on a failed load would make the
         // page's one hydration attempt the one that read nothing.
-        let Some(Some(rows)) = saved.get() else {
+        let Some(Some(batch)) = saved.get() else {
             return;
         };
         let Some(ev) = event_id.get() else { return };
-        if hydrated_for.get_value().as_deref() == Some(ev.as_str()) {
-            return;
-        }
-        hydrated_for.set_value(Some(ev));
-        let Some(row) = rows.last() else {
+        let Some(restored) = hydration_step(&batch, &ev, hydrated_for.get_value().as_deref())
+        else {
             return;
         };
-        if let Some(r) = restore(row) {
+        hydrated_for.set_value(Some(ev));
+        if let Some(r) = restored {
             fp_x.set(r.fp.0);
             fp_y.set(r.fp.1);
             tgt_x.set(r.tgt.0);
@@ -671,11 +722,24 @@ fn MortarInner() -> impl IntoView {
                     <div class=CARD_SAVED>
                         <h2 class="text-sm font-semibold text-primary">"Saved Fire Missions"</h2>
                         {move || {
-                            // `LocalResource::get()` is `Option<Option<Vec<_>>>`: the outer layer
+                            // `LocalResource::get()` is `Option<Option<SavedFor>>`: the outer layer
                             // is "the fetch has not resolved", the inner one is this module's own
                             // "the fetch failed". Collapsing them would render an empty list over
-                            // a dead endpoint.
-                            match saved.get() {
+                            // a dead endpoint. A batch whose tag is not the selected operation is
+                            // the previous key's value still being served — "Loading…", never
+                            // another operation's gun line (see `SavedFor`).
+                            let batch = saved.get();
+                            let stale = matches!(
+                                &batch,
+                                Some(Some(b)) if b.event_id != event_id.get()
+                            );
+                            match batch {
+                                _ if stale => {
+                                    view! {
+                                        <p class="text-xs text-on-surface-variant">"Loading…"</p>
+                                    }
+                                        .into_any()
+                                }
                                 None => {
                                     view! {
                                         <p class="text-xs text-on-surface-variant">"Loading…"</p>
@@ -690,7 +754,7 @@ fn MortarInner() -> impl IntoView {
                                     }
                                         .into_any()
                                 }
-                                Some(Some(rows)) if rows.is_empty() => {
+                                Some(Some(SavedFor { rows, .. })) if rows.is_empty() => {
                                     view! {
                                         <p class="text-xs text-on-surface-variant">
                                             {move || {
@@ -704,7 +768,7 @@ fn MortarInner() -> impl IntoView {
                                     }
                                         .into_any()
                                 }
-                                Some(Some(rows)) => {
+                                Some(Some(SavedFor { rows, .. })) => {
                                     let rows: Vec<SavedFire> = rows.iter().rev().cloned().collect();
                                     view! {
                                         <ul class="flex min-h-0 flex-col gap-1 overflow-y-auto font-mono text-xs">
@@ -993,6 +1057,58 @@ mod tests {
             preview_pos((500.0, 500.0), (500.0, 500.0)),
             ((50.0, 50.0), (50.0, 50.0))
         );
+    }
+
+    /// **The measured race, pinned.** On 2026-07-31 a real browser against the live API showed a
+    /// cold session pick its operation and get "Enter coordinates and calculate to see solution."
+    /// back over a fire mission it already had in hand: `LocalResource` was still serving the
+    /// previous key's value, the once-per-operation latch fired against *that*, and the real rows
+    /// arriving a tick later were then correctly ignored as already-hydrated.
+    ///
+    /// Delete the `batch.event_id != want` arm of [`hydration_step`] and the first case below goes
+    /// green-then-wrong exactly as it did in the browser: it latches, restores nothing, and no
+    /// render assertion anywhere can tell the difference between that and an operation with no
+    /// saved fire missions.
+    #[test]
+    fn hydration_refuses_a_batch_fetched_for_a_different_operation() {
+        let row = serde_json::from_str::<DataEnvelope<SavedFire>>(LIVE_LIST)
+            .unwrap()
+            .data
+            .remove(0);
+        let want = "c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7";
+
+        // The value in flight belongs to "no operation" — the state a cold page starts in.
+        let stale = SavedFor {
+            event_id: None,
+            rows: Vec::new(),
+        };
+        assert_eq!(
+            hydration_step(&stale, want, None),
+            None,
+            "a batch fetched for another operation must not hydrate AND must not latch"
+        );
+
+        // …and the batch that actually answers for `want` still hydrates afterwards, which is the
+        // half that was broken: the latch had already been spent.
+        let fresh = SavedFor {
+            event_id: Some(want.to_string()),
+            rows: vec![row],
+        };
+        let applied = hydration_step(&fresh, want, None)
+            .expect("the batch for this operation must be acted on")
+            .expect("its newest row must restore");
+        assert_eq!(applied.fp, (1000.0, 2000.0));
+        assert_eq!(applied.shown.distance_m, 1217);
+
+        // Once done it is done — a refetch after a save must not clobber the fresh card.
+        assert_eq!(hydration_step(&fresh, want, Some(want)), None);
+
+        // An operation with nothing saved is a real answer: latch, restore nothing.
+        let empty = SavedFor {
+            event_id: Some(want.to_string()),
+            rows: Vec::new(),
+        };
+        assert_eq!(hydration_step(&empty, want, None), Some(None));
     }
 
     /// The weapon list duplicates `api/src/services/mortar.rs::charges_for`. Nothing can check
