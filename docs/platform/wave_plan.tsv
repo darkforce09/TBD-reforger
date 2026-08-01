@@ -411,3 +411,15 @@ w78	T-613	-	scripts/platform/wave.sh; scripts/mod/remote-log-grep.sh
 w78	T-611	-	Makefile; xtask/src
 w78	T-612	-	scripts/mod/mcp-wb-logs.sh; scripts/mod/tbd-spawn-verify.sh; scripts/mod/tbd-spawn-determinism.sh; apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c; apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c; docs/specs/Mission_Creator_Architecture; apps/mod/README.md; apps/mod/tbd-framework/README.md
 w78	T-607	-	scripts/mod/deploy-staging.sh; docs/mod/STAGING-SERVER.md
+w79	T-493	-	apps/website/api/tests/telemetry.rs; apps/website/api/tests/identity_link.rs; apps/website/api/src/handlers/telemetry.rs; apps/website/api/migrations/0014_nullable_match_player_stat_counters.sql
+w79	T-546	-	apps/website/api/tests/common/mod.rs; apps/website/api/tests/misc_integration.rs; apps/website/api/tests/webhook_it.rs; apps/website/api/src/services/webhook.rs
+w79	T-601	-	apps/website/frontend/src/arsenal.rs; apps/website/frontend/src/client.rs; apps/website/frontend/src/content.rs; apps/website/frontend/src/event_hub.rs; apps/website/frontend/src/mission_commands.rs; apps/website/frontend/src/mission_title_prefer.rs; apps/website/frontend/src/server_control.rs; apps/website/frontend/src/sse.rs
+w79	T-574	-	crates/map-engine-core/src/doc/store.rs
+w79	T-618	-	scripts/platform/wave.sh; scripts/mod/mcp-wb-logs.sh
+w80	T-620	-	scripts/verify-no-python.sh; scripts/platform/slice-collisions.py; scripts/mod/slice-collisions.py; xtask/src; Makefile; docs/platform/CODING_STANDARDS.md; scripts/platform/wave.sh; docs/platform/wave_plan.tsv
+w80	T-615	-	docs/platform/DOCUMENTATION_STANDARDS.md; docs/specs/Mission_Creator_Architecture/t123_documentation_standards_rollout.md; apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf
+w81	T-578	-	apps/website/api/src/middleware/ratelimit.rs; apps/website/api/src/app.rs; apps/website/api/src/handlers/telemetry.rs; apps/website/api/src/services
+w81	T-587	-	apps/website/api/src/handlers/field_tools.rs; apps/website/api/src/services/mortar.rs; apps/website/api/migrations; apps/website/frontend/src/mortar.rs
+w81	T-155	-	apps/website/frontend/src/client.rs
+w81	T-579	-	apps/website/frontend/src/event_manager.rs; apps/website/frontend/src/mission_overview.rs; apps/website/frontend/src/components; apps/website/api/src/handlers/events.rs
+w81	T-314	-	crates/map-engine-core; crates/map-engine-render; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/mission_hydrate.rs
