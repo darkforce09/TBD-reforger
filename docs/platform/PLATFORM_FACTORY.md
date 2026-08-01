@@ -68,30 +68,42 @@ Both are one slice from done and it is the **same** slice: a live two-client E2E
 server. T-181 (54 slices shipped; the mod boots, all five screens open, objectives/radio/play-area/
 briefings/markers run) and T-068 (cargo ladder shipped through .12). Neither is agent-actionable.
 
-### What the 47 open tickets are
+### What the 17 open tickets are
 
-15 with no priority, 15 P3, 16 P2, **1 P1** (T-607), **0 P0**. Roughly 29 are `deferred` — bugs that
-are already found, diagnosed, and written down with repro steps. That was a deliberate trade, made
-repeatedly and on the record: *recording them is the value; fixing them now is optional.* About half
-predate this run entirely, some from the T-085–088 era. **Do not treat the pile as a debt to burn
-down.** Promote a ticket when it blocks something real.
+11 with no priority, 3 P3, 3 P2, **0 P1, 0 P0**. There is no backlog left in the sense the word
+usually means:
 
-Three worth knowing about because they describe the *tools*, not the product:
+- **10 are features nobody ever started** — T-085/086/087/088 (wiki renderer, Server Control + RCON
+  API, CMS rich-text, multi-server picker), T-133, T-135, T-136, T-137, T-139, T-157. Real scope, not
+  debt.
+- **4 need a human or Enfusion Workbench** and no agent can close them: T-137, T-139, T-327, T-404.
+- **T-181** is open only because its last slice is the playtest.
+- The rest are documented residuals with their exact remaining patch written on the ticket.
 
-- **T-601 — Class-R pin hollowness is systemic**, ~23 known instances of one defect class. Wave 76's
-  verifier defeated three pins shipped in that same wave. Two proven cures exist; the ticket names
-  both. **Do not respond by blocklisting dead-code shapes** — that is the fourth round of that game
-  (T-517 → T-567 → T-570) and a fifth wrapper always exists.
-- **T-609 — the world-boot ratchet has been red for every golden mission** since before wave 76, and
-  no gate noticed because `cmd_gate` has no world-boot step. Filed as *decide, don't widen*: widening
-  the baseline makes the red go away while preserving whatever it was warning about.
-- **T-613 — the gate's base derivation verifies itself with its own oracle.** T-602 (wave 77) fixed
-  `wave.sh gate` silently narrowing its scope — it now derives the base from the `wave N CLOSED`
-  marker and refuses a base that starts after the wave opened. But **derive and verify call the same
-  function**, so a commit subject that merely continues past `CLOSED` becomes the base *and*
-  self-approves. Proven in a clone. Latent — no historical subject matches and `wave --close` writes
-  the format — but it is the signature defect living inside the fix for it. **A checker that consults
-  the thing it is checking is not a check.**
+**Do not treat this as a pile to burn down.** Promote a ticket when it blocks something real.
+
+Four worth knowing about, because they are the ones that will bite:
+
+- **T-618 — variant D, an unrefused forgery of the gate base.** The derivation now reads wave
+  membership from the plan at the boundary's **parent**, which a forging commit cannot have written —
+  that killed the self-corroborating attack. But a forger who files the plan row in a *separate,
+  earlier* commit still satisfies both legs, and a corroborating forgery **bypasses**
+  `demand_base_confirmation` entirely rather than being caught by it. Conceded in the code, not hidden.
+- **T-625 — behind Caddy every public client shares one auth rate-limit bucket** (1 rps, burst 10).
+  Ten-plus members opening the site within ten seconds on op night will see 429s on `/auth/refresh`.
+  Pre-existing; the 429 lands before the handler so the single-use token is not spent and a retry
+  succeeds. Real fix: wire `X-Forwarded-For` behind `Config::trusted_proxies`, which exists and is
+  read by nothing.
+- **T-609 — the world-boot ratchet is red for every golden mission**, deliberately, as a forcing
+  function. While a row is red a *new* regression on it is indistinguishable from the standing red.
+  Filed as *decide, don't widen*.
+- **T-573 / T-370** — the two W81 tickets that did not ship. Both carry their exact remaining patch.
+  T-370's ordering constraint still binds: the purge has moved, so the eight dead `mark_adopted` call
+  sites are now safely deletable — but not in the same commit that moved the behaviour off them.
+
+The Class-R campaign (T-517 → T-567 → T-570 → T-601 → T-622) is **closed**. The evaluator now fails
+closed: an expression it cannot fold is treated as possibly-dead, so an unknown wrapper costs a false
+RED, not a false GREEN. It no longer needs to know the next trick.
 
 ### The one lesson worth carrying forward
 
@@ -114,9 +126,14 @@ repo has always been the source of truth, which is what makes this cheap.
 ```bash
 bash scripts/platform/preflight.sh          # must print PASS; fix BLOCKs before anything else
 bash scripts/platform/wave.sh status        # what is shipped, in flight, ready
-cargo xtask slice-collisions --repack
-cargo xtask slice-collisions          # the dispatch set, + any UNPLANNED warning
+cargo xtask slice-collisions                # the dispatch set, + any UNPLANNED warning
 ```
+
+> **Do NOT run `cargo xtask slice-collisions --repack` on the live plan.** It regenerates column 1
+> and collapses the 45 wave labels to `0–5`, erasing waves 76–81 — which the wave-gate base
+> derivation reads through `git show` as one of its corroborating oracles (T-613/T-618). W80's slice
+> found this and refused to run it; W80's verifier confirmed it (T-604 76→0, T-620 80→1, T-315 81→0).
+> `--repack` is for a plan that has genuinely rotted, on a copy, with the oracle checked afterwards.
 
 State lives in: [`wave_plan.tsv`](wave_plan.tsv) (what runs together) · `.ai/tickets/registry.json`
 (every ticket's full history — **the summaries are the handoff**, read the ones you are dispatching)
