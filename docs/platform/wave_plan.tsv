@@ -425,3 +425,6 @@
 81	T-155	-	apps/website/frontend/src/client.rs
 81	T-579	-	apps/website/frontend/src/event_manager.rs; apps/website/frontend/src/mission_overview.rs; apps/website/frontend/src/components; apps/website/api/src/handlers/events.rs
 81	T-314	-	crates/map-engine-core; crates/map-engine-render; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/mission_hydrate.rs
+82	T-573	-	crates/map-engine-core/src/slots_gpu.rs; apps/website/frontend/src/mission_history.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/select_tool.rs
+82	T-370	-	apps/website/frontend/src/mission_hydrate.rs; apps/website/frontend/src/mission_commands.rs; apps/website/frontend/src/editor_session.rs
+82	T-625	-	apps/website/api/src/middleware/ratelimit.rs; apps/website/api/src/config.rs; apps/website/api/src/app.rs; apps/website/api/migrations; apps/website/api/tests/t587_fire_mission_solution.rs; apps/website/frontend/src/mortar.rs

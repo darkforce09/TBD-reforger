@@ -10392,7 +10392,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3186,
       "stream": "web-platform",
       "targets": [
@@ -14726,7 +14726,7 @@
         "mission-authoring",
         "ui"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3426,
       "executor": "claude-code",
       "priority": 2,
@@ -15764,7 +15764,7 @@
       "id": "T-625",
       "title": "Behind Caddy every public client shares one auth rate-limit bucket",
       "summary": "FOUND by wave 81''s verifier (F5). **Pre-existing and self-documented**, but worth knowing before a\nbig event night.\n\n`Caddyfile.website:18-19` proxies from loopback, so axum''s `ConnectInfo` peer is Caddy for every\npublic client and they all key to a single `strict|127.0.0.1` bucket at **1 rps / burst 10**\n(`middleware/ratelimit.rs:53-63` says so itself). `frontend/src/auth.rs:5` confirms the SPA refreshes\non bootstrap.\n\n**Op-night scenario:** more than ~10 members open the site within ~10 seconds; boot 11 onward gets a\n429 on `/auth/refresh` and renders logged-out until retried.\n\n**What holds:** the 429 is refused by middleware *before* the handler, so the single-use refresh token\nis **not spent** and a retry succeeds; and the client has no auto-retry loop, so there is no stampede.\n\n**Not new.** The in-memory L1 tier has had identical numbers on the identical shared key for waves.\nT-578 added durability, which makes it marginally stricter (a restart mid-spike no longer refills the\nbucket) -- it did not create the sharing.\n\n**FIX:** wire `X-Forwarded-For` behind `Config::trusted_proxies`, which exists and is **read by\nnothing**. That is what makes per-IP mean per-client. T-578''s module header defers it explicitly\nrather than doing it silently.",
-      "status": "deferred",
+      "status": "ready",
       "priority": 2,
       "order": 3742,
       "surfaces": [
@@ -15784,7 +15784,7 @@
       "id": "T-626",
       "title": "T-587 backfill regex is not character-for-character with parse_grid",
       "summary": "FOUND by wave 81''s verifier (F3). Divergence is entirely in the **safe** direction; filed for accuracy.\n\n`migrations/0020_fire_missions_solution.sql:86-88` claims its accept regex matches `parse_grid`\ncharacter for character. `frontend/src/mortar.rs:297-302` parses via `str::parse::<f64>`, which accepts\n`+`-signed, bare-dot and exponent forms the regex rejects. Measured:\n\n    ''+1000, 2000'' -> f      ''.5, 2'' -> f      ''5., 2'' -> f      ''1e3, 500'' -> f\n    ''1000, 2000''  -> t\n\n**Under-permissive only** -- the dangerous direction (inventing coordinates for rows the calculator\nhas always shown as unrestorable) is closed: everything the regex accepts, Rust parses to the same\nfinite f64. Practical impact ~nil, because `restore()` (`mortar.rs:347-355`) still falls back to\n`parse_grid` for un-backfilled rows and `fmt_grid` output always matches the regex, so every\nSPA-written row backfills.\n\nThe backfill test''s six cases (`t587_fire_mission_solution.rs:311-334`) omit exactly the divergent\nforms -- **the equivalence claim is untested precisely where it is false.**\n\nPathological edge, recorded: a >~309-digit grid string matches the regex but overflows\n`::double precision`, which would abort the migration. No realistic row has that shape.",
-      "status": "deferred",
+      "status": "ready",
       "priority": 3,
       "order": 3752,
       "surfaces": [
