@@ -8,17 +8,17 @@ use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 use serde_json::{Value, json};
-use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::db::refresh_leaderboard;
 use crate::error::ApiError;
 use crate::handlers::{is_foreign_key_violation, violated_constraint};
 use crate::middleware::ServiceAuth;
 use crate::models::{AuditSeverity, MissionOutcome, ServerStatus, TerrainType};
 use crate::realtime::publish_server_status;
 use crate::services::text::is_http_url;
-use crate::services::write_audit;
+// T-336 — `recompute_user_stats` moved to `services::user_stats`; this file is a caller now,
+// not its owner. `handlers::me` calls the same one, which is the point.
+use crate::services::{recompute_user_stats, refresh_leaderboard_best_effort, write_audit};
 use crate::state::AppState;
 
 const LOW_FPS_THRESHOLD: f64 = 20.0;
@@ -1040,19 +1040,13 @@ pub async fn ingest_match_results(
     for did in &resolved {
         recompute_user_stats(&state.pool, did).await?;
     }
-    if refresh_leaderboard(&state.pool).await.is_err() {
-        write_audit(
-            &state.pool,
-            AuditSeverity::Warn,
-            None,
-            "system",
-            "leaderboard.refresh_failed",
-            "Leaderboard refresh failed after match ingest",
-            "match",
-            &match_id.to_string(),
-        )
-        .await;
-    }
+    refresh_leaderboard_best_effort(
+        &state.pool,
+        "Leaderboard refresh failed after match ingest",
+        "match",
+        &match_id.to_string(),
+    )
+    .await;
 
     // T-229 — `players` is unchanged and still the submitted count, because it is the only field
     // a caller may already read (the committed test asserts it, and `models::Match` carries
@@ -1252,57 +1246,6 @@ async fn upsert_match(
     .map_err(|e| foreign_key_error(&e).unwrap_or_else(|| e.into()))?;
     // Create has no prior pair to retract from (T-384).
     Ok((row.0, None))
-}
-
-/// Refresh a user's denormalized deployment + attendance metrics.
-///
-/// **`pub(super)` for `handlers::me` (T-326), not a general-purpose export.** The identity-link
-/// confirm backfills `match_player_stats.discord_id` for matches played before the link existed,
-/// and unlink releases them again — both change exactly the two counts this function derives, so
-/// both have to call it or `users.total_deployments` reports a number the rows contradict.
-/// Measured before it was reachable: a player with three claimed pre-link matches still read
-/// `total_deployments = 0`, and for anyone who links *after* their last op nothing else ever
-/// recomputes it.
-///
-/// Kept private to the `handlers` subtree, and deliberately **not** duplicated in `me.rs` — two
-/// definitions of "a deployment" drifting apart is the same silent-wrong-number failure the
-/// backfill was filed to fix. Takes `&PgPool` rather than a transaction on purpose: it reads
-/// committed state, so callers must run it *after* their commit, never inside it.
-pub(super) async fn recompute_user_stats(pool: &PgPool, discord_id: &str) -> Result<(), ApiError> {
-    let deployments: i64 = sqlx::query_scalar(
-        "SELECT count(DISTINCT match_id) FROM match_player_stats WHERE discord_id = $1",
-    )
-    .bind(discord_id)
-    .fetch_one(pool)
-    .await?;
-    let attended: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM event_registrations WHERE discord_id = $1 AND state::text = 'attended'",
-    )
-    .bind(discord_id)
-    .fetch_one(pool)
-    .await?;
-    let past_registered: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM event_registrations \
-         JOIN event_missions ON event_missions.id = event_registrations.event_mission_id \
-         WHERE event_registrations.discord_id = $1 AND event_missions.start_time <= now()",
-    )
-    .bind(discord_id)
-    .fetch_one(pool)
-    .await?;
-    let rate = if past_registered > 0 {
-        attended as f64 / past_registered as f64 * 100.0
-    } else {
-        0.0
-    };
-    sqlx::query(
-        "UPDATE users SET total_deployments = $1, attendance_rate = $2::float8::numeric WHERE discord_id = $3",
-    )
-    .bind(deployments)
-    .bind(rate)
-    .bind(discord_id)
-    .execute(pool)
-    .await?;
-    Ok(())
 }
 
 #[cfg(test)]

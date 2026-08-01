@@ -9,7 +9,6 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use crate::auth;
-use crate::db::refresh_leaderboard;
 use crate::error::ApiError;
 use crate::handlers::auth::arma_id_is_linked;
 use crate::handlers::{is_unique_violation, load_user};
@@ -26,7 +25,7 @@ const LINK_CODE_TTL_MIN: i64 = 10;
 /// `discord_id` on that table is not a fact about the row — it is a cached answer to "who owns
 /// this `arma_id`", resolved once at ingest (`telemetry.rs:376-381`). Nothing ever re-asked, so
 /// every match a player played *before* linking kept `discord_id = NULL` forever, and
-/// `recompute_user_stats` (`telemetry.rs:530-534`) only counts non-NULL rows. Measured pre-fix
+/// `recompute_user_stats` (`services/user_stats.rs`) only counts non-NULL rows. Measured pre-fix
 /// on the throwaway fixture: a player ingested through three real `match-results` POSTs, then
 /// linked, then played a fourth — the platform's own recompute reported
 /// `total_deployments = 1` for four ops, and `leaderboard_totals` showed
@@ -249,38 +248,22 @@ pub async fn unlink(
             // lower it, or an unlinked account keeps advertising deployments whose rows no longer
             // carry its id. `attendance_rate` is recomputed too but does not move — unlink
             // deliberately leaves `event_registrations` alone (see above).
-            if crate::handlers::telemetry::recompute_user_stats(&state.pool, &user.discord_id)
-                .await
-                .is_err()
-            {
-                services::write_audit(
-                    &state.pool,
-                    AuditSeverity::Warn,
-                    None,
-                    "system",
-                    "user.stats_recompute_failed",
-                    "User stat recompute failed after identity unlink",
-                    "user",
-                    &user.discord_id,
-                )
-                .await;
-            }
+            services::recompute_user_stats_best_effort(
+                &state.pool,
+                &user.discord_id,
+                "User stat recompute failed after identity unlink",
+            )
+            .await;
             // `leaderboard_totals` aggregates `match_player_stats.discord_id` (migration
             // `0001_initial_schema.sql:270-291`), so the released rows keep counting for this
             // player on the leaderboard until the view is refreshed.
-            if refresh_leaderboard(&state.pool).await.is_err() {
-                services::write_audit(
-                    &state.pool,
-                    AuditSeverity::Warn,
-                    None,
-                    "system",
-                    "leaderboard.refresh_failed",
-                    "Leaderboard refresh failed after identity unlink",
-                    "user",
-                    &user.discord_id,
-                )
-                .await;
-            }
+            services::refresh_leaderboard_best_effort(
+                &state.pool,
+                "Leaderboard refresh failed after identity unlink",
+                "user",
+                &user.discord_id,
+            )
+            .await;
         }
         // Releasing a service record must not be silent — without this, a player's deployment
         // count dropping to zero has no explanation anywhere in the audit log.
@@ -445,42 +428,27 @@ pub async fn ingest_link_confirm(
     // 404 on retry and show the player a failed link that actually succeeded. The rows are correct
     // either way; these two only refresh derived numbers, and the next match ingest redoes both.
     if claimed > 0 || attended > 0 {
-        // `users.total_deployments` / `attendance_rate` are denormalized, and this is the crate's
-        // only definition of them (see the visibility note on `recompute_user_stats`). Without
-        // this call a player who links after their *last* op reads zero deployments forever,
-        // because nothing else would ever recount.
-        if crate::handlers::telemetry::recompute_user_stats(&state.pool, &discord_id)
-            .await
-            .is_err()
-        {
-            services::write_audit(
-                &state.pool,
-                AuditSeverity::Warn,
-                None,
-                "system",
-                "user.stats_recompute_failed",
-                "User stat recompute failed after identity link backfill",
-                "user",
-                &discord_id,
-            )
-            .await;
-        }
+        // `users.total_deployments` / `attendance_rate` are denormalized, and
+        // `services::recompute_user_stats` is the crate's only definition of them (T-336 moved it
+        // out of `handlers::telemetry`, which is what made "the only definition" true of a place
+        // other handlers are supposed to call). Without this a player who links after their
+        // *last* op reads zero deployments forever, because nothing else would ever recount.
+        services::recompute_user_stats_best_effort(
+            &state.pool,
+            &discord_id,
+            "User stat recompute failed after identity link backfill",
+        )
+        .await;
         // `leaderboard_totals` reads `match_player_stats.discord_id` directly
         // (`0001_initial_schema.sql:270-291`), so a refresh is all the leaderboard needs; it has
         // no `arma_id` of its own to backfill.
-        if refresh_leaderboard(&state.pool).await.is_err() {
-            services::write_audit(
-                &state.pool,
-                AuditSeverity::Warn,
-                None,
-                "system",
-                "leaderboard.refresh_failed",
-                "Leaderboard refresh failed after identity link backfill",
-                "user",
-                &discord_id,
-            )
-            .await;
-        }
+        services::refresh_leaderboard_best_effort(
+            &state.pool,
+            "Leaderboard refresh failed after identity link backfill",
+            "user",
+            &discord_id,
+        )
+        .await;
     }
 
     // Best-effort audit (username reload; failure must not fail the request). The counts are

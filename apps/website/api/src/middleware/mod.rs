@@ -12,7 +12,11 @@ pub mod request_id;
 
 pub use auth::{AdminUser, AuthUser, LeaderUser, MissionMakerUser, ServiceAuth};
 pub use cors::cors;
-pub use ratelimit::{IpLimiter, rate_limit};
+// T-578 — `RateLimitState` carries the durable (Postgres) tier alongside the in-memory one.
+pub use ratelimit::{
+    DURABLE_STRICT_BURST, DURABLE_STRICT_RPS, DURABLE_STRICT_SCOPE, IpLimiter, RateLimitState,
+    STRICT_PREFIXES, rate_limit,
+};
 pub use request_id::{logging, request_id};
 
 use axum::Json;

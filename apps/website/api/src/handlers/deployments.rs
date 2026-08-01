@@ -91,8 +91,9 @@ struct ServiceRecord {
 /// already serve, and it is refreshed on every path that can change the rows underneath it: match
 /// ingest (`telemetry.rs:523`), identity link (`me.rs:459`) and unlink (`me.rs:259`). Recomputing
 /// the same two ratios with a second query here is precisely how the Deployments page and the
-/// Leaderboard come to disagree about one player — the two-definitions-drift failure that
-/// `recompute_user_stats` was kept `pub(super)` to prevent (`telemetry.rs:675-678`). The refreshes
+/// Leaderboard come to disagree about one player — the two-definitions-drift failure that keeping
+/// **one** `recompute_user_stats` prevents (`services/user_stats.rs`; T-326 kept it `pub(super)`
+/// in `handlers/telemetry.rs`, T-336 moved it to the services layer). The refreshes
 /// are best-effort, so the view can lag a failed refresh; it lags identically for both readers,
 /// which is the property that matters.
 ///

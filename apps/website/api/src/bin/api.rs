@@ -62,6 +62,16 @@ async fn main() -> anyhow::Result<()> {
     let role_interval = services::role_sync::role_resync_interval();
     tracing::info!(secs = role_interval.as_secs(), "discord role resync armed");
     let _role_resync = services::role_sync::start_role_resync(state.pool.clone(), role_interval);
+    // T-578: garbage-collect the durable rate limiter's bucket table — one row per client IP seen
+    // on the auth/ingest surface, and nothing else removes them. Deleting an idle bucket can never
+    // grant quota (it refills to full in ten seconds; the TTL is an hour), so this is reclamation
+    // only — see `services::ratelimit_gc`. Sits here beside the leaderboard refresher exactly as
+    // `app::durable_ratelimit`'s wiring note asked.
+    let _rl_prune = services::start_rate_limit_prune(
+        state.pool.clone(),
+        services::RATE_LIMIT_BUCKET_TTL,
+        services::RATE_LIMIT_PRUNE_INTERVAL,
+    );
     let app = app::router(state);
 
     let addr = format!("0.0.0.0:{port}");
