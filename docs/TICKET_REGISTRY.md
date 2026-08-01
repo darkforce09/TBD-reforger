@@ -4545,35 +4545,49 @@ None of these failure modes survive contact with a typed language and a test har
 
 **Do not start by rewriting `wave.sh`.** Write the rule, add the ratchet, then port when a script next
 needs real work. |
-| T-622 | 3692 | shipped | platform | The Class-R evaluator failed OPEN — an expression it could not fold was treated as live code | FOUND by wave 79's adversarial verifier, in T-601's own fix, and closed in-wave as T-622.
+| T-622 | 3692 | shipped | platform | The Class-R evaluator failed OPEN — an expression it could not fold was treated as live code | FOUND by wave 79's adversarial verifier, inside T-601's own fix, and closed in-wave as T-622.
 
-Round FIVE of the same defect (T-517 -> T-567 -> T-570 -> W77-F2/F3 -> here). Every earlier round
-lost by enumerating dead-code shapes; a sixth always existed.
+**Round FIVE of the same defect** (T-517 -> T-567 -> T-570 -> W77-F2/F3 -> here). Every earlier round
+lost by enumerating dead-code shapes; a sixth shape always existed.
 
-THE BUG:  returned  for any expression it could not fold, and the caller treated
- as "not provably dead" -> kept the block -> the pin greened over dead code. Two root causes:
- folded each initialiser against an EMPTY const map, so  never resolved;
-and  emitted  for ,  and a leading , so any unrecognised token bailed out.
-Measured survivors included three named in T-601's own brief and none in its residual list.
-Reproduced live on the real  pin: wrapping  in
- gave  -- the pin
+=== THE BUG: THE EVALUATOR FAILED OPEN ===
+`eval_bool` returned `None` for any expression it could not fold, and the caller treated `None` as
+"not provably dead" -- so it kept the block and the pin greened over dead code. Two root causes:
+`bool_bindings` folded each initialiser against an **empty** const map, so `const B = A` never
+resolved; and `lex` emitted `Tok::Other` for `+`, `\|` and a leading `:`, so any unrecognised token
+bailed out. Measured survivors included **three named in T-601's own brief** and none in its
+documented residual list:
+
+    const A = false; const B = A; if B { ... }        const NEVER: bool = { false }; if NEVER
+    if (true, false).1 { ... }                        if 1 + 1 > 3 { ... }
+    if false \| false { ... }                          if ::std::hint::black_box(false) { ... }
+
+Reproduced live on the **real** sse.rs pin -- wrapping the live `init.set_signal(Some(&signal));` in
+`const W_A: bool = false; const W_B: bool = W_A; if W_B { ... }` gave `pin_holds = true`. The pin
 reported the abort wire live while it sat in dead code, so the SSE stream would leak on route-leave.
 
-THE FIX: unknown fails CLOSED.  () decides on "every identifier is
-compile-time material" -- a const/static name, a folded value, a cast target, a modelled transparent
-call. **Operators are deliberately NOT enumerated**, so the rule covers shapes nobody has invented;
-the agent's three invented attacks went RED for free. Scrub was chosen over refuse because a scrub is
-local and still loud (a scrubbed needle REDs as "needle missing"), where a refusal would panic a whole
-pin over an unrelated condition. Consts now fixpoint-fold over 8 rounds.
+=== THE FIX: UNKNOWN FAILS CLOSED ===
+`constant_shaped` (`arsenal.rs:2209`) decides on a rule, not a list: **every identifier must be
+compile-time material** -- a const/static name (Rust's own proof of constness), a folded value, a
+primitive cast target, or a modelled transparent call. **Operators are deliberately NOT enumerated**,
+so the rule covers shapes nobody has invented; the agent's three invented attacks went RED for free.
 
-RESULT: 9 wrappers x 6 real production pins, FALSE GREENS 54/54 -> 0/54; all six pins still GREEN on
-unmodified main; a census over every SPA .rs file found 0 live conditions newly scrubbed; 368 tests.
+Scrub was chosen over refuse: a scrub is local and still loud (a scrubbed needle REDs as "needle
+missing"), where a refusal would panic an entire pin over one unrelated condition in a 2000-line file.
+Consts now fixpoint-fold over 8 rounds.
 
-REMAINING, disclosed rather than hidden: build-conditional compilation (,
-) is deliberately still fail-open -- scrubbing it would delete the shipped wasm32
-SPA. And  stays GREEN: to a text pass it is the same three
-tokens as , and folding calls by name is the blocklist one level down. Pinned by a test
-at  so it cannot grow in silence. |
+RESULT: 9 wrappers x 6 real production pins -- **FALSE GREENS 54/54 -> 0/54**. All six pins still
+GREEN on unmodified main; a census over every SPA .rs file found **0** live conditions newly scrubbed;
+368 tests pass.
+
+=== REMAINING, DISCLOSED RATHER THAN HIDDEN ===
+- **Build-conditional compilation** (`#[cfg(feature = "...")]`, `#[cfg(target_arch = "...")]`) is
+  deliberately still fail-open. Scrubbing it would delete the shipped wasm32 SPA.
+- `if Option::<bool>::None.unwrap_or(false)` stays GREEN: to a text pass it is the same three tokens
+  as `if resp.ok()`, and folding calls by name is the blocklist one level down. Pinned by a test at
+  `arsenal.rs:4321` so it cannot grow in silence.
+- The `the_*_rejects_every_dead_code_wrapper` batteries certify **twelve enumerated shapes and nothing
+  more**; `the_unknown_condition_fails_closed` (`arsenal.rs:4253`) states the actual property. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
