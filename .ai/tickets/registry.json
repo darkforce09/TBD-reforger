@@ -1,5 +1,5 @@
 {
-  "next_id": 691,
+  "next_id": 706,
   "tickets": [
     {
       "id": "T-001",
@@ -17436,6 +17436,318 @@
       ],
       "executor": "workbench",
       "notes": "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Ranked 16 of 16 by framework_synthesis.md C.5; filed as `idea` deliberately. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
+    },
+    {
+      "id": "T-691",
+      "order": 4450,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Editor preferences, separated from mission settings",
+      "summary": "NEW-F2 + 3den E6. Eight screenshot rows (MENU-BAR-006, MENU-SET-001, DLG-SHELL-003, DLG-PREF-001/003/004/005/009). Eden separates Settings>Preferences (editor-local, per-user) from Attributes (mission document). TBD mixes both in one dialog: basemap and the 12 world-layer toggles are already localStorage, while time/weather/flow are document keys behind author_env. Give the editor-local half its own surface. 3den E6 is the same need from the other direction (a preferences store) and folds in here rather than being built standalone.",
+      "surfaces": [
+        "TOP",
+        "DATA"
+      ]
+    },
+    {
+      "id": "T-692",
+      "order": 4460,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Editor help surface — Help menu and a Controls Hint overlay",
+      "summary": "NEW-F3. Rows MENU-BAR-008, MENU-VIEW-017, MENU-HELP-001. TBD binds 10 keyboard shortcuts and documents none of them in the UI. Eden has both a Help menu and a toggleable Controls Hint. Pairs with T-668 (state vocabulary) and with 3den E10 — a keybinding collision test is worth little if the bindings are invisible.",
+      "surfaces": [
+        "TOP",
+        "UI"
+      ]
+    },
+    {
+      "id": "T-693",
+      "order": 4470,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Merge another mission into this one",
+      "summary": "NEW-F4. Row MENU-SCEN-011, Eden Ctrl+M. High value for composing an ORBAT from a template mission, and the paste primitives already exist (paste_slots, store.rs:1442). Scoped to mission_commands.rs + store.rs rather than editor_ops.rs on the sweep own advice — that keeps it packable into any wave instead of only two.",
+      "surfaces": [
+        "TOP",
+        "DATA"
+      ]
+    },
+    {
+      "id": "T-694",
+      "order": 4480,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Mission shape editable after creation — game mode, min/max players",
+      "summary": "NEW-F6. Rows DLG-MP-001..003, the one genuine gap the Edit: Multiplayer dialog surfaced. game_mode and max_players are create-dialog only (create_mission_dialog.rs:158-166, :199-215) and reach a compiled mission through the row, not the document (dto.rs:895). A mission cannot change shape after creation. PATCH /missions/:id already accepts both.",
+      "surfaces": [
+        "TOP",
+        "DATA"
+      ]
+    },
+    {
+      "id": "T-695",
+      "order": 4490,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Favourites — a starred-asset list across the catalogue",
+      "summary": "NEW-F5 + 3den E3 + 3DEN-CTX-001. Eden F7. Pure SPA over the live catalogue with localStorage. Deliberately NOT folded into T-646: that ticket is search and submode filtering over the existing tree, this is a separate persistent collection with its own add/remove verbs.",
+      "surfaces": [
+        "RIGHT"
+      ]
+    },
+    {
+      "id": "T-696",
+      "order": 4500,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Map bookmarks and a named-locations index",
+      "summary": "NEW-F7 + 3den E1. The cheapest large win in the 3den sweep: a 12.8 km map with zero bookmarks today. TBD ALREADY HAS THE DATA for the locations half — world_assets/labels.rs and the Town labels layer (world_layer_prefs.rs) carry named places; nothing lets you list or fly to one. Eden has a Locations tab beside Entities.",
+      "surfaces": [
+        "LEFT",
+        "MAP"
+      ]
+    },
+    {
+      "id": "T-697",
+      "order": 4510,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Selection filter and document search",
+      "summary": "3den E4 + 3DEN-TOOL-011. Search the text attributes of every entity in the mission, and filter a selection down by type or faction. TBD has search over the asset catalogue (T-055) but nothing over placed entities. At 19,627 slots median 137 per mission in the WOG corpus, find-by-name is not optional.",
+      "surfaces": [
+        "LEFT",
+        "EDITOR"
+      ]
+    },
+    {
+      "id": "T-698",
+      "order": 4520,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Clipboard exporters — grid position, classnames, selection summary",
+      "summary": "3den E5. Both WOG (wog3_3den Log entries) and 3den Enhanced ship clipboard exporters, and the milsim-relevant one is grid position — a mission maker reads a grid ref out of the editor and types it into a briefing or a radio message. Cheap: the data is in the document, the target is navigator.clipboard.",
+      "surfaces": [
+        "BOTTOM",
+        "DATA"
+      ]
+    },
+    {
+      "id": "T-699",
+      "order": 4530,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Loadout buffer — copy, apply, and strip-everything",
+      "summary": "3den E7 (3DEN-LOAD-001/002/010). TBD has no way to move a loadout between slots at all. Copy buffers the loadout of every selected entity; Apply writes it to a selection, picking at random per entity when several are buffered (the randomisation is the novel part). Remove Everything is the one strip verb worth building — the nine per-category variants (NVGs, vests, goggles, headgear, weapons) are marked maybe and deliberately excluded.",
+      "surfaces": [
+        "ATTR",
+        "DATA"
+      ]
+    },
+    {
+      "id": "T-700",
+      "order": 4540,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Small-UI idioms — numeric nudge, one shared search box, tree tooltips",
+      "summary": "3den E8, the best value-per-effort in that sweep — hours each. 3DEN-PLACE-013: every numeric field nudges by PageUp/PageDown with Ctrl/Alt/Shift scaling the step; TBD number_field (attributes.rs:167-228) has no keyboard affordance at all. Plus one shared Ctrl+F search box rather than per-panel boxes, and tooltips on truncated tree rows.",
+      "surfaces": [
+        "ATTR",
+        "UI"
+      ]
+    },
+    {
+      "id": "T-701",
+      "order": 4550,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Editor-only visibility override — hide without deleting",
+      "summary": "3den E9. An editor-local hidden flag that never compiles, so a maker can declutter a dense area while authoring. Distinct from T-665 layer visibility: that is per-layer, this is per-entity. Eden Layer attributes carry Enable Visibility for exactly this.",
+      "surfaces": [
+        "LEFT",
+        "DATA"
+      ]
+    },
+    {
+      "id": "T-702",
+      "order": 4560,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Whole-terrain zone — one zone sized to the map",
+      "summary": "3den E11 (3DEN-MISC-001). One command that creates a zone covering the terrain exactly. Trivial given terrain_bounds already exists, and it is the normal way to author a boundary or a mission-wide trigger area.",
+      "surfaces": [
+        "RIGHT",
+        "MAP"
+      ]
+    },
+    {
+      "id": "T-703",
+      "order": 4570,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Keybinding collision test",
+      "summary": "3den E10. A test that fails when two editor actions claim the same key. Cheap insurance, and this program already found real collisions the hard way: Backspace deletes the selection while Eden uses it to hide the interface (T-662), and Space is flyTo here but widget-cycle in Eden (T-648). Pairs with T-692 — invisible bindings collide silently.",
+      "surfaces": [
+        "UI"
+      ]
+    },
+    {
+      "id": "T-704",
+      "order": 4580,
+      "program": "eden",
+      "status": "idea",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "route": "/missions/:id/edit",
+      "impact": [
+        "ui"
+      ],
+      "title": "Command palette over every editor command",
+      "summary": "3den E2 (3DEN-TOOL-013/014). Fuzzy search over every menu command, ALT+SPACE. The largest of the 3den slices and the highest ceiling — it directly answers T-668 complaint that the chrome is hard to navigate, and 3den own version learns from usage frequency. Filed as `idea` because it is a product call, not a scoping question: it changes how the editor is driven.",
+      "surfaces": [
+        "TOP",
+        "UI"
+      ]
+    },
+    {
+      "id": "T-705",
+      "order": 4590,
+      "program": "eden",
+      "status": "queued",
+      "stream": "mission-creator",
+      "targets": [
+        "shared",
+        "mod"
+      ],
+      "executor": "workbench",
+      "impact": [
+        "ui"
+      ],
+      "title": "Player gadget flags — map, compass, watch, GPS, radio",
+      "summary": "NEW-W1, 5 screenshot rows from Edit: General States. Eden lets a scenario decide which gadgets a player has. Every one needs a mission.schema.json field plus an Enfusion reader in apps/mod/tbd-framework/, so none is dispatchable. Grouped rather than split because they share one schema shape.",
+      "surfaces": [
+        "ATTR"
+      ]
     }
   ]
 }

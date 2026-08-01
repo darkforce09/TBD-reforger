@@ -19,3 +19,4 @@ Tickets for Workbench or human execution (`apps/mod/` targets).
 - **T-685** (queued) — Zones become volumes: min/max height, attacker and defender counts, starting owner [workbench] — milestone —
 - **T-689** (queued) — Play-area enforcement gains a vehicle-class axis: the aircraft exemption [workbench] — milestone —
 - **T-212** (queued) — Objectives as typed, placed, per-side entities with one uniform attribute spine [workbench] — milestone —
+- **T-705** (queued) — Player gadget flags — map, compass, watch, GPS, radio [workbench] — milestone —

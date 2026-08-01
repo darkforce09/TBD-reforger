@@ -481,3 +481,16 @@
 117	T-671	Mission presentation: briefing text and thumbnail	apps/website/frontend/src/eden_settings.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/create_mission_dialog.rs
 117	T-672	Connection graph: draw, sync, delete, formation	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/context_menu.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/draw_order.rs
 118	T-637	Dock density and the 240px equalisation	apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/eden_tree.rs; apps/website/frontend/src/eden_layout.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs
+106	T-691	Editor preferences, separated from mission settings	apps/website/frontend/src/eden_settings.rs;apps/website/frontend/src/world_layer_prefs.rs
+112	T-692	Editor help surface — Help menu and a Controls Hint overlay	apps/website/frontend/src/eden_help.rs;apps/website/frontend/src/eden_top_strip.rs
+111	T-693	Merge another mission into this one	apps/website/frontend/src/mission_commands.rs;crates/map-engine-core/src/doc/store.rs
+113	T-694	Mission shape editable after creation — game mode, min/max players	apps/website/frontend/src/eden_settings.rs;apps/website/frontend/src/dto.rs
+114	T-695	Favourites — a starred-asset list across the catalogue	apps/website/frontend/src/eden_dock_right.rs
+116	T-696	Map bookmarks and a named-locations index	apps/website/frontend/src/eden_dock_left.rs
+119	T-697	Selection filter and document search	apps/website/frontend/src/editor_ops.rs;apps/website/frontend/src/eden_dock_left.rs
+118	T-698	Clipboard exporters — grid position, classnames, selection summary	apps/website/frontend/src/mission_commands.rs
+118	T-699	Loadout buffer — copy, apply, and strip-everything	apps/website/frontend/src/arsenal.rs;apps/website/frontend/src/editor_ops.rs
+119	T-700	Small-UI idioms — numeric nudge, one shared search box, tree tooltips	apps/website/frontend/src/attributes.rs
+120	T-701	Editor-only visibility override — hide without deleting	apps/website/frontend/src/editor_ops.rs;crates/map-engine-core/src/doc/store.rs
+121	T-702	Whole-terrain zone — one zone sized to the map	apps/website/frontend/src/eden_zones.rs;apps/website/frontend/src/editor_ops.rs
+119	T-703	Keybinding collision test	apps/website/frontend/src/mission_editor.rs
