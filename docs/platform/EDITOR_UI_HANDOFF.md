@@ -27,7 +27,7 @@ rocks, that's fine").
 
 | File | Lines | What it is |
 |---|---|---|
-| [`eden/gap_analysis.md`](../specs/Mission_Creator_Architecture/eden/gap_analysis.md) | 136 | **The parity table.** `eden_id → tbd_id`, a `parity` column (`match` / `partial` / `missing` / `deferred` / `na` / `tbd_only`) and a ticket column. **59 rows, 31 `missing`** — see the correction below before planning against it. |
+| [`eden/gap_analysis.md`](../specs/Mission_Creator_Architecture/eden/gap_analysis.md) | 639 | **The parity table.** `eden_id → tbd_id`, a `parity` column (`match` / `partial` / `missing` / `deferred` / `na` / `tbd_only`), a `build_class` column on attribute rows, and a ticket column. **191 rows, 113 `missing`** — a census as of 2026-08-01. Read the correction below for what it was before that, and why it matters. |
 | [`eden/ui_anatomy.md`](../specs/Mission_Creator_Architecture/eden/ui_anatomy.md) | 273 | What Eden's screen is actually made of |
 | [`eden/interactions.md`](../specs/Mission_Creator_Architecture/eden/interactions.md) | 560 | Eden's input model — clicks, modifiers, drags |
 | [`eden/attributes.md`](../specs/Mission_Creator_Architecture/eden/attributes.md) | 250 | Eden's per-entity attribute catalogue |
@@ -36,7 +36,9 @@ rocks, that's fine").
 The numbered files (`07_…`, `08_…`) at the parent level are **stubs** that redirect into `eden/`.
 Do not edit those.
 
-### Correction (2026-08-01) — the parity table is a sample, not a census
+### Correction (2026-08-01) — the parity table *was* a sample, and has since been rewritten
+
+**Resolved. Keep reading anyway** — the failure shape is the point, not the numbers.
 
 This document originally said "87 rows, 32 `missing`". **Both numbers were wrong**, and because this
 is the kickoff doc they were inherited into the program plan and the ticket drafts before anyone
@@ -47,22 +49,40 @@ opened the file being described. Measured:
 | Rows with a parity value | 87 | **59** |
 | `missing` | 32 | **31** |
 
-The more important correction is what the table *is*. It reads as a census of Eden parity. It is
+The more important correction was what the table *is*. It read as a census of Eden parity. It was
 not:
 
 - [`eden/attributes.md`](../specs/Mission_Creator_Architecture/eden/attributes.md) defines
-  **96 ids**; the parity table covers **3**.
+  **93 ids** (not 96 — the higher figure came from a looser grep that also caught the bare
+  `ATTR-FIELD` template, the `ATTR-TAB-*` glob and a cross-ref); the table covered **3**.
 - [`eden/interactions.md`](../specs/Mission_Creator_Architecture/eden/interactions.md) defines
-  **83 ids**; most have no parity row.
+  **83 ids**; **42 had no parity row at all**.
 
-So "work the parity table" is **not** the same as the operator's ask, *"add all the things to the
-editor that should be there"* — it is roughly 3% of the attribute surface. Ten of the 31 `missing`
+So "work the parity table" was **not** the same as the operator's ask, *"add all the things to the
+editor that should be there"* — it was roughly 3% of the attribute surface. Ten of the 31 `missing`
 rows (the trigger / waypoint / systems / crew clusters) had no ticket, draft or disposition
 anywhere as of this correction.
 
-Anyone planning against this table must either extend it or state explicitly which surfaces are
-out of scope. Evidence:
+**Fixed the same day.** `gap_analysis.md` is now a census: **191 rows** — all 83 interaction ids,
+all 93 attribute ids, and the 15 pre-existing rows that come from `feature_inventory.md` or are
+TBD-only. Attribute rows carry a **`build_class`** (`a` SPA-buildable · `b` schema-blocked ·
+`c` mod-blocked · `d` na) which is what separates factory work from `executor: workbench` work —
+the split is **22 factory · 49 workbench · 22 closed**. Seven stale or wrong values were corrected
+in the same pass, including two rows that had been scored `match`/`partial` for capabilities that
+were removed or never reachable.
+
+Sources and the full change log:
+[`.ai/artifacts/parity/`](../../.ai/artifacts/parity/) —
+[`attributes_sweep.md`](../../.ai/artifacts/parity/attributes_sweep.md),
+[`interactions_sweep.md`](../../.ai/artifacts/parity/interactions_sweep.md),
+[`gap_analysis_rewrite_log.md`](../../.ai/artifacts/parity/gap_analysis_rewrite_log.md).
+Original evidence for the undercount:
 [`.ai/artifacts/adversarial/verify_coverage.md`](../../.ai/artifacts/adversarial/verify_coverage.md).
+
+**What still needs stating when planning against it:** the table now covers every id, but ~49
+attribute ids are `executor: workbench` (a second program), the ~13 unnamed Eden toolbar buttons
+have no ids and could not be triaged, and several rows carry an explicit `UNKNOWN:` / `INFERRED:`
+that must not be read as a parity value.
 
 ---
 
