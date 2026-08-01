@@ -988,8 +988,6 @@ pub struct MissionEnv {
     pub terrain: String,
     pub time: String,
     pub weather: String,
-    pub view_distance: i64,
-    pub thermals: bool,
     // T-173 P6 — render prefs restored from the React Mission Settings (per-mission, in
     // `meta.environment`; the per-user basemap view + world-layer toggles live in localStorage —
     // see `world_layer_prefs`). Defaults mirror the React `useDemLayer` OPACITY=0.4 + grid on.
@@ -1004,8 +1002,6 @@ impl Default for MissionEnv {
             terrain: String::new(),
             time: String::new(),
             weather: String::new(),
-            view_distance: 0,
-            thermals: false,
             show_hillshade: true,
             hillshade_opacity: 0.4,
             show_grid: true,
