@@ -24,14 +24,25 @@
 //!    API echoes back the weapon it was asked for (`services/mortar.rs`). It is now a real choice
 //!    and the heading is a real readout.
 //!
-//! **What persistence can and cannot restore.** `fire_missions` (`api/src/models/admin.rs:66-80`)
-//! stores `weapon_system`, `fp_grid`, `target_grid`, `distance_m`, `azimuth_deg` and
-//! `elevation_mils` — and **no** `time_of_flight_s`, `charge` or `azimuth_mils`, and no numeric
-//! coordinates at all. So: a freshly-saved solution shows the full card, because the `POST`
-//! *response* carries the live `FireSolution`; a solution restored after a reload shows TOF as
-//! `—`, because the row genuinely does not have one. The FP/TGT numbers come back because this
-//! module encodes them into the one free-text field the table has for them ([`fmt_grid`]) — that
-//! encoding IS the persistence of the operator's inputs, which is why it has a round-trip test.
+//! **T-587 — the table can now hold the solution, so a restored one is no longer a lesser one.**
+//! Until migration `0020_fire_missions_solution.sql`, `fire_missions` stored `weapon_system`, the
+//! two grid strings, `distance_m`, `azimuth_deg` and `elevation_mils` — and **no**
+//! `time_of_flight_s`, `charge` or `azimuth_mils`, and no numeric coordinates at all. A
+//! freshly-saved solution showed the full card, because the `POST` *response* carries the live
+//! `FireSolution`; the same solution after a reload showed TOF as `—`, because the row genuinely
+//! did not have one. That asymmetry was visible to the operator every time and it was the schema's
+//! fault, not this page's.
+//!
+//! The row now carries the four coordinates and all three missing numbers, so a restored solution
+//! and a fresh one are the same card. What did **not** change is what `—` means: a row written
+//! before that migration has `null` in all seven, and [`restore`] renders it exactly as it always
+//! did rather than fabricating a `0.0 s` flight or charge zero.
+//!
+//! **The grid encoding is retired as a *dependency*, not deleted.** [`fmt_grid`] still writes the
+//! coordinates into `fp_grid`/`target_grid` — those columns are `NOT NULL` and required by the
+//! route — but [`restore`] now reads `fp_x`/`fp_y`/`tgt_x`/`tgt_y` first and falls back to
+//! [`parse_grid`] only for pre-T-587 rows. The round-trip test on that encoding stays: it is what
+//! keeps the fallback path honest for every row already in the table.
 #![allow(dead_code)]
 use crate::dto::{DataEnvelope, FireSolution, Paginated};
 use crate::ui::{AuthGate, PageHeader};
@@ -84,6 +95,18 @@ const EVENT_PREF_KEY: &str = "tbd-mortar-event";
 /// `event_id` carries `skip_serializing_if = "Option::is_none"` on the model, so it is genuinely
 /// absent for a fire mission saved with no event and needs the default; every other field is
 /// unconditional on the wire.
+///
+/// **T-587 — the seven new fields are `Option` AND `#[serde(default)]`, and they need both.**
+/// `Option` because the column is nullable: a fire mission saved before migration `0020` has no
+/// charge and no time of flight, and `null` is the true answer. `#[serde(default)]` because of the
+/// *other* reader — this suite's `LIVE_LIST` fixture is a verbatim capture from before those
+/// columns existed, and a captured response is the one thing that can prove a pre-change row still
+/// decodes. Without the default that fixture stops parsing and the regression it guards goes with
+/// it.
+///
+/// This is the one place the strictness rule above is relaxed, and the relaxation is narrow: it
+/// applies only to fields the server may legitimately not send. Every field the backend marks
+/// required stays required here, so a rename still fails the decode.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 struct SavedFire {
     id: String,
@@ -96,6 +119,22 @@ struct SavedFire {
     distance_m: i64,
     azimuth_deg: f64,
     elevation_mils: i64,
+    /// The four coordinates, as real numbers (T-587). `None` for a row written before migration
+    /// `0020` whose only record of them is the [`fmt_grid`] encoding in the grid strings.
+    #[serde(default)]
+    fp_x: Option<f64>,
+    #[serde(default)]
+    fp_y: Option<f64>,
+    #[serde(default)]
+    tgt_x: Option<f64>,
+    #[serde(default)]
+    tgt_y: Option<f64>,
+    #[serde(default)]
+    azimuth_mils: Option<i64>,
+    #[serde(default)]
+    charge: Option<i64>,
+    #[serde(default)]
+    time_of_flight_s: Option<f64>,
     created_at: String,
 }
 
@@ -165,18 +204,26 @@ impl EventOption {
 
 /// What the solution card is showing.
 ///
-/// Not `FireSolution` directly, because the two sources of a solution do not carry the same
-/// fields. A live solve has all seven; a row read back out of `fire_missions` has four, and
-/// `time_of_flight_s` is not one of them. Modelling that as `Option` forces the card to say `—`
-/// rather than print a fabricated `0.0 s`, which would be indistinguishable from a real
-/// zero-second flight and is the same defect class as the `Value`-typed decode above.
+/// Not `FireSolution` directly, because the two sources of a solution still do not carry the same
+/// guarantees. A live solve always has a charge and a time of flight; a row read out of
+/// `fire_missions` has them only if it was written after T-587's migration. Modelling that as
+/// `Option` forces the card to say `—` rather than print a fabricated `0.0 s` or charge `0` —
+/// numbers that are indistinguishable from a real zero-second flight and a real charge-zero ring,
+/// and are the same defect class as the `Value`-typed decode above.
+///
+/// **T-587 — `charge` joined the card.** It is not new information from the calculator, which has
+/// always computed it; it is newly *storable*, and it is the half of a fire order an elevation is
+/// useless without. Showing it only for a fresh solve, as this card would have had to before the
+/// migration, is the exact asymmetry the ticket is about.
 #[derive(Clone, Debug, PartialEq)]
 struct Shown {
     weapon_system: String,
     distance_m: i64,
     azimuth_deg: f64,
     elevation_mils: i64,
-    /// `None` for a row restored from the database — `fire_missions` has no TOF column.
+    /// The propellant ring. `None` only for a row written before T-587's migration.
+    charge: Option<i64>,
+    /// `None` only for a row written before T-587's migration — that row genuinely has no TOF.
     time_of_flight_s: Option<f64>,
     /// `Some(created_at)` once these numbers exist in the database; `None` for a solve that was
     /// computed with no operation selected and will not outlive the tab.
@@ -190,6 +237,7 @@ impl From<&FireSolution> for Shown {
             distance_m: s.distance_m,
             azimuth_deg: s.azimuth_deg,
             elevation_mils: s.elevation_mils,
+            charge: Some(s.charge),
             time_of_flight_s: Some(s.time_of_flight_s),
             saved_at: None,
         }
@@ -226,11 +274,14 @@ fn locale_int(n: f64) -> String {
 
 /// Render an FP/TGT pair into the one free-text field `fire_missions` has for it.
 ///
-/// **`fire_missions` stores no coordinates.** The insert at `field_tools.rs:255-271` writes
-/// `fp_grid` and `target_grid` and nothing else positional, so this string is the *only* place the
-/// operator's four numbers survive a reload. That makes the encoding load-bearing and it has to be
-/// lossless: a six-figure military grid ("012 020") would quantise 2200.4 to the nearest hundred
-/// metres and hand back a target nobody aimed at.
+/// **T-587 — this is no longer the only record of the coordinates, and it stays lossless anyway.**
+/// Before migration `0020` the insert wrote `fp_grid`/`target_grid` and nothing else positional, so
+/// this string was the sole place the operator's four numbers survived a reload. The row now
+/// carries `fp_x`/`fp_y`/`tgt_x`/`tgt_y` and [`restore`] prefers them — but the encoding is still
+/// what every pre-migration row is read back through, and it is what the migration's own backfill
+/// parses. A lossy format here (a six-figure military grid, "012 020") would quantise 2200.4 to the
+/// nearest hundred metres and hand back a target nobody aimed at — in the historical rows, now
+/// permanently.
 ///
 /// `f64::to_string` prints `1000` for `1000.0` and `2200.5` for `2200.5`, so a whole-metre grid
 /// reads exactly as the operator typed it and a fractional one is not truncated. The handler trims
@@ -275,20 +326,43 @@ fn save_body(weapon: &str, fp: (f64, f64), tgt: (f64, f64), event_id: Option<&st
 
 /// Unpack a saved row back into the four inputs and the solution card.
 ///
-/// `None` when the grids are not this module's encoding — the numbers in the row are still real,
-/// but without coordinates there is nothing to put in the FP/TGT inputs, and half-restoring would
-/// leave the inputs saying one thing and the card another.
+/// `None` when the row has neither real coordinates nor a grid string this module wrote — the
+/// numbers in the row are still real, but without coordinates there is nothing to put in the
+/// FP/TGT inputs, and half-restoring would leave the inputs saying one thing and the card another.
+///
+/// # T-587 — the columns first, the encoding as the fallback
+///
+/// `fp_x`/`fp_y`/`tgt_x`/`tgt_y` are the authoritative record now, so they are read first. The
+/// [`parse_grid`] fallback is **not** belt-and-braces and must not be deleted as dead: every fire
+/// mission saved before migration `0020` has `null` in all four columns, and the text encoding is
+/// the only place its coordinates exist. Deleting the fallback would not throw an error — it would
+/// quietly stop restoring every historical row, which reads to the operator as "nothing was ever
+/// saved" over rows that are sitting right there in the list.
+///
+/// The two pairs fall back independently because the migration backfills them independently (a row
+/// can have one grid in this encoding and one not).
+///
+/// Everything else comes off the row and stays `Option`: a pre-migration row has no charge and no
+/// time of flight, and the card is required to say `—` rather than invent one.
 fn restore(row: &SavedFire) -> Option<Restored> {
+    let fp = match (row.fp_x, row.fp_y) {
+        (Some(x), Some(y)) => (x, y),
+        _ => parse_grid(&row.fp_grid)?,
+    };
+    let tgt = match (row.tgt_x, row.tgt_y) {
+        (Some(x), Some(y)) => (x, y),
+        _ => parse_grid(&row.target_grid)?,
+    };
     Some(Restored {
-        fp: parse_grid(&row.fp_grid)?,
-        tgt: parse_grid(&row.target_grid)?,
+        fp,
+        tgt,
         shown: Shown {
             weapon_system: row.weapon_system.clone(),
             distance_m: row.distance_m,
             azimuth_deg: row.azimuth_deg,
             elevation_mils: row.elevation_mils,
-            // Not stored. See the module note.
-            time_of_flight_s: None,
+            charge: row.charge,
+            time_of_flight_s: row.time_of_flight_s,
             saved_at: Some(row.created_at.clone()),
         },
     })
@@ -847,6 +921,28 @@ fn MortarInner() -> impl IntoView {
                                             <dt class="text-on-surface-variant">"Elevation"</dt>
                                             <dd class="text-primary">{s.elevation_mils} " mils"</dd>
                                         </div>
+                                        // T-587 — charge and TOF now come off the stored row as
+                                        // well as off a live solve, so both read the same on a
+                                        // reload as they did the moment they were computed. `—` is
+                                        // reserved for a fire mission saved before the migration,
+                                        // which genuinely has neither.
+                                        <div class="flex justify-between">
+                                            <dt class="text-on-surface-variant">"Charge"</dt>
+                                            <dd
+                                                title=move || {
+                                                    if s.charge.is_some() {
+                                                        ""
+                                                    } else {
+                                                        "saved before charge was stored — recalculate for it"
+                                                    }
+                                                }
+                                            >
+                                                {match s.charge {
+                                                    Some(c) => c.to_string(),
+                                                    None => "—".to_string(),
+                                                }}
+                                            </dd>
+                                        </div>
                                         <div class="flex justify-between">
                                             <dt class="text-on-surface-variant">"TOF"</dt>
                                             <dd
@@ -854,7 +950,7 @@ fn MortarInner() -> impl IntoView {
                                                     if s.time_of_flight_s.is_some() {
                                                         ""
                                                     } else {
-                                                        "fire_missions stores no time of flight — recalculate for it"
+                                                        "saved before time of flight was stored — recalculate for it"
                                                     }
                                                 }
                                             >
@@ -938,20 +1034,95 @@ mod tests {
         );
     }
 
-    /// TOF is `None` on a restored row and the card must say so. `fire_missions` has no such
-    /// column (`api/src/models/admin.rs:66-80`), and a `0.0` here would render `0.0 s` — a
-    /// plausible, wrong, unfalsifiable number.
+    /// **T-587 — the pre-existing row.** [`LIVE_LIST`] was captured before migration `0020`
+    /// existed, so it is the exact wire shape of every fire mission already in the table: no
+    /// `fp_x`, no `charge`, no `time_of_flight_s`. It must still decode, still restore its
+    /// coordinates (through the [`fmt_grid`] fallback, the only record it has of them), and still
+    /// render `—` for the two numbers it does not carry.
+    ///
+    /// This is the regression that the obvious version of this ticket breaks: read the new columns,
+    /// delete the grid fallback as "superseded", and every historical row silently stops restoring.
+    /// Nothing throws — the list still renders, the rows are still there, and clicking one just
+    /// does nothing.
     #[test]
-    fn a_restored_row_has_no_time_of_flight_because_the_table_has_no_column_for_it() {
+    fn a_row_saved_before_the_migration_still_restores_and_shows_no_tof_or_charge() {
         let list: DataEnvelope<SavedFire> = serde_json::from_str(LIVE_LIST).unwrap();
-        let r = restore(&list.data[0]).unwrap();
+        let row = &list.data[0];
+        // The columns are absent from the capture, not null-and-present.
+        assert_eq!(
+            (row.fp_x, row.fp_y, row.tgt_x, row.tgt_y),
+            (None, None, None, None)
+        );
+        assert_eq!((row.charge, row.time_of_flight_s), (None, None));
+
+        let r = restore(row).expect("a pre-T-587 row still restores via the grid encoding");
+        assert_eq!(r.fp, (1000.0, 2000.0), "coordinates come from fp_grid");
+        assert_eq!(r.tgt, (2200.0, 1800.0), "coordinates come from target_grid");
         assert_eq!(r.shown.time_of_flight_s, None);
-        // …while a live solve does carry one, so the two sources are distinguishable.
+        assert_eq!(r.shown.charge, None);
+        // …while a live solve does carry both, so the two sources stay distinguishable.
         let solved: FireSolution = serde_json::from_str(
             r#"{"weapon_system":"M252 81mm","distance_m":1217,"azimuth_deg":99.5,"azimuth_mils":1768,"elevation_mils":1315,"charge":2,"time_of_flight_s":29.4}"#,
         )
         .unwrap();
         assert_eq!(Shown::from(&solved).time_of_flight_s, Some(29.4));
+        assert_eq!(Shown::from(&solved).charge, Some(2));
+    }
+
+    /// **T-587 — the row a post-migration save produces.** Captured from
+    /// `GET /events/{id}/fire-missions` against the live handler in
+    /// `api/tests/t587_fire_mission_solution.rs`, which asserts these same values against the
+    /// database row itself.
+    ///
+    /// The card a reload builds from this must be the card the live solve built: same charge, same
+    /// TOF, no `—` anywhere. If any of the seven columns stops being written, or stops being
+    /// projected by the SELECT, this goes red on the field that went missing rather than on a
+    /// vague "restore returned None".
+    const LIVE_LIST_T587: &str = r#"{"data":[{"id":"5c2e8b4a-1f77-4a10-9d3e-2b6c7f0a1e44","event_id":"c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7","created_by":"000000000000000001","weapon_system":"M252 81mm","fp_grid":"1000, 2000","target_grid":"2200, 1800","distance_m":1217,"azimuth_deg":99.5,"elevation_mils":1315,"fp_x":1000.0,"fp_y":2000.0,"tgt_x":2200.0,"tgt_y":1800.0,"azimuth_mils":1768,"charge":2,"time_of_flight_s":29.4,"created_at":"2026-08-01T10:04:11.512004Z"}]}"#;
+
+    #[test]
+    fn a_row_saved_after_the_migration_restores_the_whole_solution() {
+        let list: DataEnvelope<SavedFire> = serde_json::from_str(LIVE_LIST_T587).unwrap();
+        let row = &list.data[0];
+        let r = restore(row).expect("a T-587 row restores");
+
+        // Coordinates come from the COLUMNS now. Proven by breaking the encoding: a row whose
+        // grid strings no longer parse still restores, which was impossible before this ticket.
+        let mut no_grid = row.clone();
+        no_grid.fp_grid = "GRID 012345".into();
+        no_grid.target_grid = "GRID 012845".into();
+        let r2 = restore(&no_grid).expect("the numeric columns carry it without the encoding");
+        assert_eq!((r2.fp, r2.tgt), (r.fp, r.tgt));
+        assert_eq!(r.fp, (1000.0, 2000.0));
+        assert_eq!(r.tgt, (2200.0, 1800.0));
+
+        // The three numbers that had no column before T-587.
+        assert_eq!(r.shown.charge, Some(2), "charge did not survive the reload");
+        assert_eq!(
+            r.shown.time_of_flight_s,
+            Some(29.4),
+            "TOF did not survive the reload"
+        );
+        assert_eq!(
+            row.azimuth_mils,
+            Some(1768),
+            "the sight setting is on the row"
+        );
+
+        // …and the card is now indistinguishable from the freshly-computed one, which is the
+        // whole ticket. Same source numbers, same card, minus the `saved_at` a live solve has
+        // not earned yet.
+        let solved: FireSolution = serde_json::from_str(
+            r#"{"weapon_system":"M252 81mm","distance_m":1217,"azimuth_deg":99.5,"azimuth_mils":1768,"elevation_mils":1315,"charge":2,"time_of_flight_s":29.4}"#,
+        )
+        .unwrap();
+        let mut fresh = Shown::from(&solved);
+        assert_eq!(fresh.saved_at, None);
+        fresh.saved_at = r.shown.saved_at.clone();
+        assert_eq!(
+            fresh, r.shown,
+            "a restored solution must render as the same card as a fresh one"
+        );
     }
 
     /// The grid encoding is the persistence of the operator's inputs, so it has to be lossless

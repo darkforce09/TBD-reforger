@@ -74,42 +74,31 @@ pub struct SolveInput {
 /// the T-347 rule: the guard and the value that gets bound cannot drift apart if there is only
 /// one of each.
 ///
-/// **On detecting an unknown weapon without duplicating the weapon table.** `charges_for` is
-/// private to `services/mortar.rs` and there is no `is_known_weapon`, so the obvious guard —
-/// re-listing the valid weapons here — would plant exactly the drift T-347 closed: a second copy
-/// of a table, silently wrong the first time `mortar.rs` gains a tube. Instead this reads
-/// `mortar.rs`'s *own answer*: `solve_fire_mission` returns the weapon it actually used, and the
-/// only way that differs from the weapon asked for is the `None` arm substituting
-/// `DEFAULT_MORTAR`. So `sol.weapon_system != requested` is precisely `charges_for(requested)
-/// == None`, computed with zero duplication and no edit needed when the table grows.
-///
-/// It is indirect, and it should not have to be. **`services/mortar.rs` is not this ticket's file,
-/// so the substitution itself is still there**; this guard only stops it escaping through the two
-/// HTTP routes. What `mortar.rs` needs, in order of preference: (1) `solve_fire_mission` returns
-/// `Result<FireSolution, SolveError>` with distinct `UnknownWeapon` / `OutOfRange` arms, deleting
-/// the `None` arm at `mortar.rs:46-52` outright; or (2) failing that, `pub fn
-/// is_known_weapon(&str) -> bool` so the check below can be direct. Either way
-/// `mortar.rs:21` (`DEFAULT_MORTAR`) loses its only caller and the
-/// `unknown_weapon_falls_back` unit test at `mortar.rs:126-131` — which currently *asserts* the
-/// substitution as intended behaviour — has to be rewritten to assert the refusal. That test is
-/// why this is a `mortar.rs` decision and not one to make from here.
-///
-/// Order matters: the unknown-weapon 400 comes **before** the out-of-range 422. Pre-fix, a
-/// misspelled weapon aimed beyond `DEFAULT_MORTAR`'s reach was answered "target out of range" —
+/// Order matters: the unknown-weapon 400 comes **before** the out-of-range 422. Pre-T-349, a
+/// misspelled weapon aimed beyond the substituted tube's reach was answered "target out of range" —
 /// a range verdict for a tube the caller never named, about a target that may be well inside the
-/// range of the one they did.
+/// range of the one they did. Since T-365 that ordering is *structural* rather than conventional:
+/// an unknown weapon has no charge table and so never reaches the range loop, leaving no range
+/// verdict in existence to report first.
 ///
-/// **T-365 UPDATE — the two paragraphs above describe a substitution that no longer exists.**
-/// `solve_fire_mission` now returns `Result<FireSolution, SolveError>` with distinct
-/// `UnknownWeapon` / `OutOfRange` variants; the `None` arm and `DEFAULT_MORTAR` are gone, and the
-/// 400-before-422 ordering is now structural (an unknown weapon never reaches the charge loop, so
-/// no range verdict exists to report first). Consequently **`sol.weapon_system !=
-/// input.weapon_system` below can no longer be true** — the returned weapon is always the one
-/// asked for — so that guard is now unreachable belt-and-braces. It is left in place deliberately:
-/// T-365 owns `mortar.rs` only, and its brief was to leave this file's shipped behaviour provably
-/// untouched rather than simplify it in the same change. **Safe to delete in a follow-up**, along
-/// with the `Ok`/`Err` → `(sol, in_range)` adaptation below, collapsing this into a direct
-/// `match`. Nothing else here depends on the pair.
+/// # T-587 — the unreachable guard is gone
+///
+/// Until this ticket the body ran `solve_fire_mission` into a `(FireSolution, bool)` pair and then
+/// re-checked `sol.weapon_system != input.weapon_system`, returning the same 400 a second time.
+/// Both were T-349 artefacts of a `mortar.rs` that answered an unknown weapon by silently
+/// substituting `DEFAULT_MORTAR` and labelling the result with the requested name — back then the
+/// name comparison *was* the unknown-weapon detector, and doing it here rather than re-listing the
+/// weapon table avoided a second copy of `charges_for` (the T-347 drift).
+///
+/// T-365 deleted the substitution: `solve_fire_mission` returns `Result<FireSolution, SolveError>`
+/// with a distinct `UnknownWeapon` arm and always echoes the weapon it was asked for, so the
+/// comparison could no longer be true. T-365 left it standing on purpose — its brief was
+/// `mortar.rs`, and leaving this file provably untouched was worth more than tidying it in the same
+/// change — with a note reading "safe to delete in a follow-up, along with the `Ok`/`Err` →
+/// `(sol, in_range)` adaptation, collapsing this into a direct `match`". This is that follow-up,
+/// and that is exactly what it does. **The 400 and the 422 are unchanged**: the same two statuses,
+/// the same two messages, the same `details` payload — `unknown_weapon_beats_out_of_range` in
+/// `services/mortar.rs` and the field-tools cases in `tests/admin_field.rs` pin them.
 fn solve_checked(input: &SolveInput) -> Result<FireSolution, ApiError> {
     if input.weapon_system.trim().is_empty() {
         return Err(ApiError::bad_request("weapon_system is required"));
@@ -122,40 +111,28 @@ fn solve_checked(input: &SolveInput) -> Result<FireSolution, ApiError> {
             "weapon_system must not have leading or trailing whitespace",
         ));
     }
-    // T-365 changed this call from `(FireSolution, bool)` to `Result<FireSolution, SolveError>`.
-    // Adapting straight back to the pair is deliberate: it keeps T-349's two guards below
-    // byte-for-byte as shipped, so this file's behaviour is provably unchanged by that signature
-    // change. `UnknownWeapon` carries the weapon verbatim, so the 400 body is the same string the
-    // comparison below would have produced. See the T-365 note in the doc comment.
-    let (sol, in_range) = match solve_fire_mission(
+    // `UnknownWeapon` carries the weapon verbatim, so the 400 body is byte-identical to the one
+    // the deleted name comparison produced. `OutOfRange` carries the PARTIAL solution — distance
+    // and azimuth are computed and correct — and it is serialised into the 422's `details`, which
+    // is why the variant carries a payload at all (`services/mortar.rs`). Do not collapse it to a
+    // message.
+    match solve_fire_mission(
         &input.weapon_system,
         input.fp_x,
         input.fp_y,
         input.tgt_x,
         input.tgt_y,
     ) {
-        Ok(sol) => (sol, true),
-        Err(SolveError::OutOfRange(sol)) => (sol, false),
-        Err(SolveError::UnknownWeapon(w)) => {
-            return Err(ApiError::bad_request(format!(
-                "unknown weapon_system '{w}'"
-            )));
-        }
-    };
-    if sol.weapon_system != input.weapon_system {
-        return Err(ApiError::bad_request(format!(
-            "unknown weapon_system '{}'",
-            input.weapon_system
-        )));
-    }
-    if !in_range {
-        return Err(ApiError::with_details(
+        Ok(sol) => Ok(sol),
+        Err(SolveError::UnknownWeapon(w)) => Err(ApiError::bad_request(format!(
+            "unknown weapon_system '{w}'"
+        ))),
+        Err(SolveError::OutOfRange(sol)) => Err(ApiError::with_details(
             StatusCode::UNPROCESSABLE_ENTITY,
             "target out of range",
             serde_json::to_value(&sol).unwrap_or(Value::Null),
-        ));
+        )),
     }
-    Ok(sol)
 }
 
 /// `POST /api/v1/fire-missions/solve` — live firing solution (no persist).
@@ -210,7 +187,49 @@ pub struct SaveFireInput {
     target_grid: String,
 }
 
+/// Every column of `fire_missions`, spelled once (T-587).
+///
+/// The INSERT's `RETURNING` and the list `SELECT` must project the identical set — they both
+/// deserialise into [`FireMission`], so a column added to one and missed on the other is a decode
+/// error on exactly one of the two routes. Before T-587 the two lists were duplicated verbatim and
+/// there were nine columns to keep in step; this ticket adds seven more, which is the point at
+/// which a copy becomes a matter of time.
+///
+/// `azimuth_deg` needs its `::float8` because the column is `numeric(5,1)`. The seven T-587
+/// columns are already `double precision` / `bigint` (see `0020_fire_missions_solution.sql` on why)
+/// and cast to nothing. `created_at` is `COALESCE`d because it is nullable in the shipped schema
+/// while the model types it non-`Option`.
+///
+/// **A macro rather than a `const &str`, because sqlx 0.9 takes `SqlSafeStr`.** That trait is
+/// implemented for `&'static str` only; a `format!`ed query needs `AssertSqlSafe`, which is the
+/// injection-audit escape hatch and has no business wrapping a query with no runtime input in it.
+/// Expanding to a literal inside `concat!` keeps both call sites on the `&'static str` path with
+/// the safety check intact and the list written once.
+macro_rules! fire_mission_columns {
+    () => {
+        "id, event_id, created_by, weapon_system, fp_grid, target_grid, \
+         distance_m, azimuth_deg::float8 AS azimuth_deg, elevation_mils, fp_x, fp_y, tgt_x, tgt_y, \
+         azimuth_mils, charge, time_of_flight_s, \
+         COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at"
+    };
+}
+
 /// `POST /api/v1/fire-missions` — compute + persist a fire mission.
+///
+/// # T-587 — the row now carries the solution, not a third of it
+///
+/// This INSERT used to write `distance_m`, `azimuth_deg` and `elevation_mils` and drop the rest of
+/// `sol` on the floor: `charge`, `azimuth_mils` and `time_of_flight_s` were computed, returned to
+/// the caller in the response body, and then discarded — as were the four coordinates the caller
+/// sent, which reached no column at all. So the 201 was honest about what it had *computed* and
+/// silent about how little of it survived the statement. Read the row back an hour later and the
+/// charge ring, the sight setting and the time to splash were gone; the coordinates only came back
+/// because the SPA had smuggled them through `fp_grid` as text.
+///
+/// All fifteen values now go in. `sol` is the single source for the seven computed ones — they are
+/// bound straight off the struct `solve_checked` returned, so the row and the response body cannot
+/// disagree about a number — and `input.solve` is the source for the four coordinates, stored as
+/// the caller sent them.
 ///
 /// @route POST /api/v1/fire-missions
 pub async fn save_fire(
@@ -252,13 +271,14 @@ pub async fn save_fire(
         }
         Some(v) => Some(Uuid::parse_str(v).map_err(|_| ApiError::bad_request("invalid event_id"))?),
     };
-    let fm: FireMission = sqlx::query_as(
+    let fm: FireMission = sqlx::query_as(concat!(
         "INSERT INTO fire_missions \
-         (event_id, created_by, weapon_system, fp_grid, target_grid, distance_m, azimuth_deg, elevation_mils, created_at) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7::float8::numeric, $8, now()) \
-         RETURNING id, event_id, created_by, weapon_system, fp_grid, target_grid, distance_m, \
-          azimuth_deg::float8 AS azimuth_deg, elevation_mils, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at",
-    )
+         (event_id, created_by, weapon_system, fp_grid, target_grid, distance_m, azimuth_deg, \
+          elevation_mils, fp_x, fp_y, tgt_x, tgt_y, azimuth_mils, charge, time_of_flight_s, created_at) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7::float8::numeric, $8, $9, $10, $11, $12, $13, $14, $15, now()) \
+         RETURNING ",
+        fire_mission_columns!()
+    ))
     .bind(event_id)
     .bind(&user.discord_id)
     .bind(&sol.weapon_system)
@@ -267,6 +287,18 @@ pub async fn save_fire(
     .bind(sol.distance_m)
     .bind(sol.azimuth_deg)
     .bind(sol.elevation_mils)
+    // The four coordinates as the caller sent them — `solve_checked` does not modify them, and
+    // storing the request rather than a round-trip through the solution is what makes the row
+    // re-solvable byte for byte.
+    .bind(input.solve.fp_x)
+    .bind(input.solve.fp_y)
+    .bind(input.solve.tgt_x)
+    .bind(input.solve.tgt_y)
+    // The three computed values that had no column before T-587. Bound off `sol`, the same struct
+    // serialised into the response below, so the row cannot disagree with what the caller was told.
+    .bind(sol.azimuth_mils)
+    .bind(sol.charge)
+    .bind(sol.time_of_flight_s)
     .fetch_one(&state.pool)
     .await?;
     Ok((
@@ -277,6 +309,12 @@ pub async fn save_fire(
 
 /// `GET /api/v1/events/:id/fire-missions` — saved fire missions on an event.
 ///
+/// **This is the only reader of `fire_missions`, so it is where T-587 becomes visible.** Rows
+/// written before migration `0020` come back with `null` in all seven new fields — the calculator
+/// renders `—` for those, exactly as it did for every row before this change — and rows written
+/// after come back with the charge, the sight setting and the time of flight the crew needs.
+/// `ORDER BY created_at ASC` is unchanged; the SPA takes the last row as the newest.
+///
 /// @route GET /api/v1/events/:id/fire-missions
 pub async fn list_event_fire_missions(
     State(state): State<AppState>,
@@ -286,11 +324,11 @@ pub async fn list_event_fire_missions(
     let Ok(eid) = Uuid::parse_str(&id) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    let fms: Vec<FireMission> = sqlx::query_as(
-        "SELECT id, event_id, created_by, weapon_system, fp_grid, target_grid, distance_m, \
-         azimuth_deg::float8 AS azimuth_deg, elevation_mils, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at \
-         FROM fire_missions WHERE event_id = $1 ORDER BY created_at ASC",
-    )
+    let fms: Vec<FireMission> = sqlx::query_as(concat!(
+        "SELECT ",
+        fire_mission_columns!(),
+        " FROM fire_missions WHERE event_id = $1 ORDER BY created_at ASC"
+    ))
     .bind(eid)
     .fetch_all(&state.pool)
     .await?;
