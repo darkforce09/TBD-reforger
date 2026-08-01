@@ -84,14 +84,20 @@ fn bookmark_api_path(id: &str) -> String {
 /// `pending_approval`, `live`, `rejected`, `archived` — `migrations/01_enums.sql`), so with this arm
 /// every reachable status is now named and the `other` fallback is genuinely unreachable defence
 /// rather than a silent hole.
+///
+/// **T-395 — the label half moved out.** T-389 fixed this `match` and left the identical mapping
+/// inline in the mission dossier's STATUS cell, which went on rendering the raw `rejected`. Two
+/// copies is how that happened, so there is now one:
+/// [`crate::mission_overview::mission_status_label`]. The *variant* stays here — it is a badge
+/// concern and the detail grid has no chips.
 fn visibility_badge(status: &str) -> impl IntoView + use<> {
-    let (label, variant) = match status {
-        "draft" => ("Draft".to_string(), "neutral"),
-        "pending_approval" => ("Open for review".to_string(), "warning"),
-        "live" => ("Live".to_string(), "success"),
-        "rejected" => ("Returned".to_string(), "error"),
-        "archived" => ("Archived".to_string(), "neutral"),
-        other => (other.to_string(), "neutral"),
+    let label = crate::mission_overview::mission_status_label(status);
+    let variant = match status {
+        "pending_approval" => "warning",
+        "live" => "success",
+        "rejected" => "error",
+        // draft / archived / anything unknown
+        _ => "neutral",
     };
     view! { <span class=badge_class(variant)>{label}</span> }
 }

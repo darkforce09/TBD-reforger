@@ -95,9 +95,99 @@ pub fn badge_class(variant: &str) -> String {
     format!("inline-flex items-center gap-1 rounded border px-2 py-0.5 text-label-sm uppercase whitespace-nowrap {v}")
 }
 
+/// ═══════════════ T-333 — one Escape, one dialog ═══════════════
+///
+/// [`Dialog`] and [`Sheet`] each install a **window-level** `keydown` listener, one per instance.
+/// Every listener sees every Escape, and each one's only guard was "am I open?", so pressing Esc
+/// with a confirm stacked on an edit form closed **both** — the operator lost unsaved edits to
+/// dismiss a confirmation. Found by T-226, which could not fix it (`ui.rs` was not in its owns) and
+/// worked around it by driving the confirm through clicks instead.
+///
+/// There is no modal-stack primitive underneath to lean on: these are hand-rolled overlays, not
+/// `@base-ui/react` — that dependency died with the React app at T-159.29.3, and the Leptos port
+/// reimplemented the dismissal by hand (see the comment this replaces). So the stack is ours to
+/// hold, and this is it.
+///
+/// **Topmost means topmost on screen, not most-recently-opened.** Every overlay in this file is
+/// `z-50`; with equal z-index the browser paints in DOM order, which is why `event_manager.rs`
+/// declares its detach confirm *last in the tree on purpose* and says so. Leptos mounts in tree
+/// order, so registration order **is** paint order, and the dialog the user sees on top is the
+/// last-registered one that is currently open. A most-recently-opened stack would be the wrong
+/// answer for a pair declared in one order and opened in the other: it would route Escape to a
+/// dialog painted underneath.
+///
+/// **Out-of-order close is not a special case here, by construction.** Nothing is pushed on open or
+/// popped on close: openness is read *live* at keydown time, so a dialog that closes from the
+/// middle of the stack simply stops being a candidate on the next keystroke, and one that reopens
+/// becomes a candidate again — in its original paint position, which is where it reopens on screen.
+/// Unmount removes **by id**, not by popping, so components torn down in any order leave a
+/// consistent registry. Both the listener and the registration are released in the same
+/// [`on_cleanup`], so neither can outlive the component.
+pub(crate) mod modal_stack {
+    use std::cell::{Cell, RefCell};
+    use std::rc::Rc;
+
+    thread_local! {
+        /// `(id, is_open)` in mount order. Not a `Vec<bool>`: the flag has to be read at keydown
+        /// time, not cached at registration time, or a dialog closed by a button would still be
+        /// holding Escape.
+        static REGISTRY: RefCell<Vec<(u64, Rc<dyn Fn() -> bool>)>> =
+            const { RefCell::new(Vec::new()) };
+        static NEXT_ID: Cell<u64> = const { Cell::new(1) };
+    }
+
+    /// Register an overlay and return the id that identifies it for the rest of its life.
+    pub(crate) fn register(is_open: impl Fn() -> bool + 'static) -> u64 {
+        let id = NEXT_ID.with(|n| {
+            let id = n.get();
+            n.set(id + 1);
+            id
+        });
+        REGISTRY.with_borrow_mut(|r| r.push((id, Rc::new(is_open))));
+        id
+    }
+
+    /// Drop an overlay's registration. Removes by id, so unmount order does not matter, and is a
+    /// no-op on an id that is already gone (double cleanup must not panic or evict a stranger).
+    pub(crate) fn unregister(id: u64) {
+        REGISTRY.with_borrow_mut(|r| r.retain(|(other, _)| *other != id));
+    }
+
+    /// Whether `id` is the last-registered overlay that is currently open — i.e. the one painted
+    /// on top. False when nothing is open, and false for `id`s that are not registered.
+    ///
+    /// The predicates are cloned out from under the borrow before any of them runs: they read
+    /// Leptos signals, and a signal read is arbitrary user code. Evaluating them while the
+    /// `RefCell` is borrowed would make a re-entrant `register` from inside one a panic instead of
+    /// a merely surprising ordering.
+    pub(crate) fn is_topmost_open(id: u64) -> bool {
+        let entries: Vec<(u64, Rc<dyn Fn() -> bool>)> =
+            REGISTRY.with_borrow(|r| r.iter().map(|(i, f)| (*i, Rc::clone(f))).collect());
+        entries
+            .iter()
+            .rev()
+            .find(|(_, is_open)| is_open())
+            .is_some_and(|(top, _)| *top == id)
+    }
+
+    /// How many overlays are registered — the leak check for the tests.
+    ///
+    /// Deliberately **not** `#[cfg(test)]`. `class_r_scrub::cut_test_module` treats the *first*
+    /// `#[cfg(test)]` in a file as the start of the test half and drops everything after it, so a
+    /// test-gated helper up here would hide `Dialog` and `Sheet` from every pin in this file. It
+    /// fails closed — the wiring pin below goes red with "found 0" rather than quietly passing —
+    /// but the cure is to keep the attribute out of the production half, not to weaken the pin.
+    #[allow(dead_code)]
+    pub(crate) fn depth() -> usize {
+        REGISTRY.with_borrow(Vec::len)
+    }
+}
+
 /// Frosted, centered macOS modal — the components/ui/dialog.tsx port (T-159.25). Renders **no DOM
 /// while closed** (transient overlay: V captures of default states are unaffected; base-ui's
 /// enter/exit transition attributes are not replicated). Esc and the backdrop close it.
+///
+/// T-333: Escape is handled only when this is the topmost open overlay — see [`modal_stack`].
 #[component]
 #[allow(dead_code)]
 pub fn Dialog(
@@ -109,13 +199,20 @@ pub fn Dialog(
     class: &'static str,
     children: ChildrenFn,
 ) -> impl IntoView {
+    // T-333 — `try_get_untracked` rather than `get_untracked`: the registration is dropped in
+    // `on_cleanup`, which Leptos runs before the arena disposes the signal, but a disposed signal
+    // read must answer "not open" rather than panic if that order ever changes.
+    let modal_id = modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
     // Esc closes (base-ui behavior). Window-level like React's focus-trap dismissal.
     let esc = leptos::prelude::window_event_listener(leptos::ev::keydown, move |ev| {
-        if open.get_untracked() && ev.key() == "Escape" {
+        if open.get_untracked() && ev.key() == "Escape" && modal_stack::is_topmost_open(modal_id) {
             open.set(false);
         }
     });
-    on_cleanup(move || esc.remove());
+    on_cleanup(move || {
+        esc.remove();
+        modal_stack::unregister(modal_id);
+    });
     move || {
         open.get().then(|| {
             view! {
@@ -164,6 +261,13 @@ pub fn Dialog(
 
 /// macOS slide-over panel — the components/ui/sheet.tsx port (right side; `bleed` = children own
 /// the full layout). Same no-DOM-while-closed / no-transition-attrs notes as `Dialog`.
+///
+/// **T-333 covers this too, and had to.** The ticket names `Dialog`, but `Sheet` is the same
+/// window-level-listener-per-instance shape at the same `z-50`, and the two stack on each other in
+/// production: `missions.rs:789` opens the mission dossier in a `Sheet` and the armory/delete
+/// confirms are `Dialog`s over it. Fixing only `Dialog` would have left Escape closing the dossier
+/// out from under an open confirm — the same defect, one component over. One registry, both
+/// components.
 #[component]
 #[allow(dead_code)]
 pub fn Sheet(
@@ -174,12 +278,16 @@ pub fn Sheet(
     #[prop(optional)] bleed: bool,
     children: ChildrenFn,
 ) -> impl IntoView {
+    let modal_id = modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
     let esc = leptos::prelude::window_event_listener(leptos::ev::keydown, move |ev| {
-        if open.get_untracked() && ev.key() == "Escape" {
+        if open.get_untracked() && ev.key() == "Escape" && modal_stack::is_topmost_open(modal_id) {
             open.set(false);
         }
     });
-    on_cleanup(move || esc.remove());
+    on_cleanup(move || {
+        esc.remove();
+        modal_stack::unregister(modal_id);
+    });
     move || {
         open.get().then(|| {
             view! {
@@ -338,5 +446,125 @@ mod tests {
             !code.contains(&one_shot),
             "auth.has_min_role(Admin) is browse-mode None=>true (T-286/T-454 contract)"
         );
+    }
+
+    /* ═══════════════ T-333 — Esc must reach exactly one dialog ═══════════════ */
+
+    use super::modal_stack;
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    /// A stand-in for a `RwSignal<bool>` the component reads at keydown time.
+    fn overlay(open: bool) -> (Rc<Cell<bool>>, u64) {
+        let flag = Rc::new(Cell::new(open));
+        let read = Rc::clone(&flag);
+        let id = modal_stack::register(move || read.get());
+        (flag, id)
+    }
+
+    /// The bug, stated as a test. Before T-333 every open overlay answered Escape, so *both* of
+    /// these would have closed; the guard is `is_topmost_open`, and only the confirm may say true.
+    ///
+    /// RED on the unfixed component is the second half of this: the source pin below proves the
+    /// guard is actually in the keydown closure, because a passing stack with an unwired component
+    /// is exactly the "reports success over an input it never examined" failure this repo hunts.
+    #[test]
+    fn only_the_topmost_open_overlay_answers_escape() {
+        let start = modal_stack::depth();
+        // Mount order = paint order: the form is declared first, the confirm last (the arrangement
+        // `event_manager.rs` documents at its detach dialog).
+        let (form, form_id) = overlay(true);
+        let (confirm, confirm_id) = overlay(true);
+
+        assert!(
+            modal_stack::is_topmost_open(confirm_id),
+            "the last-registered open overlay is the one painted on top"
+        );
+        assert!(
+            !modal_stack::is_topmost_open(form_id),
+            "the form behind an open confirm must not answer Escape — this is T-333"
+        );
+
+        // Esc dismisses the confirm only; the form is still open and now becomes the target.
+        confirm.set(false);
+        assert!(modal_stack::is_topmost_open(form_id));
+        assert!(!modal_stack::is_topmost_open(confirm_id));
+
+        // Nothing open → Escape has no owner at all.
+        form.set(false);
+        assert!(!modal_stack::is_topmost_open(form_id));
+        assert!(!modal_stack::is_topmost_open(confirm_id));
+
+        modal_stack::unregister(form_id);
+        modal_stack::unregister(confirm_id);
+        assert_eq!(modal_stack::depth(), start, "registrations must not leak");
+    }
+
+    /// Closed out of order: the overlay *underneath* goes away first (its own Cancel button, or a
+    /// save that dismisses the form while the confirm it launched is still up). The survivor must
+    /// still own Escape, and the departed one must not come back as topmost when it reopens under
+    /// something else.
+    #[test]
+    fn a_dialog_closed_out_of_order_leaves_the_stack_consistent() {
+        let start = modal_stack::depth();
+        let (form, form_id) = overlay(true);
+        let (confirm, confirm_id) = overlay(true);
+
+        form.set(false); // the middle of the stack leaves while the top is still up
+        assert!(modal_stack::is_topmost_open(confirm_id));
+        assert!(!modal_stack::is_topmost_open(form_id));
+
+        // …and reopens underneath. Paint order is unchanged, so it is still not the top.
+        form.set(true);
+        assert!(modal_stack::is_topmost_open(confirm_id));
+        assert!(!modal_stack::is_topmost_open(form_id));
+
+        // Unmount out of order too: the top component is torn down first, by id, not by popping.
+        modal_stack::unregister(confirm_id);
+        assert!(
+            modal_stack::is_topmost_open(form_id),
+            "removing a registration from the top must promote the one below, not orphan it"
+        );
+        assert!(
+            !modal_stack::is_topmost_open(confirm_id),
+            "an unregistered id must never be reported as topmost"
+        );
+        confirm.set(true); // a stale handle to a torn-down overlay changes nothing
+        assert!(modal_stack::is_topmost_open(form_id));
+
+        modal_stack::unregister(form_id);
+        modal_stack::unregister(form_id); // double cleanup is a no-op, not a panic
+        assert_eq!(modal_stack::depth(), start, "registrations must not leak");
+        assert!(!modal_stack::is_topmost_open(form_id));
+    }
+
+    /// **The wiring.** The stack above is only a fix if the components consult it. Both `Dialog`
+    /// and `Sheet` install a window-level listener, so both must carry the guard; a keydown closure
+    /// that still reads `if open.get_untracked() && ev.key() == "Escape"` and nothing else is the
+    /// unfixed component.
+    ///
+    /// Scrubbed source (T-601/T-622 `class_r_scrub`), and `live_code` at that, so the needle cannot
+    /// be satisfied by this doc comment, by a string literal, or by an item the build drops.
+    #[test]
+    fn both_overlay_components_gate_escape_on_the_modal_stack() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let prod = live_code(include_str!("ui.rs"));
+        for component in ["pub fn Dialog(", "pub fn Sheet("] {
+            let body = only_body(&prod, component);
+            assert!(
+                body.contains("modal_stack::register("),
+                "{component} must register with the modal stack. Body was: {body}"
+            );
+            assert!(
+                body.contains("modal_stack::is_topmost_open(modal_id)"),
+                "{component} must gate its Escape handler on being topmost (T-333). \
+                 Body was: {body}"
+            );
+            assert!(
+                body.contains("modal_stack::unregister(modal_id)"),
+                "{component} must release its registration on cleanup or the registry leaks \
+                 one dead entry per mount. Body was: {body}"
+            );
+        }
     }
 }
