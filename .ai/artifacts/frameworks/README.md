@@ -158,16 +158,37 @@ consequences:
   were. The tell that these are genuinely OFCRA's: **all 437 `readme.md` files in the corpus belong
   to OFCRA missions; zero are WOG's.**
 
-**Both tool-analyses found the tool broken in the same way.** FNF's `AnalyzeSQM.ps1` has 27 checks
-of which only 14 run — two disabled by bugs, so objectives have gone unverified for ~5 years. WOG's
-Med/Eng slot auto-tagger has a JavaScript `/g` flag pasted into an SQF regex, where it is a literal
-character, so the pattern never matches: its strip branch is dead and its append branch duplicates
-on every save. Neither community appears to know.
+**One tool is confirmed broken; the second claim did not survive verification.**
 
-That is the same defect this repo's own handoff names as its recurring shape — *a tool reports
-success over an input it never actually examined*. Finding it independently in two rival frameworks
-is a reason to build validation that can be **made to fail on demand**, not a reason to copy either
-implementation.
+**FNF — HOLDS, verified against source.** `AnalyzeSQM.ps1` declares 27 checks and runs 14. Two are
+disabled by bugs (the `$MarkObjs` typo at `:902`, the `$ReqCoreObjs.name` guard at `:943`), which
+means objective-existence has gone unchecked for a long time — *how* long is a **lower bound only**:
+the clone is shallow, so the landing date is not recoverable. The earlier "five years" figure is
+not established.
+
+**WOG — the `/g` claim FAILS, and I wrote it.** This README previously asserted that WOG's Med/Eng
+slot auto-tagger contains a JavaScript `/g` flag pasted into an SQF regex where it is a literal
+character, so the pattern never matches. **That mechanism is unsupported.** SQF's `regexMatch` does
+accept trailing `/flags` syntax (BIKI: flags are `/`-prefixed at the end of the pattern), under
+which `".*\| (Med|Eng).*/g"` parses as pattern-plus-flag and *matches*.
+
+The code quote itself is accurate and re-verified —
+`wog3_3den/functions/fn_onMissionSaveEH.sqf:5` — and it is the **only** `regexMatch` anywhere in
+the 757 extracted files, so the corpus offers no internal precedent either way. **Residual
+uncertainty is real:** the correction rests on documented BIKI semantics, not on execution. A
+30-second `regexMatch` in an Arma debug console would settle it conclusively, and until someone
+runs it neither reading is proven.
+
+**What this costs.** The tidy "two rival frameworks, same defect, neither community knows" framing
+was wrong — it is **one** confirmed framework, and "neither community appears to know" has one
+community too many. The claim had crossed four documents (`wog.md` → this README → the synthesis's
+Decision 2 → T-656's rationale), borrowing credibility from the genuinely solid FNF finding it was
+presented alongside.
+
+**The conclusion survives on the FNF leg alone**, which was verified directly: build validation
+that can be **made to fail on demand**. But it is now a one-framework argument plus TBD-internal
+reasoning, not a convergence argument — and that is a weaker thing that should be stated as the
+weaker thing.
 
 ## What happens next
 
