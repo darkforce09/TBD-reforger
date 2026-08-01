@@ -12974,7 +12974,7 @@
         "tests",
         "infra"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3332,
       "stream": "web-platform",
       "targets": [
@@ -13144,7 +13144,7 @@
         "tests",
         "telemetry"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3341,
       "stream": "web-platform",
       "targets": [
@@ -13522,7 +13522,7 @@
         "website",
         "tests"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3358,
       "stream": "web-platform",
       "targets": [
@@ -13849,7 +13849,7 @@
         "telemetry",
         "tests"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3373,
       "stream": "web-platform",
       "targets": [
@@ -14004,7 +14004,7 @@
         "telemetry",
         "tests"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3380,
       "stream": "web-platform",
       "targets": [
@@ -14137,7 +14137,7 @@
         "tests",
         "cms"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3386,
       "executor": "claude-code",
       "priority": 2,
@@ -14679,7 +14679,7 @@
         "tests",
         "auth"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3424,
       "executor": "claude-code",
       "priority": 2,
@@ -14701,7 +14701,7 @@
         "tests",
         "auth"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3425,
       "executor": "claude-code",
       "priority": 2,
@@ -14746,7 +14746,7 @@
         "tests",
         "mission-authoring"
       ],
-      "status": "deferred",
+      "status": "shipped",
       "order": 3427,
       "executor": "claude-code",
       "priority": 2,
@@ -15285,7 +15285,7 @@
       "id": "T-601",
       "title": "Class-R pin hollowness is systemic, not a bug in three pins",
       "summary": "FOUND by wave 75's adversarial verifier (Fable 5), which defeated THREE separate pins shipped in that\nsame wave — after each slice had proven its own pin against the attacks it knew about.\n\n=== F2 (MAJOR) T-570's new executing pin, `mission_title_prefer.rs:442-499` `item()` ===\nThe extractor's anti-decoy ambiguity check counts only COLUMN-0 signature heads (`:453-465`), and its\n`cfg`-refusal scans only INSIDE the extracted `[start..=end]` span (`:489-496`). An attribute on the\nline ABOVE the signature is outside both. Demonstrated live: move the real `adopt_payload` into a\n`mod` with `pub use` re-export and cut its briefing (`opt(&row.briefing)` -> `None`), then plant a\npristine copy at column 0 under `#[cfg(any())]`. The wasm build ships the CUT wire; the pin extracts\nand executes the COMPILED-OUT decoy and reports ok. This defeats the pin's own stated defense at\n`:447-450`. NOTE the guard is otherwise strong -- `cfg_attr(target_arch…, cfg(any()))` INSIDE an item\nIS caught; the gap is strictly the pre-signature attribute.\n\n=== F3 (MAJOR) T-503's scrubber, `arsenal.rs:2641-2672` + `:2676-2720` ===\n`strip_cfg_any_items` matches the LITERAL `#[cfg(any())]`; `strip_const_false_blocks` whitelists 7\nconditions. Measured, running the scrubber verbatim:\n    cfg any with space   -> SURVIVES      if 1 > 2            -> SURVIVES\n    cfg spaced brackets  -> SURVIVES      if black_box(false) -> SURVIVES\n    while false          -> SURVIVES      baseline cfg exact  -> stripped\nA `set_loadout` decoy in any surviving shape greens `cargo_mutations_commit_without_a_staging_gate`\n(`:2801`) and `the_panel_states_the_persistence_contract` (`:2833`) over dead persistence wiring.\nDefeated by trivial spelling variation.\n\n=== F4 (MINOR) T-598's wiring pin, `server_control.rs:1051-1064` ===\nPolarity-blind. Swap the success/error arm bodies (undelivered -> green success toast) and all 11\nt270 tests stay GREEN. It proves the guard string exists and that there is exactly one\n`toasts.success(` -- not WHICH arm it sits in. Nothing native compiles the wasm-only block (`:402`).\n\n=== THE SCOPE, which is the real finding ===\nT-570's agent independently catalogued ~20 SIBLING pins sharing the identical `include_str!` +\n`contains()` shape, each walkable by the same dead-code decoys: `client.rs:642`, `content.rs:938`,\n`sse.rs:254`, `event_hub.rs:1663`, `mission_commands.rs:542`, and more. This is not three bugs. It is\none defect class with ~23 known instances, and it is the SIGNATURE DEFECT of this codebase wearing a\ntest's uniform: *a tool reports success over an input it never actually examined.*\n\n=== TWO PROVEN PATTERNS EXIST -- do not invent a third ===\n1. EXECUTE THE CODE (T-570, `mission_title_prefer.rs`): lift the items verbatim, compile them against\n   a recording stand-in, RUN them, assert on the arguments actually received. Dead code produces no\n   behaviour, so wrappers die by construction rather than by enumeration. Strongest; use for\n   high-value invariants. Fix F2's pre-signature-attribute gap before reusing it.\n2. SCRUB THEN GREP (T-503, `arsenal.rs`): strip comments, string literals, cfg'd items, constant-false\n   blocks and post-`break`/`return` dead code before matching, AND give the scrubber its own test so\n   it cannot go hollow silently. Cheap; use for bulk. Fix F3's literal-matching first.\n\nDO NOT respond to this ticket by blocklisting the specific shapes above. That is the fourth round of\nthat game (T-517 -> T-567 -> T-570) and a fifth wrapper always exists. Fix the two patterns, then\nconvert the ~20 siblings.",
-      "status": "deferred",
+      "status": "shipped",
       "priority": 2,
       "order": 3482
     },
@@ -15622,7 +15622,7 @@
       "id": "T-618",
       "title": "The gate base can still self-approve: the ticket ledger reads files the forging commit wrote",
       "summary": "FOUND by wave 78's adversarial verifier. **Third round of the same defect** (T-602 -> T-613 -> here),\nand the fix this time is small and specific -- do not redesign the oracles.\n\n=== THE ATTACK, measured in a scratch clone ===\nONE commit defeats all three cross-checks for a **silent PASS**. Subject `wave 78 CLOSED …`; **in the\nsame commit** append wave-78 rows to `docs/platform/wave_plan.tsv` and mark them `shipped` in\n`.ai/tickets/registry.json`; place it after the last slice merge.\n\n    Variant A (marker AFTER wave + plan/registry edited in the same commit):\n      ticket ledger: wave 78 has 2 ticket(s) ... all shipped — corroborated.\n      RC=0        <-- SILENT PASS; range gated = 1 commit, honest range = 11\n    Variant B (marker, NO ledger edits):  refusing to run unconfirmed.  RC=2\n    Variant C (marker mid-wave + plan edit): base cuts through a slice.  RC=2  (oracle 3 catches it)\n\n- **Oracle 1** (`wave_close_is_newest_wave:1938`) never refuses a HIGHER wave number -- 78 beats all\n  of 45-77, so it passes silently.\n- **Oracle 2** (`wave_close_ledger_says:1970`) is the hole. It reads `wave_plan.tsv` and\n  `registry.json` **from HEAD's checkout**, and the forging commit's edits are IN HEAD's tree. The\n  independence claim written at `wave.sh:1901` -- that each check draws on \"evidence the commit under\n  test did not itself produce\" -- **is false for oracle 2**, because a slice may edit both files.\n- **Oracle 3** (`slice_span_check:2002`) is genuinely marker-free and does catch the mid-wave variant,\n  but its own comment admits it \"cannot catch a base placed AFTER the whole wave\".\n- The backstop `demand_base_confirmation:2034` fires in variant B but is **bypassed** in A, precisely\n  because editing the two files flips oracle 2 to rc0.\n\nNet effect: the gate runs `base..HEAD` = 1 commit and reports PASS/SKIP over an entire unread wave --\nthe wave-75 defect, reintroduced through the derivation oracle.\n\n=== THE FIX (small, specific) ===\n**Read the ledger from OUTSIDE the range being validated.** Oracle 2 must not consult HEAD's tree; it\nshould read `wave_plan.tsv` / `registry.json` at the **candidate base's parent**, or at the previous\nclose, via `git show <rev>:<path>` -- a revision the forging commit cannot have written. That single\nchange restores the independence the comment already claims and kills variant A.\n\nThen **correct the comment at `:1901`** to describe what is actually true. A false independence claim\nin a security-shaped check is worse than no claim, because the next reader stops looking.\n\nConsider also giving oracle 1 an upper bound (a boundary claiming a wave number far beyond the\nhighest ticket in the plan is suspicious), but the oracle-2 fix is the load-bearing one.\n\n=== FAIR WEIGHTING, so the next agent does not over-build ===\nThis needs a **deliberately forged commit**, not a natural mistake -- but that is exactly T-613's\nstated threat model (\"the gate base can no longer approve itself\"), it requires no operator\ninteraction, and the design only half-discloses the gap: it admits \"no fully independent oracle\nexists\" while making a specific false independence claim about oracle 2. Fix the read, fix the\ncomment, stop.",
-      "status": "ready",
+      "status": "shipped",
       "priority": 1,
       "order": 3652,
       "surfaces": [
@@ -15642,12 +15642,72 @@
       "id": "T-619",
       "title": "PAT_ASSIGNED diverged between two sibling scripts that both claim ONE shared definition",
       "summary": "FOUND by wave 78's adversarial verifier -- the cross-slice class that wave 77 also shipped (T-604's\ndetector quoted a Print T-605 reworded).\n\n`scripts/mod/mcp-wb-logs.sh:44` states: *\"The check vocabulary — shared with remote-log-grep.sh.\n**ONE definition per pattern**.\"* Five of the six shared patterns match. `PAT_ASSIGNED` does not:\n\n    mcp-wb-logs.sh:57   '\\[TBD\\] SpawnManager: assigned slot'                          # flat only\n    remote-log-grep.sh:136 '\\[TBD\\]\\[Spawn\\].*assigned|\\[TBD\\] SpawnManager: assigned'  # both formats\n\nThey are **not sourced from a common lib** -- the \"one definition\" is a claim, not a mechanism.\nT-614 broadened the sibling THIS WAVE, with the reasoning that `TBD_SpawnManager.c` is 70/74 tagged\nand `:675` is a flat straggler, so *\"the reword is the direction the file is already travelling.\"*\n\n**When `:675` moves to `[TBD][Spawn]`, `mcp-wb-logs.sh` reports PARTIAL over a boot where a player\nreally was seated** -- measured:\n\n    $ bash scripts/mod/mcp-wb-logs.sh --file tagged_seat.log   # player WAS seated (tagged format)\n      exit=2  (PARTIAL: slot bodies built; no player has deployed yet.)\n\nThat is the latent false-amber T-614 inoculated its own file against, and a partial regression of the\ninversion T-612 had just fixed in this same file.\n\nFIX: broaden `mcp-wb-logs.sh:57` to match its sibling -- **or better, make the claim true** by\nextracting the six shared patterns into one sourced file (`scripts/mod/lib/` already exists;\n`gate-grep.sh` lives there from T-556). A comment asserting a shared definition, over two divergent\ncopies, is the signature defect in miniature: it reports agreement it never checked.",
-      "status": "ready",
+      "status": "shipped",
       "priority": 3,
       "order": 3662,
       "surfaces": [
         "MOD"
       ]
+    },
+    {
+      "program": "platform",
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "surfaces": [
+        "INFRA"
+      ],
+      "id": "T-620",
+      "title": "verify-no-python has been RED since the factory started, is in no CI job, and half of it cannot fire",
+      "summary": "OPERATOR-RAISED 2026-08-01: *\"I thought I had made a rule to make future scripts be in Rust using\nxtask. That does not seem like it's the case.\"* **The rule exists and is correct. It has simply never\nbeen able to bind.** Three independent reasons, all measured.\n\n=== 1. THE GATE IS RED, AND HAS BEEN SINCE THE DAY THE FACTORY STARTED ===\n    $ make verify-no-python\n    FAIL: leftover .py files:\n      ./scripts/mod/slice-collisions.py\n      ./scripts/platform/slice-collisions.py\n    verify-no-python: FAIL\n    make: *** [Makefile:467: verify-no-python] Error 1\nBoth files landed in `1e3ea1f6` (**2026-07-26**) -- the day the platform factory opened -- and they are\n**the factory's own tooling**. The command center has invoked `slice-collisions.py` throughout.\n\n=== 2. IT IS IN NO CI JOB ===\n`grep verify-no-python .github/workflows/*.yml` -> **no hits.** It exists only at `Makefile:466-467`\nand inside `make ci-local` (`Makefile:481`), the local replay that nothing runs by default. It is\n**not a wave-gate step**, which is why the factory's gate kept reporting 28/28 over a red rule for\nthree straight waves.\n\n=== 3. HALF OF IT PHYSICALLY CANNOT FIRE -- THE SIGNATURE DEFECT, INSIDE THE RULE'S OWN GATE ===\n`scripts/verify-no-python.sh:29` greps with **`rg`**, which does not exist in this environment (it is\na harness-injected shell function; `bash -c 'command -v rg'` finds nothing -- documented three times\nin `docs/platform/PLATFORM_FACTORY.md`). Measured:\n    ./scripts/verify-no-python.sh: line 29: rg: command not found\n      OK (none)\n`|| true` swallows the failure and the check reports **\"OK (none)\"** -- not because there are no\n`python3` invocations in `scripts/` and the `Makefile`, but **because it never looked.** So the\ninterpreter-invocation half of this gate has never once run.\n\n=== FIX, IN ORDER ===\n1. **Replace `rg` with `grep`** at `:29` and make the check **fail closed** on a non-zero exit that is\n   not \"no matches\" (see `scripts/mod/lib/gate-grep.sh` from T-556, which already reads exit status\n   0/1/2/127 correctly -- reuse it rather than re-deriving). Expect it to go red immediately; that is\n   the point.\n2. **Decide the two `.py` files.** Either port `slice-collisions.py` to `xtask` (it is the operator's\n   stated intent and it is ~one command: disjoint-set packing over the `owns` column), or add an\n   explicit, dated, justified exemption in the gate. **Do not silently delete the finding.**\n3. **Wire it somewhere that runs.** CI job, or a wave-gate step, or both. A gate in `ci-local` only is\n   a gate nobody runs -- exactly how this stayed red for three waves.\n\nRELATED: T-621 (no rule at all for shell), T-611 (`verify-citations` scoped so it never read Rust),\nT-606/T-612 (health checks satisfied only by a stale build). Same class each time: **a tool reports\nsuccess over an input it never actually examined.**",
+      "status": "ready",
+      "priority": 1,
+      "order": 3672
+    },
+    {
+      "program": "platform",
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "surfaces": [
+        "INFRA"
+      ],
+      "id": "T-621",
+      "title": "There is no Rust-first rule for shell — 58 scripts, 15,415 lines, no gate, no convention",
+      "summary": "OPERATOR-RAISED 2026-08-01, alongside T-620. Python has a rule (T-162, and see T-620 for why it never\nbound). **Shell has none at all** -- no `verify-no-shell`, no \"new tooling goes in xtask\" convention,\nnothing in `CODING_STANDARDS.md` or `CLAUDE.md`.\n\nMEASURED: **58 `.sh` files, 15,415 lines** (excluding `.git` and worktrees). `scripts/platform/wave.sh`\nalone is ~2,800 lines and grew by hundreds more across waves 75-79. Nothing was violating a rule --\n**the rule was never written**, so every slice that needed a script reached for bash by default.\n\nThe operator's stated intent, from the Rust rewrite era: *everything in Rust; scripts in `xtask`.*\n`CLAUDE.md` already records the direction of travel -- *\"All tooling is Rust (T-165 Node eradication);\nNode exists solely as the `enfusion-mcp` runtime\"* -- but says nothing about bash.\n\n=== WHY THIS IS NOT COSMETIC ===\nWaves 75-79 spent a large fraction of their budget on defects that are **specific to shell**:\n- `grep` is ugrep 7.5.0 in an agent shell and GNU 3.8 under `bash script.sh`; they disagree on bare\n  `{}` in an ERE, and every API route path contains `{id}`.\n- `rg` does not exist, and `|| true` turns its absence into a silent pass (T-620, and the same shape\n  in T-606's `remote-log-grep.sh`).\n- `${TBD_SCENARIO:={GUID}...}` truncates at the GUID's brace, and the validator printed\n  \"config VALID\" over the wreckage (T-607).\n- `mcp-wb-logs.sh` had no reachable `exit 0` **or** `exit 2` and was fully inverted -- PASS on a stale\n  build, FAIL on a healthy one (T-612).\nNone of these failure modes survive contact with a typed language and a test harness.\n\n=== FIX SHAPE -- proposal, operator to confirm ===\n1. Write the rule down (`CODING_STANDARDS.md`): **new tooling goes in `xtask`**; bash is permitted only\n   for thin process glue that must run before/without cargo (container entry, `distrobox-host-exec`\n   wrappers, git hooks).\n2. **Grandfather with an explicit list**, so the list can only shrink. A `verify-no-new-shell` gate\n   compares against the committed inventory and fails on an unlisted new `.sh`. This is the cheap,\n   honest version -- it does not force a 15k-line rewrite, it just stops the bleeding.\n3. Port opportunistically, highest-risk first. `wave.sh`'s gate/push logic is the obvious candidate:\n   it has now had **three consecutive rounds** of self-approval defects (T-602 -> T-613 -> T-618),\n   every one of them a bash-string-matching problem.\n\n**Do not start by rewriting `wave.sh`.** Write the rule, add the ratchet, then port when a script next\nneeds real work.",
+      "status": "ready",
+      "priority": 2,
+      "order": 3682
+    },
+    {
+      "id": "T-622",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "shipped",
+      "priority": 1,
+      "order": 3692,
+      "title": "The Class-R evaluator failed OPEN — an expression it could not fold was treated as live code",
+      "summary": "FOUND by wave 79's adversarial verifier, in T-601's own fix, and closed in-wave as T-622.\n\nRound FIVE of the same defect (T-517 -> T-567 -> T-570 -> W77-F2/F3 -> here). Every earlier round\nlost by enumerating dead-code shapes; a sixth always existed.\n\nTHE BUG:  returned  for any expression it could not fold, and the caller treated\n as \"not provably dead\" -> kept the block -> the pin greened over dead code. Two root causes:\n folded each initialiser against an EMPTY const map, so  never resolved;\nand  emitted  for ,  and a leading , so any unrecognised token bailed out.\nMeasured survivors included three named in T-601's own brief and none in its residual list.\nReproduced live on the real  pin: wrapping  in\n gave  -- the pin\nreported the abort wire live while it sat in dead code, so the SSE stream would leak on route-leave.\n\nTHE FIX: unknown fails CLOSED.  () decides on \"every identifier is\ncompile-time material\" -- a const/static name, a folded value, a cast target, a modelled transparent\ncall. **Operators are deliberately NOT enumerated**, so the rule covers shapes nobody has invented;\nthe agent's three invented attacks went RED for free. Scrub was chosen over refuse because a scrub is\nlocal and still loud (a scrubbed needle REDs as \"needle missing\"), where a refusal would panic a whole\npin over an unrelated condition. Consts now fixpoint-fold over 8 rounds.\n\nRESULT: 9 wrappers x 6 real production pins, FALSE GREENS 54/54 -> 0/54; all six pins still GREEN on\nunmodified main; a census over every SPA .rs file found 0 live conditions newly scrubbed; 368 tests.\n\nREMAINING, disclosed rather than hidden: build-conditional compilation (,\n) is deliberately still fail-open -- scrubbing it would delete the shipped wasm32\nSPA. And  stays GREEN: to a text pass it is the same three\ntokens as , and folding calls by name is the blocklist one level down. Pinned by a test\nat  so it cannot grow in silence."
     }
   ]
 }

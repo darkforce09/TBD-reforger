@@ -153,24 +153,6 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 == TWO MORE, from wave 2 ==
 4. `apps/website/frontend/src/event_hub.rs:411` — the comment justifying the objectives-panel deletion says the `objectivesById` root "is still the closed hydrate→emit loop with no mutator". `crates/map-engine-core/src/doc/store.rs:1102,1122,1130` show `hydrate()` calling `objectives.clear(&mut txn)` then `load_rows(...)` — that IS a mutator; what is absent is an INCREMENTAL, user-facing one. The deletion decision survives on the stronger ground the same comment already gives (the DTO carries no objectives field on either side of the wire, verified at handlers/events.rs:952-972 and dto.rs:781-800), so this is a wording defect in a load-bearing comment, not a wrong call.
 5. `docs/platform/frontend_data_provenance.md:41,62` — its event_hub.rs citations drifted by ~5-50 lines, and `:62` names `event_hub.rs:211` as an `events.briefing` render site when `:211` is the `name_override` fallback and the Event Hub never read the event briefing at all. The `:41` row is invalidated wholesale by T-392's removals. Same drift on its `orbat_selection.rs:90` citation.
-- **T-493** (deferred) — T-397 Class-R blind to sum(COALESCE(deaths,0)) on leaderboard_totals [API, DATA] — Wave 37 adversarial NIT. insert_without_counters_stores_null_not_zero holds. leaderboard_mv_does_not_invent_deaths_from_null went RED when INSERT bound 0, but poisoning the MV to sum(COALESCE(deaths,0)) with a mixed NULL+measured fixture still left the Class-R GREEN (0+3=3). Cure: pin all-NULL row set → kd_ratio IS NULL and/or source-ratchet migration 0014 / live MV for FILTER (WHERE deaths IS NOT NULL) / no COALESCE(deaths,0) in the aggregate.
-- **T-501** (deferred) — Community-terrain soft-fail has no match-ingest HTTP IT [API, CI] — Wave 39 residual from T-402. parse_terrain_opt + unit Class-R pin unknown terrain → None. No IT proves POST match ingest with terrain kolguyev/anizay returns 200 and stores NULL terrain. Cure: apps/website/api/tests/telemetry.rs case on cold DB.
-- **T-518** (deferred) — T-517 Class-R denylists old telemetry id only (not live PLAYER_DISCORD) [API, tests] — Wave 45 verifier MINOR. identity_link.rs Class-R assert_ne!(PAD_ACTOR, "000000000000400003") REDs if PAD returns to 400003, but stays green if telemetry PLAYER_DISCORD moves onto live PAD (…400013) — pin is a hardcoded denylist, not bound to telemetry.rs. Original shared-discord_id failure class can return one-sided. Cure: include_str!/parse PLAYER_DISCORD from telemetry.rs in the Class-R test, or assert_ne against a shared test const both suites import. Repro: set PLAYER_DISCORD to 000000000000400013 in tests/telemetry.rs; cargo test -p website-api --test identity_link t400_actor_is_not_shared_dev_login_user -- --exact → ok (false green); restore after.
-- **T-533** (deferred) — T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400 [API, tests] — FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-355.
-
-upsert_match uses parse_uuid_opt_strict and unit/source pins prove junk → BadRequest, but no integration test POSTs a malformed event_id/mission_id through the live route and asserts HTTP 400. RED if the handler call sites are deleted while unit helper tests remain: today the source pin covers that; an HTTP IT would close the residual.
-
-Repro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note absence of IT asserting status 400 on junk ids.
-- **T-540** (deferred) — T-384 Class-R only — no IT for attendance retract on match re-point [API, tests] — FOUND by W53 adversarial verifier (CLEAN MINOR-NIT) after T-384.
-
-ingest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1→EV2 and asserts EV1 returns to registered while EV2 is attended.
-
-Repro: rg retract_from apps/website/api — no IT exercises the path.
-- **T-546** (deferred) — T-498 Class-R only — no HTTP IT for Discord formula-title sanitize [API, tests] — FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-498.
-
-sanitize_discord_embed_field + include_str wire pins exist; no services_http / CMS IT asserts a leading '=title' becomes ZWSP-prefixed in the outbound embed JSON.
-
-Repro: rg sanitize_discord apps/website/api/tests — no hit.
 - **T-578** (deferred) — Wire T-280's durable rate limiter — it is proven but inert [API, INFRA] — T-280 built `app::durable_ratelimit::PgRateLimiter` (a one-statement refill-and-spend token bucket;
 `ON CONFLICT DO UPDATE` takes the row lock so it is atomic across processes) and PROVED it with a
 perturbation that isolates durability from throttling: an in-process bucket still refuses at the
@@ -205,11 +187,6 @@ reaches Postgres. Get sign-off on the cost before wiring.
    Pre-existing. T-262's constraint 1 means the cascade is already correct for the day that handler
    becomes a hard delete -- but today the dialog is wrong. Either fix the copy or make the handler
    match it; decide which, do not leave both.
-- **T-571** (deferred) — T-568 Class-R still hollow — nested fn dev_login / PG dollar-quote COALESCE [API, tests] — FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-568.
-
-Plain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE…COALESCE…$decoy$ (blanker only handles '/").
-
-Repro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R green.
 - **T-580** (deferred) — /healthz is unauthenticated and now reports version, uptime, pool depth and migration counts [API] — T-280 extended `/healthz` with two independent failable checks -- a genuine improvement -- but it is
 UNAUTHENTICATED and exposed publicly through Caddy (`Caddyfile.website:27`).
 
@@ -226,11 +203,6 @@ by `preflight.sh:140`, `Caddyfile.website:27`, `editor-gates.yml:95` and
 LIKELY ANSWER: keep the 200/503 + `status` field public (that is all any prober needs) and move the
 detail behind the same `X-Service-Token` gate `/metrics` uses, or behind a `?verbose=1` that requires
 it. Confirm every listed prober still passes afterwards.
-- **T-572** (deferred) — T-569 Class-R still hollow — #[cfg(any())] match arms [API, tests] — FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-569.
-
-r#/br#/concat decoys RED. Still GREEN: `#[cfg(any())] match { live arms }` + `#[cfg(not(any()))] match { _ }` or cfg on each role arm with live `_`.
-
-Repro: cfg-out live arms; leave `_ => DEV_USER_ID` live; Class-R green.
 - **T-573** (deferred) — Mixed drag: vehicle GPU preview still slots-only (set_drag SoA) [FRONTEND, MAP, VEH] — FOUND by W68 adversarial verifier (CLEAN NIT) after T-491, and admitted by the slice agent.
 
 `move_entities_and_vehicles` commits mixed drag in one LOCAL yrs txn, but live drag preview still filters vehicles out of `engine.set_drag` (`mission_editor.rs` ~1125–1134). `set_drag` is slot-SoA only in map-engine-render (outside T-491 owns).
@@ -238,13 +210,6 @@ Repro: cfg-out live arms; leave `_ => DEV_USER_ID` live; Class-R green.
 Repro: select one slot + one vehicle; drag — vehicle glyph stays put until release; slot previews. Commit still moves both; undo is one step.
 
 Cure: extend drag preview / set_drag for vehicles (map-engine-render + host), or document as wontfix.
-- **T-574** (deferred) — T-491 host Class-R soft include_str — comment-only move_entities_and_vehicles survives [FRONTEND, tests] — FOUND by W68 adversarial verifier (CLEAN NIT) after T-491.
-
-`select_tool_and_mission_editor_delegate_to_atomic_mix_apis` (store.rs ~2912–2940) only string-presence / Move-arm absence checks via include_str. A comment-only `move_entities_and_vehicles` mention would keep the pin green; it also does not pin that mission_editor calls pick_slot_or_vehicle / marquee_* helpers.
-
-Behavioral one-undo Class-R is real and PASS. Soft host-delegation pin is the residue.
-
-Repro: replace live call with comment containing the symbol (or keep call but drop pick/marquee delegation asserts); soft pin stays green.
 - **T-587** (deferred) — fire_missions cannot store a solution: no coordinates, no TOF, no charge [DATA, FRONTEND] — Surfaced by T-285, which wired the orphaned /fire-missions endpoints and had to work around the
 schema to do it.
 
@@ -268,53 +233,6 @@ ALSO FROM T-285, same surface:
    is dto.rs; `SavedFire` is currently pinned only by T-285's captured-live-response test.
  - `dto::FireSolution` has no `Debug` derive, so `SaveResponse` cannot have one. Cosmetic.
  - field_tools.rs:106-112 documents a now-unreachable guard and says it is safe to delete.
-- **T-601** (deferred) — Class-R pin hollowness is systemic, not a bug in three pins [INFRA] — FOUND by wave 75's adversarial verifier (Fable 5), which defeated THREE separate pins shipped in that
-same wave — after each slice had proven its own pin against the attacks it knew about.
-
-=== F2 (MAJOR) T-570's new executing pin, `mission_title_prefer.rs:442-499` `item()` ===
-The extractor's anti-decoy ambiguity check counts only COLUMN-0 signature heads (`:453-465`), and its
-`cfg`-refusal scans only INSIDE the extracted `[start..=end]` span (`:489-496`). An attribute on the
-line ABOVE the signature is outside both. Demonstrated live: move the real `adopt_payload` into a
-`mod` with `pub use` re-export and cut its briefing (`opt(&row.briefing)` -> `None`), then plant a
-pristine copy at column 0 under `#[cfg(any())]`. The wasm build ships the CUT wire; the pin extracts
-and executes the COMPILED-OUT decoy and reports ok. This defeats the pin's own stated defense at
-`:447-450`. NOTE the guard is otherwise strong -- `cfg_attr(target_arch…, cfg(any()))` INSIDE an item
-IS caught; the gap is strictly the pre-signature attribute.
-
-=== F3 (MAJOR) T-503's scrubber, `arsenal.rs:2641-2672` + `:2676-2720` ===
-`strip_cfg_any_items` matches the LITERAL `#[cfg(any())]`; `strip_const_false_blocks` whitelists 7
-conditions. Measured, running the scrubber verbatim:
-    cfg any with space   -> SURVIVES      if 1 > 2            -> SURVIVES
-    cfg spaced brackets  -> SURVIVES      if black_box(false) -> SURVIVES
-    while false          -> SURVIVES      baseline cfg exact  -> stripped
-A `set_loadout` decoy in any surviving shape greens `cargo_mutations_commit_without_a_staging_gate`
-(`:2801`) and `the_panel_states_the_persistence_contract` (`:2833`) over dead persistence wiring.
-Defeated by trivial spelling variation.
-
-=== F4 (MINOR) T-598's wiring pin, `server_control.rs:1051-1064` ===
-Polarity-blind. Swap the success/error arm bodies (undelivered -> green success toast) and all 11
-t270 tests stay GREEN. It proves the guard string exists and that there is exactly one
-`toasts.success(` -- not WHICH arm it sits in. Nothing native compiles the wasm-only block (`:402`).
-
-=== THE SCOPE, which is the real finding ===
-T-570's agent independently catalogued ~20 SIBLING pins sharing the identical `include_str!` +
-`contains()` shape, each walkable by the same dead-code decoys: `client.rs:642`, `content.rs:938`,
-`sse.rs:254`, `event_hub.rs:1663`, `mission_commands.rs:542`, and more. This is not three bugs. It is
-one defect class with ~23 known instances, and it is the SIGNATURE DEFECT of this codebase wearing a
-test's uniform: *a tool reports success over an input it never actually examined.*
-
-=== TWO PROVEN PATTERNS EXIST -- do not invent a third ===
-1. EXECUTE THE CODE (T-570, `mission_title_prefer.rs`): lift the items verbatim, compile them against
-   a recording stand-in, RUN them, assert on the arguments actually received. Dead code produces no
-   behaviour, so wrappers die by construction rather than by enumeration. Strongest; use for
-   high-value invariants. Fix F2's pre-signature-attribute gap before reusing it.
-2. SCRUB THEN GREP (T-503, `arsenal.rs`): strip comments, string literals, cfg'd items, constant-false
-   blocks and post-`break`/`return` dead code before matching, AND give the scrubber its own test so
-   it cannot go hollow silently. Cheap; use for bulk. Fix F3's literal-matching first.
-
-DO NOT respond to this ticket by blocklisting the specific shapes above. That is the fourth round of
-that game (T-517 -> T-567 -> T-570) and a fifth wrapper always exists. Fix the two patterns, then
-convert the ~20 siblings.
 - **T-616** (deferred) — wave_plan.tsv mixes bare-number and wN wave labels, so current_wave() sorts the recent ones as zero [INFRA] — FOUND by T-613 (wave 78). Cosmetic today, wrong in a way that will mislead.
 
 `docs/platform/wave_plan.tsv` column 1 carries **two incompatible label formats**: bare numbers

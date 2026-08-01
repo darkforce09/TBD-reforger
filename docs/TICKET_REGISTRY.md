@@ -2660,14 +2660,14 @@ Repro: select one slot + one vehicle, drag, undo once — only one kind moves ba
 Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/marquee helpers; optional vehicle drag preview. |
 | T-492 | 3331 | shipped | platform | fmt_changed/clippy_changed ignore changed_rs rc (empty→SKIP) | Wave 36 adversarial NIT. T-401 made git_porcelain_paths fail-loud, and wasm_changed/refuse_empty_range check rc. fmt_changed and clippy_changed still do files="$(changed_rs …)" and treat empty as SKIP (return 0) without checking $?. Gate path is still safe because refuse_empty_range runs first. Cure: propagate changed_rs failure in those helpers (or share a wrapper that dies on rc≠0). |
 | T-496 | 3331 | shipped | platform | T-410 library/bookmark page-1 Class-R weak without NULL updated_at residue | Wave 38 adversarial NIT. find_in_approvals page-1-only RED on tbd_gate_it (26 pending). Disabling prefer-mine RED on dashboard. But find_id_in_missions_list→page-1 limit=20 stayed GREEN on mission_lifecycle_and_compiled because only 2 NULL updated_at rows — DESC puts fresh missions on page 1. Cure: Class-R that forces >20 NULL-updated_at residue (or source ratchet that the helper always paginates) so library/bookmark pins fail without relying on shared-DB residue. |
-| T-493 | 3332 | deferred | platform | T-397 Class-R blind to sum(COALESCE(deaths,0)) on leaderboard_totals | Wave 37 adversarial NIT. insert_without_counters_stores_null_not_zero holds. leaderboard_mv_does_not_invent_deaths_from_null went RED when INSERT bound 0, but poisoning the MV to sum(COALESCE(deaths,0)) with a mixed NULL+measured fixture still left the Class-R GREEN (0+3=3). Cure: pin all-NULL row set → kd_ratio IS NULL and/or source-ratchet migration 0014 / live MV for FILTER (WHERE deaths IS NOT NULL) / no COALESCE(deaths,0) in the aggregate. |
+| T-493 | 3332 | shipped | platform | T-397 Class-R blind to sum(COALESCE(deaths,0)) on leaderboard_totals | Wave 37 adversarial NIT. insert_without_counters_stores_null_not_zero holds. leaderboard_mv_does_not_invent_deaths_from_null went RED when INSERT bound 0, but poisoning the MV to sum(COALESCE(deaths,0)) with a mixed NULL+measured fixture still left the Class-R GREEN (0+3=3). Cure: pin all-NULL row set → kd_ratio IS NULL and/or source-ratchet migration 0014 / live MV for FILTER (WHERE deaths IS NOT NULL) / no COALESCE(deaths,0) in the aggregate. |
 | T-497 | 3332 | shipped | platform | Mission mutators still AuthUser+can_edit after T-408 PATCH tier fix | Wave 38 residual from T-408. update_mission now MissionMakerUser. Still AuthUser+can_edit only: delete_mission, submit_mission, create_version, set_armory in handlers/missions.rs. Demotion still leaves those paths open. Cure: same MissionMakerUser tier (or deliberate ownership-outlives-role Class-R per path). |
 | T-494 | 3333 | shipped | platform | mission_overview trim source-ratchet still allows !b.is_empty() match arm | Wave 37 adversarial NIT on T-407. dossier_body_uses_trim_aware_briefing_helper only bans .filter(\|b\| !b.is_empty()); a match-arm !b.is_empty() stayed GREEN while the behavioral trim test went RED. Also residual from T-407 report: schedule events.rs briefing still uses (!briefing.is_empty()) without trim (out of T-407 owns). Cure: widen source ratchet to ban non-trim empty checks on briefing paths; align schedule card trim with event_hub/mission_overview. |
 | T-498 | 3333 | shipped | platform | Discord webhook title not CSV/formula-safe (sibling of T-408) | Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord — user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R. |
 | T-495 | 3334 | shipped | platform | GET /members IT still only asserts data is_array (no offset exercise) | Wave 37 residual from T-412. Handler Class-R pins limit/offset + envelope. apps/website/api/tests/events.rs:~275 still only assert!(mem["data"].is_array()). Cure: seed >20 members on a cold IT DB and assert offset=20 returns member 21 / envelope total. |
 | T-499 | 3334 | shipped | platform | admin_field roles/sync still demotes all users in shared IT DB | Wave 38 residual from T-400. identity_link/factions/telemetry isolated. admin_field.rs POST /admin/roles/sync still loops every users row and demotes anyone without user_discord_roles — fires inside the suite against shared rows. Cure: scope sync to fixture actors or skip in IT / use private actors for asserts. |
 | T-500 | 3340 | shipped | platform | mission_compile does not run cargo wire_safety (Save-only refuse) | Wave 39 adversarial residual (CLEAN). T-416 wires Save Version via load_cargo_phys_catalog + validate_mission_editor_payload_with_catalog. Production mission_compile.rs does not call scan_cargo_capacity — pre-existing over-capacity versions can still compile until re-saved. Cure: pass CargoPhysCatalog into the compile gate (same table as Save) or document compile-as-trust-saved with a Class-R that compile path mentions the Save refuse. |
-| T-501 | 3341 | deferred | platform | Community-terrain soft-fail has no match-ingest HTTP IT | Wave 39 residual from T-402. parse_terrain_opt + unit Class-R pin unknown terrain → None. No IT proves POST match ingest with terrain kolguyev/anizay returns 200 and stores NULL terrain. Cure: apps/website/api/tests/telemetry.rs case on cold DB. |
+| T-501 | 3341 | shipped | platform | Community-terrain soft-fail has no match-ingest HTTP IT | Wave 39 residual from T-402. parse_terrain_opt + unit Class-R pin unknown terrain → None. No IT proves POST match ingest with terrain kolguyev/anizay returns 200 and stores NULL terrain. Cure: apps/website/api/tests/telemetry.rs case on cold DB. |
 | T-502 | 3342 | shipped | platform | POST /admin/roles/sync IT does not prove empty-snapshot admin survives | Wave 40 residual from T-372. Class-R pins resync_ids_from_snapshot empty→None. Existing roles/sync IT only asserts 200. Cure: cold IT — promote admin with zero user_discord_roles, POST sync, assert role still admin. |
 | T-503 | 3343 | shipped | platform | Arsenal has no Save button — cargo persists immediately (T-417 structural) | Wave 40 residual from T-417. arsenal.rs persist_cargo→set_loadout on every cargo mutation; export gate is the only client refusal. Cure: either add explicit Save UX or document intentional auto-persist with Class-R. |
 | T-504 | 3344 | shipped | platform | Silent no-garment cargo in Arsenal (T-417 structural) | Wave 40 residual from T-417. arsenal UI shows 'no garment worn' with total and no limit; arsenal_rules deliberate silence; mod TBD_LoadoutEquipHelper already degrades. Author never hears undeliverable cargo. Cure: authoring-time warning/refuse when cargo targets unworn container. |
@@ -2684,7 +2684,7 @@ Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/m
 | T-515 | 3355 | shipped | platform | Cold gate db_migrate hollow for SQL-only claim migrations | Wave 44 residual (CLEAN after T-513/514; MINOR from verifier). db_migrate in wave.sh only checks schema/object counts. A SQL-only claim migration like T-335 0016 can drop the claim UPDATE yet keep REFRESH and still gate-green when claimable orphans are 0. Mitigated by synthetic non-vacuity in the slice report, not by the gate. Cure: gate asserts migration body contains the claim UPDATE (Class-R on 0016) and/or runs a planted-orphan migrate probe. |
 | T-516 | 3356 | shipped | platform | W45 hotfix: identity_link IT race on idx_users_arma_id after T-351 | Wave 45 cold gate FAIL. arma_link_flow seed_user(400001, identity-link-seed-400001) hit duplicate key idx_users_arma_id while padded_arma_id_is_stored_trimmed_and_resolvable runs in parallel (both call setup() which seeds ACTOR with the same placeholder arma_id without releasing it first). Cure: serialize the async identity_link tests (Mutex like null_tolerance) AND release identity-link-seed-40000{1,2,3} in setup before seed_user. Perturbation/repro: parallel runs under shared TBD_GATE_DB. Owns: identity_link.rs only. |
 | T-517 | 3357 | shipped | platform | W45 hotfix: identity_link PAD_ACTOR collides with telemetry PLAYER_DISCORD | Wave 45 cold gate FAIL after T-516. telemetry_ingest_closes_the_loop asserts leaderboard kills==5 but got 15; identity_link padded_arma assert deployments==1 got 2. Root cause: T-351 PAD_ACTOR and telemetry PLAYER_DISCORD both use discord snowflake 000000000000400003 on the shared gate DB. Parallel suites: telemetry writes 5 kills; T-351 padded test writes 7+3=10 for the same discord_id → MV sum 15. Cure: move PAD_ACTOR (and PAD seed/arma string suffixes) to an unused T-400 id (e.g. 000000000000400013); Class-R assert PAD_ACTOR != telemetry PLAYER_DISCORD literal. Owns: apps/website/api/tests/identity_link.rs only. Do not change telemetry.rs. |
-| T-518 | 3358 | deferred | platform | T-517 Class-R denylists old telemetry id only (not live PLAYER_DISCORD) | Wave 45 verifier MINOR. identity_link.rs Class-R assert_ne!(PAD_ACTOR, "000000000000400003") REDs if PAD returns to 400003, but stays green if telemetry PLAYER_DISCORD moves onto live PAD (…400013) — pin is a hardcoded denylist, not bound to telemetry.rs. Original shared-discord_id failure class can return one-sided. Cure: include_str!/parse PLAYER_DISCORD from telemetry.rs in the Class-R test, or assert_ne against a shared test const both suites import. Repro: set PLAYER_DISCORD to 000000000000400013 in tests/telemetry.rs; cargo test -p website-api --test identity_link t400_actor_is_not_shared_dev_login_user -- --exact → ok (false green); restore after. |
+| T-518 | 3358 | shipped | platform | T-517 Class-R denylists old telemetry id only (not live PLAYER_DISCORD) | Wave 45 verifier MINOR. identity_link.rs Class-R assert_ne!(PAD_ACTOR, "000000000000400003") REDs if PAD returns to 400003, but stays green if telemetry PLAYER_DISCORD moves onto live PAD (…400013) — pin is a hardcoded denylist, not bound to telemetry.rs. Original shared-discord_id failure class can return one-sided. Cure: include_str!/parse PLAYER_DISCORD from telemetry.rs in the Class-R test, or assert_ne against a shared test const both suites import. Repro: set PLAYER_DISCORD to 000000000000400013 in tests/telemetry.rs; cargo test -p website-api --test identity_link t400_actor_is_not_shared_dev_login_user -- --exact → ok (false green); restore after. |
 | T-519 | 3359 | shipped | platform | R-api fixture goldens for Member / RegistryCompat / FireSolution | Wave 45 residual (T-360 NIT). DashboardResponse.server_status is typed Option<ServerStatusDto> end-to-end; dto::r_api::dashboard green. Remaining typed DTOs Member, RegistryCompatResponse, FireSolution still lack fixtures under apps/website/frontend/tests/fixtures/api/ (ls \| rg -i 'member\|compat\|fire\|solve' → empty). Owns when filed: apps/website/frontend/tests/fixtures/api/ + matching dto.rs R-api modules. Outside T-360 owns at ship time. |
 | T-520 | 3360 | shipped | platform | W46 hotfix: rustfmt events.rs after T-511 | Wave 46 cold gate FAIL on fmt (changed). T-511 apps/website/api/tests/events.rs fails rustfmt --check (indent/wrapping around the new 23505 probe). Cure: rustfmt that file only; no logic change. Owns: apps/website/api/tests/events.rs. |
 | T-521 | 3361 | shipped | platform | W46 hotfix: rustfmt missions.rs create_version after T-505 | Wave 46 cold re-gate after T-520 still FAIL fmt (changed). apps/website/api/src/handlers/missions.rs else-branch UPDATE (no title mirror) fails rustfmt --check around create_version ~951. Cure: rustfmt that file only. Owns: apps/website/api/src/handlers/missions.rs. |
@@ -2705,7 +2705,7 @@ The stale path is `eprintln!` only today (not a hard fail); cold gate PASS saw i
 | T-532 | 3372 | shipped | platform | No API route to re-point mission current_version_id after a bad version | FOUND as T-382 residual (W48). T-382 closed the *new* hole: vacuous `payload:{}` is rejected at create_version write time. Already-broken rows (and any future non-vacuous but unwanted tip) still cannot be re-pointed via API — only `psql` UPDATE of `missions.current_version_id`.
 
 Needs a rollback / re-point handler in missions.rs **and** route registration in `app.rs` (out of T-382 owns). Repro: after a good version then a bad tip that somehow lands, there is no PATCH/POST to restore the prior version id; `/compiled` stays 409 NoSlots. |
-| T-533 | 3373 | deferred | platform | T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400 | FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-355.
+| T-533 | 3373 | shipped | platform | T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400 | FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-355.
 
 upsert_match uses parse_uuid_opt_strict and unit/source pins prove junk → BadRequest, but no integration test POSTs a malformed event_id/mission_id through the live route and asserts HTTP 400. RED if the handler call sites are deleted while unit helper tests remain: today the source pin covers that; an HTTP IT would close the residual.
 
@@ -2800,7 +2800,7 @@ Repro: run flatten-orbat-slots without --in-place on a golden with loadout/uid. 
 Stdout schema/preserve Class-R calls `apply_flatten_orbat_slots` directly, not `flatten_orbat_slots(..., false)`. A post-apply stdout-only `mission["schemaVersion"] = "1.1"` stamp (exact pre-T-538 bug shape) keeps all `flatten_stdout_*` tests GREEN. Production path is shared/correct today; pin does not cover the CLI entrypoint claim.
 
 Cure: Class-R must exercise stdout entrypoint (or source-pin that stdout path cannot reassign schemaVersion after apply). Repro: add stamp after apply in flatten_orbat_slots false branch → current tests stay green. |
-| T-540 | 3380 | deferred | platform | T-384 Class-R only — no IT for attendance retract on match re-point | FOUND by W53 adversarial verifier (CLEAN MINOR-NIT) after T-384.
+| T-540 | 3380 | shipped | platform | T-384 Class-R only — no IT for attendance retract on match re-point | FOUND by W53 adversarial verifier (CLEAN MINOR-NIT) after T-384.
 
 ingest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1→EV2 and asserts EV1 returns to registered while EV2 is attended.
 
@@ -2832,7 +2832,7 @@ Repro: rg set_current_version apps/website/api/tests — no hit. |
 Runtime is correct (T-328/T-543). Residual: scripts/mod/mcp-daemon.sh comment still says mcpd-bin ignores CARGO_TARGET_DIR. Cure: update the comment to match live honor of CARGO_TARGET_DIR.
 
 Repro: rg 'ignores CARGO_TARGET_DIR' scripts/mod/ |
-| T-546 | 3386 | deferred | platform | T-498 Class-R only — no HTTP IT for Discord formula-title sanitize | FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-498.
+| T-546 | 3386 | shipped | platform | T-498 Class-R only — no HTTP IT for Discord formula-title sanitize | FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-498.
 
 sanitize_discord_embed_field + include_str wire pins exist; no services_http / CMS IT asserts a leading '=title' becomes ZWSP-prefixed in the outbound embed JSON.
 
@@ -3174,7 +3174,7 @@ Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pi
    Pre-existing. T-262's constraint 1 means the cascade is already correct for the day that handler
    becomes a hard delete -- but today the dialog is wrong. Either fix the copy or make the handler
    match it; decide which, do not leave both. |
-| T-571 | 3424 | deferred | platform | T-568 Class-R still hollow — nested fn dev_login / PG dollar-quote COALESCE | FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-568.
+| T-571 | 3424 | shipped | platform | T-568 Class-R still hollow — nested fn dev_login / PG dollar-quote COALESCE | FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-568.
 
 Plain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE…COALESCE…$decoy$ (blanker only handles '/").
 
@@ -3195,7 +3195,7 @@ by `preflight.sh:140`, `Caddyfile.website:27`, `editor-gates.yml:95` and
 LIKELY ANSWER: keep the 200/503 + `status` field public (that is all any prober needs) and move the
 detail behind the same `X-Service-Token` gate `/metrics` uses, or behind a `?verbose=1` that requires
 it. Confirm every listed prober still passes afterwards. |
-| T-572 | 3425 | deferred | platform | T-569 Class-R still hollow — #[cfg(any())] match arms | FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-569.
+| T-572 | 3425 | shipped | platform | T-569 Class-R still hollow — #[cfg(any())] match arms | FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-569.
 
 r#/br#/concat decoys RED. Still GREEN: `#[cfg(any())] match { live arms }` + `#[cfg(not(any()))] match { _ }` or cfg on each role arm with live `_`.
 
@@ -3207,7 +3207,7 @@ Repro: cfg-out live arms; leave `_ => DEV_USER_ID` live; Class-R green. |
 Repro: select one slot + one vehicle; drag — vehicle glyph stays put until release; slot previews. Commit still moves both; undo is one step.
 
 Cure: extend drag preview / set_drag for vehicles (map-engine-render + host), or document as wontfix. |
-| T-574 | 3427 | deferred | platform | T-491 host Class-R soft include_str — comment-only move_entities_and_vehicles survives | FOUND by W68 adversarial verifier (CLEAN NIT) after T-491.
+| T-574 | 3427 | shipped | platform | T-491 host Class-R soft include_str — comment-only move_entities_and_vehicles survives | FOUND by W68 adversarial verifier (CLEAN NIT) after T-491.
 
 `select_tool_and_mission_editor_delegate_to_atomic_mix_apis` (store.rs ~2912–2940) only string-presence / Move-arm absence checks via include_str. A comment-only `move_entities_and_vehicles` mention would keep the pin green; it also does not pin that mission_editor calls pick_slot_or_vehicle / marquee_* helpers.
 
@@ -3812,7 +3812,7 @@ naming WHICH files tripped it, so the next operator can verify rather than trust
 
 The command center overrode it by hand this once, after confirming zero LFS files in the range --
 recorded here so the override is auditable rather than folklore. |
-| T-601 | 3482 | deferred | platform | Class-R pin hollowness is systemic, not a bug in three pins | FOUND by wave 75's adversarial verifier (Fable 5), which defeated THREE separate pins shipped in that
+| T-601 | 3482 | shipped | platform | Class-R pin hollowness is systemic, not a bug in three pins | FOUND by wave 75's adversarial verifier (Fable 5), which defeated THREE separate pins shipped in that
 same wave — after each slice had proven its own pin against the attacks it knew about.
 
 === F2 (MAJOR) T-570's new executing pin, `mission_title_prefer.rs:442-499` `item()` ===
@@ -4392,7 +4392,7 @@ CONTEXT for why a description string is worth a ticket: T-612 proved `mcp-wb-log
 reachable exit 0 or exit 2** and was fully inverted -- it printed PASS on a stale June log and FAIL on
 a real healthy boot -- because it was built on these same two dead strings. The strings have a track
 record of turning into false verdicts wherever they are copied. |
-| T-618 | 3652 | ready | platform | The gate base can still self-approve: the ticket ledger reads files the forging commit wrote | FOUND by wave 78's adversarial verifier. **Third round of the same defect** (T-602 -> T-613 -> here),
+| T-618 | 3652 | shipped | platform | The gate base can still self-approve: the ticket ledger reads files the forging commit wrote | FOUND by wave 78's adversarial verifier. **Third round of the same defect** (T-602 -> T-613 -> here),
 and the fix this time is small and specific -- do not redesign the oracles.
 
 === THE ATTACK, measured in a scratch clone ===
@@ -4438,7 +4438,7 @@ stated threat model ("the gate base can no longer approve itself"), it requires 
 interaction, and the design only half-discloses the gap: it admits "no fully independent oracle
 exists" while making a specific false independence claim about oracle 2. Fix the read, fix the
 comment, stop. |
-| T-619 | 3662 | ready | platform | PAT_ASSIGNED diverged between two sibling scripts that both claim ONE shared definition | FOUND by wave 78's adversarial verifier -- the cross-slice class that wave 77 also shipped (T-604's
+| T-619 | 3662 | shipped | platform | PAT_ASSIGNED diverged between two sibling scripts that both claim ONE shared definition | FOUND by wave 78's adversarial verifier -- the cross-slice class that wave 77 also shipped (T-604's
 detector quoted a Print T-605 reworded).
 
 `scripts/mod/mcp-wb-logs.sh:44` states: *"The check vocabulary — shared with remote-log-grep.sh.
@@ -4464,6 +4464,116 @@ FIX: broaden `mcp-wb-logs.sh:57` to match its sibling -- **or better, make the c
 extracting the six shared patterns into one sourced file (`scripts/mod/lib/` already exists;
 `gate-grep.sh` lives there from T-556). A comment asserting a shared definition, over two divergent
 copies, is the signature defect in miniature: it reports agreement it never checked. |
+| T-620 | 3672 | ready | platform | verify-no-python has been RED since the factory started, is in no CI job, and half of it cannot fire | OPERATOR-RAISED 2026-08-01: *"I thought I had made a rule to make future scripts be in Rust using
+xtask. That does not seem like it's the case."* **The rule exists and is correct. It has simply never
+been able to bind.** Three independent reasons, all measured.
+
+=== 1. THE GATE IS RED, AND HAS BEEN SINCE THE DAY THE FACTORY STARTED ===
+    $ make verify-no-python
+    FAIL: leftover .py files:
+      ./scripts/mod/slice-collisions.py
+      ./scripts/platform/slice-collisions.py
+    verify-no-python: FAIL
+    make: *** [Makefile:467: verify-no-python] Error 1
+Both files landed in `1e3ea1f6` (**2026-07-26**) -- the day the platform factory opened -- and they are
+**the factory's own tooling**. The command center has invoked `slice-collisions.py` throughout.
+
+=== 2. IT IS IN NO CI JOB ===
+`grep verify-no-python .github/workflows/*.yml` -> **no hits.** It exists only at `Makefile:466-467`
+and inside `make ci-local` (`Makefile:481`), the local replay that nothing runs by default. It is
+**not a wave-gate step**, which is why the factory's gate kept reporting 28/28 over a red rule for
+three straight waves.
+
+=== 3. HALF OF IT PHYSICALLY CANNOT FIRE -- THE SIGNATURE DEFECT, INSIDE THE RULE'S OWN GATE ===
+`scripts/verify-no-python.sh:29` greps with **`rg`**, which does not exist in this environment (it is
+a harness-injected shell function; `bash -c 'command -v rg'` finds nothing -- documented three times
+in `docs/platform/PLATFORM_FACTORY.md`). Measured:
+    ./scripts/verify-no-python.sh: line 29: rg: command not found
+      OK (none)
+`\|\| true` swallows the failure and the check reports **"OK (none)"** -- not because there are no
+`python3` invocations in `scripts/` and the `Makefile`, but **because it never looked.** So the
+interpreter-invocation half of this gate has never once run.
+
+=== FIX, IN ORDER ===
+1. **Replace `rg` with `grep`** at `:29` and make the check **fail closed** on a non-zero exit that is
+   not "no matches" (see `scripts/mod/lib/gate-grep.sh` from T-556, which already reads exit status
+   0/1/2/127 correctly -- reuse it rather than re-deriving). Expect it to go red immediately; that is
+   the point.
+2. **Decide the two `.py` files.** Either port `slice-collisions.py` to `xtask` (it is the operator's
+   stated intent and it is ~one command: disjoint-set packing over the `owns` column), or add an
+   explicit, dated, justified exemption in the gate. **Do not silently delete the finding.**
+3. **Wire it somewhere that runs.** CI job, or a wave-gate step, or both. A gate in `ci-local` only is
+   a gate nobody runs -- exactly how this stayed red for three waves.
+
+RELATED: T-621 (no rule at all for shell), T-611 (`verify-citations` scoped so it never read Rust),
+T-606/T-612 (health checks satisfied only by a stale build). Same class each time: **a tool reports
+success over an input it never actually examined.** |
+| T-621 | 3682 | ready | platform | There is no Rust-first rule for shell — 58 scripts, 15,415 lines, no gate, no convention | OPERATOR-RAISED 2026-08-01, alongside T-620. Python has a rule (T-162, and see T-620 for why it never
+bound). **Shell has none at all** -- no `verify-no-shell`, no "new tooling goes in xtask" convention,
+nothing in `CODING_STANDARDS.md` or `CLAUDE.md`.
+
+MEASURED: **58 `.sh` files, 15,415 lines** (excluding `.git` and worktrees). `scripts/platform/wave.sh`
+alone is ~2,800 lines and grew by hundreds more across waves 75-79. Nothing was violating a rule --
+**the rule was never written**, so every slice that needed a script reached for bash by default.
+
+The operator's stated intent, from the Rust rewrite era: *everything in Rust; scripts in `xtask`.*
+`CLAUDE.md` already records the direction of travel -- *"All tooling is Rust (T-165 Node eradication);
+Node exists solely as the `enfusion-mcp` runtime"* -- but says nothing about bash.
+
+=== WHY THIS IS NOT COSMETIC ===
+Waves 75-79 spent a large fraction of their budget on defects that are **specific to shell**:
+- `grep` is ugrep 7.5.0 in an agent shell and GNU 3.8 under `bash script.sh`; they disagree on bare
+  `{}` in an ERE, and every API route path contains `{id}`.
+- `rg` does not exist, and `\|\| true` turns its absence into a silent pass (T-620, and the same shape
+  in T-606's `remote-log-grep.sh`).
+- `${TBD_SCENARIO:={GUID}...}` truncates at the GUID's brace, and the validator printed
+  "config VALID" over the wreckage (T-607).
+- `mcp-wb-logs.sh` had no reachable `exit 0` **or** `exit 2` and was fully inverted -- PASS on a stale
+  build, FAIL on a healthy one (T-612).
+None of these failure modes survive contact with a typed language and a test harness.
+
+=== FIX SHAPE -- proposal, operator to confirm ===
+1. Write the rule down (`CODING_STANDARDS.md`): **new tooling goes in `xtask`**; bash is permitted only
+   for thin process glue that must run before/without cargo (container entry, `distrobox-host-exec`
+   wrappers, git hooks).
+2. **Grandfather with an explicit list**, so the list can only shrink. A `verify-no-new-shell` gate
+   compares against the committed inventory and fails on an unlisted new `.sh`. This is the cheap,
+   honest version -- it does not force a 15k-line rewrite, it just stops the bleeding.
+3. Port opportunistically, highest-risk first. `wave.sh`'s gate/push logic is the obvious candidate:
+   it has now had **three consecutive rounds** of self-approval defects (T-602 -> T-613 -> T-618),
+   every one of them a bash-string-matching problem.
+
+**Do not start by rewriting `wave.sh`.** Write the rule, add the ratchet, then port when a script next
+needs real work. |
+| T-622 | 3692 | shipped | platform | The Class-R evaluator failed OPEN — an expression it could not fold was treated as live code | FOUND by wave 79's adversarial verifier, in T-601's own fix, and closed in-wave as T-622.
+
+Round FIVE of the same defect (T-517 -> T-567 -> T-570 -> W77-F2/F3 -> here). Every earlier round
+lost by enumerating dead-code shapes; a sixth always existed.
+
+THE BUG:  returned  for any expression it could not fold, and the caller treated
+ as "not provably dead" -> kept the block -> the pin greened over dead code. Two root causes:
+ folded each initialiser against an EMPTY const map, so  never resolved;
+and  emitted  for ,  and a leading , so any unrecognised token bailed out.
+Measured survivors included three named in T-601's own brief and none in its residual list.
+Reproduced live on the real  pin: wrapping  in
+ gave  -- the pin
+reported the abort wire live while it sat in dead code, so the SSE stream would leak on route-leave.
+
+THE FIX: unknown fails CLOSED.  () decides on "every identifier is
+compile-time material" -- a const/static name, a folded value, a cast target, a modelled transparent
+call. **Operators are deliberately NOT enumerated**, so the rule covers shapes nobody has invented;
+the agent's three invented attacks went RED for free. Scrub was chosen over refuse because a scrub is
+local and still loud (a scrubbed needle REDs as "needle missing"), where a refusal would panic a whole
+pin over an unrelated condition. Consts now fixpoint-fold over 8 rounds.
+
+RESULT: 9 wrappers x 6 real production pins, FALSE GREENS 54/54 -> 0/54; all six pins still GREEN on
+unmodified main; a census over every SPA .rs file found 0 live conditions newly scrubbed; 368 tests.
+
+REMAINING, disclosed rather than hidden: build-conditional compilation (,
+) is deliberately still fail-open -- scrubbing it would delete the shipped wasm32
+SPA. And  stays GREEN: to a text pass it is the same three
+tokens as , and folding calls by name is the blocklist one level down. Pinned by a test
+at  so it cannot grow in silence. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

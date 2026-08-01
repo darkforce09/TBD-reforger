@@ -14,88 +14,97 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 
-## T-618 — The gate base can still self-approve: the ticket ledger reads files the forging commit wrote
+## T-620 — verify-no-python has been RED since the factory started, is in no CI job, and half of it cannot fire
 
 - **Slice spec:** ``
 - **Program hub:** ``
-- **Branch:** `ticket/T-618`
+- **Branch:** `ticket/T-620`
 - **Targets:** website
-- **Summary:** FOUND by wave 78's adversarial verifier. **Third round of the same defect** (T-602 -> T-613 -> here),
-and the fix this time is small and specific -- do not redesign the oracles.
+- **Summary:** OPERATOR-RAISED 2026-08-01: *"I thought I had made a rule to make future scripts be in Rust using
+xtask. That does not seem like it's the case."* **The rule exists and is correct. It has simply never
+been able to bind.** Three independent reasons, all measured.
 
-=== THE ATTACK, measured in a scratch clone ===
-ONE commit defeats all three cross-checks for a **silent PASS**. Subject `wave 78 CLOSED …`; **in the
-same commit** append wave-78 rows to `docs/platform/wave_plan.tsv` and mark them `shipped` in
-`.ai/tickets/registry.json`; place it after the last slice merge.
+=== 1. THE GATE IS RED, AND HAS BEEN SINCE THE DAY THE FACTORY STARTED ===
+    $ make verify-no-python
+    FAIL: leftover .py files:
+      ./scripts/mod/slice-collisions.py
+      ./scripts/platform/slice-collisions.py
+    verify-no-python: FAIL
+    make: *** [Makefile:467: verify-no-python] Error 1
+Both files landed in `1e3ea1f6` (**2026-07-26**) -- the day the platform factory opened -- and they are
+**the factory's own tooling**. The command center has invoked `slice-collisions.py` throughout.
 
-    Variant A (marker AFTER wave + plan/registry edited in the same commit):
-      ticket ledger: wave 78 has 2 ticket(s) ... all shipped — corroborated.
-      RC=0        <-- SILENT PASS; range gated = 1 commit, honest range = 11
-    Variant B (marker, NO ledger edits):  refusing to run unconfirmed.  RC=2
-    Variant C (marker mid-wave + plan edit): base cuts through a slice.  RC=2  (oracle 3 catches it)
+=== 2. IT IS IN NO CI JOB ===
+`grep verify-no-python .github/workflows/*.yml` -> **no hits.** It exists only at `Makefile:466-467`
+and inside `make ci-local` (`Makefile:481`), the local replay that nothing runs by default. It is
+**not a wave-gate step**, which is why the factory's gate kept reporting 28/28 over a red rule for
+three straight waves.
 
-- **Oracle 1** (`wave_close_is_newest_wave:1938`) never refuses a HIGHER wave number -- 78 beats all
-  of 45-77, so it passes silently.
-- **Oracle 2** (`wave_close_ledger_says:1970`) is the hole. It reads `wave_plan.tsv` and
-  `registry.json` **from HEAD's checkout**, and the forging commit's edits are IN HEAD's tree. The
-  independence claim written at `wave.sh:1901` -- that each check draws on "evidence the commit under
-  test did not itself produce" -- **is false for oracle 2**, because a slice may edit both files.
-- **Oracle 3** (`slice_span_check:2002`) is genuinely marker-free and does catch the mid-wave variant,
-  but its own comment admits it "cannot catch a base placed AFTER the whole wave".
-- The backstop `demand_base_confirmation:2034` fires in variant B but is **bypassed** in A, precisely
-  because editing the two files flips oracle 2 to rc0.
+=== 3. HALF OF IT PHYSICALLY CANNOT FIRE -- THE SIGNATURE DEFECT, INSIDE THE RULE'S OWN GATE ===
+`scripts/verify-no-python.sh:29` greps with **`rg`**, which does not exist in this environment (it is
+a harness-injected shell function; `bash -c 'command -v rg'` finds nothing -- documented three times
+in `docs/platform/PLATFORM_FACTORY.md`). Measured:
+    ./scripts/verify-no-python.sh: line 29: rg: command not found
+      OK (none)
+`|| true` swallows the failure and the check reports **"OK (none)"** -- not because there are no
+`python3` invocations in `scripts/` and the `Makefile`, but **because it never looked.** So the
+interpreter-invocation half of this gate has never once run.
 
-Net effect: the gate runs `base..HEAD` = 1 commit and reports PASS/SKIP over an entire unread wave --
-the wave-75 defect, reintroduced through the derivation oracle.
+=== FIX, IN ORDER ===
+1. **Replace `rg` with `grep`** at `:29` and make the check **fail closed** on a non-zero exit that is
+   not "no matches" (see `scripts/mod/lib/gate-grep.sh` from T-556, which already reads exit status
+   0/1/2/127 correctly -- reuse it rather than re-deriving). Expect it to go red immediately; that is
+   the point.
+2. **Decide the two `.py` files.** Either port `slice-collisions.py` to `xtask` (it is the operator's
+   stated intent and it is ~one command: disjoint-set packing over the `owns` column), or add an
+   explicit, dated, justified exemption in the gate. **Do not silently delete the finding.**
+3. **Wire it somewhere that runs.** CI job, or a wave-gate step, or both. A gate in `ci-local` only is
+   a gate nobody runs -- exactly how this stayed red for three waves.
 
-=== THE FIX (small, specific) ===
-**Read the ledger from OUTSIDE the range being validated.** Oracle 2 must not consult HEAD's tree; it
-should read `wave_plan.tsv` / `registry.json` at the **candidate base's parent**, or at the previous
-close, via `git show <rev>:<path>` -- a revision the forging commit cannot have written. That single
-change restores the independence the comment already claims and kills variant A.
+RELATED: T-621 (no rule at all for shell), T-611 (`verify-citations` scoped so it never read Rust),
+T-606/T-612 (health checks satisfied only by a stale build). Same class each time: **a tool reports
+success over an input it never actually examined.**
 
-Then **correct the comment at `:1901`** to describe what is actually true. A false independence claim
-in a security-shaped check is worse than no claim, because the next reader stops looking.
-
-Consider also giving oracle 1 an upper bound (a boundary claiming a wave number far beyond the
-highest ticket in the plan is suspicious), but the oracle-2 fix is the load-bearing one.
-
-=== FAIR WEIGHTING, so the next agent does not over-build ===
-This needs a **deliberately forged commit**, not a natural mistake -- but that is exactly T-613's
-stated threat model ("the gate base can no longer approve itself"), it requires no operator
-interaction, and the design only half-discloses the gap: it admits "no fully independent oracle
-exists" while making a specific false independence claim about oracle 2. Fix the read, fix the
-comment, stop.
-
-## T-619 — PAT_ASSIGNED diverged between two sibling scripts that both claim ONE shared definition
+## T-621 — There is no Rust-first rule for shell — 58 scripts, 15,415 lines, no gate, no convention
 
 - **Slice spec:** ``
 - **Program hub:** ``
-- **Branch:** `ticket/T-619`
+- **Branch:** `ticket/T-621`
 - **Targets:** website
-- **Summary:** FOUND by wave 78's adversarial verifier -- the cross-slice class that wave 77 also shipped (T-604's
-detector quoted a Print T-605 reworded).
+- **Summary:** OPERATOR-RAISED 2026-08-01, alongside T-620. Python has a rule (T-162, and see T-620 for why it never
+bound). **Shell has none at all** -- no `verify-no-shell`, no "new tooling goes in xtask" convention,
+nothing in `CODING_STANDARDS.md` or `CLAUDE.md`.
 
-`scripts/mod/mcp-wb-logs.sh:44` states: *"The check vocabulary — shared with remote-log-grep.sh.
-**ONE definition per pattern**."* Five of the six shared patterns match. `PAT_ASSIGNED` does not:
+MEASURED: **58 `.sh` files, 15,415 lines** (excluding `.git` and worktrees). `scripts/platform/wave.sh`
+alone is ~2,800 lines and grew by hundreds more across waves 75-79. Nothing was violating a rule --
+**the rule was never written**, so every slice that needed a script reached for bash by default.
 
-    mcp-wb-logs.sh:57   '\[TBD\] SpawnManager: assigned slot'                          # flat only
-    remote-log-grep.sh:136 '\[TBD\]\[Spawn\].*assigned|\[TBD\] SpawnManager: assigned'  # both formats
+The operator's stated intent, from the Rust rewrite era: *everything in Rust; scripts in `xtask`.*
+`CLAUDE.md` already records the direction of travel -- *"All tooling is Rust (T-165 Node eradication);
+Node exists solely as the `enfusion-mcp` runtime"* -- but says nothing about bash.
 
-They are **not sourced from a common lib** -- the "one definition" is a claim, not a mechanism.
-T-614 broadened the sibling THIS WAVE, with the reasoning that `TBD_SpawnManager.c` is 70/74 tagged
-and `:675` is a flat straggler, so *"the reword is the direction the file is already travelling."*
+=== WHY THIS IS NOT COSMETIC ===
+Waves 75-79 spent a large fraction of their budget on defects that are **specific to shell**:
+- `grep` is ugrep 7.5.0 in an agent shell and GNU 3.8 under `bash script.sh`; they disagree on bare
+  `{}` in an ERE, and every API route path contains `{id}`.
+- `rg` does not exist, and `|| true` turns its absence into a silent pass (T-620, and the same shape
+  in T-606's `remote-log-grep.sh`).
+- `${TBD_SCENARIO:={GUID}...}` truncates at the GUID's brace, and the validator printed
+  "config VALID" over the wreckage (T-607).
+- `mcp-wb-logs.sh` had no reachable `exit 0` **or** `exit 2` and was fully inverted -- PASS on a stale
+  build, FAIL on a healthy one (T-612).
+None of these failure modes survive contact with a typed language and a test harness.
 
-**When `:675` moves to `[TBD][Spawn]`, `mcp-wb-logs.sh` reports PARTIAL over a boot where a player
-really was seated** -- measured:
+=== FIX SHAPE -- proposal, operator to confirm ===
+1. Write the rule down (`CODING_STANDARDS.md`): **new tooling goes in `xtask`**; bash is permitted only
+   for thin process glue that must run before/without cargo (container entry, `distrobox-host-exec`
+   wrappers, git hooks).
+2. **Grandfather with an explicit list**, so the list can only shrink. A `verify-no-new-shell` gate
+   compares against the committed inventory and fails on an unlisted new `.sh`. This is the cheap,
+   honest version -- it does not force a 15k-line rewrite, it just stops the bleeding.
+3. Port opportunistically, highest-risk first. `wave.sh`'s gate/push logic is the obvious candidate:
+   it has now had **three consecutive rounds** of self-approval defects (T-602 -> T-613 -> T-618),
+   every one of them a bash-string-matching problem.
 
-    $ bash scripts/mod/mcp-wb-logs.sh --file tagged_seat.log   # player WAS seated (tagged format)
-      exit=2  (PARTIAL: slot bodies built; no player has deployed yet.)
-
-That is the latent false-amber T-614 inoculated its own file against, and a partial regression of the
-inversion T-612 had just fixed in this same file.
-
-FIX: broaden `mcp-wb-logs.sh:57` to match its sibling -- **or better, make the claim true** by
-extracting the six shared patterns into one sourced file (`scripts/mod/lib/` already exists;
-`gate-grep.sh` lives there from T-556). A comment asserting a shared definition, over two divergent
-copies, is the signature defect in miniature: it reports agreement it never checked.
+**Do not start by rewriting `wave.sh`.** Write the rule, add the ratchet, then port when a script next
+needs real work.
