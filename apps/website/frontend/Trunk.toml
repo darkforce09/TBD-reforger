@@ -7,6 +7,16 @@ dist = "dist"
 [tools]
 tailwindcss = "4.3.2"
 
+# Trunk's default watch set is the whole crate directory, which includes the paths trunk and the
+# Tailwind v4 pass write into. Measured 2026-08-01: one `trunk serve --release` produced THREE builds
+# back to back — `✅ success` immediately followed by `📦 starting build`, and the third finished in
+# 0.11s, i.e. cargo found nothing changed. So the trigger was the build's own output, not a source
+# edit. Every one of those pushes a browser reload, which aborts the 152 MB
+# `everon-sat.tbd-sat` fetch mid-flight and leaves the Mission Creator showing a heightmap with no
+# satellite layer, and an empty Asset Browser.
+[watch]
+ignore = ["dist", "style/aegis.css"]
+
 [serve]
 address = "127.0.0.1"
 port = 3000
