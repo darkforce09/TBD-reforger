@@ -310,6 +310,75 @@ pub fn pack_drag_overlay(drag_ids: &[String], ids: &[String], xy: &[f32]) -> (Ve
     (out, rows)
 }
 
+/// T-573 — the previewed **`MissionVehicles`** lane for a live drag: interleaved `[x0,y0,…]` world
+/// meters ready for `RenderEngine::vehicles_bind`, with the dragged vehicles offset by `(dx, dy)`.
+///
+/// `drag_ids` is the **whole** dragged selection — slot ids and vehicle ids mixed, in gesture order.
+/// `points` is every *placed* vehicle as `(id, world_x, world_y)`: the host's
+/// `editor_ops::vehicle_points`, i.e. the same list [`crate::doc::MissionDocCore::pick_vehicle`]
+/// picks against, so anything the operator can grab is by construction a row here. A `drag_ids`
+/// entry that names no vehicle — the slot half of a mixed selection — matches nothing and is
+/// **skipped**, never resolved to a row.
+///
+/// **The whole lane comes back, not just the dragged rows.** `MissionVehicles` is a dense pack with
+/// no ids and no stable row identity inside the engine, and `vehicles_bind` re-uploads it wholesale,
+/// so a row left out of this vector would *vanish* mid-drag rather than stay put. That property is
+/// also why this cures T-573 without teaching the engine about vehicle ids and without SoA row
+/// patching: the re-pack **is** the update.
+///
+/// Two deliberate departures from the T-573 diagnosis, both to keep `map-engine-render` untouched:
+/// the parameters are the host's `(id, x, y)` triples rather than a split `ids` + `xy` (so the f64→
+/// f32 truncation and the interleave are proven *here*, not in un-testable wasm-only host code),
+/// and the return is the **xy lane** rather than packed instance bytes (so the existing
+/// `vehicles_bind(&[f32])` consumes it as-is — no new engine entry point, no engine signature
+/// change). Empty `drag_ids` therefore also means "restore": the identity re-pack of the lane.
+///
+/// T-574 — the example below is a **pin**, not decoration. `vehicle_drag_preview_*` in this file's
+/// `tests` module is the primary behavioural proof, but it compiles under `--cfg test`, so a
+/// `#[cfg(not(test))]` twin of this function could gut the shipped preview while the unit tests
+/// exercised an honest `#[cfg(test)]` copy. A doctest links against the crate built **without**
+/// `--cfg test`, so it is the one check here that shape cannot hide from.
+///
+/// ```
+/// use map_engine_core::slots_gpu::pack_vehicle_drag_preview;
+///
+/// let points = vec![
+///     ("v-parked".to_string(), 10.0, 20.0),
+///     ("v-dragged".to_string(), 30.0, 40.0),
+/// ];
+/// // The mixed selection that was broken: one slot id (which names no vehicle) + one vehicle id.
+/// let drag = vec!["slot-7".to_string(), "v-dragged".to_string()];
+///
+/// assert_eq!(
+///     pack_vehicle_drag_preview(&drag, &points, 7.5, -3.25),
+///     vec![10.0_f32, 20.0, 37.5, 36.75],
+///     "the dragged vehicle moves, the parked one does not, and the slot id resolves to no row"
+/// );
+/// ```
+#[must_use]
+pub fn pack_vehicle_drag_preview(
+    drag_ids: &[String],
+    points: &[(String, f64, f64)],
+    dx: f64,
+    dy: f64,
+) -> Vec<f32> {
+    let dragged: std::collections::HashSet<&str> = drag_ids.iter().map(String::as_str).collect();
+    let mut out = Vec::with_capacity(points.len() * 2);
+    for (id, x, y) in points {
+        let (wx, wy) = if dragged.contains(id.as_str()) {
+            (x + dx, y + dy)
+        } else {
+            (*x, *y)
+        };
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            out.push(wx as f32);
+            out.push(wy as f32);
+        }
+    }
+    out
+}
+
 /// Build a dense `selected[i]` mask from SoA ids + selected id set.
 #[must_use]
 pub fn selected_mask(ids: &[String], selected: &std::collections::HashSet<String>) -> Vec<bool> {
@@ -581,6 +650,73 @@ mod tests {
         assert_eq!(bytes.len(), SLOT_ICON_STRIDE);
         let x = f32::from_le_bytes(bytes[0..4].try_into().unwrap());
         assert!((x - 3.0).abs() < 1e-6);
+    }
+
+    /// T-573 — a **mixed** drag (slots + vehicles) must offset exactly the dragged *vehicle* rows.
+    ///
+    /// This is the reported bug, stated as behaviour: the preview showed the slots moving and left
+    /// the vehicles standing, so the overlay promised a move the drop would not perform — a tool
+    /// reporting success over an input it never examined, at 60 fps. `move_entities_and_vehicles`
+    /// (T-491, pinned by T-574) already commits both, so the preview was the only liar.
+    ///
+    /// The row set and the id order are chosen so the three ways a re-pack gets this wrong all
+    /// fail: `drag_ids[0]` is a **slot**, so a "first dragged id only" collapse moves nothing; the
+    /// dragged vehicles are rows 1 and 2, so an "offset every row" bug moves `v-parked`; and the
+    /// two slot ids resolve to no row, so an implementation that defaults an unknown id to row 0
+    /// moves `v-parked` too. `dx`/`dy` and every coordinate are exactly representable in f32 and
+    /// pairwise distinct, so an x/y swap cannot hide behind a matching value.
+    #[test]
+    fn vehicle_drag_preview_offsets_only_the_dragged_vehicles_of_a_mixed_selection() {
+        let points = vec![
+            ("v-parked".to_string(), 10.0, 20.0),
+            ("v-dragged-a".to_string(), 30.0, 40.0),
+            ("v-dragged-b".to_string(), 50.0, 60.0),
+        ];
+        // Mixed AND out of row order, slot id first — the shape the host actually hands over.
+        let drag: Vec<String> = ["slot-7", "v-dragged-b", "slot-9", "v-dragged-a"]
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect();
+
+        let lane = pack_vehicle_drag_preview(&drag, &points, 7.5, -3.25);
+
+        assert_eq!(
+            lane.len(),
+            points.len() * 2,
+            "every placed vehicle must stay in the dense lane — a dropped row VANISHES mid-drag"
+        );
+        assert_eq!(
+            lane,
+            vec![10.0_f32, 20.0, 37.5, 36.75, 57.5, 56.75],
+            "v-parked stands still; both dragged vehicles move by exactly (+7.5, -3.25)"
+        );
+    }
+
+    /// T-573 — a slots-only drag (and the empty-drag restore) must leave the vehicle lane on the
+    /// authored positions. This is the "skip unknown ids" half stated on its own: every id in
+    /// `drag_ids` names no vehicle, so nothing may move. Empty `drag_ids` is the same call the
+    /// cancel/no-move paths make to put the lane back.
+    #[test]
+    fn vehicle_drag_preview_leaves_the_lane_authored_when_no_vehicle_is_dragged() {
+        let points = vec![
+            ("v0".to_string(), 10.0, 20.0),
+            ("v1".to_string(), 30.0, 40.0),
+        ];
+        let slots_only: Vec<String> = vec!["slot-1".to_string(), "slot-2".to_string()];
+        assert_eq!(
+            pack_vehicle_drag_preview(&slots_only, &points, 7.5, -3.25),
+            vec![10.0_f32, 20.0, 30.0, 40.0],
+            "a slots-only drag must not smear the vehicle lane"
+        );
+        assert_eq!(
+            pack_vehicle_drag_preview(&[], &points, 7.5, -3.25),
+            vec![10.0_f32, 20.0, 30.0, 40.0],
+            "empty drag = the identity re-pack the cancel path restores with"
+        );
+        assert!(
+            pack_vehicle_drag_preview(&slots_only, &[], 1.0, 1.0).is_empty(),
+            "no placed vehicles ⇒ empty lane (vehicles_bind drops the lane)"
+        );
     }
 
     #[test]

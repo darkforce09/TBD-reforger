@@ -1122,16 +1122,17 @@ pub fn MissionEditorPage() -> impl IntoView {
                         } => {
                             let (dx, dy) = st::drag_delta(&cam, start_wx, start_wy, px, py);
                             if let Some(e) = engine.borrow_mut().as_mut() {
-                                // T-425 — slot drag overlay is SoA-keyed; vehicle ids would be a
-                                // no-op/wrong overlay, so only feed slot ids into set_drag.
-                                let slot_ids: Vec<String> = ids
-                                    .iter()
-                                    .filter(|i| !crate::editor_ops::is_vehicle_id(i))
-                                    .cloned()
-                                    .collect();
-                                if !slot_ids.is_empty() {
-                                    e.set_drag(slot_ids, dx as f32, dy as f32);
-                                }
+                                // T-573 — preview the WHOLE selection. The T-425 pre-filter fed
+                                // `set_drag` slot ids only and nothing previewed the vehicles, so a
+                                // mixed drag drew the slots moving and the vehicles standing while
+                                // the pointerup commit moved both: an overlay lying about its drop.
+                                st::push_drag_preview(
+                                    e,
+                                    &ids,
+                                    &crate::editor_ops::vehicle_points(),
+                                    dx,
+                                    dy,
+                                );
                             }
                             LG::Move {
                                 ids,
@@ -1316,7 +1317,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     crate::mission_history::after_local_edit();
                                 }
                             } else if let Some(e) = engine.borrow_mut().as_mut() {
-                                e.set_drag(Vec::new(), 0.0, 0.0); // no move → just clear the overlay
+                                // No move ⇒ no commit, so nothing else re-binds: drop BOTH preview
+                                // lanes back to the authored positions (T-573 — the vehicle lane is
+                                // a live re-pack now, not a passive bind).
+                                st::clear_drag_preview(e, &crate::editor_ops::vehicle_points());
                             }
                         }
                         // T-159.19 M3 — marquee commit. Release capture; a ≥1×1 px box replaces the
@@ -1403,7 +1407,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             let _ = container.release_pointer_capture(ev.pointer_id());
                         }
                     }
-                    use crate::select_tool::LeftGesture as LG;
+                    use crate::select_tool::{self as st, LeftGesture as LG};
                     let taken = left.borrow_mut().take();
                     match taken {
                         Some(LG::Move { .. }) => {
@@ -1411,7 +1415,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 let _ = container.release_pointer_capture(ev.pointer_id());
                             }
                             if let Some(e) = engine.borrow_mut().as_mut() {
-                                e.set_drag(Vec::new(), 0.0, 0.0);
+                                // T-573 — a cancel is never a commit, so nothing downstream
+                                // re-binds: the previewed vehicle rows would otherwise stay parked
+                                // at the last offset while the document says they never moved.
+                                st::clear_drag_preview(e, &crate::editor_ops::vehicle_points());
                             }
                         }
                         Some(LG::Marquee { .. }) => {
@@ -2047,6 +2054,141 @@ mod t245_registry_session {
             src.contains("registry_session::store_compat"),
             "successful /registry/compat response must populate the session cache"
         );
+    }
+}
+
+/// T-573 — the mixed-drag preview wiring.
+///
+/// **Why a source pin here and a behavioural test elsewhere.** The proof that the preview moves the
+/// right vehicles is a real unit test on the real function —
+/// `map_engine_core::slots_gpu::pack_vehicle_drag_preview`, native, driven directly. What cannot be
+/// proven that way is the *wiring*: `mod select_tool` is `#[cfg(target_arch = "wasm32")]`
+/// (`main.rs`) and `editor_ops` is `#![cfg(target_arch = "wasm32")]`, so no native test can call the
+/// drag path, and `RenderEngine` needs a GPU device besides. That leaves "the host hands the WHOLE
+/// mixed selection to both lanes" as the one claim only source can carry — so it is carried on the
+/// fail-closed scrubber (T-601 `class_r_scrub`), not a grep: `live_code` deletes comments, string
+/// literals, `#[cfg(any())]` items, `if false` blocks and code after an unconditional jump, and
+/// `only_body` refuses a marker that matches zero or two or more items rather than guessing.
+/// `the_preview_pin_rejects_every_dead_code_wrapper` below keeps that honest.
+#[cfg(test)]
+mod t573_mixed_drag_preview {
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    /// Both lanes must be driven from the same unfiltered `ids`, and the T-425 slot-only pre-filter
+    /// must be gone from the drag branch — that filter WAS the bug (vehicles never previewed).
+    #[test]
+    fn drag_preview_feeds_the_whole_mixed_selection_to_both_lanes() {
+        let tool = live_code(include_str!("select_tool.rs"));
+        let push = only_body(&tool, "pub fn push_drag_preview(");
+        assert!(
+            push.contains("e.set_drag(ids.to_vec()"),
+            "the slot lane must get the WHOLE id list — set_drag skips ids it cannot resolve, so \
+             filtering vehicles out first only ever cost the vehicle preview"
+        );
+        assert!(
+            push.contains("pack_vehicle_drag_preview("),
+            "the vehicle lane must be re-packed with the dragged rows offset"
+        );
+        assert!(
+            push.contains("e.vehicles_bind("),
+            "…and uploaded, or the re-pack never reaches the GPU"
+        );
+        assert!(
+            !push.contains("is_vehicle_id"),
+            "a preview that filters by kind is the defect this ticket cures"
+        );
+
+        // The un-committed exits must put the vehicle lane back: it is live state during a drag now.
+        let clear = only_body(&tool, "pub fn clear_drag_preview(");
+        assert!(
+            clear.contains("e.set_drag(Vec::new()") && clear.contains("e.vehicles_bind("),
+            "clearing the preview must drop BOTH lanes, not just the slot overlay"
+        );
+
+        // `class_r_scrub::cut_test_module` cuts from the **first** `#[cfg(test)]` to EOF, and this
+        // file has one at ~line 88 (`registry_session::clear_for_test`, a test-only helper inside a
+        // production module). Scrubbing the whole file therefore examines only its first ~90 lines
+        // and would report every needle below as absent — which is how this assertion first failed,
+        // and why the scrubber is worth having: it refused rather than guessed. So hand it the
+        // region from the next top-level item onward. The cut is at brace depth 0 between complete
+        // items, so the slice stays balanced and the scrubber's own cut still fires on the real
+        // test modules below.
+        // Split so the anchor literal is not itself a second occurrence in this file (the t427
+        // pin below uses the same trick for the same reason).
+        let anchor = format!("{}{}", "const REGISTRY_", "COLD_PAGE");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(
+            raw.matches(anchor.as_str()).count(),
+            1,
+            "the scrub anchor must be unambiguous — 0 or 2+ means this pin is reading a region it \
+             cannot identify"
+        );
+        let editor = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
+        assert!(
+            editor.contains("pub fn MissionEditorPage"),
+            "canary: the scrubbed region must still contain the editor page, or the anchor moved \
+             and this pin is examining almost nothing"
+        );
+        assert!(
+            editor.contains("st::push_drag_preview("),
+            "the pointermove drag branch must push the preview through the shared helper"
+        );
+        assert!(
+            !editor.contains("e.set_drag(slot_ids"),
+            "the drag branch must no longer feed set_drag a vehicle-filtered id list"
+        );
+        assert!(
+            editor.contains("st::clear_drag_preview("),
+            "the no-move release and the pointercancel must restore the vehicle lane"
+        );
+    }
+
+    /// **Calibration.** Every needle above must stop being satisfied once the code it names is
+    /// dead, or this pin could report a live mixed-drag preview over code the build never runs —
+    /// which is the exact shape of defect the ticket is about, relocated into the test.
+    #[test]
+    fn the_preview_pin_rejects_every_dead_code_wrapper() {
+        let needle = "pack_vehicle_drag_preview(";
+        let attacks: [(&str, String); 8] = [
+            ("if false", format!("if false {{ {needle}); }}")),
+            (
+                "if true == false",
+                format!("if true == false {{ {needle}); }}"),
+            ),
+            ("while false", format!("while false {{ {needle}); }}")),
+            ("loop { break; … }", format!("loop {{ break; {needle}); }}")),
+            (
+                "#[cfg(any())] item",
+                format!("#[cfg(any())] fn d() {{ {needle}); }}"),
+            ),
+            (
+                "#[cfg(any())] mod shadow",
+                format!("#[cfg(any())] mod s {{ fn d() {{ {needle}); }} }}"),
+            ),
+            ("after return", format!("fn d() {{ return; {needle}); }}")),
+            ("comment", format!("// {needle})")),
+        ];
+        for (label, body) in attacks {
+            let forged = format!("pub fn push_drag_preview() {{\n    {body}\n}}\n#[cfg(test)]\n");
+            assert!(
+                !live_code(&forged).contains(needle),
+                "{label}: the vehicle re-pack needle survived scrubbing — this pin would report a \
+                 live mixed-drag preview over code that never runs"
+            );
+        }
+        // A second definition is how a pin gets fed a pristine decoy while the real one is gutted.
+        let two = "pub fn push_drag_preview() { good(); }\n\
+                   mod real { pub fn push_drag_preview() { bad(); } }\n#[cfg(test)]\n";
+        let scrubbed = live_code(two);
+        let caught =
+            std::panic::catch_unwind(|| only_body(&scrubbed, "pub fn push_drag_preview(")).is_err();
+        assert!(
+            caught,
+            "two definitions must be RED, not a coin flip over which one ships"
+        );
+        // …and the honest shape must still satisfy the needle, or the battery proves nothing.
+        let live = format!("pub fn push_drag_preview() {{\n    {needle});\n}}\n#[cfg(test)]\n");
+        assert!(live_code(&live).contains(needle));
     }
 }
 

@@ -379,6 +379,11 @@ fn after_doc_change(ctx: &HistoryCtx) {
         e.set_selection(ids);
         if let Some(doc) = ctx.doc.borrow().as_ref() {
             upload_squad_links(e, doc, &soa);
+            // T-573 — this is also the END of the mixed-drag VEHICLE preview: since
+            // `select_tool::push_drag_preview` re-packs the vehicle lane with the dragged rows
+            // offset, the lane is live state during a drag, and this unconditional re-bind from the
+            // committed document is what puts it back on authored truth. A gesture that ends
+            // WITHOUT a commit never reaches here — `select_tool::clear_drag_preview` covers those.
             e.vehicles_bind(&doc.vehicle_xy_flat());
         }
     }

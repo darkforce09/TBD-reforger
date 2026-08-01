@@ -206,6 +206,64 @@ pub fn drag_delta(cam: &OrthoCamera, start_wx: f64, start_wy: f64, px: f64, py: 
     (c[0] - start_wx, c[1] - start_wy)
 }
 
+/// T-573 — push the live drag preview for a (possibly **mixed**) selection: slot overlay lane +
+/// mission-vehicle lane, from the one world delta the gesture is carrying.
+///
+/// The bug this cures: the caller used to strip vehicle ids out of the selection before
+/// `set_drag`, and nothing then previewed the vehicles — so dragging a slot **and** a vehicle drew
+/// the slot moving and the vehicle standing, while the pointerup commit
+/// ([`map_engine_core::doc::MissionDocCore::move_entities_and_vehicles`], T-491/T-574) moved both.
+/// The overlay described a drop it would not perform.
+///
+/// Both lanes are driven from the same `ids`, so they cannot disagree:
+///
+/// * **Slots** — `set_drag` resolves ids against the slot SoA and *skips* what it cannot find
+///   ([`map_engine_core::slots_gpu::pack_drag_overlay`]), so the vehicle ids in a mixed selection
+///   cost one hash miss each and the old pre-filter was never load-bearing. Handing over the whole
+///   list keeps the engine's `drag_ids` equal to the gesture's, so its Start/Restart/Delta phase
+///   classification tracks the real selection instead of a filtered shadow of it.
+/// * **Vehicles** — the `MissionVehicles` lane is a dense pack the engine re-uploads wholesale and
+///   holds no ids for, so the preview is a re-pack of the *whole* lane with the dragged rows
+///   offset ([`map_engine_core::slots_gpu::pack_vehicle_drag_preview`]). No engine change, and no
+///   vehicle ids inside `map-engine-render`.
+///
+/// `vehicle_points` is [`crate::editor_ops::vehicle_points`] — the same list the press-time pick
+/// ran against, so every draggable vehicle is by construction a row in it.
+pub fn push_drag_preview(
+    e: &mut RenderEngine,
+    ids: &[String],
+    vehicle_points: &[(String, f64, f64)],
+    dx: f64,
+    dy: f64,
+) {
+    #[allow(clippy::cast_possible_truncation)]
+    e.set_drag(ids.to_vec(), dx as f32, dy as f32);
+    e.vehicles_bind(&map_engine_core::slots_gpu::pack_vehicle_drag_preview(
+        ids,
+        vehicle_points,
+        dx,
+        dy,
+    ));
+}
+
+/// T-573 — drop the live drag preview and put **both** lanes back on the authored positions.
+///
+/// The vehicle half is not bookkeeping: [`push_drag_preview`] moves real rows in the vehicle lane,
+/// so a gesture that ends without a commit (pointercancel; a release whose delta is zero) must
+/// re-bind it or the discs stay parked at the last previewed offset while the document says
+/// otherwise — the same lie as the original bug, just frozen. The restore is the identity re-pack
+/// (`pack_vehicle_drag_preview` with an empty drag set), i.e. the lane
+/// `mission_history::after_doc_change` re-binds from the document after a *committed* drag.
+pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, f64)]) {
+    e.set_drag(Vec::new(), 0.0, 0.0);
+    e.vehicles_bind(&map_engine_core::slots_gpu::pack_vehicle_drag_preview(
+        &[],
+        vehicle_points,
+        0.0,
+        0.0,
+    ));
+}
+
 /// Slot ids inside the marquee box, from the two frozen-cam screen corners. The press corner is
 /// already unprojected to `(start_wx, start_wy)`; this unprojects the release px `(end_px, end_py)`,
 /// forms the **ordered** world AABB (the drag can go any direction — `PointIndex::pick_rect` returns
