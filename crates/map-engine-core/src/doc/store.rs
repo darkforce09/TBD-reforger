@@ -1139,6 +1139,30 @@ impl MissionDocCore {
     /// The T-425 host path called [`Self::move_entities`] then [`Self::move_vehicles`] — two txns —
     /// so a mixed slot+vehicle drag needed two Ctrl+Z. Prefer this for any drag that may include
     /// both kinds. Slot `zs[i]` matches [`Self::move_entities`]; vehicle z/rotation are preserved.
+    ///
+    /// T-574 — the example below is a **pin**, not decoration. `move_entities_and_vehicles_*` in
+    /// this file's `tests` module is the primary behavioural proof, but it compiles under
+    /// `--cfg test`, so a `#[cfg(not(test))]` twin of this function could gut production while the
+    /// unit test exercised a `#[cfg(test)]` honest copy. A doctest links against the crate built
+    /// **without** `--cfg test`, so it is the one check here that shape cannot hide from. `cargo
+    /// test -p map-engine-core --features doc,mission` runs it (`Doc-tests map_engine_core`).
+    ///
+    /// ```
+    /// use map_engine_core::doc::MissionDocCore;
+    ///
+    /// let doc = MissionDocCore::new();
+    /// doc.set_origin_init(true);
+    /// doc.add_slot("s0", "sq", "lyr", 0, "Rifleman", None, None, 100.0, 200.0, 0.0, 0.0);
+    /// doc.add_vehicle("v0", "Prefab/Vehicle.et", Some(300.0), Some(400.0), Some(0.0), Some(45.0));
+    /// doc.set_origin_init(false);
+    ///
+    /// doc.move_entities_and_vehicles(vec!["s0".into()], &["v0".into()], 10.0, 20.0, vec![1.5]);
+    ///
+    /// let slots = doc.materialize(); // one slot, so row 0 is s0
+    /// assert_eq!((slots.xs[0], slots.ys[0], slots.zs[0]), (110.0, 220.0, 1.5), "the slot moved");
+    /// assert_eq!(doc.vehicle_xy_flat(), vec![310.0, 420.0], "the vehicle moved too");
+    /// assert_eq!(doc.undo_depth(), 1, "…and both inside ONE transaction");
+    /// ```
     pub fn move_entities_and_vehicles(
         &self,
         slot_ids: Vec<String>,
@@ -3289,6 +3313,134 @@ mod tests {
         assert!(!doc.can_undo());
     }
 
+    /// T-574 — the **behavioural** pin that replaces T-491's soft `include_str!` string check.
+    ///
+    /// **The invariant:** `move_entities_and_vehicles` translates *every* named slot **and** *every*
+    /// named placed vehicle by the same world delta inside **one** LOCAL yrs transaction — so a
+    /// mixed drag is exactly one undo step that restores both kinds together, slot z comes from
+    /// `zs[i]`, vehicle z/rotation survive, and ids that are absent or unplaced are skipped rather
+    /// than teleported.
+    ///
+    /// It *calls the function*, so no source shape satisfies it. A comment-only body, a
+    /// `#[cfg(any())]` and a gutted col-0 shadow copy do not compile; `if true == false`,
+    /// `loop { break; … }` and a leading `return;` compile but move nothing. Deliberately **two**
+    /// slots and **two** vehicles (T-491's test had one of each, so a body that only handled
+    /// `ids[0]` would have passed) with distinct `zs`, so `zs[i]` cannot collapse to `zs[0]`.
+    ///
+    /// The one shape a same-crate unit test cannot see is a `#[cfg(not(test))]` twin: the doctest on
+    /// [`MissionDocCore::move_entities_and_vehicles`] covers that, because doctests link the crate
+    /// built without `--cfg test`.
+    #[test]
+    fn move_entities_and_vehicles_moves_every_slot_and_vehicle_in_one_txn() {
+        let mut doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_slot(
+            "s0", "sq", "lyr", 0, "Rifleman", None, None, 100.0, 200.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "s1", "sq", "lyr", 1, "Rifleman", None, None, 500.0, 600.0, 0.0, 0.0,
+        );
+        doc.add_vehicle(
+            "v0",
+            "Prefab/Vehicle.et",
+            Some(300.0),
+            Some(400.0),
+            Some(7.0),
+            Some(45.0),
+        );
+        doc.add_vehicle(
+            "v1",
+            "Prefab/Vehicle.et",
+            Some(900.0),
+            Some(800.0),
+            Some(-3.0),
+            Some(270.0),
+        );
+        // An ORBAT-only vehicle (no `position`) — must stay unplaced, not land at the delta.
+        doc.add_vehicle("v_orbat", "Prefab/Vehicle.et", None, None, None, None);
+        doc.set_origin_init(false);
+        assert_eq!(doc.undo_depth(), 0, "the INIT seed is not an undo step");
+
+        let (dx, dy) = (10.0, -20.0);
+        doc.move_entities_and_vehicles(
+            vec!["s0".to_string(), "s1".to_string(), "s_absent".to_string()],
+            &[
+                "v0".to_string(),
+                "v1".to_string(),
+                "v_orbat".to_string(),
+                "v_absent".to_string(),
+            ],
+            dx,
+            dy,
+            vec![1.5, 2.5, 3.5],
+        );
+
+        // ── every slot moved, each with its own zs[i] ──────────────────────────────────────────
+        let slots = doc.materialize();
+        for (id, x, y, z) in [("s0", 110.0, 180.0, 1.5), ("s1", 510.0, 580.0, 2.5)] {
+            let i = row_of(&slots, id);
+            assert_eq!(slots.xs[i], x, "{id}: x moved by dx");
+            assert_eq!(slots.ys[i], y, "{id}: y moved by dy");
+            assert_eq!(slots.zs[i], z, "{id}: z is zs[i], not zs[0]");
+        }
+        assert_eq!(slots.len(), 2, "an absent slot id must not mint a row");
+
+        // ── every vehicle moved, z/rotation untouched ──────────────────────────────────────────
+        let vehs = vehicles_of(&doc);
+        for (id, x, y, z, rot) in [
+            ("v0", 310.0, 380.0, 7.0, 45.0),
+            ("v1", 910.0, 780.0, -3.0, 270.0),
+        ] {
+            assert_eq!(vehs[id]["position"]["x"], x, "{id}: x moved by dx");
+            assert_eq!(vehs[id]["position"]["y"], y, "{id}: y moved by dy");
+            assert_eq!(vehs[id]["position"]["z"], z, "{id}: z preserved");
+            assert_eq!(
+                vehs[id]["position"]["rotation"], rot,
+                "{id}: rotation preserved"
+            );
+        }
+        assert!(
+            vehs["v_orbat"]["position"].is_null(),
+            "an unplaced vehicle must not be given a position by a drag"
+        );
+        assert!(
+            vehs["v_absent"].is_null(),
+            "an absent vehicle id must not mint a row"
+        );
+
+        // ── ONE transaction. A body that moved both kinds correctly but under two `begin()` calls
+        //    passes every assert above and dies here — that is the T-425 defect T-491 removed. ──
+        assert_eq!(
+            doc.undo_depth(),
+            1,
+            "one mixed drag must be ONE LOCAL txn (two ⇒ the T-425 two-Ctrl+Z defect)"
+        );
+
+        // ── and one undo restores BOTH kinds together (the user-visible half) ──────────────────
+        assert!(doc.undo());
+        assert_eq!(doc.undo_depth(), 0, "the whole drag came off in one undo");
+        let slots = doc.materialize();
+        assert_eq!(slots.xs[row_of(&slots, "s0")], 100.0, "s0 restored");
+        assert_eq!(slots.ys[row_of(&slots, "s1")], 600.0, "s1 restored");
+        let vehs = vehicles_of(&doc);
+        assert_eq!(
+            vehs["v0"]["position"]["x"], 300.0,
+            "v0 restored by the SAME undo as the slots"
+        );
+        assert_eq!(
+            vehs["v1"]["position"]["y"], 800.0,
+            "v1 restored by the SAME undo as the slots"
+        );
+        assert!(!doc.can_undo(), "nothing left on the stack");
+
+        // ── redo re-applies both kinds together ────────────────────────────────────────────────
+        assert!(doc.redo());
+        let slots = doc.materialize();
+        assert_eq!(slots.xs[row_of(&slots, "s0")], 110.0, "s0 re-applied");
+        let vehs = vehicles_of(&doc);
+        assert_eq!(vehs["v1"]["position"]["x"], 910.0, "v1 re-applied");
+    }
+
     /// T-491 Class-R — `pick_slot_or_vehicle`: only a slot in range → slot id.
     #[test]
     fn pick_slot_or_vehicle_slot_only() {
@@ -3375,36 +3527,307 @@ mod tests {
         );
     }
 
-    /// T-491 — host wrappers must call the Class-R SoT (not a forked copy).
+    /// T-574 — best-effort Rust **lexer** over a source string: line comments, (nested) block
+    /// comments and string / raw-string / byte-string / char literals become spaces; newlines
+    /// survive, so line structure and any `split` on real code are unaffected.
+    ///
+    /// `rustc` discards exactly these before it has a token, so a symbol that survives this pass is
+    /// at least a *token* rather than prose. That is the whole of what it buys — it is strictly
+    /// weaker than "the host calls the function", and the gap is enumerated on
+    /// [`mission_editor_move_commit_names_the_atomic_mix_api`].
+    fn strip_rust_lexical_noise(src: &str) -> String {
+        let s: Vec<char> = src.chars().collect();
+        let n = s.len();
+        let mut out = String::with_capacity(src.len());
+        let mut i = 0usize;
+        // Blank one source char; newlines survive so nothing shifts line.
+        fn blank(out: &mut String, c: char) {
+            out.push(if c == '\n' { '\n' } else { ' ' });
+        }
+        let is_ident = |c: char| c.is_alphanumeric() || c == '_';
+
+        while i < n {
+            let c = s[i];
+
+            // `//` … end of line (covers `///` and `//!`).
+            if c == '/' && i + 1 < n && s[i + 1] == '/' {
+                while i < n && s[i] != '\n' {
+                    blank(&mut out, s[i]);
+                    i += 1;
+                }
+                continue;
+            }
+            // `/* … */`, nesting like rustc.
+            if c == '/' && i + 1 < n && s[i + 1] == '*' {
+                let mut depth = 0usize;
+                while i < n {
+                    if s[i] == '/' && i + 1 < n && s[i + 1] == '*' {
+                        depth += 1;
+                        out.push_str("  ");
+                        i += 2;
+                    } else if s[i] == '*' && i + 1 < n && s[i + 1] == '/' {
+                        depth -= 1;
+                        out.push_str("  ");
+                        i += 2;
+                        if depth == 0 {
+                            break;
+                        }
+                    } else {
+                        blank(&mut out, s[i]);
+                        i += 1;
+                    }
+                }
+                continue;
+            }
+            // Raw string `[b]r#*"…"#*` — no escapes inside, so the hash count is the terminator.
+            {
+                let mut j = i;
+                if s[j] == 'b' {
+                    j += 1;
+                }
+                let mut hashes = 0usize;
+                if j < n && s[j] == 'r' {
+                    let mut k = j + 1;
+                    while k < n && s[k] == '#' {
+                        hashes += 1;
+                        k += 1;
+                    }
+                    if k < n && s[k] == '"' && (i == 0 || !is_ident(s[i - 1])) {
+                        while i <= k {
+                            blank(&mut out, s[i]);
+                            i += 1;
+                        }
+                        while i < n {
+                            let closes =
+                                s[i] == '"' && (1..=hashes).all(|h| i + h < n && s[i + h] == '#');
+                            if closes {
+                                for _ in 0..=hashes {
+                                    blank(&mut out, s[i]);
+                                    i += 1;
+                                }
+                                break;
+                            }
+                            blank(&mut out, s[i]);
+                            i += 1;
+                        }
+                        continue;
+                    }
+                }
+            }
+            // Normal / byte string `[b]"…"` with backslash escapes.
+            {
+                let j = if s[i] == 'b' { i + 1 } else { i };
+                if j < n && s[j] == '"' && (i == 0 || !is_ident(s[i - 1])) {
+                    while i <= j {
+                        blank(&mut out, s[i]);
+                        i += 1;
+                    }
+                    while i < n {
+                        if s[i] == '\\' {
+                            blank(&mut out, s[i]);
+                            if i + 1 < n {
+                                blank(&mut out, s[i + 1]);
+                            }
+                            i += 2;
+                            continue;
+                        }
+                        let end = s[i] == '"';
+                        blank(&mut out, s[i]);
+                        i += 1;
+                        if end {
+                            break;
+                        }
+                    }
+                    continue;
+                }
+            }
+            // Char / byte-char literal — but NOT a lifetime: `'x'` and `'\n'` close, `'a` does not.
+            {
+                let q =
+                    if c == 'b' && i + 1 < n && s[i + 1] == '\'' && (i == 0 || !is_ident(s[i - 1]))
+                    {
+                        Some(i + 1)
+                    } else if c == '\'' {
+                        Some(i)
+                    } else {
+                        None
+                    };
+                if let Some(q) = q {
+                    let end = if q + 1 < n && s[q + 1] == '\\' {
+                        (q + 3..n).find(|&k| s[k] == '\'')
+                    } else if q + 2 < n && s[q + 2] == '\'' {
+                        Some(q + 2)
+                    } else {
+                        None // lifetime, or a stray quote — leave it alone
+                    };
+                    if let Some(end) = end {
+                        while i <= end {
+                            blank(&mut out, s[i]);
+                            i += 1;
+                        }
+                        continue;
+                    }
+                }
+            }
+            out.push(c);
+            i += 1;
+        }
+        out
+    }
+
+    /// T-574 — the scrubber, pinned before it is trusted.
+    ///
+    /// A scrubber that silently did nothing would be the exact defect this ticket exists to remove:
+    /// a check reporting PASS over an input it never really examined. So every shape it claims to
+    /// eat is proved gone, and live code is proved to survive.
     #[test]
-    fn select_tool_and_mission_editor_delegate_to_atomic_mix_apis() {
-        let select = include_str!("../../../../apps/website/frontend/src/select_tool.rs");
-        assert!(
-            select.contains("MissionDocCore::pick_slot_or_vehicle"),
-            "select_tool must delegate pick_slot_or_vehicle to MissionDocCore"
+    fn rust_lexical_scrubber_eats_comments_and_literals_but_not_code() {
+        // The T-574 attack verbatim: the symbol survives only as prose.
+        let out = strip_rust_lexical_noise(
+            "// core.move_entities_and_vehicles(slot_ids, &veh_ids, dx, dy, zs);\nlet keep = 1;\n",
         );
         assert!(
-            select.contains("MissionDocCore::marquee_ids_with_vehicles"),
-            "select_tool must delegate marquee_ids_with_vehicles to MissionDocCore"
+            !out.contains("move_entities_and_vehicles"),
+            "a line comment must not survive: {out:?}"
         );
-        let editor = include_str!("../../../../apps/website/frontend/src/mission_editor.rs");
         assert!(
-            editor.contains("move_entities_and_vehicles"),
-            "mission_editor Move commit must use the atomic mixed move"
+            out.contains("let keep = 1;"),
+            "live code must survive: {out:?}"
         );
-        // The split path must not remain on the Move commit (two-txn defect).
+
+        for (label, src) in [
+            (
+                "doc comment",
+                "/// see move_entities_and_vehicles\nlet keep = 1;",
+            ),
+            ("inner doc", "//! move_entities_and_vehicles\nlet keep = 1;"),
+            (
+                "block comment",
+                "/* move_entities_and_vehicles */ let keep = 1;",
+            ),
+            (
+                "nested block",
+                "/* outer /* move_entities_and_vehicles */ still */ let keep = 1;",
+            ),
+            (
+                "string literal",
+                "let s = \"move_entities_and_vehicles\"; let keep = 1;",
+            ),
+            (
+                "escaped string",
+                "let s = \"\\\"move_entities_and_vehicles\\\"\"; let keep = 1;",
+            ),
+            (
+                "raw string",
+                "let s = r\"move_entities_and_vehicles\"; let keep = 1;",
+            ),
+            (
+                "hashed raw string",
+                "let s = r##\"move_entities_and_vehicles \"# \"##; let keep = 1;",
+            ),
+            (
+                "byte string",
+                "let s = b\"move_entities_and_vehicles\"; let keep = 1;",
+            ),
+        ] {
+            let out = strip_rust_lexical_noise(src);
+            assert!(
+                !out.contains("move_entities_and_vehicles"),
+                "{label} must not survive scrubbing: {out:?}"
+            );
+            assert!(
+                out.contains("let keep = 1;"),
+                "{label}: live code lost: {out:?}"
+            );
+        }
+
+        // Lifetimes are not char literals — mangling them would corrupt the code we then search.
+        let life = strip_rust_lexical_noise("fn f<'a>(x: &'a str, c: char) { let q = '\\''; }");
+        assert!(
+            life.contains("fn f<'a>(x: &'a str, c: char)"),
+            "lifetimes kept: {life:?}"
+        );
+        assert!(!life.contains("'\\''"), "the char literal went: {life:?}");
+
+        // Comment delimiters *inside* a string are not comment delimiters.
+        let tricky = strip_rust_lexical_noise("let s = \"// /*\"; call_me();");
+        assert!(
+            tricky.contains("call_me();"),
+            "string-borne `//` must not eat code: {tricky:?}"
+        );
+
+        // Byte offsets and line count are preserved, so `split` on real code still lines up.
+        let src = "// a\nlet keep = 1;\n";
+        let out = strip_rust_lexical_noise(src);
+        assert_eq!(
+            out.chars().count(),
+            src.chars().count(),
+            "char count preserved"
+        );
+        assert_eq!(
+            out.lines().count(),
+            src.lines().count(),
+            "newlines preserved: {out:?}"
+        );
+    }
+
+    /// T-491 / T-574 — the host **names** the Class-R SoT rather than a forked copy.
+    ///
+    /// **Read the name of this test literally.** It is a source check on two files in another
+    /// crate, run over lexically scrubbed text ([`strip_rust_lexical_noise`]) so a comment, doc
+    /// comment or string literal can no longer satisfy it — that was the T-574 defect, and it is
+    /// fixed. What it still cannot decide is whether the token it found is *live code*; a grep
+    /// cannot, and `map-engine-core` cannot link the frontend crate to find out (the dependency
+    /// runs the other way). So this pin admits, and does **not** detect:
+    ///
+    ///   * a call site under `#[cfg(…)]` that is never enabled, or inside `if false` / after an
+    ///     early `return` — present as a token, dead at runtime;
+    ///   * a same-named method on some *other* receiver shadowing `MissionDocCore`'s;
+    ///   * the whole Move arm being unreachable because an earlier branch returns.
+    ///
+    /// The real proof that the mixed drag is one undo step lives where it can be executed:
+    /// [`super::MissionDocCore::move_entities_and_vehicles`] is pinned behaviourally by
+    /// `move_entities_and_vehicles_moves_every_slot_and_vehicle_in_one_txn` (and by its doctest,
+    /// which runs outside `--cfg test`). The residue this test covers — that the *host* is wired to
+    /// that SoT — has no runtime signature from a native crate; closing it needs a behavioural test
+    /// in `website-frontend`, which owns the pointer-gesture code.
+    #[test]
+    fn mission_editor_move_commit_names_the_atomic_mix_api() {
+        let select = strip_rust_lexical_noise(include_str!(
+            "../../../../apps/website/frontend/src/select_tool.rs"
+        ));
+        assert!(
+            select.contains("MissionDocCore::pick_slot_or_vehicle("),
+            "select_tool.rs has no `MissionDocCore::pick_slot_or_vehicle(` call token outside \
+             comments/strings — the mixed pick was forked or deleted"
+        );
+        assert!(
+            select.contains("MissionDocCore::marquee_ids_with_vehicles("),
+            "select_tool.rs has no `MissionDocCore::marquee_ids_with_vehicles(` call token outside \
+             comments/strings — the mixed marquee was forked or deleted"
+        );
+
+        let editor = strip_rust_lexical_noise(include_str!(
+            "../../../../apps/website/frontend/src/mission_editor.rs"
+        ));
         let move_arm = editor
             .split("LG::Move { ids, dx, dy, .. }")
             .nth(1)
             .and_then(|s| s.split("LG::Marquee").next())
-            .expect("Move arm present");
+            .expect("mission_editor.rs still has an `LG::Move { ids, dx, dy, .. }` arm");
+        assert!(
+            move_arm.contains(".move_entities_and_vehicles("),
+            "the Move arm has no `.move_entities_and_vehicles(` call token outside comments/\
+             strings — T-574's defect was that a bare `contains` here accepted a comment"
+        );
+        // The T-425 split path must not come back onto the Move commit (two txns → two Ctrl+Z).
         assert!(
             !move_arm.contains("core.move_entities("),
-            "Move arm must not call move_entities alone (two-txn defect)"
+            "Move arm calls move_entities alone (two-txn defect)"
         );
         assert!(
             !move_arm.contains("editor_ops::move_vehicles"),
-            "Move arm must not call editor_ops::move_vehicles (second txn)"
+            "Move arm calls editor_ops::move_vehicles (second txn)"
         );
     }
 
