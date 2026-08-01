@@ -6,3 +6,13 @@
 Tickets for Workbench or human execution (`apps/mod/` targets).
 
 - **T-120** (queued) — Staging soak + golden mission smoke [human] — milestone M1
+- **T-673** (queued) — Marker style and Area markers — the $defs/marker widening [workbench] — milestone —
+- **T-674** (queued) — T-216 follow-on: slot identity reaches the wire [workbench] — milestone —
+- **T-675** (queued) — Vehicle roster reaches the game — the compile half of T-076 [workbench] — milestone —
+- **T-676** (queued) — Trigger activation and effects — the Enfusion runtime [workbench] — milestone —
+- **T-677** (queued) — Waypoints — blocked on AI units existing at all [workbench] — milestone —
+- **T-678** (queued) — Group AI state: combat mode, behaviour, formation, speed [workbench] — milestone —
+- **T-679** (queued) — Placement scatter: radius and area shape [workbench] — milestone —
+- **T-680** (queued) — Vehicle states: lock, fuel, ammo [workbench] — milestone —
+- **T-681** (queued) — Entity states: health, allow-damage, show-model, size, stamina [workbench] — milestone —
+- **T-682** (queued) — Environment readers: fog, wind, view distance [workbench] — milestone —

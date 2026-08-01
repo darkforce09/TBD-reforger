@@ -11,13 +11,16 @@
 <!-- ticket-sync:next:start -->
 ### Recommended next work (auto-generated)
 
-- **T-072** — Ctrl multi-place (queued)
-- **T-073** — Shift + map rotation (queued)
-- **T-075** — Spacebar flyTo vs widget (queued)
 - **T-090** — Map visualization program (ready)
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
+- **T-661** — Split eden_chrome.rs into ten modules before the editor program starts (ready)
+- **T-662** — Free right-click and Backspace — the two input traps that gate the program (queued)
+- **T-663** — Remove the dead view_distance / thermals DTO fields (queued)
+- **T-639** — Zoom-adaptive contour interval — hold spacing constant in screen space (queued)
+- **T-664** — Right-click context menu — the slice that unblocks six tickets (queued)
+- **T-665** — Editor layer flags: per-layer visibility and transform lock (queued)
 <!-- ticket-sync:next:end -->
 
 ---

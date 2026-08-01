@@ -428,3 +428,53 @@
 82	T-573	-	crates/map-engine-core/src/slots_gpu.rs; apps/website/frontend/src/mission_history.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/select_tool.rs
 82	T-370	-	apps/website/frontend/src/mission_hydrate.rs; apps/website/frontend/src/mission_commands.rs; apps/website/frontend/src/editor_session.rs
 82	T-625	-	apps/website/api/src/middleware/ratelimit.rs; apps/website/api/src/config.rs; apps/website/api/src/app.rs; apps/website/api/migrations; apps/website/api/tests/t587_fire_mission_solution.rs; apps/website/frontend/src/mortar.rs
+# ---- editor-UI program (eden) — 43 tickets, 19 waves, plan labels 100-118 ----
+# Program waves 0-18 are written as plan labels 100-118: labels 0-11, 43-68, 76-82 and 99 already
+# belong to the platform factory, and column 1 must stay a bare integer (T-616).
+# Packing: owns_parity.md §5.3, with owns_correction_chrome3.md applied (T-636/T-637/T-638 widened;
+# T-637 alone at program wave 18) and editor_chrome_direction.md applied (T-632 absorbed by T-637;
+# T-668 state vocabulary added at program wave 10, the earliest collision-free slot).
+#
+100	T-661	Split eden_chrome.rs into ten modules before the editor program starts	apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/eden_layout.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/eden_env.rs; apps/website/frontend/src/eden_tree.rs; apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/eden_vehicles_panel.rs; apps/website/frontend/src/eden_zones.rs; apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/eden_settings.rs; apps/website/frontend/src/main.rs
+101	T-639	Zoom-adaptive contour interval — hold spacing constant in screen space	crates/map-engine-core/src/world/lod_gates.rs; apps/website/frontend/src/world_assets/dem_vectors.rs
+101	T-662	Free right-click and Backspace — the two input traps that gate the program	apps/website/frontend/src/mission_editor.rs
+101	T-663	Remove the dead view_distance / thermals DTO fields	apps/website/frontend/src/dto.rs; apps/website/frontend/src/editor_ops.rs
+102	T-640	Contours as a tint, not a colour; darker summit ring	apps/website/frontend/src/world_assets/dem_vectors.rs; crates/map-engine-core/src/geometry/contours.rs; crates/map-engine-core/src/geometry/vector_compose.rs
+102	T-664	Right-click context menu — the slice that unblocks six tickets	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/context_menu.rs
+102	T-665	Editor layer flags: per-layer visibility and transform lock	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/outliner.rs; apps/website/frontend/src/eden_tree.rs
+103	T-076	Vehicle crew authoring UI — the factory-safe half of T-076	apps/website/frontend/src/eden_vehicles_panel.rs; apps/website/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/eden_dock_right.rs
+103	T-631	The boot overlay cannot fail	apps/website/frontend/src/mission_editor.rs
+103	T-641	Spot heights — Eden-parity screen-space label density	apps/website/frontend/src/world_assets/labels.rs; crates/map-engine-core/src/dem/peaks.rs
+104	T-635	Debug HUD overlaps the toolbelt readouts	apps/website/frontend/src/mission_editor.rs
+104	T-656	Validation rule engine — the four primitives + per-rule fail-on-demand tests	crates/map-engine-core/src/mission/validate.rs; crates/map-engine-core/src/mission/mod.rs
+104	T-666	Outliner layer authoring — create, rename, delete, reparent, refile	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/eden_tree.rs
+105	T-636	Full-width status bar — stop the toolbelt conflating tools with telemetry	apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/eden_layout.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs
+105	T-646	Asset browser: class: search, side/faction submode, crew toggle	apps/website/frontend/src/asset_catalog.rs; apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/editor_ops.rs
+106	T-647	Placement interactions: click-then-click, Ctrl multi-place, Alt empty vehicle, dbl-click entry points	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs
+106	T-667	Map furniture: scale bar and edge grid reference labels	apps/website/frontend/src/eden_toolbelt.rs
+107	T-638	Collapse and expand both docks	apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/eden_layout.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs
+107	T-657	Validation: ORBAT and slot rules	crates/map-engine-core/src/mission/validate.rs
+107	T-659	Slot census badge + generated mission summary line	apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/editor_ops.rs
+108	T-642	Ruler: persistent polyline with per-leg distance and bearing	apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/ruler_tool.rs
+108	T-650	Compositions: save and place	apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
+108	T-658	Validation: every placed asset resolves in the live catalogue	crates/map-engine-core/src/mission/validate.rs
+109	T-079	Triggers — the editor half: palette mode, area geometry, owner link	apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/eden_zones.rs; apps/website/frontend/src/editor_ops.rs; crates/map-engine-core/src/doc/store.rs
+109	T-643	Line of Sight: point-to-point ray	apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/los_tool.rs; crates/map-engine-core/src/dem/sample.rs
+109	T-660	Validation: cargo and loadout policy rules	crates/map-engine-core/src/mission/validate.rs; crates/map-engine-core/src/mission/wire_safety.rs
+110	T-644	Line of Sight: viewshed raster	apps/website/frontend/src/los_tool.rs; crates/map-engine-render/src/engine.rs; crates/map-engine-core/src/dem/sample.rs
+110	T-648	Transform: Shift-rotate, snap grid, widget + Space cycle	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/editor_ops.rs
+110	T-668	One state vocabulary across the whole editor chrome	apps/website/frontend/src/eden_layout.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/eden_tree.rs; apps/website/frontend/src/eden_settings.rs; apps/website/frontend/src/eden_zones.rs; apps/website/frontend/src/eden_vehicles_panel.rs; apps/website/frontend/src/ui.rs
+111	T-645	Placement helpers: patterns, align, space, orient, garrison	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/place_helpers.rs
+111	T-655	Validation panel: persistent issue list with rollup	apps/website/frontend/src/validation_panel.rs; apps/website/frontend/src/mission_editor.rs
+112	T-649	Select All in view, and multi-edit per-field checkboxes	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/attributes.rs; apps/website/frontend/src/editor_ops.rs
+113	T-082	Attributes modal: entity type and a real role description field	apps/website/frontend/src/attributes.rs; apps/website/frontend/src/editor_ops.rs
+113	T-669	Clipboard completion: Ctrl+X cut, Ctrl+Shift+V paste-at-original	apps/website/frontend/src/mission_editor.rs
+114	T-633	Native range and select controls in the top strip	apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/ui.rs
+114	T-651	Editor comments / annotations	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/outliner.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/context_menu.rs
+115	T-634	Top strip: split into two rows and give the actions a hierarchy	apps/website/frontend/src/eden_top_strip.rs
+115	T-670	Scale readout in the status bar	apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/mission_editor.rs
+116	T-069	Markers on map — the four schema-carried fields	apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/mission_editor.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/draw_order.rs; crates/map-engine-render/src/engine.rs
+117	T-084	Classname / mod prefix search in the asset browser	apps/website/frontend/src/asset_catalog.rs; apps/website/frontend/src/eden_dock_right.rs
+117	T-671	Mission presentation: briefing text and thumbnail	apps/website/frontend/src/eden_settings.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/create_mission_dialog.rs
+117	T-672	Connection graph: draw, sync, delete, formation	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/context_menu.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/draw_order.rs
+118	T-637	Dock density and the 240px equalisation	apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/eden_tree.rs; apps/website/frontend/src/eden_layout.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs
