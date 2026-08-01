@@ -27,7 +27,7 @@ rocks, that's fine").
 
 | File | Lines | What it is |
 |---|---|---|
-| [`eden/gap_analysis.md`](../specs/Mission_Creator_Architecture/eden/gap_analysis.md) | 136 | **The parity table.** 87 rows, `eden_id → tbd_id`, a `parity` column (`match` / `partial` / `missing` / `deferred` / `na` / `tbd_only`) and a ticket column. **32 rows read `missing`.** Start here. |
+| [`eden/gap_analysis.md`](../specs/Mission_Creator_Architecture/eden/gap_analysis.md) | 136 | **The parity table.** `eden_id → tbd_id`, a `parity` column (`match` / `partial` / `missing` / `deferred` / `na` / `tbd_only`) and a ticket column. **59 rows, 31 `missing`** — see the correction below before planning against it. |
 | [`eden/ui_anatomy.md`](../specs/Mission_Creator_Architecture/eden/ui_anatomy.md) | 273 | What Eden's screen is actually made of |
 | [`eden/interactions.md`](../specs/Mission_Creator_Architecture/eden/interactions.md) | 560 | Eden's input model — clicks, modifiers, drags |
 | [`eden/attributes.md`](../specs/Mission_Creator_Architecture/eden/attributes.md) | 250 | Eden's per-entity attribute catalogue |
@@ -35,6 +35,34 @@ rocks, that's fine").
 
 The numbered files (`07_…`, `08_…`) at the parent level are **stubs** that redirect into `eden/`.
 Do not edit those.
+
+### Correction (2026-08-01) — the parity table is a sample, not a census
+
+This document originally said "87 rows, 32 `missing`". **Both numbers were wrong**, and because this
+is the kickoff doc they were inherited into the program plan and the ticket drafts before anyone
+opened the file being described. Measured:
+
+| | Stated here | Actual |
+|---|---|---|
+| Rows with a parity value | 87 | **59** |
+| `missing` | 32 | **31** |
+
+The more important correction is what the table *is*. It reads as a census of Eden parity. It is
+not:
+
+- [`eden/attributes.md`](../specs/Mission_Creator_Architecture/eden/attributes.md) defines
+  **96 ids**; the parity table covers **3**.
+- [`eden/interactions.md`](../specs/Mission_Creator_Architecture/eden/interactions.md) defines
+  **83 ids**; most have no parity row.
+
+So "work the parity table" is **not** the same as the operator's ask, *"add all the things to the
+editor that should be there"* — it is roughly 3% of the attribute surface. Ten of the 31 `missing`
+rows (the trigger / waypoint / systems / crew clusters) had no ticket, draft or disposition
+anywhere as of this correction.
+
+Anyone planning against this table must either extend it or state explicitly which surfaces are
+out of scope. Evidence:
+[`.ai/artifacts/adversarial/verify_coverage.md`](../../.ai/artifacts/adversarial/verify_coverage.md).
 
 ---
 

@@ -15790,6 +15790,86 @@
       "surfaces": [
         "INFRA"
       ]
+    },
+    {
+      "program": "platform",
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-627",
+      "title": "a Mission Creator load screen that measures something, and a satellite fetch that overlaps",
+      "summary": "Backfilled 2026-08-01. Shipped in commit `920533f63` but never written to the registry, so `next_id` and every \"next free id\" reading were four short. Code is authoritative; this row exists so the registry stops disagreeing with git.",
+      "status": "shipped",
+      "priority": 3,
+      "surfaces": [
+        "INFRA"
+      ],
+      "order": 3762
+    },
+    {
+      "program": "platform",
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-628",
+      "title": "one loading bar, 0 to 100, across the whole Mission Creator boot",
+      "summary": "Backfilled 2026-08-01. Shipped in commit `646a54de8` but never written to the registry, so `next_id` and every \"next free id\" reading were four short. Code is authoritative; this row exists so the registry stops disagreeing with git.",
+      "status": "shipped",
+      "priority": 3,
+      "surfaces": [
+        "INFRA"
+      ],
+      "order": 3772
+    },
+    {
+      "program": "platform",
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-629",
+      "title": "the satellite basemap was the placeholder, and the rate limiter is why",
+      "summary": "Backfilled 2026-08-01. Shipped in commit `af3f8c39c` but never written to the registry, so `next_id` and every \"next free id\" reading were four short. Code is authoritative; this row exists so the registry stops disagreeing with git.",
+      "status": "shipped",
+      "priority": 3,
+      "surfaces": [
+        "INFRA"
+      ],
+      "order": 3782
+    },
+    {
+      "program": "platform",
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-630",
+      "title": "the limiter was refusing 145,858 map assets and zero attacks",
+      "summary": "Backfilled 2026-08-01. Shipped in commit `2e7526c26` but never written to the registry, so `next_id` and every \"next free id\" reading were four short. Code is authoritative; this row exists so the registry stops disagreeing with git.",
+      "status": "shipped",
+      "priority": 3,
+      "surfaces": [
+        "INFRA"
+      ],
+      "order": 3792
     }
   ]
 }
