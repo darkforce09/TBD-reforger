@@ -104,6 +104,34 @@ So the rule is stronger than "use `-w`": a word-boundary grep is a *narrowing* s
 **Read the matches before reporting the count.** State the command *and* what the surviving hits
 actually were.
 
+## Two process hazards recorded from this run
+
+**`git add <dir>` while agents are writing into it captures mid-write snapshots.** Committing the
+attributes and interactions sweeps with `git add .ai/artifacts/parity/` swept in the
+`owns_and_waves.md` file that a third agent was still writing — twice. HEAD held an 885-line
+mid-write snapshot of a file that finished at 968. Nothing was corrupted and no foreign content was
+injected, but the committed artifact was **silently incomplete**, and the only reason it was noticed
+is that the agent checked its own file against HEAD when it finished.
+
+Stage explicit paths, not directories, while any agent is still running.
+
+**Two errors in `editor_ui_ticket_drafts.md` survived until the `owns` pass**, and one of them
+contradicted a document written in the same session:
+
+- **T-641 claims "we currently render zero height annotations."** False.
+  `crates/map-engine-core/src/dem/peaks.rs` and `apps/website/frontend/src/world_assets/labels.rs`
+  both exist, and `world_layer_prefs.rs:72` carries `("heights", self.heights, "Height labels")` —
+  a live, user-toggleable layer. **`editor_inventory_mission_settings.md` in this very directory
+  says so explicitly** ("Note for the contour tickets: `Contours` and `Height labels` are already
+  toggleable layers"). The note was written and then not applied to the ticket. T-641 is probably a
+  **zoom-band defect**, not greenfield work, and must be re-scoped by looking at the running editor.
+- **T-635 cites a `Ctrl+Alt+D` HUD toggle that does not exist.** The only match in the entire
+  frontend is an unrelated comment at `mission_editor.rs:1003`. The toggle died with React's
+  `FpsCounter.tsx` at T-159.29.3.
+
+Both are the same shape as the four statistical errors already on record: **a claim that was true
+once, or true elsewhere, restated without checking the current tree.**
+
 ## Re-run guidance
 
 The three dead lanes should be re-dispatched with their original briefs, plus:

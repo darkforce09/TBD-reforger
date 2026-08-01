@@ -65,6 +65,23 @@ Every inference is prefixed `INFERRED:`. Every count states its command.
 | `editor_ops.rs` is the doc-mutation surface — 68 `pub fn` | `grep -c '^pub fn ' editor_ops.rs` → 68 |
 | Frontend is **flat** — no directories except `world_assets/` | `find apps/website/frontend/src -type d` → 2 entries |
 
+### A collision the file graph hides: `main.rs`
+
+Rust has no implicit module discovery. `apps/website/frontend/src/main.rs` is the crate root and
+carries **57 `mod` declarations**, `mod eden_chrome;` at `:36`
+(`grep -c '^mod ' main.rs` → 57). **Every ticket that creates a new module must add a line to
+`main.rs`** — so the four new-module tickets (T-642 `ruler_tool.rs`, T-643 `los_tool.rs`, T-645
+`place_helpers.rs`, T-655 `validation_panel.rs`) collide there, on one line each.
+
+Same in core: `crates/map-engine-core/src/mission/mod.rs` declares 5 modules (`:7-11`), so **T-656**
+adds `pub mod validate;` there. T-657/658/660 do not — the declaration already exists by then.
+
+`main.rs` is therefore in the `owns` of T-642, T-643, T-645, T-655 and its core equivalent is in
+T-656's. **The cheap fix, and the recommendation:** have the §7 preparatory split ticket
+**pre-declare all four `mod` lines against empty stub modules**. That removes `main.rs` from four
+tickets' `owns` at the cost of four one-line stubs, and it is the difference between T-645 and
+T-655 sharing wave 9 and not.
+
 ### Two corrections to the drafts, found while deriving
 
 1. **T-635 cites a toggle that does not exist.** The draft says "gate it behind the existing
@@ -252,7 +269,7 @@ and `:3715-3717` (LoS, `name="visibility"`). Verified by `grep -n 'TOOL_DISABLED
 
 #### T-642 — Ruler: persistent polyline with bearing
 ```
-apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/ruler_tool.rs
+apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/ruler_tool.rs; apps/website/frontend/src/main.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -263,7 +280,7 @@ apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/mission_edit
 
 #### T-643 — Line of Sight: point-to-point ray
 ```
-apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/los_tool.rs; crates/map-engine-core/src/dem/sample.rs
+apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/los_tool.rs; crates/map-engine-core/src/dem/sample.rs; apps/website/frontend/src/main.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -290,7 +307,7 @@ apps/website/frontend/src/los_tool.rs; crates/map-engine-render/src/engine.rs; c
 
 #### T-645 — Placement helpers: patterns, align, space, orient
 ```
-apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/place_helpers.rs
+apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/place_helpers.rs; apps/website/frontend/src/main.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -423,7 +440,7 @@ design lands.**
 
 #### T-655 — Validation panel: persistent issue list with rollup
 ```
-apps/website/frontend/src/validation_panel.rs; apps/website/frontend/src/mission_editor.rs
+apps/website/frontend/src/validation_panel.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/main.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
@@ -436,11 +453,12 @@ serialisation.
 
 #### T-656 — Rule engine: the four validation primitives + fail-on-demand tests
 ```
-crates/map-engine-core/src/mission/validate.rs
+crates/map-engine-core/src/mission/validate.rs; crates/map-engine-core/src/mission/mod.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
 | `NEW: crates/…/mission/validate.rs` | The engine belongs in core beside the existing scanners: `crates/map-engine-core/src/mission/wire_safety.rs:262` `scan_editor_payload` and `:360` `scan_cargo_capacity` are the same shape (payload in, `Vec<String>` findings out) | **medium** |
+| `crates/…/mission/mod.rs` | One line: `pub mod validate;`. The file declares 5 modules at `:7-11` (`compile`, `flatten`, `kit`, `orbat`, `wire_safety`). **T-657/658/660 do not claim it** — the declaration exists by then | **high** |
 
 > §D.3's premise ("TBD already has a post-hoc validator in the wrong place") checks out:
 > `apps/website/api/src/handlers/missions.rs:608` and `:1000` call `validate_payload`, and `:1471`
@@ -502,9 +520,10 @@ for.
 | `apps/website/frontend/src/world_assets/dem_vectors.rs` | 2 | 7% | T-639, T-640 |
 | `crates/map-engine-core/src/doc/store.rs` | 2 | 7% | T-650, T-651 |
 | `crates/map-engine-core/src/dem/sample.rs` | 2 | 7% | T-643, T-644 |
+| **`apps/website/frontend/src/main.rs`** *(one `mod` line each)* | **4** | 15% | T-642, T-643, T-645, T-655 — see §1; removable by pre-declaring stubs |
 | `crates/map-engine-render/src/engine.rs` | 2 | 7% | T-641, T-644 |
 | `apps/website/frontend/src/los_tool.rs` *(new)* | 2 | 7% | T-643, T-644 |
-| everything else (12 paths) | 1 each | — | — |
+| everything else (13 paths) | 1 each | — | — |
 
 **The number that decides the program:**
 
@@ -569,11 +588,18 @@ tickets collide with at least one other.
 | T-656 | T-657, T-658, T-660 | `crates/…/mission/validate.rs` |
 | T-657 | T-658, T-660 | `crates/…/mission/validate.rs` |
 | T-658 | T-660 | `crates/…/mission/validate.rs` |
+| T-642 | T-643, T-645, T-655 | `main.rs` — one `mod` line each (§1). Removable |
+| T-643 | T-645, T-655 | `main.rs` |
+| T-645 | T-655 | `main.rs` |
 
 ### 4.2 Collision-free tickets
 
-**Zero** tickets are collision-free. The closest are **T-639** and **T-640** (one collision each,
-with each other) and **T-641a** if the split is taken (collides only with T-644, on `engine.rs`).
+Exactly **one**, and only if T-641 is split: **T-641a** (`world_assets/labels.rs` +
+`crates/…/dem/peaks.rs`) collides with nothing. That is the whole argument for splitting T-641 in
+one line — unsplit it inherits `eden_chrome.rs` and joins the 14-way pile-up.
+
+The next-closest are **T-639** and **T-640**, colliding only with each other on
+`world_assets/dem_vectors.rs`. **Every other ticket collides with two or more.**
 
 ### 4.3 Dependency edges (independent of file collisions)
 
@@ -589,100 +615,108 @@ with each other) and **T-641a** if the split is taken (collides only with T-644,
 
 ## 5. Proposed wave packing
 
-Two packings. The factory runs **3 agents per wave with a barrier**, so the practical answer is the
-second one; the first shows what the file graph actually permits.
+All packings below use **28 rows** — the 27 code-bearing tickets with T-641 split into T-641a /
+T-641b (§2). If T-641 stays unsplit, subtract one row and the wave counts are unchanged, because
+T-641 then lands on `eden_chrome.rs`, which is already the binding constraint.
 
-### 5.1 Maximum-disjoint packing (what the graph allows)
-
-**Waves are numbered from 0 to match `wave_plan.tsv` column 1 (a bare integer).** Use whatever
+**Waves are numbered from 0** to match `wave_plan.tsv` column 1 (a bare integer). Apply whatever
 base offset the operator picks when appending to the live file.
 
-| Wave | Tickets | Concurrency | Note |
+### 5.1 The floor — and why priority barely matters
+
+From §3: `eden_chrome.rs` has 14 claimants, so **≥ 14 waves**, full stop. The best achievable
+packing therefore *equals* the floor at 14 — there is no slack to trade against priority order, and
+the operator can order waves by product priority at zero scheduling cost.
+
+Two structural facts make the tail unavoidable:
+
+- **Every `editor_ops.rs` ticket also touches `eden_chrome.rs` or `mission_editor.rs`.** All eight
+  of T-645/646/647/648/649/650/651/659. So `editor_ops.rs` never contributes a free agent.
+- **T-647, T-648 and T-649 are all `mission_editor.rs` + `editor_ops.rs`.** They can only pair with
+  an `eden_chrome.rs`-only ticket (T-632, T-633, T-634, T-637, T-641b) — five such tickets exist,
+  so all three do get partners, but nothing else does.
+
+### 5.2 Factory-shaped packing — 14 waves, barrier between
+
+Dependency- and priority-ordered, filled toward 3 per wave wherever the graph permits. **This is
+the one to hand the factory.**
+
+| Wave | Tickets | n | Files locked |
 |---|---|---|---|
-| **0** | T-631, T-632, T-639, T-656 | **4** | T-631 is `ready`; T-632 takes `eden_chrome.rs`; T-639 the contour lane; T-656 the new validation core. Add **T-641a** → **5** if T-641 is split |
-| 1 | T-635, T-634, T-640, T-657 | 4 | T-635 takes `mission_editor.rs` (T-631 released it); T-640 inherits `dem_vectors.rs` |
-| 2 | T-636, T-658 | 2 | T-636 needs **both** hot files, so it runs near-alone |
-| 3 | T-638, T-637, T-660 | 3 | T-638 = `eden_chrome` + `mission_editor` + `select_tool`; T-637 blocked on `eden_chrome`… |
+| **0** | T-631 · T-632 · T-639 | 3 | `mission_editor` \| `eden_chrome` \| `lod_gates`+`dem_vectors` |
+| **1** | T-635 · T-633 · T-641a | 3 | `mission_editor` \| `eden_chrome`+`ui` \| `labels`+`peaks` |
+| **2** | T-636 · T-640 · T-656 | 3 | `eden_chrome`+`mission_editor` \| `dem_vectors`+`contours`+`vector_compose` \| **new** `validate` |
+| **3** | T-638 · T-657 | 2 | `eden_chrome`+`mission_editor`+`select_tool` \| `validate` — **T-638 is a chokepoint: three hot files at once** |
+| **4** | T-634 · T-647 · T-658 | 3 | `eden_chrome` \| `mission_editor`+`editor_ops` \| `validate` |
+| **5** | T-637 · T-648 · T-660 | 3 | `eden_chrome` \| `mission_editor`+`select_tool`+`editor_ops` \| `validate`+`wire_safety` |
+| **6** | T-641b · T-649 | 2 | `eden_chrome` \| `mission_editor`+`select_tool`+`attributes`+`editor_ops` — T-641b unblocked by T-636 @ w2 |
+| **7** | T-642 | 1 | `eden_chrome`+`mission_editor`+`select_tool`+**new** `ruler_tool` |
+| **8** | T-643 | 1 | `eden_chrome`+`mission_editor`+**new** `los_tool`+`dem/sample` |
+| **9** | T-645 · T-644 | 2 | `editor_ops`+`eden_chrome`+**new** `place_helpers`+`main` \| `los_tool`+`engine`+`dem/sample` — T-644 unblocked by T-643 @ w8 |
+| **10** | T-646 · T-655 | 2 | `asset_catalog`+`eden_chrome`+`editor_ops` \| **new** `validation_panel`+`mission_editor`+`main` — **T-655 must float, not dock** (§2) |
+| **11** | T-650 | 1 | `eden_chrome`+`editor_ops`+`doc/store` |
+| **12** | T-659 | 1 | `eden_chrome`+`editor_ops` |
+| **13** | T-651 | 1 | `eden_chrome`+`editor_ops`+`outliner`+`mission_editor`+`doc/store` |
 
-— and that is where the honest version stops. **From wave 2 onward the packing degenerates**,
-because `eden_chrome.rs` admits exactly one ticket per wave and `mission_editor.rs` exactly one,
-and four tickets (T-636, T-638, T-642, T-643) need both at once. The tail is:
+**14 waves · 28 tickets · mean 2.0 agents/wave · 5 waves run a single agent.**
 
-| Wave | Tickets | Concurrency |
+T-645 and T-655 were originally packed together in wave 9; they collide on `main.rs` (§1). If the
+preparatory ticket pre-declares the `mod` stubs, T-655 moves back to wave 9 and wave 10 runs T-646
+alone — same 14 waves either way.
+
+**One product-order violation, stated rather than hidden.** §D.3 is explicit that T-655 (the
+validation panel) *"ships first"*, because FNF's own rollup was commented out and *"every other
+check became invisible"*. This packing puts T-655 at **wave 10**, after all four rule tickets. The
+file graph permits T-655 as early as wave 3 — it wants only `validation_panel.rs` + `mission_editor`
++ `main.rs`, and `mission_editor.rs` is free in waves 9–12 only because T-638 holds it at wave 3.
+**If the operator values §D.3's ordering over wave-3 density, swap T-655 into wave 3 and push T-638
+to wave 10.** Both packings are 14 waves; this is a product call, not a scheduling one.
+
+**How many can run in wave 1?** Three — T-631, T-632, T-639 — which happens to match the factory's
+3-agent shape exactly, so wave 0 costs nothing. **The problem is not wave 0; it is waves 7–13**,
+where the program collapses to one agent for six of seven waves. Every one of those is an
+`eden_chrome.rs` ticket waiting for the previous `eden_chrome.rs` ticket.
+
+If T-641 is filed unsplit, drop the T-641a row from wave 1 and the T-641b row from wave 6, and add
+T-641 to wave 6 (it wants `eden_chrome` + `mission_editor` + `labels` + `peaks` + `engine`). Wave
+count unchanged at 14; mean drops to 1.9.
+
+### 5.3 The same program after the `eden_chrome.rs` split (§7)
+
+Assume the §7 split lands first as one preparatory ticket in its own wave. The 14 claimants
+redistribute across the new modules:
+
+| Post-split file | Claimants | n |
 |---|---|---|
-| 4 | T-633, T-647, T-660 | 3 |
-| 5 | T-642, T-644 | 2 |
-| 6 | T-643 | 1 |
-| 7 | T-645, T-648 | 2 |
-| 8 | T-646, T-649 | 2 |
-| 9 | T-659, T-655 | 2 |
-| 10 | T-650 | 1 |
-| 11 | T-651 | 1 |
-| 12 | T-641b | 1 |
+| `eden_toolbelt.rs` | T-636, T-641b, T-642, T-643 | 4 |
+| `eden_dock_right.rs` | T-632, T-646, T-650 | 3 |
+| `eden_top_strip.rs` | T-633, T-634, T-659 | 3 |
+| `eden_tree.rs` | T-637 | 1 |
+| `eden_dock_left.rs` | T-637, T-651 | 2 |
+| `eden_layout.rs` (the four size constants) | T-638 | 1 |
+| `eden_zones.rs`, `eden_settings.rs`, `eden_env.rs`, `eden_vehicles_panel.rs` | — | 0 |
 
-**13 waves, mean concurrency 2.1, four waves of 1.** 27 tickets in 13 waves.
+**The gain is real but smaller than it looks, and here is the honest arithmetic.**
 
-### 5.2 Factory-shaped packing (3 per wave, barrier between)
+```
+floor before split : max(14 eden_chrome, 11 mission_editor, 8 editor_ops)  = 14 waves
+floor after  split : max( 4 eden_toolbelt, 11 mission_editor, 8 editor_ops) = 11 waves
+```
 
-Fills to 3 wherever the graph permits, in dependency + priority order. This is the one to hand the
-factory.
+**`mission_editor.rs` becomes the binding constraint the instant `eden_chrome.rs` stops being it.**
+Splitting one file buys **14 → 11 waves (−21%)**, mean concurrency **2.0 → 2.5** — not the halving
+a naive reading of "14 claimants" suggests. Anyone who quotes a bigger number for this split alone
+is quoting the ceiling, not the floor.
 
-| Wave | Tickets | Files locked |
-|---|---|---|
-| **0** | T-631 · T-632 · T-639 | `mission_editor.rs` \| `eden_chrome.rs` \| `lod_gates.rs`+`dem_vectors.rs` |
-| **1** | T-635 · T-634 · T-640 | `mission_editor.rs` \| `eden_chrome.rs` \| `dem_vectors.rs`+`contours.rs`+`vector_compose.rs` |
-| **2** | T-656 · T-637 · T-641a | `validate.rs` \| `eden_chrome.rs` \| `labels.rs`+`peaks.rs` |
-| **3** | T-636 · T-657 | `eden_chrome.rs`+`mission_editor.rs` \| `validate.rs` — **only 2; T-636 is the chokepoint** |
-| **4** | T-638 · T-658 | `eden_chrome.rs`+`mission_editor.rs`+`select_tool.rs` \| `validate.rs` — **only 2** |
-| **5** | T-633 · T-647 · T-660 | `eden_chrome.rs`+`ui.rs` \| `mission_editor.rs`+`editor_ops.rs` \| `validate.rs`+`wire_safety.rs` |
-| **6** | T-643 · T-655 | `eden_chrome.rs`+`mission_editor.rs`+`los_tool.rs`+`sample.rs` \| `validation_panel.rs` — T-655 must **float, not dock** (§2) |
-| **7** | T-642 · T-644 | `eden_chrome.rs`+`mission_editor.rs`+`select_tool.rs`+`ruler_tool.rs` \| `los_tool.rs`+`engine.rs`+`sample.rs` |
-| **8** | T-645 · T-648 | `editor_ops.rs`… wait — **collide.** See note below |
-| **8′** | T-648 · T-641b | `mission_editor.rs`+`select_tool.rs`+`editor_ops.rs` \| `eden_chrome.rs` |
-| **9** | T-649 · T-646 | collide on `editor_ops.rs` → **T-649 alone** |
-| **10** | T-646 · — | `asset_catalog.rs`+`eden_chrome.rs`+`editor_ops.rs` |
-| **11** | T-645 | `editor_ops.rs`+`eden_chrome.rs`+`place_helpers.rs` |
-| **12** | T-659 | `eden_chrome.rs`+`editor_ops.rs` |
-| **13** | T-650 | `eden_chrome.rs`+`editor_ops.rs`+`store.rs` |
-| **14** | T-651 | `eden_chrome.rs`+`editor_ops.rs`+`outliner.rs`+`mission_editor.rs`+`store.rs` |
+**Where the halving actually lives:** split *both* hot files.
 
-I left wave 8 in with its error visible rather than silently fixing it, because it is the finding:
-**from wave 8 the program is single-file-serial.** Every remaining ticket (T-645, T-646, T-649,
-T-650, T-651, T-659) touches `editor_ops.rs`, and five of the six also touch `eden_chrome.rs`.
-There is no packing that runs two of them together.
+```
+floor after eden_chrome + mission_editor gesture-host split
+  = max(4 toolbelt, ~5 mission_editor remainder, 8 editor_ops)  = 8 waves   (−43%)
+```
 
-**Result: ~15 waves, 27 tickets, mean 1.8 per wave. Seven waves run a single agent.**
-
-### 5.3 The same program with `eden_chrome.rs` split (§7)
-
-Assume the split in §7 lands first (one preparatory ticket, one wave). The 14 `eden_chrome.rs`
-claimants redistribute across 6 files:
-
-| Post-split file | Claimants |
-|---|---|
-| `eden_top_strip.rs` | T-633, T-634, T-659 |
-| `eden_dock_right.rs` | T-632, T-637, T-646, T-650 |
-| `eden_dock_left.rs` | T-637, T-651 |
-| `eden_toolbelt.rs` | T-636, T-641b, T-642, T-643 |
-| `eden_layout.rs` (the four size constants) | T-638 |
-| `eden_settings.rs` | — (none of the 27) |
-
-`mission_editor.rs` is untouched by the split and remains at 10 — it becomes the binding
-constraint, which is the honest limit on the gain.
-
-| Wave | Tickets | n |
-|---|---|---|
-| 0 | T-631 · T-632 · T-633 · T-639 · T-656 · T-641a · T-637* | 6–7 |
-| 1 | T-635 · T-634 · T-640 · T-657 · T-646 | 5 |
-| 2 | T-636 · T-638 · T-658 · T-650 | 4 |
-| 3 | T-647 · T-659 · T-660 · T-642 | 4 |
-| 4 | T-648 · T-643 · T-651 | 3 |
-| 5 | T-649 · T-644 · T-655 · T-645 | 4 |
-| 6 | T-641b | 1 |
-
-\* T-632 and T-637 both want `eden_dock_right.rs`; one moves to wave 1. Counted conservatively as 6.
-
-**~7 waves instead of ~15. Mean concurrency 3.9 instead of 1.8.**
+and if `editor_ops.rs` were split by concern after that, the floor falls to ~5 (`validate.rs` and
+`select_tool.rs` at 4 each). §7.2 turns this into a recommendation.
 
 ---
 
@@ -736,9 +770,10 @@ are **not in this ticket range** and correctly stayed out.
 |---|---|
 | Tickets claiming it | **14 of 27** (52%) |
 | Tickets claiming it *or* `mission_editor.rs` | **20 of 27** (74%) |
-| Waves in the factory-shaped packing | **~15** |
-| Waves with a single agent | **7** |
-| Mean concurrency | **1.8** |
+| **Wave floor it imposes, alone** | **14** — one agent per wave × 14 claimants |
+| Waves in the factory-shaped packing (§5.2) | **14** (the floor is achieved) |
+| Waves with a single agent | **6** |
+| Mean concurrency | **2.0** |
 
 **Cost of the split — measured, not estimated**
 
@@ -755,28 +790,59 @@ that lives elsewhere. The split's compatibility layer is a pattern the file itse
 
 ### 7.2 Verdict
 
-**Yes. Split it, in one preparatory ticket, before wave 0.**
+**Yes — split it. But do not buy it on the wave count alone, because the wave-count gain is
+14 → 11 (−21%), not the halving the "14 claimants" figure suggests.**
 
-Three reasons, in order of weight:
+I revised this section after checking my own arithmetic. The first pass claimed 15 → 7 waves. That
+was wrong: it under-counted `mission_editor.rs` at 10 (T-651 was missed) and, more importantly, it
+quoted the *achievable ceiling* rather than the *floor the next-worst file imposes*. The corrected
+figures are below and they are weaker. They still support the split.
 
-1. **The gain is measured, not hoped for.** 15 waves → ~7. Mean concurrency 1.8 → 3.9. Seven
-   single-agent waves → one. That is roughly **half the wall-clock** on a 27-ticket program.
+**The gain, stated honestly**
 
-2. **The cost is a measured 15 lines of import churn.** Twelve symbols, three files, and a
-   `pub use` shim keeps even those at zero if you want it. One test's `include_str!` retargets. The
-   938-line test block splits along the same seams as the code, and 36 tests is a mechanical
-   redistribution, not a rewrite.
+| | Floor | Mean concurrency | Single-agent waves |
+|---|---|---|---|
+| Today | **14** waves | 2.0 | 6 |
+| Split `eden_chrome.rs` | **11** waves | 2.5 | ~3 |
+| Split `eden_chrome.rs` **and** the `mission_editor.rs` gesture host | **8** waves | 3.5 | ~1 |
 
-3. **The file is not cohesive.** It holds a top strip, two docks, a toolbelt, a settings dialog, a
-   zone editor, a virtual tree renderer, a JSON-schema parser and a row-mirror debounce machine.
-   Fourteen tickets claim it because eight unrelated concerns live in it — not because they are
-   related work.
+`mission_editor.rs` (11 claimants, 3,830 lines) becomes the binding constraint the moment
+`eden_chrome.rs` stops being it, and `editor_ops.rs` (8) is right behind it. **One split moves the
+bottleneck; it does not remove it.**
 
-**The one honest caveat:** `mission_editor.rs` (10 claimants, 3,830 lines) is untouched by this
-split and becomes the new binding constraint. The gain is real but capped at ~4 concurrent. A
-second preparatory ticket extracting the pointer/gesture host from `mission_editor.rs` would lift
-that cap further; **I do not recommend it now** — it is riskier (live gesture state machine, leaked
-closures at `:1999`, `:1998`) and the first split already gets most of the win.
+**Why to do it anyway — three reasons, the first of which is not about waves**
+
+1. **Fourteen sequential edits to one 5,119-line file is a merge-and-context hazard, independent of
+   scheduling.** Each wave's agent reads a file the previous wave rewrote. Rebase conflicts on a
+   file this size are not mechanical, and an agent briefed on wave-3's `eden_chrome.rs` is briefed
+   on a file that no longer exists by wave 9. Splitting it turns 14 edits to one file into ~3 edits
+   each to five files. **This argument holds even if the wave count did not move at all.**
+
+2. **The cost is measured at 15 import sites.** Twelve symbols, three files
+   (`mission_editor.rs` 10, `select_tool.rs` 4, `editor_ops.rs` 1), and a `pub use` shim keeps even
+   those at zero — a shim the file *already uses* at `:2866`. One test's `include_str!` retargets.
+   The 938-line test block splits along the same seams as the code; 36 tests is a mechanical
+   redistribution, not a rewrite. There is no cheaper 21%-plus available anywhere in this program.
+
+3. **The file is not cohesive.** Top strip, two docks, toolbelt, settings dialog, zone editor,
+   virtual-tree renderer, JSON-schema parser, row-mirror debounce machine. Fourteen tickets claim it
+   because eight unrelated concerns live in it, not because the work is related. Splitting it is
+   correct on its own terms; the packing gain is a side effect.
+
+**Recommendation, in order**
+
+- **Do now:** one preparatory ticket splitting `eden_chrome.rs` per §7.3. Wave 0, **alone in its
+  wave**. Pure move, no behaviour change, `make ci-local-leptos` as the gate.
+- **Consider next, and cost it separately:** a second preparatory ticket extracting the pointer /
+  gesture host and the keydown map from `mission_editor.rs` (`onwheel` `:1333`, `onpointerdown`
+  `:1395`, `onpointermove` `:1437`, `onpointerup` `:1644`, `oncontextmenu` `:1844`, `onresize`
+  `:1972`, keydown `:1005-1030`). That is what takes the floor to 8. **It is materially riskier than
+  the first** — a live gesture state machine with deliberately leaked closures (`.forget()` at
+  `:1998`, `:1999`) and a documented single-pointer invariant. Do not bundle it with the
+  `eden_chrome.rs` split; a failed gesture extraction would poison a split that is otherwise
+  risk-free.
+- **Do not** split `editor_ops.rs` yet. Its 8 claimants are all also blocked by one of the two files
+  above, so it buys nothing until both land.
 
 ### 7.3 The split, sketched
 
@@ -832,10 +898,10 @@ T-639	crates/map-engine-core/src/world/lod_gates.rs; apps/website/frontend/src/w
 T-640	apps/website/frontend/src/world_assets/dem_vectors.rs; crates/map-engine-core/src/geometry/contours.rs; crates/map-engine-core/src/geometry/vector_compose.rs
 T-641a	apps/website/frontend/src/world_assets/labels.rs; crates/map-engine-core/src/dem/peaks.rs
 T-641b	apps/website/frontend/src/eden_chrome.rs
-T-642	apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/ruler_tool.rs
-T-643	apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/los_tool.rs; crates/map-engine-core/src/dem/sample.rs
+T-642	apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/ruler_tool.rs; apps/website/frontend/src/main.rs
+T-643	apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/los_tool.rs; crates/map-engine-core/src/dem/sample.rs; apps/website/frontend/src/main.rs
 T-644	apps/website/frontend/src/los_tool.rs; crates/map-engine-render/src/engine.rs; crates/map-engine-core/src/dem/sample.rs
-T-645	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/place_helpers.rs
+T-645	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/place_helpers.rs; apps/website/frontend/src/main.rs
 T-646	apps/website/frontend/src/asset_catalog.rs; apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/editor_ops.rs
 T-647	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs
 T-648	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/editor_ops.rs
@@ -845,8 +911,8 @@ T-651	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/editor_
 T-652	
 T-653	
 T-654	
-T-655	apps/website/frontend/src/validation_panel.rs; apps/website/frontend/src/mission_editor.rs
-T-656	crates/map-engine-core/src/mission/validate.rs
+T-655	apps/website/frontend/src/validation_panel.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/main.rs
+T-656	crates/map-engine-core/src/mission/validate.rs; crates/map-engine-core/src/mission/mod.rs
 T-657	crates/map-engine-core/src/mission/validate.rs
 T-658	crates/map-engine-core/src/mission/validate.rs
 T-659	apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/editor_ops.rs
@@ -864,11 +930,28 @@ T-641	apps/website/frontend/src/world_assets/labels.rs; crates/map-engine-core/s
 
 — and accept that it then collides with 14 other tickets instead of 1.
 
+And the preparatory split ticket from §7.3, which must be **wave 0, alone**:
+
+```
+T-630.5	apps/website/frontend/src/eden_chrome.rs; apps/website/frontend/src/eden_layout.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/eden_env.rs; apps/website/frontend/src/eden_tree.rs; apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/eden_vehicles_panel.rs; apps/website/frontend/src/eden_zones.rs; apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/eden_settings.rs; apps/website/frontend/src/main.rs
+```
+
+`main.rs` is included because the new modules need `mod` declarations — verify the crate root before
+filing (`apps/website/frontend/src/main.rs`, 148 lines).
+
 ---
 
 ## What was not verified
 
 Stated so nothing here is mistaken for checked fact:
+
+- **§7.2's verdict was revised mid-derivation, and the first version was wrong.** The first pass
+  reported the split as 15 → 7 waves. Two errors: `mission_editor.rs` was counted at 10 because
+  T-651 was missed, and the "after" figure quoted an achievable ceiling rather than the floor the
+  next-worst file imposes. Corrected to 14 → 11. **The revision is recorded rather than
+  overwritten**, because this program has four confirmed instances of a number entering the record
+  without its derivation and this document should not add a fifth. If you find the split ticket
+  quoting "halves the program", that is the retracted figure.
 
 - **New-file paths are `INFERRED:`** — `ruler_tool.rs`, `los_tool.rs`, `place_helpers.rs`,
   `validation_panel.rs`, `crates/map-engine-core/src/mission/validate.rs`. They follow the repo's
