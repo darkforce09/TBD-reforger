@@ -1061,6 +1061,12 @@ pub struct RenderEngine {
     surface: wgpu::Surface<'static>,
     config: wgpu::SurfaceConfiguration,
     pub(crate) backend_kind: String,
+    /// T-629 — the **adapter's** `maxTextureDimension2D`, captured at create time (the adapter
+    /// itself is not retained). [`Self::max_texture_dimension_2d`] reports the *device's* limit,
+    /// which is what the renderer is actually allowed to allocate; this is the ceiling that limit
+    /// was requested against. Keeping both readable is what makes "the device only granted 8192"
+    /// distinguishable from "this GPU really cannot do more than 8192" without a second boot.
+    adapter_max_texture_dimension_2d: u32,
     pub(crate) shader: wgpu::ShaderModule,
     pub(crate) pipeline_layout: wgpu::PipelineLayout,
     pub(crate) bind_group_layout: wgpu::BindGroupLayout,
@@ -1221,6 +1227,9 @@ impl RenderEngine {
             wgpu::Limits::default()
         };
         let want_timestamps = adapter.features().contains(wgpu::Features::TIMESTAMP_QUERY);
+        // T-629 — read the adapter ceiling BEFORE `request_device` consumes the borrow, so the
+        // satellite loader can say which of the two numbers pinned it to a half-resolution mip.
+        let adapter_max_texture_dimension_2d = adapter.limits().max_texture_dimension_2d;
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
                 label: Some("map-engine-render"),
@@ -1507,6 +1516,7 @@ impl RenderEngine {
             surface,
             config,
             backend_kind,
+            adapter_max_texture_dimension_2d,
             shader,
             pipeline_layout,
             bind_group_layout,
@@ -4671,6 +4681,19 @@ impl RenderEngine {
     #[must_use]
     pub fn max_texture_dimension_2d(&self) -> u32 {
         self.device.limits().max_texture_dimension_2d
+    }
+
+    /// T-629 — the **adapter's** `maxTextureDimension2D`: the hardware/driver ceiling this device's
+    /// limit was requested against (`create` asks for `base_limits.using_resolution(adapter.limits())`,
+    /// which copies exactly this value into the device request).
+    ///
+    /// Read-only. It exists so a half-resolution basemap can be attributed: if this equals
+    /// [`Self::max_texture_dimension_2d`] the GPU genuinely cannot do better, and if it is larger
+    /// the device request lost the resolution somewhere.
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn adapter_max_texture_dimension_2d(&self) -> u32 {
+        self.adapter_max_texture_dimension_2d
     }
 
     /// Re-tint a committed lane's opacity in place + toggle its visibility

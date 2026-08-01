@@ -100,22 +100,55 @@ pub struct RangeBody {
     pub total: u64,
 }
 
-/// HTTP Range GET. Succeeds only on **206**; a 200 (server ignoring Range) is rejected so CI
-/// never silently downloads the full 152_713_114 B sat bundle.
-pub async fn fetch_range(url: &str, start: u64, end_inclusive: u64) -> Option<RangeBody> {
-    let resp = gloo_net::http::Request::get(url)
+/// T-629 — why a Range request did not produce a body.
+///
+/// The old `fetch_range` collapsed every non-206 into `None`, so the satellite loader could not tell
+/// "this file is missing" from "the server is throttling me" — and the answer turned out to matter:
+/// the API's global limiter is 20 req/s burst 40, and the base-level-0 satellite plan is **49**
+/// Range requests, so the boot reliably ran the bucket dry and got `429`s. Retrying a 429
+/// immediately is pointless; retrying a 404 at all is pointless. They are different outcomes now.
+pub enum RangeOutcome {
+    Body(RangeBody),
+    /// `429` — carries the server's `Retry-After` in seconds when it sent one.
+    RateLimited {
+        retry_after_s: Option<u64>,
+    },
+    /// Any other non-206 status, or a transport/parse failure.
+    Failed {
+        status: u16,
+    },
+}
+
+/// HTTP Range GET, reporting **which way it went** — see [`RangeOutcome`]. Succeeds only on
+/// **206**; a 200 (server ignoring Range) is rejected so CI never silently downloads the full
+/// 152_713_114 B sat bundle.
+pub async fn fetch_range_outcome(url: &str, start: u64, end_inclusive: u64) -> RangeOutcome {
+    let Ok(resp) = gloo_net::http::Request::get(url)
         .header("Range", &format!("bytes={start}-{end_inclusive}"))
         .send()
         .await
-        .ok()?;
-    if resp.status() != 206 {
-        return None;
+    else {
+        return RangeOutcome::Failed { status: 0 };
+    };
+    let status = resp.status();
+    if status == 429 {
+        return RangeOutcome::RateLimited {
+            retry_after_s: resp
+                .headers()
+                .get("retry-after")
+                .and_then(|v| v.parse::<u64>().ok()),
+        };
+    }
+    if status != 206 {
+        return RangeOutcome::Failed { status };
     }
     let total = resp
         .headers()
         .get("content-range")
         .and_then(|cr| cr.split('/').nth(1)?.parse::<u64>().ok())
-        .filter(|&t| t > 0)?;
-    let bytes = resp.binary().await.ok()?;
-    Some(RangeBody { bytes, total })
+        .filter(|&t| t > 0);
+    let (Some(total), Ok(bytes)) = (total, resp.binary().await) else {
+        return RangeOutcome::Failed { status };
+    };
+    RangeOutcome::Body(RangeBody { bytes, total })
 }

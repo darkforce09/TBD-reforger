@@ -15,16 +15,83 @@ use crate::mission_editor::boot_progress::{
 use crate::select_tool::EngineHandle;
 
 use super::bridge::{publish, BridgeHandle};
-use super::fetch::{fetch_bytes, fetch_range};
+use super::fetch::{fetch_bytes, fetch_range_outcome, RangeBody, RangeOutcome};
 use super::tbd_sat::{
-    parse_tbd_sat_index_only, parse_tbd_sat_index_strict, pick_base_level, pick_preview_level,
-    TbdSatIndex, TbdSatMip, TbdSatTile,
+    parse_tbd_sat_index_only, parse_tbd_sat_index_strict, pick_base_level_for_limit,
+    pick_preview_level, TbdSatIndex, TbdSatMip, TbdSatTile,
 };
 
 const ROLE_BASEMAP: u32 = 0;
 const MODE_UNIFIED: u32 = 0;
 const MODE_SINGLE: u32 = 2;
 const PREVIEW_MAX_EDGE: u32 = 1024;
+
+/// T-629 — what the GPU will actually accept as one texture's long edge, read off the live engine.
+///
+/// Two numbers, because a half-resolution basemap has two different explanations and the operator
+/// deserves to be told which one he is looking at:
+///
+/// * `device` is the limit the renderer may allocate against, and the only one
+///   [`pick_base_level_for_limit`] may be given.
+/// * `adapter` is the ceiling that limit was *requested* against
+///   (`base_limits.using_resolution(adapter.limits())` in `RenderEngine::create`). When the two
+///   agree, the hardware genuinely cannot hold the full-resolution level as a single texture; when
+///   `device` is the smaller, the device request lost resolution the GPU was offering.
+#[derive(Clone, Copy)]
+struct TextureLimit {
+    device: u32,
+    adapter: u32,
+}
+
+/// T-629 — read the limit, or report that there is nothing to read it from.
+///
+/// This replaced `engine.borrow().as_ref().map(|e| e.max_texture_dimension_2d()).unwrap_or(8192)`,
+/// which appeared at both call sites. There is no fallback any more, loud or otherwise: a guessed
+/// limit picks a real mip and commits it, so the guess is indistinguishable downstream from a
+/// measurement — which is precisely the failure this codebase keeps producing. `None` here makes
+/// the absence unignorable at the call site instead.
+fn texture_limit(engine: &EngineHandle) -> Option<TextureLimit> {
+    let guard = engine.borrow();
+    let e = guard.as_ref()?;
+    Some(TextureLimit {
+        device: e.max_texture_dimension_2d(),
+        adapter: e.adapter_max_texture_dimension_2d(),
+    })
+}
+
+/// T-629 — warn when this GPU's texture limit forces a downscaled basemap.
+///
+/// Level 0 is the source resolution and says nothing here; the commit at the end of
+/// [`load_unified_full`] reports what actually landed, which is the only thing worth claiming
+/// before the bytes are on the GPU. Anything above level 0 means the operator is looking at a
+/// downscaled island, which was previously indistinguishable from a correctly loaded one — the bar
+/// reached 100%, a texture appeared, and the only symptom was that everon looked soft.
+fn report_chosen_level(index: &TbdSatIndex, base: usize, limit: TextureLimit) {
+    let Some(mip) = index.mips.get(base) else {
+        return;
+    };
+    if base == 0 {
+        return;
+    }
+    let cause = if limit.device >= limit.adapter {
+        "this GPU cannot hold the full-resolution basemap as a single texture"
+    } else {
+        "the device was granted less than the adapter offered — this is a renderer bug, not a GPU \
+         limit"
+    };
+    leptos::logging::warn!(
+        "satellite: DOWNSCALED basemap — showing level {} ({}x{}) instead of level 0 ({}x{}). GPU \
+         maxTextureDimension2D = {} (adapter {}); {}.",
+        base,
+        mip.width,
+        mip.height,
+        index.base_width_px,
+        index.base_height_px,
+        limit.device,
+        limit.adapter,
+        cause
+    );
+}
 
 /// `?sat=preview` — Range-only path; never full-bundle GET (CI / gate harness).
 pub fn sat_preview_only() -> bool {
@@ -101,7 +168,9 @@ fn upload_decoded(
 /// block-range one — see that function. The preview path stays loose, as it always was; the full
 /// load is strict, as it always was when it parsed the whole downloaded file.
 async fn fetch_index_head(url: &str, strict: bool) -> Option<(TbdSatIndex, u64)> {
-    let head = fetch_range(url, 0, 11).await?;
+    // T-629 — the index is two Range requests and everything downstream depends on them, so they
+    // get the same retry ladder as the tiles: losing the header to a 429 loses the whole basemap.
+    let head = fetch_range_resilient(url, 0, 11).await?;
     if head.bytes.len() < 12 {
         return None;
     }
@@ -110,7 +179,7 @@ async fn fetch_index_head(url: &str, strict: bool) -> Option<(TbdSatIndex, u64)>
     if version != 1 || json_len == 0 || json_len > 16 * 1024 * 1024 {
         return None;
     }
-    let full = fetch_range(url, 0, 11 + u64::from(json_len)).await?;
+    let full = fetch_range_resilient(url, 0, 11 + u64::from(json_len)).await?;
     let index = if strict {
         parse_tbd_sat_index_strict(&full.bytes, full.total).ok()?
     } else {
@@ -136,6 +205,92 @@ async fn fetch_index_head(url: &str, strict: bool) -> Option<(TbdSatIndex, u64)>
 ///   still in flight. A partial texture never reaches `commit_mip`.
 /// * **Progress.** `on_bytes` is called with the size of each completed request — completed work
 ///   only, never a prediction.
+/// T-629 — attempts allowed per Range span before the whole load is abandoned.
+///
+/// **This is the T-627 regression.** [`fetch_tiles`] is deliberately fail-fast: the first failed
+/// request cancels the run so a partial texture can never reach `commit_mip`. That is right. What
+/// was not right is what counted as a failure. Before T-627 the satellite was **one** GET of the
+/// whole bundle; T-627 turned it into per-tile Range requests — **49** of them for everon's base
+/// level 0 — and T-625/T-626, landing immediately before, keyed the API's rate limiter per client.
+/// That limiter is `20/s` **burst 40** and `/map-assets` is not exempt from it, so a base-level-0
+/// boot asks for 49 spans out of a 40-token bucket that the DEM, the world chunks and the SPA's own
+/// assets have already been drawing on. The overflow comes back `429`, `fetch_range` mapped every
+/// non-206 to `None`, one `None` killed all 152,710,470 B, and `load_satellite` discarded the bool —
+/// so the ≤1024 px preview stayed on screen as "the satellite map".
+///
+/// Measured on the T-629 rig (headless Chrome against this repo's `trunk serve`, level 0 chosen
+/// from a real 16384 limit): three consecutive boots failed on three *different* spans, and
+/// replaying the exact 49-span plan with `curl` at concurrency 4 returned **48× `429`, 1× `206`**.
+/// The base-level-1 plan is 21 spans and survived — which is precisely what a 40-token bucket
+/// predicts.
+///
+/// Five attempts with [`RANGE_BACKOFF_MS`], not "retry until it works": a span that fails five
+/// times is a real failure and must still fail the load loudly rather than hang the boot behind an
+/// unbounded loop.
+const RANGE_ATTEMPTS: usize = 5;
+
+/// T-629 — backoff before each retry, in ms. The limiter refills at 20 tokens/s (one per 50 ms) and
+/// answers `Retry-After: 1`, so the ladder starts just above one token and ends above a full second;
+/// a span that is still throttled after 2.15 s of waiting is not a burst, it is an outage.
+const RANGE_BACKOFF_MS: [i32; 4] = [100, 250, 600, 1_200];
+
+/// Await `ms` of wall clock. Resolves immediately if there is no window to schedule on, so this can
+/// never wedge the boot.
+async fn sleep_ms(ms: i32) {
+    let p = js_sys::Promise::new(&mut |resolve, _reject| {
+        let scheduled = web_sys::window().and_then(|w| {
+            w.set_timeout_with_callback_and_timeout_and_arguments_0(&resolve, ms)
+                .ok()
+        });
+        if scheduled.is_none() {
+            let _ = resolve.call0(&wasm_bindgen::JsValue::NULL);
+        }
+    });
+    let _ = JsFuture::from(p).await;
+}
+
+/// T-629 — one Range span, retried up to [`RANGE_ATTEMPTS`] times with backoff.
+///
+/// Every retry is announced. A throttled origin has to show up as noise in the console rather than
+/// as a mysteriously soft island — that silence is the whole bug.
+async fn fetch_range_resilient(url: &str, start: u64, end: u64) -> Option<RangeBody> {
+    for attempt in 1..=RANGE_ATTEMPTS {
+        let throttled = match fetch_range_outcome(url, start, end).await {
+            RangeOutcome::Body(body) => {
+                if attempt > 1 {
+                    leptos::logging::warn!(
+                        "satellite: Range bytes={start}-{end} succeeded on attempt {attempt}"
+                    );
+                }
+                return Some(body);
+            }
+            RangeOutcome::RateLimited { retry_after_s } => {
+                leptos::logging::warn!(
+                    "satellite: Range bytes={start}-{end} throttled (429, Retry-After {:?}) \
+                     — attempt {attempt}/{RANGE_ATTEMPTS}",
+                    retry_after_s
+                );
+                true
+            }
+            RangeOutcome::Failed { status } => {
+                leptos::logging::warn!(
+                    "satellite: Range bytes={start}-{end} failed (status {status}) — attempt \
+                     {attempt}/{RANGE_ATTEMPTS}"
+                );
+                false
+            }
+        };
+        // The last attempt has nothing to wait for.
+        let Some(&base_ms) = RANGE_BACKOFF_MS.get(attempt - 1) else {
+            break;
+        };
+        // A 429 is the server telling us when to come back; anything else is just a retry.
+        let wait = if throttled { base_ms } else { base_ms / 2 };
+        sleep_ms(wait).await;
+    }
+    None
+}
+
 async fn fetch_tiles(
     url: &str,
     file_size: u64,
@@ -163,11 +318,23 @@ async fn fetch_tiles(
     let mut parts: Vec<Ordered<Vec<u8>>> = plans.iter().map(|p| Ordered::new(p.len())).collect();
     let mut inflight =
         futures::stream::iter(reqs.into_iter().map(|(ti, pi, start, end)| async move {
-            (ti, pi, start, end, fetch_range(url, start, end).await)
+            (
+                ti,
+                pi,
+                start,
+                end,
+                fetch_range_resilient(url, start, end).await,
+            )
         }))
         .buffer_unordered(SAT_FETCH_CONCURRENCY);
 
     while let Some((ti, pi, start, end, got)) = inflight.next().await {
+        if got.is_none() {
+            leptos::logging::error!(
+                "satellite: Range bytes={start}-{end} (tile {ti}, part {pi}) failed after \
+                 {RANGE_ATTEMPTS} attempts — abandoning the full-resolution basemap"
+            );
+        }
         let body = got?;
         let want = end - start + 1;
         // Both halves of the original loop's validation, per request: the body is exactly the span
@@ -311,18 +478,31 @@ async fn load_unified_full(
     // of level 0 was downloaded and thrown away. Fetching per tile skips it outright — and gives
     // the loading bar a byte budget it can actually count against.
     let Some((index, file_size)) = fetch_index_head(url, true).await else {
+        leptos::logging::error!("satellite: could not read the .tbd-sat index from {url}");
         return false;
     };
-    let max_dim = {
-        let g = engine.borrow();
-        g.as_ref()
-            .map(|e| e.max_texture_dimension_2d())
-            .unwrap_or(8192)
+    // T-629 — the level is chosen from the limit the engine REPORTS, or not at all. The engine is
+    // mounted before `world_assets::bootstrap` is even constructed (`mission_editor.rs`: the
+    // bootstrap future is built inside the `RenderEngine::create` success arm, after
+    // `*engine.borrow_mut() = Some(eng)`), so `None` here is not a boot-ordering race that waiting
+    // would fix — it is the engine having failed to come up at all, and the honest response is to
+    // leave the preview placeholder in place and say so.
+    let limit = texture_limit(engine);
+    let Some(base) = pick_base_level_for_limit(&index, limit.map(|l| l.device)) else {
+        leptos::logging::error!(
+            "satellite: no render engine when the basemap level had to be chosen — refusing to \
+             guess a GPU texture limit. The <={PREVIEW_MAX_EDGE} px preview is what is on screen."
+        );
+        return false;
     };
-    let base = pick_base_level(&index, max_dim) as usize;
+    let base = base as usize;
     let Some(base_mip) = index.mips.get(base).cloned() else {
+        leptos::logging::error!("satellite: index has no mip at the chosen base level {base}");
         return false;
     };
+    if let Some(limit) = limit {
+        report_chosen_level(&index, base, limit);
+    }
     let mip_count = (index.mip_count as usize).saturating_sub(base) as u32;
     let webgl2 = {
         let g = engine.borrow();
@@ -349,19 +529,43 @@ async fn load_unified_full(
     // 16384-limit one), it also re-weights the satellite's share of the bar to what is actually
     // going to be transferred.
     let total: u64 = tiles.iter().map(|t| t.length).sum();
+    // T-629 — the request count is the number that broke this: 49 spans at base level 0 against a
+    // 40-token bucket. Worth stating next to the byte budget rather than leaving it to be inferred.
+    let req_count: usize = tiles
+        .iter()
+        .map(|t| split_range(t.offset, t.length, SAT_CHUNK_BYTES).len())
+        .sum();
     report(BootEvent::Budget(BootSeg::Satellite, total));
     let Some(bodies) = fetch_tiles(url, file_size, &tiles, |n| {
         report(BootEvent::Done(BootSeg::Satellite, n));
     })
     .await
     else {
+        leptos::logging::error!(
+            "satellite: the Range fetch of {} tiles ({total} B) from level {base} down did not \
+             complete",
+            tiles.len()
+        );
         return false;
     };
 
     // Decode all mips ≥ base before taking the engine borrow for begin/write/commit.
+    // T-629 — every arm below used to be a bare `return false`, so a basemap that failed at decode
+    // and one that failed at commit were the same non-event: `load_satellite` discarded the bool
+    // and the preview stayed up. Each one now names itself, because "the map is blurry" is not a
+    // report anyone can act on and it was the only signal this path produced.
     let mut levels: Vec<(u32, TbdSatTile, Decoded)> = Vec::with_capacity(plan.len());
     for ((rel, tile), bytes) in plan.into_iter().zip(bodies) {
         let Some(d) = decode_webp(&bytes, webgl2).await else {
+            leptos::logging::error!(
+                "satellite: WebP decode failed for the {}x{} tile at ({},{}) of relative level \
+                 {rel} ({} B, webgl2={webgl2})",
+                tile.width,
+                tile.height,
+                tile.x,
+                tile.y,
+                bytes.len()
+            );
             return false;
         };
         levels.push((rel, tile, d));
@@ -370,9 +574,10 @@ async fn load_unified_full(
     {
         let mut guard = engine.borrow_mut();
         let Some(e) = guard.as_mut() else {
+            leptos::logging::error!("satellite: the render engine went away before upload");
             return false;
         };
-        if e.tex_layer_begin(
+        if let Err(err) = e.tex_layer_begin(
             ROLE_BASEMAP,
             0.0,
             0.0,
@@ -382,20 +587,43 @@ async fn load_unified_full(
             base_mip.height,
             mip_count,
             MODE_UNIFIED,
-        )
-        .is_err()
-        {
+        ) {
+            leptos::logging::error!(
+                "satellite: could not allocate the {}x{} basemap texture with {mip_count} mips: \
+                 {err:?}",
+                base_mip.width,
+                base_mip.height
+            );
             return false;
         }
         for (rel, tile, d) in levels {
             if !upload_decoded(e, ROLE_BASEMAP, rel, tile.x, tile.y, d) {
+                leptos::logging::error!(
+                    "satellite: GPU upload rejected the {}x{} tile at ({},{}) of relative level \
+                     {rel}",
+                    tile.width,
+                    tile.height,
+                    tile.x,
+                    tile.y
+                );
                 return false;
             }
         }
-        if e.tex_layer_commit(ROLE_BASEMAP, 1.0_f32, true).is_err() {
+        if let Err(err) = e.tex_layer_commit(ROLE_BASEMAP, 1.0_f32, true) {
+            leptos::logging::error!("satellite: basemap commit failed: {err:?}");
             return false;
         }
     }
+    // T-629 — the one line the operator can check against what he is looking at, printed only once
+    // the texture is actually on the GPU. Everything before this point is an intention.
+    leptos::logging::log!(
+        "satellite: basemap up — level {base}, {}x{} with {mip_count} mips ({total} B over {} \
+         Range requests); GPU maxTextureDimension2D = {}",
+        base_mip.width,
+        base_mip.height,
+        req_count,
+        limit.map_or(0, |l| l.device)
+    );
     {
         let mut b = bridge.borrow_mut();
         b.sat_w = base_mip.width;
@@ -427,12 +655,18 @@ pub async fn load_map_basemap(
     terrain_w: f64,
     terrain_h: f64,
 ) -> bool {
-    let max_dim = {
-        let g = engine.borrow();
-        g.as_ref()
-            .map(|e| e.max_texture_dimension_2d())
-            .unwrap_or(8192)
+    // T-629 — same rule as the satellite base level: the zoom that gets stitched is a rendering
+    // resolution, so it comes from a measured limit or the load declines. `unwrap_or(8192)` here
+    // was harmless only by luck (z4 = 4096 px fits 8192 anyway) — it is removed because the next
+    // person to raise the z cap would have inherited a silent half-resolution map for free.
+    let Some(limit) = texture_limit(engine) else {
+        leptos::logging::error!(
+            "map basemap: no render engine when the pyramid zoom had to be chosen — refusing to \
+             guess a GPU texture limit."
+        );
+        return false;
     };
+    let max_dim = limit.device;
     // Largest z in [0, 6] with 2^z·256 ≤ max_dim (cap z4 = 4096² — the cartographic source res).
     let mut z: u32 = 0;
     for cand in 0..=4u32 {
@@ -516,9 +750,25 @@ pub async fn load_satellite(
     // index is read, so it is outside the segment's budget and reports nothing. Counting its bytes
     // against a total that does not include them is exactly the overshoot the fraction clamp exists
     // to absorb, and there is no reason to create the case.
-    let _ = try_preview(&engine, &url, terrain_w, terrain_h, &bridge).await;
+    let preview_ok = try_preview(&engine, &url, terrain_w, terrain_h, &bridge).await;
     if sat_preview_only() {
         return;
     }
-    let _ = load_unified_full(&engine, &url, terrain_w, terrain_h, &bridge, report).await;
+    // T-629 — the full load's failure used to be discarded into `let _`. That is the operator's
+    // report verbatim: "we are using the low resolution satellite map... that should only be a
+    // placeholder if the main one doesn't load." When the full load returns false the placeholder
+    // is exactly what stays on screen, and nothing said so — the loading bar had already reached
+    // 100% on the DEM and world segments, so a silent basemap failure reads as a finished boot.
+    if !load_unified_full(&engine, &url, terrain_w, terrain_h, &bridge, report).await {
+        if preview_ok {
+            leptos::logging::warn!(
+                "satellite: the full-resolution basemap did NOT load — the <={PREVIEW_MAX_EDGE} px \
+                 preview placeholder is what is on screen."
+            );
+        } else {
+            leptos::logging::error!(
+                "satellite: no basemap loaded at all — neither the preview nor the full mip chain."
+            );
+        }
+    }
 }

@@ -218,6 +218,23 @@ pub fn pick_base_level(index: &TbdSatIndex, max_texture_dimension_2d: u32) -> u3
     index.mip_count.saturating_sub(1)
 }
 
+/// T-629 — [`pick_base_level`] over a limit that **may not be known**.
+///
+/// The displayed resolution of the whole basemap is this one number's output, and the caller used
+/// to reach it through `engine.max_texture_dimension_2d()`…`.unwrap_or(8192)`. That default is not
+/// a conservative choice, it is a *silent* one: on everon, 8192 forbids the 12800 px level 0 and
+/// commits level 1 — exactly half resolution — with nothing on screen or in the console to say a
+/// limit had been assumed rather than read. An assumed limit and a measured one are not
+/// interchangeable inputs, so they do not share a type here: no limit means **no level**, and the
+/// caller has to decide out loud what to do about it.
+#[must_use]
+pub fn pick_base_level_for_limit(
+    index: &TbdSatIndex,
+    max_texture_dimension_2d: Option<u32>,
+) -> Option<u32> {
+    max_texture_dimension_2d.map(|max| pick_base_level(index, max))
+}
+
 /// Coarsest-usable preview mip (long edge ≤ `max_edge_px`).
 pub fn pick_preview_level(index: &TbdSatIndex, max_edge_px: u32) -> &TbdSatMip {
     for mip in &index.mips {
