@@ -22,7 +22,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 
 | Wave | Marker | Tickets | Gate | Verifier | Outcome |
 |---|---|---|---|---|---|
-| 100 | 83 | T-661 | — | — | in flight |
+| 100 | 83 | T-661 | PASS 30/30 (run 3; runs 1–2 red on non-ticket causes, see Incidents) | 0B/0M/5m/5N | SHIPPED — split proven pure (101 symbols 1:1, 419/419 tests); + capture harness ported to Rust (43a3f170); T-707..T-710 filed |
 | 101 | 84 | T-639 T-662 T-663 | — | — | pending |
 | 102 | 85 | T-640 T-664 T-665 | — | — | pending |
 | 103 | 86 | T-076 T-631 T-641 | — | — | pending |
@@ -52,8 +52,18 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 
 ## Deferred tickets filed by verifiers
 
-(none yet)
+- **T-707** (W100/F-2): wave.sh test-split comment transposes its own measurement — one-line fix.
+- **T-708** (W100/F-3): capture shot hang-fallback 25s→130s latency regression — send_with_timeout.
+- **T-709** (W100/F-4): capture zoomsweep lost the per-zoom console error tap (hides __editorCamSet).
+- **T-710** (W100/F-5): capture port pure fns (ztag/canvas_path/crop math/step parse) unpinned by tests.
 
 ## Incidents
 
-(none yet)
+- **W100 gate red on planning-session files, not T-661.** First full wave gate (base c2dac546)
+  failed `no-node` (tools/editor-capture/cdp2.mjs, zoomsweep.mjs) and `no-shell` (crop.sh,
+  run_shot_gpu.sh unlisted). The capture harness was committed 2026-08-01 (d1df67fb, d9fe8243)
+  without running the language gates — they are repo-wide scans, so the red predates the wave and
+  would fail on 852f17a4 itself. All 24 other steps PASS; T-661's split is clean. Triage: port the
+  two .mjs onto tbd-tools' existing cdp.rs (same precedent as smokes.rs, itself a port of 19 Node
+  drivers), absorb or inventory the two .sh, keep the README's KB-002 knowledge. Remediation
+  commit lands inside wave 100's gate range so the re-run gate and the wave verifier cover it.

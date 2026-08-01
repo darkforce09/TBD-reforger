@@ -145,7 +145,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 > the lowest-ordered `ready` program, not the program in flight.
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-630**
+**Latest shipped:** **T-661**
 
 **ACTIVE NOW:** **T-090** — T-090.6 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md`.
 
@@ -154,12 +154,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-120** — Staging soak + golden mission smoke (`queued`)
 - **T-146** — Asset Browser Data Wiring (`queued`)
 - **T-170** — Prod default flip to Leptos SPA (`queued`)
-- **T-661** — Split eden_chrome.rs into ten modules before the editor program starts (`ready`)
 - **T-662** — Free right-click and Backspace — the two input traps that gate the program (`queued`)
 - **T-663** — Remove the dead view_distance / thermals DTO fields (`queued`)
 - **T-639** — Zoom-adaptive contour interval — hold spacing constant in screen space (`queued`)
 - **T-664** — Right-click context menu — the slice that unblocks six tickets (`queued`)
 - **T-665** — Editor layer flags: per-layer visibility and transform lock (`queued`)
+- **T-640** — Contours as a tint, not a colour; darker summit ring (`queued`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
