@@ -574,6 +574,12 @@ RETURNING b.tokens";
 
     /// `scope|ip` — the scope keeps the strict and global buckets independent for one IP,
     /// exactly as the two separate `IpLimiter`s do today.
+    ///
+    /// **T-625 — which IP.** Whatever `middleware::ratelimit::client_ip` resolved: the connection
+    /// peer, or the client behind it when that peer is a configured `TRUSTED_PROXIES` entry. So on
+    /// the deployed stack these rows now read `strict|<member's public address>` rather than
+    /// `strict|127.0.0.1` for the whole community. With no trusted proxy configured they are the
+    /// peer, unchanged.
     pub fn bucket_key(scope: &str, ip: IpAddr) -> String {
         format!("{scope}|{ip}")
     }
