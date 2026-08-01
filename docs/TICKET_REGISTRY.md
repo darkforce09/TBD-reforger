@@ -1474,7 +1474,7 @@ TWO STRUCTURAL CARES: started_at binds m.started_at and NEVER the create path's 
 All six T-316 decisions re-verified individually on a live server, plus T-347's blank-dedupe test. 119/119. attendance_rate 0.00 -> 50.00; leaderboard_totals checked and correctly unaffected (it aggregates match_player_stats, not attendance).
 
 NEW CONSEQUENCE ITS OWN FIX CREATED, flagged not hidden: the re-point is now reachable, and the attendance UPDATE only ever SETS attended, never retracts. Re-pointing a match from EV1 to EV2 marks EV2 attended and LEAVES EV1 attended, inflating attendance_rate to 100%. There is no record of which match marked a registration, so the write is not currently reversible — a contract decision, filed as T-384. |
-| T-370 | 3186 | ready | platform | Remove the 8 dead mark_adopted call sites — but move the purge first | FOLLOW-UP from T-352, which deliberately left this and explained why. **The sequencing is the whole ticket; getting it wrong strands data in users' browsers permanently.**
+| T-370 | 3186 | shipped | platform | Remove the 8 dead mark_adopted call sites — but move the purge first | FOLLOW-UP from T-352, which deliberately left this and explained why. **The sequencing is the whole ticket; getting it wrong strands data in users' browsers permanently.**
 
 `mark_adopted` no longer writes anything — T-352 deleted the storage and made the function purge `tbd-editor-adopted:*` residue instead. Eight call sites remain: mission_hydrate.rs 187, 213, 226, 246, 279, 299, 888 and mission_commands.rs:141.
 
@@ -3214,7 +3214,7 @@ it. Confirm every listed prober still passes afterwards. |
 r#/br#/concat decoys RED. Still GREEN: `#[cfg(any())] match { live arms }` + `#[cfg(not(any()))] match { _ }` or cfg on each role arm with live `_`.
 
 Repro: cfg-out live arms; leave `_ => DEV_USER_ID` live; Class-R green. |
-| T-573 | 3426 | ready | platform | Mixed drag: vehicle GPU preview still slots-only (set_drag SoA) | FOUND by W68 adversarial verifier (CLEAN NIT) after T-491, and admitted by the slice agent.
+| T-573 | 3426 | shipped | platform | Mixed drag: vehicle GPU preview still slots-only (set_drag SoA) | FOUND by W68 adversarial verifier (CLEAN NIT) after T-491, and admitted by the slice agent.
 
 `move_entities_and_vehicles` commits mixed drag in one LOCAL yrs txn, but live drag preview still filters vehicles out of `engine.set_drag` (`mission_editor.rs` ~1125–1134). `set_drag` is slot-SoA only in map-engine-render (outside T-491 owns).
 
@@ -4694,7 +4694,7 @@ STILL OPEN, reported not fixed (both outside the slice''s owns):
 - **A third copy of F1''s false claim** at `frontend/src/event_manager.rs:238-240`.
 - F4, cosmetic: `tests/t578_ratelimit.rs:389` is named `migration_0020_is_the_ddl_constant_verbatim`
   while correctly reading `0021_rate_limit_buckets.sql`; `app.rs:468-469` cites it by that name. |
-| T-625 | 3742 | ready | platform | Behind Caddy every public client shares one auth rate-limit bucket | FOUND by wave 81''s verifier (F5). **Pre-existing and self-documented**, but worth knowing before a
+| T-625 | 3742 | shipped | platform | Behind Caddy every public client shares one auth rate-limit bucket | FOUND by wave 81''s verifier (F5). **Pre-existing and self-documented**, but worth knowing before a
 big event night.
 
 `Caddyfile.website:18-19` proxies from loopback, so axum''s `ConnectInfo` peer is Caddy for every
@@ -4715,7 +4715,7 @@ bucket) -- it did not create the sharing.
 **FIX:** wire `X-Forwarded-For` behind `Config::trusted_proxies`, which exists and is **read by
 nothing**. That is what makes per-IP mean per-client. T-578''s module header defers it explicitly
 rather than doing it silently. |
-| T-626 | 3752 | ready | platform | T-587 backfill regex is not character-for-character with parse_grid | FOUND by wave 81''s verifier (F3). Divergence is entirely in the **safe** direction; filed for accuracy.
+| T-626 | 3752 | shipped | platform | T-587 backfill regex is not character-for-character with parse_grid | FOUND by wave 81''s verifier (F3). Divergence is entirely in the **safe** direction; filed for accuracy.
 
 `migrations/0020_fire_missions_solution.sql:86-88` claims its accept regex matches `parse_grid`
 character for character. `frontend/src/mortar.rs:297-302` parses via `str::parse::<f64>`, which accepts

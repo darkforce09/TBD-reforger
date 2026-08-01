@@ -8,12 +8,16 @@ Do not start this program until **T-181 is finished**. Operator instruction.
 
 ---
 
-## ⏹ THE FACTORY STOPPED AFTER WAVE 81 — 2026-08-01. Read this before restarting it.
+## ⏹ THE FACTORY STOPPED AFTER WAVE 82 — 2026-08-01. Read this before restarting it.
 
-**395 platform tickets shipped. 17 open. Zero P0. Zero P1.**
+**399 platform tickets shipped. 13 open. Zero P0. Zero P1.**
 
-Waves 75–81 ran end to end in one session. What is left is not a backlog — it is ten features nobody
-started, two items that need Enfusion Workbench, the playtest, and a handful of documented residuals.
+Waves 75–82 ran end to end in one session. **There is no agent-actionable backlog left.** Of the 13:
+ten are features nobody ever started, two need Enfusion Workbench (`T-327`, `T-404`) and one is the
+playtest (`T-181`). Nothing remaining is a known defect an agent could pick up and fix.
+
+**ONE THING NEEDS YOU BEFORE PRODUCTION:** set **`TRUSTED_PROXIES=127.0.0.1`** on the home server —
+see T-625 below. Without it the rate-limit fix is inert and behaviour is exactly as it was.
 
 **The playtest is unblocked and the Workshop skew is closed — measured, on 2026-08-01.** The operator
 re-published the mod; the stale 1.0.1 was still cached locally and would have been preferred. Cleared
@@ -68,9 +72,9 @@ Both are one slice from done and it is the **same** slice: a live two-client E2E
 server. T-181 (54 slices shipped; the mod boots, all five screens open, objectives/radio/play-area/
 briefings/markers run) and T-068 (cargo ladder shipped through .12). Neither is agent-actionable.
 
-### What the 17 open tickets are
+### What the 13 open tickets are
 
-11 with no priority, 3 P3, 3 P2, **0 P1, 0 P0**. There is no backlog left in the sense the word
+11 with no priority, 1 P3, 1 P2, **0 P1, 0 P0**. There is no backlog left in the sense the word
 usually means:
 
 - **10 are features nobody ever started** — T-085/086/087/088 (wiki renderer, Server Control + RCON
@@ -89,17 +93,22 @@ Four worth knowing about, because they are the ones that will bite:
   that killed the self-corroborating attack. But a forger who files the plan row in a *separate,
   earlier* commit still satisfies both legs, and a corroborating forgery **bypasses**
   `demand_base_confirmation` entirely rather than being caught by it. Conceded in the code, not hidden.
-- **T-625 — behind Caddy every public client shares one auth rate-limit bucket** (1 rps, burst 10).
-  Ten-plus members opening the site within ten seconds on op night will see 429s on `/auth/refresh`.
-  Pre-existing; the 429 lands before the handler so the single-use token is not spent and a retry
-  succeeds. Real fix: wire `X-Forwarded-For` behind `Config::trusted_proxies`, which exists and is
-  read by nothing.
+- **T-625 — SHIPPED in W82, but INERT until you configure it.** `X-Forwarded-For` is now honoured
+  behind `Config::trusted_proxies` (rightmost untrusted hop; header ignored entirely when the trust
+  list is empty, which is the shipped default). **`docker-compose.staging.yml:69` already defaults to
+  `127.0.0.1/32`, so staging switched over on its own. The home-server deployment needs
+  `TRUSTED_PROXIES=127.0.0.1` set** — leave it unset and behaviour is exactly as before: every public
+  client shares one bucket at 1 rps / burst 10, and ten-plus members opening the site within ten
+  seconds see 429s on `/auth/refresh`. (Those 429s land before the handler, so the single-use token is
+  not spent and a retry succeeds.)
 - **T-609 — the world-boot ratchet is red for every golden mission**, deliberately, as a forcing
   function. While a row is red a *new* regression on it is indistinguishable from the standing red.
   Filed as *decide, don't widen*.
-- **T-573 / T-370** — the two W81 tickets that did not ship. Both carry their exact remaining patch.
-  T-370's ordering constraint still binds: the purge has moved, so the eight dead `mark_adopted` call
-  sites are now safely deletable — but not in the same commit that moved the behaviour off them.
+- **`class_r_scrub` is blind on `mission_editor.rs` past line ~88.** `cut_test_module` cuts from the
+  **first** `#[cfg(test)]` to EOF, and that file has a test-only `clear_for_test` inside a *production*
+  module at line 88 — so a whole-file `live_code()` examines 88 of 2200 lines and reports every needle
+  below as absent. It fails closed (found-0, not a false green) and W82's pin works around it with a
+  `REGISTRY_COLD_PAGE` anchor plus a canary. Any future pin on that file must do the same.
 
 The Class-R campaign (T-517 → T-567 → T-570 → T-601 → T-622) is **closed**. The evaluator now fails
 closed: an expression it cannot fold is treated as possibly-dead, so an unknown wrapper costs a false

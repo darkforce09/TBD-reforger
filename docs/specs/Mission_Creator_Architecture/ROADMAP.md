@@ -18,9 +18,6 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-370** — Remove the 8 dead mark_adopted call sites — but move the purge first (ready)
-- **T-573** — Mixed drag: vehicle GPU preview still slots-only (set_drag SoA) (ready)
-- **T-625** — Behind Caddy every public client shares one auth rate-limit bucket (ready)
 <!-- ticket-sync:next:end -->
 
 ---
