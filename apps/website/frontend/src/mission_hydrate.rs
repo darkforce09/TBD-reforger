@@ -58,9 +58,12 @@
 //!
 //! [`classify_local`] replaces the marker with the only question that has an answer: **would
 //! adopting this payload change the document?** Empty local → adopt, nothing to lose; identical →
-//! no prompt, and a `dirty` flag that is provably clean; different → prompt. The marker is still
-//! *written* (Save and both adopt paths keep it current; `resolve_conflict_local` still clears it),
-//! but nothing reads it to make this decision any more.
+//! no prompt, and a `dirty` flag that is provably clean; different → prompt. The marker is **gone**:
+//! T-352 removed the storage, and T-370 removed the eight now-dead writes that outlived it. All that
+//! survives is [`editor_session::purge_legacy_markers`], called once per boot below, which erases
+//! what earlier builds left in users' browsers.
+//!
+//! [`editor_session::purge_legacy_markers`]: crate::editor_session::purge_legacy_markers
 //!
 //! **T-338 — the snapshot cache is per-account, and sign-out destroys the account's copies.**
 //! T-221 scoped the IndexedDB *records* to the signed-in `discord_id`; it did not scope the RAM cache
@@ -153,8 +156,9 @@ pub async fn hydrate_from_server(
     // every boot (`doc` is the very `Rc` `on_load` handed `mission_history::set_ctx`), which is what
     // makes the cross-mission refusal in `restore_snapshot` exact rather than best-effort.
     register_mission_backup(id.clone(), &doc);
-    // T-388 / T-370 step 1 — the adoption-residue purge, hung on the editor BOOT rather than on a
-    // hydrate decision.
+    // T-388 / T-370 — the adoption-residue purge, hung on the editor BOOT rather than on a hydrate
+    // decision. This line is now the ONLY thing that clears the residue: T-370 deleted the eight
+    // dead `mark_adopted` calls that used to carry it, and the shim itself.
     //
     // `tbd-editor-adopted:<missionId>` is pre-T-352 residue under a global (un-account-scoped) key.
     // T-352 could only reach it through `mark_adopted`, and T-388 measured what that costs: three
@@ -162,7 +166,7 @@ pub async fn hydrate_from_server(
     // below (`apply_row`, no adopt), `Local::Diverged` (defers to the conflict modal), and every
     // boot whose `GET /missions/:id` never lands, which is any offline / unauthenticated / 404
     // open. Clearance was therefore EVENTUAL: correct on some later hydrate or Save, absent at
-    // first open.
+    // first open. From here it is guaranteed at first open instead.
     //
     // Three properties of THIS position, and all three are the point:
     //   * **before `is_uuid`** — a `smoke`/`draft` id returns two lines down, and residue does not
@@ -171,10 +175,9 @@ pub async fn hydrate_from_server(
     //     session, which is the case T-388 could not otherwise reach.
     //   * **before every branch** — so no future branch can be added that misses it.
     //
-    // Called directly rather than through `editor_session::mark_adopted`, and that is deliberate:
-    // T-370 deletes the eight dead `mark_adopted` calls (six of them in this file) in a LATER
-    // release, and routing the purge through the same shim would put this line in the blast radius
-    // of that deletion. It is now the one call site that must survive it.
+    // **Do not move this below a branch, a `return`, or the fetch.** Wave 81 put it here precisely
+    // so T-370's deletion could not strand residue in users' localStorage, and that deletion has
+    // now happened — there is no second caller left to heal a boot this line misses.
     crate::editor_session::purge_legacy_markers();
     if !is_uuid(&id) {
         return;
@@ -215,7 +218,6 @@ pub async fn hydrate_from_server(
         // a Save must not round-trip fixture data. A warm/IDB reopen keeps the user's local work.
         if !loaded_from_idb {
             adopt_payload(&doc, "{}", &row, Adopt::Init);
-            crate::editor_session::mark_adopted(&id, semver.as_deref());
             crate::mission_history::set_dirty(false);
         } else {
             apply_row(&doc, &row);
@@ -241,20 +243,19 @@ pub async fn hydrate_from_server(
             // snapshot, because there is nothing to lose.
             Local::Empty => {
                 adopt_payload(&doc, &payload_json, &row, Adopt::Init);
-                crate::editor_session::mark_adopted(&id, semver.as_deref());
                 crate::mission_history::set_dirty(false);
             }
-            // Local IS the server's document. Nothing to choose between, so nothing to ask: re-arm
-            // the marker (this branch is what heals one that went missing) and correct `dirty`.
+            // Local IS the server's document. Nothing to choose between, so nothing to ask —
+            // correcting `dirty` is the whole of this branch's work.
             //
-            // That `set_dirty(false)` is new, and it is earned. T-189 marks an IDB restore dirty
-            // because nothing on this path could prove the restored blob had ever been saved, and
-            // its own comment names the cost: "a save-then-immediately-reopen therefore shows the
-            // dot with a zero delta … the adopted marker records a semver, not a document digest,
-            // so nothing on this path can tell that case apart". A content test is that digest, so
-            // the zero delta is now measured rather than assumed.
+            // That `set_dirty(false)` is earned. T-189 marks an IDB restore dirty because nothing on
+            // this path could prove the restored blob had ever been saved, and its own comment names
+            // the cost: "a save-then-immediately-reopen therefore shows the dot with a zero delta …
+            // the adopted marker records a semver, not a document digest, so nothing on this path can
+            // tell that case apart". A content test is that digest, so the zero delta is now measured
+            // rather than assumed — which is also why the marker this branch used to re-arm is gone
+            // (T-352 emptied it, T-370 removed the write): nothing consults it to get here.
             Local::Matches => {
-                crate::editor_session::mark_adopted(&id, semver.as_deref());
                 crate::mission_history::set_dirty(false);
             }
             // Two different documents — ask. Note this now fires on a case the marker test
@@ -274,7 +275,6 @@ pub async fn hydrate_from_server(
     } else {
         // Empty local → adopt the server payload (replaces the seed). Cold doc: INIT, no snapshot.
         adopt_payload(&doc, &payload_json, &row, Adopt::Init);
-        crate::editor_session::mark_adopted(&id, semver.as_deref());
         crate::mission_history::set_dirty(false);
     }
 }
@@ -307,7 +307,6 @@ pub fn resolve_conflict_server(
         // The payload carries its own map.terrain; the compile drops the title, so leave the
         // existing title untouched (row meta isn't refetched here).
         adopt_payload(&doc, &c.payload_json, &RowMeta::default(), Adopt::Undoable);
-        crate::editor_session::mark_adopted(&id, c.semver.as_deref());
         crate::mission_history::set_dirty(false);
         // Tell the user the door swings both ways — the modal can't (it is gone by the next line),
         // and an undo nobody knows about is not a recovery.
@@ -321,13 +320,17 @@ pub fn resolve_conflict_server(
     conflict.set(None);
 }
 
-/// The "Keep local" resolution (React `resolveConflict('local')`): local knowingly diverges, so
-/// drop the adopted marker and mark dirty. Clears the conflict signal.
+/// The "Keep local" resolution (React `resolveConflict('local')`): local knowingly diverges, so mark
+/// it dirty. Clears the conflict signal.
+///
+/// T-370 — `_mission_id` is now unused. It fed `editor_session::mark_adopted`, which T-352 emptied
+/// and T-370 deleted; dropping the parameter would mean editing the caller in `mission_editor.rs`,
+/// which this slice does not own. Removing it is a safe follow-up for whoever next holds that file —
+/// there is exactly one call site (`mission_editor.rs`, the ConflictDialog's "Keep local" arm).
 pub fn resolve_conflict_local(
-    id: String,
+    _mission_id: String,
     conflict: RwSignal<Option<crate::mission_editor::ConflictInfo>>,
 ) {
-    crate::editor_session::mark_adopted(&id, None);
     crate::mission_history::set_dirty(true);
     conflict.set(None);
 }
@@ -923,9 +926,11 @@ async fn restore_snapshot(mission_id: String, want: Snapshot) -> bool {
     // nothing has touched `doc` yet.
     let displaced = snapshot_local(&doc, &mission_id, want.counterpart());
     *doc.borrow_mut() = Some(fresh);
-    // The local doc no longer derives from the server semver we adopted, so drop the marker or the
-    // next cold boot would silently trust local against the wrong version.
-    crate::editor_session::mark_adopted(&mission_id, None);
+    // The local doc no longer derives from the server semver that was adopted. That used to mean
+    // clearing the `tbd-editor-adopted:<id>` marker here so the next cold boot would not silently
+    // trust local against the wrong version — but T-223 replaced that test with `classify_local`,
+    // which compares the two *documents* and cannot be misled by a stale semver, so there is nothing
+    // left to clear. `set_dirty(true)` below carries the whole of the signal now.
     // Wholesale document swap: rebind glyphs/HUD/docks (`after_local_edit` would be wrong — it
     // rebinds from a doc it assumes was edited in place), then mark dirty and re-arm the persist so
     // the restored document becomes the local record rather than the displaced one.

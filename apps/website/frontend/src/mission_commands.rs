@@ -308,10 +308,11 @@ mod imp {
                 Ok(_) => {
                     status.set(format!("Saved v{semver}"));
                     // T-159.26 — the saved version is now what local derives from: clear the dirty
-                    // flag, adopt the semver (cross-tab conflict skip), and update the current-semver
-                    // signal so a later Export/adopt uses it.
+                    // flag and update the current-semver signal so a later Export/adopt uses it.
+                    // (T-370 removed the `editor_session::mark_adopted` call that sat here: T-352
+                    // had already emptied it, and T-223 replaced the semver marker it once wrote
+                    // with the content test in `mission_hydrate::classify_local`.)
                     crate::mission_history::set_dirty(false);
-                    crate::editor_session::mark_adopted(&mission_id, Some(&semver));
                     // T-191 fix — expire the conflict backup pair. This 201 is the one moment those
                     // whole-document IDB records stop being anybody's last copy, and nothing else ever
                     // deleted them: they accumulated one doc per mission ever conflicted, forever, while
