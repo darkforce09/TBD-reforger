@@ -136,7 +136,9 @@ the standard makes them uniform. The schema definition:
 }
 ```
 
-**Go model** — already well-documented ([`internal/models/registry.go:17`](../../apps/website/internal/models/registry.go)); add the `@contract` tag:
+**Go model** — `internal/models/registry.go`, **deleted at T-145**. The tag it carried now sits on
+`RegistryItem` in [`apps/website/api/src/models/registry.rs`](../../apps/website/api/src/models/registry.rs).
+The historical Go form:
 
 ```go
 // RegistryItem is one placeable/equipable engine item in a modpack's flat catalog
@@ -149,7 +151,9 @@ type RegistryItem struct {
 }
 ```
 
-**Go handler** — already names the route in prose ([`internal/handlers/registry.go:14`](../../apps/website/internal/handlers/registry.go)); make it the `@route` tag:
+**Go handler** — `internal/handlers/registry.go`, **deleted at T-145**. The `@route` tag now sits on
+`list_registry` in [`apps/website/api/src/handlers/registry.rs`](../../apps/website/api/src/handlers/registry.rs).
+The historical Go form:
 
 ```go
 // ListRegistry returns a modpack's flat Virtual Arsenal catalog.
@@ -159,7 +163,9 @@ type RegistryItem struct {
 func (h *Handler) ListRegistry(c *gin.Context) { ... }
 ```
 
-**TS type** — today a `//` note ([`types/models/registry.ts:1`](../../apps/website/frontend/src/types/models/registry.ts)); promote to TSDoc with tags:
+**TS type** — `frontend/src/types/models/registry.ts`, **deleted at T-159.29.3**. Its successor is
+`RegistryItem` in [`apps/website/frontend/src/dto.rs`](../../apps/website/frontend/src/dto.rs).
+The historical TS form:
 
 ```ts
 /**
@@ -179,8 +185,9 @@ export interface RegistryItem { resource_name: string; /* ... */ }
 class TBD_RegistryItemsExportPlugin { ... }
 ```
 
-The same `@contract registry-items.schema.json` string now links all four artifacts; the same
-`@route GET /api/v1/registry` links the Go and TS ends. (For a file-based contract with no HTTP
+The same `@contract registry-items.schema.json` string links every projection of the contract; the
+same `@route GET /api/v1/registry` links the server and client ends — the Go and TS pair above
+historically, `list_registry` and `dto.rs` today. (For a file-based contract with no HTTP
 route — e.g. `loadout-export`, copied as `$profile:TBD_LoadoutTest.json` — use `@contract` alone;
 omit `@route`.)
 
@@ -194,8 +201,10 @@ adds the cross-boundary tags.
 **REQUIRED**
 
 1. Every exported `func`, method, type, and `const`/`var` has a doc comment, and it **starts with
-   the identifier name** (Godoc convention). Gold standard: [`internal/models/mission.go:77`](../../apps/website/internal/models/mission.go),
-   [`internal/handlers/handlers.go:1`](../../apps/website/internal/handlers/handlers.go).
+   the identifier name** (Godoc convention). The gold standards this rule was written against —
+   `internal/models/mission.go` and `internal/handlers/handlers.go` — were **deleted at T-145**.
+   Their rustdoc successors are `Mission` in [`apps/website/api/src/models/mission.rs`](../../apps/website/api/src/models/mission.rs)
+   and the handlers under [`apps/website/api/src/handlers/`](../../apps/website/api/src/handlers).
 2. Every package has a `// Package <name> …` doc on exactly one file.
 3. Struct fields carry a **trailing intent comment** where the name is not self-evident
    (e.g. units, nil-meaning, enum domain). See `RegistryItem` fields above.
@@ -219,9 +228,9 @@ The feature code is moderately documented; the **contract layer is the gap** and
 **REQUIRED**
 
 1. Every exported type/interface/hook/component in the contract layer has a **`/** … */` TSDoc
-   block** (not `//`). Bare interfaces such as [`types/models/user.ts`](../../apps/website/frontend/src/types/models/user.ts)
-   and most of [`types/api/index.ts`](../../apps/website/frontend/src/types/api/index.ts) are
-   non-conforming and fixed on next touch.
+   block** (not `//`). The non-conforming examples this rule named — bare interfaces in
+   `types/models/user.ts` and most of `types/api/index.ts` — were **deleted at T-159.29.3** with
+   the React app, so nothing in the tree is held to this rule today.
 2. TSDoc tags where applicable: `@param`, `@returns`, `@remarks`, `@see`.
 3. Cross-boundary tags from §3: `@model` on any type mirroring a Go model; `@contract` on any
    type mirroring a schema def; `@route` on the query/mutation hook that calls an endpoint.
@@ -246,7 +255,7 @@ The mod has a strong house style already; this section codifies it as policy.
 1. `//!` single-line banner on **every class** and **every non-trivial method**.
 2. `/** … */` **file-header block** is mandatory on every script under `Scripts/Game/TBD/Backend/`
    and `Scripts/Game/TBD/Gamemode/` (the cross-boundary + lifecycle-heavy code). Gold standard:
-   [`TBD_LoadoutEquipComponent.c:1`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c).
+   the header block atop [`TBD_LoadoutEquipComponent.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c).
 3. Every `[Attribute(...)]` and `[ComponentEditorProps(...)]` carries a human `desc:` /
    `description:` string.
 4. **DTO structs** parsed from JSON carry a `@contract` header **and a per-field doc comment** on
@@ -279,7 +288,8 @@ mandatory**.
 4. Every server gate — `if (RplSession.Mode() == RplMode.Client) return;` — carries a
    **`// Authority only — <reason>`** comment.
 
-**Annotated example** (formalizing the pattern in [`TBD_MissionBrowser.c:79`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_MissionBrowser.c)):
+**Annotated example** (formalizing the pattern on `TBD_RpcAsk_MissionList` /
+`TBD_RpcDo_ReceiveMissionList` in [`TBD_MissionBrowser.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_MissionBrowser.c)):
 
 ```cpp
 //! @authority owner
@@ -417,13 +427,35 @@ Ruthless means enforced. Primary gates live in [`.github/workflows/ci.yml`](../.
 | Gate | Tool | Scope |
 |------|------|-------|
 | Rust API / SPA | `cargo fmt` + `clippy -D warnings` | `website-api` + `website-frontend` (`ci.yml` jobs) |
-| Cross-boundary tags | citation verifier (xtask / schema CI) | `@contract`/`@route` resolve; Enfusion `@contract` |
+| Cross-boundary tags | `make verify-citations` (`xtask schema citations`) | `@contract` in `.c/.go/.js/.mjs/.rs/.ts/.tsx` under `apps/`, `crates/`, `packages/` — **code only, never `docs/`** |
+| Route tags | `make verify-coding-standards` (route-tag check) | `@route` against registered routes in `apps/website/api/src/app.rs` |
 | Enfusion DTO conformance | golden fixture + schema validate | each Backend `@contract` DTO has a validating fixture |
 
 > **Historical (retired T-145/T-159):** golangci `exported`, eslint TSDoc — replaced by clippy + rustdoc.
 
 The citation verifier is the keystone: it turns `@contract` from a comment into a **checked link**,
 so a renamed schema definition fails CI instead of silently parsing to empty.
+
+### 10.1 Prose citations are a convention, not a gate
+
+`verify-citations` reads **code**. It does not read `docs/`, and that is deliberate (T-611).
+Scanning markdown was measured: 9 prose citations, 5 reported dangling, **all 5 false** — an
+inline `` `@contract registry-items.schema.json#/$defs/item`. `` loses to the closing backtick
+and the trailing punctuation. A markdown-aware matcher would still be unable to distinguish
+§3.1's grammar template from a live citation, because this document is mostly examples of it.
+
+Prose is therefore held by convention:
+
+1. **Cite stable symbol names, never line numbers.** `TBD_SpawnManager.ClaimSlot` survives an
+   edit above it; `TBD_SpawnManager.c:2094` does not. Line numbers in prose are the largest
+   single source of doc rot in this repo (T-610 found ~19 in one runbook).
+2. Cite a repo-relative **file path without a line number** when a symbol will not do.
+3. `@contract` written in prose is **illustrative**, not a checked link. Checked links live in
+   code; a doc that needs one should point at the code that carries it.
+4. A prose citation that genuinely must be machine-checked belongs either in code as a comment
+   tag, or in an index gate of its own (cf. `make verify-oracle` for `@idx` in `docs/mod`).
+
+The gate prints its own scope on every run. Trust that line over this section if they disagree.
 
 ---
 
