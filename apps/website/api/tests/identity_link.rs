@@ -197,6 +197,89 @@ fn t400_actor_is_not_shared_dev_login_user() {
     );
 }
 
+/// Extract the string literal from a `const <name>: &str = "…";` line of `src`.
+///
+/// Deliberately narrow, and deliberately `Option`-returning: the caller turns "not found" into
+/// a loud failure. Returning `""` on a miss would make every `assert_ne!` in
+/// [`t518_fixtures_do_not_collide_with_the_live_telemetry_player`] trivially pass — which is
+/// the exact shape of the defect T-518 is about, a check reporting success over an input it
+/// never actually examined.
+fn parse_str_const(src: &str, name: &str) -> Option<String> {
+    let needle = format!("const {name}:");
+    let line = src.lines().find(|l| l.trim_start().starts_with(&needle))?;
+    let (_, after_eq) = line.split_once('=')?;
+    let (value, _) = after_eq.trim_start().strip_prefix('"')?.split_once('"')?;
+    Some(value.to_string())
+}
+
+/// T-518 — bind the T-517 collision guard to telemetry's **live** fixture instead of to a
+/// hard-coded copy of the value it happened to hold in wave 45.
+///
+/// [`t400_actor_is_not_shared_dev_login_user`] above denies `000000000000400003`. That is a
+/// denylist of one historical id: it REDs if `PAD_ACTOR` moves back onto 400003, and stays
+/// **green** if telemetry's `PLAYER_DISCORD` moves forward onto `PAD_ACTOR` (`…400013`). Same
+/// single collision, approached from the other side — and the side nothing was watching. The
+/// original T-517 failure (two suites sharing one `discord_id`, so T-351's padded kills pile
+/// onto `telemetry_ingest_closes_the_loop`'s leaderboard row) could return one-sided.
+///
+/// The cure is to *read* the other suite's fixture rather than remember it. `include_str!`
+/// pulls `tests/telemetry.rs` in at compile time, so this pin cannot drift from the value
+/// telemetry actually uses — and it fails loudly if it cannot find that value at all.
+///
+/// Arma ids are checked on the same principle: `users.arma_id` is UNIQUE (`idx_users_arma_id`),
+/// so a shared one is a hard insert failure in whichever suite loses the race — the same
+/// cross-suite coupling, just noisier when it lands.
+///
+/// RED: set `PLAYER_DISCORD` in `tests/telemetry.rs` to `000000000000400013` and this test
+/// fails, while the hard-coded assertion in `t400_actor_is_not_shared_dev_login_user` stays
+/// green. RED (parser): turn that `const` into a `static` and the `expect` below fires, so a
+/// pin that has stopped reading anything cannot pass quietly.
+#[test]
+fn t518_fixtures_do_not_collide_with_the_live_telemetry_player() {
+    let telemetry_src = include_str!("telemetry.rs");
+    let player_discord = parse_str_const(telemetry_src, "PLAYER_DISCORD").expect(
+        "could not find `const PLAYER_DISCORD: &str = \"…\";` in tests/telemetry.rs — this pin \
+         reads the live fixture instead of remembering it, so a rename must fail here loudly \
+         rather than silently guard nothing (T-518)",
+    );
+    let player_arma = parse_str_const(telemetry_src, "PLAYER_ARMA")
+        .expect("could not find `const PLAYER_ARMA: &str = \"…\";` in tests/telemetry.rs (T-518)");
+    assert!(
+        player_discord.len() >= 17 && player_discord.chars().all(|c| c.is_ascii_digit()),
+        "parsed PLAYER_DISCORD `{player_discord}` is not a snowflake — the parse is reading the \
+         wrong thing, so the assertions below would be guarding a value telemetry never uses"
+    );
+    assert!(
+        !player_arma.is_empty(),
+        "parsed PLAYER_ARMA is empty — same problem"
+    );
+
+    // THE TICKET: the collision this file's setup can cause, in the direction the hard-coded
+    // denylist cannot see.
+    for (label, discord) in [("PAD_ACTOR", PAD_ACTOR), ("ACTOR", ACTOR), ("USER2", USER2)] {
+        assert_ne!(
+            discord, player_discord,
+            "{label} must not equal telemetry's live PLAYER_DISCORD ({player_discord}) — one \
+             discord_id shared across both suites piles T-351's padded kills onto \
+             telemetry_ingest_closes_the_loop's leaderboard row (T-517 / T-518)"
+        );
+    }
+    for (label, arma) in [
+        ("ACTOR_ARMA", ACTOR_ARMA),
+        ("PAD_ARMA", PAD_ARMA),
+        ("PAD_ARMA_PADDED", PAD_ARMA_PADDED.trim()),
+        ("SEED_ARMA_ACTOR", SEED_ARMA_ACTOR),
+        ("SEED_ARMA_USER2", SEED_ARMA_USER2),
+        ("SEED_ARMA_PAD", SEED_ARMA_PAD),
+    ] {
+        assert_ne!(
+            arma, player_arma,
+            "{label} collides with telemetry's live PLAYER_ARMA ({player_arma}) — arma_id is \
+             UNIQUE (idx_users_arma_id), so this is a cross-suite insert failure (T-518)"
+        );
+    }
+}
+
 #[tokio::test]
 async fn arma_link_flow() {
     let _serial = DB_LOCK.lock().await;

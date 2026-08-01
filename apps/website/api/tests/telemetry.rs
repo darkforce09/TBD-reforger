@@ -2139,3 +2139,736 @@ async fn leaderboard_mv_does_not_invent_deaths_from_null() {
 
     clean(pool.clone()).await;
 }
+
+/// T-493 — the leaderboard must not collapse "nobody ever measured deaths" into "measured,
+/// and it was none". The **installed** view is ratcheted here too, not just the arithmetic.
+///
+/// [`leaderboard_mv_does_not_invent_deaths_from_null`] above is the T-397 pin, and it uses a
+/// *mixed* fixture: one counters-absent row beside a measured `17/3`. That is precisely why it
+/// cannot see this. `SUM` ignores NULL by definition, so `sum(COALESCE(deaths, 0))` and
+/// `COALESCE(sum(deaths), 0)` are **the same number on every fixture** — `0 + 3 = 3` — and
+/// poisoning the view that way leaves the pin green. The blind spot was never the sum. It is
+/// `count(deaths) FILTER (WHERE deaths IS NOT NULL)`, the one expression in `0014` that can
+/// tell an unmeasured row from a measured zero.
+///
+/// So this pins the pair that differs in nothing else:
+///
+/// | player | rows                    | MV `deaths` | MV `kd_ratio`             |
+/// |--------|-------------------------|-------------|---------------------------|
+/// | A      | 2 × counters absent     | `0`         | **NULL** — never measured |
+/// | B      | 1 × `kills=4, deaths=0` | `0`         | **4** — measured as none  |
+///
+/// Both read `deaths = 0`. Only `kd_ratio` separates them, and a leaderboard that prints
+/// "0 deaths, KD 0.00" for player A has invented a scoreline nobody reported — the T-397
+/// failure mode wearing the aggregate's clothes.
+///
+/// The second half reads the **live** view definition rather than the migration text. `0014`
+/// is applied and checksummed, so it can only be superseded, never edited; what a later
+/// migration actually left in the database is therefore the thing that has to be true. That is
+/// what makes "`COALESCE` moved inside the aggregate" a failing test instead of a code review.
+///
+/// RED — **verified**: rewrite every `deaths` reference in `0014`'s aggregate as
+/// `COALESCE(deaths, 0)` (the poisoning the ticket names). The guard then reads
+/// `count(COALESCE(deaths, 0)) FILTER (WHERE COALESCE(deaths, 0) IS NOT NULL)`, which is 2 for
+/// player A rather than 0, so it stops firing and `kd_ratio` falls through to
+/// `COALESCE(sum(kills), 0)` = `Some(0.0)`. This test fails; the sibling
+/// `leaderboard_mv_does_not_invent_deaths_from_null` **passes** under the same poisoning, which
+/// is the blind spot restated as an experiment.
+///
+/// Note what does *not* RED, because it is the trap: deleting the guard line alone leaves
+/// `sum(deaths)` NULL for an all-unmeasured player, so `sum(deaths) = 0` is NULL and the ELSE
+/// branch divides by NULL — `kd_ratio` is NULL again and this test would still pass. The guard
+/// only becomes load-bearing once something has coalesced the NULLs away, which is exactly the
+/// pairing `0014` was written to hold together.
+#[tokio::test]
+async fn leaderboard_kd_is_null_when_deaths_were_never_measured() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    // Player A — every row unmeasured. Player B — one row that really did measure zero deaths.
+    const ARMA_A: &str = "t493-arma-never-measured";
+    const DISCORD_A: &str = "000000000000493101";
+    const ARMA_B: &str = "t493-arma-measured-zero";
+    const DISCORD_B: &str = "000000000000493102";
+    const SRC_A1: &str = "m-t493-never-1";
+    const SRC_A2: &str = "m-t493-never-2";
+    const SRC_B: &str = "m-t493-zero";
+    const EV: &str = "e-t493";
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T493a', 't493a', '', $2, '[TBD] T493a', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(DISCORD_A)
+    .bind(ARMA_A)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T493b', 't493b', '', $2, '[TBD] T493b', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(DISCORD_B)
+    .bind(ARMA_B)
+    .execute(&pool)
+    .await
+    .unwrap();
+
+    // Same reasoning as the sibling T-397 tests: `matches` does not cascade to
+    // `match_player_stats`, and the view SUMs every row for a discord_id, so a second run
+    // against a surviving database would double-count.
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = ANY($1)")
+            .bind(vec![ARMA_A.to_string(), ARMA_B.to_string()])
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = ANY($1)")
+            .bind(vec![
+                SRC_A1.to_string(),
+                SRC_A2.to_string(),
+                SRC_B.to_string(),
+            ])
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    let post = |body: String| {
+        let app = app.clone();
+        async move {
+            call(
+                &app,
+                "POST",
+                "/api/v1/ingest/match-results",
+                None,
+                Some(SVC),
+                Some(&body),
+            )
+            .await
+        }
+    };
+
+    // Player A: two identity-only reports — the mod path, which claims nothing about the
+    // scoreline at all.
+    for src in [SRC_A1, SRC_A2] {
+        let (st, r) = post(format!(
+            r#"{{"match":{{"source_match_id":"{src}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA_A}","role_played":"SL","source_event_id":"{EV}"}}]}}"#
+        ))
+        .await;
+        assert_eq!(st, StatusCode::OK, "player A {src}: {r}");
+    }
+    // Player B: one full report whose measured deaths really is zero.
+    let (st, r) = post(format!(
+        r#"{{"match":{{"source_match_id":"{SRC_B}","outcome":"success","winning_faction":"USA"}},"players":[{{"arma_id":"{ARMA_B}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":4,"deaths":0,"team_kills":0,"longest_kill_m":120,"vehicles_destroyed":0,"is_command":false,"command_win":null}}}}]}}"#
+    ))
+    .await;
+    assert_eq!(st, StatusCode::OK, "player B: {r}");
+
+    // The fixture *is* the argument, so prove the fixture is the one claimed. Without this a
+    // mis-seeded run could satisfy every assertion below for the wrong reason.
+    let a_measured: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM match_player_stats WHERE arma_id = $1 AND deaths IS NOT NULL",
+    )
+    .bind(ARMA_A)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        a_measured, 0,
+        "player A must have no measured deaths reading"
+    );
+    let b_zero: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM match_player_stats WHERE arma_id = $1 AND deaths = 0",
+    )
+    .bind(ARMA_B)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(b_zero, 1, "player B must have exactly one measured zero");
+
+    sqlx::query("REFRESH MATERIALIZED VIEW CONCURRENTLY leaderboard_totals")
+        .execute(&pool)
+        .await
+        .ok();
+    let row = |pool: PgPool, discord: &'static str| async move {
+        sqlx::query_as::<_, (i64, i64, Option<f64>, i64)>(
+            "SELECT kills::int8, deaths::int8, kd_ratio::float8, missions_played::int8 \
+             FROM leaderboard_totals WHERE discord_id = $1",
+        )
+        .bind(discord)
+        .fetch_one(&pool)
+        .await
+        .unwrap()
+    };
+    let a = row(pool.clone(), DISCORD_A).await;
+    let b = row(pool.clone(), DISCORD_B).await;
+
+    // THE TICKET. Both players report `deaths = 0`; only `kd_ratio` says which of the two is a
+    // scoreline somebody actually measured.
+    assert_eq!(
+        a.1, 0,
+        "player A sums to 0 deaths — NULLs contribute nothing"
+    );
+    assert_eq!(b.1, 0, "player B measured 0 deaths");
+    assert_eq!(
+        a.2, None,
+        "THE TICKET / RED: an all-unmeasured row set must leave kd_ratio NULL, not 0 — got {:?}. \
+         With the FILTER guard removed this is Some(0.0), which reads on the leaderboard as a \
+         scoreline nobody reported.",
+        a.2
+    );
+    let b_kd = b.2.expect(
+        "a measured zero-deaths row set IS a scoreline — kd_ratio must not be NULL here, or the \
+         view has collapsed the two cases the other way round",
+    );
+    assert!(
+        (b_kd - 4.0).abs() < 1e-9,
+        "measured 0 deaths → kd_ratio falls back to total kills (4), got {b_kd}"
+    );
+    assert_eq!(a.0, 0, "player A never claimed a kill either");
+    assert_eq!(a.3, 2, "both of player A's matches still count as played");
+
+    // ---- ratchet the INSTALLED view, not the migration text ----
+    let viewdef: String =
+        sqlx::query_scalar("SELECT pg_get_viewdef('public.leaderboard_totals'::regclass, true)")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    // A ratchet that silently matched nothing would be the exact defect this slice exists to
+    // remove, so prove the definition was read before asserting anything about it.
+    assert!(
+        viewdef.len() > 200 && viewdef.contains("kd_ratio"),
+        "pg_get_viewdef returned nothing recognisable — the two assertions below would pass \
+         over an input they never examined: {viewdef}"
+    );
+    let norm = viewdef.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        norm.contains("deaths IS NOT NULL"),
+        "the installed leaderboard_totals must keep its FILTER (WHERE deaths IS NOT NULL) \
+         guard — it is the only expression that separates unmeasured from zero:\n{viewdef}"
+    );
+    let lowered = norm.to_lowercase();
+    assert!(
+        !lowered.contains("coalesce(deaths") && !lowered.contains("coalesce(s.deaths"),
+        "COALESCE must not be applied to the `deaths` column inside the aggregate — that is what \
+         turns 'not measured' into a measured zero (T-397 / T-493):\n{viewdef}"
+    );
+
+    clean(pool.clone()).await;
+}
+
+/// T-501 — a community terrain name degrades the match report; it does not reject it.
+///
+/// `parse_terrain_opt` soft-fails unknown names to `None` (T-402) because the mission schema
+/// constrains terrain to `^[a-z][a-z0-9_]*$`, so community missions legitimately carry names
+/// outside `everon|arland|custom`; 400-ing a whole report over one of them was the "production
+/// ingest 400s" failure mode for those senders. That was pinned only by a unit test on the
+/// helper, which cannot see whether the route wired it up.
+///
+/// A soft-fail has **two** halves and both have to hold: the request has to succeed, *and* the
+/// degradation has to be what actually landed. Asserting the 200 alone would pass over a
+/// handler that returns 200 and stores `everon` — a guess dressed as a reading.
+///
+/// RED (half 1): make `upsert_match` reject an unknown terrain instead of soft-failing (the
+/// pre-T-402 behaviour) and the first POST is a 400 — this test fails.
+/// RED (half 2): make `parse_terrain_opt` fall back to `Some(TerrainType::Everon)` instead of
+/// `None`; every POST still returns 200 while `matches.terrain` reads `everon` — this test
+/// fails on the database assertion, which is the assertion a status code cannot make.
+#[tokio::test]
+async fn community_terrain_soft_fails_to_null_without_dropping_the_report() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA: &str = "t501-arma-terrain";
+    const DISCORD: &str = "000000000000501001";
+    const SRC_A: &str = "m-t501-kolguyev";
+    const SRC_B: &str = "m-t501-anizay";
+    const EV: &str = "e-t501";
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T501', 't501', '', $2, '[TBD] T501', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(DISCORD)
+    .bind(ARMA)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = ANY($1)")
+            .bind(vec![SRC_A.to_string(), SRC_B.to_string()])
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    let post = |body: String| {
+        let app = app.clone();
+        async move {
+            call(
+                &app,
+                "POST",
+                "/api/v1/ingest/match-results",
+                None,
+                Some(SVC),
+                Some(&body),
+            )
+            .await
+        }
+    };
+    // Honest in every respect except that the terrain is one this platform has never heard of.
+    let body = |src: &str, terrain: &str| {
+        format!(
+            r#"{{"match":{{"source_match_id":"{src}","terrain":"{terrain}","outcome":"success","winning_faction":"USA","ended_at":"2026-07-26T20:14:00Z"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":7,"deaths":2,"team_kills":0,"longest_kill_m":310,"vehicles_destroyed":1,"is_command":false,"command_win":null}}}}]}}"#
+        )
+    };
+
+    // (1) `kolguyev` — a real community terrain. The report lands, minus the terrain.
+    let (st, first) = post(body(SRC_A, "kolguyev")).await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "a community terrain must not 400 the whole report: {first}"
+    );
+    assert_eq!(first["players"], 1);
+    assert_eq!(
+        first["linked"], 1,
+        "the player is linked, so the row counts"
+    );
+    assert_eq!(first["unlinked"], 0);
+
+    let stored: (Option<String>, String, Option<String>, bool) = sqlx::query_as(
+        "SELECT terrain::text, outcome::text, winning_faction, ended_at IS NOT NULL \
+         FROM matches WHERE source_match_id = $1",
+    )
+    .bind(SRC_A)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        stored.0, None,
+        "THE TICKET: an unknown terrain stores NULL — it must never be guessed onto a known pin"
+    );
+    // The degrade must be *only* the terrain. If anything else went missing, "soft-fail" would
+    // just be a quieter way to lose the report.
+    assert_eq!(stored.1, "success", "the outcome still landed");
+    assert_eq!(stored.2.as_deref(), Some("USA"), "the winner still landed");
+    assert!(stored.3, "ended_at still landed");
+    let counters: (Option<i64>, Option<i64>) = sqlx::query_as(
+        "SELECT s.kills, s.deaths FROM match_player_stats s \
+         INNER JOIN matches m ON m.id = s.match_id \
+         WHERE s.arma_id = $1 AND m.source_match_id = $2",
+    )
+    .bind(ARMA)
+    .bind(SRC_A)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        counters,
+        (Some(7), Some(2)),
+        "the scoreline landed in full — degraded means the terrain, not the match"
+    );
+
+    // (2) A second community name, so the first is not a one-off in the enum's neighbourhood.
+    let (st, second) = post(body(SRC_B, "anizay")).await;
+    assert_eq!(st, StatusCode::OK, "second community terrain: {second}");
+    let t_b: Option<String> =
+        sqlx::query_scalar("SELECT terrain::text FROM matches WHERE source_match_id = $1")
+            .bind(SRC_B)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(t_b, None, "`anizay` soft-fails to NULL as well");
+
+    // (3) Control — same route, same match, a *known* pin. Without it, both assertions above
+    // are equally satisfied by a handler that never writes this column at all.
+    let (st, third) = post(body(SRC_A, "everon")).await;
+    assert_eq!(st, StatusCode::OK, "known terrain: {third}");
+    assert_eq!(
+        third["match_id"], first["match_id"],
+        "a corrected re-POST is the same match, not a second row"
+    );
+    let t_a: Option<String> =
+        sqlx::query_scalar("SELECT terrain::text FROM matches WHERE source_match_id = $1")
+            .bind(SRC_A)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(
+        t_a.as_deref(),
+        Some("everon"),
+        "a known terrain still writes through — the NULLs above are the soft-fail, not a \
+         handler that cannot write this column"
+    );
+
+    clean(pool.clone()).await;
+}
+
+/// T-533 — a malformed `event_id` / `mission_id` is a 400 **through the route**, and nothing
+/// is written.
+///
+/// `parse_uuid_opt_strict` is T-355: junk used to become `None` through the soft parser, the
+/// match stored with no event or mission, the attendance UPDATE matched nothing, and the game
+/// server got a **200** for a report that had silently lost its attribution. The helper's unit
+/// tests and the Class-R source pin both hold, but neither can answer the only question a game
+/// server actually asks — what does the endpoint do. This POSTs the junk.
+///
+/// The status code is the smaller half. The larger half is that the transaction did not
+/// half-land: a 400 returned over a `matches` row that was already inserted is the same silent
+/// loss in a different costume.
+///
+/// RED: swap `parse_uuid_opt_strict` back to `parse_uuid_opt` at both `upsert_match` call
+/// sites (the T-355 pre-fix) and every junk POST below returns 200 with a match row written —
+/// this test fails on the first status assertion and again on "nothing written".
+#[tokio::test]
+async fn junk_event_or_mission_id_is_a_400_that_writes_nothing() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA: &str = "t533-arma-junk-ids";
+    const DISCORD: &str = "000000000000533001";
+    const SRC: &str = "m-t533-junk";
+    const EV: &str = "e-t533";
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T533', 't533', '', $2, '[TBD] T533', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(DISCORD)
+    .bind(ARMA)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = $1")
+            .bind(SRC)
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    let post = |body: String| {
+        let app = app.clone();
+        async move {
+            call(
+                &app,
+                "POST",
+                "/api/v1/ingest/match-results",
+                None,
+                Some(SVC),
+                Some(&body),
+            )
+            .await
+        }
+    };
+    // `ids` is spliced into the match object, so each case differs only in the two pointers.
+    let body = |ids: &str| {
+        format!(
+            r#"{{"match":{{"source_match_id":"{SRC}","outcome":"success","winning_faction":"USA"{ids}}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":2,"deaths":1,"team_kills":0,"longest_kill_m":40,"vehicles_destroyed":0,"is_command":false,"command_win":null}}}}]}}"#
+        )
+    };
+
+    // Three shapes of junk, and the error must name **which** field — a game server's only
+    // channel back is this string.
+    for (ids, field) in [
+        (r#","event_id":"not-a-uuid""#, "event_id"),
+        (r#","mission_id":"12345""#, "mission_id"),
+        // A truncated uuid: the shape a sender produces by slicing a real id.
+        (
+            r#","event_id":"9f0f4c6e-1d3a-4e2b-8c77-2a5b6d4e90""#,
+            "event_id",
+        ),
+    ] {
+        let (st, r) = post(body(ids)).await;
+        assert_eq!(st, StatusCode::BAD_REQUEST, "junk {field} ({ids}): {r}");
+        assert_eq!(
+            r["error"],
+            format!("invalid {field}"),
+            "the 400 must name the field the sender has to fix: {r}"
+        );
+    }
+
+    // Nothing above wrote anything — not a match, not a stat row.
+    let matches: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM matches WHERE source_match_id = $1")
+            .bind(SRC)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(matches, 0, "a rejected pointer must not mint a match row");
+    let stats: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(stats, 0, "no stat row written either");
+
+    // Control — blank is "omit", not junk (`parse_uuid_opt_strict` returns `Ok(None)`), so the
+    // very same body shape must still be a 200. Without this the assertions above are equally
+    // satisfied by an endpoint that 400s everything.
+    let (st, ok) = post(body(r#","event_id":"","mission_id":"   ""#)).await;
+    assert_eq!(st, StatusCode::OK, "blank ids are omit, not junk: {ok}");
+    // `fetch_all` rather than a count + aggregate: this Postgres has no `min(uuid)`, and the
+    // whole-row form asserts "exactly one row, both pointers unset" in one comparison anyway.
+    let landed: Vec<(Option<Uuid>, Option<Uuid>)> =
+        sqlx::query_as("SELECT event_id, mission_id FROM matches WHERE source_match_id = $1")
+            .bind(SRC)
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+    assert_eq!(
+        landed,
+        vec![(None, None)],
+        "exactly one match row, both pointers unset"
+    );
+
+    clean(pool.clone()).await;
+}
+
+/// T-540 — re-pointing a match at a different event retracts the attendance it granted, and
+/// only when no other match still justifies it.
+///
+/// T-369 made EV1→EV2 reachable, and the attendance SET marked EV2 without ever undoing EV1:
+/// `attendance_rate` inflated to 100% off two past registrations both reading `attended`.
+/// T-384 made the write reversible by attributing through live match rows, because
+/// `event_registrations` still carries no `match_id`. Coverage was a Class-R source pin whose
+/// own comment cited an integration test in this file — one that did not exist.
+///
+/// Both halves are asserted, because the guard is the hard half:
+///
+/// 1. **retract** — once SRC1 has moved EV1→EV2 and nothing else points at EV1, the EV1
+///    registration goes back to `registered`.
+/// 2. **`NOT EXISTS` guard** — while SRC2 still points at EV1 carrying this player's stat row,
+///    the EV1 registration must stay `attended`. A retract firing here would strip attendance
+///    off an operation the player really did play.
+///
+/// `registered` (not `waitlisted`) is the restore target: it is the state attendance is
+/// granted *from*, so it is the state undoing it returns to.
+///
+/// RED (half 1): delete the `if let Some((old_event, old_mission)) = retract_from` block in
+/// `ingest_match_results` and step 4 leaves EV1 `attended` — this test fails.
+/// RED (half 2): delete the `AND NOT EXISTS (…)` clause from that same UPDATE and step 3
+/// retracts EV1 early, while SRC2 still justifies it — this test fails.
+#[tokio::test]
+async fn re_pointing_a_match_retracts_prior_attendance_only_when_unjustified() {
+    let Some((app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    const ARMA: &str = "t540-arma-repoint";
+    const DISCORD: &str = "000000000000540001";
+    const SRC1: &str = "m-t540-one";
+    const SRC2: &str = "m-t540-two";
+    const EV: &str = "e-t540";
+
+    sqlx::query(
+        "INSERT INTO users (discord_id, username, discord_handle, avatar_url, arma_id, arma_character, role, is_banned, ban_reason, created_at, updated_at) \
+         VALUES ($1, 'T540', 't540', '', $2, '[TBD] T540', 'enlisted', false, '', now(), now()) \
+         ON CONFLICT (discord_id) DO UPDATE SET arma_id = EXCLUDED.arma_id",
+    )
+    .bind(DISCORD)
+    .bind(ARMA)
+    .execute(&pool)
+    .await
+    .unwrap();
+    let clean = |pool: PgPool| async move {
+        sqlx::query("DELETE FROM match_player_stats WHERE arma_id = $1")
+            .bind(ARMA)
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM matches WHERE source_match_id = ANY($1)")
+            .bind(vec![SRC1.to_string(), SRC2.to_string()])
+            .execute(&pool)
+            .await
+            .unwrap();
+        sqlx::query("DELETE FROM event_registrations WHERE discord_id = $1")
+            .bind(DISCORD)
+            .execute(&pool)
+            .await
+            .unwrap();
+    };
+    clean(pool.clone()).await;
+
+    // One mission played under two different events — the shape a re-point corrects. The pair
+    // `(event_id, mission_id)` is what `event_missions` is unique on and what both the SET and
+    // the retract key off, so moving only `event_id` is the minimal real move.
+    let mission_id: Uuid = sqlx::query_scalar(
+        "INSERT INTO missions (title, author_id, terrain, game_mode, max_players, status, created_at, updated_at) \
+         VALUES ('T540 Played', $1, 'everon', 'pve_coop', 32, 'live', now(), now()) RETURNING id",
+    )
+    .bind(DISCORD)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let event_1: Uuid = sqlx::query_scalar(
+        "INSERT INTO events (name_override, start_time, status, created_by, created_at, updated_at) \
+         VALUES ('T540 First Op', now() - interval '3 hours', 'open', $1, now(), now()) RETURNING id",
+    )
+    .bind(DISCORD)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let event_2: Uuid = sqlx::query_scalar(
+        "INSERT INTO events (name_override, start_time, status, created_by, created_at, updated_at) \
+         VALUES ('T540 Second Op', now() - interval '2 hours', 'open', $1, now(), now()) RETURNING id",
+    )
+    .bind(DISCORD)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let mut ems = Vec::new();
+    for event in [event_1, event_2] {
+        let em: Uuid = sqlx::query_scalar(
+            "INSERT INTO event_missions (event_id, mission_id, start_time, created_at, updated_at) \
+             VALUES ($1, $2, now() - interval '2 hours', now(), now()) RETURNING id",
+        )
+        .bind(event)
+        .bind(mission_id)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "INSERT INTO event_registrations (event_mission_id, discord_id, state) \
+             VALUES ($1, $2, 'registered')",
+        )
+        .bind(em)
+        .bind(DISCORD)
+        .execute(&pool)
+        .await
+        .unwrap();
+        ems.push(em);
+    }
+    let (em_1, em_2) = (ems[0], ems[1]);
+
+    let state = |pool: PgPool, em: Uuid| async move {
+        sqlx::query_scalar::<_, String>(
+            "SELECT state::text FROM event_registrations \
+             WHERE event_mission_id = $1 AND discord_id = $2",
+        )
+        .bind(em)
+        .bind(DISCORD)
+        .fetch_one(&pool)
+        .await
+        .unwrap()
+    };
+    let post = |src: &str, event: Uuid| {
+        let app = app.clone();
+        let body = format!(
+            r#"{{"match":{{"source_match_id":"{src}","outcome":"success","winning_faction":"USA","event_id":"{event}","mission_id":"{mission_id}","terrain":"everon"}},"players":[{{"arma_id":"{ARMA}","role_played":"SL","source_event_id":"{EV}","counters":{{"kills":3,"deaths":1,"team_kills":0,"longest_kill_m":80,"vehicles_destroyed":0,"is_command":false,"command_win":null}}}}]}}"#
+        );
+        async move {
+            call(
+                &app,
+                "POST",
+                "/api/v1/ingest/match-results",
+                None,
+                Some(SVC),
+                Some(&body),
+            )
+            .await
+        }
+    };
+
+    // 1. SRC1 lands on EV1 — the ordinary path into `attended`.
+    let (st, r1) = post(SRC1, event_1).await;
+    assert_eq!(st, StatusCode::OK, "SRC1 @ EV1: {r1}");
+    assert_eq!(
+        r1["linked"], 1,
+        "the player must resolve, or attendance is never in play and this test is vacuous"
+    );
+    assert_eq!(state(pool.clone(), em_1).await, "attended", "EV1 marked");
+    assert_eq!(
+        state(pool.clone(), em_2).await,
+        "registered",
+        "EV2 untouched"
+    );
+
+    // 2. SRC2 lands on EV1 too. Two live matches now justify the same attendance.
+    let (st, r2) = post(SRC2, event_1).await;
+    assert_eq!(st, StatusCode::OK, "SRC2 @ EV1: {r2}");
+    assert_ne!(
+        r2["match_id"], r1["match_id"],
+        "two distinct source ids are two distinct matches"
+    );
+    assert_eq!(state(pool.clone(), em_1).await, "attended");
+
+    // 3. Re-point SRC1 → EV2. EV1 is still justified by SRC2, so the guard must hold it.
+    let (st, r3) = post(SRC1, event_2).await;
+    assert_eq!(st, StatusCode::OK, "SRC1 re-pointed → EV2: {r3}");
+    assert_eq!(
+        r3["match_id"], r1["match_id"],
+        "a re-point is the same match row, not a new one"
+    );
+    assert_eq!(
+        state(pool.clone(), em_1).await,
+        "attended",
+        "THE GUARD / RED: SRC2 still points at EV1 with this player's stat row, so the retract \
+         must not fire — dropping the NOT EXISTS clause strips attendance off an op that was \
+         really played"
+    );
+    assert_eq!(
+        state(pool.clone(), em_2).await,
+        "attended",
+        "the re-point marks the event it moved to"
+    );
+
+    // 4. Re-point SRC2 → EV2 as well. Nothing points at EV1 any more.
+    let (st, r4) = post(SRC2, event_2).await;
+    assert_eq!(st, StatusCode::OK, "SRC2 re-pointed → EV2: {r4}");
+    assert_eq!(
+        state(pool.clone(), em_1).await,
+        "registered",
+        "THE TICKET / RED: with no match left pointing at EV1, the attendance it granted must be \
+         retracted — pre-T-384 both registrations stayed `attended` and attendance_rate inflated \
+         to 100%"
+    );
+    assert_eq!(
+        state(pool.clone(), em_2).await,
+        "attended",
+        "EV2 keeps the attendance it earned"
+    );
+
+    // The match rows really did move; otherwise everything above is an assertion about a no-op.
+    let pointed: Vec<(String, Option<Uuid>)> = sqlx::query_as(
+        "SELECT source_match_id, event_id FROM matches WHERE source_match_id = ANY($1) \
+         ORDER BY source_match_id",
+    )
+    .bind(vec![SRC1.to_string(), SRC2.to_string()])
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        pointed,
+        vec![
+            (SRC1.to_string(), Some(event_2)),
+            (SRC2.to_string(), Some(event_2)),
+        ],
+        "both matches ended up on EV2"
+    );
+
+    clean(pool.clone()).await;
+}
