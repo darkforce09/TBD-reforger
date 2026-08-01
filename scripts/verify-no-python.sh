@@ -100,25 +100,79 @@ echo "==> python interpreter invocations in scripts/ + Makefile"
 # header note), and a tracked-file list is reproducible in a way that a recursive walk over whatever
 # happens to be on disk is not. `scripts/ticket` is an extensionless bash wrapper, so this cannot be
 # narrowed to `*.sh`.
+#
+# ── T-623 F1: WHY `-z`, AND WHY AN UNREADABLE PATH IS FATAL ─────────────────────────────────────
+#
+# `git ls-files` C-QUOTES any path holding a non-ASCII byte, a control character, `"` or `\`:
+#
+#     $ git ls-files scripts/
+#     "scripts/pyth\303\266n.sh"        <- the quotes and the backslashes are LITERAL output
+#
+# The loop that used to live here then tested `[ -f "$f" ]` against that mangled 24-character
+# string — false, obviously — and `continue`d. The file was dropped from FILES WITH NO COMPLAINT
+# and the gate printed `OK — 12 file(s) invoke python3, all inventoried, none new`, rc 0.
+# MEASURED 2026-08-01: a tracked, python3-invoking `scripts/pythön.sh` passed this gate clean.
+# An umlaut in a filename was enough to hide a violation from the gate that bans it.
+#
+# That is this program's signature defect — A TOOL REPORTING SUCCESS OVER AN INPUT IT NEVER
+# EXAMINED — found for the second time inside the gate written to enforce the rule against it.
+# So the encoding fix is only half of this: the OTHER half is that a path git names and this
+# script cannot read is now a FAILURE. There is no longer any route by which an enumerated input
+# is skipped and the gate still says OK.
+#
+# `-z` is preferred over `-c core.quotepath=false` because it emits paths VERBATIM with no quoting
+# at all; quotepath only disables the non-ASCII escaping and still quotes a `"` or a newline.
+# SPACES were never quoted by either spelling and were already handled correctly — verified before
+# and after this change — so nothing here is a fix for those.
+#
+# A NUL-delimited stream cannot survive `$(...)`: bash discards NUL bytes in command substitution
+# (with a warning), which would concatenate every path into one. The list therefore goes through a
+# temp file — which has the side benefit of keeping git's exit status readable, unlike a pipe or a
+# process substitution.
+LIST="$(mktemp "${TMPDIR:-/tmp}/verify-no-python.XXXXXX")"
+trap 'rm -f "$LIST"' EXIT
 LS_RC=0
-TRACKED="$(git ls-files scripts/)" || LS_RC=$?
-if [ "$LS_RC" -ne 0 ] || [ -z "$TRACKED" ]; then
-	echo "FAIL: 'git ls-files scripts/' exited $LS_RC with $(printf '%s' "$TRACKED" | grep -c . || true) path(s)."
-	echo "      The interpreter scan has no file list, so it did not run. Refusing to report OK."
-	FAIL=1
-	TRACKED=""
-fi
+git ls-files -z scripts/ >"$LIST" || LS_RC=$?
 
+N_ENUM=0
 FILES=()
-while IFS= read -r f; do
-	[ -n "$f" ] || continue
+UNREADABLE=()
+while IFS= read -r -d '' f; do
+	N_ENUM=$((N_ENUM + 1))
 	# This gate names the ban in prose, and the inventory is a list of the very files that violate
 	# it. Scanning either would make both permanently self-incriminating.
 	[ "$f" = "$SELF" ] && continue
 	[ "$f" = "$INVENTORY" ] && continue
-	[ -f "$f" ] && FILES+=("$f")
-done <<<"$TRACKED"
-[ -f Makefile ] && FILES+=(Makefile)
+	if [ -f "$f" ] && [ -r "$f" ]; then
+		FILES+=("$f")
+	else
+		UNREADABLE+=("$f")
+	fi
+done <"$LIST"
+
+if [ "$LS_RC" -ne 0 ] || [ "$N_ENUM" -eq 0 ]; then
+	echo "FAIL: 'git ls-files -z scripts/' exited $LS_RC with $N_ENUM path(s)."
+	echo "      The interpreter scan has no file list, so it did not run. Refusing to report OK."
+	FAIL=1
+fi
+
+if [ "${#UNREADABLE[@]}" -ne 0 ]; then
+	printf 'FAIL: %d tracked path(s) git listed but this gate could not read:\n' "${#UNREADABLE[@]}"
+	printf '%s\n' "${UNREADABLE[@]}" | sed 's/^/  /'
+	echo "      Each of these is an INPUT to the interpreter scan that the scan did not examine."
+	echo "      Restore the file, or untrack it — a skipped input must never read as a clean one."
+	FAIL=1
+fi
+
+# Makefile is this check's other NAMED input (see the heading printed above), not something git
+# enumerated, so it gets the same treatment explicitly rather than being silently dropped by a
+# bare `[ -f Makefile ] &&`.
+if [ -f Makefile ] && [ -r Makefile ]; then
+	FILES+=(Makefile)
+else
+	echo "FAIL: Makefile is missing or unreadable, but this check reports that it scans it."
+	FAIL=1
+fi
 
 # `#!.*python` catches a shebang on an extensionless script, which check 1 cannot see. Both halves
 # are plain ERE alternation — no braces — so ugrep 7.5.0 (an interactive shell) and GNU grep 3.8

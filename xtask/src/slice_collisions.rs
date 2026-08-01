@@ -33,6 +33,23 @@
 //!     exactly one `"` and it is mid-field, where csv and a naive split agree on every row — so
 //!     splitting on tabs is safe HERE. It is not safe in general; re-measure before trusting it on
 //!     a plan that has grown quoted fields.
+//!
+//! ── T-623: THE PORT WAS MORE LENIENT THAN THE PYTHON, IN THE ONE DIRECTION THAT MATTERS ──────
+//!
+//! Byte-identity was verified on the WELL-FORMED plan and held. The divergence was on the error
+//! paths, where the Python CRASHED and the port shrugged — see `check_wave_labels()` and the
+//! empty-input note in `run()`. `preflight.sh` check 9 reads nothing but the exit code, so every
+//! one of those shrugs was a red light quietly turning green. Restored, both of them.
+//!
+//! One divergence is DELIBERATELY LEFT: `--check <ticket not in the plan>` writes
+//! `xtask: T-623 is not an open ticket in docs/platform/wave_plan.tsv` where the Python wrote the
+//! same sentence without the `xtask: ` prefix (`bail!` unwinds to `main()`, which prefixes every
+//! error it prints). ACCEPTED, for three reasons: the exit code — the only thing any caller reads
+//! — is 1 in both; it is stderr prose for a human, parsed by nothing in the tree (`grep -rn` over
+//! scripts/ and .github/ finds no consumer); and removing it would mean either bypassing `anyhow`
+//! in one arm of this file, leaving its other three `bail!` sites inconsistent, or editing
+//! `xtask/src/main.rs`, which would strip the prefix off every other xtask subcommand. Naming the
+//! tool that failed is worth more than byte-parity with a file that no longer exists.
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -253,6 +270,60 @@ fn chars(s: &str, n: usize) -> String {
     s.chars().take(n).collect()
 }
 
+/// Every wave label in the plan must be a bare integer. T-623 F5.
+///
+/// ── WHY THIS IS A HARD EXIT AND NOT A FILTER ─────────────────────────────────────────────────
+///
+/// The Python computed the next wave as
+///
+///     nxt = min((r['wave'] for r in rows), key=lambda w: int(w))
+///
+/// and on a `w80`-style label `int()` raised ValueError, which was never caught, so the process
+/// printed a traceback and exited 1. That was not a defect — it was the only thing that ever
+/// noticed. `preflight.sh` check 9 keys on nothing but this command's exit code, so `w76`..`w81`
+/// turned preflight red and stayed red until T-616 normalised the column.
+///
+/// The port replaced that with `.filter_map(|r| r.wave.parse().ok())`, which DROPS the row it
+/// cannot read and carries on to print a confident dispatch set. MEASURED 2026-08-01 against a
+/// plan with `w76` reintroduced: exit 0, no mention of the two unreadable rows, preflight green.
+/// A reintroduced label would now go unnoticed exactly the way T-616's did — and T-616 exists
+/// because one went unnoticed for five waves.
+///
+/// Checked over EVERY parsed row rather than only the dispatchable ones (which is all the Python
+/// reached). The wave column is the plan's generation structure; a label this tool cannot read
+/// leaves the whole file's ordering unverified, and scoping the check to the dispatchable subset
+/// would make its coverage depend on which tickets the registry happens to leave open today.
+/// The live plan is all-integer, so this can only ever fire on a plan that is genuinely broken.
+fn check_wave_labels(rows: &[Row], plan_label: &str) -> Result<()> {
+    let bad: Vec<&Row> = rows
+        .iter()
+        .filter(|r| r.wave.parse::<i64>().is_err())
+        .collect();
+    if bad.is_empty() {
+        return Ok(());
+    }
+    let mut msg = format!(
+        "{} row(s) in {plan_label} have a wave label that is not a bare integer:",
+        bad.len()
+    );
+    for r in bad.iter().take(20) {
+        msg.push_str(&format!(
+            "\n    wave {:<6} {:<8} {}",
+            r.wave,
+            r.id,
+            chars(&r.title, 60)
+        ));
+    }
+    if bad.len() > 20 {
+        msg.push_str(&format!("\n    ... and {} more", bad.len() - 20));
+    }
+    msg.push_str(
+        "\n  Column 1 is a BARE INTEGER (T-616). Fix the label — a row whose wave cannot be read \
+is a row this command would otherwise skip in silence.",
+    );
+    bail!(msg)
+}
+
 /* ─────────────────────────── unplanned-ticket warning ─────────────────────────── */
 
 /// Open tickets in the REGISTRY that have no row in the plan — and are therefore invisible to every
@@ -432,9 +503,33 @@ pub fn run(argv: &[String]) -> Result<u8> {
     let all = plan_rows(&plan)?;
     let (order, reg) = registry(&root)?;
 
+    // --repack is exempt from the two checks below: it REGENERATES the wave column outright, and
+    // it is the only way back from a plan whose labels have rotted. Refusing to run the repair
+    // tool on the thing it repairs would leave no path forward.
     if flags.contains("--repack") {
         return repack(&plan, &order, &reg, &all);
     }
+
+    // ── T-623 F5: AN EMPTY PLAN IS AN ERROR; AN EMPTY DISPATCH SET IS NOT ────────────────────
+    //
+    // The Python crashed on both (`min()` of an empty sequence), and the port printed the same
+    // limp `next wave is .` for both. They are not the same event and this command must stop
+    // saying the same thing about them.
+    //
+    // NO ROWS PARSED AT ALL is an input failure, every time. A TBD_WAVE_PLAN pointing somewhere
+    // wrong, a truncated file, a column shift that drops every row through the `f.len() < 4`
+    // filter — in each case this tool has NOTHING to compute over, and printing
+    // "Max disjoint dispatch set (0, cap 8)" is the signature defect stated out loud: success
+    // reported over an input never examined. preflight check 9 would read that exit 0 as
+    // "dispatch set computes". Hard fail, named.
+    if all.is_empty() {
+        bail!(
+            "no ticket rows in {} — the plan is empty, truncated or mis-columned. No dispatch \
+set was computed and none will be printed.",
+            pathdiff(&plan, &root)
+        );
+    }
+    check_wave_labels(&all, &pathdiff(&plan, &root))?;
 
     let rows: Vec<&Row> = all.iter().filter(|r| dispatchable(&r.id, &reg)).collect();
     let by_id: HashMap<&str, &Row> = rows.iter().map(|r| (r.id.as_str(), *r)).collect();
@@ -486,15 +581,38 @@ pub fn run(argv: &[String]) -> Result<u8> {
             println!("  {:<8} {}", r.id, chars(&r.title, 60));
         }
         println!("\nmay join them ({}, cap {max}):", picked.len());
+    } else if rows.is_empty() {
+        // ROWS PARSED, NONE DISPATCHABLE — the other half of the T-623 F5 note above, and a
+        // judgement call rather than a restoration: the Python crashed here too, and this does
+        // not. Every planned ticket being shipped, cancelled, deferred or assigned to a human is
+        // the factory FINISHING, not the factory breaking, and turning preflight red on the day
+        // the backlog empties would be a bug of our own making. Exit 0 — but SAY SO, in a
+        // sentence, because the bare `next wave is .` this replaces was indistinguishable from
+        // the empty-plan failure above, which is precisely why both needed splitting apart.
+        println!(
+            "no dispatchable tickets in {} — all {} planned ticket(s) are shipped, cancelled, \
+deferred, or assigned to a non-agent executor. Nothing to dispatch.",
+            pathdiff(&plan, &root),
+            all.len()
+        );
+        warn_unplanned(&order, &reg, &all);
+        return Ok(0);
     } else {
         // min by INTEGER value, printing the original label. T-616 normalised the column to bare
-        // integers precisely so this cannot raise the way `int('w80')` did.
-        let nxt = rows
+        // integers, and check_wave_labels() above now refuses to run over a plan where that is
+        // not true — so unlike the code this replaced, a row is never dropped here in silence.
+        let Some(nxt) = rows
             .iter()
             .filter_map(|r| r.wave.parse::<i64>().ok().map(|n| (n, &r.wave)))
             .min_by_key(|(n, _)| *n)
             .map(|(_, w)| w.clone())
-            .unwrap_or_default();
+        else {
+            // Unreachable: every label parsed, and `rows` is non-empty. Fail closed anyway — a
+            // silent default here is the shape of bug this whole ticket is about.
+            bail!(
+                "internal: no readable wave label after validation — check_wave_labels() is wrong"
+            );
+        };
         println!(
             "next wave is {nxt}. Max disjoint dispatch set ({}, cap {max}):",
             picked.len()

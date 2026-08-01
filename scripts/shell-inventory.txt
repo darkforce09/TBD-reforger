@@ -1,16 +1,23 @@
 # T-621 — THE SHELL RATCHET BASELINE.
 #
-# Every tracked *.sh in the repository, frozen at the count measured on 2026-08-01:
-# 58 files, 15,618 lines. Enforced by `cargo xtask verify no-shell` (xtask/src/shell_free.rs).
+# Every tracked shell script in the repository, frozen at the count measured on 2026-08-01:
+# 59 files, 15,845 lines. Enforced by `cargo xtask verify no-shell` (xtask/src/shell_free.rs).
+#
+# A file is shell if it is named *.sh OR its first line is a shebang naming sh/bash/dash/zsh.
+# T-621 froze this baseline on the extension alone, so `scripts/ticket` — an extensionless bash
+# script, and the repository's own ticket CLI — was missing from a list that claimed to be
+# exhaustive. T-623 taught the gate to read shebangs and added that one line; the list has never
+# been regenerated and this remains the only path ever added to it.
 #
 # THIS LIST MAY ONLY SHRINK.
 #
-#   * Adding a NEW .sh fails the gate until the path is added here deliberately. New tooling
-#     belongs in `xtask` — see CODING_STANDARDS.md LANG-1. Bash is permitted only for thin process
-#     glue that must run before or without cargo (container entry, distrobox-host-exec wrappers,
-#     git hooks); if that is genuinely what you wrote, add the line and the reviewer will see it.
-#   * DELETING a .sh must delete its line here in the same commit. A listed path that no longer
-#     exists also fails, so this file cannot rot into a record nobody has checked.
+#   * Adding a NEW shell script fails the gate until the path is added here deliberately. New
+#     tooling belongs in `xtask` — see CODING_STANDARDS.md LANG-1. Bash is permitted only for thin
+#     process glue that must run before or without cargo (container entry, distrobox-host-exec
+#     wrappers, git hooks); if that is genuinely what you wrote, add the line and the reviewer
+#     will see it. Dropping the `.sh` off the name does NOT get you past the gate any more.
+#   * DELETING a shell script must delete its line here in the same commit. A listed path that no
+#     longer exists also fails, so this file cannot rot into a record nobody has checked.
 #
 # This is NOT a list of files to port. There is no ticket to rewrite wave.sh and T-621 explicitly
 # excludes one. It is a line held at today's count so the next 15,000 lines do not arrive by
@@ -72,6 +79,7 @@ scripts/mod/wave.sh
 scripts/mod/world-boot.sh
 scripts/platform/preflight.sh
 scripts/platform/wave.sh
+scripts/ticket
 scripts/verify-no-python.sh
 scripts/verify-route-tags.sh
 scripts/verify-t180-coherency.sh
