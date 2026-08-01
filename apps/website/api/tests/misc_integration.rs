@@ -443,14 +443,29 @@ fn t566_fn_body<'a>(code: &'a str, name: &str) -> &'a str {
 /// underneath. The arms are still in the file, so the comment-strip + string-blank view still
 /// sees them and this stays GREEN while every role folds back onto one row.
 ///
-/// That was **not** fixed by teaching the view about `#[cfg(any())]`, and it should not be:
+/// That was **not** fixed by teaching the view about `#[cfg(any())]`, and it should not be —
+/// though **not for the reason this comment used to give** (T-622 re-measured it):
 ///
-/// * the literal-`#[cfg(any())]` scrubber in `frontend/src/arsenal.rs` (T-503) is already known
-///   to miss `#[cfg(all(unix, any()))]`, `#[cfg(feature = "nope")]` and plain extra whitespace —
-///   a blocklist buys one wave;
-/// * `if false`, `const NEVER: bool = false`, `std::hint::black_box(false)`, an early `return`,
-///   a macro that expands to something else, and a `use other as …` shadow all reach the same
-///   result with no attribute at all. Reachability is not a lexical property.
+/// * the scrubber in `frontend/src/arsenal.rs` is no longer the literal-`"#[cfg(any())]"` match
+///   T-503 shipped. T-601 replaced it with a `cfg`-predicate *parser*, so of the three examples
+///   this comment used to cite as misses, two are **caught**: `#[cfg(all(unix, any()))]` and
+///   extra whitespace in any position (`#[cfg( any() )]`, `#[ cfg(any()) ]`). Only
+///   `#[cfg(feature = "nope")]` still survives, and it survives **deliberately** — a `feature`
+///   predicate is undecidable from source text, and scrubbing it would delete code that really
+///   does ship in some build. "A blocklist buys one wave" was the right instinct about the wrong
+///   thing: a parser buys the whole family, and the residual is one honest hole rather than an
+///   open-ended list;
+/// * the reason not to copy that machinery here is the second bullet, which still holds:
+///   reachability is not a lexical property. `if false`, `const NEVER: bool = false`,
+///   `std::hint::black_box(false)`, an early `return`, a macro that expands to something else,
+///   and a `use other as …` shadow all reach the same result with no attribute to find.
+///   `arsenal.rs` answers those by constant-folding the condition and — since T-622 — by
+///   treating a condition it *cannot* fold as dead rather than live, so an unrecognised wrapper
+///   costs a loud false RED instead of a silent false GREEN. That is worth a whole module in the
+///   crate that has no runtime signature to reach for. It is worth nothing here, where the
+///   invariant *does* have one and
+///   [`t572_dev_login_gives_every_role_its_own_identity_at_runtime`] already reads it back over
+///   HTTP.
 ///
 /// **Shapes this pin still admits (GREEN while the behaviour is gone):** any never-true `cfg` on
 /// the arms or on either helper item; any constant-false guard around the `match`; a `return`

@@ -1694,15 +1694,51 @@ fn paper_doll(
 /// any invariant with a runtime signature; use this for pure source-shape invariants (a banned
 /// literal, a wiring seam that has no callable surface).
 ///
-/// # What this is honest about
+/// # What this is honest about — the residual, restated at T-622
 ///
 /// This is still a grep, so it still cannot decide reachability in general. What it *can* do is
-/// remove the constructs it can prove dead, and be **fail-closed** everywhere else: an expression
-/// it cannot fold is left in place (the pin may still green — the residual), and a construct it
-/// mis-reads as dead removes live code and turns the pin RED (loud). Known residual shapes it does
-/// not fold, documented rather than hidden: `if let` / `while let` patterns that never match, an
-/// opaque `const fn` predicate, a `#[cfg(feature = "…")]` nobody enables. Pins that cannot tolerate
-/// those go to cure 1.
+/// remove the constructs it can prove dead **and treat the ones it cannot read as dead too**, so
+/// that the direction of every mistake is a false RED rather than a false GREEN.
+///
+/// T-601 claimed to be fail-closed and was not. It removed a block only on a provable
+/// `Some(false)`; every condition its evaluator could not parse fell through to "keep", which is
+/// "report as live". Six wrappers walked past it on the real production files — measured, not
+/// theorised — and three of them were named in T-601's own brief. The rule that replaced it is in
+/// [`class_r_scrub::Scrub::kill_const_false_blocks`]: an `if`/`while` condition made **only** of
+/// compile-time material ([`class_r_scrub::constant_shaped`]) that does not fold to `true` is
+/// scrubbed, whatever shape it is. That is closed under wrappers nobody has invented yet, because a
+/// wrapper built out of literals and `const`s cannot smuggle in a runtime name and still be a
+/// wrapper.
+///
+/// **What genuinely remains, after the change and measured against the real sources:**
+///
+/// * **Build-conditional compilation.** `kill_dead_cfg_items` removes an item only when
+///   [`cfg_eval`] proves the predicate false for *every* build. `#[cfg(feature = "nobody-enables-
+///   this")]` and `#[cfg(target_arch = "…")]` are undecidable from source text alone and are
+///   **kept**. This one is fail-open on purpose and it is the only one: scrubbing them would delete
+///   the shipped wasm32 SPA, which is the branch these pins exist to examine. A needle parked under
+///   an unenabled `feature` gate will still green a pin.
+/// * **Runtime conditions that are never true in practice.** `if let` / `while let` patterns that
+///   never match, `if flag_that_is_always_false()`, an opaque `const fn` predicate called on a
+///   runtime path. These mention names the program computes, so they are not constant-shaped and
+///   are kept — correctly, since a text pass cannot know the call always returns `false`.
+/// * **Scope.** Binding collection is not scope-aware: a `const C: bool = false;` in one function
+///   silences `if C` in another. The failure direction is a false strip → RED.
+/// * **`unsafe`, panics, unreachable-by-typestate, and everything else the halting problem owns.**
+///
+/// Note what is **not** on that list any more: an expression the evaluator cannot fold. That used
+/// to be the residual and it was the bug.
+///
+/// **What the calibration tests certify, and what they do not.** The
+/// `the_*_rejects_every_dead_code_wrapper` batteries in `sse.rs`, `client.rs`, `content.rs`,
+/// `event_hub.rs` and `mission_commands.rs` each run **twelve** enumerated shapes. Twelve shapes is
+/// evidence about twelve shapes and nothing else — five previous waves were beaten by shape
+/// thirteen. The property that covers the unnamed thirteenth is
+/// [`class_r_scrub::constant_shaped`], and the test that states it as a *property* rather than a
+/// list is `the_unknown_condition_fails_closed` in this file's own test module. A green battery
+/// without that test would mean only that nobody had tried a new spelling yet.
+///
+/// Pins that cannot tolerate the residual above go to cure 1.
 ///
 /// # The W77-F3 holes this closes
 ///
@@ -1714,9 +1750,20 @@ fn paper_doll(
 ///   through. [`eval_bool`] now constant-folds the condition.
 /// * `fn_body` took the **first** match of a marker, so a pristine shadow definition parked in a
 ///   never-called `mod` fed the pin a decoy. [`only_body`] refuses ambiguity.
+///
+/// # The T-622 holes this closes
+///
+/// * [`eval_bool`] folded each `const` initialiser against an **empty** const map, so
+///   `const A: bool = false; const B: bool = A;` left `B` unknown and `if B { … }` was kept.
+///   [`class_r_scrub::constants`] now iterates to a fixpoint.
+/// * `{ false }`, `::std::hint::black_box(false)` — a block-expression initialiser and a leading
+///   path `::` both lexed to unknown bytes. `lex` reads both now.
+/// * `(true, false).1`, `1 + 1 > 3`, `false | false`, `[false, true][0]`, `(|| false)()` — the
+///   evaluator still cannot read any of these, and no longer needs to: they name nothing the
+///   program computes, so they fail closed.
 #[cfg(test)]
 pub(crate) mod class_r_scrub {
-    use std::collections::HashMap;
+    use std::collections::{HashMap, HashSet};
 
     pub(crate) fn is_ident_char(c: char) -> bool {
         c.is_ascii_alphanumeric() || c == '_'
@@ -2096,7 +2143,8 @@ pub(crate) mod class_r_scrub {
     enum Val {
         B(bool),
         N(f64),
-        /// Depends on something this pass cannot see. Fail-open: the block is kept.
+        /// This pass could not decide the expression. **Not** a value — a refusal. Whether a `U`
+        /// keeps a block or removes it is decided by [`constant_shaped`], never by defaulting.
         U,
     }
 
@@ -2106,7 +2154,65 @@ pub(crate) mod class_r_scrub {
         Num(f64),
         Bool(bool),
         Op(&'static str),
+        /// A byte the grammar does not model — `+`, `|`, `.`, `^`. Its presence is precisely the
+        /// evaluator admitting it cannot read the expression, so it must never be shrugged off.
         Other,
+    }
+
+    /// Cast targets, so `x as u8` does not read as a runtime identifier.
+    const PRIMITIVE_TYPES: &[&str] = &[
+        "bool", "char", "i8", "i16", "i32", "i64", "i128", "isize", "u8", "u16", "u32", "u64",
+        "u128", "usize", "f32", "f64",
+    ];
+
+    /// What the *compiler* decides, as opposed to what the program computes.
+    ///
+    /// The split is the whole fail-closed mechanism. `known` is what this pass folded. `opaque` is
+    /// the set of names that are compile-time constant **by Rust's own rules** — every `const` and
+    /// `static`, plus a `let` whose initialiser is itself made only of compile-time material —
+    /// which this pass could **not** fold. A condition gated on an `opaque` name is a condition
+    /// whose truth was fixed at compile time and which this evaluator failed to read: exactly the
+    /// case that must not be reported as live.
+    #[derive(Debug, Clone, Default, PartialEq)]
+    pub(crate) struct Consts {
+        known: HashMap<String, Val>,
+        opaque: HashSet<String>,
+    }
+
+    impl Consts {
+        /// An identifier the compiler resolves: a folded constant, an unfolded-but-constant name,
+        /// a primitive cast target, or a call this pass folds through ([`transparent_call`]).
+        fn is_compile_time(&self, name: &str) -> bool {
+            let last = name.rsplit("::").next().unwrap_or(name);
+            PRIMITIVE_TYPES.contains(&name)
+                || matches!(last, "black_box" | "identity")
+                || self.known.contains_key(name)
+                || self.opaque.contains(name)
+        }
+    }
+
+    /// `expr` is built **only** out of material the compiler decides: literals, operators, and
+    /// identifiers that [`Consts::is_compile_time`] recognises.
+    ///
+    /// This is the predicate that lets the scrubber fail closed without deleting the program. A
+    /// condition containing a runtime name (`resp`, `loading`, a method, an `if let` pattern) is
+    /// genuinely conditional and must be left alone. A condition containing *no* runtime name is a
+    /// compile-time constant whatever else is in it — `(true, false).1`, `1 + 1 > 3`,
+    /// `false | false`, `[false, true][0]`, `(|| false)()` — so if [`eval_bool`] could not fold it,
+    /// the failure is the evaluator's, not the code's, and the block is treated as possibly dead.
+    ///
+    /// Note what is **not** enumerated here: the operators. `Tok::Other` — the evaluator's own
+    /// admission that it met a byte it does not model — does not disqualify an expression from
+    /// being constant-shaped. That is the inversion. Every previous round of this defect lost by
+    /// growing a list of shapes; this predicate is closed under shapes nobody has thought of yet,
+    /// because a wrapper made of literals cannot smuggle in a runtime name and stay a wrapper.
+    fn constant_shaped(expr: &str, consts: &Consts) -> bool {
+        let toks = lex(&fold_cfg_macros(expr));
+        !toks.is_empty()
+            && toks.iter().all(|t| match t {
+                Tok::Ident(name) => consts.is_compile_time(name),
+                _ => true,
+            })
     }
 
     fn lex(expr: &str) -> Vec<Tok> {
@@ -2140,7 +2246,17 @@ pub(crate) mod class_r_scrub {
                 t.push(lit.parse::<f64>().map(Tok::Num).unwrap_or(Tok::Other));
                 continue;
             }
-            if is_ident_char(c[i]) {
+            // A **leading** `::` is part of the path, not punctuation. `::std::hint::black_box`
+            // names the same function as `std::hint::black_box`; lexing the two colons as unknown
+            // bytes was enough to make the whole expression undecidable, which used to mean
+            // "keep the block". Skipped, not emitted, so the path text still matches a const name.
+            let leading_path = c[i] == ':'
+                && c.get(i + 1) == Some(&':')
+                && c.get(i + 2).is_some_and(|x| is_ident_char(*x));
+            if leading_path {
+                i += 2;
+            }
+            if leading_path || is_ident_char(c[i]) {
                 let s = i;
                 while i < c.len() {
                     if is_ident_char(c[i]) {
@@ -2182,6 +2298,9 @@ pub(crate) mod class_r_scrub {
                 '(' => Tok::Op("("),
                 ')' => Tok::Op(")"),
                 ',' => Tok::Op(","),
+                // `const NEVER: bool = { false };` — a block whose only expression is its tail.
+                '{' => Tok::Op("{"),
+                '}' => Tok::Op("}"),
                 _ => Tok::Other,
             });
             i += 1;
@@ -2192,7 +2311,7 @@ pub(crate) mod class_r_scrub {
     struct Parser<'a> {
         t: Vec<Tok>,
         i: usize,
-        consts: &'a HashMap<String, bool>,
+        consts: &'a Consts,
     }
 
     impl Parser<'_> {
@@ -2283,6 +2402,17 @@ pub(crate) mod class_r_scrub {
                     }
                     v
                 }
+                // `{ <expr> }` — a block whose value is its tail expression. `const NEVER: bool =
+                // { false };` was a survivor purely because `{` lexed as an unknown byte.
+                // A block with statements in it stops here and the trailing-token check refuses.
+                Some(Tok::Op("{")) => {
+                    self.i += 1;
+                    let v = self.or();
+                    if !self.eat("}") {
+                        return Val::U;
+                    }
+                    v
+                }
                 Some(Tok::Ident(name)) => {
                     self.i += 1;
                     let macro_bang = self.eat("!");
@@ -2311,7 +2441,7 @@ pub(crate) mod class_r_scrub {
                     if macro_bang {
                         return Val::U;
                     }
-                    self.consts.get(&name).map(|b| Val::B(*b)).unwrap_or(Val::U)
+                    self.consts.known.get(&name).copied().unwrap_or(Val::U)
                 }
                 _ => {
                     self.i = self.t.len();
@@ -2385,8 +2515,10 @@ pub(crate) mod class_r_scrub {
         out
     }
 
-    /// Constant-fold a boolean condition. `Some(false)` is the only answer that removes code.
-    pub(crate) fn eval_bool(expr: &str, consts: &HashMap<String, bool>) -> Option<bool> {
+    /// Constant-fold an expression to a bool **or a number** — numbers so that
+    /// `const LIMIT: usize = 5; if LIMIT > 3` folds instead of being scrubbed as an undecidable
+    /// constant. `None` is a refusal, never a value.
+    fn eval_value(expr: &str, consts: &Consts) -> Option<Val> {
         let folded = fold_cfg_macros(expr);
         let mut p = Parser {
             t: lex(&folded),
@@ -2400,21 +2532,41 @@ pub(crate) mod class_r_scrub {
             return None;
         }
         match v {
+            Val::U => None,
+            v => Some(v),
+        }
+    }
+
+    /// Constant-fold a boolean condition.
+    ///
+    /// `None` means **this evaluator could not read the expression** — it does not mean "live".
+    /// Callers must decide the unknown case explicitly; [`Scrub::kill_const_false_blocks`] does it
+    /// with [`constant_shaped`].
+    pub(crate) fn eval_bool(expr: &str, consts: &Consts) -> Option<bool> {
+        match eval_value(expr, consts)? {
             Val::B(b) => Some(b),
             _ => None,
         }
     }
 
-    /// `const NAME: bool = …;` / `static NAME: bool = …;` / `let NAME: bool = …;` /
-    /// `let NAME = true|false;` bindings whose value folds to a constant.
+    /// One `const` / `static` / `let` binding site, harvested textually.
+    struct Binding {
+        name: String,
+        expr: String,
+        /// `const` or `static`: the compiler fixes its value, so the *name* is compile-time
+        /// material whether or not this pass can fold the initialiser.
+        compile_time: bool,
+        /// The value may be trusted: `: bool`-annotated, or a `const`/`static` of any type, or a
+        /// bare `true`/`false`. An un-annotated `let x = some_call();` is not a constant just
+        /// because the call is opaque.
+        trusted: bool,
+    }
+
+    /// Every `const NAME[: T] = …;` / `static …` / `let …` binding in `scan`, in source order.
     ///
-    /// This is what makes `const C: bool = false; if C { … }` fold — and, more to the point, what
-    /// makes `const NEVER: bool = 1 > 2; if NEVER { … }` fold, which a fixer who special-cased the
-    /// literal `= false` would have missed.
-    ///
-    /// Deliberately conservative: `mut` bindings are skipped (they can be reassigned out of sight)
-    /// and a name bound twice to different values is dropped. This pass is not scope-aware, so the
-    /// failure direction is a *false* strip — which turns a pin RED, loudly, rather than green.
+    /// Deliberately conservative: `mut` bindings are skipped (they can be reassigned out of sight).
+    /// This pass is not scope-aware, so the failure direction is a *false* strip — which turns a
+    /// pin RED, loudly, rather than green.
     ///
     /// # The bug this scan had, found by running the battery against real files
     ///
@@ -2425,8 +2577,8 @@ pub(crate) mod class_r_scrub {
     /// path in exactly that shape, and a `const C: bool = false; if C { … }` planted inside one of
     /// them survived scrubbing and greened the pin — measured, not theorised. The cursor now
     /// advances one keyword at a time, so a nested binding is just another binding.
-    fn bool_bindings(scan: &[char]) -> HashMap<String, bool> {
-        let mut seen: HashMap<String, Option<bool>> = HashMap::new();
+    fn binding_sites(scan: &[char]) -> Vec<Binding> {
+        let mut sites: Vec<Binding> = Vec::new();
         let n = scan.len();
         let mut i = 0usize;
         while i < n {
@@ -2458,6 +2610,7 @@ pub(crate) mod class_r_scrub {
             while j < n && scan[j].is_whitespace() {
                 j += 1;
             }
+            let compile_time = kw != "let";
             let mut annotated = false;
             if scan.get(j) == Some(&':') {
                 j += 1;
@@ -2468,11 +2621,16 @@ pub(crate) mod class_r_scrub {
                 while j < n && is_ident_char(scan[j]) {
                     j += 1;
                 }
-                if scan[ts..j].iter().collect::<String>() != "bool" {
+                let ty: String = scan[ts..j].iter().collect();
+                // A non-`bool` `let` annotation is a runtime binding this pass has no business
+                // folding. A non-`bool` `const`/`static` is still compile-time, and folding its
+                // number is what keeps `const LIMIT: usize = 5; if LIMIT > 3` out of the
+                // fail-closed path.
+                if ty != "bool" && !compile_time {
                     i += kw.len();
                     continue;
                 }
-                annotated = true;
+                annotated = ty == "bool";
                 while j < n && scan[j].is_whitespace() {
                     j += 1;
                 }
@@ -2494,25 +2652,87 @@ pub(crate) mod class_r_scrub {
                 j += 1;
             }
             let expr: String = scan[es..j.min(n)].iter().collect();
-            // An un-annotated `let` only counts on a bare bool literal: `let x = some_call();`
-            // must not be mistaken for a constant just because the call is opaque.
-            let v = match eval_bool(&expr, &HashMap::new()) {
-                Some(b) if annotated || matches!(expr.trim(), "true" | "false") => Some(b),
-                _ => None,
-            };
-            seen.entry(name)
-                .and_modify(|e| {
-                    if *e != v {
-                        *e = None;
-                    }
-                })
-                .or_insert(v);
+            let trusted = compile_time || annotated || matches!(expr.trim(), "true" | "false");
+            sites.push(Binding {
+                name,
+                expr,
+                compile_time,
+                trusted,
+            });
             // One keyword forward, NOT to the end of the initializer — see the note above.
             i += kw.len();
         }
-        seen.into_iter()
-            .filter_map(|(k, v)| v.map(|b| (k, b)))
-            .collect()
+        sites
+    }
+
+    /// How many rounds of const-to-const substitution to run. A `const B = A; const A = false;`
+    /// chain needs one round per link, and the links can appear in any order — but a real chain is
+    /// two or three long, and an unbounded loop inside a test harness is its own defect.
+    const CONST_FOLD_ROUNDS: usize = 8;
+
+    /// The compile-time constants of `scan`: what folded, and what provably did not.
+    ///
+    /// # Why this is a fixpoint and not one pass
+    ///
+    /// T-601 evaluated every initialiser against an **empty** const map
+    /// (`eval_bool(&expr, &HashMap::new())`), so `const A: bool = false; const B: bool = A;` left
+    /// `B` unknown — and unknown meant the `if B { … }` block was kept, which greened the SSE
+    /// abort pin over a dead signal wire on the real `sse.rs`. Measured, not theorised. One extra
+    /// hop was all the indirection it took. Iterating to a fixpoint costs nothing and removes the
+    /// whole family rather than the one spelling that was reported.
+    ///
+    /// # Why the unfolded names are kept rather than dropped
+    ///
+    /// `opaque` is the fail-closed half. A `const`/`static` is compile-time **by definition**, so a
+    /// `const` this pass cannot fold is a constant it failed to read, not a runtime value — and
+    /// [`constant_shaped`] uses that to scrub the block instead of trusting it. A `let` earns the
+    /// same treatment only when its initialiser is itself made of compile-time material, because a
+    /// `let ok = resp.ok();` genuinely is runtime and scrubbing `if ok { … }` would delete the
+    /// program.
+    fn constants(scan: &[char]) -> Consts {
+        let sites = binding_sites(scan);
+        let mut consts = Consts {
+            known: HashMap::new(),
+            opaque: sites
+                .iter()
+                .filter(|b| b.compile_time)
+                .map(|b| b.name.clone())
+                .collect(),
+        };
+        for _ in 0..CONST_FOLD_ROUNDS {
+            let mut round: HashMap<String, Option<Val>> = HashMap::new();
+            for b in &sites {
+                let v = b.trusted.then(|| eval_value(&b.expr, &consts)).flatten();
+                // A name bound twice to different values tells this pass nothing it can use.
+                round
+                    .entry(b.name.clone())
+                    .and_modify(|e| {
+                        if *e != v {
+                            *e = None;
+                        }
+                    })
+                    .or_insert(v);
+            }
+            let known: HashMap<String, Val> = round
+                .into_iter()
+                .filter_map(|(k, v)| v.map(|x| (k, x)))
+                .collect();
+            if known == consts.known {
+                break;
+            }
+            consts.known = known;
+        }
+        // A `let` whose initialiser mentions nothing the program computes is a constant wearing a
+        // `let`: `let w: bool = (true, false).1;` must not launder a dead block into a live one.
+        for b in &sites {
+            if !consts.known.contains_key(&b.name) && constant_shaped(&b.expr, &consts) {
+                consts.opaque.insert(b.name.clone());
+            }
+        }
+        let known = std::mem::take(&mut consts.known);
+        consts.opaque.retain(|n| !known.contains_key(n));
+        consts.known = known;
+        consts
     }
 
     /* ─────────────────────────── the scrubber itself ─────────────────────────── */
@@ -2579,10 +2799,34 @@ pub(crate) mod class_r_scrub {
             }
         }
 
-        /// Remove `if <provably false> { … }` and `while <provably false> { … }` blocks — and the
-        /// `match` arm form `_ if <provably false> => …`, which is neither.
+        /// Remove `if { … }` / `while { … }` blocks — and the `match` arm form `_ if … => …` —
+        /// whose condition this pass cannot prove will run.
+        ///
+        /// # This is the fail-closed seam (T-622)
+        ///
+        /// T-601 removed a block only on `eval_bool(…) == Some(false)`. Everything else — including
+        /// every condition the evaluator simply could not read — was **kept**, i.e. reported as
+        /// live. That is the file's own signature defect wearing the fix's costume: a tool
+        /// reporting success over an input it never examined. Six wrappers walked straight through
+        /// it (`const B = A`, `{ false }`, `(true, false).1`, `1 + 1 > 3`, `false | false`,
+        /// `::std::hint::black_box(false)`), three of them named in T-601's own brief.
+        ///
+        /// The rule now has three arms and no default:
+        ///
+        /// * `Some(false)` — provably dead. Removed, as before.
+        /// * `Some(true)` — provably live. Kept.
+        /// * `None` — **undecided**, and the direction is chosen by [`constant_shaped`] rather than
+        ///   by assumption. A condition made only of compile-time material is a constant this
+        ///   evaluator failed to read, so the block is treated as possibly dead and removed; a
+        ///   condition mentioning anything the program computes is genuinely conditional and kept.
+        ///
+        /// Removing a block that was in fact live costs a **false RED**: the pin loses its needle
+        /// and says so, loudly, on the next test run. Keeping a block that was in fact dead costs a
+        /// **false GREEN**: silence, forever, over code the build never runs. The whole point of
+        /// this ticket is that those two are not symmetric, and the evaluator must lean the first
+        /// way. An attack shape nobody has thought of yet is now a bug report, not a bypass.
         fn kill_const_false_blocks(&mut self) {
-            let consts = bool_bindings(&self.scan);
+            let consts = constants(&self.scan);
             let n = self.scan.len();
             let mut i = 0usize;
             while i < n {
@@ -2619,7 +2863,12 @@ pub(crate) mod class_r_scrub {
                     continue;
                 };
                 let cond: String = self.scan[i + klen..at].iter().collect();
-                if eval_bool(&cond, &consts) == Some(false) {
+                let dead = match eval_bool(&cond, &consts) {
+                    Some(b) => !b,
+                    // Unknown never means "live" — see the doc comment on this function.
+                    None => constant_shaped(&cond, &consts),
+                };
+                if dead {
                     let end = if arrow {
                         arm_end(&self.scan, at + 2)
                     } else {
@@ -3863,6 +4112,66 @@ mod tests {
                 "const inside an async block",
                 "fn f() { spawn(async move {\nconst T601C: bool = false; if T601C {\n    set_loadout(x);\n}\n}); }",
             ),
+            // ── tier 4: the six wave-79 survivors of T-601's own fix, measured against the real
+            // production files (`sse.rs`, `event_hub.rs` ×2, `client.rs`, `mission_commands.rs`,
+            // `content.rs`) before they were fixed. Three of them were named in T-601's brief.
+            // They are listed for regression value only — the thing that actually stops the
+            // seventh is `the_unknown_condition_fails_closed`.
+            (
+                "T-622 S1: const referencing const",
+                "const W_A: bool = false; const W_B: bool = W_A;\nfn f() { if W_B { set_loadout(x); } }",
+            ),
+            (
+                "T-622 S1': the same chain, declared out of order",
+                "const W_B: bool = W_A; const W_A: bool = false;\nfn f() { if W_B { set_loadout(x); } }",
+            ),
+            (
+                "T-622 S2: block-expression initialiser",
+                "const W_NEVER: bool = { false };\nfn f() { if W_NEVER { set_loadout(x); } }",
+            ),
+            (
+                "T-622 S3: tuple index",
+                "fn f() { if (true, false).1 { set_loadout(x); } }",
+            ),
+            (
+                "T-622 S4: arithmetic inside a comparison",
+                "fn f() { if 1 + 1 > 3 { set_loadout(x); } }",
+            ),
+            (
+                "T-622 S5: bitwise rather than logical",
+                "fn f() { if false | false { set_loadout(x); } }",
+            ),
+            (
+                "T-622 S6: leading :: on a transparent call",
+                "fn f() { if ::std::hint::black_box(false) { set_loadout(x); } }",
+            ),
+            // ── tier 5: shapes invented against the T-622 fix, not handed down by any verifier.
+            // With the unknown case failing closed these cost nothing to defeat, which is the
+            // point: none of them required the fixer to have thought of them first.
+            (
+                "T-622 I1: array index",
+                "fn f() { if [false, true][0] { set_loadout(x); } }",
+            ),
+            (
+                "T-622 I2: if-expression const initialiser",
+                "const W_C: bool = if true { false } else { true };\nfn f() { if W_C { set_loadout(x); } }",
+            ),
+            (
+                "T-622 I3: immediately-invoked closure",
+                "fn f() { if (|| false)() { set_loadout(x); } }",
+            ),
+            (
+                "T-622 I4: xor",
+                "fn f() { if false ^ false { set_loadout(x); } }",
+            ),
+            (
+                "T-622 I5: shift compared to a literal",
+                "fn f() { if 1 << 2 == 7 { set_loadout(x); } }",
+            ),
+            (
+                "T-622 I6: constant laundered through a let",
+                "fn f() { let w: bool = (true, false).1; if w { set_loadout(x); } }",
+            ),
         ];
         for (label, src) in cases {
             let scrubbed = live_code(src);
@@ -3885,6 +4194,24 @@ mod tests {
             "const C: bool = true; fn f() { if C { set_loadout(a); } }",
             "match () { _ if x => { set_loadout(a); } _ => {} }",
             "fn f() { if a { return; } set_loadout(a); }",
+            // T-622 — the shapes a fail-closed evaluator could plausibly eat. Every one of these
+            // names something the program computes, so none of them is constant-shaped and none
+            // may be scrubbed. Without this half, "scrub whatever you cannot read" would pass the
+            // whole battery above by deleting the crate.
+            "fn f() { if let Some(v) = opt { set_loadout(v); } }",
+            "fn f() { while let Some(v) = it.next() { set_loadout(v); } }",
+            "fn f() { if resp.ok() { set_loadout(a); } }",
+            "fn f() { let ok = resp.ok(); if ok { set_loadout(a); } }",
+            "fn f() { let ok: bool = resp.ok(); if ok { set_loadout(a); } }",
+            "fn f() { if !items.is_empty() { set_loadout(a); } }",
+            "fn f() { if i < n { set_loadout(a); } }",
+            "fn f() { if cfg!(feature = \"x\") { set_loadout(a); } }",
+            "fn f() { if cfg!(target_arch = \"wasm32\") { set_loadout(a); } }",
+            // A numeric `const` is compile-time material, so it MUST fold rather than fail closed —
+            // otherwise every `const LIMIT: usize = …; if LIMIT > n` in the crate turns RED.
+            "const LIMIT: usize = 5; fn f() { if LIMIT > 3 { set_loadout(a); } }",
+            "const LIMIT: usize = 5; fn f() { if LIMIT > 3 && x { set_loadout(a); } }",
+            "const NAME: &str = \"x\"; fn f() { if p == NAME { set_loadout(a); } }",
         ] {
             assert!(
                 live_code(kept).contains("set_loadout"),
@@ -3901,6 +4228,121 @@ mod tests {
         // `live_source` keeps literals — a route path or a `data-testid` is shipped code.
         assert!(super::class_r_scrub::live_source("let p = \"/servers\";").contains("/servers"));
         assert!(!live_code("let p = \"/servers\";").contains("/servers"));
+    }
+
+    /// **T-622 — the property, not the list.**
+    ///
+    /// Five rounds of this defect (T-517 → T-567 → T-570 → W77-F2/F3 → W79) were each closed by
+    /// enumerating the wrapper shapes that had been reported, and each was walked around by the
+    /// next spelling. T-601's own fix lost the same way: it replaced two blocklists with a real
+    /// evaluator, and then let every expression the evaluator could not read fall through to
+    /// "keep" — which is "report as live". Six wrappers survived it on real production source.
+    ///
+    /// The list above is regression value. **This** is the thing that stops the seventh: it asserts
+    /// the invariant directly, over conditions chosen so that no fixer could have special-cased
+    /// them, using operators the evaluator provably does not model.
+    ///
+    /// The invariant has two halves and both are load-bearing:
+    ///
+    /// 1. A condition naming nothing the program computes is a compile-time constant. If it does
+    ///    not fold to `true`, the block goes — **whatever** shape it is.
+    /// 2. A condition naming anything the program computes is genuinely conditional and stays. A
+    ///    "fail-closed" scrubber without this half would pass every attack test by deleting the
+    ///    crate, and would turn all five cure-2 pins permanently RED.
+    #[test]
+    fn the_unknown_condition_fails_closed() {
+        use super::class_r_scrub::live_code;
+
+        // Half 1 — pure compile-time material, spelled with operators `lex` emits `Tok::Other`
+        // for. None of these is parsed; all of them must still be removed.
+        for cond in [
+            "(true, false).1",
+            "1 + 1 > 3",
+            "false | false",
+            "false ^ false",
+            "[false, true][0]",
+            "(|| false)()",
+            "1 << 2 == 7",
+            "10 % 3 == 2",
+            "-1 > 0",
+            "*&false",
+            "(true && false) & true",
+            "({ false })",
+            "::std::hint::black_box(false)",
+            "0xff_u8 as bool",
+        ] {
+            let src = format!("fn f() {{ if {cond} {{ set_loadout(x); }} }}");
+            assert!(
+                !live_code(&src).contains("set_loadout"),
+                "`if {cond}` mentions nothing this program computes, so its truth was fixed at \
+                 compile time. The evaluator could not read it — and an evaluator that cannot \
+                 prove code is live must not report it as live. This is a false GREEN, the exact \
+                 defect five waves have now failed to close by enumeration."
+            );
+        }
+
+        // The same shapes behind one level of `const` indirection, which is how the wave-79
+        // reproduction on the real `sse.rs` was built.
+        for init in ["(true, false).1", "{ false }", "1 + 1 > 3", "false | false"] {
+            let src = format!(
+                "const W_A: bool = {init}; const W_B: bool = W_A;\n\
+                 fn f() {{ if W_B {{ set_loadout(x); }} }}"
+            );
+            assert!(
+                !live_code(&src).contains("set_loadout"),
+                "`const W_A: bool = {init}; const W_B: bool = W_A` — a `const` is compile-time by \
+                 Rust's own rules, so a `const` this pass cannot fold is a constant it failed to \
+                 read, never a runtime value"
+            );
+        }
+
+        // Half 2 — one runtime name is enough to make the condition genuinely conditional. These
+        // are the same operators; the only difference is that something in them is computed.
+        for cond in [
+            "(true, flag).1",
+            "n + 1 > 3",
+            "flag | false",
+            "[flag, true][0]",
+            "(|| flag)()",
+            "resp.ok()",
+            "!items.is_empty()",
+            "cfg!(feature = \"x\")",
+            "let Some(v) = opt",
+        ] {
+            let src = format!("fn f() {{ if {cond} {{ set_loadout(x); }} }}");
+            assert!(
+                live_code(&src).contains("set_loadout"),
+                "`if {cond}` names something the program computes, so it is live code the \
+                 scrubber must leave alone. Eating it would turn every cure-2 pin permanently RED \
+                 — a fail-closed evaluator that scrubs the program is not a fix, it is an outage."
+            );
+        }
+
+        // ── the residual, pinned so it cannot grow in silence ────────────────────────────────
+        //
+        // These DO survive, and the module doc says so. A call is the boundary: to this pass
+        // `Option::<bool>::None.unwrap_or(false)` and `resp.ok()` are the same three tokens in the
+        // same order, and there is no reading of the text that separates them. Folding calls by
+        // name would be the blocklist again, one level down — and folding them *all* would delete
+        // every `if resp.ok()` in the crate. So an opaque call stays live, loudly documented,
+        // rather than quietly half-handled.
+        //
+        // Asserted rather than omitted: if a later change closes one of these, this test fails and
+        // whoever closed it gets to move the line in the module doc too. That is the opposite of
+        // how the last five rounds of this defect were "fixed".
+        for cond in [
+            "Option::<bool>::None.unwrap_or(false)",
+            "bool::default()",
+            "\"\".is_empty() && false == true",
+        ] {
+            let src = format!("fn f() {{ if {cond} {{ set_loadout(x); }} }}");
+            assert!(
+                live_code(&src).contains("set_loadout"),
+                "`if {cond}` is a KNOWN residual (an opaque call). If it now scrubs, that is an \
+                 improvement — say so in the residual list at the top of this file instead of \
+                 leaving this assertion lying about what the scrubber does."
+            );
+        }
     }
 
     /// **Two attacks the handed-down list does not contain.**
