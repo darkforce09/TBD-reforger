@@ -4300,7 +4300,7 @@ ALSO NOTED, deliberate and not a defect (verifier F5): `.world-boot-warning-base
 below boot reality on purpose, as a forcing function, so `world-boot.sh --mission=…` fails on clean
 main by design. Confirmed live (`5 > baseline 1 for msn_2d91be`). The cost, worth knowing: while a row
 is red, a NEW regression on it (5->6) is indistinguishable from the standing red. See T-609. |
-| T-615 | 3622 | ready | platform | DOCUMENTATION_STANDARDS.md is the most rotted example of the convention it defines — 7 dead links inside it | FOUND by T-611 (wave 78) while deciding whether `verify-citations` should read `docs/`. Doc-owned,
+| T-615 | 3622 | shipped | platform | DOCUMENTATION_STANDARDS.md is the most rotted example of the convention it defines — 7 dead links inside it | FOUND by T-611 (wave 78) while deciding whether `verify-citations` should read `docs/`. Doc-owned,
 so T-611 reported rather than fixed.
 
 === THE IRONY, AND THE POINT ===
@@ -4348,7 +4348,7 @@ every run -- trust that line over the doc if they disagree.
 `verify-citations` now prints its scope generated from its own constants, so the printed claim can no
 longer outlive the config. Any doc sentence that restates the scope in prose should defer to that line
 instead of duplicating it -- duplicated scope claims are how this ticket happened. |
-| T-616 | 3632 | deferred | platform | wave_plan.tsv mixes bare-number and wN wave labels, so current_wave() sorts the recent ones as zero | FOUND by T-613 (wave 78). Cosmetic today, wrong in a way that will mislead.
+| T-616 | 3632 | shipped | platform | wave_plan.tsv mixes bare-number and wN wave labels, so current_wave() sorts the recent ones as zero | FOUND by T-613 (wave 78). Cosmetic today, wrong in a way that will mislead.
 
 `docs/platform/wave_plan.tsv` column 1 carries **two incompatible label formats**: bare numbers
 (`0`-`11`, `43`-`68`, `99`) from the original packing, and `w76`/`w77`/`w78` from the recent waves.
@@ -4371,7 +4371,7 @@ NOTE the new wave-78 base-derivation cross-checks read `wave_plan.tsv` as one of
 (`ticket ledger`). They key on the `wN` form and worked correctly this wave ("wave 77 has 5
 ticket(s)… all shipped — corroborated"), but anything that normalises these labels must keep that
 check working -- see T-613's implementation before touching the format. |
-| T-617 | 3642 | deferred | platform | TBD_Dev_POC.conf tells players to watch for two log strings that no longer exist | FOUND by T-612 (wave 78) after it corrected the four scripts and six docs its own ticket named.
+| T-617 | 3642 | shipped | platform | TBD_Dev_POC.conf tells players to watch for two log strings that no longer exist | FOUND by T-612 (wave 78) after it corrected the four scripts and six docs its own ticket named.
 One more site, missed by the original sweep because it is a mission config rather than a doc or script.
 
 `apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf:5` -- `m_sDescription` still instructs players to
@@ -4464,7 +4464,7 @@ FIX: broaden `mcp-wb-logs.sh:57` to match its sibling -- **or better, make the c
 extracting the six shared patterns into one sourced file (`scripts/mod/lib/` already exists;
 `gate-grep.sh` lives there from T-556). A comment asserting a shared definition, over two divergent
 copies, is the signature defect in miniature: it reports agreement it never checked. |
-| T-620 | 3672 | ready | platform | verify-no-python has been RED since the factory started, is in no CI job, and half of it cannot fire | OPERATOR-RAISED 2026-08-01: *"I thought I had made a rule to make future scripts be in Rust using
+| T-620 | 3672 | shipped | platform | verify-no-python has been RED since the factory started, is in no CI job, and half of it cannot fire | OPERATOR-RAISED 2026-08-01: *"I thought I had made a rule to make future scripts be in Rust using
 xtask. That does not seem like it's the case."* **The rule exists and is correct. It has simply never
 been able to bind.** Three independent reasons, all measured.
 
@@ -4508,7 +4508,7 @@ interpreter-invocation half of this gate has never once run.
 RELATED: T-621 (no rule at all for shell), T-611 (`verify-citations` scoped so it never read Rust),
 T-606/T-612 (health checks satisfied only by a stale build). Same class each time: **a tool reports
 success over an input it never actually examined.** |
-| T-621 | 3682 | ready | platform | There is no Rust-first rule for shell — 58 scripts, 15,415 lines, no gate, no convention | OPERATOR-RAISED 2026-08-01, alongside T-620. Python has a rule (T-162, and see T-620 for why it never
+| T-621 | 3682 | shipped | platform | There is no Rust-first rule for shell — 58 scripts, 15,415 lines, no gate, no convention | OPERATOR-RAISED 2026-08-01, alongside T-620. Python has a rule (T-162, and see T-620 for why it never
 bound). **Shell has none at all** -- no `verify-no-shell`, no "new tooling goes in xtask" convention,
 nothing in `CODING_STANDARDS.md` or `CLAUDE.md`.
 
@@ -4588,6 +4588,46 @@ GREEN on unmodified main; a census over every SPA .rs file found **0** live cond
   `arsenal.rs:4321` so it cannot grow in silence.
 - The `the_*_rejects_every_dead_code_wrapper` batteries certify **twelve enumerated shapes and nothing
   more**; `the_unknown_condition_fails_closed` (`arsenal.rs:4253`) states the actual property. |
+| T-623 | 3702 | shipped | platform | The language ratchets had three holes of their own — C-quoted paths, extensionless shell, a lenient port | FOUND by wave 80's adversarial verifier, in wave 80's own fix, and closed in-wave.
+
+**F1 (LOW-MED, new) — the gate silently dropped C-quoted paths.** `git ls-files` C-quotes paths with
+non-ASCII, control chars, `"` or `\`, emitting e.g. `"scripts/pyth\303\266n.sh"`. The script's
+`[ -f "$f" ]` was false for that mangled string, so the file was dropped from `FILES` **with no
+complaint** and the gate reported OK. A tracked, python3-invoking `scripts/python.sh` PASSED.
+Fixed with `git ls-files -z` (NUL-delimited, via a temp file, since bash discards NULs in `$(...)`)
+-- and, the half that matters, **any enumerated path that does not resolve to a readable file is now
+a FAIL, not a silent skip.** Tested two ways: tracked-but-deleted, and `chmod 000`. Spaces were never
+affected and still behave.
+
+**F3 (LOW, new) — the shell ratchet only counted `*.sh`.** An extensionless bash tool was invisible,
+and the repo already ships one: `scripts/ticket`. Now counts `*.sh` OR a real shell shebang.
+**The trap, worth recording:** a naive `starts_with("#!")` files `xtask/src/main.rs` into the shell
+inventory, because it opens `#![allow(clippy::collapsible_if)]`. The shebang is therefore parsed --
+first token, basename, follow `env` past its flags, closed list of sh/bash/dash/zsh -- reading 256
+bytes, binary-tolerant, with three unit tests including that case. A sweep of all 2,530 tracked files
+found exactly two non-`.sh` files starting `#!`, and the second was that Rust attribute.
+Inventory now 59 (58 by extension + `scripts/ticket` by shebang).
+
+**F5 (LOW, latent) — the xtask port was more lenient than the Python it replaced.** A non-numeric wave
+label made the Python exit 1; the port exited 0 with `next wave is .`, and `preflight.sh` check 9 keys
+on the exit code -- so a reintroduced `wNN` label would have passed preflight silently. T-616 exists
+precisely because a bad label went unnoticed for five waves. Now nonzero, naming the offending rows,
+checked over every parsed row rather than the dispatchable subset; `--repack` is exempt because it
+regenerates the column and is the only way back from a rotted plan.
+**The empty-set case was split deliberately:** no rows parsed at all is a hard error (the tool has no
+input -- wrong `TBD_WAVE_PLAN`, truncation, a column shift). Rows parsed with none dispatchable exits
+0: *that case is the factory finishing, not breaking, and wedging preflight red the day the backlog
+empties would be a bug of our own making.*
+
+Byte-identity did not regress: 10 streams plus the repacked file diffed against the pre-change binary,
+all IDENTICAL (repacked plan 61,078 B, sha d5b815f3...). Every repack ran on a copy; the live plan is
+untouched and waves 76-81 intact.
+
+STILL OPEN, filed rather than fixed (verifier F2/F4, both LOW): the `.py` ban excludes nested
+`target/`, `node_modules/`, `.ai/artifacts/worktrees/`, so a tracked importable `.py` under
+`scripts/target/` evades it -- **pre-existing**, byte-identical to the pre-T-620 exclusions. And the
+pattern misses a bareword `python run.py`. Also cosmetic: `CODING_STANDARDS.md:126`, `Makefile:472`
+and `ci.yml:209` still say "58 .sh"; the gate reports the true count at runtime. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |

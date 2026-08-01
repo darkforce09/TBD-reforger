@@ -18,9 +18,6 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-615** — DOCUMENTATION_STANDARDS.md is the most rotted example of the convention it defines — 7 dead links inside it (ready)
-- **T-620** — verify-no-python has been RED since the factory started, is in no CI job, and half of it cannot fire (ready)
-- **T-621** — There is no Rust-first rule for shell — 58 scripts, 15,415 lines, no gate, no convention (ready)
 <!-- ticket-sync:next:end -->
 
 ---
