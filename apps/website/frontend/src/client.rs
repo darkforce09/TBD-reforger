@@ -274,9 +274,32 @@ pub fn peer_rotation_supersedes(peer: &RefreshResponse, about_to_spend: Option<&
 /// 2. **Re-read.** Otherwise take the freshest refresh token from shared storage rather than the
 ///    stale one held in this tab's signal, which is the copy that goes out of date the moment a
 ///    peer rotates. `stored()` falling back to `entry_token` covers the storage read failing (the
-///    blob is unreadable in some private-mode configurations); spending a stale token there costs
-///    one 401 in this tab, which is strictly better than refusing to refresh at all.
+///    blob is unreadable in some private-mode configurations).
 /// 3. **Spend** exactly that token.
+///
+/// **What a lost race costs — this comment used to understate it.** It said spending a stale token
+/// "costs one 401 in this tab, which is strictly better than refusing to refresh at all". The
+/// second half is still true; the first half is not. `handlers/auth.rs:149-152` treats presentation
+/// of an already-revoked token as **reuse** and calls `revoke_token_family`, which is
+/// `UPDATE refresh_tokens SET revoked_at = now() WHERE discord_id = $1 AND revoked_at IS NULL` —
+/// every live token for that user, including the pair the *winner* just minted. So the price of a
+/// lost race is not one 401 in one tab; it is **every tab logged out, the winner's included**.
+/// That is the 2026-07-13 incident class, which is what this function exists to prevent.
+///
+/// The window is real but narrow, and it takes **both** mitigations missing to reach it. The winner
+/// broadcasts before releasing the lock (`refresh_via_gloo`), but it persists to `localStorage`
+/// only *after* the lock releases — `on_refreshed` in [`send_with_refresh`] runs once `sf.run`
+/// returns. BroadcastChannel delivery is not ordered against Web Locks grant by any spec, so a
+/// waiter can be handed the lock, find no peer pair parked yet (step 1 misses), read a
+/// `localStorage` the winner has not written yet (step 2 misses), and spend the revoked token.
+/// T-155 nonetheless turned a **guaranteed** double-spend into a **rare two-lost-races** event,
+/// which is a large genuine improvement — the residual is this narrow interleaving, not the old bug.
+///
+/// **The native suite below cannot catch it.** The harness at the bottom of this file is
+/// single-threaded and deterministic: `block_on(join(a, b))` plus the `pending_once` park means the
+/// winner's post-await persist into the shared `storage` cell always completes before the waiter is
+/// resumed. The losing interleaving is therefore *unreachable* by the very tests that model the
+/// race. Read a green run as "the policy is right", not as "the residual window is closed".
 ///
 /// Generic over the lock, so the policy — which is all of the correctness — is unit-tested
 /// natively against a real fair mutex. `with_lock` is `FnOnce(body) -> future`: it must run `body`

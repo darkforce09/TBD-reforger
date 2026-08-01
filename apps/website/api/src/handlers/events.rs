@@ -1384,12 +1384,33 @@ pub async fn update_event(
 /// dashboards and everyone's deployments and nobody can sign up. It is a disappearance, not an
 /// erasure.
 ///
-/// That is deliberate. `migrations/0018_foreign_keys.sql` ships the cascade this handler would need
-/// (constraint 1, `event_missions.event_id → events(id) ON DELETE CASCADE`) and records that it
-/// **withheld** the handler change on purpose; `event_registrations.state` carries `attended`,
-/// stamped from real telemetry (`me.rs` `BACKFILL_ATTENDANCE`), which is history rather than
-/// schedule; and `matches.event_id` points here with no foreign key at all (0018 abstention (iv)),
-/// so a hard delete would silently orphan AAR and leaderboard rows.
+/// That is deliberate, and it rests on three things. `migrations/0018_foreign_keys.sql` ships the
+/// cascade this handler would need (constraint 1, `event_missions.event_id → events(id) ON DELETE
+/// CASCADE`) and records that it **withheld** the handler change on purpose. `event_registrations`
+/// hangs off that cascade (constraint 2) and its `state` carries `attended`, stamped from real
+/// telemetry (`me.rs` `BACKFILL_ATTENDANCE`) — so a cascade erases attendance *history*, not a
+/// schedule entry. And keeping the row is this platform's shape for a delete: `delete_mission`
+/// stamps `deleted_at`, `delete_announcement` sets `status = 'archived'`, `deactivate_server` sets
+/// `is_active = false`; the one admin delete that truly removes a row, `delete_modpack`, first 409s
+/// while anything still references it.
+///
+/// **`matches.event_id` is NOT a fourth reason, and this comment used to claim it was.** It read:
+/// "`matches.event_id` points here with no foreign key at all (0018 abstention (iv)), so a hard
+/// delete would silently orphan AAR and leaderboard rows." 0018 did abstain — but
+/// `0019_ingest_pointer_foreign_keys.sql:222-224` (T-585) added the constraint a full day before
+/// that sentence was written, and it is on every migrated database:
+///
+/// ```text
+/// matches_event_id_fkey | FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE SET NULL
+/// ```
+///
+/// So a hard delete orphans nothing. The `matches` row survives, `aar_replay_url` with it, and the
+/// leaderboard never reads `event_id` at all — `leaderboard_totals` aggregates `match_player_stats`,
+/// which hangs off `matches(id)` and is therefore untouched. What a hard delete would really do is
+/// **NULL the attribution**: the match stops knowing which event it was played for, silently, with
+/// nothing left to reconstruct it from. That is a real loss and a smaller one than orphaning, and
+/// it is the weakest of the reasons on this page. The decision stands on the other three; do not
+/// re-derive it from this one.
 ///
 /// **T-579 — the SPA's confirm dialog is an assertion about this function.** For four waves it read
 /// "The operation, its attached missions' ORBATs, and all registrations are removed. This cannot be
