@@ -125,17 +125,25 @@ fn validate_mip_tiles(
     Ok(())
 }
 
-/// Full-buffer structural parse (React `parseTbdSat`).
-pub fn parse_tbd_sat(buf: &[u8]) -> Result<TbdSatIndex, TbdSatError> {
-    let (index, payload_start) = parse_header(buf, buf.len() as u64)?;
-    validate_index(&index, payload_start, buf.len() as u64, true)?;
-    Ok(index)
-}
-
 /// Index-only parse for Range preview (React `parseTbdSatIndexOnly`).
 pub fn parse_tbd_sat_index_only(buf: &[u8], file_size: u64) -> Result<TbdSatIndex, TbdSatError> {
     let (index, payload_start) = parse_header(buf, file_size)?;
     validate_index(&index, payload_start, file_size, false)?;
+    Ok(index)
+}
+
+/// T-627 — header + index out of a **partial** buffer, validated with the full mip-chain rules.
+///
+/// Replaces the whole-buffer `parse_tbd_sat` (React `parseTbdSat`), which was the only strict
+/// parse and needed all 152 MB in hand to run. Dropping the whole-file GET in favour of per-tile
+/// Range requests would otherwise have quietly traded those checks (level numbering, the halving
+/// rule, tiles covering their level, the 1×1 terminator) for the loose block-range one. It does not
+/// have to: every one of those rules reads `offset` / `length` / `width` / `height` against
+/// `file_size`, and not one of them reads a payload byte. Same validation, ~2.6 KB of index instead
+/// of the whole texture.
+pub fn parse_tbd_sat_index_strict(buf: &[u8], file_size: u64) -> Result<TbdSatIndex, TbdSatError> {
+    let (index, payload_start) = parse_header(buf, file_size)?;
+    validate_index(&index, payload_start, file_size, true)?;
     Ok(index)
 }
 

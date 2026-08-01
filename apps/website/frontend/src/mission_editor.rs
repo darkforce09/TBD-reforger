@@ -181,6 +181,10 @@ fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
 /// tasks (IDB restore + server hydrate, and engine create + world/map-asset bootstrap); the overlay
 /// stays up with an honest phase label until **both** settle, so the operator never stares at a
 /// silent half-ready map. (The React editor had a T-060 determinate overlay that never ported.)
+///
+/// T-627 — the two variants below are the operator's two stages: `Hydrating` is stage 1 (the
+/// mission — fast, small) and `LoadingMap` is stage 2 (the map — slow, big). What each stage
+/// *shows* is [`boot_progress::MapStep`], reported by the map-asset bootstrap.
 #[derive(Clone, Copy, PartialEq)]
 enum BootPhase {
     /// IDB restore + server hydrate in flight.
@@ -189,6 +193,178 @@ enum BootPhase {
     LoadingMap,
     /// Doc hydrated + world settled — overlay hidden.
     Ready,
+}
+
+/// T-627 — the pure arithmetic behind the Mission Creator boot overlay, plus the ordering
+/// discipline the concurrent satellite fetch that feeds it has to honour.
+///
+/// It lives here, next to the overlay, rather than beside the fetch, because `mod world_assets` is
+/// `#[cfg(target_arch = "wasm32")]` in `main.rs`: not one line under it compiles on the host, so
+/// not one line under it can be unit-tested. Everything the loader can decide *without* a network —
+/// how a tile is split into Range requests, how out-of-order completions are put back into tile
+/// order, what a byte count reads as, when a bar is allowed to claim a number — is therefore
+/// hoisted into this module and proved by `t627_boot_progress` at the bottom of the file, leaving
+/// the wasm side with fetch, decode and upload. The pins in that module also hold
+/// `world_assets/satellite.rs` to actually routing through here.
+pub mod boot_progress {
+    /// Concurrent HTTP Range requests in flight against the map-asset host.
+    ///
+    /// Browsers cap ~6 connections per HTTP/1.1 origin, and the world-chunk loader is pulling from
+    /// that **same** origin for the whole boot, so the satellite cannot have all six: at 6 it wins
+    /// every slot and the chunk stream stalls behind it, which makes the boot the operator is
+    /// actually waiting on *slower* even though the texture lands sooner. 4 leaves two slots for
+    /// the chunk loader and still keeps the pipe full — everon's level 0 is exactly 4 tiles
+    /// (28.3 / 21.6 / 27.6 / 33.0 MB measured from the live index), so 4 in flight covers the
+    /// largest level in one wave and nothing is gained by going wider.
+    pub const SAT_FETCH_CONCURRENCY: usize = 4;
+
+    /// Bytes per Range request. A tile is fetched as a run of these rather than in one shot, and
+    /// the reason is the *bar*: everon's level 0 is four ~25 MB tiles fetched four-up, so per-tile
+    /// reporting would leave the bar at 0% for the entire download and then snap to 100% — the
+    /// same "conveys nothing" failure as the fixed-width animation this slice replaces. At 4 MiB
+    /// the 152.7 MB bundle reports ~37 times (~2.7% a step) and the per-request overhead is noise
+    /// beside the body.
+    pub const SAT_CHUNK_BYTES: u64 = 4 * 1024 * 1024;
+
+    /// Split one tile's byte extent into consecutive `fetch_range` arguments (**inclusive** ends,
+    /// which is what the `Range: bytes=a-b` header wants).
+    ///
+    /// The contract the caller depends on and `t627_boot_progress` pins: the returned spans are in
+    /// ascending order, are contiguous with no gap and no overlap, and cover `[offset, offset +
+    /// length)` exactly — concatenating the bodies back in this order reproduces the tile byte for
+    /// byte. A zero-length tile yields no requests; a zero `chunk` degrades to 1 byte a request
+    /// rather than looping forever.
+    #[must_use]
+    pub fn split_range(offset: u64, length: u64, chunk: u64) -> Vec<(u64, u64)> {
+        if length == 0 {
+            return Vec::new();
+        }
+        let step = chunk.max(1);
+        let end = offset + length; // exclusive
+        let mut out = Vec::new();
+        let mut at = offset;
+        while at < end {
+            let stop = at.saturating_add(step).min(end); // exclusive
+            out.push((at, stop - 1));
+            at = stop;
+        }
+        out
+    }
+
+    /// Index-addressed collector for completions that arrive out of order.
+    ///
+    /// `buffer_unordered` hands back whichever request the network finished first, but the
+    /// satellite is consumed **positionally** — tile *n* of the reassembled `Vec` is uploaded at
+    /// `mip.tiles[n]`'s `(x, y)`, and chunk *n* of a tile is concatenated at its own offset. A Vec
+    /// pushed in completion order is therefore a scrambled texture that looks like a rendering bug.
+    /// Every result carries the index of the request that produced it and is written to that slot;
+    /// [`Ordered::finish`] refuses to hand back a partially filled run, so a dropped completion is
+    /// a `None` rather than a silently shorter, shifted `Vec`.
+    pub struct Ordered<T> {
+        slots: Vec<Option<T>>,
+    }
+
+    impl<T> Ordered<T> {
+        #[must_use]
+        pub fn new(n: usize) -> Self {
+            Self {
+                slots: (0..n).map(|_| None).collect(),
+            }
+        }
+
+        /// Place `v` at `i`. `false` when `i` is out of range — the caller must treat that as a
+        /// failed fetch, not skip it, or the run silently loses a chunk.
+        pub fn put(&mut self, i: usize, v: T) -> bool {
+            match self.slots.get_mut(i) {
+                Some(slot) => {
+                    *slot = Some(v);
+                    true
+                }
+                None => false,
+            }
+        }
+
+        /// The run in index order, or `None` if any slot was never filled.
+        #[must_use]
+        pub fn finish(self) -> Option<Vec<T>> {
+            self.slots.into_iter().collect()
+        }
+    }
+
+    /// Which map-asset step stage 2 is on. Only [`MapStep::Satellite`] carries numbers, because it
+    /// is the only step whose size is known before it starts (the tbd-sat index lists every tile's
+    /// `length`). The others deliberately carry none rather than an invented one.
+    #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+    pub enum MapStep {
+        /// Manifest + DEM decode + hillshade + the Range satellite preview.
+        #[default]
+        Terrain,
+        /// The unified satellite mip chain: `done` / `total` bytes of the mips that will actually
+        /// be uploaded (levels below the GPU's `maxTextureDimension2D` are never fetched).
+        Satellite { done: u64, total: u64 },
+        /// World chunk residency, forest mass, labels — no byte budget is known up front.
+        World,
+    }
+
+    impl MapStep {
+        /// The caption under the bar.
+        #[must_use]
+        pub fn caption(self) -> String {
+            match self {
+                Self::Terrain => "Terrain".to_string(),
+                Self::Satellite { done, total } => {
+                    format!("Satellite · {}", fmt_bytes_pair(done, total))
+                }
+                Self::World => "World objects".to_string(),
+            }
+        }
+
+        /// Bar fill in percent, or `None` when this step has no measurement — the overlay must then
+        /// draw an **indeterminate** bar. Never estimated from elapsed time: a bar that moves on a
+        /// guessed duration is the fixed-width animation again, wearing a percentage.
+        #[must_use]
+        pub fn fill(self) -> Option<f64> {
+            match self {
+                Self::Satellite { done, total } if total > 0 => Some(percent(done, total)),
+                _ => None,
+            }
+        }
+    }
+
+    /// `done / total` as 0..=100. Clamped at the top so a server that returns one byte more than
+    /// the index promised cannot push the bar past the end of its track, and `0` for a zero total
+    /// (nothing measured is nothing done, not a division).
+    #[must_use]
+    pub fn percent(done: u64, total: u64) -> f64 {
+        if total == 0 {
+            return 0.0;
+        }
+        #[allow(clippy::cast_precision_loss)]
+        let pct = (done as f64 / total as f64) * 100.0;
+        pct.clamp(0.0, 100.0)
+    }
+
+    /// `"47.3 MB / 152.7 MB"` — both sides in whatever unit `total` warrants, so the pair reads as
+    /// one measurement instead of switching units under the operator mid-download. Base-10 (MB, not
+    /// MiB) to match the manifest's `bytes` field and every browser download UI.
+    #[must_use]
+    pub fn fmt_bytes_pair(done: u64, total: u64) -> String {
+        #[allow(clippy::cast_precision_loss)]
+        fn mb(n: u64) -> f64 {
+            n as f64 / 1_000_000.0
+        }
+        if total >= 1_000_000 {
+            format!("{:.1} MB / {:.1} MB", mb(done), mb(total))
+        } else if total >= 1_000 {
+            format!(
+                "{} KB / {} KB",
+                done.div_ceil(1_000).min(total.div_ceil(1_000)),
+                total.div_ceil(1_000)
+            )
+        } else {
+            format!("{done} B / {total} B")
+        }
+    }
 }
 
 #[component]
@@ -217,6 +393,10 @@ pub fn MissionEditorPage() -> impl IntoView {
     let debug_hud = RwSignal::new(String::new());
     // T-175 B5 — boot loading overlay phase (set by the wasm boot tasks; the view reads it).
     let boot = RwSignal::new(BootPhase::Hydrating);
+    // T-627 — stage-2 detail: which map-asset step is running, and (satellite only) how many of its
+    // bytes have actually landed. Written by `world_assets::bootstrap` through the callback handed
+    // to it below — never by a timer, so it can only ever report completed work.
+    let map_step = RwSignal::new(boot_progress::MapStep::default());
     #[cfg(target_arch = "wasm32")]
     {
         use std::cell::Cell;
@@ -826,11 +1006,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // T-175 B5 — mark the world settled + clear the loading overlay once
                                 // the map-asset / residency bootstrap finishes (→ Ready if the doc
                                 // already hydrated, else the hydrate task flips Ready).
+                                // T-627 — the bootstrap reports its step (and the satellite's real
+                                // byte progress) straight into `map_step`; the overlay renders
+                                // whatever landed. `RwSignal` is `Copy`, so the `Fn` closure just
+                                // captures it.
                                 let boot_fut = crate::world_assets::bootstrap(
                                     engine.clone(),
                                     terrain,
                                     host,
                                     dem_grid.clone(),
+                                    std::rc::Rc::new(move |s| map_step.set(s)),
                                 );
                                 let world_ready = world_ready.clone();
                                 let restore_settled = restore_settled.clone();
@@ -1642,26 +1827,53 @@ pub fn MissionEditorPage() -> impl IntoView {
                     <ConflictDialog conflict conflict_id=mission_id.clone() />
                 </div>
             </div>
-            // T-175 B5 — boot loading overlay. Honest phase label + indeterminate bar (the surviving
-            // T-060 `mc-load-bar`) until doc hydrate AND the initial world/map-asset settle finish,
-            // so the operator never faces a silent half-ready map. `pointer-events-none` so it never
-            // intercepts an operator / editor-smoke click (the map no-ops while the engine is None).
+            // T-175 B5 / T-627 — boot loading overlay, two stages. Stage 1 is the mission (IDB
+            // restore + server hydrate); stage 2 is the map, captioned with the step it is on and,
+            // for the satellite, its real byte count. `pointer-events-none` so it never intercepts
+            // an operator / editor-smoke click (the map no-ops while the engine is None).
+            //
+            // The bar is determinate EXACTLY when `MapStep::fill()` returns a measurement and
+            // indeterminate otherwise — no phase gets a number invented for it, and no phase gets
+            // its bar advanced by a clock. The 200 ms ease on `.mc-load-fill` only travels *to* the
+            // last reported byte total; it can lag a real completion, never lead one.
             {move || {
                 let phase = boot.get();
+                let step = map_step.get();
                 (phase != BootPhase::Ready)
                     .then(|| {
-                        let label = if phase == BootPhase::Hydrating {
-                            "Loading mission…"
+                        let hydrating = phase == BootPhase::Hydrating;
+                        let title = if hydrating { "Loading mission…" } else { "Loading map…" };
+                        // Stage 1 has no progress data to report: the hydrate is one IDB replay
+                        // plus one whole-document GET, neither of which yields a per-unit signal.
+                        // An honest "what it is doing" beats a fabricated "how far along".
+                        let caption = if hydrating {
+                            "Restoring document".to_string()
                         } else {
-                            "Loading map…"
+                            step.caption()
                         };
+                        let fill = if hydrating { None } else { step.fill() };
                         view! {
                             <div class="animate-overlay-fade pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-background/85 backdrop-blur-sm">
-                                <div class="flex w-64 flex-col items-center gap-3">
-                                    <p class="text-sm font-medium text-on-surface-variant">{label}</p>
+                                <div class="flex w-64 flex-col items-center gap-2">
+                                    <p class="text-sm font-medium text-on-surface-variant">{title}</p>
                                     <div class="h-1 w-56 overflow-hidden rounded-full bg-surface-variant/40">
-                                        <div class="animate-mc-load-bar h-full w-1/4 rounded-full bg-primary"></div>
+                                        {match fill {
+                                            Some(pct) => view! {
+                                                <div
+                                                    class="mc-load-fill h-full rounded-full bg-primary"
+                                                    style=format!("width:{pct:.1}%")
+                                                ></div>
+                                            }
+                                            .into_any(),
+                                            None => view! {
+                                                <div class="animate-mc-load-bar h-full w-1/4 rounded-full bg-primary"></div>
+                                            }
+                                            .into_any(),
+                                        }}
                                     </div>
+                                    <p class="font-mono text-[11px] tabular-nums text-on-surface-variant/60">
+                                        {caption}
+                                    </p>
                                 </div>
                             </div>
                         }
@@ -2280,6 +2492,297 @@ mod t427_cold_registry_path {
         assert!(
             (rows.len() as i64) < c.source_edge_count.unwrap(),
             "cargo_defaults view must be smaller than the raw edge walk"
+        );
+    }
+}
+
+/// T-627 — the Mission Creator boot overlay: two determinate-where-measurable stages, and a
+/// satellite fetch that is concurrent without being unordered.
+///
+/// Everything the loader itself does is `#[cfg(target_arch = "wasm32")]` — `fetch_range` is
+/// `gloo-net` over `web_sys`, and `mod world_assets` does not exist on the host at all — so no test
+/// here fetches anything, and none pretends to. What these pins do cover is the whole class of bug
+/// a host test *can* catch cheaply and a browser cannot catch at all until the texture is already
+/// on screen and wrong: the byte arithmetic behind the bar, and the reassembly that decides whether
+/// tile 3's pixels land at tile 3's coordinates. The last two pins hold the wasm side to actually
+/// routing through the code proved here, so it cannot drift back to a sequential or an unordered
+/// loop while these stay green.
+#[cfg(test)]
+mod t627_boot_progress {
+    use super::boot_progress::{
+        fmt_bytes_pair, percent, split_range, MapStep, Ordered, SAT_CHUNK_BYTES,
+        SAT_FETCH_CONCURRENCY,
+    };
+
+    /// everon `everon-sat.tbd-sat`, read off the live index at `/map-assets/everon/satellite/`
+    /// (2026-08-01): file 152,713,114 B; level 0 = 4 tiles of 28,326,346 / 21,632,714 / 27,555,806
+    /// / 33,042,794 starting at 2,644.
+    const L0_TILE0_OFFSET: u64 = 2_644;
+    const L0_TILE0_LENGTH: u64 = 28_326_346;
+    const FILE_BYTES: u64 = 152_713_114;
+
+    // ── split_range: the spans must rebuild the tile byte for byte ────────────────────────────
+
+    #[test]
+    fn split_range_covers_the_tile_exactly_contiguously_and_in_order() {
+        let spans = split_range(L0_TILE0_OFFSET, L0_TILE0_LENGTH, SAT_CHUNK_BYTES);
+        assert!(!spans.is_empty(), "a 28 MB tile must produce requests");
+        assert_eq!(
+            spans[0].0, L0_TILE0_OFFSET,
+            "the run must start at the tile's own offset"
+        );
+        assert_eq!(
+            spans[spans.len() - 1].1,
+            L0_TILE0_OFFSET + L0_TILE0_LENGTH - 1,
+            "the run must end on the tile's last byte (Range ends are inclusive)"
+        );
+        let mut covered = 0u64;
+        for (i, &(start, end)) in spans.iter().enumerate() {
+            assert!(end >= start, "span {i} is inverted");
+            assert!(
+                end - start + 1 <= SAT_CHUNK_BYTES,
+                "span {i} is larger than one request"
+            );
+            if i > 0 {
+                assert_eq!(
+                    start,
+                    spans[i - 1].1 + 1,
+                    "span {i} must resume exactly where {} stopped — a gap loses bytes, an \
+                     overlap duplicates them, and concatenation cannot tell either from a good run",
+                    i - 1
+                );
+            }
+            covered += end - start + 1;
+        }
+        assert_eq!(
+            covered, L0_TILE0_LENGTH,
+            "the spans must cover the tile exactly"
+        );
+    }
+
+    #[test]
+    fn split_range_degenerate_inputs_do_not_loop_or_overrun() {
+        assert!(
+            split_range(2_644, 0, SAT_CHUNK_BYTES).is_empty(),
+            "a zero-length tile asks for nothing"
+        );
+        assert_eq!(
+            split_range(100, 10, SAT_CHUNK_BYTES),
+            vec![(100, 109)],
+            "a tile below one chunk is one request"
+        );
+        assert_eq!(
+            split_range(100, 3, 0),
+            vec![(100, 100), (101, 101), (102, 102)],
+            "a zero chunk must degrade to 1 B a request, not spin"
+        );
+    }
+
+    // ── Ordered: the scrambled-texture guard ─────────────────────────────────────────────────
+
+    #[test]
+    fn completions_arriving_out_of_order_reassemble_in_request_order() {
+        // The network hands back 3, 0, 2, 1 — the shape `buffer_unordered` actually produces.
+        let mut slots: Ordered<&str> = Ordered::new(4);
+        for (i, body) in [(3, "d"), (0, "a"), (2, "c"), (1, "b")] {
+            assert!(slots.put(i, body), "slot {i} must accept its body");
+        }
+        assert_eq!(
+            slots.finish(),
+            Some(vec!["a", "b", "c", "d"]),
+            "the assembled run must be in REQUEST order, not completion order — `commit_mip` \
+             uploads element n at mip.tiles[n]'s (x, y), so completion order here is a scrambled \
+             satellite texture that reads as a rendering bug"
+        );
+    }
+
+    #[test]
+    fn a_dropped_completion_fails_instead_of_shifting_the_run() {
+        let mut slots: Ordered<u8> = Ordered::new(3);
+        assert!(slots.put(0, 1));
+        assert!(slots.put(2, 3));
+        assert_eq!(
+            slots.finish(),
+            None,
+            "a missing chunk must fail the whole fetch; a 2-element Vec would silently shift \
+             every tile after the gap"
+        );
+    }
+
+    #[test]
+    fn an_out_of_range_slot_is_refused_rather_than_dropped() {
+        let mut slots: Ordered<u8> = Ordered::new(2);
+        assert!(
+            !slots.put(2, 9),
+            "an index past the plan must be reported so the caller aborts — silently ignoring \
+             it loses a chunk the length check would then blame on the server"
+        );
+    }
+
+    // ── percent / byte formatting ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn percent_is_clamped_and_survives_a_zero_total() {
+        assert!((percent(0, FILE_BYTES) - 0.0).abs() < 1e-9);
+        assert!((percent(FILE_BYTES / 2, FILE_BYTES) - 50.0).abs() < 0.001);
+        assert!((percent(FILE_BYTES, FILE_BYTES) - 100.0).abs() < 1e-9);
+        assert!(
+            (percent(FILE_BYTES + 4096, FILE_BYTES) - 100.0).abs() < 1e-9,
+            "a body longer than the index promised must not push the fill past its track"
+        );
+        assert!(
+            (percent(1, 0) - 0.0).abs() < 1e-9,
+            "nothing measured is nothing done, not a division"
+        );
+    }
+
+    #[test]
+    fn the_byte_pair_reads_in_one_unit_and_matches_the_manifest() {
+        assert_eq!(
+            fmt_bytes_pair(0, FILE_BYTES),
+            "0.0 MB / 152.7 MB",
+            "the total must read as the manifest's own `bytes` field does"
+        );
+        assert_eq!(fmt_bytes_pair(47_300_000, FILE_BYTES), "47.3 MB / 152.7 MB");
+        assert_eq!(
+            fmt_bytes_pair(4_194_304, 42_152_810),
+            "4.2 MB / 42.2 MB",
+            "the 8192-limit device fetches level 1 down — 42 MB, not 152"
+        );
+        assert_eq!(
+            fmt_bytes_pair(500, 900),
+            "500 B / 900 B",
+            "a sub-KB total must not read as 0.0 MB / 0.0 MB"
+        );
+    }
+
+    // ── which steps are allowed to claim a number ────────────────────────────────────────────
+
+    #[test]
+    fn only_the_satellite_step_claims_a_number() {
+        assert_eq!(
+            MapStep::Terrain.fill(),
+            None,
+            "terrain has no byte budget — it must draw the indeterminate bar"
+        );
+        assert_eq!(
+            MapStep::World.fill(),
+            None,
+            "world residency has no byte budget — it must draw the indeterminate bar"
+        );
+        assert_eq!(
+            MapStep::Satellite {
+                done: 0,
+                total: FILE_BYTES
+            }
+            .fill(),
+            Some(0.0),
+            "the satellite knows its size from the index before the first byte moves"
+        );
+        assert_eq!(
+            MapStep::Satellite { done: 1, total: 0 }.fill(),
+            None,
+            "a satellite step with no total is not measured either"
+        );
+        assert_eq!(
+            MapStep::Satellite {
+                done: 47_300_000,
+                total: FILE_BYTES
+            }
+            .caption(),
+            "Satellite · 47.3 MB / 152.7 MB"
+        );
+        assert_eq!(MapStep::Terrain.caption(), "Terrain");
+        assert_eq!(MapStep::World.caption(), "World objects");
+    }
+
+    // ── the wasm side must actually route through the code proved above ──────────────────────
+
+    /// Source pin on `world_assets/satellite.rs`. It is `#[cfg(target_arch = "wasm32")]` (via
+    /// `mod world_assets` in `main.rs`), so nothing in it can be called from here — but it can be
+    /// held to *shape*. `live_code` blanks comments and string literals first, so a needle can only
+    /// be satisfied by code that ships.
+    #[test]
+    fn the_satellite_fetch_is_bounded_concurrent_ordered_and_fails_fast() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("world_assets/satellite.rs"));
+        let body = only_body(&src, "async fn fetch_tiles(");
+
+        assert!(
+            body.contains("buffer_unordered(SAT_FETCH_CONCURRENCY)"),
+            "the fetch must be concurrent and BOUNDED by the named constant — an unbounded \
+             `FuturesUnordered` over 37 requests starves the world-chunk loader on the same origin"
+        );
+        assert!(
+            body.contains("split_range(t.offset, t.length, SAT_CHUNK_BYTES)"),
+            "requests must come from the span planner proved above, not an ad-hoc loop"
+        );
+        assert!(
+            body.contains("Ordered::new(p.len())") && body.contains(".put(pi, body.bytes)"),
+            "completions must be written to their own index; a `push` here is the scrambled \
+             texture this module exists to prevent"
+        );
+        assert!(
+            body.contains("slot.finish()?"),
+            "reassembly must refuse a partially filled run"
+        );
+        assert!(
+            body.contains("let body = got?;")
+                && body.contains("body.bytes.len() as u64 != want")
+                && body.contains("body.total != file_size"),
+            "fail-fast and the length check must both survive: the pre-T-627 loop returned None \
+             on the first failure and on a short body, and a partial texture must still never \
+             reach commit_mip"
+        );
+        assert!(
+            !body.contains("out.push(body.bytes)"),
+            "bodies must never be pushed in completion order"
+        );
+
+        // And the full load must not be back to swallowing the whole bundle to read its index.
+        let full = only_body(&src, "async fn load_unified_full(");
+        assert!(
+            full.contains("fetch_index_head(url, true)") && full.contains("fetch_tiles(url,"),
+            "the full mip chain must come from the index + per-tile Range fetches"
+        );
+        assert!(
+            !full.contains("fetch_bytes(url)"),
+            "a whole-file GET has no byte progress to report and drags down 110.6 MB of level 0 \
+             that an 8192-limit GPU cannot use"
+        );
+    }
+
+    /// Source pin on the overlay itself: the bar's determinacy is decided by `MapStep::fill()`,
+    /// not by a literal width. Raw `include_str!` (not `live_code`) because this file's first
+    /// `#[cfg(test)]` is a `clear_for_test` helper near the top, which would cut the view out;
+    /// the needles are therefore assembled at runtime so this test's own text cannot satisfy them.
+    #[test]
+    fn the_overlay_bar_is_determinate_only_where_a_measurement_exists() {
+        let src = include_str!("mission_editor.rs");
+        let from_fill = format!("{}{}", "step.", "fill()");
+        assert!(
+            src.contains(&from_fill),
+            "the overlay must ask the step whether it has a measurement"
+        );
+        let inline_width = format!("{}{}", "width:{", "pct:.1}%");
+        assert!(
+            src.contains(&inline_width),
+            "the determinate fill's width must be the real percentage"
+        );
+        let indeterminate = format!("{}{}", "animate-mc-", "load-bar");
+        assert!(
+            src.contains(indeterminate.as_str()),
+            "the unmeasured phases must keep an honest indeterminate bar"
+        );
+        assert!(
+            SAT_FETCH_CONCURRENCY >= 4 && SAT_FETCH_CONCURRENCY <= 6,
+            "browsers cap ~6 connections per origin and the chunk loader shares them — outside \
+             4..=6 this is either not parallel or actively starving the rest of the boot"
+        );
+        assert!(
+            SAT_CHUNK_BYTES > 0 && FILE_BYTES / SAT_CHUNK_BYTES >= 20,
+            "the chunk size must give the bar at least ~20 steps across the bundle, or it is a \
+             per-tile bar again: four ~25 MB tiles fetched four-up would sit at 0% then snap"
         );
     }
 }

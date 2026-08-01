@@ -183,13 +183,26 @@ pub fn apply_basemap_view(view: &str) {
     });
 }
 
+/// T-627 — where the editor's stage-2 loading caption comes from. `Rc` because the satellite fetch
+/// needs it inside a future that outlives `bootstrap`'s stack frame while the world steps below
+/// still call it.
+pub type StepFn = Rc<dyn Fn(crate::mission_editor::boot_progress::MapStep)>;
+
 /// Mount-time bootstrap: hillshade + sat + DEM vectors + world + forest, then first settle.
+///
+/// `on_step` is called as each phase begins, and repeatedly during the satellite fetch with its
+/// real byte count. Every call reports work that has **already happened** — there is no timer in
+/// this path, so a stalled network shows a stalled bar, which is the point.
 pub async fn bootstrap(
     engine: EngineHandle,
     terrain: String,
     host: HostHandle,
     dem_out: DemGridHandle,
+    on_step: StepFn,
 ) {
+    use crate::mission_editor::boot_progress::MapStep;
+
+    on_step(MapStep::Terrain);
     let mut mh = MapHost::new();
     mh.terrain = terrain.clone();
     let bridge = mh.bridge.clone();
@@ -205,10 +218,22 @@ pub async fn bootstrap(
     let dem_fut = async { load_dem_and_hillshade(&engine, &base, manifest.as_ref()?).await };
     let sat_fut = async {
         let (url, tw, th) = sat_url_from(manifest.as_ref()?, &base)?;
-        satellite::load_satellite(engine.clone(), &base, &url, tw, th, bridge.clone()).await;
+        satellite::load_satellite(
+            engine.clone(),
+            &base,
+            &url,
+            tw,
+            th,
+            bridge.clone(),
+            on_step.as_ref(),
+        )
+        .await;
         Some(())
     };
     let (dem_res, _sat) = futures::join!(dem_fut, sat_fut);
+    // Everything past here is world residency / forest / labels — no byte budget is known for any
+    // of it, so the overlay goes back to an honest indeterminate bar rather than inventing one.
+    on_step(MapStep::World);
 
     // T-173 H5 — keep the decoded DEM raster so the label host can find peaks after the world's
     // roads load (peaks + road/town labels all init together below).

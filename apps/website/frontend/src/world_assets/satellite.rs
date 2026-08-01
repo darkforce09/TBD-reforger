@@ -1,16 +1,24 @@
 //! T-166 — unified satellite host: TBDS Range preview + optional full mip upload.
-//! CI / `?sat=preview` never GETs the 146–206 MB bundle body (Range only).
+//!
+//! T-627: **no** path GETs the bundle body any more, not just `?sat=preview`. The full load reads
+//! the index by Range and then fetches only the tiles it will upload, `SAT_FETCH_CONCURRENCY`
+//! requests at a time — so the old "CI never downloads 146–206 MB" guarantee now holds for every
+//! caller, and on a GPU whose `maxTextureDimension2D` is below the 12800 px base level it is the
+//! difference between 152.7 MB and 42.2 MB of everon.
 
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 
+use crate::mission_editor::boot_progress::{
+    split_range, MapStep, Ordered, SAT_CHUNK_BYTES, SAT_FETCH_CONCURRENCY,
+};
 use crate::select_tool::EngineHandle;
 
 use super::bridge::{publish, BridgeHandle};
 use super::fetch::{fetch_bytes, fetch_range};
 use super::tbd_sat::{
-    parse_tbd_sat, parse_tbd_sat_index_only, pick_base_level, pick_preview_level, TbdSatIndex,
-    TbdSatMip,
+    parse_tbd_sat_index_only, parse_tbd_sat_index_strict, pick_base_level, pick_preview_level,
+    TbdSatIndex, TbdSatMip, TbdSatTile,
 };
 
 const ROLE_BASEMAP: u32 = 0;
@@ -89,7 +97,10 @@ fn upload_decoded(
     }
 }
 
-async fn fetch_index_head(url: &str) -> Option<(TbdSatIndex, u64)> {
+/// `strict` runs the full mip-chain validation (`parse_tbd_sat_index_strict`) instead of the loose
+/// block-range one — see that function. The preview path stays loose, as it always was; the full
+/// load is strict, as it always was when it parsed the whole downloaded file.
+async fn fetch_index_head(url: &str, strict: bool) -> Option<(TbdSatIndex, u64)> {
     let head = fetch_range(url, 0, 11).await?;
     if head.bytes.len() < 12 {
         return None;
@@ -100,24 +111,101 @@ async fn fetch_index_head(url: &str) -> Option<(TbdSatIndex, u64)> {
         return None;
     }
     let full = fetch_range(url, 0, 11 + u64::from(json_len)).await?;
-    let index = parse_tbd_sat_index_only(&full.bytes, full.total).ok()?;
+    let index = if strict {
+        parse_tbd_sat_index_strict(&full.bytes, full.total).ok()?
+    } else {
+        parse_tbd_sat_index_only(&full.bytes, full.total).ok()?
+    };
     Some((index, full.total))
+}
+
+/// T-627 — fetch every tile in `tiles` over **concurrent** HTTP Range requests, returning the
+/// bodies in `tiles` order.
+///
+/// wasm is single-threaded, so "concurrent" here is `buffer_unordered` over a stream of futures:
+/// `SAT_FETCH_CONCURRENCY` requests are in flight at once and the browser pipelines them. What that
+/// buys, and what it costs:
+///
+/// * **Order.** Completions arrive in network order, and callers consume the result positionally
+///   (`commit_mip` pairs element *n* with `mip.tiles[n]`, and a tile's chunks concatenate at their
+///   own offsets). Every request therefore carries `(tile, part)` indices and is written into
+///   [`Ordered`] at exactly those, never pushed. Getting this wrong is a scrambled satellite
+///   texture that reads as a rendering bug, so the reassembly is pinned by a host test.
+/// * **Fail-fast.** The first failed request, short body, or `content-range` total that disagrees
+///   with the index's file size returns `None` immediately; dropping the stream cancels whatever is
+///   still in flight. A partial texture never reaches `commit_mip`.
+/// * **Progress.** `on_bytes` is called with the size of each completed request — completed work
+///   only, never a prediction.
+async fn fetch_tiles(
+    url: &str,
+    file_size: u64,
+    tiles: &[TbdSatTile],
+    mut on_bytes: impl FnMut(u64),
+) -> Option<Vec<Vec<u8>>> {
+    use futures::stream::StreamExt;
+
+    // One `fetch_range` per ≤SAT_CHUNK_BYTES slice of a tile — sub-tile granularity is what makes
+    // the bar move during level 0's four ~25 MB tiles instead of sitting at 0% until they all land.
+    let plans: Vec<Vec<(u64, u64)>> = tiles
+        .iter()
+        .map(|t| split_range(t.offset, t.length, SAT_CHUNK_BYTES))
+        .collect();
+    let reqs: Vec<(usize, usize, u64, u64)> = plans
+        .iter()
+        .enumerate()
+        .flat_map(|(ti, plan)| {
+            plan.iter()
+                .enumerate()
+                .map(move |(pi, &(start, end))| (ti, pi, start, end))
+        })
+        .collect();
+
+    let mut parts: Vec<Ordered<Vec<u8>>> = plans.iter().map(|p| Ordered::new(p.len())).collect();
+    let mut inflight =
+        futures::stream::iter(reqs.into_iter().map(|(ti, pi, start, end)| async move {
+            (ti, pi, start, end, fetch_range(url, start, end).await)
+        }))
+        .buffer_unordered(SAT_FETCH_CONCURRENCY);
+
+    while let Some((ti, pi, start, end, got)) = inflight.next().await {
+        let body = got?;
+        let want = end - start + 1;
+        // Both halves of the original loop's validation, per request: the body is exactly the span
+        // that was asked for, and it came from the file the index describes (a bundle rebuilt
+        // mid-boot changes `content-range`'s total, and stitching those bytes in would be silent
+        // corruption).
+        if body.bytes.len() as u64 != want || body.total != file_size {
+            return None;
+        }
+        on_bytes(want);
+        if !parts.get_mut(ti)?.put(pi, body.bytes) {
+            return None;
+        }
+    }
+    drop(inflight);
+
+    let mut out = Vec::with_capacity(tiles.len());
+    for (tile, slot) in tiles.iter().zip(parts) {
+        let chunks = slot.finish()?; // a dropped completion fails here rather than shifting the run
+        let mut bytes = Vec::with_capacity(tile.length as usize);
+        for c in chunks {
+            bytes.extend_from_slice(&c);
+        }
+        if bytes.len() as u64 != tile.length {
+            return None;
+        }
+        out.push(bytes);
+    }
+    Some(out)
 }
 
 async fn fetch_mip_blocks(
     url: &str,
+    file_size: u64,
     mip: &TbdSatMip,
-) -> Option<Vec<(super::tbd_sat::TbdSatTile, Vec<u8>)>> {
-    let mut out = Vec::with_capacity(mip.tiles.len());
-    for tile in &mip.tiles {
-        let end = tile.offset + tile.length - 1;
-        let r = fetch_range(url, tile.offset, end).await?;
-        if r.bytes.len() as u64 != tile.length {
-            return None;
-        }
-        out.push((tile.clone(), r.bytes));
-    }
-    Some(out)
+) -> Option<Vec<(TbdSatTile, Vec<u8>)>> {
+    let bodies = fetch_tiles(url, file_size, &mip.tiles, |_| {}).await?;
+    Some(mip.tiles.iter().cloned().zip(bodies).collect())
 }
 
 async fn commit_mip(
@@ -177,11 +265,11 @@ async fn try_preview(
     terrain_h: f64,
     bridge: &BridgeHandle,
 ) -> bool {
-    let Some((index, _total)) = fetch_index_head(url).await else {
+    let Some((index, total)) = fetch_index_head(url, false).await else {
         return false;
     };
     let mip = pick_preview_level(&index, PREVIEW_MAX_EDGE).clone();
-    let Some(blocks) = fetch_mip_blocks(url, &mip).await else {
+    let Some(blocks) = fetch_mip_blocks(url, total, &mip).await else {
         return false;
     };
     if !commit_mip(
@@ -215,11 +303,14 @@ async fn load_unified_full(
     terrain_w: f64,
     terrain_h: f64,
     bridge: &BridgeHandle,
+    on_step: &dyn Fn(MapStep),
 ) -> bool {
-    let Some(buf) = fetch_bytes(url).await else {
-        return false;
-    };
-    let Ok(index) = parse_tbd_sat(&buf) else {
+    // T-627 — the index first (12 B header, then ~2.6 KB of JSON), NOT the whole bundle. The old
+    // path GET'd all 152,713,114 B of `everon-sat.tbd-sat` and then used only the mips at or below
+    // the GPU's `maxTextureDimension2D`; on an 8192-limit device that is level 1 down, so 110.6 MB
+    // of level 0 was downloaded and thrown away. Fetching per tile skips it outright — and gives
+    // the loading bar a byte budget it can actually count against.
+    let Some((index, file_size)) = fetch_index_head(url, true).await else {
         return false;
     };
     let max_dim = {
@@ -238,23 +329,41 @@ async fn load_unified_full(
         g.as_ref().map(|e| e.backend() == "webgl2").unwrap_or(true)
     };
 
+    // Every tile that will actually be uploaded, flattened in upload order, with its relative mip
+    // level alongside. One flat list (rather than a fetch per level) so the bounded concurrency
+    // spans levels: the 13 small tails keep the pipe full behind the big levels.
+    let plan: Vec<(u32, TbdSatTile)> = index
+        .mips
+        .iter()
+        .enumerate()
+        .skip(base)
+        .flat_map(|(li, mip)| {
+            let rel = (li - base) as u32;
+            mip.tiles.iter().cloned().map(move |t| (rel, t))
+        })
+        .collect();
+    let tiles: Vec<TbdSatTile> = plan.iter().map(|(_, t)| t.clone()).collect();
+    // The budget is exact and known before the first byte moves: the index lists every tile's
+    // `length`. Nothing here is estimated.
+    let total: u64 = tiles.iter().map(|t| t.length).sum();
+    let mut done: u64 = 0;
+    on_step(MapStep::Satellite { done, total });
+    let Some(bodies) = fetch_tiles(url, file_size, &tiles, |n| {
+        done += n;
+        on_step(MapStep::Satellite { done, total });
+    })
+    .await
+    else {
+        return false;
+    };
+
     // Decode all mips ≥ base before taking the engine borrow for begin/write/commit.
-    let mut levels: Vec<(u32, TbdSatMip, Vec<(super::tbd_sat::TbdSatTile, Decoded)>)> = Vec::new();
-    for (li, mip) in index.mips.iter().enumerate().skip(base) {
-        let rel = (li - base) as u32;
-        let mut decoded_tiles = Vec::new();
-        for tile in &mip.tiles {
-            let start = tile.offset as usize;
-            let end = start + tile.length as usize;
-            if end > buf.len() {
-                return false;
-            }
-            let Some(d) = decode_webp(&buf[start..end], webgl2).await else {
-                return false;
-            };
-            decoded_tiles.push((tile.clone(), d));
-        }
-        levels.push((rel, mip.clone(), decoded_tiles));
+    let mut levels: Vec<(u32, TbdSatTile, Decoded)> = Vec::with_capacity(plan.len());
+    for ((rel, tile), bytes) in plan.into_iter().zip(bodies) {
+        let Some(d) = decode_webp(&bytes, webgl2).await else {
+            return false;
+        };
+        levels.push((rel, tile, d));
     }
 
     {
@@ -277,11 +386,9 @@ async fn load_unified_full(
         {
             return false;
         }
-        for (rel, _mip, tiles) in levels {
-            for (tile, d) in tiles {
-                if !upload_decoded(e, ROLE_BASEMAP, rel, tile.x, tile.y, d) {
-                    return false;
-                }
+        for (rel, tile, d) in levels {
+            if !upload_decoded(e, ROLE_BASEMAP, rel, tile.x, tile.y, d) {
+                return false;
             }
         }
         if e.tex_layer_commit(ROLE_BASEMAP, 1.0_f32, true).is_err() {
@@ -397,15 +504,18 @@ pub async fn load_satellite(
     terrain_w: f64,
     terrain_h: f64,
     bridge: BridgeHandle,
+    on_step: &dyn Fn(MapStep),
 ) {
     let url = if unified_url.starts_with('/') {
         unified_url.to_string()
     } else {
         format!("{base}/{unified_url}")
     };
+    // The preview is one ≤1024 px mip (everon: a single 583 KB Range) and is over before a bar
+    // could say anything useful, so it reports nothing and the overlay stays on "Terrain".
     let _ = try_preview(&engine, &url, terrain_w, terrain_h, &bridge).await;
     if sat_preview_only() {
         return;
     }
-    let _ = load_unified_full(&engine, &url, terrain_w, terrain_h, &bridge).await;
+    let _ = load_unified_full(&engine, &url, terrain_w, terrain_h, &bridge, on_step).await;
 }
