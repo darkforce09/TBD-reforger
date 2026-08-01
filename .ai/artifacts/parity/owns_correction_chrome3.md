@@ -47,39 +47,61 @@ committed at `004a9c6d` rescoped it to *"Eden's density **and** the 240px equali
 equalising the dock widths is precisely what pulls in the constants and their three readers. My
 change widened the footprint; the packing predates it.
 
-## The consequence — wave 5 collides
+## The consequence — a collision, but not where this document first said
 
-From the combined packing:
+**Self-correction, same session.** The first version of this file reported the collision at
+**wave 5**, against the table in `owns_and_waves.md`. That table is the **30-ticket packing, which
+`owns_parity.md` superseded** with the combined 43-ticket one. In the combined packing wave 5 is
+`T-636 · T-646` and T-637 already sits at **wave 16**. I analysed a stale table — the same
+inherited-source error this program keeps recording, committed while fixing an instance of it.
+
+**The finding survives the relocation.** Checking the widened `owns` against the *combined* packing:
 
 | Wave | Tickets | Status |
 |---|---|---|
-| 2 | T-636 · T-640 · T-656 | **safe** — T-640 is dem/contours, T-656 is a new `validate` file |
-| 3 | T-638 · T-657 | **safe** — T-657 is `validate` |
-| 5 | T-637 · T-648 · T-660 | **COLLIDES** |
+| 5 | T-636 · T-646 | **safe** — T-636's widened set adds `mission_editor` + `select_tool`; T-646 is `asset_catalog` + `eden_dock_right` + `editor_ops`. Disjoint. |
+| 7 | T-638 · T-659 · T-657 | **safe** — T-638 already carried `mission_editor` + `select_tool` in this packing; T-659 is `eden_top_strip` + `editor_ops`, T-657 is `validate`. |
+| **16** | **T-069⊕T-213 · T-637** | **COLLIDES** |
 
-**T-648** (transform: Shift-rotate, snap grid, widget) owns
-`mission_editor.rs` + `select_tool.rs` + `editor_ops.rs`.
-**T-637** now owns `mission_editor.rs` + `select_tool.rs` + four modules.
+**T-069⊕T-213** (markers) owns `eden_dock_right` + `editor_ops` + `mission_editor` + `store` +
+`draw_order` + `engine`.
+**T-637** now owns `eden_dock_left` + **`eden_dock_right`** + `eden_tree` + `eden_layout` +
+**`mission_editor`** + `select_tool`.
 
-Two claimants on two hot files in one wave. Wave 5 cannot run as packed.
+They share **two** files — `eden_dock_right.rs` and `mission_editor.rs`. Wave 16 cannot run as
+packed.
 
-## The fix — move T-637, do not split the wave
+## The fix — move T-637 to wave 12
 
-Splitting wave 5 gives **19 waves**. Moving T-637 keeps **18**, because there are later waves whose
-rows touch neither `mission_editor.rs` nor `select_tool.rs`.
+Wave 12 is `T-649 · T-632`. T-649 owns `mission_editor` + `select_tool` + `attributes` +
+`editor_ops` — **that also collides** with the widened T-637 on two files. So not there either.
 
-Recommended: **T-637 moves to wave 12** (currently `T-650` alone — `eden_dock_right.rs` +
-`editor_ops.rs` + `doc/store.rs`). That collides on nothing, and T-650 is the compositions ticket
-whose own storage location is already marked `low` confidence, so the wave was soft anyway.
+Checking the remaining waves for one whose rows touch none of T-637's six files:
 
-Wave 5 then runs T-648 · T-660 (2 rows), wave 12 runs T-650 · T-637 (2 rows). **Total stays 18,
-mean 2.39 unchanged.**
+- **Wave 11** — `T-655` (`validation_panel` + `mission_editor`) ✗ collides on `mission_editor`
+- **Wave 13** — `P-10` (`mission_editor`) ✗
+- **Wave 17** — `T-079d` (`mission_editor` …) ✗
+
+**Every candidate wave has a `mission_editor.rs` claimant**, which is the whole point of that file
+being the binding constraint at 18 claimants. There is no free slot.
+
+**So T-637 gets its own wave, and the program becomes 19.** That is the honest cost of the chrome
+direction: equalising the dock widths converts a single-module cosmetic ticket into a six-file
+geometry-and-input ticket, and the binding file has no spare capacity left.
+
+Wave 16 runs `T-069⊕T-213` alone; a new **wave 18** runs `T-637` alone. **19 waves, 43 tickets,
+mean 2.26.**
+
+Two single-agent waves reappear at the tail — exactly what the `eden_chrome.rs` split was meant to
+eliminate. That is not an argument against the chrome direction; it is the clearest evidence yet
+for the **second split**, which the operator has declined for now on risk grounds. Recorded so the
+trade is visible if it is revisited.
 
 ## What this does not change
 
-The three chrome tickets stay in three different waves regardless, so the *ordering* logic survives
-— only wave 5's membership was wrong. No dependency edge is affected: T-637 gates nothing and is
-gated only by wave 0.
+No dependency edge is affected — T-637 gates nothing and is gated only by wave 0, so it can sit
+anywhere after wave 0. The three chrome tickets remain in three different waves either way, so the
+ordering logic survives; only wave 16's membership and the total count change.
 
 ## What it says about the split decision
 
