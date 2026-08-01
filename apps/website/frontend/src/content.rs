@@ -933,13 +933,26 @@ mod tests {
     ///
     /// RED perturbation (Wave 25 verifier B2): keep LocalResource/api_get + `doc_from_announcement`
     /// but Effect does `docs.set(hardcoded)` / never reads `opt` → FAIL (missing map + set needles).
+    ///
+    /// # Cure 2 (scrub-then-grep), and why not cure 1 (T-601)
+    ///
+    /// What is pinned here is a **wiring seam**, not a value: a `LocalResource` inside a Leptos
+    /// component and an `Effect` that reads its `Option` and writes a signal. There is no function
+    /// to call — the seam only exists once a reactive runtime has mounted the component — so cure 1
+    /// would have to stand up a fake Leptos and then assert against the fake. The mapping half that
+    /// *does* have a runtime signature, `doc_from_announcement`, is already covered by its own
+    /// value tests below; this pin covers only "the boot path reaches it", which is source shape.
+    ///
+    /// T-601 replaces the raw `SRC.split("#[cfg(test)]")` with the shared scrubber: comments and
+    /// string literals blanked, `#[cfg(<false>)]` items and constant-false blocks removed. Before
+    /// that, every positive needle here would have been satisfied by a commented-out line — and
+    /// `announcement_list_path` in particular is discussed in prose a few lines above its own
+    /// definition.
     #[test]
     fn content_boots_from_cms_list_not_mock_docs() {
+        use crate::arsenal::class_r_scrub::live_code;
         const SRC: &str = include_str!("content.rs");
-        let prod = SRC
-            .split("#[cfg(test)]")
-            .next()
-            .expect("content.rs must have a #[cfg(test)] module");
+        let prod = live_code(SRC);
         assert!(
             !prod.contains("fn mock_docs()"),
             "mock_docs must be gone from production (perturbation: restore mock seed helper)"
@@ -972,6 +985,82 @@ mod tests {
             prod.contains(&set_docs),
             "hydrate Effect must `{set_docs}` (perturbation: hardcoded docs.set / drop apply)"
         );
+    }
+
+    /// **T-601 — calibration for the boot pin above.**
+    ///
+    /// Every wrapper in the handed-down battery is applied to the two needles the pin cannot do
+    /// without, and each must stop satisfying it. Without this, a future edit that weakened the
+    /// scrubber would leave the pin green over a CMS list the SPA never fetches — which is the
+    /// exact bug T-447 shipped to fix.
+    #[test]
+    fn the_boot_pin_rejects_every_dead_code_wrapper() {
+        use crate::arsenal::class_r_scrub::live_code;
+        let needle = "LocalResource::new";
+        let attacks: [(&str, String); 12] = [
+            (
+                "if true == false",
+                format!("if true == false {{ {needle}(f); }}"),
+            ),
+            (
+                "loop { break; … }",
+                format!("loop {{ break; {needle}(f); }}"),
+            ),
+            (
+                "#[cfg(any())]",
+                format!("#[cfg(any())] fn d() {{ {needle}(f); }}"),
+            ),
+            ("while false", format!("while false {{ {needle}(f); }}")),
+            ("if !true", format!("if !true {{ {needle}(f); }}")),
+            ("if 1 > 2", format!("if 1 > 2 {{ {needle}(f); }}")),
+            (
+                "if std::hint::black_box(false)",
+                format!("if std::hint::black_box(false) {{ {needle}(f); }}"),
+            ),
+            (
+                "const C: bool = false; if C",
+                format!("const C: bool = false;\nfn d() {{ if C {{ {needle}(f); }} }}"),
+            ),
+            (
+                "return; above",
+                format!("fn d() {{ return; {needle}(f); }}"),
+            ),
+            (
+                "#[cfg(any())] mod shadow",
+                format!("#[cfg(any())] mod shadow {{ fn d() {{ {needle}(f); }} }}"),
+            ),
+            (
+                "match guard",
+                format!("match () {{ _ if false => {{ {needle}(f); }} _ => {{}} }}"),
+            ),
+            ("comment", format!("// {needle}(f)")),
+        ];
+        for (label, body) in attacks {
+            let forged = format!("fn content_page() {{\n    {body}\n}}\n#[cfg(test)]\n");
+            assert!(
+                !live_code(&forged).contains(needle),
+                "{label}: the boot needle survived scrubbing — this pin would report a live CMS \
+                 fetch over code the build never runs"
+            );
+        }
+        // Two attacks the handed-down list does not contain (see arsenal.rs for the full write-up).
+        assert!(
+            !live_code(&format!(
+                "const NEVER: bool = 1 > 2;\nfn d() {{ if NEVER {{ {needle}(f); }} }}\n#[cfg(test)]\n"
+            ))
+            .contains(needle),
+            "A2: a constant folded through a comparison never spells `false` — grepping for \
+             `= false` would have shipped this hole"
+        );
+        assert!(
+            !live_code(&format!(
+                "#[cfg(all(any(), unix))] fn d() {{ {needle}(f); }}\n#[cfg(test)]\n"
+            ))
+            .contains(needle),
+            "a composite never-true cfg is not the literal `#[cfg(any())]`"
+        );
+        let live = format!("fn content_page() {{\n    {needle}(f);\n}}\n#[cfg(test)]\n");
+        assert!(live_code(&live).contains(needle));
     }
 
     /// Strip all whitespace so `set( true )` and `set(true)` compare equal.

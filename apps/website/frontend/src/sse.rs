@@ -212,57 +212,40 @@ pub fn stream_server_status(
 
 #[cfg(test)]
 mod tests {
-    /// Strip `//` line comments and `/* … */` block comments so Class-R `contains` cannot
-    /// green on a commented-out registration (T-457 / Wave 21 adversarial).
-    fn strip_rust_comments(src: &str) -> String {
-        let mut out = String::with_capacity(src.len());
-        let mut chars = src.chars().peekable();
-        while let Some(c) = chars.next() {
-            if c == '/' {
-                match chars.peek() {
-                    Some('/') => {
-                        chars.next();
-                        while let Some(n) = chars.next() {
-                            if n == '\n' {
-                                out.push('\n');
-                                break;
-                            }
-                        }
-                        continue;
-                    }
-                    Some('*') => {
-                        chars.next();
-                        while let Some(n) = chars.next() {
-                            if n == '*' && matches!(chars.peek(), Some('/')) {
-                                chars.next();
-                                break;
-                            }
-                        }
-                        continue;
-                    }
-                    _ => {}
-                }
-            }
-            out.push(c);
-        }
-        out
-    }
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
 
     /// T-287 Class-R — the SSE fetch must abort on dispose; a comment-only "fixed" is a fail.
+    ///
+    /// # Cure 2 (scrub-then-grep), and why not cure 1 (T-601)
+    ///
+    /// The invariant lives entirely inside `#[cfg(target_arch = "wasm32")]`
+    /// [`stream_server_status`]: it is `web_sys::AbortController` + `RequestInit::set_signal` +
+    /// a `thread_local` park. There is no runtime signature a native harness can observe without
+    /// standing up a fake `web_sys` — cure 1 would be modelling the browser, and a pin that
+    /// asserts against its own mock of `fetch` proves nothing about the real one. So this stays a
+    /// source pin, scrubbed so that what it greps is provably shipped code.
+    ///
+    /// # What this pin was reporting on before T-601 — and it was its own prose
+    ///
+    /// `production` was `SRC.split("mod tests {").next()`: the raw file, **module documentation
+    /// included**. Every positive needle below appears verbatim in the `//!` header above —
+    /// "`AbortController` is `!Send`", "park the controller in a `thread_local`", "register the
+    /// zero-capture [`abort_server_status_stream`]". Delete [`stream_server_status`] outright and
+    /// this pin stayed green off the paragraph describing it. That is the signature defect exactly:
+    /// a tool reporting success over an input it never examined.
+    ///
+    /// The positive asserts now run on [`live_code`] — comments and string literals blanked,
+    /// `#[cfg(<false>)]` items and constant-false blocks removed — so a needle only counts as a
+    /// call in code the build can reach. The **negative** asserts deliberately keep reading the raw
+    /// file: they ban stale prose, and prose is precisely what a scrubber removes.
     #[test]
     fn class_r_sse_abort_teardown_exists() {
         const SRC: &str = include_str!("sse.rs");
         const INTEL: &str = include_str!("server_intel.rs");
-        // Exclude this tests module from the negative asserts — the banned phrases appear in the
-        // assert! messages themselves and would false-red the guard. Split on the mod marker, not
-        // a bare `#[cfg(test)]` (that substring also appears in the module docs above).
-        let production = SRC
-            .split("mod tests {")
-            .next()
-            .expect("tests module marker");
-        // T-457 — INTEL pin must ignore `//` / block comments so commenting out the live
+        let production = live_code(SRC);
+        // T-457 — the INTEL pin must ignore comments so commenting out the live
         // `on_cleanup(...abort_server_status_stream)` while leaving the string in a comment REDS.
-        let intel_code = strip_rust_comments(INTEL);
+        let intel_code = live_code(INTEL);
 
         assert_eq!(
             super::SSE_ABORT_CLEANUP_FN,
@@ -271,28 +254,51 @@ mod tests {
         );
         // Native no-op call — proves the Send+Sync seam is reachable outside wasm.
         super::abort_server_status_stream();
+
+        // Scoped to the one function that owns the transport. A whole-file `contains` is satisfied
+        // by a match ANYWHERE, including in a second, dead copy of the fetch — `only_body` refuses
+        // two definitions rather than silently reading the first.
+        let stream = only_body(&production, "pub fn stream_server_status(");
         assert!(
-            production.contains("AbortController"),
-            "sse.rs must create an AbortController for the fetch"
+            stream.contains("AbortController"),
+            "stream_server_status must create an AbortController for the fetch — on a live path, \
+             not in the paragraph that explains why it needs one"
         );
         assert!(
-            production.contains("init.set_signal(Some(&signal))"),
-            "RequestInit must wire the AbortController signal via init.set_signal(Some(&signal))"
+            stream.contains("init.set_signal(Some(&signal))"),
+            "RequestInit must wire the AbortController signal via init.set_signal(Some(&signal)); \
+             an AbortController the fetch never receives aborts nothing"
         );
         assert!(
-            production.contains("fn abort_server_status_stream"),
-            "zero-capture abort entry point must exist for on_cleanup"
+            stream.contains("SSE_ABORT.with("),
+            "the controller must be parked in the thread_local (the !Send workaround), or \
+             route-leave has nothing to take"
         );
         assert!(
-            production.contains("SSE_ABORT"),
-            "AbortController must be parked in a thread_local (Send workaround)"
+            stream.contains("abort_server_status_stream()"),
+            "a re-subscribe must abort the prior controller first, or a remount leaks a stream"
         );
+
+        let abort = only_body(&production, "pub fn abort_server_status_stream()");
         assert!(
-            !production.contains("NOT torn down on SPA nav"),
+            abort.contains("SSE_ABORT.with(") && abort.contains(".abort()"),
+            "the zero-capture entry point must actually take the parked controller and abort it"
+        );
+
+        // Negatives read the RAW production text on purpose: they ban stale *documentation*, and
+        // documentation is the first thing the scrubber removes. The cut is the `mod tests {`
+        // marker rather than a bare `#[cfg(test)]` (that substring also appears in the module docs
+        // above) so this test's own assertion strings cannot satisfy the ban it is asserting.
+        let prose = SRC
+            .split("mod tests {")
+            .next()
+            .expect("tests module marker");
+        assert!(
+            !prose.contains("NOT torn down on SPA nav"),
             "stale leak documentation must not remain after T-287"
         );
         assert!(
-            !production.contains("navigation leaks at most one"),
+            !prose.contains("navigation leaks at most one"),
             "stale leak documentation must not remain after T-287"
         );
         assert!(
@@ -301,5 +307,59 @@ mod tests {
             "ServerIntelInner must register abort_server_status_stream under on_cleanup \
              (live production line — comment-only string is not enough)"
         );
+    }
+
+    /// **The pin above, pinned.** Each attack is applied to a copy of this file's own source and
+    /// the scrubbed result must no longer satisfy the needle — so a future edit that weakens the
+    /// scrubbing shows up here rather than as a quiet green.
+    ///
+    /// This is the cheap generic form of the calibration `mission_title_prefer` gets for free by
+    /// executing the code: prove the instrument can still say NO.
+    #[test]
+    fn the_teardown_pin_rejects_every_dead_code_wrapper() {
+        let needle = "init.set_signal(Some(&signal))";
+        let attacks: [(&str, String); 12] = [
+            (
+                "if true == false",
+                format!("if true == false {{ {needle}; }}"),
+            ),
+            ("loop { break; … }", format!("loop {{ break; {needle}; }}")),
+            (
+                "#[cfg(any())]",
+                format!("#[cfg(any())] fn d() {{ {needle}; }}"),
+            ),
+            ("while false", format!("while false {{ {needle}; }}")),
+            ("if !true", format!("if !true {{ {needle}; }}")),
+            ("if 1 > 2", format!("if 1 > 2 {{ {needle}; }}")),
+            (
+                "if std::hint::black_box(false)",
+                format!("if std::hint::black_box(false) {{ {needle}; }}"),
+            ),
+            (
+                "const C: bool = false; if C",
+                format!("const C: bool = false;\nfn d() {{ if C {{ {needle}; }} }}"),
+            ),
+            ("return; above", format!("fn d() {{ return; {needle}; }}")),
+            (
+                "#[cfg(any())] mod shadow",
+                format!("#[cfg(any())] mod shadow {{ fn d() {{ {needle}; }} }}"),
+            ),
+            (
+                "match guard",
+                format!("match () {{ _ if false => {{ {needle}; }} _ => {{}} }}"),
+            ),
+            ("comment", format!("// {needle}")),
+        ];
+        for (label, body) in attacks {
+            let forged = format!("fn stream_server_status() {{\n    {body}\n}}\n#[cfg(test)]\n");
+            assert!(
+                !live_code(&forged).contains(needle),
+                "{label}: the signal-wiring needle survived scrubbing, so this pin would report a \
+                 live abort wire over code the build never runs"
+            );
+        }
+        // The honest wiring still reads as present, or the assertions above pin nothing.
+        let live = format!("fn stream_server_status() {{\n    {needle};\n}}\n#[cfg(test)]\n");
+        assert!(live_code(&live).contains(needle));
     }
 }

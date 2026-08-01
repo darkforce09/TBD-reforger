@@ -637,24 +637,29 @@ mod tests {
 
     /// T-446 Class-R — multipart upload helper must stay in the wasm client (source pin; the
     /// function is cfg(wasm32) so native tests cannot call it).
+    ///
+    /// **Cure 2 (T-601).** There is no runtime signature here that a native harness could observe
+    /// honestly: the whole assertion is about `web_sys::FormData` and a `gloo_net` builder, so
+    /// cure 1 would mean writing a fake `FormData` and then asserting against the fake. What is
+    /// left is a source-shape invariant — "the multipart field is named `file`, matching
+    /// `POST /cms/uploads`" — so it gets the scrubber, scoped to the one function, instead of a
+    /// whole-file `contains` that any dead copy anywhere in the file could satisfy.
     #[test]
     fn api_upload_file_posts_multipart_file_field() {
-        const SRC: &str = include_str!("client.rs");
-        let prod = SRC
-            .split("#[cfg(test)]")
-            .next()
-            .expect("client.rs must have a #[cfg(test)] module");
+        let f = item("pub async fn api_upload_file<");
         assert!(
-            prod.contains("pub async fn api_upload_file<"),
-            "api_upload_file must exist (perturbation: rename/delete)"
+            f.contains("FormData::new()") && f.contains("append_with_blob_and_filename("),
+            "upload must build FormData (perturbation: rename/delete api_upload_file, or post JSON)"
+        );
+        // The field NAME is the contract with the handler, and it is a string literal — so this
+        // one assertion reads `live_source` (literals kept) rather than `live_code`.
+        assert!(
+            item_src("pub async fn api_upload_file<")
+                .contains("append_with_blob_and_filename(\"file\""),
+            "the multipart field must be named \"file\" to match POST /cms/uploads"
         );
         assert!(
-            prod.contains("FormData::new()")
-                && prod.contains("append_with_blob_and_filename(\"file\""),
-            "upload must build FormData with field name \"file\" matching POST /cms/uploads"
-        );
-        assert!(
-            prod.contains("Request::post(&url)") && prod.contains(".body(form)"),
+            f.contains("Request::post(&url)") && f.contains(".body(form)"),
             "upload must POST FormData without forcing a JSON Content-Type"
         );
     }
@@ -779,26 +784,41 @@ mod tests {
         );
     }
 
-    /// Everything before `#[cfg(test)]` — the shipped half of this file.
-    fn prod() -> &'static str {
-        const SRC: &str = include_str!("client.rs");
-        SRC.split("#[cfg(test)]")
-            .next()
-            .expect("client.rs must have a #[cfg(test)] module")
+    /// The shipped half of this file with comments, string literals and every construct that
+    /// cannot run removed (T-601 — [`crate::arsenal::class_r_scrub`]).
+    ///
+    /// Before T-601 this was `SRC.split("#[cfg(test)]").next()`: raw text, module docs included.
+    /// Every needle these pins look for is discussed in prose somewhere in this file, and every
+    /// one of them would have been satisfied by a `// …` line — plus by anything parked in
+    /// `if false { … }`, `#[cfg(any())]`, or after a `return;`.
+    fn prod() -> String {
+        crate::arsenal::class_r_scrub::live_code(include_str!("client.rs"))
     }
 
-    /// The source of one item, `start` up to the next 4-space doc comment (the next item's).
+    /// Same, but string literals survive — for the handful of assertions where the literal **is**
+    /// the contract (a wire field name, a header value, a route).
+    fn prod_src() -> String {
+        crate::arsenal::class_r_scrub::live_source(include_str!("client.rs"))
+    }
+
+    /// The body of the ONE item whose signature is `start`.
     ///
     /// Scoped on purpose. A `prod().contains(…)` check is satisfied by a match ANYWHERE in the
     /// file, so it can report success over code it never looked at — this repo's signature defect.
-    /// Panics rather than returning empty when the marker is gone: a missing marker is new
-    /// information, not "no match".
-    fn item(start: &str) -> &'static str {
-        let after = prod()
-            .split(start)
-            .nth(1)
-            .unwrap_or_else(|| panic!("item marker vanished from client.rs: {start}"));
-        after.split("\n    /// ").next().unwrap_or(after)
+    ///
+    /// T-601 changed two things. It reads the scrubbed source, so a needle in a comment or a dead
+    /// block no longer counts; and it takes the **balanced body** of the one match rather than
+    /// "everything up to the next doc comment", refusing outright when the signature appears twice.
+    /// The old shape would happily have handed back a pristine shadow copy parked in a
+    /// never-called `mod` while the real helper was cut — and a shadow copy is not a hypothetical
+    /// here, since a second `fn api_post_raw` in an inner module compiles fine.
+    fn item(start: &str) -> String {
+        crate::arsenal::class_r_scrub::only_item(&prod(), start).to_string()
+    }
+
+    /// [`item`], literals kept.
+    fn item_src(start: &str) -> String {
+        crate::arsenal::class_r_scrub::only_item(&prod_src(), start).to_string()
     }
 
     /// T-591 — the raw-body POST exists and is the shape T-117 asked for.
@@ -897,7 +917,9 @@ mod tests {
     /// with no header — every raw upload would fail, and not for a reason the body explains.
     #[test]
     fn the_raw_body_arm_sets_the_json_content_type() {
-        let f = item("async fn request<");
+        // `item_src`, not `item`: the header NAME and VALUE are string literals, and here the
+        // literal is the contract with Axum's `Json` extractor rather than a mention of it.
+        let f = item_src("async fn request<");
         let raw = f
             .split("Body::Raw(s) =>")
             .nth(1)
@@ -935,5 +957,89 @@ mod tests {
             err.contains("Err((status, msg))"),
             "the caller needs the status too — upload_failure(status, ..) maps 409/413 by it"
         );
+    }
+
+    /// **T-601 — the calibration for every source pin in this module.**
+    ///
+    /// The five pins above are only worth their green if [`prod`] / [`item`] can still say NO.
+    /// Each row is an attack on a needle one of them looks for, applied to a synthetic file, and
+    /// the scrubbed source must no longer contain it. The last two rows are the interesting ones:
+    /// they are shadow-copy attacks, which no amount of dead-code stripping catches — only
+    /// refusing ambiguity does.
+    #[test]
+    fn the_source_pins_reject_every_dead_code_wrapper() {
+        use crate::arsenal::class_r_scrub::{live_code, only_item};
+        let needle = "Body::Raw(std::rc::Rc::new(body))";
+        let attacks: [(&str, String); 12] = [
+            (
+                "if true == false",
+                format!("if true == false {{ {needle}; }}"),
+            ),
+            ("loop { break; … }", format!("loop {{ break; {needle}; }}")),
+            (
+                "#[cfg(any())]",
+                format!("#[cfg(any())] fn d() {{ {needle}; }}"),
+            ),
+            ("while false", format!("while false {{ {needle}; }}")),
+            ("if !true", format!("if !true {{ {needle}; }}")),
+            ("if 1 > 2", format!("if 1 > 2 {{ {needle}; }}")),
+            (
+                "if std::hint::black_box(false)",
+                format!("if std::hint::black_box(false) {{ {needle}; }}"),
+            ),
+            (
+                "const C: bool = false; if C",
+                format!("const C: bool = false;\nfn d() {{ if C {{ {needle}; }} }}"),
+            ),
+            ("return; above", format!("fn d() {{ return; {needle}; }}")),
+            (
+                "#[cfg(any())] mod shadow",
+                format!("#[cfg(any())] mod shadow {{ fn d() {{ {needle}; }} }}"),
+            ),
+            (
+                "match guard",
+                format!("match () {{ _ if false => {{ {needle}; }} _ => {{}} }}"),
+            ),
+            ("comment", format!("// {needle}")),
+        ];
+        for (label, body) in attacks {
+            let forged =
+                format!("pub async fn api_post_raw(\n) {{\n    {body}\n}}\n#[cfg(test)]\n");
+            assert!(
+                !live_code(&forged).contains(needle),
+                "{label}: the needle survived scrubbing, so `api_post_raw_takes_an_already_\
+                 serialised_string_body` would report a live Rc body over code the build never runs"
+            );
+        }
+
+        // Shadow copies: a pristine definition at column 0 with the real one moved into a `mod`,
+        // and the same trick with no `cfg` anywhere to give it away. Both compile; both feed a
+        // whole-file grep the wrong body. Only the ambiguity refusal in `only_body` catches them.
+        for (label, forged) in [
+            (
+                "#[cfg(any())]-free shadow copy in a live mod",
+                "pub async fn api_post_raw() { good(); }\n\
+                 mod real { pub async fn api_post_raw() { bad(); } }\n#[cfg(test)]\n",
+            ),
+            (
+                "shadow copy nested in an impl",
+                "pub async fn api_post_raw() { good(); }\n\
+                 impl T { pub async fn api_post_raw() { bad(); } }\n#[cfg(test)]\n",
+            ),
+        ] {
+            let scrubbed = live_code(forged);
+            let caught =
+                std::panic::catch_unwind(|| only_item(&scrubbed, "pub async fn api_post_raw("))
+                    .is_err();
+            assert!(
+                caught,
+                "{label}: two definitions of one helper and the pin picked one without saying so — \
+                 a grep cannot tell which body ships, so it must refuse rather than guess"
+            );
+        }
+
+        // The honest shape still reads as present, or every assertion above pins nothing.
+        let live = format!("pub async fn api_post_raw() {{\n    {needle};\n}}\n#[cfg(test)]\n");
+        assert!(live_code(&live).contains(needle));
     }
 }

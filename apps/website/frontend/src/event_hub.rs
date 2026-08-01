@@ -1656,54 +1656,168 @@ mod tests {
         );
     }
 
+    /// The shipped half of this module, scrubbed (T-601 — [`crate::arsenal::class_r_scrub`]).
+    fn live() -> String {
+        crate::arsenal::class_r_scrub::live_code(include_str!("event_hub.rs"))
+    }
+
     /// T-407 — the hub hero must actually *read* `EventHub.briefing`. A pure call above is not
     /// enough if the view never binds it; this pins the source seam.
+    ///
+    /// # Cure 2 (scrub-then-grep), and why not cure 1 (T-601)
+    ///
+    /// The half of this invariant that has a runtime signature — "blank means blank, authored
+    /// text is rendered verbatim" — is [`briefing_text`], and it is already pinned by value in
+    /// [`operation_level_briefing_uses_the_same_empty_rule`] and
+    /// [`an_authored_briefing_is_rendered_verbatim`].
+    /// What is left is exactly the part that has **no** signature: whether the hero *view* binds
+    /// the helper's output into the DOM. That lives inside a `view!` macro in an `impl IntoView`,
+    /// so there is nothing to call and nothing to observe without mounting a reactive runtime.
+    /// Source shape is the honest instrument here; the job is to make sure the source it reads is
+    /// source that ships.
+    ///
+    /// T-601 changed two things. The needles now run on the **scrubbed** module (comments and
+    /// literals blanked, `#[cfg(<false>)]` items and constant-false blocks removed) rather than on
+    /// the raw `include_str!`, which previously included this very test file — and `SRC` contained
+    /// the needle on the assertion line below it. And they are **scoped to [`event_hub_view`]**,
+    /// the one function that draws the hero, instead of matching anywhere in 1900 lines.
     #[test]
     fn hub_hero_reads_event_briefing() {
-        const SRC: &str = include_str!("event_hub.rs");
+        let prod = live();
+        let hero = crate::arsenal::class_r_scrub::only_body(&prod, "fn event_hub_view(");
         assert!(
-            SRC.contains("briefing_text(ev.briefing.as_deref())"),
+            hero.contains("briefing_text(ev.briefing.as_deref())"),
             "event_hub hero must render EventHub.briefing via briefing_text — \
              schedule detail routes through this same helper (T-407/T-494)"
         );
+        // Computing it and dropping it on the floor is the failure T-407 shipped to fix, so the
+        // binding must also reach the view. Two mentions: the `let`, and the interpolation.
         assert!(
-            SRC.contains("operation_briefing"),
-            "operation_briefing binding must remain on the hub hero"
+            hero.matches("operation_briefing").count() >= 2,
+            "the operation_briefing binding must be bound AND rendered on the hub hero — one \
+             mention means it is computed and discarded, which is the T-407 defect exactly"
         );
     }
 
     /// T-494 — source ratchet for [`briefing_text`]: ban non-trim emptiness on briefing paths
     /// (filter *and* match-arm). Same failure mode as `mission_overview`'s dossier ratchet.
+    ///
+    /// Cure 2 for the same reason as above: the positive halves are wiring seams inside views, and
+    /// the negative halves ban a *shape*, which is not a value anything can return.
     #[test]
     fn briefing_text_source_ratchet_requires_trim() {
-        const SRC: &str = include_str!("event_hub.rs");
+        let prod = live();
+        let dossier = crate::arsenal::class_r_scrub::only_body(&prod, "fn mission_dossier(");
         assert!(
-            SRC.contains("briefing_text(m.briefing.as_deref())"),
+            dossier.contains("briefing_text(m.briefing.as_deref())"),
             "mission dossier must route briefing through briefing_text"
         );
-        // concat! so this test body does not match itself.
+        // concat! so this test body does not match itself. Belt and braces since T-601: the
+        // scrubber already cuts everything from `#[cfg(test)]` on, so the test module is not in
+        // `prod` at all — but the fragments cost nothing and survive a future re-scoping.
         let old_filter = concat!(".filter(|b| !b.", "is_empty())");
         assert!(
-            !SRC.contains(old_filter),
+            !prod.contains(old_filter),
             "is_empty-only briefing filter must not return — whitespace-only briefings \
              would blank the dossier Briefing section again"
         );
         let old_arm = concat!("Some(b) if !b.", "is_empty()");
         assert!(
-            !SRC.contains(old_arm),
+            !prod.contains(old_arm),
             "match-arm !b.is_empty() without trim must not return on briefing paths"
         );
+        let helper = crate::arsenal::class_r_scrub::only_body(&prod, "fn briefing_text(");
         let trim_arm = concat!("Some(b) if !b.trim().", "is_empty()");
         assert!(
-            SRC.contains(trim_arm),
-            "briefing_text must keep the trim-aware match arm"
+            helper.contains(trim_arm),
+            "briefing_text must keep the trim-aware match arm — on its own live path, not in a \
+             comment describing it"
         );
         // Pre-T-353 schedule shape that used to live in events.rs hub_detail.
         let old_then = concat!("(!briefing.", "is_empty())");
         assert!(
-            !SRC.contains(old_then),
+            !prod.contains(old_then),
             "non-trim briefing.then emptiness guard must not return on hub briefing paths"
         );
+    }
+
+    /// **T-601 — calibration for the two briefing pins above.**
+    ///
+    /// The full attack battery against the needle the hero pin cannot do without, plus the two
+    /// shadow-copy shapes (a second `fn hub_shell` in a `mod` or an `impl` compiles fine and is
+    /// exactly how a whole-file grep gets fed a pristine decoy).
+    #[test]
+    fn the_briefing_pins_reject_every_dead_code_wrapper() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let needle = "briefing_text(ev.briefing.as_deref())";
+        let attacks: [(&str, String); 12] = [
+            (
+                "if true == false",
+                format!("if true == false {{ let b = {needle}; }}"),
+            ),
+            (
+                "loop { break; … }",
+                format!("loop {{ break; let b = {needle}; }}"),
+            ),
+            (
+                "#[cfg(any())]",
+                format!("#[cfg(any())] fn d() {{ let b = {needle}; }}"),
+            ),
+            (
+                "while false",
+                format!("while false {{ let b = {needle}; }}"),
+            ),
+            ("if !true", format!("if !true {{ let b = {needle}; }}")),
+            ("if 1 > 2", format!("if 1 > 2 {{ let b = {needle}; }}")),
+            (
+                "if std::hint::black_box(false)",
+                format!("if std::hint::black_box(false) {{ let b = {needle}; }}"),
+            ),
+            (
+                "const C: bool = false; if C",
+                format!("const C: bool = false;\nfn d() {{ if C {{ let b = {needle}; }} }}"),
+            ),
+            (
+                "return; above",
+                format!("fn d() {{ return; let b = {needle}; }}"),
+            ),
+            (
+                "#[cfg(any())] mod shadow",
+                format!("#[cfg(any())] mod shadow {{ fn d() {{ let b = {needle}; }} }}"),
+            ),
+            (
+                "match guard",
+                format!("match () {{ _ if false => {{ let b = {needle}; }} _ => {{}} }}"),
+            ),
+            ("comment", format!("// {needle}")),
+        ];
+        for (label, body) in attacks {
+            let forged = format!("fn event_hub_view() {{\n    {body}\n}}\n#[cfg(test)]\n");
+            assert!(
+                !live_code(&forged).contains(needle),
+                "{label}: the hero needle survived scrubbing — this pin would report a rendered \
+                 operation briefing over code the build never runs"
+            );
+        }
+        for (label, forged) in [
+            (
+                "shadow event_hub_view in a live mod, no cfg",
+                "fn event_hub_view() { good(); }\n\
+                 mod real { pub fn event_hub_view() { bad(); } }\n#[cfg(test)]\n",
+            ),
+            (
+                "shadow event_hub_view in an impl",
+                "fn event_hub_view() { good(); }\n\
+                 impl T { fn event_hub_view() { bad(); } }\n#[cfg(test)]\n",
+            ),
+        ] {
+            let scrubbed = live_code(forged);
+            let caught =
+                std::panic::catch_unwind(|| only_body(&scrubbed, "fn event_hub_view(")).is_err();
+            assert!(caught, "{label}: ambiguity must be RED, not a coin flip");
+        }
+        let live = format!("fn event_hub_view() {{\n    let b = {needle};\n}}\n#[cfg(test)]\n");
+        assert!(live_code(&live).contains(needle));
     }
 
     /// The other half of the contract: a real briefing is still rendered verbatim, newlines and
