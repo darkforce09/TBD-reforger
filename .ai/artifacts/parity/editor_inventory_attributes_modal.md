@@ -33,8 +33,15 @@ Default open tab is **Identity (index 1)**, not Transform — `mission_editor.rs
 
 Commits on **blur or Enter** (`:176-183`, `:198-210`).
 
-**A real behaviour worth a ticket:** editing X or Y **resets Z to 0.0** —
-`store.rs:1356-1358` (`} else if x.is_some() || y.is_some() { pz = 0.0; }`).
+**~~A real behaviour worth a ticket:~~ CORRECTED — this is deliberate.** Editing X or Y sets Z to
+0.0, at `store.rs:1356-1358`. The original version of this file called it a defect. It is not: the
+line carries `// terrain-follow; DEM z is sampled on the JS side`. Moving a slot horizontally drops
+it back onto the terrain, which is the intended behaviour, and a ticket "fixing" it would have
+broken working code.
+
+Recorded rather than silently edited because the mis-framing propagated — it was reported to the
+operator as a bug found in passing before the `attributes_sweep` caught it. **The lesson is the one
+this program keeps relearning: the code was read, the adjacent comment was not.**
 
 ### Identity (`attributes.rs:321-348`)
 
@@ -129,5 +136,9 @@ Eden defines **93 `ATTR-FIELD-*` ids**. TBD has **nine per-slot fields plus a lo
 entity type, with no multi-edit and no per-entity checkbox anywhere. The parity table's claim to
 cover this surface with **3 rows** is the under-scoping this sweep exists to fix.
 
-Two defects found in passing that deserve their own tickets regardless of parity work:
-**editing X or Y silently zeroes Z**, and **text fields commit one undo step per keystroke**.
+**One defect found in passing** that deserves its own ticket regardless of parity work: modal text
+fields commit **one undo step per keystroke** (`attributes.rs:246`, `on:input`). Note the ORBAT
+Manager's `callsign`/`rank` inputs commit `on:change` instead — two identity surfaces with
+different semantics, so a fix must not flatten them into one.
+
+The Z-reset originally listed here as a second defect **was a misreading** — see §Transform.
