@@ -91,6 +91,66 @@
 //! by `tests::durable_strict_policy_matches_the_in_memory_strict_policy`. Retuning is a separate
 //! judgement from fixing the key, and this slice only fixed the key.
 //!
+//! # `/map-assets` is not limiter-bound — T-630
+//!
+//! Decision 1 above already argued that the Mission Creator's map traffic must not carry the
+//! durable tier's cost. L1 limited it anyway, and the header said otherwise for two waves. This is
+//! the slice where the code agrees with the document: [`RATE_LIMIT_EXEMPT_MOUNT`] is mounted
+//! **outside** this middleware entirely.
+//!
+//! ## What the route is
+//!
+//! `/map-assets` is one `tower_http::services::ServeDir` over `packages/map-assets`. No database,
+//! no session, no credential, no mutation, no per-caller state — bytes off a disk that are already
+//! public to anyone who can load the editor. There is nothing behind it to brute-force and nothing
+//! a repeated request can corrupt or guess.
+//!
+//! ## Full exemption, not a higher tier
+//!
+//! A generous ceiling was the alternative and it does not survive contact with what this route
+//! serves. Three reasons, in the order they bind:
+//!
+//! 1. **Requests per second is not this route's cost.** The resource is bytes. One un-`Range`d
+//!    `GET /map-assets/everon/satellite/everon-sat.tbd-sat` is 152,713,114 B and spends **one**
+//!    token; the 49 polite Range spans T-627 replaced it with fetch the same bytes and spend
+//!    **49**. A request-rate ceiling therefore charges the well-behaved client 49× what it charges
+//!    the greedy one. It is not merely a weak control here, it is an inverted one, and no choice of
+//!    ceiling fixes that — the meter is measuring the wrong quantity.
+//! 2. **A ceiling that clears a real boot is not a ceiling.** A cold Mission Creator boot touches
+//!    **951 distinct files** under this mount (the 625 `objects/density/*.bin` grids, the
+//!    `objects/chunks/*.json.gz` set, the DEM, the 49 satellite spans, the glyph atlas), and the
+//!    live access log peaks at **2,115** `/map-assets` requests inside one second. Any burst large
+//!    enough to pass that is a number a scraper never has to think about.
+//! 3. **The proxy is where this belongs.** `scripts/deploy/Caddyfile.website` already fronts the
+//!    API and already has its own `handle /map-assets/*` block. That layer can bound bytes,
+//!    concurrency and connection count and can cache — the controls that match the resource. An
+//!    in-process token bucket counting requests cannot see any of them.
+//!
+//! ## What this is not
+//!
+//! It is not a retreat from limiting. Measured on the operator's live stack before this slice, the
+//! limiter had issued **145,861** `429`s: **145,858** of them `/map-assets`, three of them
+//! `/api/v1/registry`, and **none at all** on `/auth/` or `/ingest/`. Removing this one mount
+//! removes 99.998% of the refusals this limiter has ever made and every one of them was a false
+//! positive against the operator's own editor. [`STRICT_PREFIXES`] is untouched, both tiers still
+//! guard it, `/uploads` — the *other* `ServeDir` — is still limited (it serves user-uploaded
+//! content, a different risk), and every other route keeps the global tier.
+//!
+//! ## Where the exemption attaches, and why it is not a path guess
+//!
+//! **Not here.** This middleware still has exactly one path predicate — `STRICT_PREFIXES` — and
+//! gains no second one. The exemption lives in [`crate::app::router`]: `Router::layer` wraps the
+//! routes registered *before* it, so mounting `RATE_LIMIT_EXEMPT_MOUNT` on the line *after* the
+//! `rate_limit` layer leaves that service structurally outside the middleware. The limiter is never
+//! asked about a map asset, so it can never get the answer wrong.
+//!
+//! That matters because T-599 is the counter-example this codebase already paid for: a guard that
+//! matched the string `packages/map-assets/` and concluded everything beneath it was LFS. A
+//! `path.starts_with("/map-assets")` here would be the same shape of mistake — it would exempt
+//! `/map-assets-admin`, it would be defeated by `/api/v1/../map-assets`, and it would put a second,
+//! silently-diverging notion of "which route is this" next to axum's own. The router already knows
+//! which service a request reached. This uses that answer instead of re-deriving it.
+//!
 //! [`Config::trusted_proxies`]: crate::config::Config::trusted_proxies
 
 use std::net::{IpAddr, SocketAddr};
@@ -114,6 +174,18 @@ use crate::state::AppState;
 ///
 /// This is also the durable tier's entire surface — see the module header for why.
 pub const STRICT_PREFIXES: [&str; 2] = ["/api/v1/auth/", "/api/v1/ingest/"];
+
+/// T-630 — the router mount point that is served **outside** [`rate_limit`] entirely.
+///
+/// This is a **`Router::nest_service` argument**, not a request-path predicate. It is passed to
+/// axum once, at registration, in [`crate::app::router`]; nothing in this module compares it
+/// against `req.uri().path()`, and nothing should. See the module header's `/map-assets` section
+/// for why the exemption is structural and what a `starts_with` version of it would get wrong.
+///
+/// The literal is pinned by `tests::the_exempt_mount_is_the_path_the_editor_requests` against the
+/// URL the SPA actually builds (`world_assets/mod.rs`: `format!("/map-assets/{terrain}")`) — the
+/// mount and the client cannot drift apart silently.
+pub const RATE_LIMIT_EXEMPT_MOUNT: &str = "/map-assets";
 
 /// Bucket scope for the durable strict tier. One scope, because the two prefixes share one
 /// policy; `bucket_key` keeps it independent of any future scope.
@@ -362,7 +434,13 @@ fn with_retry_after(mut resp: Response, secs: u64) -> Response {
     resp
 }
 
-/// L1 for every request; L2 (durable) additionally for the strict prefixes.
+/// L1 for every request that reaches this middleware; L2 (durable) additionally for the strict
+/// prefixes.
+///
+/// "Every request that reaches this middleware" is the whole of the T-630 exemption: nothing below
+/// tests for [`RATE_LIMIT_EXEMPT_MOUNT`], because a map-asset request never arrives here — the
+/// router hands it to a `ServeDir` mounted outside this layer. One path predicate lives in this
+/// function ([`STRICT_PREFIXES`]) and that is the only one there should ever be.
 pub async fn rate_limit(State(rl): State<RateLimitState>, req: Request, next: Next) -> Response {
     let path = req.uri().path();
     let strict = STRICT_PREFIXES.iter().any(|p| path.starts_with(p));
@@ -701,6 +779,92 @@ mod tests {
         assert_eq!(
             resolved(Some("10.0.0.1"), &[&joined], &["10.0.0.0/8"]),
             addr("198.51.100.10")
+        );
+    }
+
+    // ───────────────────── T-630 — the exempt static mount ─────────────────────
+
+    /// The mount is the path the editor actually asks for.
+    ///
+    /// `apps/website/frontend/src/world_assets/mod.rs` builds every map-asset URL as
+    /// `format!("/map-assets/{terrain}")` and `world_host.rs` hard-codes
+    /// `/map-assets/glyphs/atlas/…`. If this constant drifts from that literal the exemption stops
+    /// covering the traffic it was written for and the T-627 boot starts paying backoff again —
+    /// silently, because everything still *works*, just slowly. That is the failure mode this pin
+    /// exists for.
+    #[test]
+    fn the_exempt_mount_is_the_path_the_editor_requests() {
+        assert_eq!(RATE_LIMIT_EXEMPT_MOUNT, "/map-assets");
+    }
+
+    /// **The seam.** `Router::layer` wraps the routes registered before it and nothing after, so
+    /// the entire T-630 exemption is one ordering fact in `app::router`: the `/map-assets`
+    /// `nest_service` comes *below* the `rate_limit` layer.
+    ///
+    /// `tests/t630_map_assets_exempt.rs` proves the behaviour through real HTTP, which is the
+    /// primary guard. This is the diagnostic one: a future tidy-up that moves the mount back
+    /// alongside the other static mounts re-arms the defect with no compile error and no obvious
+    /// symptom beyond a slower editor boot, and this says so by name instead of leaving a burst
+    /// test to fail cryptically.
+    ///
+    /// Both markers are required to exist exactly once — a pin that passes because it could not
+    /// find what it was checking is the defect class this whole ticket is about.
+    #[test]
+    fn the_exempt_mount_is_registered_below_the_rate_limit_layer() {
+        const LAYER: &str = "RateLimitState::new(state.clone())";
+        const MOUNT: &str = "RATE_LIMIT_EXEMPT_MOUNT";
+        let src = include_str!("../app.rs");
+
+        assert_eq!(
+            src.matches(LAYER).count(),
+            1,
+            "src/app.rs no longer contains exactly one `{LAYER}` — this pin cannot locate the \
+             rate-limit layer, so it is not checking anything"
+        );
+        assert_eq!(
+            src.matches(MOUNT).count(),
+            1,
+            "src/app.rs no longer contains exactly one `{MOUNT}` — this pin cannot locate the \
+             exempt mount, so it is not checking anything"
+        );
+
+        let layer_at = src.find(LAYER).expect("counted above");
+        let mount_at = src.find(MOUNT).expect("counted above");
+        assert!(
+            mount_at > layer_at,
+            "src/app.rs mounts {RATE_LIMIT_EXEMPT_MOUNT} at byte {mount_at}, ABOVE the rate-limit \
+             layer at byte {layer_at}. `Router::layer` wraps everything registered before it, so \
+             the map-asset ServeDir is back inside the limiter and a Mission Creator boot is \
+             paying T-629's backoff again. Move the `nest_service` back below the layer."
+        );
+    }
+
+    /// The exemption is one named mount, not a category.
+    ///
+    /// `/uploads` is the other `ServeDir` in the router and it is **not** exempt: it serves
+    /// user-uploaded content, which is a different risk profile from terrain data shipped in the
+    /// repo. Nothing about T-630 generalises to "static files are unlimited", and this states that
+    /// so the next reader does not generalise it for us. The behavioural half is
+    /// `t630_map_assets_exempt::the_other_static_mount_is_still_limited`.
+    #[test]
+    fn the_exemption_does_not_cover_the_other_static_mount() {
+        assert_ne!(RATE_LIMIT_EXEMPT_MOUNT, "/uploads");
+        let src = include_str!("../app.rs");
+        assert!(
+            src.contains(r#"nest_service("/uploads", ServeDir::new("uploads"))"#),
+            "src/app.rs no longer mounts /uploads the way this test assumes — re-check that it is \
+             still registered ABOVE the rate-limit layer"
+        );
+        let uploads_at = src
+            .find(r#"nest_service("/uploads""#)
+            .expect("asserted above");
+        let layer_at = src
+            .find("RateLimitState::new(state.clone())")
+            .expect("the rate-limit layer");
+        assert!(
+            uploads_at < layer_at,
+            "/uploads drifted below the rate-limit layer and is now unlimited too — T-630 exempted \
+             one mount, not every ServeDir"
         );
     }
 

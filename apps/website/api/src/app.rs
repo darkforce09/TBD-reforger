@@ -910,6 +910,11 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
 /// Leptos SPA + `/map-assets` (T-159.29), and the global middleware chain (outermost first:
 /// request-id → logging → **metrics** → recovery → CORS → body-limit → rate-limit).
 ///
+/// **T-630 — the chain is not uniform at its innermost link.** `/map-assets` gets every layer in
+/// that list except the last: it is mounted below the `rate_limit` layer and is therefore never
+/// seen by the limiter. Everything else, including the SPA fallback and the other `ServeDir`
+/// (`/uploads`), is above it and unchanged. The seam is commented in full at the call site.
+///
 /// The metrics registry is created here, once per router, and shared by the `observe`
 /// middleware, `/metrics` and `/healthz` — see [`metrics::Registry`] for why it is not a
 /// `static`.
@@ -957,56 +962,92 @@ pub fn router(state: AppState) -> Router {
     // Always serve `/map-assets` (Trunk proxies here in dev; production SPA cutover uses the same
     // path). Gating this behind SPA_DIST_DIR left the editor with 404s for DEM/sat/world under
     // `make leptos` + `make api`.
+    //
+    // T-630 — the *mount* is deliberately deferred to below the rate-limit layer. Only the
+    // directory is resolved here.
     let map_assets = if state.cfg.map_assets_dir.is_empty() {
         "../../../packages/map-assets".to_string()
     } else {
         state.cfg.map_assets_dir.clone()
     };
-    r = r.nest_service("/map-assets", ServeDir::new(map_assets));
 
     // T-159.29 — serve the Leptos SPA statically when SPA_DIST_DIR is set (the cutover flip; unset
-    // in dev, where `trunk serve` owns the SPA). Cross-origin isolation (COOP `same-origin` + COEP
-    // `credentialless`) mirrors the Vite/Trunk headers so the wasm SharedArrayBuffer path stays
-    // available; a no-extension path falls back to index.html (client routing).
+    // in dev, where `trunk serve` owns the SPA). A no-extension path falls back to index.html
+    // (client routing). The SPA document is a rate-limited route like any other, so it is
+    // registered here, above the layer.
     if !state.cfg.spa_dist_dir.is_empty() {
-        use axum::http::header::{HeaderName, HeaderValue};
-        use tower_http::set_header::SetResponseHeaderLayer;
-
         let dist = state.cfg.spa_dist_dir.clone();
         let index = format!("{dist}/index.html");
-        let coop = SetResponseHeaderLayer::overriding(
-            HeaderName::from_static("cross-origin-opener-policy"),
-            HeaderValue::from_static("same-origin"),
-        );
-        let coep = SetResponseHeaderLayer::overriding(
-            HeaderName::from_static("cross-origin-embedder-policy"),
-            HeaderValue::from_static("credentialless"),
-        );
-        r = r
-            .fallback_service(ServeDir::new(dist).fallback(ServeFile::new(index)))
-            .layer(coop)
-            .layer(coep);
+        r = r.fallback_service(ServeDir::new(dist).fallback(ServeFile::new(index)));
     }
 
     // T-578 — the rate limiter's own state: `AppState` (the in-memory L1 limiters) plus the
     // durable Postgres L2 built on the same pool. Not folded into `AppState` — see
     // `middleware::RateLimitState`.
-    r.layer(from_fn_with_state(
+    //
+    // ─────────────────────────────────────────────────────────────────────────────────────────
+    // T-630 — **THIS LINE IS THE RATE-LIMIT SEAM.** `Router::layer` wraps the routes registered
+    // *above* it and nothing registered below. Everything the API actually answers for — the
+    // whole of `/api/v1`, `/healthz`, `/metrics`, `/uploads`, and the SPA fallback — is above,
+    // and stays limited. `/map-assets` is mounted immediately below, and is therefore outside
+    // this middleware: the limiter is never asked about a map asset rather than being asked and
+    // told to say yes.
+    //
+    // That is the point. `middleware/ratelimit.rs`'s header already argued the editor's map
+    // traffic must not be limiter-bound, and L1 limited it anyway: measured on the live stack,
+    // 145,858 of the 145,861 `429`s this limiter had ever issued were `/map-assets`, and none
+    // were `/auth/` or `/ingest/`. A cold Mission Creator boot needs 951 distinct files from this
+    // mount — no request-per-second ceiling both clears that and refuses anything a scraper would
+    // do differently, because the resource here is bytes and the meter counts requests. See that
+    // header's `/map-assets` section for the full argument, and `tests/t630_map_assets_exempt.rs`
+    // for the proof that the routes above this line still refuse.
+    //
+    // Moving the `nest_service` below back above this layer silently re-arms the defect; that is
+    // why the order is asserted by `middleware::ratelimit::tests::
+    // the_exempt_mount_is_registered_below_the_rate_limit_layer` as well as behaviourally.
+    // ─────────────────────────────────────────────────────────────────────────────────────────
+    r = r.layer(from_fn_with_state(
         middleware::RateLimitState::new(state.clone()),
         middleware::rate_limit,
-    ))
-    .layer(DefaultBodyLimit::max(middleware::MAX_JSON_BODY))
-    .layer(from_fn_with_state(state.clone(), middleware::cors))
-    .layer(CatchPanicLayer::new())
-    // OUTSIDE the panic-catcher and the rate limiter, INSIDE the logger. That position
-    // is the whole point: inside `CatchPanicLayer` a panicking handler would never
-    // reach `record` and the 500 would go uncounted, and inside `rate_limit` a throttled
-    // request would never reach it either — `tbd_http_rate_limited_total` would be a
-    // series that can only ever read 0. Both are checked by the tests below.
-    .layer(from_fn_with_state(registry, observe))
-    .layer(from_fn(middleware::logging))
-    .layer(from_fn(middleware::request_id))
-    .with_state(state)
+    ));
+
+    r = r.nest_service(
+        middleware::RATE_LIMIT_EXEMPT_MOUNT,
+        ServeDir::new(map_assets),
+    );
+
+    // Cross-origin isolation (COOP `same-origin` + COEP `credentialless`) mirrors the Trunk/gate
+    // headers so the wasm SharedArrayBuffer path stays available. Applied after **both** the SPA
+    // fallback and the map-asset mount, so the header set is exactly what it was before T-630 split
+    // them across the limiter seam. It now also lands on a 429 body, which is inert (COOP/COEP are
+    // document-scoped) and is the price of not maintaining two copies of these two layers.
+    if !state.cfg.spa_dist_dir.is_empty() {
+        use axum::http::header::{HeaderName, HeaderValue};
+        use tower_http::set_header::SetResponseHeaderLayer;
+
+        r = r
+            .layer(SetResponseHeaderLayer::overriding(
+                HeaderName::from_static("cross-origin-opener-policy"),
+                HeaderValue::from_static("same-origin"),
+            ))
+            .layer(SetResponseHeaderLayer::overriding(
+                HeaderName::from_static("cross-origin-embedder-policy"),
+                HeaderValue::from_static("credentialless"),
+            ));
+    }
+
+    r.layer(DefaultBodyLimit::max(middleware::MAX_JSON_BODY))
+        .layer(from_fn_with_state(state.clone(), middleware::cors))
+        .layer(CatchPanicLayer::new())
+        // OUTSIDE the panic-catcher and the rate limiter, INSIDE the logger. That position
+        // is the whole point: inside `CatchPanicLayer` a panicking handler would never
+        // reach `record` and the 500 would go uncounted, and inside `rate_limit` a throttled
+        // request would never reach it either — `tbd_http_rate_limited_total` would be a
+        // series that can only ever read 0. Both are checked by the tests below.
+        .layer(from_fn_with_state(registry, observe))
+        .layer(from_fn(middleware::logging))
+        .layer(from_fn(middleware::request_id))
+        .with_state(state)
 }
 
 /// Count every request: `tbd_http_requests_total`, the latency histogram, the in-flight
