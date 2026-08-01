@@ -4686,7 +4686,7 @@
         "ui",
         "security"
       ],
-      "status": "ready",
+      "status": "shipped",
       "depends_on": [],
       "route": null,
       "branch": "ticket/T-155",
@@ -4696,7 +4696,8 @@
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "order": 3712
     },
     {
       "id": "T-156",
@@ -4710,7 +4711,7 @@
       "impact": [
         "ui"
       ],
-      "status": "ready",
+      "status": "shipped",
       "depends_on": [],
       "route": null,
       "branch": "ticket/T-156",
@@ -4720,7 +4721,8 @@
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "order": 3722
     },
     {
       "id": "T-157",
@@ -4983,7 +4985,7 @@
       "impact": [
         "ui"
       ],
-      "status": "ready",
+      "status": "shipped",
       "depends_on": [
         "T-159"
       ],
@@ -9225,7 +9227,7 @@
       "impact": [
         "contract"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 2314,
       "stream": "web-platform",
       "targets": [
@@ -9624,7 +9626,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3149,
       "stream": "web-platform",
       "targets": [
@@ -9686,7 +9688,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3152,
       "stream": "web-platform",
       "targets": [
@@ -10382,7 +10384,7 @@
     {
       "id": "T-370",
       "title": "Remove the 8 dead mark_adopted call sites — but move the purge first",
-      "summary": "FOLLOW-UP from T-352, which deliberately left this and explained why. **The sequencing is the whole ticket; getting it wrong strands data in users' browsers permanently.**\n\n`mark_adopted` no longer writes anything — T-352 deleted the storage and made the function purge `tbd-editor-adopted:*` residue instead. Eight call sites remain: mission_hydrate.rs 187, 213, 226, 246, 279, 299, 888 and mission_commands.rs:141.\n\n**DO NOT simply delete them.** `purge_legacy_markers` is reachable ONLY via `mark_adopted`. Every browser that ever opened the editor still holds `tbd-editor-adopted:<missionId>` in localStorage, and those calls are currently what erases it. Removing them in the same release leaves that residue stranded forever — and residue readable by whichever account signs in next was the original leak.\n\nCorrect order:\n  1. Move the purge to a boot hook (`main.rs` or `mission_editor.rs`), so it runs regardless of hydrate path.\n  2. Ship that. Give it a release to reach users' browsers.\n  3. THEN delete the eight call sites and the shim.\n\nSteps 1 and 3 must not be the same release. If you judge one release insufficient for step 2, say so and pick a longer gap — this is data in other people's browsers, not a refactor.\n\nNote mission_hydrate.rs is assigned to T-191/T-223/T-338 in the wave plan, so check nothing else holds it when you take this.\n\n== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==\nRecording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.\nThis is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+      "summary": "FOLLOW-UP from T-352, which deliberately left this and explained why. **The sequencing is the whole ticket; getting it wrong strands data in users' browsers permanently.**\n\n`mark_adopted` no longer writes anything — T-352 deleted the storage and made the function purge `tbd-editor-adopted:*` residue instead. Eight call sites remain: mission_hydrate.rs 187, 213, 226, 246, 279, 299, 888 and mission_commands.rs:141.\n\n**DO NOT simply delete them.** `purge_legacy_markers` is reachable ONLY via `mark_adopted`. Every browser that ever opened the editor still holds `tbd-editor-adopted:<missionId>` in localStorage, and those calls are currently what erases it. Removing them in the same release leaves that residue stranded forever — and residue readable by whichever account signs in next was the original leak.\n\nCorrect order:\n  1. Move the purge to a boot hook (`main.rs` or `mission_editor.rs`), so it runs regardless of hydrate path.\n  2. Ship that. Give it a release to reach users' browsers.\n  3. THEN delete the eight call sites and the shim.\n\nSteps 1 and 3 must not be the same release. If you judge one release insufficient for step 2, say so and pick a longer gap — this is data in other people's browsers, not a refactor.\n\nNote mission_hydrate.rs is assigned to T-191/T-223/T-338 in the wave plan, so check nothing else holds it when you take this.\n\n== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==\nRecording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.\nThis is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.\n\n=== WAVE 81: STEP 1 DONE, STEP 3 DELIBERATELY NOT ===\nThe purge has MOVED, which was the ticket's stated precondition. `mission_hydrate.rs:178` now calls\n`crate::editor_session::purge_legacy_markers()` at the top of `hydrate_from_server` -- **before** the\n`is_uuid` guard and **before** the fetch, so it runs on every editor boot on every branch (closing\nT-388's three skip paths), and it is called **directly, not through `mark_adopted`**, so the eight\ndead call sites are now safely deletable.\n**What remains is only the deletion of those eight sites.** It was not done in wave 81 because the\npurge move should bake for a release first -- deleting the sites in the same commit that moves the\nbehaviour off them removes the ability to revert one without the other.\nCAVEAT recorded honestly by the slice: the compile-level proof (a real path expression to a `pub fn`,\nwhich a comment cannot produce) does NOT prove the ORDERING claim (before-fetch / before-`is_uuid`);\nthat rests on review of the 4-line prologue. Every file involved is wasm32-only, so no native test can\ncall it.",
       "program": "platform",
       "surfaces": [
         "FRONTEND"
@@ -10390,7 +10392,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "deferred",
       "order": 3186,
       "stream": "web-platform",
       "targets": [
@@ -10758,7 +10760,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3204,
       "stream": "web-platform",
       "targets": [
@@ -10903,7 +10905,7 @@
       "impact": [
         "mission-authoring"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3211,
       "stream": "web-platform",
       "targets": [
@@ -14713,7 +14715,7 @@
     {
       "id": "T-573",
       "title": "Mixed drag: vehicle GPU preview still slots-only (set_drag SoA)",
-      "summary": "FOUND by W68 adversarial verifier (CLEAN NIT) after T-491, and admitted by the slice agent.\n\n`move_entities_and_vehicles` commits mixed drag in one LOCAL yrs txn, but live drag preview still filters vehicles out of `engine.set_drag` (`mission_editor.rs` ~1125–1134). `set_drag` is slot-SoA only in map-engine-render (outside T-491 owns).\n\nRepro: select one slot + one vehicle; drag — vehicle glyph stays put until release; slot previews. Commit still moves both; undo is one step.\n\nCure: extend drag preview / set_drag for vehicles (map-engine-render + host), or document as wontfix.",
+      "summary": "FOUND by W68 adversarial verifier (CLEAN NIT) after T-491, and admitted by the slice agent.\n\n`move_entities_and_vehicles` commits mixed drag in one LOCAL yrs txn, but live drag preview still filters vehicles out of `engine.set_drag` (`mission_editor.rs` ~1125–1134). `set_drag` is slot-SoA only in map-engine-render (outside T-491 owns).\n\nRepro: select one slot + one vehicle; drag — vehicle glyph stays put until release; slot previews. Commit still moves both; undo is one step.\n\nCure: extend drag preview / set_drag for vehicles (map-engine-render + host), or document as wontfix.\n\n=== WAVE 81: NOT REACHED, AND THE EXACT PATCH IS KNOWN ===\nT-314's slice found the cure needs two files it did not own, and shipped nothing rather than half.\n**Root cause: the engine has no vehicle ids.** `vehicles_bind(xy)` (`crates/map-engine-render/src/engine.rs:4282`)\ntakes a bare flat `xy` from `MissionDocCore::vehicle_xy_flat`, so `set_drag` cannot resolve a dragged\nvehicle id to a lane row. Three edits:\n1. `crates/map-engine-core/src/slots_gpu.rs` -- `pack_vehicle_drag_preview(drag_ids, ids, xy, dx, dy)`:\n   re-pack the whole `MissionVehicles` lane with matched rows offset, unknown ids (the slot half of a\n   mixed selection) skipped. The lane is a dense pack already re-uploaded wholesale, so no SoA\n   row-patching is needed.\n2. `apps/website/frontend/src/mission_history.rs:329,382` -- feed vehicle ids alongside `xy`.\n3. `apps/website/frontend/src/mission_editor.rs:1126-1134` -- delete the `is_vehicle_id` filter and\n   pass the whole `ids` list to `set_drag`.",
       "program": "platform",
       "surfaces": [
         "FRONTEND",
@@ -14724,7 +14726,7 @@
         "mission-authoring",
         "ui"
       ],
-      "status": "ready",
+      "status": "deferred",
       "order": 3426,
       "executor": "claude-code",
       "priority": 2,
@@ -14829,7 +14831,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3422,
       "stream": "web-platform",
       "targets": [
@@ -14849,7 +14851,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3423,
       "stream": "web-platform",
       "targets": [
@@ -14869,7 +14871,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3424,
       "stream": "web-platform",
       "targets": [
@@ -15015,7 +15017,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3442,
       "stream": "web-platform",
       "targets": [
@@ -15728,6 +15730,66 @@
       "status": "shipped",
       "priority": 3,
       "order": 3702
+    },
+    {
+      "program": "platform",
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-624",
+      "title": "Two load-bearing comments asserted a schema and a backend neither author had checked",
+      "summary": "FOUND by wave 81's adversarial verifier; fixed the same wave. **The signature defect in prose** --\nthe one form of it this program never systematically hunted.\n\n**F1 -- the claim that decides whether a cascade is safe.** `handlers/events.rs:1391` and\n`tests/t579_event_delete_is_soft.rs:34` both stated that `matches.event_id` has **no foreign key at\nall**, so a hard delete would silently orphan AAR and leaderboard rows. False. Measured on a\nfreshly-migrated database:\n\n    matches_event_id_fkey   | FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE SET NULL\n\n`0019_ingest_pointer_foreign_keys.sql:222-224` (T-585, commit `4ed5eb942`) added it at 2026-07-31\n07:02. The false sentence was written in `a189ac39` at 2026-08-01 04:48 -- **the FK had been on main\nfor 22 hours.** A hard delete orphans nothing; it NULLs the attribution, a weaker and different loss.\nThe soft-delete decision stands on its other legs and did not change; the `matches` leg is now marked\nthe weakest on the page, with the text telling the reader not to re-derive the decision from it.\n\n**F2 -- what a lost refresh race actually costs.** `client.rs:277-278` said spending a stale token\n\"costs one 401 in this tab\". `handlers/auth.rs:149-152` treats presentation of a revoked token as\n**reuse** and runs `revoke_token_family` -- `UPDATE refresh_tokens SET revoked_at = now() WHERE\ndiscord_id = $1 AND revoked_at IS NULL` -- so the cost is **every tab logged out, the winner''s fresh\npair included.** The 2026-07-13 incident class. Now stated accurately, together with the narrowness\n(broadcast before unlock; persist only after unlock via `on_refreshed`; ordering not spec-guaranteed),\nthe credit T-155 is due (a guaranteed double-spend became a rare two-lost-races event), and the fact\nthat **the native harness cannot reach the losing interleaving** -- it is single-threaded, so the\nwinner''s persist always lands before the waiter resumes.\n\n**AND THE COMMAND CENTER DID IT AGAIN, IN THIS TICKET''S OWN BRIEF.** I told the agent \"every other\nadmin delete on the platform is soft.\" It checked instead of copying: only `events` and `missions`\nstamp `deleted_at`; `delete_announcement` sets `status=''archived''`, `deactivate_server` sets\n`is_active=false`, and `delete_modpack` is a genuine `DELETE FROM modpacks`. It wrote the verified\nversion -- *keeping the row is the platform''s shape for a delete* -- naming each mechanism. An\nunverified claim, in the ticket about unverified claims, caught by the agent.\n\nSTILL OPEN, reported not fixed (both outside the slice''s owns):\n- **A third copy of F1''s false claim** at `frontend/src/event_manager.rs:238-240`.\n- F4, cosmetic: `tests/t578_ratelimit.rs:389` is named `migration_0020_is_the_ddl_constant_verbatim`\n  while correctly reading `0021_rate_limit_buckets.sql`; `app.rs:468-469` cites it by that name.",
+      "status": "shipped",
+      "priority": 3,
+      "order": 3732,
+      "surfaces": [
+        "INFRA"
+      ]
+    },
+    {
+      "program": "platform",
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-625",
+      "title": "Behind Caddy every public client shares one auth rate-limit bucket",
+      "summary": "FOUND by wave 81''s verifier (F5). **Pre-existing and self-documented**, but worth knowing before a\nbig event night.\n\n`Caddyfile.website:18-19` proxies from loopback, so axum''s `ConnectInfo` peer is Caddy for every\npublic client and they all key to a single `strict|127.0.0.1` bucket at **1 rps / burst 10**\n(`middleware/ratelimit.rs:53-63` says so itself). `frontend/src/auth.rs:5` confirms the SPA refreshes\non bootstrap.\n\n**Op-night scenario:** more than ~10 members open the site within ~10 seconds; boot 11 onward gets a\n429 on `/auth/refresh` and renders logged-out until retried.\n\n**What holds:** the 429 is refused by middleware *before* the handler, so the single-use refresh token\nis **not spent** and a retry succeeds; and the client has no auto-retry loop, so there is no stampede.\n\n**Not new.** The in-memory L1 tier has had identical numbers on the identical shared key for waves.\nT-578 added durability, which makes it marginally stricter (a restart mid-spike no longer refills the\nbucket) -- it did not create the sharing.\n\n**FIX:** wire `X-Forwarded-For` behind `Config::trusted_proxies`, which exists and is **read by\nnothing**. That is what makes per-IP mean per-client. T-578''s module header defers it explicitly\nrather than doing it silently.",
+      "status": "deferred",
+      "priority": 2,
+      "order": 3742,
+      "surfaces": [
+        "INFRA"
+      ]
+    },
+    {
+      "program": "platform",
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "id": "T-626",
+      "title": "T-587 backfill regex is not character-for-character with parse_grid",
+      "summary": "FOUND by wave 81''s verifier (F3). Divergence is entirely in the **safe** direction; filed for accuracy.\n\n`migrations/0020_fire_missions_solution.sql:86-88` claims its accept regex matches `parse_grid`\ncharacter for character. `frontend/src/mortar.rs:297-302` parses via `str::parse::<f64>`, which accepts\n`+`-signed, bare-dot and exponent forms the regex rejects. Measured:\n\n    ''+1000, 2000'' -> f      ''.5, 2'' -> f      ''5., 2'' -> f      ''1e3, 500'' -> f\n    ''1000, 2000''  -> t\n\n**Under-permissive only** -- the dangerous direction (inventing coordinates for rows the calculator\nhas always shown as unrestorable) is closed: everything the regex accepts, Rust parses to the same\nfinite f64. Practical impact ~nil, because `restore()` (`mortar.rs:347-355`) still falls back to\n`parse_grid` for un-backfilled rows and `fmt_grid` output always matches the regex, so every\nSPA-written row backfills.\n\nThe backfill test''s six cases (`t587_fire_mission_solution.rs:311-334`) omit exactly the divergent\nforms -- **the equivalence claim is untested precisely where it is false.**\n\nPathological edge, recorded: a >~309-digit grid string matches the regex but overflows\n`::double precision`, which would abort the migration. No realistic row has that shape.",
+      "status": "deferred",
+      "priority": 3,
+      "order": 3752,
+      "surfaces": [
+        "INFRA"
+      ]
     }
   ]
 }

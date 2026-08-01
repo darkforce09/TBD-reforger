@@ -130,7 +130,7 @@ Its own summary says 'This row is a pointer, not work' and names the residual as
 | T-157 | 1550 | idea | platform | Mission Create visual overhaul | Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu. |
 | T-158 | 1560 | idea | eden | Editor shell UX consolidation | Consolidate Settings buttons, wire up top bar, remove redundant Assets tab. |
 | T-159 | 1570 | shipped | platform | Leptos UI rewrite (React SPA → Rust) | SHIPPED @ merge df181120 (branch tip 50bba633, tags T-159.15.1–.29.3): Leptos SPA rewrite complete + React app DELETED (.29.3, operator go). Frozen V-oracle 25/25 + 15 CDP smokes + census pin in cargo. Residual: prod default flip (SPA_DIST_DIR + OAuth origin + soak) operator-gated. Hub: docs/platform/t159_leptos_ui_program.md. |
-| T-160 | 1575 | idea | platform | wgpu GpuTimer readback err-path (unmap / in_flight) | Found during T-159.15.1: GpuTimer map_async err-path unmaps only on res.is_ok() but clears in_flight unconditionally — latent double-map when HUD/timer returns. Editor currently uses disable_frame_timing(). Fix in map-engine-render when re-enabling frame timing. |
+| T-160 | 1575 | shipped | platform | wgpu GpuTimer readback err-path (unmap / in_flight) | Found during T-159.15.1: GpuTimer map_async err-path unmaps only on res.is_ok() but clears in_flight unconditionally — latent double-map when HUD/timer returns. Editor currently uses disable_frame_timing(). Fix in map-engine-render when re-enabling frame timing. |
 | T-161 | 1580 | shipped | platform | Ticket CLI: Python → Rust xtask | SHIPPED: Python ticket CLI → Rust xtask (Grok 4.5). scripts/ticket → cargo xtask; verify t161_1..4_verify_log.md. Hub: docs/platform/t161_ticket_xtask_program.md. |
 | T-162 | 1590 | shipped | platform | Eradicate remaining Python → Rust xtask | SHIPPED: eradicate remaining Python → Rust xtask (MCP/debug/repro). verify-no-python + mcp-call-selftest 19/19. Hub: docs/platform/t162_python_eradication.md. |
 | T-163 | 1600 | shipped | platform | Merge integration: t-159 + t-161 → main | SHIPPED: both worktree branches merged to main (t-159 @ df181120 clean, t-161 @ 3cec57ee 6-conflict resolution). xtask dead-React-reference purge (10 lines), V13 web→leptos, template fixes, T-152.5 compose_roads caller restored (map-engine-wasm compiled on no head since), registry truth (T-159 shipped, T-154 order). Verify: .ai/artifacts/t163_merge_verify_log.md. |
@@ -271,7 +271,7 @@ Recording a bug is most of its value; fixing it now is optional. The audits that
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
 
 CANCELLED — DELIVERED BY T-389, which shipped the RETURNED badge, the reason text on the author's own card and dossier, and a working resubmit that clears the stamp. Verified in a browser end to end. Nothing left in this ticket's ask. |
-| T-314 | 2314 | deferred | platform | Nothing reads doc.kit_substitutions — the last mile of T-200 | T-200 attached a KitSubstitutionReport to the compiled document so the compiler stops silently swapping an authored character for the faction default (342 of 354 registry characters have no kit alias). It rides the returned value with #[serde(skip)], so every existing caller already holds it and the /compiled wire contract is unchanged — pinned by a test asserting the top-level key set is exactly the schema's ten properties. But no caller surfaces it yet. The last mile is a tracing::warn! in get_compiled_mission (apps/website/api/src/handlers/missions.rs) reading doc.kit_substitutions.details(), which T-200 did not own. Until then the report exists and nobody sees it. details() returns the same shape as wire_safety::scan_editor_payload so a caller can render both identically.
+| T-314 | 2314 | shipped | platform | Nothing reads doc.kit_substitutions — the last mile of T-200 | T-200 attached a KitSubstitutionReport to the compiled document so the compiler stops silently swapping an authored character for the faction default (342 of 354 registry characters have no kit alias). It rides the returned value with #[serde(skip)], so every existing caller already holds it and the /compiled wire contract is unchanged — pinned by a test asserting the top-level key set is exactly the schema's ten properties. But no caller surfaces it yet. The last mile is a tracing::warn! in get_compiled_mission (apps/website/api/src/handlers/missions.rs) reading doc.kit_substitutions.details(), which T-200 did not own. Until then the report exists and nobody sees it. details() returns the same shape as wire_safety::scan_editor_payload so a caller can render both identically.
 
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
@@ -736,7 +736,7 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-333 | 3149 | deferred | platform | Dialog installs a window-level Escape listener per instance, so Esc closes stacked dialogs | Pre-existing, found by T-226 while stacking a confirm on top of an edit dialog. `ui.rs` `Dialog` installs a window-level Escape listener PER INSTANCE, so pressing Esc with both open closes BOTH — the confirm and the form behind it. The operator loses unsaved edits to dismiss a confirmation.
+| T-333 | 3149 | shipped | platform | Dialog installs a window-level Escape listener per instance, so Esc closes stacked dialogs | Pre-existing, found by T-226 while stacking a confirm on top of an edit dialog. `ui.rs` `Dialog` installs a window-level Escape listener PER INSTANCE, so pressing Esc with both open closes BOTH — the confirm and the form behind it. The operator loses unsaved edits to dismiss a confirmation.
 
 T-226 did not touch it (`ui.rs` was not in its owns) and worked around it by testing the confirm path via clicks. Fix: only the topmost dialog should handle Escape — a shared stack/depth counter, or listen on the dialog element rather than window and let it stop propagation.
 
@@ -800,7 +800,7 @@ Attendance deliberately out of scope: T-326's reasoning is that a registration w
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
-| T-336 | 3152 | deferred | platform | recompute_user_stats belongs in services/, not private to the telemetry handler | RECOMMENDED by T-326, correctly declined as out of scope. `recompute_user_stats` (handlers/telemetry.rs:530) is the sole writer of `users.total_deployments` and `attendance_rate`, and T-326 needed it from `handlers/me.rs` at identity-link time. The minimal unblock was widening it to `pub(super)`, which is what shipped.
+| T-336 | 3152 | shipped | platform | recompute_user_stats belongs in services/, not private to the telemetry handler | RECOMMENDED by T-326, correctly declined as out of scope. `recompute_user_stats` (handlers/telemetry.rs:530) is the sole writer of `users.total_deployments` and `attendance_rate`, and T-326 needed it from `handlers/me.rs` at identity-link time. The minimal unblock was widening it to `pub(super)`, which is what shipped.
 
 The right home is `src/services/` — the crate already has a services layer, and a function two handlers depend on is a service, not a handler internal. T-326 explicitly refused to re-derive the SQL in me.rs on the grounds that two definitions of 'a deployment' drifting silently is the same bug class as the ticket it was fixing, which is exactly right and is the argument for moving it.
 
@@ -1491,7 +1491,21 @@ Note mission_hydrate.rs is assigned to T-191/T-223/T-338 in the wave plan, so ch
 
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now. |
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+
+=== WAVE 81: STEP 1 DONE, STEP 3 DELIBERATELY NOT ===
+The purge has MOVED, which was the ticket's stated precondition. `mission_hydrate.rs:178` now calls
+`crate::editor_session::purge_legacy_markers()` at the top of `hydrate_from_server` -- **before** the
+`is_uuid` guard and **before** the fetch, so it runs on every editor boot on every branch (closing
+T-388's three skip paths), and it is called **directly, not through `mark_adopted`**, so the eight
+dead call sites are now safely deletable.
+**What remains is only the deletion of those eight sites.** It was not done in wave 81 because the
+purge move should bake for a release first -- deleting the sites in the same commit that moves the
+behaviour off them removes the ability to revert one without the other.
+CAVEAT recorded honestly by the slice: the compile-level proof (a real path expression to a `pub fn`,
+which a comment cannot produce) does NOT prove the ORDERING claim (before-fetch / before-`is_uuid`);
+that rests on review of the 4-line prologue. Every file involved is wasm32-only, so no native test can
+call it. |
 | T-371 | 3187 | shipped | platform | display_name() selects on an untrimmed is_empty, so a whitespace Discord name is stored verbatim | FOUND by T-366 while establishing whether trimming on read was safe. This is the WRITE side of the bug it fixed on the read side, and it is reachable in production.
 
 `services/discord.rs:113` `display_name()` chooses between `global_name` and `username` using `global_name.is_empty()` — an untrimmed FIELD-SELECTION test. So a Discord `global_name` of `"   "` wins that branch and is stored verbatim into `users.username` by the login upsert at `handlers/oauth.rs:117`, which rewrites on EVERY login.
@@ -1757,7 +1771,7 @@ MEASURED residual (W64 attempt, STOP — owns collide with T-560):
 
 Fix lives in handlers/dev.rs — sequence AFTER T-560 (same owns). Do not re-litigate api_proxy.
 Owns for the real fix: apps/website/api/src/handlers/dev.rs (+ ITs that assume one discord_id). |
-| T-388 | 3204 | deferred | platform | The adoption-residue purge is not guaranteed on a first editor open | MINOR, from the behavioural probe of T-352. Its residue purge (`editor_session.rs:149 purge_legacy_markers`) is reachable ONLY via `mark_adopted`, and three paths reach the editor without calling it:
+| T-388 | 3204 | shipped | platform | The adoption-residue purge is not guaranteed on a first editor open | MINOR, from the behavioural probe of T-352. Its residue purge (`editor_session.rs:149 purge_legacy_markers`) is reachable ONLY via `mark_adopted`, and three paths reach the editor without calling it:
   mission_hydrate.rs:181-190 — the `is_empty && loaded_from_idb` branch calls `apply_row` and no `mark_adopted`;
   `Local::Diverged` (:236) defers to conflict resolution;
   the whole hydrate needs a successful server fetch, so an unauthenticated or offline editor boot never reaches it.
@@ -1855,7 +1869,7 @@ PROVEN by T-389 as a negative control: with `#[serde(skip)]` on `rejection_reaso
 SCOPE THIS BEFORE FIXING: the exposure is every golden-backed struct using flatten, not just MissionCard. Enumerate `#[serde(flatten)]` across the API and check which are golden-asserted.
 
 Cheapest durable fix is not more assertions (T-389 hand-wrote per-field ones, which does not generalise): assert on the DESERIALIZED type, or deny_unknown_fields on a mirror struct, so the check is structural rather than textual. Note T-359's related hazard — a golden captured from a DRAFT mission has these fields absent, so it proves nothing about them either way; goldens must be captured from a row that actually populates the field under test. |
-| T-395 | 3211 | deferred | platform | mission_overview stat grid renders STATUS as raw lowercase `rejected` | MINOR/cosmetic — filed deferred per Rule 12, not worth this week's budget.
+| T-395 | 3211 | shipped | platform | mission_overview stat grid renders STATUS as raw lowercase `rejected` | MINOR/cosmetic — filed deferred per Rule 12, not worth this week's budget.
 
 `frontend/src/mission_overview.rs` renders the `STATUS` stat-grid cell as the raw DB enum (`rejected`, lowercase) a few hundred pixels below the correct 'RETURNED BY REVIEW' callout that T-389 added. Same defect class T-389 fixed, different file, so it was out of that slice's owns. Two labels for one state, disagreeing on the same screen. Needs the same label mapper the badge uses. Found by T-389, which reported filing it but did not. |
 | T-396 | 3212 | shipped | platform | Cure the trunk serve / gate race instead of killing the operator's dev server | The gate's `trunk build --release` and the operator's `make leptos` (`trunk serve --release`) race over the same staging paths. OBSERVED 2026-07-26: the wave gate failed with "error writing JS loader file to stage dir / No such file or directory" while PID 158382 held it, and the identical build passed seconds later. Worst possible failure shape — an ENVIRONMENT race that reads exactly like a code defect, so an unattended fix agent burns its whole retry budget on working code.
@@ -3135,7 +3149,7 @@ backups live outside `app.rs`. This is that work, and T-280 already specified it
 // and /* */ arm comments now RED; ignore-helper DEV_USER_ID bind RED. Still GREEN: live match collapses to `_` while arms exist only inside r#" "enlisted" => … "# decoys (comment strip keeps string contents).
 
 Repro: park arms in raw-string decoy; match `_ => DEV_USER_ID`; Class-R green. |
-| T-578 | 3422 | deferred | platform | Wire T-280's durable rate limiter — it is proven but inert | T-280 built `app::durable_ratelimit::PgRateLimiter` (a one-statement refill-and-spend token bucket;
+| T-578 | 3422 | shipped | platform | Wire T-280's durable rate limiter — it is proven but inert | T-280 built `app::durable_ratelimit::PgRateLimiter` (a one-statement refill-and-spend token bucket;
 `ON CONFLICT DO UPDATE` takes the row lock so it is atomic across processes) and PROVED it with a
 perturbation that isolates durability from throttling: an in-process bucket still refuses at the
 limit, and fails only on 'still refused after a restart'.
@@ -3158,7 +3172,7 @@ reaches Postgres. Get sign-off on the cost before wiring. |
 Exact `if false { … }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply… }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(…, opt(&row.briefing)).
 
 Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pin green. |
-| T-579 | 3423 | deferred | platform | Post-wave-69 UI honesty: dead RCON success path, and a delete dialog that still lies | Two frontend items from wave 69, neither a regression, both cosmetic-but-dishonest.
+| T-579 | 3423 | shipped | platform | Post-wave-69 UI honesty: dead RCON success path, and a delete dialog that still lies | Two frontend items from wave 69, neither a regression, both cosmetic-but-dishonest.
 
 1. MINOR -- dead code after T-269 flipped RCON to 503. `frontend/src/server_control.rs:116`
    `rcon_accepted_message` ("RCON accepted ... transport pending T-269"), the `Ok(resp)` arm at
@@ -3179,7 +3193,7 @@ Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pi
 Plain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE…COALESCE…$decoy$ (blanker only handles '/").
 
 Repro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R green. |
-| T-580 | 3424 | deferred | platform | /healthz is unauthenticated and now reports version, uptime, pool depth and migration counts | T-280 extended `/healthz` with two independent failable checks -- a genuine improvement -- but it is
+| T-580 | 3424 | shipped | platform | /healthz is unauthenticated and now reports version, uptime, pool depth and migration counts | T-280 extended `/healthz` with two independent failable checks -- a genuine improvement -- but it is
 UNAUTHENTICATED and exposed publicly through Caddy (`Caddyfile.website:27`).
 
 MEASURED LIVE by wave 69's verifier against `app.rs:1021`:
@@ -3206,7 +3220,20 @@ Repro: cfg-out live arms; leave `_ => DEV_USER_ID` live; Class-R green. |
 
 Repro: select one slot + one vehicle; drag — vehicle glyph stays put until release; slot previews. Commit still moves both; undo is one step.
 
-Cure: extend drag preview / set_drag for vehicles (map-engine-render + host), or document as wontfix. |
+Cure: extend drag preview / set_drag for vehicles (map-engine-render + host), or document as wontfix.
+
+=== WAVE 81: NOT REACHED, AND THE EXACT PATCH IS KNOWN ===
+T-314's slice found the cure needs two files it did not own, and shipped nothing rather than half.
+**Root cause: the engine has no vehicle ids.** `vehicles_bind(xy)` (`crates/map-engine-render/src/engine.rs:4282`)
+takes a bare flat `xy` from `MissionDocCore::vehicle_xy_flat`, so `set_drag` cannot resolve a dragged
+vehicle id to a lane row. Three edits:
+1. `crates/map-engine-core/src/slots_gpu.rs` -- `pack_vehicle_drag_preview(drag_ids, ids, xy, dx, dy)`:
+   re-pack the whole `MissionVehicles` lane with matched rows offset, unknown ids (the slot half of a
+   mixed selection) skipped. The lane is a dense pack already re-uploaded wholesale, so no SoA
+   row-patching is needed.
+2. `apps/website/frontend/src/mission_history.rs:329,382` -- feed vehicle ids alongside `xy`.
+3. `apps/website/frontend/src/mission_editor.rs:1126-1134` -- delete the `is_vehicle_id` filter and
+   pass the whole `ids` list to `set_drag`. |
 | T-574 | 3427 | shipped | platform | T-491 host Class-R soft include_str — comment-only move_entities_and_vehicles survives | FOUND by W68 adversarial verifier (CLEAN NIT) after T-491.
 
 `select_tool_and_mission_editor_delegate_to_atomic_mix_apis` (store.rs ~2912–2940) only string-presence / Move-arm absence checks via include_str. A comment-only `move_entities_and_vehicles` mention would keep the pin green; it also does not pin that mission_editor calls pick_slot_or_vehicle / marquee_* helpers.
@@ -3409,7 +3436,7 @@ RELATED, same family, from T-285: `POST /missions/{id}/inject` is a DEAD ROUTE. 
 -- zero `mission.json` references under apps/mod/tbd-framework/, and the mod's real path is
 GET /api/v1/missions/:id/compiled. No frontend caller either. Decide: delete the route, or point the
 mod at it. |
-| T-587 | 3442 | deferred | platform | fire_missions cannot store a solution: no coordinates, no TOF, no charge | Surfaced by T-285, which wired the orphaned /fire-missions endpoints and had to work around the
+| T-587 | 3442 | shipped | platform | fire_missions cannot store a solution: no coordinates, no TOF, no charge | Surfaced by T-285, which wired the orphaned /fire-missions endpoints and had to work around the
 schema to do it.
 
 THE TABLE STORES NO COORDINATES. T-285 encodes the four inputs losslessly into the `fp_grid` /
@@ -4628,6 +4655,86 @@ STILL OPEN, filed rather than fixed (verifier F2/F4, both LOW): the `.py` ban ex
 `scripts/target/` evades it -- **pre-existing**, byte-identical to the pre-T-620 exclusions. And the
 pattern misses a bareword `python run.py`. Also cosmetic: `CODING_STANDARDS.md:126`, `Makefile:472`
 and `ci.yml:209` still say "58 .sh"; the gate reports the true count at runtime. |
+| T-155 | 3712 | shipped | platform | Cross-tab refresh-token mutex (single-use rotation double-spend) | Found 2026-07-13 via api access log during the T-154.1 pause: two editor tabs share the single-use refresh token; tab A rotates it, tab B later POSTs the stale one -> /auth/refresh 401 -> the whole browser session dies (log: 12:13 local, registry+compat 401 -> refresh 401 -> all subsequent 401). The single-flight helper (apps/website/frontend/src/api/refresh.ts) serializes refreshes WITHIN a tab only. Fix: cross-tab mutex around refresh (Web Locks API, BroadcastChannel fallback) + adopt the rotated pair from the winning tab (storage event), so N tabs spend one rotation. Repro: open the editor in two tabs, wait out the access TTL, act in the stale tab. |
+| T-156 | 3722 | shipped | platform | Session-expired UX - 401s must not masquerade as empty data | Sibling of T-155 (same 2026-07-13 incident): when auth dies, GET /registry and GET /factions fail and the UI silently degrades - the Arsenal shows the non-character guard ("Loadout applies to placed characters") because the catalog is empty, and the Factions palette shows the "No factions yet" author-CTA. Operator read it as data loss. Fix: distinguish query-error (esp. 401 after failed refresh) from genuinely-empty responses; surface one clear "session expired - log in again" banner/toast with a dev-login shortcut in dev, and make useRegistry/useFactionLibrary consumers render an error state, never the empty-state copy, on failure. |
+| T-624 | 3732 | shipped | platform | Two load-bearing comments asserted a schema and a backend neither author had checked | FOUND by wave 81's adversarial verifier; fixed the same wave. **The signature defect in prose** --
+the one form of it this program never systematically hunted.
+
+**F1 -- the claim that decides whether a cascade is safe.** `handlers/events.rs:1391` and
+`tests/t579_event_delete_is_soft.rs:34` both stated that `matches.event_id` has **no foreign key at
+all**, so a hard delete would silently orphan AAR and leaderboard rows. False. Measured on a
+freshly-migrated database:
+
+    matches_event_id_fkey   \| FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE SET NULL
+
+`0019_ingest_pointer_foreign_keys.sql:222-224` (T-585, commit `4ed5eb942`) added it at 2026-07-31
+07:02. The false sentence was written in `a189ac39` at 2026-08-01 04:48 -- **the FK had been on main
+for 22 hours.** A hard delete orphans nothing; it NULLs the attribution, a weaker and different loss.
+The soft-delete decision stands on its other legs and did not change; the `matches` leg is now marked
+the weakest on the page, with the text telling the reader not to re-derive the decision from it.
+
+**F2 -- what a lost refresh race actually costs.** `client.rs:277-278` said spending a stale token
+"costs one 401 in this tab". `handlers/auth.rs:149-152` treats presentation of a revoked token as
+**reuse** and runs `revoke_token_family` -- `UPDATE refresh_tokens SET revoked_at = now() WHERE
+discord_id = $1 AND revoked_at IS NULL` -- so the cost is **every tab logged out, the winner''s fresh
+pair included.** The 2026-07-13 incident class. Now stated accurately, together with the narrowness
+(broadcast before unlock; persist only after unlock via `on_refreshed`; ordering not spec-guaranteed),
+the credit T-155 is due (a guaranteed double-spend became a rare two-lost-races event), and the fact
+that **the native harness cannot reach the losing interleaving** -- it is single-threaded, so the
+winner''s persist always lands before the waiter resumes.
+
+**AND THE COMMAND CENTER DID IT AGAIN, IN THIS TICKET''S OWN BRIEF.** I told the agent "every other
+admin delete on the platform is soft." It checked instead of copying: only `events` and `missions`
+stamp `deleted_at`; `delete_announcement` sets `status=''archived''`, `deactivate_server` sets
+`is_active=false`, and `delete_modpack` is a genuine `DELETE FROM modpacks`. It wrote the verified
+version -- *keeping the row is the platform''s shape for a delete* -- naming each mechanism. An
+unverified claim, in the ticket about unverified claims, caught by the agent.
+
+STILL OPEN, reported not fixed (both outside the slice''s owns):
+- **A third copy of F1''s false claim** at `frontend/src/event_manager.rs:238-240`.
+- F4, cosmetic: `tests/t578_ratelimit.rs:389` is named `migration_0020_is_the_ddl_constant_verbatim`
+  while correctly reading `0021_rate_limit_buckets.sql`; `app.rs:468-469` cites it by that name. |
+| T-625 | 3742 | deferred | platform | Behind Caddy every public client shares one auth rate-limit bucket | FOUND by wave 81''s verifier (F5). **Pre-existing and self-documented**, but worth knowing before a
+big event night.
+
+`Caddyfile.website:18-19` proxies from loopback, so axum''s `ConnectInfo` peer is Caddy for every
+public client and they all key to a single `strict\|127.0.0.1` bucket at **1 rps / burst 10**
+(`middleware/ratelimit.rs:53-63` says so itself). `frontend/src/auth.rs:5` confirms the SPA refreshes
+on bootstrap.
+
+**Op-night scenario:** more than ~10 members open the site within ~10 seconds; boot 11 onward gets a
+429 on `/auth/refresh` and renders logged-out until retried.
+
+**What holds:** the 429 is refused by middleware *before* the handler, so the single-use refresh token
+is **not spent** and a retry succeeds; and the client has no auto-retry loop, so there is no stampede.
+
+**Not new.** The in-memory L1 tier has had identical numbers on the identical shared key for waves.
+T-578 added durability, which makes it marginally stricter (a restart mid-spike no longer refills the
+bucket) -- it did not create the sharing.
+
+**FIX:** wire `X-Forwarded-For` behind `Config::trusted_proxies`, which exists and is **read by
+nothing**. That is what makes per-IP mean per-client. T-578''s module header defers it explicitly
+rather than doing it silently. |
+| T-626 | 3752 | deferred | platform | T-587 backfill regex is not character-for-character with parse_grid | FOUND by wave 81''s verifier (F3). Divergence is entirely in the **safe** direction; filed for accuracy.
+
+`migrations/0020_fire_missions_solution.sql:86-88` claims its accept regex matches `parse_grid`
+character for character. `frontend/src/mortar.rs:297-302` parses via `str::parse::<f64>`, which accepts
+`+`-signed, bare-dot and exponent forms the regex rejects. Measured:
+
+    ''+1000, 2000'' -> f      ''.5, 2'' -> f      ''5., 2'' -> f      ''1e3, 500'' -> f
+    ''1000, 2000''  -> t
+
+**Under-permissive only** -- the dangerous direction (inventing coordinates for rows the calculator
+has always shown as unrestorable) is closed: everything the regex accepts, Rust parses to the same
+finite f64. Practical impact ~nil, because `restore()` (`mortar.rs:347-355`) still falls back to
+`parse_grid` for un-backfilled rows and `fmt_grid` output always matches the regex, so every
+SPA-written row backfills.
+
+The backfill test''s six cases (`t587_fire_mission_solution.rs:311-334`) omit exactly the divergent
+forms -- **the equivalence claim is untested precisely where it is false.**
+
+Pathological edge, recorded: a >~309-digit grid string matches the regex but overflows
+`::double precision`, which would abort the migration. No realistic row has that shape. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
 | T-132 | — | idea | eden | Multiplayer MC + visual git | Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap. |
@@ -4641,5 +4748,3 @@ and `ci.yml:209` still say "58 .sh"; the gate reports the true count at runtime.
 | T-141 | — | idea | eden | Procedural slot naming | Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering. |
 | T-142 | — | idea | eden | MC shell layout polish | Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity. |
 | T-143 | — | idea | infra | Perfect water — exact hydrology + water placement guard | Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads — full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable — missions get playtested. |
-| T-155 | — | idea | platform | Cross-tab refresh-token mutex (single-use rotation double-spend) | Found 2026-07-13 via api access log during the T-154.1 pause: two editor tabs share the single-use refresh token; tab A rotates it, tab B later POSTs the stale one -> /auth/refresh 401 -> the whole browser session dies (log: 12:13 local, registry+compat 401 -> refresh 401 -> all subsequent 401). The single-flight helper (apps/website/frontend/src/api/refresh.ts) serializes refreshes WITHIN a tab only. Fix: cross-tab mutex around refresh (Web Locks API, BroadcastChannel fallback) + adopt the rotated pair from the winning tab (storage event), so N tabs spend one rotation. Repro: open the editor in two tabs, wait out the access TTL, act in the stale tab. |
-| T-156 | — | idea | platform | Session-expired UX - 401s must not masquerade as empty data | Sibling of T-155 (same 2026-07-13 incident): when auth dies, GET /registry and GET /factions fail and the UI silently degrades - the Arsenal shows the non-character guard ("Loadout applies to placed characters") because the catalog is empty, and the Factions palette shows the "No factions yet" author-CTA. Operator read it as data loss. Fix: distinguish query-error (esp. 401 after failed refresh) from genuinely-empty responses; surface one clear "session expired - log in again" banner/toast with a dev-login shortcut in dev, and make useRegistry/useFactionLibrary consumers render an error state, never the empty-state copy, on failure. |

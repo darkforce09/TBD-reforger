@@ -8,27 +8,41 @@ Do not start this program until **T-181 is finished**. Operator instruction.
 
 ---
 
-## ⏹ THE FACTORY STOPPED AFTER WAVE 77 — 2026-08-01. Read this before restarting it.
+## ⏹ THE FACTORY STOPPED AFTER WAVE 81 — 2026-08-01. Read this before restarting it.
 
-**358 platform tickets shipped. 42 open. Zero P0. Zero P1.**
+**395 platform tickets shipped. 17 open. Zero P0. Zero P1.**
 
-**Wave 77 was the tooling wave** — nine tickets, all of them the project's own checks rather than
-anything a user meets. It exists because waves 75 and 76 kept tripping over instruments that lied:
-a gate that narrowed its own scope and reported 26/26, a health grep with no reachable exit 0, a
-validator ratchet red since before anyone looked, a sentinel test that could not fail, and a backup
-verifier that accepted the wrong database. All nine are fixed and adversarially verified.
+Waves 75–81 ran end to end in one session. What is left is not a backlog — it is ten features nobody
+started, two items that need Enfusion Workbench, the playtest, and a handful of documented residuals.
 
 **The playtest is unblocked and the Workshop skew is closed — measured, on 2026-08-01.** The operator
 re-published the mod; the stale 1.0.1 was still cached locally and would have been preferred. Cleared
 it, booted `-config` only (the exact path a joining client takes), and the engine fetched **1.0.2**
 (`data.pak` 570,489 B vs 41,288) emitting **151** current-format `[TBD][` lines against 1.0.1's zero.
 
-The operator's call, and it was the right one: the active `ready`/`queued` lane is empty, nothing
-open is P0, and **the only thing left that can tell us whether the product actually works is a live
-two-client playtest.** Waves were producing roughly −5 shipped / +2 filed each, because every wave
-ends with an adversarial verifier whose entire job is finding bugs and whose standing triage rule is
-*document, don't fix.* That converges, but slowly, and it never reaches zero while the verifier runs.
-More waves was not the constraint. Contact with reality was.
+### What the last four waves were for
+
+- **W78** — staging had been validating a build it did not deploy; `mcp-wb-logs.sh` had **no reachable
+  `exit 0` or `exit 2`** and passed only on a stale mod; `verify-citations` silently `continue`d a
+  missing scan root, so renaming `apps/` gave `Checked 0 … All resolve`, exit 0.
+- **W79** — the Class-R campaign. Every "test that does not test what it claims" is closed. `sse.rs`'s
+  pin was matching **its own `//!` module docs**: deleting the function it guarded kept it green.
+- **W80** — the operator's own Rust-first rule finally got teeth. `verify-no-python` had been RED since
+  the day the factory opened, was in no CI job, and **half of it could not fire** — it grepped with
+  `rg`, which does not exist here, and `|| true` turned "command not found" into `OK (none)`.
+  Both `.py` files are gone, ported to `cargo xtask slice-collisions`, byte-identical across 10 streams.
+- **W81** — the product bugs. The rate limiter was built, proven and **wired to nothing**; fire missions
+  returned 201 with a full firing solution while writing three of seven numbers; a 401 rendered as an
+  empty list next to a "+ New faction" button; the delete dialog promised a cascade that never ran.
+
+### Where the last of the token budget went, and why that was right
+
+Every wave ended with an adversarial verifier, and **every one of them found the defect inside that
+wave's own fix.** W77's verifier defeated three pins W77 had just shipped. W78's defeated W78's new
+gate oracle. W79's found that W79's own dead-code evaluator **failed open**. W81's found that W81 had
+asserted a foreign key did not exist — 22 hours after another slice added it.
+
+That is not waste. It is the only reason the numbers above can be trusted.
 
 ### What to do next, in order
 
