@@ -109,6 +109,49 @@ Every rule serves one primary pillar — the *why*. The rule is the *what*; §10
 | **Usability** | Correct, predictable contract for the consumer? | error envelope + status table (ERR-1/2/4/5), duplicate-key 409 (GO-5), surfaced FE errors (TS-4/7), DTO fixtures (ENF-4) |
 | **Debuggability** | At 02:00, can we tell *what* and *why* fast? | handled DB errors + `%w` (GO-2/3/4/8), `strict` (TS-1/3), structured logs (LOG-2/3), tests (TEST-1–3), CI gates (CI-1/2) |
 
+### 1.1 Tooling language — Rust first (LANG-1/2/3)
+
+**LANG-1 — New tooling is Rust, in `xtask`.** Anything that reads a file, parses JSON, walks the
+repo, computes a verdict or generates code is a `cargo xtask` subcommand. Not a shell script.
+
+**Bash is permitted for exactly one thing: thin process glue that must run before or without
+cargo.** Container entry points, `distrobox-host-exec` wrappers, git hooks, and the wave driver's
+own bootstrap qualify. "It was quicker to write in bash" does not. If a script parses anything, it
+is tooling, and tooling is Rust.
+
+**LANG-2 — No Python.** Zero `.py` files; no new `python3` invocation in `scripts/` or the
+`Makefile`. Ported to `xtask`, same as LANG-1.
+
+**LANG-3 — Both bans are RATCHETS against committed inventories, and the lists may only shrink.**
+[`scripts/shell-inventory.txt`](../../scripts/shell-inventory.txt) (58 `.sh`) and
+[`scripts/python-inventory.txt`](../../scripts/python-inventory.txt) (12 files invoking `python3`)
+freeze the debt as it stood on 2026-08-01. A new entry fails the gate; removing the last violation
+from a listed file must also delete its line, so an inventory cannot rot into a record nobody
+re-checked.
+
+> **Why this rule did not exist until T-621, and why it is a ratchet.**
+>
+> Nothing here was ever a violation — **there was no rule**. §10 had 38 entries and not one of them
+> said which language new tooling should be written in, so every slice reached for bash by default.
+> Measured 2026-08-01: **58 tracked `.sh`, 15,618 lines**, of which `scripts/platform/wave.sh` alone
+> is 3,327. That is far too much to port, and porting it is not what stops the bleeding — so the
+> ratchet holds the line at today's count instead. **Rewriting `wave.sh` is explicitly out of
+> scope.**
+>
+> The cost is not hypothetical. Waves 75–79 burned a large share of their budget on failures that
+> are *specific to shell* and that a compiler would have refused at the door:
+>
+> * `rg` absent, with `|| true` converting status 127 into a silent pass — in `verify-no-python.sh`,
+>   the gate written to enforce LANG-2, which therefore **had never once executed** (T-620);
+> * ugrep-vs-GNU divergence on bare `{}` in an ERE, so a pattern's meaning depended on whether a
+>   human or a script ran it;
+> * `${TBD_SCENARIO:={GUID}…}` truncating at the GUID's brace while the validator printed
+>   "config VALID";
+> * `mcp-wb-logs.sh` with no reachable `exit 0` **or** `exit 2`, passing only on a stale build.
+>
+> Every one is the same family: **a tool reporting success over an input it never examined.** Shell
+> makes that shape cheap to write and invisible to review, which is the whole argument for LANG-1.
+
 ---
 
 ## 2. Go — RETIRED (T-145 Go→Rust)
@@ -419,9 +462,12 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **LOG-3** | De | 5xx + mutator 4xx log path+status+dur | CI-SCRIPT | `scripts/website/verify-handler-logging.sh` | `bash …/verify-handler-logging.sh` | T-125.4 | live |
 | **CI-1** | De | No `only-new-issues:true` post-T-125.2 | CI-SCRIPT | `scripts/website/verify-ci1.sh` (via `make ci-local-backend`) | `bash scripts/website/verify-ci1.sh` | T-125.2 | live |
 | **CI-2** | De | `ci.yml` gates every push/PR to main | CI-BLOCK | `ci.yml` backend+frontend+schema jobs | `make ci-local` (mirror) | T-125.1 | live |
+| **LANG-1** | Sc | New tooling is Rust in `xtask`; bash only for pre-cargo process glue | CI-SCRIPT | `xtask/src/shell_free.rs` vs [`shell-inventory.txt`](../../scripts/shell-inventory.txt) (58, may only shrink) | `make verify-no-shell` | T-621 | live |
+| **LANG-2** | Sc | Zero `.py`; no new `python3` in `scripts/`/`Makefile` | CI-SCRIPT | [`verify-no-python.sh`](../../scripts/verify-no-python.sh) + [`python-inventory.txt`](../../scripts/python-inventory.txt) (12) — fail-closed via `gate-grep.sh` | `make verify-no-python` | T-162/T-620 | live |
+| **LANG-3** | De | Both inventories are ratchets — new entry fails, stale entry fails | CI-SCRIPT | same two gates, both directions checked | `make verify-no-shell && make verify-no-python` | T-620/T-621 | live |
 
-**Count by pillar:** Scalability 6 · Readability 9 · Usability 9 · Debuggability 14 · **38 total.**
-**Count by gate:** CI-BLOCK 24 · CI-SCRIPT 11 · ALLOWLIST 1 · MANUAL 2 (ENF-1, ENF-2 — Enfusion only).
+**Count by pillar:** Scalability 8 · Readability 9 · Usability 9 · Debuggability 15 · **41 total.**
+**Count by gate:** CI-BLOCK 24 · CI-SCRIPT 14 · ALLOWLIST 1 · MANUAL 2 (ENF-1, ENF-2 — Enfusion only).
 
 ### 10.1 CI scripts inventory
 
@@ -455,8 +501,12 @@ make ci-local                          # whole gate; needs `make db-up`
 
 # 0. EditorConfig (FMT-2) — first in ci-local
 make verify-editorconfig
-# 0b. Python eradication hard gate (T-162)
-make verify-no-python
+# 0b. Language gates (LANG-1/2/3) — also a dedicated `language-gates` job in ci.yml and a
+#     wave-gate step. Wired in three places on purpose: T-620 found verify-no-python had been
+#     RED for four waves while living only in ci-local, which nothing runs by default.
+make verify-no-python                  # LANG-2/3 — .py ban + ratcheted python3 inventory
+make verify-no-node                    # T-165.10 — .mjs/.cjs ban
+make verify-no-shell                   # LANG-1/3 — shell ratchet (58 .sh, may only shrink)
 
 # 1. Rust API + engine crates (website-api job)
 cd apps/website/api && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo build

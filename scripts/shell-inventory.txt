@@ -1,0 +1,79 @@
+# T-621 — THE SHELL RATCHET BASELINE.
+#
+# Every tracked *.sh in the repository, frozen at the count measured on 2026-08-01:
+# 58 files, 15,618 lines. Enforced by `cargo xtask verify no-shell` (xtask/src/shell_free.rs).
+#
+# THIS LIST MAY ONLY SHRINK.
+#
+#   * Adding a NEW .sh fails the gate until the path is added here deliberately. New tooling
+#     belongs in `xtask` — see CODING_STANDARDS.md LANG-1. Bash is permitted only for thin process
+#     glue that must run before or without cargo (container entry, distrobox-host-exec wrappers,
+#     git hooks); if that is genuinely what you wrote, add the line and the reviewer will see it.
+#   * DELETING a .sh must delete its line here in the same commit. A listed path that no longer
+#     exists also fails, so this file cannot rot into a record nobody has checked.
+#
+# This is NOT a list of files to port. There is no ticket to rewrite wave.sh and T-621 explicitly
+# excludes one. It is a line held at today's count so the next 15,000 lines do not arrive by
+# default the way these did — there was no rule about shell until now, so nothing here was a
+# violation.
+#
+# Regenerating this file wholesale would re-bless whatever happens to exist and defeat the entire
+# mechanism. Edit it one line at a time.
+scripts/deploy/backup-db.sh
+scripts/deploy/backup-drill.sh
+scripts/deploy/deploy-website.sh
+scripts/deploy/lib/db-common.sh
+scripts/deploy/restore-db.sh
+scripts/lib/hostrun.sh
+scripts/map-assets/export-terrain.sh
+scripts/map-assets/verify-spike-all.sh
+scripts/mod/bootstrap-staging-server.sh
+scripts/mod/compile.sh
+scripts/mod/debug-direct-join.sh
+scripts/mod/deploy-staging.sh
+scripts/mod/fetch-vanilla-api.sh
+scripts/mod/fetch-vanilla-source.sh
+scripts/mod/lib/gate-grep.sh
+scripts/mod/lib/mcpd-bin.sh
+scripts/mod/lib/paths.sh
+scripts/mod/lib/xtask-run.sh
+scripts/mod/manual-test.sh
+scripts/mod/mcp-call-selftest.sh
+scripts/mod/mcp-call.sh
+scripts/mod/mcp-daemon.sh
+scripts/mod/mcp-smoke.sh
+scripts/mod/mcp-wb-logs.sh
+scripts/mod/remote-log-grep.sh
+scripts/mod/run-dev-server.sh
+scripts/mod/run-playtest-server.sh
+scripts/mod/seed-milestone-announcement.sh
+scripts/mod/setup-client-addons.sh
+scripts/mod/setup-mcp-game-root.sh
+scripts/mod/setup-server-profile.sh
+scripts/mod/setup-workbench-linux.sh
+scripts/mod/slice-worktree.sh
+scripts/mod/tbd-dev-bootstrap.sh
+scripts/mod/tbd-spawn-determinism.sh
+scripts/mod/tbd-spawn-verify.sh
+scripts/mod/test-mission.sh
+scripts/mod/test-phase1-api.sh
+scripts/mod/verify-no-crf-leak.sh
+scripts/mod/verify-t296-results-reporter-identity-comments.sh
+scripts/mod/verify-t437-destroy-inert-diagnostics.sh
+scripts/mod/verify-t438-deploy-staging-compose-path.sh
+scripts/mod/verify-t439-objects-registry-aliases.sh
+scripts/mod/verify-t440-faction-library-seed.sh
+scripts/mod/verify-t444-wiki-seed.sh
+scripts/mod/verify-t452-player-identity-link-comments.sh
+scripts/mod/verify-t456-mission-rest-size-gate.sh
+scripts/mod/verify-t468-ci-schema-parity.sh
+scripts/mod/verify-ui-layouts.sh
+scripts/mod/wave.sh
+scripts/mod/world-boot.sh
+scripts/platform/preflight.sh
+scripts/platform/wave.sh
+scripts/verify-no-python.sh
+scripts/verify-route-tags.sh
+scripts/verify-t180-coherency.sh
+scripts/website/mission-version-upload-repro.sh
+scripts/website/verify-no-select-star.sh

@@ -15,7 +15,7 @@ TBD_GIT_COMMON := $(shell git rev-parse --path-format=absolute --git-common-dir 
 TBD_REPO_ROOT := $(patsubst %/.git,%,$(TBD_GIT_COMMON))
 export CARGO_TARGET_DIR ?= $(TBD_REPO_ROOT)/target
 
-.PHONY: help db-up db-down db-logs seed db-backup db-restore db-backup-drill db-backup-verify registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-t296 verify-t438 verify-t440 verify-t452 verify-t456 verify-t468 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke mod-spawn-determinism mod-spawn-determinism-preflight ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat verify-cargo-target print-cargo-target-dir reclaim-target-ci
+.PHONY: help db-up db-down db-logs seed db-backup db-restore db-backup-drill db-backup-verify registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest mod-world-boot-compiled enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-t296 verify-t438 verify-t440 verify-t452 verify-t456 verify-t468 verify-terrain verify-no-python verify-no-node verify-no-shell map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke mod-spawn-determinism mod-spawn-determinism-preflight ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat verify-cargo-target print-cargo-target-dir reclaim-target-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -469,6 +469,9 @@ verify-no-python: ## T-162 hard gate — zero .py files / no Python interpreter 
 verify-no-node: ## T-165.10 hard gate — zero tracked .mjs/.cjs; node only as the enfusion-mcp floor
 	cargo run -q -p xtask -- verify no-node
 
+verify-no-shell: ## T-621 ratchet — no NEW .sh outside scripts/shell-inventory.txt (list may only shrink)
+	cargo run -q -p xtask -- verify no-shell
+
 # ci-local mirrors .github/workflows/ci.yml (CODING_STANDARDS.md §0.3 CI-2, §11). Order:
 # editorconfig (FMT-2) -> rust backend -> coding standards -> Leptos SPA -> schema ->
 # T-438/T-456 Class-R (T-467) -> T-468 tripwire direct bash (T-489; not $(MAKE)
@@ -480,6 +483,7 @@ ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` first)
 	$(MAKE) verify-editorconfig
 	$(MAKE) verify-no-python
 	$(MAKE) verify-no-node
+	$(MAKE) verify-no-shell
 	$(MAKE) rust-ci
 	$(MAKE) verify-coding-standards
 	$(MAKE) ci-local-leptos

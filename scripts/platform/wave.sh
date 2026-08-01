@@ -21,9 +21,10 @@
 #      old barrier behaviour if you ever actually want it.
 #
 #   3. TIERED GATES.  A slice pays only the cheap gate (~10 s). The expensive suite runs once per
-#      wave on merged main. `make ci-local` is deliberately NOT used: it has been red for weeks
-#      (verify-no-python fails on scripts/mod/slice-collisions.py) and it is 15-40 minutes, not
-#      the 22.7 s the docs still claim.
+#      wave on merged main. `make ci-local` is deliberately NOT used: it is 15-40 minutes, not the
+#      22.7 s the docs still claim. (It was ALSO red for weeks because verify-no-python failed on
+#      scripts/mod/slice-collisions.py; T-620 ported both .py files to xtask and deleted them, so
+#      that half is green now and `verify-no-python` is a wave-gate step in its own right below.)
 #
 #   bash scripts/platform/wave.sh status      # where are we? what is blocking?
 #   bash scripts/platform/wave.sh prep        # create worktrees for the next disjoint set
@@ -69,7 +70,10 @@ cd "$ROOT"
 PLAN="${TBD_WAVE_PLAN:-docs/platform/wave_plan.tsv}"
 REGISTRY=".ai/tickets/registry.json"
 WORKTREES=".ai/artifacts/worktrees"
-COLLIDE="scripts/platform/slice-collisions.py"
+# T-620: was scripts/platform/slice-collisions.py. Ported to xtask byte-identically (default,
+# --check and --repack all diffed clean against the Python before it was deleted), because the
+# factory's own tooling was the last thing keeping `make verify-no-python` red.
+COLLIDE="cargo run -q -p xtask -- slice-collisions"
 
 # See note 1. Every worktree build must land in the MAIN repo's target dir.
 #
@@ -364,13 +368,45 @@ sys.exit(0 if (t and t[0]['status'] in ('shipped','cancelled')) else 1)
 EOF
 }
 
-# The lowest wave with at least one unshipped ticket.
+# The lowest wave AT OR ABOVE THE LIVE GENERATION FLOOR with at least one unshipped ticket.
+#
+# T-616. Column 1 of the plan used to carry two spellings — bare `0`-`11`/`43`-`68`/`99` and
+# `w76`…`w81` — and that mix was not cosmetic, it was LOAD-BEARING. `sort -n` scores any
+# non-numeric key as 0, so every `wNN` row sorted into the wave-0 block AHEAD of wave 1, and this
+# loop therefore reached the live factory rows first. The answer it returned was right; the reason
+# was an accident. MEASURED 2026-08-01 before the migration: `current_wave` -> `w80`, which is the
+# operationally correct wave, arrived at by a sort that believed 80 < 1.
+#
+# So normalising the column to bare integers — which is what T-616 asks for, and what
+# `slice-collisions` needs since `int('w80')` raises — is only HALF a migration. With uniform
+# numbers `sort -n` finally orders honestly, and this loop then walks the LEGACY BACKLOG first and
+# returns wave 3 (T-578/579/580/587, all `deferred`). `wave`, `wave --close` and `land` all key off
+# this function, so that would have pointed every one of them at a four-year-old deferred backlog
+# row instead of the wave in flight. A uniform format that silently re-aims `land` is a worse bug
+# than the mixed format it replaced.
+#
+# The floor is what the `w` prefix actually MEANT, written down as data the sort can respect. The
+# plan holds two generations: the legacy packing waves (0-11, 43-68, plus 99 as a parking lot,
+# still carrying genuinely open `idea`/`deferred` backlog) and the live factory waves, which begin
+# at 76. Only the live generation is dispatchable, so only it can be "current". MEASURED after the
+# migration: waves with unshipped tickets are 0, 3, 5, 7, 8, 9, 10, 11, 80, 81, 99 — floor 76
+# selects 80, identical to the pre-migration answer.
+#
+# Raise this when a later generation starts; it is one integer in one place, which is strictly more
+# maintainable than a prefix that had to be typed onto every row and understood by every parser.
+WAVE_GENERATION_FLOOR="${TBD_WAVE_GENERATION_FLOOR:-76}"
 current_wave() {
-  local w t last=""
+  local w t
   while IFS=$'\t' read -r w t _; do
     [ "$w" = "0" ] && continue
+    # Bare-integer guard: a row whose label is not numeric cannot be compared, and silently
+    # skipping it is how the pre-T-616 mix hid. Say so and keep going.
+    if ! [[ "$w" =~ ^[0-9]+$ ]]; then
+      echo "wave.sh: non-numeric wave label '$w' in $PLAN — T-616 normalised these to integers" >&2
+      continue
+    fi
+    [ "$w" -lt "$WAVE_GENERATION_FLOOR" ] && continue
     if ! is_shipped "$t"; then echo "$w"; return; fi
-    last="$w"
   done < <(plan_rows | sort -n -k1,1)
   echo "done"
 }
@@ -478,12 +514,15 @@ cmd_status() {
   done
   echo
   [ "$ready" -gt 0 ] && echo "→ $ready slice(s) ready: bash scripts/platform/wave.sh land"
-  echo "→ dispatch set: python3 $COLLIDE"
+  echo "→ dispatch set: $COLLIDE"
 }
 
 cmd_prep() {
   echo "next disjoint dispatch set:"
-  python3 "$COLLIDE"
+  # cargo is a HOST binary inside the dev container, so this goes through the bridge — unlike the
+  # `python3` it replaced, which was present on both sides. hostrun degrades to a plain exec on the
+  # host, so the same line is correct from either shell.
+  hostrun $COLLIDE
   echo
   echo "create trees with:  bash scripts/mod/slice-worktree.sh new <TICKET>"
   echo "(slice-worktree.sh is program-agnostic; it keys off the branch name only)"
@@ -1969,6 +2008,15 @@ prev_wave_close() {
 # Tickets the plan assigns to a wave AS OF A REVISION, accepting both label spellings in the file
 # (`77` and `w77`).
 #
+# THE `sub(/^w/,"",w)` BELOW IS NOT STYLE TOLERANCE AND MUST NOT BE "TIDIED UP" NOW THAT T-616 HAS
+# NORMALISED THE COLUMN TO BARE INTEGERS. T-616 normalised the WORKING TREE; it cannot normalise
+# HISTORY, and this function reads history exclusively — `git show "$1:$PLAN"` at the boundary's
+# PARENT. Every revision at or before wave 79's close still spells those rows `w76`…`w79`, because
+# that is what was committed. MEASURED 2026-08-01 against wave 79's close 6b2f4750: the parent
+# 3c44b6ea holds 5 rows literally beginning `w79`, and stripping the prefix is the only reason
+# oracle 2 can still say "corroborated" instead of falling silent. Delete it and every wave close
+# in this repository's history becomes unverifiable in one commit.
+#
 # T-618: takes a rev because the checkout is not evidence. This has exactly one caller — oracle 2 —
 # and that caller must not be able to read a plan row the commit it is grading just wrote, so there
 # is deliberately NO checkout-reading variant of this function to reach for by mistake.
@@ -2510,6 +2558,12 @@ gate_slice() {
   # halves (here and cmd_gate) so neither path can drift green on its own.
   run "T-296 reporter identity" bash "$ROOT/scripts/mod/verify-t296-results-reporter-identity-comments.sh"
   run "T-452 player identity" bash "$ROOT/scripts/mod/verify-t452-player-identity-link-comments.sh"
+  # T-620. Hot-path twin of the cmd_gate run — see the long note there for why this gate spent four
+  # waves invoked by nothing. Pure bash + git ls-files, no cargo, ~0.2 s measured, so it fits the
+  # slice gate's ~10 s budget. Catching a stray .py or a new python3 call at SLICE time is the
+  # cheapest place to catch it; the no-node/no-shell twins stay wave-level because they need a
+  # built xtask and this gate deliberately does not build one.
+  run "no-python (T-620)" bash "$ROOT/scripts/verify-no-python.sh"
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "SLICE GATE"; return 1; }
   gate_verdict PASS "SLICE GATE"
@@ -2773,6 +2827,20 @@ cmd_gate() {
   # AND fail-open. Both halves, for the T-478 reason: one path alone can drift green.
   run "T-296 reporter identity" bash "$ROOT/scripts/mod/verify-t296-results-reporter-identity-comments.sh"
   run "T-452 player identity" bash "$ROOT/scripts/mod/verify-t452-player-identity-link-comments.sh"
+  # T-620/T-621 — THE LANGUAGE GATES, AND WHY THEY ARE HERE RATHER THAN ONLY IN ci.yml.
+  #
+  # `verify-no-python` existed since T-162 and was wired into one Makefile target and `make
+  # ci-local` — which this file's own header explains is deliberately NOT used by the gate. It was
+  # therefore in NO path that runs: not ci.yml (measured, zero hits), not this gate. Meanwhile it
+  # was RED, on scripts/{platform,mod}/slice-collisions.py, from the day the factory opened. Four
+  # waves of "GATE PASS 28/28" were printed over a hard gate that was failing the whole time and
+  # that nothing invoked. That is the exact shape T-556 and T-478 keep finding, at gate scope.
+  #
+  # `verify-no-python` is bash + git and costs nothing. The other two are xtask, and xtask is
+  # already built by `test xtask+tbd-tools` above, so `cargo run -q` is a no-op relink here.
+  run "no-python (T-620)" bash "$ROOT/scripts/verify-no-python.sh"
+  run "no-node (T-165.10)" hostrun cargo run -q -p xtask -- verify no-node
+  run "no-shell (T-621)"  hostrun cargo run -q -p xtask -- verify no-shell
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "GATE"; return 1; }
   gate_verdict PASS "GATE"

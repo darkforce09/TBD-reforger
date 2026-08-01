@@ -29,8 +29,13 @@ main ──┬── wave N ──┬── worktree slice/T-181.7   → agent A
    worktree** — `T-181.7.1`, `T-181.7.2` are the same slice's work, not new trees.
 2. **As many concurrent slices as are FILE-DISJOINT — computed, not guessed.**
    ```bash
-   python3 scripts/mod/slice-collisions.py                        # max concurrent set
-   python3 scripts/mod/slice-collisions.py T-181.32 T-181.27      # what can join those in flight
+   # T-620 deleted scripts/mod/slice-collisions.py with the Python ban. The xtask port reads any
+   # plan via TBD_WAVE_PLAN. The mod-only glob + bare-filename `owns` resolution did NOT come
+   # across, so collisions are prefix containment now — coarser, and it errs toward REPORTING a
+   # collision. T-181 is 63/66 shipped and deferred on a human E2E, so the precise variant was
+   # retired with the program it served rather than ported.
+   TBD_WAVE_PLAN=docs/mod/wave_plan.tsv cargo xtask slice-collisions
+   TBD_WAVE_PLAN=docs/mod/wave_plan.tsv cargo xtask slice-collisions T-181.32 T-181.27
    ```
    This rule used to say "three, not more, disk is the constraint". **That was wrong on the
    measurement.** A worktree is ~81 MB fresh and ~500 MB warm; six cost 3.0 GB against 129 GB free,

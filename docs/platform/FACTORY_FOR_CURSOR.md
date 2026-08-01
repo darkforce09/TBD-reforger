@@ -114,7 +114,7 @@ do not work around it.
 **Next wave is T-245, T-247, T-248.** Plan rows and `owns` are already verified.
 
 ```bash
-python3 scripts/platform/slice-collisions.py T-245 T-247 T-248     # must show no collision
+cargo xtask slice-collisions T-245 T-247 T-248     # must show no collision
 grep -E "	T-(245|247|248)	" docs/platform/wave_plan.tsv | cut -f2,4   # the owns paths
 python3 -c "
 import json,re

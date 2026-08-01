@@ -17,6 +17,8 @@ mod registry;
 mod repro;
 mod root;
 mod schema_gates;
+mod shell_free;
+mod slice_collisions;
 mod sync;
 
 use anyhow::{Result, bail};
@@ -80,6 +82,13 @@ enum TopCmd {
         #[command(subcommand)]
         cmd: GenCmd,
     },
+    /// Max file-disjoint dispatch set (T-620 port of scripts/platform/slice-collisions.py).
+    /// Flags mirror the original: [--repack] [--check] [TICKET...]
+    #[command(name = "slice-collisions")]
+    SliceCollisions {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -90,6 +99,9 @@ enum VerifyCmd {
     /// T-165.10 hard gate: zero tracked .mjs/.cjs; no node/npx outside the enfusion-mcp floor
     #[command(name = "no-node")]
     NoNode,
+    /// T-621 shell ratchet: no NEW tracked .sh outside the committed inventory
+    #[command(name = "no-shell")]
+    NoShell,
 }
 
 #[derive(Subcommand, Debug)]
@@ -442,9 +454,11 @@ fn run() -> Result<u8> {
             let code = match cmd {
                 VerifyCmd::FileLength => node_free::verify_file_length()?,
                 VerifyCmd::NoNode => node_free::verify_no_node()?,
+                VerifyCmd::NoShell => shell_free::verify_no_shell()?,
             };
             Ok(code)
         }
+        TopCmd::SliceCollisions { args } => slice_collisions::run(&args),
         TopCmd::Gen { cmd } => {
             let code = match cmd {
                 GenCmd::FontTable { bdf } => node_free::gen_font_table(&bdf)?,
