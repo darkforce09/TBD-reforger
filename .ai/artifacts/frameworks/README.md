@@ -59,24 +59,50 @@ Agents were instructed to treat Disk_2 as read-only and to extract into a sessio
 
 ## Reproducing the extraction
 
-`tools/pbo/unpbo.py` is a zero-dependency PBO extractor (no `armake2` build, no Mikero tools):
+Three zero-dependency tools, no `armake2` build and no Mikero tools required:
 
 ```bash
 python3 tools/pbo/unpbo.py <file.pbo|dir-of-pbos> <outdir>   # --list to inspect only
+python3 tools/pbo/derap.py <file.bin|mission.sqm>            # \0raP → readable config source
+python3 tools/pbo/orbat.py <mission-dir>                     # slot/side census over a mission
 ```
 
-It handles the `Vers` properties block and `Cprs` LZSS compression. Verified against all 50 WOG
-framework PBOs: **757 entries, 757 written, 0 failed**.
+`unpbo.py` handles the `Vers` properties block and `Cprs` LZSS compression. Verified against all 50
+WOG framework PBOs: **757 entries, 757 written, 0 failed**.
 
-### What it cannot give you
+`derap.py` and `orbat.py` were written by the WOG agent mid-analysis and rescued into the repo —
+they are why the WOG numbers are corpus-wide rather than plaintext-only. See the section below.
 
-Of the 757 extracted WOG files, **107 are `.bin`** (binarized configs) and **21 are `.sqfc`**
-(compiled SQF). Neither is readable as text, and neither is derapified by this tool. Any WOG system
-that lives only in those files is **opaque**, and the analysis is instructed to say so rather than
-infer contents. Readable formats are `.sqf` (150), `.hpp` (194), `.cpp` (22) and `.xml` (41).
+### Binarized content — mostly solved
 
-This is a real coverage limit, not a formality — treat any WOG claim about a binarized config as
-unsupported unless it cites a readable file.
+The original staging note said the binarized files were opaque and that any WOG claim about one
+should be treated as unsupported. **That is now substantially wrong, and the correction matters.**
+
+The WOG agent wrote a de-rapifier for the `\0raP` format — `tools/pbo/derap.py` — which decoded:
+
+| Input | Decoded | Still opaque |
+|---|---|---|
+| 107 `.bin` configs | **76** | 31 — `Texheaders.bin`, `stringtable.bin`, and deliberately obfuscated blobs |
+| 171 `mission.sqm` | **86** were binarized, all decoded | — |
+
+Independently re-verified: **25 of 25** sampled `config.bin` files decode to readable
+`class CfgPatches { … }` source.
+
+**Why this mattered rather than being a nicety:** an early plaintext-only grep concluded that
+`wog3_presets` had *zero* users across the whole 171-mission corpus. It actually has two — their
+`mission.sqm` files were binarized. A coverage limit had silently turned into a false negative, and
+"no one uses this feature" is exactly the kind of conclusion that would have shaped the synthesis.
+Every corpus statistic in [`wog.md`](wog.md) is therefore over **all 171 missions machine-parsed**,
+not over the plaintext subset.
+
+**What remains genuinely opaque**, and must still be treated as unsupported: the 31 undecodable
+blobs, the 21 `.sqfc` compiled SQF, and in particular **`wmt_main`** — owner of every `WMT_*`
+module — which is absent from the corpus entirely, and **`wog_main`**, which is deliberately
+obfuscated with scrambled filenames in the PBO header. `wog.md` reconstructs WMT's parameter
+surface from observed mission usage instead: parameter names and values are hard evidence,
+semantics are labelled `INFERRED:`.
+
+Readable-as-shipped formats were `.sqf` (150), `.hpp` (194), `.cpp` (22) and `.xml` (41).
 
 ## Method
 
@@ -95,6 +121,35 @@ Plus per-agent extras: `fnf_v4.md` §15 is the v3→v4 delta; `wog.md` §15 is e
 inference with `INFERRED:`, distinguish "read in source" from "stated in docs" from "guessed from
 naming", and never guess at binarized content. Each analysis opens with a **source inventory table**
 listing what was actually read.
+
+## Cross-analysis caveats
+
+Findings that affect how to read more than one of the five. Recorded here because no single
+analysis owns them.
+
+**The WOG mission corpus is not one community's work.** Of the 171 archived missions, roughly
+**78 are WOG-native, 33 are imported OFCRA missions** (carrying a rival embedded toolkit — `omtk`,
+the same codebase [`ofcra_omtk.md`](ofcra_omtk.md) documents), and **60 are third-party**. Two
+consequences:
+
+- Any corpus-wide statistic in [`wog.md`](wog.md) is over a **mixed** population unless it says
+  otherwise. Treat "the corpus does X" as "missions WOG hosted do X", not "WOG's framework does X".
+- The 33 OFCRA missions are an **independent cross-check** on `ofcra_omtk.md` — real authored
+  output from the framework whose repo the OFCRA agent read. Worth exploiting in the adversarial
+  pass: a claim about how OFCRA *says* missions are authored can be tested against 33 that actually
+  were. The tell that these are genuinely OFCRA's: **all 437 `readme.md` files in the corpus belong
+  to OFCRA missions; zero are WOG's.**
+
+**Both tool-analyses found the tool broken in the same way.** FNF's `AnalyzeSQM.ps1` has 27 checks
+of which only 14 run — two disabled by bugs, so objectives have gone unverified for ~5 years. WOG's
+Med/Eng slot auto-tagger has a JavaScript `/g` flag pasted into an SQF regex, where it is a literal
+character, so the pattern never matches: its strip branch is dead and its append branch duplicates
+on every save. Neither community appears to know.
+
+That is the same defect this repo's own handoff names as its recurring shape — *a tool reports
+success over an input it never actually examined*. Finding it independently in two rival frameworks
+is a reason to build validation that can be **made to fail on demand**, not a reason to copy either
+implementation.
 
 ## What happens next
 
