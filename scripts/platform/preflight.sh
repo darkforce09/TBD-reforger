@@ -119,10 +119,15 @@ if hostrun ./scripts/ticket check >/dev/null 2>&1; then ok "ticket check" "regis
 else nope "ticket check" "registry INVALID — every wave gate will fail"; fi
 
 # 9. Wave plan sanity: disjoint, no directory claims, deps satisfiable.
-if python3 scripts/platform/slice-collisions.py >/dev/null 2>&1; then
+#
+# T-620: `python3 scripts/platform/slice-collisions.py` became `cargo xtask slice-collisions` when
+# the Python was ported and deleted. This check had been reporting "slice-collisions.py failed" for
+# real since the w76-w81 rows landed — `int('w80')` raised ValueError, so the dispatch view was dead
+# and preflight was honestly saying so. T-616 normalised the labels; both are fixed together.
+if hostrun cargo run -q -p xtask -- slice-collisions >/dev/null 2>&1; then
   n=$(grep -vc '^#' docs/platform/wave_plan.tsv)
   ok "wave plan" "$n tickets, dispatch set computes"
-else nope "wave plan" "slice-collisions.py failed"; fi
+else nope "wave plan" "cargo xtask slice-collisions failed"; fi
 
 # 10. Optional environment. Missing DB/API is NOT a code failure — but a gate will report it as one,
 #     and an unattended fix agent will burn its whole budget chasing it. Know before you start.

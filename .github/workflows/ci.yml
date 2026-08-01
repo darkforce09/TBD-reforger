@@ -191,6 +191,45 @@ jobs:
       - name: editorconfig-checker (repo root)
         run: editorconfig-checker
 
+  # --- language gates: which language new tooling may be written in (T-620 / T-621) ---
+  #
+  # THE POINT OF THIS JOB IS THAT IT EXISTS. `verify-no-python` was written in T-162 and wired into
+  # exactly two places: one Makefile target and `make ci-local`, the local replay nothing runs by
+  # default. `grep verify-no-python .github/workflows/*.yml` returned NOTHING for four waves, so a
+  # gate that was RED THE ENTIRE TIME — on scripts/{platform,mod}/slice-collisions.py, the factory's
+  # own tooling — never once blocked a push, and the wave gate reported 28/28 straight over it.
+  #
+  # A rule nobody is stopped by is not a rule. All three run here, on every push and PR, unfiltered.
+  #
+  #   verify-no-python  T-162 + T-620. Zero .py, plus a RATCHETED interpreter check. That second
+  #                     half greped with `rg` until T-620 — a binary installed nowhere in this
+  #                     program — and `|| true` turned "command not found" into "OK (none)", so it
+  #                     had never executed at all. It is fail-closed now: absent tool = FAIL.
+  #   verify-no-node    T-165.10. Zero tracked .mjs/.cjs; node only as the enfusion-mcp floor.
+  #   verify-no-shell   T-621. The shell ratchet — 58 .sh frozen in scripts/shell-inventory.txt,
+  #                     which may only shrink. New tooling goes in xtask (CODING_STANDARDS LANG-1).
+  #
+  # Needs cargo (two of the three are xtask) but no database, no LFS and no wasm target, so it is a
+  # cheap job that fails fast and early rather than riding on the back of the 25-minute API job.
+  language-gates:
+    name: language gates (no-python / no-node / no-shell)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # fetch-depth: 0 is NOT needed — every check reads the working tree and `git ls-files`,
+      # neither of which walks history. Keep the shallow default; it is the fast path.
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95.0"
+      - uses: Swatinem/rust-cache@v2
+      - name: verify-no-python (T-162 + T-620 — .py ban + ratcheted interpreter check)
+        run: make verify-no-python
+      - name: verify-no-node (T-165.10)
+        run: make verify-no-node
+      - name: verify-no-shell (T-621 shell ratchet)
+        run: make verify-no-shell
+
   # --- mod gates, HOSTED PORTION (T-209) ---
   # `scripts/mod/compile.sh` and `scripts/mod/world-boot.sh` are the mod's only regression
   # instruments, and until T-209 neither ran in CI at all — 33k lines of Enfusion with nothing

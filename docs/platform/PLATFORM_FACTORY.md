@@ -100,8 +100,8 @@ repo has always been the source of truth, which is what makes this cheap.
 ```bash
 bash scripts/platform/preflight.sh          # must print PASS; fix BLOCKs before anything else
 bash scripts/platform/wave.sh status        # what is shipped, in flight, ready
-python3 scripts/platform/slice-collisions.py --repack
-python3 scripts/platform/slice-collisions.py   # the dispatch set, + any UNPLANNED warning
+cargo xtask slice-collisions --repack
+cargo xtask slice-collisions          # the dispatch set, + any UNPLANNED warning
 ```
 
 State lives in: [`wave_plan.tsv`](wave_plan.tsv) (what runs together) · `.ai/tickets/registry.json`
@@ -209,7 +209,7 @@ Every instance looked like a green check:
 | shared `CARGO_TARGET_DIR` served stale/foreign binaries | a test's "126 passed" was not its own code |
 | `wave.sh land T-204` discarded its argument | landed 4 slices, 2 whose agents had not reported |
 | `assert_golden` under `#[serde(flatten)]` | a deleted field is re-emitted, JSON byte-identical (T-394) |
-| `slice-collisions.py --repack` | 36% of open tickets had no plan row and were never candidates |
+| `slice-collisions --repack` | 36% of open tickets had no plan row and were never candidates |
 | preflight's `:8080` check was a TCP connect | reported a **six-hour-stale binary** as "up" |
 
 **The lesson that generalises:** a passing check is worth nothing until you know *what it looked at*.
@@ -351,11 +351,18 @@ do not want it.
 A slice pays only the **cheap gate** (`cargo check` + `cargo fmt`, ~10 s). The expensive suite runs
 once per wave on merged main.
 
-`make ci-local` is **deliberately excluded**. It has been red for weeks — `verify-no-python.sh`
-fails on `scripts/mod/slice-collisions.py` and on inline `python3` in `wave.sh`/`world-boot.sh` —
-and it costs 15-40 minutes, not the 22.7 s the docs still claim (that figure was measured before
-the Go→Rust and React→Leptos migrations). A gate everyone routes around teaches agents that gate
-failures are noise.
+`make ci-local` is **deliberately excluded**, on cost alone: 15-40 minutes, not the 22.7 s the docs
+still claim (that figure was measured before the Go→Rust and React→Leptos migrations). A gate
+everyone routes around teaches agents that gate failures are noise.
+
+> **T-620 corrected the other half of this paragraph.** It used to add that `verify-no-python.sh`
+> "fails on `scripts/mod/slice-collisions.py` and on inline `python3` in `wave.sh`/`world-boot.sh`",
+> which was true and was the reason nobody minded routing around it. Both `.py` files are now ported
+> to `cargo xtask slice-collisions` and deleted, the inline `python3` debt is frozen in
+> `scripts/python-inventory.txt`, and the gate is GREEN — so it no longer has an excuse to live only
+> in `ci-local`. It is now a step in the **wave gate** and in a dedicated **`language-gates` CI job**,
+> alongside `verify-no-node` and the T-621 shell ratchet. Routing around `ci-local` no longer routes
+> around the language gates.
 
 ### 4. Cargo does not run inside the container
 
@@ -386,9 +393,9 @@ to the slice's own diff against `main`.
    tree.
 2. **Concurrency = file-disjointness, computed, never guessed.**
    ```bash
-   python3 scripts/platform/slice-collisions.py              # max dispatch set
-   python3 scripts/platform/slice-collisions.py T-190 T-191  # what may join those in flight
-   python3 scripts/platform/slice-collisions.py --check T-195
+   cargo xtask slice-collisions              # max dispatch set
+   cargo xtask slice-collisions T-190 T-191  # what may join those in flight
+   cargo xtask slice-collisions --check T-195
    ```
    Worktrees make concurrent edits *safe* but do not prevent **merge conflicts**. The `owns`
    column in [`wave_plan.tsv`](wave_plan.tsv) is the only thing standing between eight agents and
@@ -439,7 +446,7 @@ to the slice's own diff against `main`.
     | **MINOR / NIT** | File as `deferred` **immediately**. Do not create wave work. |
 
     **File deferred, never drop.** A diagnosed, reproducible ticket costs nothing to hold and is most
-    of the finding's value. `dispatchable()` in `slice-collisions.py` already filters `deferred`, so a
+    of the finding's value. `dispatchable()` in `xtask slice-collisions` already filters `deferred`, so a
     deferred ticket cannot enter a wave until someone promotes it.
 
     Two criteria promote a non-BLOCKER, and only these two:

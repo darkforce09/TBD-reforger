@@ -1,0 +1,40 @@
+# T-620 — THE PYTHON-INTERPRETER DEBT, FROZEN.
+#
+# Enforced by scripts/verify-no-python.sh. Every file below invokes `python3`. Measured
+# 2026-08-01, the day the check could run for the FIRST TIME: the gate had greped with `rg`,
+# which does not exist here, and `|| true` turned status 127 into "OK (none)". This list is what
+# was actually there the whole time — 12 files, four waves deep, none of them ever reported.
+#
+# THIS LIST MAY ONLY SHRINK.
+#
+#   * A python3 invocation in a file NOT listed here fails the gate. New tooling goes in `xtask`
+#     (CODING_STANDARDS.md LANG-1) — that is the rule this whole ticket exists to give teeth.
+#   * Removing the last python3 call from a listed file must ALSO delete its line. A stale entry
+#     fails, so the inventory cannot rot into a record nobody has re-checked.
+#
+# WHY A RATCHET AND NOT A HARD RED: these 12 are load-bearing — the wave driver, the staging
+# deploy, the world-boot harness and five mod gates. Porting them is real work and is not T-620,
+# which was scoped to make the rule ENFORCEABLE, not to pay off the debt in one commit. A gate
+# that is red on arrival gets disabled; a gate that freezes the line gets obeyed.
+#
+# WHY `jq` IS NOT THE ANSWER: measured — jq is NOT installed here either, and hand-rolled JSON in
+# bash silently emits invalid documents (see the note in deploy-staging.sh). The port target is
+# `cargo xtask`, which already parses this repo's JSON everywhere else.
+#
+# Comment-only mentions of python3 do NOT belong here and are not counted: the gate skips lines
+# whose first non-space character is `#` (shebangs excepted), so
+# scripts/mod/verify-t296-*.sh and verify-t452-*.sh — which say "deliberately no python3 here" —
+# stay out of this list, as they should.
+
+scripts/mod/deploy-staging.sh                        # server.json/modpack render + socket probe
+scripts/mod/run-playtest-server.sh                   # backend cfg + admin list JSON
+scripts/mod/test-mission.sh                          # golden-mission id extraction
+scripts/mod/verify-t437-destroy-inert-diagnostics.sh # registry assertions
+scripts/mod/verify-t438-deploy-staging-compose-path.sh
+scripts/mod/verify-t439-objects-registry-aliases.sh
+scripts/mod/verify-t440-faction-library-seed.sh
+scripts/mod/verify-t456-mission-rest-size-gate.sh
+scripts/mod/verify-t468-ci-schema-parity.sh
+scripts/mod/wave.sh                                  # shipped-status read from registry.json
+scripts/mod/world-boot.sh                            # compiled-mission ids + server.json render
+scripts/platform/wave.sh                             # is_shipped + wave_ledger_unshipped_at
