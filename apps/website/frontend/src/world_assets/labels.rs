@@ -15,6 +15,7 @@ use map_engine_render::text_layout::{
     text_char_meters,
 };
 
+use crate::mission_editor::boot_progress::{BootEvent, BootSeg};
 use crate::select_tool::EngineHandle;
 use crate::world_layer_prefs::WorldLayerPrefs;
 
@@ -51,17 +52,23 @@ impl LabelHost {
         dem_w: u32,
         dem_h: u32,
         road_segments: Vec<RoadSegment>,
+        report: &dyn Fn(BootEvent),
     ) {
+        // T-628 — two of the world segment's declared files. Both report on completion regardless of
+        // outcome: `road-names.json` is not shipped for everon and 404s, and a request that came
+        // back 404 is still a request that finished.
         if let Some(txt) = fetch_text(&format!("{base}/locations.json")).await {
             if let Ok(t) = parse_locations_json(&txt) {
                 self.towns = t;
             }
         }
+        report(BootEvent::Done(BootSeg::World, 1));
         if let Some(txt) = fetch_text(&format!("{base}/road-names.json")).await {
             if let Ok(r) = parse_road_names_json(&txt) {
                 self.road_names = Some(r);
             }
         }
+        report(BootEvent::Done(BootSeg::World, 1));
         self.road_segments = road_segments;
         // Peaks over the full 12.8 km Everon extent (DEM raster is north-up, no axis flip).
         let manifest = DemManifest {

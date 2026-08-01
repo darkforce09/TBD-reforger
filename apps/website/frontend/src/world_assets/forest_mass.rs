@@ -14,10 +14,20 @@ use map_engine_core::world::class_visible;
 // compile-time link to `lane_role_from_u32`, so a renumber misroutes this upload silently.
 use map_engine_render::draw_order::role_id;
 
+use crate::mission_editor::boot_progress::{BootEvent, BootSeg};
 use crate::select_tool::EngineHandle;
 
 use super::bridge::{publish, publish_engine, BridgeHandle};
 use super::fetch::fetch_bytes;
+
+/// T-628 — how many 8 m density bins the boot will ask for, known before the first request because
+/// it is a property of the chunk grid (25 × 25 = 625 on everon), not of anything on the wire.
+/// `bootstrap` declares this against the world segment up front — declaring it late, once the
+/// chunks had already filled the segment, would park the bar at 100% and then find 625 more files.
+#[must_use]
+pub const fn planned_density_bins() -> u64 {
+    (CHUNKS_PER_AXIS * CHUNKS_PER_AXIS) as u64
+}
 
 const FETCH_CONCURRENCY: usize = 12;
 const FETCH_RETRIES: usize = 3;
@@ -58,17 +68,27 @@ impl ForestMassHost {
     }
 
     /// Boot: fetch all 625 bins (retry), stitch, upload once + MS outlines. Settle: LOD params only.
-    pub async fn run_viewport(&mut self, engine: &EngineHandle, bridge: &BridgeHandle) -> bool {
+    pub async fn run_viewport(
+        &mut self,
+        engine: &EngineHandle,
+        bridge: &BridgeHandle,
+        report: &dyn Fn(BootEvent),
+    ) -> bool {
         if !self.ready {
             return false;
         }
         if !self.uploaded {
-            return self.boot_upload(engine, bridge).await;
+            return self.boot_upload(engine, bridge, report).await;
         }
         self.apply_params(engine, bridge)
     }
 
-    async fn boot_upload(&mut self, engine: &EngineHandle, bridge: &BridgeHandle) -> bool {
+    async fn boot_upload(
+        &mut self,
+        engine: &EngineHandle,
+        bridge: &BridgeHandle,
+        report: &dyn Fn(BootEvent),
+    ) -> bool {
         let base = self.asset_base.clone();
         let mut island = vec![0u16; ISLAND_CORNERS * ISLAND_CORNERS];
         let mut pending: Vec<(u32, u32)> = Vec::with_capacity(EVERON_DENSITY_BINS as usize);
@@ -101,7 +121,13 @@ impl ForestMassHost {
                             }
                         }
                     }
-                    if !ok {
+                    // T-628 — a bin counts against the world segment exactly once, on the attempt
+                    // that actually landed it. Counting *attempts* would let a retried bin advance a
+                    // unit `bootstrap` had already declared for its first try, and 625 declared bins
+                    // would finish at 640 done — a segment reading full while the canopy is holed.
+                    if ok {
+                        report(BootEvent::Done(BootSeg::World, 1));
+                    } else {
                         still.push((cx, cy));
                     }
                 }

@@ -133,6 +133,85 @@ fn is_uuid(id: &str) -> bool {
 /// whose layer was pruned.
 const DEFAULT_LAYER_ID: &str = "layer-1";
 
+/// T-628 — `GET /api/v1/missions/:id`, measured, with [`crate::client::api_get`] behind it.
+///
+/// The mission document is the boot bar's first segment and the API sends a `content-length` for
+/// it, so it is determinate for the same reason the DEM is: budget from the header, progress from
+/// the body's `ReadableStream`. What it is *not* is a second copy of the auth contract. The token is
+/// injected and the body is read here; **anything that is not a 2xx — including the 401 that means
+/// the access token expired — falls through to `api_get`**, which owns the single-flight refresh and
+/// the one retry (`client.rs`). So this adds a fast path and cannot add a second place that spends a
+/// refresh token; the worst case is one wasted GET before the real one.
+///
+/// A response with no `content-length` reports no budget and the segment simply stays at 0 until it
+/// is finished — the bar under-claims rather than invents.
+async fn get_mission_measured(
+    auth: AuthStore,
+    path: &str,
+    report: &dyn Fn(crate::mission_editor::boot_progress::BootEvent),
+) -> Result<MissionDetail, crate::client::ApiErr> {
+    use crate::mission_editor::boot_progress::{BootEvent, BootSeg, STREAM_REPORT_BYTES};
+    use wasm_bindgen::JsCast;
+
+    let measured = async {
+        let token = auth.access_token.get_untracked()?;
+        let resp = gloo_net::http::RequestBuilder::new(&format!("/api/v1{path}"))
+            .method(gloo_net::http::Method::GET)
+            .credentials(web_sys::RequestCredentials::Include)
+            .header("Authorization", &format!("Bearer {token}"))
+            .build()
+            .ok()?
+            .send()
+            .await
+            .ok()?;
+        if !(200..300).contains(&resp.status()) {
+            return None;
+        }
+        let budget = resp
+            .headers()
+            .get("content-length")
+            .and_then(|v| v.parse::<u64>().ok())
+            .unwrap_or(0);
+        report(BootEvent::Budget(BootSeg::Mission, budget));
+        let body = resp.body()?;
+        let reader: web_sys::ReadableStreamDefaultReader = body.get_reader().unchecked_into();
+        let mut out: Vec<u8> = Vec::with_capacity(usize::try_from(budget).unwrap_or(0));
+        let mut unreported: u64 = 0;
+        loop {
+            let chunk = wasm_bindgen_futures::JsFuture::from(reader.read())
+                .await
+                .ok()?;
+            let done = js_sys::Reflect::get(&chunk, &"done".into())
+                .ok()
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true);
+            if done {
+                break;
+            }
+            let arr: js_sys::Uint8Array = js_sys::Reflect::get(&chunk, &"value".into())
+                .ok()?
+                .unchecked_into();
+            let at = out.len();
+            out.resize(at + arr.length() as usize, 0);
+            arr.copy_to(&mut out[at..]);
+            unreported += u64::from(arr.length());
+            if unreported >= STREAM_REPORT_BYTES {
+                report(BootEvent::Done(BootSeg::Mission, unreported));
+                unreported = 0;
+            }
+        }
+        if unreported > 0 {
+            report(BootEvent::Done(BootSeg::Mission, unreported));
+        }
+        serde_json::from_slice::<MissionDetail>(&out).ok()
+    }
+    .await;
+    match measured {
+        Some(d) => Ok(d),
+        None => crate::client::api_get::<MissionDetail>(auth, path).await,
+    }
+}
+
 /// Fetch `GET /missions/:id` and reconcile it with the just-loaded local doc:
 ///  * new mission (empty server payload) → apply the row terrain only;
 ///  * no local content — no IDB record, or one that decodes to an empty document → hydrate the
@@ -142,6 +221,12 @@ const DEFAULT_LAYER_ID: &str = "layer-1";
 ///
 /// `loaded_from_idb` is the persist layer's flag. On any non-404 failure it leaves the doc as-is
 /// (local-only) — the caller shows no blocking error (the editor is usable on the local copy).
+///
+/// T-628 — `report` carries the mission segment of the boot bar. The document GET is the one part
+/// of this function with a number on it, and it is not a small one: the editor's own payload runs
+/// from ~700 B on a fresh mission to the ~142 MB T-060 measured at 367k slots, so a boot bar that
+/// treated it as a rounding error would sit full while the operator waited on it. See
+/// [`get_mission_measured`].
 pub async fn hydrate_from_server(
     doc: DocHandle,
     id: String,
@@ -149,6 +234,7 @@ pub async fn hydrate_from_server(
     loaded_from_idb: bool,
     current_semver: RwSignal<Option<String>>,
     conflict: RwSignal<Option<crate::mission_editor::ConflictInfo>>,
+    report: crate::mission_editor::boot_progress::ProgressFn,
 ) {
     // T-191 — the recovery bridge is registered on every editor boot, not only when a conflict
     // fires: after a reload the in-memory snapshot is gone and the IDB record is the only copy, and
@@ -183,7 +269,7 @@ pub async fn hydrate_from_server(
         return;
     }
     let path = format!("/missions/{id}");
-    let detail = match crate::client::api_get::<MissionDetail>(auth, &path).await {
+    let detail = match get_mission_measured(auth, &path, report.as_ref()).await {
         Ok(d) => d,
         Err((404, _)) => return, // ad-hoc/local-only id — stay local, silently
         Err(_) => {

@@ -24,9 +24,11 @@ use crate::select_tool::EngineHandle;
 
 use bridge::{new_bridge, publish, publish_engine, BridgeHandle};
 use dem_vectors::DemVectors;
-use fetch::fetch_bytes;
+use fetch::{fetch_bytes, fetch_bytes_streamed};
 use forest_mass::ForestMassHost;
 use world_host::WorldHost;
+
+use crate::mission_editor::boot_progress::ProgressFn;
 
 const TERRAIN_M: f64 = 12_800.0;
 
@@ -183,26 +185,44 @@ pub fn apply_basemap_view(view: &str) {
     });
 }
 
-/// T-627 — where the editor's stage-2 loading caption comes from. `Rc` because the satellite fetch
-/// needs it inside a future that outlives `bootstrap`'s stack frame while the world steps below
-/// still call it.
-pub type StepFn = Rc<dyn Fn(crate::mission_editor::boot_progress::MapStep)>;
+/// T-628 — files this bootstrap fetches whose count is a fixed property of the code path, declared
+/// against the world segment before any of them is requested.
+///
+/// `WorldHost::init` makes seven requests (terrain manifest, prefabs, chunk index, glyph-atlas JSON,
+/// glyph-atlas WebP, roads, forest regions) and `LabelHost::init` makes two (`locations.json`,
+/// `road-names.json`). Declaring them up front rather than one-at-a-time is the difference between a
+/// budget the bar can divide by and a denominator that keeps growing under it.
+const WORLD_INIT_FILES: u64 = 7;
+const WORLD_LABEL_FILES: u64 = 2;
 
 /// Mount-time bootstrap: hillshade + sat + DEM vectors + world + forest, then first settle.
 ///
-/// `on_step` is called as each phase begins, and repeatedly during the satellite fetch with its
-/// real byte count. Every call reports work that has **already happened** — there is no timer in
-/// this path, so a stalled network shows a stalled bar, which is the point.
+/// `report` receives this task's three segments' worth of measurements — the DEM's `content-length`
+/// and streamed bytes, the satellite's index-derived budget and Range completions, and the world's
+/// file counts. Every call reports work that has **already happened** or a budget read off the wire
+/// *before* the work; there is no timer in this path, so a stalled network shows a stalled bar,
+/// which is the point.
+///
+/// All three segments are closed before this returns, on every path including total failure, so the
+/// bar cannot be left short of 100% while the overlay waits on it.
 pub async fn bootstrap(
     engine: EngineHandle,
     terrain: String,
     host: HostHandle,
     dem_out: DemGridHandle,
-    on_step: StepFn,
+    report: ProgressFn,
 ) {
-    use crate::mission_editor::boot_progress::MapStep;
+    use crate::mission_editor::boot_progress::{BootEvent, BootSeg};
 
-    on_step(MapStep::Terrain);
+    // The world's *static* plan, declared before its first fetch: the init + label files, and the
+    // 8 m density bins, whose count is a property of the terrain grid (25×25) and is therefore
+    // known without asking anything. The only part that cannot be declared this early is the chunk
+    // set, which the residency does not decide until it pins the boot camera — that batch declares
+    // itself in `WorldHost::fetch_and_queue`, still before its own fetches.
+    report(BootEvent::Files(
+        BootSeg::World,
+        WORLD_INIT_FILES + WORLD_LABEL_FILES + forest_mass::planned_density_bins(),
+    ));
     let mut mh = MapHost::new();
     mh.terrain = terrain.clone();
     let bridge = mh.bridge.clone();
@@ -215,25 +235,40 @@ pub async fn bootstrap(
         Some(bytes) => serde_json::from_slice(&bytes).ok(),
         None => None,
     };
-    let dem_fut = async { load_dem_and_hillshade(&engine, &base, manifest.as_ref()?).await };
-    let sat_fut = async {
-        let (url, tw, th) = sat_url_from(manifest.as_ref()?, &base)?;
-        satellite::load_satellite(
-            engine.clone(),
-            &base,
-            &url,
-            tw,
-            th,
-            bridge.clone(),
-            on_step.as_ref(),
-        )
+    // Both futures wrap their real body in an inner `async` block and close their segment OUTSIDE
+    // it. The `?` on `manifest.as_ref()` returns from whichever block it sits in, so writing the
+    // `Finish` in the same block as the `?` would skip it exactly when the manifest fetch failed —
+    // i.e. the bar would come up short precisely on the boot that went wrong.
+    let dem_fut = async {
+        let r = async {
+            load_dem_and_hillshade(&engine, &base, manifest.as_ref()?, report.as_ref()).await
+        }
         .await;
-        Some(())
+        report(BootEvent::Finish(BootSeg::Terrain));
+        r
+    };
+    let sat_fut = async {
+        let out = async {
+            let (url, tw, th) = sat_url_from(manifest.as_ref()?, &base)?;
+            satellite::load_satellite(
+                engine.clone(),
+                &base,
+                &url,
+                tw,
+                th,
+                bridge.clone(),
+                report.as_ref(),
+            )
+            .await;
+            Some(())
+        }
+        .await;
+        // Closed here rather than inside `load_satellite`, so a manifest without a `unified` block
+        // — which returns before the loader is ever reached — still ends the segment.
+        report(BootEvent::Finish(BootSeg::Satellite));
+        out
     };
     let (dem_res, _sat) = futures::join!(dem_fut, sat_fut);
-    // Everything past here is world residency / forest / labels — no byte budget is known for any
-    // of it, so the overlay goes back to an honest indeterminate bar rather than inventing one.
-    on_step(MapStep::World);
 
     // T-173 H5 — keep the decoded DEM raster so the label host can find peaks after the world's
     // roads load (peaks + road/town labels all init together below).
@@ -272,7 +307,7 @@ pub async fn bootstrap(
         }
     }
 
-    let _ = mh.world.init(&terrain).await;
+    let _ = mh.world.init(&terrain, report.as_ref()).await;
     mh.forest.init(&terrain);
 
     // T-173 H6 — build + upload the airfield apron ground polygon once (static). Needs both the
@@ -286,18 +321,30 @@ pub async fn bootstrap(
     // road segments are available, then push once for the initial camera.
     if let Some((meters, w, h)) = dem_kept {
         let roads = mh.world.road_segments_clone();
-        mh.labels.init(&base, &meters, w, h, roads).await;
+        mh.labels
+            .init(&base, &meters, w, h, roads, report.as_ref())
+            .await;
         let zoom = engine.borrow().as_ref().map(|e| e.zoom()).unwrap_or(-2.0);
         let prefs = crate::world_layer_prefs::load_prefs();
         mh.labels.push(&engine, zoom, &prefs);
+    } else {
+        // No DEM raster → `LabelHost::init` never runs, so its two declared files never land.
+        // Say so rather than leave two units of a budget permanently outstanding.
+        report(BootEvent::Done(BootSeg::World, WORLD_LABEL_FILES));
     }
 
     // Drain residency / forest over a few passes so the first paint settles without requiring a pan.
     // Each pass awaits chunk/density fetches, so the browser event loop advances between iterations.
     // T-173 P2 — break as soon as both hosts report idle instead of always running 12 passes.
     for _ in 0..12 {
-        let w = mh.world.run_viewport(&engine, &bridge).await;
-        let f = mh.forest.run_viewport(&engine, &bridge).await;
+        let w = mh
+            .world
+            .run_viewport(&engine, &bridge, report.as_ref())
+            .await;
+        let f = mh
+            .forest
+            .run_viewport(&engine, &bridge, report.as_ref())
+            .await;
         if !w && !f {
             break;
         }
@@ -309,6 +356,12 @@ pub async fn bootstrap(
         publish(&bridge);
     }
 
+    // The map's last word. A boot that lost chunks to the network, or broke out of the loop with
+    // bins still holed, ends here with the world segment short of its declared files — closing it
+    // is what turns "as much as actually landed" into a bar that reads 100% at hand-over instead of
+    // an overlay that never comes down.
+    report(BootEvent::Finish(BootSeg::World));
+
     *host.borrow_mut() = Some(mh);
 }
 
@@ -319,6 +372,7 @@ pub async fn bootstrap(
 /// also touch the host; a RefCell panic freezes camera input for the rest of the session.
 pub fn flush_viewport(host: HostHandle, engine: EngineHandle) {
     wasm_bindgen_futures::spawn_local(async move {
+        let no_progress = |_: crate::mission_editor::boot_progress::BootEvent| {};
         for _ in 0..6 {
             // Take the host out for the async pass so JS event handlers can still
             // `host.borrow()` (they no-op while `None`) without panicking.
@@ -344,13 +398,18 @@ pub fn flush_viewport(host: HostHandle, engine: EngineHandle) {
             // are idle the remaining passes would be pure no-ops (revision-gated), so stop early.
             // Multi-pass hydration still works: pass N ingests what pass N-1 fetched, and each of
             // those passes reports `did_work=true` until the viewport is fully resident.
-            let did_world = h.world.run_viewport(&engine, &h.bridge).await;
+            // T-628 — a post-boot settle has no overlay to feed, so it reports into a sink. The
+            // hosts take a reporter rather than an `Option` so there is exactly one code path
+            // through them and the boot's instrumentation cannot silently stop applying.
+            let did_world = h.world.run_viewport(&engine, &h.bridge, &no_progress).await;
             // T-178 — after the island tex is up, LOD params are cheap: run during gesture so
             // outline/α update mid-pan. Never start the 625-bin boot mid-gesture (blocks input).
             let did_forest = if gesture && !h.forest.is_uploaded() {
                 false
             } else {
-                h.forest.run_viewport(&engine, &h.bridge).await
+                h.forest
+                    .run_viewport(&engine, &h.bridge, &no_progress)
+                    .await
             };
             // T-173 H5 — repack the text labels for the current zoom band (memoized; cheap no-op
             // when the band + toggles are unchanged).
@@ -444,12 +503,27 @@ struct UnifiedBlock {
     path: Option<String>,
 }
 
+/// T-628 — the terrain segment's whole budget is this one file. everon's is 71,911,548 B of
+/// `dem/everon-dem-16bit.png` and the host serves a `content-length` for it, so the segment is
+/// determinate from its first response header; `fetch_bytes_streamed` then reports the bytes as
+/// they land instead of one 71.9 MB step at the end.
+///
+/// The decode + hillshade below is CPU, not network, and is deliberately unmeasured: it is a
+/// synchronous block on wasm's single thread, so nothing — including the bar — repaints while it
+/// runs. A number moving through it would be a number nobody could see and nothing had measured.
 async fn load_dem_and_hillshade(
     engine: &EngineHandle,
     base: &str,
     manifest: &ManifestDem,
+    report: &dyn Fn(crate::mission_editor::boot_progress::BootEvent),
 ) -> Option<(Vec<f32>, u32, u32, u32, u32)> {
-    let dem_bytes = fetch_bytes(&format!("{base}/{}", manifest.dem.path)).await?;
+    use crate::mission_editor::boot_progress::BootSeg;
+    let dem_bytes = fetch_bytes_streamed(
+        &format!("{base}/{}", manifest.dem.path),
+        BootSeg::Terrain,
+        report,
+    )
+    .await?;
     let dem = decode_png_to_meters(&dem_bytes, manifest.dem.min_m, manifest.dem.max_m).ok()?;
     let hs = build_hillshade_image(&dem.meters, dem.width as usize, dem.height as usize);
     if hs.data.is_empty() || hs.w == 0 || hs.h == 0 {

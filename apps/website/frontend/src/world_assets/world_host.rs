@@ -14,6 +14,7 @@ use map_engine_render::draw_order::role_id;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 
+use crate::mission_editor::boot_progress::{BootEvent, BootSeg};
 use crate::select_tool::EngineHandle;
 
 use super::bridge::{publish_engine, BridgeHandle};
@@ -83,9 +84,17 @@ impl WorldHost {
         }
     }
 
-    pub async fn init(&mut self, terrain: &str) -> bool {
+    /// T-628 — `report` takes one [`BootEvent::Done`] per completed fetch. The seven requests below
+    /// were declared against the world segment by `bootstrap` before this was called, so every
+    /// early `return false` here leaves units outstanding on purpose: they are files this boot is
+    /// now never going to fetch, and the segment's `Finish` is what settles the difference. Nothing
+    /// on this path may report a file it did not complete.
+    pub async fn init(&mut self, terrain: &str, report: &dyn Fn(BootEvent)) -> bool {
+        let done = || report(BootEvent::Done(BootSeg::World, 1));
         let base = format!("/map-assets/{terrain}");
-        let Some(manifest) = fetch_text(&format!("{base}/manifest.json")).await else {
+        let manifest = fetch_text(&format!("{base}/manifest.json")).await;
+        done();
+        let Some(manifest) = manifest else {
             return false;
         };
         if self.residency.load_manifest_json(&manifest).is_err() {
@@ -120,10 +129,14 @@ impl WorldHost {
         if let Some(bytes) = fetch_bytes(&format!("{base}/{prefabs}")).await {
             let _ = self.residency.load_prefabs_gz(&bytes);
         }
+        done();
         if let Some(idx) = fetch_text(&format!("{base}/{chunks}/manifest.json")).await {
             let _ = self.residency.load_chunk_index_json(&idx);
         }
-        self.atlas = load_glyph_atlas().await;
+        done();
+        // Two files (JSON + WebP), and it reports them itself so a bail-out between them is not
+        // counted as both.
+        self.atlas = load_glyph_atlas(report).await;
         if let Some(bytes) = fetch_bytes(&format!("{base}/{roads}")).await {
             if self.store.load_roads_gz(&bytes).is_ok() {
                 self.roads_loaded = true;
@@ -133,11 +146,13 @@ impl WorldHost {
                 self.residency.set_airfield_bbox_from_runways(&runways);
             }
         }
+        done();
         if let Some(bytes) = fetch_bytes(&format!("{base}/{regions}")).await {
             if self.store.load_forest_regions_gz(&bytes).is_ok() {
                 self.landcover_ready = true;
             }
         }
+        done();
         self.ready = true;
         true
     }
@@ -145,7 +160,12 @@ impl WorldHost {
     /// One residency settle pass. Returns whether it did real work (fetched, drained, or pushed a
     /// changed buffer) — `flush_viewport` breaks its multi-pass loop once every host reports idle
     /// (T-173 P2, kills the fixed ×6 recompose storm when nothing is pending).
-    pub async fn run_viewport(&mut self, engine: &EngineHandle, bridge: &BridgeHandle) -> bool {
+    pub async fn run_viewport(
+        &mut self,
+        engine: &EngineHandle,
+        bridge: &BridgeHandle,
+        report: &dyn Fn(BootEvent),
+    ) -> bool {
         if !self.ready {
             return false;
         }
@@ -181,7 +201,7 @@ impl WorldHost {
         // failures through `note_fetch_failure` (retry to a cap, then cache).
         let fetched = !missing.is_empty();
         if fetched {
-            self.fetch_and_queue(missing).await;
+            self.fetch_and_queue(missing, report).await;
         }
         let drained = self.drain(engine, bridge);
         let pushed = self.push_to_engine(engine, bridge);
@@ -362,7 +382,15 @@ impl WorldHost {
         true
     }
 
-    async fn fetch_and_queue(&mut self, ids: Vec<String>) {
+    /// T-628 — this is the one genuinely dynamic part of the world budget, and the one place the
+    /// boot can learn how many chunk files it is going to want: `set_viewport` intersects the boot
+    /// camera's rect with the chunk index's 315 existing cells and hands back exactly the ids it
+    /// needs. That count is declared here, **before** the first request goes out, so the bar divides
+    /// by a real denominator rather than discovering work behind a bar that already read 100%.
+    /// A failed fetch still advances — the unit of work is a completed request, not a good payload;
+    /// the retry that follows re-declares itself through this same path.
+    async fn fetch_and_queue(&mut self, ids: Vec<String>, report: &dyn Fn(BootEvent)) {
+        report(BootEvent::Files(BootSeg::World, ids.len() as u64));
         // Do NOT clear_inflight here — set_viewport already marked these ids. Clearing would
         // drop the pin-settled contract and race with a concurrent settle.
         self.residency.mark_inflight(&ids);
@@ -383,6 +411,7 @@ impl WorldHost {
                 }
             });
             for item in futures::future::join_all(futs).await {
+                report(BootEvent::Done(BootSeg::World, 1));
                 fetched.push(item);
             }
         }
@@ -503,14 +532,16 @@ impl Default for WorldHost {
     }
 }
 
-async fn load_glyph_atlas() -> Option<AtlasUpload> {
-    let json_txt = fetch_text(ATLAS_JSON).await?;
-    let json: serde_json::Value = serde_json::from_str(&json_txt).ok()?;
+async fn load_glyph_atlas(report: &dyn Fn(BootEvent)) -> Option<AtlasUpload> {
+    let json_txt = fetch_text(ATLAS_JSON).await;
+    report(BootEvent::Done(BootSeg::World, 1));
+    let json: serde_json::Value = serde_json::from_str(&json_txt?).ok()?;
     let icons = json.get("icons")?.as_object()?;
     let mut keys: Vec<String> = icons.keys().cloned().collect();
     keys.sort();
-    let webp = fetch_bytes(ATLAS_WEBP).await?;
-    let (w, h, rgba) = decode_webp_rgba(&webp).await?;
+    let webp = fetch_bytes(ATLAS_WEBP).await;
+    report(BootEvent::Done(BootSeg::World, 1));
+    let (w, h, rgba) = decode_webp_rgba(&webp?).await?;
     let mut uv = vec![0f32; keys.len() * 4];
     for (i, k) in keys.iter().enumerate() {
         let r = icons.get(k)?;

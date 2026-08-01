@@ -182,9 +182,10 @@ fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
 /// stays up with an honest phase label until **both** settle, so the operator never stares at a
 /// silent half-ready map. (The React editor had a T-060 determinate overlay that never ported.)
 ///
-/// T-627 — the two variants below are the operator's two stages: `Hydrating` is stage 1 (the
-/// mission — fast, small) and `LoadingMap` is stage 2 (the map — slow, big). What each stage
-/// *shows* is [`boot_progress::MapStep`], reported by the map-asset bootstrap.
+/// T-628 — the phase no longer decides what the bar shows; [`boot_progress::BootProgress`] does,
+/// and it spans the whole boot rather than restarting per stage. What survives here is the single
+/// question the overlay still needs a phase for: is the boot over? `Hydrating`/`LoadingMap` are
+/// kept because the two boot tasks flip them independently and `Ready` is their rendezvous.
 #[derive(Clone, Copy, PartialEq)]
 enum BootPhase {
     /// IDB restore + server hydrate in flight.
@@ -195,17 +196,31 @@ enum BootPhase {
     Ready,
 }
 
-/// T-627 — the pure arithmetic behind the Mission Creator boot overlay, plus the ordering
+/// Hand-over hold, in ms, between the bar reaching 100% and the overlay coming down.
+///
+/// Not progress and not a duration guess: every segment has already reported [`BootEvent::Finish`]
+/// before this timer is armed. It exists because the last real report and the overlay's removal
+/// otherwise land in the same Leptos render, so the operator would never see the bar full — he
+/// would see it stop short and the screen change. 220 ms is the 200 ms `.mc-load-fill` ease plus a
+/// frame, i.e. exactly long enough for the fill to finish travelling to 100%.
+///
+/// [`BootEvent::Finish`]: boot_progress::BootEvent::Finish
+// Ungated so `t628_boot_progress` can hold it to the CSS ease it exists to outlast; only the
+// `set_timeout` that consumes it is wasm-only.
+#[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+const BOOT_HANDOVER_MS: i32 = 220;
+
+/// T-627/T-628 — the pure arithmetic behind the Mission Creator boot overlay, plus the ordering
 /// discipline the concurrent satellite fetch that feeds it has to honour.
 ///
 /// It lives here, next to the overlay, rather than beside the fetch, because `mod world_assets` is
 /// `#[cfg(target_arch = "wasm32")]` in `main.rs`: not one line under it compiles on the host, so
 /// not one line under it can be unit-tested. Everything the loader can decide *without* a network —
 /// how a tile is split into Range requests, how out-of-order completions are put back into tile
-/// order, what a byte count reads as, when a bar is allowed to claim a number — is therefore
-/// hoisted into this module and proved by `t627_boot_progress` at the bottom of the file, leaving
-/// the wasm side with fetch, decode and upload. The pins in that module also hold
-/// `world_assets/satellite.rs` to actually routing through here.
+/// order, what a byte count reads as, how four differently-sized segments add up to one bar that
+/// cannot go backwards — is therefore hoisted into this module and proved by `t628_boot_progress`
+/// at the bottom of the file, leaving the wasm side with fetch, decode and upload. The pins in that
+/// module also hold `world_assets/*` to actually routing through here.
 pub mod boot_progress {
     /// Concurrent HTTP Range requests in flight against the map-asset host.
     ///
@@ -291,44 +306,300 @@ pub mod boot_progress {
         }
     }
 
-    /// Which map-asset step stage 2 is on. Only [`MapStep::Satellite`] carries numbers, because it
-    /// is the only step whose size is known before it starts (the tbd-sat index lists every tile's
-    /// `length`). The others deliberately carry none rather than an invented one.
-    #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
-    pub enum MapStep {
-        /// Manifest + DEM decode + hillshade + the Range satellite preview.
-        #[default]
+    /// Bytes of a streamed body to accumulate before reporting them.
+    ///
+    /// `fetch`'s `ReadableStream` hands back whatever came off the socket — typically 16–64 KB — so
+    /// reporting every chunk would push ~1,100 signal writes through the overlay for the DEM alone.
+    /// At 512 KB the terrain segment still reports ~140 times (0.7% of itself a step), which is
+    /// finer than the bar can render, and the boot does ~200 signal writes instead of ~2,000.
+    pub const STREAM_REPORT_BYTES: u64 = 512 * 1024;
+
+    /// The four stretches of the Mission Creator boot. Every one of them has a **real** budget:
+    /// three are byte-metered against a `content-length` (or, for the satellite, the sum of the
+    /// tbd-sat index's tile `length`s), and the fourth is metered in **files**, because a world
+    /// chunk's size is published nowhere and the only number knowable before the fetch is how many
+    /// of them there are.
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+    pub enum BootSeg {
+        /// IDB replay + `GET /api/v1/missions/:id` — byte-metered off that response's
+        /// `content-length` (the editor's own document can be anything from 700 B to ~142 MB, so it
+        /// is emphatically not a rounding error on a big mission).
+        Mission,
+        /// `dem/everon-dem-16bit.png` — byte-metered off its `content-length`.
         Terrain,
-        /// The unified satellite mip chain: `done` / `total` bytes of the mips that will actually
-        /// be uploaded (levels below the GPU's `maxTextureDimension2D` are never fetched).
-        Satellite { done: u64, total: u64 },
-        /// World chunk residency, forest mass, labels — no byte budget is known up front.
+        /// The tbd-sat mips at or below the GPU's `maxTextureDimension2D` — byte-metered off the
+        /// index, which lists every tile's `length` before a tile byte moves.
+        Satellite,
+        /// World chunks, the 8 m density bins, the prefab/road/region/atlas/label files — **file**
+        /// metered: each unit is one completed fetch, and every batch's count is declared before it
+        /// is requested.
         World,
     }
 
-    impl MapStep {
-        /// The caption under the bar.
+    impl BootSeg {
+        /// Canonical boot order. The overlay names the first segment in this order that has not
+        /// finished, which is what makes the caption a stable narrative even though the terrain and
+        /// satellite fetches actually overlap.
+        pub const ALL: [BootSeg; 4] = [
+            BootSeg::Mission,
+            BootSeg::Terrain,
+            BootSeg::Satellite,
+            BootSeg::World,
+        ];
+
         #[must_use]
-        pub fn caption(self) -> String {
+        const fn idx(self) -> usize {
             match self {
-                Self::Terrain => "Terrain".to_string(),
-                Self::Satellite { done, total } => {
-                    format!("Satellite · {}", fmt_bytes_pair(done, total))
-                }
-                Self::World => "World objects".to_string(),
+                Self::Mission => 0,
+                Self::Terrain => 1,
+                Self::Satellite => 2,
+                Self::World => 3,
             }
         }
 
-        /// Bar fill in percent, or `None` when this step has no measurement — the overlay must then
-        /// draw an **indeterminate** bar. Never estimated from elapsed time: a bar that moves on a
-        /// guessed duration is the fixed-width animation again, wearing a percentage.
+        /// The stage line above the bar.
         #[must_use]
-        pub fn fill(self) -> Option<f64> {
+        pub const fn title(self) -> &'static str {
             match self {
-                Self::Satellite { done, total } if total > 0 => Some(percent(done, total)),
-                _ => None,
+                Self::Mission => "Loading mission…",
+                Self::Terrain => "Loading terrain…",
+                Self::Satellite => "Loading satellite…",
+                Self::World => "Loading world objects…",
             }
         }
+    }
+
+    /// What a loader is allowed to tell the bar. Note what is **not** here: there is no "elapsed",
+    /// no "expected duration", no "step N of M begun". Every variant is either a budget the loader
+    /// read off the wire before doing the work, or work it has already finished.
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+    pub enum BootEvent {
+        /// This segment's real byte budget, read from a `content-length` header or summed from the
+        /// tbd-sat index. Replaces both the segment's unit budget and its pacing weight, so the
+        /// bar's speed tracks the transfer that is actually going to happen (a 16384-limit GPU
+        /// fetches 152.7 MB of satellite where an 8192-limit one fetches 42.2 MB).
+        Budget(BootSeg, u64),
+        /// `n` more files added to a file-metered segment's budget. **Declared before the fetch**,
+        /// never after: a batch that announced itself only on completion would be a bar that jumps
+        /// to 100% and then discovers more work, which is the failure this whole slice is fixing.
+        Files(BootSeg, u64),
+        /// `n` more units — bytes off the socket, or completed fetches — that have **already**
+        /// landed.
+        Done(BootSeg, u64),
+        /// Nothing further will be reported for this segment. Sent when a loader returns, whether
+        /// it succeeded or failed, so a dead network cannot leave the bar short of 100% with the
+        /// overlay still up.
+        Finish(BootSeg),
+    }
+
+    /// How the reporter reaches the loaders. `Rc` because the satellite fetch holds it inside a
+    /// future that outlives `bootstrap`'s stack frame.
+    pub type ProgressFn = std::rc::Rc<dyn Fn(BootEvent)>;
+
+    /// Terrain DEM, measured on the live stack (2026-08-01):
+    /// `content-length` of `/map-assets/everon/dem/everon-dem-16bit.png`.
+    pub const PLANNED_TERRAIN_BYTES: u64 = 71_911_548;
+
+    /// Satellite, measured off the live tbd-sat index: the mips from level 1 down sum to
+    /// 42,152,810 B, which is what an 8192-limit `maxTextureDimension2D` uploads. A 16384-limit GPU
+    /// takes level 0 as well (152,710,470 B) — the [`BootEvent::Budget`] the loader sends after
+    /// reading the index replaces this with whichever of the two it is actually going to fetch, so
+    /// this constant only paces the first ~2 round trips.
+    pub const PLANNED_SATELLITE_BYTES: u64 = 42_152_810;
+
+    /// World objects, measured on the live stack: 315 chunk files totalling 15,320,508 B, the 625
+    /// density bins totalling 10,582,750 B, and ~1.08 MB of prefab / road / region / glyph-atlas /
+    /// label files. Unlike the other three this one is **not** replaced by a measurement, because
+    /// no index publishes a chunk's byte size and only the subset of chunks the boot camera pins is
+    /// ever fetched — so the segment's *progress* is counted in files (exact) and only its *pacing
+    /// weight* is this approximation.
+    pub const PLANNED_WORLD_BYTES: u64 = 27_000_000;
+
+    /// One segment's real state. `weight` is pacing only — it never appears in a numerator.
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+    struct Segment {
+        weight: u64,
+        done: u64,
+        total: u64,
+        finished: bool,
+    }
+
+    impl Segment {
+        const fn new(weight: u64) -> Self {
+            Self {
+                weight,
+                done: 0,
+                total: 0,
+                finished: false,
+            }
+        }
+
+        /// 0..=1. A budget that was never learned reads as 0, not as a guess; a body that overruns
+        /// its promised length is clamped rather than allowed to push the bar past the segment.
+        fn fraction(self) -> f64 {
+            if self.finished {
+                return 1.0;
+            }
+            if self.total == 0 {
+                return 0.0;
+            }
+            #[allow(clippy::cast_precision_loss)]
+            let f = self.done as f64 / self.total as f64;
+            f.clamp(0.0, 1.0)
+        }
+    }
+
+    /// T-628 — the whole boot as **one** 0→100% bar.
+    ///
+    /// T-627 made the satellite determinate and left the other three steps sweeping, and the
+    /// operator rejected that: a sweep animates identically at 1%, at 99% and while stalled, so it
+    /// carries no information — "you might as well have a black screen". So the bar is now a single
+    /// continuous journey with four weighted segments underneath it, and it never resets.
+    ///
+    /// Three properties, all pinned by `t628_boot_progress`:
+    ///
+    /// * **Monotonic.** [`Self::percent`] returns a high-water mark. Budgets grow mid-boot — the
+    ///   world's file count only becomes known when the residency pins the camera's chunk set, and
+    ///   a segment's *weight* changes when it reads its own `content-length` — and either can make
+    ///   the freshly computed figure smaller. The bar absorbs that by holding still until real work
+    ///   passes it. It never rewinds.
+    /// * **Never invented.** Nothing in here is a function of time. The only way a number moves is
+    ///   [`BootEvent::Done`], and the only thing that sends one is a loader with the bytes or the
+    ///   file already in hand.
+    /// * **Reaches 100%.** Every loader sends [`BootEvent::Finish`] when it returns, success or
+    ///   failure, and an all-finished progress reads exactly `100.0`.
+    #[derive(Clone, Copy, PartialEq, Debug)]
+    pub struct BootProgress {
+        segs: [Segment; 4],
+        /// The high-water mark — see the type doc. This, not the raw ratio, is what the bar draws.
+        floor: f64,
+    }
+
+    impl Default for BootProgress {
+        fn default() -> Self {
+            Self::new()
+        }
+    }
+
+    impl BootProgress {
+        #[must_use]
+        pub const fn new() -> Self {
+            Self {
+                segs: [
+                    // The mission document starts weightless on purpose. Its size is not knowable
+                    // until its response headers arrive, and a placeholder would be exactly the
+                    // invention this slice exists to remove — so it joins the bar at its real
+                    // `content-length`, one round trip in.
+                    Segment::new(0),
+                    Segment::new(PLANNED_TERRAIN_BYTES),
+                    Segment::new(PLANNED_SATELLITE_BYTES),
+                    Segment::new(PLANNED_WORLD_BYTES),
+                ],
+                floor: 0.0,
+            }
+        }
+
+        /// Fold one report in and re-arm the high-water mark.
+        pub fn apply(&mut self, ev: BootEvent) {
+            match ev {
+                // A zero budget is not a budget (a response with no `content-length`); taking it
+                // would silently delete the segment from the bar's denominator.
+                BootEvent::Budget(_, 0) => {}
+                BootEvent::Budget(s, bytes) => {
+                    let g = &mut self.segs[s.idx()];
+                    g.total = bytes;
+                    g.weight = bytes;
+                }
+                BootEvent::Files(s, n) => {
+                    let g = &mut self.segs[s.idx()];
+                    g.total = g.total.saturating_add(n);
+                }
+                BootEvent::Done(s, n) => {
+                    let g = &mut self.segs[s.idx()];
+                    g.done = g.done.saturating_add(n);
+                }
+                BootEvent::Finish(s) => self.segs[s.idx()].finished = true,
+            }
+            let raw = self.raw();
+            if raw > self.floor {
+                self.floor = raw;
+            }
+        }
+
+        /// The weighted ratio as it stands *right now* — may be lower than [`Self::percent`] after a
+        /// budget grew. Exposed for the tests that prove the difference between the two is exactly
+        /// the monotonicity guarantee.
+        #[must_use]
+        pub fn raw(&self) -> f64 {
+            if self.is_complete() {
+                return 100.0;
+            }
+            let total_w: u64 = self.segs.iter().map(|s| s.weight).sum();
+            if total_w == 0 {
+                return 0.0;
+            }
+            #[allow(clippy::cast_precision_loss)]
+            let acc: f64 = self
+                .segs
+                .iter()
+                .map(|s| s.weight as f64 * s.fraction())
+                .sum();
+            #[allow(clippy::cast_precision_loss)]
+            let pct = (acc / total_w as f64) * 100.0;
+            // Belt and braces, and deliberately so: `Segment::fraction` already caps each term at
+            // its own weight, so with both in place this clamp is unreachable. `t628_boot_progress`
+            // proves that — the "cannot exceed 100" pin only goes RED when *both* are removed. Keep
+            // them both: one guards a single overrunning segment, the other guards the assembled
+            // total, and neither is free to assume the other is still there.
+            pct.clamp(0.0, 100.0)
+        }
+
+        /// What the bar draws: 0..=100, monotonically non-decreasing for the life of the boot.
+        #[must_use]
+        pub fn percent(&self) -> f64 {
+            self.floor
+        }
+
+        /// Every segment has reported in. The overlay may hand over only here.
+        #[must_use]
+        pub fn is_complete(&self) -> bool {
+            self.segs.iter().all(|s| s.finished)
+        }
+
+        /// The stage named above the bar: the first unfinished segment in [`BootSeg::ALL`].
+        #[must_use]
+        pub fn stage(&self) -> BootSeg {
+            BootSeg::ALL
+                .into_iter()
+                .find(|s| !self.segs[s.idx()].finished)
+                .unwrap_or(BootSeg::World)
+        }
+
+        /// The line under the bar: the overall percentage, then what the current stage has actually
+        /// counted. A stage that has not yet read its own budget shows the percentage alone rather
+        /// than a denominator nobody measured.
+        #[must_use]
+        pub fn caption(&self) -> String {
+            let s = self.stage();
+            let g = self.segs[s.idx()];
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let pct = self.percent().floor() as u64;
+            if g.total == 0 {
+                return format!("{pct}%");
+            }
+            let detail = match s {
+                BootSeg::World => fmt_files_pair(g.done.min(g.total), g.total),
+                _ => fmt_bytes_pair(g.done, g.total),
+            };
+            format!("{pct}% · {detail}")
+        }
+    }
+
+    /// `"214 / 834 files"` — the world segment counts completed fetches, so it says so instead of
+    /// borrowing the byte formatter and implying a byte budget nothing published.
+    #[must_use]
+    pub fn fmt_files_pair(done: u64, total: u64) -> String {
+        format!("{done} / {total} files")
     }
 
     /// `done / total` as 0..=100. Clamped at the top so a server that returns one byte more than
@@ -393,10 +664,10 @@ pub fn MissionEditorPage() -> impl IntoView {
     let debug_hud = RwSignal::new(String::new());
     // T-175 B5 — boot loading overlay phase (set by the wasm boot tasks; the view reads it).
     let boot = RwSignal::new(BootPhase::Hydrating);
-    // T-627 — stage-2 detail: which map-asset step is running, and (satellite only) how many of its
-    // bytes have actually landed. Written by `world_assets::bootstrap` through the callback handed
-    // to it below — never by a timer, so it can only ever report completed work.
-    let map_step = RwSignal::new(boot_progress::MapStep::default());
+    // T-628 — the one bar. Written only by the two boot tasks, through the `ProgressFn` built below,
+    // and only with work that has already completed: there is no timer anywhere on this path, so a
+    // stalled network shows a stalled bar, which is the point.
+    let progress = RwSignal::new(boot_progress::BootProgress::new());
     #[cfg(target_arch = "wasm32")]
     {
         use std::cell::Cell;
@@ -793,6 +1064,11 @@ pub fn MissionEditorPage() -> impl IntoView {
             // T-175 B5 — the two boot-readiness flags the loading overlay clears on: doc settled
             // (restore + hydrate) and world/map-asset residency settled. `boot` → Ready when both.
             let world_ready = Rc::new(Cell::new(false));
+            // T-628 — the single reporter both boot tasks fold their measurements into. `RwSignal`
+            // is `Copy`, so the closure captures it by value and the `Rc` can be cloned into futures
+            // that outlive this scope.
+            let report: boot_progress::ProgressFn =
+                Rc::new(move |ev| progress.update(|p| p.apply(ev)));
             spawn_local({
                 let doc = doc.clone();
                 let id = mission_id.clone();
@@ -801,6 +1077,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let restore_settled = restore_settled.clone();
                 let engine_mounted = engine_mounted.clone();
                 let world_ready = world_ready.clone();
+                let report = report.clone();
                 async move {
                     // 1. Restore from IDB if a blob exists — SWAP a fresh core (mirrors React's
                     //    empty-shell + apply; rests on the tested fresh-peer path + persist_roundtrip_ok,
@@ -854,8 +1131,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                         loaded.get(),
                         current_semver,
                         conflict,
+                        report.clone(),
                     )
                     .await;
+                    // T-628 — the mission segment is over the instant the hydrate returns, on every
+                    // one of its paths (adopted / trusted-local / conflict / 404 / offline). Closing
+                    // it here rather than inside the hydrate is what stops a network failure from
+                    // parking the bar short of 100% with the overlay still up.
+                    report(boot_progress::BootEvent::Finish(
+                        boot_progress::BootSeg::Mission,
+                    ));
                     // 1.75 T-175 B1 — the doc is now settled (IDB restore + server hydrate). Mark it
                     //      and, if the engine already mounted + first-bound the seed, rebind it from
                     //      the settled doc so restored slot positions render (not the seed).
@@ -874,12 +1159,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                         crate::mission_history::rebind_engine_from_doc();
                     }
                     // T-175 B5 — doc is hydrated: advance the loading overlay (→ Ready if the world
-                    // already settled, else show "Loading map…" until the world task finishes).
-                    boot.set(if world_ready.get() {
-                        BootPhase::Ready
+                    // already settled, else keep the overlay up until the world task finishes).
+                    if world_ready.get() {
+                        hand_over(boot);
                     } else {
-                        BootPhase::LoadingMap
-                    });
+                        boot.set(BootPhase::LoadingMap);
+                    }
                     // 2. Initial persist through the debounced writer (get_bytes read at write time;
                     //    cancel when the doc Option is cleared). No mutator hook exists yet, so this
                     //    post-seed/post-load encode is the writer's trigger this slice.
@@ -923,6 +1208,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let restore_settled = restore_settled.clone();
                 let engine_mounted = engine_mounted.clone();
                 let world_ready = world_ready.clone();
+                let report = report.clone();
                 let (cw, ch) = (rect0.width(), rect0.height());
                 async move {
                     match map_engine_render::RenderEngine::create(canvas, force_webgl).await {
@@ -1006,16 +1292,15 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // T-175 B5 — mark the world settled + clear the loading overlay once
                                 // the map-asset / residency bootstrap finishes (→ Ready if the doc
                                 // already hydrated, else the hydrate task flips Ready).
-                                // T-627 — the bootstrap reports its step (and the satellite's real
-                                // byte progress) straight into `map_step`; the overlay renders
-                                // whatever landed. `RwSignal` is `Copy`, so the `Fn` closure just
-                                // captures it.
+                                // T-628 — the bootstrap folds the DEM's, the satellite's and the
+                                // world's real measurements into the same one bar through this
+                                // reporter, and closes all three of its segments before it returns.
                                 let boot_fut = crate::world_assets::bootstrap(
                                     engine.clone(),
                                     terrain,
                                     host,
                                     dem_grid.clone(),
-                                    std::rc::Rc::new(move |s| map_step.set(s)),
+                                    report.clone(),
                                 );
                                 let world_ready = world_ready.clone();
                                 let restore_settled = restore_settled.clone();
@@ -1023,7 +1308,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     boot_fut.await;
                                     world_ready.set(true);
                                     if restore_settled.get() {
-                                        boot.set(BootPhase::Ready);
+                                        hand_over(boot);
                                     }
                                 });
                             }
@@ -1827,49 +2112,36 @@ pub fn MissionEditorPage() -> impl IntoView {
                     <ConflictDialog conflict conflict_id=mission_id.clone() />
                 </div>
             </div>
-            // T-175 B5 / T-627 — boot loading overlay, two stages. Stage 1 is the mission (IDB
-            // restore + server hydrate); stage 2 is the map, captioned with the step it is on and,
-            // for the satellite, its real byte count. `pointer-events-none` so it never intercepts
-            // an operator / editor-smoke click (the map no-ops while the engine is None).
+            // T-628 — boot loading overlay: ONE bar, 0→100%, across the whole boot. It never resets
+            // between stages and there is no sweep anywhere in it — the stage name underneath
+            // changes, the bar does not restart. `pointer-events-none` so it never intercepts an
+            // operator / editor-smoke click (the map no-ops while the engine is None).
             //
-            // The bar is determinate EXACTLY when `MapStep::fill()` returns a measurement and
-            // indeterminate otherwise — no phase gets a number invented for it, and no phase gets
-            // its bar advanced by a clock. The 200 ms ease on `.mc-load-fill` only travels *to* the
-            // last reported byte total; it can lag a real completion, never lead one.
+            // Every width this renders came from `BootProgress`, which moves on completed bytes and
+            // completed fetches only. The 200 ms ease on `.mc-load-fill` travels *to* the last
+            // measured width, so it can lag a real completion and can never lead one; a stalled
+            // network is a stalled bar. The overlay comes down `BOOT_HANDOVER_MS` after the bar
+            // reaches 100%, never before it.
             {move || {
                 let phase = boot.get();
-                let step = map_step.get();
+                let p = progress.get();
                 (phase != BootPhase::Ready)
                     .then(|| {
-                        let hydrating = phase == BootPhase::Hydrating;
-                        let title = if hydrating { "Loading mission…" } else { "Loading map…" };
-                        // Stage 1 has no progress data to report: the hydrate is one IDB replay
-                        // plus one whole-document GET, neither of which yields a per-unit signal.
-                        // An honest "what it is doing" beats a fabricated "how far along".
-                        let caption = if hydrating {
-                            "Restoring document".to_string()
-                        } else {
-                            step.caption()
-                        };
-                        let fill = if hydrating { None } else { step.fill() };
+                        let pct = p.percent();
+                        let title = p.stage().title();
+                        let caption = p.caption();
                         view! {
                             <div class="animate-overlay-fade pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-background/85 backdrop-blur-sm">
                                 <div class="flex w-64 flex-col items-center gap-2">
                                     <p class="text-sm font-medium text-on-surface-variant">{title}</p>
-                                    <div class="h-1 w-56 overflow-hidden rounded-full bg-surface-variant/40">
-                                        {match fill {
-                                            Some(pct) => view! {
-                                                <div
-                                                    class="mc-load-fill h-full rounded-full bg-primary"
-                                                    style=format!("width:{pct:.1}%")
-                                                ></div>
-                                            }
-                                            .into_any(),
-                                            None => view! {
-                                                <div class="animate-mc-load-bar h-full w-1/4 rounded-full bg-primary"></div>
-                                            }
-                                            .into_any(),
-                                        }}
+                                    // Was `h-1` (a 4 px hairline) when it only ever swept. A bar the
+                                    // operator is expected to read a real position off is worth the
+                                    // extra 2 px.
+                                    <div class="h-1.5 w-56 overflow-hidden rounded-full bg-surface-variant/40">
+                                        <div
+                                            class="mc-load-fill h-full rounded-full bg-primary"
+                                            style=format!("width:{pct:.1}%")
+                                        ></div>
                                     </div>
                                     <p class="font-mono text-[11px] tabular-nums text-on-surface-variant/60">
                                         {caption}
@@ -1880,6 +2152,34 @@ pub fn MissionEditorPage() -> impl IntoView {
                     })
             }}
         </div>
+    }
+}
+
+/// T-628 — take the overlay down, [`BOOT_HANDOVER_MS`] after the last segment reported in.
+///
+/// Called from the two boot tasks' rendezvous, so by the time it runs every segment has already
+/// sent `Finish` and the bar reads exactly 100%. The delay is the hand-over, not the work: without
+/// it the final report and the overlay's removal are folded into one Leptos render and the operator
+/// sees the bar stop short and the screen change under it. A window that has gone away simply skips
+/// the timer and the overlay stays — the same thing that already happens if a boot task never
+/// returns.
+#[cfg(target_arch = "wasm32")]
+fn hand_over(boot: RwSignal<BootPhase>) {
+    use wasm_bindgen::prelude::Closure;
+    use wasm_bindgen::JsCast;
+    let Some(win) = web_sys::window() else {
+        boot.set(BootPhase::Ready);
+        return;
+    };
+    let cb = Closure::once_into_js(move || boot.set(BootPhase::Ready));
+    if win
+        .set_timeout_with_callback_and_timeout_and_arguments_0(
+            cb.as_ref().unchecked_ref(),
+            BOOT_HANDOVER_MS,
+        )
+        .is_err()
+    {
+        boot.set(BootPhase::Ready);
     }
 }
 
@@ -2496,23 +2796,26 @@ mod t427_cold_registry_path {
     }
 }
 
-/// T-627 — the Mission Creator boot overlay: two determinate-where-measurable stages, and a
-/// satellite fetch that is concurrent without being unordered.
+/// T-627/T-628 — the Mission Creator boot bar: one 0→100% journey over four measured segments, and
+/// a satellite fetch that is concurrent without being unordered.
 ///
 /// Everything the loader itself does is `#[cfg(target_arch = "wasm32")]` — `fetch_range` is
 /// `gloo-net` over `web_sys`, and `mod world_assets` does not exist on the host at all — so no test
 /// here fetches anything, and none pretends to. What these pins do cover is the whole class of bug
-/// a host test *can* catch cheaply and a browser cannot catch at all until the texture is already
-/// on screen and wrong: the byte arithmetic behind the bar, and the reassembly that decides whether
-/// tile 3's pixels land at tile 3's coordinates. The last two pins hold the wasm side to actually
-/// routing through the code proved here, so it cannot drift back to a sequential or an unordered
-/// loop while these stay green.
+/// a host test *can* catch cheaply and a browser cannot catch at all until the operator is already
+/// watching the wrong bar: the arithmetic that turns four differently-sized, differently-metered
+/// segments into one number that never rewinds, and the reassembly that decides whether tile 3's
+/// pixels land at tile 3's coordinates. The source pins at the bottom hold the wasm side to actually
+/// routing through the code proved here, so it cannot drift back to a sweep, to a whole-file DEM
+/// GET, or to a batch that discovers its own size after the fact, while these stay green.
 #[cfg(test)]
-mod t627_boot_progress {
+mod t628_boot_progress {
     use super::boot_progress::{
-        fmt_bytes_pair, percent, split_range, MapStep, Ordered, SAT_CHUNK_BYTES,
-        SAT_FETCH_CONCURRENCY,
+        fmt_bytes_pair, fmt_files_pair, percent, split_range, BootEvent, BootProgress, BootSeg,
+        Ordered, PLANNED_SATELLITE_BYTES, PLANNED_TERRAIN_BYTES, PLANNED_WORLD_BYTES,
+        SAT_CHUNK_BYTES, SAT_FETCH_CONCURRENCY, STREAM_REPORT_BYTES,
     };
+    use super::BOOT_HANDOVER_MS;
 
     /// everon `everon-sat.tbd-sat`, read off the live index at `/map-assets/everon/satellite/`
     /// (2026-08-01): file 152,713,114 B; level 0 = 4 tiles of 28,326,346 / 21,632,714 / 27,555,806
@@ -2656,44 +2959,338 @@ mod t627_boot_progress {
         );
     }
 
-    // ── which steps are allowed to claim a number ────────────────────────────────────────────
+    // ── the one bar: weighting, monotonicity, clamping, and reaching 100% ────────────────────
+
+    /// The world segment's real shape at boot, measured on the live stack: 7 `WorldHost::init`
+    /// files + 2 label files + 625 density bins are declared up front, and the chunk batch the
+    /// residency pins declares itself before it fetches.
+    const WORLD_STATIC_FILES: u64 = 7 + 2 + 625;
+    const WORLD_CHUNK_FILES: u64 = 200;
+
+    /// Drive the whole boot the way the loaders do, in the order they do it.
+    fn boot_to_completion() -> BootProgress {
+        let mut p = BootProgress::new();
+        p.apply(BootEvent::Files(BootSeg::World, WORLD_STATIC_FILES));
+        p.apply(BootEvent::Budget(BootSeg::Mission, 2_032));
+        p.apply(BootEvent::Done(BootSeg::Mission, 2_032));
+        p.apply(BootEvent::Finish(BootSeg::Mission));
+        p.apply(BootEvent::Budget(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        p.apply(BootEvent::Done(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        p.apply(BootEvent::Finish(BootSeg::Terrain));
+        p.apply(BootEvent::Budget(
+            BootSeg::Satellite,
+            PLANNED_SATELLITE_BYTES,
+        ));
+        p.apply(BootEvent::Done(BootSeg::Satellite, PLANNED_SATELLITE_BYTES));
+        p.apply(BootEvent::Finish(BootSeg::Satellite));
+        p.apply(BootEvent::Files(BootSeg::World, WORLD_CHUNK_FILES));
+        p.apply(BootEvent::Done(
+            BootSeg::World,
+            WORLD_STATIC_FILES + WORLD_CHUNK_FILES,
+        ));
+        p.apply(BootEvent::Finish(BootSeg::World));
+        p
+    }
 
     #[test]
-    fn only_the_satellite_step_claims_a_number() {
+    fn nothing_is_claimed_before_anything_is_measured() {
+        let mut p = BootProgress::new();
+        assert!(
+            (p.percent() - 0.0).abs() < 1e-9,
+            "a boot that has measured nothing is at 0% — the old sweep's whole problem was that it \
+             looked identical at 0 and at 99"
+        );
+        // Budgets alone move nothing: they are denominators, not work.
+        p.apply(BootEvent::Budget(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        p.apply(BootEvent::Budget(
+            BootSeg::Satellite,
+            PLANNED_SATELLITE_BYTES,
+        ));
+        p.apply(BootEvent::Files(BootSeg::World, WORLD_STATIC_FILES));
+        assert!(
+            (p.percent() - 0.0).abs() < 1e-9,
+            "knowing how big the download is is not the same as having downloaded any of it"
+        );
+        p.apply(BootEvent::Done(BootSeg::Terrain, PLANNED_TERRAIN_BYTES / 2));
+        assert!(p.percent() > 0.0, "real bytes must move the bar");
+    }
+
+    #[test]
+    fn one_bar_spans_the_whole_boot_and_never_resets_between_segments() {
+        let mut p = BootProgress::new();
+        p.apply(BootEvent::Files(BootSeg::World, WORLD_STATIC_FILES));
+        let mut seen: Vec<f64> = vec![p.percent()];
+        // Mission, then terrain, then satellite, then world — the four stages in boot order.
+        p.apply(BootEvent::Budget(BootSeg::Mission, 2_032));
+        p.apply(BootEvent::Done(BootSeg::Mission, 2_032));
+        p.apply(BootEvent::Finish(BootSeg::Mission));
+        seen.push(p.percent());
+        p.apply(BootEvent::Budget(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        for _ in 0..4 {
+            p.apply(BootEvent::Done(BootSeg::Terrain, PLANNED_TERRAIN_BYTES / 4));
+            seen.push(p.percent());
+        }
+        p.apply(BootEvent::Finish(BootSeg::Terrain));
+        seen.push(p.percent());
+        p.apply(BootEvent::Budget(
+            BootSeg::Satellite,
+            PLANNED_SATELLITE_BYTES,
+        ));
+        for _ in 0..4 {
+            p.apply(BootEvent::Done(
+                BootSeg::Satellite,
+                PLANNED_SATELLITE_BYTES / 4,
+            ));
+            seen.push(p.percent());
+        }
+        p.apply(BootEvent::Finish(BootSeg::Satellite));
+        seen.push(p.percent());
+        p.apply(BootEvent::Files(BootSeg::World, WORLD_CHUNK_FILES));
+        p.apply(BootEvent::Done(
+            BootSeg::World,
+            WORLD_STATIC_FILES + WORLD_CHUNK_FILES,
+        ));
+        p.apply(BootEvent::Finish(BootSeg::World));
+        seen.push(p.percent());
+
+        for w in seen.windows(2) {
+            assert!(
+                w[1] >= w[0],
+                "the bar must never step back — it went {:.3} → {:.3}. Restarting per stage is \
+                 exactly what T-627 did and what the operator rejected",
+                w[0],
+                w[1]
+            );
+        }
+        // Crossing a segment boundary must not drop the bar to zero.
+        assert!(
+            seen.iter().skip(2).all(|v| *v > 0.0),
+            "no reading after the first stage may be 0%: that is a reset, not one bar"
+        );
+        assert!((seen[seen.len() - 1] - 100.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_budget_that_grows_holds_the_bar_instead_of_rewinding_it() {
+        let mut p = BootProgress::new();
+        // The world's static plan lands, and the init + label files complete against it…
+        p.apply(BootEvent::Files(BootSeg::World, WORLD_STATIC_FILES));
+        p.apply(BootEvent::Done(BootSeg::World, 9));
+        let before = p.percent();
+        // …then the residency pins the boot camera and 200 chunk files join the same segment.
+        p.apply(BootEvent::Files(BootSeg::World, WORLD_CHUNK_FILES));
+        assert!(
+            p.raw() < before,
+            "the arithmetic really does dip here — 9/634 is a bigger fraction than 9/834. If this \
+             assert fails the test is no longer exercising the case it exists for"
+        );
+        assert!(
+            (p.percent() - before).abs() < 1e-9,
+            "the bar must ABSORB the larger budget by holding, not by rewinding: it read {before:.4} \
+             and then {:.4}",
+            p.percent()
+        );
+        // And it resumes as soon as real work passes the mark it held.
+        p.apply(BootEvent::Done(BootSeg::World, 400));
+        assert!(p.percent() > before, "real work past the hold must move it");
+    }
+
+    #[test]
+    fn a_weight_that_grows_holds_the_bar_instead_of_rewinding_it() {
+        let mut p = BootProgress::new();
+        p.apply(BootEvent::Budget(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        p.apply(BootEvent::Done(BootSeg::Terrain, PLANNED_TERRAIN_BYTES / 2));
+        let before = p.percent();
+        // A 16384-limit GPU takes level 0 too: the satellite's real budget is 152.7 MB, not the
+        // 42.2 MB planned — so the denominator jumps and every completed byte is worth less.
+        p.apply(BootEvent::Budget(BootSeg::Satellite, 152_710_470));
+        assert!(
+            p.raw() < before,
+            "a satellite 3.6× the planned size really does shrink everything else's share"
+        );
+        assert!(
+            (p.percent() - before).abs() < 1e-9,
+            "learning the device's real satellite size must not rewind the bar"
+        );
+    }
+
+    #[test]
+    fn a_segment_that_overruns_its_promised_budget_is_clamped_to_its_own_share() {
+        let mut p = BootProgress::new();
+        p.apply(BootEvent::Budget(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        p.apply(BootEvent::Done(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        let honest = p.percent();
+        // A `content-length` that undercounts the body (a proxy re-encoding it, say) must not let
+        // the terrain segment spend the satellite's and the world's share of the track.
+        p.apply(BootEvent::Done(BootSeg::Terrain, PLANNED_TERRAIN_BYTES * 4));
+        assert!(
+            (p.percent() - honest).abs() < 1e-9,
+            "a segment that overruns is clamped at its own weight — it read {honest:.4} then {:.4}",
+            p.percent()
+        );
+        let expected = 100.0 * PLANNED_TERRAIN_BYTES as f64
+            / (PLANNED_TERRAIN_BYTES + PLANNED_SATELLITE_BYTES + PLANNED_WORLD_BYTES) as f64;
+        assert!(
+            (honest - expected).abs() < 0.001,
+            "a finished terrain is worth exactly its weight's share: {honest:.3} vs {expected:.3}"
+        );
+    }
+
+    #[test]
+    fn the_bar_can_never_exceed_one_hundred() {
+        let mut p = BootProgress::new();
+        for seg in BootSeg::ALL {
+            p.apply(BootEvent::Budget(seg, 1_000));
+            p.apply(BootEvent::Files(seg, 10));
+            p.apply(BootEvent::Done(seg, u64::MAX));
+            assert!(
+                p.percent() <= 100.0,
+                "{seg:?} pushed the bar to {:.4} — past the end of its own track",
+                p.percent()
+            );
+        }
+        p.apply(BootEvent::Done(BootSeg::World, u64::MAX));
+        assert!(
+            (p.percent() - 100.0).abs() < 1e-9,
+            "saturating every segment reads 100%, not 400%"
+        );
+    }
+
+    #[test]
+    fn every_segment_finishing_reads_exactly_one_hundred_even_when_one_failed() {
+        // The failure shape the overlay has to survive: the DEM never arrived, so its segment has
+        // no budget and no bytes at all — but the boot still ends and the overlay still has to come
+        // down on a full bar rather than park at 49% forever.
+        let mut p = BootProgress::new();
+        p.apply(BootEvent::Files(BootSeg::World, WORLD_STATIC_FILES));
+        p.apply(BootEvent::Budget(
+            BootSeg::Satellite,
+            PLANNED_SATELLITE_BYTES,
+        ));
+        p.apply(BootEvent::Done(BootSeg::Satellite, PLANNED_SATELLITE_BYTES));
+        p.apply(BootEvent::Done(BootSeg::World, WORLD_STATIC_FILES));
+        assert!(!p.is_complete());
+        assert!(p.percent() < 100.0, "an unfinished boot is not a full bar");
+        for seg in BootSeg::ALL {
+            p.apply(BootEvent::Finish(seg));
+        }
+        assert!(p.is_complete());
+        assert!(
+            (p.percent() - 100.0).abs() < 1e-9,
+            "every loader has reported in, so the bar reads 100% — it read {:.4}. A hand-over on a \
+             bar that stopped short is the failure this slice exists to remove",
+            p.percent()
+        );
+        assert!((boot_to_completion().percent() - 100.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_weightless_segment_redistributes_its_share_to_the_others() {
+        // The mission document starts weightless (its size is unknowable until its headers land),
+        // so before it reports the other three divide the whole bar between them…
+        let mut without = BootProgress::new();
+        without.apply(BootEvent::Budget(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        without.apply(BootEvent::Done(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        let share_without = without.percent();
+
+        // …and the moment it weighs 142 MB, the terrain is worth materially less of the track.
+        let mut with = BootProgress::new();
+        with.apply(BootEvent::Budget(BootSeg::Mission, 142_000_000));
+        with.apply(BootEvent::Budget(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        with.apply(BootEvent::Done(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        let share_with = with.percent();
+
+        let denom_without = PLANNED_TERRAIN_BYTES + PLANNED_SATELLITE_BYTES + PLANNED_WORLD_BYTES;
+        assert!(
+            (share_without - 100.0 * PLANNED_TERRAIN_BYTES as f64 / denom_without as f64).abs()
+                < 0.001,
+            "with no mission weight the terrain is its share of the other three"
+        );
+        assert!(
+            (share_with
+                - 100.0 * PLANNED_TERRAIN_BYTES as f64 / (denom_without + 142_000_000) as f64)
+                .abs()
+                < 0.001,
+            "a 142 MB mission document takes its own share of the bar — the T-060 scale case is \
+             exactly why the document cannot be treated as a rounding error"
+        );
+        assert!(
+            share_with < share_without / 2.0,
+            "a mission bigger than the whole map must take more than half the track: {share_with:.2} \
+             vs {share_without:.2}"
+        );
+    }
+
+    #[test]
+    fn the_weights_are_the_live_measurements_and_the_map_dominates_them() {
         assert_eq!(
-            MapStep::Terrain.fill(),
-            None,
-            "terrain has no byte budget — it must draw the indeterminate bar"
+            PLANNED_TERRAIN_BYTES, 71_911_548,
+            "the terrain weight is the `content-length` of \
+             /map-assets/everon/dem/everon-dem-16bit.png, measured 2026-08-01"
         );
         assert_eq!(
-            MapStep::World.fill(),
-            None,
-            "world residency has no byte budget — it must draw the indeterminate bar"
+            PLANNED_SATELLITE_BYTES, 42_152_810,
+            "the satellite weight is the tbd-sat index's own tile lengths from level 1 down — what \
+             an 8192-limit maxTextureDimension2D actually uploads"
         );
+        // The whole reason weights exist: a naive equal-quarters bar would stall in two places.
+        let total = PLANNED_TERRAIN_BYTES + PLANNED_SATELLITE_BYTES + PLANNED_WORLD_BYTES;
+        let dem_and_sat = PLANNED_TERRAIN_BYTES + PLANNED_SATELLITE_BYTES;
+        assert!(
+            dem_and_sat * 100 / total >= 80,
+            "the DEM and satellite are ~81% of the map's bytes — an equal-quarters bar would give \
+             them half the track and crawl through both, then race through the rest"
+        );
+        assert!(
+            STREAM_REPORT_BYTES > 0 && PLANNED_TERRAIN_BYTES / STREAM_REPORT_BYTES >= 100,
+            "the stream must report at least ~100 times across the DEM, or the terrain segment is \
+             a per-file bar again: 0% for the whole download, then a snap"
+        );
+    }
+
+    #[test]
+    fn the_stage_name_follows_the_first_unfinished_segment() {
+        let mut p = BootProgress::new();
+        assert_eq!(p.stage(), BootSeg::Mission);
+        assert_eq!(p.stage().title(), "Loading mission…");
+        p.apply(BootEvent::Finish(BootSeg::Mission));
+        assert_eq!(p.stage(), BootSeg::Terrain);
+        assert_eq!(p.stage().title(), "Loading terrain…");
+        p.apply(BootEvent::Finish(BootSeg::Terrain));
+        assert_eq!(p.stage(), BootSeg::Satellite);
+        assert_eq!(p.stage().title(), "Loading satellite…");
+        p.apply(BootEvent::Finish(BootSeg::Satellite));
+        assert_eq!(p.stage(), BootSeg::World);
+        assert_eq!(p.stage().title(), "Loading world objects…");
+    }
+
+    #[test]
+    fn the_caption_reports_bytes_for_bytes_and_files_for_files() {
+        let mut p = BootProgress::new();
         assert_eq!(
-            MapStep::Satellite {
-                done: 0,
-                total: FILE_BYTES
-            }
-            .fill(),
-            Some(0.0),
-            "the satellite knows its size from the index before the first byte moves"
+            p.caption(),
+            "0%",
+            "a stage that has not read its own budget shows the percentage alone — not a \
+             denominator nobody measured"
         );
-        assert_eq!(
-            MapStep::Satellite { done: 1, total: 0 }.fill(),
-            None,
-            "a satellite step with no total is not measured either"
+        p.apply(BootEvent::Budget(BootSeg::Mission, 2_032));
+        p.apply(BootEvent::Done(BootSeg::Mission, 2_032));
+        assert_eq!(p.caption(), "0% · 3 KB / 3 KB");
+        p.apply(BootEvent::Finish(BootSeg::Mission));
+        p.apply(BootEvent::Budget(BootSeg::Terrain, PLANNED_TERRAIN_BYTES));
+        p.apply(BootEvent::Done(BootSeg::Terrain, 26_700_000));
+        assert_eq!(p.caption(), "18% · 26.7 MB / 71.9 MB");
+        p.apply(BootEvent::Finish(BootSeg::Terrain));
+        p.apply(BootEvent::Finish(BootSeg::Satellite));
+        p.apply(BootEvent::Files(BootSeg::World, 834));
+        p.apply(BootEvent::Done(BootSeg::World, 214));
+        assert!(
+            p.caption().ends_with("214 / 834 files"),
+            "the world counts completed fetches, so it says files — implying a byte budget nothing \
+             published is the same defect one size down. Got {}",
+            p.caption()
         );
-        assert_eq!(
-            MapStep::Satellite {
-                done: 47_300_000,
-                total: FILE_BYTES
-            }
-            .caption(),
-            "Satellite · 47.3 MB / 152.7 MB"
-        );
-        assert_eq!(MapStep::Terrain.caption(), "Terrain");
-        assert_eq!(MapStep::World.caption(), "World objects");
+        assert_eq!(fmt_files_pair(214, 834), "214 / 834 files");
     }
 
     // ── the wasm side must actually route through the code proved above ──────────────────────
@@ -2752,27 +3349,29 @@ mod t627_boot_progress {
         );
     }
 
-    /// Source pin on the overlay itself: the bar's determinacy is decided by `MapStep::fill()`,
-    /// not by a literal width. Raw `include_str!` (not `live_code`) because this file's first
-    /// `#[cfg(test)]` is a `clear_for_test` helper near the top, which would cut the view out;
-    /// the needles are therefore assembled at runtime so this test's own text cannot satisfy them.
+    /// Source pin on the overlay itself. Raw `include_str!` (not `live_code`) because this file's
+    /// first `#[cfg(test)]` is a `clear_for_test` helper near the top, which would cut the view
+    /// out; the needles are therefore assembled at runtime so this test's own text cannot satisfy
+    /// them.
     #[test]
-    fn the_overlay_bar_is_determinate_only_where_a_measurement_exists() {
+    fn the_overlay_draws_one_measured_bar_and_no_sweep_anywhere() {
         let src = include_str!("mission_editor.rs");
-        let from_fill = format!("{}{}", "step.", "fill()");
+        let from_progress = format!("{}{}", "p.", "percent()");
         assert!(
-            src.contains(&from_fill),
-            "the overlay must ask the step whether it has a measurement"
+            src.contains(&from_progress),
+            "the overlay's width must come from the accumulator, not from a per-stage step"
         );
         let inline_width = format!("{}{}", "width:{", "pct:.1}%");
         assert!(
             src.contains(&inline_width),
-            "the determinate fill's width must be the real percentage"
+            "the fill's width must be the real percentage"
         );
-        let indeterminate = format!("{}{}", "animate-mc-", "load-bar");
+        let sweep = format!("{}{}", "animate-mc-", "load-bar");
         assert!(
-            src.contains(indeterminate.as_str()),
-            "the unmeasured phases must keep an honest indeterminate bar"
+            !src.contains(sweep.as_str()),
+            "the Mission Creator boot overlay must contain NO indeterminate sweep. A sweep looks \
+             identical at 1%, at 99% and while stalled — 'you might as well have a black screen'. \
+             (The class itself still ships for other surfaces; this file may not use it.)"
         );
         assert!(
             SAT_FETCH_CONCURRENCY >= 4 && SAT_FETCH_CONCURRENCY <= 6,
@@ -2783,6 +3382,202 @@ mod t627_boot_progress {
             SAT_CHUNK_BYTES > 0 && FILE_BYTES / SAT_CHUNK_BYTES >= 20,
             "the chunk size must give the bar at least ~20 steps across the bundle, or it is a \
              per-tile bar again: four ~25 MB tiles fetched four-up would sit at 0% then snap"
+        );
+    }
+
+    /// Source pin on the terrain segment. The DEM is the single biggest thing the boot fetches and
+    /// the pre-T-628 path pulled it with a plain `fetch_bytes`, which yields one 71.9 MB step at the
+    /// very end — indistinguishable from a stall for the whole download.
+    #[test]
+    fn the_terrain_dem_is_streamed_against_its_content_length() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("world_assets/mod.rs"));
+        let body = only_body(&src, "async fn load_dem_and_hillshade(");
+        assert!(
+            body.contains("fetch_bytes_streamed(") && body.contains("BootSeg::Terrain"),
+            "the DEM must be fetched through the measured, streamed helper — a whole-body GET has \
+             nothing to report until it is already finished"
+        );
+        assert!(
+            !body.contains("fetch_bytes(&format!"),
+            "the unmeasured whole-body GET must not come back"
+        );
+
+        let fetch = live_code(include_str!("world_assets/fetch.rs"));
+        let streamed = only_body(&fetch, "pub async fn fetch_bytes_streamed(");
+        // `live_code` blanks string literals, so the header NAME cannot be the needle — the shape
+        // that survives is "a header off this response, parsed as a number, becomes the budget",
+        // which is the property that matters anyway.
+        assert!(
+            streamed.contains(".headers()")
+                && streamed.contains("parse::<u64>()")
+                && streamed.contains("BootEvent::Budget(seg, budget)"),
+            "the budget must be a header read off this response, not a constant and not a guess"
+        );
+        assert!(
+            streamed.contains("reader.read()") && streamed.contains("BootEvent::Done"),
+            "progress must be the bytes that came out of the body reader — nothing else in this \
+             function is allowed to be the numerator"
+        );
+        let elapsed = ["Date::now", "set_timeout", "performance"];
+        for needle in elapsed {
+            assert!(
+                !streamed.contains(needle),
+                "`{needle}` in the streaming fetch would be a bar moving on a clock: the one \
+                 defect this whole slice is aimed at"
+            );
+        }
+    }
+
+    /// Source pin on the world segment's two dynamic budgets. Both must be declared **before** the
+    /// fetches they cover: a batch that announces itself on completion is a bar that reaches 100%
+    /// and then finds more work, which reads to the operator as a lie either way round.
+    #[test]
+    fn every_world_batch_declares_its_files_before_it_fetches_them() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let world = live_code(include_str!("world_assets/world_host.rs"));
+        let queue = only_body(&world, "async fn fetch_and_queue(");
+        let declare = queue
+            .find("BootEvent::Files")
+            .expect("the chunk batch must declare its own size");
+        let fetch = queue
+            .find("fetch_bytes(&url)")
+            .expect("the chunk batch must still fetch");
+        assert!(
+            declare < fetch,
+            "the chunk count must be declared before the first request goes out, not after"
+        );
+        assert!(
+            queue.contains("ids.len() as u64"),
+            "the declared count must be the residency's own missing set — the exact list it is \
+             about to request, not an estimate of it"
+        );
+
+        let boot = live_code(include_str!("world_assets/mod.rs"));
+        let bootstrap = only_body(&boot, "pub async fn bootstrap(");
+        let plan = bootstrap
+            .find("planned_density_bins()")
+            .expect("the 625 density bins must be declared up front");
+        let init = bootstrap
+            .find("world.init(")
+            .expect("bootstrap must still init the world host");
+        assert!(
+            plan < init,
+            "the density bins are a known constant (25×25) and must join the budget before the \
+             world starts filling it — declaring them after the chunks land would park the bar at \
+             100% and then discover 625 more files"
+        );
+
+        // The forest host may only count a bin it actually landed; counting attempts would let a
+        // retried bin advance a unit that was already declared and spent.
+        let forest = live_code(include_str!("world_assets/forest_mass.rs"));
+        let upload = only_body(&forest, "async fn boot_upload(");
+        let done_at = upload
+            .find("BootEvent::Done")
+            .expect("a landed bin must be counted");
+        let ok_at = upload
+            .rfind("if ok {")
+            .expect("the bin must only be counted when it decoded");
+        assert!(
+            ok_at < done_at,
+            "a density bin counts on success only — a retry loop that counts attempts finishes 625 \
+             declared bins at 640 done, i.e. a full segment over a holed canopy"
+        );
+    }
+
+    /// Source pin on the hand-over. Every segment must be closed by the code that owns it, or a
+    /// dead network leaves the bar short of 100% with the overlay still up — and the overlay may
+    /// not come down until it is full.
+    #[test]
+    fn every_segment_is_closed_and_the_overlay_waits_for_a_full_bar() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let boot = live_code(include_str!("world_assets/mod.rs"));
+        let bootstrap = only_body(&boot, "pub async fn bootstrap(");
+        for seg in ["BootSeg::Terrain", "BootSeg::Satellite", "BootSeg::World"] {
+            assert!(
+                bootstrap.contains(&format!("BootEvent::Finish({seg})")),
+                "`bootstrap` owns {seg} and must close it on every path, including failure"
+            );
+        }
+        // "On every path" has teeth: both map futures reach their loader through a `?` on the
+        // manifest, and a `?` returns from whichever `async` block it sits in. The `Finish` must
+        // therefore live in an OUTER block, or a failed manifest fetch skips it — and the bar comes
+        // up short precisely on the boot that went wrong. Two `async {` before the close is that
+        // nesting.
+        for (open, seg) in [
+            ("let dem_fut = async {", "BootSeg::Terrain"),
+            ("let sat_fut = async {", "BootSeg::Satellite"),
+        ] {
+            let at = bootstrap
+                .find(open)
+                .unwrap_or_else(|| panic!("`{open}` must still exist"));
+            let close = bootstrap[at..]
+                .find(&format!("BootEvent::Finish({seg})"))
+                .unwrap_or_else(|| panic!("{seg} must be closed inside its own future"));
+            let region = &bootstrap[at..at + close];
+            assert!(
+                region.matches("async {").count() >= 2,
+                "{seg}'s `Finish` must sit outside the block holding the `?` — one `async {{` \
+                 between them means a failed manifest fetch returns past it"
+            );
+        }
+        let src = include_str!("mission_editor.rs");
+        let mission_finish = format!(
+            "{}{}",
+            "BootEvent::Finish(\n", "                        boot_progress::BootSeg::Mission,"
+        );
+        assert!(
+            src.contains(&mission_finish)
+                || src.contains("BootEvent::Finish(boot_progress::BootSeg::Mission)"),
+            "the hydrate task owns the mission segment and must close it once the hydrate returns"
+        );
+        let handover = format!("{}{}", "hand_", "over(boot)");
+        assert!(
+            src.contains(&handover),
+            "both rendezvous points must go through the hand-over, so the overlay is never removed \
+             in the same render as the last measurement"
+        );
+        assert!(
+            BOOT_HANDOVER_MS >= 200,
+            "the hold must be at least the 200 ms `.mc-load-fill` ease, or the fill is still \
+             travelling when the overlay is pulled and 100% is never actually drawn"
+        );
+    }
+
+    /// Source pin on the mission document. It is the one measured fetch that is **not** on the
+    /// map-asset host, and the one that must not grow a second copy of the auth contract.
+    #[test]
+    fn the_mission_document_is_measured_and_still_defers_to_the_single_flight_client() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("mission_hydrate.rs"));
+        let body = only_body(&src, "async fn get_mission_measured(");
+        // `live_code` blanks string literals — see the terrain pin for why the shape, not the
+        // header name, is the needle.
+        assert!(
+            body.contains(".headers()")
+                && body.contains("parse::<u64>()")
+                && body.contains("BootEvent::Budget(BootSeg::Mission, budget)"),
+            "the mission segment's budget must be a header read off this response"
+        );
+        assert!(
+            body.contains("reader.read()") && body.contains("BootEvent::Done"),
+            "its progress must be the bytes off the body reader"
+        );
+        assert!(
+            body.contains("crate::client::api_get::<MissionDetail>(auth, path)"),
+            "anything that is not a 2xx — the 401 above all — must fall through to `api_get`, \
+             which owns the single-flight refresh. A second refresh path would double-spend the \
+             rotating token, and that is a data-safety bug, not a loading-bar bug"
+        );
+        assert!(
+            !body.contains("auth/refresh"),
+            "this function must never mint or spend a refresh token itself"
+        );
+        let hydrate = only_body(&src, "pub async fn hydrate_from_server(");
+        assert!(
+            hydrate.contains("get_mission_measured(auth, &path")
+                && !hydrate.contains("client::api_get::<MissionDetail>"),
+            "the hydrate's own GET must route through the measured wrapper, not around it"
         );
     }
 }

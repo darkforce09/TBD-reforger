@@ -10,7 +10,7 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 
 use crate::mission_editor::boot_progress::{
-    split_range, MapStep, Ordered, SAT_CHUNK_BYTES, SAT_FETCH_CONCURRENCY,
+    split_range, BootEvent, BootSeg, Ordered, SAT_CHUNK_BYTES, SAT_FETCH_CONCURRENCY,
 };
 use crate::select_tool::EngineHandle;
 
@@ -303,7 +303,7 @@ async fn load_unified_full(
     terrain_w: f64,
     terrain_h: f64,
     bridge: &BridgeHandle,
-    on_step: &dyn Fn(MapStep),
+    report: &dyn Fn(BootEvent),
 ) -> bool {
     // T-627 — the index first (12 B header, then ~2.6 KB of JSON), NOT the whole bundle. The old
     // path GET'd all 152,713,114 B of `everon-sat.tbd-sat` and then used only the mips at or below
@@ -344,13 +344,14 @@ async fn load_unified_full(
         .collect();
     let tiles: Vec<TbdSatTile> = plan.iter().map(|(_, t)| t.clone()).collect();
     // The budget is exact and known before the first byte moves: the index lists every tile's
-    // `length`. Nothing here is estimated.
+    // `length`. Nothing here is estimated — and because it is the real figure for THIS device
+    // (42,152,810 B from level 1 down on an 8192-limit GPU, 152,710,470 B including level 0 on a
+    // 16384-limit one), it also re-weights the satellite's share of the bar to what is actually
+    // going to be transferred.
     let total: u64 = tiles.iter().map(|t| t.length).sum();
-    let mut done: u64 = 0;
-    on_step(MapStep::Satellite { done, total });
+    report(BootEvent::Budget(BootSeg::Satellite, total));
     let Some(bodies) = fetch_tiles(url, file_size, &tiles, |n| {
-        done += n;
-        on_step(MapStep::Satellite { done, total });
+        report(BootEvent::Done(BootSeg::Satellite, n));
     })
     .await
     else {
@@ -504,18 +505,20 @@ pub async fn load_satellite(
     terrain_w: f64,
     terrain_h: f64,
     bridge: BridgeHandle,
-    on_step: &dyn Fn(MapStep),
+    report: &dyn Fn(BootEvent),
 ) {
     let url = if unified_url.starts_with('/') {
         unified_url.to_string()
     } else {
         format!("{base}/{unified_url}")
     };
-    // The preview is one ≤1024 px mip (everon: a single 583 KB Range) and is over before a bar
-    // could say anything useful, so it reports nothing and the overlay stays on "Terrain".
+    // The preview is one ≤1024 px mip (everon: a single 583 KB Range) fetched before the full
+    // index is read, so it is outside the segment's budget and reports nothing. Counting its bytes
+    // against a total that does not include them is exactly the overshoot the fraction clamp exists
+    // to absorb, and there is no reason to create the case.
     let _ = try_preview(&engine, &url, terrain_w, terrain_h, &bridge).await;
     if sat_preview_only() {
         return;
     }
-    let _ = load_unified_full(&engine, &url, terrain_w, terrain_h, &bridge, on_step).await;
+    let _ = load_unified_full(&engine, &url, terrain_w, terrain_h, &bridge, report).await;
 }

@@ -256,20 +256,27 @@
   }
 }
 
-/* Indeterminate progress bar (Mission Creator load gate, T-060): a short fill
-   sweeps across the track since y-indexeddb gives no per-entity load signal.
-   T-627 kept it for exactly the phases that still have no such signal — the doc
-   hydrate and world residency — because an honest "working, duration unknown"
-   beats a number nothing measured. */
+/* Indeterminate progress bar (T-060): a short fill sweeps across the track.
+   T-628 REMOVED it from the Mission Creator boot overlay — a sweep animates
+   identically at 1%, at 99% and while stalled, so it carries no information, and
+   the operator rejected it in exactly those terms. It survives here only for the
+   surfaces that still have genuinely uncountable work (`missions.rs` list fetch,
+   `eden_chrome.rs`); `t628_boot_progress` fails if the editor's boot overlay ever
+   reaches for it again. */
 .animate-mc-load-bar {
   animation: mc-load-bar 1.1s ease-in-out infinite;
 }
 
-/* Determinate fill (T-627, Mission Creator satellite stage). The width is written
-   inline from bytes that have ALREADY arrived; this transition only eases between
-   two measured widths, so the bar can lag a real completion but can never lead
-   one. Nothing interpolates against a predicted duration — a stalled download
-   shows a stalled bar, which is the whole point of replacing the fake one. */
+/* Determinate fill (T-627; T-628 made it the whole boot). The width is written
+   inline from a percentage computed only from bytes and files that have ALREADY
+   arrived, and it spans the entire boot — mission document, terrain, satellite,
+   world objects — as one 0→100% journey that never resets between stages. This
+   transition only eases between two measured widths, so the bar can lag a real
+   completion but can never lead one. Nothing interpolates against a predicted
+   duration: a stalled download shows a stalled bar, which is the whole point.
+   The 200ms here is also why the overlay holds for BOOT_HANDOVER_MS (220ms)
+   after reaching 100% — otherwise the fill is still travelling when the overlay
+   is pulled and the operator never sees a full bar. */
 .mc-load-fill {
   transition: width 200ms ease-out;
 }
