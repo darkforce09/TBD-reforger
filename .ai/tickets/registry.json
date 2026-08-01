@@ -1,5 +1,5 @@
 {
-  "next_id": 683,
+  "next_id": 691,
   "tickets": [
     {
       "id": "T-001",
@@ -7263,23 +7263,33 @@
     },
     {
       "id": "T-212",
-      "title": "Objectives authoring UI",
-      "summary": "objectivesById exists in the doc (store.rs:174) and compiles into the payload (compile.rs:91) but has no mutator and no control — a dead container. The mod's TBD_ObjectiveRegistry implements capture, destroy and hold-until with progress, ownership and completion, wired to winConditions.endOn.",
+      "title": "Objectives as typed, placed, per-side entities with one uniform attribute spine",
+      "summary": "EXTENDED 2026-08-01 from the framework research (framework_synthesis.md Decision 1 / C.3 B5, ranked 13 of 16 — \"Very high value, Large effort, own program\"). The original row predated the research and read \"objectivesById exists in the doc and compiles into the payload but has no mutator and no control — a dead container\"; that is kept and CORRECTED, then scoped from the corpus. TWO CORRECTIONS TO THE OLD RECORD, both checked against the live tree today: (a) the cited line numbers have moved — the container is `crates/map-engine-core/src/doc/store.rs`:351 and the emit is `crates/map-engine-core/src/mission/compile.rs`:228, not :174 / :91; (b) more importantly, :228 sits inside `compile_payload`, the EDITOR SUPERSET — `objectives` is NOT a top-level property of `packages/tbd-schema/schema/mission.schema.json` (the 14 are schemaVersion / meta / environment / factions / orbat / slots / radioPlan / zones / entities / layers / flow / winConditions / briefings / settings) and the root is `additionalProperties: false`, and `crates/map-engine-core/src/mission/flatten.rs` contains ZERO occurrences of the word. The container does not reach the mod at all. What DOES work today is objectives-as-zones: `TBD_ObjectiveRegistry.c`:36-42 keys on `zone.type` in {`objective_capture`, `objective_destroy`, `objective_hold_until`} and drives `winConditions.endOn` in {`all_objectives_captured`, `objective_destroyed`, `hold_expired`}. So this ticket is a decision about which of the two shapes wins, not a UI to hang on the dead one. THE CORPUS ANSWER, and it is the strongest architectural convergence in the research: FNF v4 and WOG independently arrived at \"an objective is a typed, placed, parameterised entity with a uniform attribute spine\", from opposite starting points — FNF from a scripted nine-fixed-modes ancestor it rewrote away, WOG apparently from scratch (fnf_v4.md 7, wog.md 7 / 13.1; wog.md 13.1 notes a capture-and-hold mission needs ZERO lines of script, \"that is why the median WOG description.ext is empty\"). TAKE WOG's SPINE. `WMT_Task_Point` is the best-evidenced objective design in the corpus — 166 instances across 73 missions, every one carrying all 15 parameters (wog.md:382-402) — and the parameters TBD lacks are attacker count (`_CaptureCount` 4x128 / 1x16 / 2x6 / 3x5), defender count (`_DefCount` 3x129 / 1x17 / 2x8 / 0x5), starting owner (`_Owner` 1x70 / 0x65 / 2x30), advantage percent (`_AdvantagePercent` 2x72 / 0x67 / 4x14 / 3x13), `_Lock` (1x136), `_AutoLose` (-1x156), and the pair that makes a zone a VOLUME rather than a disc: `_MinHeight` = -5 INVARIANT ACROSS ALL 166 and `_MaxHeight` 30x137 / 15x16 / 20x13 — read at wog.md:405-410 as deliberately including basements and excluding aircraft. TBD's `$defs/shape` is `oneOf` circle-or-polygon and carries no height at all. (The volume + counts half is filed separately as T-685 so it can ship against the existing zone types without waiting for this row.) TAKE FNF v4's PER-SIDE FRAMING, AND IMPLEMENT IT DIFFERENTLY. The insight is real — every objective reads differently to attacker and defender, and v4 generates genuinely different task text, titles and separate My Tasks / Ally Tasks trees from it (fnf_v4.md 7). The implementation is bad in four documented ways (fnf_v4.md 14.4): identity is POSITIONAL (modules sorted by zero-padded X/Y/Z, so moving one renumbers it), two modules are \"the same objective\" only because they happen to sync to the same object or share a prefix string, NOTHING VALIDATES THAT BOTH HALVES EXIST, and the only tell is the lobby tool dividing every objective count by 2 — forget the second module and the count comes out fractional. fnf_v4.md:943 says it in its own steal-list: \"Make it one object with per-side framing.\" So: ONE ENTITY, TWO FRAMINGS — not two modules sharing a target. TBD's stable `uid` + derived `id` already makes v4's positional-identity defect unreachable; do not regress that. MAKE THE SCRIPTING HATCH ADVANCED AND OPTIONAL: WOG's `_Condition` is `true` in 165 of 166 `Task_Point`, 71 of 71 `CapturePoint`, 14 of 14 `Destroy` and 7 of 7 `Compose` (wog.md:402, 15.5). Ship the declarative parameters first-class; put any condition or hook behind advanced disclosure. CARRY THE CAVEAT AND DO NOT LAUNDER IT: wog.md:379-381 and :403-406 mark the SEMANTICS `INFERRED:` — \"a zone is captured when CaptureCount attackers are inside the marker's area between MinHeight and MaxHeight for Timer seconds while fewer than DefCount defenders contest it\" — because `wmt_main`, the addon supplying every `WMT_*` module, IS ENTIRELY ABSENT FROM THE CORPUS (wog.md:88-95: not in `extracted/`, not in `pbo/`). Parameter NAMES and observed VALUES are hard evidence; the reading of what they do is inference and must not enter an acceptance criterion as fact. EXECUTOR IS `workbench` DELIBERATELY (changed from claude-code): whichever shape wins, this is a `packages/tbd-schema/schema/mission.schema.json` change against a root that is `additionalProperties: false` plus Enfusion work in `apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. framework_synthesis.md D.5 puts B5 in the mission-content program for exactly this reason. THE SPA AUTHORING UI IS DELIBERATELY NOT SPLIT OUT YET — it cannot be scoped until the shape is decided, and pre-filing it would be a duplicate. Split it as a `claude-code` follow-on with its own `owns` once this lands, the way T-076/T-675 and T-079/T-676 are split.",
       "program": "eden",
       "surfaces": [
+        "SCHEMA",
+        "MOD",
         "MAP",
         "PLACE"
       ],
       "impact": [
+        "schema",
+        "mod",
+        "mission-authoring",
         "mc-authoring"
       ],
-      "status": "idea",
-      "order": 2300,
-      "stream": "mission-creator",
+      "status": "queued",
+      "order": 4430,
+      "stream": "shared-schema",
       "targets": [
-        "website"
+        "shared",
+        "mod"
       ],
-      "executor": "claude-code"
+      "executor": "workbench",
+      "notes": "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. EXTENDED (not superseded) 2026-08-01 from framework_synthesis.md B5 by the coverage audit (parity/coverage_audit.md); previous shape was `idea` / claude-code / order 2300 / targets [website].",
+      "depends_on": [
+        "T-685"
+      ]
     },
     {
       "id": "T-213",
@@ -17218,6 +17228,214 @@
       ],
       "executor": "workbench",
       "notes": "not factory-dispatchable; no owns, no wave row"
+    },
+    {
+      "id": "T-683",
+      "title": "Default-override instrumentation: which mission defaults every author changes",
+      "summary": "The B7 item from framework_synthesis.md C.3/C.5 rank 9, and THE ONE RECOMMENDATION IN THE CORPUS NO ARMA FRAMEWORK CAN IMPLEMENT. Evidence: WOG's single most-used API across 171 shipped missions is the one that turns a WOG feature OFF — `wog3_no_auto_long_range_radio = true` appears in 74 of 171 missions (wog.md:603, :774-775, :853, :987), and wog.md:1078 draws the conclusion verbatim: \"if 43% of missions disable your default, the default is wrong — so make such toggles visible mission settings, not magic globals.\" WOG could only learn that because an outside analyst machine-parsed 171 shipped PBOs; TBD OWNS ITS CORPUS IN A DATABASE, so \"what fraction of missions override X\" is a query rather than an argument. Scope: one read-only aggregation over `mission_versions.json_payload` reporting, per authored key, the fraction of missions whose latest version differs from the schema default, plus the value histogram. THE QUERY SHAPE ALREADY EXISTS AND IS PROVEN — `apps/website/api/src/handlers/missions.rs`:1563-1564 already runs `jsonb_typeof(v.json_payload -> 'editor' -> 'slots')` + `jsonb_array_length` over exactly that column, so this is a second query beside a working one, not new machinery. The defaults side is READ-ONLY: `packages/tbd-schema/schema/mission.schema.json` already declares a `default` on every `zoneRules` key and on the flow/settings keys, so this ticket reads the schema and MUST NOT widen it (a widening would flip the executor to workbench). Admin tier. NOTE THE ABSENT `depends_on`: this is the only row in the editor-UI block that touches no editor file, so the T-661 eden_chrome split does not gate it and its owns is disjoint from all 43 other rows.",
+      "program": "eden",
+      "surfaces": [
+        "API",
+        "DATA"
+      ],
+      "impact": [
+        "api",
+        "telemetry",
+        "mc-settings"
+      ],
+      "status": "queued",
+      "order": 3945,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "notes": "editor-UI program wave 5 (wave_plan.tsv row 105); filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
+    },
+    {
+      "id": "T-686",
+      "title": "Loadout import — close the round-trip TBD has only half of",
+      "summary": "The U2 item from framework_synthesis.md C.2, ranked 6 of 16 (\"Medium-high value, Small effort\"). WOG is the ONLY framework in the corpus with a loadout ROUND-TRIP — GUI arsenal -> `WOG: EXPORT` -> clipboard -> `tpl/<faction>/<role>.sqf`, and `WOG: IMPORT` reads it back — and wog.md:814 states the gap it closes: \"Most frameworks give you export only.\" TBD is currently in the export-only class: `apps/website/frontend/src/arsenal.rs`:1058-1066 gates through `try_export` (the T-240 refusal gate — a refusal produces no bytes) and hands the result to `download_json(\"loadout-export.json\", ...)`; THERE IS NO INGEST PATH ANYWHERE (no file input in arsenal.rs). NO NEW FORMAT IS NEEDED: the document written is `packages/tbd-schema/schema/loadout-export.schema.json` v2, which already carries 7 closed objects, and `arsenal.rs`:489-596 already holds the file-vs-doc-field distinction that T-199 established. Scope: a file picker, a parse against the shipped schema, and one apply path onto the current Arsenal picks — plus the refusal behaviour that mirrors the export gate (a document that does not validate applies nothing and says why, rather than half-applying). REQUIRED, from the same corpus: re-use `rules::validate_loadout` / `cargo_capacity_errors` (arsenal_rules.rs:350-368) on the imported picks before commit — OFCRA's ~11 silent loadout data bugs are all schema errors a typed importer makes unrepresentable (ofcra_omtk.md 5.9, 14.1), and importing without validating would re-import them. Import must be one undo step.",
+      "program": "eden",
+      "surfaces": [
+        "ARS",
+        "ATTR"
+      ],
+      "impact": [
+        "ui",
+        "arsenal"
+      ],
+      "status": "queued",
+      "order": 4115,
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "notes": "editor-UI program wave 12 (wave_plan.tsv row 112); filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)",
+      "depends_on": [
+        "T-661"
+      ]
+    },
+    {
+      "id": "T-688",
+      "title": "Aggregated settings view: every authored setting in one list, with diff-from-default",
+      "summary": "The U4 item from framework_synthesis.md C.2, ranked 4 of 16, and the only ticket in the program that exists to PREVENT a regression rather than fix one. FNF v4 named this defect about itself at fnf_v4.md:906: \"One `config.sqf` became 22 modules whose attributes are only visible when the right module is selected. There is no 'show me every setting in this mission' view. Some settings (Fortify Points) are on Init, some (Death Mode) on Misc Options, some (Time until Zone is Deleted) on each Safe Zone — and safe-start duration is IMPLICITLY the maximum across all of them.\" That is the exact bill for the move to typed-attributes-on-placed-objects, which the corpus otherwise says wins outright (2 of 4 crossed that line, 1 stayed and ranks the text-config friction #1). TBD IS AT THE START OF THE SAME CURVE: `MissionSettingsDialog` (eden_chrome.rs:3788, post-split eden_settings.rs) holds terrain / time / weather / the three flow durations / JIP, while `zone.rules` ALREADY lives on placed entities (mission.schema.json `$defs/zoneRules`), and every ticket in this program that puts a setting on an entity widens the scatter. Scope: a READ-ONLY aggregation over the document listing every authored setting regardless of which entity owns it, each row showing key, owning entity, authored value and the schema default, with a diff-from-default filter. Cheap by construction — the schema declares `default` on every key that has one, so the comparison needs no second source of truth. TWO CONSTRAINTS: it must not become a second editing surface (that would duplicate every attribute control in the program), and rows must click through to the owning entity — wog.md:14.6's lesson that a findings list which only prints is worse than one that selects applies here as much as to T-655's panel. Depends on T-668 so it is built in the finished state vocabulary rather than retrofitted.",
+      "program": "eden",
+      "surfaces": [
+        "TOP",
+        "ATTR",
+        "DATA"
+      ],
+      "impact": [
+        "ui",
+        "mc-settings"
+      ],
+      "status": "queued",
+      "order": 4165,
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "notes": "editor-UI program wave 15 (wave_plan.tsv row 115); filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)",
+      "depends_on": [
+        "T-661",
+        "T-668"
+      ]
+    },
+    {
+      "id": "T-690",
+      "title": "Compile becomes a compiler: structured diagnostics instead of a toast",
+      "summary": "The U7 item from framework_synthesis.md C.2, ranked 7 of 16, and the row that FEEDS T-655's panel. fnf_v4.md:713-715 (13.1) rates \"the export hook that makes Eden a compiler\" as the single thing FNF v4 does better than anyone else: `init3DEN.sqf` turns Export-to-Multiplayer into a build step that derives group names, rewrites sync links, toggles markers, strips inventories, restores every mutation, wraps the lot in `collect3DENHistory` as ONE undo step, and self-heals on next open if a previous export left scaffolding behind — \"No other Arma framework I've seen treats the editor as a compilation front-end this deliberately.\" TBD ALREADY HAS THE BUILD STEP AND NONE OF THE BUILD SYSTEM: `apps/website/frontend/src/mission_commands.rs`:23 `compiled_export_text`, :186 `compiled_document_json`, :237 the download error path, over `crates/map-engine-core/src/mission/compile.rs`. Everything the compile learns today is thrown away or flattened into a pass/fail. Scope: give the compile a structured result — a list of findings with severity, a stable rule id, the owning entity id and a message — returned alongside the bytes rather than instead of them, and rendered in T-655's panel. THE FIRST CONTENT IS ALREADY WRITTEN DOWN AND CURRENTLY SILENT: `crates/map-engine-core/src/mission/flatten.rs`:2584-2649 is the T-216 drop ledger — six author-facing values the compile silently discards (a squad's leaderSlotId, a slot's tag / callsign / rank / stance, and the entire vehicle roster) — and it records that `make verify-t180` stayed green throughout BECAUSE NOT ONE OF ITS 22 TESTS CHECKED. Each of those six is a diagnostic this ticket can emit on day one, and each stays emitted until T-674/T-675 land the schema half. TWO RULES CARRIED FROM THE CORPUS: diagnostics are NEVER debug-gated (fnf_v4.md 14.9 — v4's shipped state is the un-diagnosable one; T-635 gates telemetry, not correctness), and no severity may fire on correct input (fnf_tooling.md 1.3 — the Analyzer's role accordion can never go green). Depends on T-655 for the surface; owns only the compiler and the command layer so the panel stays a single claimant.",
+      "program": "eden",
+      "surfaces": [
+        "TOP",
+        "DATA",
+        "EDITOR"
+      ],
+      "impact": [
+        "compiler",
+        "ui",
+        "mc-integrity"
+      ],
+      "status": "queued",
+      "order": 4185,
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "notes": "editor-UI program wave 16 (wave_plan.tsv row 116); filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)",
+      "depends_on": [
+        "T-661",
+        "T-655"
+      ]
+    },
+    {
+      "id": "T-685",
+      "title": "Zones become volumes: min/max height, attacker and defender counts, starting owner",
+      "summary": "The U1 item from framework_synthesis.md C.2, ranked 10 of 16 (\"High value, Medium effort, mod-gated\"). Source is the best-evidenced objective design in the whole corpus: WOG's `WMT_Task_Point`, 166 instances across 73 missions, every instance carrying all 15 parameters (wog.md:382-402). The five TBD lacks, with WOG's observed value distributions, which are what prove real use rather than a default nobody chose: `_CaptureCount` 4x128 / 1x16 / 2x6 / 3x5 (attackers needed); `_DefCount` 3x129 / 1x17 / 2x8 / 0x5 (defenders needed to hold); `_AdvantagePercent` 2x72 / 0x67 / 4x14 / 3x13; `_Owner` (starting owner) 1x70 / 0x65 / 2x30 / 4x1; and the pair that matters most, `_MinHeight` = -5 INVARIANT ACROSS ALL 166 and `_MaxHeight` 30x137 / 15x16 / 20x13. Optionally `_Lock` (1x136) and `_AutoLose` (-1x156). TBD's `contestable: bool` is the degenerate 1-vs-1 case of CaptureCount/DefCount, and TBD's zones are 2D: `$defs/shape` is `oneOf` circle-or-polygon and neither carries a height (mission.schema.json), so a zone today is a disc, not a volume. wog.md:405-410 reads the -5/+30 pair as deliberately INCLUDING BASEMENTS AND EXCLUDING AIRCRAFT, and TBD has had a DEM and a Z axis since T-091.2 (`terrainZ`), so the volume is close to free on the editor side. CARRY THE CAVEAT INTACT AND DO NOT LAUNDER IT: wog.md:379-381 and :403-406 mark the SEMANTICS `INFERRED:` — \"a zone is captured when CaptureCount attackers are inside the marker's area between MinHeight and MaxHeight for Timer seconds while fewer than DefCount defenders contest it\" — because `wmt_main`, the addon that implements every `WMT_*` module, IS ENTIRELY ABSENT FROM THE CORPUS (wog.md:88-95, not in `extracted/`, not in `pbo/`). The parameter NAMES and the observed VALUES are hard evidence; the reading of what they do is inference. So: take the parameter set with confidence, decide the semantics as a TBD design question, and do not copy the inferred sentence into an acceptance criterion. Note what TBD has and WOG lacks and must not lose: `neutralizeSeconds`, `onEmpty` + `decayRate`, `pauseOnEnemy` vs `resetOnEnemy`, `requireHolderPresent`. EXECUTOR IS `workbench` DELIBERATELY: `$defs/zoneRules` is `additionalProperties: false` and its own description states why — Enfusion's `JsonLoadContext` maps JSON keys onto named class fields, so a key the class does not declare is INVISIBLE rather than rejected, which makes the schema the only place a misspelled rule key can be caught. Every new key therefore needs a field in `TBD_MissionLoader` / `TBD_ObjectiveRules.c` and a resolve branch in `TBD_ObjectiveRegistry.c` alongside the schema property. The editor half (three numeric fields and a side picker in the zone inspector) is small and follows the shape, not the other way round.",
+      "program": "eden",
+      "surfaces": [
+        "SCHEMA",
+        "MOD",
+        "MAP"
+      ],
+      "impact": [
+        "schema",
+        "mod",
+        "mission-authoring"
+      ],
+      "status": "queued",
+      "order": 4400,
+      "stream": "shared-schema",
+      "targets": [
+        "shared",
+        "mod"
+      ],
+      "executor": "workbench",
+      "notes": "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
+    },
+    {
+      "id": "T-689",
+      "title": "Play-area enforcement gains a vehicle-class axis: the aircraft exemption",
+      "summary": "The U6 item from framework_synthesis.md C.2, ranked 8 of 16 (\"Medium value, Small effort, needs a mod-side read\"). TBD already models play-area enforcement properly — `$defs/zoneRules` carries `graceSeconds` (default 30, ceiling 3600 = `TBD_ZoneRegistry.MAX_GRACE_SECONDS`), `warnEverySeconds` (default 5, must be > 0) and `penalty` (`none` | `warn` | `kill`, resolved at TBD_ZoneRegistry.c:419-438, where an out-of-enum value resolves to `warn` and never `kill` because the mod refuses to guess toward ending a player's only life). THE MISSING AXIS IS WHICH VEHICLE CLASSES THE RULE APPLIES TO, and FNF v4 documents exactly why it exists. fnf_v4.md:469 and :473-477: `fn_addRestrictionGroup.sqf` takes per-group flags [teleport, weaponDisable, air, selectors]; the SAFE-ZONE group is `[true, true, true, true]` but THE PLAY-ZONE GROUP'S AIR FLAG IS `false` — \"which is exactly why aircraft may leave the play area, and why a player exiting an aircraft outside it is teleported back to the last in-zone position, possibly mid-air\" (behaviour documented to players at `fn_initBreifing.sqf:630-635`). So the exemption is a deliberate design decision with a known, documented side effect, not an oversight. Corroboration that boundary enforcement is a first-class authored concern: 3 of 4 frameworks enforce a play area — FNF v3 kills after a 20 s countdown outside it, WOG ships `WOG_IslandRestriction` in 34 of 171 missions with `_Timer` / `_Height` / `_Otstup` (margin) parameters, and OFCRA has none at all (framework_synthesis.md A.9). Scope: one authored field on `boundary` / `base_protection` zones saying which vehicle classes the penalty applies to (at minimum on-foot / ground / air), plus the WOG `_Height` idea if T-685 lands the volume first. EXECUTOR IS `workbench` DELIBERATELY: `$defs/zoneRules` is `additionalProperties: false` and a key Enfusion's typed reader does not declare is invisible rather than rejected, so this is a schema property plus a field in `TBD_MissionLoader.c` and a branch in `TBD_ZoneRegistry.c`. Pairs naturally with T-685 — same `$defs`, same reader, and shipping them together costs one widening instead of two.",
+      "program": "eden",
+      "surfaces": [
+        "SCHEMA",
+        "MOD",
+        "MAP"
+      ],
+      "impact": [
+        "schema",
+        "mod",
+        "mission-authoring"
+      ],
+      "status": "queued",
+      "order": 4410,
+      "stream": "shared-schema",
+      "targets": [
+        "shared",
+        "mod"
+      ],
+      "executor": "workbench",
+      "notes": "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)",
+      "depends_on": [
+        "T-685"
+      ]
+    },
+    {
+      "id": "T-687",
+      "title": "Loadout templates with inheritance: a default block, per-role deep merge, and an explicit remove verb",
+      "summary": "The U3 item from framework_synthesis.md C.2, ranked 12 of 16, and the synthesis says take OFCRA's model ALMOST WHOLESALE. The model, verbatim from ofcra_omtk.md:490-520: a flat map of role-name -> gear map with ONE RESERVED KEY `default`; each role is DEEP-MERGED onto `default` (nested maps recurse, arrays concatenate and are then coalesced, duplicate quantities summed and re-emitted sorted); a single regex `^((?<quantity>[0-9]+)x )?((?<rounds>[0-9]+)#)?(?<item>.*)$` gives the whole value grammar, so `\"8x 30#rhs_30Rnd_545x39_7N10_plum_AK\"` is 8 magazines each loaded with 30 rounds and a bare classname is quantity 1; and AN EMPTY VALUE IS MEANINGFUL — `optics:` with nothing after it parses as nil and SUPPRESSES the inherited default. ofcra_omtk.md:1374 states the principle: \"explicit null is itself a setting\". It is used 579 times to strip the inherited rucksack (:506, :733). ofcra_omtk.md:1802-1806 is the verdict: that little language \"made 57 faction kits x 28 roles maintainable, and it made balance policy legible as data: you can grep the corpus and prove 'no infantry NVGs anywhere', 'binoculars to eight roles', 'one launcher and three mixed warheads', 'twelve magazines West, eight East, five to seven insurgent'\" — and it compiles INTO `mission.sqm` with zero runtime footprint. WHERE TBD IS: \"Apply Template\" POPULATES a slot and then each slot owns its copy (`apply_faction_library`, crates/map-engine-core/src/doc/apply_faction.rs:211; editor_ops.rs:1548-1585), which is copy-then-diverge — the exact drift DTAS demonstrates (18 files differ, only 4 intentionally, fnf_tooling.md 2.1). THE REMOVE VERB IS ALREADY REPRESENTABLE AND NOBODY HAS USED IT: `packages/tbd-schema/schema/faction-library.schema.json`:42 declares `\"slot\": { \"type\": [\"string\", \"null\"] }`, so every `wear` / `equipment` entry and every weapon `optic` / `magazine` can already carry an explicit null distinct from absent. THE COST, STATED HONESTLY: inheritance is also where OFCRA's bugs live — ofcra_omtk.md 5.9 lists six keys mis-indented to column 0 and silently ignored, five `medic` blocks missing the `primary:` level so the intended rifle is dropped, and five `sniper` blocks nesting `headgear` under `backpack:` (discarding the hat AND accidentally un-clearing the rucksack); ~11 silent data bugs (14.1). Every one is a SCHEMA error a typed editor makes unrepresentable, which is the argument for doing inheritance in the editor rather than in YAML, not against inheritance. EXECUTOR IS `workbench`, AND THE OPERATOR SHOULD KNOW IT IS A PRODUCT CALL, NOT A LAW: `faction-library.schema.json` is `additionalProperties: false` at the root (:7, required side/name/roles/vehicles) and on `$defs/role` (:46), so a `default` block and a per-role template reference are a `packages/tbd-schema/` widening plus a `make schema-codegen` regeneration into `apps/website/api/src/contract/generated/faction_library.rs`, and framework_synthesis.md D.5 puts U3 in the mission-content program for that reason. IF instead the templates live in the editor payload — `mission-editor-payload.schema.json` carries ZERO `additionalProperties: false`, verified — and the merge is RESOLVED AT COMPILE into the existing flat `slot.loadout` (mission.schema.json, `additionalProperties: false`), then nothing under `packages/` changes, no mod work is needed at all, and this becomes `claude-code` owning `arsenal_rules.rs` + the faction library UI. That is exactly OFCRA's own architecture (compiled artefact, zero runtime footprint), so it is the better-evidenced option; it is filed `workbench` because that is the executor that cannot mis-dispatch, and the row should be re-opened the moment the call is made.",
+      "program": "eden",
+      "surfaces": [
+        "ARS",
+        "SCHEMA",
+        "DATA"
+      ],
+      "impact": [
+        "schema",
+        "arsenal",
+        "mission-authoring"
+      ],
+      "status": "queued",
+      "order": 4420,
+      "stream": "shared-schema",
+      "targets": [
+        "shared",
+        "website"
+      ],
+      "executor": "workbench",
+      "notes": "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Executor is a product call recorded in the summary. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
+    },
+    {
+      "id": "T-684",
+      "title": "Mission parameters as first-class document objects",
+      "summary": "The B9 item from framework_synthesis.md C.3, and C.5 RANKS IT LAST OF 16 — \"Low for this genre\", \"Weakest evidence in the set\", \"may be a not now\". FILED AS `idea` SO THE RESEARCH IS NOT LOST, NOT AS WORK QUEUED. The idea (fnf_tooling.md 2.5 #2, 3.4): a mission carries named parameters — name, i18n-key title, value list, display list, default, consuming symbol — chosen at LAUNCH rather than baked at authoring time. Evidence FOR: OFCRA runs one artefact as training server, briefing room, mod-check sandbox and match off 29 `class Params` entries of which 25 are real knobs in four lobby bands (ofcra_omtk.md 10.1), and DTAS ships 17 active params (fnf_tooling.md 2.4). Evidence AGAINST, and it is why this ranks 16th: that is TWO ARTEFACTS FROM ONE COMMUNITY (OFCRA authored `omtk`; DTAS is 2013 third-party code FNF adopted), while FNF v4 is down to exactly ONE parameter (`PerformanceTweaks`), FNF v3 has 4 chosen by the admin not the maker, and WOG's `class Params` is one of only three surviving uses of `description.ext`. TBD's genre is FNF/WOG's one-shot round, not OFCRA's multi-mode artefact (framework_synthesis.md A.10). The half worth keeping in view is \"one artefact, many run modes, selected at launch\" for a training/rehearsal mode later. NOTE WHERE THE PARAMETER EVIDENCE ACTUALLY POINTS — it is self-defeating for this ticket and useful for another: two of DTAS's shipped bugs live in the parameter arrays. `description.ext:235` is missing a comma between `14` and `15`, so `values[]` has 25 entries against `texts[]`'s 26 and the displayed capture radius stops matching the applied one from that index on; `AFKKillTime`'s 5th label reads \"60\" where the value is 70 (`description.ext:171-172`); and 29 call sites read `phx_loadout_*` params that `class params` never declares, so long-range radios and nav gear silently resolve to absent (fnf_tooling.md 2.4, :708-727). Those argue for THE EDITOR OWNING VALUE/LABEL PAIRING WHEREVER A VALUE LIST EXISTS — a rule for T-656's engine — rather than for a parameters feature. EXECUTOR IS `workbench`: parameters would be a document-shape change against a schema carrying 25 `additionalProperties: false` plus a mod-side reader that selects at launch. Same shape and same reason as T-654.",
+      "program": "eden",
+      "surfaces": [
+        "SCHEMA",
+        "DATA"
+      ],
+      "impact": [
+        "schema",
+        "mod",
+        "mission-authoring"
+      ],
+      "status": "idea",
+      "order": 4440,
+      "stream": "shared-schema",
+      "targets": [
+        "shared",
+        "mod"
+      ],
+      "executor": "workbench",
+      "notes": "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Ranked 16 of 16 by framework_synthesis.md C.5; filed as `idea` deliberately. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
     }
   ]
 }
