@@ -28,7 +28,7 @@ must stay a bare integer.
 |---|---|
 | Program tickets | **77 actionable** — 76 `claude-code`, 1 `human` |
 | In the waves | **77**, across **27 waves**, 3 agents each |
-| Not in the waves | 2 pre-existing strays — T-146, T-170 |
+| Not in the waves | T-146 (needs `owns`) · T-170 (`executor: human`) |
 | Wave rows | 77, **0 `owns` collisions**, 0 waves over 3 agents |
 
 **Waves run 3 agents with a barrier** — all three report, all three merge, then the wave gate, then
@@ -78,8 +78,10 @@ is either in a wave or explicitly `na`.
    loadout inheritance."* Filed as **rejected, not deferred**, so nobody revives it off the
    synthesis ranking without asking again. The arsenal stays as-is; **T-699** (loadout buffer —
    copy from one slot, apply to a selection) is the practical half and survives.
-3. **T-146 and T-170** are dispatchable `eden` rows with no wave row. Both pre-existing. Each needs
-   an `owns` or a supersede before it can be picked up.
+3. **T-146** (Asset Browser Data Wiring) is the one dispatchable `eden` row with no wave row —
+   pre-existing; needs an `owns` before it can be picked up. **T-170** (prod default flip) is
+   `executor: human` — the operator's own switch-flip, not factory work, listed here only so its
+   absence from the plan is not read as an omission.
 
 ## Where the evidence lives
 

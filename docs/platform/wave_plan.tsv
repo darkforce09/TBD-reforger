@@ -499,7 +499,7 @@
 121	T-654	Conditional inclusion: variant-gated document subtrees	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
 122	T-673	Marker style and Area markers — the $defs/marker widening	apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c;apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerClient.c
 122	T-674	T-216 follow-on: slot identity reaches the wire	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c
-122	T-675	Vehicle roster reaches the game — the compile half of T-076	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_SpawnManager.c
+122	T-675	Vehicle roster reaches the game — the compile half of T-076	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c
 123	T-676	Trigger activation and effects — the Enfusion runtime	apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c
 123	T-677	Waypoints — group movement orders	apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c
 123	T-678	Group AI state: combat mode, behaviour, formation, speed	apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c

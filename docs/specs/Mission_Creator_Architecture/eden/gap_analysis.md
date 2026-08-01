@@ -4,7 +4,7 @@
 **Inputs:** [feature_inventory.md](../feature_inventory.md) + [interactions](./interactions.md) + [ui_anatomy](./ui_anatomy.md) + [attributes](./attributes.md)  
 **Schema:** [reference/feds_schema.md](../reference/feds_schema.md)
 
-**Coverage: 191 rows — a census, not a sample.**
+**Coverage: 191 ids — a census, not a sample.** 191 = 93 `attributes.md` ids + 83 `interactions.md` ids + 15 legacy/TBD-only rows. Verified by set-diff in both directions (empty), zero duplicate ids. Stated as an *id* count deliberately: a table-*row* count is parser-dependent here (legend, corrections and summary tables also carry parity words) and three careful parsers read it three ways.
 
 | Source catalogue | Ids defined | Rows here |
 |---|---:|---:|
