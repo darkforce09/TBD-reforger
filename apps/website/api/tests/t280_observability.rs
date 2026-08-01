@@ -116,6 +116,12 @@ async fn ensure_bucket_table(pool: &PgPool) {
 /// The red half — both checks `down`, 503 — is `app::tests::healthz_goes_red_when_the_
 /// database_is_unreachable`. Neither is worth anything without the other: a probe that is
 /// always green and a probe that is always red are the same defect.
+///
+/// **T-580** moved the detail behind `X-Service-Token`, so this now reads the probe *with* the
+/// token. The public shape (`{"status": …}` and nothing else) is asserted against a dead pool by
+/// `app::tests::healthz_discloses_nothing_to_an_unauthenticated_caller` and against a live one by
+/// [`healthz_public_shape_is_status_only_against_a_live_database`] below — a probe that discloses
+/// nothing only because it is failing would prove nothing.
 #[tokio::test]
 async fn healthz_is_green_and_metrics_see_a_live_database() {
     let Some(url) = common::require_test_database_url() else {
@@ -128,7 +134,7 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
     db::migrate(&pool).await.expect("migrate");
     let app = app_with(pool);
 
-    let (st, body) = call(&app, "/healthz", false).await;
+    let (st, body) = call(&app, "/healthz", true).await;
     assert_eq!(st, StatusCode::OK, "{body}");
     let v: serde_json::Value = serde_json::from_str(&body).expect("healthz json");
     assert_eq!(v["status"], "ok", "legacy status string preserved");
@@ -180,6 +186,64 @@ async fn healthz_is_green_and_metrics_see_a_live_database() {
         ),
         Some(1.0),
         "a real 200 did not land in the counter:\n{m}"
+    );
+}
+
+/// T-580 — against a **live, healthy** database the public probe still discloses nothing.
+///
+/// The dead-pool half lives in `src/app.rs`. Both are needed: a `/healthz` that reveals nothing
+/// because it is 503-ing on every check has not been fixed, it has been broken, and this is the
+/// case where there is real detail to leak (a real version, a real uptime, real pool gauges and a
+/// real migration count — the four fields wave 69's verifier actually measured off the public
+/// route).
+#[tokio::test]
+async fn healthz_public_shape_is_status_only_against_a_live_database() {
+    let Some(url) = common::require_test_database_url() else {
+        eprintln!("skip: TEST_DATABASE_URL unset — healthz_public_shape_is_status_only…");
+        return;
+    };
+    let pool = pool_for(&url).await;
+    db::migrate(&pool).await.expect("migrate");
+    let app = app_with(pool);
+
+    let (st, body) = call(&app, "/healthz", false).await;
+    // The prober contract: 200 + `status`. `curl -fsS` (preflight.sh, editor-gates.yml,
+    // smokes.rs) and Caddy's health handler read exactly this much.
+    assert_eq!(st, StatusCode::OK, "{body}");
+    let v: serde_json::Value = serde_json::from_str(&body).expect("healthz json");
+    assert_eq!(v["status"], "ok");
+    assert_eq!(
+        v.as_object().expect("object").keys().collect::<Vec<_>>(),
+        vec!["status"],
+        "public /healthz must carry exactly one field: {body}"
+    );
+    for leak in [
+        "version",
+        "uptime",
+        "pool",
+        "migration",
+        "latency",
+        "checks",
+    ] {
+        assert!(
+            !body.contains(leak),
+            "public /healthz leaked {leak:?}: {body}"
+        );
+    }
+
+    // …and the token still gets the real numbers off the same live database, so this is a
+    // relocation and not a deletion.
+    let (st, detail) = call(&app, "/healthz", true).await;
+    assert_eq!(st, StatusCode::OK, "{detail}");
+    let d: serde_json::Value = serde_json::from_str(&detail).expect("healthz json");
+    assert_eq!(d["checks"]["database"]["status"], "up", "{detail}");
+    assert!(
+        d["checks"]["migrations"]["applied"].as_i64().unwrap_or(0) > 0,
+        "{detail}"
+    );
+    assert!(
+        d["pool"]["connections"].as_u64().unwrap_or(0) > 0,
+        "{detail}"
     );
 }
 

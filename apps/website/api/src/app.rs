@@ -12,12 +12,16 @@
 //!   mutable state), scraped at `GET /metrics` behind the existing `X-Service-Token`.
 //! * [`observe`] — the middleware that feeds it, mounted **outside** the panic-catcher
 //!   and the rate limiter so a 500-from-panic and a 429-from-throttle are both counted.
-//! * [`healthz`] — now a multi-check report (database + migration state) that **can go
+//! * [`healthz`] — a multi-check report (database + migration state) that **can go
 //!   red on either check independently**. A health probe that cannot fail is worse than
-//!   none, so both checks are tested against a deliberately broken pool.
+//!   none, so both checks are tested against a deliberately broken pool. **T-580** put that
+//!   report behind `X-Service-Token` and left a public `{"status": …}` + 200/503 for the
+//!   credential-less probers; see [`healthz`] for the full reasoning.
 //!
-//! [`durable_ratelimit`] is the second half of T-280 and is **not wired into
-//! [`router`]** — see that module's header for exactly what has to land first.
+//! [`durable_ratelimit`] is the second half of T-280. **T-578 wired it**: the DDL is now
+//! `migrations/0020_rate_limit_buckets.sql`, the limiter is the L2 tier in
+//! `middleware/ratelimit.rs` (mounted below by [`router`]), and the `prune` tick is
+//! [`crate::services::start_rate_limit_prune`].
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -33,6 +37,7 @@ use sqlx::PgPool;
 use tower_http::catch_panic::CatchPanicLayer;
 use tower_http::services::{ServeDir, ServeFile};
 
+use crate::config::Config;
 use crate::state::AppState;
 use crate::{handlers, middleware};
 
@@ -434,7 +439,7 @@ pub mod metrics {
     }
 }
 
-/// Durable, cross-process rate limiting on Postgres (T-280, **not yet wired**).
+/// Durable, cross-process rate limiting on Postgres (T-280; **wired at T-578**).
 ///
 /// # The defect this addresses
 ///
@@ -452,22 +457,22 @@ pub mod metrics {
 /// `ON CONFLICT DO UPDATE` takes the row lock, so the refill-and-spend is atomic across
 /// processes without an advisory lock or a transaction round trip.
 ///
-/// # Why it is not wired into [`router`]
+/// # Wiring (T-578) — where each of the three pieces landed
 ///
-/// It needs [`RATE_LIMIT_BUCKETS_DDL`] to exist, which is a file in
-/// `apps/website/api/migrations/` — owned by a live sibling slice this wave (T-262).
-/// Rather than self-provision DDL from the request path (a migration smuggled into
-/// `app.rs`), the limiter ships **implemented and proven against a real database** and the
-/// wiring is left as a two-line change recorded at the bottom of this doc.
+/// T-280 shipped this module implemented and proven and deliberately **unwired**, because the
+/// table belongs in `apps/website/api/migrations/`, which was a sibling slice's file that wave.
+/// All three pieces it named now exist:
 ///
-/// Wiring, once the migration lands:
-/// ```ignore
-/// // src/state.rs: replace the two `IpLimiter`s (or keep them as an L1 in front)
-/// pub rl_global: Arc<PgRateLimiter>,   // PgRateLimiter::new(pool.clone(), 20, 40)
-/// pub rl_strict: Arc<PgRateLimiter>,   // PgRateLimiter::new(pool.clone(), 1, 10)
-/// // src/middleware/ratelimit.rs: `limiter.check(&bucket_key(scope, ip)).await`
-/// ```
-/// and one `prune` tick alongside the leaderboard refresher in `src/bin/api.rs`.
+/// * the table — `migrations/0020_rate_limit_buckets.sql`, which is
+///   [`RATE_LIMIT_BUCKETS_DDL`] verbatim (pinned by
+///   `tests/t578_ratelimit.rs::migration_0020_is_the_ddl_constant_verbatim`, so the bytes the
+///   tests prove and the bytes the migration lands still cannot drift);
+/// * the wiring — [`middleware::RateLimitState`], mounted in [`router`]. T-280's sketch replaced
+///   the two `IpLimiter`s outright; what shipped is its own parenthesised alternative, "keep them
+///   as an L1 in front", narrowed to the strict prefixes. `middleware/ratelimit.rs`'s header is
+///   the policy and its justification;
+/// * the `prune` tick — [`crate::services::start_rate_limit_prune`], armed in `src/bin/api.rs`
+///   beside the leaderboard refresher, exactly as this doc asked.
 pub mod durable_ratelimit {
     use std::net::IpAddr;
     use std::time::Duration;
@@ -540,6 +545,16 @@ RETURNING b.tokens";
                 .fetch_optional(&self.pool)
                 .await?;
             Ok(row.is_some())
+        }
+
+        /// Seconds a refused client should wait for one token, from this limiter's own
+        /// refill rate (T-578). Always at least 1 — `Retry-After: 0` is an invitation to
+        /// retry immediately, which is the opposite of the instruction.
+        pub fn retry_after_secs(&self) -> u64 {
+            if self.refill_per_second <= 0.0 {
+                return 1;
+            }
+            ((1.0 / self.refill_per_second).ceil() as u64).max(1)
         }
 
         /// Drop buckets untouched for `older_than`. A full bucket is indistinguishable
@@ -902,12 +917,21 @@ pub fn router(state: AppState) -> Router {
     let reg_metrics = registry.clone();
     let reg_health = registry.clone();
     let mut r = Router::new()
+        // T-580 — public callers get `{"status": …}` and the 200/503 split, nothing else. The
+        // detail is behind the same `X-Service-Token` that gates `/metrics`. See [`healthz`].
         .route(
             "/healthz",
-            get(move |State(pool): State<PgPool>| {
-                let reg = reg_health.clone();
-                async move { healthz(&reg, &pool).await }
-            }),
+            get(
+                move |State(pool): State<PgPool>,
+                      State(cfg): State<Arc<Config>>,
+                      headers: axum::http::HeaderMap| {
+                    let reg = reg_health.clone();
+                    async move {
+                        let detailed = service_token_matches(&cfg, &headers);
+                        healthz(&reg, &pool, detailed).await
+                    }
+                },
+            ),
         )
         // Scraping is gated on the SAME `X-Service-Token` the game-server ingest uses, and
         // `ServiceAuth` fails closed when `SERVICE_TOKEN` is unset — so an unconfigured
@@ -958,19 +982,25 @@ pub fn router(state: AppState) -> Router {
             .layer(coep);
     }
 
-    r.layer(from_fn_with_state(state.clone(), middleware::rate_limit))
-        .layer(DefaultBodyLimit::max(middleware::MAX_JSON_BODY))
-        .layer(from_fn_with_state(state.clone(), middleware::cors))
-        .layer(CatchPanicLayer::new())
-        // OUTSIDE the panic-catcher and the rate limiter, INSIDE the logger. That position
-        // is the whole point: inside `CatchPanicLayer` a panicking handler would never
-        // reach `record` and the 500 would go uncounted, and inside `rate_limit` a throttled
-        // request would never reach it either — `tbd_http_rate_limited_total` would be a
-        // series that can only ever read 0. Both are checked by the tests below.
-        .layer(from_fn_with_state(registry, observe))
-        .layer(from_fn(middleware::logging))
-        .layer(from_fn(middleware::request_id))
-        .with_state(state)
+    // T-578 — the rate limiter's own state: `AppState` (the in-memory L1 limiters) plus the
+    // durable Postgres L2 built on the same pool. Not folded into `AppState` — see
+    // `middleware::RateLimitState`.
+    r.layer(from_fn_with_state(
+        middleware::RateLimitState::new(state.clone()),
+        middleware::rate_limit,
+    ))
+    .layer(DefaultBodyLimit::max(middleware::MAX_JSON_BODY))
+    .layer(from_fn_with_state(state.clone(), middleware::cors))
+    .layer(CatchPanicLayer::new())
+    // OUTSIDE the panic-catcher and the rate limiter, INSIDE the logger. That position
+    // is the whole point: inside `CatchPanicLayer` a panicking handler would never
+    // reach `record` and the 500 would go uncounted, and inside `rate_limit` a throttled
+    // request would never reach it either — `tbd_http_rate_limited_total` would be a
+    // series that can only ever read 0. Both are checked by the tests below.
+    .layer(from_fn_with_state(registry, observe))
+    .layer(from_fn(middleware::logging))
+    .layer(from_fn(middleware::request_id))
+    .with_state(state)
 }
 
 /// Count every request: `tbd_http_requests_total`, the latency histogram, the in-flight
@@ -1030,22 +1060,64 @@ async fn metrics_scrape(reg: &metrics::Registry, pool: &PgPool) -> Response {
         .into_response()
 }
 
+/// Constant-time `X-Service-Token` comparison, without the 401 (T-580).
+///
+/// [`middleware::ServiceAuth`] is the extractor for routes that must *refuse* an unauthenticated
+/// caller. `/healthz` must not: a load balancer or container orchestrator probes it with no
+/// credentials and has to get a usable answer, so an absent or wrong token downgrades the payload
+/// rather than rejecting the request. Same fail-closed rule as the extractor otherwise — an
+/// unconfigured `SERVICE_TOKEN` matches nothing, so a deployment that never set one can never
+/// serve the detail.
+fn service_token_matches(cfg: &Config, headers: &axum::http::HeaderMap) -> bool {
+    let got = headers
+        .get("x-service-token")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    !cfg.service_token.is_empty() && crate::auth::constant_time_equal(got, &cfg.service_token)
+}
+
 /// Liveness/readiness probe.
 ///
-/// Was: one `SELECT 1`. Now two independent checks, **either of which can take the whole
-/// probe red** — a health check that cannot fail is worse than none:
+/// Two independent checks, **either of which can take the whole probe red** — a health check
+/// that cannot fail is worse than none:
 ///
-/// * `database` — the same bounded `SELECT 1`. Red when the database is down, refusing
+/// * `database` — a bounded `SELECT 1`. Red when the database is down, refusing
 ///   connections, or slower than [`DB_PROBE_TIMEOUT`].
 /// * `migrations` — red when `_sqlx_migrations` is unreadable (the schema was never
 ///   migrated, so the process is serving a database it does not match) or when any row
 ///   records a failed migration. This is the state `db::migrate` on boot is supposed to
 ///   guarantee and nothing was checking afterwards.
 ///
-/// The top-level `status` string keeps its two legacy values (`ok` / `unavailable`) and
-/// the 200/503 split, because `scripts/platform/preflight.sh`, the Caddy health handler,
-/// `.github/workflows/editor-gates.yml` and `tools/tbd-tools` all read them.
-async fn healthz(reg: &metrics::Registry, pool: &PgPool) -> (StatusCode, Json<serde_json::Value>) {
+/// # T-580 — two payloads, one status (the reason `detailed` exists)
+///
+/// T-280 added those checks to a route that is **unauthenticated and published through Caddy**
+/// (`scripts/deploy/Caddyfile.website:27`). Measured live against the pre-fix handler:
+/// `version=0.1.0  uptime=396  pool={connections:5, idle:4}  migrations.applied=18` — the exact
+/// build, how recently the process restarted, the connection-pool depth and the migration count,
+/// to any caller who finds the URL. That is reconnaissance, handed over for free.
+///
+/// Simply adding auth was the wrong fix and is explicitly rejected: `/healthz` is probed **without
+/// credentials** by `scripts/platform/preflight.sh:145`, `scripts/deploy/Caddyfile.website:27`,
+/// `.github/workflows/editor-gates.yml:95` and `tools/tbd-tools/src/smokes.rs:2714`, and T-280
+/// left it open for exactly that reason while gating `/metrics` behind `X-Service-Token`.
+///
+/// So the split is by **payload**, never by status code:
+///
+/// * **Public** (`detailed == false`) — `{"status": "ok" | "unavailable"}` and the 200/503 split.
+///   That is everything a prober reads: `curl -fsS` only looks at the code, and `preflight.sh`
+///   compares the code. Nothing about the build, the uptime, the pool or the schema is disclosed.
+/// * **`X-Service-Token`** (`detailed == true`) — the full report: `version`, `uptime_seconds`,
+///   per-check `status`/`latency_ms`/`error`, the applied/failed migration counts and the pool
+///   gauges. Same fields, same names, same values as before T-580, so an operator's tooling is
+///   unchanged; it just has to present the token `/metrics` already requires.
+///
+/// The top-level `status` string keeps its two legacy values in **both** shapes, and so does the
+/// 200/503 split, because that pair is the actual contract every prober depends on.
+async fn healthz(
+    reg: &metrics::Registry,
+    pool: &PgPool,
+    detailed: bool,
+) -> (StatusCode, Json<serde_json::Value>) {
     let (db_up, db_ping, db_err) = probe_db(pool).await;
 
     // Only meaningful if the database answered at all; skip the second round trip otherwise
@@ -1081,10 +1153,17 @@ async fn healthz(reg: &metrics::Registry, pool: &PgPool) -> (StatusCode, Json<se
     } else {
         StatusCode::SERVICE_UNAVAILABLE
     };
+    let status = if healthy { "ok" } else { "unavailable" };
+    if !detailed {
+        // The whole public payload. Every prober listed in this function's doc reads the code,
+        // and `status` is here only because it is the one field that was already documented as
+        // legacy contract. Nothing derived from the build, the process or the schema.
+        return (code, Json(json!({ "status": status })));
+    }
     (
         code,
         Json(json!({
-            "status": if healthy { "ok" } else { "unavailable" },
+            "status": status,
             "version": env!("CARGO_PKG_VERSION"),
             "uptime_seconds": reg.uptime().as_secs(),
             "checks": {
@@ -1389,10 +1468,14 @@ mod tests {
 
     /// A health check that cannot fail is worse than none. With the database
     /// unreachable both checks report down and the probe is 503.
+    ///
+    /// Reads the **detailed** payload (T-580 moved `checks` behind `X-Service-Token`), because
+    /// the claim under test is that each check can go red independently, and that is only
+    /// visible per-check.
     #[tokio::test]
     async fn healthz_goes_red_when_the_database_is_unreachable() {
         let app = app_with(dead_pool());
-        let (st, body) = call(&app, "GET", "/healthz", false).await;
+        let (st, body) = call(&app, "GET", "/healthz", true).await;
         assert_eq!(st, StatusCode::SERVICE_UNAVAILABLE);
         let v: serde_json::Value = serde_json::from_str(&body).expect("healthz json");
         assert_eq!(v["status"], "unavailable", "legacy status string preserved");
@@ -1404,6 +1487,78 @@ mod tests {
                 .is_some_and(|e| !e.is_empty()),
             "a down check must say why: {body}"
         );
+    }
+
+    /// T-580 — the public probe discloses **only** `status`, and the 200/503 split survives.
+    ///
+    /// Measured against the pre-fix handler by wave 69's verifier:
+    /// `version=0.1.0  uptime=396  pool={connections:5, idle:4}  migrations.applied=18`, to any
+    /// unauthenticated caller. Every one of those is asserted absent here — by key AND by value,
+    /// because a handler that renamed `version` to `build` would satisfy a key-only check while
+    /// disclosing exactly the same thing.
+    #[tokio::test]
+    async fn healthz_discloses_nothing_to_an_unauthenticated_caller() {
+        let app = app_with(dead_pool());
+        let (st, body) = call(&app, "GET", "/healthz", false).await;
+        // The contract every prober reads is unchanged: the code, and `status`.
+        assert_eq!(st, StatusCode::SERVICE_UNAVAILABLE);
+        let v: serde_json::Value = serde_json::from_str(&body).expect("healthz json");
+        assert_eq!(v["status"], "unavailable");
+
+        let obj = v.as_object().expect("healthz is a JSON object");
+        assert_eq!(
+            obj.keys().collect::<Vec<_>>(),
+            vec!["status"],
+            "public /healthz must carry exactly one field, got: {body}"
+        );
+        // Value-level: the build string, the pool depth and the migration count must not appear
+        // anywhere in the bytes, under any key.
+        for leak in [env!("CARGO_PKG_VERSION"), "uptime", "pool", "migration"] {
+            assert!(
+                !body.contains(leak),
+                "public /healthz leaked {leak:?}: {body}"
+            );
+        }
+    }
+
+    /// …and the same route with the service token still serves the whole report, so T-580 is a
+    /// relocation rather than a deletion. Without this, "discloses nothing" is satisfiable by a
+    /// handler that lost the detail entirely.
+    #[tokio::test]
+    async fn healthz_detail_is_served_to_a_service_token() {
+        let app = app_with(dead_pool());
+        let (_, body) = call(&app, "GET", "/healthz", true).await;
+        let v: serde_json::Value = serde_json::from_str(&body).expect("healthz json");
+        assert_eq!(v["version"], env!("CARGO_PKG_VERSION"));
+        assert!(v["uptime_seconds"].is_u64(), "{body}");
+        assert!(v["pool"]["connections"].is_u64(), "{body}");
+        assert!(v["checks"]["migrations"]["applied"].is_i64(), "{body}");
+    }
+
+    /// A **wrong** token gets the public payload, not a 401 — the probers are credential-less and
+    /// a 401 would fail `curl -fsS` in `preflight.sh` / `editor-gates.yml` / `smokes.rs`.
+    #[tokio::test]
+    async fn healthz_with_a_wrong_token_downgrades_rather_than_rejecting() {
+        let app = app_with(dead_pool());
+        let resp = app
+            .clone()
+            .oneshot(
+                HttpRequest::builder()
+                    .method("GET")
+                    .uri("/healthz")
+                    .header("x-service-token", "not-the-token")
+                    .body(Body::empty())
+                    .expect("request"),
+            )
+            .await
+            .expect("router call");
+        // 503 because the pool is dead — never 401/403.
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+        let body = to_bytes(resp.into_body(), 1 << 20).await.expect("body");
+        let body = String::from_utf8_lossy(&body).into_owned();
+        let v: serde_json::Value = serde_json::from_str(&body).expect("healthz json");
+        assert_eq!(v.as_object().expect("object").keys().len(), 1, "{body}");
+        assert_eq!(v["status"], "unavailable");
     }
 
     // ───────────────────── render unit checks ─────────────────────
