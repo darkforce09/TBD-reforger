@@ -19,7 +19,7 @@
 //!   credential-less probers; see [`healthz`] for the full reasoning.
 //!
 //! [`durable_ratelimit`] is the second half of T-280. **T-578 wired it**: the DDL is now
-//! `migrations/0020_rate_limit_buckets.sql`, the limiter is the L2 tier in
+//! `migrations/0021_rate_limit_buckets.sql`, the limiter is the L2 tier in
 //! `middleware/ratelimit.rs` (mounted below by [`router`]), and the `prune` tick is
 //! [`crate::services::start_rate_limit_prune`].
 
@@ -463,7 +463,7 @@ pub mod metrics {
 /// table belongs in `apps/website/api/migrations/`, which was a sibling slice's file that wave.
 /// All three pieces it named now exist:
 ///
-/// * the table — `migrations/0020_rate_limit_buckets.sql`, which is
+/// * the table — `migrations/0021_rate_limit_buckets.sql`, which is
 ///   [`RATE_LIMIT_BUCKETS_DDL`] verbatim (pinned by
 ///   `tests/t578_ratelimit.rs::migration_0020_is_the_ddl_constant_verbatim`, so the bytes the
 ///   tests prove and the bytes the migration lands still cannot drift);

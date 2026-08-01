@@ -4686,7 +4686,7 @@
         "ui",
         "security"
       ],
-      "status": "idea",
+      "status": "ready",
       "depends_on": [],
       "route": null,
       "branch": "ticket/T-155",
@@ -4710,7 +4710,7 @@
       "impact": [
         "ui"
       ],
-      "status": "idea",
+      "status": "ready",
       "depends_on": [],
       "route": null,
       "branch": "ticket/T-156",
@@ -4983,7 +4983,7 @@
       "impact": [
         "ui"
       ],
-      "status": "idea",
+      "status": "ready",
       "depends_on": [
         "T-159"
       ],
@@ -9225,7 +9225,7 @@
       "impact": [
         "contract"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 2314,
       "stream": "web-platform",
       "targets": [
@@ -9624,7 +9624,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3149,
       "stream": "web-platform",
       "targets": [
@@ -9686,7 +9686,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3152,
       "stream": "web-platform",
       "targets": [
@@ -10390,7 +10390,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3186,
       "stream": "web-platform",
       "targets": [
@@ -10758,7 +10758,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3204,
       "stream": "web-platform",
       "targets": [
@@ -10903,7 +10903,7 @@
       "impact": [
         "mission-authoring"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3211,
       "stream": "web-platform",
       "targets": [
@@ -14724,7 +14724,7 @@
         "mission-authoring",
         "ui"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3426,
       "executor": "claude-code",
       "priority": 2,
@@ -14829,7 +14829,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3422,
       "stream": "web-platform",
       "targets": [
@@ -14849,7 +14849,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3423,
       "stream": "web-platform",
       "targets": [
@@ -14869,7 +14869,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3424,
       "stream": "web-platform",
       "targets": [
@@ -15015,7 +15015,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "deferred",
+      "status": "ready",
       "order": 3442,
       "stream": "web-platform",
       "targets": [

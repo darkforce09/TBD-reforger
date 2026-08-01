@@ -387,10 +387,10 @@ fn prune_ttl_is_longer_than_a_full_refill() {
 /// and compares them, which is what this does.
 #[test]
 fn migration_0020_is_the_ddl_constant_verbatim() {
-    let sql = include_str!("../migrations/0020_rate_limit_buckets.sql");
+    let sql = include_str!("../migrations/0021_rate_limit_buckets.sql");
     assert!(
         sql.contains(RATE_LIMIT_BUCKETS_DDL),
-        "migrations/0020_rate_limit_buckets.sql no longer contains RATE_LIMIT_BUCKETS_DDL \
+        "migrations/0021_rate_limit_buckets.sql no longer contains RATE_LIMIT_BUCKETS_DDL \
          verbatim — the limiter would bind a shape the migration did not land.\n\
          --- const ---\n{RATE_LIMIT_BUCKETS_DDL}\n--- file ---\n{sql}"
     );
