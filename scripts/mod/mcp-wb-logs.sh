@@ -41,7 +41,30 @@ source "$SCRIPT_DIR/lib/gate-grep.sh"
 PROTON_LOG_DIR="$HOME/.local/share/Steam/steamapps/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/logs"
 NATIVE_LOG_DIR="$HOME/Documents/Games/ArmaReforgerWorkbench/logs"
 
-# ── The check vocabulary — shared with remote-log-grep.sh. ONE definition per pattern. ──────
+# ── The check vocabulary — a HAND-SYNCED COPY of remote-log-grep.sh's. NOT one definition. ──
+#
+# T-619 corrected this header, because what it used to say — "shared with remote-log-grep.sh.
+# ONE definition per pattern" — was a claim with no mechanism behind it. Nothing is shared: these
+# are two independent assignments in two files, and "one definition" was a promise that the next
+# editor would keep them equal, not a thing the code enforced. It was already false when it was
+# written. Five of the six patterns matched; PAT_ASSIGNED did not, and had not since T-614
+# broadened the sibling without a way to notice this copy existed.
+#
+# THE DRIFT, measured 2026-08-01:
+#     here (before)          '\[TBD\] SpawnManager: assigned slot'                    flat only
+#     remote-log-grep.sh:136 '\[TBD\]\[Spawn\].*assigned|\[TBD\] SpawnManager: assigned'  both
+# TBD_SpawnManager.c is 70 of 74 Prints onto the tagged `[TBD][Sub]` format and `:675` is one of
+# the last flat stragglers, so on the day it is reworded this script reports PARTIAL — "no player
+# has deployed yet" — over a boot where a player really was seated. Measured: exit 2 on a
+# tagged-seat log before this change, exit 0 after.
+#
+# WHAT WOULD MAKE THE OLD CLAIM TRUE, and why it is not done here: lift these six into
+# scripts/mod/lib/ (next to gate-grep.sh) and `source` it from BOTH files. That is a two-line
+# change to remote-log-grep.sh, which this slice does not own — and a lib sourced by only one of
+# two copies is not one definition, it is the same two copies plus a file, which would make this
+# header MORE misleading rather than less. So the fix here is one-sided on purpose and the header
+# now says so. Until that lib exists, EDIT BOTH FILES: this one and remote-log-grep.sh:102-144.
+#
 # ERE only, restricted to `\[ \] . * |` + POSIX classes: identical meaning under ugrep 7.5.0
 # (interactive agent shells) and GNU grep 3.8 (bash script.sh). Do not add `{n,m}`, `\d`, `\b`
 # or any PCRE shorthand without re-testing under both engines.
@@ -52,9 +75,19 @@ NATIVE_LOG_DIR="$HOME/Documents/Games/ArmaReforgerWorkbench/logs"
 PAT_TAGGED='\[TBD\]\['
 PAT_MISSION='\[TBD\]\[Mission\] loaded id='
 PAT_SLOTS='\[TBD\]\[Slots\] Slot-'
-# Player-join evidence (TBD_SpawnManager.c:675). The old companion `spawn requested` is deleted
-# and must never be re-added to this condition — it is what made exit 0 unreachable.
-PAT_ASSIGNED='\[TBD\] SpawnManager: assigned slot'
+# Player-join evidence (TBD_SpawnManager.c:675). BOTH FORMATS, byte-identical to
+# remote-log-grep.sh:136 — see the drift note in the header above.
+#
+# Matching the TAG plus the event key `assigned`, never the sentence after it, is this file's own
+# stated rule (see THE RULE, T-606) and the old value broke it: it pinned the legacy flat prefix
+# plus three words of prose. Checked against every Print in TBD_SpawnManager.c — no other
+# `[TBD][Spawn]` line contains the word (the failure case reads "could not be seated"), and the
+# only other `assigned slot` in the mod is TBD_SpectatorHost.c's refusal text, which carries the
+# `[TBD][spectator]` tag and so cannot match this.
+#
+# The old companion `spawn requested` is deleted and must never be re-added to this condition —
+# it is what made exit 0 unreachable.
+PAT_ASSIGNED='\[TBD\]\[Spawn\].*assigned|\[TBD\] SpawnManager: assigned'
 # Engine strings, not our prose — far more stable than anything we Print.
 PAT_ERRORS='Can.t compile|Unknown class .TBD_|RequestSpawn failed'
 # The loadout tag is [Slot] (also [TestNPC] for the dev harness). It is NOT [Player] — that
