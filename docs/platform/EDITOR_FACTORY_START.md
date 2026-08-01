@@ -19,17 +19,17 @@ export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target   # NOT /tmp — 16 GB tm
 **Wave 100 is `T-661` — split `eden_chrome.rs` into ten modules. It runs alone.** Every later wave
 assumes the post-split module names in its `owns`, so this cannot be skipped or reordered.
 
-Waves are labelled **100–121** because the platform factory owns 0–99 in the same file. Column 1
+Waves are labelled **100–126** because the platform factory owns 0–99 in the same file. Column 1
 must stay a bare integer.
 
 ## The shape
 
 | | |
 |---|---|
-| Program tickets | **75** — 58 `claude-code`, 16 `workbench`, 1 `cursor-docs` |
-| In the waves | **55**, across **22 waves**, 3 agents each |
-| Not in the waves | **19** — 17 workbench, 1 docs, 1 stray |
-| Wave rows | 60, **0 `owns` collisions**, 0 waves over 3 agents |
+| Program tickets | **77 actionable** — 76 `claude-code`, 1 `human` |
+| In the waves | **77**, across **27 waves**, 3 agents each |
+| Not in the waves | 2 pre-existing strays — T-146, T-170 |
+| Wave rows | 77, **0 `owns` collisions**, 0 waves over 3 agents |
 
 **Waves run 3 agents with a barrier** — all three report, all three merge, then the wave gate, then
 an adversarial verifier. This overrides `PLATFORM_FACTORY.md` rule 3, which says land each slice as
@@ -47,36 +47,39 @@ the model **explicitly on every dispatch** — never rely on inheritance.
 placement and selection, live validation, the ruler, line of sight, contour refinement, the markers
 UI, layers and outliner authoring.
 
-**Will not — and this is the important half.** 17 tickets need `packages/tbd-schema/schema/mission.schema.json`
-widened plus Enfusion readers, so they are `executor: workbench` and the factory **cannot** dispatch
-them. They include the deepest work in the program:
+**Will also do the mod half.** An earlier draft of this document said 17 tickets were
+`executor: workbench` and undispatchable. **That was wrong**, and the operator corrected it.
+`scripts/mod/compile.sh` compiles `tbd-framework` against the native Linux dedicated server
+headlessly — verified 2026-08-02: `OK: compiled clean, 5707 files, 11182 classes, 832 ms, no
+Workbench`. Editing a `.c` file is not the same as needing the Workbench GUI. All 16 mod tickets
+are factory work; per the model-routing rule their `.c` portion goes to **Fable 5**.
 
-- **T-212** objectives as typed per-side entities (WOG's `WMT_Task_Point` spine, incl. min/max
-  height so a zone is a volume)
-- **T-685** zone volume + force counts · **T-687** loadout templates + inheritance (OFCRA's model —
-  faction default + per-role deep merge + explicit-null as "remove inherited")
-- **T-677** waypoints · **T-678** group AI state · trigger runtime · the full marker field set
+**Waves 20–26 are the mod half.** T-706 widens `mission.schema.json` once for the whole program at
+wave 20, then the 16 Enfusion runtime readers land at 21–26. The schema deliberately sits one wave
+ahead of its consumers rather than at the start, to keep the contract-ahead-of-consumer window
+short — `mission.schema.json:72` already carries a warning about exactly that failure for
+`entities[]`. **T-706 must ship a test asserting each new field is currently unread**, so the day a
+reader lands the test fails and forces the comment to be removed.
 
-Also outside everything, and never in the research schema: mission diff/versioning, real-time
-collaborative editing, a review workflow, and an editor→mod end-to-end test. They were in the
-operator's original braindump and no artifact covers them.
+**Genuinely still out of scope**, and never in the research schema: mission diff/versioning,
+real-time collaborative editing, a review workflow, and an editor→mod end-to-end test. They were in
+the operator's original braindump and no artifact covers them. Everything else in the parity census
+is either in a wave or explicitly `na`.
 
-**So: complete editor front-end, not a complete Mission Creator.** Say so before anyone assumes
-otherwise.
+## Open items
 
-## Three open items
-
-1. **`window.__editorCamSet(6400, 6400, 0)` in a real browser.** Headless, this panics the renderer
-   (`wgpu webgpu.rs:2697`) and every canvas read afterwards is a 44 KB black rectangle instead of
-   ~3.7 MB of map. **8 gate smokes in `tools/tbd-tools/src/smokes.rs` drive the camera with it.** If
-   it reproduces in a real browser those smokes have been asserting against a dead engine. If it
-   does not, it is a headless artifact — note it and move on. **T-641 sits at wave 3 and cannot be
-   properly scoped until this is answered.** See
-   [`camset_panic_finding.md`](../../.ai/artifacts/parity/camset_panic_finding.md).
-2. **T-687 is invisible to every queue view.** `xtask/src/sync.rs:254-266` gates the mod queue on
-   `targets ∋ "mod"`. Left honest rather than mislabelled to force it to appear.
-3. **T-146** is the one dispatchable `eden` row with no wave row. Pre-existing. Needs an `owns` or a
-   supersede before it can be picked up.
+1. ~~`__editorCamSet` panic~~ — **RESOLVED 2026-08-02, headless-only artifact.** The operator ran
+   `window.__editorCamSet(6400, 6400, 0)` in a real browser: returns `undefined` (it is a void
+   function) and the map renders normally at 147 FPS. **The 8 gate smokes in
+   `tools/tbd-tools/src/smokes.rs` are sound.** The panic reproduces only under headless
+   vulkan — record it in the capture harness, do not file it against the gate. T-641 is unblocked.
+2. ~~T-687 loadout inheritance~~ — **CANCELLED 2026-08-02 by operator decision.** The synthesis
+   ranked OFCRA's model highly and the operator rejected it: *"I don't really agree with the OFCRA
+   loadout inheritance."* Filed as **rejected, not deferred**, so nobody revives it off the
+   synthesis ranking without asking again. The arsenal stays as-is; **T-699** (loadout buffer —
+   copy from one slot, apply to a selection) is the practical half and survives.
+3. **T-146 and T-170** are dispatchable `eden` rows with no wave row. Both pre-existing. Each needs
+   an `owns` or a supersede before it can be picked up.
 
 ## Where the evidence lives
 

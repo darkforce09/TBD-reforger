@@ -6,17 +6,3 @@
 Tickets for Workbench or human execution (`apps/mod/` targets).
 
 - **T-120** (queued) — Staging soak + golden mission smoke [human] — milestone M1
-- **T-673** (queued) — Marker style and Area markers — the $defs/marker widening [workbench] — milestone —
-- **T-674** (queued) — T-216 follow-on: slot identity reaches the wire [workbench] — milestone —
-- **T-675** (queued) — Vehicle roster reaches the game — the compile half of T-076 [workbench] — milestone —
-- **T-676** (queued) — Trigger activation and effects — the Enfusion runtime [workbench] — milestone —
-- **T-677** (queued) — Waypoints — group movement orders [workbench] — milestone —
-- **T-678** (queued) — Group AI state: combat mode, behaviour, formation, speed [workbench] — milestone —
-- **T-679** (queued) — Placement scatter: radius and area shape [workbench] — milestone —
-- **T-680** (queued) — Vehicle states: lock, fuel, ammo [workbench] — milestone —
-- **T-681** (queued) — Entity states: health, allow-damage, show-model, size, stamina [workbench] — milestone —
-- **T-682** (queued) — Environment readers: fog, wind, view distance [workbench] — milestone —
-- **T-685** (queued) — Zones become volumes: min/max height, attacker and defender counts, starting owner [workbench] — milestone —
-- **T-689** (queued) — Play-area enforcement gains a vehicle-class axis: the aircraft exemption [workbench] — milestone —
-- **T-212** (queued) — Objectives as typed, placed, per-side entities with one uniform attribute spine [workbench] — milestone —
-- **T-705** (queued) — Player gadget flags — map, compass, watch, GPS, radio [workbench] — milestone —
