@@ -144,9 +144,21 @@ const ADOPTED_KEY_PREFIX: &str = "tbd-editor-adopted:";
 /// **Deliberately unguarded** — no once-per-page-load latch. `localStorage` is shared across tabs, so
 /// during a deploy rollover a tab still running pre-T-352 wasm can write *fresh* residue at any
 /// moment; a latched purge would run once, before that write, and never look again. Re-scanning is
-/// affordable because every [`mark_adopted`] call site is one-shot per hydrate decision or per Save
-/// (never a loop), so this is a prefix scan of a few dozen keys a handful of times per mission open.
-fn purge_legacy_markers() {
+/// affordable because every caller is one-shot per editor boot / hydrate decision / Save (never a
+/// loop), so this is a prefix scan of a few dozen keys a handful of times per mission open.
+///
+/// **T-370 step 1 / T-388 — `pub` since the purge stopped riding [`mark_adopted`].** T-352 hung this
+/// off `mark_adopted` because that slice did not own the files the call sites live in, and T-388
+/// then measured the consequence: three editor paths reach the document without ever calling
+/// `mark_adopted` (the `is_empty && loaded_from_idb` branch, `Local::Diverged`, and every boot whose
+/// server fetch fails — offline, unauthenticated, 404), so clearance was *eventual* rather than
+/// guaranteed. T-370 also cannot delete the eight dead `mark_adopted` calls while they are the only
+/// thing that reaches this, which is why its ticket insists the purge move FIRST and ship a release
+/// ahead of the deletion. `mission_hydrate::hydrate_from_server` now calls this directly, before its
+/// own `is_uuid` guard and before the fetch — so it runs on every editor boot, on every branch. The
+/// eight `mark_adopted` sites are untouched by that change and remain safe to delete in a LATER
+/// release, which is exactly the sequencing the ticket asks for.
+pub fn purge_legacy_markers() {
     let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) else {
         return;
     };
@@ -169,9 +181,20 @@ fn purge_legacy_markers() {
 /// scope for, and the correct move is for the state to stop existing.
 ///
 /// The signature survives because the call sites live in `mission_hydrate` / `mission_commands`, which
-/// this slice does not own. They are dead and should go with whoever next touches those files. Until
-/// then this is the right place to hang [`purge_legacy_markers`]: every path that used to *create*
-/// residue now *erases* it, so the browsers that have any are reached without a new boot hook.
+/// this slice does not own. They are dead and should go with whoever next touches those files.
+///
+/// **T-370 step 1 (this wave) — the purge no longer depends on these calls.**
+/// `mission_hydrate::hydrate_from_server` now calls [`purge_legacy_markers`] directly on every editor
+/// boot, so residue clearance survives the deletion of every line below. That is the *whole* of what
+/// T-370 asks for in this release, and the deletion is deliberately NOT done here: browsers still
+/// running pre-purge wasm need one release to pick up the boot-hook call, and removing the eight
+/// writes in the same release would strand `tbd-editor-adopted:<missionId>` in them permanently. Step
+/// 3 — delete the eight call sites and this shim — is a LATER release, and it is now safe because the
+/// behaviour it would otherwise take with it has already moved.
+///
+/// The redundant purge here is kept meanwhile and costs nothing: a prefix scan over a few dozen
+/// localStorage keys, and it is the only thing still reaching a tab that opened the editor before the
+/// boot hook existed but is still running.
 pub fn mark_adopted(_mission_id: &str, _semver: Option<&str>) {
     purge_legacy_markers();
 }

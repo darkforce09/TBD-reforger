@@ -30,6 +30,7 @@ use map_engine_core::slots_gpu::{
 use wasm_bindgen::prelude::*;
 
 use crate::lanes;
+use crate::readback::ReadbackLane;
 use crate::scene::{self, ANCHOR, CHUNK_CAPACITY, QuadInstance, UNIT_QUAD};
 
 /// T-151.7.3 — slot/selection/drag/cluster GPU policy state on the engine (not in TS).
@@ -313,15 +314,24 @@ struct Batch {
 
 /// GPU frame timing via `TIMESTAMP_QUERY` when the adapter offers it (plan §S4d: fps is a
 /// readout, and where possible the GPU pass time is too). One 2-slot query set resolved per
-/// frame; readback is async with an in-flight guard so mapping never overlaps.
+/// frame; readback is async, and the mapping lifecycle is [`ReadbackLane`]'s.
+///
+/// **T-160 — the guard and the error arm are no longer expressed here.** They used to be two raw
+/// `Rc<Cell<bool>>` fields whose rules were enforced by the one caller that happened to know them:
+/// `kick_readback` mapped unconditionally, `render()` checked `in_flight` before calling it, and
+/// the callback's failure arm cleared the flag while leaving `has_sample` standing over a reading
+/// from an older frame. Both rules now live in [`ReadbackLane`], which compiles natively and is
+/// tested there — including the failure arm, which nothing in this `wasm32`-only file can reach.
+/// The raw cells are deliberately gone rather than kept alongside: with no `in_flight` field to
+/// read, `render()` and `stats()` *cannot* re-derive the old ungoverned behaviour.
 struct GpuTimer {
     query_set: wgpu::QuerySet,
     resolve_buf: wgpu::Buffer,
     read_buf: wgpu::Buffer,
     period_ns: f32,
     last_ms: Rc<Cell<f64>>,
-    has_sample: Rc<Cell<bool>>,
-    in_flight: Rc<Cell<bool>>,
+    /// Shared with the `'static` `map_async` callback, which is the only other holder.
+    lane: Rc<ReadbackLane>,
 }
 
 impl GpuTimer {
@@ -349,32 +359,44 @@ impl GpuTimer {
             read_buf,
             period_ns: queue.get_timestamp_period(),
             last_ms: Rc::new(Cell::new(0.0)),
-            has_sample: Rc::new(Cell::new(false)),
-            in_flight: Rc::new(Cell::new(false)),
+            lane: Rc::new(ReadbackLane::new()),
         }
     }
 
+    /// Arm the async readback of the 16 bytes the last submit resolved into `read_buf`.
+    ///
+    /// **Self-guarded (T-160).** `icon_cull_gpu::kick_readback` has always been, and its comment
+    /// said this one was too — it was not: the check lived in `render()`, so the invariant held
+    /// only for that caller. The lane owns it now, which matters precisely because the caller this
+    /// timer exists for does not exist yet. The editor runs `disable_frame_timing()`; whoever
+    /// re-enables it to draw the fps/GPU-time HUD is the second call site, and a second call site
+    /// that forgets a check it was never told about is how `Buffer is already mapped` reaches a
+    /// user's frame.
     fn kick_readback(&self) {
-        self.in_flight.set(true);
+        if !self.lane.begin() {
+            return;
+        }
         let buf = self.read_buf.clone();
         let last = self.last_ms.clone();
-        let has = self.has_sample.clone();
-        let flag = self.in_flight.clone();
+        let lane = self.lane.clone();
         let period = f64::from(self.period_ns);
         self.read_buf
             .slice(..)
             .map_async(wgpu::MapMode::Read, move |res| {
-                if res.is_ok() {
+                // `settle` clears in-flight on BOTH arms and answers the one question this
+                // closure cannot answer for itself: is the buffer mapped, i.e. may we unmap it?
+                // On the failure arm it also retires the previous reading, so `stats()` prints
+                // `null` rather than an older frame's milliseconds dressed as this frame's.
+                if lane.settle(res.is_ok()) {
                     {
                         let data = buf.slice(..).get_mapped_range();
                         let t0 = u64::from_le_bytes(data[0..8].try_into().expect("8 bytes"));
                         let t1 = u64::from_le_bytes(data[8..16].try_into().expect("8 bytes"));
                         last.set(t1.saturating_sub(t0) as f64 * period / 1.0e6);
-                        has.set(true);
+                        lane.record_sample();
                     }
                     buf.unmap();
                 }
-                flag.set(false);
             });
     }
 }
@@ -1944,7 +1966,7 @@ impl RenderEngine {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        let take_timing = self.timer.as_ref().is_some_and(|t| !t.in_flight.get());
+        let take_timing = self.timer.as_ref().is_some_and(|t| !t.lane.in_flight());
         let mut encoder = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -2103,7 +2125,7 @@ impl RenderEngine {
             })
             .sum();
         let gpu_frame_ms = match &self.timer {
-            Some(t) if t.has_sample.get() => format!("{:.3}", t.last_ms.get()),
+            Some(t) if t.lane.has_sample() => format!("{:.3}", t.last_ms.get()),
             _ => "null".to_owned(),
         };
         // W3 additive fields (L15) — appended after the T-151.0/1 keys, whose positions/values are
