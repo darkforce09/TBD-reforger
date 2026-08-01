@@ -122,6 +122,24 @@ inference with `INFERRED:`, distinguish "read in source" from "stated in docs" f
 naming", and never guess at binarized content. Each analysis opens with a **source inventory table**
 listing what was actually read.
 
+## Reading the five — two things that look like defects and are not, and one that might be
+
+**`fnf_tooling.md` does not follow the 14-section schema, deliberately.** It had a different brief:
+Part 1 is the MissionAnalyzer rule set (§1.1–1.6), Part 2 is DTAS (§2.0–2.5). A completeness check
+that looks for §4–14 will report it as missing eleven sections. It is not.
+
+**`ofcra_omtk.md` skips from §4 to §6 in the numbering**, because §5 (loadouts) is covered at
+length inside the authoring workflow and the arsenal discussion rather than as a standalone
+heading. Content is present; the numbering is not contiguous.
+
+**`fnf_v3.md` carries zero `INFERRED:` markers across 1,198 lines.** Compare: `wog.md` 17,
+`ofcra_omtk.md` 8, `fnf_v4.md` 5, `fnf_tooling.md` 3. WOG legitimately needs the most — no repo, no
+docs, reverse-engineered from binaries. But *zero* over 1,198 lines is either unusual rigour or
+unlabelled inference, and the two are indistinguishable from outside. **Flagged for the adversarial
+pass** — it is the one analysis whose evidence discipline has not demonstrated itself. Note also
+that this agent spawned three sub-agents and consumed 407 k tokens, roughly double any other, so
+some of its content is second-hand from workers whose own labelling was not enforced.
+
 ## Cross-analysis caveats
 
 Findings that affect how to read more than one of the five. Recorded here because no single
