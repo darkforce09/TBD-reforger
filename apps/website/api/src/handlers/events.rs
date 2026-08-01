@@ -1376,6 +1376,37 @@ pub async fn update_event(
 
 /// `DELETE /api/v1/events/:id` — soft-delete an event (admin).
 ///
+/// **One statement, and it is the whole handler.** No transaction, no child deletes, no cascade:
+/// `event_missions`, `orbat_slots`, `orbat_reservations` and `event_registrations` all survive, and
+/// so does the `events` row. What changes is reachability — every read path filters
+/// `deleted_at IS NULL` ([`list_events`], `deployments.rs:163`, `dashboard.rs:141`, [`load_event`]),
+/// and the `ev_gate` in [`register_for_event_mission`] answers 404, so the operation leaves the schedule, the
+/// dashboards and everyone's deployments and nobody can sign up. It is a disappearance, not an
+/// erasure.
+///
+/// That is deliberate. `migrations/0018_foreign_keys.sql` ships the cascade this handler would need
+/// (constraint 1, `event_missions.event_id → events(id) ON DELETE CASCADE`) and records that it
+/// **withheld** the handler change on purpose; `event_registrations.state` carries `attended`,
+/// stamped from real telemetry (`me.rs` `BACKFILL_ATTENDANCE`), which is history rather than
+/// schedule; and `matches.event_id` points here with no foreign key at all (0018 abstention (iv)),
+/// so a hard delete would silently orphan AAR and leaderboard rows.
+///
+/// **T-579 — the SPA's confirm dialog is an assertion about this function.** For four waves it read
+/// "The operation, its attached missions' ORBATs, and all registrations are removed. This cannot be
+/// undone." — a cascade this handler has never run, reported to the operator as fact. It now
+/// describes the soft delete, in `frontend/src/event_manager.rs` `DELETE_EVENT_CONFIRM_DESC`, and
+/// the two are locked together from both ends:
+///
+///   * `tests/t579_event_delete_is_soft.rs` asserts on **database state** after a real
+///     `DELETE /api/v1/events/:id` and names that constant in its failure message. Turn this into a
+///     hard cascade and it goes red telling you which copy to rewrite.
+///   * `event_manager.rs`'s `delete_confirm_copy_matches_the_soft_delete_handler` bans the
+///     destructive claims from the copy. Put "cannot be undone" back and it goes red telling you
+///     which handler to change.
+///
+/// Neither side can move alone. If you *do* make this a hard delete, those two tests are the
+/// checklist.
+///
 /// @route DELETE /api/v1/events/:id
 pub async fn delete_event(
     State(state): State<AppState>,

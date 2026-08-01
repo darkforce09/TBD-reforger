@@ -214,6 +214,54 @@ enum Roster {
     Loaded(String, Vec<EventMissionDossier>),
 }
 
+/// ═══════════ T-579 — what `DELETE /api/v1/events/:id` actually does ═══════════
+///
+/// This dialog used to read *"The operation, its attached missions' ORBATs, and all registrations
+/// are removed. This cannot be undone."* Every clause of that was false.
+/// [`website_api::handlers::events::delete_event`] is
+/// `UPDATE events SET deleted_at = now() WHERE id = $1` **and nothing else** — one statement, no
+/// transaction, no child deletes. `event_missions`, `orbat_slots`, `orbat_reservations` and
+/// `event_registrations` all survive untouched, and the row itself is still there. A confirm dialog
+/// reporting a cascade that never runs is this repo's signature defect pointed at the operator.
+///
+/// **The soft delete stays; the copy was the thing that was wrong.** Both cures were on the table
+/// and the code decided it:
+///
+///   * `migrations/0018_foreign_keys.sql` already ships `event_missions.event_id → events(id) ON
+///     DELETE CASCADE` (constraint 1) and states in as many words that it *deliberately did not*
+///     make this handler cascade — the FK is there "so the day that handler is changed to a hard
+///     delete the cascade is already in place". The plumbing for the other cure exists; the
+///     decision not to pull it was made once already, with reasons.
+///   * `event_registrations.state` carries `attended` — telemetry stamps it from real play
+///     (`me.rs` `BACKFILL_ATTENDANCE`). A cascade would erase attendance history, which is a record
+///     of something that happened, not a schedule entry.
+///   * `matches.event_id` points at `events(id)` with **no foreign key at all** (0018 abstention
+///     (iv)): a hard delete would neither cascade nor restrict it, just leave AAR and leaderboard
+///     rows pointing at an id that is gone.
+///   * Soft delete is the platform's uniform shape for admin deletes — `missions.rs:835`,
+///     `announcements`, `cms`, `users` all set `deleted_at`. Making this one path the exception
+///     would be a surprise in the direction of unrecoverable data loss.
+///
+/// So the honest copy states the **user-visible** consequence, which is a disappearance and not an
+/// erasure, and stops promising irreversibility the handler does not deliver.
+///
+/// **Scoped on purpose.** It says the operation leaves the schedule and everyone's deployments —
+/// `list_events` (`events.rs:939`), `deployments.rs:163` and `dashboard.rs:141` all filter
+/// `deleted_at IS NULL`, and `register` (`events.rs:1696`) refuses with 404. It does **not** claim
+/// the operation is gone from everywhere, because it is not: `load_em` (`events.rs:480`) does not
+/// check the parent event, so a bookmarked `GET /event-missions/:emid/orbat` deep link still
+/// answers 200. That is a separate defect and out of this slice; the copy simply does not lie about
+/// it.
+///
+/// **Kept honest from both ends.** These constants are pinned by
+/// `delete_confirm_copy_matches_the_soft_delete_handler` below, and the handler is pinned by
+/// `website-api`'s `tests/t579_event_delete_is_soft.rs`, whose failure message names this constant.
+/// Change the handler to a real cascade and that test goes red pointing here; weaken this copy back
+/// toward "cannot be undone" and the test below goes red pointing at the handler. Neither can drift
+/// alone, which is the whole reason T-579 exists.
+const DELETE_EVENT_CONFIRM_TITLE: &str = "Delete this operation?";
+const DELETE_EVENT_CONFIRM_DESC: &str = "It leaves the schedule, the dashboard and everyone's deployments, and no one can register on it. Nothing is erased — the attached missions, their ORBATs and every registration are kept, so an administrator can still restore it from the database.";
+
 /// Badge variant for a lifecycle status, so the day list shows where an operation *is* and not
 /// just whether registration happens to be locked.
 fn status_badge(status: &str) -> String {
@@ -978,11 +1026,13 @@ fn EventManagerInner() -> impl IntoView {
                 </div>
             </div>
 
-            // Destructive confirm for operation delete (F2F-07) — Aegis Dialog.
+            // Confirm for operation delete (F2F-07) — Aegis Dialog. Copy lives in
+            // DELETE_EVENT_CONFIRM_* (T-579): it is an assertion about the handler, so it is pinned
+            // like one rather than typed inline where it drifted for four waves.
             <Dialog
                 open=confirm_open
-                title="Delete this operation?"
-                description="The operation, its attached missions' ORBATs, and all registrations are removed. This cannot be undone."
+                title=DELETE_EVENT_CONFIRM_TITLE
+                description=DELETE_EVENT_CONFIRM_DESC
             >
                 <div class="flex justify-end gap-2">
                     <button
@@ -1637,6 +1687,84 @@ mod tests {
                 && code.contains("body.insert(\"banner_image_url\".into(), bn.into())"),
             "Edit save must POST banner_image_url when changed — including \"\" clears \
              (perturbation: stop inserting empty banner / drop unwrap_or_default diff)"
+        );
+    }
+
+    /* ═════════════ T-579 — the delete dialog must describe the delete ═════════════ */
+
+    /// **The frontend half of the drift lock.** `DELETE /api/v1/events/:id` is a soft delete
+    /// (`handlers/events.rs` `delete_event`, one `UPDATE events SET deleted_at = now()`), proven
+    /// behaviourally against real database state by `website-api`'s
+    /// `tests/t579_event_delete_is_soft.rs`. This asserts the operator is told that, and — the part
+    /// that actually matters — that the copy cannot quietly slide back to the cascade promise it
+    /// carried for four waves.
+    ///
+    /// It bans the false claims by shape rather than by exact sentence, so a reworded lie fails
+    /// too: any form of "cannot be undone" / "permanent" / "erased", and any claim that the
+    /// registrations or ORBATs are *removed*.
+    #[test]
+    fn delete_confirm_copy_matches_the_soft_delete_handler() {
+        let copy = super::DELETE_EVENT_CONFIRM_DESC.to_ascii_lowercase();
+
+        // ── the promises the handler does not keep ──
+        for lie in [
+            "cannot be undone",
+            "can't be undone",
+            "permanently",
+            "irreversible",
+            "deleted forever",
+        ] {
+            assert!(
+                !copy.contains(lie),
+                "the delete dialog must not claim `{lie}`: delete_event sets deleted_at and \
+                 nothing else, so the operation and every child row are still there. \
+                 If the handler became a hard cascade, fix the handler's test first."
+            );
+        }
+        for destroyed in ["registrations are removed", "registrations are deleted"] {
+            assert!(
+                !copy.contains(destroyed),
+                "the delete dialog must not claim `{destroyed}`: no cascade fires — \
+                 `event_registrations` rows survive `DELETE /api/v1/events/:id` untouched"
+            );
+        }
+
+        // ── and the truth it must state instead ──
+        assert!(
+            copy.contains("nothing is erased"),
+            "the copy must say plainly that nothing is destroyed; it is a soft delete"
+        );
+        assert!(
+            copy.contains("kept") || copy.contains("retained"),
+            "the copy must say the missions / ORBATs / registrations are kept"
+        );
+        assert!(
+            copy.contains("restore") || copy.contains("recover"),
+            "a soft delete is recoverable and the operator should be told so"
+        );
+
+        // ── and the Dialog must actually render it ──
+        // Scrubbed production source (T-601/T-622): `live_source` keeps string literals, because
+        // user-visible copy *is* the thing being pinned here, but folds comments and any dead
+        // branch a decoy could hide in.
+        let prod = crate::arsenal::class_r_scrub::live_source(include_str!("event_manager.rs"));
+        assert!(
+            prod.contains("description=DELETE_EVENT_CONFIRM_DESC"),
+            "the delete confirm Dialog must render DELETE_EVENT_CONFIRM_DESC — a constant nothing \
+             displays is not user-visible copy, and asserting on it would be the very defect \
+             T-579 is about"
+        );
+        assert!(
+            prod.contains("title=DELETE_EVENT_CONFIRM_TITLE"),
+            "…and DELETE_EVENT_CONFIRM_TITLE"
+        );
+        // The sibling detach dialog at the bottom of the tree is a REAL hard delete
+        // (`remove_event_mission`: DELETE event_registrations, orbat_slots, event_missions in one
+        // transaction), so its "This cannot be undone." is accurate and must survive this ban.
+        assert!(
+            prod.contains("The mission's ORBAT slots and every registration on it are deleted."),
+            "the detach confirm is accurate about a genuine cascade and must not be softened \
+             along with the event-delete copy"
         );
     }
 }

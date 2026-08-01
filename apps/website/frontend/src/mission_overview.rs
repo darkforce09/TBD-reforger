@@ -55,6 +55,50 @@ fn terrain_label(t: &str) -> String {
     }
 }
 
+/// **T-395 — the one mission-status label on the platform.**
+///
+/// `missions.status` is a Postgres enum with exactly five values (`draft`, `pending_approval`,
+/// `live`, `rejected`, `archived` — `migrations/01_enums.sql`). The dossier's STATUS cell used to
+/// render `m.status` verbatim, so a returned mission read `rejected` — lowercase, unlabelled, the
+/// raw database token — a few hundred pixels under the "Returned by review" callout T-389 added on
+/// the same page (`missions.rs:2208`). Two labels for one state, disagreeing on one screen.
+///
+/// The convention already existed: [`crate::missions::visibility_badge`] maps status → (label,
+/// badge variant). Copying its `match` here would have made a **third** place to change, which is
+/// how T-395 happened in the first place — T-389 fixed the badge and the grid kept its own arm. So
+/// the label half lives here, once, and the badge calls it. The *variant* stays with the badge:
+/// that is a badge concern, and the grid has no chips.
+///
+/// The `other` arm is unreachable defence over the five-value enum, not a silent hole — the same
+/// reasoning `visibility_badge` records. It is deliberately **not** a passthrough that would let a
+/// sixth enum value leak the raw token again: an unknown status is uppercased and de-underscored,
+/// so the worst case reads `SOMETHING NEW`, not `something_new`.
+pub(crate) fn mission_status_label(status: &str) -> String {
+    match status {
+        "draft" => "Draft".to_string(),
+        "pending_approval" => "Open for review".to_string(),
+        "live" => "Live".to_string(),
+        "rejected" => "Returned".to_string(),
+        "archived" => "Archived".to_string(),
+        other => other.replace('_', " ").to_uppercase(),
+    }
+}
+
+/// The dossier detail grid, as `(label, value)` rows — the single source [`dossier_body`] renders.
+///
+/// Extracted at T-395 so the STATUS cell has a **behavioural** surface: a `view!` macro cannot be
+/// asserted on from a native `cargo test`, so as long as the mapping lived inline in the markup the
+/// only available instrument was a source grep. `detail_rows` is what the view is built from, so a
+/// test that drives it drives what ships.
+fn detail_rows(m: &MissionDetail) -> Vec<(&'static str, String)> {
+    vec![
+        ("Weather", m.weather.clone()),
+        ("Time", m.time_of_day.clone()),
+        ("Max Players", m.max_players.to_string()),
+        ("Status", mission_status_label(&m.status)),
+    ]
+}
+
 /* ═════════════════════════ Armory authoring (T-368) ═════════════════════════ */
 
 /// Where a faction key offered by the editor came from — which is the whole reason the editor
@@ -939,9 +983,7 @@ pub fn dossier_body(m: &MissionDetail) -> impl IntoView {
             </section>
 
             <dl class="grid grid-cols-1 gap-8 md:grid-cols-2">
-                {detail("Weather", m.weather.clone())} {detail("Time", m.time_of_day.clone())}
-                {detail("Max Players", m.max_players.to_string())}
-                {detail("Status", m.status.clone())}
+                {detail_rows(m).into_iter().map(|(l, v)| detail(l, v)).collect_view()}
             </dl>
 
             {(!factions.is_empty())
@@ -1271,6 +1313,100 @@ mod tests {
         assert!(
             SRC.contains(trim_arm),
             "tactical_briefing_text must keep the trim-aware match arm"
+        );
+    }
+
+    /* ═════════════════════════ T-395 — the STATUS cell ═════════════════════════ */
+
+    /// The real captured wire body of a mission that was driven through submit → reject
+    /// (`dto.rs mission_detail_rejected_carries_the_review_stamp` round-trips the same file).
+    /// Deserialised rather than hand-built so the test is driven by a status the backend really
+    /// sends, not by a string this file invented.
+    const REJECTED_GOLDEN: &str = include_str!(
+        "../tests/fixtures/api/GET__missions__82b937fc-c88e-4bb9-abb3-0bef67379398.json"
+    );
+
+    /// **T-395 RED without the fix.** The dossier grid rendered `m.status` verbatim, so this is
+    /// `("Status", "rejected")` on the unfixed tree — the raw Postgres enum token, lowercase, in a
+    /// `text-headline-sm` cell directly under a "Returned by review" callout saying the opposite.
+    ///
+    /// Behavioural, not a grep: [`detail_rows`] is what `dossier_body` builds the `<dl>` from, so
+    /// putting `m.status.clone()` back into the grid means putting it back here.
+    #[test]
+    fn the_dossier_status_cell_is_labelled_not_the_raw_enum() {
+        let m: MissionDetail = serde_json::from_str(REJECTED_GOLDEN).expect("rejected golden");
+        assert_eq!(m.status, "rejected", "fixture must be the returned mission");
+        let rows = detail_rows(&m);
+        let status = rows
+            .iter()
+            .find(|(l, _)| *l == "Status")
+            .expect("the grid must still carry a Status cell");
+        assert_eq!(
+            status.1, "Returned",
+            "the STATUS cell must render the same label the card badge does"
+        );
+        assert_ne!(
+            status.1, m.status,
+            "rendering the DB enum verbatim is the T-395 defect"
+        );
+    }
+
+    /// Every value the enum can hold gets a label, and no label is the raw token. `other` is
+    /// covered too: an enum value added tomorrow must not reach the screen as `some_new_state`.
+    #[test]
+    fn no_mission_status_reaches_the_screen_as_a_database_token() {
+        for status in [
+            "draft",
+            "pending_approval",
+            "live",
+            "rejected",
+            "archived",
+            "some_future_state",
+        ] {
+            let label = mission_status_label(status);
+            assert!(!label.is_empty(), "{status}: empty label");
+            assert!(
+                !label.contains('_'),
+                "{status}: `{label}` still carries the snake_case join of a DB token"
+            );
+            assert_ne!(label, status, "{status}: label is the raw enum value");
+        }
+    }
+
+    /// **The drift lock.** T-395 exists because T-389 fixed the badge and left a second copy of the
+    /// same mapping in the grid. One mapper is only one mapper while the badge actually calls it —
+    /// so pin the call, on the scrubbed production half of `missions.rs` (T-601/T-622
+    /// [`crate::arsenal::class_r_scrub`], which folds comments, dead `cfg` items and const-false
+    /// blocks away and fails closed on anything it cannot read).
+    ///
+    /// `live_code` blanks string literals as well, so a `"mission_status_label"` mention inside a
+    /// doc string or a copy literal cannot green this.
+    #[test]
+    fn the_card_badge_and_the_dossier_grid_share_one_label_mapper() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let prod = live_code(include_str!("missions.rs"));
+        let badge = only_body(&prod, "fn visibility_badge(status: &str)");
+        assert!(
+            badge.contains("mission_status_label(status)"),
+            "visibility_badge must take its label from mission_overview::mission_status_label, \
+             not a second local match — that duplication is T-395. Body was: {badge}"
+        );
+        assert!(
+            !badge.contains("=> ("),
+            "visibility_badge must not rebuild the (label, variant) tuple match — the label half \
+             moved to mission_status_label. Body was: {badge}"
+        );
+        // And the grid: the view is built from detail_rows, so a hand-rolled Status cell beside it
+        // would be a second source the behavioural test above cannot see.
+        let own = live_code(include_str!("mission_overview.rs"));
+        let body = only_body(&own, "pub fn dossier_body(m: &MissionDetail)");
+        assert!(
+            body.contains("detail_rows(m)"),
+            "dossier_body must build the detail grid from detail_rows"
+        );
+        assert!(
+            !body.contains("m.status"),
+            "dossier_body must not touch m.status directly — that is the raw-enum path T-395 removed"
         );
     }
 }
