@@ -50,6 +50,44 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 125 | 108 | T-682 T-684 T-685 | — | — | pending |
 | 126 | 109 | T-689 T-705 | — | — | pending |
 
+## Continuation recipe (compaction-proof — execute mechanically from any fresh context)
+
+State lives in the table above: the first non-`SHIPPED` row is the current wave. Per wave L
+(marker M = L−17), tickets from `awk -F'\t' '$1==L' docs/platform/wave_plan.tsv`:
+1. `bash scripts/mod/slice-worktree.sh new T-xxx` per ticket.
+2. Dispatch ≤3 slice agents (Agent tool, background): model **opus**, except any ticket whose
+   owns includes `.c` under apps/mod/tbd-framework/ → model **fable**. Brief = registry summary
+   verbatim + the standing HARD RULES block (no sub-agents; no .py; distrobox-host-exec with
+   CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target never /tmp; explicit-path staging; slice gate
+   `bash scripts/platform/wave.sh gate --slice T-xxx` must PASS from the worktree; tree clean;
+   Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>).
+3. BARRIER: all agents report. Then merge each: `git merge --no-ff slice/T-xxx -m "T-xxx: <title>"`.
+4. Wave gate: `CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target TBD_WAVE_GENERATION_FLOOR=100
+   TBD_GATE_WAVE=<L> bash scripts/platform/wave.sh gate` — when oracle 2 falls silent (markers 83+
+   have no matching plan rows) it demands `TBD_GATE_BASE_CONFIRM=<prev close sha>`: verify the sha
+   is the previous `wave M-1 CLOSED` commit (git log), then pass it. Red → triage: fix in-wave
+   once; a second red on the SAME ticket is BLOCK-class → stop with a state writeup here.
+5. One Fable adversarial verifier over merged main (documents, never fixes; BLOCKERs fixed
+   in-wave, else deferred tickets + diagnosis). Report → .ai/artifacts/editor_verify/waveL.md.
+6. `bash scripts/platform/wave.sh verified $(git rev-parse HEAD)` · registry: wave tickets →
+   shipped, verifier tickets filed (next free T-7xx) · `distrobox-host-exec sh -c 'cd
+   /home/Samuel/Projects/TBD-Reforger && ./scripts/ticket sync'` · update this file's table ·
+   `echo L > docs/platform/factory_pack_wave`.
+7. Close commit staging EXPLICIT paths (registry, generated TICKET_* docs, CLAUDE.md, ROADMAP.md,
+   this file, editor_verify/waveL.md, factory_pack_wave), subject
+   `wave M CLOSED — editor wave L: <one-liner>; GATE PASS n/n`, Co-Authored-By trailer. Then
+   `bash scripts/mod/slice-worktree.sh drop T-xxx` per slice and
+   `git -c core.hooksPath=/dev/null push origin main` (plain push dies on the absent-git-lfs
+   pre-push hook; verify range LFS-free first: `git diff --name-only origin/main..HEAD | grep
+   map-assets` → must be empty).
+8. Next wave. After wave 126: make ci-local + make leptos-gates, update
+   docs/platform/EDITOR_FACTORY_START.md per-wave outcomes, final summary. NO playtest.
+
+Known traps already hit: rustfmt needs the file's real edition (tools/* are 2024); `make
+schema-validate` broken in worktrees; agent chat summaries are not artifacts — trust gates and
+the verifier; wave-101 agents running concurrent slice gates queue on the gate lock (WAITING is
+serialisation, not a hang).
+
 ## Deferred tickets filed by verifiers
 
 - **T-707** (W100/F-2): wave.sh test-split comment transposes its own measurement — one-line fix.
