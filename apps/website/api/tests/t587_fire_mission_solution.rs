@@ -19,7 +19,7 @@
 //! * the **list endpoint's** body, which is built by a `SELECT` — so a column the INSERT never
 //!   wrote cannot appear in it, and a column the `SELECT` forgets to project cannot either.
 //!
-//! # The four cases
+//! # The cases
 //!
 //! 1. [`saved_solution_reaches_the_row_and_comes_back_out`] — the ticket. Save, read the row,
 //!    read the list, and require all three to agree on all seven values.
@@ -32,6 +32,21 @@
 //!    inserts. A transcribed copy of the SQL would test the copy.
 //! 4. [`out_of_range_and_unknown_weapon_still_answer_422_and_400`] — T-587 deleted an unreachable
 //!    guard in `solve_checked`; these are the two statuses that must not have moved with it.
+//!
+//! # T-626 — the claim case 3 was not checking
+//!
+//! 0020's comment calls its accept regex `parse_grid`'s, "deliberately character for character".
+//! It is not: `parse::<f64>` also takes `+1000, 2000`, `.5, 2`, `5., 2` and `1e3, 500`, and the
+//! regex takes none of them. Case 3's original six fixtures omitted **exactly** those four forms,
+//! so the suite agreed with the claim by never testing it — the same shape as the defect this file
+//! was written for. Two cases close that:
+//!
+//! 5. [`the_backfill_regex_is_narrower_than_parse_grid`] — measures both readers on the divergent
+//!    forms, on the agreed forms (same `f64` bits, not just "both accept"), and on the one input
+//!    class where the regex is the *wider* of the two.
+//! 6. [`the_transcription_of_parse_grid_is_still_the_shipped_one`] — case 5 needs a copy of
+//!    `parse_grid` (the frontend is a wasm crate and cannot be linked here); this pins the copy
+//!    against the shipped function token for token.
 //!
 //! Skips without `TEST_DATABASE_URL`, like every DB-backed suite in this crate.
 
@@ -292,10 +307,12 @@ async fn a_row_written_before_this_migration_still_lists_and_restores() {
 /// the `UPDATE`s are idempotent over rows that are already correct, which is what lets them be
 /// replayed here at all.
 ///
-/// The criterion under test is agreement with `frontend/src/mortar.rs::parse_grid`: accept what it
-/// accepts, refuse what it refuses. Accept more and the migration invents coordinates for rows the
-/// calculator has always shown as unrestorable; accept less and it strands rows it has always
-/// restored.
+/// The criterion under test is **not** "accept exactly what `parse_grid` accepts" — 0020's comment
+/// claims that and it is false (T-626). It is the direction: the regex must never accept a grid
+/// `parse_grid` would refuse, because that invents coordinates for a row the calculator has always
+/// shown as unrestorable. Accepting *less* is survivable and is what actually happens for four
+/// syntactic forms; those four are in the table below, and
+/// [`the_backfill_regex_is_narrower_than_parse_grid`] measures the divergence directly.
 #[tokio::test]
 async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
     let Some((_app, pool)) = boot().await else {
@@ -308,7 +325,7 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
     // `None` = "this grid is not `fmt_grid`'s encoding, so the row keeps NULL coordinates".
     type Coords = Option<(f64, f64)>;
     type BackfillCase = (&'static str, &'static str, Coords, Coords);
-    let cases: [BackfillCase; 6] = [
+    let cases: [BackfillCase; 10] = [
         // What `fmt_grid` writes — whole metres, fractions, negatives.
         (
             "1000, 2000",
@@ -331,6 +348,17 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
         // One grid is the encoding and the other is not. The two pairs are backfilled by two
         // independent statements, so this row gets one real pair and one NULL pair.
         ("500, 600", "GRID REF ALPHA", Some((500.0, 600.0)), None),
+        // ── T-626 — the four forms `parse_grid` accepts and the regex does not.
+        //
+        // The six cases above are exactly the ones where 0020's "character for character" claim
+        // is TRUE, which is why the claim survived: the suite avoided the inputs that break it.
+        // These four are those inputs, and they must come back NULL — the regex refuses them, and
+        // refusing is the safe direction. `restore()` still reads such a row through `parse_grid`,
+        // so nothing is stranded; see `the_backfill_regex_is_narrower_than_parse_grid`.
+        ("+1000, 2000", "+2200, 1800", None, None), // `-?` has no `+`
+        (".5, 2", ".25, .75", None, None),          // `\d+` wants a digit before the point
+        ("5., 2", "6., 3", None, None),             // `(\.\d+)?` wants digits after it
+        ("1e3, 500", "2.2e3, 1.8e3", None, None),   // no exponent form
     ];
 
     for (fp_grid, target_grid, _, _) in cases {
@@ -350,10 +378,10 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
 
     // Replay the migration's own UPDATEs, scoped to this test's rows so a parallel sibling's
     // fixtures are untouched.
-    const MIGRATION: &str = include_str!("../migrations/0020_fire_missions_solution.sql");
+    //
     // Comment lines go first: 0020's rationale block contains prose semicolons, and splitting
     // statements before stripping them would shred the file into fragments.
-    let sql_only = MIGRATION
+    let sql_only = MIGRATION_0020
         .lines()
         .filter(|l| !l.trim_start().starts_with("--"))
         .collect::<Vec<_>>()
@@ -402,6 +430,247 @@ async fn the_shipped_backfill_recovers_coordinates_from_the_grid_encoding() {
             "target_grid {target_grid:?} backfilled wrong"
         );
     }
+}
+
+// ───────────────────────── T-626 — the claim 0020 makes about its own regex ─────────────────────
+
+/// `frontend/src/mortar.rs::parse_grid`, transcribed.
+///
+/// The frontend is a separate crate (`website-frontend`, built for `wasm32`) and cannot be linked
+/// into an API test binary, so the rule is restated here and
+/// [`the_transcription_of_parse_grid_is_still_the_shipped_one`] pins every line of it against the
+/// shipped source. A transcription nothing checks is how the divergence this test measures got
+/// into a comment in the first place.
+fn parse_grid(s: &str) -> Option<(f64, f64)> {
+    let (a, b) = s.split_once(',')?;
+    let x: f64 = a.trim().parse().ok()?;
+    let y: f64 = b.trim().parse().ok()?;
+    (x.is_finite() && y.is_finite()).then_some((x, y))
+}
+
+const SHIPPED_MORTAR: &str = include_str!("../../frontend/src/mortar.rs");
+const MIGRATION_0020: &str = include_str!("../migrations/0020_fire_missions_solution.sql");
+
+/// The accept regex out of the shipped migration — both copies, which must be the same regex.
+///
+/// Read from the file rather than retyped for the same reason the backfill statements are: a
+/// transcription would agree with itself while the migration said something else.
+fn shipped_accept_regex() -> String {
+    let patterns: Vec<&str> = MIGRATION_0020
+        .lines()
+        .filter(|l| !l.trim_start().starts_with("--"))
+        .filter_map(|l| l.split_once("~ '"))
+        .filter_map(|(_, rest)| rest.split_once('\''))
+        .map(|(pattern, _)| pattern)
+        .collect();
+    assert_eq!(
+        patterns.len(),
+        2,
+        "expected two `~ '<regex>'` accept tests in 0020, found {patterns:?}"
+    );
+    assert_eq!(
+        patterns[0], patterns[1],
+        "the two backfill statements no longer share one accept regex — `fp` and `tgt` rows would \
+         be restored under different rules"
+    );
+    patterns[0].to_string()
+}
+
+/// This suite's own source, so the transcription above can be compared with the shipped function
+/// rather than merely asserted to resemble it.
+const THIS_SUITE: &str = include_str!("t587_fire_mission_solution.rs");
+
+/// `fn parse_grid`'s source out of `src`, comment lines dropped and whitespace flattened.
+///
+/// The signature is assembled with `concat!` so this needle does not itself occur as a literal in
+/// this file — otherwise it would match its own definition before the function's.
+fn parse_grid_source(src: &str, whose: &str) -> String {
+    let needle = concat!("fn ", "parse_grid(s: &str) -> Option<(f64, f64)> {");
+    let start = src
+        .find(needle)
+        .unwrap_or_else(|| panic!("{whose} no longer defines `{needle}`"));
+    let rest = &src[start..];
+    let end = rest
+        .find("\n}")
+        .unwrap_or_else(|| panic!("{whose}'s parse_grid has no closing brace at column 0"))
+        + 2;
+    rest[..end]
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.starts_with("//"))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Class-R: the transcribed `parse_grid` above **is** the shipped one, token for token.
+///
+/// Not "contains these lines" — that would pass while the copy in this file drifted, which is the
+/// same shape of defect as the comment T-626 is here to correct: a check that agrees with itself.
+#[test]
+fn the_transcription_of_parse_grid_is_still_the_shipped_one() {
+    assert_eq!(
+        parse_grid_source(THIS_SUITE, "this suite"),
+        parse_grid_source(SHIPPED_MORTAR, "frontend/src/mortar.rs"),
+        "the copy of parse_grid in this file is no longer the shipped one — every assertion about \
+         'what the calculator accepts' below is measuring a function nothing ships"
+    );
+    // …and the corrected claim is where a reader of `parse_grid` will find it, since 0020 is
+    // applied + checksummed and its own comment can never be edited.
+    assert!(
+        SHIPPED_MORTAR.contains("T-626 — what migration `0020`'s backfill regex really accepts"),
+        "the T-626 correction is gone from mortar.rs, and 0020's false 'character for character' \
+         claim is once again the only description of the accept set"
+    );
+}
+
+/// **T-626.** 0020 says its regex is `parse_grid`'s "deliberately character for character". It is
+/// not. This measures both readers on the same strings and states what is actually true.
+///
+/// Three claims, each asserted rather than argued:
+///
+/// 1. **Under-permissive on four syntactic forms** — `+1000, 2000`, `.5, 2`, `5., 2`, `1e3, 500`.
+///    `parse::<f64>` takes all four; the regex takes none. This is the safe direction: the row
+///    keeps NULL coordinates and `restore()` reads it through `parse_grid` exactly as before.
+/// 2. **Never over-permissive in the dangerous direction** — every string the regex accepts,
+///    `parse_grid` also accepts, and Postgres's cast lands on the *same* `f64` bits. That is the
+///    property that matters: an accept the reader would refuse is an invented coordinate.
+/// 3. **One over-permissive class, and it is not a coordinate** — a digit string past `f64::MAX`
+///    matches the regex and then fails `::double precision`, which would have aborted the whole
+///    migration. `parse_grid` refuses it (`inf` is not finite). No writer can produce one:
+///    `fmt_grid`'s longest output is `f64::MAX`'s 309 digits, which casts cleanly.
+#[tokio::test]
+async fn the_backfill_regex_is_narrower_than_parse_grid() {
+    let Some((_app, pool)) = boot().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let regex = shipped_accept_regex();
+
+    // Run the shipped regex in the same engine the migration ran it in.
+    async fn regex_accepts(pool: &PgPool, regex: &str, s: &str) -> bool {
+        sqlx::query_scalar::<_, bool>("SELECT $1::text ~ $2::text")
+            .bind(s)
+            .bind(regex)
+            .fetch_one(pool)
+            .await
+            .expect("T-626: evaluate the shipped accept regex")
+    }
+
+    // 1 ── the divergence, form by form. Measured, not asserted from the ticket.
+    for form in ["+1000, 2000", ".5, 2", "5., 2", "1e3, 500"] {
+        assert!(
+            parse_grid(form).is_some(),
+            "{form:?} must parse in mortar.rs — if it no longer does, the divergence closed and \
+             this test is describing history"
+        );
+        assert!(
+            !regex_accepts(&pool, &regex, form).await,
+            "0020's regex now accepts {form:?}. That is the DANGEROUS direction: the backfill \
+             would write coordinates for rows the calculator shows as unrestorable"
+        );
+    }
+
+    // …and the form both accept, so the test above is not passing because the regex accepts
+    // nothing at all.
+    assert!(regex_accepts(&pool, &regex, "1000, 2000").await);
+    assert_eq!(parse_grid("1000, 2000"), Some((1000.0, 2000.0)));
+
+    // 2 ── the direction that would be a defect: an accept `parse_grid` refuses. Every accepted
+    // string must parse to the same f64 on both sides, bit for bit.
+    for (grid, want) in [
+        ("1000, 2000", (1000.0_f64, 2000.0_f64)),
+        ("2200.5, 1800.25", (2200.5, 1800.25)),
+        ("-750, 12800", (-750.0, 12800.0)),
+        ("0, 0", (0.0, 0.0)),
+        ("  1000 , 2000  ", (1000.0, 2000.0)),
+        ("1000,2000", (1000.0, 2000.0)),
+        ("0.1, -0.1", (0.1, -0.1)),
+    ] {
+        assert!(
+            regex_accepts(&pool, &regex, grid).await,
+            "the regex stopped accepting {grid:?} — rows it has always backfilled would strand"
+        );
+        assert_eq!(
+            parse_grid(grid),
+            Some(want),
+            "{grid:?} does not parse to {want:?} in mortar.rs"
+        );
+        // The migration's own arithmetic: `btrim(split_part(...))::double precision`.
+        let (x, y): (f64, f64) = sqlx::query_as(
+            "SELECT btrim(split_part($1::text, ',', 1))::double precision, \
+                    btrim(split_part($1::text, ',', 2))::double precision",
+        )
+        .bind(grid)
+        .fetch_one(&pool)
+        .await
+        .expect("T-626: cast an accepted grid the way the migration does");
+        assert_eq!(
+            (x.to_bits(), y.to_bits()),
+            (want.0.to_bits(), want.1.to_bits()),
+            "{grid:?} backfills to ({x}, {y}) but the calculator reads {want:?} — the same row \
+             would say two different things depending on which reader got there first"
+        );
+    }
+
+    // …and strings both readers refuse stay refused.
+    for grid in [
+        "012345",
+        "AB, CD",
+        "1000, ",
+        "1000, 2000, 3000",
+        "inf, 2",
+        "NaN, 2",
+    ] {
+        assert!(
+            !regex_accepts(&pool, &regex, grid).await,
+            "regex took {grid:?}"
+        );
+        assert_eq!(parse_grid(grid), None, "mortar.rs took {grid:?}");
+    }
+
+    // 3 ── the pathological edge, recorded for the next reader. 309 nines is past `f64::MAX`.
+    let huge = format!("{}, 2", "9".repeat(309));
+    assert!(
+        regex_accepts(&pool, &regex, &huge).await,
+        "a 309-digit grid matches the regex — this is the one input class where it is WIDER than \
+         parse_grid, and the consequence is an aborted migration, not a wrong coordinate"
+    );
+    assert_eq!(
+        parse_grid(&huge),
+        None,
+        "parse_grid must refuse it: `parse::<f64>` overflows to inf and `is_finite` rejects"
+    );
+    let cast = sqlx::query_scalar::<_, f64>("SELECT btrim(split_part($1::text, ',', 1))::float8")
+        .bind(&huge)
+        .fetch_one(&pool)
+        .await;
+    let err = cast
+        .expect_err("a 309-nine grid must overflow double precision")
+        .to_string();
+    assert!(
+        err.contains("out of range"),
+        "expected an out-of-range cast failure, got: {err}"
+    );
+
+    // …and the longest thing `fmt_grid` can actually emit — `f64::MAX` — is fine, which is why
+    // no realistic row has the shape above and why 0020 ran without hitting it.
+    let f_max = format!("{}, 2", f64::MAX);
+    assert_eq!(
+        f_max.split_once(',').expect("pair").0.len(),
+        309,
+        "f64::MAX renders in 309 digits; the boundary above is not hypothetical, it is one digit \
+         of headroom"
+    );
+    assert!(regex_accepts(&pool, &regex, &f_max).await);
+    let (x, _): (f64, f64) = sqlx::query_as(
+        "SELECT btrim(split_part($1::text, ',', 1))::double precision, \
+                btrim(split_part($1::text, ',', 2))::double precision",
+    )
+    .bind(&f_max)
+    .fetch_one(&pool)
+    .await
+    .expect("f64::MAX must cast cleanly — fmt_grid can emit it");
+    assert_eq!(x, f64::MAX);
 }
 
 /// T-587 collapsed `solve_checked` onto a direct `match`, deleting a guard that had been

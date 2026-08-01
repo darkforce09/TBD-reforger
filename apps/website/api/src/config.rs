@@ -24,6 +24,7 @@
 //! [`handlers::admin::send_rcon`]: crate::handlers::admin::send_rcon
 
 use std::env;
+use std::net::IpAddr;
 use std::path::Path;
 
 /// Default body cap for `POST /missions/:id/versions` (256 MB), matching Go.
@@ -36,7 +37,20 @@ pub struct Config {
     pub port: String,
     /// `"development"` | `"production"`.
     pub env: String,
-    /// Reverse-proxy CIDRs whose `X-Forwarded-For` is trusted (empty = trust none).
+    /// Reverse-proxy addresses/CIDRs whose `X-Forwarded-For` is trusted (empty = trust none).
+    ///
+    /// **T-625 — this is now read.** Through T-624 it was parsed out of `TRUSTED_PROXIES` and
+    /// consulted by nothing, which is why every public client behind `Caddyfile.website` shared
+    /// one rate-limit bucket: `middleware::ratelimit` keyed on the `ConnectInfo` peer, and behind
+    /// a loopback reverse proxy that peer is Caddy for everyone. The consumer is
+    /// [`crate::middleware::RateLimitState`], and the entries are validated at boot by
+    /// [`ProxyNet::parse`] — an unparseable entry is a boot failure, not a silently-ignored line
+    /// that leaves the operator believing the header is honoured.
+    ///
+    /// Empty is the default and means the header is ignored **entirely**. That is deliberate:
+    /// `X-Forwarded-For` is client-controllable, and a rate-limit key any client can forge is
+    /// worse than one everybody shares — shared means everyone is limited together, forgeable
+    /// means nobody is limited at all.
     pub trusted_proxies: Vec<String>,
 
     // Frontend integration
@@ -88,6 +102,143 @@ pub enum ConfigError {
     /// outage (T-279) — the same disguise class as T-248 / T-481 / T-484.
     #[error("{0} is malformed: {1}")]
     Malformed(&'static str, &'static str),
+    /// Same rule as [`Self::Malformed`], for a **list** variable where the reason is useless
+    /// without the offending entry: `TRUSTED_PROXIES` can hold a dozen entries and "is malformed"
+    /// would send the operator reading all of them. Carries the entry verbatim (T-625).
+    #[error("{0} entry {1:?} is malformed: {2}")]
+    MalformedEntry(&'static str, String, &'static str),
+}
+
+/// One trusted reverse proxy: a bare address (`127.0.0.1`) or a CIDR block (`10.0.0.0/8`).
+///
+/// # Why this is hand-rolled rather than `ipnet`
+///
+/// Two functions — parse and "does this address fall inside" — over `[u8; 4]` / `[u8; 16]`. A
+/// dependency for that would be more supply chain than arithmetic, and the arithmetic is unit
+/// tested below.
+///
+/// # The rules, and what each one refuses
+///
+/// * **A bare address is a single host** (`/32`, `/128`). It is *not* silently widened to the
+///   surrounding network, which is the classic way a trusted-proxy list ends up trusting a whole
+///   datacentre.
+/// * **A CIDR must be written as its network address.** `10.0.0.5/8` is refused rather than
+///   quietly read as `10.0.0.0/8`, because that reading trusts 16 million addresses the operator
+///   did not type. The error names the form to write instead.
+/// * **IPv4-mapped IPv6 is canonicalised** (`::ffff:127.0.0.1` → `127.0.0.1`), on both the
+///   configured address and the address being tested. A dual-stack listener hands axum the mapped
+///   form, and without this an operator who correctly wrote `127.0.0.1` would get *no* match —
+///   silently falling back to the shared-bucket behaviour they were trying to fix.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProxyNet {
+    base: IpAddr,
+    prefix_len: u8,
+}
+
+impl ProxyNet {
+    /// Parse one `TRUSTED_PROXIES` entry. `Err` carries a reason fit to print at boot.
+    pub fn parse(entry: &str) -> Result<Self, &'static str> {
+        let entry = entry.trim();
+        let Some((addr, len)) = entry.split_once('/') else {
+            // Bare address: exactly this host. Canonicalised so either spelling of a mapped
+            // IPv4 address matches a peer that arrives in either spelling.
+            let base = entry
+                .parse::<IpAddr>()
+                .map_err(|_| "not an IP address or CIDR block")?
+                .to_canonical();
+            return Ok(Self {
+                prefix_len: full_prefix_len(&base),
+                base,
+            });
+        };
+        // With an explicit prefix the family is the one the operator wrote — canonicalising here
+        // would turn `::ffff:10.0.0.0/104` into an IPv4 base carrying an IPv6 prefix length.
+        // Write IPv4 proxies in IPv4 form.
+        let base = addr
+            .parse::<IpAddr>()
+            .map_err(|_| "the part before `/` is not an IP address")?;
+        let prefix_len = len
+            .parse::<u8>()
+            .map_err(|_| "the part after `/` is not a prefix length")?;
+        if prefix_len > full_prefix_len(&base) {
+            return Err("prefix length is longer than the address family allows");
+        }
+        if !host_bits_are_zero(&base, prefix_len) {
+            return Err(
+                "host bits are set — write the network address (e.g. `10.0.0.0/8`, not \
+                 `10.0.0.5/8`), so the entry cannot trust more than it says",
+            );
+        }
+        Ok(Self { base, prefix_len })
+    }
+
+    /// True when `ip` falls inside this network.
+    ///
+    /// A mismatched family is `false`, never a panic and never a match: an IPv6 peer does not
+    /// belong to an IPv4 proxy's network however the two are spelled.
+    pub fn contains(&self, ip: IpAddr) -> bool {
+        match (self.base, ip.to_canonical()) {
+            (IpAddr::V4(base), IpAddr::V4(ip)) => {
+                prefix_eq(&base.octets(), &ip.octets(), self.prefix_len)
+            }
+            (IpAddr::V6(base), IpAddr::V6(ip)) => {
+                prefix_eq(&base.octets(), &ip.octets(), self.prefix_len)
+            }
+            _ => false,
+        }
+    }
+}
+
+/// Parse every entry. `Err` names the first bad one — `(entry, why)`.
+///
+/// Used twice on purpose: once by [`Config::validate`] so a typo is a boot failure, and once by
+/// [`crate::middleware::RateLimitState::new`] so the middleware holds parsed networks rather than
+/// re-parsing strings per request.
+pub fn parse_trusted_proxies(entries: &[String]) -> Result<Vec<ProxyNet>, (String, &'static str)> {
+    entries
+        .iter()
+        .map(|e| ProxyNet::parse(e).map_err(|why| (e.clone(), why)))
+        .collect()
+}
+
+/// Bits in a full address of this family.
+fn full_prefix_len(ip: &IpAddr) -> u8 {
+    match ip {
+        IpAddr::V4(_) => 32,
+        IpAddr::V6(_) => 128,
+    }
+}
+
+/// True when the first `prefix_len` bits of `a` and `b` are equal.
+fn prefix_eq(a: &[u8], b: &[u8], prefix_len: u8) -> bool {
+    let whole = usize::from(prefix_len / 8);
+    let rest = prefix_len % 8;
+    if a[..whole] != b[..whole] {
+        return false;
+    }
+    if rest == 0 {
+        return true;
+    }
+    // Compare only the leading `rest` bits of the next byte.
+    let mask = 0xffu8 << (8 - rest);
+    (a[whole] ^ b[whole]) & mask == 0
+}
+
+/// True when every bit past `prefix_len` is zero — i.e. the address IS its network address.
+fn host_bits_are_zero(ip: &IpAddr, prefix_len: u8) -> bool {
+    fn check(octets: &[u8], prefix_len: u8) -> bool {
+        let whole = usize::from(prefix_len / 8);
+        let rest = prefix_len % 8;
+        if rest != 0 && octets[whole] & (0xffu8 >> rest) != 0 {
+            return false;
+        }
+        let tail = if rest == 0 { whole } else { whole + 1 };
+        octets[tail..].iter().all(|b| *b == 0)
+    }
+    match ip {
+        IpAddr::V4(v4) => check(&v4.octets(), prefix_len),
+        IpAddr::V6(v6) => check(&v6.octets(), prefix_len),
+    }
 }
 
 impl Config {
@@ -202,6 +353,13 @@ impl Config {
                     "must be an absolute path",
                 ));
             }
+        }
+        // T-625 — `TRUSTED_PROXIES` decides whether a client-supplied header is believed, so a
+        // typo in it must not be survivable. Unset stays legal and means "trust none"; a *set*
+        // entry that does not parse dies here rather than being skipped at request time, where
+        // the operator would see a running API and a header that is quietly still ignored.
+        if let Err((entry, why)) = parse_trusted_proxies(&self.trusted_proxies) {
+            return Err(ConfigError::MalformedEntry("TRUSTED_PROXIES", entry, why));
         }
         Ok(self)
     }
@@ -630,5 +788,194 @@ mod tests {
             Err(ConfigError::Malformed("GAME_AGENT_SOCKET", _)) => {}
             other => panic!("expected Malformed(GAME_AGENT_SOCKET) in dev, got {other:?}"),
         }
+    }
+
+    // ───────────────────────── T-625 — TRUSTED_PROXIES ─────────────────────────
+
+    fn net(entry: &str) -> ProxyNet {
+        ProxyNet::parse(entry).unwrap_or_else(|e| panic!("{entry:?} should parse: {e}"))
+    }
+
+    fn ip(s: &str) -> IpAddr {
+        s.parse().expect("test address")
+    }
+
+    /// A bare address is that host and **nothing else**. The failure this pins is the widening
+    /// one: reading `10.0.0.1` as "the 10.0.0.0/8 this address sits in" would trust 16 million
+    /// hosts on the strength of one line.
+    #[test]
+    fn a_bare_address_is_a_single_host() {
+        let n = net("127.0.0.1");
+        assert!(n.contains(ip("127.0.0.1")));
+        assert!(!n.contains(ip("127.0.0.2")));
+        assert!(!n.contains(ip("127.1.0.1")));
+
+        let six = net("::1");
+        assert!(six.contains(ip("::1")));
+        assert!(!six.contains(ip("::2")));
+    }
+
+    /// CIDR membership, including a prefix that does not land on a byte boundary — the case a
+    /// byte-wise comparison gets wrong in the permissive direction.
+    #[test]
+    fn cidr_membership_is_bitwise() {
+        let n = net("10.0.0.0/8");
+        assert!(n.contains(ip("10.0.0.1")));
+        assert!(n.contains(ip("10.255.255.254")));
+        assert!(!n.contains(ip("11.0.0.1")));
+
+        let odd = net("192.168.4.0/22"); // 192.168.4.0 – 192.168.7.255
+        assert!(odd.contains(ip("192.168.4.1")));
+        assert!(odd.contains(ip("192.168.7.255")));
+        assert!(!odd.contains(ip("192.168.8.0")));
+        assert!(!odd.contains(ip("192.168.3.255")));
+
+        let v6 = net("2001:db8::/32");
+        assert!(v6.contains(ip("2001:db8::1")));
+        assert!(!v6.contains(ip("2001:db9::1")));
+    }
+
+    /// `/0` trusts everything of that family — legal, and it must mean what it says rather than
+    /// accidentally matching nothing (or the other family).
+    #[test]
+    fn a_zero_prefix_trusts_the_whole_family_and_only_that_family() {
+        let all_v4 = net("0.0.0.0/0");
+        assert!(all_v4.contains(ip("1.2.3.4")));
+        assert!(all_v4.contains(ip("203.0.113.9")));
+        assert!(!all_v4.contains(ip("2001:db8::1")));
+    }
+
+    /// An IPv4-mapped IPv6 peer is the IPv4 client it denotes. A dual-stack listener produces
+    /// these, and without canonicalisation a correct `127.0.0.1` entry would match nothing —
+    /// failing closed, but silently, over a configuration that is right.
+    #[test]
+    fn ipv4_mapped_addresses_canonicalise_on_both_sides() {
+        assert!(net("127.0.0.1").contains(ip("::ffff:127.0.0.1")));
+        assert!(net("::ffff:127.0.0.1").contains(ip("127.0.0.1")));
+        assert!(net("10.0.0.0/8").contains(ip("::ffff:10.1.2.3")));
+        assert!(!net("10.0.0.0/8").contains(ip("::ffff:11.1.2.3")));
+    }
+
+    /// Families do not cross.
+    #[test]
+    fn mismatched_families_never_match() {
+        assert!(!net("127.0.0.1").contains(ip("::1")));
+        assert!(!net("::1").contains(ip("127.0.0.1")));
+    }
+
+    /// A CIDR with host bits set is refused rather than silently masked. `10.0.0.5/8` read as
+    /// `10.0.0.0/8` trusts a network the operator never typed — the widening this file exists to
+    /// prevent, arriving as a typo instead of as a decision.
+    #[test]
+    fn a_cidr_with_host_bits_set_is_refused_not_masked() {
+        let err = ProxyNet::parse("10.0.0.5/8").expect_err("host bits set must not parse");
+        assert!(err.contains("host bits"), "unhelpful reason: {err}");
+        assert!(ProxyNet::parse("10.0.0.0/8").is_ok());
+        // …and the same rule inside a byte.
+        assert!(ProxyNet::parse("192.168.5.0/22").is_err());
+        assert!(ProxyNet::parse("192.168.4.0/22").is_ok());
+    }
+
+    /// Every other way an entry can be wrong is an error with a reason, never a `ProxyNet`.
+    #[test]
+    fn malformed_entries_are_rejected() {
+        for bad in [
+            "",
+            "  ",
+            "not-an-ip",
+            "10.0.0.0/",
+            "10.0.0.0/33",
+            "::/129",
+            "10.0.0.0/eight",
+            "10.0.0.0/8/8",
+            "127.0.0.1:8080",
+            "example.com",
+        ] {
+            assert!(
+                ProxyNet::parse(bad).is_err(),
+                "{bad:?} must not parse as a trusted proxy"
+            );
+        }
+    }
+
+    /// Surrounding whitespace is the `.env` copy-paste, not a different proxy.
+    #[test]
+    fn entries_tolerate_surrounding_whitespace() {
+        assert_eq!(net("  127.0.0.1  "), net("127.0.0.1"));
+        assert_eq!(net(" 10.0.0.0/8 "), net("10.0.0.0/8"));
+    }
+
+    /// A bad entry is a **boot failure**, and the message names the entry. Silently dropping it
+    /// would leave an operator who typed one CIDR wrong believing per-client keying is live.
+    #[test]
+    fn a_malformed_trusted_proxy_entry_fails_validation() {
+        let mut cfg = production_base();
+        cfg.trusted_proxies = vec!["127.0.0.1".into(), "10.0.0.5/8".into()];
+        match cfg.validate() {
+            Err(ConfigError::MalformedEntry("TRUSTED_PROXIES", entry, _)) => {
+                assert_eq!(entry, "10.0.0.5/8", "the error must name the bad entry");
+            }
+            other => panic!("expected MalformedEntry(TRUSTED_PROXIES), got {other:?}"),
+        }
+    }
+
+    /// Unset stays legal and means trust-none — the shipped default, unchanged.
+    #[test]
+    fn an_empty_trusted_proxy_list_is_valid_and_trusts_nothing() {
+        let cfg = production_base().validate().expect("no proxies is legal");
+        assert!(cfg.trusted_proxies.is_empty());
+        assert_eq!(parse_trusted_proxies(&cfg.trusted_proxies).unwrap(), vec![]);
+    }
+
+    /// **The value the deployment actually ships.** `docker-compose.staging.yml` has carried
+    /// `TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32}` since before anything read it, so T-625
+    /// turns that line from inert into load-bearing in two ways at once: it is now the setting that
+    /// switches per-client keying on, **and** it is now parsed at boot, so a value this file
+    /// refuses would stop the staging API from starting.
+    ///
+    /// Read out of the compose file rather than retyped, because a typed copy would agree with
+    /// itself while the deployment shipped something else — which is the whole T-625/T-626 theme.
+    #[test]
+    fn the_shipped_staging_default_parses_and_matches_the_loopback_proxy() {
+        const COMPOSE: &str = include_str!("../../docker-compose.staging.yml");
+        let line = COMPOSE
+            .lines()
+            .find(|l| l.trim_start().starts_with("TRUSTED_PROXIES:"))
+            .expect("docker-compose.staging.yml no longer sets TRUSTED_PROXIES");
+        let shipped = line
+            .split_once(":-")
+            .and_then(|(_, rest)| rest.split_once('}'))
+            .map(|(default, _)| default.trim())
+            .expect("TRUSTED_PROXIES no longer has a `${VAR:-default}` default");
+        let entries = split_csv(shipped);
+        let nets = parse_trusted_proxies(&entries).unwrap_or_else(|(entry, why)| {
+            panic!(
+                "the staging compose default {shipped:?} does not parse — entry {entry:?}: {why}. \
+                 The API would refuse to boot on staging."
+            )
+        });
+        assert!(
+            nets.iter().any(|n| n.contains(ip("127.0.0.1"))),
+            "the staging default {shipped:?} does not cover the loopback address Caddy proxies \
+             from, so X-Forwarded-For would still be ignored there"
+        );
+        assert!(
+            !nets.iter().any(|n| n.contains(ip("203.0.113.9"))),
+            "the staging default {shipped:?} trusts a public address"
+        );
+    }
+
+    /// The whole list parses, in order, and a good list validates.
+    #[test]
+    fn a_well_formed_list_parses_and_validates() {
+        let mut cfg = production_base();
+        cfg.trusted_proxies = vec!["127.0.0.1".into(), "10.0.0.0/8".into(), "::1".into()];
+        let cfg = cfg.validate().expect("well-formed list must validate");
+        let nets = parse_trusted_proxies(&cfg.trusted_proxies).expect("parse");
+        assert_eq!(nets.len(), 3);
+        assert!(nets[0].contains(ip("127.0.0.1")));
+        assert!(nets[1].contains(ip("10.9.9.9")));
+        assert!(nets[2].contains(ip("::1")));
+        assert!(!nets.iter().any(|n| n.contains(ip("203.0.113.1"))));
     }
 }

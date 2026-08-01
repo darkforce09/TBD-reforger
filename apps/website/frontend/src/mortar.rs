@@ -294,6 +294,51 @@ fn fmt_grid(x: f64, y: f64) -> String {
 
 /// The inverse of [`fmt_grid`]. `None` for anything this module did not write — a grid typed by
 /// hand into some other client, say — which restores as "no coordinates" rather than as `(0, 0)`.
+///
+/// # T-626 — what migration `0020`'s backfill regex really accepts
+///
+/// `migrations/0020_fire_missions_solution.sql` calls its accept test "`parse_grid`'s,
+/// deliberately character for character". **That claim is wrong, and the migration is applied and
+/// checksummed, so it cannot be corrected in place** — sqlx verifies the file's hash on every boot
+/// and an edited comment would refuse to start the API. The correction lives here, next to the
+/// function the claim is about, and is *tested* by
+/// `api/tests/t587_fire_mission_solution.rs::the_backfill_regex_is_narrower_than_parse_grid`.
+///
+/// The regex is `^\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$`. This function parses with
+/// `str::parse::<f64>`, which accepts strictly more syntax. Measured against a live Postgres:
+///
+/// ```text
+///   input            regex   parse_grid
+///   '1000, 2000'       t         t        agree — what `fmt_grid` writes
+///   '+1000, 2000'      f         t        `-?` has no `+`
+///   '.5, 2'            f         t        `\d+` requires a digit before the point
+///   '5., 2'            f         t        `(\.\d+)?` requires digits after it
+///   '1e3, 500'         f         t        no exponent form
+/// ```
+///
+/// **The divergence is under-permissive, and that is the safe direction.** A backfill that
+/// accepted *more* than this function would invent coordinates for rows the calculator has always
+/// shown as unrestorable; one that accepts less only leaves a row where it already was. Nothing is
+/// lost either: [`restore`] still falls back to this function whenever the numeric columns are
+/// NULL, so a row written in one of those forms restores today exactly as it always did.
+///
+/// **Nothing widens the regex, because nothing can write those forms.** `fmt_grid` is the only
+/// writer of this encoding, it is `format!("{x}, {y}")`, and `f64`'s `Display` never emits a `+`,
+/// never a bare leading or trailing point, and never an exponent. A `0022` migration widening the
+/// accept set would be dead code over rows that cannot exist — the ticket's alternative, weighed
+/// and declined.
+///
+/// # The one input where the regex is the *wider* of the two
+///
+/// The accept sets are not nested. A grid whose integer part exceeds `f64::MAX` — 309 digits is
+/// already enough, e.g. 309 nines — **matches the regex** and then overflows `::double precision`,
+/// which raises `out of range for type double precision` and would have **aborted the whole
+/// migration**. This function returns `None` for the same string, because `parse::<f64>` yields
+/// `inf` and the `is_finite` guard rejects it.
+///
+/// No realistic row has that shape: `fmt_grid`'s longest possible output is `f64::MAX`'s own 309
+/// digits, which casts cleanly. It would take a hand-written `psql` INSERT to produce one. Recorded
+/// because it is the kind of thing that is only obvious once, and 0020 ran without hitting it.
 fn parse_grid(s: &str) -> Option<(f64, f64)> {
     let (a, b) = s.split_once(',')?;
     let x: f64 = a.trim().parse().ok()?;
