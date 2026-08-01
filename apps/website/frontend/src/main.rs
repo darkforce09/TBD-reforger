@@ -30,10 +30,37 @@ mod dto;
 // MissionDocCore (add_slot / add_editor_layer), so wasm32-only, gated like the doc host.
 #[cfg(target_arch = "wasm32")]
 mod editor_ops;
-// T-159.21 Eden chrome scaffold — the Mission Creator's docked shell (top strip / toolbelt / dock
-// placeholders). Ungated: it holds no wasm-only types (the doc-driving on:click bodies are
-// cfg-gated inside the closures), so the native view shell compiles it too.
+// T-159.21 Eden chrome — the Mission Creator's docked shell (top strip / toolbelt / docks). T-661
+// split it by symbol into the ten `eden_*` modules below; `eden_chrome` is now a re-export shim so
+// consumers' `use crate::eden_chrome::*` paths stay stable. Ungated: they hold no wasm-only types
+// (the doc-driving on:click bodies are cfg-gated inside the closures), so the native view shell
+// compiles them too.
 mod eden_chrome;
+// T-661 — the ten modules `eden_chrome` was split into. Layout consts feed `select_tool` /
+// `mission_editor`; the rest is the docked shell (strip / docks / toolbelt / settings) plus the
+// zone tool's pure predicates.
+mod eden_dock_left;
+mod eden_dock_right;
+mod eden_env;
+mod eden_layout;
+mod eden_settings;
+mod eden_toolbelt;
+mod eden_top_strip;
+mod eden_tree;
+mod eden_vehicles_panel;
+mod eden_zones;
+// T-661 — pre-declared `mod` stubs the later editor-program tickets fill (Rust has no implicit
+// module discovery, so main.rs must name them before their tickets land).
+// T-664 — right-click context menu.
+mod context_menu;
+// T-643 — line-of-sight tool.
+mod los_tool;
+// T-645 — shared placement helpers.
+mod place_helpers;
+// T-642 — ruler / measure tool.
+mod ruler_tool;
+// T-655 — mission validation panel.
+mod validation_panel;
 // T-167 — Faction Manager dialog (FactionManagerDialog.tsx / T-153 port; /factions CRUD).
 mod faction_manager;
 // T-180.7 — Stitch ORBAT Manager on live graph (thin re-export from eden_chrome).
