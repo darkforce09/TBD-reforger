@@ -536,19 +536,30 @@ mod tests {
         );
     }
 
+    /// T-417 Class-R — the Export Compiled download must ship the compact wire bytes.
+    ///
+    /// # Cure 2 (scrub-then-grep), and why not cure 1 (T-601)
+    ///
+    /// This is the closest call of the six pins T-601 converted, because the invariant *does* have
+    /// a runtime signature: [`compiled_export_text`]. But that half is already pinned by value —
+    /// [`class_r_compiled_export_is_byte_identical_to_wire`] feeds it the golden wire bytes and
+    /// asserts the output is byte-identical. What is left over is only "the download path calls
+    /// it", and [`compiled_document_json`] lives inside `#[cfg(target_arch = "wasm32")] mod imp`
+    /// on top of `snapshot()`, `ROW_META`, `compile_payload` and `flatten_mod_document_json`. A
+    /// cure-1 harness would have to model four crate seams, and a pin whose preamble is bigger
+    /// than the code under test is a pin nobody will keep honest. Recorded as a deliberate choice,
+    /// not an oversight: if the wasm boundary ever moves, this is the pin to promote.
+    ///
+    /// T-601 replaced the ad-hoc `split(…).nth(1).split("fn clone_meta")` slice — which silently
+    /// depended on `clone_meta` staying the next item, and would have returned the *first* of two
+    /// `compiled_document_json` definitions without a word — with the shared scrubber's
+    /// ambiguity-refusing extractor.
     #[test]
     fn class_r_source_forbids_value_pretty_on_compiled_export() {
-        // Production path must call compiled_export_text, not Value→pretty on the return.
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
         const SRC: &str = include_str!("mission_commands.rs");
-        let production = SRC.split("mod tests {").next().expect("tests marker");
-        let compile_fn = production
-            .split("pub fn compiled_document_json()")
-            .nth(1)
-            .expect("compiled_document_json")
-            .split("fn clone_meta")
-            .next()
-            .expect("clone_meta");
-        let code = strip_rust_comments(compile_fn);
+        let production = live_code(SRC);
+        let code = only_body(&production, "pub fn compiled_document_json()");
         assert!(
             code.contains("compiled_export_text(&doc)"),
             "compiled_document_json must ship via compiled_export_text"
@@ -562,44 +573,91 @@ mod tests {
             !code.contains("let value: serde_json::Value"),
             "compiled_document_json must not re-parse through Value for download"
         );
+        // The ROW_META docs are PROSE, so they are read from the raw file on purpose — the
+        // scrubber's whole job is to delete prose, and asserting a doc string against scrubbed
+        // source would be a pin that can only ever fail.
+        let prose = SRC.split("mod tests {").next().expect("tests marker");
         assert!(
-            production.contains("401") && production.contains("expired session"),
+            prose.contains("401") && prose.contains("expired session"),
             "ROW_META docs must name 401 / expired session"
         );
     }
 
-    fn strip_rust_comments(src: &str) -> String {
-        let mut out = String::with_capacity(src.len());
-        let mut chars = src.chars().peekable();
-        while let Some(c) = chars.next() {
-            if c == '/' {
-                match chars.peek() {
-                    Some('/') => {
-                        chars.next();
-                        while let Some(n) = chars.next() {
-                            if n == '\n' {
-                                out.push('\n');
-                                break;
-                            }
-                        }
-                        continue;
-                    }
-                    Some('*') => {
-                        chars.next();
-                        while let Some(n) = chars.next() {
-                            if n == '*' && matches!(chars.peek(), Some('/')) {
-                                chars.next();
-                                break;
-                            }
-                        }
-                        continue;
-                    }
-                    _ => {}
-                }
-            }
-            out.push(c);
+    /// **T-601 — calibration for the export pin above.**
+    ///
+    /// The needle it cannot do without is `compiled_export_text(&doc)`. Every wrapper in the
+    /// battery must stop satisfying it, or a `to_string_pretty` download could ship while this
+    /// pin reported the compact wire path was live.
+    #[test]
+    fn the_export_pin_rejects_every_dead_code_wrapper() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let needle = "compiled_export_text(&doc)";
+        let attacks: [(&str, String); 12] = [
+            (
+                "if true == false",
+                format!("if true == false {{ {needle}; }}"),
+            ),
+            ("loop { break; … }", format!("loop {{ break; {needle}; }}")),
+            (
+                "#[cfg(any())]",
+                format!("#[cfg(any())] fn d() {{ {needle}; }}"),
+            ),
+            ("while false", format!("while false {{ {needle}; }}")),
+            ("if !true", format!("if !true {{ {needle}; }}")),
+            ("if 1 > 2", format!("if 1 > 2 {{ {needle}; }}")),
+            (
+                "if std::hint::black_box(false)",
+                format!("if std::hint::black_box(false) {{ {needle}; }}"),
+            ),
+            (
+                "const C: bool = false; if C",
+                format!("const C: bool = false;\nfn d() {{ if C {{ {needle}; }} }}"),
+            ),
+            ("return; above", format!("fn d() {{ return; {needle}; }}")),
+            (
+                "#[cfg(any())] mod shadow",
+                format!("#[cfg(any())] mod shadow {{ fn d() {{ {needle}; }} }}"),
+            ),
+            (
+                "match guard",
+                format!("match () {{ _ if false => {{ {needle}; }} _ => {{}} }}"),
+            ),
+            ("comment", format!("// {needle}")),
+        ];
+        for (label, body) in attacks {
+            let forged =
+                format!("pub fn compiled_document_json() {{\n    {body}\n}}\n#[cfg(test)]\n");
+            assert!(
+                !live_code(&forged).contains(needle),
+                "{label}: the compact-bytes needle survived scrubbing — this pin would report a \
+                 live wire-bytes download over code the build never runs"
+            );
         }
-        out
+        for (label, forged) in [
+            (
+                "shadow copy in a live mod, no cfg",
+                "pub fn compiled_document_json() { good(); }\n\
+                 mod real { pub fn compiled_document_json() { bad(); } }\n#[cfg(test)]\n",
+            ),
+            (
+                "shadow copy in an impl",
+                "pub fn compiled_document_json() { good(); }\n\
+                 impl T { pub fn compiled_document_json() { bad(); } }\n#[cfg(test)]\n",
+            ),
+        ] {
+            let scrubbed = live_code(forged);
+            let caught = std::panic::catch_unwind(|| {
+                only_body(&scrubbed, "pub fn compiled_document_json()")
+            })
+            .is_err();
+            assert!(
+                caught,
+                "{label}: the old `split(…).nth(1)` slice would have taken the first of two \
+                 definitions without saying so"
+            );
+        }
+        let live = format!("pub fn compiled_document_json() {{\n    {needle}\n}}\n#[cfg(test)]\n");
+        assert!(live_code(&live).contains(needle));
     }
 
     /// First-level object key order from a JSON object string (no full parse → no Map reorder).

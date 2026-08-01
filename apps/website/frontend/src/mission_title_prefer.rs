@@ -312,18 +312,29 @@ fn drive(
         (from..=hay.len() - needle.len()).find(|&i| hay[i..i + needle.len()] == *needle)
     }
 
-    /// `ident` occurs in `hay` as a whole word.
-    fn mentions_ident(hay: &[char], ident: &str) -> bool {
-        let needle: Vec<char> = ident.chars().collect();
-        let mut from = 0;
-        while let Some(i) = find_from(hay, &needle, from) {
-            let after = i + needle.len();
-            if (i == 0 || !is_ident_char(hay[i - 1]))
-                && (after >= hay.len() || !is_ident_char(hay[after]))
-            {
-                return true;
+    /// Any whole-word identifier in the `cfg` family — `cfg`, `cfg_attr`, `cfg_match`, whatever
+    /// the next one is called.
+    ///
+    /// The prefix rule is deliberate. T-601's first cut asked for the whole word `cfg` and let
+    /// `#[cfg_attr(target_arch = "wasm32", …)]` through, which is the same class of miss as the
+    /// hole it was written to close: conditional compilation spelled slightly differently. A pin
+    /// that runs code natively to prove a wasm wire is live must refuse *every* construct that can
+    /// make the two builds disagree, not the one spelling someone thought of.
+    fn mentions_cfg_family(hay: &[char]) -> bool {
+        let mut i = 0;
+        while i < hay.len() {
+            if is_ident_char(hay[i]) && (i == 0 || !is_ident_char(hay[i - 1])) {
+                let s = i;
+                while i < hay.len() && is_ident_char(hay[i]) {
+                    i += 1;
+                }
+                let word: String = hay[s..i].iter().collect();
+                if word == "cfg" || word.starts_with("cfg_") {
+                    return true;
+                }
+                continue;
             }
-            from = i + 1;
+            i += 1;
         }
         false
     }
@@ -438,29 +449,154 @@ fn drive(
         out
     }
 
-    /// Verbatim source of the top-level `sig` item in `mission_hydrate.rs`, signature and body.
+    /// Start of the item **including everything that annotates it**: its `#[…]` / `#![…]`
+    /// attributes and the modifiers that can sit between them and the signature (`pub`,
+    /// `pub(crate)`, `async`, `unsafe`, `const`, `extern`, `default`).
+    ///
+    /// # Why this exists (T-601, closing the wave-77 F2 hole)
+    ///
+    /// [`item`]'s `cfg` refusal used to scan only the extracted span, `start..=end` — the signature
+    /// and the body. An attribute on the line **above** the signature is outside that span, and so
+    /// was invisible to it. Demonstrated attack: move the real `adopt_payload` into a `mod` with a
+    /// `pub use` and cut its briefing, then leave a pristine copy at column 0 under
+    /// `#[cfg(any())]`. The wasm build ships the cut wire; this harness compiles and runs the
+    /// decoy, sees the briefing it wanted, and reports ok. Two independent defects in one move —
+    /// the ambiguity count missed the indented real item (fixed below), and the `cfg` refusal
+    /// missed the attribute above the decoy (fixed here).
+    ///
+    /// Comments are already blanked to spaces by [`masked`], so walking backwards over whitespace
+    /// steps over doc comments for free. The walk is deliberately **greedy**: over-including a
+    /// preceding token can only make the `cfg` refusal stricter (a false RED, which is loud),
+    /// while under-including is how the hole above stayed silent.
+    fn attr_start(mask: &[char], sig_at: usize) -> usize {
+        const MODIFIERS: &[&str] = &[
+            "pub", "async", "unsafe", "const", "extern", "default", "static", "move",
+        ];
+        let mut a = sig_at;
+        loop {
+            let mut b = a;
+            while b > 0 && mask[b - 1].is_whitespace() {
+                b -= 1;
+            }
+            if b == 0 {
+                return 0;
+            }
+            match mask[b - 1] {
+                // `#[ … ]` / `#![ … ]`
+                ']' => {
+                    let mut depth = 0usize;
+                    let mut k = b - 1;
+                    let open = loop {
+                        match mask[k] {
+                            ']' => depth += 1,
+                            '[' => {
+                                depth -= 1;
+                                if depth == 0 {
+                                    break Some(k);
+                                }
+                            }
+                            _ => {}
+                        }
+                        if k == 0 {
+                            break None;
+                        }
+                        k -= 1;
+                    };
+                    let Some(open) = open else { return b };
+                    let mut h = open;
+                    if h > 0 && mask[h - 1] == '!' {
+                        h -= 1;
+                    }
+                    if h > 0 && mask[h - 1] == '#' {
+                        a = h - 1;
+                        continue;
+                    }
+                    return b;
+                }
+                // `pub(crate)` / `pub(super)` / `pub(in path)`
+                ')' => {
+                    let mut depth = 0usize;
+                    let mut k = b - 1;
+                    let open = loop {
+                        match mask[k] {
+                            ')' => depth += 1,
+                            '(' => {
+                                depth -= 1;
+                                if depth == 0 {
+                                    break Some(k);
+                                }
+                            }
+                            _ => {}
+                        }
+                        if k == 0 {
+                            break None;
+                        }
+                        k -= 1;
+                    };
+                    match open {
+                        Some(open) => {
+                            a = open;
+                            continue;
+                        }
+                        None => return b,
+                    }
+                }
+                c if is_ident_char(c) => {
+                    let mut k = b;
+                    while k > 0 && is_ident_char(mask[k - 1]) {
+                        k -= 1;
+                    }
+                    let word: String = mask[k..b].iter().collect();
+                    if MODIFIERS.contains(&word.as_str()) {
+                        a = k;
+                        continue;
+                    }
+                    return b;
+                }
+                _ => return b,
+            }
+        }
+    }
+
+    /// Verbatim source of the one `sig` item in `mission_hydrate.rs`, signature and body.
     fn item(sig: &str) -> String {
-        let chars: Vec<char> = HYDRATE_SRC.chars().collect();
+        item_in(HYDRATE_SRC, sig)
+    }
+
+    /// [`item`], with the source as a parameter so the extractor itself can be pinned against
+    /// synthetic attacks — see [`the_extractor_refuses_the_shapes_that_beat_it`]. An extractor that
+    /// silently stopped refusing decoys would leave this whole module green over a dead wire, which
+    /// is the defect it exists to remove; it does not get to be the one untested thing here.
+    fn item_in(src: &str, sig: &str) -> String {
+        let chars: Vec<char> = src.chars().collect();
         let mask = masked(&chars);
         let needle: Vec<char> = sig.chars().collect();
 
-        // Every column-0 occurrence, not just the first: a second definition of the same item —
-        // the obvious way to feed the pin a pristine copy while the real one is cut — is
-        // ambiguity, and ambiguity is RED. (Two *compiled* definitions of one name do not build,
-        // so this only ever fires on a decoy or on a rename in progress.)
+        // EVERY occurrence, at any indentation. A second definition of the same item — the obvious
+        // way to feed the pin a pristine copy while the real one is cut — is ambiguity, and
+        // ambiguity is RED.
+        //
+        // T-601: this used to count only **column-0** occurrences, which is precisely half the
+        // W77-F2 attack: move the real item into a `mod` (indented, therefore uncounted) and leave
+        // a decoy at column 0, and `heads.len()` reads 1 while the pin examines the wrong copy.
+        // Comments and string literals are already blanked by `masked`, so a surviving occurrence
+        // of `fn adopt_payload(` / `struct RowMeta {` in the mask is a definition, full stop —
+        // there is nothing left for the column-0 filter to protect against, only something for it
+        // to hide.
         let mut heads = Vec::new();
         let mut from = 0;
         while let Some(i) = find_from(&mask, &needle, from) {
-            if i == 0 || mask[i - 1] == '\n' {
-                heads.push(i);
-            }
+            heads.push(i);
             from = i + 1;
         }
         assert_eq!(
             heads.len(),
             1,
-            "T-570: expected exactly one top-level `{sig}` in mission_hydrate.rs, found {}. \
-             The pin cannot examine code it cannot unambiguously find, so this is RED, not a skip.",
+            "T-570: expected exactly one `{sig}` in mission_hydrate.rs, found {}. \
+             0 means it was renamed or deleted; 2+ means a shadow definition — and a nested `mod` \
+             copy compiles perfectly well beside the real one, so 'it would not build' is not a \
+             defence. The pin cannot examine code it cannot unambiguously find, so this is RED, \
+             not a skip.",
             heads.len()
         );
         let start = heads[0];
@@ -486,13 +622,16 @@ fn drive(
             assert!(i < mask.len(), "T-570: `{sig}` body never closes");
         };
 
+        // The scan starts at the item's ATTRIBUTES, not at its signature — see [`attr_start`].
+        let guarded = attr_start(&mask, start);
         assert!(
-            !mentions_ident(&mask[start..=end], "cfg"),
-            "T-570: `{sig}` contains conditional compilation.\n\
-             This pin executes the item natively to prove the wire is live, so a `cfg` inside it \
-             would let the wasm build and this harness disagree — which is exactly the hole the \
-             W67 `#[cfg(any())]` decoy walked through. Conditional compilation belongs outside \
-             the pinned items."
+            !mentions_cfg_family(&mask[guarded..=end]),
+            "T-570: `{sig}` is under, or contains, conditional compilation.\n\
+             This pin executes the item natively to prove the wire is live, so a `cfg` anywhere on \
+             it would let the wasm build and this harness disagree — which is exactly the hole the \
+             W67 `#[cfg(any())]` decoy walked through, and (T-601) the hole a `#[cfg(any())]` on \
+             the line ABOVE the signature walked through after that. Conditional compilation \
+             belongs outside the pinned items."
         );
 
         chars[start..=end].iter().collect()
@@ -685,6 +824,108 @@ fn drive(
             "T-570: unexpected harness output:\n{}",
             evidence(&lines)
         );
+    }
+
+    /// **T-601 — the extractor's own pin: the two shapes that beat it in wave 77.**
+    ///
+    /// [`hydrate_wires_row_briefing_into_apply_row_meta`] is sound *given* that [`item`] hands it
+    /// the code that actually ships. Wave 77's F2 finding was that it did not have to: the
+    /// ambiguity check counted only column-0 signature heads, and the `cfg` refusal scanned only
+    /// inside the extracted span. Move the real item into a `mod` (indented → uncounted) and leave
+    /// a pristine copy at column 0 under `#[cfg(any())]` (attribute above the signature →
+    /// unscanned) and the harness compiles and runs the copy the wasm build never sees.
+    ///
+    /// Both halves are asserted here, plus the shapes a fixer might have papered over instead of
+    /// fixing. Each must panic; a returned `String` means the hole is back.
+    #[test]
+    fn the_extractor_refuses_the_shapes_that_beat_it() {
+        let refuses = |label: &str, src: &str| {
+            let owned = src.to_string();
+            let r = std::panic::catch_unwind(move || item_in(&owned, "fn adopt_payload("));
+            assert!(
+                r.is_err(),
+                "T-601: `{label}` was accepted by the extractor. This pin executes what `item` \
+                 returns, so accepting the wrong copy is a GREEN over a dead wire — the exact \
+                 defect this module exists to remove."
+            );
+        };
+
+        // ── the full W77-F2 attack: pristine column-0 decoy + real code moved into a `mod`.
+        refuses(
+            "column-0 pristine decoy with the real code in a mod",
+            "\
+#[cfg(any())]
+fn adopt_payload(doc: &D, p: &str, row: &R, mode: A) {
+    core.apply_row_meta(&t, &row.terrain, opt(&row.time_of_day), opt(&row.weather), opt(&row.briefing));
+}
+mod real {
+    pub fn adopt_payload(doc: &D, p: &str, row: &R, mode: A) {
+        core.apply_row_meta(&t, &row.terrain, opt(&row.time_of_day), opt(&row.weather), None);
+    }
+}
+pub use real::adopt_payload;
+",
+        );
+
+        // ── half one on its own: a shadow copy anywhere, with no cfg at all to give it away.
+        refuses(
+            "shadow copy in a plain mod, no cfg anywhere",
+            "\
+fn adopt_payload(doc: &D) { live(); }
+mod shadow {
+    pub fn adopt_payload(doc: &D) { dead(); }
+}
+",
+        );
+        refuses(
+            "shadow copy indented inside an impl",
+            "fn adopt_payload(a: u8) { x(); }\nimpl T {\n    fn adopt_payload(a: u8) { y(); }\n}\n",
+        );
+
+        // ── half two on its own: a cfg attribute on the line ABOVE the signature.
+        for (label, attr) in [
+            ("cfg(any()) above the signature", "#[cfg(any())]"),
+            ("spaced cfg above the signature", "#[cfg( any() )]"),
+            (
+                "target_arch above the signature",
+                "#[cfg(target_arch = \"wasm32\")]",
+            ),
+            (
+                "cfg_attr above the signature",
+                "#[cfg_attr(test, allow(dead_code))]",
+            ),
+        ] {
+            refuses(
+                label,
+                &format!("{attr}\nfn adopt_payload(a: u8) {{ live(); }}\n"),
+            );
+            // …and still refused when a doc comment sits between the attribute and the signature,
+            // since `masked` blanks the comment and the walk-back must step over it.
+            refuses(
+                &format!("{label}, doc comment between"),
+                &format!("{attr}\n/// what it does\nfn adopt_payload(a: u8) {{ live(); }}\n"),
+            );
+            // …and when the item carries a visibility modifier, which is where a naive
+            // walk-back would stop short and miss the attribute entirely.
+            refuses(
+                &format!("{label}, pub(crate) item"),
+                &format!("{attr}\npub(crate) fn adopt_payload(a: u8) {{ live(); }}\n"),
+            );
+        }
+
+        // The instrument must still say YES to the honest shape, or every assertion above is
+        // satisfied by an extractor that refuses everything and pins nothing.
+        let ok = item_in(
+            "/// doc\n#[inline]\npub fn adopt_payload(a: u8) { live(); }\n",
+            "fn adopt_payload(",
+        );
+        assert_eq!(ok, "fn adopt_payload(a: u8) { live(); }");
+        // A decoy inside a comment or a string is still not a definition.
+        let ok = item_in(
+            "// fn adopt_payload(x) {}\nlet s = \"fn adopt_payload(y) {}\";\nfn adopt_payload(a: u8) { live(); }\n",
+            "fn adopt_payload(",
+        );
+        assert_eq!(ok, "fn adopt_payload(a: u8) { live(); }");
     }
 
     /// Calibration — proof this instrument can still say NO, and proof of the specific thing five

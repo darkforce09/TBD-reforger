@@ -1673,6 +1673,1150 @@ fn paper_doll(
     }
 }
 
+/// ═══════════ T-503 / T-601 — the shared Class-R scrubber (**cure 2**) ═══════════
+///
+/// A Class-R "pin" that does `include_str!("x.rs")` then `.contains("needle")` is the repo's
+/// signature defect wearing a costume: it reports success over source it never proved was live.
+/// The needle can sit in a comment, in a string literal, in a `#[cfg(any())]` item the build never
+/// compiles, in an `if false { … }` block, or after a `return;`.
+///
+/// Five waves of pins tried to fix that by **blocklisting wrapper shapes** (`if false`,
+/// `if true == false`, `loop { break; … }`, `#[cfg(any())]`, `while false`, `if !true`) and each
+/// generation was walked around by the next spelling. Deciding reachability from source text is the
+/// halting problem in a costume, so a blocklist can only ever be one round behind.
+///
+/// This module is the **cheap** answer: rather than enumerate wrappers, lex the file once and then
+/// decide each construct *structurally* — a `cfg` predicate is evaluated as a predicate, an `if`
+/// condition is constant-folded as an expression. Whitespace, spelling and nesting stop mattering
+/// because nothing is matched literally. The expensive-but-sound answer is **cure 1**
+/// (`mission_title_prefer::t570_tests`): lift the item out, compile it, *run* it, and assert on
+/// behaviour. Dead code produces no behaviour, so cure 1 is closed by construction. Use cure 1 for
+/// any invariant with a runtime signature; use this for pure source-shape invariants (a banned
+/// literal, a wiring seam that has no callable surface).
+///
+/// # What this is honest about
+///
+/// This is still a grep, so it still cannot decide reachability in general. What it *can* do is
+/// remove the constructs it can prove dead, and be **fail-closed** everywhere else: an expression
+/// it cannot fold is left in place (the pin may still green — the residual), and a construct it
+/// mis-reads as dead removes live code and turns the pin RED (loud). Known residual shapes it does
+/// not fold, documented rather than hidden: `if let` / `while let` patterns that never match, an
+/// opaque `const fn` predicate, a `#[cfg(feature = "…")]` nobody enables. Pins that cannot tolerate
+/// those go to cure 1.
+///
+/// # The W77-F3 holes this closes
+///
+/// * `strip_cfg_any_items` matched the **literal** `"#[cfg(any())]"`, so `#[cfg( any() )]`,
+///   `#[ cfg(any()) ]` and `#[cfg(all(any(), unix))]` all sailed through. [`cfg_eval`] now parses
+///   the predicate.
+/// * `strip_const_false_blocks` whitelisted **seven** condition spellings, so `if 1 > 2`,
+///   `if std::hint::black_box(false)`, `while false` and `const C: bool = false; if C` all sailed
+///   through. [`eval_bool`] now constant-folds the condition.
+/// * `fn_body` took the **first** match of a marker, so a pristine shadow definition parked in a
+///   never-called `mod` fed the pin a decoy. [`only_body`] refuses ambiguity.
+#[cfg(test)]
+pub(crate) mod class_r_scrub {
+    use std::collections::HashMap;
+
+    pub(crate) fn is_ident_char(c: char) -> bool {
+        c.is_ascii_alphanumeric() || c == '_'
+    }
+
+    /// `kw` occurs at `i` as a whole word.
+    fn kw_at(c: &[char], i: usize, kw: &str) -> bool {
+        let k: Vec<char> = kw.chars().collect();
+        if i + k.len() > c.len() || c[i..i + k.len()] != k[..] {
+            return false;
+        }
+        (i == 0 || !is_ident_char(c[i - 1]))
+            && (i + k.len() >= c.len() || !is_ident_char(c[i + k.len()]))
+    }
+
+    fn blank(c: char) -> char {
+        if c == '\n' {
+            '\n'
+        } else {
+            ' '
+        }
+    }
+
+    /// Index of the delimiter matching the one at `at`.
+    fn balanced(c: &[char], at: usize, open: char, close: char) -> Option<usize> {
+        debug_assert_eq!(c[at], open);
+        let mut depth = 0usize;
+        for (i, ch) in c.iter().enumerate().skip(at) {
+            if *ch == open {
+                depth += 1;
+            } else if *ch == close {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(i);
+                }
+            }
+        }
+        None
+    }
+
+    /// Same-length copy of `chars` with comments blanked to spaces (newlines kept, so line numbers
+    /// survive) and string/char literals blanked when `blank_literals`.
+    ///
+    /// Length preservation is the whole point: every structural decision below is taken on the
+    /// literal-blanked copy, so a `{` inside a string or a `fn foo(` inside a doc comment can never
+    /// steer brace balancing — while the indices still address the original text.
+    fn mask(chars: &[char], blank_literals: bool) -> Vec<char> {
+        let mut out: Vec<char> = Vec::with_capacity(chars.len());
+        let mut i = 0usize;
+        while i < chars.len() {
+            // `// …`
+            if chars[i] == '/' && chars.get(i + 1) == Some(&'/') {
+                while i < chars.len() && chars[i] != '\n' {
+                    out.push(blank(chars[i]));
+                    i += 1;
+                }
+                continue;
+            }
+            // `/* … */`, nesting as rustc allows
+            if chars[i] == '/' && chars.get(i + 1) == Some(&'*') {
+                let mut depth = 0usize;
+                while i < chars.len() {
+                    if chars[i] == '/' && chars.get(i + 1) == Some(&'*') {
+                        depth += 1;
+                        out.push(' ');
+                        out.push(' ');
+                        i += 2;
+                        continue;
+                    }
+                    if chars[i] == '*' && chars.get(i + 1) == Some(&'/') {
+                        depth -= 1;
+                        out.push(' ');
+                        out.push(' ');
+                        i += 2;
+                        if depth == 0 {
+                            break;
+                        }
+                        continue;
+                    }
+                    out.push(blank(chars[i]));
+                    i += 1;
+                }
+                continue;
+            }
+            // literal spans: `r#"…"#`, `"…"`, `'c'`
+            let span = literal_span(chars, i);
+            if let Some(end) = span {
+                for k in i..end {
+                    out.push(if blank_literals {
+                        blank(chars[k])
+                    } else {
+                        chars[k]
+                    });
+                }
+                i = end;
+                continue;
+            }
+            out.push(chars[i]);
+            i += 1;
+        }
+        assert_eq!(
+            out.len(),
+            chars.len(),
+            "T-601: scrubber mask lost alignment with the source — nothing built on it can be \
+             trusted, so this is a hard failure rather than a silent skip"
+        );
+        out
+    }
+
+    /// End index (exclusive) of the string/char literal starting at `i`, if one does.
+    /// A lifetime (`'a`) is deliberately not a literal.
+    fn literal_span(chars: &[char], i: usize) -> Option<usize> {
+        // r"…" / r#"…"# / r##"…"##
+        if chars[i] == 'r' && (i == 0 || !is_ident_char(chars[i - 1])) {
+            let mut j = i + 1;
+            let mut hashes = 0usize;
+            while j < chars.len() && chars[j] == '#' {
+                hashes += 1;
+                j += 1;
+            }
+            if chars.get(j) == Some(&'"') {
+                let mut k = j + 1;
+                while k < chars.len() {
+                    if chars[k] == '"' && (1..=hashes).all(|h| chars.get(k + h) == Some(&'#')) {
+                        return Some((k + hashes + 1).min(chars.len()));
+                    }
+                    k += 1;
+                }
+                return Some(chars.len());
+            }
+        }
+        if chars[i] == '"' {
+            let mut k = i + 1;
+            while k < chars.len() {
+                if chars[k] == '\\' {
+                    k += 2;
+                    continue;
+                }
+                if chars[k] == '"' {
+                    return Some((k + 1).min(chars.len()));
+                }
+                k += 1;
+            }
+            return Some(chars.len());
+        }
+        if chars[i] == '\'' {
+            let escaped = chars.get(i + 1) == Some(&'\\');
+            let single = chars.get(i + 2) == Some(&'\'');
+            if escaped || single {
+                let mut k = i + 1;
+                while k < chars.len() {
+                    if chars[k] == '\\' {
+                        k += 2;
+                        continue;
+                    }
+                    if chars[k] == '\'' {
+                        return Some((k + 1).min(chars.len()));
+                    }
+                    k += 1;
+                }
+                return Some(chars.len());
+            }
+        }
+        None
+    }
+
+    /* ───────────────────────── `cfg` predicates, evaluated ───────────────────────── */
+
+    /// `s` is exactly `name( … )` → the argument text.
+    ///
+    /// Word-bounded by construction: `cfg_attr(…)` does not strip as `cfg` because what follows the
+    /// prefix is `_attr(`, not `(`.
+    fn call_args(s: &str, name: &str) -> Option<String> {
+        let t = s.trim();
+        let rest = t.strip_prefix(name)?.trim_start();
+        let inner = rest.strip_prefix('(')?.strip_suffix(')')?;
+        let mut d = 0i32;
+        for ch in inner.chars() {
+            match ch {
+                '(' => d += 1,
+                ')' => {
+                    d -= 1;
+                    if d < 0 {
+                        return None; // the ')' we stripped was not the matching one
+                    }
+                }
+                _ => {}
+            }
+        }
+        (d == 0).then(|| inner.to_string())
+    }
+
+    /// Split on commas that are not inside a nested group. Empty input → no arms (not one empty).
+    fn split_top_commas(s: &str) -> Vec<String> {
+        if s.trim().is_empty() {
+            return Vec::new();
+        }
+        let mut parts = Vec::new();
+        let mut d = 0i32;
+        let mut cur = String::new();
+        for ch in s.chars() {
+            match ch {
+                '(' | '[' | '{' => d += 1,
+                ')' | ']' | '}' => d -= 1,
+                ',' if d == 0 => {
+                    parts.push(std::mem::take(&mut cur));
+                    continue;
+                }
+                _ => {}
+            }
+            cur.push(ch);
+        }
+        if !cur.trim().is_empty() {
+            parts.push(cur);
+        }
+        parts
+    }
+
+    /// Statically-decidable truth of a `cfg` predicate, with `leaf` deciding the atoms
+    /// (`target_arch = "wasm32"`, `feature = "x"`, a bare ident).
+    ///
+    /// Follows rustc's own empty-list rule: `any()` is false, `all()` is true. That is what makes
+    /// `#[cfg(any())]` the canonical never-compiled attribute — and what makes this a *parse*
+    /// rather than the literal `"#[cfg(any())]"` match that `#[cfg( any() )]` walked straight past.
+    fn cfg_eval_with(pred: &str, leaf: &dyn Fn(&str) -> Option<bool>) -> Option<bool> {
+        let p = pred.trim();
+        if p.is_empty() {
+            return None;
+        }
+        for name in ["any", "all"] {
+            if let Some(args) = call_args(p, name) {
+                let vals: Vec<Option<bool>> = split_top_commas(&args)
+                    .iter()
+                    .map(|s| cfg_eval_with(s, leaf))
+                    .collect();
+                return if name == "any" {
+                    if vals.iter().any(|v| *v == Some(true)) {
+                        Some(true)
+                    } else if vals.iter().all(|v| *v == Some(false)) {
+                        Some(false) // includes `any()` — no arm is true
+                    } else {
+                        None
+                    }
+                } else if vals.iter().any(|v| *v == Some(false)) {
+                    Some(false)
+                } else if vals.iter().all(|v| *v == Some(true)) {
+                    Some(true) // includes `all()` — no arm is false
+                } else {
+                    None
+                };
+            }
+        }
+        if let Some(args) = call_args(p, "not") {
+            return cfg_eval_with(&args, leaf).map(|b| !b);
+        }
+        leaf(p)
+    }
+
+    /// Truth of a `cfg` predicate for **any** build. `None` = build-dependent, so **leave it
+    /// alone** (`target_arch = "wasm32"` and `feature = "x"` are real production code).
+    pub(crate) fn cfg_eval(pred: &str) -> Option<bool> {
+        cfg_eval_with(pred, &|_| None)
+    }
+
+    /// Truth of a `cfg` predicate **for the wasm32 SPA build** — the build that actually ships.
+    /// Only `target_arch` is decided; everything else stays unknown, which callers must treat as
+    /// a refusal rather than a default.
+    pub(crate) fn cfg_eval_wasm(pred: &str) -> Option<bool> {
+        cfg_eval_with(pred, &|atom| {
+            let (k, v) = atom.split_once('=')?;
+            (k.trim() == "target_arch").then(|| v.trim().trim_matches('"') == "wasm32")
+        })
+    }
+
+    /// Any whole-word identifier in the `cfg` family — `cfg`, `cfg_attr`, `cfg_match`, whatever
+    /// the next one is called. The prefix rule is deliberate: a defence that knows only the exact
+    /// spelling `cfg` is the same class of miss as the literal `"#[cfg(any())]"` match it replaced.
+    pub(crate) fn mentions_cfg_family(src: &str) -> bool {
+        let c: Vec<char> = src.chars().collect();
+        let mut i = 0;
+        while i < c.len() {
+            if is_ident_char(c[i]) && (i == 0 || !is_ident_char(c[i - 1])) {
+                let s = i;
+                while i < c.len() && is_ident_char(c[i]) {
+                    i += 1;
+                }
+                let w: String = c[s..i].iter().collect();
+                if w == "cfg" || w.starts_with("cfg_") {
+                    return true;
+                }
+                continue;
+            }
+            i += 1;
+        }
+        false
+    }
+
+    /// Resolve every `#[cfg(…)]` inside `item` **as the wasm32 SPA build sees it**: keep what wasm
+    /// compiles, delete what it does not, and refuse anything undecidable.
+    ///
+    /// This is the seam that lets **cure 1** (compile-and-run) reach code that only exists on
+    /// wasm32. `mission_title_prefer`'s harness refuses `cfg` inside a pinned item outright,
+    /// because there the wire is unconditional and a `cfg` could only be a decoy. On this page the
+    /// live branch *is* the `#[cfg(target_arch = "wasm32")]` one, so refusing would mean never
+    /// pinning it at all.
+    ///
+    /// The transformation is narrow on purpose and stated in full:
+    ///
+    /// * a `cfg` that is **true** on wasm32 → the attribute is removed, the item is kept verbatim;
+    /// * a `cfg` that is **false** on wasm32 → the attribute *and its item* are removed, exactly as
+    ///   the shipped build removes them;
+    /// * anything else (`feature = …`, a bare ident, `cfg_attr`) → **panic**. An undecidable gate
+    ///   means the harness and the shipped build could disagree, and a pin that runs a different
+    ///   program from the one that ships is the defect, not the fix.
+    ///
+    /// The final assertion is the belt: no `cfg` of any spelling survives into the code that gets
+    /// compiled and run.
+    pub(crate) fn resolve_wasm_cfg(item: &str) -> String {
+        let chars: Vec<char> = item.chars().collect();
+        let scan = mask(&chars, true);
+        let mut out = chars.clone();
+        let mut i = 0usize;
+        while i < scan.len() {
+            if scan[i] != '#' {
+                i += 1;
+                continue;
+            }
+            let mut j = i + 1;
+            if scan.get(j) == Some(&'!') {
+                j += 1;
+            }
+            if scan.get(j) != Some(&'[') {
+                i += 1;
+                continue;
+            }
+            let Some(close) = balanced(&scan, j, '[', ']') else {
+                i += 1;
+                continue;
+            };
+            // Literals intact here: the predicate is `target_arch = "wasm32"`.
+            let inner: String = chars[j + 1..close].iter().collect();
+            if let Some(pred) = call_args(&inner, "cfg") {
+                match cfg_eval_wasm(&pred) {
+                    Some(true) => {
+                        for k in i..=close {
+                            out[k] = blank(out[k]);
+                        }
+                    }
+                    Some(false) => {
+                        let end = item_end_after(&scan, close + 1);
+                        for k in i..end {
+                            out[k] = blank(out[k]);
+                        }
+                    }
+                    None => panic!(
+                        "T-601: `#[cfg({pred})]` inside a cure-1 pinned item cannot be resolved \
+                         for the wasm32 build. This pin compiles and runs the item to prove the \
+                         path is live, so a gate the harness cannot decide would let it run a \
+                         different program from the one that ships. Move the conditional out of \
+                         the pinned item, or teach `cfg_eval_wasm` the atom."
+                    ),
+                }
+            }
+            i = close + 1;
+        }
+        let resolved: String = out.into_iter().collect();
+        assert!(
+            !mentions_cfg_family(&resolved),
+            "T-601: conditional compilation survived resolution:\n{resolved}"
+        );
+        resolved
+    }
+
+    /* ─────────────────── boolean conditions, constant-folded ─────────────────── */
+
+    #[derive(Debug, Clone, Copy, PartialEq)]
+    enum Val {
+        B(bool),
+        N(f64),
+        /// Depends on something this pass cannot see. Fail-open: the block is kept.
+        U,
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    enum Tok {
+        Ident(String),
+        Num(f64),
+        Bool(bool),
+        Op(&'static str),
+        Other,
+    }
+
+    fn lex(expr: &str) -> Vec<Tok> {
+        const SUFFIXES: &[&str] = &[
+            "i8", "i16", "i32", "i64", "i128", "isize", "u8", "u16", "u32", "u64", "u128", "usize",
+            "f32", "f64",
+        ];
+        let c: Vec<char> = expr.chars().collect();
+        let mut t = Vec::new();
+        let mut i = 0usize;
+        while i < c.len() {
+            if c[i].is_whitespace() {
+                i += 1;
+                continue;
+            }
+            if c[i].is_ascii_digit() {
+                let s = i;
+                while i < c.len() && (c[i].is_ascii_digit() || c[i] == '_' || c[i] == '.') {
+                    i += 1;
+                }
+                let ns = i;
+                while i < c.len() && is_ident_char(c[i]) {
+                    i += 1;
+                }
+                let lit: String = c[s..ns].iter().filter(|x| **x != '_').collect();
+                let suffix: String = c[ns..i].iter().collect();
+                if !suffix.is_empty() && !SUFFIXES.contains(&suffix.as_str()) {
+                    t.push(Tok::Other);
+                    continue;
+                }
+                t.push(lit.parse::<f64>().map(Tok::Num).unwrap_or(Tok::Other));
+                continue;
+            }
+            if is_ident_char(c[i]) {
+                let s = i;
+                while i < c.len() {
+                    if is_ident_char(c[i]) {
+                        i += 1;
+                    } else if c[i] == ':' && c.get(i + 1) == Some(&':') {
+                        i += 2;
+                    } else {
+                        break;
+                    }
+                }
+                let w: String = c[s..i].iter().collect();
+                t.push(match w.as_str() {
+                    "true" => Tok::Bool(true),
+                    "false" => Tok::Bool(false),
+                    "as" => Tok::Op("as"),
+                    _ => Tok::Ident(w),
+                });
+                continue;
+            }
+            let two: String = c[i..(i + 2).min(c.len())].iter().collect();
+            let two_op = match two.as_str() {
+                "&&" => Some("&&"),
+                "||" => Some("||"),
+                "==" => Some("=="),
+                "!=" => Some("!="),
+                "<=" => Some("<="),
+                ">=" => Some(">="),
+                _ => None,
+            };
+            if let Some(op) = two_op {
+                t.push(Tok::Op(op));
+                i += 2;
+                continue;
+            }
+            t.push(match c[i] {
+                '!' => Tok::Op("!"),
+                '<' => Tok::Op("<"),
+                '>' => Tok::Op(">"),
+                '(' => Tok::Op("("),
+                ')' => Tok::Op(")"),
+                ',' => Tok::Op(","),
+                _ => Tok::Other,
+            });
+            i += 1;
+        }
+        t
+    }
+
+    struct Parser<'a> {
+        t: Vec<Tok>,
+        i: usize,
+        consts: &'a HashMap<String, bool>,
+    }
+
+    impl Parser<'_> {
+        fn peek(&self) -> Option<&Tok> {
+            self.t.get(self.i)
+        }
+        fn eat(&mut self, op: &str) -> bool {
+            if matches!(self.peek(), Some(Tok::Op(x)) if *x == op) {
+                self.i += 1;
+                true
+            } else {
+                false
+            }
+        }
+        fn or(&mut self) -> Val {
+            let mut l = self.and();
+            while self.eat("||") {
+                let r = self.and();
+                l = match (l, r) {
+                    (Val::B(true), _) | (_, Val::B(true)) => Val::B(true),
+                    (Val::B(a), Val::B(b)) => Val::B(a || b),
+                    _ => Val::U,
+                };
+            }
+            l
+        }
+        fn and(&mut self) -> Val {
+            let mut l = self.cmp();
+            while self.eat("&&") {
+                let r = self.cmp();
+                l = match (l, r) {
+                    (Val::B(false), _) | (_, Val::B(false)) => Val::B(false),
+                    (Val::B(a), Val::B(b)) => Val::B(a && b),
+                    _ => Val::U,
+                };
+            }
+            l
+        }
+        fn cmp(&mut self) -> Val {
+            let l = self.unary();
+            for op in ["==", "!=", "<=", ">=", "<", ">"] {
+                if self.eat(op) {
+                    let r = self.unary();
+                    return compare(op, l, r);
+                }
+            }
+            l
+        }
+        fn unary(&mut self) -> Val {
+            if self.eat("!") {
+                return match self.unary() {
+                    Val::B(b) => Val::B(!b),
+                    _ => Val::U,
+                };
+            }
+            let v = self.primary();
+            // `<expr> as bool` / `as u8` — the cast target is an identifier; a non-identifier
+            // target is something this pass does not model, so the whole expression is unknown.
+            let mut v = v;
+            while self.eat("as") {
+                match self.peek() {
+                    Some(Tok::Ident(ty)) => {
+                        if ty != "bool" {
+                            v = Val::U;
+                        }
+                        self.i += 1;
+                    }
+                    _ => return Val::U,
+                }
+            }
+            v
+        }
+        fn primary(&mut self) -> Val {
+            match self.t.get(self.i).cloned() {
+                Some(Tok::Bool(b)) => {
+                    self.i += 1;
+                    Val::B(b)
+                }
+                Some(Tok::Num(n)) => {
+                    self.i += 1;
+                    Val::N(n)
+                }
+                Some(Tok::Op("(")) => {
+                    self.i += 1;
+                    let v = self.or();
+                    if !self.eat(")") {
+                        return Val::U;
+                    }
+                    v
+                }
+                Some(Tok::Ident(name)) => {
+                    self.i += 1;
+                    let macro_bang = self.eat("!");
+                    if self.eat("(") {
+                        let mut args = Vec::new();
+                        if !self.eat(")") {
+                            loop {
+                                args.push(self.or());
+                                if self.eat(")") {
+                                    break;
+                                }
+                                if !self.eat(",") {
+                                    return Val::U;
+                                }
+                                if self.eat(")") {
+                                    break;
+                                }
+                            }
+                        }
+                        return if macro_bang {
+                            Val::U // `cfg!(…)` is folded before lexing; every other macro is opaque
+                        } else {
+                            transparent_call(&name, &args)
+                        };
+                    }
+                    if macro_bang {
+                        return Val::U;
+                    }
+                    self.consts.get(&name).map(|b| Val::B(*b)).unwrap_or(Val::U)
+                }
+                _ => {
+                    self.i = self.t.len();
+                    Val::U
+                }
+            }
+        }
+    }
+
+    /// Calls that are the identity on their argument, so the argument's constness passes through.
+    ///
+    /// `std::hint::black_box` is the interesting one: it exists precisely to hide a value from the
+    /// optimiser, which is what made `if std::hint::black_box(false)` a working decoy against a
+    /// condition **whitelist**. It does not hide anything from a reader, and it does not change the
+    /// value — so folding through it is the correct reading, not a special case bolted on.
+    fn transparent_call(path: &str, args: &[Val]) -> Val {
+        let last = path.rsplit("::").next().unwrap_or(path);
+        if args.len() == 1 && matches!(last, "black_box" | "identity") {
+            return args[0];
+        }
+        Val::U
+    }
+
+    fn compare(op: &str, l: Val, r: Val) -> Val {
+        match (l, r) {
+            (Val::N(a), Val::N(b)) => Val::B(match op {
+                "==" => a == b,
+                "!=" => a != b,
+                "<=" => a <= b,
+                ">=" => a >= b,
+                "<" => a < b,
+                _ => a > b,
+            }),
+            (Val::B(a), Val::B(b)) => match op {
+                "==" => Val::B(a == b),
+                "!=" => Val::B(a != b),
+                _ => Val::U,
+            },
+            _ => Val::U,
+        }
+    }
+
+    /// Replace every `cfg!(…)` with the literal its predicate evaluates to, so the expression
+    /// parser never has to model `any()`/`all()` twice.
+    fn fold_cfg_macros(expr: &str) -> String {
+        let c: Vec<char> = expr.chars().collect();
+        let mut out = String::with_capacity(expr.len());
+        let mut i = 0usize;
+        while i < c.len() {
+            if kw_at(&c, i, "cfg") && c.get(i + 3) == Some(&'!') {
+                let mut j = i + 4;
+                while j < c.len() && c[j].is_whitespace() {
+                    j += 1;
+                }
+                if c.get(j) == Some(&'(') {
+                    if let Some(close) = balanced(&c, j, '(', ')') {
+                        let pred: String = c[j + 1..close].iter().collect();
+                        match cfg_eval(&pred) {
+                            Some(true) => out.push_str("true"),
+                            Some(false) => out.push_str("false"),
+                            None => out.push_str("__unknown_cfg__"),
+                        }
+                        i = close + 1;
+                        continue;
+                    }
+                }
+            }
+            out.push(c[i]);
+            i += 1;
+        }
+        out
+    }
+
+    /// Constant-fold a boolean condition. `Some(false)` is the only answer that removes code.
+    pub(crate) fn eval_bool(expr: &str, consts: &HashMap<String, bool>) -> Option<bool> {
+        let folded = fold_cfg_macros(expr);
+        let mut p = Parser {
+            t: lex(&folded),
+            i: 0,
+            consts,
+        };
+        let v = p.or();
+        // Trailing tokens mean the grammar did not describe this expression; refuse rather than
+        // act on a partial read — a partial read is exactly the defect this file exists to remove.
+        if p.i != p.t.len() {
+            return None;
+        }
+        match v {
+            Val::B(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    /// `const NAME: bool = …;` / `static NAME: bool = …;` / `let NAME: bool = …;` /
+    /// `let NAME = true|false;` bindings whose value folds to a constant.
+    ///
+    /// This is what makes `const C: bool = false; if C { … }` fold — and, more to the point, what
+    /// makes `const NEVER: bool = 1 > 2; if NEVER { … }` fold, which a fixer who special-cased the
+    /// literal `= false` would have missed.
+    ///
+    /// Deliberately conservative: `mut` bindings are skipped (they can be reassigned out of sight)
+    /// and a name bound twice to different values is dropped. This pass is not scope-aware, so the
+    /// failure direction is a *false* strip — which turns a pin RED, loudly, rather than green.
+    ///
+    /// # The bug this scan had, found by running the battery against real files
+    ///
+    /// The cursor used to resume at the **end of the initializer** after recording a binding, which
+    /// is correct for finding the next *sibling* binding and catastrophic for anything nested: a
+    /// `let run = async { … };` or a `let send = move |t| { … };` swallowed its entire body, so no
+    /// binding inside it was ever seen. `sse.rs`, `client.rs` and `arsenal.rs` all wrap their live
+    /// path in exactly that shape, and a `const C: bool = false; if C { … }` planted inside one of
+    /// them survived scrubbing and greened the pin — measured, not theorised. The cursor now
+    /// advances one keyword at a time, so a nested binding is just another binding.
+    fn bool_bindings(scan: &[char]) -> HashMap<String, bool> {
+        let mut seen: HashMap<String, Option<bool>> = HashMap::new();
+        let n = scan.len();
+        let mut i = 0usize;
+        while i < n {
+            let Some(kw) = ["const", "static", "let"]
+                .iter()
+                .find(|k| kw_at(scan, i, k))
+                .copied()
+            else {
+                i += 1;
+                continue;
+            };
+            let mut j = i + kw.len();
+            while j < n && scan[j].is_whitespace() {
+                j += 1;
+            }
+            if kw_at(scan, j, "mut") {
+                i += kw.len();
+                continue; // reassignable — out of scope for a text pass
+            }
+            let s = j;
+            while j < n && is_ident_char(scan[j]) {
+                j += 1;
+            }
+            if j == s {
+                i += kw.len();
+                continue;
+            }
+            let name: String = scan[s..j].iter().collect();
+            while j < n && scan[j].is_whitespace() {
+                j += 1;
+            }
+            let mut annotated = false;
+            if scan.get(j) == Some(&':') {
+                j += 1;
+                while j < n && scan[j].is_whitespace() {
+                    j += 1;
+                }
+                let ts = j;
+                while j < n && is_ident_char(scan[j]) {
+                    j += 1;
+                }
+                if scan[ts..j].iter().collect::<String>() != "bool" {
+                    i += kw.len();
+                    continue;
+                }
+                annotated = true;
+                while j < n && scan[j].is_whitespace() {
+                    j += 1;
+                }
+            }
+            if scan.get(j) != Some(&'=') || scan.get(j + 1) == Some(&'=') {
+                i += kw.len();
+                continue;
+            }
+            j += 1;
+            let es = j;
+            let mut d = 0i32;
+            while j < n {
+                match scan[j] {
+                    '(' | '[' | '{' => d += 1,
+                    ')' | ']' | '}' => d -= 1,
+                    ';' if d <= 0 => break,
+                    _ => {}
+                }
+                j += 1;
+            }
+            let expr: String = scan[es..j.min(n)].iter().collect();
+            // An un-annotated `let` only counts on a bare bool literal: `let x = some_call();`
+            // must not be mistaken for a constant just because the call is opaque.
+            let v = match eval_bool(&expr, &HashMap::new()) {
+                Some(b) if annotated || matches!(expr.trim(), "true" | "false") => Some(b),
+                _ => None,
+            };
+            seen.entry(name)
+                .and_modify(|e| {
+                    if *e != v {
+                        *e = None;
+                    }
+                })
+                .or_insert(v);
+            // One keyword forward, NOT to the end of the initializer — see the note above.
+            i += kw.len();
+        }
+        seen.into_iter()
+            .filter_map(|(k, v)| v.map(|b| (k, b)))
+            .collect()
+    }
+
+    /* ─────────────────────────── the scrubber itself ─────────────────────────── */
+
+    struct Scrub {
+        /// Structure is read from here only: comments and literals blanked, length preserved.
+        scan: Vec<char>,
+        /// What the pin ends up greping.
+        out: Vec<char>,
+    }
+
+    impl Scrub {
+        /// Blank a range in both buffers, so later passes cannot see what an earlier pass removed
+        /// and brace balance is preserved (a balanced region blanked stays balanced).
+        fn kill(&mut self, range: std::ops::Range<usize>) {
+            for k in range {
+                if k < self.scan.len() {
+                    self.scan[k] = blank(self.scan[k]);
+                    self.out[k] = blank(self.out[k]);
+                }
+            }
+        }
+
+        /// Everything from the crate's `#[cfg(test)]` boundary onward, so a pin can never read its
+        /// own assertion strings back as evidence.
+        fn cut_test_module(&mut self) {
+            let needle: Vec<char> = "#[cfg(test)]".chars().collect();
+            if let Some(at) = find_from(&self.scan, &needle, 0) {
+                self.kill(at..self.scan.len());
+            }
+        }
+
+        /// Remove every item whose `cfg` predicate is provably false, attribute and body together.
+        fn kill_dead_cfg_items(&mut self) {
+            let n = self.scan.len();
+            let mut i = 0usize;
+            while i < n {
+                if self.scan[i] != '#' {
+                    i += 1;
+                    continue;
+                }
+                let mut j = i + 1;
+                if self.scan.get(j) == Some(&'!') {
+                    j += 1;
+                }
+                if self.scan.get(j) != Some(&'[') {
+                    i += 1;
+                    continue;
+                }
+                let Some(close) = balanced(&self.scan, j, '[', ']') else {
+                    i += 1;
+                    continue;
+                };
+                let inner: String = self.scan[j + 1..close].iter().collect();
+                if let Some(pred) = call_args(&inner, "cfg") {
+                    if cfg_eval(&pred) == Some(false) {
+                        let end = item_end_after(&self.scan, close + 1);
+                        self.kill(i..end);
+                        i = end;
+                        continue;
+                    }
+                }
+                i = close + 1;
+            }
+        }
+
+        /// Remove `if <provably false> { … }` and `while <provably false> { … }` blocks — and the
+        /// `match` arm form `_ if <provably false> => …`, which is neither.
+        fn kill_const_false_blocks(&mut self) {
+            let consts = bool_bindings(&self.scan);
+            let n = self.scan.len();
+            let mut i = 0usize;
+            while i < n {
+                let klen = if kw_at(&self.scan, i, "if") {
+                    2
+                } else if kw_at(&self.scan, i, "while") {
+                    5
+                } else {
+                    i += 1;
+                    continue;
+                };
+                let mut j = i + klen;
+                let mut d = 0i32;
+                let mut stop = None;
+                while j < n {
+                    match self.scan[j] {
+                        '(' | '[' => d += 1,
+                        ')' | ']' => d -= 1,
+                        '{' if d <= 0 => {
+                            stop = Some((j, false));
+                            break;
+                        }
+                        '=' if d <= 0 && self.scan.get(j + 1) == Some(&'>') => {
+                            stop = Some((j, true));
+                            break;
+                        }
+                        ';' if d <= 0 => break,
+                        _ => {}
+                    }
+                    j += 1;
+                }
+                let Some((at, arrow)) = stop else {
+                    i += klen;
+                    continue;
+                };
+                let cond: String = self.scan[i + klen..at].iter().collect();
+                if eval_bool(&cond, &consts) == Some(false) {
+                    let end = if arrow {
+                        arm_end(&self.scan, at + 2)
+                    } else {
+                        balanced(&self.scan, at, '{', '}')
+                            .map(|e| e + 1)
+                            .unwrap_or(n)
+                    };
+                    self.kill(i..end);
+                    i = end;
+                } else {
+                    i += klen;
+                }
+            }
+        }
+
+        /// Remove everything between a bare `break;` / `continue;` / `return;` and the `}` that
+        /// closes the block it sits in.
+        fn kill_after_unconditional_jump(&mut self) {
+            let n = self.scan.len();
+            let mut i = 0usize;
+            while i < n {
+                let Some(kw) = ["break", "continue", "return"]
+                    .iter()
+                    .find(|k| kw_at(&self.scan, i, k))
+                    .copied()
+                else {
+                    i += 1;
+                    continue;
+                };
+                let mut j = i + kw.len();
+                while j < n && self.scan[j].is_whitespace() {
+                    j += 1;
+                }
+                if self.scan.get(j) != Some(&';') {
+                    i += kw.len();
+                    continue;
+                }
+                j += 1;
+                let from = j;
+                let mut depth = 0i32;
+                while j < n {
+                    match self.scan[j] {
+                        '{' => depth += 1,
+                        '}' if depth == 0 => break,
+                        '}' => depth -= 1,
+                        _ => {}
+                    }
+                    j += 1;
+                }
+                self.kill(from..j);
+                i = j;
+            }
+        }
+    }
+
+    fn find_from(hay: &[char], needle: &[char], from: usize) -> Option<usize> {
+        if needle.is_empty() || hay.len() < needle.len() {
+            return None;
+        }
+        (from..=hay.len() - needle.len()).find(|&i| hay[i..i + needle.len()] == *needle)
+    }
+
+    /// End (exclusive) of the item an attribute annotates: its balanced `{…}` body, or its `;`.
+    /// Depth-tracked, so the `;` inside `[u8; 3]` is not mistaken for the item terminator.
+    fn item_end_after(scan: &[char], from: usize) -> usize {
+        let n = scan.len();
+        let mut i = from;
+        let mut d = 0i32;
+        while i < n {
+            match scan[i] {
+                '(' | '[' => d += 1,
+                ')' | ']' => d -= 1,
+                ';' if d <= 0 => return i + 1,
+                '{' if d <= 0 => {
+                    return balanced(scan, i, '{', '}').map(|e| e + 1).unwrap_or(n);
+                }
+                _ => {}
+            }
+            i += 1;
+        }
+        n
+    }
+
+    /// End (exclusive) of a `match` arm body starting at `from` (just past the `=>`).
+    fn arm_end(scan: &[char], from: usize) -> usize {
+        let n = scan.len();
+        let mut i = from;
+        while i < n && scan[i].is_whitespace() {
+            i += 1;
+        }
+        if scan.get(i) == Some(&'{') {
+            let end = balanced(scan, i, '{', '}').map(|e| e + 1).unwrap_or(n);
+            // an optional trailing comma belongs to the arm
+            let mut k = end;
+            while k < n && scan[k].is_whitespace() {
+                k += 1;
+            }
+            return if scan.get(k) == Some(&',') {
+                k + 1
+            } else {
+                end
+            };
+        }
+        let mut d = 0i32;
+        while i < n {
+            match scan[i] {
+                '(' | '[' | '{' => d += 1,
+                ')' | ']' => d -= 1,
+                '}' if d == 0 => return i,
+                '}' => d -= 1,
+                ',' if d <= 0 => return i + 1,
+                _ => {}
+            }
+            i += 1;
+        }
+        n
+    }
+
+    fn scrub(src: &str, keep_literals: bool) -> String {
+        let chars: Vec<char> = src.chars().collect();
+        let mut s = Scrub {
+            scan: mask(&chars, true),
+            out: mask(&chars, !keep_literals),
+        };
+        s.cut_test_module();
+        s.kill_dead_cfg_items();
+        s.kill_const_false_blocks();
+        s.kill_after_unconditional_jump();
+        s.out.into_iter().collect()
+    }
+
+    /// The production half of `src` with comments and unreachable constructs removed. **String
+    /// literals are kept** — a route path, a `data-testid` or user-visible copy is code that ships,
+    /// and pinning it is not the same defect as pinning a comment.
+    pub(crate) fn live_source(src: &str) -> String {
+        scrub(src, true)
+    }
+
+    /// Same, with string/char literals blanked as well — for pins that mean "this is a **call**,
+    /// not a mention", where a needle sitting inside a literal is precisely the decoy.
+    pub(crate) fn live_code(src: &str) -> String {
+        scrub(src, false)
+    }
+
+    /// `(signature_tail, body)` of the **only** item matching `marker`.
+    ///
+    /// Panics on zero (a rename must be new information, not "no match") **and on two or more**:
+    /// a second definition of the same name is how a pin is fed a pristine decoy while the real
+    /// item is cut, and a grep cannot tell which one ships. Ambiguity is RED, not a coin flip.
+    ///
+    /// This is the check the old `fn_body` did not have. "Two definitions would not compile" is
+    /// not a defence — a copy inside a `mod`, an `impl`, or a `#[cfg(any())]` block compiles
+    /// perfectly well beside the real one, and that is the whole shadow-copy attack.
+    fn split_only<'a>(src: &'a str, marker: &str) -> (usize, usize, usize) {
+        let hits = src.matches(marker).count();
+        assert_eq!(
+            hits, 1,
+            "T-601: expected exactly one `{marker}` in the live source, found {hits}. \
+             0 means it was renamed or deleted; 2+ means a shadow definition — either way this pin \
+             cannot examine code it cannot unambiguously find, so it fails rather than guesses."
+        );
+        let at = src.find(marker).expect("counted above");
+        let tail = &src[at + marker.len()..];
+        let open = tail
+            .find('{')
+            .unwrap_or_else(|| panic!("`{marker}` has no body"));
+        let bytes = tail.as_bytes();
+        let mut depth = 1usize;
+        let mut i = open + 1;
+        while i < tail.len() && depth > 0 {
+            match bytes[i] {
+                b'{' => depth += 1,
+                b'}' => depth -= 1,
+                _ => {}
+            }
+            i += 1;
+        }
+        assert_eq!(depth, 0, "`{marker}` body is unbalanced");
+        (at + marker.len(), open, i)
+    }
+
+    /// The whole of the **only** item matching `marker`: signature and balanced body.
+    ///
+    /// Use this when the assertion is about the item's *shape* — a parameter type, a return type —
+    /// and not only about what it calls.
+    pub(crate) fn only_item<'a>(src: &'a str, marker: &str) -> &'a str {
+        let (base, _open, end) = split_only(src, marker);
+        &src[base - marker.len()..base + end]
+    }
+
+    /// The balanced `{…}` body of the **only** item matching `marker`.
+    pub(crate) fn only_body<'a>(src: &'a str, marker: &str) -> &'a str {
+        let (base, open, end) = split_only(src, marker);
+        &src[base + open + 1..base + end - 1]
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2506,288 +3650,19 @@ mod tests {
     /* ═══════════ T-503 — the Arsenal commits on the spot, and now says so ═══════════ */
 
     /// arsenal.rs with everything **unreachable** removed, so a source pin cannot be greened by a
-    /// needle that no running build can reach. Strips, in order: comments, string/char literals,
-    /// `#[cfg(any())]` items, constant-false `if` blocks, and everything after an unconditional
-    /// `break;` / `continue;` / `return;`. The test module is cut off first, so a pin can never
-    /// read its own assertion.
+    /// needle that no running build can reach.
     ///
-    /// This exists because a pin that greps raw text is worthless — the needle sits in a comment or
-    /// a dead block and the pin greens over a broken code path. Each pin below records the decoys
-    /// that were actually run against it.
+    /// T-601 moved the machinery to [`super::class_r_scrub`], which every Class-R pin in this crate
+    /// now shares. The behaviour it replaced was literal matching: `#[cfg(any())]` was a **string**
+    /// compare and the constant-false conditions were a **seven-entry whitelist**, so
+    /// `#[cfg( any() )]`, `if 1 > 2`, `if std::hint::black_box(false)` and `while false` all walked
+    /// straight past it (measured, wave 77 F3). The replacement parses the `cfg` predicate and
+    /// constant-folds the condition, so spelling and whitespace stop being the defence.
     fn live_production_src() -> String {
-        const SRC: &str = include_str!("arsenal.rs");
-        let production = SRC.split("#[cfg(test)]").next().unwrap_or(SRC);
-        strip_after_unconditional_jump(&strip_const_false_blocks(&strip_cfg_any_items(
-            &strip_comments_and_literals(production),
-        )))
+        super::class_r_scrub::live_code(include_str!("arsenal.rs"))
     }
 
-    fn ident_char(c: char) -> bool {
-        c.is_ascii_alphanumeric() || c == '_'
-    }
-
-    /// Word-boundary check for a keyword starting at `i`.
-    fn kw_at(chars: &[char], i: usize, kw: &str) -> bool {
-        let k: Vec<char> = kw.chars().collect();
-        if i + k.len() > chars.len() || chars[i..i + k.len()] != k[..] {
-            return false;
-        }
-        (i == 0 || !ident_char(chars[i - 1]))
-            && (i + k.len() >= chars.len() || !ident_char(chars[i + k.len()]))
-    }
-
-    /// Drop `//` / `/* */` (nesting) comments and `"…"` / `r#"…"#` / `'c'` literals, replacing each
-    /// with a space so tokens cannot fuse. Lifetimes (`'static`) survive — only real char literals
-    /// are eaten.
-    fn strip_comments_and_literals(src: &str) -> String {
-        let c: Vec<char> = src.chars().collect();
-        let mut out = String::with_capacity(src.len());
-        let mut i = 0;
-        while i < c.len() {
-            // line comment
-            if c[i] == '/' && i + 1 < c.len() && c[i + 1] == '/' {
-                while i < c.len() && c[i] != '\n' {
-                    i += 1;
-                }
-                out.push(' ');
-                continue;
-            }
-            // block comment (nesting, as rustc allows)
-            if c[i] == '/' && i + 1 < c.len() && c[i + 1] == '*' {
-                let mut depth = 1usize;
-                i += 2;
-                while i < c.len() && depth > 0 {
-                    if c[i] == '/' && i + 1 < c.len() && c[i + 1] == '*' {
-                        depth += 1;
-                        i += 2;
-                    } else if c[i] == '*' && i + 1 < c.len() && c[i + 1] == '/' {
-                        depth -= 1;
-                        i += 2;
-                    } else {
-                        i += 1;
-                    }
-                }
-                out.push(' ');
-                continue;
-            }
-            // raw string: r"…" / r#"…"# / r##"…"##
-            if c[i] == 'r' && (i == 0 || !ident_char(c[i - 1])) {
-                let mut j = i + 1;
-                let mut hashes = 0usize;
-                while j < c.len() && c[j] == '#' {
-                    hashes += 1;
-                    j += 1;
-                }
-                if j < c.len() && c[j] == '"' {
-                    j += 1;
-                    while j < c.len() {
-                        if c[j] == '"' {
-                            let closed = (1..=hashes).all(|k| j + k < c.len() && c[j + k] == '#');
-                            if closed {
-                                j += hashes + 1;
-                                break;
-                            }
-                        }
-                        j += 1;
-                    }
-                    out.push(' ');
-                    i = j;
-                    continue;
-                }
-            }
-            // normal string
-            if c[i] == '"' {
-                i += 1;
-                while i < c.len() {
-                    if c[i] == '\\' {
-                        i += 2;
-                        continue;
-                    }
-                    if c[i] == '"' {
-                        i += 1;
-                        break;
-                    }
-                    i += 1;
-                }
-                out.push(' ');
-                continue;
-            }
-            // char literal vs lifetime
-            if c[i] == '\'' {
-                let escaped = i + 1 < c.len() && c[i + 1] == '\\';
-                let single = i + 2 < c.len() && c[i + 2] == '\'';
-                if escaped || single {
-                    i += 1;
-                    while i < c.len() {
-                        if c[i] == '\\' {
-                            i += 2;
-                            continue;
-                        }
-                        if c[i] == '\'' {
-                            i += 1;
-                            break;
-                        }
-                        i += 1;
-                    }
-                    out.push(' ');
-                    continue;
-                }
-            }
-            out.push(c[i]);
-            i += 1;
-        }
-        out
-    }
-
-    /// Skip past the item a `#[cfg(any())]` attribute annotates: to the end of its balanced `{…}`
-    /// body, or to its terminating `;`, whichever comes first.
-    fn strip_cfg_any_items(src: &str) -> String {
-        const ATTR: &str = "#[cfg(any())]";
-        let mut out = String::with_capacity(src.len());
-        let mut rest = src;
-        while let Some(at) = rest.find(ATTR) {
-            out.push_str(&rest[..at]);
-            out.push(' ');
-            let after: Vec<char> = rest[at + ATTR.len()..].chars().collect();
-            let mut i = 0;
-            while i < after.len() && after[i] != '{' && after[i] != ';' {
-                i += 1;
-            }
-            if i < after.len() && after[i] == '{' {
-                let mut depth = 1usize;
-                i += 1;
-                while i < after.len() && depth > 0 {
-                    match after[i] {
-                        '{' => depth += 1,
-                        '}' => depth -= 1,
-                        _ => {}
-                    }
-                    i += 1;
-                }
-            } else if i < after.len() {
-                i += 1; // the `;`
-            }
-            rest =
-                &rest[at + ATTR.len() + after[..i].iter().map(|c| c.len_utf8()).sum::<usize>()..];
-        }
-        out.push_str(rest);
-        out
-    }
-
-    /// Drop `if <constant false> { … }` blocks (brace-balanced), leaving any `else` arm — so a
-    /// decoy parked in `if false { … }` or `if true == false { … }` cannot green a pin.
-    fn strip_const_false_blocks(src: &str) -> String {
-        const DEAD: &[&str] = &[
-            "false",
-            "true==false",
-            "false==true",
-            "1==0",
-            "0==1",
-            "!true",
-            "cfg!(any())",
-        ];
-        let c: Vec<char> = src.chars().collect();
-        let mut out = String::with_capacity(src.len());
-        let mut i = 0;
-        while i < c.len() {
-            if kw_at(&c, i, "if") {
-                // Read the condition up to the block's opening brace.
-                let mut j = i + 2;
-                let mut cond = String::new();
-                while j < c.len() && c[j] != '{' {
-                    if !c[j].is_ascii_whitespace() {
-                        cond.push(c[j]);
-                    }
-                    j += 1;
-                }
-                if j < c.len() && DEAD.contains(&cond.as_str()) {
-                    let mut depth = 1usize;
-                    j += 1;
-                    while j < c.len() && depth > 0 {
-                        match c[j] {
-                            '{' => depth += 1,
-                            '}' => depth -= 1,
-                            _ => {}
-                        }
-                        j += 1;
-                    }
-                    out.push(' ');
-                    i = j;
-                    continue;
-                }
-            }
-            out.push(c[i]);
-            i += 1;
-        }
-        out
-    }
-
-    /// Drop everything between a bare `break;` / `continue;` / `return;` and the `}` that closes
-    /// the block it sits in — so a decoy parked after `loop { break; … }` cannot green a pin.
-    fn strip_after_unconditional_jump(src: &str) -> String {
-        let c: Vec<char> = src.chars().collect();
-        let mut out = String::with_capacity(src.len());
-        let mut i = 0;
-        while i < c.len() {
-            let jump = ["break", "continue", "return"]
-                .iter()
-                .find(|k| kw_at(&c, i, k))
-                .copied();
-            if let Some(kw) = jump {
-                let mut j = i + kw.len();
-                while j < c.len() && c[j].is_ascii_whitespace() {
-                    j += 1;
-                }
-                if j < c.len() && c[j] == ';' {
-                    out.push_str(kw);
-                    out.push(';');
-                    j += 1;
-                    // Skip to the first unmatched `}` — the end of the enclosing block.
-                    let mut depth = 0i32;
-                    while j < c.len() {
-                        match c[j] {
-                            '{' => depth += 1,
-                            '}' if depth == 0 => break,
-                            '}' => depth -= 1,
-                            _ => {}
-                        }
-                        j += 1;
-                    }
-                    out.push(' ');
-                    i = j;
-                    continue;
-                }
-            }
-            out.push(c[i]);
-            i += 1;
-        }
-        out
-    }
-
-    /// The balanced `{…}` body of the first item matching `marker`. Panics rather than returning
-    /// an empty string, so a renamed function fails loudly instead of vacuously passing.
-    fn fn_body<'a>(src: &'a str, marker: &str) -> &'a str {
-        let at = src
-            .find(marker)
-            .unwrap_or_else(|| panic!("live source has no `{marker}` — did it get renamed?"));
-        let tail = &src[at + marker.len()..];
-        let open = tail
-            .find('{')
-            .unwrap_or_else(|| panic!("`{marker}` has no body"));
-        let bytes = tail.as_bytes();
-        let mut depth = 1usize;
-        let mut i = open + 1;
-        while i < tail.len() && depth > 0 {
-            match bytes[i] {
-                b'{' => depth += 1,
-                b'}' => depth -= 1,
-                _ => {}
-            }
-            i += 1;
-        }
-        assert_eq!(depth, 0, "`{marker}` body is unbalanced");
-        &tail[open + 1..i - 1]
-    }
+    use super::class_r_scrub::only_body as fn_body;
 
     /// T-503 Class-R: every cargo mutation in the panel must commit through `on_change`, and the
     /// commit must reach `editor_ops::set_loadout`. Staging — a mutation that updates the local
@@ -2876,38 +3751,217 @@ mod tests {
         assert!(!mission_has_unsaved_work(), "native shell hosts no editor");
     }
 
-    /// The scrubber is load-bearing for both pins above, so it gets its own test: each decoy shape
-    /// the pins claim to defeat is fed through and must come out empty.
+    /// **The scrubber's own pin.** Every shape the Class-R pins in this crate claim to defeat is
+    /// fed through and must come out empty — because a scrubber that quietly stopped scrubbing
+    /// would leave every pin built on it hollow while all of them stayed green. That is this
+    /// repo's signature defect (a tool reporting success over an input it never examined) applied
+    /// to the tool itself, so it gets a test rather than a comment.
+    ///
+    /// The list is the full attack battery, in three tiers:
+    ///
+    /// 1. **Comment / literal decoys** — T-554…T-561.
+    /// 2. **Dead-code wrappers** — the shapes that beat T-564…T-570 and wave 77 (`if false`,
+    ///    `if true == false`, `loop { break; … }`, `#[cfg(any())]`, `while false`, `if !true`,
+    ///    `if 1 > 2`, the `match` guard, `const C: bool = false; if C`, `black_box(false)`,
+    ///    a `return;` above, and the `#[cfg(any())] mod` shadow copy).
+    /// 3. **The measured wave-77-F3 survivors** — the spelling variations that walked past the
+    ///    literal `"#[cfg(any())]"` match and the seven-condition whitelist. These are the reason
+    ///    T-601 replaced both with a parser.
+    ///
+    /// Plus two attacks the handed-down list does **not** contain, because a list is exactly what a
+    /// fixer special-cases; see [`two_attacks_the_known_list_does_not_contain`].
     #[test]
     fn the_scrubber_actually_removes_every_decoy_shape() {
+        use super::class_r_scrub::live_code;
         let cases = [
+            // ── tier 1: the needle is text, not code
             ("line comment", "// set_loadout(x)\nlet a = 1;"),
             ("block comment", "/* set_loadout(x) */ let a = 1;"),
             ("nested block comment", "/* a /* set_loadout(x) */ b */ x"),
             ("string literal", "let s = \"set_loadout(x)\";"),
             ("raw string", "let s = r#\"set_loadout(x)\"#;"),
+            // ── tier 2: the known dead-code wrappers
             ("if false", "if false { set_loadout(x); }"),
             ("if true == false", "if true == false { set_loadout(x); }"),
+            ("if false == true", "if false == true { set_loadout(x); }"),
+            ("if !true", "if !true { set_loadout(x); }"),
+            ("if 1 > 2", "if 1 > 2 { set_loadout(x); }"),
+            ("while false", "while false { set_loadout(x); }"),
             ("cfg(any())", "#[cfg(any())] fn d() { set_loadout(x); }"),
+            (
+                "cfg(any()) mod shadow copy",
+                "#[cfg(any())] mod shadow { fn cargo_panel() { set_loadout(x); } }",
+            ),
             ("after break", "loop { break; set_loadout(x); }"),
+            ("after continue", "loop { continue; set_loadout(x); }"),
             ("after return", "fn f() { return; set_loadout(x); }"),
+            (
+                "match guard",
+                "match () { _ if false => { set_loadout(x); } _ => {} }",
+            ),
+            (
+                "const false binding",
+                "const C: bool = false; fn f() { if C { set_loadout(x); } }",
+            ),
+            (
+                "black_box(false)",
+                "if std::hint::black_box(false) { set_loadout(x); }",
+            ),
+            ("cfg!(any())", "if cfg!(any()) { set_loadout(x); }"),
+            // ── tier 3: wave 77 F3's measured survivors — spelling, not structure
+            ("cfg(any()) spaced", "#[cfg( any() )] fn d() { set_loadout(x); }"),
+            (
+                "cfg(any()) spaced brackets",
+                "#[ cfg(any()) ] fn d() { set_loadout(x); }",
+            ),
+            (
+                "cfg(any()) inner spaces",
+                "#[cfg(any( ))]\nfn d() { set_loadout(x); }",
+            ),
+            (
+                "if condition with odd spacing",
+                "if  true  ==  false  { set_loadout(x); }",
+            ),
+            (
+                "black_box, core path",
+                "if core::hint::black_box(1) > core::hint::black_box(2) { set_loadout(x); }",
+            ),
+            // ── measured against the real files by the T-601 battery, not imagined. The first two
+            // shipped GREEN in the first cut of this scrubber: the binding scanner walked the
+            // source one keyword at a time and, once any earlier `const`/`let` in the file failed
+            // its checks, resumed *inside* that binding's own text — from where it could never see
+            // a later one. Every pin whose file had such a binding above the decoy was hollow.
+            (
+                "const declared on the same line as the if",
+                "fn f() {\nconst T601C: bool = false; if T601C {\n    set_loadout(x);\n}\n}",
+            ),
+            (
+                "const folded through a comparison, same line",
+                "fn f() {\nconst T601N: bool = 1 > 2; if T601N {\n    set_loadout(x);\n}\n}",
+            ),
+            (
+                "const behind an unrelated non-bool const",
+                "const OTHER: &str = \"x\";\nconst T601C: bool = false;\nfn f() { if T601C { set_loadout(x); } }",
+            ),
+            (
+                "const behind a let-else",
+                "fn g() { let Ok(v) = h() else { return; }; }\nconst T601C: bool = false;\nfn f() { if T601C { set_loadout(x); } }",
+            ),
+            // ── THE ONE THAT SHIPPED GREEN. `sse.rs`, `client.rs` and `arsenal.rs` all park their
+            // live path inside a binding whose initializer is a block (`let run = async { … };`,
+            // `let send = move |t| { … };`), and the binding scanner used to resume after the
+            // initializer — so nothing inside one was ever seen. Measured against the real files.
+            (
+                "const nested inside a block-initialised binding",
+                "fn f() { let run = async {\nconst T601C: bool = false; if T601C { set_loadout(x); }\n}; }",
+            ),
+            (
+                "const nested inside a closure-initialised binding",
+                "fn f() { let send = move |t| {\nconst T601N: bool = 1 > 2; if T601N { set_loadout(x); }\n}; }",
+            ),
+            (
+                "const inside an async block",
+                "fn f() { spawn(async move {\nconst T601C: bool = false; if T601C {\n    set_loadout(x);\n}\n}); }",
+            ),
         ];
         for (label, src) in cases {
-            let scrubbed = strip_after_unconditional_jump(&strip_const_false_blocks(
-                &strip_cfg_any_items(&strip_comments_and_literals(src)),
-            ));
+            let scrubbed = live_code(src);
             assert!(
                 !scrubbed.contains("set_loadout"),
-                "{label}: decoy survived scrubbing — pins built on this are hollow: {scrubbed}"
+                "{label}: decoy survived scrubbing — every pin built on this scrubber is hollow \
+                 while staying green, which is the exact defect T-601 exists to remove.\n{scrubbed}"
             );
         }
-        // …and it must not eat live code while it is at it.
+
+        // …and it must not eat live code while it is at it. A scrubber that removed everything
+        // would pass every case above and pin nothing.
         let live = "if x { set_loadout(a); } else { set_loadout(b); }";
-        let kept = strip_after_unconditional_jump(&strip_const_false_blocks(&strip_cfg_any_items(
-            &strip_comments_and_literals(live),
-        )));
-        assert_eq!(kept.matches("set_loadout(").count(), 2, "{kept}");
-        // A lifetime is not a char literal.
-        assert!(strip_comments_and_literals("fn f<'a>(x: &'a str) {}").contains("'a"));
+        assert_eq!(live_code(live).matches("set_loadout(").count(), 2);
+        for kept in [
+            "if 2 > 1 { set_loadout(a); }",
+            "while running { set_loadout(a); }",
+            "#[cfg(target_arch = \"wasm32\")] fn d() { set_loadout(a); }",
+            "#[cfg(feature = \"never-enabled\")] fn d() { set_loadout(a); }",
+            "const C: bool = true; fn f() { if C { set_loadout(a); } }",
+            "match () { _ if x => { set_loadout(a); } _ => {} }",
+            "fn f() { if a { return; } set_loadout(a); }",
+        ] {
+            assert!(
+                live_code(kept).contains("set_loadout"),
+                "the scrubber ate live code: {kept}"
+            );
+        }
+        // A lifetime is not a char literal; a `;` inside a type is not an item terminator.
+        assert!(live_code("fn f<'a>(x: &'a str) { set_loadout(x); }").contains("'a"));
+        assert!(
+            live_code("#[cfg(any())] const D: [u8; 3] = [1, 2, 3];\nfn f() { set_loadout(x); }")
+                .contains("set_loadout"),
+            "the `;` inside `[u8; 3]` must not end the cfg'd item early"
+        );
+        // `live_source` keeps literals — a route path or a `data-testid` is shipped code.
+        assert!(super::class_r_scrub::live_source("let p = \"/servers\";").contains("/servers"));
+        assert!(!live_code("let p = \"/servers\";").contains("/servers"));
+    }
+
+    /// **Two attacks the handed-down list does not contain.**
+    ///
+    /// The listed shapes are the ones a fixer naturally special-cases, so passing them proves
+    /// little on its own. These two were invented against the *fix*:
+    ///
+    /// * **A1 — the shadow copy with no `cfg` at all.** The known variant parks the decoy under
+    ///   `#[cfg(any())]`, so every cfg-based defence catches it. Move the real item into a plain
+    ///   `mod` nobody calls and leave the pristine copy at column 0 and there is no cfg to find,
+    ///   no dead-code wrapper to strip, and both copies compile. Only refusing **ambiguity**
+    ///   catches this, which is why [`class_r_scrub::only_body`] counts before it reads.
+    /// * **A2 — the constant folded through a comparison.** The known variant is
+    ///   `const C: bool = false; if C`, which a fixer answers by looking for `= false`.
+    ///   `const NEVER: bool = 1 > 2;` has no `false` anywhere in it. Only actually evaluating the
+    ///   initialiser catches it.
+    ///
+    /// Bonus third, same family as A2 but on the `cfg` side: `#[cfg(all(any(), unix))]` contains
+    /// `any()` but is not the literal `#[cfg(any())]`, and `#[cfg(not(all()))]` contains neither.
+    #[test]
+    fn two_attacks_the_known_list_does_not_contain() {
+        use super::class_r_scrub::{live_code, only_body};
+
+        // A1 — pristine decoy at column 0, real (cut) code in a live module. No cfg, no wrapper.
+        let a1 = "\
+fn cargo_panel() { on_change(&items); }
+mod real {
+    pub fn cargo_panel() { /* wire cut */ }
+}
+";
+        let scrubbed = live_code(a1);
+        let hits = scrubbed.matches("fn cargo_panel(").count();
+        assert_eq!(
+            hits, 2,
+            "both definitions must survive scrubbing: {scrubbed}"
+        );
+        let caught = std::panic::catch_unwind(|| only_body(&scrubbed, "fn cargo_panel(")).is_err();
+        assert!(
+            caught,
+            "A1: a shadow definition with no cfg and no dead-code wrapper fed the pin a decoy — \
+             only an ambiguity refusal catches this shape"
+        );
+
+        // A2 — the constant never spells `false`.
+        let a2 = "const NEVER: bool = 1 > 2;\nfn f() { if NEVER { on_change(&items); } }";
+        assert!(
+            !live_code(a2).contains("on_change"),
+            "A2: `const NEVER: bool = 1 > 2` must fold — a fixer that grepped for `= false` \
+             would have shipped this hole"
+        );
+
+        // Bonus — composite never-true cfg predicates.
+        for src in [
+            "#[cfg(all(any(), unix))] fn d() { on_change(&items); }",
+            "#[cfg(not(all()))] fn d() { on_change(&items); }",
+            "#[cfg(any(any(), any()))] fn d() { on_change(&items); }",
+        ] {
+            assert!(
+                !live_code(src).contains("on_change"),
+                "composite false cfg survived: {src}"
+            );
+        }
     }
 }
