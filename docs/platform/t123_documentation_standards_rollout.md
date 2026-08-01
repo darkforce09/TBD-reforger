@@ -70,6 +70,7 @@ Per §4 + §3. Priority cross-boundary surfaces:
 Per §5.
 
 1. Add `apps/website/frontend/tsdoc.json` — custom tags `@contract`, `@route`, `@model`, `@consumer`
+   (**deleted at T-159.29.3** with the React app; the Leptos SPA has no TSDoc surface)
 2. TSDoc (not `//`-only) on exports in `src/types/models/*`, `src/types/api/*`, `src/api/*`, route hooks in `src/hooks/`
 3. `@model` / `@contract` / `@route` on cross-boundary symbols
 
@@ -116,7 +117,8 @@ Per §9.1. **Generate** projections from `packages/tbd-schema/schema/*.json`; st
 
 Per §9.2.
 
-- Validate incoming mission version payload against `mission-editor-payload.schema.json` (the editor superset, **not** canonical `mission.schema.json`) **before persist** in `CreateVersion`, via [`internal/contract/validate.go`](../../apps/website/internal/contract/validate.go)
+- Validate incoming mission version payload against `mission-editor-payload.schema.json` (the editor superset, **not** canonical `mission.schema.json`) **before persist** in `CreateVersion`, via `internal/contract/validate.go` (**deleted at T-145**; the
+  live carrier is [`apps/website/api/src/contract/validate.rs`](../../apps/website/api/src/contract/validate.rs))
 - Library: `santhosh-tekuri/jsonschema/v6`; schema `go:embed`-ed + compiled once (`sync.Once`)
 - **400** with structured `{ error, details[] }` on validation failure; golden missions + invalid fixtures in integration tests
 - Align with existing `packages/tbd-schema/scripts/validate-file.mjs` semantics
@@ -133,7 +135,7 @@ Per §10. Wire all four gates:
 |------|---------|
 | Go exported-doc | `golangci-lint` + `revive` exported rules in CI (website job or new job) |
 | TS contract docs | `eslint-plugin-jsdoc` + `@microsoft/tsdoc`; rules on `src/types/`, `src/api/`, `src/hooks/` — require TSDoc + `@contract`/`@model` on cross-boundary exports |
-| Citation integrity | Node script `packages/tbd-schema/scripts/verify-contract-citations.mjs` — every `@contract` in repo resolves to schema file + valid JSON pointer; shipped as a dedicated [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) workflow (citation + codegen-drift + golangci + eslint jobs) |
+| Citation integrity | Node script `packages/tbd-schema/scripts/verify-contract-citations.mjs` — every `@contract` in repo resolves to schema file + valid JSON pointer; shipped as a dedicated [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) workflow (citation + codegen-drift + golangci + eslint jobs). **Superseded:** the `.mjs` went with the T-165.1 Node eradication — the live gate is `make verify-citations` → `xtask schema citations`, scoped to code only (DOCUMENTATION_STANDARDS §10.1) |
 | Enfusion DTO conformance | Extend `validate.mjs` or sibling check: DTO scripts with `@contract` header have matching golden fixture |
 
 **Verify:** CI green locally where possible (`npm run validate`, `golangci-lint run`, FE lint); citation script exits 0 on main after .1–.3 tags land
