@@ -36,7 +36,7 @@ disk:
 
 ```
 /run/media/system/Disk_2/tbd-framework-analysis/
-├── unpbo.py                  # extractor, also committed to tools/pbo/
+├── unpbo.py  derap.py  orbat.py    # extraction tools — kept HERE, not in the repo (no-.py gate)
 ├── fnf/
 │   ├── FNF-full/             # full clone, all 118 tags — for git diff between eras
 │   ├── FNF-v3.6.9/           # worktree @ tag v3.6.9   (client_mod, server_mods, tools, FNF_MissionTemplate.VR)
@@ -59,18 +59,18 @@ Agents were instructed to treat Disk_2 as read-only and to extract into a sessio
 
 ## Reproducing the extraction
 
-Three zero-dependency tools, no `armake2` build and no Mikero tools required:
+Three zero-dependency tools (staged beside the source on Disk_2, **not in this repo** — it enforces a no-`.py` gate, `scripts/verify-no-python.sh`), no `armake2` build and no Mikero tools required:
 
 ```bash
-python3 tools/pbo/unpbo.py <file.pbo|dir-of-pbos> <outdir>   # --list to inspect only
-python3 tools/pbo/derap.py <file.bin|mission.sqm>            # \0raP → readable config source
-python3 tools/pbo/orbat.py <mission-dir>                     # slot/side census over a mission
+python3 $DISK2/unpbo.py <file.pbo|dir-of-pbos> <outdir>   # --list to inspect only
+python3 $DISK2/derap.py <file.bin|mission.sqm>            # \0raP → readable config source
+python3 $DISK2/orbat.py <mission-dir>                     # slot/side census over a mission
 ```
 
 `unpbo.py` handles the `Vers` properties block and `Cprs` LZSS compression. Verified against all 50
 WOG framework PBOs: **757 entries, 757 written, 0 failed**.
 
-`derap.py` and `orbat.py` were written by the WOG agent mid-analysis and rescued into the repo —
+were written by the WOG agent mid-analysis —
 they are why the WOG numbers are corpus-wide rather than plaintext-only. See the section below.
 
 ### Binarized content — mostly solved
@@ -78,7 +78,7 @@ they are why the WOG numbers are corpus-wide rather than plaintext-only. See the
 The original staging note said the binarized files were opaque and that any WOG claim about one
 should be treated as unsupported. **That is now substantially wrong, and the correction matters.**
 
-The WOG agent wrote a de-rapifier for the `\0raP` format — `tools/pbo/derap.py` — which decoded:
+The WOG agent wrote a de-rapifier for the `\0raP` format — `derap.py` — which decoded:
 
 | Input | Decoded | Still opaque |
 |---|---|---|
