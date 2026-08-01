@@ -9,6 +9,7 @@
 //! - T-165.7: the MCP broker (`mcpd` bin).
 //! - T-165.8/.9: `world` + `map` pipeline modules.
 
+pub mod capture;
 pub mod cdp;
 pub mod density;
 pub mod doctor;

@@ -226,8 +226,66 @@ where
     });
 }
 
-/// Spawn a headless chromium with SwiftShader WebGL2 + lavapipe WebGPU.
+/// The GPU backend chromium is launched with — the one knob that separates the gate harness from
+/// the editor-capture harness (T-165.5 vs T-661 capture port).
+///
+/// # Why this is a choice and not a constant
+///
+/// The **gate** smokes render the SPA chrome and a `wgpu` canvas that only needs WebGL2, and they
+/// must run **in CI on a box with no GPU** — so they take [`GpuBackend::Swiftshader`] (ANGLE's
+/// software rasterizer, `--enable-unsafe-swiftshader`), which renders deterministically everywhere.
+///
+/// The **capture** harness (`capture shot` / `capture zoomsweep`) photographs the *live* Mission
+/// Creator, whose map is a real `wgpu`/WebGPU engine. Under SwiftShader that engine cannot create
+/// its WebGPU buffers — `createBuffer failed, size (32) too large` → wasm abort → the editor hangs
+/// on the boot overlay forever (measured; see `tools/editor-capture/README.md` §2). It needs
+/// [`GpuBackend::Vulkan`]: ANGLE/Vulkan on the host's real device, which is the only mode that
+/// boots the engine. That is why the capture path exists as its own launch flavour rather than
+/// reusing the gate's flags — everything else (profile hygiene, pipe draining, the font cache, the
+/// process-group teardown) is shared.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GpuBackend {
+    /// ANGLE SwiftShader — software WebGL2, no GPU required. The gate harness default.
+    Swiftshader,
+    /// ANGLE/Vulkan on the real device — required to boot the live WebGPU map engine. The
+    /// editor-capture harness default. The flag set mirrors `run_shot_gpu.sh` GPU_MODE=vulkan
+    /// (`--use-angle=vulkan --enable-features=Vulkan --use-vulkan --ignore-gpu-blocklist`).
+    Vulkan,
+}
+
+impl GpuBackend {
+    /// The chromium GPU flags for this backend, appended after the shared base flags in [`launch`].
+    fn flags(self) -> &'static [&'static str] {
+        match self {
+            // T-165.5 baseline: ANGLE software GL for CI determinism.
+            GpuBackend::Swiftshader => &["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+            // run_shot_gpu.sh vulkan branch, verbatim — the only mode the live wgpu engine boots on.
+            GpuBackend::Vulkan => &[
+                "--use-angle=vulkan",
+                "--enable-features=Vulkan",
+                "--use-vulkan",
+                "--ignore-gpu-blocklist",
+            ],
+        }
+    }
+}
+
+/// Spawn a headless chromium with SwiftShader WebGL2 + lavapipe WebGPU (the gate-harness default).
+///
+/// For the editor-capture harness — which needs ANGLE/Vulkan on the real device to boot the live
+/// WebGPU map engine — call [`launch_with_gpu`] with [`GpuBackend::Vulkan`].
 pub async fn launch(debug_port: u16, extra_args: &[String]) -> Result<Browser> {
+    launch_with_gpu(debug_port, GpuBackend::Swiftshader, extra_args).await
+}
+
+/// Spawn a headless chromium with a caller-chosen [`GpuBackend`]. See [`launch`] for the shared
+/// setup (font cache, per-launch profile, pipe draining, process-group teardown) — the backend is
+/// the only thing this varies.
+pub async fn launch_with_gpu(
+    debug_port: u16,
+    gpu: GpuBackend,
+    extra_args: &[String],
+) -> Result<Browser> {
     let chromium = find_chromium().ok_or_else(|| {
         anyhow!("cdp: no chromium (set CHROME_HEADLESS_SHELL or install playwright)")
     })?;
@@ -253,8 +311,8 @@ pub async fn launch(debug_port: u16, extra_args: &[String]) -> Result<Browser> {
     args.push("--disable-gpu-sandbox".into());
     args.push(format!("--remote-debugging-port={debug_port}"));
     args.push(format!("--user-data-dir={}", user_data_dir.display()));
-    args.push("--use-angle=swiftshader".into());
-    args.push("--enable-unsafe-swiftshader".into());
+    // Backend-specific GPU flags (SwiftShader for the gate, ANGLE/Vulkan for capture).
+    args.extend(gpu.flags().iter().map(|s| (*s).to_string()));
     args.push("--enable-unsafe-webgpu".into());
     args.push("--hide-scrollbars".into());
     args.push("--force-device-scale-factor=1".into());

@@ -55,6 +55,10 @@ path = "src/bin/world.rs"
 name = "map"
 path = "src/bin/map.rs"
 
+[[bin]]
+name = "capture"
+path = "src/bin/capture.rs"
+
 [lib]
 name = "tbd_tools"
 path = "src/lib.rs"
