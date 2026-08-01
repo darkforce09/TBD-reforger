@@ -2333,17 +2333,82 @@ fn clock_hhmm(s: &str) -> Option<String> {
 /// These bytes are the editor's **server-truth Export** download and must satisfy
 /// `mission.schema.json` on their own, so [`ModMissionDocument::kit_substitutions`] does NOT appear
 /// in them — it is `#[serde(skip)]` and this function returns only the serialized document. A
-/// caller that wants the substitutions in the browser needs [`flatten_to_mod_document`] and an
-/// entry point of its own; adding a second key here would put a non-schema field in a file the mod
-/// loads.
+/// caller that wants the substitutions alongside the bytes calls
+/// [`flatten_mod_document_json_with_substitutions`], which this delegates to; adding a second key
+/// *here* would put a non-schema field in a file the mod loads.
 ///
 /// # Errors
 /// Returns a message on meta/payload parse failure or a compile error (e.g. no slots).
 pub fn flatten_mod_document_json(meta_json: &[u8], payload: &[u8]) -> Result<Vec<u8>, String> {
+    flatten_mod_document_json_with_substitutions(meta_json, payload).map(|(bytes, _)| bytes)
+}
+
+/// T-314 — the same compile as [`flatten_mod_document_json`], plus the kit substitutions it made.
+///
+/// **This is the last mile of T-200.** T-200 stopped the compiler swapping an authored character
+/// for the faction default *in silence*: it attached a [`KitSubstitutionReport`] to the returned
+/// document. But `#[serde(skip)]` means that report dies with the [`ModMissionDocument`] the moment
+/// a caller serializes it, and every caller did exactly that — `flatten_mod_document_json` dropped
+/// `doc` on the next line and no other consumer named the field at all. So the report existed and
+/// nothing ever looked at it, which from the author's seat is indistinguishable from T-200 never
+/// having shipped: they place a sniper, the mission spawns a rifleman, and nobody says a word.
+/// This function is where that value is finally read.
+///
+/// **Why the read lives here rather than in a second compile.** The substitutions are a by-product
+/// of the *one* slot walk inside [`flatten_to_mod_document`] — there is no way to recompute them
+/// without compiling again, and a second compile is a second thing that can disagree with the
+/// first. So [`flatten_mod_document_json`] is now a *projection* of this function rather than a
+/// parallel copy of its body: one compile, one report, and the Export bytes are byte-identical to
+/// the reported-on document by construction rather than by a test keeping two bodies in step. The
+/// twinning with `GET /missions/:id/compiled`
+/// (`mission_compile::client_twin_is_byte_identical_to_the_compiled_route`) therefore still holds
+/// for both entry points, and cannot be broken here without breaking it for the twin as well.
+///
+/// The second element is [`KitSubstitutionReport::details`] — already-rendered lines in the same
+/// shape `wire_safety::scan_editor_payload` returns, so a caller renders compile findings and save
+/// findings identically. Empty when every placed character resolved to its own kit; that is the
+/// case for the 12 aliased characters and *not* the case for the other 342 (see
+/// [`KitSubstitutionReport`] for the measurement and why this is a report rather than an error).
+///
+/// ```
+/// # use map_engine_core::mission::flatten::flatten_mod_document_json_with_substitutions as f;
+/// // One slot, carrying a real registry character that has no `kit-aliases.json` row.
+/// let meta = br#"{"id":"11112222333344445555666677778888","title":"t","author":"a",
+///   "terrain":"everon","customTerrainName":"","maxPlayers":8,"timeOfDay":"05:30",
+///   "weatherPreset":"clear"}"#;
+/// let payload = br#"{"editor":{
+///   "factions":[{"key":"BLUFOR","name":"US Army","squadIds":["sq"]}],
+///   "squads":[{"id":"sq","callsign":"Alpha","slotIds":["s0"]}],
+///   "slots":[{"id":"s0","index":0,"role":"RFL",
+///     "assetId":"{0F6689B491641155}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Sniper.et",
+///     "position":{"x":1.0,"y":2.0,"z":0.0,"rotation":0.0}}]}}"#;
+///
+/// let (bytes, substitutions) = f(meta, payload).expect("compiles");
+/// let text = String::from_utf8(bytes).expect("utf-8");
+/// // The seat really did change: a sniper was placed, a rifleman is what the document ships,
+/// // and the document keeps no trace of what was asked for.
+/// assert!(text.contains("kit:us_rifleman"), "{text}");
+/// assert!(!text.contains("Character_US_Sniper"), "{text}");
+/// // …and that is no longer silent.
+/// assert_eq!(substitutions.len(), 1, "{substitutions:?}");
+/// assert!(substitutions[0].contains("blufor:Alpha:RFL:0"), "{substitutions:?}");
+/// ```
+///
+/// # Errors
+/// Returns a message on meta/payload parse failure or a compile error (e.g. no slots).
+pub fn flatten_mod_document_json_with_substitutions(
+    meta_json: &[u8],
+    payload: &[u8],
+) -> Result<(Vec<u8>, Vec<String>), String> {
     let mut meta: MissionMeta = serde_json::from_slice(meta_json).map_err(|e| e.to_string())?;
     apply_authored_environment(&mut meta, payload);
     let doc = flatten_to_mod_document(&meta, payload).map_err(|e| e.to_string())?;
-    serde_json::to_vec(&doc).map_err(|e| e.to_string())
+    // The one read of `doc.kit_substitutions` outside a test, and it has to happen before the
+    // `to_vec` below: `#[serde(skip)]` means the bytes cannot carry it and `doc` is consumed by
+    // nothing else, so a caller who only gets the bytes can never recover this.
+    let substitutions = doc.kit_substitutions.details();
+    let bytes = serde_json::to_vec(&doc).map_err(|e| e.to_string())?;
+    Ok((bytes, substitutions))
 }
 
 #[cfg(test)]
@@ -3908,6 +3973,74 @@ mod tests {
             lines[MAX_REPORTED_SUBSTITUTIONS].starts_with("+ 5 further slot(s)"),
             "{:?}",
             lines[MAX_REPORTED_SUBSTITUTIONS]
+        );
+    }
+
+    /// **T-314 — the last mile.** T-200 built the report; this is the test that something reads it.
+    ///
+    /// The shape of the defect, stated as an experiment: compile TWO different authored documents —
+    /// one placing a character with a `kit-aliases.json` row, one placing a character without —
+    /// and compare what comes back. The compiled bytes are **identical**. The author's choice does
+    /// not survive the compile in any form: `slots[].kit` is the faction default either way, and
+    /// the placed ResourceName is never copied into the document (pinned separately by
+    /// `substitutions_never_reach_the_compiled_wire`). So a reader holding the compiled document —
+    /// the game server, the Export download, a human — cannot tell the two runs apart, and before
+    /// this ticket neither could anyone else, because the one value that CAN tell them apart was
+    /// computed and then dropped on the floor.
+    ///
+    /// RED levers, both real: replace `doc.kit_substitutions.details()` in
+    /// [`flatten_mod_document_json_with_substitutions`] with `Vec::new()` (the substitutions go
+    /// silent again — `assertion left == right failed: 0 != 1`), or make
+    /// [`flatten_mod_document_json`] compile a second time instead of projecting this one.
+    #[test]
+    fn the_compile_erases_the_authored_character_and_only_the_report_can_say_so() {
+        let meta_json = serde_json::to_vec(&meta()).expect("meta serializes");
+        let placed_sniper = payload_with_assets(&[("BLUFOR", "US Army", "Alpha", &[US_SNIPER])]);
+        let placed_aliased =
+            payload_with_assets(&[("BLUFOR", "US Army", "Alpha", &[US_RIFLEMAN_ALIASED])]);
+
+        let (sniper_bytes, sniper_lines) =
+            flatten_mod_document_json_with_substitutions(&meta_json, &placed_sniper)
+                .expect("compiles");
+        let (aliased_bytes, aliased_lines) =
+            flatten_mod_document_json_with_substitutions(&meta_json, &placed_aliased)
+                .expect("compiles");
+
+        // Two different missions, one compiled document — byte for byte.
+        assert_eq!(
+            sniper_bytes, aliased_bytes,
+            "the compile erases which character was placed"
+        );
+        let doc: serde_json::Value = serde_json::from_slice(&sniper_bytes).expect("valid json");
+        assert_eq!(doc["slots"][0]["kit"], "kit:us_rifleman");
+        assert_eq!(doc["slots"][0]["id"], "blufor:Alpha:RFL:0");
+
+        // The report is the ONLY thing that distinguishes them — and it now reaches the caller.
+        assert!(
+            aliased_lines.is_empty(),
+            "an aliased character is not a substitution: {aliased_lines:?}"
+        );
+        assert_eq!(sniper_lines.len(), 1, "{sniper_lines:?}");
+        // WHICH seat, WHAT was placed, WHAT it became — the three answers the silence swallowed.
+        assert!(
+            sniper_lines[0].starts_with("blufor:Alpha:RFL:0:"),
+            "{sniper_lines:?}"
+        );
+        assert!(
+            sniper_lines[0].contains("Character_US_Sniper.et"),
+            "{sniper_lines:?}"
+        );
+        assert!(
+            sniper_lines[0].contains("kit:us_rifleman"),
+            "{sniper_lines:?}"
+        );
+
+        // And the Export download is untouched by the wiring: `flatten_mod_document_json` is a
+        // projection of the same single compile, not a second one that could drift from it.
+        assert_eq!(
+            flatten_mod_document_json(&meta_json, &placed_sniper).expect("compiles"),
+            sniper_bytes,
+            "the byte-identical-to-/compiled contract must survive T-314"
         );
     }
 

@@ -153,6 +153,29 @@ pub async fn hydrate_from_server(
     // every boot (`doc` is the very `Rc` `on_load` handed `mission_history::set_ctx`), which is what
     // makes the cross-mission refusal in `restore_snapshot` exact rather than best-effort.
     register_mission_backup(id.clone(), &doc);
+    // T-388 / T-370 step 1 — the adoption-residue purge, hung on the editor BOOT rather than on a
+    // hydrate decision.
+    //
+    // `tbd-editor-adopted:<missionId>` is pre-T-352 residue under a global (un-account-scoped) key.
+    // T-352 could only reach it through `mark_adopted`, and T-388 measured what that costs: three
+    // paths open the editor without ever calling it — the `is_empty && loaded_from_idb` branch
+    // below (`apply_row`, no adopt), `Local::Diverged` (defers to the conflict modal), and every
+    // boot whose `GET /missions/:id` never lands, which is any offline / unauthenticated / 404
+    // open. Clearance was therefore EVENTUAL: correct on some later hydrate or Save, absent at
+    // first open.
+    //
+    // Three properties of THIS position, and all three are the point:
+    //   * **before `is_uuid`** — a `smoke`/`draft` id returns two lines down, and residue does not
+    //     care which mission you opened; it is one global key set per browser.
+    //   * **before the fetch** — the purge cannot be skipped by a network failure or an expired
+    //     session, which is the case T-388 could not otherwise reach.
+    //   * **before every branch** — so no future branch can be added that misses it.
+    //
+    // Called directly rather than through `editor_session::mark_adopted`, and that is deliberate:
+    // T-370 deletes the eight dead `mark_adopted` calls (six of them in this file) in a LATER
+    // release, and routing the purge through the same shim would put this line in the blast radius
+    // of that deletion. It is now the one call site that must survive it.
+    crate::editor_session::purge_legacy_markers();
     if !is_uuid(&id) {
         return;
     }

@@ -16,6 +16,9 @@ pub mod damage;
 pub mod doll_pack;
 pub mod draw_order;
 pub mod lanes;
+/// T-160 — the `map_async` readback lifecycle (in-flight guard + the error arm). Pure, so the
+/// error arm is reachable from `cargo test`; the wasm32 engine's `GpuTimer` is its consumer.
+pub mod readback;
 pub mod scene;
 /// T-152.13 — generated Spleen 16×32 glyph rasters (`cargo xtask gen font-table` — T-165.10).
 pub mod text_font_table;
