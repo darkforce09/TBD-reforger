@@ -1,8 +1,9 @@
 # Interactions sweep — all 83 `eden/interactions.md` ids vs the live Leptos editor
 
 **Written 2026-08-01.** Companion to [`README.md`](README.md) (§"What must be re-run" — this is the
-`interactions_sweep.md` row). Peer of the not-yet-written `attributes_sweep.md` and
-`owns_and_waves.md`.
+`interactions_sweep.md` row). Peer of [`attributes_sweep.md`](attributes_sweep.md) (93 `ATTR-FIELD-*`
+ids) and [`owns_and_waves.md`](owns_and_waves.md), written in the same pass by sibling agents; those
+two were not read while writing this one, so agreement between them is independent, not copied.
 
 **Sources.** `docs/specs/Mission_Creator_Architecture/eden/interactions.md` (the id set),
 `eden/gap_analysis.md` (format + parity vocabulary, **not modified**),
@@ -257,11 +258,11 @@ Parity vocabulary exactly as `gap_analysis.md:13-20`: `match` · `partial` · `m
 
 | parity | count | share |
 |---|---:|---:|
-| `match` | 12 | 14.5 % |
-| `partial` | 9 | 10.8 % |
-| `missing` | 46 | 55.4 % |
+| `match` | 11 | 13.3 % |
+| `partial` | 8 | 9.6 % |
+| `missing` | 51 | 61.4 % |
 | `deferred` | 4 | 4.8 % |
-| `na` | 12 | 14.5 % |
+| `na` | 9 | 10.8 % |
 | `tbd_only` | 0 | 0 % |
 | **total** | **83** | |
 
@@ -286,25 +287,41 @@ compiled-mission export, the SZ payload estimate) are named in the notes above a
 | KEY | 4 | 0 | 0 | 4 | 0 | 0 |
 | ACTION | 10 | 3 | 0 | 5 | 0 | 2 |
 | STATUS | 7 | 3 | 0 | 1 | 0 | 3 |
-| **total** | **83** | **12** | **9** | **46** | **4** | **12** |
+| **total** | **83** | **11** | **8** | **51** | **4** | **9** |
 
-### The 12 `na` and why each is genuinely `na`
+Rows and columns both sum to 83; counted off §2.1–§2.12, not carried forward from a draft.
 
-Not one of these is "hard, skip it" — each is a capability whose **precondition** a 2D top-down web
-editor does not have:
+### By disposition
 
-| id | missing precondition |
-|---|---|
-| XFORM-ALT-001 | a screen axis that is not the ground plane |
-| XFORM-VERT-001 | ditto, plus an ATL/ASL height datum in the doc |
-| XFORM-SNAP-001 | an un-snapped state — the mod grounds every spawn (T-092.1) |
-| WIDGET-COORD-001 | an orientation with more than yaw; one axis-aligned world frame |
-| ACTION-LEVEL-001 | pitch/roll in the slot record |
-| ACTION-SNAP-001 | as XFORM-SNAP-001 |
-| STATUS-VER-001 | an attached game build |
-| STATUS-MOD-001 | a local addon set |
-| STATUS-SRV-001 | an in-editor MP session |
-| *(3 counted above under XFORM/WIDGET/ACTION)* | | |
+| disposition | ids |
+|---|---:|
+| already shipped (`match`) | 11 |
+| genuinely `na` for a 2D web editor | 9 |
+| absorbed by an **existing open** ticket | 41 |
+| needs a **new** slice (§5.2) | 16 |
+| shipped-partial or deferred with no ticket needed | 6 |
+| **total** | **83** |
+
+The 6: `RIGHT-SUBMODE-001` (shipped T-180.5), `PLACE-005` / `WIDGET-AREA-001` /
+`WIDGET-AREA-SCALE-001` (T-582 shipped, follow-on only), `TOOLBAR-NEW-001` (exists on the Library
+route), `TOOLBAR-TUTORIAL-001` (deferred, no owner).
+
+### All 9 `na`, and why each is genuinely `na`
+
+Not one is "hard, skip it" — each is a capability whose **precondition** a 2D top-down web editor
+does not have:
+
+| id | missing precondition | 2D substitute |
+|---|---|---|
+| XFORM-ALT-001 | a screen axis that is not the ground plane | numeric Z — **already ships** (`editor_ops.rs:667`) |
+| XFORM-VERT-001 | ditto, plus an ATL/ASL height datum in the doc | none needed |
+| XFORM-SNAP-001 | an un-snapped state — the mod grounds every spawn (T-092.1) | always-on by contract |
+| WIDGET-COORD-001 | an orientation richer than yaw; one axis-aligned world frame | none needed |
+| ACTION-LEVEL-001 | pitch/roll in the slot record | none needed |
+| ACTION-SNAP-001 | as XFORM-SNAP-001 | always-on by contract |
+| STATUS-VER-001 | an attached game build | a schema/mod-version chip would be `tbd_only`, not this id |
+| STATUS-MOD-001 | a local addon set | platform Modpacks page (`modpacks.rs`) |
+| STATUS-SRV-001 | an in-editor MP session | Server Intel / Server Control pages |
 
 **`na` ≠ nothing to do.** XFORM-ALT-001's 2D substitute (numeric Z) already ships; XFORM-SNAP-001's
 substitute is enforced mod-side. Where a substitute is missing it is named in the row, not hidden by
@@ -478,8 +495,11 @@ almost certainly where `interactions.md:522`'s `` ` ; ` `` for `KEY-GRID-001` ca
 | **T-082** Full attribute fields | deferred | `ATTR-MULTI-001`, `ATTR-MULTI-CHK-001` | Multi-edit needs the `editor_ops.rs:583-585` suppression removed first. |
 | **T-146** Asset Browser Data Wiring | queued | `RIGHT-MODE-001` | Unifying the split Factions/Vehicles/Objects trees toward one Eden-style Object mode. |
 
-Existing tickets absorb **40 of the 83**. `na` accounts for **12**. The remaining **31** need the
-new slices below.
+Existing open tickets absorb **41 of the 83**. **11** are already shipped (`match`), **9** are `na`,
+**6** need no owner (§3). The remaining **16** need the new slices below.
+
+Per-ticket absorption counts: T-079 **14** · T-076 **6** · T-078 **6** · T-084 **4** · T-075 **3** ·
+T-073 **2** · T-082 **2** · T-072 **1** · T-077 **1** · T-069/T-213 **1** · T-146 **1** = 41.
 
 ### 5.2 New slices — proposed, coherent, smallest-first
 

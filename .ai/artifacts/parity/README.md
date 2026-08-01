@@ -78,15 +78,31 @@ These were checked directly and do **not** need re-deriving:
    *"it reaches the game"* are different claims, and this ledger exists because they were confused
    before.
 
-## A methodology note worth keeping
+## A methodology note worth keeping — and its limit
 
 The attributes agent recorded a trap it avoided: `grep -rl stance apps/mod` returns **39 files**,
 which would have supported "the mod has a stance concept". A **word-boundary** search returns
 **zero** — every hit was the substring inside `instance`.
 
-That is the same failure mode as the three statistical errors already on record in this program. It
-is now the fourth independent instance of *a grep answering a different question than the one
-asked*. Word-boundary by default; state the command with the number.
+That is the same failure mode as the three statistical errors already on record in this program —
+the fourth independent instance of *a grep answering a different question than the one asked*.
+
+**But word-boundary is not sufficient, and the `snap` case proves it.** Checking whether TBD has
+Eden-style snapping:
+
+```
+grep -ri  "snap" apps/website/frontend/src --include="*.rs" | wc -l   # 142  — looks like snapping
+grep -riw "snap" apps/website/frontend/src --include="*.rs" | wc -l   #  37  — still looks like it
+```
+
+The word-boundary filter removed `snapshot`/`Snapshot` and **still returned 37 apparently-positive
+hits**. Reading them settles it: every one is `let snap = read_snapshot();` — a local variable
+abbreviating `snapshot`. **TBD has no snapping.**
+
+So the rule is stronger than "use `-w`": a word-boundary grep is a *narrowing* step, not a verdict.
+`snap` is simultaneously a real term and a common abbreviation, and no pattern distinguishes those.
+**Read the matches before reporting the count.** State the command *and* what the surviving hits
+actually were.
 
 ## Re-run guidance
 

@@ -160,7 +160,7 @@ apps/website/frontend/src/eden_chrome.rs
 ```
 | Path | Why | Conf |
 |---|---|---|
-| `…/eden_chrome.rs` | `DockLeft` `:2813-2862` (**50 lines** — the void is real), `DockRight` `:2961-3379`, dock style consts `DOCK_L` `:61` / `DOCK_R` `:62`, widths `:40`/`:42`. The "five unlabelled icon buttons marooned at the bottom" are `strip_btn(…)` at `:2854-2858` and every one passes `false` for enabled — their tooltips literally read `"Layers (visual only)"`, `"Assets (visual only)"`, `"History (visual only)"`, `"Settings (visual only)"`. The tree renderer it would densify (`ROW_H = 24.0` `:1525`, `virtual_tree` `:1711`) is also in this file | **high** |
+| `…/eden_chrome.rs` | `DockLeft` `:2813-2863` (**51 lines** — the void is real), `DockRight` `:2961-3379`, dock style consts `DOCK_L` `:61` / `DOCK_R` `:62`, widths `:40`/`:42`. The "five unlabelled icon buttons marooned at the bottom edge" are the `strip_btn(…)` calls at `:2857-2861`, inside a `class="mt-auto …"` row `:2856` — `mt-auto` **is** the marooning. Their tooltips read `"Hierarchy (visual only)"`, `"Layers (visual only)"`, `"Assets (visual only)"`, `"History (visual only)"`, `"Settings (visual only)"`; only the first passes `true` (active), the other four `false`. **They are decoration, not controls** — that is a stronger finding than "stranded" and should be in the ticket. The tree renderer it would densify (`ROW_H = 24.0` `:1525`, `virtual_tree` `:1711`) is also in this file | **high** |
 
 ---
 
@@ -495,7 +495,7 @@ for.
 | File | Tickets | Share of 27 | Ticket ids |
 |---|---|---|---|
 | **`apps/website/frontend/src/eden_chrome.rs`** | **14** | **52%** | T-632, T-633, T-634, T-636, T-637, T-638, T-641, T-642, T-643, T-645, T-646, T-650, T-651, T-659 |
-| `apps/website/frontend/src/mission_editor.rs` | **10** | 37% | T-631, T-635, T-636, T-638, T-642, T-643, T-647, T-648, T-649, T-655 |
+| `apps/website/frontend/src/mission_editor.rs` | **11** | 41% | T-631, T-635, T-636, T-638, T-642, T-643, T-647, T-648, T-649, T-651, T-655 |
 | `apps/website/frontend/src/editor_ops.rs` | **8** | 30% | T-645, T-646, T-647, T-648, T-649, T-650, T-651, T-659 |
 | `crates/map-engine-core/src/mission/validate.rs` *(new)* | **4** | 15% | T-656, T-657, T-658, T-660 |
 | `apps/website/frontend/src/select_tool.rs` | 4 | 15% | T-638, T-642, T-648, T-649 |
@@ -518,8 +518,23 @@ Of those 7, four share `validate.rs` and two share `dem_vectors.rs` — so the *
 file-disjoint set drawn from outside the two hot files is 3**: one contour ticket, one validation
 ticket, and T-644 (which is dependency-blocked behind T-643 anyway).
 
-`eden_chrome.rs` is **not** merely large. It is the *only* file where five unrelated UI concerns
-live, so its 14 claimants are 14 different problems that cannot be batched into one agent's brief.
+**The wave floor, stated as an inequality.** A file with *n* claimants forces at least *n* waves,
+because it admits exactly one agent per wave. So for this program:
+
+```
+waves ≥ max(claimants per file) = 14        (eden_chrome.rs)
+next constraint down                = 11    (mission_editor.rs)
+then                                =  8    (editor_ops.rs)
+```
+
+**No number of agents can run this program in fewer than 14 waves while `eden_chrome.rs` is one
+file.** That is the single hardest fact in this document, and it holds independently of priority
+order, dependency edges and how the operator packs.
+
+`eden_chrome.rs` is **not** merely large. It is the *only* file where eight unrelated concerns live
+— top strip, two docks, toolbelt, settings dialog, zone editor, virtual-tree renderer, JSON-schema
+parser, row-mirror debounce machine — so its 14 claimants are 14 different problems that cannot be
+batched into one agent's brief.
 
 ---
 
@@ -536,7 +551,7 @@ tickets collide with at least one other.
 | T-633 | T-634, T-636, T-637, T-638, T-641, T-642, T-643, T-645, T-646, T-650, T-651, T-659 | `eden_chrome.rs` |
 | T-634 | T-636, T-637, T-638, T-641, T-642, T-643, T-645, T-646, T-650, T-651, T-659 | `eden_chrome.rs` |
 | T-636 | T-637, T-641, T-645, T-646, T-650, T-651, T-659 | `eden_chrome.rs` |
-| T-636 | T-631, T-635, T-647, T-648, T-649, T-655 | `mission_editor.rs` |
+| T-636 | T-631, T-635, T-647, T-648, T-649, T-651, T-655 | `mission_editor.rs` |
 | T-636 | T-638, T-642, T-643 | **both** `eden_chrome.rs` + `mission_editor.rs` |
 | T-638 | T-642, T-643 | `eden_chrome.rs`, `mission_editor.rs` |
 | T-638 | T-648, T-649, T-642 | `select_tool.rs` |
@@ -550,7 +565,7 @@ tickets collide with at least one other.
 | T-647 | T-648, T-649 | `mission_editor.rs`, `editor_ops.rs` |
 | T-648 | T-649 | `mission_editor.rs`, `select_tool.rs`, `editor_ops.rs` |
 | T-650 | T-651 | `eden_chrome.rs`, `editor_ops.rs`, `crates/…/doc/store.rs` |
-| T-655 | T-631, T-635, T-636, T-638, T-642, T-643, T-647, T-648, T-649 | `mission_editor.rs` |
+| T-655 | T-631, T-635, T-636, T-638, T-642, T-643, T-647, T-648, T-649, T-651 | `mission_editor.rs` |
 | T-656 | T-657, T-658, T-660 | `crates/…/mission/validate.rs` |
 | T-657 | T-658, T-660 | `crates/…/mission/validate.rs` |
 | T-658 | T-660 | `crates/…/mission/validate.rs` |
