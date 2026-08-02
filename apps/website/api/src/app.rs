@@ -856,6 +856,13 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
         )
         .route("/admin/roles/sync", post(handlers::admin::resync_roles))
         .route("/admin/servers/{id}/rcon", post(handlers::admin::send_rcon))
+        // T-683: corpus-wide default-override instrumentation. Lives under `/admin/*` because it is
+        // an aggregate only an admin reads (not per-mission content); the handler is in `missions`
+        // because it queries `mission_versions`. Tier via the per-handler `AdminUser` extractor.
+        .route(
+            "/admin/mission-default-overrides",
+            get(handlers::missions::mission_default_overrides),
+        )
         // Approvals.
         .route("/approvals", get(handlers::approvals::list_approvals))
         .route(

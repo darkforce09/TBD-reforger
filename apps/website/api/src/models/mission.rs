@@ -149,6 +149,50 @@ pub struct MissionArmory {
     pub sort_order: i64,
 }
 
+/// T-683 — one authored default key on `GET /api/v1/admin/mission-default-overrides`.
+///
+/// The row answers, for a single schema-`default`-bearing key, "how often does an author
+/// change this away from what the mod would do if they wrote nothing?" — the query WOG could
+/// only get by machine-parsing 171 shipped PBOs (`wog.md:1078`), which TBD owns as a table.
+///
+/// `default_value` and the `key` pointer are read FROM `mission.schema.json` at runtime (see
+/// [`crate::handlers::missions::schema_default_keys`]); nothing here is hardcoded, because the
+/// ticket's whole point is that the schema owns the defaults. The counts are over the LATEST
+/// version of every mission (the `current_version_id` join, the same one the library reads).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MissionDefaultOverride {
+    /// JSON-pointer-style path to the key inside a stored `zones[].rules` object, e.g.
+    /// `zones[].rules.graceSeconds`. This is the AUTHORED (editor-payload) location, not the
+    /// compiled-document pointer — the two are distinct namespaces (T-357).
+    pub key: String,
+    /// The `default` this key declares in `mission.schema.json` — the value an author gets by
+    /// writing nothing. Carried verbatim as JSON so a string default (`"warn"`), a number
+    /// (`30`) and a bool (`true`) all round-trip unchanged.
+    pub default_value: serde_json::Value,
+    /// Missions whose latest version has AT LEAST ONE authored zone (the population this
+    /// fraction is over — a mission that authors no zone rules cannot override a rule).
+    pub missions_total: i64,
+    /// Of `missions_total`, how many authored a value for this key, in any zone, that DIFFERS
+    /// from `default_value`.
+    pub missions_overriding: i64,
+    /// `missions_overriding / missions_total`, or `0.0` when `missions_total` is 0. The single
+    /// number `wog.md:1078` turns on ("if 43% of missions disable your default…").
+    pub override_fraction: f64,
+    /// Every DISTINCT authored value for this key across all latest versions, with its mission
+    /// count — the value histogram. Sorted by descending count then value for a stable wire.
+    pub histogram: Vec<MissionDefaultValueBucket>,
+}
+
+/// T-683 — one `(value, count)` bar of a [`MissionDefaultOverride`] histogram.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MissionDefaultValueBucket {
+    /// A distinct authored value for the key (the default's value included when authors write
+    /// it explicitly), carried verbatim as JSON.
+    pub value: serde_json::Value,
+    /// Missions (latest-version, distinct) that authored this value for the key in any zone.
+    pub count: i64,
+}
+
 /// Backs the "Bookmarked" tab in the Mission Library.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct MissionBookmark {
