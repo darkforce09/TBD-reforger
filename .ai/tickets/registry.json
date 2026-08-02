@@ -16014,7 +16014,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3840,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16022,7 +16022,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 2 (wave_plan.tsv row 102)",
+   "notes": "editor-UI program wave 2 (wave_plan.tsv row 102) — SHIPPED wave 102 (editor factory), slice 705920f5; verifier wave102.md (4 MAJOR deferred: T-713..T-716)",
    "depends_on": [
     "T-661",
     "T-662"
@@ -16041,7 +16041,7 @@
     "ui",
     "state"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3850,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16049,7 +16049,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 2 (wave_plan.tsv row 102)",
+   "notes": "editor-UI program wave 2 (wave_plan.tsv row 102) — SHIPPED wave 102 (editor factory), slice 6f479a41; verifier wave102.md (4 MAJOR deferred: T-713..T-716)",
    "depends_on": [
     "T-661"
    ]
@@ -16065,7 +16065,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3860,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16073,7 +16073,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 2 (wave_plan.tsv row 102)",
+   "notes": "editor-UI program wave 2 (wave_plan.tsv row 102) — SHIPPED wave 102 (editor factory), slice 8722916e; verifier wave102.md (4 MAJOR deferred: T-713..T-716)",
    "depends_on": [
     "T-661"
    ]
@@ -17872,6 +17872,86 @@
    "title": "Contour band: honest constant annotations + sample the default view in acceptance",
    "summary": "Three claim-accuracy defects on lod_gates.rs shipped by T-639, behaviorally nil but false-as-annotated: (1) :111 comment claims tan(11 deg) but the literal 0.1943803091472314 fabricates digits after the 10th place (true 0.19438030913771848); (2) the provenance story is circular — the test's synthetic sinusoid AMP=1.184 is tuned to yield ~11 deg, yet declares itself 'a real terrain statistic, not a fudge factor' and the production comment says 'DEM slope statistics'; the value is actually fitted to the 3.41/6.20 corpus anchors. Fix: correct digits, rewrite both comments to name the fit honestly, optionally measure the real Everon DEM median slope and cite it. (3) The acceptance test samples only rung centres; the DEFAULT boot view (zoom -2.0 = 4.0 m/px) sits near the 10->20 switch at 12.9 px, below the 14 px floor — add the default view as a sampled point and decide (retune or accept-with-comment). Diagnosis: editor_verify/wave101.md F-2, F-3, N-1.",
    "notes": "filed by wave-101 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-713",
+   "order": 4306,
+   "title": "Summit-ring rule inverts on depressions — every crater ring renders dark",
+   "summary": "T-640's summit_ring_indices (crates/map-engine-core/src/geometry/contours.rs) selects a closed ring iff no higher closed ring nests inside it. For a depression the containment inverts (higher rings sit OUTSIDE lower ones), so every closed contour of a crater/basin qualifies: verifier harness against the real code got 5-of-5 rings selected [50,60,70,80,90] for a crater in a 100 m plateau — the whole basin renders in the dark summit tint. The 4 shipped tests cover only bumps and ramps. Fix: a summit ring must also verify its interior is HIGHER than the ring level (sample the DEM inside, or require the enclosing-ring level to be lower); add a crater fixture + a rim-with-twin-peaks fixture. Diagnosis: editor_verify/wave102.md F-1.",
+   "notes": "filed by wave-102 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-714",
+   "order": 4307,
+   "title": "Contour re-march hitch: 0.66-1.3 s native per rung crossing (est 1-4 s wasm)",
+   "summary": "T-640's contour_rings re-marches the full 1601-square grid per level plus an O(n^2) segment chainer: measured 660 ms @ 10 m interval / 1.33 s @ 5 m native vs 15-25 ms for the old single-sweep path (43-54x). last_interval correctly gates it to log2-rung crossings (T-639 quantizes, so not per zoom tick), but every ~x2 zoom crosses a rung — a recurring main-thread hitch during interaction. Fix directions: chain from the existing single sweep (segments already computed), hash-grid the chainer to O(n), or move the march off the interaction path; contour_segments is now production-dead — either delete it or make it the shared fast path again. Diagnosis: editor_verify/wave102.md F-2 (+ NOTE on dead contour_segments).",
+   "notes": "filed by wave-102 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-715",
+   "order": 4308,
+   "title": "Hidden-layer slots vanish from Outliner/ORBAT docks instead of dimming",
+   "summary": "T-665 filters hidden layers' slots inside materialize() (correct for the GPU upload), but slot_rows() feeds the Outliner and ORBAT docks from that same filtered output — hidden ids read as dangling and are skipped, so squads silently lose members in the dock views. The slice's dimmed-slot styling and its outliner unit test assert a state the live pipeline cannot produce (the test hand-builds SlotRows, bypassing the filter). Fix: docks must read the UNFILTERED doc with effective-hidden carried per row (dim, don't drop); route the outliner test through the live materialize->slot_rows pipeline so it can catch this class. WAVE-104 NOTE: T-666 (outliner authoring) claims the same files — its brief carries this as known-pending; do not double-fix. Diagnosis: editor_verify/wave102.md F-3.",
+   "notes": "filed by wave-102 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-716",
+   "order": 4309,
+   "title": "Context menu honesty: Go Here goes elsewhere; enabled rows dead on multi-select; keydown hijacks fields",
+   "summary": "Three defects in T-664's shipped menu, one honesty rule: an enabled row must do what it says on the target it names. (1) Empty-ground 'Go Here' dispatches center_on_selection() — with a selection elsewhere the camera jumps AWAY from the clicked point; with none, enabled no-op. The variant doc claims a set_view-to-clicked-point wiring that does not exist. Wire the event pixel through resolve_target into a real set-view. (2) 'Attributes...' and 'Edit Loadout...' are enabled for multi-selection targets but open_attributes/open_arsenal silently no-op at len()>1 — disable-with-reason or make them act (ATTR-MULTI-001 is the extender; coordinate with T-649 wave 112). (3) The menu's window keydown lacks the in_editable_field guard T-662 established — with a dock field focused, Arrows/Enter hijack into menu nav and Enter fires a row. Related, filed for T-082's brief (wave 113): refused locked-slot Transform edits display as accepted in the Attributes modal (one-shot snapshot, no re-read, no disabled affordance) — wave102.md F-7. Diagnosis: editor_verify/wave102.md F-4, F-5, F-6.",
+   "notes": "filed by wave-102 adversarial verifier (editor factory)"
   }
  ]
 }

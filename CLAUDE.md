@@ -145,7 +145,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 > the lowest-ordered `ready` program, not the program in flight.
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-639**
+**Latest shipped:** **T-640**
 
 **ACTIVE NOW:** **T-090** — T-090.6 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md`.
 
@@ -154,12 +154,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-120** — Staging soak + golden mission smoke (`queued`)
 - **T-146** — Asset Browser Data Wiring (`queued`)
 - **T-170** — Prod default flip to Leptos SPA (`queued`)
-- **T-664** — Right-click context menu — the slice that unblocks six tickets (`queued`)
-- **T-665** — Editor layer flags: per-layer visibility and transform lock (`queued`)
-- **T-640** — Contours as a tint, not a colour; darker summit ring (`queued`)
 - **T-631** — The boot overlay cannot fail (`queued`)
 - **T-076** — Vehicle crew authoring UI — the factory-safe half of T-076 (`queued`)
 - **T-641** — Spot heights — Eden-parity screen-space label density (`queued`)
+- **T-635** — Debug HUD overlaps the toolbelt readouts (`queued`)
+- **T-666** — Outliner layer authoring — create, rename, delete, reparent, refile (`queued`)
+- **T-656** — Validation rule engine — the four primitives + per-rule fail-on-demand tests (`queued`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.

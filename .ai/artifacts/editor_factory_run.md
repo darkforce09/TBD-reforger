@@ -24,7 +24,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 |---|---|---|---|---|---|
 | 100 | 83 | T-661 | PASS 30/30 (run 3; runs 1–2 red on non-ticket causes, see Incidents) | 0B/0M/5m/5N | SHIPPED — split proven pure (101 symbols 1:1, 419/419 tests); + capture harness ported to Rust (43a3f170); T-707..T-710 filed |
 | 101 | 84 | T-639 T-662 T-663 | PASS (run 1) | 0B/1M/3m/5N | SHIPPED — contour band + RMB/Backspace freed + dead DTO cut; T-711 (doc sync) T-712 (annotations) filed |
-| 102 | 85 | T-640 T-664 T-665 | — | — | pending |
+| 102 | 85 | T-640 T-664 T-665 | PASS (run 1) | 0B/4M/3m/10N | SHIPPED — two-tone contours + context menu + layer flags; 4 MAJOR deferred: T-713 (crater rings), T-714 (re-march hitch), T-715 (dock vanish), T-716 (menu honesty) |
 | 103 | 86 | T-076 T-631 T-641 | — | — | pending |
 | 104 | 87 | T-635 T-656 T-666 | — | — | pending |
 | 105 | 88 | T-636 T-646 T-683 | — | — | pending |
@@ -104,6 +104,12 @@ serialisation, not a hang).
 - **T-706 (W120):** eden_env.rs:309 `keys_nothing_reads_are_not_authored` names viewDistance/
   thermals as never-authored — widening the schema must consciously edit that list or stay clear
   of those keys; mission.schema.json itself never carried them. [wave101 N-5]
+- **T-666 (W104):** T-715 is known-pending on the same files (hidden slots vanish from docks via
+  filtered slot_rows) — do not double-fix, do not regress dimming further. [wave102 F-3]
+- **T-649 (W112):** coordinate the multi-select edit path with T-716's enabled-but-dead menu rows
+  (Attributes/Edit Loadout at len()>1). [wave102 F-5]
+- **T-082 (W113):** the Attributes modal shows refused locked-slot Transform edits as accepted
+  (one-shot snapshot, no re-read) — add re-read or disabled affordance. [wave102 F-7]
 
 ## Deferred tickets filed by verifiers
 
