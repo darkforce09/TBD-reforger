@@ -50,9 +50,50 @@
 //! that "passes" by doing nothing. The `engine_self_check_*` tests exercise both the healthy case and
 //! a deliberately-misdeclared rule to prove the guard is not itself a silent pass.
 
+use std::collections::HashSet;
+
 use serde_json::Value;
 
 use crate::mission::compile::terrain_bounds;
+
+/// Ambient facts a rule may need that are NOT in the editor payload — the engine's evaluation
+/// context (T-658). The engine is PURE core code with no access to the SPA's thread_locals, so a
+/// rule that must resolve a placed asset against the *live* catalogue cannot reach it directly:
+/// the caller (the SPA panel, T-655's W111 wiring) threads the live ids in through here instead.
+///
+/// Each field is an `Option` whose `None` means "this fact is not available in this call" — the
+/// conservative default. A context-dependent rule reads its field and, when it is `None`, SKIPS via
+/// its `applies` gate rather than guessing (see [`rule_asset_resolves`]): a cold-registry /
+/// server-side call must not flag every asset as unknown just because the catalogue was not handed
+/// in. `evaluate()` uses [`EvalContext::default`] (all `None`), so nothing context-dependent fires
+/// unless a caller opts in with [`Registry::evaluate_with_context`].
+///
+/// `#[non_exhaustive]` on purpose: T-660 lands cargo/loadout rules next wave and may add fields
+/// (e.g. a known-loadout set, capacity tables) — a new field is a non-breaking addition here, and
+/// callers build the context with `..Default::default()` so they never have to name every field.
+/// Add new facts as new `Option` fields; keep the "None ⇒ rule skips via its gate" discipline.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct EvalContext {
+    /// The set of asset ids that resolve in the live registry catalogue — full Enfusion
+    /// `resource_name`s AND any `veh:`/`prop:`/`comp:` aliases the catalogue exposes. `Some(set)`
+    /// ⇒ the resolution rule runs against it; `None` ⇒ the catalogue was not supplied (cold /
+    /// server-side) and the rule skips. See [`rule_asset_resolves`] for how a placed asset id is
+    /// matched against it (exact id, plus alias forms the payload carries).
+    pub known_asset_ids: Option<HashSet<String>>,
+}
+
+impl EvalContext {
+    /// A context carrying a known-asset-id set — the shape the SPA panel builds from its
+    /// `registry_session` cache (T-655 W111). Convenience over `EvalContext { known_asset_ids:
+    /// Some(ids), ..Default::default() }` for the common case.
+    #[must_use]
+    pub fn with_known_asset_ids(ids: HashSet<String>) -> Self {
+        Self {
+            known_asset_ids: Some(ids),
+        }
+    }
+}
 
 /// How much a finding matters. The domain waves (T-657/T-658/T-660) and the panel (T-655) route on
 /// this: an `Error` blocks, a `Warning` is advisory, `Info` is a note. The seed keeps the mapping
@@ -139,24 +180,45 @@ pub struct Finding {
 ///
 /// `eval` returns every finding the rule sees on the payload (a V3 invariant can return one per
 /// offending object). It is only ever called when `applies` returned `true`, and it must not itself
-/// early-exit across the objects it walks — returning all findings is the engine's contract.
+/// early-exit across the objects it walks — returning all findings is the engine's contract. It also
+/// receives the [`EvalContext`] (T-658) so a rule can consult ambient facts (the live catalogue) the
+/// payload does not carry; a payload-only rule simply ignores it.
+///
+/// `applies` receives the same `(payload, ctx)` pair: a context-dependent rule expresses "I have no
+/// facts to check against, so I do not apply" as a gate condition (e.g. `ctx.known_asset_ids
+/// .is_some()`), which is how a `None` context makes the rule *deliberately inert* rather than
+/// silently wrong — the same first-class conditionality V1 uses for mission shape.
 ///
 /// `trip_fixture` is the payload that MUST make this rule fire. It is not test scaffolding bolted on
 /// the side: it lives on the rule so [`Registry::self_check`] can prove, at the engine level, that
 /// the rule is still capable of firing. A rule author cannot add a rule to the registry without also
 /// stating the input that trips it, which is exactly the property whose absence let FNF ship 14 dead
 /// checks.
+///
+/// `trip_context` is the companion for a **context-dependent** rule: the [`EvalContext`] its
+/// `trip_fixture` must be evaluated *against* to fire. `None` (the default, via
+/// [`Rule::no_trip_context`]) means "a default context suffices" — every payload-only rule. A rule
+/// whose `applies`/`eval` reads a context field MUST supply a `trip_context`, or its self-check runs
+/// against the default (all-`None`) context, its gate excludes its own trip, and it is reported as a
+/// loud failure — exactly the "a context rule that cannot fire is a loud failure" discipline T-658
+/// requires, so the seam cannot hide a dead context rule any more than the base engine hides a dead
+/// payload rule.
 pub struct Rule {
     id: &'static str,
     severity: Severity,
     primitive: Primitive,
-    /// Mission-shape gate. `applies(payload) == false` ⇒ the rule contributes nothing to this
-    /// payload's findings (V1 conditionality). Defaults to always-applies for shape-independent rules.
-    applies: fn(&Value) -> bool,
-    /// The evaluator. Called only when [`applies`](Rule::applies) held; returns ALL findings.
-    eval: fn(&Rule, &Value) -> Vec<Finding>,
+    /// Mission-shape / context gate. `applies(payload, ctx) == false` ⇒ the rule contributes nothing
+    /// to this payload's findings (V1 conditionality; T-658 context conditionality). Defaults to
+    /// always-applies for shape- and context-independent rules.
+    applies: fn(&Value, &EvalContext) -> bool,
+    /// The evaluator. Called only when [`applies`](Rule::applies) held; returns ALL findings. Reads
+    /// the [`EvalContext`] for ambient facts (T-658); payload-only rules ignore it.
+    eval: fn(&Rule, &Value, &EvalContext) -> Vec<Finding>,
     /// A payload that this rule is REQUIRED to fire on — the self-check's oracle (see the struct doc).
     trip_fixture: fn() -> Value,
+    /// The context [`trip_fixture`](Rule::trip_fixture) must be evaluated against to fire (T-658).
+    /// `None` ⇒ a default context suffices (payload-only rules). See the struct doc.
+    trip_context: fn() -> Option<EvalContext>,
 }
 
 impl Rule {
@@ -175,22 +237,31 @@ impl Rule {
         self.primitive
     }
 
-    /// Whether this rule applies to `payload`'s mission shape (V1 conditionality). A rule that does
-    /// not apply is *deliberately* inert here — not skipped-and-forgotten: the registry records the
-    /// distinction, and the rule's own `trip_fixture` still proves it can fire when it does apply.
+    /// Whether this rule applies to `payload`'s mission shape (V1 conditionality) and the ambient
+    /// [`EvalContext`] (T-658 context conditionality). A rule that does not apply is *deliberately*
+    /// inert here — not skipped-and-forgotten: the registry records the distinction, and the rule's
+    /// own `trip_fixture` (+ `trip_context`) still proves it can fire when it does apply.
     #[must_use]
-    pub fn applies(&self, payload: &Value) -> bool {
-        (self.applies)(payload)
+    pub fn applies(&self, payload: &Value, ctx: &EvalContext) -> bool {
+        (self.applies)(payload, ctx)
     }
 
-    /// Evaluate against `payload`, honouring the gate: returns `[]` when the rule does not apply,
-    /// otherwise every finding the evaluator produced.
+    /// Evaluate against `payload` with a **default** (empty) context — the back-compat entry. A rule
+    /// gated on a context field (T-658) does not fire here; use [`evaluate_with_context`]
+    /// (Rule::evaluate_with_context) to supply the live catalogue.
     #[must_use]
     pub fn evaluate(&self, payload: &Value) -> Vec<Finding> {
-        if !self.applies(payload) {
+        self.evaluate_with_context(payload, &EvalContext::default())
+    }
+
+    /// Evaluate against `payload` and `ctx`, honouring the gate: returns `[]` when the rule does not
+    /// apply, otherwise every finding the evaluator produced.
+    #[must_use]
+    pub fn evaluate_with_context(&self, payload: &Value, ctx: &EvalContext) -> Vec<Finding> {
+        if !self.applies(payload, ctx) {
             return Vec::new();
         }
-        (self.eval)(self, payload)
+        (self.eval)(self, payload, ctx)
     }
 
     /// The payload this rule must fire on. Used by [`Registry::self_check`]; exposed so a caller can
@@ -198,6 +269,13 @@ impl Rule {
     #[must_use]
     pub fn trip_fixture(&self) -> Value {
         (self.trip_fixture)()
+    }
+
+    /// The context this rule's [`trip_fixture`](Rule::trip_fixture) must be evaluated against to fire
+    /// (T-658), or `None` when a default context suffices. Used by [`Registry::self_check`].
+    #[must_use]
+    pub fn trip_context(&self) -> Option<EvalContext> {
+        (self.trip_context)()
     }
 
     /// Convenience for an `eval` body: build a finding carrying this rule's stable identity, with no
@@ -272,44 +350,61 @@ impl Registry {
         &self.rules
     }
 
-    /// Run every rule and return every finding. Order is: rules in registration order, and within a
-    /// rule the evaluator's own order. No rule can suppress another's findings, and no finding is
-    /// dropped — the "return all findings, never early-exit" contract.
+    /// Run every rule with a **default** (empty) context and return every finding — the back-compat
+    /// entry ([`validate_editor_payload`] uses it). Context-dependent rules (T-658) stay inert here;
+    /// pass a populated context via [`evaluate_with_context`](Registry::evaluate_with_context).
     #[must_use]
     pub fn evaluate(&self, payload: &Value) -> Vec<Finding> {
+        self.evaluate_with_context(payload, &EvalContext::default())
+    }
+
+    /// Run every rule against `payload` and `ctx`, returning every finding. Order is: rules in
+    /// registration order, and within a rule the evaluator's own order. No rule can suppress
+    /// another's findings, and no finding is dropped — the "return all findings, never early-exit"
+    /// contract. `ctx` carries ambient facts (the live catalogue) that payload-only rules ignore and
+    /// context-dependent rules gate on (T-658).
+    #[must_use]
+    pub fn evaluate_with_context(&self, payload: &Value, ctx: &EvalContext) -> Vec<Finding> {
         let mut out = Vec::new();
         for rule in &self.rules {
-            out.extend(rule.evaluate(payload));
+            out.extend(rule.evaluate_with_context(payload, ctx));
         }
         out
     }
 
     /// Prove every rule is still capable of firing. For each rule, evaluate it against its own
-    /// `trip_fixture` and require that (a) the rule APPLIES to that fixture and (b) it produces at
-    /// least one finding CARRYING ITS OWN id. A rule that stays silent — because its subject field
-    /// was renamed out from under it, its predicate was inverted, or its gate now excludes its own
-    /// trip case — is returned as a [`SelfCheckFailure`]. Returns `Ok(())` only when every rule fires.
+    /// `trip_fixture` — **and its own `trip_context`** (T-658; a default context when the rule
+    /// declares none) — and require that (a) the rule APPLIES to that fixture+context and (b) it
+    /// produces at least one finding CARRYING ITS OWN id. A rule that stays silent — because its
+    /// subject field was renamed out from under it, its predicate was inverted, its gate now excludes
+    /// its own trip case, or a context-dependent rule shipped without the `trip_context` that lets it
+    /// fire — is returned as a [`SelfCheckFailure`]. Returns `Ok(())` only when every rule fires.
     ///
     /// This is the engine-level answer to "a check that does nothing looks like a check that passed":
-    /// here, a check that does nothing is a returned error.
+    /// here, a check that does nothing is a returned error. Extending the oracle to carry a context
+    /// keeps that guarantee across the T-658 seam — a context rule that cannot fire (no supplied
+    /// catalogue) is caught here as a loud failure, not passed by doing nothing.
     ///
     /// # Errors
-    /// Returns the list of rules that failed to fire on their own trip fixture.
+    /// Returns the list of rules that failed to fire on their own trip fixture (+ context).
     pub fn self_check(&self) -> Result<(), Vec<SelfCheckFailure>> {
         let mut failures = Vec::new();
         for rule in &self.rules {
             let fixture = rule.trip_fixture();
-            if !rule.applies(&fixture) {
+            // A context-dependent rule states the context it needs; a payload-only rule declares
+            // none and self-checks against the default (empty) context — same as `evaluate()`.
+            let ctx = rule.trip_context().unwrap_or_default();
+            if !rule.applies(&fixture, &ctx) {
                 failures.push(SelfCheckFailure {
                     rule_id: rule.id,
                     reason:
-                        "trip_fixture does not satisfy the rule's own `applies` gate — the rule \
-                             can never fire on it"
+                        "trip_fixture does not satisfy the rule's own `applies` gate (with its \
+                             trip_context) — the rule can never fire on it"
                             .to_string(),
                 });
                 continue;
             }
-            let findings = rule.evaluate(&fixture);
+            let findings = rule.evaluate_with_context(&fixture, &ctx);
             if !findings.iter().any(|f| f.rule_id == rule.id) {
                 failures.push(SelfCheckFailure {
                     rule_id: rule.id,
@@ -411,7 +506,16 @@ pub fn default_registry() -> Registry {
         rule_orbat_squad_has_leader(),
         rule_orbat_callsign_unique(),
         rule_orbat_template_coverage(),
+        // ── T-658 catalogue-resolution rule ──
+        rule_asset_resolves(),
     ])
+}
+
+/// The `trip_context` a payload-only rule declares: none — its `trip_fixture` fires against the
+/// default (empty) context, exactly as `evaluate()` runs it. Only a context-dependent rule (T-658,
+/// e.g. [`rule_asset_resolves`]) overrides this with the context its trip fixture needs.
+fn no_trip_context() -> Option<EvalContext> {
+    None
 }
 
 /// Convenience: `default_registry().evaluate(payload)`. The one-call entry the API/SPA use.
@@ -447,6 +551,16 @@ fn editor_squads(payload: &Value) -> &[Value] {
     payload
         .get("editor")
         .and_then(|e| e.get("squads"))
+        .and_then(Value::as_array)
+        .map_or(&[], Vec::as_slice)
+}
+
+/// A TOP-LEVEL payload array (`vehicles[]`, `entities[]`) as a slice, or empty. Unlike the ORBAT
+/// graph these live at the payload root, not under `editor` (`compile::compile_payload` copies
+/// `vehiclesById`/`entitiesById` → top-level `vehicles`/`entities`). Total over any payload shape.
+fn top_level_array<'a>(payload: &'a Value, key: &str) -> &'a [Value] {
+    payload
+        .get(key)
         .and_then(Value::as_array)
         .map_or(&[], Vec::as_slice)
 }
@@ -494,8 +608,8 @@ fn terrain_key(payload: &Value) -> &str {
 
 /// A mission "declares players" iff it has at least one faction row. Faction rows are how the editor
 /// expresses sides/players; a payload with none is a draft that has declared nothing, and V1 must not
-/// fire on it (conditionality).
-fn declares_players(payload: &Value) -> bool {
+/// fire on it (conditionality). Shape-only gate — the `ctx` is unused (T-658 signature).
+fn declares_players(payload: &Value, _ctx: &EvalContext) -> bool {
     !editor_factions(payload).is_empty()
 }
 
@@ -507,7 +621,7 @@ fn rule_v1_player_spawn() -> Rule {
         // GATE: only a mission that declares a faction has players to spawn. This is the line that
         // makes V1 conditional — an empty `{}` or a factionless draft is not "missing" a spawn.
         applies: declares_players,
-        eval: |rule, payload| {
+        eval: |rule, payload, _ctx| {
             if editor_slots(payload).is_empty() {
                 vec![rule.finding(
                     "This mission declares a faction but has no slots — there is nowhere for a \
@@ -529,6 +643,7 @@ fn rule_v1_player_spawn() -> Rule {
                 }
             })
         },
+        trip_context: no_trip_context,
     }
 }
 
@@ -544,8 +659,8 @@ fn rule_v2_faction_max() -> Rule {
         id: "V2-FACTION-MAX",
         severity: Severity::Warning,
         primitive: Primitive::Cardinality,
-        applies: |_| true,
-        eval: |rule, payload| {
+        applies: |_, _| true,
+        eval: |rule, payload, _ctx| {
             let n = editor_factions(payload).len();
             if n > MAX_FACTIONS {
                 vec![rule.finding(
@@ -569,6 +684,7 @@ fn rule_v2_faction_max() -> Rule {
                 .collect();
             serde_json::json!({ "editor": { "factions": factions } })
         },
+        trip_context: no_trip_context,
     }
 }
 
@@ -579,8 +695,8 @@ fn rule_v3_slot_in_bounds() -> Rule {
         id: "V3-SLOT-IN-BOUNDS",
         severity: Severity::Error,
         primitive: Primitive::PerObjectInvariant,
-        applies: |_| true,
-        eval: |rule, payload| {
+        applies: |_, _| true,
+        eval: |rule, payload, _ctx| {
             let [min_x, min_y, max_x, max_y] = terrain_bounds(terrain_key(payload));
             let mut out = Vec::new();
             // Walk EVERY slot — the invariant is per-object and the pass returns one finding per
@@ -619,6 +735,7 @@ fn rule_v3_slot_in_bounds() -> Rule {
                 }
             })
         },
+        trip_context: no_trip_context,
     }
 }
 
@@ -629,8 +746,8 @@ fn rule_v4_schema_version() -> Rule {
         id: "V4-SCHEMA-VERSION",
         severity: Severity::Error,
         primitive: Primitive::FieldShape,
-        applies: |_| true,
-        eval: |rule, payload| {
+        applies: |_, _| true,
+        eval: |rule, payload, _ctx| {
             let Some(raw) = payload.get("schemaVersion") else {
                 return Vec::new(); // absent is fine — fresh docs omit it, compiler defaults to 1
             };
@@ -653,6 +770,7 @@ fn rule_v4_schema_version() -> Rule {
         },
         // Trips because: a STRING "1" is present, which does not derive to a u64 ≥ 1.
         trip_fixture: || serde_json::json!({ "schemaVersion": "1" }),
+        trip_context: no_trip_context,
     }
 }
 
@@ -674,8 +792,9 @@ fn rule_v4_schema_version() -> Rule {
 
 /// A mission "has an ORBAT" iff it declares at least one squad. With no squads there are no slot↔squad
 /// edges to check and "unattached slot" is meaningless (a factionless/squadless draft is not broken),
-/// so this rule — like V1 — is conditional on that shape.
-fn declares_orbat(payload: &Value) -> bool {
+/// so this rule — like V1 — is conditional on that shape. Shape-only gate — the `ctx` is unused
+/// (T-658 signature).
+fn declares_orbat(payload: &Value, _ctx: &EvalContext) -> bool {
     !editor_squads(payload).is_empty()
 }
 
@@ -701,7 +820,7 @@ fn rule_orbat_slot_resolves() -> Rule {
         // GATE: only when the mission declares squads. A factionless/squadless draft has no ORBAT to
         // be inconsistent with — the same V1 conditionality that spares the tool an ignore-list.
         applies: declares_orbat,
-        eval: |rule, payload| {
+        eval: |rule, payload, _ctx| {
             let attached = attached_slot_ids(payload);
             let mut out = Vec::new();
             // Walk EVERY slot; report each offender (never early-exit — a second unresolved slot must
@@ -744,6 +863,7 @@ fn rule_orbat_slot_resolves() -> Rule {
                 }
             })
         },
+        trip_context: no_trip_context,
     }
 }
 
@@ -755,7 +875,7 @@ fn rule_orbat_identity_filled() -> Rule {
         severity: Severity::Warning,
         primitive: Primitive::PerObjectInvariant,
         applies: declares_orbat,
-        eval: |rule, payload| {
+        eval: |rule, payload, _ctx| {
             let mut out = Vec::new();
             for (i, sq) in editor_squads(payload).iter().enumerate() {
                 let id = squad_id(sq);
@@ -786,6 +906,7 @@ fn rule_orbat_identity_filled() -> Rule {
                 }
             })
         },
+        trip_context: no_trip_context,
     }
 }
 
@@ -797,7 +918,7 @@ fn rule_orbat_squad_has_leader() -> Rule {
         severity: Severity::Warning,
         primitive: Primitive::PerObjectInvariant,
         applies: declares_orbat,
-        eval: |rule, payload| {
+        eval: |rule, payload, _ctx| {
             let mut out = Vec::new();
             for (i, sq) in editor_squads(payload).iter().enumerate() {
                 let id = squad_id(sq);
@@ -834,6 +955,7 @@ fn rule_orbat_squad_has_leader() -> Rule {
                 }
             })
         },
+        trip_context: no_trip_context,
     }
 }
 
@@ -845,7 +967,7 @@ fn rule_orbat_callsign_unique() -> Rule {
         severity: Severity::Warning,
         primitive: Primitive::PerObjectInvariant,
         applies: declares_orbat,
-        eval: |rule, payload| {
+        eval: |rule, payload, _ctx| {
             // Index squads by id so a faction's `squadIds` resolve to callsigns. The uniqueness scope
             // is ONE SIDE (one faction): two sides may reuse a callsign ("Alpha" on both BLUFOR and
             // OPFOR is legal and common) — that must NOT fire, so we group per faction, not globally.
@@ -897,6 +1019,7 @@ fn rule_orbat_callsign_unique() -> Rule {
                 }
             })
         },
+        trip_context: no_trip_context,
     }
 }
 
@@ -928,7 +1051,7 @@ fn rule_orbat_template_coverage() -> Rule {
         severity: Severity::Warning,
         primitive: Primitive::PerObjectInvariant,
         applies: declares_orbat,
-        eval: |rule, payload| {
+        eval: |rule, payload, _ctx| {
             use std::collections::HashSet;
             // Slot id → role, so a squad's `slotIds` resolve to the roles it actually fills.
             let role_of: std::collections::HashMap<&str, &str> = editor_slots(payload)
@@ -985,6 +1108,198 @@ fn rule_orbat_template_coverage() -> Rule {
                 }
             })
         },
+        trip_context: no_trip_context,
+    }
+}
+
+/* ═══════════════════════════ T-658 — catalogue-resolution rule ═══════════════════════════ */
+
+// ASSET-RESOLVES revives MissionAnalyzer's dead rule D13: every PLACED asset must resolve in the
+// live registry catalogue, catching modset drift the MOMENT an asset is placed rather than at
+// compile. The check is context-dependent (T-658): the engine is PURE core with no access to the
+// SPA's `mission_editor.rs` thread_local `registry_session` cache, so the caller threads the live
+// ids in through `EvalContext.known_asset_ids` and the rule reads them from there. When that set is
+// `None` — a cold registry or a server-side call that has no catalogue to check against — the rule
+// SKIPS via its applies-gate: the conservative default (do not flag every asset as unknown just
+// because nobody handed us the catalogue). The SPA wiring that fills the context from
+// `registry_session` is T-655's panel work (W111), NOT this ticket; here the seam + rule are proven
+// by tests that build the context directly.
+
+/// Asset-id PREFIXES a placed object may carry as an ALIAS, in addition to the exact
+/// `resource_name`. Mirrored (not imported — the engine must not depend on frontend code) from the
+/// alias derivation in `apps/website/frontend/src/asset_catalog.rs::derive_object_alias`
+/// (`fn derive_object_alias` @ ~L352): a placed object's alias is `comp:<slug>` when its
+/// `resource_name` names a Composition, else `prop:<slug>`; vehicles carry a `veh:` alias in the mod
+/// spawn registry (`apps/mod/tbd-framework/Data/registry.json` entries — `veh:`/`prop:`/`comp:`).
+/// The rule treats an id that starts with one of these as an alias form and resolves it against the
+/// same `known_asset_ids` set — a catalogue that lists a placed object by its alias resolves it.
+const ASSET_ALIAS_PREFIXES: &[&str] = &["veh:", "prop:", "comp:"];
+
+/// Whether `id` looks like an alias form (`veh:` / `prop:` / `comp:` …) rather than a bare
+/// `resource_name`. Purely a shape test on the string; resolution is still membership in the
+/// supplied catalogue set.
+fn is_alias_form(id: &str) -> bool {
+    ASSET_ALIAS_PREFIXES.iter().any(|p| id.starts_with(p))
+}
+
+/// Every placed-asset reference in the payload the resolution rule must check, as
+/// `(subject_pointer, subject_id, asset_id)` triples. The asset-id vocabulary is fixed by the
+/// document core's writers and carried verbatim by `compile::compile_payload`:
+///
+/// * **Slots** — `editor.slots[].assetId` is the FULL Enfusion `resource_name` the palette dropped
+///   (`doc/store.rs::add_slot` writes `assetId`; `asset_catalog.rs::PlacePayload.asset_id =
+///   resource_name`). `subject_id` = the slot id (the T-657 convention).
+/// * **Vehicles** — `vehicles[].resourceName` (`doc/store.rs::add_vehicle`; `compile.rs` copies
+///   `vehiclesById` → top-level `vehicles`). Vehicles may also carry a `veh:` alias.
+/// * **Entities** (placed world objects) — `entities[].alias` (a `prop:`/`comp:` alias) AND
+///   `entities[].resourceName` (`doc/store.rs::add_entity`; `compile.rs` copies `entitiesById` →
+///   top-level `entities`). The rule resolves the ALIAS when one is present (that is the id the
+///   Objects palette is pinned to in the mod spawn registry, T-439), else the resource_name.
+///
+/// A row with no usable id (all fields blank/absent/wrong-typed) contributes no reference — a
+/// malformed row is the schema's concern, and this stays a total function over arbitrary JSON
+/// (reads through `str_field`, never indexes/unwraps on payload data). Kept small and allocation-
+/// light: one `String` id per placed reference.
+fn placed_asset_refs(payload: &Value) -> Vec<(String, String, String)> {
+    let mut refs = Vec::new();
+
+    // Slots: assetId = full resource_name. Only slots that actually carry an assetId are checked —
+    // an ORBAT slot placed before an asset was assigned has none, and "resolve a role/squad" is
+    // ORBAT-SLOT-RESOLVES's job, not this rule's.
+    for (i, slot) in editor_slots(payload).iter().enumerate() {
+        let asset = str_field(slot, "assetId");
+        if asset.is_empty() {
+            continue;
+        }
+        let id = slot_id(slot);
+        refs.push((
+            format!("/editor/slots/{i}/assetId"),
+            id.to_string(),
+            asset.to_string(),
+        ));
+    }
+
+    // Vehicles: resourceName (may also be a veh: alias). Top-level `vehicles[]`.
+    for (i, veh) in top_level_array(payload, "vehicles").iter().enumerate() {
+        let asset = str_field(veh, "resourceName");
+        if asset.is_empty() {
+            continue;
+        }
+        let id = str_field(veh, "id");
+        refs.push((
+            format!("/vehicles/{i}/resourceName"),
+            id.to_string(),
+            asset.to_string(),
+        ));
+    }
+
+    // Entities (placed world objects): resolve the alias when present (the id the mod spawn registry
+    // is keyed on, T-439), else the resourceName. Top-level `entities[]`.
+    for (i, ent) in top_level_array(payload, "entities").iter().enumerate() {
+        let alias = str_field(ent, "alias");
+        let (field, asset) = if alias.is_empty() {
+            ("resourceName", str_field(ent, "resourceName"))
+        } else {
+            ("alias", alias)
+        };
+        if asset.is_empty() {
+            continue;
+        }
+        let id = str_field(ent, "id");
+        refs.push((
+            format!("/entities/{i}/{field}"),
+            id.to_string(),
+            asset.to_string(),
+        ));
+    }
+
+    refs
+}
+
+/// A placed asset id RESOLVES against `known` when the id (a `resource_name` OR an alias form) is a
+/// member of the catalogue set. The catalogue is expected to carry ids in whatever forms the payload
+/// uses — full `resource_name`s for slots/vehicles and `veh:`/`prop:`/`comp:` aliases for objects
+/// (T-655 populates it from `registry_session`, which holds both) — so resolution is a single exact
+/// membership test on the id as written. `is_alias_form` is not used to *transform* the id (the
+/// engine has no display-name to re-derive a slug from, and must not import the frontend's
+/// derivation); it only documents, and lets tests assert, that alias-form ids are first-class here:
+/// a catalogue that lists `prop:ammo_crate` resolves a placed object whose `alias` is
+/// `prop:ammo_crate`.
+fn asset_resolves(asset_id: &str, known: &HashSet<String>) -> bool {
+    known.contains(asset_id)
+}
+
+fn rule_asset_resolves() -> Rule {
+    Rule {
+        id: "ASSET-RESOLVES",
+        // Error — a placed asset that does not resolve in the live catalogue is modset drift: the
+        // prefab is gone (or the mod that provided it is unloaded), so the mission will not spawn it.
+        severity: Severity::Error,
+        primitive: Primitive::PerObjectInvariant,
+        // GATE (T-658 context conditionality): only when a live catalogue was supplied. `None` ⇒
+        // cold registry / server-side call ⇒ the rule is deliberately inert (the conservative
+        // default), NOT silently skipped — the registry records that it did not apply, and its
+        // trip_context still proves it fires when a catalogue IS present. A supplied set that is
+        // empty still applies: with no known ids, every placed asset is unresolved, which is the
+        // correct (if drastic) reading of "the catalogue is loaded and contains nothing".
+        applies: |_payload, ctx| ctx.known_asset_ids.is_some(),
+        eval: |rule, payload, ctx| {
+            // Safe by the gate: `applies` guaranteed `Some`. `as_ref` (not unwrap) keeps eval total
+            // even if called directly — a `None` here yields no findings rather than a panic.
+            let Some(known) = ctx.known_asset_ids.as_ref() else {
+                return Vec::new();
+            };
+            let mut out = Vec::new();
+            // Walk EVERY placed reference; report each unresolved one (never early-exit — a second
+            // missing asset must not hide behind the first, the engine's contract).
+            for (subject, subject_id, asset_id) in placed_asset_refs(payload) {
+                if asset_resolves(&asset_id, known) {
+                    continue;
+                }
+                // Name the id's kind in the message so the author knows what to look for — an alias
+                // form (`prop:`/`comp:`/`veh:`) points at a mod spawn-registry entry, a bare id at a
+                // raw prefab `resource_name`. Uses the mirrored prefix const (T-658).
+                let kind = if is_alias_form(&asset_id) {
+                    "alias"
+                } else {
+                    "prefab"
+                };
+                out.push(rule.finding_id(
+                    format!(
+                        "placed asset {kind} {asset_id:?} does not resolve in the live catalogue — \
+                         the entry is missing (modset drift), so this placement will not spawn. \
+                         Re-pick it from the palette or restore the mod that provides it."
+                    ),
+                    subject,
+                    subject_id,
+                ));
+            }
+            out
+        },
+        // Trips because: the fixture places a slot whose assetId is NOT in the trip_context's known
+        // set — the moment-of-placement modset-drift case. (An in-set asset would resolve; see the
+        // trip_context below, which lists a DIFFERENT id.)
+        trip_fixture: || {
+            serde_json::json!({
+                "editor": {
+                    "slots": [
+                        {"id": "s1", "role": "RFL", "assetId": "{ABC}Prefabs/Characters/Ghost.et"}
+                    ]
+                }
+            })
+        },
+        // The catalogue the trip_fixture is checked against — deliberately does NOT contain the
+        // placed asset id, so the rule fires. Supplying a context here is what makes ASSET-RESOLVES
+        // self-checkable: without it, self_check would run against the default (`None`) context, the
+        // applies-gate would exclude the trip, and the rule would be reported as a loud failure —
+        // the "a context rule that cannot fire is a loud failure" discipline (T-658).
+        trip_context: || {
+            Some(EvalContext::with_known_asset_ids(
+                ["{XYZ}Prefabs/Characters/SomethingElse.et".to_string()]
+                    .into_iter()
+                    .collect(),
+            ))
+        },
     }
 }
 
@@ -1020,7 +1335,10 @@ mod tests {
         // finding, even though there are zero slots. This is what spares the tool FNF's ignore-list.
         for empty in [json!({}), json!({"editor": {"slots": []}})] {
             let rule = rule_v1_player_spawn();
-            assert!(!rule.applies(&empty), "must not apply: {empty}");
+            assert!(
+                !rule.applies(&empty, &EvalContext::default()),
+                "must not apply: {empty}"
+            );
             assert!(
                 validate_editor_payload(&empty)
                     .iter()
@@ -1265,16 +1583,17 @@ mod tests {
         // A deliberately-misdeclared rule: it claims a trip fixture but its eval NEVER produces a
         // finding (the FNF failure mode — a check that does nothing). self_check must catch it and
         // name it, proving the guard is not itself a silent pass.
-        fn dead_eval(_r: &Rule, _p: &Value) -> Vec<Finding> {
+        fn dead_eval(_r: &Rule, _p: &Value, _c: &EvalContext) -> Vec<Finding> {
             Vec::new()
         }
         let dead = Rule {
             id: "DEAD-RULE",
             severity: Severity::Error,
             primitive: Primitive::FieldShape,
-            applies: |_| true,
+            applies: |_, _| true,
             eval: dead_eval,
             trip_fixture: || json!({"anything": true}),
+            trip_context: no_trip_context,
         };
         let reg = Registry::new(vec![dead]);
         let err = reg
@@ -1293,9 +1612,10 @@ mod tests {
             id: "MISGATED-RULE",
             severity: Severity::Warning,
             primitive: Primitive::RequiredEntity,
-            applies: |_| false, // never applies — so it can never fire, on anything
-            eval: |rule, _| vec![rule.finding("unreachable".into(), "/x".into())],
+            applies: |_, _| false, // never applies — so it can never fire, on anything
+            eval: |rule, _, _| vec![rule.finding("unreachable".into(), "/x".into())],
             trip_fixture: || json!({}),
+            trip_context: no_trip_context,
         };
         let err = Registry::new(vec![misgated])
             .self_check()
@@ -1318,9 +1638,10 @@ mod tests {
             id: "DEAD",
             severity: Severity::Error,
             primitive: Primitive::FieldShape,
-            applies: |_| true,
-            eval: |_, _| Vec::new(),
+            applies: |_, _| true,
+            eval: |_, _, _| Vec::new(),
             trip_fixture: || json!({}),
+            trip_context: no_trip_context,
         };
         Registry::new(vec![dead]).assert_self_check();
     }
@@ -1402,7 +1723,7 @@ mod tests {
             json!({"editor": {"slots": [{"id": "s1", "role": ""}]}}),
         ] {
             assert!(
-                !rule_orbat_slot_resolves().applies(&p),
+                !rule_orbat_slot_resolves().applies(&p, &EvalContext::default()),
                 "must not apply: {p}"
             );
             assert!(
@@ -1708,5 +2029,321 @@ mod tests {
             validate_editor_payload(&clean).is_empty(),
             "restoring must return to green"
         );
+    }
+
+    /* ═══════════════════════════ T-658 — catalogue-resolution rule ═══════════════════════════ */
+
+    use std::collections::HashSet;
+
+    /// Build an `EvalContext` carrying a known-asset-id set from string literals — the shape the SPA
+    /// panel builds from `registry_session` (T-655 W111), constructed directly here.
+    fn ctx_with(ids: &[&str]) -> EvalContext {
+        let set: HashSet<String> = ids.iter().map(|s| (*s).to_string()).collect();
+        EvalContext::with_known_asset_ids(set)
+    }
+
+    /* ── ASSET-RESOLVES: fail-on-demand (id/severity/primitive/subject/subject_id/message) ── */
+
+    #[test]
+    fn asset_resolves_fires_on_an_unknown_placed_asset() {
+        // The rule's own trip fixture + trip context: a placed slot whose assetId is absent from the
+        // supplied catalogue. Asserts the STABLE half AND the message, per the acceptance bar.
+        let rule = rule_asset_resolves();
+        let ctx = rule
+            .trip_context()
+            .expect("ASSET-RESOLVES declares a trip_context");
+        let findings = default_registry().evaluate_with_context(&rule.trip_fixture(), &ctx);
+        let f = finding_for(&findings, "ASSET-RESOLVES");
+        assert_eq!(f.severity, Severity::Error); // D13 — modset drift blocks the spawn
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant); // V3
+        assert_eq!(f.subject, "/editor/slots/0/assetId");
+        assert_eq!(f.subject_id.as_deref(), Some("s1")); // T-657 convention: the placed entity id
+        assert!(
+            f.message.contains("does not resolve in the live catalogue"),
+            "{f:?}"
+        );
+        assert!(
+            f.message.contains("{ABC}Prefabs/Characters/Ghost.et"),
+            "{f:?}"
+        );
+    }
+
+    #[test]
+    fn asset_resolves_passes_when_every_placed_asset_is_in_the_catalogue() {
+        // The same placed slot, but now its assetId IS in the supplied catalogue → green. The
+        // green-path counterpart to the fail-on-demand case above.
+        let p = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "assetId": "{ABC}Prefabs/Characters/Ghost.et"}
+        ]}});
+        let ctx = ctx_with(&["{ABC}Prefabs/Characters/Ghost.et"]);
+        assert!(
+            default_registry()
+                .evaluate_with_context(&p, &ctx)
+                .iter()
+                .all(|f| f.rule_id != "ASSET-RESOLVES"),
+            "a resolvable asset must not fire: {:?}",
+            default_registry().evaluate_with_context(&p, &ctx)
+        );
+    }
+
+    /* ── The skips-when-None gate (the conservative default) ── */
+
+    #[test]
+    fn asset_resolves_skips_when_no_catalogue_is_supplied() {
+        // No known_asset_ids (cold registry / server-side) ⇒ the rule DOES NOT APPLY, even though the
+        // placed asset would be unresolved against an empty world. This is the T-658 conservative
+        // default: do not flag every asset just because nobody handed us the catalogue.
+        let p = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "assetId": "{ABC}Prefabs/Characters/Ghost.et"}
+        ]}});
+        let rule = rule_asset_resolves();
+        // Default context has known_asset_ids == None.
+        assert!(
+            !rule.applies(&p, &EvalContext::default()),
+            "must not apply without a catalogue"
+        );
+        // Both the back-compat evaluate() (default ctx) and an explicit None-ctx stay silent.
+        assert!(
+            validate_editor_payload(&p)
+                .iter()
+                .all(|f| f.rule_id != "ASSET-RESOLVES"),
+            "evaluate() (default ctx) must not fire ASSET-RESOLVES"
+        );
+        assert!(
+            default_registry()
+                .evaluate_with_context(&p, &EvalContext::default())
+                .iter()
+                .all(|f| f.rule_id != "ASSET-RESOLVES"),
+            "explicit empty context must not fire ASSET-RESOLVES"
+        );
+    }
+
+    #[test]
+    fn asset_resolves_applies_but_flags_all_when_the_catalogue_is_empty_but_present() {
+        // `Some(empty set)` is DISTINCT from `None`: the catalogue is loaded and contains nothing, so
+        // every placed asset is unresolved. The rule applies (a supplied set, even empty) and fires —
+        // proof the gate keys on Some/None, not on emptiness.
+        let p = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "assetId": "{ABC}X.et"}
+        ]}});
+        let ctx = EvalContext::with_known_asset_ids(HashSet::new());
+        assert!(
+            rule_asset_resolves().applies(&p, &ctx),
+            "Some(empty) applies"
+        );
+        let findings = default_registry().evaluate_with_context(&p, &ctx);
+        assert!(
+            findings.iter().any(|f| f.rule_id == "ASSET-RESOLVES"),
+            "an empty-but-present catalogue resolves nothing: {findings:?}"
+        );
+    }
+
+    /* ── Alias-form resolution: vehicles (veh:/resourceName) + entities (prop:/comp: alias) ── */
+
+    #[test]
+    fn asset_resolves_resolves_alias_forms_for_vehicles_and_entities() {
+        // A vehicle carried by resourceName, and a placed object carried by a `prop:` alias — both
+        // present in the catalogue in the form the payload uses → green, proving the rule resolves
+        // BOTH the exact resource_name form (slot/vehicle) AND the alias form (object).
+        let p = json!({
+            "editor": {"slots": [
+                {"id": "s1", "role": "RFL", "assetId": "{ABC}Prefabs/Characters/US_Rifleman.et"}
+            ]},
+            "vehicles": [
+                {"id": "v1", "resourceName": "{ABC}Prefabs/Vehicles/Humvee.et"}
+            ],
+            "entities": [
+                {"id": "e1", "alias": "prop:ammo_crate", "resourceName": "{ABC}Prefabs/Props/AmmoBox.et"}
+            ]
+        });
+        let ctx = ctx_with(&[
+            "{ABC}Prefabs/Characters/US_Rifleman.et",
+            "{ABC}Prefabs/Vehicles/Humvee.et",
+            "prop:ammo_crate", // the entity is resolved by its ALIAS, not its resourceName
+        ]);
+        let findings = default_registry().evaluate_with_context(&p, &ctx);
+        assert!(
+            findings.iter().all(|f| f.rule_id != "ASSET-RESOLVES"),
+            "all three forms must resolve: {findings:?}"
+        );
+    }
+
+    #[test]
+    fn asset_resolves_fires_per_unresolved_reference_across_kinds_never_early_exits() {
+        // One good slot, one bad vehicle, one bad object (by alias): the pass must report BOTH bad
+        // ones (never early-exit), each keyed on its own subject pointer + entity id, and name the
+        // id's kind (prefab vs alias) in the message.
+        let p = json!({
+            "editor": {"slots": [
+                {"id": "s1", "role": "RFL", "assetId": "{ABC}Known.et"}
+            ]},
+            "vehicles": [
+                {"id": "v1", "resourceName": "{ABC}GoneVehicle.et"}
+            ],
+            "entities": [
+                {"id": "e1", "alias": "comp:gone_comp", "resourceName": "{ABC}GoneObj.et"}
+            ]
+        });
+        let ctx = ctx_with(&["{ABC}Known.et"]);
+        let all = default_registry().evaluate_with_context(&p, &ctx);
+        let asset_findings: Vec<&Finding> = all
+            .iter()
+            .filter(|f| f.rule_id == "ASSET-RESOLVES")
+            .collect();
+        assert_eq!(asset_findings.len(), 2, "{asset_findings:?}");
+        let v = asset_findings
+            .iter()
+            .find(|f| f.subject_id.as_deref() == Some("v1"))
+            .expect("a finding for the vehicle v1");
+        let e = asset_findings
+            .iter()
+            .find(|f| f.subject_id.as_deref() == Some("e1"))
+            .expect("a finding for the entity e1");
+        assert_eq!(v.subject, "/vehicles/0/resourceName");
+        assert!(
+            v.message.contains("prefab"),
+            "vehicle id is a raw prefab: {v:?}"
+        );
+        assert_eq!(e.subject, "/entities/0/alias");
+        assert!(e.message.contains("alias"), "object id is an alias: {e:?}");
+    }
+
+    #[test]
+    fn asset_resolves_ignores_placements_with_no_asset_id() {
+        // An ORBAT slot placed before an asset was assigned carries no assetId; a vehicle/entity row
+        // with a blank/absent id likewise. None of these is this rule's concern (they carry no asset
+        // reference) — the rule must stay silent on them even with a catalogue supplied.
+        let p = json!({
+            "editor": {"slots": [
+                {"id": "s1", "role": "RFL"},                 // no assetId — ORBAT-only slot
+                {"id": "s2", "role": "MED", "assetId": ""}   // blank assetId
+            ]},
+            "vehicles": [{"id": "v1"}],                       // no resourceName
+            "entities": [{"id": "e1"}]                        // no alias, no resourceName
+        });
+        let ctx = ctx_with(&["something-unrelated"]);
+        assert!(
+            default_registry()
+                .evaluate_with_context(&p, &ctx)
+                .iter()
+                .all(|f| f.rule_id != "ASSET-RESOLVES"),
+            "rows with no asset id carry no reference to resolve: {:?}",
+            default_registry().evaluate_with_context(&p, &ctx)
+        );
+    }
+
+    /* ── Total-function discipline: empty payload + garbage never panic, even WITH a context ── */
+
+    #[test]
+    fn asset_resolves_never_panics_on_empty_or_garbage_with_a_context() {
+        // The T-657 total-function discipline, extended across the T-658 seam: feed empty and
+        // deliberately malformed payloads through the WHOLE registry WITH a populated context and
+        // assert only that evaluation returns without panicking (the rule reads through str_field /
+        // top_level_array, never indexes/unwraps on payload data).
+        let ctx = ctx_with(&["{ABC}Known.et", "prop:ok"]);
+        let garbage = [
+            json!({}),
+            json!(null),
+            json!(42),
+            json!("a string, not an object"),
+            json!([]),
+            json!({"editor": 7, "vehicles": 9, "entities": "no"}),
+            json!({"vehicles": [null, 5, {"resourceName": 3}, {"id": 1}]}),
+            json!({"entities": [null, "x", {"alias": [], "resourceName": {}}]}),
+            json!({"editor": {"slots": [null, 9, {"id": 5, "assetId": []}]}}),
+            json!({"editor": {"slots": [{"id": "s1", "assetId": "{ABC}Missing.et"}]},
+                   "vehicles": [{"id": "v1", "resourceName": "{ABC}Missing.et"}],
+                   "entities": [{"id": "e1", "alias": "prop:missing"}]}),
+        ];
+        let reg = default_registry();
+        for p in garbage {
+            let _ = reg.evaluate_with_context(&p, &ctx); // must not panic
+            let _ = reg.evaluate(&p); // default-ctx path too
+        }
+        // Empty payload with a catalogue: the rule applies (Some ctx) but finds no placed refs → no
+        // ASSET-RESOLVES findings, cleanly.
+        assert!(
+            reg.evaluate_with_context(&json!({}), &ctx)
+                .iter()
+                .all(|f| f.rule_id != "ASSET-RESOLVES"),
+            "empty payload has no placed assets to flag"
+        );
+    }
+
+    /* ── The self_check context extension: ASSET-RESOLVES self-checks green via its trip_context ── */
+
+    #[test]
+    fn asset_resolves_is_registered_and_self_check_passes_with_the_context_extension() {
+        let reg = default_registry();
+        assert!(
+            reg.rules().iter().any(|r| r.id() == "ASSET-RESOLVES"),
+            "registry missing ASSET-RESOLVES"
+        );
+        // The engine-level guard must pass WITH the context-dependent rule present: self_check now
+        // evaluates each rule against its own trip_context (a default when none), so ASSET-RESOLVES —
+        // which cannot fire without a catalogue — fires against the one its trip_context supplies.
+        reg.self_check()
+            .expect("every rule (incl. ASSET-RESOLVES) must fire on its trip fixture + context");
+        reg.assert_self_check(); // the panic form a service calls at boot
+    }
+
+    #[test]
+    fn self_check_catches_a_context_rule_that_ships_without_its_trip_context() {
+        // The "a context rule that cannot fire is a loud failure" discipline (T-658), tested
+        // directly: a rule that GATES on a context field but declares NO trip_context self-checks
+        // against the default (None) context, its gate excludes its own trip, and self_check reports
+        // it — proving the seam cannot hide a dead context rule.
+        let ctx_rule_no_trip = Rule {
+            id: "CTX-NO-TRIP",
+            severity: Severity::Error,
+            primitive: Primitive::PerObjectInvariant,
+            applies: |_p, ctx| ctx.known_asset_ids.is_some(), // needs a catalogue
+            eval: |rule, _p, _c| vec![rule.finding("x".into(), "/x".into())],
+            trip_fixture: || json!({}),
+            trip_context: no_trip_context, // BUG: a context rule with no trip context
+        };
+        let err = Registry::new(vec![ctx_rule_no_trip])
+            .self_check()
+            .expect_err("a context rule with no trip_context must fail self-check");
+        assert_eq!(err[0].rule_id, "CTX-NO-TRIP");
+        assert!(err[0].reason.contains("`applies` gate"), "{:?}", err[0]);
+    }
+
+    /* ── Back-compat proof: the pre-T-658 evaluate()/self_check surface is unchanged ── */
+
+    #[test]
+    fn evaluate_default_context_matches_the_pre_t658_behaviour() {
+        // The seam is additive: evaluate(payload) still returns exactly what it did before T-658 —
+        // the seed + T-657 findings, with ASSET-RESOLVES inert (its gate needs a catalogue). This is
+        // the back-compat proof: existing callers (validate_editor_payload, the backend /compiled
+        // path) see no behaviour change.
+        let p = json!({
+            "schemaVersion": "bad",
+            "map": {"terrain": "everon"},
+            "editor": {
+                "factions": [{"key": "BLUFOR", "name": "US", "squadIds": ["sq1"]}],
+                "squads": [{"id": "sq1", "callsign": "Alpha", "name": "A", "slotIds": []}],
+                "slots": [{"id": "s1", "position": {"x": 99999.0, "y": 1.0},
+                           "assetId": "{ABC}WouldBeUnknown.et"}]
+            }
+        });
+        let via_free_fn = validate_editor_payload(&p);
+        let via_default_ctx = default_registry().evaluate_with_context(&p, &EvalContext::default());
+        assert_eq!(
+            via_free_fn, via_default_ctx,
+            "evaluate() and evaluate_with_context(default) must agree"
+        );
+        // ASSET-RESOLVES is inert on the default path even though s1's assetId would be unknown.
+        assert!(
+            via_free_fn.iter().all(|f| f.rule_id != "ASSET-RESOLVES"),
+            "ASSET-RESOLVES must stay inert without a catalogue: {via_free_fn:?}"
+        );
+        // The pre-T-658 rules still fire on the same payload (proof the default path is live).
+        for want in ["V3-SLOT-IN-BOUNDS", "V4-SCHEMA-VERSION"] {
+            assert!(
+                via_free_fn.iter().any(|f| f.rule_id == want),
+                "{want} must still fire on the default path: {via_free_fn:?}"
+            );
+        }
     }
 }
