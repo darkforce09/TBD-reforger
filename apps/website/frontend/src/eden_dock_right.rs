@@ -284,6 +284,65 @@ pub fn eden_chip_selected(chip: EdenChip, active_side: &str, objects_mode: bool)
     }
 }
 
+// ── T-646 (RIGHT-SUBMODE-001) — the Custom slot, visible only under Groups ────────────────────────
+//
+// Eden's chip row carries a sixth CUSTOM slot in ADDITION to the side chips, and it appears **only
+// under the Groups sub-mode** — the mode where you place whole groups/squads. It is modelled here as
+// its own pure predicate rather than a fifth `EdenChip` variant on purpose: `EdenChip` and
+// `EDEN_SIDE_CHIPS` are pinned by the E1/E5 gate to the exact shipped 4-chip list (BLUFOR / OPFOR /
+// INDFOR / Objects, no CIV, no F-keys), and widening that enum would both break those assertions and
+// entangle the always-on side chips with a slot whose whole point is that it is conditional. Keeping
+// Custom a standalone, submode-gated mechanic is what lets the visibility rule be tested in isolation
+// (the "Custom-only-under-Groups" gate) without disturbing the shipped side row.
+
+/// T-646 — which right-dock sub-mode the palette is showing. Eden cycles these with `Tab`; here they
+/// map onto the dock's tabs. Only [`EdenSubmode::Groups`] (the character/squad-placing surface, the
+/// Factions tab) reveals the Custom chip — Vehicles / Objects / Markers / Zones never do.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EdenSubmode {
+    /// The Factions tab — placing characters that form groups/squads. Eden's "Groups" mode.
+    Groups,
+    /// The Vehicles tab.
+    Vehicles,
+    /// The Objects world-entity place (the Objects chip on the Factions tab).
+    Objects,
+    /// The Markers tab (T-069 stub).
+    Markers,
+    /// The Zones tab (T-582).
+    Zones,
+}
+
+impl EdenSubmode {
+    /// Map a DockRight tab index (`0` Factions, `1` Vehicles, `2` Markers, `3` Zones) plus the
+    /// Objects-chip flag to the sub-mode. The Objects chip lives on the Factions tab but is its own
+    /// place surface, so it reports [`EdenSubmode::Objects`], not `Groups` — which is exactly why the
+    /// Custom slot hides the moment the operator flips to Objects.
+    #[must_use]
+    pub fn from_tab(tab: usize, objects_mode: bool) -> Self {
+        match tab {
+            1 => Self::Vehicles,
+            2 => Self::Markers,
+            3 => Self::Zones,
+            // tab 0 (Factions): Objects chip splits Groups vs Objects.
+            _ if objects_mode => Self::Objects,
+            _ => Self::Groups,
+        }
+    }
+}
+
+/// T-646 (RIGHT-SUBMODE-001) — the Custom chip's `aria-label` / row text. The sixth slot; a fixed
+/// label so the gate can pin it without a render.
+pub const EDEN_CUSTOM_CHIP: &str = "Custom";
+
+/// T-646 (RIGHT-SUBMODE-001) — whether the Custom slot is shown in the chip row.
+///
+/// The whole rule in one predicate: **Custom appears only under Groups.** Every other sub-mode hides
+/// it, so an author on the Vehicles or Objects surface never sees a group-only affordance.
+#[must_use]
+pub fn custom_chip_visible(submode: EdenSubmode) -> bool {
+    matches!(submode, EdenSubmode::Groups)
+}
+
 /// Right dock — the **Factions** palette (spec O2), off the live `GET /api/v1/registry`. Leaves drag
 /// onto the map to place their slot. `fm_open` toggles the T-167 Faction Manager dialog.
 ///
@@ -449,6 +508,25 @@ pub fn DockRight(
                                 }
                             })
                             .collect_view()}
+                        // T-646 (RIGHT-SUBMODE-001) — the sixth Custom slot, shown only under the
+                        // Groups sub-mode (Factions tab, side place — never Objects). Renders as a
+                        // labelled outline chip: unlike the side swatches it carries no fill token,
+                        // and it is inert here (its persistent custom-collection verbs are T-078's
+                        // separate ticket), so it declares itself disabled rather than feigning a
+                        // place. `Show` keeps it out of the DOM entirely when Objects is active.
+                        <Show when=move || custom_chip_visible(
+                            EdenSubmode::from_tab(0, objects_mode.get()),
+                        )>
+                            <button
+                                type="button"
+                                disabled=true
+                                aria-label=EDEN_CUSTOM_CHIP
+                                title="Custom groups arrive in T-078"
+                                class="flex h-5 shrink-0 items-center rounded-sm border border-outline-variant/60 px-1.5 text-[10px] font-semibold uppercase tracking-wide text-outline opacity-45"
+                            >
+                                {EDEN_CUSTOM_CHIP}
+                            </button>
+                        </Show>
                     </div>
                     <input
                         type="search"
@@ -459,11 +537,13 @@ pub fn DockRight(
                                 "Search assets"
                             }
                         }
+                        // T-646 — hint the `class:` operator (RIGHT-SEARCH-002). The broader
+                        // `mod `/glob/regex grammar is T-084 and lands its own copy here.
                         placeholder=move || {
                             if objects_mode.get() {
-                                "Search objects…"
+                                "Search objects or class:…"
                             } else {
-                                "Search assets…"
+                                "Search assets or class:…"
                             }
                         }
                         class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
@@ -504,10 +584,11 @@ pub fn DockRight(
                                 }
                                 let filtered = crate::asset_catalog::filter_catalog(&nodes, &q);
                                 if filtered.is_empty() {
+                                    // T-646 — a `class:` with an empty operand says so; a genuine
+                                    // miss reads "No objects match."
+                                    let msg = crate::asset_catalog::search_empty_message(&q, "objects");
                                     return view! {
-                                        <p class="text-label-sm text-outline">
-                                            "No objects match."
-                                        </p>
+                                        <p class="text-label-sm text-outline">{msg}</p>
                                     }
                                     .into_any();
                                 }
@@ -559,10 +640,13 @@ pub fn DockRight(
                                         let filtered =
                                             crate::asset_catalog::filter_catalog(&nodes, &q);
                                         if filtered.is_empty() {
+                                            // T-646 — `class:` empty operand says so (see
+                                            // `search_empty_message`); a real miss reads "No assets match."
+                                            let msg = crate::asset_catalog::search_empty_message(
+                                                &q, "assets",
+                                            );
                                             view! {
-                                                <p class="text-label-sm text-outline">
-                                                    "No assets match."
-                                                </p>
+                                                <p class="text-label-sm text-outline">{msg}</p>
                                             }
                                                 .into_any()
                                         } else {
@@ -594,7 +678,7 @@ pub fn DockRight(
                     <input
                         type="search"
                         aria-label="Search vehicles"
-                        placeholder="Search vehicles…"
+                        placeholder="Search vehicles or class:…"
                         class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
                         on:input=move |ev| vehicle_search.set(event_target_value(&ev))
                     />
@@ -655,10 +739,12 @@ pub fn DockRight(
                                         let filtered =
                                             crate::asset_catalog::filter_catalog(&nodes, &q);
                                         if filtered.is_empty() {
+                                            // T-646 — `class:` empty operand says so; else "No vehicles match."
+                                            let msg = crate::asset_catalog::search_empty_message(
+                                                &q, "vehicles",
+                                            );
                                             view! {
-                                                <p class="text-label-sm text-outline">
-                                                    "No vehicles match."
-                                                </p>
+                                                <p class="text-label-sm text-outline">{msg}</p>
                                             }
                                                 .into_any()
                                         } else {
@@ -695,8 +781,60 @@ pub fn DockRight(
 
 #[cfg(test)]
 mod tests {
-    use super::{apply_eden_chip, eden_chip_selected, EdenChip, EDEN_SIDE_CHIPS};
+    use super::{
+        apply_eden_chip, custom_chip_visible, eden_chip_selected, EdenChip, EdenSubmode,
+        EDEN_CUSTOM_CHIP, EDEN_SIDE_CHIPS,
+    };
     use leptos::prelude::*;
+
+    /// T-646 (RIGHT-SUBMODE-001) — the Custom slot appears **only under Groups**. The predicate is
+    /// true for the Groups sub-mode and false for every other, and the tab→sub-mode map places the
+    /// Objects chip (Factions tab + objects_mode) into Objects — so flipping to Objects hides Custom
+    /// even though it is the same tab. Perturbation RED: were `custom_chip_visible` to admit any
+    /// non-Groups sub-mode, one of the `!` assertions below fails.
+    #[test]
+    fn custom_chip_only_under_groups() {
+        assert!(
+            custom_chip_visible(EdenSubmode::Groups),
+            "Groups shows Custom"
+        );
+        assert!(!custom_chip_visible(EdenSubmode::Vehicles));
+        assert!(!custom_chip_visible(EdenSubmode::Objects));
+        assert!(!custom_chip_visible(EdenSubmode::Markers));
+        assert!(!custom_chip_visible(EdenSubmode::Zones));
+
+        // Tab → sub-mode: Factions (tab 0) is Groups unless the Objects chip is on.
+        assert_eq!(EdenSubmode::from_tab(0, false), EdenSubmode::Groups);
+        assert_eq!(EdenSubmode::from_tab(0, true), EdenSubmode::Objects);
+        assert_eq!(EdenSubmode::from_tab(1, false), EdenSubmode::Vehicles);
+        assert_eq!(EdenSubmode::from_tab(2, false), EdenSubmode::Markers);
+        assert_eq!(EdenSubmode::from_tab(3, false), EdenSubmode::Zones);
+
+        // The end-to-end visibility rule the render uses: Custom on the Factions tab iff not Objects,
+        // and never on any other tab.
+        assert!(
+            custom_chip_visible(EdenSubmode::from_tab(0, false)),
+            "Factions+side → Custom shown"
+        );
+        assert!(
+            !custom_chip_visible(EdenSubmode::from_tab(0, true)),
+            "Factions+Objects → Custom hidden"
+        );
+        for tab in [1usize, 2, 3] {
+            assert!(
+                !custom_chip_visible(EdenSubmode::from_tab(tab, false)),
+                "Custom hidden on tab {tab}"
+            );
+        }
+
+        // The Custom slot is a SIXTH slot, distinct from the pinned 4-chip side row — it must not be
+        // one of the side labels (that would fold it into the always-on row).
+        assert_eq!(EDEN_CUSTOM_CHIP, "Custom");
+        assert!(
+            !EDEN_SIDE_CHIPS.iter().any(|c| *c == EDEN_CUSTOM_CHIP),
+            "Custom is not a side chip"
+        );
+    }
 
     /// The tab was a one-line promise that placement would arrive in T-070, and the only vehicle
     /// path was the ORBAT Manager's derived position. Both halves of the replacement are pinned:
