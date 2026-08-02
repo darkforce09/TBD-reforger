@@ -729,6 +729,11 @@ pub fn MissionEditorPage() -> impl IntoView {
     let fm_open = RwSignal::new(false);
     // T-177 B2 / T-071.0 — the ORBAT Manager modal open flag (top-strip button ↔ OrbatManagerDialog).
     let orbat_open = RwSignal::new(false);
+    // T-664 — the right-click context menu's open state: `Some(MenuState)` = open at that pixel/take,
+    // `None` = closed (no DOM). The wasm `contextmenu` handler sets it via `context_menu::open`; the
+    // overlay reads it. Mounted BESIDE the ungated dialogs below (not inside the chrome_hidden gate),
+    // so a floating menu survives Backspace hide-chrome per the wave-101 verifier.
+    let context_menu = RwSignal::new(None::<crate::context_menu::MenuState>);
     // T-662 — Backspace hides the whole Eden chrome (Eden's "hide interface"), leaving the map
     // full-bleed and interactive. Gates the four dock mounts + the strip below; another Backspace
     // brings them back. Declared on both targets — the view reads it, the wasm keydown toggles it.
@@ -987,6 +992,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                 attrs_tab,
                 doc_tick,
             );
+            // T-664 — hand the context-menu signal to the module's thread_local so the wasm
+            // `contextmenu` closure below (which has no reactive handle) can open the menu.
+            crate::context_menu::set_menu_signal(context_menu);
 
             crate::mission_history::register_editor_history();
             crate::mission_history::register_key_handler();
@@ -1858,17 +1866,61 @@ pub fn MissionEditorPage() -> impl IntoView {
                     }
                 }
             });
-            // T-662 — RMB no longer pans (see onpointerdown), so the old blanket suppression that
-            // kept the browser menu from interrupting an RMB-drag is gone with it. We still call
-            // `prevent_default` here — and ONLY that — to stop the BROWSER's native context menu from
-            // popping over the map. That is all `prevent_default` does: it does NOT call
-            // `stop_propagation`, so the `contextmenu` event still fires and still bubbles, leaving it
-            // as a clean, un-suppressed event that T-664's context menu can attach its own listener to
-            // (which is exactly what this ticket unblocks). Do not add `stop_propagation` here.
-            let oncontextmenu =
-                Closure::<dyn FnMut(web_sys::MouseEvent)>::new(move |ev: web_sys::MouseEvent| {
-                    ev.prevent_default()
-                });
+            // T-662 → T-664 — RMB no longer pans (see onpointerdown), so the browser menu is only
+            // *suppressed* here, never propagation-eaten. `prevent_default` stops the BROWSER's
+            // native menu (still the first thing this does, and all it did under T-662); it does NOT
+            // `stop_propagation` — that is the invariant the T-662 pin protects, and it holds: this
+            // handler attaches to the SAME `contextmenu` event and, having stopped the native menu,
+            // opens OUR menu at the event pixel. `prevent_default`'s only meaning is "suppress the
+            // browser menu" — it is NOT a "someone handled this" flag (wave-101 verifier note 2), so
+            // there is no `default_prevented()` gate here: this handler always acts on the click.
+            //
+            // Hit-target (T-664, selection-aware): pick the entity under the cursor with a fresh
+            // frozen camera at the event px (the same pick the click / dbl-click paths run), then
+            // `resolve_target` decides the take — empty ground vs on-entity, retargeting to the hit
+            // entity when it is not already selected (Eden's rule). `open` commits any retarget to
+            // the live selection and shows the menu. Do not add `stop_propagation` here.
+            let oncontextmenu = Closure::<dyn FnMut(web_sys::MouseEvent)>::new({
+                let container = container.clone();
+                let engine = engine.clone();
+                let doc = doc.clone();
+                let selection = selection.clone();
+                move |ev: web_sys::MouseEvent| {
+                    ev.prevent_default();
+                    let rect = container.get_bounding_client_rect();
+                    let (px, py) = (
+                        ev.client_x() as f64 - rect.left(),
+                        ev.client_y() as f64 - rect.top(),
+                    );
+                    // Frozen camera at the event px (borrow scoped so it drops before the pick's
+                    // doc borrow; JS is single-threaded so this never reenters the rAF borrow_mut).
+                    let cam = {
+                        let g = engine.borrow();
+                        let Some(e) = g.as_ref() else { return };
+                        crate::select_tool::frozen_camera(
+                            rect.width(),
+                            rect.height(),
+                            e.target_x(),
+                            e.target_y(),
+                            e.zoom(),
+                        )
+                    };
+                    // Slot OR vehicle under the cursor — the same pick the left-click uses, so the
+                    // menu's notion of "the entity here" matches selection's.
+                    let hit = doc.borrow().as_ref().and_then(|c| {
+                        crate::select_tool::pick_slot_or_vehicle(
+                            &cam,
+                            &c.materialize(),
+                            &crate::editor_ops::vehicle_points(),
+                            px,
+                            py,
+                        )
+                    });
+                    let sel = selection.borrow().clone();
+                    let target = crate::context_menu::resolve_target(hit.as_deref(), &sel);
+                    crate::context_menu::open(ev.client_x() as f64, ev.client_y() as f64, target);
+                }
+            });
             // T-159.21 — pointer off the map ⇒ the CUR read-out shows the em-dash cells (React's
             // `onPointerLeave → null`). Fires when the pointer enters a chrome panel too, which is
             // correct: those px are not map coordinates.
@@ -2150,6 +2202,15 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // user chooses which version wins before any Save.
                 <div class="pointer-events-auto">
                     <ConflictDialog conflict conflict_id=mission_id.clone() />
+                </div>
+                // T-664 — the right-click context menu overlay. Mounted HERE, beside the ungated
+                // dialogs (Attributes / Settings / Faction / ORBAT / Conflict) and NOT inside the
+                // four `chrome_hidden` gates above, so a menu the operator opened survives a
+                // Backspace hide-chrome (wave-101 verifier note 1: a floating overlay is not dock
+                // chrome). Renders no DOM while `context_menu` is None; its own backdrop is
+                // `pointer-events-auto` so click-away dismissal works even over the map.
+                <div class="pointer-events-auto">
+                    <crate::context_menu::ContextMenuOverlay menu=context_menu />
                 </div>
             </div>
             // T-628 — boot loading overlay: ONE bar, 0→100%, across the whole boot. It never resets
