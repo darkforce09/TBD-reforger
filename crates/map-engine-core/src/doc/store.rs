@@ -925,6 +925,15 @@ impl MissionDocCore {
     /// because vehicle data has no per-class seat schema yet; that is T-205). The seat ids are the
     /// authoring surface's, opaque to the doc.
     ///
+    /// **The write rides the row exactly like cargo, on the HYDRATE axis too.** After a server-adopt
+    /// boot the vehicle row is re-`hydrate`d, and [`load_row`] stores nested objects as opaque
+    /// `Any::Map`s, not tracked `YMap`s — there is no `crew` sub-key to `insert` into. So this mutator
+    /// uses the same whole-`Any` read-modify-write idiom cargo/briefing use ([`read_crew_map`] reads
+    /// the whole map tolerant of BOTH shapes, mutate the plain map, [`write_crew_map`] writes it back
+    /// whole): a board on a hydrated mission preserves the loaded crew instead of wiping it, and the
+    /// eviction scan below sees hydrated crews instead of skipping them. Matching `Out::YMap` (the
+    /// pre-fix shape) was dead or destructive on any mission opened on a second machine (wave-103).
+    ///
     /// **One slot occupies at most ONE seat across ALL vehicles** — enforced HERE, not in the UI: the
     /// same soldier cannot be two places at once, and a rule the caller can forget to apply is not a
     /// rule. Before writing, `slot_id` is cleared from every other seat of every vehicle (its own
@@ -944,41 +953,38 @@ impl MissionDocCore {
             return;
         }
         // One-seat-per-slot: strip this slot from any seat of any vehicle before assigning it here.
-        // Collect first (cannot mutate a crew map while iterating the vehicles map that owns it).
+        // Collect first (cannot mutate while iterating the vehicles map that owns the crew maps).
+        // The crew map is read via [`read_crew_map`], the whole-`Any` reader — [`load_row`] stores
+        // `crew` as an opaque `Any::Map` on a HYDRATED mission, not a tracked `YMap`, so an
+        // `Out::YMap` match here would skip every hydrated crew and let the same slot sit in two
+        // vehicles at once. This mirrors cargo's/briefing's read-modify-write-whole idiom (T-345).
         let mut evict: Vec<(String, String)> = Vec::new();
         for (vid, out_v) in self.vehicles.iter(&txn) {
             let Out::YMap(v) = out_v else { continue };
-            if let Some(Out::YMap(crew)) = v.get(&txn, "crew") {
-                for (sid, occ) in crew.iter(&txn) {
-                    if matches!(occ, Out::Any(Any::String(ref s)) if s.as_ref() == slot_id)
-                        && !(vid == vehicle_id && sid == seat_id)
-                    {
-                        evict.push((vid.to_string(), sid.to_string()));
-                    }
+            for (sid, occ) in read_crew_map(&txn, &v) {
+                if matches!(occ, Any::String(ref s) if s.as_ref() == slot_id)
+                    && !(vid == vehicle_id && sid == seat_id)
+                {
+                    evict.push((vid.to_string(), sid));
                 }
             }
         }
         for (vid, sid) in evict {
-            if let Some(Out::YMap(v)) = self.vehicles.get(&txn, &vid)
-                && let Some(Out::YMap(crew)) = v.get(&txn, "crew")
-            {
-                crew.remove(&mut txn, sid.as_str());
+            if let Some(Out::YMap(v)) = self.vehicles.get(&txn, &vid) {
+                let mut crew = read_crew_map(&txn, &v);
+                crew.remove(&sid);
                 // An empty crew map removes the key — a never-crewed vehicle's row stays byte-
                 // identical to before this ticket (the `cargo`/`tag` omit idiom).
-                if crew.len(&txn) == 0 {
-                    v.remove(&mut txn, "crew");
-                }
+                write_crew_map(&mut txn, &v, crew);
             }
         }
-        // Ensure `crew` exists on the target, then write the seat.
+        // Read the target crew whole, set the seat, write it back whole (hydrate-proof).
         let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id) else {
             return;
         };
-        let crew = match v.get(&txn, "crew") {
-            Some(Out::YMap(c)) => c,
-            _ => v.insert(&mut txn, "crew", MapPrelim::default()),
-        };
-        crew.insert(&mut txn, seat_id, slot_id);
+        let mut crew = read_crew_map(&txn, &v);
+        crew.insert(seat_id.to_string(), Any::String(slot_id.into()));
+        write_crew_map(&mut txn, &v, crew);
     }
 
     /// T-076 — record the RIGHT-CREW-001 manned/unmanned intent on a placed vehicle
@@ -1005,12 +1011,14 @@ impl MissionDocCore {
     /// for an empty cargo list). One LOCAL undo step, like the board it reverses.
     pub fn clear_crew_seat(&self, vehicle_id: &str, seat_id: &str) {
         let mut txn = self.begin();
-        if let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id)
-            && let Some(Out::YMap(crew)) = v.get(&txn, "crew")
-        {
-            crew.remove(&mut txn, seat_id);
-            if crew.len(&txn) == 0 {
-                v.remove(&mut txn, "crew");
+        // Whole-map read-modify-write like the board it reverses: on a HYDRATED mission `crew` is an
+        // opaque `Any::Map` ([`load_row`]), so matching `Out::YMap` would make unboard a silent
+        // no-op. [`read_crew_map`] tolerates both shapes; [`write_crew_map`] drops the key once the
+        // last seat is gone (the omit idiom). No-op when nothing was actually removed.
+        if let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id) {
+            let mut crew = read_crew_map(&txn, &v);
+            if crew.remove(seat_id).is_some() {
+                write_crew_map(&mut txn, &v, crew);
             }
         }
     }
@@ -3294,6 +3302,39 @@ fn read_any_map<T: ReadTxn>(txn: &T, row: &MapRef, key: &str) -> HashMap<String,
     }
 }
 
+/// A vehicle's `crew` map (`seat_id → slot_id`) as an OWNED plain map, tolerant of BOTH doc shapes
+/// (T-076 wave-103): a freshly-authored vehicle carries `crew` as a tracked `YMap`, but after a
+/// server-adopt boot [`load_row`] re-inserts it as an opaque `Any::Map`. The crew mutators must read
+/// through this — matching only `Out::YMap` made unboard a no-op and made a board WIPE the loaded
+/// crew on any hydrated mission. This is [`read_any_map`] plus the `YMap` case, since crew is the one
+/// nested map that is *also* live-tracked before its first hydrate.
+fn read_crew_map<T: ReadTxn>(txn: &T, vehicle: &MapRef) -> HashMap<String, Any> {
+    match vehicle.get(txn, "crew") {
+        Some(Out::Any(Any::Map(m))) => (*m).clone(),
+        Some(Out::YMap(crew)) => crew
+            .iter(txn)
+            .filter_map(|(seat, occ)| match occ {
+                Out::Any(a) => Some((seat.to_string(), a)),
+                _ => None,
+            })
+            .collect(),
+        _ => HashMap::new(),
+    }
+}
+
+/// Write a vehicle's `crew` map back WHOLE (the read-modify-write half of [`read_crew_map`]), or drop
+/// the key when the map is empty — the `cargo`/`tag` omit idiom, so an emptied crew leaves the row
+/// byte-identical to a never-crewed one. Always writing the whole `Any::Map` makes the seat edit
+/// hydrate-proof: it does not depend on `crew` being a tracked `YMap`, so a board/unboard on a
+/// server-adopted mission behaves exactly like one on a freshly-authored doc.
+fn write_crew_map(txn: &mut TransactionMut, vehicle: &MapRef, crew: HashMap<String, Any>) {
+    if crew.is_empty() {
+        vehicle.remove(txn, "crew");
+    } else {
+        vehicle.insert(txn, "crew", Any::Map(Arc::new(crew)));
+    }
+}
+
 /// `briefing.markers` as an owned vec; missing or non-array reads as empty (T-345).
 fn briefing_markers(briefing: &HashMap<String, Any>) -> Vec<Any> {
     match briefing.get("markers") {
@@ -3913,6 +3954,151 @@ mod tests {
             vehicles_of(&reloaded)["v1"]["crewed"],
             false,
             "unmanned intent round-trips"
+        );
+    }
+
+    /* ── T-076 wave-103 BLOCKER — crew mutators must survive HYDRATE, not just fresh authoring ──
+     *
+     * The tests above board/unboard on a freshly-authored doc, where `crew` is a live-tracked
+     * `YMap`. The mainline server-adopt path is different: `mission_hydrate::adopt_payload` →
+     * `core.hydrate()` re-loads the vehicle row through `load_row`, which stores `crew` as an
+     * OPAQUE `Any::Map` (not a `YMap`). The pre-fix mutators matched only `Out::YMap`, so on any
+     * mission opened on a second machine unboard NO-OP'd, a board WIPED the loaded crew, and the
+     * one-seat scan skipped hydrated crews. These four go through the REAL compile→hydrate→mutate
+     * path (`save_and_reload`) so a regression to the `YMap`-only shape fails loudly. */
+
+    /// Board a slot into `v0`, board a different slot into `v1`, and `save_and_reload` so both crew
+    /// maps come back as opaque `Any::Map`s — the exact post-server-adopt state the mutators must
+    /// handle. Returns the hydrated doc; the caller then mutates it and asserts.
+    #[cfg(feature = "mission")]
+    fn hydrated_with_crew() -> MissionDocCore {
+        let doc = two_vehicles_three_slots();
+        doc.assign_crew_seat("v0", "driver", "s0");
+        doc.assign_crew_seat("v0", "gunner", "s1");
+        doc.assign_crew_seat("v1", "commander", "s2");
+        let reloaded = save_and_reload(&doc);
+        // Precondition: the crew survived the round-trip as a *read* (the shipped test already pins
+        // this) — the point of these tests is that a *mutation* after this is sound.
+        assert_eq!(
+            crew_of(&reloaded, "v0")["driver"],
+            "s0",
+            "v0 driver hydrated"
+        );
+        assert_eq!(
+            crew_of(&reloaded, "v0")["gunner"],
+            "s1",
+            "v0 gunner hydrated"
+        );
+        reloaded
+    }
+
+    /// (1) POST-HYDRATE UNBOARD actually clears the seat. Pre-fix `clear_crew_seat` matched
+    /// `Out::YMap`, missed the opaque `Any::Map`, and left the crew `{driver,gunner}` untouched.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn crew_unboard_after_hydrate_clears_the_seat() {
+        let doc = hydrated_with_crew();
+        doc.clear_crew_seat("v0", "driver");
+        assert!(
+            crew_of(&doc, "v0")["driver"].is_null(),
+            "post-hydrate unboard must vacate the seat, not no-op: {}",
+            vehicles_of(&doc)["v0"]
+        );
+        assert_eq!(
+            crew_of(&doc, "v0")["gunner"],
+            "s1",
+            "the other loaded seat is untouched"
+        );
+    }
+
+    /// (2) POST-HYDRATE BOARD preserves the existing loaded crew. Pre-fix `assign_crew_seat` hit its
+    /// `_ =>` arm on the opaque map and REPLACED the whole crew with `{commander: s2'}`, silently
+    /// destroying the loaded driver+gunner (a wipe that then round-tripped into the next save).
+    ///
+    /// **FIRE-ONCE proof:** temporarily narrow `read_crew_map` to the OLD `Out::YMap`-only shape
+    /// (return `HashMap::new()` for the `Any::Map` case) and this assertion fails —
+    /// `crew_of(v0) == {"commander":"s0new"}`, driver+gunner gone — reproducing the reported wipe.
+    /// Restored to the whole-`Any` reader that ships. (Chosen the cheap perturbation of the fix over
+    /// reinstating the whole old mutator body; same defect, same failing assertion.)
+    #[cfg(feature = "mission")]
+    #[test]
+    fn crew_board_after_hydrate_keeps_existing_crew() {
+        let doc = hydrated_with_crew();
+        // A brand-new slot into a brand-new seat on the already-crewed v0.
+        doc.add_slot(
+            "s3", "sq", "L", 0, "Rifleman", None, None, 30.0, 40.0, 0.0, 0.0,
+        );
+        doc.assign_crew_seat("v0", "commander", "s3");
+        assert_eq!(
+            crew_of(&doc, "v0")["commander"],
+            "s3",
+            "the new seat was written"
+        );
+        assert_eq!(
+            crew_of(&doc, "v0")["driver"],
+            "s0",
+            "the loaded driver SURVIVES the post-hydrate board (pre-fix: wiped): {}",
+            vehicles_of(&doc)["v0"]
+        );
+        assert_eq!(
+            crew_of(&doc, "v0")["gunner"],
+            "s1",
+            "the loaded gunner SURVIVES too"
+        );
+    }
+
+    /// (3) POST-HYDRATE ONE-SEAT-PER-SLOT eviction still fires across vehicles, hydrated crew
+    /// included. Pre-fix the scan skipped `Any::Map` crews, so re-boarding `s0` (which crews the
+    /// hydrated `v0`) into `v1` left `s0` seated in BOTH vehicles at once.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn crew_eviction_after_hydrate_reaches_hydrated_crews() {
+        let doc = hydrated_with_crew();
+        // s0 currently crews the hydrated v0/driver. Board it into v1 — the one-seat rule must
+        // vacate v0/driver even though v0's crew is now an opaque Any::Map.
+        doc.assign_crew_seat("v1", "driver", "s0");
+        assert_eq!(crew_of(&doc, "v1")["driver"], "s0", "s0 now crews v1");
+        assert!(
+            crew_of(&doc, "v0")["driver"].is_null(),
+            "s0 evicted from the HYDRATED v0 — no soldier in two vehicles at once: {}",
+            vehicles_of(&doc)["v0"]
+        );
+        assert_eq!(
+            crew_of(&doc, "v0")["gunner"],
+            "s1",
+            "eviction is surgical — v0's gunner is spared"
+        );
+    }
+
+    /// (4) The fixed behaviour ROUND-TRIPS: hydrate → board → serialize → re-hydrate shows the
+    /// merged crew (the loaded seats plus the new one), proving the post-hydrate board is not a
+    /// transient in-memory patch that a second save would drop.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn crew_board_after_hydrate_round_trips_merged() {
+        let doc = hydrated_with_crew();
+        doc.add_slot(
+            "s3", "sq", "L", 0, "Rifleman", None, None, 30.0, 40.0, 0.0, 0.0,
+        );
+        doc.assign_crew_seat("v0", "commander", "s3");
+
+        // Second save/reload — the merged crew must serialize and come back whole.
+        let twice = save_and_reload(&doc);
+        assert_eq!(
+            crew_of(&twice, "v0")["driver"],
+            "s0",
+            "loaded driver present after the second round-trip"
+        );
+        assert_eq!(
+            crew_of(&twice, "v0")["gunner"],
+            "s1",
+            "loaded gunner present after the second round-trip"
+        );
+        assert_eq!(
+            crew_of(&twice, "v0")["commander"],
+            "s3",
+            "the post-hydrate board persisted through the second round-trip: {}",
+            vehicles_of(&twice)["v0"]
         );
     }
 
