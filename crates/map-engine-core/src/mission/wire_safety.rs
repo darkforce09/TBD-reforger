@@ -334,7 +334,7 @@ pub const CARGO_CAPACITY_CAVEAT: &str = "Capacity is a build-time catalogue figu
 ///
 /// Built by the API from DB/import rows. Core never loads the registry itself (see module header
 /// **T-416 — cargo capacity**).
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct CargoPhys {
     pub display_name: String,
     pub weight_kg: Option<f64>,
