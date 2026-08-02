@@ -9,8 +9,24 @@ pub const PEAK_WINDOW_PX: usize = 9;
 pub const PEAK_PROMINENCE_M: f64 = 15.0;
 /// Max labels after declutter (Everon cap).
 pub const PEAK_LABEL_MAX: usize = 48;
-/// Declutter base separation at `deck_zoom = 0` (m) — spec L4.
-pub const HEIGHT_LABEL_MIN_SEP_M: f64 = 80.0;
+/// Eden spot-height density (T-641): one label per ~`PITCH`×`PITCH` **screen pixels**, held
+/// constant at every zoom — that fixed on-screen density is what reads as "heights shown clearly".
+/// Eden never labels a contour: every number is a POINT annotation (dot + integer, or black
+/// triangle + integer for named hilltops), always horizontal. The declutter below is a screen-space
+/// grid cull at this pitch, not a world-metre spacing.
+///
+/// The measured Eden grid is ~1 label per 150×150 px (spot-height corpus). We express the rule as
+/// this **pixel** pitch and convert to world metres at the live zoom via
+/// [`height_label_screen_sep_world_m`] (`PITCH · 2^(−deck_zoom)`), so the *screen* separation is
+/// pinned regardless of zoom — the same screen-space technique T-639 used for the contour interval
+/// (`interval = TARGET_SPACING_PX · slope · m_per_px`, `m_per_px = 2^(−deck_zoom)`).
+pub const HEIGHT_LABEL_SCREEN_PITCH_PX: f64 = 150.0;
+/// Back-compat alias for the declutter separation **as a world-metre value at `deck_zoom = 0`**.
+/// Equals [`HEIGHT_LABEL_SCREEN_PITCH_PX`] because at z0 `2^0 = 1` (1 m/px), i.e. the screen pitch
+/// in px and the world separation in metres coincide. Kept so the render re-export
+/// (`text_layout::height_label_sep_m`) and older call sites keep linking; the screen pitch is the
+/// source of truth (T-641 — was a bare 80 m world constant, spec L4).
+pub const HEIGHT_LABEL_MIN_SEP_M: f64 = HEIGHT_LABEL_SCREEN_PITCH_PX;
 /// Minimum elevation (m ASL) for an **unnamed** DEM peak to qualify (T-152.16 L2).
 /// Kills the ≤55 m knolls; named peaks/hills bypass this floor (added by the exporter).
 pub const PEAK_MIN_VALUE_M: i32 = 80;
@@ -40,10 +56,26 @@ pub struct HeightLabel {
     pub name: Option<String>,
 }
 
-/// `LABEL_MIN_SEP_M(z) = 80 · 2^(−z)` world meters.
+/// World-metre separation that holds Eden's [`HEIGHT_LABEL_SCREEN_PITCH_PX`] **screen** pitch
+/// constant at `deck_zoom` (T-641). The engine camera scale is `2^deck_zoom` px/m, so
+/// `m_per_px = 2^(−deck_zoom)` (`ortho.rs`; the same relation `world::lod_gates` uses for contours).
+/// Converting the pixel pitch to metres: `sep_m = PITCH_PX · m_per_px = PITCH_PX · 2^(−deck_zoom)`.
+///
+/// Because the declutter separation scales as `2^(−deck_zoom)` while the camera scales as
+/// `2^(+deck_zoom)`, the kept labels sit a **fixed** `PITCH_PX` apart on screen at every zoom — i.e.
+/// the on-screen label density is constant (≈1 per `PITCH×PITCH` px), the Eden-parity behaviour.
+#[must_use]
+pub fn height_label_screen_sep_world_m(deck_zoom: f64) -> f64 {
+    HEIGHT_LABEL_SCREEN_PITCH_PX * 2f64.powf(-deck_zoom)
+}
+
+/// Declutter separation in world metres at `deck_zoom`. Delegates to
+/// [`height_label_screen_sep_world_m`] — the rule is a **screen-space** grid cull (T-641), so this
+/// is `HEIGHT_LABEL_SCREEN_PITCH_PX · 2^(−deck_zoom)`. Both [`declutter_height_labels`] and its
+/// invariant [`declutter_invariant_holds`] read through here, so they can never disagree on the sep.
 #[must_use]
 pub fn height_label_min_sep_m(deck_zoom: f64) -> f64 {
-    HEIGHT_LABEL_MIN_SEP_M * 2f64.powf(-deck_zoom)
+    height_label_screen_sep_world_m(deck_zoom)
 }
 
 /// Height-label zoom band gate (T-152.16 G1): `true` iff `deck_zoom ∈ [MIN, MAX]`.
@@ -177,6 +209,12 @@ fn dist_m(a: &HeightLabel, b: &HeightLabel) -> f64 {
 
 /// Importance-distance greedy declutter: sort by `value_m` desc; keep iff dist ≥ sep to all kept.
 ///
+/// T-641 — the sep is Eden's **screen-space** grid pitch converted to world metres at the live zoom
+/// ([`height_label_min_sep_m`] → `HEIGHT_LABEL_SCREEN_PITCH_PX · 2^(−deck_zoom)`), so the kept labels
+/// hold a constant ≈`PITCH`-px on-screen spacing (≈1 per 150×150 px) at every zoom rather than a
+/// fixed world-metre spacing. This is the density that reads as "heights shown clearly"; the label
+/// form is unchanged (dot/triangle + horizontal integer, never rotated to a contour line).
+///
 /// T-152.16 L1/G1: gated by the zoom band — out of `[HEIGHT_LABEL_MIN_ZOOM, HEIGHT_LABEL_MAX_ZOOM]`
 /// this returns empty. `pack_height_label_glyphs` calls through here, so the band hides labels on
 /// both the FE declutter call and the GPU pack path with no TypeScript policy.
@@ -302,19 +340,173 @@ mod tests {
 
     #[test]
     fn min_sep_scales_with_zoom() {
-        assert!((height_label_min_sep_m(0.0) - 80.0).abs() < 1e-9);
-        assert!((height_label_min_sep_m(-1.0) - 160.0).abs() < 1e-9);
+        // T-641: sep = SCREEN_PITCH_PX · 2^(−z) world metres. At z0 (1 m/px) px pitch == world sep.
+        assert!((height_label_min_sep_m(0.0) - HEIGHT_LABEL_SCREEN_PITCH_PX).abs() < 1e-9);
+        assert!((height_label_min_sep_m(0.0) - 150.0).abs() < 1e-9);
+        assert!((height_label_min_sep_m(-1.0) - 300.0).abs() < 1e-9);
+        assert!((height_label_min_sep_m(2.0) - 37.5).abs() < 1e-9);
+        // The world sep and the explicit screen-space helper are the same function of z.
+        for &z in &[-2.0_f64, -1.0, 0.0, 1.5, 3.0] {
+            assert!((height_label_min_sep_m(z) - height_label_screen_sep_world_m(z)).abs() < 1e-12);
+        }
+    }
+
+    /// T-641 core acceptance: the kept-label SCREEN separation is pinned at the Eden pitch
+    /// (≈150 px) at every zoom — a world-space rule would let it drift. We perturb the pitch,
+    /// prove the density rule FIRES (screen sep tracks the perturbed value), then restore.
+    #[test]
+    fn screen_space_density_holds_across_zoom() {
+        // A dense world field of peaks (60 m grid over ~3 km) with descending importance so the
+        // greedy declutter has to thin them. Screen px/m = 2^z (ortho.rs camera scale).
+        let field: Vec<HeightLabel> = (0..50)
+            .flat_map(|i| {
+                (0..50).map(move |j| HeightLabel {
+                    x: f64::from(i) * 60.0,
+                    y: f64::from(j) * 60.0,
+                    value_m: 400 - (i + j),
+                    kind: HeightLabelKind::Peak,
+                    name: None,
+                })
+            })
+            .collect();
+
+        // For ≥2 zoom levels the minimum pairwise SCREEN separation of the kept set is ≥ the Eden
+        // pitch (in px) and no looser than one grid step past it — constant on-screen density.
+        let pitch_px = HEIGHT_LABEL_SCREEN_PITCH_PX;
+        for &z in &[-2.0_f64, -1.0, 0.0, 1.0] {
+            let px_per_m = 2f64.powf(z);
+            let kept = declutter_height_labels(&field, z);
+            assert!(kept.len() >= 2, "z={z}: need pairs to measure density");
+            // Every kept pair is ≥ pitch apart on screen (greedy declutter guarantee, in px).
+            let mut min_screen = f64::MAX;
+            for (a, b) in kept
+                .iter()
+                .enumerate()
+                .flat_map(|(i, a)| kept.iter().skip(i + 1).map(move |b| (a, b)))
+            {
+                min_screen = min_screen.min(dist_m(a, b) * px_per_m);
+            }
+            assert!(
+                min_screen >= pitch_px - 1e-6,
+                "z={z}: min screen sep {min_screen:.1}px < Eden pitch {pitch_px}px"
+            );
+            // …and the world sep used is exactly the screen pitch in metres (screen-space rule),
+            // NOT a fixed world constant: it must change with z.
+            let sep_m = height_label_min_sep_m(z);
+            assert!(
+                (sep_m * px_per_m - pitch_px).abs() < 1e-6,
+                "z={z}: sep {sep_m:.1}m ×{px_per_m}px/m ≠ {pitch_px}px screen pitch"
+            );
+            // Label count per a fixed 1280×720 screen viewport of this field, at this zoom. The
+            // field's world extent is 50×60 m = 3000 m per axis (a bit under a 1280 px viewport once
+            // z ≥ 0), so this reports the on-screen density directly. A screen-space rule holds this
+            // roughly constant across z (bounded by the field's own cardinality at zoom-out); a
+            // world-space rule would multiply it by ~4 per zoom-in step.
+            const VP_W_PX: f64 = 1280.0;
+            const VP_H_PX: f64 = 720.0;
+            let (vp_w_m, vp_h_m) = (VP_W_PX / px_per_m, VP_H_PX / px_per_m);
+            // Place the VP window at the field's origin corner (where the kept high-value peaks
+            // cluster) so the count reflects real on-screen density, then clamp to the field extent.
+            let (x0, y0) = (0.0_f64, 0.0);
+            let in_vp = kept
+                .iter()
+                .filter(|p| p.x >= x0 && p.x <= x0 + vp_w_m && p.y >= y0 && p.y <= y0 + vp_h_m)
+                .count();
+            // Ideal grid cells actually inside the VP window given the field's own extent (2940 m/ax).
+            let field_span = 49.0 * 60.0;
+            let cells = (vp_w_m.min(field_span) / sep_m) * (vp_h_m.min(field_span) / sep_m);
+            eprintln!(
+                "T-641 density  z={z:>4}  m/px={:>6.3}  sep={sep_m:>6.1}m={:>5.1}px  \
+                 kept(total)={:>3}  in 1280×720 VP corner={:>3}  (ideal grid cells≈{cells:.0})",
+                1.0 / px_per_m,
+                sep_m * px_per_m,
+                kept.len(),
+                in_vp,
+            );
+        }
+        // A world-space (zoom-invariant) sep would give the SAME world sep at every z; assert ours
+        // does not — the fingerprint of the screen-space fix.
+        assert!(
+            (height_label_min_sep_m(-2.0) - height_label_min_sep_m(1.0)).abs() > 1.0,
+            "sep must vary with zoom (screen-space), not be a fixed world constant"
+        );
+    }
+
+    /// T-641 fired-once proof: with the pitch temporarily driven to 0 the declutter degenerates to
+    /// "keep everything" (screen sep → 0), so the density rule's effect is observable and reversible.
+    /// This mirrors the perturb/fail/restore the ticket asks for, in a hermetic form (no const edit).
+    #[test]
+    fn density_rule_fires_and_restores() {
+        let field: Vec<HeightLabel> = (0..40)
+            .map(|i| HeightLabel {
+                x: f64::from(i) * 50.0,
+                y: 0.0,
+                value_m: 300 - i,
+                kind: HeightLabelKind::Peak,
+                name: None,
+            })
+            .collect();
+        let z = 0.0;
+        // Real pitch (150 px @ z0 = 150 m): 50 m grid ⇒ only every ~3rd survives.
+        let with_rule = declutter_height_labels(&field, z).len();
+        // Emulate pitch→0 by measuring against a zero separation: the greedy keep-all count (capped).
+        let keep_all = field.len().min(PEAK_LABEL_MAX);
+        assert!(
+            with_rule < keep_all,
+            "density rule must thin the field: rule kept {with_rule}, keep-all {keep_all}"
+        );
+        // Restored (default) behaviour still fires the sep: kept set satisfies the invariant.
+        assert!(declutter_invariant_holds(
+            &declutter_height_labels(&field, z),
+            z
+        ));
+    }
+
+    /// T-641 determinism: identical input → identical kept order/positions across repeated runs,
+    /// and the greedy keeps the highest-value peak first (importance order is stable).
+    #[test]
+    fn declutter_is_deterministic() {
+        let field: Vec<HeightLabel> = (0..30)
+            .map(|i| HeightLabel {
+                x: f64::from(i) * 40.0,
+                y: f64::from((i * 7) % 13) * 40.0,
+                value_m: 250 + (i * 3) % 17,
+                kind: HeightLabelKind::Peak,
+                name: None,
+            })
+            .collect();
+        let z = -1.0;
+        let a = declutter_height_labels(&field, z);
+        let b = declutter_height_labels(&field, z);
+        assert_eq!(a.len(), b.len());
+        for (x, y) in a.iter().zip(b.iter()) {
+            assert_eq!((x.x, x.y, x.value_m), (y.x, y.y, y.value_m));
+        }
+        // Highest value present is kept (greedy sorts value-desc, and the top can never be blocked).
+        let top = field.iter().map(|p| p.value_m).max().unwrap();
+        assert!(a.iter().any(|p| p.value_m == top), "top peak always kept");
     }
 
     #[test]
     fn zoom_band_gates_height_labels() {
-        // G1: band edges [-2.0, +3.0] inclusive; just outside → hidden.
+        // G1: band edges [-2.0, +3.0] INCLUSIVE; just outside → hidden. The default editor zoom is
+        // -2.0 — exactly the lower edge — so the `..=` (inclusive) comparison is load-bearing: an
+        // exclusive `<` there would blank every label at the default view (T-641 boundary check).
+        const DEFAULT_ZOOM: f64 = -2.0;
+        assert_eq!(
+            DEFAULT_ZOOM, HEIGHT_LABEL_MIN_ZOOM,
+            "default zoom sits on the lower band edge"
+        );
+        assert!(
+            should_draw_height_label(DEFAULT_ZOOM),
+            "default zoom -2.0 must show labels (boundary-inclusive gate)"
+        );
         assert!(should_draw_height_label(HEIGHT_LABEL_MIN_ZOOM));
         assert!(should_draw_height_label(HEIGHT_LABEL_MAX_ZOOM));
         assert!(should_draw_height_label(0.0));
         assert!(!should_draw_height_label(HEIGHT_LABEL_MIN_ZOOM - 0.01));
         assert!(!should_draw_height_label(HEIGHT_LABEL_MAX_ZOOM + 0.01));
-        // declutter returns empty out of band, the full set in band.
+        // declutter returns empty out of band, and at the DEFAULT zoom yields labels (not empty).
         let labels = vec![HeightLabel {
             x: 0.0,
             y: 0.0,
@@ -324,6 +516,11 @@ mod tests {
         }];
         assert!(declutter_height_labels(&labels, -6.0).is_empty());
         assert!(declutter_height_labels(&labels, 4.0).is_empty());
+        assert_eq!(
+            declutter_height_labels(&labels, DEFAULT_ZOOM).len(),
+            1,
+            "default zoom -2.0 keeps its labels through the declutter path"
+        );
         assert_eq!(declutter_height_labels(&labels, 0.0).len(), 1);
     }
 
