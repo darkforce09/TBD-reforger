@@ -39,13 +39,29 @@
         },
         "required": ["slots"]
       }
+    },
+    {
+      "if": {
+        "properties": { "schemaVersion": { "const": "1.3" } },
+        "required": ["schemaVersion"]
+      },
+      "then": {
+        "properties": {
+          "slots": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/slot" }
+          }
+        },
+        "required": ["slots"]
+      }
     }
   ],
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "enum": ["1.0", "1.1", "1.2"],
-      "description": "1.1 adds required slots[] for per-player spawn positions. 1.2 adds the optional per-slot y (spawn height, metres ASL)."
+      "enum": ["1.0", "1.1", "1.2", "1.3"],
+      "description": "1.1 adds required slots[] for per-player spawn positions. 1.2 adds the optional per-slot y (spawn height, metres ASL). 1.3 widens the WIRE once for the whole editor program (T-706): objectives[], variants, marker style/area, per-slot uid already present, vehicles[], editorTriggers[], per-squad waypoints/AI state, placement scatter, vehicle/entity states, environment, missionParams[], zone-volume + attacker/defender + startingOwner rules, play-area vehicleClasses, per-slot gadgets. Every 1.3 addition is OPTIONAL and ADDITIVE — `JsonLoadContext` ignores unknown keys and TBD_MissionLoader allowlists 1.1/1.2/1.3, so a 1.1/1.2 document stays valid unchanged and the bump exists to NAME the widening, not to gate it. Like 1.1/1.2, a 1.3 document still requires slots[]. THE READERS ARE MOD-SIDE AND LAND SEPARATELY: each 1.3 field is carried on the wire but read by nothing on any build shipped today (the `xtask schema validate` unread-fields gate asserts exactly that, per field, and names the ticket that will land each reader). Do not cite a 1.3 field as a capability — it is a definition ahead of its consumer, the same discipline the top-level `entities` description states."
     },
     "meta": { "$ref": "#/$defs/meta" },
     "environment": { "$ref": "#/$defs/environment" },
@@ -80,7 +96,32 @@
     "flow": { "$ref": "#/$defs/flow" },
     "winConditions": { "$ref": "#/$defs/winConditions" },
     "briefings": { "$ref": "#/$defs/briefings" },
-    "settings": { "$ref": "#/$defs/settings" }
+    "settings": { "$ref": "#/$defs/settings" },
+    "objectives": {
+      "type": "array",
+      "description": "T-212 / T-685 — typed per-side objective entities (schemaVersion 1.3). Distinct from `zones[]` of `type: objective_*`: a `zone` is a VOLUME with capture RULES, whereas an `objective` is the mission's first-class task record — the container the editor's `objectivesById` compiles into, which today has no mutator and no reader (a dead container, per T-212). Carried on the wire; NOTHING reads it on any shipped build — the Enfusion reader lands under T-212/T-685. Each row carries a uniform attribute spine (id/type/side/callsign/rank/stance) plus WOG's proven capture/defend/height model (T-685: attackerCount/defenderCount/advantagePercent/minHeight/maxHeight/startingOwner, whose degenerate 1-vs-1 case is a zone's `contestable`). Distinct from `winConditions.endOn` — that is the win TRIGGER vocabulary; this is the objective SUBJECT it fires on.",
+      "items": { "$ref": "#/$defs/objective" }
+    },
+    "vehicles": {
+      "type": "array",
+      "description": "T-675 / T-076 — mission-placed VEHICLE roster (schemaVersion 1.3), the compile half split out of T-076 so the crew UI could ship. A vehicle is NOT an `entities[]` alias row: `#/$defs/alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$` and the mod's `Data/registry.json` holds exactly ONE `veh:` row, so routing crewed vehicles through `entities[]` would reproduce the T-200 silent-substitution defect with a ten-tonne vehicle (flatten.rs:2631-2640). This is `document root + a new $def`, keyed `vehicles`, carrying seats/crew refs onto the wire. NOTHING reads it on any shipped build (`TBD_MissionDocumentStruct` declares no `vehicles`); the crew-spawn reader lands under T-675. Compiled from the editor `vehiclesById` (T-215/T-425), sibling of the payload's own top-level `vehicles` bag but the DECLARED contract shape here.",
+      "items": { "$ref": "#/$defs/vehicle" }
+    },
+    "editorTriggers": {
+      "type": "array",
+      "description": "T-079 / T-676 — editor-authored TRIGGER entities: an activation model (condition/repeat/timeout/owner side) plus an effects model (schemaVersion 1.3). NAMED `editorTriggers`, NOT `triggers`, DELIBERATELY (T-706 forward-constraint 3): `flatten.rs` already emits a win-condition trigger vocabulary as `winConditions.endOn` (values `time_limit` / `faction_eliminated` / …, computed at flatten.rs:2152-2160), and T-079's editor triggers are a DIFFERENT object with a different lifecycle — an authored condition→effect rule, not a round-end predicate. Collapsing them onto one `triggers` key would make a reader unable to tell a win predicate from an authored rule, so they are named apart on the wire; `winConditions.endOn` keeps the win vocabulary and `editorTriggers[]` carries the T-079 runtime. The editor payload rides `triggersById` undeclared today (T-706 forward-constraint 2); this is the compiled, DECLARED shape. NOTHING reads it on any shipped build — the Enfusion activation/effects runtime lands under T-676. Geometry rides the shipped T-582 zone draw tool, so a trigger's area is a `zones[]` row referenced by `zoneId`, not re-declared here.",
+      "items": { "$ref": "#/$defs/editorTrigger" }
+    },
+    "variants": {
+      "type": "array",
+      "description": "T-654 — the named-variant registry for conditional inclusion (schemaVersion 1.3). Generalises what FNF v3 built by hand with Eden layers: a template ships named modes (`FNF Gamemode: <Mode>`) and the setup script deletes every object/marker belonging to the modes not picked, making the layer name a HARD RUNTIME CONTRACT. Here each variant is declared ONCE by id, and any variant-gated subtree elsewhere in the document (an objective, a vehicle, an entity, a zone, a trigger) references it via `variantId` — the compiler emits that subtree only when the variant is selected. Declaring variants centrally is what lets the `variantId` predicate be validated (an unknown id is catchable) instead of being a free string. NOTHING reads it on any shipped build — the conditional-inclusion compile pass lands under T-654 (which is a DESIGN ticket first; this is the wire shape its design will target).",
+      "items": { "$ref": "#/$defs/variant" }
+    },
+    "missionParams": {
+      "type": "array",
+      "description": "T-684 — first-class launch-time mission parameters (schemaVersion 1.3): a mission carries named parameters chosen at LAUNCH rather than baked at authoring time (name, i18n title key, value list, display list, default, consuming symbol). Models Arma's `class Params` — OFCRA runs one artefact as training server, briefing room, mod-check sandbox and match off 29 such entries. Ranked last of 16 in the synthesis (weakest evidence for this genre) and filed as an idea so the research is not lost; carried here as the wire shape. NOTHING reads it on any shipped build — the launch-time parameter reader + fail-on-demand validation land under T-684.",
+      "items": { "$ref": "#/$defs/missionParam" }
+    }
   },
   "$defs": {
     "alias": {
@@ -142,11 +183,28 @@
     },
     "environment": {
       "type": "object",
+      "description": "Mission environment. T-682 adds `fog` / `wind` / `viewDistance` on the WIRE (schemaVersion 1.3) as the scenario-side environment axes (ATTR-FIELD-SCN-FOG / -SCN-WIND / -SCN-VIEW-DIST).\n\nAUTHORING PATH LANDS SEPARATELY — read this before adding an editor control. `eden_env.rs`'s `keys_nothing_reads_are_not_authored` test names `viewDistance` (and `thermals`/`windDirDeg`/`fog`/`wind`) as keys the EDITOR MUST NOT AUTHOR, because nothing reads them back: `ModEnvironment` (flatten.rs) serialises only `dateTime`/`weatherPreset`, and T-193 removed the view-distance/thermals controls for exactly this reason. That frontend test gates AUTHORING (`env_key_is_carried`, a hardcoded editor table with no dependency on this schema), NOT the wire: declaring `viewDistance` here does not make the editor author it, so the test stays green. The mod READER comes first and the control second (the `author_env` ordering rationale, eden_env.rs) — the Enfusion environment reader lands under T-682, and only then does an editor control become authorable. NOTHING reads `fog`/`wind`/`viewDistance` on any shipped build; `windDirDeg` is present but `ModEnvironment` does not serialise it either.",
       "additionalProperties": false,
       "properties": {
         "dateTime": { "type": "string", "format": "date-time" },
         "weatherPreset": { "type": "string" },
-        "windDirDeg": { "type": "number", "minimum": 0, "maximum": 360 }
+        "windDirDeg": { "type": "number", "minimum": 0, "maximum": 360 },
+        "fog": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "T-682 (ATTR-FIELD-SCN-FOG). Fog density, 0 (clear) → 1 (thickest), matching Eden's normalised scenario fog. On the wire only — no reader on any shipped build; lands under T-682."
+        },
+        "wind": {
+          "type": "number",
+          "minimum": 0,
+          "description": "T-682 (ATTR-FIELD-SCN-WIND). Wind STRENGTH (m/s); direction is the existing `windDirDeg`. On the wire only — no reader on any shipped build; lands under T-682."
+        },
+        "viewDistance": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "T-682 (ATTR-FIELD-SCN-VIEW-DIST). Terrain/object view distance in metres. On the wire only — no reader on any shipped build, and DELIBERATELY NOT AUTHORED by the editor (T-193 removed its control; eden_env.rs asserts it stays un-authored). The reader + re-added control land under T-682."
+        }
       }
     },
     "faction": {
@@ -201,6 +259,55 @@
           "type": "array",
           "minItems": 1,
           "items": { "$ref": "#/$defs/role" }
+        },
+        "combatMode": {
+          "type": "string",
+          "enum": ["blue", "green", "white", "yellow", "red"],
+          "description": "T-678 (ATTR-FIELD-GRP-COMBAT-MODE, schemaVersion 1.3). Group rules of engagement, matching Enfusion's `EAICombatType` ladder (blue=never fire → red=open fire, engage at will). On the wire only — word-boundary `combatMode` is ZERO in both the frontend and the mod tree; the AI reader lands under T-678, which ships together with the waypoints ticket (T-677) or not at all (they share the AI gate: every slot currently spawns AI-disabled)."
+        },
+        "behaviour": {
+          "type": "string",
+          "enum": ["careless", "safe", "aware", "combat", "stealth"],
+          "description": "T-678 (ATTR-FIELD-GRP-BEHAVIOUR, schemaVersion 1.3). Group behaviour state (`EAIWaypointCompletionType`/behaviour ladder). On the wire only — no reader on any shipped build; lands under T-678."
+        },
+        "formation": {
+          "type": "string",
+          "enum": [
+            "column",
+            "stagger_column",
+            "wedge",
+            "echelon_left",
+            "echelon_right",
+            "vee",
+            "line",
+            "file",
+            "diamond"
+          ],
+          "description": "T-678 (ATTR-FIELD-GRP-FORMATION, schemaVersion 1.3). Group movement formation. On the wire only — the sole frontend hit for `formation` is prose in a comment (editor_ops.rs:1324); no mod reader; lands under T-678."
+        },
+        "speedMode": {
+          "type": "string",
+          "enum": ["limited", "normal", "full"],
+          "description": "T-678 (ATTR-FIELD-GRP-SPEED-MODE, schemaVersion 1.3). Group movement speed mode. On the wire only — word-boundary `speedMode` is ZERO in both trees; lands under T-678."
+        },
+        "waypoints": {
+          "type": "array",
+          "description": "T-677 — per-squad waypoint list (schemaVersion 1.3), the nine `ATTR-FIELD-WP-*` ids. On the wire only, and GATED ON A SUBJECT: `TBD_SpawnManager` spawns every body AI-DISABLED (TBD_SpawnManager.c:963,1166), so a waypoint has nothing to command until AI units exist. Ships together with the group-AI-state ticket (T-678) or not at all — they share the gate exactly. The waypoint runtime lands under T-677.",
+          "items": { "$ref": "#/$defs/waypoint" }
+        },
+        "placementRadius": {
+          "type": "number",
+          "minimum": 0,
+          "description": "T-679 (ATTR-FIELD-GRP-PLACEMENT-RADIUS, schemaVersion 1.3). Metres: the group's members are scattered within this radius of its authored position at spawn (0/absent = exact placement). On the wire only — the scatter reader lands under T-679; the 2D top-down editor is the surface where the scatter circle is drawable."
+        },
+        "placementShape": {
+          "type": "string",
+          "enum": ["circle", "square"],
+          "description": "T-679 (ATTR-FIELD-OBJ-SHAPE applied to a group, schemaVersion 1.3). Scatter area shape for `placementRadius`. On the wire only — lands under T-679."
+        },
+        "variantId": {
+          "$ref": "#/$defs/variantIdRef",
+          "description": "T-654 (schemaVersion 1.3). When set, this group is emitted only if the named `variants[]` entry is selected (conditional inclusion). On the wire only — the variant compile pass lands under T-654."
         }
       }
     },
@@ -295,6 +402,62 @@
               }
             }
           }
+        },
+        "callsign": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "T-674 (ATTR-FIELD-OBJ-CALLSIGN, schemaVersion 1.3). A per-slot display callsign, distinct from `groupCallsign` (the ORBAT group name) and from `id` (the derived label). On the wire only — flatten.rs:2620-2632 records this as one of the author-facing values the compile silently drops today; the roster reader lands under T-674. `wireSafeString`-constrained because it reaches the same tab-delimited roster wire as `id`."
+        },
+        "rank": {
+          "type": "string",
+          "enum": [
+            "private",
+            "corporal",
+            "sergeant",
+            "lieutenant",
+            "captain",
+            "major",
+            "colonel"
+          ],
+          "description": "T-674 (ATTR-FIELD-OBJ-RANK, schemaVersion 1.3). Character rank, matching Enfusion's `ECharacterRank` ladder. On the wire only — no reader on any shipped build; lands under T-674."
+        },
+        "stance": {
+          "type": "string",
+          "enum": ["stand", "crouch", "prone"],
+          "description": "T-674 (ATTR-FIELD-OBJ-STANCE, schemaVersion 1.3). Initial spawn pose. On the wire only, and needs an Enfusion spawn-pose call as well as this key — word-boundary `stance` in apps/mod is ZERO today (the 39-file `grep -rl stance` result is every hit being a substring). Lands under T-674."
+        },
+        "unitName": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "T-674 (ATTR-FIELD-OBJ-UNIT-NAME, schemaVersion 1.3). A per-slot unit name that rides this slice rather than standing alone (the sweep says so explicitly). On the wire only — no reader on any shipped build; lands under T-674. `wireSafeString`-constrained (reaches a delimited wire)."
+        },
+        "tag": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "T-674 — the TBD-only slot tag key (schemaVersion 1.3), mirroring the ORBAT-slot `tag` the events path already carries (T-010). On the wire only for the placed-slot document — the flatten drops it today (flatten.rs:2620-2632); the reader lands under T-674."
+        },
+        "leaderSlotId": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "T-674 — the TBD-only key naming which slot leads this slot's squad (schemaVersion 1.3), keyed on a slot `uid`/`id`. On the wire only — flatten.rs:2584-2649 enumerates a squad's leaderSlotId as one of the six author-facing values the compile silently drops; the reader lands under T-674."
+        },
+        "placementRadius": {
+          "type": "number",
+          "minimum": 0,
+          "description": "T-679 (ATTR-FIELD-OBJ-PLACEMENT-RADIUS, schemaVersion 1.3). Metres: this slot is scattered within this radius of its authored (x, z) at spawn (0/absent = exact). On the wire only — the scatter reader lands under T-679."
+        },
+        "placementShape": {
+          "type": "string",
+          "enum": ["circle", "square"],
+          "description": "T-679 (ATTR-FIELD-OBJ-SHAPE, schemaVersion 1.3). Scatter area shape for this slot's `placementRadius`. On the wire only — lands under T-679."
+        },
+        "gadgets": {
+          "$ref": "#/$defs/gadgetFlags",
+          "description": "T-705 (schemaVersion 1.3). Which personal gadgets this player spawns with (map/compass/watch/gps/radio), the Eden General-States model that lets a scenario decide a player's gadgets. On the wire only — every flag needs an Enfusion reader in apps/mod/tbd-framework, none of which exists on any shipped build; the readers land under T-705 (this is the schema half, split out of T-705 for the one-pass widening)."
+        },
+        "variantId": {
+          "$ref": "#/$defs/variantIdRef",
+          "description": "T-654 (schemaVersion 1.3). When set, this slot is emitted only if the named `variants[]` entry is selected. On the wire only — lands under T-654."
         }
       }
     },
@@ -394,7 +557,11 @@
         },
         "faction": { "$ref": "#/$defs/factionKey" },
         "shape": { "$ref": "#/$defs/shape" },
-        "rules": { "$ref": "#/$defs/zoneRules" }
+        "rules": { "$ref": "#/$defs/zoneRules" },
+        "variantId": {
+          "$ref": "#/$defs/variantIdRef",
+          "description": "T-654 (schemaVersion 1.3). When set, this zone is emitted only if the named `variants[]` entry is selected. On the wire only — lands under T-654."
+        }
       }
     },
     "zoneRules": {
@@ -491,6 +658,42 @@
           "type": "number",
           "exclusiveMinimum": 0,
           "description": "EVERY objective type. How often a player standing on the objective is told the progress. Read at TBD_ObjectiveRules.c:89, resolved at TBD_ObjectiveRegistry.c:412-423. No single default is stated because the default is per zone type: 15 s for `objective_capture` (DEFAULT_CAPTURE_ANNOUNCE_SECONDS) and 60 s for `objective_hold_until` (DEFAULT_HOLD_ANNOUNCE_SECONDS)."
+        },
+        "attackerCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "T-685 (schemaVersion 1.3). `objective_capture`. How many attackers must be inside to make progress — WOG's `_CaptureCount` (observed 4x128 / 1x16 / 2x6 / 3x5 across 166 instances). TBD's `contestable: bool` is the degenerate 1-vs-1 case of this + `defenderCount`. On the wire only — no reader on any shipped build; the objective reader lands under T-685."
+        },
+        "defenderCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "T-685 (schemaVersion 1.3). `objective_capture` / `objective_hold_until`. How many defenders must be inside to HOLD — WOG's `_DefCount` (observed 3x129 / 1x17 / 2x8 / 0x5). On the wire only — lands under T-685."
+        },
+        "advantagePercent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "T-685 (schemaVersion 1.3). `objective_capture`. The numeric advantage (percent) one side needs before capture progresses — WOG's `_AdvantagePercent` (observed 2x72 / 0x67 / 4x14 / 3x13). On the wire only — lands under T-685."
+        },
+        "minHeight": {
+          "type": "number",
+          "description": "T-685 (schemaVersion 1.3). The objective volume's LOWER bound, metres relative to the objective (WOG's `_MinHeight` = -5 INVARIANT across all 166 instances). Together with `maxHeight` this makes an objective a 3D VOLUME rather than a flat footprint. On the wire only — the volume reader lands under T-685."
+        },
+        "maxHeight": {
+          "type": "number",
+          "description": "T-685 (schemaVersion 1.3). The objective volume's UPPER bound, metres relative to the objective (WOG's `_MaxHeight`, observed 30x137 / 15x16 / 20x13). On the wire only — lands under T-685."
+        },
+        "startingOwner": {
+          "$ref": "#/$defs/factionKey",
+          "description": "T-685 (schemaVersion 1.3). Which faction holds this objective at round start — WOG's `_Owner` (observed 1x70 / 0x65 / 2x30 / 4x1). Constrained to `factionKey` — it names a `factions[].key`. On the wire only — lands under T-685."
+        },
+        "vehicleClasses": {
+          "type": "array",
+          "description": "T-689 (schemaVersion 1.3). PLAY AREA (`boundary`, `base_protection`). WHICH VEHICLE CLASSES the play-area rule applies to — the missing axis on TBD's otherwise-complete play-area model (graceSeconds/warnEverySeconds/penalty). FNF v4 documents exactly why it exists: the play-zone group's air flag is `false` so AIRCRAFT MAY LEAVE the play area while ground vehicles and infantry may not (`fn_addRestrictionGroup.sqf`). An ABSENT array means the rule applies to everything (today's behaviour); listing classes restricts it, and omitting `aircraft` from the list is how the aircraft exemption is authored. On the wire only — no reader on any shipped build; the class-filtered enforcement lands under T-689.",
+          "items": {
+            "type": "string",
+            "enum": ["infantry", "ground", "aircraft", "sea"]
+          }
         }
       }
     },
@@ -505,7 +708,50 @@
         "z": { "type": "number" },
         "headingDeg": { "type": "number", "minimum": 0, "maximum": 360 },
         "faction": { "$ref": "#/$defs/factionKey" },
-        "inventory": { "$ref": "#/$defs/entityInventory" }
+        "inventory": { "$ref": "#/$defs/entityInventory" },
+        "lock": {
+          "type": "boolean",
+          "description": "T-680 (ATTR-FIELD-OBJ-LOCK, schemaVersion 1.3). Vehicle-lock state for a placed vehicle entity. On the wire only — word-boundary `lock` in apps/mod is 4 hits, NONE an authored vehicle lock; the reader lands under T-680 (the natural successor to shipped T-215). Like the rest of `entity`, this authors state with no destination until `entities[]` acquires a consumer."
+        },
+        "fuel": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "T-680 (ATTR-FIELD-OBJ-FUEL, schemaVersion 1.3). Vehicle fuel fraction, 0 → 1 (full). On the wire only — word-boundary `fuel` in apps/mod is 1 hit and not this; the reader lands under T-680."
+        },
+        "ammo": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "T-680 (ATTR-FIELD-OBJ-AMMO, schemaVersion 1.3). Vehicle ammunition fraction, 0 → 1 (full). On the wire only — no reader on any shipped build; lands under T-680."
+        },
+        "health": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "T-681 (ATTR-FIELD-OBJ-HEALTH, schemaVersion 1.3). Initial health fraction, 0 (destroyed) → 1 (pristine). On the wire only — GATED ON `entities[]` acquiring a consumer (nothing on any shipped build reads that array), so this authors state with no destination until the reader lands under T-681."
+        },
+        "allowDamage": {
+          "type": "boolean",
+          "description": "T-681 (ATTR-FIELD-OBJ-ALLOW-DAMAGE, schemaVersion 1.3). Whether this entity may take damage at all (Eden's invincibility toggle). On the wire only — lands under T-681."
+        },
+        "showModel": {
+          "type": "boolean",
+          "description": "T-681 (ATTR-FIELD-OBJ-SHOW-MODEL, schemaVersion 1.3). Whether the entity's model is visible (Eden's show/hide). On the wire only — lands under T-681."
+        },
+        "size": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "T-681 (ATTR-FIELD-OBJ-SIZE, schemaVersion 1.3). Uniform scale multiplier for the placed object (1 = native size). On the wire only — lands under T-681."
+        },
+        "stamina": {
+          "type": "boolean",
+          "description": "T-681 (ATTR-FIELD-OBJ-STAMINA, schemaVersion 1.3). Whether stamina is enabled for a character entity. On the wire only, and carries an UNRESOLVED upstream question — whether Reforger exposes a per-character stamina toggle at all (a Workbench API question, not answerable by code search here). The reader (and the answer) land under T-681."
+        },
+        "variantId": {
+          "$ref": "#/$defs/variantIdRef",
+          "description": "T-654 (schemaVersion 1.3). When set, this entity is emitted only if the named `variants[]` entry is selected. On the wire only — lands under T-654."
+        }
       }
     },
     "entityInventory": {
@@ -527,6 +773,283 @@
             "description": "UNIT COUNT, not a stack size. The character-side reader this mirrors (TBD_LoadoutEquipHelper.InsertCargo) spawns the prefab once per unit and inserts each one separately; an entity-side reader has the same engine primitive available against the entity's storage (SCR_InventoryStorageManagerComponent.TryInsertItemInStorage)."
           }
         }
+      }
+    },
+    "objective": {
+      "type": "object",
+      "description": "T-212 / T-685 — one typed objective entity (schemaVersion 1.3). Read the top-level `objectives` description first: NOTHING reads this on any shipped build. Carries the uniform attribute spine every objective shares (id/type/side/callsign/rank/stance) plus WOG's proven capture/defend model. The `type` is the SUBJECT vocabulary (what kind of task), distinct from `winConditions.endOn`'s TRIGGER vocabulary (when the round ends) and from `zone.type`'s VOLUME-with-rules. Capture-tuning numbers (attackerCount/defenderCount/advantagePercent/min/maxHeight/startingOwner) live on `zoneRules` where the runtime already reads them; this def carries the objective's IDENTITY, not a second copy of those numbers.",
+      "required": ["id", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/wireSafeString", "minLength": 1 },
+        "type": {
+          "type": "string",
+          "enum": ["capture", "destroy", "hold", "defend"],
+          "description": "The task kind. Named apart from `zone.type` (which is the enforcement volume) and `winConditions.endOn` (the round-end predicate)."
+        },
+        "side": {
+          "$ref": "#/$defs/factionKey",
+          "description": "Which faction this objective belongs to / must complete it (a `factions[].key`)."
+        },
+        "zoneId": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "The `zones[].id` that gives this objective its geometry and capture rules — an objective points at its enforcement volume rather than restating the shape, so the T-582-drawn zone is the single source of the footprint."
+        },
+        "callsign": { "$ref": "#/$defs/wireSafeString", "minLength": 1 },
+        "rank": {
+          "type": "string",
+          "enum": [
+            "private",
+            "corporal",
+            "sergeant",
+            "lieutenant",
+            "captain",
+            "major",
+            "colonel"
+          ]
+        },
+        "stance": { "type": "string", "enum": ["stand", "crouch", "prone"] },
+        "label": { "$ref": "#/$defs/wireSafeString" },
+        "variantId": {
+          "$ref": "#/$defs/variantIdRef",
+          "description": "T-654. When set, this objective is emitted only if the named variant is selected."
+        }
+      }
+    },
+    "vehicle": {
+      "type": "object",
+      "description": "T-675 / T-076 — one mission-placed vehicle (schemaVersion 1.3). Read the top-level `vehicles` description first: NOTHING reads this on any shipped build. `alias` is the `veh:` (or comp:) registry alias; `seats` carries the crew plan (which slots ride where) so the crew UI's authored state reaches the game. Carries the same state fields a vehicle `entity` can (`lock`/`fuel`/`ammo`) because a roster vehicle is still a vehicle — but as a FIRST-CLASS row, not an alias-substituted `entities[]` entry (flatten.rs:2634-2640 proves `entities[]` cannot carry it: one `veh:` registry row means alias substitution would silently swap the wrong vehicle in).",
+      "required": ["alias", "x", "z"],
+      "additionalProperties": false,
+      "properties": {
+        "alias": { "$ref": "#/$defs/alias" },
+        "x": { "type": "number" },
+        "z": { "type": "number" },
+        "headingDeg": { "type": "number", "minimum": 0, "maximum": 360 },
+        "faction": { "$ref": "#/$defs/factionKey" },
+        "seats": {
+          "type": "array",
+          "description": "Crew assignment plan: which slot fills which crew position. `slotId` keys on a `slots[].uid`/`id`; `role` is the crew position. The `seats/crew refs` T-076's crew UI authors.",
+          "items": {
+            "type": "object",
+            "required": ["role"],
+            "additionalProperties": false,
+            "properties": {
+              "slotId": { "$ref": "#/$defs/wireSafeString", "minLength": 1 },
+              "role": {
+                "type": "string",
+                "enum": ["driver", "commander", "gunner", "cargo", "pilot", "copilot", "turret"]
+              },
+              "index": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Disambiguates multiple positions of the same `role` (e.g. cargo seat 0, 1, 2…)."
+              }
+            }
+          }
+        },
+        "inventory": { "$ref": "#/$defs/entityInventory" },
+        "lock": {
+          "type": "boolean",
+          "description": "T-680-style lock state on the roster vehicle (schemaVersion 1.3). On the wire only — reader lands under T-675/T-680."
+        },
+        "fuel": { "type": "number", "minimum": 0, "maximum": 1 },
+        "ammo": { "type": "number", "minimum": 0, "maximum": 1 },
+        "variantId": {
+          "$ref": "#/$defs/variantIdRef",
+          "description": "T-654. When set, this vehicle is emitted only if the named variant is selected."
+        }
+      }
+    },
+    "editorTrigger": {
+      "type": "object",
+      "description": "T-079 / T-676 — one editor-authored trigger (schemaVersion 1.3). Read the top-level `editorTriggers` description first (including WHY it is not named `triggers`): NOTHING reads this on any shipped build. An `activation` model (condition/repeat/timeout/owner side) fires an `effects` model. Geometry is a `zones[]` reference (`zoneId`), riding the shipped T-582 zone draw tool rather than re-declaring a shape here — the twelve `ATTR-FIELD-TRG-*` ids this ticket owns are activation + effects; the geometry/palette half is elsewhere.",
+      "required": ["id", "activation"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/wireSafeString", "minLength": 1 },
+        "zoneId": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "The `zones[].id` whose volume arms this trigger (T-582 draw tool). A trigger without a zone is a document-wide condition."
+        },
+        "activation": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "condition": {
+              "type": "string",
+              "enum": [
+                "present",
+                "not_present",
+                "detected_by",
+                "seized_by",
+                "timer",
+                "objective_complete"
+              ],
+              "description": "What makes the trigger fire. Modelled on Eden's activation types; the closest existing TBD semantics are `$defs/zoneRules` (16 keys, the nearest thing TBD has to trigger semantics — read them before the reader lands)."
+            },
+            "ownerSide": {
+              "$ref": "#/$defs/factionKey",
+              "description": "Which faction's presence/detection the condition tests."
+            },
+            "repeat": {
+              "type": "boolean",
+              "default": false,
+              "description": "Whether the trigger re-arms after firing (Eden's repeatable flag)."
+            },
+            "timeoutSeconds": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Delay between the condition holding and the effects firing."
+            }
+          }
+        },
+        "effects": {
+          "type": "array",
+          "description": "What happens when `activation` fires — an ordered list of effect records. `type` is the effect kind; `params` is an open bag the reader interprets (the effects vocabulary is a NEW Enfusion runtime, so its shape is deliberately not frozen into a closed enum here beyond the coarse `type`).",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "spawn",
+                  "delete",
+                  "end_mission",
+                  "set_objective",
+                  "hint",
+                  "play_sound",
+                  "set_variant"
+                ]
+              },
+              "params": {
+                "type": "object",
+                "description": "Effect-specific parameters, interpreted by the T-676 reader. Open by design — see the def description."
+              }
+            }
+          }
+        },
+        "variantId": {
+          "$ref": "#/$defs/variantIdRef",
+          "description": "T-654. When set, this trigger is emitted only if the named variant is selected."
+        }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "description": "T-654 — one named variant in the conditional-inclusion registry (schemaVersion 1.3). Read the top-level `variants` description first: NOTHING reads this on any shipped build. Declaring a variant here by `id` is what makes a `variantId` reference elsewhere validatable (an unknown id is a catchable error rather than a silent free string), which is the whole point of a central registry — it turns FNF v3's by-hand `FNF Gamemode: <Mode>` layer-name convention into a checked contract.",
+      "required": ["id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Stable variant key, referenced by every subtree's `variantId`."
+        },
+        "label": { "$ref": "#/$defs/wireSafeString" },
+        "default": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this variant is selected when the launcher makes no choice."
+        }
+      }
+    },
+    "variantIdRef": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "T-654 — a reference to a `variants[].id`. Same shape as `variant.id` so a subtree's `variantId` and the registry entry it points at cannot disagree on form. WHOLE-DOCUMENT referential integrity (every `variantId` names a declared variant) is a graph check the T-654 reader owns, not something JSON Schema draft 2020-12 can express here — the pattern pins the SHAPE, the same split `entity.alias` uses (schema shape here, registry existence in the gate)."
+    },
+    "missionParam": {
+      "type": "object",
+      "description": "T-684 — one launch-time mission parameter (schemaVersion 1.3). Read the top-level `missionParams` description first: NOTHING reads this on any shipped build. Models Arma's `class Params` row: a named value chosen at launch, with a title key for i18n, the list of allowed values and their display strings, a default, and the symbol the mission consumes it through.",
+      "required": ["name", "values", "default"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Stable parameter key / consuming symbol."
+        },
+        "titleKey": {
+          "type": "string",
+          "description": "i18n key for the launcher-facing title."
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Allowed values (integers, matching Arma's `values[]`).",
+          "items": { "type": "integer" }
+        },
+        "displays": {
+          "type": "array",
+          "description": "Parallel display strings for `values` (Arma's `texts[]`). When present, must line up 1:1 with `values` — a length check the T-684 reader owns.",
+          "items": { "$ref": "#/$defs/wireSafeString" }
+        },
+        "default": {
+          "type": "integer",
+          "description": "The value used when the launcher makes no choice (must be one of `values` — a membership check the T-684 reader owns)."
+        }
+      }
+    },
+    "waypoint": {
+      "type": "object",
+      "description": "T-677 — one squad waypoint (schemaVersion 1.3). Read the `group.waypoints` description first: NOTHING reads this on any shipped build, and the whole feature is gated on AI units existing (every body spawns AI-disabled today). Ordered by position in the array; `type` is the waypoint kind, `x`/`z` its position.",
+      "required": ["type", "x", "z"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "move",
+            "attack",
+            "defend",
+            "patrol",
+            "cycle",
+            "hold",
+            "get_in",
+            "get_out",
+            "seek_and_destroy",
+            "sentry"
+          ],
+          "description": "Waypoint kind, matching Enfusion's `SCR_AIWaypoint` families."
+        },
+        "x": { "type": "number" },
+        "z": { "type": "number" },
+        "y": {
+          "type": "number",
+          "description": "Optional waypoint height, metres ASL (same policy as `slot.y`)."
+        },
+        "radiusM": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Completion radius in metres."
+        },
+        "behaviour": {
+          "type": "string",
+          "enum": ["careless", "safe", "aware", "combat", "stealth"],
+          "description": "Per-waypoint behaviour override (falls back to the group's `behaviour`)."
+        },
+        "speedMode": {
+          "type": "string",
+          "enum": ["limited", "normal", "full"],
+          "description": "Per-waypoint speed override (falls back to the group's `speedMode`)."
+        }
+      }
+    },
+    "gadgetFlags": {
+      "type": "object",
+      "description": "T-705 — per-player gadget presence flags (schemaVersion 1.3). Read the `slot.gadgets` description first: NOTHING reads these on any shipped build. Each is Eden's General-States gadget toggle; ABSENT means \"leave the kit's default\", `true`/`false` force the gadget on/off. Every flag needs its own Enfusion reader in apps/mod/tbd-framework (the T-705 half); a bool cannot express \"absent vs authored false\" at runtime, but the kit default covers the absent case, so nothing is lost behaviourally.",
+      "additionalProperties": false,
+      "properties": {
+        "map": { "type": "boolean", "description": "T-705 — spawn with a map. On the wire only; reader lands under T-705." },
+        "compass": { "type": "boolean", "description": "T-705 — spawn with a compass. On the wire only; reader lands under T-705." },
+        "watch": { "type": "boolean", "description": "T-705 — spawn with a watch. On the wire only; reader lands under T-705." },
+        "gps": { "type": "boolean", "description": "T-705 — spawn with a GPS. On the wire only; reader lands under T-705." },
+        "radio": { "type": "boolean", "description": "T-705 — spawn with a personal radio. On the wire only; reader lands under T-705." }
       }
     },
     "flow": {
@@ -658,7 +1181,51 @@
             "marker"
           ]
         },
-        "label": { "type": "string" }
+        "label": { "type": "string" },
+        "size": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "T-673 (ATTR-FIELD-MRK-SIZE, schemaVersion 1.3). Marker icon/text scale multiplier (1 = default). On the wire only — the closed `$defs/marker` ({x,z,icon,label}) blocked this field entirely (the compiled schema carries 25 `additionalProperties: false`, so it was contract-blocked, not merely unbuilt); the mod reader lands under T-673, which ships after T-069."
+        },
+        "rotationDeg": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 360,
+          "description": "T-673 (ATTR-FIELD-MRK-ROTATION, schemaVersion 1.3). Marker rotation in degrees. On the wire only — lands under T-673."
+        },
+        "shape": {
+          "type": "string",
+          "enum": ["icon", "rectangle", "ellipse", "polyline"],
+          "description": "T-673 (ATTR-FIELD-MRK-SHAPE, schemaVersion 1.3). Icon-vs-AREA is Eden's entire second marker model: `icon` keeps the existing glyph marker; `rectangle`/`ellipse`/`polyline` make this an AREA marker whose extent is `area`. On the wire only — the area-marker reader lands under T-673 (a widening plus a mod-side reader, not a UI ticket)."
+        },
+        "brush": {
+          "type": "string",
+          "enum": [
+            "solid",
+            "border",
+            "diagonal",
+            "cross_diagonal",
+            "horizontal",
+            "vertical",
+            "grid",
+            "fill_diagonal"
+          ],
+          "description": "T-673 (ATTR-FIELD-MRK-BRUSH, schemaVersion 1.3). Area-marker fill brush (matches Eden's marker brush set). Meaningful only for a `shape` other than `icon`. On the wire only — lands under T-673."
+        },
+        "color": {
+          "$ref": "#/$defs/hexColor",
+          "description": "T-673 (ATTR-FIELD-MRK-COLOR, schemaVersion 1.3). Marker colour, same `#rrggbb` form as `faction.color`. On the wire only — lands under T-673."
+        },
+        "alpha": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "T-673 (ATTR-FIELD-MRK-ALPHA, schemaVersion 1.3). Marker opacity, 0 (transparent) → 1 (opaque). On the wire only — lands under T-673."
+        },
+        "area": {
+          "$ref": "#/$defs/shape",
+          "description": "T-673 (schemaVersion 1.3). The extent of an AREA marker (`shape` = rectangle/ellipse/polyline), reusing `#/$defs/shape` (circle | polygon) so an area marker and a zone speak the same geometry vocabulary. Meaningful only when `shape` is not `icon`. On the wire only — lands under T-673."
+        }
       }
     },
     "settings": {

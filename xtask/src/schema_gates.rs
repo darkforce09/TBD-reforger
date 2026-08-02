@@ -1883,6 +1883,556 @@ fn spawn_registry_aliases(root: &Path) -> Result<(PathBuf, HashSet<String>)> {
     Ok((p, set))
 }
 
+/* ────────── T-706 — schemaVersion 1.3 wire fields must stay UNREAD until their reader lands ────────── */
+
+// WHY THIS GATE EXISTS (the ticket's own non-negotiable acceptance)
+// ----------------------------------------------------------------
+// T-706 widened `mission.schema.json` ONCE for the whole editor program: sixteen mod-side tickets
+// each add a `$def`/property, landed in one pass so the sixteen Enfusion-runtime halves can pack
+// freely afterwards. Every one of those fields is on the WIRE today and READ BY NOTHING — the
+// readers are mod-side and land under the named ticket. A wire field ahead of its consumer is a
+// legitimate contract (the schema is the shared definition the mod/API/editor each build against),
+// but it is a definition, not a capability, and the schema descriptions say so per field.
+//
+// The failure mode this gate prevents is the description going stale: a reader lands under (say)
+// T-678, and the schema still says "on the wire only — no reader on any shipped build". So this
+// asserts, PER FIELD, that the mod tree has exactly its baseline number of readers. The day a real
+// reader lands, the count for that field rises above its baseline, THIS GATE FAILS, and whoever
+// landed the reader is forced to come here, drop the field's "no reader" wording, and move its row
+// out of the table. That is the mechanism the ticket mandates: "ship a test asserting EACH NEW
+// FIELD IS CURRENTLY UNREAD — so the day a reader lands, the test fails and forces its comment to
+// be removed." Fired once during authoring (a synthetic reader flips a field baseline→FAIL — see
+// `unread_gate_fires_when_a_reader_appears`), then removed.
+//
+// WHY A COMMENT/STRING-STRIPPED WHOLE-WORD COUNT, AND WHY A PER-FIELD BASELINE
+// ---------------------------------------------------------------------------
+// Enfusion's `JsonLoadContext` binds a JSON key onto a class MEMBER OF THE SAME NAME (the mod's own
+// structs say so: "Field names must equal the JSON keys — JsonLoadContext maps by name"). So a
+// reader of wire key `combatMode` manifests as the identifier `combatMode` in a `.c` file. A raw
+// grep would false-fire on the word inside a `//` doc-comment or a `""` string literal, so both are
+// stripped before counting (MEASURED: without stripping, `wind`/`size`/`behaviour` already "read"
+// via prose). Whole-word (`\b…\b`) so `map` does not match `heatmap`.
+//
+// Most fields strip to 0 — no identifier of that spelling exists in the mod. A handful collide with
+// a GENUINELY UNRELATED identifier already in the tree (`map` is EnforceScript's `map<>` container;
+// `objectives` is `TBD_ObjectivesComponent`'s own field; `callsign` is the EXISTING group callsign,
+// a different wire key; `radio`/`gadgets` are the radio subsystem; `area` is a loadout area; `seats`
+// is briefing/lobby UI; `tag` is loadout/spectator tags). For those the baseline is the measured
+// pre-existing count and the row says WHY it is not a reader of the NEW field plus which ticket
+// lands the real one. The assertion is `== baseline`: an unrelated refactor that changes a collision
+// count is a deliberate, visible re-pin here (rare), while the event this gate is FOR — a new reader
+// of the new field — is always a +1 that trips it. Fail-closed with a documented table, the same
+// discipline `KNOWN_UNRESOLVABLE_KITS` uses above.
+
+/// One 1.3 wire field: `(name, expected_reader_count, ticket_that_lands_the_reader, why_baseline)`.
+///
+/// `expected` is 0 for a field whose spelling appears nowhere in the mod, or the measured count of a
+/// pre-existing UNRELATED identifier of the same spelling (with `why` naming what it actually is).
+/// A real reader for the field is a +1 over `expected` and fails the `== expected` assertion.
+struct UnreadField {
+    name: &'static str,
+    expected: usize,
+    ticket: &'static str,
+    why: &'static str,
+}
+
+/// The full set of `mission.schema.json` fields T-706 added on the wire with no mod-side reader yet.
+/// Order groups them by owning ticket. Every entry is a field whose schema description asserts "no
+/// reader on any shipped build"; when that stops being true this table is what fails.
+const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
+    // T-212 / T-685 — objectives[] typed entities + capture/defend/height rules on zoneRules.
+    UnreadField {
+        name: "editorTriggers",
+        expected: 0,
+        ticket: "T-079/T-676",
+        why: "no identifier of this spelling in the mod",
+    },
+    UnreadField {
+        name: "attackerCount",
+        expected: 0,
+        ticket: "T-685",
+        why: "clean",
+    },
+    UnreadField {
+        name: "defenderCount",
+        expected: 0,
+        ticket: "T-685",
+        why: "clean",
+    },
+    UnreadField {
+        name: "advantagePercent",
+        expected: 0,
+        ticket: "T-685",
+        why: "clean",
+    },
+    UnreadField {
+        name: "minHeight",
+        expected: 0,
+        ticket: "T-685",
+        why: "clean",
+    },
+    UnreadField {
+        name: "maxHeight",
+        expected: 0,
+        ticket: "T-685",
+        why: "clean",
+    },
+    UnreadField {
+        name: "startingOwner",
+        expected: 0,
+        ticket: "T-685",
+        why: "clean",
+    },
+    // `objectives` collides with TBD_ObjectivesComponent's own member (the win-condition objective
+    // list it already tracks) — NOT a reader of the new top-level `objectives[]` document array.
+    UnreadField {
+        name: "objectives",
+        expected: 13,
+        ticket: "T-212",
+        why: "TBD_ObjectivesComponent's own objective-list field, unrelated to the mission-doc objectives[] array",
+    },
+    // T-675 / T-076 — vehicles[] roster.
+    UnreadField {
+        name: "vehicles",
+        expected: 0,
+        ticket: "T-675",
+        why: "clean",
+    },
+    // `seats` is briefing/lobby seat-count UI, not a vehicle crew-plan reader.
+    UnreadField {
+        name: "seats",
+        expected: 8,
+        ticket: "T-675",
+        why: "briefing/lobby seat-count UI identifiers, unrelated to vehicle.seats crew plan",
+    },
+    // T-676 / T-079 — trigger activation/effects.
+    UnreadField {
+        name: "activation",
+        expected: 0,
+        ticket: "T-676",
+        why: "clean",
+    },
+    UnreadField {
+        name: "effects",
+        expected: 0,
+        ticket: "T-676",
+        why: "clean",
+    },
+    // T-677 — per-squad waypoints.
+    UnreadField {
+        name: "waypoints",
+        expected: 0,
+        ticket: "T-677",
+        why: "clean",
+    },
+    // T-678 — group AI state.
+    UnreadField {
+        name: "combatMode",
+        expected: 0,
+        ticket: "T-678",
+        why: "clean",
+    },
+    UnreadField {
+        name: "formation",
+        expected: 0,
+        ticket: "T-678",
+        why: "clean",
+    },
+    UnreadField {
+        name: "speedMode",
+        expected: 0,
+        ticket: "T-678",
+        why: "clean",
+    },
+    // `behaviour` appears only in English prose in comments — stripped to 0 identifiers.
+    UnreadField {
+        name: "behaviour",
+        expected: 0,
+        ticket: "T-678",
+        why: "English word 'behaviour' only in comments (stripped); no identifier",
+    },
+    // T-679 — placement scatter (slot + group).
+    UnreadField {
+        name: "placementRadius",
+        expected: 0,
+        ticket: "T-679",
+        why: "clean",
+    },
+    UnreadField {
+        name: "placementShape",
+        expected: 0,
+        ticket: "T-679",
+        why: "clean",
+    },
+    // T-680 — vehicle states.
+    UnreadField {
+        name: "fuel",
+        expected: 0,
+        ticket: "T-680",
+        why: "clean",
+    },
+    // `lock`/`ammo` word-boundary identifiers strip to 0 in the mod tree (the earlier raw hits were
+    // substrings / string literals like item.kind == "ammo" in the Workbench registry scanner).
+    UnreadField {
+        name: "lock",
+        expected: 0,
+        ticket: "T-680",
+        why: "clean once string literals stripped",
+    },
+    UnreadField {
+        name: "ammo",
+        expected: 0,
+        ticket: "T-680",
+        why: "clean once string literals stripped (kind==\"ammo\" was a string)",
+    },
+    // T-681 — entity states.
+    UnreadField {
+        name: "allowDamage",
+        expected: 0,
+        ticket: "T-681",
+        why: "clean",
+    },
+    UnreadField {
+        name: "showModel",
+        expected: 0,
+        ticket: "T-681",
+        why: "clean",
+    },
+    UnreadField {
+        name: "stamina",
+        expected: 0,
+        ticket: "T-681",
+        why: "clean",
+    },
+    // `health`/`size` strip to 0 (size appeared only in a byte-count comment).
+    UnreadField {
+        name: "health",
+        expected: 0,
+        ticket: "T-681",
+        why: "clean",
+    },
+    UnreadField {
+        name: "size",
+        expected: 0,
+        ticket: "T-681",
+        why: "clean once comments stripped (file-size comment)",
+    },
+    // T-682 — environment fog/wind/viewDistance.
+    UnreadField {
+        name: "fog",
+        expected: 0,
+        ticket: "T-682",
+        why: "clean",
+    },
+    UnreadField {
+        name: "wind",
+        expected: 0,
+        ticket: "T-682",
+        why: "clean once comments stripped",
+    },
+    UnreadField {
+        name: "viewDistance",
+        expected: 0,
+        ticket: "T-682",
+        why: "clean (frontend also refuses to author it — eden_env.rs)",
+    },
+    // T-684 — missionParams[] first-class launch parameters.
+    UnreadField {
+        name: "missionParams",
+        expected: 0,
+        ticket: "T-684",
+        why: "clean",
+    },
+    // T-673 — marker style/area fields.
+    UnreadField {
+        name: "rotationDeg",
+        expected: 0,
+        ticket: "T-673",
+        why: "clean",
+    },
+    UnreadField {
+        name: "brush",
+        expected: 0,
+        ticket: "T-673",
+        why: "clean",
+    },
+    // `area` collides with the loadout-area (`LoadoutArea`) identifier family — not a marker reader.
+    UnreadField {
+        name: "area",
+        expected: 13,
+        ticket: "T-673",
+        why: "loadout-area (worn-garment area) identifiers, unrelated to marker.area geometry",
+    },
+    // T-705 — per-player gadget flags.
+    UnreadField {
+        name: "compass",
+        expected: 0,
+        ticket: "T-705",
+        why: "clean",
+    },
+    UnreadField {
+        name: "watch",
+        expected: 0,
+        ticket: "T-705",
+        why: "clean",
+    },
+    UnreadField {
+        name: "gps",
+        expected: 0,
+        ticket: "T-705",
+        why: "clean",
+    },
+    // `gadgets` is the radio/gadget subsystem's own vocabulary; not a reader of slot.gadgets flags.
+    UnreadField {
+        name: "gadgets",
+        expected: 6,
+        ticket: "T-705",
+        why: "radio/gadget subsystem identifiers, unrelated to the slot.gadgets flag block",
+    },
+    // T-654 — variant conditional-inclusion.
+    UnreadField {
+        name: "variantId",
+        expected: 0,
+        ticket: "T-654",
+        why: "clean",
+    },
+    // T-674 — objective-style slot identity.
+    UnreadField {
+        name: "rank",
+        expected: 0,
+        ticket: "T-674",
+        why: "clean",
+    },
+    UnreadField {
+        name: "stance",
+        expected: 0,
+        ticket: "T-674",
+        why: "clean (word-boundary; the 39-file grep hits were substrings)",
+    },
+    UnreadField {
+        name: "unitName",
+        expected: 0,
+        ticket: "T-674",
+        why: "clean",
+    },
+    UnreadField {
+        name: "leaderSlotId",
+        expected: 0,
+        ticket: "T-674",
+        why: "clean",
+    },
+    // `callsign` is the EXISTING group.callsign wire key (a different field); `tag` is loadout /
+    // spectator tag identifiers. Both are re-checked, not introduced, by T-674's new slot.* keys.
+    UnreadField {
+        name: "callsign",
+        expected: 16,
+        ticket: "T-674",
+        why: "existing group.callsign reader (TBD_MissionLoader/TBD_BriefingData), a different wire key from the new slot.callsign",
+    },
+    UnreadField {
+        name: "tag",
+        expected: 42,
+        ticket: "T-674",
+        why: "loadout/spectator 'tag' identifiers, unrelated to the new slot.tag key",
+    },
+];
+
+/// Strip `//`/`//!` line comments, `/* … */` block comments and the CONTENTS of double-quoted
+/// string literals from EnforceScript source, so an identifier count reflects code, not prose or
+/// data. Deliberately simple (no escaped-quote-in-string edge lawyering) — the corpus is the mod's
+/// own hand-written `.c`, and the count only has to be STABLE and identifier-scoped, not a parser.
+fn strip_enfusion_comments_and_strings(src: &str) -> String {
+    // Block comments first (can span lines).
+    let no_block = regex::Regex::new(r"(?s)/\*.*?\*/")
+        .map(|re| re.replace_all(src, " ").into_owned())
+        .unwrap_or_else(|_| src.to_string());
+    let str_re = regex::Regex::new(r#""(?:\\.|[^"\\])*""#).ok();
+    let mut out = String::with_capacity(no_block.len());
+    for line in no_block.lines() {
+        let code = match line.find("//") {
+            Some(i) => &line[..i],
+            None => line,
+        };
+        let code = match &str_re {
+            Some(re) => re.replace_all(code, "\"\"").into_owned(),
+            None => code.to_string(),
+        };
+        out.push_str(&code);
+        out.push('\n');
+    }
+    out
+}
+
+/// Count whole-word occurrences of `name` as an identifier across every `.c` under `mod_root`,
+/// after stripping comments and string literals. The reader-count of a wire key.
+fn count_mod_readers(mod_root: &Path, name: &str) -> Result<usize> {
+    let re = regex::Regex::new(&format!(r"\b{}\b", regex::escape(name)))?;
+    let mut total = 0usize;
+    for entry in walkdir::WalkDir::new(mod_root)
+        .into_iter()
+        .filter_entry(|e| {
+            !(e.file_type().is_dir()
+                && IGNORE_DIRS.contains(&e.file_name().to_string_lossy().as_ref()))
+        })
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_type().is_file())
+        .filter(|e| e.path().extension().map(|x| x == "c").unwrap_or(false))
+    {
+        let Ok(text) = fs::read_to_string(entry.path()) else {
+            continue;
+        };
+        let stripped = strip_enfusion_comments_and_strings(&text);
+        total += re.find_iter(&stripped).count();
+    }
+    Ok(total)
+}
+
+/// The `UNREAD_WIRE_FIELDS` invariant as a list of failure strings (empty = all fields still unread
+/// at their baseline). Shared by the runtime gate and the unit test so neither can drift from the
+/// other's idea of "unread". `mod_root` is `apps/mod/tbd-framework`.
+fn unread_wire_field_failures(mod_root: &Path) -> Result<Vec<String>> {
+    // A field spelled twice would let one row mask the other; catch the authoring slip here.
+    let mut seen = HashSet::new();
+    let mut out = Vec::new();
+    for f in UNREAD_WIRE_FIELDS {
+        if !seen.insert(f.name) {
+            out.push(format!("{}: duplicated row in UNREAD_WIRE_FIELDS", f.name));
+            continue;
+        }
+        let got = count_mod_readers(mod_root, f.name)?;
+        if got != f.expected {
+            out.push(format!(
+                "'{}' now has {got} mod identifier(s) (baseline {}) — if {} landed the reader, \
+                 DROP the field's \"no reader on any shipped build\" wording in mission.schema.json \
+                 and remove/repin its UNREAD_WIRE_FIELDS row; if this is an unrelated change to the \
+                 pre-existing '{}' identifier, re-pin the baseline here on purpose",
+                f.name, f.expected, f.ticket, f.why
+            ));
+        }
+    }
+    Ok(out)
+}
+
+/// T-706 — the developer-feedback half of the unread-fields gate. The load-bearing half is the
+/// `unread_wire_field_failures` call inside `validate_all()` (run in every slice + wave gate via
+/// `gate_schema`); this proves the mechanism actually FIRES so the assertion is not decorative —
+/// the same non-vacuity discipline the INSTANCE_KINDS lockstep tests use.
+#[cfg(test)]
+mod unread_wire_field_tests {
+    use super::{
+        UNREAD_WIRE_FIELDS, count_mod_readers, repo_root, strip_enfusion_comments_and_strings,
+        unread_wire_field_failures,
+    };
+    use std::fs;
+    use std::path::PathBuf;
+
+    fn mod_root() -> PathBuf {
+        repo_root()
+            .expect("repo root")
+            .join("apps/mod/tbd-framework")
+    }
+
+    /// Green on the live tree: every 1.3 field is still at its baseline. This is the assertion the
+    /// gate makes; if it ever reds here, a reader landed and the schema wording must be updated.
+    #[test]
+    fn all_1_3_fields_are_unread_on_the_live_tree() {
+        let f = unread_wire_field_failures(&mod_root()).expect("scan mod tree");
+        assert!(
+            f.is_empty(),
+            "a 1.3 wire field is no longer unread:\n  {f:#?}"
+        );
+    }
+
+    /// The fire-once proof, MEASURED, not assumed. Drop a synthetic reader of a CLEAN field
+    /// (baseline 0) into a scratch mod tree and confirm the count rises to 1 — i.e. the day T-678
+    /// lands a `combatMode` reader, `unread_wire_field_failures` trips. Without this, "asserts ZERO
+    /// readers" could be a check that never notices a reader at all.
+    #[test]
+    fn unread_gate_fires_when_a_reader_appears() {
+        let dir = std::env::temp_dir().join(format!("t706-unread-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        let scripts = dir.join("Scripts/Game/TBD/Gamemode");
+        fs::create_dir_all(&scripts).expect("scratch mod tree");
+        // A plausible future reader: a struct member bound by JsonLoadContext (maps by name).
+        fs::write(
+            scripts.join("TBD_FutureGroupReader.c"),
+            "class TBD_FutureGroupStruct { EAICombatType combatMode; }\n",
+        )
+        .expect("write reader");
+
+        assert_eq!(
+            count_mod_readers(&dir, "combatMode").expect("count"),
+            1,
+            "a combatMode identifier in a .c file must be counted as a reader"
+        );
+        let f = unread_wire_field_failures(&dir).expect("scan scratch");
+        assert!(
+            f.iter()
+                .any(|m| m.contains("'combatMode'") && m.contains("T-678")),
+            "the gate must fail and name combatMode + its ticket once a reader appears; got {f:#?}"
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// The stripper must ignore the field name inside a `//` comment and inside a `""` string, or
+    /// prose like the word "behaviour" would count as a reader (MEASURED before stripping: it did).
+    #[test]
+    fn comments_and_string_literals_do_not_count_as_readers() {
+        let dir = std::env::temp_dir().join(format!("t706-strip-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).expect("scratch");
+        fs::write(
+            dir.join("TBD_ProseOnly.c"),
+            "//! combatMode is discussed here in prose only.\n\
+             void F() { string s = \"combatMode goes on the wire\"; /* combatMode again */ }\n",
+        )
+        .expect("write prose");
+        assert_eq!(
+            count_mod_readers(&dir, "combatMode").expect("count"),
+            0,
+            "combatMode only in a comment and a string literal must count as ZERO readers"
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    /// A direct unit test of the stripper on all three shapes at once.
+    #[test]
+    fn stripper_removes_line_block_and_string_bodies() {
+        let src = "a //b\nc /* d */ e\nf \"g h\" i\n";
+        let out = strip_enfusion_comments_and_strings(src);
+        for gone in ["b", "d", "g", "h"] {
+            assert!(
+                !out.contains(gone),
+                "{gone} should be stripped from {out:?}"
+            );
+        }
+        for kept in ["a", "c", "e", "f", "i"] {
+            assert!(out.contains(kept), "{kept} should survive in {out:?}");
+        }
+    }
+
+    // Every collision baseline (>0) must name the pre-existing identifier it is pinning, so a future
+    /// reader cannot silently re-use a fat baseline as cover. A `clean`/`stripped`/`substring` note
+    /// is only allowed at baseline 0.
+    #[test]
+    fn nonzero_baselines_explain_the_pre_existing_identifier() {
+        for f in UNREAD_WIRE_FIELDS {
+            if f.expected > 0 {
+                assert!(
+                    !f.why.is_empty()
+                        && (f.why.contains("unrelated")
+                            || f.why.contains("different")
+                            || f.why.contains("existing")),
+                    "'{}' baseline {} must explain the unrelated identifier it pins (got: {:?})",
+                    f.name,
+                    f.expected,
+                    f.why
+                );
+            }
+        }
+    }
+}
+
 /* ─────────────────────────── validate (T-165.2 — the validate.mjs core) ─────────────────────────── */
 
 /// The full contract-validation suite (port of `packages/tbd-schema/scripts/validate.mjs`):
@@ -1999,6 +2549,28 @@ pub fn validate_all() -> Result<u8> {
     let missions_dir = sroot.join("golden-missions");
     for f in sorted_json_files(&missions_dir)? {
         check(&f, &v_mission, &read_json(&missions_dir.join(&f))?);
+    }
+
+    // ── T-706 — schemaVersion 1.3 wire fields must stay UNREAD until their reader lands ───────
+    // The ticket's own acceptance: every field the 1.3 pass added is on the wire and read by
+    // NOTHING mod-side; when a reader lands under its owning ticket, this trips and forces the
+    // "no reader on any shipped build" wording to come out. See UNREAD_WIRE_FIELDS.
+    println!("T-706 unread 1.3 wire fields (each must stay reader-free until its ticket lands):");
+    {
+        let mod_root = root.join("apps/mod/tbd-framework");
+        let bad = unread_wire_field_failures(&mod_root)?;
+        if bad.is_empty() {
+            println!(
+                "  PASS  {} field(s) still unread at baseline (readers land per owning ticket)",
+                UNREAD_WIRE_FIELDS.len()
+            );
+        } else {
+            failures.set(failures.get() + 1);
+            println!("  FAIL  a 1.3 wire field gained a reader — update mission.schema.json");
+            for b in &bad {
+                println!("        {b}");
+            }
+        }
     }
 
     // ── T-450 — MISSION_FILE_MAX_BYTES pin (schema keyword ↔ mod constant ↔ goldens) ─────────
