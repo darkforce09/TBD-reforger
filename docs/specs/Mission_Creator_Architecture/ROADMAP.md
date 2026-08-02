@@ -15,12 +15,12 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-631** — The boot overlay cannot fail (queued)
-- **T-076** — Vehicle crew authoring UI — the factory-safe half of T-076 (queued)
-- **T-641** — Spot heights — Eden-parity screen-space label density (queued)
 - **T-635** — Debug HUD overlaps the toolbelt readouts (queued)
 - **T-666** — Outliner layer authoring — create, rename, delete, reparent, refile (queued)
 - **T-656** — Validation rule engine — the four primitives + per-rule fail-on-demand tests (queued)
+- **T-636** — Full-width status bar — stop the toolbelt conflating tools with telemetry (queued)
+- **T-646** — Asset browser: class: search, side/faction submode, crew toggle (queued)
+- **T-683** — Default-override instrumentation: which mission defaults every author changes (queued)
 <!-- ticket-sync:next:end -->
 
 ---

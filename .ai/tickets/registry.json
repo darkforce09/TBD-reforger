@@ -1687,7 +1687,7 @@
     "ui",
     "state"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3880,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -1695,7 +1695,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 3 (wave_plan.tsv row 103)",
+   "notes": "editor-UI program wave 3 (wave_plan.tsv row 103) — SHIPPED wave 103 (editor factory), slice 434d05a4; verifier wave103.md (1 BLOCKER fixed in-wave, 2 MAJOR deferred: T-717/T-718)",
    "depends_on": [
     "T-661"
    ],
@@ -16091,7 +16091,7 @@
     "ui",
     "mc-integrity"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3870,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16099,7 +16099,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 3 (wave_plan.tsv row 103)",
+   "notes": "editor-UI program wave 3 (wave_plan.tsv row 103) — SHIPPED wave 103 (editor factory), slice 4a605031; verifier wave103.md (1 BLOCKER fixed in-wave, 2 MAJOR deferred: T-717/T-718)",
    "depends_on": [
     "T-661"
    ]
@@ -16115,7 +16115,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3890,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16123,7 +16123,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 3 (wave_plan.tsv row 103)",
+   "notes": "editor-UI program wave 3 (wave_plan.tsv row 103) — SHIPPED wave 103 (editor factory), slice 9700f170; verifier wave103.md (1 BLOCKER fixed in-wave, 2 MAJOR deferred: T-717/T-718)",
    "depends_on": [
     "T-661"
    ]
@@ -17952,6 +17952,46 @@
    "title": "Context menu honesty: Go Here goes elsewhere; enabled rows dead on multi-select; keydown hijacks fields",
    "summary": "Three defects in T-664's shipped menu, one honesty rule: an enabled row must do what it says on the target it names. (1) Empty-ground 'Go Here' dispatches center_on_selection() — with a selection elsewhere the camera jumps AWAY from the clicked point; with none, enabled no-op. The variant doc claims a set_view-to-clicked-point wiring that does not exist. Wire the event pixel through resolve_target into a real set-view. (2) 'Attributes...' and 'Edit Loadout...' are enabled for multi-selection targets but open_attributes/open_arsenal silently no-op at len()>1 — disable-with-reason or make them act (ATTR-MULTI-001 is the extender; coordinate with T-649 wave 112). (3) The menu's window keydown lacks the in_editable_field guard T-662 established — with a dock field focused, Arrows/Enter hijack into menu nav and Enter fires a row. Related, filed for T-082's brief (wave 113): refused locked-slot Transform edits display as accepted in the Attributes modal (one-shot snapshot, no re-read, no disabled affordance) — wave102.md F-7. Diagnosis: editor_verify/wave102.md F-4, F-5, F-6.",
    "notes": "filed by wave-102 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-717",
+   "order": 4310,
+   "title": "Continue-without-map before hydrate resurrects the boot overlay forever",
+   "summary": "T-631's Continue button writes boot.set(Ready) directly (mission_editor.rs:2375) — the one write that bypasses the sticky advance() fold, and Ready is not sticky. Engine failure is fast; if the operator clicks Continue while the server hydrate is still in flight, the doc task's later advance(LoadingMap) (:1241) brings the spinner back permanently: world_ready (:1384) sits in the Ok-arm and can never fire, and the bar state has no buttons. Editor stays clickable underneath (bar is pointer-events-none) but is occluded forever — the misleading-event class T-631 exists to ban, re-opened via its own escape hatch. Fix: make Continue arm a sticky ContinuedWithoutMap state (or advance() treats a Ready that follows Failed as sticky) so later LoadingMap/Ready writes fold to no-ops; test the race explicitly (Failed -> Continue -> LoadingMap arrives -> overlay stays down). Diagnosis: editor_verify/wave103.md MAJOR-1.",
+   "notes": "filed by wave-103 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-718",
+   "order": 4311,
+   "title": "Crew residue: scrub seats on slot removal; seat-picker honesty; undo-step and Alt comment falsities",
+   "summary": "T-076 residue, one ticket. (1) MAJOR: remove_slot/remove_slots scrub no crew seats — a deleted soldier's seat assignment dangles, persists through small_maps_json -> compile into SAVES, while the panel <select> shows '— empty —' (UI vacant, doc seated). Scrub crew maps in the removal ops (same tolerant-Any idiom as the wave-103 blocker fix) + regression test through remove. (2) Seat picker offers all placed slots but never flags 'seated elsewhere' — the eviction is expressible but invisible; add the flag text. (3) editor_ops.rs:1755 comment 'Same undo step as the place' is false — capture_timeout=0 makes unmanned place 3 undo steps (Ctrl+Z re-mans the vehicle); either group the transaction or fix the comment to the truth. (4) editor_ops.rs:141 '(or holds Alt)' describes an affordance that does not exist on the place path — implement (T-647 wave 106 owns Alt-empty-vehicle placement; coordinate, don't duplicate) or delete the clause. Diagnosis: editor_verify/wave103.md MAJOR-2, MINOR-1, MINOR-2, NOTE-4.",
+   "notes": "filed by wave-103 adversarial verifier (editor factory)"
   }
  ]
 }

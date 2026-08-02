@@ -25,7 +25,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 100 | 83 | T-661 | PASS 30/30 (run 3; runs 1–2 red on non-ticket causes, see Incidents) | 0B/0M/5m/5N | SHIPPED — split proven pure (101 symbols 1:1, 419/419 tests); + capture harness ported to Rust (43a3f170); T-707..T-710 filed |
 | 101 | 84 | T-639 T-662 T-663 | PASS (run 1) | 0B/1M/3m/5N | SHIPPED — contour band + RMB/Backspace freed + dead DTO cut; T-711 (doc sync) T-712 (annotations) filed |
 | 102 | 85 | T-640 T-664 T-665 | PASS (run 1) | 0B/4M/3m/10N | SHIPPED — two-tone contours + context menu + layer flags; 4 MAJOR deferred: T-713 (crater rings), T-714 (re-march hitch), T-715 (dock vanish), T-716 (menu honesty) |
-| 103 | 86 | T-076 T-631 T-641 | — | — | pending |
+| 103 | 86 | T-076 T-631 T-641 | PASS (runs 1+2; re-run over blocker fix) | 1B/2M/2m/4N → fix CLEARED | SHIPPED — crew UI + boot failure path + spot heights; BLOCKER (hydrated-crew wipe) fixed in-wave 5f92cc4a; T-717 T-718 deferred |
 | 104 | 87 | T-635 T-656 T-666 | — | — | pending |
 | 105 | 88 | T-636 T-646 T-683 | — | — | pending |
 | 106 | 89 | T-647 T-667 T-691 | — | — | pending |
