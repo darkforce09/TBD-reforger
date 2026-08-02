@@ -40,6 +40,14 @@ pub enum LaneRole {
     WorldRoadLabels,
     /// T-152.8 town name labels (above road + height labels, below grid).
     WorldTownLabels,
+    /// T-644 — Line-of-Sight viewshed wash: a per-cell visible/hidden RGBA raster over the world
+    /// rect, uploaded as ONE texture (the forest-density lane's exact shape — own texture + a
+    /// 1-instance world-rect quad, NOT the 2-slot `pending` basemap bucket). Sits ABOVE all world
+    /// geometry + labels (so the desaturated dead-ground wash composites over contours / landcover /
+    /// forest — the T-640 contour hairlines show through its α0.38) and BELOW `Grid` + every mission
+    /// lane (so the wash never dims the grid ticks or occludes a slot marker / zone ring). Session-
+    /// only, cleared on tool/sub-mode switch; never persisted.
+    Viewshed,
     /// T-592 — mission zone rings (under every other mission lane).
     ///
     /// **One lane carries both zone shapes.** A circle and a polygon differ only in how the
@@ -100,19 +108,22 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldLabels => 18,
         LaneRole::WorldRoadLabels => 19,
         LaneRole::WorldTownLabels => 20,
-        LaneRole::Grid => 21,
-        // T-592: zones open the mission block; everything below shifted +1. These integers are a
-        // pure in-memory sort key for `upsert_lane` — never serialized, never persisted — so a
-        // uniform shift is safe exactly as long as the `lane_order_pins` relations still hold.
-        LaneRole::MissionZones => 22,
-        LaneRole::SquadLinks => 23,
-        LaneRole::MissionVehicles => 24,
-        LaneRole::Slots => 25,
-        LaneRole::SlotPlacePreview => 26,
-        LaneRole::SlotDrag => 27,
-        LaneRole::Clusters => 28,
-        LaneRole::Marquee => 29,
-        LaneRole::MarqueeOutline => 30,
+        // T-644: the viewshed wash sits above ALL world chrome + labels, below the grid + mission
+        // lanes. Inserting here shifts the grid + mission block +1 (the SAME sanctioned uniform shift
+        // T-592 did for zones) — these integers are a pure in-memory sort key for `upsert_lane`,
+        // never serialized/persisted, so the shift is safe exactly as long as the `lane_order_pins`
+        // relations below still hold (they pin RELATIONS, e.g. Viewshed < Grid < Slots, not values).
+        LaneRole::Viewshed => 21,
+        LaneRole::Grid => 22,
+        LaneRole::MissionZones => 23,
+        LaneRole::SquadLinks => 24,
+        LaneRole::MissionVehicles => 25,
+        LaneRole::Slots => 26,
+        LaneRole::SlotPlacePreview => 27,
+        LaneRole::SlotDrag => 28,
+        LaneRole::Clusters => 29,
+        LaneRole::Marquee => 30,
+        LaneRole::MarqueeOutline => 31,
     }
 }
 
@@ -121,7 +132,7 @@ pub fn lane_order(role: LaneRole) -> u8 {
 /// tag-set assertion then fails until the variant is listed here too. Tests that must consider
 /// *every* lane (e.g. `marquee_lanes_are_topmost_fill_then_border`) derive from this rather than
 /// a hand-kept copy — a hand-kept copy silently stops examining each new lane.
-pub const ALL_LANES: [LaneRole; 31] = [
+pub const ALL_LANES: [LaneRole; 32] = [
     LaneRole::Stress,
     LaneRole::Calibration,
     LaneRole::Satellite,
@@ -143,6 +154,7 @@ pub const ALL_LANES: [LaneRole; 31] = [
     LaneRole::WorldLabels,
     LaneRole::WorldRoadLabels,
     LaneRole::WorldTownLabels,
+    LaneRole::Viewshed,
     LaneRole::Grid,
     LaneRole::MissionZones,
     LaneRole::SquadLinks,
@@ -271,6 +283,10 @@ pub fn lane_role_to_u32(role: LaneRole) -> Option<u32> {
         | LaneRole::WorldLabels
         | LaneRole::WorldRoadLabels
         | LaneRole::WorldTownLabels
+        // T-644: the viewshed lane is fed by its OWN typed engine API (`viewshed_upload` /
+        // `viewshed_clear`, the forest-density shape), not the generic vector-lane upload-id path, so
+        // it has no `role_id` — exactly like `ForestFill`'s companion typed lanes and the world lanes.
+        | LaneRole::Viewshed
         | LaneRole::Grid
         | LaneRole::MissionVehicles
         | LaneRole::Slots
@@ -553,25 +569,48 @@ mod lane_order_pins {
                 L::WorldLabels => 18,
                 L::WorldRoadLabels => 19,
                 L::WorldTownLabels => 20,
-                L::Grid => 21,
-                L::MissionZones => 22,
-                L::SquadLinks => 23,
-                L::MissionVehicles => 24,
-                L::Slots => 25,
-                L::SlotPlacePreview => 26,
-                L::SlotDrag => 27,
-                L::Clusters => 28,
-                L::Marquee => 29,
-                L::MarqueeOutline => 30,
+                L::Viewshed => 21,
+                L::Grid => 22,
+                L::MissionZones => 23,
+                L::SquadLinks => 24,
+                L::MissionVehicles => 25,
+                L::Slots => 26,
+                L::SlotPlacePreview => 27,
+                L::SlotDrag => 28,
+                L::Clusters => 29,
+                L::Marquee => 30,
+                L::MarqueeOutline => 31,
             }
         }
         let mut tags: Vec<u8> = ALL_LANES.into_iter().map(tag).collect();
         tags.sort_unstable();
-        let expected: Vec<u8> = (0..31).collect();
+        let expected: Vec<u8> = (0..32).collect();
         assert_eq!(
             tags, expected,
             "ALL_LANES must list every variant exactly once"
         );
+    }
+
+    /// T-644: the viewshed wash sits above ALL world chrome + labels (so a dead-ground wash
+    /// composites over contours / forest / roads / town labels) but below the grid and every mission
+    /// lane (so it never dims a grid tick or occludes a slot / zone). The RELATIONS the placement
+    /// rests on — pinned so a future renumber that breaks them fails here, not on-screen.
+    #[test]
+    fn viewshed_sits_above_world_chrome_below_grid_and_mission() {
+        // Above every world geometry + label lane.
+        assert!(lane_order(L::Viewshed) > lane_order(L::Contours));
+        assert!(lane_order(L::Viewshed) > lane_order(L::Landcover));
+        assert!(lane_order(L::Viewshed) > lane_order(L::ForestFill));
+        assert!(lane_order(L::Viewshed) > lane_order(L::ForestOutline));
+        assert!(lane_order(L::Viewshed) > lane_order(L::Roads));
+        assert!(lane_order(L::Viewshed) > lane_order(L::WorldTrees));
+        assert!(lane_order(L::Viewshed) > lane_order(L::WorldTownLabels));
+        // Below the grid + every mission lane (never occludes markers/zones, never dims grid ticks).
+        assert!(lane_order(L::Viewshed) < lane_order(L::Grid));
+        assert!(lane_order(L::Viewshed) < lane_order(L::MissionZones));
+        assert!(lane_order(L::Viewshed) < lane_order(L::SquadLinks));
+        assert!(lane_order(L::Viewshed) < lane_order(L::Slots));
+        assert!(lane_order(L::Viewshed) < lane_order(L::Marquee));
     }
 
     /// T-592: zone rings open the mission block — above the grid (mission data outranks world

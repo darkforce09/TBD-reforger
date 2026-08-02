@@ -52,7 +52,7 @@
 
 use leptos::prelude::*;
 
-use map_engine_core::dem::sample::ProfileSample;
+use map_engine_core::dem::sample::{ProfileSample, Viewshed, Visibility};
 
 // ── Decision 1 — eye-height constants (named, adjustable later) ──────────────────────────────────
 
@@ -70,6 +70,89 @@ pub const EYE_HEIGHT_TARGET_M: f64 = 1.8;
 /// touches the line (float noise, or a ridge exactly at eye level) reads CLEAR, not blocked — so a
 /// hair of sampling jitter never flips a clear sight to blocked.
 pub const OCCLUSION_EPS_M: f64 = 0.01;
+
+// ── T-644 — the viewshed COLOUR LANGUAGE (the hard part; palette + written rationale) ────────────
+//
+// A viewshed wash shares the SAME map surface as two lanes that were already tuned for legibility on
+// this basemap, and it must not fight either:
+//
+//   * T-640's TWO-TONE BROWN CONTOURS (`world_assets/dem_vectors.rs`). Cited verbatim so this
+//     rationale is checkable, not vibes: the base contour is `CONTOUR_RGBA = [188, 150, 100, 235]`
+//     and the per-peak summit ring `CONTOUR_SUMMIT_RGBA = [174, 145, 123, 235]`. Both are WARM
+//     (r > g > b), 1 px, and drawn at α ≈ 0.92 (235/255) — effectively opaque hairlines that carry
+//     the terrain's shape.
+//   * the LANDCOVER / forest-density washes, which are GREENS and greys over the same hillshade.
+//
+// THE CONVENTIONAL ARMY ANSWER, and the one this ticket adopts: shade what the observer CANNOT see;
+// leave what it CAN see as the untouched map. "Dead ground" is the thing a planner scans for, so the
+// ink goes on the HIDDEN cells and VISIBLE cells stay pristine (no green/brown is added over ground
+// the operator can already read). That immediately settles the hue question — the wash must be a
+// NEUTRAL DESATURATED DARK, not a colour, so it reads as "shadow / no-data" rather than as a third
+// thematic layer competing with the warm contours and the green landcover.
+//
+//   HIDDEN  = a desaturated dark wash at LOW alpha. Near-neutral (a hair of cool blue so it never
+//             reads as "brown contour" and never as "green forest"), dark, and TRANSLUCENT so the
+//             hillshade relief + the brown contour hairlines show straight THROUGH it. Alpha is the
+//             whole game: too high and the α0.92 contours drown; too low and the dead-ground read is
+//             lost. Chosen α = 0.38. Rationale for that number, against the cited contour values: a
+//             1 px contour at α0.92 composited UNDER a full-cell wash at α0.38 keeps
+//             `0.62 × 235 ≈ 146` of its 235 source alpha showing through — the contour stays a clearly
+//             visible hairline (well above the ~α0.3/​luma-155 floor T-175 A3 set for contour
+//             legibility on both basemaps), while the wash is still solid enough over a multi-cell
+//             dead-ground pocket to read as a distinct dark region. A HIDDEN cell darkens the map by
+//             ~38%; a lone contour pixel crossing it dips only where it crosses, so the line reads
+//             continuous.
+//   VISIBLE = the untouched map — α 0 (fully transparent). No ink at all: the conventional answer,
+//             and it guarantees zero fight with contours/landcover on the ground that matters most.
+//   UNKNOWN = off-coverage (constraint 1). Rendered as HIDDEN but a shade LIGHTER (α 0.22) so a
+//             coverage hole is visually distinct from proven dead ground without ever masquerading as
+//             visible — an honest "can't tell", never a fake CLEAR (the em-dash policy, in pixels).
+//
+// The wash is a per-cell RGBA raster uploaded as ONE texture over the world rect (the engine's
+// texture-lane shape), so it is a single translucent quad the GPU blends over the map in one draw —
+// it never touches the contour or landcover geometry, only composites above them.
+
+/// HIDDEN-cell wash colour, straight RGBA8 `[r, g, b, a]`. A desaturated dark near-neutral (faint
+/// cool cast, `b > r` by 12 so it can never be mistaken for the warm brown contour) at α 0.38 — dark
+/// enough to read as dead ground, translucent enough that the α0.92 T-640 contours + the hillshade
+/// show through (see the module rationale for the alpha derivation against `CONTOUR_RGBA`).
+pub const VIEWSHED_HIDDEN_RGBA: [u8; 4] = [24, 26, 36, 97]; // 97/255 ≈ 0.38
+
+/// VISIBLE-cell colour: fully transparent — the untouched map (the conventional army answer). No ink
+/// on ground the observer can see, so the wash never competes with contours/landcover where it matters.
+pub const VIEWSHED_VISIBLE_RGBA: [u8; 4] = [0, 0, 0, 0];
+
+/// UNKNOWN-cell (off-coverage) colour: the same neutral dark as HIDDEN but a shade LIGHTER (α 0.22),
+/// so a coverage hole is distinct from proven dead ground yet still clearly NOT visible — the honest
+/// "can't tell" (constraint 1: off-coverage renders hidden-ish, never fake-visible).
+pub const VIEWSHED_UNKNOWN_RGBA: [u8; 4] = [24, 26, 36, 56]; // 56/255 ≈ 0.22
+
+/// Map one [`Visibility`] class to its wash RGBA8 (the palette above). Pure + native-tested so the
+/// colour language is proved without a GPU: Visible → transparent, Hidden → the dark wash, Unknown →
+/// the lighter dark wash.
+#[must_use]
+pub fn viewshed_cell_rgba(v: Visibility) -> [u8; 4] {
+    match v {
+        Visibility::Visible => VIEWSHED_VISIBLE_RGBA,
+        Visibility::Hidden => VIEWSHED_HIDDEN_RGBA,
+        Visibility::Unknown => VIEWSHED_UNKNOWN_RGBA,
+    }
+}
+
+/// Encode a computed [`Viewshed`] into a row-major RGBA8 byte buffer (`cols * rows * 4`) via
+/// [`viewshed_cell_rgba`], ready to upload as one texture over the viewshed's world rect. Pure (no
+/// GPU, no wasm) so the encoding is native-testable; the wasm host hands the bytes + the world rect
+/// straight to the engine's viewshed texture lane. Row 0 is the raster's `min_y` edge (the engine's
+/// `world_rect_rel` + its `flip_y:false` upload convention put world-min at texture-row-0, matching
+/// the basemap/forest-density lanes).
+#[must_use]
+pub fn encode_viewshed_rgba(vs: &Viewshed) -> Vec<u8> {
+    let mut out = Vec::with_capacity(vs.cols * vs.rows * 4);
+    for cell in &vs.cells {
+        out.extend_from_slice(&viewshed_cell_rgba(*cell));
+    }
+    out
+}
 
 // ── Pure occlusion core (native-tested) ─────────────────────────────────────────────────────────
 
@@ -309,6 +392,113 @@ impl LosState {
     }
 }
 
+// ── T-644 — the LoS tool's SECOND MODE: viewshed ─────────────────────────────────────────────────
+//
+// THE UX DECISION (the ticket left it open — "the LoS button gains a mode toggle or long-press/
+// second-click semantics; pick clean UX and document"). Chosen: the ONE LoS button (`visibility`)
+// carries a SUB-MODE that toggles on repeated click of the button — Ray (T-643 point-to-point) →
+// Viewshed (T-644 disc) → Ray → … The button label/icon reflects the live sub-mode so the operator
+// always knows which they're in, and the map cursor semantics change with it:
+//   * Ray sub-mode      — TWO clicks (observer, target) → a clear/blocked verdict + profile panel.
+//   * Viewshed sub-mode — ONE click (the observer) → the whole disc is shaded (visible/hidden wash).
+// Why a sub-mode on one button rather than a fourth toolbar button: the ticket says "second mode on
+// the same tool surface", and the two are the SAME question ("what can be seen from here") at two
+// scales — one ray vs the whole horizon — so they belong on one control. Switching sub-mode CLEARS
+// the other sub-mode's overlay (a placed ray is dropped when you switch to viewshed and vice-versa),
+// exactly as switching TOOLS clears the inactive tool.
+
+/// The LoS tool's sub-mode (T-644). `Ray` is the T-643 point-to-point sight line; `Viewshed` is the
+/// T-644 one-observer disc raster. Toggled by re-clicking the LoS toolbar button. A shared,
+/// native-testable enum (the toolbar reads it; the pointer commit branches on it), kept here beside
+/// the states it selects between.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum LosMode {
+    /// T-643 — click observer, click target → clear/blocked + profile.
+    #[default]
+    Ray,
+    /// T-644 — click one observer → shade the whole visible/hidden disc.
+    Viewshed,
+}
+
+impl LosMode {
+    /// The next sub-mode in the toggle cycle (Ray ⇆ Viewshed). Re-clicking the LoS button advances
+    /// this while the LoS tool is already active; the FIRST click (from another tool) just activates
+    /// LoS without advancing, so a fresh switch to LoS always lands on the mode it last showed.
+    #[must_use]
+    pub fn toggled(self) -> Self {
+        match self {
+            LosMode::Ray => LosMode::Viewshed,
+            LosMode::Viewshed => LosMode::Ray,
+        }
+    }
+
+    /// True for the viewshed sub-mode (the one-click disc).
+    #[must_use]
+    pub fn is_viewshed(self) -> bool {
+        matches!(self, LosMode::Viewshed)
+    }
+}
+
+/// The viewshed sub-mode's session-local overlay state (Decision 4 — NOT the Y.Doc, exactly like the
+/// ruler chain + the LoS ray). A single placed observer and the raster computed from it. The raster
+/// is stored (unlike the ray's derived-every-frame verdict) because the compute runs ONCE per
+/// placement (the ~36 ms radial march is not a per-frame cost — see `compute_viewshed`); a pan
+/// re-projects the SAME raster's world rect, it does not recompute. Re-placing (a new observer click)
+/// replaces both the observer and the raster.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ViewshedState {
+    /// The placed observer world point + its click-time ground Z, or `None` if none placed.
+    pub observer: Option<(f64, f64, Option<f64>)>,
+    /// The computed raster for the placed observer, or `None` until the host computes it. Held so the
+    /// overlay/engine can re-project on pan without recomputing.
+    pub raster: Option<Viewshed>,
+}
+
+impl ViewshedState {
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// True when there is nothing placed or drawn.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.observer.is_none() && self.raster.is_none()
+    }
+
+    /// Place a new observer at world `(x, y, z)` — REPLACES any previous observer + raster (a viewshed
+    /// is a single disc, not a chain). The raster is left `None` for the host to fill via
+    /// [`compute_viewshed`](map_engine_core::dem::sample::compute_viewshed); returns nothing because,
+    /// unlike the ray, there is no "completed on the second click" event — one click IS the placement.
+    pub fn place(&mut self, x: f64, y: f64, z: Option<f64>) {
+        self.observer = Some((x, y, z));
+        self.raster = None;
+    }
+
+    /// Store the host-computed raster for the current observer.
+    pub fn set_raster(&mut self, vs: Viewshed) {
+        self.raster = Some(vs);
+    }
+
+    /// Escape / dismissal — one step (there is no in-progress half-placement to abandon first, unlike
+    /// the ray's two-click capture): clear the placed observer + raster. Returns whether it acted so
+    /// the host `preventDefault`s only on a real dismissal.
+    pub fn escape(&mut self) -> bool {
+        if self.is_empty() {
+            false
+        } else {
+            self.clear();
+            true
+        }
+    }
+
+    /// Clear everything (tool/sub-mode switch away). Idempotent.
+    pub fn clear(&mut self) {
+        self.observer = None;
+        self.raster = None;
+    }
+}
+
 // ── The DOM/SVG overlay projection helpers (native-tested; the overlay draws from these) ─────────
 //
 // RENDERING LANE: a LoS shot is TWO points + a small profile panel — a GPU lane would be far more
@@ -544,6 +734,158 @@ pub fn register_los_sampler(sampler: std::rc::Rc<dyn Fn(f64, f64) -> Option<f64>
 #[must_use]
 pub fn read_registered_sampler() -> Option<std::rc::Rc<dyn Fn(f64, f64) -> Option<f64>>> {
     LOS_SAMPLER.with(|c| c.borrow().clone())
+}
+
+// ── T-644 — the viewshed sub-mode's leaked state registry (peer of `register_los_state`) ─────────
+
+thread_local! {
+    #[allow(clippy::type_complexity)]
+    static VIEWSHED_STATE: std::cell::RefCell<
+        Option<std::rc::Rc<std::cell::RefCell<ViewshedState>>>,
+    > = const { std::cell::RefCell::new(None) };
+}
+
+/// Register the host's leaked viewshed state so the overlay/engine bridge can read it. Called once at
+/// mount by `mission_editor`, beside `register_los_state`.
+pub fn register_viewshed_state(state: std::rc::Rc<std::cell::RefCell<ViewshedState>>) {
+    VIEWSHED_STATE.with(|c| *c.borrow_mut() = Some(state));
+}
+
+/// A snapshot clone of the registered viewshed state (empty if none registered — native/pre-mount).
+#[must_use]
+pub fn read_registered_viewshed() -> ViewshedState {
+    VIEWSHED_STATE.with(|c| {
+        c.borrow()
+            .as_ref()
+            .map(|rc| rc.borrow().clone())
+            .unwrap_or_default()
+    })
+}
+
+/// T-644 default sight radius (metres), re-exported at the tool surface so the toolbar/overlay and
+/// the compute agree on one number. Mirrors the core's `VIEWSHED_DEFAULT_RADIUS_M`.
+pub const VIEWSHED_RADIUS_M: f64 = map_engine_core::dem::sample::VIEWSHED_DEFAULT_RADIUS_M;
+
+/// Compute the viewshed raster for an observer at world `(x, y)` using the registered DEM sampler
+/// (the SAME 8 m grid the ruler Z / LoS profile read). Returns `None` when no sampler is registered
+/// (native / pre-mount). The observer's ground elevation is read from the sampler at the observer
+/// point (the wave-109 anchor — the eye is anchored at the OBSERVER's true elevation, constraint 1);
+/// if that point is off coverage the raster is all-`Unknown` (never fake-visible). Radius is
+/// [`VIEWSHED_RADIUS_M`], cells the 8 m grid spacing ([`PROFILE_STEP_M`]).
+///
+/// This is the ONE seam the wasm host calls on observer placement; it wraps the pure
+/// [`compute_viewshed`](map_engine_core::dem::sample::compute_viewshed) with the registered sampler
+/// and the Everon manifest, so the host holds no DEM types itself (mirrors `build_profile`).
+#[must_use]
+pub fn compute_viewshed_for(obs_x: f64, obs_y: f64) -> Option<Viewshed> {
+    let sampler = read_registered_sampler()?;
+    let observer_ground_m = sampler(obs_x, obs_y);
+    let manifest = everon_manifest();
+    let params = map_engine_core::dem::sample::ViewshedParams {
+        obs_x,
+        obs_y,
+        observer_ground_m,
+        eye_height_m: EYE_HEIGHT_OBSERVER_M,
+        radius_m: VIEWSHED_RADIUS_M,
+        cell_m: PROFILE_STEP_M,
+    };
+    Some(map_engine_core::dem::sample::compute_viewshed(
+        &manifest,
+        params,
+        move |x, y| sampler(x, y),
+    ))
+}
+
+/// The world rect + RGBA bytes for the engine's viewshed texture lane
+/// ([`RenderEngine::viewshed_upload`](map_engine_render)). Returned by [`viewshed_texture_payload`]
+/// so the (host-owned) wiring is a mechanical `engine.viewshed_upload(rect…, w, h, &rgba, stride)`
+/// with no DEM/encode logic of its own. `stride_bytes` is `rgba.len() / rows` — the 256-aligned
+/// `bytes_per_row` the raster was packed to (see `pack_rgba_256`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct ViewshedTexture {
+    pub min_x: f64,
+    pub min_y: f64,
+    pub max_x: f64,
+    pub max_y: f64,
+    pub tex_w: u32,
+    pub tex_h: u32,
+    /// Row-padded RGBA8 (`stride_bytes * tex_h` bytes).
+    pub rgba: Vec<u8>,
+    /// 256-aligned bytes-per-row (the engine's `write_texture` copy requirement).
+    pub stride_bytes: u32,
+}
+
+/// Row-pad a tightly-packed `cols*rows*4` RGBA buffer to a 256-aligned `bytes_per_row` (the WebGPU
+/// `write_texture` copy requirement the engine's `viewshed_upload` enforces). Returns
+/// `(padded_bytes, stride)`. Pure + native-tested. A width already 256-aligned (`cols*4 % 256 == 0`)
+/// is copied through unchanged; otherwise each row is right-padded with zero bytes (fully transparent
+/// texels — they fall outside the drawn cells anyway since the quad UVs span only `cols`).
+#[must_use]
+pub fn pack_rgba_256(tight: &[u8], cols: usize, rows: usize) -> (Vec<u8>, u32) {
+    let row_bytes = cols * 4;
+    let stride = row_bytes.div_ceil(256) * 256;
+    if stride == row_bytes {
+        return (tight.to_vec(), stride as u32);
+    }
+    let mut out = vec![0u8; stride * rows];
+    for r in 0..rows {
+        let src = &tight[r * row_bytes..(r + 1) * row_bytes];
+        out[r * stride..r * stride + row_bytes].copy_from_slice(src);
+    }
+    (out, stride as u32)
+}
+
+/// Build the engine-ready viewshed texture payload from a computed raster: encode via the palette
+/// ([`encode_viewshed_rgba`]) then row-pad to 256 ([`pack_rgba_256`]). The one call the host makes
+/// after [`compute_viewshed_for`] to get bytes it can hand straight to `engine.viewshed_upload`.
+#[must_use]
+pub fn viewshed_texture_payload(vs: &Viewshed) -> ViewshedTexture {
+    let tight = encode_viewshed_rgba(vs);
+    let (rgba, stride_bytes) = pack_rgba_256(&tight, vs.cols, vs.rows);
+    ViewshedTexture {
+        min_x: vs.min_x,
+        min_y: vs.min_y,
+        max_x: vs.max_x,
+        max_y: vs.max_y,
+        tex_w: vs.cols as u32,
+        tex_h: vs.rows as u32,
+        rgba,
+        stride_bytes,
+    }
+}
+
+/// HOST WIRING ENTRY POINT (T-644). Place a viewshed observer at world `(x, y)` and return the
+/// texture payload to upload — the ONE call the (host-owned, out-of-this-slice-scope)
+/// `mission_editor` pointer commit makes when the LoS sub-mode is [`LosMode::Viewshed`]:
+///
+/// ```ignore
+/// // in mission_editor's LG::Ruler pointerup arm, when tool_mode.is_los() && los_mode.is_viewshed():
+/// viewshed_state.borrow_mut().place(w[0], w[1], z);
+/// if let Some(tex) = los_tool::place_viewshed(w[0], w[1]) {
+///     if let Some(e) = engine.borrow_mut().as_mut() {
+///         let _ = e.viewshed_upload(tex.min_x, tex.min_y, tex.max_x, tex.max_y,
+///                                   tex.tex_w, tex.tex_h, &tex.rgba, tex.stride_bytes);
+///     }
+/// }
+/// ```
+///
+/// It computes the raster ([`compute_viewshed_for`]), STORES it in the registered [`ViewshedState`]
+/// (so a pan re-projects the same rect without recompute), and returns the [`ViewshedTexture`].
+/// `None` when no sampler is registered (native / pre-mount) — the host then draws nothing. On
+/// dismissal (Esc / sub-mode or tool switch) the host calls `engine.viewshed_clear()` and clears the
+/// state (the `tool_mode`/sub-mode Effect, peer of the ruler's clear-on-switch).
+#[must_use]
+pub fn place_viewshed(x: f64, y: f64) -> Option<ViewshedTexture> {
+    let vs = compute_viewshed_for(x, y)?;
+    let payload = viewshed_texture_payload(&vs);
+    VIEWSHED_STATE.with(|c| {
+        if let Some(rc) = c.borrow().as_ref() {
+            let mut st = rc.borrow_mut();
+            st.observer = Some((x, y, None));
+            st.raster = Some(vs);
+        }
+    });
+    Some(payload)
 }
 
 // ── Overlay geometry constants ──────────────────────────────────────────────────────────────────
@@ -1323,5 +1665,286 @@ mod tests {
             occlusion(&cleared, EYE_HEIGHT_OBSERVER_M, EYE_HEIGHT_TARGET_M),
             "the occlusion verdict must depend on the terrain profile"
         );
+    }
+
+    // ── T-644 — viewshed palette (the colour language) + encoder ─────────────────────────────────
+
+    use map_engine_core::dem::sample::{Viewshed, Visibility};
+
+    /// PALETTE CONSTANTS PIN (the ticket's required "palette constants + rationale pin"). The colour
+    /// language is a contract, so pin the exact bytes: HIDDEN is a desaturated dark near-neutral at
+    /// α0.38, VISIBLE is fully transparent (the untouched map — the conventional army answer), UNKNOWN
+    /// is the same dark but LIGHTER (α0.22). A change to any of these is a deliberate colour-language
+    /// decision that must update this pin.
+    #[test]
+    fn viewshed_palette_constants_are_pinned() {
+        assert_eq!(VIEWSHED_HIDDEN_RGBA, [24, 26, 36, 97], "HIDDEN wash pinned");
+        assert_eq!(VIEWSHED_VISIBLE_RGBA, [0, 0, 0, 0], "VISIBLE = transparent");
+        assert_eq!(
+            VIEWSHED_UNKNOWN_RGBA,
+            [24, 26, 36, 56],
+            "UNKNOWN wash pinned"
+        );
+        // The colour-language INVARIANTS the rationale rests on (checked, not just asserted in prose):
+        // VISIBLE is fully transparent (no ink on seen ground — the whole conventional-answer point).
+        assert_eq!(VIEWSHED_VISIBLE_RGBA[3], 0, "visible ground is never inked");
+        // HIDDEN is more opaque than UNKNOWN (proven dead ground reads darker than a coverage hole),
+        // and BOTH are translucent enough to let the α235 T-640 contours show through (α well under
+        // the contour's 235). If HIDDEN's alpha ever climbed to/over the contour alpha the hairlines
+        // would drown — the derivation in the module rationale.
+        assert!(
+            VIEWSHED_HIDDEN_RGBA[3] > VIEWSHED_UNKNOWN_RGBA[3],
+            "hidden (dead ground) must read darker than unknown (a coverage hole)"
+        );
+        assert!(
+            u32::from(VIEWSHED_HIDDEN_RGBA[3]) < 235,
+            "the wash alpha must stay under the T-640 contour alpha (235) so contours show through"
+        );
+        // Near-neutral with a faint COOL cast (b ≥ r) so the wash can never be mistaken for the WARM
+        // brown contour (`CONTOUR_RGBA = [188,150,100]`, r > g > b). This is the hue half of "don't
+        // fight the contours".
+        assert!(
+            VIEWSHED_HIDDEN_RGBA[2] >= VIEWSHED_HIDDEN_RGBA[0],
+            "the wash is cool/neutral (b ≥ r), never a warm brown like the contours"
+        );
+    }
+
+    /// The palette rationale CITES the live contour RGBA from `dem_vectors.rs` — pin that the exact
+    /// values the rationale quotes still match the source of truth, so the citation can't rot. Reads
+    /// the scrubbed `dem_vectors.rs` for the literal `[188, 150, 100, 235]` (base) and
+    /// `[174, 145, 123, 235]` (summit). If T-640's contour colour is retuned, THIS fails and forces
+    /// the viewshed alpha rationale to be re-derived against the new contour alpha.
+    #[test]
+    fn viewshed_rationale_cites_live_contour_rgba() {
+        let dem_vectors = include_str!("world_assets/dem_vectors.rs");
+        assert!(
+            dem_vectors.contains("[188, 150, 100, 235]"),
+            "T-644 rationale cites CONTOUR_RGBA = [188,150,100,235]; dem_vectors.rs must still define \
+             it (retuning the contour colour must re-derive the viewshed wash alpha)"
+        );
+        assert!(
+            dem_vectors.contains("[174, 145, 123, 235]"),
+            "T-644 rationale cites CONTOUR_SUMMIT_RGBA = [174,145,123,235]; dem_vectors.rs must still \
+             define it"
+        );
+        // And the los_tool rationale block actually quotes them (guards against the comment being
+        // dropped in a future edit while the constants stay).
+        let los = include_str!("los_tool.rs");
+        assert!(
+            los.contains("CONTOUR_RGBA = [188, 150, 100, 235]")
+                && los.contains("CONTOUR_SUMMIT_RGBA = [174, 145, 123, 235]"),
+            "the viewshed palette rationale must cite the contour RGBA values by number"
+        );
+    }
+
+    /// The per-cell encoder maps each class to its palette byte-for-byte, and the whole-raster encode
+    /// produces `cols*rows*4` bytes in row-major order.
+    #[test]
+    fn viewshed_encoder_maps_classes_and_sizes() {
+        assert_eq!(
+            viewshed_cell_rgba(Visibility::Visible),
+            VIEWSHED_VISIBLE_RGBA
+        );
+        assert_eq!(viewshed_cell_rgba(Visibility::Hidden), VIEWSHED_HIDDEN_RGBA);
+        assert_eq!(
+            viewshed_cell_rgba(Visibility::Unknown),
+            VIEWSHED_UNKNOWN_RGBA
+        );
+        // A 2×2 raster: V H / U V → 16 bytes, each cell's 4 bytes in order.
+        let vs = Viewshed {
+            cols: 2,
+            rows: 2,
+            cells: vec![
+                Visibility::Visible,
+                Visibility::Hidden,
+                Visibility::Unknown,
+                Visibility::Visible,
+            ],
+            min_x: 0.0,
+            min_y: 0.0,
+            max_x: 8.0,
+            max_y: 8.0,
+            obs_x: 0.0,
+            obs_y: 0.0,
+        };
+        let rgba = encode_viewshed_rgba(&vs);
+        assert_eq!(rgba.len(), 2 * 2 * 4, "cols*rows*4 bytes");
+        assert_eq!(&rgba[0..4], &VIEWSHED_VISIBLE_RGBA, "cell 0 = visible");
+        assert_eq!(&rgba[4..8], &VIEWSHED_HIDDEN_RGBA, "cell 1 = hidden");
+        assert_eq!(&rgba[8..12], &VIEWSHED_UNKNOWN_RGBA, "cell 2 = unknown");
+        assert_eq!(&rgba[12..16], &VIEWSHED_VISIBLE_RGBA, "cell 3 = visible");
+    }
+
+    // ── T-644 — the LoS sub-mode toggle (Ray ⇆ Viewshed) ─────────────────────────────────────────
+
+    #[test]
+    fn los_mode_toggles_ray_and_viewshed() {
+        assert_eq!(
+            LosMode::default(),
+            LosMode::Ray,
+            "default sub-mode is the ray"
+        );
+        assert_eq!(LosMode::Ray.toggled(), LosMode::Viewshed);
+        assert_eq!(LosMode::Viewshed.toggled(), LosMode::Ray);
+        assert!(LosMode::Viewshed.is_viewshed());
+        assert!(!LosMode::Ray.is_viewshed());
+        // Two toggles return to the start (a genuine 2-cycle).
+        assert_eq!(LosMode::Ray.toggled().toggled(), LosMode::Ray);
+    }
+
+    // ── T-644 — the viewshed state machine (one-click placement, dismissal) ──────────────────────
+
+    #[test]
+    fn viewshed_state_place_replaces_and_clears() {
+        let mut st = ViewshedState::new();
+        assert!(st.is_empty());
+        // One click places the observer (raster left None for the host to fill).
+        st.place(100.0, 200.0, Some(50.0));
+        assert_eq!(st.observer, Some((100.0, 200.0, Some(50.0))));
+        assert!(st.raster.is_none());
+        assert!(!st.is_empty());
+        // Host fills the raster.
+        st.set_raster(Viewshed {
+            cols: 1,
+            rows: 1,
+            cells: vec![Visibility::Visible],
+            min_x: 0.0,
+            min_y: 0.0,
+            max_x: 0.0,
+            max_y: 0.0,
+            obs_x: 100.0,
+            obs_y: 200.0,
+        });
+        assert!(st.raster.is_some());
+        // A NEW placement replaces both observer and raster (a viewshed is one disc, not a chain).
+        st.place(500.0, 500.0, None);
+        assert_eq!(st.observer, Some((500.0, 500.0, None)));
+        assert!(
+            st.raster.is_none(),
+            "re-placing retires the previous raster"
+        );
+    }
+
+    #[test]
+    fn viewshed_escape_is_one_step() {
+        let mut st = ViewshedState::new();
+        assert!(!st.escape(), "nothing placed → no act");
+        st.place(1.0, 2.0, None);
+        assert!(st.escape(), "Esc on a placed observer acts");
+        assert!(st.is_empty(), "Esc clears observer + raster in one step");
+        assert!(!st.escape(), "now empty → no act");
+    }
+
+    #[test]
+    fn viewshed_clear_is_idempotent() {
+        let mut st = ViewshedState::new();
+        st.place(1.0, 2.0, Some(3.0));
+        st.clear();
+        assert!(st.is_empty());
+        st.clear();
+        assert!(st.is_empty());
+    }
+
+    /// Decision-4 pin extended: the viewshed state, like the ray, is session-local overlay state and
+    /// must never write the document. Covered by `no_los_doc_writes` above (whole-file scrub), but
+    /// asserted here too so a future reader sees the viewshed was in scope for that guarantee.
+    #[test]
+    fn viewshed_is_session_local_not_doc() {
+        // The state struct holds only overlay data (observer point + raster) — no doc handle, no id.
+        // A compile-time proof by construction; this test documents the intent and fails loudly if
+        // someone adds a doc-mutating token to the module (the file scrub in `no_los_doc_writes`).
+        let st = ViewshedState::default();
+        assert!(
+            st.is_empty(),
+            "a fresh viewshed touches nothing (no doc, no map)"
+        );
+    }
+
+    // ── T-644 — the engine texture payload (256-row-pad) ─────────────────────────────────────────
+
+    /// A width whose byte-row is ALREADY 256-aligned is copied through unchanged (no padding).
+    /// 64 cols × 4 = 256 bytes → stride 256, length == tight length.
+    #[test]
+    fn pack_rgba_256_aligned_width_is_unpadded() {
+        let cols = 64;
+        let rows = 3;
+        let tight = vec![7u8; cols * 4 * rows];
+        let (padded, stride) = pack_rgba_256(&tight, cols, rows);
+        assert_eq!(stride, 256, "64*4 is exactly 256");
+        assert_eq!(padded.len(), tight.len(), "no padding added");
+        assert_eq!(padded, tight);
+    }
+
+    /// A NON-aligned width is right-padded per row to the next 256 multiple, and the original bytes
+    /// land at the row starts (the pad is trailing zero texels). 51 cols × 4 = 204 → stride 256.
+    #[test]
+    fn pack_rgba_256_pads_each_row_to_stride() {
+        let cols = 51; // 51*4 = 204, not a multiple of 256
+        let rows = 2;
+        // Distinct per-cell bytes so we can prove the row copy is correct.
+        let mut tight = Vec::with_capacity(cols * 4 * rows);
+        for i in 0..(cols * rows) {
+            let b = (i % 251) as u8;
+            tight.extend_from_slice(&[b, b, b, 255]);
+        }
+        let (padded, stride_u32) = pack_rgba_256(&tight, cols, rows);
+        let stride = stride_u32 as usize;
+        assert_eq!(stride, 256, "204 rounds up to 256");
+        assert_eq!(padded.len(), 256 * rows, "stride * rows");
+        // Row 0 and row 1 original bytes are at the row starts; the tail [204..256] is zero.
+        for r in 0..rows {
+            let row_bytes = cols * 4;
+            assert_eq!(
+                &padded[r * stride..r * stride + row_bytes],
+                &tight[r * row_bytes..(r + 1) * row_bytes],
+                "row {r} payload preserved at the row start"
+            );
+            assert!(
+                padded[r * stride + row_bytes..(r + 1) * stride]
+                    .iter()
+                    .all(|&b| b == 0),
+                "row {r} pad is zero (transparent) texels"
+            );
+        }
+    }
+
+    /// `viewshed_texture_payload` carries the raster's world rect + dims and a 256-aligned stride,
+    /// with the palette-encoded bytes — the whole hand-off the host gives `engine.viewshed_upload`.
+    #[test]
+    fn viewshed_texture_payload_is_engine_ready() {
+        // 2×2 raster, world rect [0,0]..[8,8], one hidden cell.
+        let vs = Viewshed {
+            cols: 2,
+            rows: 2,
+            cells: vec![
+                Visibility::Visible,
+                Visibility::Hidden,
+                Visibility::Visible,
+                Visibility::Unknown,
+            ],
+            min_x: 0.0,
+            min_y: 0.0,
+            max_x: 8.0,
+            max_y: 8.0,
+            obs_x: 4.0,
+            obs_y: 4.0,
+        };
+        let tex = viewshed_texture_payload(&vs);
+        assert_eq!((tex.tex_w, tex.tex_h), (2, 2));
+        assert_eq!(
+            (tex.min_x, tex.min_y, tex.max_x, tex.max_y),
+            (0.0, 0.0, 8.0, 8.0)
+        );
+        // 2*4 = 8 bytes/row → padded to 256.
+        assert_eq!(tex.stride_bytes, 256);
+        assert_eq!(tex.rgba.len(), 256 * 2, "stride * rows");
+        // The engine's length invariant: rgba.len() == stride * tex_h.
+        assert_eq!(
+            tex.rgba.len(),
+            tex.stride_bytes as usize * tex.tex_h as usize
+        );
+        // First cell (visible) is transparent at the row start.
+        assert_eq!(&tex.rgba[0..4], &VIEWSHED_VISIBLE_RGBA);
+        assert_eq!(&tex.rgba[4..8], &VIEWSHED_HIDDEN_RGBA);
     }
 }
