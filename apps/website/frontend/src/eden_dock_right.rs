@@ -62,6 +62,11 @@ pub enum PaletteKind {
     /// `palette_rows`). The variant exists so the palette-mode vocabulary is complete and so a future
     /// unification of the two surfaces has a name to hang on; the leaf helpers below give it a glyph.
     Composition,
+    /// T-079 (RIGHT-MODE-003) — the Triggers palette mode. Like [`Self::Composition`], a trigger is
+    /// not a `/registry` catalog leaf: it is an authored AREA drawn with the shipped zone tool and
+    /// listed from the doc (`triggers_panel`, not `palette_rows`). The variant completes the
+    /// palette-mode vocabulary and gives the mode a glyph; the panel does the authoring.
+    Trigger,
 }
 
 impl PaletteKind {
@@ -71,6 +76,7 @@ impl PaletteKind {
             Self::Vehicle => "directions_car",
             Self::Object => "inventory_2",
             Self::Composition => "dashboard_customize",
+            Self::Trigger => "sensors",
         }
     }
 
@@ -80,6 +86,7 @@ impl PaletteKind {
             Self::Vehicle => "Drag onto the map to place this vehicle",
             Self::Object => "Drag onto the map to place this object",
             Self::Composition => "Click to arm, then click the map to place this composition",
+            Self::Trigger => "Draw a trigger area on the map",
         }
     }
 }
@@ -183,6 +190,10 @@ fn palette_rows(
                                 // `compositions_panel` list, not from a `palette_rows` payload. This
                                 // arm only exists so the match is exhaustive.
                                 PaletteKind::Composition => {}
+                                // T-079 — triggers are not catalog leaves either; they are drawn from
+                                // the `triggers_panel`, not armed from a `palette_rows` payload. Arm
+                                // present only for exhaustiveness.
+                                PaletteKind::Trigger => {}
                             }
                             // `editor_ops` is wasm-only, so the native view shell would see an
                             // unused capture (the `announcements.rs` `let _ = store;` idiom).
@@ -325,12 +336,14 @@ pub enum EdenSubmode {
     Zones,
     /// T-650 — the Compositions tab (RIGHT-MODE-002).
     Compositions,
+    /// T-079 — the Triggers tab (RIGHT-MODE-003).
+    Triggers,
 }
 
 impl EdenSubmode {
     /// Map a DockRight tab index (`0` Factions, `1` Vehicles, `2` Markers, `3` Zones, `4`
-    /// Compositions) plus the Objects-chip flag to the sub-mode. The Objects chip lives on the
-    /// Factions tab but is its own place surface, so it reports [`EdenSubmode::Objects`], not
+    /// Compositions, `5` Triggers) plus the Objects-chip flag to the sub-mode. The Objects chip lives
+    /// on the Factions tab but is its own place surface, so it reports [`EdenSubmode::Objects`], not
     /// `Groups` — which is exactly why the Custom slot hides the moment the operator flips to Objects.
     #[must_use]
     pub fn from_tab(tab: usize, objects_mode: bool) -> Self {
@@ -340,6 +353,8 @@ impl EdenSubmode {
             3 => Self::Zones,
             // T-650 — tab 4 is Compositions.
             4 => Self::Compositions,
+            // T-079 — tab 5 is Triggers.
+            5 => Self::Triggers,
             // tab 0 (Factions): Objects chip splits Groups vs Objects.
             _ if objects_mode => Self::Objects,
             _ => Self::Groups,
@@ -445,6 +460,11 @@ pub fn DockRight(
     // signal, like `zone_selected`: a composition is neither a slot nor a zone, so it does not touch
     // `select_tool`'s selection or the zone selection.
     let comp_editing = RwSignal::new(None::<String>);
+    // T-079 — the selected trigger (Attributes target + the owner-link line's subject). Its own
+    // selection, exactly like `zone_selected` and for the same reason: a trigger is neither a slot
+    // nor a zone, so putting its id in `select_tool`'s selection would show `SEL 1` with nothing
+    // highlighted. The owner-link line renders while this is `Some`.
+    let trigger_selected = RwSignal::new(None::<String>);
     let tab_btn = move |i: usize, label: &'static str| {
         view! {
             <button
@@ -476,6 +496,9 @@ pub fn DockRight(
                         {tab_btn(3, "Zones")}
                         // T-650 — Compositions is a live surface too, so it also precedes Markers.
                         {tab_btn(4, "Compositions")}
+                        // T-079 — Triggers is a live surface (draw area + owner link), so it precedes
+                        // the Markers stub as well.
+                        {tab_btn(5, "Triggers")}
                         {tab_btn(2, "Markers")}
                     </div>
                     <div class="flex items-center gap-1">
@@ -806,6 +829,11 @@ pub fn DockRight(
                     // T-650 — the Compositions palette: save the current selection, list saved
                     // compositions grouped by category, arm a row to place, inline-edit rows.
                     4 => compositions_panel(doc_tick, comp_editing),
+                    // T-079 — the Triggers palette (RIGHT-MODE-003): draw a trigger area (second
+                    // consumer of the zone tool), list authored triggers, and edit the selected
+                    // one's name / activation / owner link / rules. The owner-link line renders while
+                    // a trigger is selected.
+                    5 => triggers_panel(doc_tick, trigger_selected),
                     _ => view! {
                         <p class="mt-3 text-label-sm normal-case text-outline">
                             "Marker placement lands in T-069."
@@ -1212,6 +1240,738 @@ pub(crate) fn compositions_panel(
     ().into_any()
 }
 
+// ── T-079 — the Triggers palette (RIGHT-MODE-003 + CONN-TRG-OWNER-001) ────────────────────────────
+//
+// The Triggers tab authors trigger AREAS as a SECOND CONSUMER of the shipped zone draw tool: the
+// draw controls call `editor_ops::begin_zone_draw(&activation, shape, DrawTarget::Trigger)` and the
+// reshape buttons `begin_zone_reshape(&id, shape, DrawTarget::Trigger)` — the SAME calls the Zones
+// panel makes with `DrawTarget::Zone`, so the whole geometry state machine is shared, not forked
+// (the ticket's constraint). The panel adds only the trigger-specific surface:
+//   • the ACTIVATION picker (presence/radio/timer — the T-676-runtime placeholder, stored not run),
+//   • the OWNER picker (CONN-TRG-OWNER-001 — a `<select>` over placed slots/vehicles that writes
+//     `ownerId`; this is the DATA EDGE, not the T-672 drag-connect gesture, whose context-menu row
+//     stays disabled),
+//   • the RULES controls, reusing `eden_zones::zone_rule_fields()` (the schema vocabulary) but
+//     writing through `set_trigger_rule`,
+//   • and the owner-link LINE overlay ([`TriggerOwnerLine`]) drawn while a trigger is selected.
+
+/// T-079 — the Triggers panel. `selected` holds the selected trigger id (Attributes target + the
+/// owner-link line's subject), or `None`. One function with a native stub, exactly like
+/// [`zones_panel`] / [`compositions_panel`].
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn triggers_panel(
+    doc_tick: RwSignal<u64>,
+    selected: RwSignal<Option<String>>,
+) -> AnyView {
+    use crate::eden_tree::{ROW, ROW_ACTIVE};
+    use crate::eden_zones::{humanize_token, DrawTarget, ZoneShape};
+    use crate::editor_ops as ops;
+
+    // The activation the NEXT draw will carry, seeded to the first of the three (presence).
+    let draw_activation = RwSignal::new(
+        ops::TRIGGER_ACTIVATIONS
+            .first()
+            .copied()
+            .unwrap_or("presence")
+            .to_string(),
+    );
+
+    let arm = move |shape: ZoneShape| {
+        let activation = draw_activation.get_untracked();
+        // SECOND CONSUMER: identical call to the Zones panel's `arm`, targeting triggers.
+        ops::begin_zone_draw(&activation, shape, DrawTarget::Trigger);
+        doc_tick.update(|n| *n = n.wrapping_add(1));
+    };
+
+    view! {
+        <div class="mt-2 flex items-center gap-2">
+            <h3 class="text-label-md font-semibold text-on-surface">"Triggers"</h3>
+            <span class="font-mono text-code-md text-outline">
+                {move || {
+                    let _ = doc_tick.get();
+                    ops::trigger_count()
+                }}
+            </span>
+        </div>
+        <p class="mt-0.5 text-label-sm normal-case text-outline">
+            "Trigger areas. Pick an activation, then draw the area exactly like a zone — Circle: click centre then rim. Polygon: click each vertex, then Close. Select a trigger to set its owner."
+        </p>
+
+        // ── Draw controls (activation + the shared Circle/Polygon arm) ───────────────────────
+        <label class="mt-3 block text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+            "Activation"
+        </label>
+        <select
+            aria-label="Trigger activation to draw"
+            class="mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
+            on:change=move |ev| draw_activation.set(event_target_value(&ev))
+        >
+            {ops::TRIGGER_ACTIVATIONS
+                .iter()
+                .map(|a| {
+                    let a = (*a).to_string();
+                    let label = humanize_token(&a);
+                    view! {
+                        <option value=a.clone() selected=move || draw_activation.get() == a>
+                            {label}
+                        </option>
+                    }
+                })
+                .collect_view()}
+        </select>
+        <div class="mt-2 flex gap-1.5">
+            <button
+                type="button"
+                class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
+                on:click=move |_| arm(ZoneShape::Circle)
+            >
+                "Circle"
+            </button>
+            <button
+                type="button"
+                class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
+                on:click=move |_| arm(ZoneShape::Polygon)
+            >
+                "Polygon"
+            </button>
+        </div>
+
+        // ── Live draw state (shared draft; shown only for a TRIGGER draw) ─────────────────────
+        {move || {
+            let _ = doc_tick.get();
+            let Some(d) = ops::zone_draft() else {
+                return ().into_any();
+            };
+            // The draft is shared with the Zones tool; only render the trigger-flavoured hint when
+            // THIS draw is targeting triggers (so the Zones panel's own hint is the one shown for a
+            // zone draw, and vice versa).
+            if d.collection != DrawTarget::Trigger {
+                return ().into_any();
+            }
+            let is_poly = d.shape == ZoneShape::Polygon;
+            let n = d.verts.len();
+            let hint = if is_poly {
+                match n {
+                    0 => "Click the first vertex.".to_string(),
+                    1 | 2 => format!("{n} of 3 vertices — a ring needs at least three."),
+                    _ => format!("{n} vertices. Close to commit."),
+                }
+            } else if d.centre.is_some() {
+                "Centre set. Click the rim.".to_string()
+            } else {
+                "Click the centre.".to_string()
+            };
+            let can_close = is_poly && crate::eden_zones::polygon_is_committable(&d.verts);
+            view! {
+                <div class="mt-3 rounded-md border border-primary/40 bg-primary/10 p-2">
+                    <p class="text-label-sm normal-case text-on-surface">
+                        {
+                            let shape = if is_poly { "polygon" } else { "circle" };
+                            d.target.as_ref().map_or_else(
+                                || format!("Drawing a {} trigger {shape}", humanize_token(&d.kind)),
+                                |id| format!("Reshaping {id} as a {shape} — name, owner and rules are kept"),
+                            )
+                        }
+                    </p>
+                    <p class="mt-0.5 text-label-sm normal-case text-outline">{hint}</p>
+                    <div class="mt-1.5 flex gap-1.5">
+                        {is_poly
+                            .then(|| {
+                                view! {
+                                    <button
+                                        type="button"
+                                        disabled=!can_close
+                                        class="rounded-md bg-primary/25 px-2 py-1 text-label-sm text-on-surface transition-colors hover:bg-primary/40 disabled:opacity-30 disabled:hover:bg-primary/25"
+                                        on:click=move |_| {
+                                            ops::close_zone_polygon();
+                                            doc_tick.update(|n| *n = n.wrapping_add(1));
+                                        }
+                                    >
+                                        "Close ring"
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled=n == 0
+                                        class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 disabled:opacity-30"
+                                        on:click=move |_| {
+                                            ops::zone_draw_pop_vertex();
+                                            doc_tick.update(|n| *n = n.wrapping_add(1));
+                                        }
+                                    >
+                                        "Undo vertex"
+                                    </button>
+                                }
+                            })}
+                        <button
+                            type="button"
+                            class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10"
+                            on:click=move |_| {
+                                ops::cancel_zone_draw();
+                                doc_tick.update(|n| *n = n.wrapping_add(1));
+                            }
+                        >
+                            "Cancel"
+                        </button>
+                    </div>
+                </div>
+            }
+                .into_any()
+        }}
+
+        // ── Authored triggers ────────────────────────────────────────────────────────────────
+        {move || {
+            let _ = doc_tick.get();
+            let rows = ops::trigger_rows();
+            if rows.is_empty() {
+                return view! {
+                    <p class="mt-3 text-label-sm normal-case text-outline">
+                        "No triggers yet."
+                    </p>
+                }
+                    .into_any();
+            }
+            view! {
+                <ul class="mt-3 flex flex-col gap-0.5" role="list" aria-label="Authored triggers">
+                    {rows
+                        .into_iter()
+                        .map(|t| {
+                            let id = t.id.clone();
+                            let sel_id = t.id.clone();
+                            let sel_id2 = t.id.clone();
+                            let title = t
+                                .name
+                                .clone()
+                                .filter(|l| !l.is_empty())
+                                .unwrap_or_else(|| format!("Trigger {}", t.id));
+                            let summary = t.shape_summary();
+                            view! {
+                                <li>
+                                    <button
+                                        type="button"
+                                        aria-pressed=move || selected.get().as_deref() == Some(sel_id.as_str())
+                                        class=move || {
+                                            if selected.get().as_deref() == Some(sel_id2.as_str()) {
+                                                ROW_ACTIVE
+                                            } else {
+                                                ROW
+                                            }
+                                        }
+                                        on:click=move |_| selected.set(Some(id.clone()))
+                                    >
+                                        <MaterialIcon
+                                            name=if t.circle.is_some() {
+                                                "radio_button_unchecked"
+                                            } else {
+                                                "pentagon"
+                                            }
+                                            class="block text-sm"
+                                        />
+                                        <span class="truncate">{title}</span>
+                                        <span class="ml-auto shrink-0 font-mono text-code-md text-outline">
+                                            {summary}
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        })
+                        .collect_view()}
+                </ul>
+            }
+                .into_any()
+        }}
+
+        // ── Attributes for the selected trigger ──────────────────────────────────────────────
+        {move || {
+            let _ = doc_tick.get();
+            let Some(id) = selected.get() else {
+                return ().into_any();
+            };
+            let Some(t) = ops::trigger_rows().into_iter().find(|r| r.id == id) else {
+                // Deleted underneath us (undo, or a reload that dropped it).
+                return ().into_any();
+            };
+            trigger_attributes(t, doc_tick, selected).into_any()
+        }}
+
+        // T-079 (CONN-TRG-OWNER-001) — the owner-link line. Rendered here (inside the panel, which is
+        // the only place `selected` is live) via a Portal so the SVG escapes the dock's clipping /
+        // backdrop-filter box and spans the viewport — the ruler-overlay idiom, mounted from an owned
+        // module (this slice does not own `mission_editor` / `ruler_tool`, so it cannot add a mount
+        // there). Draws nothing when no trigger is selected or the owner is dangling.
+        <TriggerOwnerLine selected doc_tick />
+    }
+    .into_any()
+}
+
+/// T-079 — the Attributes panel for one trigger: name, activation, the OWNER picker
+/// (CONN-TRG-OWNER-001), reshape, schema-driven rules, delete. The [`crate::eden_zones`]
+/// `zone_attributes` twin, with the owner picker + activation in place of zone label/faction/type.
+#[cfg(target_arch = "wasm32")]
+fn trigger_attributes(
+    t: crate::editor_ops::TriggerRow,
+    doc_tick: RwSignal<u64>,
+    selected: RwSignal<Option<String>>,
+) -> AnyView {
+    use crate::eden_zones::{humanize_token, DrawTarget, ZoneShape};
+    use crate::editor_ops as ops;
+
+    let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
+    let tid = t.id.clone();
+    let input_class = "mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60";
+    let field_label =
+        "mt-2 block text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant";
+
+    let (id_name, id_activation, id_owner, id_delete) =
+        (tid.clone(), tid.clone(), tid.clone(), tid.clone());
+    let rules = t.rules.clone();
+    // The owner picker's options are read ONCE per render of this panel (doc_tick above re-renders
+    // it). Includes the current owner even if it is now dangling, so the select can show it.
+    let owner_opts = ops::placed_owner_options();
+    let current_owner = t.owner_id.clone();
+    let current_owner_dangling = current_owner
+        .as_ref()
+        .is_some_and(|o| !owner_opts.iter().any(|opt| &opt.id == o));
+
+    view! {
+        <div class="mt-3 border-t border-white/10 pt-2">
+            <h4 class="text-label-md font-semibold text-on-surface">
+                {format!("Attributes — {}", t.id)}
+            </h4>
+
+            // `name` — optional; Clear removes the key, empty box sends None (mirrors zone label).
+            <label class=field_label>"Name"</label>
+            <input
+                type="text"
+                aria-label="Trigger name"
+                placeholder="(unnamed)"
+                class=input_class
+                prop:value=t.name.clone().unwrap_or_default()
+                on:change=move |ev| {
+                    let v = event_target_value(&ev);
+                    let next = (!v.trim().is_empty()).then_some(v);
+                    ops::set_trigger_name(&id_name, next);
+                    bump();
+                }
+            />
+
+            <label class=field_label>"Activation"</label>
+            <select
+                aria-label="Trigger activation"
+                class=input_class
+                on:change=move |ev| {
+                    ops::set_trigger_activation(&id_activation, &event_target_value(&ev));
+                    bump();
+                }
+            >
+                {
+                    let current = t.activation.clone();
+                    ops::TRIGGER_ACTIVATIONS
+                        .iter()
+                        .map(|a| {
+                            let a = (*a).to_string();
+                            let is = a == current;
+                            let label = humanize_token(&a);
+                            view! { <option value=a selected=is>{label}</option> }
+                        })
+                        .collect_view()
+                }
+            </select>
+
+            // ── Owner picker (CONN-TRG-OWNER-001) — the DATA EDGE, not the drag-connect gesture ──
+            <label class=field_label>"Owner"</label>
+            <select
+                aria-label="Trigger owner"
+                class=input_class
+                on:change=move |ev| {
+                    let v = event_target_value(&ev);
+                    // The empty option is "unowned" → clear; any other value is a placed entity id.
+                    let next = (!v.is_empty()).then_some(v);
+                    ops::set_trigger_owner(&id_owner, next);
+                    bump();
+                }
+            >
+                <option value="" selected=current_owner.is_none()>
+                    "(unowned)"
+                </option>
+                // A dangling current owner (its entity was deleted) is still shown, marked, so the
+                // select reflects the stored edge rather than silently snapping to "(unowned)".
+                {current_owner_dangling
+                    .then(|| {
+                        let o = current_owner.clone().unwrap_or_default();
+                        view! {
+                            <option value=o.clone() selected=true>
+                                {format!("{o} (deleted)")}
+                            </option>
+                        }
+                    })}
+                {
+                    let current_owner = current_owner.clone();
+                    owner_opts
+                        .into_iter()
+                        .map(|opt| {
+                            let is = current_owner.as_deref() == Some(opt.id.as_str());
+                            view! { <option value=opt.id selected=is>{opt.label}</option> }
+                        })
+                        .collect_view()
+                }
+            </select>
+
+            // Reshape — SECOND CONSUMER of the zone tool's reshape (whole-`shape` replacement, so
+            // name / activation / owner / rules survive).
+            <label class=field_label>"Shape"</label>
+            <div class="flex gap-1.5">
+                {
+                    let (a, b) = (tid.clone(), tid.clone());
+                    view! {
+                        <button
+                            type="button"
+                            title="Redraw this trigger as a circle — click the centre, then the rim"
+                            class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
+                            on:click=move |_| {
+                                ops::begin_zone_reshape(&a, ZoneShape::Circle, DrawTarget::Trigger);
+                                bump();
+                            }
+                        >
+                            "Redraw circle"
+                        </button>
+                        <button
+                            type="button"
+                            title="Redraw this trigger as a polygon — click each vertex, then Close"
+                            class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
+                            on:click=move |_| {
+                                ops::begin_zone_reshape(&b, ZoneShape::Polygon, DrawTarget::Trigger);
+                                bump();
+                            }
+                        >
+                            "Redraw polygon"
+                        </button>
+                    }
+                }
+            </div>
+
+            <h4 class="mt-3 text-label-md font-semibold text-on-surface">"Rules"</h4>
+            <p class="mt-0.5 text-label-sm normal-case text-outline">
+                "Reuses the mission schema's zoneRules vocabulary — the same controls the Zones panel draws. Blank means the key is not authored and the mod's default applies."
+            </p>
+            {crate::eden_zones::zone_rule_fields()
+                .into_iter()
+                .map(|f| trigger_rule_control(tid.clone(), f, rules.clone(), doc_tick))
+                .collect_view()}
+
+            <button
+                type="button"
+                class="mt-3 w-full rounded-md border border-error/40 px-2 py-1.5 text-label-sm text-error transition-colors hover:bg-error/15"
+                on:click=move |_| {
+                    ops::delete_trigger(&id_delete);
+                    selected.set(None);
+                    bump();
+                }
+            >
+                "Delete trigger"
+            </button>
+        </div>
+    }
+    .into_any()
+}
+
+/// T-079 — ONE `$defs/zoneRules` property as a control for a TRIGGER, writing through
+/// `set_trigger_rule`. Reuses `eden_zones`'s vocabulary machinery ([`ZoneRuleField`] /
+/// [`ZoneRuleKind`], read from the schema by `zone_rule_fields`) — the load-bearing "no second
+/// vocabulary" reuse — and mirrors `eden_zones::zone_rule_control`'s rendering, differing only in the
+/// mutator it calls. Clearing a control removes the key (the mod's default returns), exactly as the
+/// zone control does.
+#[cfg(target_arch = "wasm32")]
+fn trigger_rule_control(
+    trigger_id: String,
+    f: crate::eden_zones::ZoneRuleField,
+    rules: serde_json::Value,
+    doc_tick: RwSignal<u64>,
+) -> AnyView {
+    use crate::eden_zones::{humanize_key, humanize_token, ZoneRuleKind};
+    use crate::editor_ops as ops;
+
+    let current = rules.get(&f.key).cloned();
+    let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
+    let label = humanize_key(&f.key);
+    let doc = f.doc.clone();
+    let key = f.key.clone();
+    let row = "mt-2";
+    let ctl = "mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1 text-label-sm text-on-surface outline-none focus:border-primary/60";
+
+    let body = match f.kind {
+        ZoneRuleKind::Bool { default } => {
+            let checked = current.as_ref().and_then(serde_json::Value::as_bool);
+            let k = key.clone();
+            view! {
+                <label class="mt-2 flex items-center gap-2 text-label-sm text-on-surface">
+                    <input
+                        type="checkbox"
+                        aria-label=label.clone()
+                        prop:checked=checked.unwrap_or(default)
+                        prop:indeterminate=checked.is_none()
+                        on:change=move |ev| {
+                            let on = event_target_checked(&ev);
+                            ops::set_trigger_rule(&trigger_id, &k, Some(serde_json::Value::Bool(on)));
+                            bump();
+                        }
+                    />
+                    <span>{label.clone()}</span>
+                    <span class="ml-auto font-mono text-code-md text-outline">
+                        {format!("default {default}")}
+                    </span>
+                </label>
+            }
+            .into_any()
+        }
+        ZoneRuleKind::Choice { options, default } => {
+            let cur = current
+                .as_ref()
+                .and_then(|v| v.as_str())
+                .map(ToString::to_string);
+            let k = key.clone();
+            view! {
+                <div class=row>
+                    <label class="block text-label-sm text-on-surface">{label.clone()}</label>
+                    <select
+                        aria-label=label.clone()
+                        class=ctl
+                        on:change=move |ev| {
+                            let v = event_target_value(&ev);
+                            let next = (!v.is_empty()).then(|| serde_json::Value::String(v));
+                            ops::set_trigger_rule(&trigger_id, &k, next);
+                            bump();
+                        }
+                    >
+                        <option value="" selected=cur.is_none()>
+                            {default
+                                .as_ref()
+                                .map_or_else(
+                                    || "(not authored)".to_string(),
+                                    |d| format!("(not authored — default {d})"),
+                                )}
+                        </option>
+                        {options
+                            .into_iter()
+                            .map(|o| {
+                                let is = cur.as_deref() == Some(o.as_str());
+                                let l = humanize_token(&o);
+                                view! { <option value=o selected=is>{l}</option> }
+                            })
+                            .collect_view()}
+                    </select>
+                </div>
+            }
+            .into_any()
+        }
+        ZoneRuleKind::Number {
+            default,
+            minimum,
+            exclusive_minimum,
+            maximum,
+            integer,
+        } => {
+            let cur = current.as_ref().and_then(serde_json::Value::as_f64);
+            let k = key.clone();
+            let step = if integer { 1.0 } else { 0.1 };
+            let min_attr = minimum.or_else(|| exclusive_minimum.map(|m| m + step));
+            view! {
+                <div class=row>
+                    <label class="block text-label-sm text-on-surface">{label.clone()}</label>
+                    <input
+                        type="number"
+                        aria-label=label.clone()
+                        class=ctl
+                        step=step
+                        min=min_attr.map(|m| m.to_string())
+                        max=maximum.map(|m| m.to_string())
+                        placeholder=default
+                            .map_or_else(
+                                || "(not authored)".to_string(),
+                                |d| format!("(not authored — default {d})"),
+                            )
+                        prop:value=cur.map(|v| v.to_string()).unwrap_or_default()
+                        on:change=move |ev| {
+                            let raw = event_target_value(&ev);
+                            let next = if raw.trim().is_empty() {
+                                None
+                            } else {
+                                raw.trim()
+                                    .parse::<f64>()
+                                    .ok()
+                                    .and_then(serde_json::Number::from_f64)
+                                    .map(serde_json::Value::Number)
+                            };
+                            if next.is_some() || raw.trim().is_empty() {
+                                ops::set_trigger_rule(&trigger_id, &k, next);
+                                bump();
+                            }
+                        }
+                    />
+                </div>
+            }
+            .into_any()
+        }
+        ZoneRuleKind::Text { default, pattern } => {
+            let cur = current
+                .as_ref()
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+            let k = key.clone();
+            view! {
+                <div class=row>
+                    <label class="block text-label-sm text-on-surface">{label.clone()}</label>
+                    <input
+                        type="text"
+                        aria-label=label.clone()
+                        class=ctl
+                        pattern=pattern
+                        placeholder=default.unwrap_or_else(|| "(not authored)".to_string())
+                        prop:value=cur
+                        on:change=move |ev| {
+                            let v = event_target_value(&ev);
+                            let next = (!v.trim().is_empty())
+                                .then(|| serde_json::Value::String(v.trim().to_string()));
+                            ops::set_trigger_rule(&trigger_id, &k, next);
+                            bump();
+                        }
+                    />
+                </div>
+            }
+            .into_any()
+        }
+    };
+    view! {
+        <div title=doc>{body}</div>
+    }
+    .into_any()
+}
+
+/// T-079 (CONN-TRG-OWNER-001) — the owner-link line overlay: a thin line from the selected trigger's
+/// centre to its owner entity, drawn while the trigger is selected. Uses the ruler-overlay idiom
+/// exactly — a `pointer-events-none` SVG that reads the live camera off `world_assets::camera_snapshot`
+/// and re-projects off the `cursor` (pan) + `doc_tick` (any edit) heartbeats — but is rendered
+/// through a [`leptos::portal::Portal`] to `document.body` so the SVG escapes the right dock's
+/// `overflow`/`backdrop-filter` clipping box and spans the viewport. (This slice owns neither
+/// `mission_editor` nor `ruler_tool`, so it cannot add a shared overlay mount there; the Portal keeps
+/// the whole line self-contained in an owned file.) The projection math is the pure, native-tested
+/// [`crate::eden_zones::project_owner_line`]. Nothing renders when no trigger is selected or the
+/// owner is dangling (`owner_line_world` returns `None`).
+#[cfg(target_arch = "wasm32")]
+#[component]
+fn TriggerOwnerLine(selected: RwSignal<Option<String>>, doc_tick: RwSignal<u64>) -> impl IntoView {
+    use crate::editor_ops as ops;
+    use leptos::portal::Portal;
+
+    // Pan/zoom heartbeat. `mission_editor` threads its `cursor`/`debug_hud` heartbeats into the ruler
+    // overlay, but this component is mounted from the dock and receives neither (wiring them would be
+    // a `mission_editor` edit — not this slice's to make). So the line re-projects off a SELF-CONTAINED
+    // rAF that only ticks while a trigger is selected (the sole moment the line is drawn), and stops
+    // itself on unmount (leaving the Triggers tab). It early-returns every frame `selected` is `None`,
+    // so an open-but-idle Triggers tab costs one no-op closure per frame and no reprojection.
+    let tick = RwSignal::new(0u64);
+    {
+        use std::cell::RefCell;
+        use std::rc::Rc;
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::Arc;
+        use wasm_bindgen::prelude::*;
+        use wasm_bindgen::JsCast;
+
+        let disposed = Arc::new(AtomicBool::new(false));
+        // The self-referential rAF-closure cell — the same shape `mission_editor::start_raf` uses.
+        #[allow(clippy::type_complexity)]
+        let f: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
+        let g = f.clone();
+        {
+            let disposed = disposed.clone();
+            *g.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+                if disposed.load(Ordering::Relaxed) {
+                    f.borrow_mut().take(); // drop the loop closure — no further frames
+                    return;
+                }
+                // Only pay for a reprojection while a trigger is selected; the projection closure
+                // subscribes to `tick`, so bumping it re-runs the projection against the live camera.
+                if selected.get_untracked().is_some() {
+                    tick.update(|n| *n = n.wrapping_add(1));
+                }
+                let cb_ref = f.borrow();
+                if let (Some(cb), Some(win)) = (cb_ref.as_ref(), web_sys::window()) {
+                    let _ = win.request_animation_frame(cb.as_ref().unchecked_ref());
+                }
+            }) as Box<dyn FnMut()>));
+        }
+        let cb_ref = g.borrow();
+        if let (Some(cb), Some(win)) = (cb_ref.as_ref(), web_sys::window()) {
+            let _ = win.request_animation_frame(cb.as_ref().unchecked_ref());
+        }
+        on_cleanup(move || disposed.store(true, Ordering::Relaxed));
+    }
+
+    let projected = move || -> Option<crate::eden_zones::ProjectedOwnerLine> {
+        // Subscribe to selection, doc edits (owner assign / geometry / delete) and the pan heartbeat
+        // (`tick`, bumped per rAF while selected). The camera is read live off the snapshot.
+        let _ = doc_tick.get();
+        let _ = tick.get();
+        let sel = selected.get();
+        let (world_a, world_b) = ops::owner_line_world(sel.as_deref())?;
+        let (tx, ty, zoom) = crate::world_assets::camera_snapshot()?;
+        let win = web_sys::window()?;
+        let vw = win.inner_width().ok().and_then(|v| v.as_f64())?;
+        let vh = win.inner_height().ok().and_then(|v| v.as_f64())?;
+        if vw <= 0.0 || vh <= 0.0 {
+            return None;
+        }
+        // Full-bleed canvas → the camera viewport IS the whole window, built exactly as the ruler
+        // overlay does (`select_tool::frozen_camera`).
+        let cam = crate::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+        let project = move |x: f64, y: f64| {
+            let p = cam.project([x, y, 0.0]);
+            (p[0], p[1])
+        };
+        Some(crate::eden_zones::project_owner_line(
+            world_a, world_b, project,
+        ))
+    };
+
+    view! {
+        <Portal>
+            <svg
+                data-trigger-owner-line
+                class="pointer-events-none fixed inset-0 z-10"
+                width="100%"
+                height="100%"
+            >
+                {move || {
+                    projected().map(|l| {
+                        view! {
+                            <line
+                                x1=format!("{:.1}", l.x1)
+                                y1=format!("{:.1}", l.y1)
+                                x2=format!("{:.1}", l.x2)
+                                y2=format!("{:.1}", l.y2)
+                                class="stroke-primary/80"
+                                stroke-width="1.5"
+                                stroke-dasharray="5 3"
+                            />
+                        }
+                    })
+                }}
+            </svg>
+        </Portal>
+    }
+}
+
+/// Native shell: no document, so no triggers. See the wasm sibling.
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn triggers_panel(
+    doc_tick: RwSignal<u64>,
+    selected: RwSignal<Option<String>>,
+) -> AnyView {
+    let _ = (doc_tick, selected);
+    ().into_any()
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -1237,6 +1997,8 @@ mod tests {
         assert!(!custom_chip_visible(EdenSubmode::Zones));
         // T-650 — the Compositions tab is not a Groups surface, so it hides Custom too.
         assert!(!custom_chip_visible(EdenSubmode::Compositions));
+        // T-079 — nor is the Triggers tab a Groups surface.
+        assert!(!custom_chip_visible(EdenSubmode::Triggers));
 
         // Tab → sub-mode: Factions (tab 0) is Groups unless the Objects chip is on.
         assert_eq!(EdenSubmode::from_tab(0, false), EdenSubmode::Groups);
@@ -1246,6 +2008,8 @@ mod tests {
         assert_eq!(EdenSubmode::from_tab(3, false), EdenSubmode::Zones);
         // T-650 — tab 4 is the Compositions surface.
         assert_eq!(EdenSubmode::from_tab(4, false), EdenSubmode::Compositions);
+        // T-079 — tab 5 is the Triggers surface.
+        assert_eq!(EdenSubmode::from_tab(5, false), EdenSubmode::Triggers);
 
         // The end-to-end visibility rule the render uses: Custom on the Factions tab iff not Objects,
         // and never on any other tab.
@@ -1257,7 +2021,7 @@ mod tests {
             !custom_chip_visible(EdenSubmode::from_tab(0, true)),
             "Factions+Objects → Custom hidden"
         );
-        for tab in [1usize, 2, 3] {
+        for tab in [1usize, 2, 3, 4, 5] {
             assert!(
                 !custom_chip_visible(EdenSubmode::from_tab(tab, false)),
                 "Custom hidden on tab {tab}"
@@ -1544,5 +2308,228 @@ mod tests {
             ops.contains(&format!("Pending::{}(comp_id)", "Composition")),
             "place_at_impl must consume the Composition arm on a canvas release"
         );
+    }
+
+    /// T-079 (RIGHT-MODE-003) — the Triggers palette mode + tab exist and map to their own sub-mode.
+    /// The pure pins: tab-index → sub-mode reports Triggers for tab 5, and tab 5 is NOT one of the
+    /// pre-existing surfaces (so it did not silently reuse another tab's slot). Also that a
+    /// `PaletteKind::Trigger` variant was added (the palette-mode vocabulary the ticket asks to grow).
+    #[test]
+    fn triggers_tab_maps_to_its_own_submode() {
+        assert_eq!(EdenSubmode::from_tab(5, false), EdenSubmode::Triggers);
+        // Objects mode on the Triggers tab does not turn it into Objects (that split is the Factions
+        // tab's alone) — tab index wins.
+        assert_eq!(EdenSubmode::from_tab(5, true), EdenSubmode::Triggers);
+        // The pre-existing surfaces keep their tabs.
+        assert_eq!(EdenSubmode::from_tab(0, false), EdenSubmode::Groups);
+        assert_eq!(EdenSubmode::from_tab(1, false), EdenSubmode::Vehicles);
+        assert_eq!(EdenSubmode::from_tab(2, false), EdenSubmode::Markers);
+        assert_eq!(EdenSubmode::from_tab(3, false), EdenSubmode::Zones);
+        assert_eq!(EdenSubmode::from_tab(4, false), EdenSubmode::Compositions);
+
+        // The PaletteKind vocabulary grew a Trigger variant with its own glyph + title (the mode
+        // exists in the enum, not just the tab). Source-inspected because `PaletteKind` is a private
+        // enum a native test cannot name without pulling the wasm-gated module graph. The needle is
+        // assembled so this test's own text is not the thing that satisfies the check.
+        let src = include_str!("eden_dock_right.rs");
+        let variant = ["PaletteKind", "::", "Trigger"].concat();
+        assert!(
+            src.contains(&variant),
+            "the palette-mode vocabulary must carry a Trigger variant"
+        );
+    }
+
+    /// T-079 (RIGHT-MODE-003) — the Triggers palette is a LIVE surface wired to the editor-ops
+    /// trigger seam, not a T-069-style stub. Source inspection (the `compositions_tab_is_wired_not
+    /// _stubbed` precedent): the panel is a wasm-only view a native test cannot mount.
+    ///
+    /// **Every needle is assembled at run time** (this file searches itself, so a contiguous literal
+    /// would make an absence check unfailable and a presence check unpassable — the hard-won rule at
+    /// the top of this file). Each needle is split and re-joined.
+    #[test]
+    fn triggers_tab_is_wired_not_stubbed() {
+        const SRC: &str = include_str!("eden_dock_right.rs");
+        let call = |f: &str| format!("ops::{f}(");
+
+        // The tab strip renders a Triggers tab at index 5.
+        assert!(
+            SRC.contains(&format!("tab_btn(5, {:?})", "Triggers")),
+            "a Triggers tab must be in the tab strip"
+        );
+        // The panel dispatch routes tab 5 to the triggers panel.
+        assert!(
+            SRC.contains(&format!("5 => {}(", "triggers_panel")),
+            "tab 5 must dispatch to the triggers panel"
+        );
+        // The panel reaches the trigger edit seam: name / activation / owner / rule / delete.
+        for f in [
+            "set_trigger_name",
+            "set_trigger_activation",
+            "set_trigger_owner",
+            "set_trigger_rule",
+            "delete_trigger",
+        ] {
+            assert!(
+                SRC.contains(&call(f)),
+                "the Triggers panel must call {f} (the trigger edit surface)"
+            );
+        }
+        // The OWNER picker (CONN-TRG-OWNER-001) reads the placed-entity list AND the line reads its
+        // resolved endpoints.
+        assert!(
+            SRC.contains(&call("placed_owner_options")),
+            "the Owner picker must list placed entities via placed_owner_options"
+        );
+        assert!(
+            SRC.contains(&call("owner_line_world")),
+            "the owner-link line must resolve its endpoints via owner_line_world"
+        );
+
+        // The editor-ops seam actually exposes those functions AND the geometry reaches the core
+        // trigger mutators (the claim the store round-trip rests on).
+        let ops = include_str!("editor_ops.rs");
+        for f in [
+            "pub fn set_trigger_owner",
+            "pub fn trigger_rows",
+            "pub fn placed_owner_options",
+            "pub fn owner_line_world",
+        ] {
+            assert!(ops.contains(f), "editor_ops must expose `{f}`");
+        }
+        assert!(
+            ops.contains("core.add_circle_trigger(") || ops.contains("core.add_polygon_trigger("),
+            "a trigger draw must reach the core trigger mutator"
+        );
+    }
+
+    /// T-079 — the trigger AREA is a SECOND CONSUMER of the SHIPPED zone draw tool: the Triggers
+    /// panel arms the SAME `begin_zone_draw` / `begin_zone_reshape` calls the Zones panel does, only
+    /// with `DrawTarget::Trigger`. This proves BOTH halves of the ticket's "parameterize, do not
+    /// fork" constraint:
+    ///   • the zone tool is UNTOUCHED FOR ZONES — the Zones panel still arms with `DrawTarget::Zone`;
+    ///   • no forked trigger draw state machine was invented — there is no `begin_trigger_draw` /
+    ///     `advance_trigger_draw` / `close_trigger_polygon`; the trigger path routes through the
+    ///     `zone_draw`/`zone_polygon` functions with the target flag.
+    #[test]
+    fn trigger_draw_is_second_consumer_of_the_zone_tool() {
+        const SRC: &str = include_str!("eden_dock_right.rs");
+        let zones_src = include_str!("eden_zones.rs");
+        let ops = include_str!("editor_ops.rs");
+
+        // Assemble the target tokens so this test's own source cannot satisfy the checks by accident.
+        let trigger_target = ["Draw", "Target", "::", "Trigger"].concat();
+        let zone_target = ["Draw", "Target", "::", "Zone"].concat();
+        let begin_draw = ["begin_", "zone_draw"].concat();
+        let begin_reshape = ["begin_", "zone_reshape"].concat();
+
+        // The Triggers panel arms the SHARED draw tool, targeting triggers.
+        assert!(
+            SRC.contains(&begin_draw) && SRC.contains(&trigger_target),
+            "the Triggers panel must arm the shared zone-draw tool with the Trigger target"
+        );
+        assert!(
+            SRC.contains(&begin_reshape),
+            "trigger reshape must route through the shared zone-reshape, not a forked one"
+        );
+        // The Zones panel is UNTOUCHED for zones — it still targets the Zone collection.
+        assert!(
+            zones_src.contains(&begin_draw) && zones_src.contains(&zone_target),
+            "the Zones panel must still arm the zone-draw tool with the Zone target (untouched)"
+        );
+
+        // No forked trigger draw state machine exists anywhere: the geometry accumulation is the ONE
+        // shared `advance_zone_draw` / `close_zone_polygon`. A `begin_trigger_draw` /
+        // `advance_trigger_draw` / `close_trigger_polygon` would be exactly the fork the ticket bans.
+        for forked in [
+            ["begin_", "trigger_draw"].concat(),
+            ["advance_", "trigger_draw"].concat(),
+            ["close_", "trigger_polygon"].concat(),
+        ] {
+            assert!(
+                !ops.contains(&forked),
+                "found a FORKED trigger draw fn `{forked}` — the draw flow must be parameterized by \
+                 DrawTarget, not forked (the second-consumer constraint)"
+            );
+        }
+        // The single per-collection branch really is on the target: the commit calls the trigger
+        // mutators under a `DrawTarget::Trigger` match arm.
+        assert!(
+            ops.contains(&trigger_target) && ops.contains("core.add_circle_trigger("),
+            "the commit's Trigger branch must call the core trigger mutator"
+        );
+    }
+
+    /// T-079 (CONN-TRG-OWNER-001) — the owner-link LINE renders through the selection-overlay idiom
+    /// (a `pointer-events-none` SVG projected by the pure, native-tested `project_owner_line`), keyed
+    /// off the SELECTED trigger, and it TOLERATES a dangling owner by drawing nothing. Source pins;
+    /// the projection math + dangling tolerance are proven behaviourally by `project_owner_line`'s
+    /// native test (below) and the store's `owner_edge_assigns_clears_and_tolerates_dangling`.
+    #[test]
+    fn owner_line_uses_the_selection_overlay_idiom() {
+        const SRC: &str = include_str!("eden_dock_right.rs");
+        // Every SRC needle assembled at run time — this test's own source is part of the haystack, so
+        // a contiguous literal would make a presence check unpassable-by-code (satisfied by the test
+        // itself). The overlay is the ruler idiom: a non-interactive SVG projected by the pure helper.
+        let non_interactive = ["pointer-events-", "none"].concat();
+        let project_fn = ["project_", "owner_line"].concat();
+        let resolve_fn = ["owner_", "line_world"].concat();
+        assert!(
+            SRC.contains(&non_interactive) && SRC.contains(&project_fn),
+            "the owner line must be a pointer-events-none SVG drawn via the pure projection helper"
+        );
+        // Its endpoints come from the resolver that returns None (→ no line) when the owner dangles.
+        assert!(
+            SRC.contains(&resolve_fn),
+            "the line's endpoints must come from the resolver (None on a dangling owner)"
+        );
+        // T-727 keying trap: the trigger LIST must not use a `<For>` keyed on the (repeatable) name.
+        // Like the Zones list, it is a full `.map(...).collect_view()` re-render off `doc_tick`, so
+        // there is no `<For>` node to mis-key — row identity is the trigger id, never its name.
+        let list_label = ["Authored ", "triggers"].concat();
+        assert!(
+            SRC.contains(&list_label),
+            "the trigger list must render (the authored-triggers list)"
+        );
+        let name_key = ["key=", "|t| t.name"].concat();
+        assert!(
+            !SRC.contains(&name_key),
+            "the trigger list must not be <For>-keyed on the repeatable name (T-727)"
+        );
+    }
+
+    /// T-079 (CONN-TRG-OWNER-001) — the owner-link line's projection is PURE and native-tested: two
+    /// world endpoints through a projector give the screen `<line>` endpoints. Perturb / restore: a
+    /// projector that scales + offsets must move BOTH endpoints through it (a bug that projected only
+    /// one end, or dropped the offset, fails here). The dangling-owner "draw nothing" path is proven
+    /// in the store test; this proves the geometry the overlay draws when there IS a line.
+    #[test]
+    fn project_owner_line_maps_both_endpoints() {
+        use crate::eden_zones::project_owner_line;
+        // Trigger centre (10,20) → owner (110,220), through a scale-2 + offset projector.
+        let l = project_owner_line((10.0, 20.0), (110.0, 220.0), |x, y| {
+            (x * 2.0 + 5.0, y * 2.0 + 7.0)
+        });
+        assert!(
+            (l.x1 - 25.0).abs() < 1e-9 && (l.y1 - 47.0).abs() < 1e-9,
+            "endpoint A not projected"
+        );
+        assert!(
+            (l.x2 - 225.0).abs() < 1e-9 && (l.y2 - 447.0).abs() < 1e-9,
+            "endpoint B not projected"
+        );
+        // Identity projector → world coords pass through unchanged (the two ends are distinct).
+        let id = project_owner_line((1.0, 2.0), (3.0, 4.0), |x, y| (x, y));
+        assert_eq!((id.x1, id.y1, id.x2, id.y2), (1.0, 2.0, 3.0, 4.0));
+    }
+
+    /// T-079 — `DrawTarget` is the second-consumer parameter, and its two variants are distinct
+    /// (so a zone draw and a trigger draw can never collapse into one). A tiny pin, but it is the
+    /// hinge the whole "one shared draw tool" design turns on.
+    #[test]
+    fn draw_target_variants_are_distinct() {
+        use crate::eden_zones::DrawTarget;
+        assert_ne!(DrawTarget::Zone, DrawTarget::Trigger);
+        assert_eq!(DrawTarget::Trigger.noun(), "trigger");
+        assert_eq!(DrawTarget::Zone.noun(), "zone");
     }
 }

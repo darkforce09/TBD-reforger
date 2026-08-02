@@ -108,6 +108,44 @@ pub struct MissionDocCore {
     /// `is_known_editor_payload_top_level`). Self-healing: the day compile.rs authors `compositions`
     /// itself, the projection becomes dead weight to delete, not a double-emit.
     compositions: MapRef,
+    /// T-079 — root `triggers` map (`triggersById` in [`Self::small_maps_json`]) — undo-scoped. The
+    /// EDITOR half of triggers: an authored area (zone geometry) plus a stored-not-evaluated
+    /// activation kind and an optional owner-entity link. See the T-079 mutator block
+    /// ([`Self::add_circle_trigger`]) for the row contract, and the [`Self::zones`] field's T-211
+    /// routing note above — this mirrors it exactly (canonical `triggersById` + a transitional
+    /// `payloadExtras.triggers` projection in `small_maps_json`, top-level `triggers[]` loaded back by
+    /// [`Self::hydrate`], `triggers` listed in `is_known_editor_payload_top_level`).
+    ///
+    /// ── T-079 STORAGE / SPLIT NOTE ──────────────────────────────────────────────────────────────
+    /// A trigger row is `#/$defs/zone`-shaped for its `shape` and `rules` (so trigger GEOMETRY rides
+    /// the SHIPPED zone draw tool and trigger RULES reuse `$defs/zoneRules`, per the ticket) PLUS the
+    /// three trigger-only keys `name`, `ownerId`, `activation`:
+    ///
+    ///   id          String, required — the doc key.
+    ///   name        String, optional — the author-facing label (empty allowed; the tool clears the
+    ///               key rather than writing `""` when the box is emptied, mirroring `zone.label`).
+    ///   shape       Object, `#/$defs/shape` — EXACTLY ONE of circle {x,z,r} / polygon [[x,z],…],
+    ///               written by the SAME `circle_shape_any` / `polygon_shape_any` the zone mutators
+    ///               use (the second-consumer requirement — no second geometry vocabulary).
+    ///   ownerId     String, optional — the placed slot/vehicle this trigger belongs to
+    ///               (CONN-TRG-OWNER-001, the data edge). `None`/absent = unowned. A DANGLING owner
+    ///               (the entity was deleted) is TOLERATED: the row keeps the id, and the render/read
+    ///               simply resolves nothing (no cascade delete here — the owner map is another
+    ///               slice's, and a broken edge must degrade, not panic).
+    ///   activation  String, optional — one of `presence` / `radio` / `timer`, a TYPED PLACEHOLDER
+    ///               that is STORED, NOT EVALUATED (the activation/effects runtime is T-676). Written
+    ///               opaquely; the editor offers exactly the three the ticket names.
+    ///   rules       Object, optional, `#/$defs/zoneRules` — stored OPAQUE and whole, exactly like
+    ///               [`Self::set_zone_rules`] (the same closed-vocabulary reason: a typed mirror would
+    ///               be the second vocabulary T-241 exists to prevent).
+    ///
+    /// **Why the wire needs no `mission/compile.rs` change** (that file is not this slice's owns): the
+    /// schema does not declare `triggers` yet — T-706 (wave 120) declares it. Until then the round trip
+    /// is closed by the transitional `payloadExtras.triggers` projection promoted by `compile_payload`
+    /// (T-219), exactly as `zones` / `compositions` do. Self-healing on the same terms: the day
+    /// compile.rs authors `triggers` from `triggersById`, the projection retires. See the
+    /// forward-constraint comment in `small_maps_json`.
+    triggers: MapRef,
     /// When true, mutators stamp `INIT` (untracked) instead of `LOCAL` — set around boot / hydrate /
     /// default-seeding so a load is not an undo step. Interior mutability: mutators take `&self`.
     init_mode: Cell<bool>,
@@ -187,6 +225,7 @@ impl MissionDocCore {
         let entities = doc.get_or_insert_map("entities");
         let zones = doc.get_or_insert_map("zones");
         let compositions = doc.get_or_insert_map("compositions");
+        let triggers = doc.get_or_insert_map("triggers");
 
         // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
         // stack item only when `last_change > 0 && now - last_change < capture_timeout_millis`
@@ -221,6 +260,9 @@ impl MissionDocCore {
         // T-650 — a save/rename/delete of a composition row is an undoable user edit, exactly like a
         // zone or a crew board.
         undo_mgr.expand_scope(&doc, &compositions);
+        // T-079 — authoring a trigger (draw / rename / owner / activation / rules / delete) is an
+        // undoable user edit, exactly like a zone.
+        undo_mgr.expand_scope(&doc, &triggers);
 
         Self {
             doc,
@@ -233,6 +275,7 @@ impl MissionDocCore {
             entities,
             zones,
             compositions,
+            triggers,
             init_mode: Cell::new(false),
             undo_mgr,
         }
@@ -379,7 +422,7 @@ impl MissionDocCore {
         let meta = self.doc.get_or_insert_map("meta");
         let payload_extras = self.doc.get_or_insert_map("payloadExtras");
         let entity_order = self.doc.get_or_insert_map("entityOrder");
-        let named: [(&str, MapRef); 11] = [
+        let named: [(&str, MapRef); 12] = [
             ("factionsById", self.doc.get_or_insert_map("factions")),
             ("squadsById", self.doc.get_or_insert_map("squads")),
             ("loadoutsById", self.doc.get_or_insert_map("loadouts")),
@@ -399,6 +442,9 @@ impl MissionDocCore {
                 "compositionsById",
                 self.doc.get_or_insert_map("compositions"),
             ),
+            // T-079 — the canonical by-id emit for triggers, shaped exactly like `zonesById`. The
+            // panel's narrow reader ([`Self::triggers_json`]) reads the same map; a Save carries it.
+            ("triggersById", self.doc.get_or_insert_map("triggers")),
         ];
 
         let txn = self.doc.transact();
@@ -430,8 +476,21 @@ impl MissionDocCore {
         // field, not `get_or_insert_map` — that deadlocks against the live `txn`, see the zones note
         // above), ordered like every sibling.
         let comp_rows = ordered_rows(&txn, &self.compositions, &entity_order, "compositions");
+        // T-079 — the same transitional projection for triggers. The schema does not declare
+        // `triggers` yet — T-706 (wave 120) declares it — so `compile_payload` cannot AUTHOR the key,
+        // and the round trip is closed exactly as `zones`/`compositions` do: promote
+        // `payloadExtras.triggers` onto the wire root (T-219). When T-706 lands and compile.rs grows
+        // its own `"triggers": values_of_ordered(&small, "triggersById", "triggers")`, this
+        // projection retires on both of the extras loop's guards (see the zones note above). Built
+        // off `self.triggers` (the struct field, not `get_or_insert_map` — that deadlocks against the
+        // live `txn`, the zones note's measured hang), ordered like every sibling.
+        let trigger_rows = ordered_rows(&txn, &self.triggers, &entity_order, "triggers");
         // Omit when empty so a clean doc's snapshot shape stays unchanged.
-        if payload_extras.len(&txn) > 0 || !zone_rows.is_empty() || !comp_rows.is_empty() {
+        if payload_extras.len(&txn) > 0
+            || !zone_rows.is_empty()
+            || !comp_rows.is_empty()
+            || !trigger_rows.is_empty()
+        {
             let mut extras: HashMap<String, Any> = match payload_extras.to_json(&txn) {
                 Any::Map(m) => (*m).clone(),
                 _ => HashMap::new(),
@@ -449,6 +508,12 @@ impl MissionDocCore {
                 extras.remove("compositions");
             } else {
                 extras.insert("compositions".to_string(), Any::Array(comp_rows.into()));
+            }
+            // T-079 — same absence rule for triggers: deleting every trigger must clear the wire.
+            if trigger_rows.is_empty() {
+                extras.remove("triggers");
+            } else {
+                extras.insert("triggers".to_string(), Any::Array(trigger_rows.into()));
             }
             if !extras.is_empty() {
                 root.insert("payloadExtras".to_string(), Any::Map(Arc::new(extras)));
@@ -1373,6 +1438,143 @@ impl MissionDocCore {
         self.compositions.len(&self.doc.transact()) as usize
     }
 
+    // ── T-079 — triggers, the editor half (`triggersById`) ──────────────────────────────────────
+    //
+    // ROW SHAPE + ROUTING: see the `triggers` field's SPLIT NOTE. The row is `#/$defs/zone`-shaped
+    // for `shape` + `rules`, plus the trigger-only `name` / `ownerId` / `activation`. The geometry
+    // setters call the SAME `circle_shape_any` / `polygon_shape_any` the zone mutators do — that
+    // shared geometry is the "trigger area is a SECOND CONSUMER of the zone draw tool" contract at
+    // the doc layer: there is no second circle/polygon encoding for triggers to drift from.
+    //
+    // WHY THESE MUTATORS DO NOT RANGE-CHECK OR TYPE-NARROW — the same reasoning as the T-211 zone
+    // block above: `rules` is stored opaque and whole (the closed `$defs/zoneRules` vocabulary is the
+    // single validator, T-241), and `$defs/circle.r` / `$defs/polygon` bounds are the schema's to
+    // enforce, not re-encoded here. The draw tool's `radius_survives_compile` / `polygon_is_committable`
+    // guards (shared with zones) keep a degenerate shape from being COMMITTED in the first place.
+
+    /// T-079 — create a circle trigger. `x`/`z` are world metres, `r` the radius; `activation` is the
+    /// stored-not-evaluated activation kind (`presence`/`radio`/`timer`), written verbatim. Mirrors
+    /// [`Self::add_circle_zone`], with the trigger-only `activation` key added.
+    pub fn add_circle_trigger(&self, id: &str, activation: &str, x: f64, z: f64, r: f64) {
+        let mut txn = self.begin();
+        let t = self
+            .triggers
+            .insert(&mut txn, id, MapPrelim::from([("id", id)]));
+        t.insert(&mut txn, "activation", activation);
+        t.insert(&mut txn, "shape", circle_shape_any(x, z, r));
+    }
+
+    /// T-079 — create a polygon trigger from a FLAT `[x0,z0,x1,z1,…]` ring (the wasm-boundary shape,
+    /// exactly [`Self::add_polygon_zone`]). A trailing unpaired coordinate is dropped.
+    pub fn add_polygon_trigger(&self, id: &str, activation: &str, points_flat: &[f64]) {
+        let mut txn = self.begin();
+        let t = self
+            .triggers
+            .insert(&mut txn, id, MapPrelim::from([("id", id)]));
+        t.insert(&mut txn, "activation", activation);
+        t.insert(&mut txn, "shape", polygon_shape_any(points_flat));
+    }
+
+    /// T-079 — reshape a trigger to a circle. Whole-`shape` replacement (the `oneOf` reason from
+    /// [`Self::set_zone_circle`]), so `name` / `ownerId` / `activation` / `rules` survive.
+    pub fn set_trigger_circle(&self, trigger_id: &str, x: f64, z: f64, r: f64) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(t)) = self.triggers.get(&txn, trigger_id) {
+            t.insert(&mut txn, "shape", circle_shape_any(x, z, r));
+        }
+    }
+
+    /// T-079 — reshape a trigger to a polygon. Whole-`shape` replacement, as [`Self::set_zone_polygon`].
+    pub fn set_trigger_polygon(&self, trigger_id: &str, points_flat: &[f64]) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(t)) = self.triggers.get(&txn, trigger_id) {
+            t.insert(&mut txn, "shape", polygon_shape_any(points_flat));
+        }
+    }
+
+    /// T-079 — the trigger's author-facing `name`. `None` REMOVES the key; `Some("")` is refused-empty
+    /// upstream by the panel (which sends `None` on an emptied box), mirroring [`Self::set_zone_label`]'s
+    /// two reachable states without inventing a third for the mod.
+    pub fn set_trigger_name(&self, trigger_id: &str, name: Option<&str>) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(t)) = self.triggers.get(&txn, trigger_id) {
+            if let Some(n) = name {
+                t.insert(&mut txn, "name", n);
+            } else {
+                t.remove(&mut txn, "name");
+            }
+        }
+    }
+
+    /// T-079 (CONN-TRG-OWNER-001) — the owner link, the DATA EDGE. `Some(entity_id)` records the
+    /// placed slot/vehicle this trigger belongs to; `None` clears it (unowned). No referential check:
+    /// the owner map is another slice's and an owner can be deleted after assignment — the edge is
+    /// allowed to DANGLE and every reader tolerates a `ownerId` that resolves to nothing (see the
+    /// field SPLIT NOTE). This is deliberately NOT the drag-connect gesture (that is T-672's
+    /// CONN-START-001) — it is a plain id write the picker drives.
+    pub fn set_trigger_owner(&self, trigger_id: &str, owner_id: Option<&str>) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(t)) = self.triggers.get(&txn, trigger_id) {
+            if let Some(o) = owner_id {
+                t.insert(&mut txn, "ownerId", o);
+            } else {
+                t.remove(&mut txn, "ownerId");
+            }
+        }
+    }
+
+    /// T-079 — the stored-not-evaluated `activation` kind (`presence`/`radio`/`timer`). Written
+    /// verbatim; the runtime that acts on it is T-676. The panel offers only the three the ticket
+    /// names, so a value outside them can only come from a hand-authored payload — kept as-is (opaque)
+    /// rather than clamped, matching the doc layer's write-faithfully / schema-rejects discipline.
+    pub fn set_trigger_activation(&self, trigger_id: &str, activation: &str) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(t)) = self.triggers.get(&txn, trigger_id) {
+            t.insert(&mut txn, "activation", activation);
+        }
+    }
+
+    /// T-079 — the trigger's `rules` object (`$defs/zoneRules`). Stored OPAQUE and whole, identical to
+    /// [`Self::set_zone_rules`]: `None` / malformed / non-object / `{}` all REMOVE the key (the
+    /// "cleared every rule" == "never authored" identity), so triggers reuse the exact zone-rules
+    /// storage discipline and the schema stays the single vocabulary.
+    pub fn set_trigger_rules(&self, trigger_id: &str, rules_json: Option<&str>) {
+        let mut txn = self.begin();
+        let Some(Out::YMap(t)) = self.triggers.get(&txn, trigger_id) else {
+            return;
+        };
+        match rules_json.map(json_str_to_any) {
+            Some(Any::Map(m)) if !m.is_empty() => {
+                t.insert(&mut txn, "rules", Any::Map(m));
+            }
+            _ => {
+                t.remove(&mut txn, "rules");
+            }
+        }
+    }
+
+    /// T-079 — delete a trigger row.
+    pub fn remove_trigger(&self, trigger_id: &str) {
+        let mut txn = self.begin();
+        self.triggers.remove(&mut txn, trigger_id);
+    }
+
+    /// T-079 — the `triggers` root as a JSON object (`triggersById`), for the palette's render read.
+    /// `small_maps_json` carries the same map; this is the narrow getter (the [`Self::zones_json`] twin).
+    #[must_use]
+    pub fn triggers_json(&self) -> String {
+        let txn = self.doc.transact();
+        let mut buf = String::new();
+        self.triggers.to_json(&txn).to_json(&mut buf);
+        buf
+    }
+
+    /// T-079 — authored trigger count (cheap; backs the palette header count).
+    #[must_use]
+    pub fn trigger_count(&self) -> usize {
+        self.triggers.len(&self.doc.transact()) as usize
+    }
+
     /// T-650 (COMP-PLACE-001) — place a saved composition: stamp every captured entity onto the map
     /// at `(drop_x, drop_y)` as ONE undoable transaction. This is the multi-paste the ticket calls
     /// for — a `paste_at_cursor`-shaped drop, but writing slots AND vehicles AND objects, all in a
@@ -2217,6 +2419,7 @@ impl MissionDocCore {
             &entities,
             &self.zones,
             &self.compositions,
+            &self.triggers,
             &markers,
             &payload_extras,
             &entity_order,
@@ -2293,6 +2496,17 @@ impl MissionDocCore {
             payload.get("compositions"),
             &entity_order,
             "compositions",
+        );
+        // T-079 — top-level `triggers[]` into the `triggers` root, ordered like every sibling. As
+        // with `zones` / `compositions`, this takes `triggers` OFF the `payloadExtras` parking path
+        // (it is in [`is_known_editor_payload_top_level`]): the root map becomes the single source of
+        // truth and `small_maps_json` re-projects it onto the wire until T-706 authors the key.
+        load_rows_ordered(
+            &mut txn,
+            &self.triggers,
+            payload.get("triggers"),
+            &entity_order,
+            "triggers",
         );
         load_rows_ordered(
             &mut txn,
@@ -3486,6 +3700,13 @@ fn is_known_editor_payload_top_level(key: &str) -> bool {
             // `payloadExtras.compositions` projection in `small_maps_json` closes the round trip
             // until it does.
             | "compositions"
+            // T-079 — hydrate loads top-level `triggers[]` into the `triggers` root. Like `zones` /
+            // `compositions`, compile.rs's twin list does NOT list this key yet: the schema does not
+            // declare `triggers` until T-706 (wave 120), so the transitional
+            // `payloadExtras.triggers` projection in `small_maps_json` closes the round trip until
+            // then. Do NOT add `triggers` to compile.rs's list before it emits from `triggersById`,
+            // or every authored trigger drops on save (the exact failure the zones note warns of).
+            | "triggers"
             | "markers"
             | "editor"
             | "orbat"
@@ -7617,6 +7838,347 @@ mod tests {
         for pt in ring {
             assert_eq!(pt.as_array().expect("vertex").len(), 2, "{pt:?}");
         }
+    }
+
+    /* ─────────────────────── T-079 — triggers (editor half): round trip, owner edge, wire ─────────────────────── */
+
+    /// A doc carrying a complete editor graph (so `compile_payload` has a mission to compile) plus
+    /// two triggers authored through the mutators exactly as the draw tool + panel would: a polygon
+    /// presence trigger owned by a placed slot, and a circle timer trigger with no owner but with
+    /// rules. **Coordinates are deliberately NON-INTEGRAL** for the same reason the zones fixture is —
+    /// an all-integer fixture would survive a bug that coerced every coordinate to `Any::BigInt` and
+    /// back, so `-4210.75` is what lets the round-trip prove the geometry itself came back.
+    #[cfg(feature = "mission")]
+    fn triggers_fixture() -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        // A COMPLETE editor graph (a bare slot fails `flatten_to_mod_document` on NoSlots, which
+        // would fail the round trip for a reason unrelated to triggers). The slot `s1` is the owner
+        // the first trigger links to.
+        doc.add_faction("f1", "BLUFOR", "US");
+        doc.add_squad("sq1", "f1", "Alpha", Some("Alpha".to_string()));
+        doc.add_slot(
+            "s1", "sq1", "lyr", 0, "Rifleman", None, None, 100.5, 200.5, 0.0, 0.0,
+        );
+
+        // A polygon PRESENCE trigger, named, OWNED by the placed slot, with rules.
+        doc.add_polygon_trigger(
+            "t_amb",
+            "presence",
+            &[
+                1000.25, -4210.75, 1600.5, -4210.75, 1600.5, -3800.125, 1000.25, -3800.125,
+            ],
+        );
+        doc.set_trigger_name("t_amb", Some("Ambush"));
+        doc.set_trigger_owner("t_amb", Some("s1"));
+        doc.set_trigger_rules(
+            "t_amb",
+            Some(r#"{"graceSeconds":45.5,"contestable":false}"#),
+        );
+
+        // A circle TIMER trigger, unowned, with a rule.
+        doc.add_circle_trigger("t_timer", "timer", 1234.5, -3990.25, 175.75);
+        doc.set_trigger_rules("t_timer", Some(r#"{"announceEverySeconds":12.5}"#));
+        doc
+    }
+
+    /// Pull the triggers array off a compiled wire payload, whichever route put it there. Once T-706
+    /// declares `triggers` and `compile_payload` authors it, this reads the authored key instead of
+    /// the promoted one, with no test change — which is the point (mirrors `wire_zones`).
+    #[cfg(feature = "mission")]
+    fn wire_triggers(payload: &serde_json::Value) -> Vec<serde_json::Value> {
+        payload
+            .get("triggers")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// **THE ROUND TRIP — author → persist → reload → identical, through the REAL compile→hydrate.**
+    ///
+    /// Asserts on the WHOLE trigger object, not the presence of a `triggers` key: a test that only
+    /// checked `is_array()` would pass green over a trigger whose `shape` was dropped, whose polygon
+    /// was truncated, whose `ownerId` / `activation` were lost, or whose `rules` became `{}`. The
+    /// cycle runs TWICE (`compile → hydrate → compile`) because one pass cannot tell "the doc stored
+    /// it" from "the doc round-tripped it" — a value merely echoed out of the parked side-channel
+    /// survives one compile and dies on the second (the T-219 class). This is the ticket's
+    /// "store round-trip through REAL compile→hydrate" acceptance, geometry + owner + activation
+    /// + rules included.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn authored_triggers_survive_compile_hydrate_compile_whole() {
+        let doc = triggers_fixture();
+
+        let compiled = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let first = wire_triggers(&compiled);
+        assert_eq!(
+            first.len(),
+            2,
+            "both authored triggers must reach the wire payload: {compiled}"
+        );
+
+        // Full-value expectation — every key spelled out: geometry, owner edge, activation, rules.
+        let expect_amb = serde_json::json!({
+            "id": "t_amb",
+            "name": "Ambush",
+            "ownerId": "s1",
+            "activation": "presence",
+            "shape": { "polygon": [
+                [1000.25, -4210.75],
+                [1600.5,  -4210.75],
+                [1600.5,  -3800.125],
+                [1000.25, -3800.125]
+            ]},
+            "rules": { "graceSeconds": 45.5, "contestable": false }
+        });
+        let expect_timer = serde_json::json!({
+            "id": "t_timer",
+            "activation": "timer",
+            "shape": { "circle": { "x": 1234.5, "z": -3990.25, "r": 175.75 } },
+            "rules": { "announceEverySeconds": 12.5 }
+        });
+
+        let by_id = |rows: &[serde_json::Value], id: &str| -> serde_json::Value {
+            rows.iter()
+                .find(|r| r["id"] == id)
+                .unwrap_or_else(|| panic!("trigger {id} missing from {rows:?}"))
+                .clone()
+        };
+
+        assert_eq!(
+            by_id(&first, "t_amb"),
+            expect_amb,
+            "compile #1 dropped part of t_amb (geometry / owner / activation / rules)"
+        );
+        assert_eq!(
+            by_id(&first, "t_timer"),
+            expect_timer,
+            "compile #1 dropped part of t_timer"
+        );
+
+        // Reload from the persisted payload, exactly as the editor does, then recompile.
+        let reloaded = save_and_reload(&doc);
+        assert_eq!(
+            reloaded.trigger_count(),
+            2,
+            "hydrate must restore both triggers"
+        );
+
+        let recompiled = crate::mission::compile::compile_payload(
+            &reloaded.small_maps_json(),
+            &reloaded.slots_json(),
+            false,
+        );
+        let second = wire_triggers(&recompiled);
+        assert_eq!(
+            by_id(&second, "t_amb"),
+            expect_amb,
+            "t_amb did not survive save→reload→save WHOLE"
+        );
+        assert_eq!(
+            by_id(&second, "t_timer"),
+            expect_timer,
+            "t_timer did not survive save→reload→save WHOLE"
+        );
+
+        // T-432 still holds: the side-channel name never becomes a wire key.
+        assert!(
+            recompiled.get("payloadExtras").is_none(),
+            "payloadExtras must not reach the wire: {recompiled}"
+        );
+    }
+
+    /// **CONN-TRG-OWNER-001 — the owner edge is assignable, clearable, and TOLERATES a dangling
+    /// owner.** The data edge is a plain `ownerId` write; deleting the owning entity must leave the
+    /// trigger intact with an id that now resolves to nothing — never a panic, never a cascade that
+    /// removes the trigger. FIRES the rule (perturb / fail / restore): a delete that also removed the
+    /// trigger, or a `set_trigger_owner` that refused an unknown id, would fail the middle assertion.
+    #[test]
+    fn owner_edge_assigns_clears_and_tolerates_dangling() {
+        let doc = MissionDocCore::new();
+        doc.add_faction("f1", "BLUFOR", "US");
+        doc.add_squad("sq1", "f1", "Alpha", Some("Alpha".to_string()));
+        doc.add_slot(
+            "s1", "sq1", "lyr", 0, "Rifleman", None, None, 10.5, 20.5, 0.0, 0.0,
+        );
+        doc.add_circle_trigger("t1", "presence", 50.5, 60.5, 25.5);
+
+        let row = |d: &MissionDocCore| -> serde_json::Value {
+            serde_json::from_str::<serde_json::Value>(&d.triggers_json()).expect("triggers_json")["t1"]
+                .clone()
+        };
+        // Baseline: assign the edge to the placed slot.
+        doc.set_trigger_owner("t1", Some("s1"));
+        assert_eq!(row(&doc)["ownerId"], "s1", "owner edge did not record");
+
+        // Perturb the world OUT from under the edge: delete the owning slot. The edge is allowed to
+        // dangle — the trigger survives with an ownerId that now resolves to no entity.
+        doc.remove_slots(vec!["s1".to_string()]);
+        assert_eq!(
+            doc.trigger_count(),
+            1,
+            "deleting the owner must NOT delete the trigger (a dangling edge, not a cascade)"
+        );
+        assert_eq!(
+            row(&doc)["ownerId"],
+            "s1",
+            "the dangling ownerId stays on the row; readers resolve it to nothing, they do not \
+             rewrite it"
+        );
+        // The slot really is gone (so the edge really is dangling, not just claimed to be).
+        let slots: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots_json");
+        assert!(
+            slots.get("s1").is_none(),
+            "the owner slot must actually be removed for this to be a dangling edge: {slots}"
+        );
+
+        // Restore: clearing the edge removes the key entirely (unowned), a distinct state from "owns
+        // a deleted entity".
+        doc.set_trigger_owner("t1", None);
+        assert!(
+            row(&doc).get("ownerId").is_none(),
+            "clearing the owner must remove the key: {}",
+            row(&doc)
+        );
+    }
+
+    /// Reshaping a trigger replaces the whole `shape` — a polygon retyped to a circle must not leave
+    /// BOTH `oneOf` branches (schema-invalid), and it must KEEP `name` / `ownerId` / `activation` /
+    /// `rules` (the whole reason reshape exists vs delete-and-redraw). Trigger geometry is the SECOND
+    /// CONSUMER of the same `circle_shape_any`/`polygon_shape_any` the zone tool uses.
+    #[test]
+    fn reshaping_a_trigger_keeps_metadata_and_one_oneof_branch() {
+        let doc = MissionDocCore::new();
+        doc.add_polygon_trigger("t", "radio", &[0.5, 0.5, 10.5, 0.5, 10.5, 10.5]);
+        doc.set_trigger_name("t", Some("Extract"));
+        doc.set_trigger_owner("t", Some("veh1"));
+        doc.set_trigger_rules("t", Some(r#"{"holdSeconds":90.5}"#));
+
+        doc.set_trigger_circle("t", 50.5, 60.5, 25.5);
+        let row = |d: &MissionDocCore| -> serde_json::Value {
+            serde_json::from_str::<serde_json::Value>(&d.triggers_json()).expect("triggers_json")["t"]
+                .clone()
+        };
+        let r = row(&doc);
+        let shape = r["shape"].as_object().expect("shape");
+        assert!(
+            shape.contains_key("circle"),
+            "reshape did not take: {shape:?}"
+        );
+        assert!(
+            !shape.contains_key("polygon"),
+            "the polygon branch survived a reshape to circle — oneOf-invalid: {shape:?}"
+        );
+        // Every non-geometry field survived the reshape.
+        assert_eq!(r["name"], "Extract", "reshape wiped the name");
+        assert_eq!(r["ownerId"], "veh1", "reshape wiped the owner edge");
+        assert_eq!(r["activation"], "radio", "reshape wiped the activation");
+        assert_eq!(r["rules"]["holdSeconds"], 90.5, "reshape wiped the rules");
+    }
+
+    /// Optional keys must be REMOVABLE and an empty `rules` must vanish rather than persist as `{}`
+    /// — triggers reuse the zone-rules storage discipline verbatim. `activation` is NOT optional
+    /// (every trigger carries one), so it is not cleared here.
+    #[test]
+    fn clearing_optional_trigger_fields_removes_the_keys() {
+        let doc = MissionDocCore::new();
+        doc.add_circle_trigger("t", "presence", 5.5, 6.5, 7.5);
+        doc.set_trigger_name("t", Some("Alarm"));
+        doc.set_trigger_owner("t", Some("s9"));
+        doc.set_trigger_rules("t", Some(r#"{"points":3.5}"#));
+
+        let row = |d: &MissionDocCore| -> serde_json::Value {
+            serde_json::from_str::<serde_json::Value>(&d.triggers_json()).expect("triggers_json")["t"]
+                .clone()
+        };
+        let r = row(&doc);
+        assert_eq!(r["name"], "Alarm");
+        assert_eq!(r["ownerId"], "s9");
+        assert_eq!(r["rules"]["points"], 3.5);
+        assert_eq!(r["activation"], "presence", "activation is always present");
+
+        doc.set_trigger_name("t", None);
+        doc.set_trigger_owner("t", None);
+        doc.set_trigger_rules("t", None);
+        let r = row(&doc);
+        assert!(r.get("name").is_none(), "name not removed: {r}");
+        assert!(r.get("ownerId").is_none(), "ownerId not removed: {r}");
+        assert!(r.get("rules").is_none(), "rules not removed: {r}");
+        assert_eq!(
+            r["activation"], "presence",
+            "activation must survive clearing the optionals"
+        );
+
+        // An empty rules object is "unauthored", not a third state (the zone-rules identity).
+        doc.set_trigger_rules("t", Some("{}"));
+        assert!(
+            row(&doc).get("rules").is_none(),
+            "empty rules must not be written"
+        );
+        // Retyping the activation is a plain overwrite.
+        doc.set_trigger_activation("t", "timer");
+        assert_eq!(
+            row(&doc)["activation"],
+            "timer",
+            "activation retype did not take"
+        );
+    }
+
+    /// Triggers are undo-scoped like every other root, and a hydrate (INIT) is not an undo step.
+    #[test]
+    fn trigger_edits_are_undoable_and_hydrate_is_not() {
+        let mut doc = MissionDocCore::new();
+        doc.add_circle_trigger("t1", "presence", 1.5, 2.5, 3.5);
+        assert_eq!(doc.trigger_count(), 1);
+        assert!(doc.can_undo(), "a drawn trigger must be undoable");
+        assert!(doc.undo());
+        assert_eq!(doc.trigger_count(), 0, "undo did not remove the trigger");
+        assert!(doc.redo());
+        assert_eq!(doc.trigger_count(), 1, "redo did not restore the trigger");
+
+        // A load is not a user gesture.
+        let fresh = MissionDocCore::new();
+        fresh.set_origin_init(true);
+        fresh.hydrate(
+            &serde_json::json!({
+                "triggers": [ { "id": "t", "activation": "radio",
+                                "shape": { "circle": { "x": 1.5, "z": 2.5, "r": 3.5 } } } ],
+                "editor": { "factions": [], "squads": [], "slots": [], "editorLayers": [] }
+            })
+            .to_string(),
+            "lyr",
+        );
+        fresh.set_origin_init(false);
+        assert_eq!(fresh.trigger_count(), 1);
+        assert!(!fresh.can_undo(), "hydrate must not create an undo step");
+    }
+
+    /// Deleting every trigger must clear the wire, not leave the last-saved array parked (the zones
+    /// absence rule, mirrored). Without the explicit `extras.remove("triggers")`, a
+    /// reload-then-delete-all doc would keep re-emitting triggers it no longer has.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn deleting_every_trigger_clears_them_from_the_wire() {
+        let doc = triggers_fixture();
+        let reloaded = save_and_reload(&doc);
+        assert_eq!(reloaded.trigger_count(), 2);
+
+        reloaded.remove_trigger("t_amb");
+        reloaded.remove_trigger("t_timer");
+        assert_eq!(reloaded.trigger_count(), 0);
+
+        let compiled = crate::mission::compile::compile_payload(
+            &reloaded.small_maps_json(),
+            &reloaded.slots_json(),
+            false,
+        );
+        assert!(
+            wire_triggers(&compiled).is_empty(),
+            "deleted triggers must not survive on the wire: {compiled}"
+        );
     }
 
     /* ─────────────────────── T-650 — saved compositions: round trip, edit, wire ─────────────────────── */

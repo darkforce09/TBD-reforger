@@ -112,8 +112,8 @@ pub struct ZoneDraft {
     pub centre: Option<(f64, f64)>,
     /// Polygon: the ring so far, one vertex per click.
     pub verts: Vec<(f64, f64)>,
-    /// T-582 — RESHAPE target. `None` creates a new zone (`add_*_zone`); `Some(id)` re-shapes that
-    /// existing one (`set_zone_circle` / `set_zone_polygon`).
+    /// T-582 — RESHAPE target. `None` creates a new row (`add_*`); `Some(id)` re-shapes that
+    /// existing one (`set_*_circle` / `set_*_polygon`).
     ///
     /// The two reshape mutators replace the WHOLE `shape` object, which is why a circle can become a
     /// polygon and back: `$defs/shape` is a `oneOf`, so a row carrying both keys is schema-INVALID,
@@ -121,6 +121,13 @@ pub struct ZoneDraft {
     /// authored field — label, faction, and the opaque `rules` — untouched, which is the whole point
     /// of offering reshape instead of delete-and-redraw.
     pub target: Option<String>,
+    /// T-079 — WHICH collection this draw commits into ([`DrawTarget`]). This is the "trigger area is
+    /// a SECOND CONSUMER of the zone draw tool" parameter: the whole draw state machine
+    /// ([`advance_zone_draw`] / [`close_zone_polygon`]) is shared, and only the final commit branches
+    /// on this to call the zone mutators vs the trigger mutators. Zones set `DrawTarget::Zone`,
+    /// triggers `DrawTarget::Trigger`; a reshape (`target.is_some()`) carries the collection of the
+    /// row it re-shapes.
+    pub collection: DrawTarget,
 }
 
 /// One slot's editable attributes, read from the materialized SoA for the Attributes modal.
@@ -3370,6 +3377,9 @@ pub fn regroup_slot_onto(slot_id: &str, target_id: &str) -> bool {
 use crate::eden_chrome::{
     circle_from_clicks, polygon_flat, polygon_is_committable, zone_types, ZoneShape,
 };
+// T-079 — `DrawTarget` is imported straight from its home module (`eden_chrome` re-exports the other
+// zone-tool pure items, but this one is added here in a slice that does not own `eden_chrome`).
+use crate::eden_zones::DrawTarget;
 
 /// One authored zone, read back for the dock list and the Attributes panel.
 #[derive(Clone, Debug, PartialEq)]
@@ -3427,11 +3437,18 @@ pub fn zone_draft() -> Option<ZoneDraft> {
     })
 }
 
-/// Arm a zone draw. `kind` must come from [`zone_types`] — this refuses anything else rather than
-/// letting an invented `zone.type` reach the document, where it would save 201 and then 500
-/// `/compiled` forever (T-581 measured exactly that for `"capture"`).
-pub fn begin_zone_draw(kind: &str, shape: ZoneShape) -> bool {
-    if !zone_types().iter().any(|t| t == kind) {
+/// Arm a draw against `collection` ([`DrawTarget`] — the second-consumer parameter). For a ZONE,
+/// `kind` is a `zone.type` and must come from [`zone_types`] — this refuses anything else rather than
+/// letting an invented type reach the document, where it would save 201 and then 500 `/compiled`
+/// forever (T-581 measured exactly that for `"capture"`). For a TRIGGER, `kind` is the activation
+/// kind and must be one of [`TRIGGER_ACTIVATIONS`] — the same "refuse an invented value at the arm"
+/// discipline, applied to the trigger's own vocabulary.
+pub fn begin_zone_draw(kind: &str, shape: ZoneShape, collection: DrawTarget) -> bool {
+    let valid = match collection {
+        DrawTarget::Zone => zone_types().iter().any(|t| t == kind),
+        DrawTarget::Trigger => TRIGGER_ACTIVATIONS.contains(&kind),
+    };
+    if !valid {
         return false;
     }
     OPS_CTX.with(|c| {
@@ -3445,21 +3462,35 @@ pub fn begin_zone_draw(kind: &str, shape: ZoneShape) -> bool {
             centre: None,
             verts: Vec::new(),
             target: None,
+            collection,
         }));
         true
     })
 }
 
-/// T-582 — arm a RESHAPE of an existing zone: the next clicks replace its `shape` through
-/// `set_zone_circle` / `set_zone_polygon` instead of minting a new row.
+/// T-582 / T-079 — arm a RESHAPE of an existing row in `collection`: the next clicks replace its
+/// `shape` through `set_*_circle` / `set_*_polygon` instead of minting a new row.
 ///
 /// The gesture is identical to a fresh draw (circle: centre then rim; polygon: vertices then Close),
 /// so there is one geometry path and one set of guards — a reshape cannot produce the `r → 0.0`
 /// circle or the two-vertex ring any more than a create can. `kind` is read from the live document
-/// rather than taken from the caller: reshaping is a geometry edit, and silently retyping a zone
-/// because the dock's type picker had drifted would be a different, invisible edit.
-pub fn begin_zone_reshape(zone_id: &str, shape: ZoneShape) -> bool {
-    let Some(row) = zone_rows().into_iter().find(|r| r.id == zone_id) else {
+/// rather than taken from the caller: reshaping is a geometry edit, and silently retyping a row
+/// because the dock's picker had drifted would be a different, invisible edit. The existence check
+/// reads the collection's OWN map (zones vs triggers) so a reshape can never target the wrong one.
+pub fn begin_zone_reshape(row_id: &str, shape: ZoneShape, collection: DrawTarget) -> bool {
+    let kind = match collection {
+        DrawTarget::Zone => zone_rows()
+            .into_iter()
+            .find(|r| r.id == row_id)
+            .map(|r| r.kind),
+        // T-079 — a trigger reshape keeps the trigger's ACTIVATION (its analogue of `zone.type`) as
+        // the draft `kind`, so a create and a reshape carry the same field.
+        DrawTarget::Trigger => trigger_rows()
+            .into_iter()
+            .find(|r| r.id == row_id)
+            .map(|r| r.activation),
+    };
+    let Some(kind) = kind else {
         return false;
     };
     OPS_CTX.with(|c| {
@@ -3468,11 +3499,12 @@ pub fn begin_zone_reshape(zone_id: &str, shape: ZoneShape) -> bool {
             return false;
         };
         *ctx.pending.borrow_mut() = Some(Pending::Zone(ZoneDraft {
-            kind: row.kind,
+            kind,
             shape,
             centre: None,
             verts: Vec::new(),
-            target: Some(zone_id.to_string()),
+            target: Some(row_id.to_string()),
+            collection,
         }));
         true
     })
@@ -3522,6 +3554,7 @@ fn advance_zone_draw(x: f64, z: f64) -> bool {
             kind: String,
             geom: (f64, f64, f64),
             target: Option<String>,
+            collection: DrawTarget,
         },
         None,
     }
@@ -3549,24 +3582,42 @@ fn advance_zone_draw(x: f64, z: f64) -> bool {
                     // cancel: the centre stays put so the author can simply drag further out.
                     None => Commit::None,
                     Some(geom) => {
-                        let (kind, target) = (d.kind.clone(), d.target.clone());
+                        let (kind, target, collection) =
+                            (d.kind.clone(), d.target.clone(), d.collection);
                         *p = None;
-                        Commit::Circle { kind, geom, target }
+                        Commit::Circle {
+                            kind,
+                            geom,
+                            target,
+                            collection,
+                        }
                     }
                 },
             },
         }
     });
     match commit {
+        // T-079 — the ONLY per-collection branch in the whole draw flow: which mutator pair the
+        // committed geometry calls. Everything above (centre/rim accumulation, the `r → 0.0` refusal)
+        // is shared verbatim between zones and triggers.
         Commit::Circle {
             kind,
             geom: (cx, cz, r),
             target,
-        } => match target {
-            // Reshape: replaces the whole `shape` object, so label / faction / rules survive and
-            // the `oneOf` can never end up with both branches present.
-            Some(id) => edit_zone(|core| core.set_zone_circle(&id, cx, cz, r)),
-            None => write_zone(|core, id| core.add_circle_zone(id, &kind, cx, cz, r)),
+            collection,
+        } => match (collection, target) {
+            // Reshape: replaces the whole `shape` object, so name / owner / activation / rules
+            // survive and the `oneOf` can never end up with both branches present.
+            (DrawTarget::Zone, Some(id)) => edit_zone(|core| core.set_zone_circle(&id, cx, cz, r)),
+            (DrawTarget::Zone, None) => write_row(DrawTarget::Zone, |core, id| {
+                core.add_circle_zone(id, &kind, cx, cz, r);
+            }),
+            (DrawTarget::Trigger, Some(id)) => {
+                edit_zone(|core| core.set_trigger_circle(&id, cx, cz, r))
+            }
+            (DrawTarget::Trigger, None) => write_row(DrawTarget::Trigger, |core, id| {
+                core.add_circle_trigger(id, &kind, cx, cz, r);
+            }),
         },
         // A vertex / centre landed but no document write happened yet. Report progress so the dock
         // re-reads, without running the persist tail for a doc that did not change.
@@ -3590,28 +3641,44 @@ pub fn close_zone_polygon() -> bool {
         if d.shape != ZoneShape::Polygon || !polygon_is_committable(&d.verts) {
             return None;
         }
-        let out = (d.kind.clone(), d.verts.clone(), d.target.clone());
+        let out = (
+            d.kind.clone(),
+            d.verts.clone(),
+            d.target.clone(),
+            d.collection,
+        );
         *p = None;
         Some(out)
     });
-    let Some((kind, verts, target)) = taken else {
+    let Some((kind, verts, target, collection)) = taken else {
         return false;
     };
     let flat = polygon_flat(&verts);
-    match target {
+    match (collection, target) {
         // Reshape — see [`begin_zone_reshape`]: whole-`shape` replacement, so a circle becomes a
         // polygon without leaving both `oneOf` branches on the row.
-        Some(id) => edit_zone(|core| core.set_zone_polygon(&id, &flat)),
-        None => write_zone(|core, id| core.add_polygon_zone(id, &kind, &flat)),
+        (DrawTarget::Zone, Some(id)) => edit_zone(|core| core.set_zone_polygon(&id, &flat)),
+        (DrawTarget::Zone, None) => write_row(DrawTarget::Zone, |core, id| {
+            core.add_polygon_zone(id, &kind, &flat)
+        }),
+        (DrawTarget::Trigger, Some(id)) => edit_zone(|core| core.set_trigger_polygon(&id, &flat)),
+        (DrawTarget::Trigger, None) => write_row(DrawTarget::Trigger, |core, id| {
+            core.add_polygon_trigger(id, &kind, &flat)
+        }),
     }
 }
 
-/// Mint an unused zone id. `zones` is its OWN id namespace (`mint_id` proves uniqueness against the
-/// slot SoA, which does not contain zones), and uniqueness is proven against the live map rather
-/// than assumed — undo frees ids and an IDB restore can bring back a document that already used one.
-fn mint_zone_id(core: &MissionDocCore) -> String {
+/// Mint an unused id in `collection`'s OWN namespace (`z{n}` for zones, `t{n}` for triggers), proven
+/// unique against that collection's live map rather than assumed — undo frees ids and an IDB restore
+/// can bring back a document that already used one. Each collection is a separate namespace (the slot
+/// SoA does not contain either), so `mint_id`'s slot proof does not apply here.
+fn mint_row_id(core: &MissionDocCore, collection: DrawTarget) -> String {
+    let (json, prefix) = match collection {
+        DrawTarget::Zone => (core.zones_json(), "z"),
+        DrawTarget::Trigger => (core.triggers_json(), "t"),
+    };
     let existing: std::collections::HashSet<String> =
-        serde_json::from_str::<serde_json::Value>(&core.zones_json())
+        serde_json::from_str::<serde_json::Value>(&json)
             .ok()
             .and_then(|v| {
                 v.as_object()
@@ -3619,14 +3686,15 @@ fn mint_zone_id(core: &MissionDocCore) -> String {
             })
             .unwrap_or_default();
     (1u32..)
-        .map(|n| format!("z{n}"))
+        .map(|n| format!("{prefix}{n}"))
         .find(|id| !existing.contains(id))
-        .unwrap_or_else(|| "z1".to_string())
+        .unwrap_or_else(|| format!("{prefix}1"))
 }
 
-/// Run a zone-creating mutator under a minted id, then the shared dirty tail. The write txn is
-/// scoped so it is gone before `after_local_edit` opens its read txn (the `mission_history` rule).
-fn write_zone(f: impl FnOnce(&MissionDocCore, &str)) -> bool {
+/// Run a row-creating mutator (`add_*_zone` / `add_*_trigger`) under a minted id in `collection`,
+/// then the shared dirty tail. The write txn is scoped so it is gone before `after_local_edit` opens
+/// its read txn (the `mission_history` rule).
+fn write_row(collection: DrawTarget, f: impl FnOnce(&MissionDocCore, &str)) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -3636,7 +3704,7 @@ fn write_zone(f: impl FnOnce(&MissionDocCore, &str)) -> bool {
         let Some(core) = d.as_ref() else {
             return false;
         };
-        let id = mint_zone_id(core);
+        let id = mint_row_id(core, collection);
         f(core, &id);
         true
     });
@@ -3810,4 +3878,336 @@ pub fn zone_count() -> usize {
             .and_then(|ctx| ctx.doc.borrow().as_ref().map(MissionDocCore::zone_count))
             .unwrap_or(0)
     })
+}
+
+/* ═══════════════════ T-079 — triggers, the editor half (RIGHT-MODE-003 + CONN-TRG-OWNER-001) ═══════════════════ */
+
+// The trigger AREA rides the shipped zone draw tool as a SECOND CONSUMER: the draw flow above is
+// parameterized by [`DrawTarget`], so `begin_zone_draw(..., DrawTarget::Trigger)` and the reshape
+// pair author `triggersById` through the SAME `advance_zone_draw` / `close_zone_polygon` state
+// machine — there is no forked trigger draw. This block adds only the trigger-specific reads/writes
+// (name / owner / activation / rules / delete), the owner picker's source, and the owner-link line
+// geometry. Doc mutators are T-079's `MissionDocCore` block; the pure line projection is
+// native-tested (the `ruler_tool::project_legs` idiom).
+
+/// The three activation kinds the ticket names — a TYPED PLACEHOLDER: STORED, not evaluated (the
+/// activation/effects runtime is T-676). This is the trigger's small closed vocabulary, the analogue
+/// of `zone_types()` for the draw arm. Kept here (not read from the schema like `zone_types`) because
+/// the schema does not declare `triggers` yet — T-706 (wave 120) will; when it does and declares an
+/// `activation` enum, this should be replaced by a schema read exactly as `zone_types` is.
+pub const TRIGGER_ACTIVATIONS: &[&str] = &["presence", "radio", "timer"];
+
+/// One authored trigger, read back for the palette list and the Attributes panel. Mirrors
+/// [`ZoneRow`], plus the trigger-only `name` / `owner_id` / `activation`.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TriggerRow {
+    pub id: String,
+    pub name: Option<String>,
+    /// CONN-TRG-OWNER-001 — the linked placed entity, or `None` (unowned). May be DANGLING: the
+    /// entity it names can have been deleted; readers resolve it to nothing, they do not clear it.
+    pub owner_id: Option<String>,
+    /// One of [`TRIGGER_ACTIVATIONS`] (stored, not evaluated).
+    pub activation: String,
+    /// `rules` VERBATIM — the opaque `$defs/zoneRules`-shaped object, never parsed into named fields
+    /// (the `ZoneRow::rules` reason: a typed mirror would be the second vocabulary T-241 prevents).
+    pub rules: serde_json::Value,
+    /// `Some((x, z, r))` for a circle.
+    pub circle: Option<(f64, f64, f64)>,
+    /// The ring for a polygon.
+    pub polygon: Vec<(f64, f64)>,
+}
+
+impl TriggerRow {
+    /// A one-line geometry summary for the palette row (the [`ZoneRow::shape_summary`] twin).
+    #[must_use]
+    pub fn shape_summary(&self) -> String {
+        if let Some((x, z, r)) = self.circle {
+            format!("circle r {r:.1} m @ {x:.0}, {z:.0}")
+        } else if self.polygon.is_empty() {
+            "no shape".to_string()
+        } else {
+            format!("polygon, {} vertices", self.polygon.len())
+        }
+    }
+
+    /// The trigger's geometric CENTRE in world metres — a circle's centre, or a polygon's vertex
+    /// mean. `None` for a shapeless row. This is the trigger end of the owner-link line.
+    #[must_use]
+    pub fn centre(&self) -> Option<(f64, f64)> {
+        if let Some((x, z, _)) = self.circle {
+            return Some((x, z));
+        }
+        if self.polygon.is_empty() {
+            return None;
+        }
+        let n = self.polygon.len() as f64;
+        let (sx, sz) = self
+            .polygon
+            .iter()
+            .fold((0.0, 0.0), |(ax, az), (x, z)| (ax + x, az + z));
+        Some((sx / n, sz / n))
+    }
+}
+
+/// Every authored trigger, sorted by id, for the palette list. Off `triggers_json`, the
+/// [`zone_rows`] twin.
+#[must_use]
+pub fn trigger_rows() -> Vec<TriggerRow> {
+    OPS_CTX
+        .with(|c| {
+            let guard = c.borrow();
+            let ctx = guard.as_ref()?;
+            let d = ctx.doc.borrow();
+            let core = d.as_ref()?;
+            let map: serde_json::Value = serde_json::from_str(&core.triggers_json()).ok()?;
+            let obj = map.as_object()?;
+            let mut rows: Vec<TriggerRow> = obj
+                .iter()
+                .map(|(id, t)| {
+                    let shape = t.get("shape");
+                    let circle = shape.and_then(|s| s.get("circle")).and_then(|c| {
+                        Some((
+                            c.get("x")?.as_f64()?,
+                            c.get("z")?.as_f64()?,
+                            c.get("r")?.as_f64()?,
+                        ))
+                    });
+                    let polygon = shape
+                        .and_then(|s| s.get("polygon"))
+                        .and_then(serde_json::Value::as_array)
+                        .map(|ring| {
+                            ring.iter()
+                                .filter_map(|p| {
+                                    let a = p.as_array()?;
+                                    Some((a.first()?.as_f64()?, a.get(1)?.as_f64()?))
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
+                    TriggerRow {
+                        id: id.clone(),
+                        name: t
+                            .get("name")
+                            .and_then(|n| n.as_str())
+                            .map(ToString::to_string),
+                        owner_id: t
+                            .get("ownerId")
+                            .and_then(|o| o.as_str())
+                            .map(ToString::to_string),
+                        activation: t
+                            .get("activation")
+                            .and_then(|a| a.as_str())
+                            .unwrap_or_default()
+                            .to_string(),
+                        rules: t.get("rules").cloned().unwrap_or(serde_json::Value::Null),
+                        circle,
+                        polygon,
+                    }
+                })
+                .collect();
+            rows.sort_by(|a, b| a.id.cmp(&b.id));
+            Some(rows)
+        })
+        .unwrap_or_default()
+}
+
+/// Run a mutator against an existing trigger, then the shared dirty tail. The [`edit_zone`] twin.
+fn edit_trigger(f: impl FnOnce(&MissionDocCore)) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        f(core);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// Attributes — the trigger `name`. `None` REMOVES the key; the panel sends `None` on an emptied box.
+pub fn set_trigger_name(id: &str, name: Option<String>) -> bool {
+    edit_trigger(|core| core.set_trigger_name(id, name.as_deref()))
+}
+
+/// Attributes — the stored-not-evaluated `activation` kind. Refuses a value outside
+/// [`TRIGGER_ACTIVATIONS`], the same "no invented value reaches the doc" discipline `set_zone_kind`
+/// applies to `zone.type`.
+pub fn set_trigger_activation(id: &str, activation: &str) -> bool {
+    if !TRIGGER_ACTIVATIONS.contains(&activation) {
+        return false;
+    }
+    edit_trigger(|core| core.set_trigger_activation(id, activation))
+}
+
+/// CONN-TRG-OWNER-001 (the picker's write) — assign / clear the owner edge. `Some(id)` is a placed
+/// entity id from [`placed_owner_options`]; `None` clears the link. No referential check — a later
+/// deletion of the owner is TOLERATED as a dangling edge (see [`MissionDocCore::set_trigger_owner`]).
+pub fn set_trigger_owner(id: &str, owner_id: Option<String>) -> bool {
+    edit_trigger(|core| core.set_trigger_owner(id, owner_id.as_deref()))
+}
+
+/// Attributes — set or clear ONE `rules` key, read-modify-write over the OPAQUE object. Reuses the
+/// exact `set_zone_rule` shape: the key is a `$defs/zoneRules` property supplied by the schema-driven
+/// panel; this never names one. `value: None` removes the key, and clearing the last key drops the
+/// whole object (the "cleared all" == "never authored" identity).
+pub fn set_trigger_rule(id: &str, key: &str, value: Option<serde_json::Value>) -> bool {
+    let next = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let map: serde_json::Value = serde_json::from_str(&core.triggers_json()).ok()?;
+        let mut rules = map
+            .get(id)?
+            .get("rules")
+            .and_then(|r| r.as_object().cloned())
+            .unwrap_or_default();
+        match value {
+            Some(v) => {
+                rules.insert(key.to_string(), v);
+            }
+            None => {
+                rules.remove(key);
+            }
+        }
+        Some(serde_json::Value::Object(rules).to_string())
+    });
+    let Some(next) = next else {
+        return false;
+    };
+    edit_trigger(|core| core.set_trigger_rules(id, Some(&next)))
+}
+
+/// Attributes — delete the trigger.
+pub fn delete_trigger(id: &str) -> bool {
+    edit_trigger(|core| core.remove_trigger(id))
+}
+
+/// How many triggers the document declares — backs the palette header count.
+#[must_use]
+pub fn trigger_count() -> usize {
+    OPS_CTX.with(|c| {
+        c.borrow()
+            .as_ref()
+            .and_then(|ctx| ctx.doc.borrow().as_ref().map(MissionDocCore::trigger_count))
+            .unwrap_or(0)
+    })
+}
+
+/// One entry the Owner picker offers: a placed entity's id and a human label. CONN-TRG-OWNER-001 —
+/// "listing placed entities (slots/vehicles by label)".
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OwnerOption {
+    pub id: String,
+    pub label: String,
+}
+
+/// The Owner picker's source: every PLACED slot and every PLACED vehicle, by label. Slots read off
+/// the materialized SoA (role + id); vehicles off [`vehicle_rows`] filtered to those with a map
+/// position (an ORBAT-only vehicle with no `xy` is not on the map, so it cannot own a placed
+/// trigger). Sorted by label then id for a stable picker order.
+#[must_use]
+pub fn placed_owner_options() -> Vec<OwnerOption> {
+    let mut out: Vec<OwnerOption> = Vec::new();
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return;
+        };
+        let soa = core.materialize();
+        for (i, id) in soa.ids.iter().enumerate() {
+            let role = {
+                let idx = soa.role_idx.get(i).copied().unwrap_or(NONE_IDX);
+                if idx == NONE_IDX {
+                    String::new()
+                } else {
+                    soa.roles.get(idx as usize).cloned().unwrap_or_default()
+                }
+            };
+            let label = if role.is_empty() {
+                format!("Slot {id}")
+            } else {
+                format!("{role} ({id})")
+            };
+            out.push(OwnerOption {
+                id: id.clone(),
+                label,
+            });
+        }
+    });
+    // Placed vehicles (those with a map position). `vehicle_rows` opens its own borrow, so it is
+    // called OUTSIDE the borrow above.
+    for v in vehicle_rows() {
+        if v.xy.is_none() {
+            continue;
+        }
+        let short = v
+            .resource_name
+            .rsplit(['/', '\\'])
+            .next()
+            .unwrap_or(&v.resource_name)
+            .trim_end_matches(".et");
+        let label = if short.is_empty() {
+            format!("Vehicle {}", v.id)
+        } else {
+            format!("{short} ({})", v.id)
+        };
+        out.push(OwnerOption { id: v.id, label });
+    }
+    out.sort_by(|a, b| a.label.cmp(&b.label).then_with(|| a.id.cmp(&b.id)));
+    out
+}
+
+/// Resolve a placed entity id to its world position (slot OR vehicle), or `None` if no such placed
+/// entity exists. This is what makes a DANGLING owner render nothing: an `ownerId` pointing at a
+/// deleted entity resolves to `None` here, so [`owner_line_world`] yields no line — no panic, no
+/// stale draw. Slots come off the SoA; vehicles off `vehicle_rows` (placed ones only).
+#[must_use]
+fn placed_entity_pos(id: &str) -> Option<(f64, f64)> {
+    let slot = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let soa = core.materialize();
+        let row = soa.ids.iter().position(|s| s == id)?;
+        Some((f64::from(soa.xs[row]), f64::from(soa.ys[row])))
+    });
+    if slot.is_some() {
+        return slot;
+    }
+    vehicle_rows()
+        .into_iter()
+        .find(|v| v.id == id)
+        .and_then(|v| v.xy)
+}
+
+/// CONN-TRG-OWNER-001 (the line's data) — the world-metre endpoints of the owner-link line for the
+/// currently selected trigger: `(trigger centre, owner position)`. `None` — so the overlay draws
+/// nothing — when there is no selected trigger, the selected trigger has no shape, it has no owner,
+/// **or its owner is dangling** (the entity was deleted). The dangling case is the ticket's
+/// tolerance requirement, and it falls out of [`placed_entity_pos`] returning `None`.
+///
+/// `selected_trigger` is the trigger id the palette currently has selected (session UI state the
+/// panel owns), passed in so this stays a pure resolve over the doc + one id.
+#[must_use]
+pub fn owner_line_world(selected_trigger: Option<&str>) -> Option<((f64, f64), (f64, f64))> {
+    let id = selected_trigger?;
+    let row = trigger_rows().into_iter().find(|r| r.id == id)?;
+    let owner_id = row.owner_id.as_deref()?;
+    let centre = row.centre()?;
+    // Dangling owner → None → no line. NOT an error, NOT a clear — the edge is kept in the doc.
+    let owner = placed_entity_pos(owner_id)?;
+    Some((centre, owner))
 }
