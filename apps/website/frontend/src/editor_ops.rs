@@ -1195,6 +1195,340 @@ pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
     did
 }
 
+/* ═══════════════════════════════ T-645 — Placement helpers ═══════════════════════════════════════ */
+//
+// The wasm wiring for the Placement Tools. Every entry point here:
+//   1. reads the LIVE selection's positions (slots off the materialized SoA, vehicles off
+//      `small_maps_json` — the exact two sources `rotate_selection_to_face` reads),
+//   2. computes target positions/yaws with the DOM-free pure math in `crate::place_helpers`
+//      (natively golden-tested),
+//   3. CONFIRMS via `confirm_with_message` (the T-666 idiom, the same shape `orbat_manager` uses)
+//      when the op moves MORE THAN 10 entities (`place_helpers::needs_confirm`), and
+//   4. commits PER ENTITY through the existing per-field position writes — `update_slot_position`
+//      for slots (the ticket's "a GESTURE on an existing field"), `set_vehicle_position` for
+//      vehicles — then fires ONE `after_local_edit` history/persist tail.
+//
+// ── UNDO HONESTY (BINDING CONSTRAINT — T-732), stated in code, not faked ─────────────────────────
+// `MissionDocCore` builds its `UndoManager` with `capture_timeout_millis = 0`, so EVERY core
+// transaction is its own undo step. The doc store (out of this slice's `owns`) offers exactly two
+// one-txn batch shapes that touch many positions: `move_entities`/`move_entities_and_vehicles` apply
+// a UNIFORM `(dx, dy)` to a list — perfect for a translate, useless for a pattern (patterns need
+// PER-ENTITY positions) — and `paste_slots`, which writes many per-entity positions in one txn but
+// CREATES new slots (mints ids); it cannot REPOSITION existing ones. There is NO one-txn
+// per-entity-position API for existing slots. So a pattern / align / space over `k` entities is
+// honestly `k` undo steps (one `update_slot_position` per moved entity), NOT one — the same shape the
+// `editor_ops` module header already documents for the first compound place, and the same honesty
+// `rotate_selection_to_face` states for a multi-selection rotate. This is T-732: the ticket mandates
+// one-step-undoable bulk ops but the atomic batch API does not exist and is not ours to add. We do
+// NOT fake atomicity (no `mem::forget` on undo groups, no pretend wrapper) and we do NOT add a
+// store.rs API. When T-732 lands a per-entity-position one-txn mutator, every helper here becomes a
+// one-line swap to it and the op collapses to one undo step with no call-site change.
+//
+// Orient commands rotate in place (no move); a single-entity orient is exactly one step, a
+// multi-entity orient is one step per entity — identical to `rotate_selection_to_face`.
+
+/// One selected entity resolved to its kind + current world position, for the placement math.
+struct SelPos {
+    id: String,
+    /// `true` = slot (commit via `update_slot_position`); `false` = vehicle (`set_vehicle_position`).
+    is_slot: bool,
+    x: f64,
+    y: f64,
+    /// Vehicle z is preserved across a reposition (slots terrain-follow → z handled by the mutator).
+    z: f64,
+}
+
+/// Resolve the live selection into `(SelPos list, terrain [x0,y0,w,h])`. Slots come off the
+/// materialized SoA (widening the `f32` columns to f64 — the `Math.fround` store boundary); vehicles
+/// come off `small_maps_json` `vehiclesById`. Ids in the selection that are neither (objects, or a
+/// stale id) are dropped — placement acts on the transformable slot+vehicle set, the same scope as
+/// `rotate_selection_to_face`. Returns an empty list when nothing resolves.
+fn resolve_selection_positions(core: &MissionDocCore, sel: &[String]) -> (Vec<SelPos>, [f64; 4]) {
+    let soa = core.materialize();
+    let veh_root = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()).ok();
+    let tb = terrain_bounds_of(core);
+    let mut out = Vec::with_capacity(sel.len());
+    for id in sel {
+        if let Some(row) = soa.ids.iter().position(|s| s == id) {
+            out.push(SelPos {
+                id: id.clone(),
+                is_slot: true,
+                x: f64::from(soa.xs[row]),
+                y: f64::from(soa.ys[row]),
+                z: f64::from(soa.zs[row]),
+            });
+            continue;
+        }
+        if let Some(pos) = veh_root
+            .as_ref()
+            .and_then(|r| r.get("vehiclesById")?.get(id)?.get("position").cloned())
+        {
+            let (Some(vx), Some(vy)) = (
+                pos.get("x").and_then(serde_json::Value::as_f64),
+                pos.get("y").and_then(serde_json::Value::as_f64),
+            ) else {
+                continue;
+            };
+            out.push(SelPos {
+                id: id.clone(),
+                is_slot: false,
+                x: vx,
+                y: vy,
+                z: pos
+                    .get("z")
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap_or(0.0),
+            });
+        }
+    }
+    (out, tb)
+}
+
+/// Ask the operator to confirm a bulk rearrangement when it moves more than the destructive
+/// threshold (`place_helpers::needs_confirm`). Returns `true` to proceed. Below the threshold there
+/// is no prompt (returns `true`). The wasm build shows a real `window().confirm(...)`; a native build
+/// (no `window`) proceeds — the confirm is a UI guard, not a correctness gate, and the native path is
+/// test-only. `verb` names the op in the prompt ("apply the Circular pattern to").
+#[cfg(target_arch = "wasm32")]
+fn confirm_bulk(n: usize, verb: &str) -> bool {
+    if !crate::place_helpers::needs_confirm(n) {
+        return true;
+    }
+    let msg = format!("This will {verb} {n} entities. Continue?");
+    web_sys::window()
+        .and_then(|w| w.confirm_with_message(&msg).ok())
+        .unwrap_or(false)
+}
+
+/// Commit a set of target positions (index-aligned with `entities`) through the per-field position
+/// writes — `update_slot_position` for slots (x/y clamped to `[0,w]×[0,h]`, z left to terrain-follow),
+/// `set_vehicle_position` for vehicles (z + the NEW yaw preserved from the existing heading — a move
+/// does not re-orient). Returns whether anything committed. See the UNDO HONESTY note above: this is
+/// `k` undo steps for `k` moved entities (no one-txn per-entity-position API — T-732).
+fn commit_positions(
+    core: &MissionDocCore,
+    entities: &[SelPos],
+    targets: &[crate::place_helpers::Pt],
+    tb: [f64; 4],
+) -> bool {
+    let mut any = false;
+    for (e, t) in entities.iter().zip(targets.iter()) {
+        if e.x == t.x && e.y == t.y {
+            continue; // no move for this entity → no txn, no undo step
+        }
+        if e.is_slot {
+            // x/y move; z = None so the mutator terrain-follows (DEM sampled JS-side later), matching
+            // `moveEntities`/`attrs_update_position`; rotation untouched.
+            core.update_slot_position(&e.id, Some(t.x), Some(t.y), None, None, tb[2], tb[3]);
+        } else {
+            // Vehicle: preserve z + existing heading; only x/y change.
+            let heading = vehicle_heading_of(core, &e.id).unwrap_or(0.0);
+            core.set_vehicle_position(
+                &e.id,
+                t.x.clamp(0.0, tb[2]),
+                t.y.clamp(0.0, tb[3]),
+                e.z,
+                heading,
+            );
+        }
+        any = true;
+    }
+    any
+}
+
+/// Read a vehicle's current heading (rotation) off `small_maps_json`; `None` if absent/unplaced.
+fn vehicle_heading_of(core: &MissionDocCore, id: &str) -> Option<f64> {
+    let root = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()).ok()?;
+    root.get("vehiclesById")?
+        .get(id)?
+        .get("position")?
+        .get("rotation")?
+        .as_f64()
+}
+
+/// T-645 (PLACE-PATTERN-001) — apply a placement PATTERN to the live selection, LIVE (in place). The
+/// pattern re-arranges the selection's positions; each entity keeps its identity and rotation. `kind`
+/// is the pattern selector; `Fill Area` seeds its deterministic scatter from the selection ids
+/// (`place_helpers::seed_from_ids`), so the same selection scatters the same way (reproducible).
+///
+/// Confirms when moving > 10 entities. Returns whether anything moved (a selection of `< 2`, or a
+/// pattern that lands every entity where it already is, moves nothing). **Undo: `k` steps for `k`
+/// moved entities — see the module's UNDO HONESTY note (T-732).**
+pub fn apply_pattern_to_selection(kind: crate::place_helpers::PatternKind) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let sel = ctx.selection.borrow().clone();
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let (entities, tb) = resolve_selection_positions(core, &sel);
+        if entities.len() < 2 {
+            return false;
+        }
+        let src: Vec<crate::place_helpers::Pt> = entities
+            .iter()
+            .map(|e| crate::place_helpers::Pt::new(e.x, e.y))
+            .collect();
+        let targets = match kind {
+            crate::place_helpers::PatternKind::Circular => {
+                crate::place_helpers::pattern_circular(&src)
+            }
+            crate::place_helpers::PatternKind::Line => crate::place_helpers::pattern_line(&src),
+            crate::place_helpers::PatternKind::Grid => crate::place_helpers::pattern_grid(&src),
+            crate::place_helpers::PatternKind::FillArea => {
+                let ids: Vec<String> = entities.iter().map(|e| e.id.clone()).collect();
+                let seed = crate::place_helpers::seed_from_ids(&ids);
+                crate::place_helpers::pattern_fill_area(&src, seed)
+            }
+        };
+        #[cfg(target_arch = "wasm32")]
+        if !confirm_bulk(
+            entities.len(),
+            &format!("apply the {} pattern to", kind.label()),
+        ) {
+            return false;
+        }
+        commit_positions(core, &entities, &targets, tb)
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// T-645 (PLACE-ALIGN-001) — align the live selection to one of the six edges/centres
+/// (`place_helpers::AlignEdge`). Confirms when moving > 10. Returns whether anything moved. Undo:
+/// `k` steps (T-732 — see the module note).
+pub fn align_selection(edge: crate::place_helpers::AlignEdge) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let sel = ctx.selection.borrow().clone();
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let (entities, tb) = resolve_selection_positions(core, &sel);
+        if entities.len() < 2 {
+            return false;
+        }
+        let src: Vec<crate::place_helpers::Pt> = entities
+            .iter()
+            .map(|e| crate::place_helpers::Pt::new(e.x, e.y))
+            .collect();
+        let targets = crate::place_helpers::align_edge(&src, edge);
+        #[cfg(target_arch = "wasm32")]
+        if !confirm_bulk(entities.len(), "align") {
+            return false;
+        }
+        commit_positions(core, &entities, &targets, tb)
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// T-645 (PLACE-SPACE-001) — space the live selection equally along one of the three axes
+/// (`place_helpers::SpaceAxis`). Confirms when moving > 10. Returns whether anything moved. Undo:
+/// `k` steps (T-732 — see the module note).
+pub fn space_selection(axis: crate::place_helpers::SpaceAxis) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let sel = ctx.selection.borrow().clone();
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let (entities, tb) = resolve_selection_positions(core, &sel);
+        if entities.len() < 3 {
+            return false; // space-equally needs at least 3 (2 are already "spaced")
+        }
+        let src: Vec<crate::place_helpers::Pt> = entities
+            .iter()
+            .map(|e| crate::place_helpers::Pt::new(e.x, e.y))
+            .collect();
+        let targets = crate::place_helpers::space_equally(&src, axis);
+        #[cfg(target_arch = "wasm32")]
+        if !confirm_bulk(entities.len(), "space") {
+            return false;
+        }
+        commit_positions(core, &entities, &targets, tb)
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// T-645 (PLACE-ORIENT-001) — orient the live selection under one of the six commands
+/// (`place_helpers::Orient`): N/E/S/W set an absolute yaw; face-centre/face-away turn each entity
+/// toward/away from the selection centroid. Rotates IN PLACE (no move), so it rides the same per-field
+/// rotation writes as `rotate_selection_to_face` — `update_slot_position` (rotation only) for slots,
+/// `set_vehicle_position` (heading only) for vehicles. An entity sitting exactly on the centroid
+/// declines a FACE command (`orient_yaw` → `None`) and is left unchanged; cardinals always apply.
+///
+/// Confirms when re-orienting > 10 entities. Returns whether anything rotated. **Undo: one step for a
+/// single entity (the Eden-standard case); one step per entity for a multi-selection — identical to
+/// `rotate_selection_to_face` (T-732 — no atomic multi-entity rotate API).**
+pub fn orient_selection(cmd: crate::place_helpers::Orient) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let sel = ctx.selection.borrow().clone();
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let (entities, tb) = resolve_selection_positions(core, &sel);
+        if entities.is_empty() {
+            return false;
+        }
+        #[cfg(target_arch = "wasm32")]
+        if !confirm_bulk(entities.len(), "re-orient") {
+            return false;
+        }
+        let pivot = crate::place_helpers::centroid(
+            &entities
+                .iter()
+                .map(|e| crate::place_helpers::Pt::new(e.x, e.y))
+                .collect::<Vec<_>>(),
+        );
+        let mut any = false;
+        for e in &entities {
+            let Some(deg) = crate::place_helpers::orient_yaw(
+                cmd,
+                crate::place_helpers::Pt::new(e.x, e.y),
+                pivot,
+            ) else {
+                continue; // degenerate face (entity on the centroid) → leave unchanged
+            };
+            if e.is_slot {
+                core.update_slot_position(&e.id, None, None, None, Some(deg), tb[2], tb[3]);
+            } else {
+                core.set_vehicle_position(&e.id, e.x, e.y, e.z, deg);
+            }
+            any = true;
+        }
+        any
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
 /// Read a slot's embedded `loadout` JSON (Arsenal picks) from `slots_json`. `None` when unset.
 pub fn read_loadout(id: &str) -> Option<String> {
     OPS_CTX.with(|c| {

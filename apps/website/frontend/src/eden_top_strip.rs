@@ -45,9 +45,22 @@ enum MenuAction {
     Undo,
     Redo,
     Settings,
+    // T-645 — the Placement Tools (the "Arrange" menu). Each acts LIVE on the current selection;
+    // ops moving > 10 entities confirm (`editor_ops::confirm_bulk`). The dispatch bodies are
+    // wasm-gated in `run_action` (like Undo/Redo); the enum + descriptor compile natively.
+    /// Apply a placement pattern (Circular / Line / Grid / Fill Area).
+    Pattern(crate::place_helpers::PatternKind),
+    /// Align the selection to a box edge / centre axis.
+    Align(crate::place_helpers::AlignEdge),
+    /// Space the selection equally along an axis.
+    Space(crate::place_helpers::SpaceAxis),
+    /// Orient the selection (N/E/S/W / face-centre / face-away).
+    Orient(crate::place_helpers::Orient),
 }
 
-const MENUS: [(&str, &[MenuItem]); 5] = [
+use crate::place_helpers::{AlignEdge, Orient, PatternKind, SpaceAxis};
+
+const MENUS: [(&str, &[MenuItem]); 6] = [
     (
         "File",
         &[
@@ -78,6 +91,90 @@ const MENUS: [(&str, &[MenuItem]); 5] = [
             },
         ],
     ),
+    // T-645 — Placement Tools. Patterns rearrange the selection LIVE; align/space snap it; orient
+    // turns it. Ops moving > 10 entities confirm. Disabled (with a "select entities first" tooltip)
+    // until at least one entity is selected — the T-668 dead-control rule: no clickable no-op.
+    (
+        "Arrange",
+        &[
+            MenuItem {
+                label: "Pattern: Circular",
+                action: Some(MenuAction::Pattern(PatternKind::Circular)),
+            },
+            MenuItem {
+                label: "Pattern: Line",
+                action: Some(MenuAction::Pattern(PatternKind::Line)),
+            },
+            MenuItem {
+                label: "Pattern: Grid",
+                action: Some(MenuAction::Pattern(PatternKind::Grid)),
+            },
+            MenuItem {
+                label: "Pattern: Fill Area",
+                action: Some(MenuAction::Pattern(PatternKind::FillArea)),
+            },
+            MenuItem {
+                label: "Align Left",
+                action: Some(MenuAction::Align(AlignEdge::Left)),
+            },
+            MenuItem {
+                label: "Align Right",
+                action: Some(MenuAction::Align(AlignEdge::Right)),
+            },
+            MenuItem {
+                label: "Align Top",
+                action: Some(MenuAction::Align(AlignEdge::Top)),
+            },
+            MenuItem {
+                label: "Align Bottom",
+                action: Some(MenuAction::Align(AlignEdge::Bottom)),
+            },
+            MenuItem {
+                label: "Align Centres (horizontal)",
+                action: Some(MenuAction::Align(AlignEdge::CentreH)),
+            },
+            MenuItem {
+                label: "Align Centres (vertical)",
+                action: Some(MenuAction::Align(AlignEdge::CentreV)),
+            },
+            MenuItem {
+                label: "Space Equally (horizontal)",
+                action: Some(MenuAction::Space(SpaceAxis::Horizontal)),
+            },
+            MenuItem {
+                label: "Space Equally (vertical)",
+                action: Some(MenuAction::Space(SpaceAxis::Vertical)),
+            },
+            MenuItem {
+                label: "Space Equally (along line)",
+                action: Some(MenuAction::Space(SpaceAxis::AlongLine)),
+            },
+            MenuItem {
+                label: "Orient North",
+                action: Some(MenuAction::Orient(Orient::North)),
+            },
+            MenuItem {
+                label: "Orient East",
+                action: Some(MenuAction::Orient(Orient::East)),
+            },
+            MenuItem {
+                label: "Orient South",
+                action: Some(MenuAction::Orient(Orient::South)),
+            },
+            MenuItem {
+                label: "Orient West",
+                action: Some(MenuAction::Orient(Orient::West)),
+            },
+            MenuItem {
+                label: "Orient: Face Centre",
+                action: Some(MenuAction::Orient(Orient::FaceCentre)),
+            },
+            MenuItem {
+                label: "Orient: Face Away",
+                action: Some(MenuAction::Orient(Orient::FaceAway)),
+            },
+        ],
+    ),
     (
         "View",
         &[MenuItem {
@@ -100,6 +197,21 @@ const MENUS: [(&str, &[MenuItem]); 5] = [
         }],
     ),
 ];
+
+/// T-645 — how many entities are currently selected (the Placement Tools' enable gate). Reads the
+/// live selection off `editor_ops` under wasm; the native view shell has no doc/selection, so it
+/// reports 0 (the placement rows render disabled there — the menu is a wasm-only affordance anyway).
+#[must_use]
+fn selection_count() -> usize {
+    #[cfg(target_arch = "wasm32")]
+    {
+        crate::editor_ops::selection_len()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        0
+    }
+}
 
 /// Minutes-since-midnight ↔ `HH:MM` for the time scrubber (T-172 B9). Pure + tested.
 pub fn minutes_to_hhmm(min: u32) -> String {
@@ -615,6 +727,42 @@ pub fn TopCommandStrip(
                     s.set(true);
                 }
             }
+            // T-645 — the Placement Tools act on the live selection through `editor_ops`, which reads
+            // the selection/positions from its `OPS_CTX` (like Undo/Redo reach the undo stack). The
+            // confirm (> 10 entities) lives inside each `editor_ops` fn. Wasm-gated bodies; the native
+            // build compiles the match arms but does nothing (no doc).
+            MenuAction::Pattern(kind) => {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    crate::editor_ops::apply_pattern_to_selection(kind);
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                let _ = kind;
+            }
+            MenuAction::Align(edge) => {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    crate::editor_ops::align_selection(edge);
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                let _ = edge;
+            }
+            MenuAction::Space(axis) => {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    crate::editor_ops::space_selection(axis);
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                let _ = axis;
+            }
+            MenuAction::Orient(cmd) => {
+                #[cfg(target_arch = "wasm32")]
+                {
+                    crate::editor_ops::orient_selection(cmd);
+                }
+                #[cfg(not(target_arch = "wasm32"))]
+                let _ = cmd;
+            }
         }
     };
     let title_fallback = StoredValue::new(title);
@@ -677,16 +825,38 @@ pub fn TopCommandStrip(
                                                                     let disabled = move || match a {
                                                                         MenuAction::Undo => !can_undo.get(),
                                                                         MenuAction::Redo => !can_redo.get(),
+                                                                        // T-645 — a Placement Tool is dead
+                                                                        // without a selection. The dropdown is
+                                                                        // conditionally rendered on `open_menu`,
+                                                                        // so this closure re-runs at OPEN time
+                                                                        // and reads the live selection count
+                                                                        // then — correct exactly when the
+                                                                        // operator is about to click. (No
+                                                                        // clickable no-op — the T-668 rule.)
+                                                                        MenuAction::Pattern(_)
+                                                                        | MenuAction::Align(_)
+                                                                        | MenuAction::Space(_)
+                                                                        | MenuAction::Orient(_) => {
+                                                                            selection_count() == 0
+                                                                        }
                                                                         _ => false,
                                                                     };
-                                                                    // Rule (3): a disabled Undo/Redo keeps a
-                                                                    // tooltip that explains why it is dark rather
-                                                                    // than going silent; an enabled row has none.
+                                                                    // Rule (3): a disabled row keeps a tooltip
+                                                                    // that explains why it is dark rather than
+                                                                    // going silent; an enabled row has none.
                                                                     let title = move || {
-                                                                        if disabled() {
-                                                                            "Nothing to do yet"
-                                                                        } else {
+                                                                        if !disabled() {
                                                                             ""
+                                                                        } else {
+                                                                            match a {
+                                                                                MenuAction::Pattern(_)
+                                                                                | MenuAction::Align(_)
+                                                                                | MenuAction::Space(_)
+                                                                                | MenuAction::Orient(_) => {
+                                                                                    "Select entities first"
+                                                                                }
+                                                                                _ => "Nothing to do yet",
+                                                                            }
                                                                         }
                                                                     };
                                                                     view! {
