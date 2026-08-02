@@ -696,6 +696,478 @@ pub struct AssetPickerState {
     pub screen_y: f64,
 }
 
+/// T-648 — the TRANSFORM primitives: the snap-grid quantiser, the Shift-rotate face-cursor bearing,
+/// and the transformation-widget state machine. All pure (no `web_sys`, no engine, no doc), so they
+/// live in this UNGATED module and are proved by `t648_transform` at the bottom of the file — the
+/// same reason `boot_progress` above is a pure module (`mod select_tool` / `mod editor_ops` are both
+/// `#[cfg(target_arch = "wasm32")]` in `main.rs`, so a native `cargo test -p website-frontend` never
+/// compiles a test placed beside `drag_delta`; the ticket says "the quantiser goes beside
+/// `drag_delta`" as a locality hint, and this is the nearest home whose behaviour a native test can
+/// actually execute rather than only source-pin). The wasm gesture code in this same file calls
+/// straight into here; the eventual commit still rides the existing `editor_ops::attrs_update_position`
+/// field write (T-648 "a GESTURE on an existing field"), which is what this module deliberately does
+/// NOT do — it only decides the numbers.
+pub mod transform {
+    /// The TRANSLATION snap ladder in world metres. Index 0 is **OFF** (free move — the drag delta
+    /// passes through unquantised); the rest are the increasing cell sizes the ticket names
+    /// (`off / 1 / 5 / 10 m`). Held as a ladder rather than a free number so `[`/`]` step between
+    /// named rungs and the readout can name the active one, matching Eden's discrete grid sizes.
+    pub const TRANSLATE_LADDER_M: [f64; 4] = [0.0, 1.0, 5.0, 10.0];
+    /// The ROTATION snap ladder in degrees. Index 0 is **OFF** (free rotate); the rest are the
+    /// ticket's `off / 5 / 15 / 45°` rungs. A Shift-rotate (or a Shift+ring drag) quantises the
+    /// face-cursor bearing to the active rung; OFF commits the exact bearing.
+    pub const ROTATE_LADDER_DEG: [f64; 4] = [0.0, 5.0, 15.0, 45.0];
+
+    /// Which snap ladder a step key ([`step`]) or a quantise ([`snap_translate`]/[`snap_rotate`])
+    /// acts on. The two ladders are independent (translation and rotation each carry their own live
+    /// rung index), so the increase/decrease keys and the readout both name an [`Axis`].
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub enum Axis {
+        Translate,
+        Rotate,
+    }
+
+    impl Axis {
+        /// The ladder for this axis.
+        #[must_use]
+        pub const fn ladder(self) -> &'static [f64] {
+            match self {
+                Axis::Translate => &TRANSLATE_LADDER_M,
+                Axis::Rotate => &ROTATE_LADDER_DEG,
+            }
+        }
+        /// Unit suffix for the readout (`m` for translation, `°` for rotation).
+        #[must_use]
+        pub const fn unit(self) -> &'static str {
+            match self {
+                Axis::Translate => "m",
+                Axis::Rotate => "°",
+            }
+        }
+    }
+
+    /// Move one rung along a ladder of `len` rungs, CLAMPED at both ends (Eden's grid keys do not
+    /// wrap — pressing `]` at the coarsest rung is a no-op, not a jump back to OFF). `+1` is
+    /// "increase" (a bigger/coarser step), `-1` is "decrease" (finer, toward OFF at index 0).
+    /// `delta` is the raw key direction; only its sign matters.
+    #[must_use]
+    pub fn step(cur: usize, len: usize, delta: i32) -> usize {
+        if len == 0 {
+            return 0;
+        }
+        let last = len - 1;
+        if delta > 0 {
+            (cur + 1).min(last)
+        } else if delta < 0 {
+            cur.saturating_sub(1)
+        } else {
+            cur.min(last)
+        }
+    }
+
+    /// Quantise `value` to the nearest multiple of `step`. `step <= 0` (the OFF rung) is a
+    /// **passthrough** — the value is returned exactly, which is how "snap off" reads at the call
+    /// site with no branch. Round-half-away-from-zero so a delta exactly between two cells lands on
+    /// the farther one symmetrically for + and −. Non-finite `step` is treated as OFF.
+    #[must_use]
+    pub fn snap_value(value: f64, step: f64) -> f64 {
+        if !step.is_finite() || step <= 0.0 {
+            return value;
+        }
+        (value / step).round() * step
+    }
+
+    /// Quantise a TRANSLATION delta component (metres) at ladder rung `rung`. Rung 0 = OFF =
+    /// passthrough. Applied per-axis to `(dx, dy)` so a snapped drag lands the entity on the grid
+    /// lattice while a free drag (rung 0) is byte-for-byte the old `drag_delta`.
+    #[must_use]
+    pub fn snap_translate(value: f64, rung: usize) -> f64 {
+        snap_value(value, *TRANSLATE_LADDER_M.get(rung).unwrap_or(&0.0))
+    }
+
+    /// Quantise a ROTATION (degrees) at ladder rung `rung`, then normalise to `[0,360)` (the same
+    /// range `update_slot_position` stores). Rung 0 = OFF = the exact bearing, still normalised.
+    #[must_use]
+    pub fn snap_rotate(deg: f64, rung: usize) -> f64 {
+        let snapped = snap_value(deg, *ROTATE_LADDER_DEG.get(rung).unwrap_or(&0.0));
+        norm_deg(snapped)
+    }
+
+    /// Normalise degrees into `[0,360)` — the canonical rotation range (matches
+    /// `MissionDocCore::update_slot_position`, which does `((r % 360)+360)%360`). Non-finite → 0.
+    #[must_use]
+    pub fn norm_deg(deg: f64) -> f64 {
+        if !deg.is_finite() {
+            return 0.0;
+        }
+        ((deg % 360.0) + 360.0) % 360.0
+    }
+
+    /// The face-cursor BEARING (XFORM-SHIFT-001): the yaw a slot at `(from_x, from_y)` must take to
+    /// point at the cursor `(to_x, to_y)`, in the document's convention — **yaw clockwise from north
+    /// (+Y)**, the exact convention `world::glyph_math::deck_angle_for_rotation_deg` inverts for the
+    /// screen and the spawn export reads as `headingDeg`. Compass bearing = `atan2(east, north) =
+    /// atan2(dx, dy)`, normalised to `[0,360)`:
+    ///   * cursor due north (dx=0, dy>0) → 0°
+    ///   * due east  (dx>0, dy=0) → 90°
+    ///   * due south (dy<0)       → 180°
+    ///   * due west  (dx<0, dy=0) → 270°  (the wrap case)
+    /// A degenerate aim (cursor exactly on the pivot, or a non-finite input) returns `None` — the
+    /// caller leaves the rotation unchanged rather than committing a meaningless 0°.
+    #[must_use]
+    pub fn bearing_to_face(from_x: f64, from_y: f64, to_x: f64, to_y: f64) -> Option<f64> {
+        let dx = to_x - from_x;
+        let dy = to_y - from_y;
+        if !dx.is_finite() || !dy.is_finite() || (dx == 0.0 && dy == 0.0) {
+            return None;
+        }
+        Some(norm_deg(dx.atan2(dy).to_degrees()))
+    }
+
+    /// Format a ladder step for the readout without a trailing `.0` on a whole number (`5.0 → "5"`,
+    /// `2.5 → "2.5"`). Small and local so the readout has no `{:g}`-style dependency.
+    #[must_use]
+    pub fn fmt_step(v: f64) -> String {
+        if (v - v.round()).abs() < 1e-9 {
+            format!("{}", v.round() as i64)
+        } else {
+            let s = format!("{v:.2}");
+            s.trim_end_matches('0').trim_end_matches('.').to_string()
+        }
+    }
+
+    /// The transformation-widget VARIANT (`WIDGET-CYCLE-001` / `WIDGET-TRANS-001`). Eden cycles
+    /// these with `Space`; TBD keeps `Space` as flyTo (`center_on_selection`) and uses the free
+    /// `1`/`2` direct keys instead (the ticket's collision decision — Eden's `1`-`5` are unbound
+    /// here). Only two variants exist: **Translate** (axis arrows, axis-constrained drag) and
+    /// **Rotate** (a ring, drag = rotate, Shift+drag = snap to the rotation ladder).
+    ///
+    /// **No area-scale variant, and that is scoped honestly.** The widget acts on the live
+    /// SELECTION, which the select machine only ever fills with slot + vehicle ids
+    /// (`pick_slot_or_vehicle` / `marquee_ids_with_vehicles`). Neither a slot nor a vehicle carries
+    /// a scalar size — only zones and triggers have a radius, and those live in their own
+    /// collections edited by the zone-draw tool, never in `selection`. So `3` (area-scale) has
+    /// nothing in a transform selection to scale; offering it would be a dead key. Eden's `1`-`5`
+    /// stay free for a later slice that gives the widget a scalable target.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+    pub enum WidgetVariant {
+        #[default]
+        Translate,
+        Rotate,
+    }
+
+    impl WidgetVariant {
+        /// The `1`/`2` direct-key selection (Eden's variant keys, minus Space). `1` → Translate,
+        /// `2` → Rotate; any other digit leaves the variant unchanged (returns `self`). Digit keys
+        /// beyond `2` (`3`-`5`) are deliberately inert here — see the type doc on area-scale.
+        #[must_use]
+        pub fn from_digit(self, digit: u8) -> Self {
+            match digit {
+                1 => WidgetVariant::Translate,
+                2 => WidgetVariant::Rotate,
+                _ => self,
+            }
+        }
+        /// Whether a Shift+ring drag on this variant snaps to the rotation ladder (only Rotate has a
+        /// ring). Translate's arrows snap through the translation ladder instead. Used by the widget
+        /// gesture to pick which ladder a Shift constrains.
+        #[must_use]
+        pub const fn is_rotate(self) -> bool {
+            matches!(self, WidgetVariant::Rotate)
+        }
+        /// The snap [`Axis`] this variant's step keys (`[`/`]`) tune: Translate → the translation
+        /// ladder, Rotate → the rotation ladder. One mapping so the keydown and the readout agree on
+        /// "which grid am I stepping".
+        #[must_use]
+        pub const fn snap_axis(self) -> Axis {
+            match self {
+                WidgetVariant::Translate => Axis::Translate,
+                WidgetVariant::Rotate => Axis::Rotate,
+            }
+        }
+    }
+
+    /// The live snap-grid state: one rung index per ladder plus a grid-ENABLED latch (KEY-GRID-001,
+    /// the `G` toggle). `enabled=false` forces both quantisers to passthrough regardless of rung, so
+    /// `G` is a single master switch over "is the grid on at all" while `[`/`]` tune the rung the
+    /// switch gates. Copy so the wasm host can hold it in a `Cell` and the readout can snapshot it.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub struct SnapState {
+        pub enabled: bool,
+        pub translate_rung: usize,
+        pub rotate_rung: usize,
+    }
+
+    impl Default for SnapState {
+        /// Default OFF: grid disabled, both ladders parked at OFF (rung 0). An operator who never
+        /// touches `G`/`[`/`]` gets the exact pre-T-648 free move + free rotate.
+        fn default() -> Self {
+            Self {
+                enabled: false,
+                translate_rung: 0,
+                rotate_rung: 0,
+            }
+        }
+    }
+
+    impl SnapState {
+        /// The EFFECTIVE translation rung: the tuned rung when the grid is enabled, else OFF (0).
+        /// One place decides "grid off ⇒ passthrough" so the gesture never has to special-case it.
+        #[must_use]
+        pub fn effective_translate_rung(self) -> usize {
+            if self.enabled {
+                self.translate_rung
+            } else {
+                0
+            }
+        }
+        /// The EFFECTIVE rotation rung (grid-gated exactly like translation).
+        #[must_use]
+        pub fn effective_rotate_rung(self) -> usize {
+            if self.enabled {
+                self.rotate_rung
+            } else {
+                0
+            }
+        }
+        /// Toggle the grid master latch (the `G` key). Rungs are preserved so toggling off then on
+        /// restores the operator's chosen steps.
+        #[must_use]
+        pub fn toggled(self) -> Self {
+            Self {
+                enabled: !self.enabled,
+                ..self
+            }
+        }
+        /// Step one axis's rung by `delta` (the `[`/`]` keys), clamped at both ends. Turning a rung
+        /// does NOT flip `enabled`: adjusting a step while the grid is off just parks the new rung
+        /// for when it is switched on (Eden keeps the two controls orthogonal).
+        #[must_use]
+        pub fn stepped(self, axis: Axis, delta: i32) -> Self {
+            match axis {
+                Axis::Translate => Self {
+                    translate_rung: step(self.translate_rung, TRANSLATE_LADDER_M.len(), delta),
+                    ..self
+                },
+                Axis::Rotate => Self {
+                    rotate_rung: step(self.rotate_rung, ROTATE_LADDER_DEG.len(), delta),
+                    ..self
+                },
+            }
+        }
+        /// Human readout of one rung for the status bar (the T-636 readout idiom), e.g. `"5 m"`,
+        /// `"15°"`, or `"off"`. `off` is spelled out rather than `0` so the operator reads intent.
+        /// The number is printed without a trailing `.0` (the ladders are whole numbers today, but
+        /// [`fmt_step`] keeps it clean if a fractional rung is ever added).
+        #[must_use]
+        pub fn rung_label(self, axis: Axis) -> String {
+            let rung = match axis {
+                Axis::Translate => self.effective_translate_rung(),
+                Axis::Rotate => self.effective_rotate_rung(),
+            };
+            let step = axis.ladder().get(rung).copied().unwrap_or(0.0);
+            if step <= 0.0 {
+                "off".to_string()
+            } else if axis == Axis::Rotate {
+                format!("{}{}", fmt_step(step), axis.unit())
+            } else {
+                format!("{} {}", fmt_step(step), axis.unit())
+            }
+        }
+        /// The full status-bar readout: `"GRID  move 5 m · rot 15°"` when enabled, `"GRID  off"`
+        /// when the master latch is off. One string so the overlay is a single text node (the
+        /// scale-bar / ruler-status idiom).
+        #[must_use]
+        pub fn status_readout(self) -> String {
+            if !self.enabled {
+                return "GRID  off".to_string();
+            }
+            format!(
+                "GRID  move {} \u{b7} rot {}",
+                self.rung_label(Axis::Translate),
+                self.rung_label(Axis::Rotate),
+            )
+        }
+    }
+}
+
+thread_local! {
+    /// T-648 — the registered SELECTION-CENTROID getter the transform widget projects onto. Set from
+    /// `MissionEditorPage`'s wasm block (which owns the `!Send` doc + selection `Rc`s); read by the
+    /// native-compiled [`TransformWidgetOverlay`] via [`read_widget_pivot`]. Peer of
+    /// `ruler_tool::RULER_CHAIN` — a thread_local so the overlay never touches disposed reactive
+    /// state and native builds simply see `None`.
+    static WIDGET_PIVOT: std::cell::RefCell<Option<std::rc::Rc<dyn Fn() -> Option<(f64, f64)>>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// T-648 — register the selection-centroid getter (called once at mount). `#[cfg(target_arch =
+/// "wasm32")]` because only the wasm host has the doc/selection `Rc`s to close over; the getter it
+/// stores returns `Option<(world_x, world_y)>` — the current selection centroid, or `None` when the
+/// selection is empty or the doc is not ready.
+#[cfg(target_arch = "wasm32")]
+fn register_widget_pivot(f: std::rc::Rc<dyn Fn() -> Option<(f64, f64)>>) {
+    WIDGET_PIVOT.with(|c| *c.borrow_mut() = Some(f));
+}
+
+/// T-648 — the current selection centroid in world metres, or `None` (empty selection / no doc /
+/// native build / pre-mount). The overlay calls this each repaint; it is a cheap doc read behind the
+/// registered closure.
+#[must_use]
+fn read_widget_pivot() -> Option<(f64, f64)> {
+    WIDGET_PIVOT.with(|c| c.borrow().as_ref().and_then(|f| f()))
+}
+
+/// T-648 WIDGET-CYCLE-001 / WIDGET-TRANS-001 — the TRANSFORMATION WIDGET: a lightweight
+/// `pointer-events-none` SVG gizmo drawn on the selection centroid, in the ruler/LoS overlay idiom
+/// (full-bleed SVG, reads the live camera off `world_assets::camera_snapshot`, projects world→screen
+/// with the same `frozen_camera` the pick uses, re-runs off the `cursor`/`debug_hud`/`tick`
+/// heartbeats — no new rAF loop). It is a VIEW + affordance: the actual gestures (Shift+drag rotate,
+/// axis-constrained move) are captured by the map's own pointer handlers and commit through the
+/// existing move / `attrs_update_position` paths — the SVG never eats a pointer.
+///
+/// Two variants (`WidgetVariant`, cycled by the `1`/`2` keys):
+///   * **Translate** — a pair of axis ARROWS (X east, Y north) centred on the selection. A drag on
+///     an arrow is the axis-constrained move; the arrows are the discoverable handle for it.
+///   * **Rotate** — a RING around the selection. A drag rotates; Shift+drag on the ring snaps to the
+///     rotation ladder. (Shift+drag anywhere on a selected entity already rotates — the ring makes
+///     the gesture visible.)
+///
+/// Only drawn when something is selected (a widget with no target is nothing to show). Ungated so it
+/// is native-compiled and its projection is source-pinned; the geometry itself renders only under
+/// wasm (it needs the live camera + window).
+#[component]
+fn TransformWidgetOverlay(
+    /// Pan heartbeat (the editor's pointer-move cursor write) — re-projects the gizmo on pan.
+    cursor: RwSignal<Option<(f64, f64, Option<f64>)>>,
+    /// ~1 Hz zoom heartbeat (the rAF debug sampler) — re-projects after a still-pointer wheel-zoom.
+    debug_hud: Option<RwSignal<String>>,
+    /// Bumped when the selection changes without a pointermove, so the gizmo re-projects onto the new
+    /// centroid even with a still pointer (the `ruler_tick` idiom).
+    tick: RwSignal<u64>,
+    /// The live widget variant (`1` translate / `2` rotate) — decides arrows vs ring.
+    variant: RwSignal<transform::WidgetVariant>,
+) -> impl IntoView {
+    // The projected gizmo centre (screen px) + the variant, or None when there is nothing to draw.
+    let projected = move || -> Option<(f64, f64, transform::WidgetVariant)> {
+        // Subscribe to all heartbeats so the closure re-runs on pan (cursor), zoom (hud), selection
+        // change (tick) and variant change.
+        let _ = cursor.get();
+        if let Some(h) = debug_hud {
+            let _ = h.get();
+        }
+        let _ = tick.get();
+        let var = variant.get();
+        let (wx, wy) = read_widget_pivot()?;
+        #[cfg(target_arch = "wasm32")]
+        {
+            let (tx, ty, zoom) = crate::world_assets::camera_snapshot()?;
+            let win = web_sys::window()?;
+            let vw = win
+                .inner_width()
+                .ok()
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            let vh = win
+                .inner_height()
+                .ok()
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            if vw <= 0.0 || vh <= 0.0 {
+                return None;
+            }
+            let cam = crate::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+            let p = cam.project([wx, wy, 0.0]);
+            if !p[0].is_finite() || !p[1].is_finite() {
+                return None;
+            }
+            Some((p[0], p[1], var))
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = (wx, wy, var);
+            None
+        }
+    };
+    view! {
+        // Full-bleed, non-interactive SVG in the same overlay band as the ruler/grid refs (z-10),
+        // over the map but under the chrome docks. `pointer-events-none`: the gizmo is a view, the
+        // gesture is the map's own pointer handlers.
+        <svg
+            data-transform-widget
+            class="pointer-events-none absolute inset-0 z-10"
+            width="100%"
+            height="100%"
+        >
+            {move || projected().map(|(cx, cy, var)| {
+                // Fixed pixel radius/arm length — the gizmo is a screen affordance, not a world
+                // object, so it stays a constant size like a cursor (Eden's widget does too).
+                const R: f64 = 42.0;
+                const HEAD: f64 = 7.0;
+                match var {
+                    // TRANSLATE — X (east, +screen-x) and Y (north, −screen-y) arrows from the centre.
+                    transform::WidgetVariant::Translate => view! {
+                        <g>
+                            // X axis arrow (east).
+                            <line x1=move || format!("{cx:.1}") y1=move || format!("{cy:.1}")
+                                  x2=move || format!("{:.1}", cx + R) y2=move || format!("{cy:.1}")
+                                  class="stroke-primary" stroke-width="2" />
+                            <polygon
+                                points=move || format!(
+                                    "{x0:.1},{y0:.1} {x1:.1},{y1:.1} {x1:.1},{y2:.1}",
+                                    x0 = cx + R, y0 = cy,
+                                    x1 = cx + R - HEAD, y1 = cy - HEAD * 0.7,
+                                    y2 = cy + HEAD * 0.7)
+                                class="fill-primary" />
+                            // Y axis arrow (north = up on screen).
+                            <line x1=move || format!("{cx:.1}") y1=move || format!("{cy:.1}")
+                                  x2=move || format!("{cx:.1}") y2=move || format!("{:.1}", cy - R)
+                                  class="stroke-primary" stroke-width="2" />
+                            <polygon
+                                points=move || format!(
+                                    "{x0:.1},{y0:.1} {x1:.1},{y1:.1} {x2:.1},{y1:.1}",
+                                    x0 = cx, y0 = cy - R,
+                                    x1 = cx - HEAD * 0.7, y1 = cy - R + HEAD,
+                                    x2 = cx + HEAD * 0.7)
+                                class="fill-primary" />
+                            <circle cx=move || format!("{cx:.1}") cy=move || format!("{cy:.1}")
+                                    r="3" class="fill-primary" />
+                        </g>
+                    }.into_any(),
+                    // ROTATE — a ring around the centre (drag = rotate; Shift+drag snaps).
+                    transform::WidgetVariant::Rotate => view! {
+                        <g>
+                            <circle cx=move || format!("{cx:.1}") cy=move || format!("{cy:.1}")
+                                    r=move || format!("{R:.1}")
+                                    fill="none" class="stroke-primary" stroke-width="2" />
+                            <circle cx=move || format!("{cx:.1}") cy=move || format!("{cy:.1}")
+                                    r="3" class="fill-primary" />
+                        </g>
+                    }.into_any(),
+                }
+            })}
+        </svg>
+    }
+}
+
+/// T-648 TOOLBAR-GRID-MOVE-001 — the snap-grid STATUS READOUT: the active step ladder in the
+/// status-bar band (the T-636 readout idiom). Its own tiny `pointer-events-none` element rather than
+/// a field inside `eden_toolbelt::StatusBar`, because that component is another slice's owned file —
+/// this keeps the readout inside T-648's three-file boundary while sitting in the same band. Shows
+/// `GRID  move 5 m · rot 15°` (or `GRID  off`), re-running off the `snap` signal.
+#[component]
+fn SnapReadout(snap: RwSignal<transform::SnapState>) -> impl IntoView {
+    view! {
+        <div
+            data-snap-readout
+            class="pointer-events-none absolute bottom-11 right-3 z-20 rounded bg-surface/70 px-2 \
+                   py-0.5 font-mono text-[11px] tabular-nums text-on-surface-variant"
+        >
+            {move || snap.get().status_readout()}
+        </div>
+    }
+}
+
 /// T-647 PLACE-003 — the empty-ground asset picker: a floating list of placeable characters for the
 /// active Eden side, opened by a double-click on empty ground. Picking a row ARMS a place
 /// (`begin_place`, exactly what a DockRight leaf does) and closes the panel; the operator's next
@@ -873,6 +1345,19 @@ pub fn MissionEditorPage() -> impl IntoView {
     // so there is no `los_status` signal — only this tick, bumped on every capture mutation so the
     // `LosOverlay` repaints even when a click did not move the pointer.
     let los_tick = RwSignal::new(0u64);
+    // T-648 — the snap-grid state (translation + rotation ladders + the `G` master latch) and the
+    // transform-widget variant (`1` translate / `2` rotate). Both are plain reactive signals read by
+    // three places without a thread_local mirror: the window keydown (which toggles the grid, steps
+    // the rungs, and cycles the variant), the wasm pointer handlers (which read `get_untracked()` to
+    // quantise a Shift-rotate / widget-ring drag), and the DOM overlays (the status-bar GRID readout
+    // + the widget SVG, which re-run on `.get()`). The default `SnapState` is OFF, so an operator who
+    // never presses `G`/`[`/`]` gets the exact pre-T-648 free move + free rotate.
+    let snap = RwSignal::new(crate::mission_editor::transform::SnapState::default());
+    let widget_variant = RwSignal::new(crate::mission_editor::transform::WidgetVariant::default());
+    // T-648 — repaint tick for the transform widget, bumped whenever the SELECTION changes without a
+    // pointermove (a keyboard select-all, an outliner click), so the widget SVG re-projects onto the
+    // new selection centroid even with a still pointer — the `ruler_tick`/`los_tick` idiom.
+    let widget_tick = RwSignal::new(0u64);
     // T-175 B5 — boot loading overlay phase (set by the wasm boot tasks; the view reads it).
     let boot = RwSignal::new(BootPhase::Hydrating);
     // T-631 — "continue without map": once the render engine fails to start, the map pane is dead
@@ -927,6 +1412,15 @@ pub fn MissionEditorPage() -> impl IntoView {
     // T-168 — the ORBAT dock tree mirror (faction/squad/slot), rebuilt alongside `outliner_nodes`.
     let orbat_nodes = RwSignal::new(Vec::<crate::outliner::OutlinerNode>::new());
     let selected_ids = RwSignal::new(Vec::<String>::new());
+    // T-648 — bump the transform-widget repaint tick whenever the selection changes (any source:
+    // outliner click, keyboard, marquee), so the gizmo re-projects onto the new centroid even with a
+    // still pointer. `selected_ids` is the reactive selection mirror `refresh_selection_mirrors`
+    // updates; a pointermove otherwise drives repaints, this covers the still-pointer case (the
+    // `ruler_tick`/`los_tick` idiom, driven declaratively off the mirror instead of a manual bump).
+    Effect::new(move |_| {
+        let _ = selected_ids.get();
+        widget_tick.update(|t| *t = t.wrapping_add(1));
+    });
     let active_layer = RwSignal::new(None::<String>);
     // T-180.1 — Eden place side (chips write this in T-180.5); default BLUFOR.
     let active_side = RwSignal::new(String::from("BLUFOR"));
@@ -1263,6 +1757,54 @@ pub fn MissionEditorPage() -> impl IntoView {
                 container.clone(),
             );
 
+            // T-648 — hand the leaked doc + selection to a pivot getter the `TransformWidgetOverlay`
+            // (mounted in the shared view, outside this wasm block) reads to place its gizmo. Peer of
+            // `register_ruler_chain` / `register_editor_selection`: the overlay is native-compiled, so
+            // it cannot hold the `!Send` `Rc`s directly — it calls `read_widget_pivot()`, which is the
+            // registered closure here (or `None` natively / pre-mount). The pivot is the SELECTION
+            // CENTROID over slots (SoA) + vehicles (`vehiclesById`), the same average
+            // `center_on_selection` flies to, so the widget sits where Space would centre.
+            {
+                let doc = doc.clone();
+                let selection = selection.clone();
+                register_widget_pivot(std::rc::Rc::new(move || {
+                    let sel = selection.borrow();
+                    if sel.is_empty() {
+                        return None;
+                    }
+                    let d = doc.borrow();
+                    let core = d.as_ref()?;
+                    let soa = core.materialize();
+                    let veh =
+                        serde_json::from_str::<serde_json::Value>(&core.small_maps_json()).ok();
+                    let (mut sx, mut sy, mut n) = (0.0f64, 0.0f64, 0.0f64);
+                    for id in sel.iter() {
+                        if let Some(row) = soa.ids.iter().position(|s| s == id) {
+                            sx += f64::from(soa.xs[row]);
+                            sy += f64::from(soa.ys[row]);
+                            n += 1.0;
+                        } else if let Some(pos) = veh
+                            .as_ref()
+                            .and_then(|r| r.get("vehiclesById")?.get(id)?.get("position").cloned())
+                        {
+                            if let (Some(vx), Some(vy)) = (
+                                pos.get("x").and_then(serde_json::Value::as_f64),
+                                pos.get("y").and_then(serde_json::Value::as_f64),
+                            ) {
+                                sx += vx;
+                                sy += vy;
+                                n += 1.0;
+                            }
+                        }
+                    }
+                    if n == 0.0 {
+                        None
+                    } else {
+                        Some((sx / n, sy / n))
+                    }
+                }));
+            }
+
             // T-159.21 — undo/redo. The ctx carries every handle a post-change rebind needs (doc +
             // engine + selection + doc_ver + id) plus the HUD signal mirrors, so the toolbar buttons,
             // the keyboard shortcuts, and the `__editorHistory` bridge all drive ONE path. Registered
@@ -1417,6 +1959,57 @@ pub fn MissionEditorPage() -> impl IntoView {
                             }
                             "KeyR" if !modk && !ev.alt_key() && !ev.shift_key() => {
                                 dock_right_collapsed.set(!dock_right_collapsed.get_untracked());
+                                true
+                            }
+                            // ══════════════════════ T-648 — the snap grid + transform widget ══════
+                            // KEY-GRID-001 — `G` toggles the snap-grid MASTER latch. Census: `KeyG`
+                            // is bound by NOTHING in this editor keydown or `mission_history`'s (the
+                            // only two window-level editor keydowns) — see the census pin
+                            // `t648_keydown_census`. Bare key only (no Ctrl/Cmd/Alt/Shift), behind
+                            // the top-of-closure `in_editable_field()` guard like E/R, so it never
+                            // fires while typing. Chosen over Eden's `odiaeresis`/`;` keysym
+                            // artefacts (the ticket's instruction) — a plain letter mnemonic for
+                            // "grid". Always acts (flips the latch) → prevent_default below.
+                            "KeyG" if !modk && !ev.alt_key() && !ev.shift_key() => {
+                                snap.set(snap.get_untracked().toggled());
+                                true
+                            }
+                            // TOOLBAR-GRID-MOVE-001 — `[` / `]` DECREASE / INCREASE the active snap
+                            // step. Census: `BracketLeft`/`BracketRight` are bound by nothing in
+                            // either editor keydown. They step the ladder of the CURRENT widget
+                            // variant (translate variant → translation ladder, rotate variant →
+                            // rotation ladder), so the one pair of keys tunes whichever grid the
+                            // operator is working in. Clamped at both ends by `SnapState::stepped`.
+                            // Only "act" (→ prevent_default) when a keypress at a ladder end still
+                            // reports a change is unnecessary — we always return true because the
+                            // key is ours regardless, and `[`/`]` have no browser default worth
+                            // preserving inside the editor.
+                            "BracketLeft" if !modk && !ev.alt_key() && !ev.shift_key() => {
+                                let axis = widget_variant.get_untracked().snap_axis();
+                                snap.set(snap.get_untracked().stepped(axis, -1));
+                                true
+                            }
+                            "BracketRight" if !modk && !ev.alt_key() && !ev.shift_key() => {
+                                let axis = widget_variant.get_untracked().snap_axis();
+                                snap.set(snap.get_untracked().stepped(axis, 1));
+                                true
+                            }
+                            // WIDGET-CYCLE-001 — `1` / `2` select the widget VARIANT (Translate /
+                            // Rotate). This is the Space-collision decision: Eden cycles variants on
+                            // Space, but TBD's Space stays flyTo (`center_on_selection`, the arm
+                            // above), and Eden's `1`-`5` direct keys are free here (census: no
+                            // `Digit*` binding anywhere in the frontend), so `1`/`2` dissolve the
+                            // clash without touching Space. `3`-`5` are deliberately NOT bound —
+                            // there is no area-scale variant (a transform selection is slots +
+                            // vehicles, neither of which scales; see `WidgetVariant`'s doc). Bare
+                            // digit only. `from_digit` is a no-op for any other digit, but we only
+                            // reach here for 1/2 so it always changes the variant → act.
+                            "Digit1" if !modk && !ev.alt_key() && !ev.shift_key() => {
+                                widget_variant.set(widget_variant.get_untracked().from_digit(1));
+                                true
+                            }
+                            "Digit2" if !modk && !ev.alt_key() && !ev.shift_key() => {
+                                widget_variant.set(widget_variant.get_untracked().from_digit(2));
                                 true
                             }
                             _ => false,
@@ -2084,6 +2677,28 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 )
                             });
                             match hit {
+                                // T-648 XFORM-SHIFT-001 — SHIFT + drag grabbing an ALREADY-SELECTED
+                                // entity rotates the whole selection to face the cursor instead of
+                                // moving it. Shift is free in this drag path (T-053 left it unbound;
+                                // the T-073 cancel note confirms it), so this steals no existing
+                                // gesture. Gated on the grabbed entity being in the CURRENT selection
+                                // so a Shift+drag on empty ground or an unselected entity still falls
+                                // through to the normal pick/marquee below (a rotate needs something
+                                // to rotate). No pointer preview: the render engine's `set_drag` is a
+                                // TRANSLATION lane only, so — like the ruler — the rotate shows its
+                                // result on release; the widget ring (mounted in the view) is the
+                                // live affordance. `LG::Rotate` carries no ids: the commit re-reads
+                                // the live selection at release.
+                                Some(ref id)
+                                    if ev.shift_key()
+                                        && selection.borrow().iter().any(|s| s == id) =>
+                                {
+                                    LG::Rotate {
+                                        start_x: p.start_x,
+                                        start_y: p.start_y,
+                                        cam: p.cam,
+                                    }
+                                }
                                 Some(id) => {
                                     // Drag an already-selected slot → move the whole selection; else
                                     // replace the selection with the dragged slot (React :204).
@@ -2193,6 +2808,20 @@ pub fn MissionEditorPage() -> impl IntoView {
                             start_y,
                             cam,
                         },
+                        // T-648 — a Shift-rotate, like the ruler, does NOT preview through the engine
+                        // (its `set_drag` is translation-only) and does NOT promote: it stays
+                        // `Rotate` until release. The live affordance is the widget ring in the view;
+                        // the rotate itself is applied on pointerup from the release cursor. Carry the
+                        // arm back unchanged.
+                        LG::Rotate {
+                            start_x,
+                            start_y,
+                            cam,
+                        } => LG::Rotate {
+                            start_x,
+                            start_y,
+                            cam,
+                        },
                     };
                     *left.borrow_mut() = Some(next);
                 }
@@ -2218,8 +2847,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // `mission_history::after_local_edit`, which reads the id from its ctx.
                 move |ev: web_sys::PointerEvent| {
                     // T-159.22 — palette drag-to-place. FIRST: a place is armed by a `pointerdown`
-                    // on a palette leaf, which the chrome host stops from reaching the map — so
-                    // `left`/`pan_px` are both None here and no gesture branch below would fire.
+                    // on a palette leaf, which the chrome host stops from reaching the map. The
+                    // ARMED state is the signal this branch keys on (`has_pending()`), checked before
+                    // any gesture branch below — NOT an assumption about what the gesture handles hold.
+                    // (Wave-109 verifier fix: the prior comment asserted the gesture handles were
+                    // necessarily unset at this point, which its own next sentence refutes — a release
+                    // over a dock bubbles here even mid-gesture. What is actually true is that
+                    // `has_pending()` short-circuits with a `return` before the gesture `match`
+                    // regardless of what the gesture handles hold, so the two paths never interleave.)
                     //
                     // The host stops `pointerdown` only, so a release over a dock ALSO bubbles here:
                     // the chrome insets decide. They are the same consts `select_tool`'s probe grid
@@ -2527,6 +3162,34 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 }
                             }
                         }
+                        // T-648 XFORM-SHIFT-001 — SHIFT-ROTATE commit. Reached only with NO palette
+                        // place armed (the `has_pending()` branch at the top of pointerup already
+                        // returned — the T-723 discipline: this arm sits OUTSIDE that branch) and no
+                        // pan in flight, and because the promotion wrote `LG::Rotate` into `left`,
+                        // this `take()` above is what clears it (nothing is left armed). Release the
+                        // capture the promotion grabbed, then rotate the LIVE selection to face the
+                        // release cursor (unprojected against the frozen press `cam`), quantised to
+                        // the effective rotation rung. One history/persist tail via
+                        // `rotate_selection_to_face`. A drop with no finite aim (cursor off-map, or
+                        // on the pivot) is a silent no-op inside the commit.
+                        LG::Rotate { cam, .. } => {
+                            if container.has_pointer_capture(ev.pointer_id()) {
+                                let _ = container.release_pointer_capture(ev.pointer_id());
+                            }
+                            let aim = cam.unproject_xy(up_x, up_y);
+                            if aim[0].is_finite() && aim[1].is_finite() {
+                                let rung = snap.get_untracked().effective_rotate_rung();
+                                let acted = crate::editor_ops::rotate_selection_to_face(
+                                    aim[0], aim[1], rung,
+                                );
+                                if acted {
+                                    // A rotate changes the doc but not the selection; keep the tint
+                                    // lane in sync (glyphs re-bind off the history tail) and refresh
+                                    // the SEL readout, mirroring the Move commit's bookkeeping.
+                                    crate::mission_history::refresh_selection();
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -2637,6 +3300,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                             }
                             if let Some(e) = engine.borrow_mut().as_mut() {
                                 e.upload_marquee(0.0, 0.0, 0.0, 0.0, false);
+                            }
+                        }
+                        // T-648 — a cancelled Shift-rotate: release the capture the promotion grabbed
+                        // and drop the gesture with NO rotation committed (cancel is never a commit).
+                        // No engine preview to clear — a rotate never touched the drag/marquee lanes.
+                        Some(LG::Rotate { .. }) => {
+                            if container.has_pointer_capture(ev.pointer_id()) {
+                                let _ = container.release_pointer_capture(ev.pointer_id());
                             }
                         }
                         _ => {}
@@ -2997,6 +3668,21 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // `cursor`/`debug_hud` heartbeats as the ruler (no new rAF loop) plus `los_tick`
                 // (repaint on a still-pointer click).
                 <crate::los_tool::LosOverlay cursor debug_hud=Some(debug_hud) tick=los_tick />
+                // T-648 — the transformation widget (WIDGET-CYCLE-001 / WIDGET-TRANS-001). UNGATED
+                // like the ruler/LoS overlays: it draws on the live selection, is `pointer-events-none`
+                // (the gestures are the map's own handlers), and re-runs off the same
+                // `cursor`/`debug_hud` heartbeats plus `widget_tick` (repaint on a keyboard selection
+                // change with a still pointer). Draws nothing when the selection is empty.
+                <TransformWidgetOverlay
+                    cursor
+                    debug_hud=Some(debug_hud)
+                    tick=widget_tick
+                    variant=widget_variant
+                />
+                // T-648 — the snap-grid step readout (TOOLBAR-GRID-MOVE-001). GATED on `chrome_hidden`
+                // — it is status-bar furniture like the scale bar / grid refs, so Backspace hides it
+                // too (this is the SEVENTH chrome-gated mount; the count pin is updated to match).
+                {move || (!chrome_hidden.get()).then(|| view! { <SnapReadout snap /> })}
             </div>
             // T-628 — boot loading overlay: ONE bar, 0→100%, across the whole boot. It never resets
             // between stages and there is no sweep anywhere in it — the stage name underneath
@@ -5062,7 +5748,9 @@ mod t662_input_traps {
     /// T-636 [wave101 N-5]: the split turned the single `BottomToolbelt` gate into TWO (ModeToolbar
     /// + StatusBar), so the deliberate count moved 4 → 5. T-667 [wave 106]: the map-pane grid
     /// references (`MapGridRefs`) are the same kind of map furniture as the scale bar and must hide
-    /// with the rest of the chrome on Backspace, so the deliberate count moves 5 → 6. Pinned as an
+    /// with the rest of the chrome on Backspace, so the deliberate count moves 5 → 6. T-648 [wave
+    /// 110]: the snap-grid step readout (`SnapReadout`) is status-bar furniture like the scale bar /
+    /// grid refs and must hide with the chrome too, so the deliberate count moves 6 → 7. Pinned as an
     /// exact count so a mount can never silently escape the hide-chrome gate (or a stray gate creep
     /// in unnoticed) — a legitimate new gated mount UPDATES this number on purpose (it is never
     /// bumped to make a red test pass without a matching, intended mount).
@@ -5074,23 +5762,25 @@ mod t662_input_traps {
             "chrome_hidden must be a real RwSignal declared on the page"
         );
         // Each chrome mount must sit behind a chrome_hidden gate. Count the gate wrappers: strip,
-        // DockLeft, DockRight, ModeToolbar, StatusBar, MapGridRefs = 6 (T-636 split + T-667 refs).
+        // DockLeft, DockRight, ModeToolbar, StatusBar, MapGridRefs, SnapReadout = 7 (T-636 split +
+        // T-667 refs + T-648 snap readout).
         let gates = ed.matches("(!chrome_hidden.get()).then(").count();
         assert_eq!(
-            gates, 6,
-            "exactly six chrome mounts (strip + both docks + mode toolbar + status bar + grid refs) \
-             must be gated on chrome_hidden; found {gates} gate(s)"
+            gates, 7,
+            "exactly seven chrome mounts (strip + both docks + mode toolbar + status bar + grid refs \
+             + snap readout) must be gated on chrome_hidden; found {gates} gate(s)"
         );
         // The docked chrome components must appear inside the gated region (sanity: we did not gate
         // empty divs). BottomToolbelt is retired as a mount — the readouts live in StatusBar and the
-        // tools in ModeToolbar, both gated; the T-667 grid refs are gated too.
+        // tools in ModeToolbar, both gated; the T-667 grid refs + T-648 snap readout are gated too.
         assert!(
             ed.contains("TopCommandStrip")
                 && ed.contains("DockLeft")
                 && ed.contains("DockRight")
                 && ed.contains("ModeToolbar")
                 && ed.contains("StatusBar")
-                && ed.contains("MapGridRefs"),
+                && ed.contains("MapGridRefs")
+                && ed.contains("SnapReadout"),
             "the gated mounts must still be the real chrome components (incl. the two T-636 halves \
              and the T-667 grid-reference overlay)"
         );
@@ -5926,6 +6616,560 @@ mod t643_los_wiring {
             !perturbed.contains(needle),
             "fired rule: dropping the los.click() route (LoS clicks fall through to ruler.press) must \
              break the routing pin — proving the is_los() branch discriminates the regression"
+        );
+    }
+}
+
+/// T-648 — Transform: Shift-rotate, snap grid, transform widget + the Space collision decision.
+///
+/// The pure primitives (`transform` module) are proved BEHAVIOURALLY here — it is an ungated module
+/// like `boot_progress`, so a native `cargo test -p website-frontend` (the command CI/the wave gate
+/// runs) compiles and executes these, unlike a test placed beside `drag_delta` in the wasm-only
+/// `select_tool`. The wasm wiring (the Shift-rotate gesture arm, the widget mount, the keydown
+/// bindings, the included comment fix) is proved by SOURCE PINS on `live_code` (comments + dead code
+/// stripped, so a stale note or an `if false` wrapper cannot satisfy them). The keydown CENSUS reads
+/// both window-level editor keydowns (this file + `mission_history`) as raw text.
+#[cfg(test)]
+mod t648_transform {
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::mission_editor::transform::{
+        bearing_to_face, norm_deg, snap_rotate, snap_translate, snap_value, step, Axis, SnapState,
+        WidgetVariant, ROTATE_LADDER_DEG, TRANSLATE_LADDER_M,
+    };
+
+    fn editor_live() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(
+            raw.matches(anchor.as_str()).count(),
+            1,
+            "scrub anchor must be unambiguous"
+        );
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    }
+
+    // ── QUANTISER: ladders ────────────────────────────────────────────────────────────────────
+    /// The ladders are exactly the ticket's rungs, OFF-first.
+    #[test]
+    fn ladders_are_the_ticket_rungs() {
+        assert_eq!(
+            TRANSLATE_LADDER_M,
+            [0.0, 1.0, 5.0, 10.0],
+            "translation ladder = off/1/5/10 m"
+        );
+        assert_eq!(
+            ROTATE_LADDER_DEG,
+            [0.0, 5.0, 15.0, 45.0],
+            "rotation ladder = off/5/15/45°"
+        );
+        assert_eq!(Axis::Translate.ladder(), &TRANSLATE_LADDER_M);
+        assert_eq!(Axis::Rotate.ladder(), &ROTATE_LADDER_DEG);
+    }
+
+    // ── QUANTISER: off-state passthrough ──────────────────────────────────────────────────────
+    #[test]
+    fn off_rung_is_passthrough() {
+        // Rung 0 (OFF) returns the value byte-for-byte — a free move / free rotate.
+        assert_eq!(snap_translate(3.7, 0), 3.7);
+        assert_eq!(snap_translate(-123.456, 0), -123.456);
+        // snap_value with a non-positive / non-finite step is also passthrough (the OFF branch).
+        assert_eq!(snap_value(3.7, 0.0), 3.7);
+        assert_eq!(snap_value(3.7, -5.0), 3.7);
+        assert_eq!(snap_value(3.7, f64::NAN), 3.7);
+        // Rotation OFF still NORMALISES to [0,360) (the stored range) but does not quantise.
+        assert_eq!(snap_rotate(370.0, 0), 10.0);
+        assert_eq!(snap_rotate(-30.0, 0), 330.0);
+    }
+
+    // ── QUANTISER: quantisation to a rung ─────────────────────────────────────────────────────
+    #[test]
+    fn snap_translate_quantises_to_the_rung() {
+        // 5 m rung: 12 → 10, 13 → 15 (round to nearest multiple of 5).
+        assert_eq!(snap_translate(12.0, 2), 10.0);
+        assert_eq!(snap_translate(13.0, 2), 15.0);
+        // 1 m rung: rounds to whole metres.
+        assert_eq!(snap_translate(2.4, 1), 2.0);
+        assert_eq!(snap_translate(2.6, 1), 3.0);
+        // 10 m rung: negatives round symmetrically.
+        assert_eq!(snap_translate(-14.0, 3), -10.0);
+        assert_eq!(snap_translate(-16.0, 3), -20.0);
+    }
+
+    #[test]
+    fn snap_rotate_quantises_and_normalises() {
+        // 45° rung: 40 → 45, 20 → 45? no — 20 rounds to 0 (nearest of {0,45}). 30 → 45.
+        assert_eq!(snap_rotate(40.0, 3), 45.0);
+        assert_eq!(snap_rotate(20.0, 3), 0.0);
+        assert_eq!(snap_rotate(30.0, 3), 45.0);
+        // 15° rung: 7 → 0, 8 → 15, 359 → 0 (360 normalises to 0).
+        assert_eq!(snap_rotate(7.0, 2), 0.0);
+        assert_eq!(snap_rotate(8.0, 2), 15.0);
+        assert_eq!(snap_rotate(359.0, 2), 0.0);
+        // 5° rung with wrap: 358 → 360 → 0.
+        assert_eq!(snap_rotate(358.0, 1), 0.0);
+    }
+
+    // ── QUANTISER: increase/decrease clamping ─────────────────────────────────────────────────
+    #[test]
+    fn step_clamps_at_both_ends() {
+        let len = TRANSLATE_LADDER_M.len(); // 4
+                                            // Increase walks up and STOPS at the last rung.
+        assert_eq!(step(0, len, 1), 1);
+        assert_eq!(step(1, len, 1), 2);
+        assert_eq!(step(2, len, 1), 3);
+        assert_eq!(
+            step(3, len, 1),
+            3,
+            "increase at the coarsest rung is a clamp, not a wrap"
+        );
+        // Decrease walks down and STOPS at OFF (0).
+        assert_eq!(step(3, len, -1), 2);
+        assert_eq!(step(1, len, -1), 0);
+        assert_eq!(
+            step(0, len, -1),
+            0,
+            "decrease at OFF is a clamp, not a wrap to the top"
+        );
+        // A zero delta is inert (still clamped into range).
+        assert_eq!(step(2, len, 0), 2);
+        // Degenerate empty ladder never panics.
+        assert_eq!(step(0, 0, 1), 0);
+    }
+
+    // ── SnapState: the master latch + per-axis rungs ──────────────────────────────────────────
+    #[test]
+    fn snap_state_default_is_off_and_passthrough() {
+        let s = SnapState::default();
+        assert!(!s.enabled, "grid defaults OFF");
+        assert_eq!(s.translate_rung, 0);
+        assert_eq!(s.rotate_rung, 0);
+        // Effective rungs are 0 while disabled REGARDLESS of the stored rung.
+        let tuned = SnapState {
+            enabled: false,
+            translate_rung: 3,
+            rotate_rung: 2,
+        };
+        assert_eq!(
+            tuned.effective_translate_rung(),
+            0,
+            "grid off ⇒ translation passthrough even with a tuned rung"
+        );
+        assert_eq!(
+            tuned.effective_rotate_rung(),
+            0,
+            "grid off ⇒ rotation passthrough"
+        );
+    }
+
+    #[test]
+    fn toggling_the_latch_preserves_rungs() {
+        let s = SnapState {
+            enabled: false,
+            translate_rung: 2,
+            rotate_rung: 3,
+        };
+        let on = s.toggled();
+        assert!(on.enabled);
+        assert_eq!(
+            on.translate_rung, 2,
+            "toggle keeps the tuned translation rung"
+        );
+        assert_eq!(on.rotate_rung, 3, "toggle keeps the tuned rotation rung");
+        assert_eq!(
+            on.effective_translate_rung(),
+            2,
+            "enabled ⇒ tuned rung is live"
+        );
+        assert_eq!(on.effective_rotate_rung(), 3);
+        assert!(!on.toggled().enabled, "toggling again turns it back off");
+    }
+
+    #[test]
+    fn stepping_a_rung_does_not_flip_the_latch() {
+        // Stepping while OFF parks the rung without enabling (Eden keeps the two controls orthogonal).
+        let s = SnapState::default().stepped(Axis::Translate, 1);
+        assert!(!s.enabled, "stepping a rung must not enable the grid");
+        assert_eq!(s.translate_rung, 1);
+        assert_eq!(
+            s.rotate_rung, 0,
+            "stepping translation leaves rotation alone"
+        );
+        // Rotation axis is independent.
+        let s2 = s.stepped(Axis::Rotate, 1).stepped(Axis::Rotate, 1);
+        assert_eq!(s2.translate_rung, 1);
+        assert_eq!(s2.rotate_rung, 2);
+        // Clamps ride through SnapState too.
+        let maxed = SnapState::default()
+            .stepped(Axis::Rotate, 1)
+            .stepped(Axis::Rotate, 1)
+            .stepped(Axis::Rotate, 1)
+            .stepped(Axis::Rotate, 1);
+        assert_eq!(
+            maxed.rotate_rung, 3,
+            "clamped at the coarsest rotation rung"
+        );
+    }
+
+    #[test]
+    fn status_readout_names_the_active_steps() {
+        assert_eq!(SnapState::default().status_readout(), "GRID  off");
+        let s = SnapState {
+            enabled: true,
+            translate_rung: 2, // 5 m
+            rotate_rung: 2,    // 15°
+        };
+        assert_eq!(s.status_readout(), "GRID  move 5 m \u{b7} rot 15\u{b0}");
+        let off = SnapState {
+            enabled: true,
+            translate_rung: 0,
+            rotate_rung: 0,
+        };
+        assert_eq!(
+            off.status_readout(),
+            "GRID  move off \u{b7} rot off",
+            "an enabled grid with both ladders at OFF reads 'off' per axis"
+        );
+    }
+
+    // ── SHIFT-ROTATE: face-cursor bearing golden (incl. wrap) ─────────────────────────────────
+    /// The bearing is yaw clockwise from north (+Y) — the doc/export convention. Cardinal goldens
+    /// plus the wrap case (west → 270, not −90).
+    #[test]
+    fn bearing_faces_the_cursor_clockwise_from_north() {
+        let eps = 1e-9;
+        // Pivot at origin; cursor at each cardinal.
+        assert!(
+            (bearing_to_face(0.0, 0.0, 0.0, 10.0).unwrap() - 0.0).abs() < eps,
+            "north → 0°"
+        );
+        assert!(
+            (bearing_to_face(0.0, 0.0, 10.0, 0.0).unwrap() - 90.0).abs() < eps,
+            "east → 90°"
+        );
+        assert!(
+            (bearing_to_face(0.0, 0.0, 0.0, -10.0).unwrap() - 180.0).abs() < eps,
+            "south → 180°"
+        );
+        // West is the WRAP case: atan2 gives −90, normalise to 270.
+        assert!(
+            (bearing_to_face(0.0, 0.0, -10.0, 0.0).unwrap() - 270.0).abs() < eps,
+            "west → 270° (the wrap: −90 must normalise, not stay negative)"
+        );
+        // A diagonal: NE → 45.
+        assert!(
+            (bearing_to_face(0.0, 0.0, 5.0, 5.0).unwrap() - 45.0).abs() < eps,
+            "NE → 45°"
+        );
+        // Pivot offset from origin — bearing is relative to the pivot, not the world origin.
+        assert!(
+            (bearing_to_face(100.0, 200.0, 100.0, 250.0).unwrap() - 0.0).abs() < eps,
+            "cursor due north of an offset pivot is still 0°"
+        );
+    }
+
+    #[test]
+    fn bearing_is_none_for_a_degenerate_aim() {
+        // Cursor exactly on the pivot → no meaningful bearing (the commit leaves rotation untouched).
+        assert_eq!(bearing_to_face(50.0, 50.0, 50.0, 50.0), None);
+        // Non-finite inputs → None, not a NaN commit.
+        assert_eq!(bearing_to_face(0.0, 0.0, f64::NAN, 0.0), None);
+        assert_eq!(bearing_to_face(0.0, 0.0, 0.0, f64::INFINITY), None);
+    }
+
+    #[test]
+    fn norm_deg_ranges_and_handles_nonfinite() {
+        assert_eq!(norm_deg(0.0), 0.0);
+        assert_eq!(norm_deg(360.0), 0.0);
+        assert_eq!(norm_deg(370.0), 10.0);
+        assert_eq!(norm_deg(-10.0), 350.0);
+        assert_eq!(norm_deg(-370.0), 350.0);
+        assert_eq!(norm_deg(f64::NAN), 0.0);
+    }
+
+    // ── WIDGET STATE MACHINE: 1/2 cycle, variant-gated gestures ───────────────────────────────
+    #[test]
+    fn widget_variant_cycles_on_1_and_2_only() {
+        let v = WidgetVariant::default();
+        assert_eq!(v, WidgetVariant::Translate, "default variant is Translate");
+        assert_eq!(v.from_digit(2), WidgetVariant::Rotate, "2 → Rotate");
+        assert_eq!(
+            WidgetVariant::Rotate.from_digit(1),
+            WidgetVariant::Translate,
+            "1 → Translate"
+        );
+        // 3-5 (and any other digit) are INERT — there is no area-scale variant (honest scope: a
+        // transform selection is slots + vehicles, neither of which scales).
+        assert_eq!(
+            WidgetVariant::Rotate.from_digit(3),
+            WidgetVariant::Rotate,
+            "3 is not bound — no area-scale variant"
+        );
+        assert_eq!(
+            WidgetVariant::Translate.from_digit(5),
+            WidgetVariant::Translate
+        );
+        assert_eq!(WidgetVariant::Rotate.from_digit(0), WidgetVariant::Rotate);
+    }
+
+    #[test]
+    fn widget_variant_gates_its_gesture_axis() {
+        // Only Rotate has a ring (Shift+ring drag snaps to the rotation ladder).
+        assert!(WidgetVariant::Rotate.is_rotate());
+        assert!(!WidgetVariant::Translate.is_rotate());
+        // The step keys tune the axis matching the variant.
+        assert_eq!(WidgetVariant::Translate.snap_axis(), Axis::Translate);
+        assert_eq!(WidgetVariant::Rotate.snap_axis(), Axis::Rotate);
+    }
+
+    // ── KEYDOWN CENSUS: G free (+ brackets + digits), Space stays flyTo ────────────────────────
+    /// The two window-level EDITOR keydowns are this file's and `mission_history`'s. Census both as
+    /// raw text (keeping string literals — a keydown arm IS a `"KeyX"` string). T-648's new keys must
+    /// be free before this slice, and Space must remain `center_on_selection` (flyTo), not a widget
+    /// cycle (the collision decision).
+    #[test]
+    fn t648_keydown_census() {
+        // Slice ONLY the editor keydown MATCH of each of the two window-level editor keydowns, so a
+        // needle can never self-match inside this test module (which sits in the same file). The arm
+        // list runs from the `match ev.code().as_str()` head to the arm-list terminator `_ => false`
+        // / `_ => {}`. Comments are stripped (`live_source` keeps the `"KeyX"` arm LITERALS but drops
+        // notes) so a comment that MENTIONS a rejected keysym for explanation is not read as a
+        // binding — the census is about arm patterns, not prose.
+        fn keydown_arms(src: &str) -> String {
+            let head = "match ev.code().as_str() {";
+            let at = src.find(head).expect("an editor keydown match is present");
+            let rest = &src[at..];
+            // Stop at the fallthrough arm — both keydowns end their arm list with a `_ =>`.
+            let end = rest.find("_ =>").map(|i| i + 4).unwrap_or(rest.len());
+            live_source(&rest[..end])
+        }
+        let this_arms = keydown_arms(include_str!("mission_editor.rs"));
+        let history_arms = keydown_arms(include_str!("mission_history.rs"));
+        // Needles assembled so the LITERAL never appears verbatim in this test's own source.
+        let key = |k: &str| format!("\"{k}\"");
+        let g = key("KeyG");
+        let bl = key("BracketLeft");
+        let br = key("BracketRight");
+        let d1 = key("Digit1");
+        let d2 = key("Digit2");
+        let semicolon = key("Semicolon");
+        let odiaeresis = format!("odi{}", "aeresis"); // split so it is not a verbatim literal here
+
+        // The other editor keydown (Ctrl+Z/Y) must NOT claim any T-648 key.
+        assert!(
+            !history_arms.contains(&g)
+                && !history_arms.contains(&bl)
+                && !history_arms.contains(&br)
+                && !history_arms.contains(&d1)
+                && !history_arms.contains(&d2),
+            "census: mission_history's keydown (Ctrl+Z/Y) must not claim G / [ / ] / 1 / 2"
+        );
+        // G is the chosen grid toggle — an arm here, and NOT an Eden keysym artefact.
+        assert!(
+            this_arms.contains(&format!("{g} if !modk")),
+            "KEY-GRID-001: G must be the grid-toggle keydown arm"
+        );
+        assert!(
+            !this_arms.contains(&odiaeresis) && !this_arms.contains(&semicolon),
+            "census: must NOT copy Eden's odiaeresis / ; keysym artefacts for the grid toggle"
+        );
+        // [ / ] step the snap rung.
+        assert!(
+            this_arms.contains(&format!("{bl} if !modk"))
+                && this_arms.contains(&format!("{br} if !modk")),
+            "TOOLBAR-GRID-MOVE-001: [ and ] must be the decrease/increase keydown arms"
+        );
+        // 1 / 2 cycle the widget variant (Eden's free direct keys — the Space collision decision).
+        assert!(
+            this_arms.contains(&format!("{d1} if !modk"))
+                && this_arms.contains(&format!("{d2} if !modk")),
+            "WIDGET-CYCLE-001: 1 and 2 must be the widget-variant keydown arms"
+        );
+        // Space STAYS flyTo — it must still map to center_on_selection and must NOT cycle the widget.
+        let space = key("Space");
+        assert!(
+            this_arms.contains(&format!(
+                "{space} if !modk => crate::editor_ops::center_on_selection()"
+            )),
+            "collision decision: Space must remain flyTo (center_on_selection), not a widget cycle"
+        );
+        // The Space arm must not touch widget_variant (it is a one-liner flyTo call).
+        let space_at = this_arms.find(&space).expect("Space arm present");
+        let space_arm = &this_arms[space_at..(space_at + 120).min(this_arms.len())];
+        assert!(
+            !space_arm.contains("widget_variant"),
+            "collision decision: the Space arm must not cycle the widget variant"
+        );
+    }
+
+    // ── SOURCE PINS: the Shift-rotate gesture arm ─────────────────────────────────────────────
+    /// Shift+drag on a SELECTED entity promotes to `LG::Rotate` (not `LG::Move`), and the commit
+    /// routes through `rotate_selection_to_face` — never the atomic translate `move_entities_*`.
+    #[test]
+    fn shift_rotate_arm_promotes_and_commits_through_the_field_write() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("ev.shift_key()") && ed.contains("LG::Rotate {"),
+            "XFORM-SHIFT-001: a Shift-held drag on a selected entity must open LG::Rotate"
+        );
+        assert!(
+            ed.contains("editor_ops::rotate_selection_to_face("),
+            "the LG::Rotate commit must call rotate_selection_to_face"
+        );
+        // Isolate the pointerup LG::Rotate arm and prove it commits rotation, NOT a translate.
+        let rot_arm = {
+            let at = ed
+                .find("LG::Rotate { cam, .. } =>")
+                .expect("the pointerup LG::Rotate commit arm is present");
+            let rest = &ed[at..];
+            let end = rest[3..].find("LG::").map(|i| i + 3).unwrap_or(rest.len());
+            &rest[..end]
+        };
+        assert!(
+            rot_arm.contains("rotate_selection_to_face("),
+            "the rotate commit arm must call the field-write rotate"
+        );
+        assert!(
+            !rot_arm.contains("move_entities_and_vehicles(") && !rot_arm.contains("move_entities("),
+            "the rotate arm must NOT translate — rotation rides the attrs/vehicle field write"
+        );
+    }
+
+    /// The atomic move-commit pin's invariant is UNDISTURBED by the new arm: exactly one `LG::Move`
+    /// arm still calls `move_entities_and_vehicles`, and `LG::Rotate` is a separate arm. (The
+    /// authoritative version of this pin lives in map-engine-core/doc/store.rs and runs under
+    /// `cargo test -p map-engine-core`; this is the frontend-local echo so a fork shows up here too.)
+    #[test]
+    fn only_one_move_arm_commits_the_atomic_mix() {
+        let ed = editor_live();
+        let move_arms: Vec<&str> = ed
+            .split("LG::Move")
+            .skip(1)
+            .map(|s| s.split("LG::").next().unwrap_or(s))
+            .filter(|arm| arm.contains(".move_entities_and_vehicles("))
+            .collect();
+        assert_eq!(
+            move_arms.len(),
+            1,
+            "exactly one LG::Move arm may commit via move_entities_and_vehicles (found {})",
+            move_arms.len()
+        );
+    }
+
+    // ── SOURCE PINS: the keydown bindings drive the right state ────────────────────────────────
+    #[test]
+    fn keydown_arms_drive_snap_and_variant_state() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("snap.set(snap.get_untracked().toggled())"),
+            "G must toggle the SnapState master latch"
+        );
+        assert!(
+            ed.contains("snap.set(snap.get_untracked().stepped(axis, -1))")
+                && ed.contains("snap.set(snap.get_untracked().stepped(axis, 1))"),
+            "[ / ] must step the current-variant snap axis down / up"
+        );
+        assert!(
+            ed.contains("widget_variant.set(widget_variant.get_untracked().from_digit(1))")
+                && ed.contains("widget_variant.set(widget_variant.get_untracked().from_digit(2))"),
+            "1 / 2 must set the widget variant"
+        );
+    }
+
+    // ── SOURCE PINS: the widget + snap-readout mounts ─────────────────────────────────────────
+    #[test]
+    fn widget_and_readout_are_mounted() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("TransformWidgetOverlay") && ed.contains("register_widget_pivot("),
+            "WIDGET-TRANS-001: the transform widget must be mounted and its pivot registered"
+        );
+        assert!(
+            ed.contains("SnapReadout"),
+            "TOOLBAR-GRID-MOVE-001: the snap-step readout must be mounted"
+        );
+        // The Shift-rotate commit rung comes from the EFFECTIVE (grid-gated) rotation rung.
+        assert!(
+            ed.contains("effective_rotate_rung()"),
+            "the rotate commit must quantise to the grid-gated rotation rung"
+        );
+    }
+
+    // ── SOURCE PIN: the included one-line comment fix (before/after) ───────────────────────────
+    /// The wave-109 verifier's binding fix: the false T-159.22 claim must be GONE and replaced by the
+    /// truth (has_pending short-circuits regardless of left/pan_px). Pinned on the RAW file — the
+    /// claim and its correction are comments, which `live_code` strips.
+    #[test]
+    fn false_t159_22_comment_is_corrected() {
+        let raw = include_str!("mission_editor.rs");
+        // The false-claim needle is assembled from fragments so this test's OWN source (in this same
+        // file, read via include_str!) is not a decoy match for it.
+        let false_claim = format!(
+            "{}{}",
+            "`left`/`pan_px` are both None here", " and no gesture branch below would fire"
+        );
+        assert!(
+            !raw.contains(&false_claim),
+            "the false 'both-None here' T-159.22 claim must be deleted or corrected"
+        );
+        assert!(
+            raw.contains("`has_pending()` short-circuits with a `return` before the gesture"),
+            "the correction must state the true invariant: has_pending() short-circuits regardless"
+        );
+    }
+
+    // ── FIRED RULE: the quantiser is load-bearing (perturb / fail / restore) ───────────────────
+    /// Fire the quantiser once: a build that quantises everyday (perturb `snap_value` to always
+    /// passthrough) must FAIL the quantisation goldens. This proves the ladders actually bite — a
+    /// green suite over a no-op quantiser would be worthless. Restore is implicit (in-memory reasoning
+    /// via a re-derived value); the real `snap_value` is exercised by the goldens above.
+    #[test]
+    fn fired_rule_quantiser_is_load_bearing() {
+        // The real quantiser bites: 12 m at the 5 m rung lands on 10.
+        assert_eq!(
+            snap_translate(12.0, 2),
+            10.0,
+            "canary: the real quantiser snaps"
+        );
+        // Perturbation model: a passthrough quantiser (the regression) would return the input.
+        let passthrough = |v: f64, _step: f64| v;
+        let perturbed = passthrough(12.0, TRANSLATE_LADDER_M[2]);
+        assert_ne!(
+            perturbed, 10.0,
+            "fired rule: a passthrough quantiser (snap off everywhere) does NOT land on the grid — \
+             so the quantisation goldens above genuinely constrain the snap, they are not vacuous"
+        );
+        // And the rotation ladder likewise bites (40° → 45° at the 45° rung).
+        assert_eq!(snap_rotate(40.0, 3), 45.0);
+        assert_ne!(
+            40.0, 45.0,
+            "fired rule: the rotation snap moved the value — the golden is not an identity"
+        );
+    }
+
+    // ── SOURCE PINS on the pure module living where it can be native-tested ────────────────────
+    /// The `transform` module is UNGATED (native-testable) — the whole reason these behavioural tests
+    /// run at all. Pin that placement so a refactor into wasm-only `select_tool` (where a native
+    /// `cargo test` would silently skip them) is caught.
+    #[test]
+    fn transform_module_is_native_testable() {
+        let raw = include_str!("mission_editor.rs");
+        // The module declaration must NOT sit under a wasm cfg.
+        let decl = "pub mod transform {";
+        let at = raw.find(decl).expect("transform module present");
+        let before = &raw[at.saturating_sub(60)..at];
+        assert!(
+            !before.contains("cfg(target_arch = \"wasm32\")"),
+            "the transform module must stay ungated so its quantiser/bearing tests run on native \
+             `cargo test -p website-frontend` (the command the wave gate uses)"
+        );
+        // And the rotate commit really rides the existing field write, per the ticket.
+        let ops = include_str!("editor_ops.rs");
+        let ops_live = live_code(ops);
+        let body = only_body(&ops_live, "pub fn rotate_selection_to_face(");
+        assert!(
+            body.contains("update_slot_position(") && body.contains("set_vehicle_position("),
+            "rotate_selection_to_face must ride update_slot_position (slots) + set_vehicle_position \
+             (vehicles) — the existing per-field rotation writes, not a new core mutator"
         );
     }
 }

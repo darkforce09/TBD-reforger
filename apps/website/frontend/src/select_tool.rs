@@ -95,6 +95,21 @@ pub enum LeftGesture {
         start_y: f64,
         cam: OrthoCamera,
     },
+    /// T-648 XFORM-SHIFT-001 — an in-flight **Shift-rotate**: a Shift+LMB press that landed on a
+    /// selected entity. The whole live selection rotates to FACE the cursor (each entity about its
+    /// own position); the release px is unprojected against the frozen `cam` to the aim point that
+    /// [`crate::editor_ops::rotate_selection_to_face`] rotates toward, quantised to the active
+    /// rotation ladder rung. It is a SEPARATE arm from [`LeftGesture::Move`] on purpose: a rotate
+    /// commits rotation (through the existing `attrs_update_position` / `set_vehicle_position` field
+    /// writes), never the atomic `move_entities_and_vehicles` translate — so the `mission_editor`
+    /// move-commit pin (which requires exactly one `LG::Move` arm calling that API) is unaffected,
+    /// and Shift+drag can never be mistaken for a positional move. Carries no `ids`: the commit reads
+    /// the live selection at release, so a selection edited mid-gesture cannot desync a stale copy.
+    Rotate {
+        start_x: f64,
+        start_y: f64,
+        cam: OrthoCamera,
+    },
 }
 
 /// Build a frozen ortho-camera snapshot from the engine's live view + the container CSS size (S2 —
