@@ -2160,3 +2160,201 @@ async fn set_current_version_repaints_tip_over_http() {
     assert_eq!(tip_old["slots"][0]["groupCallsign"], "ALPHA");
     assert_eq!(tip_old["slots"][0]["role"], "SL");
 }
+
+// ── T-683: default-override instrumentation ─────────────────────────────────────────────────────
+
+/// Seed a mission whose LATEST version stores exactly one authored zone carrying `rules`, then
+/// return its id. Inserts the version directly and points `current_version_id` at it — the same
+/// bypass the over-capacity test uses, because the editor has no zone-rules draw tool yet (T-211),
+/// so the only way a `zones[].rules` payload reaches the DB in a test is a direct insert.
+async fn seed_zone_rules_mission(pool: &sqlx::PgPool, rules_json: &str) -> String {
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    // Insert the mission row directly (the seed helper takes `&pool`, not the router). `author_id`
+    // mirrors dev-login's admin/maker seed id; status draft so it never leaks into a live-only list.
+    let id = uuid::Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO missions \
+         (id, title, author_id, terrain, game_mode, weather, time_of_day, max_players, status, created_at, updated_at) \
+         VALUES ($1, $2, '000000000000000001', 'everon', 'pve_coop', 'clear', '14:00:00'::time, 16, 'draft', now(), now())",
+    )
+    .bind(id)
+    .bind(format!("T683 Zone {stamp}"))
+    .execute(pool)
+    .await
+    .expect("seed mission row");
+    let mid = id.to_string();
+
+    // One authored zone with the given rules. `zones` at the editor-payload ROOT (flatten.rs
+    // `EditorPayload.zones`), each element's `rules` object — the exact path the handler reads.
+    let payload = format!(
+        r#"{{"schemaVersion":1,"zones":[{{"id":"z1","type":"objective_capture","label":"OBJ","faction":"BLUFOR","shape":{{"circle":{{"x":100.0,"z":100.0,"r":50.0}}}},"rules":{rules_json}}}],"editor":{{"factions":[],"squads":[],"slots":[],"editorLayers":[]}}}}"#
+    );
+    let vid = uuid::Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO mission_versions (id, mission_id, semver, json_payload, editor_notes, created_by, created_at) \
+         VALUES ($1, $2::uuid, '0.1.0', $3::jsonb, '', '000000000000000001', now())",
+    )
+    .bind(vid)
+    .bind(&mid)
+    .bind(&payload)
+    .execute(pool)
+    .await
+    .expect("insert zone-rules version");
+    sqlx::query("UPDATE missions SET current_version_id = $1 WHERE id = $2::uuid")
+        .bind(vid)
+        .bind(&mid)
+        .execute(pool)
+        .await
+        .expect("point tip at zone-rules version");
+    mid
+}
+
+/// Find one `data[]` row by its `key` in the overrides response.
+fn find_override<'a>(body: &'a Value, key: &str) -> Option<&'a Value> {
+    body["data"]
+        .as_array()?
+        .iter()
+        .find(|r| r["key"].as_str() == Some(key))
+}
+
+/// The whole point of T-683: which mission defaults every author changes, as a QUERY over the
+/// corpus rather than a machine-parse of shipped PBOs (`wog.md:1078`).
+///
+/// Seeds two missions on ONE authored default-bearing key (`graceSeconds`, schema default 30): one
+/// that authors the default value (in the population, NOT overriding) and one that authors a
+/// non-default value (overriding). Asserts the fraction and the value histogram off those two, and
+/// that a non-admin gets 403.
+#[tokio::test]
+async fn mission_default_overrides_reports_fraction_and_histogram() {
+    let Some((app, pool, maker, admin)) = app_pool_and_tokens().await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+
+    // A run-unique override value so the histogram assertion cannot collide with any other seeded
+    // mission in this binary's database. 30 is the schema default for graceSeconds; this is not.
+    let override_grace = 700_000
+        + (std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_micros()
+            % 100_000) as i64;
+
+    // Mission DEFAULT: authors graceSeconds = 30 (the schema default). It has a zone, so it is in
+    // the denominator, but it must NOT be counted as overriding.
+    let m_default = seed_zone_rules_mission(&pool, r#"{"graceSeconds":30}"#).await;
+    // Mission OVERRIDE: authors graceSeconds = <unique>, which differs from the default.
+    let m_override =
+        seed_zone_rules_mission(&pool, &format!(r#"{{"graceSeconds":{override_grace}}}"#)).await;
+
+    // ── Admin tier: 200 with the aggregate. ──────────────────────────────────────────────────────
+    let (st, b) = call(
+        &app,
+        "GET",
+        "/api/v1/admin/mission-default-overrides",
+        Some(&admin),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "admin read: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let body = json(&b);
+    assert!(
+        body["generated_at"].is_string(),
+        "generated_at present: {body}"
+    );
+
+    let grace = find_override(&body, "zones[].rules.graceSeconds")
+        .unwrap_or_else(|| panic!("graceSeconds row missing from {}", body["data"]));
+
+    // The default is READ FROM THE SCHEMA, not hardcoded in the handler — assert the wire carries it.
+    assert_eq!(
+        grace["default_value"], 30,
+        "graceSeconds schema default is 30"
+    );
+
+    // Both seeded missions author a zone, so the population is at least 2 (other tests in this
+    // binary may add more — assert a floor, not equality).
+    let total = grace["missions_total"].as_i64().unwrap();
+    let overriding = grace["missions_overriding"].as_i64().unwrap();
+    assert!(total >= 2, "missions_total >= 2 (the two seeded): {total}");
+    assert!(
+        overriding >= 1,
+        "missions_overriding >= 1 (the non-default seed): {overriding}"
+    );
+    assert!(
+        overriding <= total,
+        "overriding {overriding} cannot exceed total {total}"
+    );
+
+    // override_fraction is exactly overriding/total (float compare with a tolerance).
+    let frac = grace["override_fraction"].as_f64().unwrap();
+    let expected = overriding as f64 / total as f64;
+    assert!(
+        (frac - expected).abs() < 1e-9,
+        "override_fraction {frac} == overriding/total {expected}"
+    );
+
+    // Histogram: the unique override value appears exactly once (one mission authored it), and the
+    // default value 30 appears at least once (the default-authoring seed).
+    let hist = grace["histogram"].as_array().unwrap();
+    let over_bucket = hist
+        .iter()
+        .find(|h| h["value"].as_i64() == Some(override_grace))
+        .unwrap_or_else(|| {
+            panic!("override value {override_grace} missing from histogram {hist:?}")
+        });
+    assert_eq!(
+        over_bucket["count"].as_i64(),
+        Some(1),
+        "exactly one mission authored the unique override value"
+    );
+    let def_bucket = hist
+        .iter()
+        .find(|h| h["value"].as_i64() == Some(30))
+        .unwrap_or_else(|| panic!("default value 30 missing from histogram {hist:?}"));
+    assert!(
+        def_bucket["count"].as_i64().unwrap() >= 1,
+        "the default-authoring mission is a histogram bar too"
+    );
+
+    // ── Non-admin tier: 403. ─────────────────────────────────────────────────────────────────────
+    let (st, _b) = call(
+        &app,
+        "GET",
+        "/api/v1/admin/mission-default-overrides",
+        Some(&maker),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::FORBIDDEN,
+        "mission_maker is below the admin tier"
+    );
+
+    // Cleanup so the shared gate DB does not accumulate these seed missions forever.
+    for id in [&m_default, &m_override] {
+        let _ = sqlx::query("UPDATE missions SET current_version_id = NULL WHERE id = $1::uuid")
+            .bind(id)
+            .execute(&pool)
+            .await;
+        let _ = sqlx::query("DELETE FROM mission_versions WHERE mission_id = $1::uuid")
+            .bind(id)
+            .execute(&pool)
+            .await;
+        let _ = sqlx::query("DELETE FROM missions WHERE id = $1::uuid")
+            .bind(id)
+            .execute(&pool)
+            .await;
+    }
+}
