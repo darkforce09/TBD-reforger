@@ -282,17 +282,21 @@ fn fmt_coord(v: Option<f64>) -> String {
 /// clickable with a hover. Select wears this when Ruler is active, and vice-versa.
 const TOOL_INACTIVE: &str = "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-label-md transition-colors text-on-surface-variant hover:bg-white/5";
 
-/// The mode toolbar — Select ⇆ Ruler (both LIVE, T-642) + LoS (still a disabled stub — T-643, wave
-/// 109). Tools only; different job from the readouts, so a separate mount (T-636). It floats above
-/// the full-width [`StatusBar`], keeping the operator's "content and feel unchanged" — the same three
-/// buttons in the same pill, just no longer sharing the strip with telemetry.
+/// The mode toolbar — Select ⇆ Ruler ⇆ LoS, all THREE now LIVE (Select always; Ruler T-642, wave
+/// 108; LoS T-643, wave 109). Tools only; different job from the readouts, so a separate mount
+/// (T-636). It floats above the full-width [`StatusBar`], keeping the operator's "content and feel
+/// unchanged" — the same three buttons in the same pill, just no longer sharing the strip with
+/// telemetry.
 ///
-/// T-642 — the Ruler button is the point of this ticket: it drops `disabled` and becomes a real mode
-/// toggle. THE RULE it honours (removing `disabled` without a working tool is worse than an honest
-/// stub) is satisfied because it only enables now that `ruler_tool` works end-to-end: clicking it
-/// sets `tool_mode = Ruler` (TOOL_ACTIVE tint + `aria-pressed`), clicking Select returns to
-/// `tool_mode = Select`. The active button is driven off the shared `tool_mode` signal so the map's
-/// pointer handlers and the button can never disagree about which tool is live. LoS stays disabled.
+/// T-643 — the LoS button is the point of THIS ticket: it drops `disabled` and becomes a real mode
+/// toggle, exactly as T-642 did for Ruler. THE HONESTY RULE it honours (removing `disabled` without
+/// a working tool is worse than an honest stub — the corpus has two dead-control cautionary tales) is
+/// satisfied because it only enables now that `los_tool` works end-to-end: clicking it sets
+/// `tool_mode = LoS` (TOOL_ACTIVE tint + `aria-pressed`), and the map's two-click capture + inline
+/// profile panel are live behind it. Each button is active exactly when its tool is the current
+/// `tool_mode` — the shared signal the pointer handlers read — so a button and the live tool can
+/// never disagree, and clicking any button switches the mode (which also clears the other tools'
+/// overlays via the tool-switch Effect in `mission_editor`).
 #[component]
 pub fn ModeToolbar(
     /// The active editor tool (shared with the map pointer handlers). Reading it tints the active
@@ -300,12 +304,23 @@ pub fn ModeToolbar(
     tool_mode: RwSignal<crate::ruler_tool::EditorTool>,
 ) -> impl IntoView {
     use crate::ruler_tool::EditorTool;
+    // A button is ACTIVE (primary tint) exactly when its tool is the current mode; otherwise it wears
+    // the inactive-but-clickable recipe. With three live tools this is a direct per-tool equality,
+    // not the old two-way `is_ruler()` toggle.
+    let cls = move |mine: EditorTool| {
+        if tool_mode.get() == mine {
+            TOOL_ACTIVE
+        } else {
+            TOOL_INACTIVE
+        }
+    };
+    let pressed = move |mine: EditorTool| (tool_mode.get() == mine).to_string();
     view! {
         <div class=MODEBAR>
             <button
                 type="button"
-                class=move || if tool_mode.get().is_ruler() { TOOL_INACTIVE } else { TOOL_ACTIVE }
-                aria-pressed=move || (!tool_mode.get().is_ruler()).to_string()
+                class=move || cls(EditorTool::Select)
+                aria-pressed=move || pressed(EditorTool::Select)
                 title="Select"
                 on:pointerdown=move |_| tool_mode.set(EditorTool::Select)
             >
@@ -314,15 +329,21 @@ pub fn ModeToolbar(
             </button>
             <button
                 type="button"
-                class=move || if tool_mode.get().is_ruler() { TOOL_ACTIVE } else { TOOL_INACTIVE }
-                aria-pressed=move || tool_mode.get().is_ruler().to_string()
+                class=move || cls(EditorTool::Ruler)
+                aria-pressed=move || pressed(EditorTool::Ruler)
                 title="Ruler — click a chain of points; Esc clears, double-click ends"
                 on:pointerdown=move |_| tool_mode.set(EditorTool::Ruler)
             >
                 <MaterialIcon name="straighten" class="block text-base" />
                 <span class="hidden sm:inline">"Ruler"</span>
             </button>
-            <button type="button" class=TOOL_DISABLED disabled=true title="Line of sight (soon)">
+            <button
+                type="button"
+                class=move || cls(EditorTool::LoS)
+                aria-pressed=move || pressed(EditorTool::LoS)
+                title="Line of sight — click observer, click target; Esc clears"
+                on:pointerdown=move |_| tool_mode.set(EditorTool::LoS)
+            >
                 <MaterialIcon name="visibility" class="block text-base" />
                 <span class="hidden sm:inline">"LoS"</span>
             </button>
@@ -960,7 +981,11 @@ mod t642_ruler {
     /// (button enable) THE RULE: the Ruler button must NOT be a disabled stub any more — it drops
     /// `disabled=true` and becomes a real `tool_mode` toggle. Proven by slicing the ModeToolbar body
     /// and checking the Ruler button's window carries an `on:pointerdown` that sets `EditorTool::Ruler`
-    /// and NO `disabled=true`. LoS, by contrast, MUST still be disabled (T-643, wave 109).
+    /// and NO `disabled=true`.
+    ///
+    /// T-643 (wave 109) — the LoS button is now ALSO enabled (its wave-108 disabled forward-guard is
+    /// flipped): the same honesty rule now permits it because `los_tool` works end-to-end. The LoS
+    /// assertion below therefore mirrors the Ruler one — sets `EditorTool::LoS`, NO `disabled=true`.
     #[test]
     fn ruler_button_is_enabled_and_toggles_tool_mode() {
         let src = src_kept();
@@ -1000,12 +1025,20 @@ mod t642_ruler {
             "T-642: the Ruler button must NOT be `disabled=true` — enabling a non-working stub is the \
              lie THE RULE forbids; it is enabled only because ruler_tool works end-to-end"
         );
-        // LoS is STILL a disabled stub (T-643 is wave 109 — leave it disabled).
+        // T-643 — the LoS button is NOW enabled too (wave 109): its window sets tool_mode = LoS on
+        // pointerdown and carries NO `disabled=true`, exactly like the Ruler check above. The
+        // wave-108 "LoS must stay disabled" forward-guard is retired here — the honesty rule is met
+        // because `los_tool` works end-to-end.
+        assert!(
+            body.contains(&format!("tool_mode.set(EditorTool::{})", "LoS")),
+            "T-643: the LoS button must set tool_mode = LoS on pointerdown"
+        );
         let los_at = body.find("visibility").expect("LoS glyph present");
         let los_open = body[..los_at].rfind("<button").expect("LoS button open");
         assert!(
-            body[los_open..los_at].contains(&disabled_true),
-            "T-642: LoS must stay disabled (T-643 wave 109)"
+            !body[los_open..los_at].contains(&disabled_true),
+            "T-643: the LoS button must NOT be `disabled=true` — it is enabled only because los_tool \
+             works end-to-end (the honesty rule this ticket, like T-642, exists to honour)"
         );
     }
 
