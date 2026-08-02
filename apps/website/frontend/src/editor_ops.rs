@@ -1637,6 +1637,27 @@ pub fn orbat_manager_snapshot() -> OrbatManagerSnapshot {
     })
 }
 
+/// T-659 — the live input the header's slot census reads: `(factions, squads, slot squad ids)`.
+///
+/// Reuses [`orbat_manager_snapshot`] (one doc read of the same rows the ORBAT Manager sees) rather
+/// than re-deriving from the document — so the header badge and the ORBAT dock can never disagree
+/// about who is on which side. The third element is one `squadId` per slot (empty string when the
+/// slot carries none); its length is the total slot count, which is what makes the pure
+/// [`crate::eden_top_strip::census_from_rows`] buckets provably sum to the total. Vehicles are read
+/// by the sibling [`vehicle_rows`] and are deliberately NOT folded in here: the header is a *slot*
+/// (people) census, and mixing crewed vehicles into the same per-side integers would misreport the
+/// roster the community naming convention is built on.
+#[must_use]
+pub fn census_input() -> (
+    Vec<crate::outliner::FactionRow>,
+    Vec<crate::outliner::SquadRow>,
+    Vec<String>,
+) {
+    let snap = orbat_manager_snapshot();
+    let slot_squad_ids = snap.slots.iter().map(|s| s.squad_id.clone()).collect();
+    (snap.factions, snap.squads, slot_squad_ids)
+}
+
 fn slot_details(core: &MissionDocCore) -> Vec<OrbatSlotDetail> {
     let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) else {
         return Vec::new();
