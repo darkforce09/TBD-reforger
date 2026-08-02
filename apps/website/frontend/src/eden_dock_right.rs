@@ -8,7 +8,8 @@
 use leptos::prelude::*;
 
 use crate::asset_catalog::{CatalogNode, CatalogState};
-use crate::eden_layout::DOCK_R;
+use crate::eden_dock_left::collapse_chevron;
+use crate::eden_layout::{DOCK_R, STUB_PX};
 use crate::eden_tree::{chevron_or_spacer, guide_spans, PALETTE_LEAF};
 use crate::eden_vehicles_panel::placed_vehicles_panel;
 use crate::eden_zones::zones_panel;
@@ -352,6 +353,9 @@ pub fn custom_chip_visible(submode: EdenSubmode) -> bool {
 /// built by `asset_catalog::build_vehicle_catalog_tree`), not the T-070 placeholder it was. Its
 /// leaves arm `editor_ops::begin_place_vehicle`, so a release on the canvas writes a `vehiclesById`
 /// row at that world point.
+///
+/// T-638 — `collapsed` collapses this dock to the [`STUB_PX`]-square stub in its outer top-RIGHT
+/// corner; the `R` key and the tab-strip chevron both flip it (see [`collapse_chevron`]).
 #[component]
 pub fn DockRight(
     catalog: RwSignal<CatalogState>,
@@ -364,6 +368,9 @@ pub fn DockRight(
     fm_open: RwSignal<bool>,
     active_side: RwSignal<String>,
     objects_mode: RwSignal<bool>,
+    /// T-638 — collapse latch (owned by `mission_editor`; `R`/chevron toggle it, the accessor + reflow
+    /// observe it).
+    collapsed: RwSignal<bool>,
 ) -> impl IntoView {
     // Palette collapse state (T-172 B6), seeded from `default_expanded` whenever the catalog
     // turns Ready or the Eden side chip rebuilds the tree (T-255). User toggles stick until the
@@ -435,347 +442,375 @@ pub fn DockRight(
             </button>
         }
     };
-    view! {
-        <aside class=DOCK_R>
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-1">
-                    {tab_btn(0, "Factions")}
-                    {tab_btn(1, "Vehicles")}
-                    // T-582 — Zones sits before the Markers stub: it is a live surface and that
-                    // one is still a promise (T-069).
-                    {tab_btn(3, "Zones")}
-                    {tab_btn(2, "Markers")}
+    let full = move || {
+        view! {
+            <aside class=DOCK_R>
+                // T-638 — the tab strip carries the collapse chevron at its outer (top-RIGHT) end, after
+                // "Manage"; » while expanded, flips to « collapsed.
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1">
+                        {tab_btn(0, "Factions")}
+                        {tab_btn(1, "Vehicles")}
+                        // T-582 — Zones sits before the Markers stub: it is a live surface and that
+                        // one is still a promise (T-069).
+                        {tab_btn(3, "Zones")}
+                        {tab_btn(2, "Markers")}
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button
+                            type="button"
+                            aria-label="Manage factions"
+                            on:click=move |_| fm_open.set(true)
+                            class="rounded-md px-1.5 py-0.5 text-label-sm font-semibold uppercase tracking-wide text-primary transition-colors hover:bg-primary/15"
+                        >
+                            "Manage"
+                        </button>
+                        {collapse_chevron(collapsed, false)}
+                    </div>
                 </div>
-                <button
-                    type="button"
-                    aria-label="Manage factions"
-                    on:click=move |_| fm_open.set(true)
-                    class="rounded-md px-1.5 py-0.5 text-label-sm font-semibold uppercase tracking-wide text-primary transition-colors hover:bg-primary/15"
-                >
-                    "Manage"
-                </button>
-            </div>
-            {move || match tab.get() {
-                0 => view! {
-                    <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Asset Browser"</h3>
-                    <p class="mt-0.5 text-label-sm normal-case text-outline">
-                        "Drag a role onto the map to place its slot."
-                    </p>
-                    // T-180.5 — Eden side chips above search (E-L4). No F1–F6 row, no CIV.
-                    <div
-                        class="mt-2 flex items-center gap-1.5"
-                        role="group"
-                        aria-label="Eden side"
-                    >
-                        {EDEN_SIDE_CHIPS
-                            .iter()
-                            .filter_map(|label| EdenChip::from_label(label))
-                            .map(|chip| {
-                                let fill = chip.fill_class();
-                                view! {
-                                    <button
-                                        type="button"
-                                        aria-label=chip.label()
-                                        aria-pressed=move || {
-                                            eden_chip_selected(
-                                                chip,
-                                                &active_side.get(),
-                                                objects_mode.get(),
-                                            )
-                                        }
-                                        class=move || {
-                                            let selected = eden_chip_selected(
-                                                chip,
-                                                &active_side.get(),
-                                                objects_mode.get(),
-                                            );
-                                            if selected {
-                                                format!(
-                                                    "{fill} h-5 w-8 shrink-0 rounded-sm ring-2 ring-offset-1 ring-offset-surface-container-lowest ring-white/90 opacity-100"
-                                                )
-                                            } else {
-                                                format!(
-                                                    "{fill} h-5 w-8 shrink-0 rounded-sm opacity-45 transition-opacity hover:opacity-75"
+                {move || match tab.get() {
+                    0 => view! {
+                        <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Asset Browser"</h3>
+                        <p class="mt-0.5 text-label-sm normal-case text-outline">
+                            "Drag a role onto the map to place its slot."
+                        </p>
+                        // T-180.5 — Eden side chips above search (E-L4). No F1–F6 row, no CIV.
+                        <div
+                            class="mt-2 flex items-center gap-1.5"
+                            role="group"
+                            aria-label="Eden side"
+                        >
+                            {EDEN_SIDE_CHIPS
+                                .iter()
+                                .filter_map(|label| EdenChip::from_label(label))
+                                .map(|chip| {
+                                    let fill = chip.fill_class();
+                                    view! {
+                                        <button
+                                            type="button"
+                                            aria-label=chip.label()
+                                            aria-pressed=move || {
+                                                eden_chip_selected(
+                                                    chip,
+                                                    &active_side.get(),
+                                                    objects_mode.get(),
                                                 )
                                             }
-                                        }
-                                        on:click=move |_| {
-                                            // T-255 — writes `active_side`; mission_editor's
-                                            // Effect rebuilds `catalog` via build_catalog_tree(_, side).
-                                            apply_eden_chip(chip, active_side, objects_mode)
-                                        }
-                                    />
-                                }
-                            })
-                            .collect_view()}
-                        // T-646 (RIGHT-SUBMODE-001) — the sixth Custom slot, shown only under the
-                        // Groups sub-mode (Factions tab, side place — never Objects). Renders as a
-                        // labelled outline chip: unlike the side swatches it carries no fill token,
-                        // and it is inert here (its persistent custom-collection verbs are T-078's
-                        // separate ticket), so it declares itself disabled rather than feigning a
-                        // place. `Show` keeps it out of the DOM entirely when Objects is active.
-                        <Show when=move || custom_chip_visible(
-                            EdenSubmode::from_tab(0, objects_mode.get()),
-                        )>
-                            <button
-                                type="button"
-                                disabled=true
-                                aria-label=EDEN_CUSTOM_CHIP
-                                title="Custom groups arrive in T-078"
-                                class="flex h-5 shrink-0 items-center rounded-sm border border-outline-variant/60 px-1.5 text-[10px] font-semibold uppercase tracking-wide text-outline opacity-45"
-                            >
-                                {EDEN_CUSTOM_CHIP}
-                            </button>
-                        </Show>
-                    </div>
-                    <input
-                        type="search"
-                        aria-label=move || {
-                            if objects_mode.get() {
-                                "Search objects"
-                            } else {
-                                "Search assets"
-                            }
-                        }
-                        // T-646 — hint the `class:` operator (RIGHT-SEARCH-002). The broader
-                        // `mod `/glob/regex grammar is T-084 and lands its own copy here.
-                        placeholder=move || {
-                            if objects_mode.get() {
-                                "Search objects or class:…"
-                            } else {
-                                "Search assets or class:…"
-                            }
-                        }
-                        class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
-                        on:input=move |ev| {
-                            let v = event_target_value(&ev);
-                            if objects_mode.get_untracked() {
-                                object_search.set(v);
-                            } else {
-                                search.set(v);
-                            }
-                        }
-                    />
-                    <div class="mt-2">
-                        {move || {
-                            if objects_mode.get() {
-                                let items = registry_items.get().unwrap_or_default();
-                                let nodes =
-                                    crate::asset_catalog::build_object_catalog_tree(&items);
-                                if nodes.is_empty() {
-                                    return view! {
-                                        <p class="text-label-sm text-outline">
-                                            "No placeable objects in the registry."
-                                        </p>
+                                            class=move || {
+                                                let selected = eden_chip_selected(
+                                                    chip,
+                                                    &active_side.get(),
+                                                    objects_mode.get(),
+                                                );
+                                                if selected {
+                                                    format!(
+                                                        "{fill} h-5 w-8 shrink-0 rounded-sm ring-2 ring-offset-1 ring-offset-surface-container-lowest ring-white/90 opacity-100"
+                                                    )
+                                                } else {
+                                                    format!(
+                                                        "{fill} h-5 w-8 shrink-0 rounded-sm opacity-45 transition-opacity hover:opacity-75"
+                                                    )
+                                                }
+                                            }
+                                            on:click=move |_| {
+                                                // T-255 — writes `active_side`; mission_editor's
+                                                // Effect rebuilds `catalog` via build_catalog_tree(_, side).
+                                                apply_eden_chip(chip, active_side, objects_mode)
+                                            }
+                                        />
                                     }
-                                    .into_any();
+                                })
+                                .collect_view()}
+                            // T-646 (RIGHT-SUBMODE-001) — the sixth Custom slot, shown only under the
+                            // Groups sub-mode (Factions tab, side place — never Objects). Renders as a
+                            // labelled outline chip: unlike the side swatches it carries no fill token,
+                            // and it is inert here (its persistent custom-collection verbs are T-078's
+                            // separate ticket), so it declares itself disabled rather than feigning a
+                            // place. `Show` keeps it out of the DOM entirely when Objects is active.
+                            <Show when=move || custom_chip_visible(
+                                EdenSubmode::from_tab(0, objects_mode.get()),
+                            )>
+                                <button
+                                    type="button"
+                                    disabled=true
+                                    aria-label=EDEN_CUSTOM_CHIP
+                                    title="Custom groups arrive in T-078"
+                                    class="flex h-5 shrink-0 items-center rounded-sm border border-outline-variant/60 px-1.5 text-[10px] font-semibold uppercase tracking-wide text-outline opacity-45"
+                                >
+                                    {EDEN_CUSTOM_CHIP}
+                                </button>
+                            </Show>
+                        </div>
+                        <input
+                            type="search"
+                            aria-label=move || {
+                                if objects_mode.get() {
+                                    "Search objects"
+                                } else {
+                                    "Search assets"
                                 }
-                                let q = object_search.get();
-                                if q.trim().is_empty() {
-                                    object_collapsed.track();
+                            }
+                            // T-646 — hint the `class:` operator (RIGHT-SEARCH-002). The broader
+                            // `mod `/glob/regex grammar is T-084 and lands its own copy here.
+                            placeholder=move || {
+                                if objects_mode.get() {
+                                    "Search objects or class:…"
+                                } else {
+                                    "Search assets or class:…"
+                                }
+                            }
+                            class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
+                            on:input=move |ev| {
+                                let v = event_target_value(&ev);
+                                if objects_mode.get_untracked() {
+                                    object_search.set(v);
+                                } else {
+                                    search.set(v);
+                                }
+                            }
+                        />
+                        <div class="mt-2">
+                            {move || {
+                                if objects_mode.get() {
+                                    let items = registry_items.get().unwrap_or_default();
+                                    let nodes =
+                                        crate::asset_catalog::build_object_catalog_tree(&items);
+                                    if nodes.is_empty() {
+                                        return view! {
+                                            <p class="text-label-sm text-outline">
+                                                "No placeable objects in the registry."
+                                            </p>
+                                        }
+                                        .into_any();
+                                    }
+                                    let q = object_search.get();
+                                    if q.trim().is_empty() {
+                                        object_collapsed.track();
+                                        return palette_rows(
+                                            &nodes,
+                                            0,
+                                            &[],
+                                            &[],
+                                            object_collapsed,
+                                            PaletteKind::Object,
+                                        );
+                                    }
+                                    let filtered = crate::asset_catalog::filter_catalog(&nodes, &q);
+                                    if filtered.is_empty() {
+                                        // T-646 — a `class:` with an empty operand says so; a genuine
+                                        // miss reads "No objects match."
+                                        let msg = crate::asset_catalog::search_empty_message(&q, "objects");
+                                        return view! {
+                                            <p class="text-label-sm text-outline">{msg}</p>
+                                        }
+                                        .into_any();
+                                    }
                                     return palette_rows(
-                                        &nodes,
+                                        &filtered,
                                         0,
                                         &[],
                                         &[],
-                                        object_collapsed,
+                                        no_collapse,
                                         PaletteKind::Object,
                                     );
                                 }
-                                let filtered = crate::asset_catalog::filter_catalog(&nodes, &q);
-                                if filtered.is_empty() {
-                                    // T-646 — a `class:` with an empty operand says so; a genuine
-                                    // miss reads "No objects match."
-                                    let msg = crate::asset_catalog::search_empty_message(&q, "objects");
-                                    return view! {
-                                        <p class="text-label-sm text-outline">{msg}</p>
+                                match catalog.get() {
+                                    CatalogState::Loading => {
+                                        view! {
+                                            <p class="text-label-sm text-outline">"Loading assets…"</p>
+                                        }
+                                            .into_any()
                                     }
-                                    .into_any();
-                                }
-                                return palette_rows(
-                                    &filtered,
-                                    0,
-                                    &[],
-                                    &[],
-                                    no_collapse,
-                                    PaletteKind::Object,
-                                );
-                            }
-                            match catalog.get() {
-                                CatalogState::Loading => {
-                                    view! {
-                                        <p class="text-label-sm text-outline">"Loading assets…"</p>
+                                    CatalogState::Failed => {
+                                        view! {
+                                            <p class="text-label-sm text-outline">
+                                                "Could not load the catalog."
+                                            </p>
+                                        }
+                                            .into_any()
                                     }
-                                        .into_any()
-                                }
-                                CatalogState::Failed => {
-                                    view! {
-                                        <p class="text-label-sm text-outline">
-                                            "Could not load the catalog."
-                                        </p>
+                                    CatalogState::Ready(nodes) if nodes.is_empty() => {
+                                        view! {
+                                            <p class="text-label-sm text-outline">"No placeable assets."</p>
+                                        }
+                                            .into_any()
                                     }
-                                        .into_any()
-                                }
-                                CatalogState::Ready(nodes) if nodes.is_empty() => {
-                                    view! {
-                                        <p class="text-label-sm text-outline">"No placeable assets."</p>
-                                    }
-                                        .into_any()
-                                }
-                                CatalogState::Ready(nodes) => {
-                                    let q = search.get();
-                                    if q.trim().is_empty() {
-                                        // Track the collapse set so a chevron toggle re-renders the
-                                        // tree (palette_rows reads it untracked).
-                                        palette_collapsed.track();
-                                        palette_rows(
-                                            &nodes,
-                                            0,
-                                            &[],
-                                            &[],
-                                            palette_collapsed,
-                                            PaletteKind::Character,
-                                        )
-                                    } else {
-                                        let filtered =
-                                            crate::asset_catalog::filter_catalog(&nodes, &q);
-                                        if filtered.is_empty() {
-                                            // T-646 — `class:` empty operand says so (see
-                                            // `search_empty_message`); a real miss reads "No assets match."
-                                            let msg = crate::asset_catalog::search_empty_message(
-                                                &q, "assets",
-                                            );
-                                            view! {
-                                                <p class="text-label-sm text-outline">{msg}</p>
-                                            }
-                                                .into_any()
-                                        } else {
+                                    CatalogState::Ready(nodes) => {
+                                        let q = search.get();
+                                        if q.trim().is_empty() {
+                                            // Track the collapse set so a chevron toggle re-renders the
+                                            // tree (palette_rows reads it untracked).
+                                            palette_collapsed.track();
                                             palette_rows(
-                                                &filtered,
+                                                &nodes,
                                                 0,
                                                 &[],
                                                 &[],
-                                                no_collapse,
+                                                palette_collapsed,
                                                 PaletteKind::Character,
                                             )
+                                        } else {
+                                            let filtered =
+                                                crate::asset_catalog::filter_catalog(&nodes, &q);
+                                            if filtered.is_empty() {
+                                                // T-646 — `class:` empty operand says so (see
+                                                // `search_empty_message`); a real miss reads "No assets match."
+                                                let msg = crate::asset_catalog::search_empty_message(
+                                                    &q, "assets",
+                                                );
+                                                view! {
+                                                    <p class="text-label-sm text-outline">{msg}</p>
+                                                }
+                                                    .into_any()
+                                            } else {
+                                                palette_rows(
+                                                    &filtered,
+                                                    0,
+                                                    &[],
+                                                    &[],
+                                                    no_collapse,
+                                                    PaletteKind::Character,
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        }}
-                    </div>
-                }
-                    .into_any(),
-                // T-215 — Vehicles: the same tree machinery over the `kind == "vehicle"` rows.
-                // A leaf drop writes a `vehiclesById` row at the world point, owned by whichever
-                // Eden side the Factions tab's chips have selected (`active_side`) — the chips are
-                // not repeated here because there is one active side per editor, not per tab.
-                1 => view! {
-                    <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Vehicles"</h3>
-                    <p class="mt-0.5 text-label-sm normal-case text-outline">
-                        "Drag a vehicle onto the map to place it."
-                    </p>
-                    <input
-                        type="search"
-                        aria-label="Search vehicles"
-                        placeholder="Search vehicles or class:…"
-                        class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
-                        on:input=move |ev| vehicle_search.set(event_target_value(&ev))
-                    />
-                    // T-076 (RIGHT-CREW-001) — the manned/unmanned placement toggle, beside the
-                    // Vehicles search. Checked ⇒ a placed vehicle is authored with crew (the Eden
-                    // default); unchecked ⇒ `crewed: false` is stamped on the row. Native builds omit
-                    // it (the `editor_ops` preference is wasm-only).
-                    {crew_place_toggle(
-                        #[cfg(target_arch = "wasm32")]
-                        place_with_crew,
-                    )}
-                    <div class="mt-2">
-                        {move || {
-                            if objects_mode.get() {
-                                return view! {
-                                    <p class="text-label-sm text-outline">
-                                        "Objects place from the Factions tab while the Objects chip is selected."
-                                    </p>
-                                }
-                                    .into_any();
-                            }
-                            match vehicle_catalog.get() {
-                                CatalogState::Loading => {
-                                    view! {
-                                        <p class="text-label-sm text-outline">"Loading vehicles…"</p>
-                                    }
-                                        .into_any()
-                                }
-                                CatalogState::Failed => {
-                                    view! {
+                            }}
+                        </div>
+                    }
+                        .into_any(),
+                    // T-215 — Vehicles: the same tree machinery over the `kind == "vehicle"` rows.
+                    // A leaf drop writes a `vehiclesById` row at the world point, owned by whichever
+                    // Eden side the Factions tab's chips have selected (`active_side`) — the chips are
+                    // not repeated here because there is one active side per editor, not per tab.
+                    1 => view! {
+                        <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Vehicles"</h3>
+                        <p class="mt-0.5 text-label-sm normal-case text-outline">
+                            "Drag a vehicle onto the map to place it."
+                        </p>
+                        <input
+                            type="search"
+                            aria-label="Search vehicles"
+                            placeholder="Search vehicles or class:…"
+                            class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
+                            on:input=move |ev| vehicle_search.set(event_target_value(&ev))
+                        />
+                        // T-076 (RIGHT-CREW-001) — the manned/unmanned placement toggle, beside the
+                        // Vehicles search. Checked ⇒ a placed vehicle is authored with crew (the Eden
+                        // default); unchecked ⇒ `crewed: false` is stamped on the row. Native builds omit
+                        // it (the `editor_ops` preference is wasm-only).
+                        {crew_place_toggle(
+                            #[cfg(target_arch = "wasm32")]
+                            place_with_crew,
+                        )}
+                        <div class="mt-2">
+                            {move || {
+                                if objects_mode.get() {
+                                    return view! {
                                         <p class="text-label-sm text-outline">
-                                            "Could not load the catalog."
+                                            "Objects place from the Factions tab while the Objects chip is selected."
                                         </p>
                                     }
-                                        .into_any()
+                                        .into_any();
                                 }
-                                CatalogState::Ready(nodes) if nodes.is_empty() => {
-                                    view! {
-                                        <p class="text-label-sm text-outline">
-                                            "No placeable vehicles."
-                                        </p>
+                                match vehicle_catalog.get() {
+                                    CatalogState::Loading => {
+                                        view! {
+                                            <p class="text-label-sm text-outline">"Loading vehicles…"</p>
+                                        }
+                                            .into_any()
                                     }
-                                        .into_any()
-                                }
-                                CatalogState::Ready(nodes) => {
-                                    let q = vehicle_search.get();
-                                    if q.trim().is_empty() {
-                                        vehicle_collapsed.track();
-                                        palette_rows(
-                                            &nodes,
-                                            0,
-                                            &[],
-                                            &[],
-                                            vehicle_collapsed,
-                                            PaletteKind::Vehicle,
-                                        )
-                                    } else {
-                                        let filtered =
-                                            crate::asset_catalog::filter_catalog(&nodes, &q);
-                                        if filtered.is_empty() {
-                                            // T-646 — `class:` empty operand says so; else "No vehicles match."
-                                            let msg = crate::asset_catalog::search_empty_message(
-                                                &q, "vehicles",
-                                            );
-                                            view! {
-                                                <p class="text-label-sm text-outline">{msg}</p>
-                                            }
-                                                .into_any()
-                                        } else {
+                                    CatalogState::Failed => {
+                                        view! {
+                                            <p class="text-label-sm text-outline">
+                                                "Could not load the catalog."
+                                            </p>
+                                        }
+                                            .into_any()
+                                    }
+                                    CatalogState::Ready(nodes) if nodes.is_empty() => {
+                                        view! {
+                                            <p class="text-label-sm text-outline">
+                                                "No placeable vehicles."
+                                            </p>
+                                        }
+                                            .into_any()
+                                    }
+                                    CatalogState::Ready(nodes) => {
+                                        let q = vehicle_search.get();
+                                        if q.trim().is_empty() {
+                                            vehicle_collapsed.track();
                                             palette_rows(
-                                                &filtered,
+                                                &nodes,
                                                 0,
                                                 &[],
                                                 &[],
-                                                no_collapse,
+                                                vehicle_collapsed,
                                                 PaletteKind::Vehicle,
                                             )
+                                        } else {
+                                            let filtered =
+                                                crate::asset_catalog::filter_catalog(&nodes, &q);
+                                            if filtered.is_empty() {
+                                                // T-646 — `class:` empty operand says so; else "No vehicles match."
+                                                let msg = crate::asset_catalog::search_empty_message(
+                                                    &q, "vehicles",
+                                                );
+                                                view! {
+                                                    <p class="text-label-sm text-outline">{msg}</p>
+                                                }
+                                                    .into_any()
+                                            } else {
+                                                palette_rows(
+                                                    &filtered,
+                                                    0,
+                                                    &[],
+                                                    &[],
+                                                    no_collapse,
+                                                    PaletteKind::Vehicle,
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        }}
-                    </div>
-                    {move || placed_vehicles_panel(doc_tick, registry_items, vehicle_expanded)}
-                }
-                    .into_any(),
-                // T-582 — the zone draw tool. T-211 shipped the document layer and eleven
-                // mutators; this is the first thing that calls them.
-                3 => zones_panel(doc_tick, zone_selected),
-                _ => view! {
-                    <p class="mt-3 text-label-sm normal-case text-outline">
-                        "Marker placement lands in T-069."
-                    </p>
-                }
-                    .into_any(),
-            }}
-        </aside>
+                            }}
+                        </div>
+                        {move || placed_vehicles_panel(doc_tick, registry_items, vehicle_expanded)}
+                    }
+                        .into_any(),
+                    // T-582 — the zone draw tool. T-211 shipped the document layer and eleven
+                    // mutators; this is the first thing that calls them.
+                    3 => zones_panel(doc_tick, zone_selected),
+                    _ => view! {
+                        <p class="mt-3 text-label-sm normal-case text-outline">
+                            "Marker placement lands in T-069."
+                        </p>
+                    }
+                        .into_any(),
+                }}
+            </aside>
+        }
+    };
+    // T-638 — collapsed: render ONLY the 24×24 stub (the expand chevron) at the outer top-RIGHT
+    // corner, overlaying the map. Its wrapper in `mission_editor` shrinks to STUB_PX so the freed
+    // area is click-through to the map. `justify-end` docks the stub to the corner.
+    let stub = move || {
+        view! {
+            <div
+                class="pointer-events-auto flex items-start justify-end bg-surface-container-lowest/55 backdrop-blur-xl"
+                style=format!("width:{STUB_PX}px;height:{STUB_PX}px")
+            >
+                {collapse_chevron(collapsed, false)}
+            </div>
+        }
+    };
+    // T-638 — swap the whole dock for the corner stub while collapsed.
+    move || {
+        if collapsed.get() {
+            stub().into_any()
+        } else {
+            full().into_any()
+        }
     }
 }
 
