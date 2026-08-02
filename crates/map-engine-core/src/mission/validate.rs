@@ -68,11 +68,17 @@ use crate::mission::compile::terrain_bounds;
 /// in. `evaluate()` uses [`EvalContext::default`] (all `None`), so nothing context-dependent fires
 /// unless a caller opts in with [`Registry::evaluate_with_context`].
 ///
-/// `#[non_exhaustive]` on purpose: T-660 lands cargo/loadout rules next wave and may add fields
-/// (e.g. a known-loadout set, capacity tables) — a new field is a non-breaking addition here, and
-/// callers build the context with `..Default::default()` so they never have to name every field.
-/// Add new facts as new `Option` fields; keep the "None ⇒ rule skips via its gate" discipline.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+/// `#[non_exhaustive]` on purpose: the context grows as domain waves add rules that need ambient
+/// facts the payload does not carry. Because it is `#[non_exhaustive]`, a downstream crate CANNOT
+/// build it with a struct literal + `..Default::default()` (that is E0639 across a crate boundary);
+/// construct it via [`EvalContext::default`] and the field setters
+/// ([`with_known_asset_ids`](EvalContext::with_known_asset_ids) /
+/// [`with_cargo_phys`](EvalContext::with_cargo_phys) /
+/// [`with_loadout_policy`](EvalContext::with_loadout_policy), each of which returns `self` so they
+/// chain) — those are the seam. (Wave-108 MINOR-4: the old doc pointed at `..Default::default()`,
+/// which compiles only *inside* this crate; a cross-crate caller hit E0639.) Add new facts as new
+/// `Option` fields with a matching setter; keep the "None ⇒ rule skips via its gate" discipline.
+#[derive(Clone, Debug, Default, PartialEq)]
 #[non_exhaustive]
 pub struct EvalContext {
     /// The set of asset ids that resolve in the live registry catalogue — full Enfusion
@@ -81,17 +87,108 @@ pub struct EvalContext {
     /// server-side) and the rule skips. See [`rule_asset_resolves`] for how a placed asset id is
     /// matched against it (exact id, plus alias forms the payload carries).
     pub known_asset_ids: Option<HashSet<String>>,
+
+    /// Per-`resource_name` cargo phys attrs (weight / volume / garment maxima) — the T-416 catalogue
+    /// the API builds from `registry_items` (`load_cargo_phys_catalog` in `handlers/missions.rs`).
+    /// `Some(catalog)` ⇒ [`rule_cargo_over_capacity`] runs the over-capacity arithmetic against it;
+    /// `None` ⇒ no catalogue supplied (cold / server-side) and the rule skips. This is the seam the
+    /// T-656 brief invited: it is what lets the standalone [`wire_safety::scan_cargo_capacity`]
+    /// scanner also exist as a registry rule (T-660 reconciliation) without core growing a registry.
+    pub cargo_phys: Option<crate::mission::wire_safety::CargoPhysCatalog>,
+
+    /// Mission loadout/cargo POLICY thresholds — the fairness/policy figures a rule needs but the
+    /// payload does not carry (a per-server "every rifleman carries ≥ N magazines" floor, the
+    /// equipment kinds a briefed slot must carry, a vehicle-cargo ceiling). `Some(policy)` ⇒ the
+    /// policy-gated rules ([`rule_loadout_mag_count`], [`rule_loadout_has_equipment`],
+    /// [`rule_vehicle_cargo_policy`]) run against it; `None` ⇒ no policy configured and those rules
+    /// skip (the conservative default — a mission with no declared policy is not "below" one). See
+    /// [`LoadoutPolicy`].
+    pub loadout_policy: Option<LoadoutPolicy>,
 }
 
 impl EvalContext {
     /// A context carrying a known-asset-id set — the shape the SPA panel builds from its
-    /// `registry_session` cache (T-655 W111). Convenience over `EvalContext { known_asset_ids:
-    /// Some(ids), ..Default::default() }` for the common case.
+    /// `registry_session` cache (T-655 W111). Chainable: returns `self` so callers can layer facts
+    /// (`EvalContext::default().with_known_asset_ids(ids).with_cargo_phys(cat)`).
     #[must_use]
-    pub fn with_known_asset_ids(ids: HashSet<String>) -> Self {
-        Self {
-            known_asset_ids: Some(ids),
-        }
+    pub fn with_known_asset_ids(mut self, ids: HashSet<String>) -> Self {
+        self.known_asset_ids = Some(ids);
+        self
+    }
+
+    /// A context carrying the T-416 cargo phys catalogue (the seam that turns
+    /// [`wire_safety::scan_cargo_capacity`] into a registry rule — see [`cargo_phys`](EvalContext::cargo_phys)).
+    /// Chainable.
+    #[must_use]
+    pub fn with_cargo_phys(
+        mut self,
+        catalog: crate::mission::wire_safety::CargoPhysCatalog,
+    ) -> Self {
+        self.cargo_phys = Some(catalog);
+        self
+    }
+
+    /// A context carrying the mission loadout/cargo policy thresholds (see [`LoadoutPolicy`]).
+    /// Chainable.
+    #[must_use]
+    pub fn with_loadout_policy(mut self, policy: LoadoutPolicy) -> Self {
+        self.loadout_policy = Some(policy);
+        self
+    }
+}
+
+/// Mission loadout & cargo policy thresholds — the fairness/policy figures the policy-gated T-660
+/// rules check authored loadouts against. Carried on [`EvalContext`] (not in the payload) because a
+/// policy is a server/mission setting, not per-slot authored data. Every field is an `Option`: a
+/// `None` field means "this dimension of the policy is not configured" and the rule reading it
+/// contributes nothing (the same conservative default as an absent context) — a policy that pins the
+/// magazine floor but not the equipment set does not suddenly demand equipment.
+///
+/// `#[non_exhaustive]`: policy dimensions grow; build it via [`LoadoutPolicy::default`] + the
+/// setters, which chain, for the same cross-crate E0639 reason [`EvalContext`] documents.
+#[derive(Clone, Debug, Default, PartialEq)]
+#[non_exhaustive]
+pub struct LoadoutPolicy {
+    /// The minimum magazine count a slot that carries a primary weapon must load — WOG
+    /// `fn_check_weapon`'s "below-standard magazine count" as a typed threshold (FNF compares a
+    /// serialised sentinel string; a typed floor deletes that brittleness). `None` ⇒ no floor
+    /// configured ⇒ [`rule_loadout_mag_count`] skips.
+    pub min_magazines: Option<u64>,
+
+    /// The equipment kinds every player slot must carry — WOG's "missing map / compass / radio".
+    /// Lowercased kind tokens (`"map"`, `"compass"`, `"radio"`); order-independent. `None` (or an
+    /// empty set) ⇒ no equipment demanded ⇒ [`rule_loadout_has_equipment`] skips. This one is a
+    /// FORWARD-COMPAT rule: the authored `SlotLoadoutV2` carries no equipment micro-slots today
+    /// (they land with the Arsenal equipment slice), so [`rule_loadout_has_equipment`] gets the
+    /// T-657 TEMPLATE-COVERAGE treatment — see that rule's doc.
+    pub required_equipment: Option<HashSet<String>>,
+
+    /// The maximum number of cargo ITEMS (summed `qty`) a placed vehicle's inventory may carry —
+    /// MissionAnalyzer's R9 (a PvP fairness check: one side pre-stuffing a truck with ammo).
+    /// `None` ⇒ no ceiling ⇒ [`rule_vehicle_cargo_policy`] skips.
+    pub max_vehicle_cargo_items: Option<u64>,
+}
+
+impl LoadoutPolicy {
+    /// Set the minimum-magazine floor (WOG below-standard-magazine check). Chainable.
+    #[must_use]
+    pub fn with_min_magazines(mut self, n: u64) -> Self {
+        self.min_magazines = Some(n);
+        self
+    }
+
+    /// Set the required-equipment kind set (WOG missing map/compass/radio). Chainable.
+    #[must_use]
+    pub fn with_required_equipment(mut self, kinds: HashSet<String>) -> Self {
+        self.required_equipment = Some(kinds);
+        self
+    }
+
+    /// Set the per-vehicle cargo-item ceiling (MissionAnalyzer R9). Chainable.
+    #[must_use]
+    pub fn with_max_vehicle_cargo_items(mut self, n: u64) -> Self {
+        self.max_vehicle_cargo_items = Some(n);
+        self
     }
 }
 
@@ -305,6 +402,26 @@ impl Rule {
             subject_id: Some(subject_id),
         }
     }
+
+    /// Like [`finding_id`](Rule::finding_id) but taking an already-`Option` entity id — for a rule
+    /// (T-660 `CARGO-OVER-CAPACITY`) that reconciles pre-formatted scanner lines where SOME lines
+    /// carry a slot id and others (a truncation tail) do not. Empty `String` ids are normalised to
+    /// `None` so the "positional subject ⇒ `None`" invariant holds.
+    fn finding_id_opt(
+        &self,
+        message: String,
+        subject: String,
+        subject_id: Option<String>,
+    ) -> Finding {
+        Finding {
+            rule_id: self.id,
+            severity: self.severity,
+            primitive: self.primitive,
+            message,
+            subject,
+            subject_id: subject_id.filter(|s| !s.is_empty()),
+        }
+    }
 }
 
 /// A set of rules, run as one pass. `evaluate` returns the union of every applicable rule's findings
@@ -508,6 +625,13 @@ pub fn default_registry() -> Registry {
         rule_orbat_template_coverage(),
         // ── T-658 catalogue-resolution rule ──
         rule_asset_resolves(),
+        // ── T-660 cargo / loadout policy rules ──
+        rule_loadout_has_uniform(),
+        rule_loadout_has_vest(),
+        rule_loadout_mag_count(),
+        rule_loadout_has_equipment(),
+        rule_vehicle_cargo_policy(),
+        rule_cargo_over_capacity(),
     ])
 }
 
@@ -1294,13 +1418,611 @@ fn rule_asset_resolves() -> Rule {
         // applies-gate would exclude the trip, and the rule would be reported as a loud failure —
         // the "a context rule that cannot fire is a loud failure" discipline (T-658).
         trip_context: || {
-            Some(EvalContext::with_known_asset_ids(
-                ["{XYZ}Prefabs/Characters/SomethingElse.et".to_string()]
-                    .into_iter()
-                    .collect(),
-            ))
+            Some(
+                EvalContext::default().with_known_asset_ids(
+                    ["{XYZ}Prefabs/Characters/SomethingElse.et".to_string()]
+                        .into_iter()
+                        .collect(),
+                ),
+            )
         },
     }
+}
+
+/* ═══════════════════════════ T-660 — cargo / loadout policy rules ═══════════════════════════ */
+//
+// These rules read the AUTHORED editor loadout — `editor.slots[].loadout`, the `SlotLoadoutV2` dict
+// the Arsenal writes via `apps/website/frontend/src/arsenal.rs::picks_to_loadout` (NOT the compiled
+// `mission.schema.json` `slot.loadout` gear block that `flatten::mod_slot_loadout` derives). The
+// engine cannot import the frontend, so the slot/kind vocabulary is MIRRORED here with the source
+// cited. The authored shape (proven by `picks_to_loadout` @ arsenal.rs:419-487 and by what
+// `wire_safety::scan_cargo_capacity` already reads):
+//
+//   loadout = {
+//     "version": 2,
+//     "wear":   { <wear key>: <resource_name | null>, … },   // the 8 WEAR_PICK_KEYS
+//     "weapons":[ { "slotIndex": i64, "slotType": str, "weapon": rn,
+//                   "optic": rn|null, "magazine": rn|null, "attachments": [rn] }, … ],
+//     "cargo":  [ { "container": str, "item": rn, "qty": i64 }, … ],   // loadout-export v2 row
+//     "summary": str,
+//   }
+//
+// The wear-key vocabulary is `arsenal_rules::WEAR_PICK_KEYS` @ arsenal_rules.rs:173-182 (headCover /
+// jacket / pants / boots / vest / armoredVest / backpack / handwear) and the 14 pick rows are
+// `arsenal_rules::LOADOUT_ROWS` @ arsenal_rules.rs:49-162. Cargo containers are
+// `arsenal_rules::CARGO_CONTAINERS` @ arsenal_rules.rs:606 (vest / pants / jacket / backpack), and
+// `vest` on the cargo side is backed by the `vest` OR `armoredVest` garment
+// (`arsenal_rules::cargo_garment` @ arsenal_rules.rs:774-789 — the spike lock this engine's
+// `wire_safety::cargo_garment` already mirrors).
+//
+// WHY WOG's `fn_check_weapon` becomes these rules, TYPED. FNF/WOG compares a *serialised sentinel
+// string* to decide "below-standard magazine / no vest / no uniform"; that string drifts the moment
+// a garment is renamed. TBD stores wear as typed `resource_name` fields and magazines as a typed
+// `weapons[].magazine`, so "has a vest" is a field-presence check and "≥ N mags" is a typed count
+// against a typed policy floor — no sentinel to rot (the brittleness a typed model deletes).
+//
+// Every `eval` is a TOTAL function over arbitrary JSON (reads through `str_field` / `loadout_of` /
+// the `Value` combinators, never indexes/unwraps on payload data), so a malformed loadout yields
+// findings or is skipped, never a panic — the wave-104 forward constraint, proved by
+// `loadout_rules_never_panic_on_garbage`.
+
+/// The authored per-slot loadout object (`editor.slots[].loadout`), or `None` when the slot carries
+/// none / a non-object. `picks_to_loadout` returns `None` (clears the field) for a bare slot, so an
+/// ORBAT-only slot placed before the Arsenal was opened has no loadout — and these rules must not
+/// fire on it (a slot with no authored loadout has not violated a loadout policy). Total.
+fn loadout_of(slot: &Value) -> Option<&Value> {
+    slot.get("loadout").filter(|v| v.is_object())
+}
+
+/// A `wear{}` garment `resource_name` for `key`, trimmed, or `""` when absent/blank/null/non-string.
+/// The `wear` map is `SlotLoadoutV2.wear` (keys = `WEAR_PICK_KEYS`); a `null` value (the Arsenal's
+/// "empty slot" marker, `picks_to_loadout` sticky()) reads as absent. Total.
+fn wear_garment<'a>(loadout: &'a Value, key: &str) -> &'a str {
+    loadout
+        .get("wear")
+        .and_then(|w| w.get(key))
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .trim()
+}
+
+/// The slot's primary-weapon `weapons[]` entry, if one is authored. A primary is the entry whose
+/// `slotIndex == 0` (arsenal_rules.rs:53-57 — the "primary" row maps to `(0, "primary")`); the
+/// magazine and optic ride it (`picks_to_loadout` writes `optic`/`magazine` only on the primary,
+/// arsenal.rs:450-456). Returns the first `slotIndex == 0` object, or `None`. Total over any JSON.
+fn primary_weapon(loadout: &Value) -> Option<&Value> {
+    loadout
+        .get("weapons")
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or(&[])
+        .iter()
+        .find(|w| w.get("slotIndex").and_then(Value::as_i64) == Some(0))
+}
+
+/// A loadout "declares a slot loadout" iff at least one editor slot carries a `loadout` object. With
+/// none, the loadout policy rules have nothing to check (a slotless / loadout-free draft is not
+/// "below" a policy), so — like V1 — they are conditional on that shape. Shape-only; `ctx` unused.
+fn declares_loadout(payload: &Value, _ctx: &EvalContext) -> bool {
+    editor_slots(payload)
+        .iter()
+        .any(|s| loadout_of(s).is_some())
+}
+
+/* ─────────────── LOADOUT-HAS-UNIFORM — every authored loadout wears a uniform (jacket) ─────────────── */
+
+fn rule_loadout_has_uniform() -> Rule {
+    Rule {
+        id: "LOADOUT-HAS-UNIFORM",
+        // Warning — a policy/fairness note (WOG `fn_check_weapon` "no uniform"), not a
+        // structurally-broken loadout: the mission still loads, the kit prefab may dress the body.
+        severity: Severity::Warning,
+        primitive: Primitive::PerObjectInvariant,
+        // GATE: only when some slot carries an authored loadout (shape conditionality). A payload with
+        // no loadouts is not missing a uniform. No policy needed — "wears a uniform" is unconditional.
+        applies: declares_loadout,
+        eval: |rule, payload, _ctx| {
+            let mut out = Vec::new();
+            for (i, slot) in editor_slots(payload).iter().enumerate() {
+                let Some(lo) = loadout_of(slot) else {
+                    continue; // no authored loadout → not this rule's concern
+                };
+                // `jacket` is the uniform/body garment (arsenal_rules.rs:106-113; flatten maps
+                // jacket→uniform, flatten.rs:1235). Blank/absent/null all read as "no uniform".
+                if wear_garment(lo, "jacket").is_empty() {
+                    let id = slot_id(slot);
+                    out.push(rule.finding_id(
+                        format!(
+                            "slot {} has an authored loadout but no uniform (wear.jacket is empty) \
+                             — a player spawning on it wears no fatigues unless the kit prefab \
+                             supplies them.",
+                            if id.is_empty() { "(no id)" } else { id },
+                        ),
+                        format!("/editor/slots/{i}/loadout/wear/jacket"),
+                        id.to_string(),
+                    ));
+                }
+            }
+            out
+        },
+        // Trips because: the slot authors a loadout (gate holds) but wear.jacket is blank.
+        trip_fixture: || {
+            serde_json::json!({
+                "editor": {"slots": [
+                    {"id": "s1", "role": "RFL",
+                     "loadout": {"version": 2, "wear": {"jacket": "", "vest": "{A}Vest.et"}, "weapons": []}}
+                ]}
+            })
+        },
+        trip_context: no_trip_context,
+    }
+}
+
+/* ─────────────── LOADOUT-HAS-VEST — every authored loadout wears a vest (or armored vest) ─────────────── */
+
+fn rule_loadout_has_vest() -> Rule {
+    Rule {
+        id: "LOADOUT-HAS-VEST",
+        severity: Severity::Warning, // WOG `fn_check_weapon` "no vest" — a fairness/policy note
+        primitive: Primitive::PerObjectInvariant,
+        applies: declares_loadout,
+        eval: |rule, payload, _ctx| {
+            let mut out = Vec::new();
+            for (i, slot) in editor_slots(payload).iter().enumerate() {
+                let Some(lo) = loadout_of(slot) else {
+                    continue;
+                };
+                // The vest container is backed by the `vest` OR `armoredVest` garment row — the
+                // spike lock (arsenal_rules.rs:786; flatten armoredVest else vest→vest,
+                // flatten.rs:1236). Either one satisfies "wears a vest"; only both-empty fires.
+                let has_vest = !wear_garment(lo, "vest").is_empty()
+                    || !wear_garment(lo, "armoredVest").is_empty();
+                if !has_vest {
+                    let id = slot_id(slot);
+                    out.push(rule.finding_id(
+                        format!(
+                            "slot {} has an authored loadout but no vest (neither wear.vest nor \
+                             wear.armoredVest is set) — no chest rig or plate carrier for the \
+                             player's magazines and gear.",
+                            if id.is_empty() { "(no id)" } else { id },
+                        ),
+                        format!("/editor/slots/{i}/loadout/wear/vest"),
+                        id.to_string(),
+                    ));
+                }
+            }
+            out
+        },
+        // Trips because: the slot authors a loadout but neither vest nor armoredVest is set.
+        trip_fixture: || {
+            serde_json::json!({
+                "editor": {"slots": [
+                    {"id": "s1", "role": "RFL",
+                     "loadout": {"version": 2, "wear": {"jacket": "{A}U.et"}, "weapons": []}}
+                ]}
+            })
+        },
+        trip_context: no_trip_context,
+    }
+}
+
+/* ─────────────── LOADOUT-MAG-COUNT — a rifle carries ≥ the policy minimum of magazines ─────────────── */
+
+/// Count the magazines a slot's loadout carries. Two authored sources, both real today:
+/// * the primary weapon's sticky `magazine` (one loaded mag if a non-empty `resource_name`), and
+/// * `cargo[]` rows whose container holds magazines — but the payload does not TYPE a cargo item as
+///   "a magazine", so a cargo row only counts toward the mag total when the policy names it (see
+///   below). To stay honest without a catalogue, this counts the loaded primary magazine plus every
+///   `cargo` row whose `item` equals the loaded magazine's `resource_name` (spare mags of the SAME
+///   type — the unambiguous case). It never guesses that an arbitrary cargo item is a magazine.
+///
+/// Returns the count as `u64` (saturating at the row `qty`, which the Arsenal writes ≥ 1). Total.
+fn magazine_count(loadout: &Value) -> u64 {
+    let mag_rn = primary_weapon(loadout)
+        .and_then(|w| w.get("magazine"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let Some(mag_rn) = mag_rn else {
+        return 0; // no loaded magazine on the primary → zero (a launcher-only slot, or none)
+    };
+    // The loaded magazine counts as one.
+    let mut count: u64 = 1;
+    // Plus spare magazines of the SAME resource_name carried as cargo (unambiguous). Summed qty.
+    for row in loadout
+        .get("cargo")
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or(&[])
+    {
+        if row.get("item").and_then(Value::as_str) == Some(mag_rn) {
+            let qty = row
+                .get("qty")
+                .and_then(Value::as_i64)
+                .filter(|q| *q >= 1)
+                .unwrap_or(0);
+            count = count.saturating_add(qty as u64);
+        }
+    }
+    count
+}
+
+fn rule_loadout_mag_count() -> Rule {
+    Rule {
+        id: "LOADOUT-MAG-COUNT",
+        severity: Severity::Warning, // WOG `fn_check_weapon` "below-standard magazine count"
+        primitive: Primitive::PerObjectInvariant,
+        // GATE: a loadout is declared AND the policy pins a magazine floor. No floor ⇒ the rule is
+        // deliberately inert (the conservative default — a mission with no declared minimum is not
+        // "below" one), NOT silently skipped: the registry records it did not apply, and its
+        // trip_context (which DOES pin a floor) proves it fires when a policy is present.
+        applies: |payload, ctx| {
+            declares_loadout(payload, ctx)
+                && ctx
+                    .loadout_policy
+                    .as_ref()
+                    .and_then(|p| p.min_magazines)
+                    .is_some()
+        },
+        eval: |rule, payload, ctx| {
+            let Some(min) = ctx.loadout_policy.as_ref().and_then(|p| p.min_magazines) else {
+                return Vec::new(); // safe by the gate; total if called directly
+            };
+            let mut out = Vec::new();
+            for (i, slot) in editor_slots(payload).iter().enumerate() {
+                let Some(lo) = loadout_of(slot) else {
+                    continue;
+                };
+                // Only a slot that carries a PRIMARY weapon is subject to a magazine floor — a
+                // sidearm-only or unarmed slot has no rifle to be under-supplied for.
+                if primary_weapon(lo)
+                    .and_then(|w| w.get("weapon"))
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .is_none()
+                {
+                    continue;
+                }
+                let have = magazine_count(lo);
+                if have < min {
+                    let id = slot_id(slot);
+                    out.push(rule.finding_id(
+                        format!(
+                            "slot {} carries {have} magazine(s) but mission policy requires at least \
+                             {min} for a slot with a primary weapon — a below-standard basic load.",
+                            if id.is_empty() { "(no id)" } else { id },
+                        ),
+                        format!("/editor/slots/{i}/loadout"),
+                        id.to_string(),
+                    ));
+                }
+            }
+            out
+        },
+        // Trips because: the primary carries one loaded mag and no spares (count 1) but the
+        // trip_context pins a floor of 3.
+        trip_fixture: || {
+            serde_json::json!({
+                "editor": {"slots": [
+                    {"id": "s1", "role": "RFL", "loadout": {"version": 2,
+                        "wear": {"jacket": "{A}U.et", "vest": "{A}V.et"},
+                        "weapons": [{"slotIndex": 0, "slotType": "primary",
+                                     "weapon": "{A}Rifle.et", "magazine": "{A}Mag.et"}],
+                        "cargo": []}}
+                ]}
+            })
+        },
+        trip_context: || {
+            Some(
+                EvalContext::default()
+                    .with_loadout_policy(LoadoutPolicy::default().with_min_magazines(3)),
+            )
+        },
+    }
+}
+
+/* ─────────────── LOADOUT-HAS-EQUIPMENT — map/compass/radio (FORWARD-COMPAT, T-657 TEMPLATE-COVERAGE) ─────────────── */
+
+/// The equipment kinds a slot's authored loadout carries, lowercased.
+///
+/// FORWARD-COMPAT — READ HONESTLY. WOG's `fn_check_weapon` flags a missing map / compass / radio;
+/// those are equipment micro-slots (`SCR_EquipmentStorageComponent`), and the authored
+/// `SlotLoadoutV2` DOES NOT CARRY AN EQUIPMENT BLOCK TODAY — `picks_to_loadout` emits only
+/// `wear`/`weapons`/`cargo`/`summary` (arsenal.rs:475-486), and `loadout-export.schema.json` calls
+/// `equipment` a "Skeleton in v2 — UI lands with the equipment slice". So on today's data this
+/// reader finds nothing and the rule cannot fire on a real mission. That is deliberate and it is
+/// exactly the T-657 ORBAT-TEMPLATE-COVERAGE posture: the rule is written to the AUTHORED shape it
+/// will one day read, gated so it stays inert until that data exists — flagged honestly rather than
+/// dropped. It reads a forward `loadout.equipment` object (`{ <kind>: <resource_name|null>, … }`,
+/// the shape the equipment slice will write, mirroring `wear`), collecting the kinds set to a
+/// non-empty value. When the equipment slice ships, this rule fires on real data with no change
+/// here. Total over any JSON.
+fn equipment_kinds(loadout: &Value) -> HashSet<String> {
+    loadout
+        .get("equipment")
+        .and_then(Value::as_object)
+        .map(|m| {
+            m.iter()
+                .filter(|(_, v)| v.as_str().is_some_and(|s| !s.trim().is_empty()))
+                .map(|(k, _)| k.to_lowercase())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn rule_loadout_has_equipment() -> Rule {
+    Rule {
+        id: "LOADOUT-HAS-EQUIPMENT",
+        severity: Severity::Warning, // WOG `fn_check_weapon` "missing map / compass / radio"
+        primitive: Primitive::PerObjectInvariant,
+        // GATE: a loadout is declared AND the policy names a non-empty required-equipment set. No
+        // policy set ⇒ inert (conservative default). This is ALSO the forward-compat gate: with no
+        // equipment authored anywhere, the rule simply finds every required kind missing only IF a
+        // policy demands them — so it stays quiet on real missions today (no policy is configured for
+        // a data shape that does not exist yet) and its trip_context supplies both the policy and the
+        // forward equipment shape to prove it can fire.
+        applies: |payload, ctx| {
+            declares_loadout(payload, ctx)
+                && ctx
+                    .loadout_policy
+                    .as_ref()
+                    .and_then(|p| p.required_equipment.as_ref())
+                    .is_some_and(|s| !s.is_empty())
+        },
+        eval: |rule, payload, ctx| {
+            let Some(required) = ctx
+                .loadout_policy
+                .as_ref()
+                .and_then(|p| p.required_equipment.as_ref())
+                .filter(|s| !s.is_empty())
+            else {
+                return Vec::new(); // safe by the gate
+            };
+            let mut out = Vec::new();
+            for (i, slot) in editor_slots(payload).iter().enumerate() {
+                let Some(lo) = loadout_of(slot) else {
+                    continue;
+                };
+                let have = equipment_kinds(lo);
+                let mut missing: Vec<&str> = required
+                    .iter()
+                    .filter(|k| !have.contains(*k))
+                    .map(String::as_str)
+                    .collect();
+                if missing.is_empty() {
+                    continue;
+                }
+                missing.sort_unstable(); // deterministic message order
+                let id = slot_id(slot);
+                out.push(rule.finding_id(
+                    format!(
+                        "slot {} is missing required equipment [{}] — mission policy requires every \
+                         player to carry it. (Equipment micro-slots land with the Arsenal equipment \
+                         slice; until then no loadout authors them.)",
+                        if id.is_empty() { "(no id)" } else { id },
+                        missing.join(", "),
+                    ),
+                    format!("/editor/slots/{i}/loadout/equipment"),
+                    id.to_string(),
+                ));
+            }
+            out
+        },
+        // Trips because: the policy requires [compass, map, radio] and the slot authors a forward
+        // equipment block carrying only a map — compass and radio are missing. (The trip fixture
+        // uses the forward equipment shape on purpose: it proves the rule fires on the data it will
+        // one day read, per the T-657 TEMPLATE-COVERAGE discipline.)
+        trip_fixture: || {
+            serde_json::json!({
+                "editor": {"slots": [
+                    {"id": "s1", "role": "RFL", "loadout": {"version": 2,
+                        "wear": {"jacket": "{A}U.et", "vest": "{A}V.et"}, "weapons": [],
+                        "equipment": {"map": "{A}Map.et", "compass": null}}}
+                ]}
+            })
+        },
+        trip_context: || {
+            let kinds: HashSet<String> = ["map", "compass", "radio"]
+                .into_iter()
+                .map(str::to_string)
+                .collect();
+            Some(
+                EvalContext::default()
+                    .with_loadout_policy(LoadoutPolicy::default().with_required_equipment(kinds)),
+            )
+        },
+    }
+}
+
+/* ─────────────── VEHICLE-CARGO-POLICY — placed vehicle inventory within the fairness ceiling (R9) ─────────────── */
+
+/// Total cargo ITEMS in a vehicle's authored inventory (summed `qty` over `vehicles[].cargo[]`,
+/// each row `{item, qty}` — the `EntityInventoryIn` shape, flatten.rs:786-791). A row with a
+/// non-positive/absent qty contributes 0. Total over any JSON.
+fn vehicle_cargo_items(vehicle: &Value) -> u64 {
+    vehicle
+        .get("cargo")
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or(&[])
+        .iter()
+        .map(|r| {
+            r.get("qty")
+                .and_then(Value::as_i64)
+                .filter(|q| *q >= 1)
+                .unwrap_or(0) as u64
+        })
+        .sum()
+}
+
+/// A payload "places vehicles" iff the top-level `vehicles[]` array is non-empty. With none, R9 has
+/// nothing to check. Shape-only gate; `ctx` unused.
+fn places_vehicles(payload: &Value, _ctx: &EvalContext) -> bool {
+    !top_level_array(payload, "vehicles").is_empty()
+}
+
+fn rule_vehicle_cargo_policy() -> Rule {
+    Rule {
+        id: "VEHICLE-CARGO-POLICY",
+        // Warning — MissionAnalyzer's R9 is a PvP FAIRNESS check (one side pre-stuffing a truck with
+        // ammo), not a structural fault: the mission loads fine, it is just imbalanced.
+        severity: Severity::Warning,
+        primitive: Primitive::PerObjectInvariant,
+        // GATE: vehicles are placed AND the policy pins a per-vehicle cargo ceiling. No ceiling ⇒
+        // inert (conservative default); trip_context supplies one.
+        applies: |payload, ctx| {
+            places_vehicles(payload, ctx)
+                && ctx
+                    .loadout_policy
+                    .as_ref()
+                    .and_then(|p| p.max_vehicle_cargo_items)
+                    .is_some()
+        },
+        eval: |rule, payload, ctx| {
+            let Some(max) = ctx
+                .loadout_policy
+                .as_ref()
+                .and_then(|p| p.max_vehicle_cargo_items)
+            else {
+                return Vec::new(); // safe by the gate
+            };
+            let mut out = Vec::new();
+            // Walk EVERY placed vehicle; report each over-stuffed one (never early-exit).
+            for (i, veh) in top_level_array(payload, "vehicles").iter().enumerate() {
+                let items = vehicle_cargo_items(veh);
+                if items > max {
+                    let id = str_field(veh, "id");
+                    out.push(rule.finding_id(
+                        format!(
+                            "vehicle {} carries {items} cargo item(s), over the policy ceiling of \
+                             {max} — a pre-stuffed vehicle inventory is a PvP fairness problem.",
+                            if id.is_empty() { "(no id)" } else { id },
+                        ),
+                        format!("/vehicles/{i}/cargo"),
+                        id.to_string(),
+                    ));
+                }
+            }
+            out
+        },
+        // Trips because: the vehicle carries 30 + 5 = 35 items, over the trip_context ceiling of 10.
+        trip_fixture: || {
+            serde_json::json!({
+                "vehicles": [
+                    {"id": "v1", "resourceName": "{A}Truck.et",
+                     "cargo": [{"item": "{A}Mag.et", "qty": 30}, {"item": "{A}Bandage.et", "qty": 5}]}
+                ]
+            })
+        },
+        trip_context: || {
+            Some(
+                EvalContext::default()
+                    .with_loadout_policy(LoadoutPolicy::default().with_max_vehicle_cargo_items(10)),
+            )
+        },
+    }
+}
+
+/* ─────────────── CARGO-OVER-CAPACITY — wire_safety::scan_cargo_capacity, reconciled as a V3 rule ─────────────── */
+
+/// A payload "declares cargo capacity to check" iff it authors at least one slot loadout — the same
+/// shape gate the other loadout rules use. Shape-only; the CATALOGUE gate (the real inertness) is on
+/// `applies` below (`ctx.cargo_phys.is_some()`).
+fn declares_cargo(payload: &Value, ctx: &EvalContext) -> bool {
+    declares_loadout(payload, ctx)
+}
+
+fn rule_cargo_over_capacity() -> Rule {
+    Rule {
+        id: "CARGO-OVER-CAPACITY",
+        // Error — this is the STRUCTURALLY-BROKEN case the ticket pins as Error: cargo authored over
+        // a container's catalogued capacity is silently dropped/re-homed at spawn (the whole row's
+        // qty), so the player does not get the items. It is the wire_safety `scan_cargo_capacity`
+        // fault, surfaced as a typed Finding. (The other T-660 rules are fairness/policy Warnings.)
+        severity: Severity::Error,
+        primitive: Primitive::PerObjectInvariant,
+        // GATE (T-658 context conditionality — the seam the brief invited): only when a cargo phys
+        // catalogue was supplied. `None` ⇒ no catalogue (cold / server-side) ⇒ the rule is inert,
+        // the conservative default `scan_cargo_capacity` itself uses (empty catalog = no-op). An
+        // empty-but-present catalogue also stays quiet (nothing has a maximum → nothing is over it),
+        // which `scan_cargo_capacity`'s own `catalog.is_empty()` bail preserves.
+        applies: |payload, ctx| declares_cargo(payload, ctx) && ctx.cargo_phys.is_some(),
+        eval: |rule, payload, ctx| {
+            let Some(catalog) = ctx.cargo_phys.as_ref() else {
+                return Vec::new(); // safe by the gate; total if called directly
+            };
+            // RECONCILIATION: reuse the SAME scanner the Save path uses — `scan_cargo_capacity` is
+            // the single source of the arithmetic + the silence rules ("never invent capacity"), so
+            // the registry rule and the standalone caller cannot disagree about what is over
+            // capacity. We wrap its `Vec<String>` author-facing lines into typed Findings, deriving a
+            // stable subject pointer + entity id from each line's `/editor/slots/{i}/…` prefix.
+            let lines = crate::mission::wire_safety::scan_cargo_capacity(payload, catalog);
+            let slots = editor_slots(payload);
+            let mut out = Vec::new();
+            for line in lines {
+                // Each line begins `"/editor/slots/{i}/loadout/wear/{container}: …"` (the scanner's
+                // location prefix) except the final truncation tail, which begins `"/editor:"`.
+                let (subject, subject_id) = parse_cargo_line_subject(&line, slots);
+                out.push(rule.finding_id_opt(line, subject, subject_id));
+            }
+            out
+        },
+        // Trips because: 4 mags × 60 cm³ = 240 cm³ into a 200 cm³ vest — the scanner reports it, and
+        // the trip_context supplies the catalogue with the mag phys + the vest maxima.
+        trip_fixture: || {
+            serde_json::json!({
+                "editor": {"slots": [
+                    {"id": "s1", "role": "RFL", "loadout": {"version": 2,
+                        "wear": {"vest": "vest_rn"}, "weapons": [],
+                        "cargo": [{"container": "vest", "item": "mag", "qty": 4}]}}
+                ]}
+            })
+        },
+        trip_context: || {
+            let mut catalog = crate::mission::wire_safety::CargoPhysCatalog::new();
+            catalog.insert(
+                "mag".to_string(),
+                crate::mission::wire_safety::CargoPhys {
+                    display_name: "Mag".to_string(),
+                    weight_kg: Some(0.5),
+                    volume_cm3: Some(60.0),
+                    ..crate::mission::wire_safety::CargoPhys::default()
+                },
+            );
+            catalog.insert(
+                "vest_rn".to_string(),
+                crate::mission::wire_safety::CargoPhys {
+                    display_name: "Plate Carrier".to_string(),
+                    max_weight_kg: Some(5.0),
+                    max_volume_cm3: Some(200.0),
+                    ..crate::mission::wire_safety::CargoPhys::default()
+                },
+            );
+            Some(EvalContext::default().with_cargo_phys(catalog))
+        },
+    }
+}
+
+/// Derive `(subject_pointer, subject_id)` from a `scan_cargo_capacity` line. The scanner keys each
+/// fault line on `"/editor/slots/{i}/loadout/wear/{container}: …"`; we parse the `{i}` back out to
+/// recover the offending slot's stable id (the T-655 forward constraint) and keep the scanner's own
+/// pointer as the subject. The truncation tail (`"/editor: …"`) and any unparseable line fall back
+/// to the leading path token as the subject with no entity id. Total — never panics on a line shape.
+fn parse_cargo_line_subject(line: &str, slots: &[Value]) -> (String, Option<String>) {
+    // Split off the location prefix (everything before the first ": ").
+    let prefix = line.split(':').next().unwrap_or(line);
+    // Try to read the slot index from `/editor/slots/{i}/…`.
+    let idx = prefix
+        .strip_prefix("/editor/slots/")
+        .and_then(|rest| rest.split('/').next())
+        .and_then(|n| n.parse::<usize>().ok());
+    let subject_id = idx
+        .and_then(|i| slots.get(i))
+        .map(slot_id)
+        .filter(|id| !id.is_empty())
+        .map(str::to_string);
+    (prefix.to_string(), subject_id)
 }
 
 #[cfg(test)]
@@ -2039,7 +2761,7 @@ mod tests {
     /// panel builds from `registry_session` (T-655 W111), constructed directly here.
     fn ctx_with(ids: &[&str]) -> EvalContext {
         let set: HashSet<String> = ids.iter().map(|s| (*s).to_string()).collect();
-        EvalContext::with_known_asset_ids(set)
+        EvalContext::default().with_known_asset_ids(set)
     }
 
     /* ── ASSET-RESOLVES: fail-on-demand (id/severity/primitive/subject/subject_id/message) ── */
@@ -2126,7 +2848,7 @@ mod tests {
         let p = json!({"editor": {"slots": [
             {"id": "s1", "role": "RFL", "assetId": "{ABC}X.et"}
         ]}});
-        let ctx = EvalContext::with_known_asset_ids(HashSet::new());
+        let ctx = EvalContext::default().with_known_asset_ids(HashSet::new());
         assert!(
             rule_asset_resolves().applies(&p, &ctx),
             "Some(empty) applies"
@@ -2345,5 +3067,543 @@ mod tests {
                 "{want} must still fire on the default path: {via_free_fn:?}"
             );
         }
+    }
+
+    /* ═══════════════════════════ T-660 — cargo / loadout policy rules ═══════════════════════════ */
+
+    use crate::mission::wire_safety::{CargoPhys, CargoPhysCatalog};
+
+    /// A context carrying a loadout policy with the given magazine floor.
+    fn ctx_min_mags(n: u64) -> EvalContext {
+        EvalContext::default().with_loadout_policy(LoadoutPolicy::default().with_min_magazines(n))
+    }
+
+    /// A phys catalogue with a 0.5 kg / 60 cm³ magazine and a 5 kg / 200 cm³ vest — the same shape
+    /// the wire_safety cargo tests use, so the reconciled rule and the standalone scanner agree.
+    fn cargo_catalog() -> CargoPhysCatalog {
+        let mut c = CargoPhysCatalog::new();
+        c.insert(
+            "mag".into(),
+            CargoPhys {
+                display_name: "Mag".into(),
+                weight_kg: Some(0.5),
+                volume_cm3: Some(60.0),
+                ..CargoPhys::default()
+            },
+        );
+        c.insert(
+            "vest_rn".into(),
+            CargoPhys {
+                display_name: "Plate Carrier".into(),
+                max_weight_kg: Some(5.0),
+                max_volume_cm3: Some(200.0),
+                ..CargoPhys::default()
+            },
+        );
+        c
+    }
+
+    /* ── LOADOUT-HAS-UNIFORM: fail-on-demand + green + shape conditionality ── */
+
+    #[test]
+    fn loadout_has_uniform_fires_when_a_loadout_has_no_jacket() {
+        let findings = validate_editor_payload(&rule_loadout_has_uniform().trip_fixture());
+        let f = finding_for(&findings, "LOADOUT-HAS-UNIFORM");
+        assert_eq!(f.severity, Severity::Warning);
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant);
+        assert_eq!(f.subject, "/editor/slots/0/loadout/wear/jacket");
+        assert_eq!(f.subject_id.as_deref(), Some("s1"));
+        assert!(f.message.contains("no uniform"), "{f:?}");
+    }
+
+    #[test]
+    fn loadout_has_uniform_passes_when_a_jacket_is_worn() {
+        let p = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "loadout": {"version": 2,
+                "wear": {"jacket": "{A}Uniform.et", "vest": "{A}Vest.et"}, "weapons": []}}
+        ]}});
+        assert!(
+            validate_editor_payload(&p)
+                .iter()
+                .all(|f| f.rule_id != "LOADOUT-HAS-UNIFORM"),
+            "a worn uniform must pass: {:?}",
+            validate_editor_payload(&p)
+        );
+    }
+
+    #[test]
+    fn loadout_rules_are_conditional_on_a_declared_loadout() {
+        // No slot carries a loadout object ⇒ the shape-gated loadout rules do not apply, even to a
+        // slot that is otherwise bare. A loadout-free draft has not violated a loadout policy.
+        for p in [
+            json!({}),
+            json!({"editor": {"slots": [{"id": "s1", "role": "RFL"}]}}), // slot, no loadout key
+        ] {
+            for rule in [rule_loadout_has_uniform(), rule_loadout_has_vest()] {
+                assert!(
+                    !rule.applies(&p, &EvalContext::default()),
+                    "{} must not apply without an authored loadout: {p}",
+                    rule.id()
+                );
+            }
+            for id in ["LOADOUT-HAS-UNIFORM", "LOADOUT-HAS-VEST"] {
+                assert!(
+                    validate_editor_payload(&p).iter().all(|f| f.rule_id != id),
+                    "{id} must stay silent without a loadout: {p}"
+                );
+            }
+        }
+    }
+
+    /* ── LOADOUT-HAS-VEST: fail-on-demand + either vest OR armoredVest satisfies ── */
+
+    #[test]
+    fn loadout_has_vest_fires_when_neither_vest_nor_armored_vest_is_worn() {
+        let findings = validate_editor_payload(&rule_loadout_has_vest().trip_fixture());
+        let f = finding_for(&findings, "LOADOUT-HAS-VEST");
+        assert_eq!(f.severity, Severity::Warning);
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant);
+        assert_eq!(f.subject, "/editor/slots/0/loadout/wear/vest");
+        assert_eq!(f.subject_id.as_deref(), Some("s1"));
+        assert!(f.message.contains("no vest"), "{f:?}");
+    }
+
+    #[test]
+    fn loadout_has_vest_accepts_either_vest_or_armored_vest() {
+        // The spike lock: the vest container is backed by vest OR armoredVest — either satisfies.
+        for wear in [
+            json!({"jacket": "{A}U.et", "vest": "{A}ChestRig.et"}),
+            json!({"jacket": "{A}U.et", "armoredVest": "{A}PlateCarrier.et"}),
+        ] {
+            let p = json!({"editor": {"slots": [
+                {"id": "s1", "role": "RFL", "loadout": {"version": 2, "wear": wear, "weapons": []}}
+            ]}});
+            assert!(
+                validate_editor_payload(&p)
+                    .iter()
+                    .all(|f| f.rule_id != "LOADOUT-HAS-VEST"),
+                "either vest garment must satisfy: {p}"
+            );
+        }
+    }
+
+    /* ── LOADOUT-MAG-COUNT: fail-on-demand + policy gate + boundary + primary-only ── */
+
+    #[test]
+    fn loadout_mag_count_fires_below_the_policy_floor() {
+        let rule = rule_loadout_mag_count();
+        let ctx = rule.trip_context().expect("declares a trip_context");
+        let findings = default_registry().evaluate_with_context(&rule.trip_fixture(), &ctx);
+        let f = finding_for(&findings, "LOADOUT-MAG-COUNT");
+        assert_eq!(f.severity, Severity::Warning);
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant);
+        assert_eq!(f.subject, "/editor/slots/0/loadout");
+        assert_eq!(f.subject_id.as_deref(), Some("s1"));
+        assert!(f.message.contains("1 magazine"), "{f:?}");
+        assert!(f.message.contains("at least 3"), "{f:?}");
+    }
+
+    #[test]
+    fn loadout_mag_count_skips_when_the_policy_carries_no_floor() {
+        // The gate: with a loadout declared but NO min_magazines in the policy (and none at all), the
+        // rule does not apply — the conservative default (a mission with no declared minimum is not
+        // "below" one). This is the "rules with policy thresholds skip when the context carries none".
+        let p = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "loadout": {"version": 2, "wear": {},
+                "weapons": [{"slotIndex": 0, "slotType": "primary", "weapon": "{A}R.et", "magazine": "{A}M.et"}],
+                "cargo": []}}
+        ]}});
+        // No context at all.
+        assert!(
+            !rule_loadout_mag_count().applies(&p, &EvalContext::default()),
+            "must not apply without a policy floor"
+        );
+        assert!(
+            validate_editor_payload(&p)
+                .iter()
+                .all(|f| f.rule_id != "LOADOUT-MAG-COUNT"),
+            "default ctx must not fire LOADOUT-MAG-COUNT"
+        );
+        // A policy present but with min_magazines == None also skips.
+        let ctx_empty_policy = EvalContext::default().with_loadout_policy(LoadoutPolicy::default());
+        assert!(
+            !rule_loadout_mag_count().applies(&p, &ctx_empty_policy),
+            "a policy with no magazine floor must not apply"
+        );
+    }
+
+    #[test]
+    fn loadout_mag_count_counts_loaded_mag_plus_same_type_spares_and_respects_the_boundary() {
+        // One loaded mag + two spare cargo rows of the SAME resource_name = 3 → meets a floor of 3.
+        let p = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "loadout": {"version": 2, "wear": {},
+                "weapons": [{"slotIndex": 0, "slotType": "primary", "weapon": "{A}R.et", "magazine": "{A}M.et"}],
+                "cargo": [{"container": "vest", "item": "{A}M.et", "qty": 2}]}}
+        ]}});
+        let ctx = ctx_min_mags(3);
+        assert!(
+            default_registry()
+                .evaluate_with_context(&p, &ctx)
+                .iter()
+                .all(|f| f.rule_id != "LOADOUT-MAG-COUNT"),
+            "3 mags meets a floor of 3 (boundary): {:?}",
+            default_registry().evaluate_with_context(&p, &ctx)
+        );
+        // A cargo row of a DIFFERENT item is not counted as a magazine — floor-of-2 still fires
+        // (only the one loaded mag counts).
+        let p2 = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "loadout": {"version": 2, "wear": {},
+                "weapons": [{"slotIndex": 0, "slotType": "primary", "weapon": "{A}R.et", "magazine": "{A}M.et"}],
+                "cargo": [{"container": "vest", "item": "{A}Bandage.et", "qty": 9}]}}
+        ]}});
+        assert!(
+            default_registry()
+                .evaluate_with_context(&p2, &ctx_min_mags(2))
+                .iter()
+                .any(|f| f.rule_id == "LOADOUT-MAG-COUNT"),
+            "an arbitrary cargo item is not a magazine — one loaded mag is below a floor of 2"
+        );
+    }
+
+    #[test]
+    fn loadout_mag_count_ignores_a_slot_with_no_primary_weapon() {
+        // A slot with a loadout but no primary weapon (a sidearm-only or unarmed seat) has no rifle
+        // to be under-supplied for — the rule must not fire even below the floor.
+        let p = json!({"editor": {"slots": [
+            {"id": "s1", "role": "MED", "loadout": {"version": 2,
+                "wear": {"jacket": "{A}U.et", "vest": "{A}V.et"},
+                "weapons": [{"slotIndex": 2, "slotType": "secondary", "weapon": "{A}Pistol.et"}],
+                "cargo": []}}
+        ]}});
+        assert!(
+            default_registry()
+                .evaluate_with_context(&p, &ctx_min_mags(3))
+                .iter()
+                .all(|f| f.rule_id != "LOADOUT-MAG-COUNT"),
+            "a primary-less slot has no basic load to be below: {:?}",
+            default_registry().evaluate_with_context(&p, &ctx_min_mags(3))
+        );
+    }
+
+    /* ── LOADOUT-HAS-EQUIPMENT (forward-compat, T-657 TEMPLATE-COVERAGE): fires on the forward shape ── */
+
+    #[test]
+    fn loadout_has_equipment_fires_on_missing_required_kinds_over_the_forward_shape() {
+        let rule = rule_loadout_has_equipment();
+        let ctx = rule.trip_context().expect("declares a trip_context");
+        let findings = default_registry().evaluate_with_context(&rule.trip_fixture(), &ctx);
+        let f = finding_for(&findings, "LOADOUT-HAS-EQUIPMENT");
+        assert_eq!(f.severity, Severity::Warning);
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant);
+        assert_eq!(f.subject, "/editor/slots/0/loadout/equipment");
+        assert_eq!(f.subject_id.as_deref(), Some("s1"));
+        // The trip carries only a map; compass + radio are the missing required kinds (sorted).
+        assert!(f.message.contains("compass, radio"), "{f:?}");
+    }
+
+    #[test]
+    fn loadout_has_equipment_is_inert_on_real_data_today_no_policy_no_equipment() {
+        // The honest forward-compat posture: with NO policy configured (the state of every real
+        // mission today, since the equipment slice does not exist), the rule does not apply — even
+        // though no loadout authors an equipment block. It cannot false-fire on real data.
+        let p = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "loadout": {"version": 2,
+                "wear": {"jacket": "{A}U.et", "vest": "{A}V.et"}, "weapons": []}}
+        ]}});
+        assert!(
+            !rule_loadout_has_equipment().applies(&p, &EvalContext::default()),
+            "no policy ⇒ inert on today's data"
+        );
+        assert!(
+            validate_editor_payload(&p)
+                .iter()
+                .all(|f| f.rule_id != "LOADOUT-HAS-EQUIPMENT"),
+            "must stay silent on real data with no policy"
+        );
+        // A policy with an EMPTY required set also skips (nothing demanded).
+        let ctx_empty = EvalContext::default()
+            .with_loadout_policy(LoadoutPolicy::default().with_required_equipment(HashSet::new()));
+        assert!(
+            !rule_loadout_has_equipment().applies(&p, &ctx_empty),
+            "an empty required-equipment set demands nothing"
+        );
+    }
+
+    #[test]
+    fn loadout_has_equipment_passes_when_the_forward_shape_carries_every_required_kind() {
+        // When the equipment slice ships and a loadout carries all required kinds, the rule is green.
+        let p = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "loadout": {"version": 2, "wear": {}, "weapons": [],
+                "equipment": {"map": "{A}Map.et", "compass": "{A}Compass.et", "radio": "{A}Radio.et"}}}
+        ]}});
+        let kinds: HashSet<String> = ["map", "compass", "radio"]
+            .into_iter()
+            .map(str::to_string)
+            .collect();
+        let ctx = EvalContext::default()
+            .with_loadout_policy(LoadoutPolicy::default().with_required_equipment(kinds));
+        assert!(
+            default_registry()
+                .evaluate_with_context(&p, &ctx)
+                .iter()
+                .all(|f| f.rule_id != "LOADOUT-HAS-EQUIPMENT"),
+            "full equipment coverage must pass: {:?}",
+            default_registry().evaluate_with_context(&p, &ctx)
+        );
+    }
+
+    /* ── VEHICLE-CARGO-POLICY (MissionAnalyzer R9): fail-on-demand + gate + per-vehicle + boundary ── */
+
+    #[test]
+    fn vehicle_cargo_policy_fires_over_the_ceiling() {
+        let rule = rule_vehicle_cargo_policy();
+        let ctx = rule.trip_context().expect("declares a trip_context");
+        let findings = default_registry().evaluate_with_context(&rule.trip_fixture(), &ctx);
+        let f = finding_for(&findings, "VEHICLE-CARGO-POLICY");
+        assert_eq!(f.severity, Severity::Warning);
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant);
+        assert_eq!(f.subject, "/vehicles/0/cargo");
+        assert_eq!(f.subject_id.as_deref(), Some("v1"));
+        assert!(f.message.contains("35 cargo item"), "{f:?}");
+        assert!(f.message.contains("ceiling of 10"), "{f:?}");
+        assert!(f.message.contains("fairness"), "{f:?}");
+    }
+
+    #[test]
+    fn vehicle_cargo_policy_skips_without_a_ceiling_and_respects_the_boundary() {
+        let p = json!({"vehicles": [
+            {"id": "v1", "resourceName": "{A}Truck.et", "cargo": [{"item": "{A}M.et", "qty": 10}]}
+        ]});
+        // No ceiling configured ⇒ inert.
+        assert!(
+            !rule_vehicle_cargo_policy().applies(&p, &EvalContext::default()),
+            "no ceiling ⇒ must not apply"
+        );
+        // Exactly at the ceiling (10) is NOT over it → no finding.
+        let ctx = EvalContext::default()
+            .with_loadout_policy(LoadoutPolicy::default().with_max_vehicle_cargo_items(10));
+        assert!(
+            default_registry()
+                .evaluate_with_context(&p, &ctx)
+                .iter()
+                .all(|f| f.rule_id != "VEHICLE-CARGO-POLICY"),
+            "10 items at a ceiling of 10 is the boundary, not over it: {:?}",
+            default_registry().evaluate_with_context(&p, &ctx)
+        );
+    }
+
+    #[test]
+    fn vehicle_cargo_policy_reports_each_over_vehicle_never_early_exits() {
+        // Two over-stuffed vehicles with a compliant one between them: both offenders reported.
+        let p = json!({"vehicles": [
+            {"id": "a", "resourceName": "{A}T.et", "cargo": [{"item": "{A}M.et", "qty": 50}]},
+            {"id": "b", "resourceName": "{A}T.et", "cargo": [{"item": "{A}M.et", "qty": 2}]},
+            {"id": "c", "resourceName": "{A}T.et", "cargo": [{"item": "{A}M.et", "qty": 99}]}
+        ]});
+        let ctx = EvalContext::default()
+            .with_loadout_policy(LoadoutPolicy::default().with_max_vehicle_cargo_items(10));
+        let all = default_registry().evaluate_with_context(&p, &ctx);
+        let offenders: Vec<&Finding> = all
+            .iter()
+            .filter(|f| f.rule_id == "VEHICLE-CARGO-POLICY")
+            .collect();
+        assert_eq!(offenders.len(), 2, "{offenders:?}");
+        assert_eq!(offenders[0].subject_id.as_deref(), Some("a"));
+        assert_eq!(offenders[1].subject_id.as_deref(), Some("c"));
+    }
+
+    /* ── CARGO-OVER-CAPACITY (wire_safety reconciliation): fail-on-demand + catalogue gate + agree ── */
+
+    #[test]
+    fn cargo_over_capacity_fires_over_a_garment_maximum() {
+        let rule = rule_cargo_over_capacity();
+        let ctx = rule.trip_context().expect("declares a trip_context");
+        let findings = default_registry().evaluate_with_context(&rule.trip_fixture(), &ctx);
+        let f = finding_for(&findings, "CARGO-OVER-CAPACITY");
+        assert_eq!(f.severity, Severity::Error); // the structurally-broken case = Error
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant);
+        assert_eq!(f.subject, "/editor/slots/0/loadout/wear/vest");
+        assert_eq!(f.subject_id.as_deref(), Some("s1"));
+        assert!(f.message.contains("240 / 200 cm³"), "{f:?}");
+        assert!(f.message.contains("Plate Carrier"), "{f:?}");
+    }
+
+    #[test]
+    fn cargo_over_capacity_skips_without_a_catalogue() {
+        // The T-658 context gate: no cargo_phys ⇒ inert (the conservative default scan_cargo_capacity
+        // itself uses). A loadout that WOULD be over an empty world stays silent.
+        let p = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "loadout": {"version": 2, "wear": {"vest": "vest_rn"},
+                "weapons": [], "cargo": [{"container": "vest", "item": "mag", "qty": 40}]}}
+        ]}});
+        assert!(
+            !rule_cargo_over_capacity().applies(&p, &EvalContext::default()),
+            "no catalogue ⇒ must not apply"
+        );
+        assert!(
+            validate_editor_payload(&p)
+                .iter()
+                .all(|f| f.rule_id != "CARGO-OVER-CAPACITY"),
+            "default ctx must not fire CARGO-OVER-CAPACITY"
+        );
+    }
+
+    #[test]
+    fn cargo_over_capacity_agrees_with_the_standalone_scanner() {
+        // RECONCILIATION PROOF: the rule and the standalone `scan_cargo_capacity` must describe the
+        // same fault (the rule wraps the scanner). Under-capacity → both silent; over → both fire and
+        // the rule's message IS the scanner's line.
+        let cat = cargo_catalog();
+        let over = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "loadout": {"version": 2, "wear": {"vest": "vest_rn"},
+                "weapons": [], "cargo": [{"container": "vest", "item": "mag", "qty": 4}]}}
+        ]}});
+        let scanner_lines = crate::mission::wire_safety::scan_cargo_capacity(&over, &cat);
+        assert_eq!(scanner_lines.len(), 1, "scanner: {scanner_lines:?}");
+        let ctx = EvalContext::default().with_cargo_phys(cat.clone());
+        let all = default_registry().evaluate_with_context(&over, &ctx);
+        let rf: Vec<&Finding> = all
+            .iter()
+            .filter(|f| f.rule_id == "CARGO-OVER-CAPACITY")
+            .collect();
+        assert_eq!(rf.len(), 1, "rule: {rf:?}");
+        assert_eq!(
+            rf[0].message, scanner_lines[0],
+            "rule message must be the scanner's line"
+        );
+
+        // Under capacity: 3 × 60 = 180 ≤ 200 → both silent.
+        let under = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "loadout": {"version": 2, "wear": {"vest": "vest_rn"},
+                "weapons": [], "cargo": [{"container": "vest", "item": "mag", "qty": 3}]}}
+        ]}});
+        assert!(crate::mission::wire_safety::scan_cargo_capacity(&under, &cat).is_empty());
+        assert!(
+            default_registry()
+                .evaluate_with_context(&under, &ctx)
+                .iter()
+                .all(|f| f.rule_id != "CARGO-OVER-CAPACITY"),
+            "under capacity must be green in the rule too"
+        );
+    }
+
+    /* ── No-panic: every T-660 rule is total over garbage, with AND without contexts ── */
+
+    #[test]
+    fn loadout_rules_never_panic_on_garbage() {
+        // The wave-104 total-function discipline extended to T-660: feed malformed loadouts/vehicles
+        // through the WHOLE registry with a fully-populated context (policy + catalogue) and assert
+        // only that evaluation returns without panicking.
+        let ctx = EvalContext::default()
+            .with_cargo_phys(cargo_catalog())
+            .with_loadout_policy(
+                LoadoutPolicy::default()
+                    .with_min_magazines(3)
+                    .with_required_equipment(["map".into()].into_iter().collect())
+                    .with_max_vehicle_cargo_items(10),
+            );
+        let garbage = [
+            json!({}),
+            json!(null),
+            json!(42),
+            json!("nope"),
+            json!([]),
+            json!({"editor": {"slots": 7}, "vehicles": "x"}),
+            json!({"editor": {"slots": [null, 9, {"id": 5, "loadout": []}]}}),
+            json!({"editor": {"slots": [{"id": "s1", "loadout": {"wear": 3, "weapons": 4, "cargo": 5, "equipment": 6}}]}}),
+            json!({"editor": {"slots": [{"id": "s1", "loadout": {"wear": {"vest": []},
+                "weapons": [null, 3, {"slotIndex": "x", "weapon": [], "magazine": {}}],
+                "cargo": [null, {"container": 1, "item": 2, "qty": "no"}],
+                "equipment": {"map": 9, "radio": ""}}}]}}),
+            json!({"vehicles": [null, 5, {"id": {}, "cargo": [null, {"item": 1, "qty": []}]}]}),
+            json!({"editor": {"slots": [{"id": "s1", "loadout": {"wear": {"vest": "vest_rn"},
+                "cargo": [{"container": "vest", "item": "mag", "qty": 4}]}}]}}),
+        ];
+        let reg = default_registry();
+        for p in garbage {
+            let _ = reg.evaluate_with_context(&p, &ctx); // must not panic
+            let _ = reg.evaluate(&p); // default-ctx path too
+            let _ = validate_editor_payload(&p);
+        }
+    }
+
+    /* ── Structural: the T-660 rules are registered and self_check still passes ── */
+
+    #[test]
+    fn t660_rules_are_registered_and_self_check_passes() {
+        let reg = default_registry();
+        let ids: Vec<&str> = reg.rules().iter().map(Rule::id).collect();
+        for want in [
+            "LOADOUT-HAS-UNIFORM",
+            "LOADOUT-HAS-VEST",
+            "LOADOUT-MAG-COUNT",
+            "LOADOUT-HAS-EQUIPMENT",
+            "VEHICLE-CARGO-POLICY",
+            "CARGO-OVER-CAPACITY",
+        ] {
+            assert!(ids.contains(&want), "registry missing {want}");
+        }
+        // Each new rule (incl. the two context-gated ones and the policy-gated ones) fires on its own
+        // trip fixture + trip_context — the engine-level guard, extended across the T-660 rules.
+        reg.self_check()
+            .expect("every rule (incl. T-660) must fire on its trip fixture + context");
+        reg.assert_self_check(); // the panic form a service calls at boot
+    }
+
+    /* ── Fired proof beyond self_check: perturb one field, exactly one T-660 rule fires, restore ── */
+
+    #[test]
+    fn perturb_and_restore_fires_exactly_the_vest_rule() {
+        // A clean single-slot loadout with a uniform + vest + a rifle. Removing the vest garment
+        // fires exactly LOADOUT-HAS-VEST among the loadout rules; restoring it returns to green.
+        let clean = json!({"editor": {"slots": [
+            {"id": "s1", "role": "RFL", "loadout": {"version": 2,
+                "wear": {"jacket": "{A}U.et", "vest": "{A}V.et"},
+                "weapons": [{"slotIndex": 0, "slotType": "primary", "weapon": "{A}R.et", "magazine": "{A}M.et"}],
+                "cargo": []}}
+        ]}});
+        // Baseline: no loadout finding (no policy/catalogue supplied, uniform+vest present).
+        assert!(
+            validate_editor_payload(&clean).iter().all(|f| {
+                !f.rule_id.starts_with("LOADOUT-") && f.rule_id != "CARGO-OVER-CAPACITY"
+            }),
+            "baseline must be loadout-clean: {:?}",
+            validate_editor_payload(&clean)
+        );
+
+        let mut broken = clean.clone();
+        broken["editor"]["slots"][0]["loadout"]["wear"]
+            .as_object_mut()
+            .unwrap()
+            .remove("vest");
+        let findings = validate_editor_payload(&broken);
+        let vest: Vec<&Finding> = findings
+            .iter()
+            .filter(|f| f.rule_id == "LOADOUT-HAS-VEST")
+            .collect();
+        assert_eq!(vest.len(), 1, "exactly one vest finding: {findings:?}");
+        assert_eq!(vest[0].subject_id.as_deref(), Some("s1"));
+        // No OTHER loadout rule fires on this single-field perturbation (uniform still worn, no
+        // policy so mag/equipment/vehicle inert, no catalogue so capacity inert).
+        for other in [
+            "LOADOUT-HAS-UNIFORM",
+            "LOADOUT-MAG-COUNT",
+            "LOADOUT-HAS-EQUIPMENT",
+            "VEHICLE-CARGO-POLICY",
+            "CARGO-OVER-CAPACITY",
+        ] {
+            assert!(
+                findings.iter().all(|f| f.rule_id != other),
+                "only the vest rule should fire; {other} also fired: {findings:?}"
+            );
+        }
+
+        // Restore → loadout-clean again.
+        assert!(
+            validate_editor_payload(&clean).iter().all(|f| {
+                !f.rule_id.starts_with("LOADOUT-") && f.rule_id != "CARGO-OVER-CAPACITY"
+            }),
+            "restoring must return to loadout-clean"
+        );
     }
 }
