@@ -1843,6 +1843,97 @@ pub fn MissionEditorPage() -> impl IntoView {
                 }));
             }
 
+            // T-655 — the validation panel's payload source. The engine (`mission::validate`) is pure
+            // core with no access to this `!Send` doc or the `registry_session` catalogue, and the
+            // panel view is native-compiled, so — peer of `register_widget_pivot` / the ruler/LoS
+            // registrations — we hand it a getter that reads the LIVE doc + registry each re-eval.
+            // It returns the Save-shape compiled payload (`compile_payload(small, slots, false)`,
+            // which carries `editor.{factions,squads,slots}` + top-level `vehicles`/`entities` the
+            // rules walk) plus the T-658 known-asset-id catalogue (this is where the T-658 SPA
+            // boundary lands — the ticket's W111 wiring). `registry_items` is `Copy` (a signal); an
+            // untracked read keeps the getter side-effect-free. `None` while the doc/registry are not
+            // ready ⇒ the panel is simply empty (and ASSET-RESOLVES skips via its own gate when the
+            // catalogue is `None`, the conservative default).
+            {
+                let doc = doc.clone();
+                crate::validation_panel::register_payload_source(std::rc::Rc::new(move || {
+                    let d = doc.borrow();
+                    let core = d.as_ref()?;
+                    let payload = map_engine_core::mission::compile::compile_payload(
+                        &core.small_maps_json(),
+                        &core.slots_json(),
+                        false,
+                    );
+                    // Catalogue: the live registry rows if loaded, else `None` (rule skips). Built
+                    // from `resource_name`s + object prop:/comp: aliases — the ids the payload uses.
+                    let known_asset_ids = registry_items.get_untracked().map(|items| {
+                        crate::validation_panel::known_asset_ids_from_registry(&items)
+                    });
+                    Some(crate::validation_panel::PayloadSource {
+                        payload,
+                        known_asset_ids,
+                    })
+                }));
+            }
+
+            // T-655 — the validation panel's CLICK-TO-SELECT router. A finding click routes its
+            // `subject_id` (the T-657 stable entity id) → the editor selection, so the offender is
+            // PINNED on the map + in the trees (not a clipboard dump). Lives HERE, closing over the
+            // `!Send` doc / selection / engine `Rc`s the native-compiled panel cannot hold (peer of
+            // the payload-source getter above and `register_widget_pivot`). Mirrors `open_attributes`
+            // (replace selection → engine `set_selection` → refresh mirrors) MINUS opening the modal,
+            // and additionally CENTRES the camera on the entity (the maker clicked to find it). A
+            // STALE finding whose entity was deleted since the last re-eval resolves to no position
+            // and no-ops (returns false) rather than clearing the current selection — the centroid
+            // math mirrors the transform-widget pivot (slot SoA position, else the vehicle row's
+            // `position`).
+            {
+                let doc = doc.clone();
+                let selection = selection.clone();
+                let engine = engine.clone();
+                crate::validation_panel::register_select_by_id(std::rc::Rc::new(
+                    move |subject_id: &str| {
+                        let d = doc.borrow();
+                        let Some(core) = d.as_ref() else {
+                            return false;
+                        };
+                        // Resolve the id → a world position: a slot (SoA) or a vehicle
+                        // (`vehiclesById.position`). `None` ⇒ the entity is gone (a stale finding).
+                        let soa = core.materialize();
+                        let pos: Option<(f64, f64)> = soa
+                            .ids
+                            .iter()
+                            .position(|s| s == subject_id)
+                            .map(|row| (f64::from(soa.xs[row]), f64::from(soa.ys[row])))
+                            .or_else(|| {
+                                let root = serde_json::from_str::<serde_json::Value>(
+                                    &core.small_maps_json(),
+                                )
+                                .ok()?;
+                                let p =
+                                    root.get("vehiclesById")?.get(subject_id)?.get("position")?;
+                                let x = p.get("x").and_then(serde_json::Value::as_f64)?;
+                                let y = p.get("y").and_then(serde_json::Value::as_f64)?;
+                                Some((x, y))
+                            });
+                        let Some((cx, cy)) = pos else {
+                            // Stale finding — keep the current selection intact.
+                            return false;
+                        };
+                        drop(d);
+                        *selection.borrow_mut() = vec![subject_id.to_string()];
+                        let ids = selection.borrow().clone();
+                        if let Some(e) = engine.borrow_mut().as_mut() {
+                            e.set_selection(ids);
+                            e.set_view(cx, cy, e.zoom()); // centre on the offender (React flyTo)
+                            e.on_camera_changed();
+                        }
+                        crate::mission_history::refresh_selection();
+                        true
+                    },
+                ));
+            }
+
             // T-159.21 — undo/redo. The ctx carries every handle a post-change rebind needs (doc +
             // engine + selection + doc_ver + id) plus the HUD signal mirrors, so the toolbar buttons,
             // the keyboard shortcuts, and the `__editorHistory` bridge all drive ONE path. Registered
@@ -3772,6 +3863,17 @@ pub fn MissionEditorPage() -> impl IntoView {
                     tick=widget_tick
                     variant=widget_variant
                 />
+                // T-655 — the validation panel (dispatcher-authorized SINGLE mount line; the component
+                // + all its logic live in `validation_panel`, my owned file). A floating collapsible
+                // card, bottom-left above the status bar (the overlay idiom — NOT docked; docking
+                // collides with the dock files program-wide). UNGATED — it is NOT inside a
+                // `chrome_hidden` gate, so a Backspace hide-interface leaves it visible: validation is
+                // ALWAYS ON and correctness diagnostics are never gated (T-635's doctrine — "telemetry
+                // gates, correctness diagnostics never"), unlike the scale bar / grid refs / snap
+                // readout, which ARE dock furniture and gated. Re-evaluates off `doc_tick` (the T-666
+                // channel) through its own 250 ms trailing debounce; the engine call is defensively
+                // wrapped so a rule panic can never take the editor down.
+                <crate::validation_panel::ValidationPanel doc_tick />
                 // T-648 — the snap-grid step readout (TOOLBAR-GRID-MOVE-001). GATED on `chrome_hidden`
                 // — it is status-bar furniture like the scale bar / grid refs, so Backspace hides it
                 // too (this is the SEVENTH chrome-gated mount; the count pin is updated to match).
@@ -7488,6 +7590,93 @@ mod t648_transform {
             body.contains("update_slot_position(") && body.contains("set_vehicle_position("),
             "rotate_selection_to_face must ride update_slot_position (slots) + set_vehicle_position \
              (vehicles) — the existing per-field rotation writes, not a new core mutator"
+        );
+    }
+}
+
+/// T-655 — the validation panel wiring pins: the mount exists, its payload source is registered, it
+/// re-evaluates off the `doc_tick` channel, it is ALWAYS ON (no debug flag), and it SURVIVES
+/// hide-chrome (mounted OUTSIDE every `chrome_hidden` gate — the diagnostics doctrine). These scan
+/// the comment-stripped page source (`live_code`) so the doc prose that mentions `chrome_hidden`
+/// cannot false-match the gate check.
+#[cfg(test)]
+mod t655_validation_panel_wiring {
+    use crate::arsenal::class_r_scrub::live_code;
+
+    fn editor_live() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(
+            raw.matches(anchor.as_str()).count(),
+            1,
+            "scrub anchor must be unambiguous"
+        );
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    }
+
+    /// The panel is mounted as a real component, fed the `doc_tick` re-eval channel (the T-666
+    /// doc-change tick), and its payload source is registered from the wasm mount.
+    #[test]
+    fn the_validation_panel_is_mounted_and_wired_to_doc_tick() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("validation_panel::ValidationPanel doc_tick"),
+            "T-655: the ValidationPanel must be mounted with the doc_tick re-eval channel"
+        );
+        assert!(
+            ed.contains("validation_panel::register_payload_source("),
+            "T-655: the panel's compiled-payload source must be registered from the wasm mount"
+        );
+        assert!(
+            ed.contains("validation_panel::register_select_by_id("),
+            "T-655: the click-to-select router (subject_id → selection) must be registered from the \
+             wasm mount, where the doc/selection/engine handles live"
+        );
+        // The router routes through the SAME selection seam the rest of the editor uses (engine
+        // set_selection + centre + refresh_selection), keyed on the finding's subject_id.
+        assert!(
+            ed.contains("e.set_selection(ids)")
+                && ed.contains("mission_history::refresh_selection()"),
+            "T-655: click-to-select must replace the selection + refresh mirrors (the open_attributes \
+             seam), not a bespoke path"
+        );
+        // The registered source compiles the SAVE-shape payload (the editor.{factions,squads,slots}
+        // block the rules read) and threads the T-658 known-asset-id catalogue.
+        assert!(
+            ed.contains("compile::compile_payload(")
+                && ed.contains("known_asset_ids_from_registry("),
+            "T-655/T-658: the source must feed compile_payload + the known-asset-id catalogue"
+        );
+    }
+
+    /// Hide-chrome survival + always-on: the panel mount is OUTSIDE every `chrome_hidden` gate (a
+    /// Backspace hide-interface leaves it visible — correctness diagnostics are never gated, T-635's
+    /// doctrine), and it is not behind any debug flag. Proven by locating the mount and checking that
+    /// no `chrome_hidden` gate (nor a `debug_hud` gate) opens between the ungated-dialog landmark
+    /// (the context-menu overlay, the same landmark the T-647 picker pin uses) and it.
+    #[test]
+    fn the_validation_panel_survives_hide_chrome_and_is_always_on() {
+        let ed = editor_live();
+        let mount = ed
+            .find("validation_panel::ValidationPanel doc_tick")
+            .expect("T-655: the ValidationPanel mount");
+        let landmark = ed
+            .find("ContextMenuOverlay menu=")
+            .expect("context menu mount is the ungated-dialog landmark");
+        assert!(
+            mount > landmark,
+            "T-655: the panel must mount after the ungated-dialog landmark"
+        );
+        let between = &ed[landmark..mount];
+        assert!(
+            !between.contains("(!chrome_hidden.get()).then("),
+            "T-655: the panel is DIAGNOSTICS — no chrome_hidden gate may sit between the ungated \
+             dialogs and its mount (it survives Backspace hide-chrome, T-635 doctrine)"
+        );
+        // Always-on: not gated behind the telemetry HUD debug flag either.
+        assert!(
+            !between.contains("debug_hud_shown.get()") && !between.contains("debug_hud.get()"),
+            "T-655: validation is ALWAYS ON — the panel must not sit behind a debug flag"
         );
     }
 }

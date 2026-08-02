@@ -1096,16 +1096,23 @@ fn rule_orbat_callsign_unique() -> Rule {
             // is ONE SIDE (one faction): two sides may reuse a callsign ("Alpha" on both BLUFOR and
             // OPFOR is legal and common) — that must NOT fire, so we group per faction, not globally.
             use std::collections::HashMap;
-            let squads_by_id: HashMap<&str, &Value> = editor_squads(payload)
+            // Wave-107 MINOR-1 / T-655 pointer-shape fix: index squads by id → (positional index,
+            // row). The index is what the subject pointer needs — the other ORBAT squad rules emit
+            // `/editor/squads/{i}` (a positional array index), and this rule used to emit
+            // `/editor/squads/{squad_id}/callsign`, keying a *squad id* into an array position, which
+            // does not resolve as a JSON pointer. `subject_id` already carries the id for the panel's
+            // click-to-select; the pointer is display/focus and must be the positional form.
+            let squads_by_id: HashMap<&str, (usize, &Value)> = editor_squads(payload)
                 .iter()
-                .map(|s| (squad_id(s), s))
+                .enumerate()
+                .map(|(i, s)| (squad_id(s), (i, s)))
                 .collect();
             let mut out = Vec::new();
             for faction in editor_factions(payload) {
                 // callsign (trimmed, lowercased for a case-insensitive clash) → first squad id seen.
                 let mut seen: HashMap<String, &str> = HashMap::new();
                 for member_id in str_array(faction, "squadIds") {
-                    let Some(sq) = squads_by_id.get(member_id) else {
+                    let Some(&(idx, sq)) = squads_by_id.get(member_id) else {
                         continue; // dangling squad ref — not this rule's fault (SLOT-RESOLVES-adjacent)
                     };
                     let callsign = str_field(sq, "callsign").trim();
@@ -1121,7 +1128,9 @@ fn rule_orbat_callsign_unique() -> Rule {
                                  (also squad {first}) — callsigns must be unique within a side.",
                                 str_field(faction, "key"),
                             ),
-                            format!("/editor/squads/{member_id}/callsign"),
+                            // Positional pointer into `editor.squads[]` (the sibling squad rules'
+                            // shape), not `{squad_id}/callsign` — the id lives in `subject_id`.
+                            format!("/editor/squads/{idx}"),
                             id.to_string(),
                         ));
                     } else {
@@ -2539,7 +2548,10 @@ mod tests {
         let f = finding_for(&findings, "ORBAT-CALLSIGN-UNIQUE");
         assert_eq!(f.severity, Severity::Warning);
         assert_eq!(f.primitive, Primitive::PerObjectInvariant);
-        assert_eq!(f.subject, "/editor/squads/sq2/callsign"); // the SECOND squad seen is the offender
+        // Wave-107 MINOR-1 / T-655 pointer fix: positional index into `editor.squads[]` (sq2 is the
+        // second squad row), NOT `/editor/squads/sq2/callsign` (an id keyed into an array — an
+        // unresolvable JSON pointer). The stable id rides `subject_id` for the panel's click-to-select.
+        assert_eq!(f.subject, "/editor/squads/1"); // the SECOND squad seen is the offender (row index 1)
         assert_eq!(f.subject_id.as_deref(), Some("sq2"));
         assert!(f.message.contains("unique within a side"), "{f:?}");
     }
