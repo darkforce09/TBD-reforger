@@ -77,6 +77,37 @@ pub struct MissionDocCore {
     /// Authored play-area / objective zones; each row is `mission.schema.json#/$defs/zone`
     /// verbatim. See the T-211 mutator block ([`Self::add_circle_zone`]) for the field contract.
     zones: MapRef,
+    /// T-650 — root `compositions` map (`compositionsById` in [`Self::small_maps_json`]) —
+    /// undo-scoped. See the T-650 mutator block ([`Self::add_composition`]) for the row contract
+    /// and the module-level ROUTING note below for why this is a doc-side collection that must
+    /// export cleanly to a later user-scoped API row.
+    ///
+    /// ── T-650 STORAGE ROUTING (dispatcher decision — the ticket's user-scoped framing is not
+    /// foreclosed) ──────────────────────────────────────────────────────────────────────────────
+    /// Compositions are **DOC-SIDE in this slice**: a `compositions` root map, each row a
+    /// SELF-CONTAINED JSON object `{id, title, author, category, entities:[…]}` where `entities`
+    /// is the captured selection as **relative-offset** entries (slots with role/asset/loadout +
+    /// vehicles with heading/crew SHAPE + objects with alias/resourceName, each `{dx, dz}` from the
+    /// capture centroid). The shape reuses the clipboard capture shapes (`copy_selection` /
+    /// `paste_at_cursor` in `editor_ops.rs`).
+    ///
+    /// **Shaped for a MECHANICAL later lift to user-scoped API rows.** Each row is self-contained:
+    /// no cross-references into the rest of the doc beyond asset/kit ids (a `resourceName` /
+    /// `assetId` / `loadout` blob is a value, not a doc pointer). So the row that rides
+    /// `compositionsById` here is byte-for-byte the row a `POST /compositions` would store — the
+    /// later lift moves WHERE the map lives (a user-scoped table instead of the mission doc) and
+    /// changes nothing about the row. `author` is the current user's display string **as authored**
+    /// (no server assignment in this framing).
+    ///
+    /// **Why the round trip needs no `mission/compile.rs` change** (that file is not this slice's
+    /// owns): this mirrors the T-211 zones precedent exactly. `small_maps_json` emits the canonical
+    /// `compositionsById` AND a transitional `payloadExtras.compositions` projection;
+    /// `compile_payload` promotes any `payloadExtras` key it neither knows nor authored onto the
+    /// wire root (T-219), so `compositions` lands at the payload root; [`Self::hydrate`] loads a
+    /// top-level `compositions[]` back into this root (and `compositions` is in
+    /// `is_known_editor_payload_top_level`). Self-healing: the day compile.rs authors `compositions`
+    /// itself, the projection becomes dead weight to delete, not a double-emit.
+    compositions: MapRef,
     /// When true, mutators stamp `INIT` (untracked) instead of `LOCAL` — set around boot / hydrate /
     /// default-seeding so a load is not an undo step. Interior mutability: mutators take `&self`.
     init_mode: Cell<bool>,
@@ -155,6 +186,7 @@ impl MissionDocCore {
         let vehicles = doc.get_or_insert_map("vehicles");
         let entities = doc.get_or_insert_map("entities");
         let zones = doc.get_or_insert_map("zones");
+        let compositions = doc.get_or_insert_map("compositions");
 
         // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
         // stack item only when `last_change > 0 && now - last_change < capture_timeout_millis`
@@ -186,6 +218,9 @@ impl MissionDocCore {
         undo_mgr.expand_scope(&doc, &vehicles);
         undo_mgr.expand_scope(&doc, &entities);
         undo_mgr.expand_scope(&doc, &zones);
+        // T-650 — a save/rename/delete of a composition row is an undoable user edit, exactly like a
+        // zone or a crew board.
+        undo_mgr.expand_scope(&doc, &compositions);
 
         Self {
             doc,
@@ -197,6 +232,7 @@ impl MissionDocCore {
             vehicles,
             entities,
             zones,
+            compositions,
             init_mode: Cell::new(false),
             undo_mgr,
         }
@@ -343,7 +379,7 @@ impl MissionDocCore {
         let meta = self.doc.get_or_insert_map("meta");
         let payload_extras = self.doc.get_or_insert_map("payloadExtras");
         let entity_order = self.doc.get_or_insert_map("entityOrder");
-        let named: [(&str, MapRef); 10] = [
+        let named: [(&str, MapRef); 11] = [
             ("factionsById", self.doc.get_or_insert_map("factions")),
             ("squadsById", self.doc.get_or_insert_map("squads")),
             ("loadoutsById", self.doc.get_or_insert_map("loadouts")),
@@ -356,6 +392,12 @@ impl MissionDocCore {
             (
                 "editorLayersById",
                 self.doc.get_or_insert_map("editorLayers"),
+            ),
+            // T-650 — the canonical by-id emit, shaped exactly like `zonesById`. The panel's
+            // narrow reader ([`Self::compositions_json`]) reads the same map; a Save carries it.
+            (
+                "compositionsById",
+                self.doc.get_or_insert_map("compositions"),
             ),
         ];
 
@@ -382,8 +424,14 @@ impl MissionDocCore {
         // `transact()` line. Measured here — four tests hung rather than failed, which is the
         // worse symptom because a hang reads as a slow gate, not a defect.
         let zone_rows = ordered_rows(&txn, &self.zones, &entity_order, "zones");
+        // T-650 — same transitional projection for compositions: `compile_payload` does not yet
+        // read `compositionsById`, so the round trip is closed by promoting `payloadExtras
+        // .compositions` onto the wire root (T-219). Built off `self.compositions` (the struct
+        // field, not `get_or_insert_map` — that deadlocks against the live `txn`, see the zones note
+        // above), ordered like every sibling.
+        let comp_rows = ordered_rows(&txn, &self.compositions, &entity_order, "compositions");
         // Omit when empty so a clean doc's snapshot shape stays unchanged.
-        if payload_extras.len(&txn) > 0 || !zone_rows.is_empty() {
+        if payload_extras.len(&txn) > 0 || !zone_rows.is_empty() || !comp_rows.is_empty() {
             let mut extras: HashMap<String, Any> = match payload_extras.to_json(&txn) {
                 Any::Map(m) => (*m).clone(),
                 _ => HashMap::new(),
@@ -394,6 +442,13 @@ impl MissionDocCore {
                 extras.remove("zones");
             } else {
                 extras.insert("zones".to_string(), Any::Array(zone_rows.into()));
+            }
+            // T-650 — mirror the zones absence rule: deleting every composition must clear the wire,
+            // not re-emit the last-saved array a reload parked.
+            if comp_rows.is_empty() {
+                extras.remove("compositions");
+            } else {
+                extras.insert("compositions".to_string(), Any::Array(comp_rows.into()));
             }
             if !extras.is_empty() {
                 root.insert("payloadExtras".to_string(), Any::Map(Arc::new(extras)));
@@ -1221,6 +1276,277 @@ impl MissionDocCore {
         self.zones.len(&self.doc.transact()) as usize
     }
 
+    // ── T-650 — saved compositions (`compositionsById`) ─────────────────────────────────────────
+    //
+    // ROW SHAPE (SELF-CONTAINED — see the `compositions` field's ROUTING note):
+    //
+    //   id         String, required — the doc key.
+    //   title      String — the author-facing name (ATTR-FIELD-COMP-TITLE).
+    //   author     String — the current user's display string, as-authored (ATTR-FIELD-COMP-AUTHOR;
+    //              no server assignment in this framing).
+    //   category   String — grouping label (ATTR-FIELD-COMP-CATEGORY).
+    //   entities   Array  — the captured selection as RELATIVE-OFFSET entries. Each entry is one of:
+    //                • {kind:"slot",   dx, dz, rotation, role, tag, assetId, stance, loadout?}
+    //                • {kind:"vehicle",dx, dz, rotation, resourceName, crewed?, crew?}
+    //                • {kind:"object", dx, dz, rotation, alias, resourceName, faction}
+    //              `dx`/`dz` are metres from the capture centroid; place re-anchors the centroid at
+    //              the drop point (the `paste_at_cursor` centroid→cursor rule). `crew` is the SHAPE
+    //              (`{seat_id: slot_id}`) captured verbatim — the slot ids are stale on placement
+    //              (the boarded bodies are not re-created here), so the placer treats `crew` as an
+    //              opaque record and does not re-board; it survives for a later crew-aware placer.
+    //
+    // WHY THE WHOLE ROW IS OPAQUE JSON (not typed sub-maps). Like `set_zone_rules` /
+    // `update_slot_loadout`, the row is stored via [`json_str_to_any`] and written whole. A typed
+    // mirror would be a second declaration of the entry vocabulary that could drift from the
+    // authoring surface; keeping it opaque is exactly what makes the mechanical lift to a
+    // user-scoped API row a *move*, not a re-encode. The mutators below therefore do whole-`Any`
+    // read-modify-write for field edits (the crew idiom), so a rename after a hydrate — where the
+    // row is an opaque `Any::Map`, not a tracked `YMap` — is sound.
+
+    /// T-650 (COMP-SAVE-001) — store one composition row from its self-contained JSON. Malformed
+    /// JSON or a non-object is refused (no row written), like a malformed zone-rules edit. The `id`
+    /// is the doc key and is forced onto the stored object so the row is addressable regardless of
+    /// what the caller put in the JSON's own `id`.
+    pub fn add_composition(&self, id: &str, row_json: &str) {
+        let Any::Map(fields) = json_str_to_any(row_json) else {
+            return;
+        };
+        let mut map: HashMap<String, Any> = (*fields).clone();
+        map.insert("id".to_string(), Any::String(id.into()));
+        let mut txn = self.begin();
+        self.compositions
+            .insert(&mut txn, id, Any::Map(Arc::new(map)));
+    }
+
+    /// T-650 (COMP-EDIT-001 / ATTR-FIELD-COMP-TITLE) — rename a composition. Whole-`Any`
+    /// read-modify-write (the crew idiom) so it is hydrate-proof. No-op when the id is absent.
+    pub fn set_composition_title(&self, id: &str, title: &str) {
+        self.set_composition_field(id, "title", title);
+    }
+
+    /// T-650 (COMP-EDIT-001 / ATTR-FIELD-COMP-CATEGORY) — recategorize a composition. Same idiom.
+    pub fn set_composition_category(&self, id: &str, category: &str) {
+        self.set_composition_field(id, "category", category);
+    }
+
+    /// T-650 (ATTR-FIELD-COMP-AUTHOR) — set the author display string. Author is normally stamped
+    /// once at save, but exposed as an edit for completeness (the three metadata fields are the
+    /// row's own title/author/category, all editable via the inline edit).
+    pub fn set_composition_author(&self, id: &str, author: &str) {
+        self.set_composition_field(id, "author", author);
+    }
+
+    /// Shared whole-`Any` field write for the three metadata edits. Reads the row entire (tolerant
+    /// of BOTH the freshly-authored `YMap` and the post-hydrate opaque `Any::Map`, via
+    /// [`read_composition_map`]), sets the one string key, writes it back whole — so a metadata edit
+    /// on a reloaded mission behaves exactly like one on a freshly-saved doc and does not wipe
+    /// `entities`.
+    fn set_composition_field(&self, id: &str, key: &str, value: &str) {
+        let mut txn = self.begin();
+        let Some(mut row) = read_composition_map(&txn, &self.compositions, id) else {
+            return;
+        };
+        row.insert(key.to_string(), Any::String(value.into()));
+        self.compositions
+            .insert(&mut txn, id, Any::Map(Arc::new(row)));
+    }
+
+    /// T-650 (COMP-EDIT-001) — delete a saved composition row.
+    pub fn remove_composition(&self, id: &str) {
+        let mut txn = self.begin();
+        self.compositions.remove(&mut txn, id);
+    }
+
+    /// T-650 — the `compositions` root as a JSON object (`compositionsById`), for the palette's
+    /// list read. `small_maps_json` carries the same map; this is the narrow getter.
+    #[must_use]
+    pub fn compositions_json(&self) -> String {
+        let txn = self.doc.transact();
+        let mut buf = String::new();
+        self.compositions.to_json(&txn).to_json(&mut buf);
+        buf
+    }
+
+    /// T-650 — saved-composition count (cheap; backs the palette header count).
+    #[must_use]
+    pub fn composition_count(&self) -> usize {
+        self.compositions.len(&self.doc.transact()) as usize
+    }
+
+    /// T-650 (COMP-PLACE-001) — place a saved composition: stamp every captured entity onto the map
+    /// at `(drop_x, drop_y)` as ONE undoable transaction. This is the multi-paste the ticket calls
+    /// for — a `paste_at_cursor`-shaped drop, but writing slots AND vehicles AND objects, all in a
+    /// single `begin()` so the whole placement is one Ctrl+Z (mixing several existing mutators would
+    /// be several undo steps, because `capture_timeout_millis = 0` makes every txn its own step).
+    ///
+    /// Each entry's world position is `drop + (dx, dz)` — the RELATIVE-OFFSET entries are re-anchored
+    /// so the composition's captured centroid lands under the cursor, clamped to the terrain
+    /// `width`/`height` (the `paste_slots` clamp). `ids[i]` is the pre-minted id for `entities[i]`
+    /// (minted by `editor_ops`, which proves uniqueness against the live doc); the caller passes as
+    /// many ids as there are entities.
+    ///
+    /// SIDE OWNERSHIP mirrors the single-entity place: the side's `faction-{SIDE}` row is ensured
+    /// in-txn (so faction creation is part of the same undo step), vehicles/objects record it, and
+    /// slots file into `layer_id` UNFILED (`squadId` absent) — a composition is a set of loose
+    /// entities, not a squad, which is the whole reason placing it does not stamp `squad.template`
+    /// (see the TEMPLATE-COVERAGE note on this method). Returns the ids actually written (an unknown
+    /// entity `kind`, or an id/entity count mismatch, skips that entry).
+    ///
+    /// **TEMPLATE-COVERAGE (T-657 forward constraint).** T-657's ORBAT-TEMPLATE-COVERAGE rule reads
+    /// `squad.template.requiredRoles`. This placer writes NO squad — its slots are unfiled loose
+    /// bodies — so there is no `squad.template` to stamp and the rule stays forward-compatible
+    /// exactly as before. Were compositions ever to capture whole squads (with squad identity), the
+    /// natural place to stamp the carried roles would be here; they do not, so nothing is forced.
+    #[allow(clippy::too_many_arguments)]
+    #[must_use]
+    pub fn place_composition(
+        &self,
+        entities_json: &str,
+        ids: &[String],
+        side: &str,
+        layer_id: &str,
+        drop_x: f64,
+        drop_y: f64,
+        width: f64,
+        height: f64,
+    ) -> Vec<String> {
+        let Any::Array(entities) = json_str_to_any(entities_json) else {
+            return Vec::new();
+        };
+        let mut written = Vec::new();
+        let mut txn = self.begin();
+
+        // Ensure the side faction in THIS txn so faction creation joins the one undo step.
+        let faction_id = format!("faction-{side}");
+        if self.factions.get(&txn, &faction_id).is_none() {
+            let f = self.factions.insert(
+                &mut txn,
+                faction_id.as_str(),
+                MapPrelim::from([("id", faction_id.as_str())]),
+            );
+            f.insert(&mut txn, "key", side);
+            f.insert(&mut txn, "name", side);
+            f.insert(&mut txn, "squadIds", Any::Array(Vec::new().into()));
+        }
+        // Slots filed into `layer_id`'s `entityIds`, accumulated once (the T-059 O(k) shape).
+        let mut layer_entities: Vec<Any> =
+            read_id_array(&txn, &self.editor_layers, layer_id, "entityIds");
+
+        let g_str = |m: &HashMap<String, Any>, k: &str| match m.get(k) {
+            Some(Any::String(s)) => s.to_string(),
+            _ => String::new(),
+        };
+        let g_num = |m: &HashMap<String, Any>, k: &str| m.get(k).map_or(0.0, any_to_f64);
+
+        for (i, ent) in entities.iter().enumerate() {
+            let Some(id) = ids.get(i) else { break };
+            let Any::Map(fields) = ent else { continue };
+            let kind = g_str(fields, "kind");
+            let wx = (drop_x + g_num(fields, "dx")).clamp(0.0, width);
+            let wy = (drop_y + g_num(fields, "dz")).clamp(0.0, height);
+            let rot = g_num(fields, "rotation");
+            match kind.as_str() {
+                "slot" => {
+                    let slot = self.slots.insert(
+                        &mut txn,
+                        id.as_str(),
+                        MapPrelim::from([("id", id.as_str())]),
+                    );
+                    // Unfiled: no squadId (a loose body — see the method's TEMPLATE-COVERAGE note).
+                    slot.insert(&mut txn, "index", Any::BigInt(0));
+                    let role = g_str(fields, "role");
+                    slot.insert(
+                        &mut txn,
+                        "role",
+                        if role.is_empty() {
+                            "Rifleman"
+                        } else {
+                            role.as_str()
+                        },
+                    );
+                    let tag = g_str(fields, "tag");
+                    if !tag.is_empty() {
+                        slot.insert(&mut txn, "tag", tag.as_str());
+                    }
+                    let asset = g_str(fields, "assetId");
+                    if !asset.is_empty() {
+                        slot.insert(&mut txn, "assetId", asset.as_str());
+                    }
+                    let stance = g_str(fields, "stance");
+                    slot.insert(
+                        &mut txn,
+                        "stance",
+                        if stance.is_empty() {
+                            "stand"
+                        } else {
+                            stance.as_str()
+                        },
+                    );
+                    slot.insert(&mut txn, "loadoutId", Any::Null);
+                    if let Some(l) = fields.get("loadout").filter(|l| !matches!(l, Any::Null)) {
+                        slot.insert(&mut txn, "loadout", l.clone());
+                    }
+                    slot.insert(&mut txn, "position", position_any(wx, wy, 0.0, rot));
+                    layer_entities.push(Any::String(id.as_str().into()));
+                    written.push(id.clone());
+                }
+                "vehicle" => {
+                    let resource = g_str(fields, "resourceName");
+                    if resource.is_empty() {
+                        continue;
+                    }
+                    let v = self.vehicles.insert(
+                        &mut txn,
+                        id.as_str(),
+                        MapPrelim::from([("id", id.as_str())]),
+                    );
+                    v.insert(&mut txn, "resourceName", resource.as_str());
+                    v.insert(&mut txn, "position", position_any(wx, wy, 0.0, rot));
+                    v.insert(&mut txn, "factionId", faction_id.as_str());
+                    // `crewed` omit idiom: only write `false` (the with-crew default is absence).
+                    if fields.get("crewed") == Some(&Any::Bool(false)) {
+                        v.insert(&mut txn, "crewed", false);
+                    }
+                    // T-650 — carry the crew SHAPE verbatim (opaque; the boarded slot ids are stale
+                    // on a place and are NOT re-created here — a later crew-aware placer can act on
+                    // it). Absent/empty leaves the row crew-free.
+                    if let Some(Any::Map(crew)) = fields.get("crew")
+                        && !crew.is_empty()
+                    {
+                        v.insert(&mut txn, "crew", Any::Map(crew.clone()));
+                    }
+                    written.push(id.clone());
+                }
+                "object" => {
+                    let resource = g_str(fields, "resourceName");
+                    let alias = g_str(fields, "alias");
+                    if resource.is_empty() || alias.is_empty() {
+                        continue;
+                    }
+                    let e = self.entities.insert(
+                        &mut txn,
+                        id.as_str(),
+                        MapPrelim::from([("id", id.as_str())]),
+                    );
+                    e.insert(&mut txn, "alias", alias.as_str());
+                    e.insert(&mut txn, "resourceName", resource.as_str());
+                    e.insert(&mut txn, "position", position_any(wx, wy, 0.0, rot));
+                    let faction = g_str(fields, "faction");
+                    if !faction.is_empty() {
+                        e.insert(&mut txn, "faction", faction.as_str());
+                    }
+                    written.push(id.clone());
+                }
+                _ => {} // unknown kind — skip, do not guess a row type
+            }
+        }
+        // One write of the layer's `entityIds` (the T-059 shape), only if slots were filed.
+        if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, layer_id) {
+            layer.insert(&mut txn, "entityIds", Any::Array(layer_entities.into()));
+        }
+        written
+    }
+
     /// Flat `[x0,y0,x1,y1,…]` for every vehicle that has a `position` (T-180.8 map bind).
     /// Order is map-iteration order (not pick-indexed — vehicles stay off the slot SoA).
     #[must_use]
@@ -1890,6 +2216,7 @@ impl MissionDocCore {
             &vehicles,
             &entities,
             &self.zones,
+            &self.compositions,
             &markers,
             &payload_extras,
             &entity_order,
@@ -1955,6 +2282,17 @@ impl MissionDocCore {
             payload.get("zones"),
             &entity_order,
             "zones",
+        );
+        // T-650 — top-level `compositions[]` into the `compositions` root, ordered like every
+        // sibling. This is also what takes `compositions` OFF the `payloadExtras` parking path (it
+        // is listed in [`is_known_editor_payload_top_level`]): the root map becomes the single
+        // source of truth, and `small_maps_json` re-projects it onto the wire.
+        load_rows_ordered(
+            &mut txn,
+            &self.compositions,
+            payload.get("compositions"),
+            &entity_order,
+            "compositions",
         );
         load_rows_ordered(
             &mut txn,
@@ -2417,6 +2755,9 @@ impl MissionDocCore {
             || vehicles.len(&txn) > 0
             || entities.len(&txn) > 0
             || self.zones.len(&txn) > 0
+            // T-650 — a saved composition is authored work that persists with the mission (the
+            // zones-alone precedent): the conflict gate must not discard a doc that has one.
+            || self.compositions.len(&txn) > 0
             || markers.len(&txn) > 0
     }
 
@@ -3140,6 +3481,11 @@ fn is_known_editor_payload_top_level(key: &str) -> bool {
             // T-211 — hydrate loads top-level `zones[]` into the `zones` root. See this fn's note
             // on why compile.rs's twin list does NOT list this key yet.
             | "zones"
+            // T-650 — hydrate loads top-level `compositions[]` into the `compositions` root. Like
+            // `zones`, compile.rs's twin list does NOT list this key yet — the transitional
+            // `payloadExtras.compositions` projection in `small_maps_json` closes the round trip
+            // until it does.
+            | "compositions"
             | "markers"
             | "editor"
             | "orbat"
@@ -3332,6 +3678,33 @@ fn write_crew_map(txn: &mut TransactionMut, vehicle: &MapRef, crew: HashMap<Stri
         vehicle.remove(txn, "crew");
     } else {
         vehicle.insert(txn, "crew", Any::Map(Arc::new(crew)));
+    }
+}
+
+/// T-650 — one composition ROW as an OWNED plain map, tolerant of BOTH doc shapes (the crew-reader
+/// idiom): a freshly-saved composition is inserted as an opaque `Any::Map`, and after a hydrate the
+/// same row comes back through [`load_row`] as a tracked `YMap` (its top-level keys become tracked;
+/// the nested `entities` array stays opaque). The metadata-edit mutators must read through this so a
+/// rename/recategorize after a reload modifies the loaded row instead of no-opping or wiping it.
+/// `None` when the id is absent.
+fn read_composition_map<T: ReadTxn>(
+    txn: &T,
+    compositions: &MapRef,
+    id: &str,
+) -> Option<HashMap<String, Any>> {
+    match compositions.get(txn, id) {
+        Some(Out::Any(Any::Map(m))) => Some((*m).clone()),
+        Some(Out::YMap(row)) => Some(
+            row.iter(txn)
+                .map(|(k, out)| match out {
+                    Out::Any(a) => (k.to_string(), a),
+                    // A nested tracked map/array (yrs can materialize `entities` either way):
+                    // re-serialize it whole so the metadata edit preserves it verbatim.
+                    other => (k.to_string(), other.to_json(txn)),
+                })
+                .collect(),
+        ),
+        _ => None,
     }
 }
 
@@ -7244,6 +7617,477 @@ mod tests {
         for pt in ring {
             assert_eq!(pt.as_array().expect("vertex").len(), 2, "{pt:?}");
         }
+    }
+
+    /* ─────────────────────── T-650 — saved compositions: round trip, edit, wire ─────────────────────── */
+
+    /// A composition row's self-contained JSON, exactly as `editor_ops::save_composition` builds it:
+    /// three metadata fields plus a multi-entity `entities` array of RELATIVE-OFFSET entries — a
+    /// slot, a vehicle (carrying a `crew` SHAPE), and an object. **Offsets are deliberately
+    /// NON-INTEGRAL** for the same reason the zones fixture is: an all-integer fixture would survive
+    /// a bug that coerced every coordinate to `Any::BigInt` and back, so `-12.75` is what lets the
+    /// round-trip prove the geometry itself came back rather than merely a number-shaped thing.
+    #[cfg(feature = "mission")]
+    fn composition_row_json() -> String {
+        serde_json::json!({
+            "id": "c1",
+            "title": "Fireteam + Technical",
+            "author": "Sam",
+            "category": "Infantry",
+            "entities": [
+                { "kind": "slot",    "dx":  -12.75, "dz": 8.5,   "rotation": 45.5,
+                  "role": "Squad Leader", "tag": "SL", "assetId": "Prefab/SL.et", "stance": "crouch",
+                  "loadout": { "gear": { "primary": "M4" } } },
+                { "kind": "slot",    "dx":   12.25, "dz": -8.5,  "rotation": 0.0,
+                  "role": "Rifleman", "tag": "", "assetId": "Prefab/Rifleman.et", "stance": "stand" },
+                { "kind": "vehicle", "dx":    0.5,  "dz": 30.125, "rotation": 270.75,
+                  "resourceName": "Prefab/Technical.et", "crewed": true,
+                  "crew": { "driver": "s0", "gunner": "s1" } },
+                { "kind": "object",  "dx":  -30.5,  "dz": 0.25,  "rotation": 90.0,
+                  "alias": "sandbag_wall", "resourceName": "Prefab/Sandbag.et", "faction": "blufor" }
+            ]
+        })
+        .to_string()
+    }
+
+    /// A doc with a complete editor graph (so `compile_payload` has a mission to compile) plus one
+    /// saved composition authored through the mutator.
+    #[cfg(feature = "mission")]
+    fn compositions_fixture() -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        doc.add_faction("f1", "BLUFOR", "US");
+        doc.add_squad("sq1", "f1", "Alpha", Some("Alpha".to_string()));
+        doc.add_slot(
+            "s1", "sq1", "lyr", 0, "Rifleman", None, None, 100.5, 200.5, 0.0, 0.0,
+        );
+        doc.add_composition("c1", &composition_row_json());
+        doc
+    }
+
+    /// Pull the compositions array off a compiled wire payload, whichever route put it there — the
+    /// `wire_zones` idiom. Once `compile_payload` authors `compositions` itself this reads the
+    /// authored key instead of the promoted one, with no test change.
+    #[cfg(feature = "mission")]
+    fn wire_compositions(payload: &serde_json::Value) -> Vec<serde_json::Value> {
+        payload
+            .get("compositions")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// Canonicalise a JSON value for the round-trip comparisons: coerce every INTEGER-VALUED
+    /// `Number(f64)` to its `i64` form. This is not a fudge — it absorbs exactly the documented
+    /// `Any::BigInt` vs `Any::Number` encoding (`any_to_f64`'s reason to exist): yrs re-emits a
+    /// stored `45.5` as `Number(45.5)` but a stored `0.0` as an integer `0`, so a `serde_json::json!`
+    /// expectation of `0.0` (`Number(0.0)`) would never `Value`-equal the round-tripped `Number(0)`
+    /// even though the two are the same number and the same JSON text. Nothing else is normalised —
+    /// a dropped entity, a truncated offset, or a lost nested blob still fails the comparison, which
+    /// is the whole point of comparing by value.
+    #[cfg(feature = "mission")]
+    fn canon(v: &serde_json::Value) -> serde_json::Value {
+        use serde_json::Value;
+        match v {
+            Value::Number(n) => match n.as_f64() {
+                // Integer-valued float → integer form, matching yrs's BigInt re-emit.
+                Some(f) if f.fract() == 0.0 && f.is_finite() => Value::from(f as i64),
+                _ => v.clone(),
+            },
+            Value::Array(a) => Value::Array(a.iter().map(canon).collect()),
+            Value::Object(o) => {
+                Value::Object(o.iter().map(|(k, val)| (k.clone(), canon(val))).collect())
+            }
+            _ => v.clone(),
+        }
+    }
+
+    /// **THE ROUND TRIP — save → persist → reload → identical, entities included.** The wave-103
+    /// class: run `compile_payload → hydrate → compile_payload` through the REAL compiler (hence
+    /// `--features doc,mission`), and compare the WHOLE composition row by value. A test that only
+    /// checked the `compositions` key was an array — or that the ids survived — would pass green over
+    /// a composition whose `entities` were dropped, whose offsets were snapped to an integer grid, or
+    /// whose nested `loadout`/`crew` blobs were flattened. Two passes are required because one cannot
+    /// distinguish "the doc stored it" from "the doc echoed it out of the parked side-channel": a
+    /// value merely relayed survives one compile and dies on the second (the T-219 class).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn saved_composition_survives_compile_hydrate_compile_whole() {
+        let doc = compositions_fixture();
+
+        let compiled = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let first = wire_compositions(&compiled);
+        assert_eq!(
+            first.len(),
+            1,
+            "one composition on the first compile: {compiled}"
+        );
+        let expected: serde_json::Value =
+            serde_json::from_str(&composition_row_json()).expect("expected row");
+        assert_eq!(
+            canon(&first[0]),
+            canon(&expected),
+            "the first compile changed the row"
+        );
+
+        // Reload a fresh doc from the compiled payload, then compile AGAIN.
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&compiled.to_string(), "lyr");
+        assert_eq!(
+            reloaded.composition_count(),
+            1,
+            "hydrate lost the composition"
+        );
+
+        let recompiled = crate::mission::compile::compile_payload(
+            &reloaded.small_maps_json(),
+            &reloaded.slots_json(),
+            false,
+        );
+        let second = wire_compositions(&recompiled);
+        assert_eq!(
+            second.len(),
+            1,
+            "the composition died on the SECOND compile — echoed, not stored: {recompiled}"
+        );
+        assert_eq!(
+            canon(&second[0]),
+            canon(&expected),
+            "the row is not identical after the round trip (nested entities/offsets lost?): {}",
+            second[0]
+        );
+    }
+
+    /// **FIRE-ONCE (the offset rule) — perturb / fail / restore.** The relative-offset geometry is
+    /// the load-bearing content: prove a corrupted offset is actually caught by the by-value
+    /// comparison the round-trip test relies on, rather than papered over. Perturb one entry's `dx`,
+    /// assert the round trip now DIFFERS (RED), then restore and assert it matches again (GREEN).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn composition_offset_perturbation_is_caught_by_the_round_trip() {
+        // Baseline: the honest fixture round-trips equal.
+        let good = compositions_fixture();
+        let good_wire = wire_compositions(&crate::mission::compile::compile_payload(
+            &good.small_maps_json(),
+            &good.slots_json(),
+            false,
+        ));
+        let expected: serde_json::Value =
+            serde_json::from_str(&composition_row_json()).expect("expected");
+        assert_eq!(
+            canon(&good_wire[0]),
+            canon(&expected),
+            "baseline must match before perturbing"
+        );
+
+        // ── PERTURB: author a row whose first entity's `dx` is shifted by 100 m. ──
+        let mut perturbed_row: serde_json::Value =
+            serde_json::from_str(&composition_row_json()).expect("row");
+        perturbed_row["entities"][0]["dx"] =
+            serde_json::json!(perturbed_row["entities"][0]["dx"].as_f64().unwrap() + 100.0);
+        let bad = compositions_fixture();
+        bad.add_composition("c1", &perturbed_row.to_string()); // overwrite c1 with the perturbed row
+        let bad_wire = wire_compositions(&crate::mission::compile::compile_payload(
+            &bad.small_maps_json(),
+            &bad.slots_json(),
+            false,
+        ));
+        assert_ne!(
+            canon(&bad_wire[0]),
+            canon(&expected),
+            "a shifted offset must be OBSERVABLE in the compiled row — the by-value check is real"
+        );
+
+        // ── RESTORE: re-author the honest row; the difference is gone. ──
+        bad.add_composition("c1", &composition_row_json());
+        let restored_wire = wire_compositions(&crate::mission::compile::compile_payload(
+            &bad.small_maps_json(),
+            &bad.slots_json(),
+            false,
+        ));
+        assert_eq!(
+            canon(&restored_wire[0]),
+            canon(&expected),
+            "restoring the honest offset must bring the row back to identical"
+        );
+    }
+
+    /// The two emit routes `small_maps_json` writes (canonical `compositionsById`, transitional
+    /// `payloadExtras.compositions`) must describe the same compositions in the same ORDER, or the
+    /// compile.rs companion change would silently reorder every mission's compositions the day it
+    /// lands. Mirrors `zones_by_id_and_extras_projection_agree_on_order`.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn compositions_by_id_and_extras_projection_agree_on_order() {
+        // Hydrate establishes an authored order that is NOT the map's own iteration order.
+        let incoming = serde_json::json!({
+            "schemaVersion": 1,
+            "map": { "terrain": "everon" },
+            "environment": {},
+            "compositions": [
+                { "id": "c_c", "title": "C", "author": "a", "category": "x", "entities": [] },
+                { "id": "c_a", "title": "A", "author": "a", "category": "x", "entities": [] },
+                { "id": "c_b", "title": "B", "author": "a", "category": "x", "entities": [] }
+            ],
+            "editor": { "factions": [], "squads": [], "slots": [], "editorLayers": [] }
+        });
+        let doc = MissionDocCore::new();
+        doc.hydrate(&incoming.to_string(), "lyr");
+
+        let small = small_maps(&doc);
+        let projected: Vec<&str> = small["payloadExtras"]["compositions"]
+            .as_array()
+            .expect("projected compositions array")
+            .iter()
+            .map(|c| c["id"].as_str().expect("id"))
+            .collect();
+        assert_eq!(
+            projected,
+            ["c_c", "c_a", "c_b"],
+            "the projection must replay hydrate's authored order, not map order"
+        );
+        // Every projected row is the same object the canonical by-id map holds.
+        for id in &projected {
+            assert_eq!(
+                small["compositionsById"][id],
+                *small["payloadExtras"]["compositions"]
+                    .as_array()
+                    .expect("arr")
+                    .iter()
+                    .find(|c| c["id"] == *id)
+                    .expect("row"),
+                "compositionsById and the projection disagree about {id}"
+            );
+        }
+        assert_eq!(
+            small["compositionsById"]
+                .as_object()
+                .expect("compositionsById")
+                .len(),
+            3,
+            "canonical by-id emit is missing rows"
+        );
+    }
+
+    /// Deleting every composition must clear the wire, not leave the last-saved array parked — the
+    /// `deleting_every_zone_clears_them_from_the_wire` rule.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn deleting_every_composition_clears_them_from_the_wire() {
+        let doc = compositions_fixture();
+        let reloaded = save_and_reload(&doc);
+        assert_eq!(reloaded.composition_count(), 1);
+
+        reloaded.remove_composition("c1");
+        assert_eq!(reloaded.composition_count(), 0);
+
+        let compiled = crate::mission::compile::compile_payload(
+            &reloaded.small_maps_json(),
+            &reloaded.slots_json(),
+            false,
+        );
+        assert!(
+            wire_compositions(&compiled).is_empty(),
+            "a deleted composition must not survive on the wire: {compiled}"
+        );
+    }
+
+    /// EDIT (COMP-EDIT-001) — rename / recategorize edit the metadata WHOLE-`Any` and preserve the
+    /// `entities` payload, INCLUDING after a hydrate (where the row is no longer a freshly-authored
+    /// map). This is the crew post-hydrate class: a naive edit that matched only the fresh shape
+    /// would either no-op or wipe `entities` on a reloaded mission.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn composition_rename_recategorize_after_hydrate_preserves_entities() {
+        let doc = save_and_reload(&compositions_fixture());
+        // Precondition: entities survived the reload as a read.
+        let before = serde_json::from_str::<serde_json::Value>(&doc.compositions_json())
+            .expect("compositions_json");
+        assert_eq!(
+            before["c1"]["entities"].as_array().expect("entities").len(),
+            4,
+            "the reloaded composition must carry all four entities"
+        );
+
+        doc.set_composition_title("c1", "Renamed Squad");
+        doc.set_composition_category("c1", "Armor");
+
+        let after = serde_json::from_str::<serde_json::Value>(&doc.compositions_json())
+            .expect("compositions_json");
+        assert_eq!(
+            after["c1"]["title"], "Renamed Squad",
+            "rename did not apply"
+        );
+        assert_eq!(
+            after["c1"]["category"], "Armor",
+            "recategorize did not apply"
+        );
+        assert_eq!(
+            after["c1"]["author"], "Sam",
+            "the untouched author metadata must survive the edit"
+        );
+        assert_eq!(
+            after["c1"]["entities"], before["c1"]["entities"],
+            "a metadata edit on a HYDRATED row must not wipe the captured entities"
+        );
+    }
+
+    /// A saved composition is authored work: it counts as local content (the conflict gate must not
+    /// discard it) and a save/rename/delete is UNDOABLE, while a hydrate is not — the zones-undo
+    /// class.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn composition_edits_are_undoable_and_count_as_content() {
+        let mut doc = MissionDocCore::new();
+        assert!(!doc.has_content(), "fresh doc has no content");
+        doc.add_composition("c1", &composition_row_json());
+        assert!(
+            doc.has_content(),
+            "a saved composition is authored work and must count as local content"
+        );
+        assert_eq!(doc.composition_count(), 1);
+        assert!(doc.can_undo(), "a saved composition must be undoable");
+        assert!(doc.undo());
+        assert_eq!(
+            doc.composition_count(),
+            0,
+            "undo did not remove the composition"
+        );
+        assert!(doc.redo());
+        assert_eq!(
+            doc.composition_count(),
+            1,
+            "redo did not restore the composition"
+        );
+
+        // A rename is its own undo step.
+        doc.set_composition_title("c1", "Renamed");
+        assert!(doc.undo(), "the rename must be undoable");
+        let after = serde_json::from_str::<serde_json::Value>(&doc.compositions_json())
+            .expect("compositions_json");
+        assert_eq!(
+            after["c1"]["title"], "Fireteam + Technical",
+            "undo did not restore the original title"
+        );
+
+        // A load is not a user gesture.
+        let fresh = MissionDocCore::new();
+        fresh.set_origin_init(true);
+        fresh.hydrate(
+            &serde_json::json!({
+                "compositions": [ { "id": "c", "title": "T", "author": "a", "category": "x", "entities": [] } ],
+                "editor": { "factions": [], "squads": [], "slots": [], "editorLayers": [] }
+            })
+            .to_string(),
+            "lyr",
+        );
+        fresh.set_origin_init(false);
+        assert_eq!(fresh.composition_count(), 1);
+        assert!(!fresh.can_undo(), "hydrate must not create an undo step");
+    }
+
+    /// **PLACE (COMP-PLACE-001) — relative-offset math + ONE undo step, multi-entity fixture.**
+    /// Placing the four-entity fixture at a drop point must (1) re-anchor every entry to
+    /// `drop + (dx, dz)` so the RELATIVE OFFSETS between entities are preserved, (2) write the slot
+    /// into `slots`, the vehicle into `vehicles` (carrying its crew SHAPE), and the object into
+    /// `entities`, and (3) be a SINGLE undo step (one Ctrl+Z removes the whole placement).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn placing_a_composition_preserves_offsets_in_one_undo_step() {
+        let mut doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_editor_layer("L", "Layer", None);
+        doc.set_origin_init(false);
+
+        let row: serde_json::Value = serde_json::from_str(&composition_row_json()).expect("row");
+        let entities = row["entities"].to_string();
+        // Four entities → four minted ids (slot, slot, vehicle, object — the fixture order).
+        let ids = vec![
+            "p0".to_string(),
+            "p1".to_string(),
+            "p2".to_string(),
+            "p3".to_string(),
+        ];
+        let (drop_x, drop_y) = (1000.0, 2000.0);
+        let written = doc.place_composition(
+            &entities, &ids, "BLUFOR", "L", drop_x, drop_y, 12800.0, 12800.0,
+        );
+        assert_eq!(written.len(), 4, "all four entities placed");
+
+        // (1) Offsets preserved: each world position is drop + the entry's (dx, dz).
+        let slots: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots_json");
+        // Entity 0 was the SL slot at (dx -12.75, dz 8.5).
+        assert_eq!(
+            slots["p0"]["position"]["x"],
+            drop_x - 12.75,
+            "slot0 x offset"
+        );
+        assert_eq!(slots["p0"]["position"]["y"], drop_y + 8.5, "slot0 y offset");
+        assert_eq!(slots["p0"]["role"], "Squad Leader");
+        assert_eq!(
+            slots["p0"]["position"]["rotation"], 45.5,
+            "slot0 heading kept"
+        );
+        // The captured loadout blob survived onto the placed slot.
+        assert_eq!(slots["p0"]["loadout"]["gear"]["primary"], "M4");
+        // Entity 1, the Rifleman, at (dx 12.25, dz -8.5): the RELATIVE spacing to slot0 is intact.
+        assert_eq!(slots["p1"]["position"]["x"], drop_x + 12.25);
+        assert_eq!(slots["p1"]["position"]["y"], drop_y - 8.5);
+
+        // (2) The vehicle landed in `vehicles` with its heading, side, and crew SHAPE.
+        let vehs = vehicles_of(&doc);
+        assert_eq!(vehs["p2"]["resourceName"], "Prefab/Technical.et");
+        assert_eq!(vehs["p2"]["position"]["x"], drop_x + 0.5);
+        assert_eq!(
+            vehs["p2"]["position"]["rotation"], 270.75,
+            "vehicle heading kept"
+        );
+        assert_eq!(vehs["p2"]["factionId"], "faction-BLUFOR");
+        assert_eq!(
+            vehs["p2"]["crew"]["driver"], "s0",
+            "crew shape carried verbatim"
+        );
+        // The object landed in `entities`.
+        let small = small_maps(&doc);
+        assert_eq!(small["entitiesById"]["p3"]["alias"], "sandbag_wall");
+        assert_eq!(small["entitiesById"]["p3"]["faction"], "blufor");
+        assert_eq!(small["entitiesById"]["p3"]["position"]["x"], drop_x - 30.5);
+
+        // (3) ONE undo step: a single undo removes the whole placement.
+        assert!(doc.undo(), "the placement must be undoable");
+        let slots_after: serde_json::Value =
+            serde_json::from_str(&doc.slots_json()).expect("slots_json");
+        assert!(
+            slots_after.get("p0").is_none() && slots_after.get("p1").is_none(),
+            "one undo must remove every placed slot: {slots_after}"
+        );
+        assert!(
+            vehicles_of(&doc).get("p2").is_none(),
+            "one undo must remove the placed vehicle too — it was the same step"
+        );
+        assert!(
+            small_maps(&doc)["entitiesById"].get("p3").is_none(),
+            "one undo must remove the placed object too"
+        );
+    }
+
+    /// A malformed composition JSON (a non-object) is refused — no row is written, mirroring the
+    /// malformed-zone-rules refusal.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn a_malformed_composition_json_writes_no_row() {
+        let doc = MissionDocCore::new();
+        doc.add_composition("c1", "\"just a string\"");
+        assert_eq!(
+            doc.composition_count(),
+            0,
+            "a non-object row must be refused"
+        );
+        doc.add_composition("c2", "not json at all");
+        assert_eq!(doc.composition_count(), 0, "invalid JSON must be refused");
     }
 
     /* ───────────────────────────── T-665 — editor layer flags ───────────────────────────── */

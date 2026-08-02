@@ -56,6 +56,12 @@ pub enum PaletteKind {
     Vehicle,
     /// T-254 — Objects chip → `entitiesById`.
     Object,
+    /// T-650 (RIGHT-MODE-002) — the Compositions palette mode. Unlike the three above, a composition
+    /// is not a `/registry` catalog leaf dragged onto the map: it is a saved multi-entity stamp
+    /// listed from the doc, whose row press ARMS a place (the `compositions_panel` list, not
+    /// `palette_rows`). The variant exists so the palette-mode vocabulary is complete and so a future
+    /// unification of the two surfaces has a name to hang on; the leaf helpers below give it a glyph.
+    Composition,
 }
 
 impl PaletteKind {
@@ -64,6 +70,7 @@ impl PaletteKind {
             Self::Character => "person",
             Self::Vehicle => "directions_car",
             Self::Object => "inventory_2",
+            Self::Composition => "dashboard_customize",
         }
     }
 
@@ -72,6 +79,7 @@ impl PaletteKind {
             Self::Character => "Drag onto the map to place",
             Self::Vehicle => "Drag onto the map to place this vehicle",
             Self::Object => "Drag onto the map to place this object",
+            Self::Composition => "Click to arm, then click the map to place this composition",
         }
     }
 }
@@ -171,6 +179,10 @@ fn palette_rows(
                                 PaletteKind::Object => {
                                     crate::editor_ops::begin_place_object(payload.clone())
                                 }
+                                // T-650 — compositions are not catalog leaves; they arm from the
+                                // `compositions_panel` list, not from a `palette_rows` payload. This
+                                // arm only exists so the match is exhaustive.
+                                PaletteKind::Composition => {}
                             }
                             // `editor_ops` is wasm-only, so the native view shell would see an
                             // unused capture (the `announcements.rs` `let _ = store;` idiom).
@@ -311,19 +323,23 @@ pub enum EdenSubmode {
     Markers,
     /// The Zones tab (T-582).
     Zones,
+    /// T-650 — the Compositions tab (RIGHT-MODE-002).
+    Compositions,
 }
 
 impl EdenSubmode {
-    /// Map a DockRight tab index (`0` Factions, `1` Vehicles, `2` Markers, `3` Zones) plus the
-    /// Objects-chip flag to the sub-mode. The Objects chip lives on the Factions tab but is its own
-    /// place surface, so it reports [`EdenSubmode::Objects`], not `Groups` — which is exactly why the
-    /// Custom slot hides the moment the operator flips to Objects.
+    /// Map a DockRight tab index (`0` Factions, `1` Vehicles, `2` Markers, `3` Zones, `4`
+    /// Compositions) plus the Objects-chip flag to the sub-mode. The Objects chip lives on the
+    /// Factions tab but is its own place surface, so it reports [`EdenSubmode::Objects`], not
+    /// `Groups` — which is exactly why the Custom slot hides the moment the operator flips to Objects.
     #[must_use]
     pub fn from_tab(tab: usize, objects_mode: bool) -> Self {
         match tab {
             1 => Self::Vehicles,
             2 => Self::Markers,
             3 => Self::Zones,
+            // T-650 — tab 4 is Compositions.
+            4 => Self::Compositions,
             // tab 0 (Factions): Objects chip splits Groups vs Objects.
             _ if objects_mode => Self::Objects,
             _ => Self::Groups,
@@ -425,6 +441,10 @@ pub fn DockRight(
     // `SEL 1` with nothing highlighted anywhere — the same reason `place_at` keeps vehicle and
     // entity ids out of it.
     let zone_selected = RwSignal::new(None::<String>);
+    // T-650 — the composition id currently in inline-edit (rename/recategorize), or `None`. Its own
+    // signal, like `zone_selected`: a composition is neither a slot nor a zone, so it does not touch
+    // `select_tool`'s selection or the zone selection.
+    let comp_editing = RwSignal::new(None::<String>);
     let tab_btn = move |i: usize, label: &'static str| {
         view! {
             <button
@@ -454,6 +474,8 @@ pub fn DockRight(
                         // T-582 — Zones sits before the Markers stub: it is a live surface and that
                         // one is still a promise (T-069).
                         {tab_btn(3, "Zones")}
+                        // T-650 — Compositions is a live surface too, so it also precedes Markers.
+                        {tab_btn(4, "Compositions")}
                         {tab_btn(2, "Markers")}
                     </div>
                     <div class="flex items-center gap-1">
@@ -781,6 +803,9 @@ pub fn DockRight(
                     // T-582 — the zone draw tool. T-211 shipped the document layer and eleven
                     // mutators; this is the first thing that calls them.
                     3 => zones_panel(doc_tick, zone_selected),
+                    // T-650 — the Compositions palette: save the current selection, list saved
+                    // compositions grouped by category, arm a row to place, inline-edit rows.
+                    4 => compositions_panel(doc_tick, comp_editing),
                     _ => view! {
                         <p class="mt-3 text-label-sm normal-case text-outline">
                             "Marker placement lands in T-069."
@@ -814,6 +839,379 @@ pub fn DockRight(
     }
 }
 
+// ── T-650 — the Compositions palette (RIGHT-MODE-002) ────────────────────────────────────────────
+//
+// A saved composition is a reusable multi-entity stamp captured from the current selection. This
+// panel is one function (native-stubbed with the same signature, like `zones_panel` /
+// `placed_vehicles_panel`) with three jobs:
+//   • SAVE (COMP-SAVE-001): a "Save composition…" header affordance, shown only when a selection
+//     exists, that opens a small INLINE title/category form (not a new dialog file) and writes the
+//     row from the current selection.
+//   • LIST + PLACE (COMP-PLACE-001): the saved compositions grouped by category, each row showing
+//     its title, an author line and an entity count; a row press ARMS the place (the T-647 armed
+//     state — the canvas release stamps it as one undo step via `place_composition`).
+//   • EDIT (COMP-EDIT-001 + the three ATTR-FIELD-COMP-* metadata fields): inline rename /
+//     recategorize / delete (the T-666 hover-actions + inline-input idiom).
+
+/// T-650 — the Compositions panel. `editing` holds the composition id currently in inline-edit
+/// (rename/recategorize), or `None`.
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn compositions_panel(
+    doc_tick: RwSignal<u64>,
+    editing: RwSignal<Option<String>>,
+) -> AnyView {
+    use crate::eden_tree::{ROW, ROW_ACTIVE};
+    use crate::editor_ops as ops;
+
+    // The inline save form's open state + field buffers. Opening seeds no defaults; a blank title
+    // reads "Untitled" on save so the row is always addressable.
+    let save_open = RwSignal::new(false);
+    let save_title = RwSignal::new(String::new());
+    let save_category = RwSignal::new(String::new());
+    let input_class = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60";
+
+    view! {
+        <div class="mt-2 flex items-center gap-2">
+            <h3 class="text-label-md font-semibold text-on-surface">"Compositions"</h3>
+            <span class="font-mono text-code-md text-outline">
+                {move || {
+                    let _ = doc_tick.get();
+                    ops::composition_count()
+                }}
+            </span>
+        </div>
+        <p class="mt-0.5 text-label-sm normal-case text-outline">
+            "Reusable multi-entity stamps. Select entities and Save; click a saved row to arm, then click the map to place."
+        </p>
+
+        // ── Save affordance (shown only when a selection exists) ──────────────────────────────
+        {move || {
+            let _ = doc_tick.get();
+            if ops::selection_len() == 0 {
+                // No selection → the affordance is not offered; make that explicit rather than
+                // showing a button that no-ops.
+                return view! {
+                    <p class="mt-3 text-label-sm normal-case text-outline">
+                        "Select one or more placed entities to save a composition."
+                    </p>
+                }
+                    .into_any();
+            }
+            if save_open.get() {
+                // The inline form (title + category), not a new dialog file.
+                view! {
+                    <div class="mt-3 rounded-md border border-primary/40 bg-primary/10 p-2">
+                        <label class="block text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+                            "Title"
+                        </label>
+                        <input
+                            type="text"
+                            aria-label="Composition title"
+                            placeholder="Fireteam + Technical"
+                            class=input_class
+                            prop:value=move || save_title.get()
+                            on:input=move |ev| save_title.set(event_target_value(&ev))
+                        />
+                        <label class="mt-2 block text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+                            "Category"
+                        </label>
+                        <input
+                            type="text"
+                            aria-label="Composition category"
+                            placeholder="Infantry"
+                            class=input_class
+                            prop:value=move || save_category.get()
+                            on:input=move |ev| save_category.set(event_target_value(&ev))
+                        />
+                        <div class="mt-2 flex gap-1.5">
+                            <button
+                                type="button"
+                                class="flex-1 rounded-md bg-primary/25 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-primary/40"
+                                on:click=move |_| {
+                                    let title = save_title.get_untracked();
+                                    let title = if title.trim().is_empty() {
+                                        "Untitled".to_string()
+                                    } else {
+                                        title
+                                    };
+                                    let category = save_category.get_untracked();
+                                    let category = if category.trim().is_empty() {
+                                        "Uncategorized".to_string()
+                                    } else {
+                                        category
+                                    };
+                                    // Author = the current user's display string (as-authored) —
+                                    // read off the AuthStore context; "You" when unauthenticated.
+                                    let author = use_context::<crate::auth::AuthStore>()
+                                        .and_then(|s| s.user.get_untracked().map(|u| u.username))
+                                        .filter(|u| !u.is_empty())
+                                        .unwrap_or_else(|| "You".to_string());
+                                    let _ = ops::save_composition(title, category, author);
+                                    save_open.set(false);
+                                    save_title.set(String::new());
+                                    save_category.set(String::new());
+                                    doc_tick.update(|n| *n = n.wrapping_add(1));
+                                }
+                            >
+                                "Save"
+                            </button>
+                            <button
+                                type="button"
+                                class="rounded-md px-2 py-1.5 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10"
+                                on:click=move |_| save_open.set(false)
+                            >
+                                "Cancel"
+                            </button>
+                        </div>
+                    </div>
+                }
+                    .into_any()
+            } else {
+                view! {
+                    <button
+                        type="button"
+                        class="mt-3 w-full rounded-md border border-primary/40 px-2 py-1.5 text-label-sm text-primary transition-colors hover:bg-primary/15"
+                        on:click=move |_| save_open.set(true)
+                    >
+                        {move || format!("Save composition… ({} selected)", ops::selection_len())}
+                    </button>
+                }
+                    .into_any()
+            }
+        }}
+
+        // ── The saved compositions, grouped by category ───────────────────────────────────────
+        {move || {
+            let _ = doc_tick.get();
+            let rows = ops::composition_rows();
+            if rows.is_empty() {
+                return view! {
+                    <p class="mt-3 text-label-sm normal-case text-outline">
+                        "No saved compositions yet."
+                    </p>
+                }
+                    .into_any();
+            }
+            // `composition_rows` is sorted by (category, title), so a run of equal categories is
+            // contiguous — group by walking and emitting a heading when the category changes.
+            let mut groups: Vec<(String, Vec<crate::editor_ops::CompositionRow>)> = Vec::new();
+            for r in rows {
+                match groups.last_mut() {
+                    Some((cat, list)) if *cat == r.category => list.push(r),
+                    _ => groups.push((r.category.clone(), vec![r])),
+                }
+            }
+            view! {
+                <div class="mt-3 flex flex-col gap-2" role="list" aria-label="Saved compositions">
+                    {groups
+                        .into_iter()
+                        .map(|(category, list)| {
+                            let heading = if category.is_empty() {
+                                "Uncategorized".to_string()
+                            } else {
+                                category
+                            };
+                            view! {
+                                <div>
+                                    <h4 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+                                        {heading}
+                                    </h4>
+                                    <ul class="mt-1 flex flex-col gap-0.5" role="list">
+                                        {list
+                                            .into_iter()
+                                            .map(|c| composition_row_view(c, doc_tick, editing, ROW, ROW_ACTIVE))
+                                            .collect_view()}
+                                    </ul>
+                                </div>
+                            }
+                        })
+                        .collect_view()}
+                </div>
+            }
+                .into_any()
+        }}
+    }
+    .into_any()
+}
+
+/// T-650 — one saved-composition row: press to ARM the place, hover actions to inline-edit / delete.
+/// When `editing == this id`, the row swaps to inline title + category inputs (the T-666 idiom).
+#[cfg(target_arch = "wasm32")]
+fn composition_row_view(
+    c: crate::editor_ops::CompositionRow,
+    doc_tick: RwSignal<u64>,
+    editing: RwSignal<Option<String>>,
+    row: &'static str,
+    row_active: &'static str,
+) -> AnyView {
+    use crate::editor_ops as ops;
+
+    // `row_active` is part of the shared row vocabulary; a composition row does not carry a
+    // persistent "selected" state (its selection IS the transient arm), so only `row` is used.
+    let _ = row_active;
+    let id = c.id.clone();
+    let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
+    let is_editing = {
+        let id = id.clone();
+        move || editing.get().as_deref() == Some(id.as_str())
+    };
+
+    // The inline-edit buffers, seeded from the current row when the pencil opens. All three
+    // ATTR-FIELD-COMP-* metadata fields (title/author/category) are editable here.
+    let edit_title = RwSignal::new(c.title.clone());
+    let edit_category = RwSignal::new(c.category.clone());
+    let edit_author = RwSignal::new(c.author.clone());
+    let input_class = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1 text-label-sm text-on-surface outline-none focus:border-primary/60";
+
+    let title = c.title.clone();
+    let title = if title.trim().is_empty() {
+        "Untitled".to_string()
+    } else {
+        title
+    };
+    let author = c.author.clone();
+    let count = c.entity_count;
+
+    // Handlers, each cloning the id they need (Leptos closures are `move`).
+    let arm_id = id.clone();
+    let edit_open_id = id.clone();
+    let (title_id, cat_id, del_id, save_id) = (id.clone(), id.clone(), id.clone(), id.clone());
+
+    view! {
+        <li>
+            {move || {
+                if is_editing() {
+                    let (title_id, cat_id, save_id, edit_title, edit_category, edit_author) = (
+                        title_id.clone(),
+                        cat_id.clone(),
+                        save_id.clone(),
+                        edit_title,
+                        edit_category,
+                        edit_author,
+                    );
+                    view! {
+                        <div class="rounded-md border border-primary/40 bg-primary/10 p-2">
+                            <input
+                                type="text"
+                                aria-label="Composition title"
+                                class=input_class
+                                prop:value=move || edit_title.get()
+                                on:input=move |ev| edit_title.set(event_target_value(&ev))
+                            />
+                            <input
+                                type="text"
+                                aria-label="Composition category"
+                                class=format!("{input_class} mt-1")
+                                prop:value=move || edit_category.get()
+                                on:input=move |ev| edit_category.set(event_target_value(&ev))
+                            />
+                            <input
+                                type="text"
+                                aria-label="Composition author"
+                                class=format!("{input_class} mt-1")
+                                prop:value=move || edit_author.get()
+                                on:input=move |ev| edit_author.set(event_target_value(&ev))
+                            />
+                            <div class="mt-1.5 flex gap-1.5">
+                                <button
+                                    type="button"
+                                    class="flex-1 rounded-md bg-primary/25 px-2 py-1 text-label-sm text-on-surface transition-colors hover:bg-primary/40"
+                                    on:click=move |_| {
+                                        let t = edit_title.get_untracked();
+                                        let t = if t.trim().is_empty() { "Untitled".to_string() } else { t };
+                                        ops::rename_composition(save_id.clone(), t);
+                                        ops::recategorize_composition(
+                                            save_id.clone(),
+                                            edit_category.get_untracked(),
+                                        );
+                                        ops::set_composition_author(
+                                            save_id.clone(),
+                                            edit_author.get_untracked(),
+                                        );
+                                        editing.set(None);
+                                        bump();
+                                    }
+                                >
+                                    "Save"
+                                </button>
+                                <button
+                                    type="button"
+                                    class="rounded-md px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10"
+                                    on:click=move |_| editing.set(None)
+                                >
+                                    "Cancel"
+                                </button>
+                            </div>
+                        </div>
+                    }
+                        .into_any()
+                } else {
+                    let (arm_id, edit_open_id, del_id) =
+                        (arm_id.clone(), edit_open_id.clone(), del_id.clone());
+                    let title = title.clone();
+                    let author = author.clone();
+                    view! {
+                        <div class="group relative flex items-center gap-1">
+                            <button
+                                type="button"
+                                title="Click to arm, then click the map to place"
+                                class=format!("{row} flex-1")
+                                on:pointerdown=move |_| {
+                                    ops::begin_place_composition(arm_id.clone());
+                                }
+                            >
+                                <MaterialIcon name="dashboard_customize" class="block text-sm" />
+                                <span class="flex min-w-0 flex-col">
+                                    <span class="truncate">{title}</span>
+                                    <span class="truncate text-[10px] text-outline">
+                                        {format!("by {author} · {count} item{}", if count == 1 { "" } else { "s" })}
+                                    </span>
+                                </span>
+                            </button>
+                            // Hover actions (T-666): edit + delete.
+                            <button
+                                type="button"
+                                aria-label="Edit composition"
+                                title="Rename / recategorize"
+                                class="shrink-0 rounded-md p-1 text-on-surface-variant opacity-0 transition-opacity hover:bg-white/10 group-hover:opacity-100"
+                                on:click=move |_| {
+                                    editing.set(Some(edit_open_id.clone()));
+                                }
+                            >
+                                <MaterialIcon name="edit" class="block text-sm" />
+                            </button>
+                            <button
+                                type="button"
+                                aria-label="Delete composition"
+                                title="Delete"
+                                class="shrink-0 rounded-md p-1 text-error opacity-0 transition-opacity hover:bg-error/15 group-hover:opacity-100"
+                                on:click=move |_| {
+                                    ops::delete_composition(del_id.clone());
+                                    bump();
+                                }
+                            >
+                                <MaterialIcon name="delete" class="block text-sm" />
+                            </button>
+                        </div>
+                    }
+                        .into_any()
+                }
+            }}
+        </li>
+    }
+    .into_any()
+}
+
+/// Native shell: no document, so no compositions. See the wasm sibling.
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn compositions_panel(
+    doc_tick: RwSignal<u64>,
+    editing: RwSignal<Option<String>>,
+) -> AnyView {
+    let _ = (doc_tick, editing);
+    ().into_any()
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -837,6 +1235,8 @@ mod tests {
         assert!(!custom_chip_visible(EdenSubmode::Objects));
         assert!(!custom_chip_visible(EdenSubmode::Markers));
         assert!(!custom_chip_visible(EdenSubmode::Zones));
+        // T-650 — the Compositions tab is not a Groups surface, so it hides Custom too.
+        assert!(!custom_chip_visible(EdenSubmode::Compositions));
 
         // Tab → sub-mode: Factions (tab 0) is Groups unless the Objects chip is on.
         assert_eq!(EdenSubmode::from_tab(0, false), EdenSubmode::Groups);
@@ -844,6 +1244,8 @@ mod tests {
         assert_eq!(EdenSubmode::from_tab(1, false), EdenSubmode::Vehicles);
         assert_eq!(EdenSubmode::from_tab(2, false), EdenSubmode::Markers);
         assert_eq!(EdenSubmode::from_tab(3, false), EdenSubmode::Zones);
+        // T-650 — tab 4 is the Compositions surface.
+        assert_eq!(EdenSubmode::from_tab(4, false), EdenSubmode::Compositions);
 
         // The end-to-end visibility rule the render uses: Custom on the Factions tab iff not Objects,
         // and never on any other tab.
@@ -1041,5 +1443,106 @@ mod tests {
             "OPFOR rebuild must keep USSR Rifleman"
         );
         assert!(!has_leaf(&opfor_tree, "US Rifleman"));
+    }
+
+    /// T-650 (RIGHT-MODE-002) — the Compositions palette mode + tab exist and map to their own
+    /// sub-mode. The pure pins: the tab-index → sub-mode function reports Compositions for tab 4, and
+    /// tab 4 is NOT one of the pre-existing surfaces (so it did not silently reuse another tab's
+    /// slot).
+    #[test]
+    fn compositions_tab_maps_to_its_own_submode() {
+        assert_eq!(EdenSubmode::from_tab(4, false), EdenSubmode::Compositions);
+        // Objects mode on the Compositions tab does not turn it into Objects (that split is the
+        // Factions tab's alone) — tab index wins.
+        assert_eq!(EdenSubmode::from_tab(4, true), EdenSubmode::Compositions);
+        // The four pre-existing surfaces keep their tabs.
+        assert_eq!(EdenSubmode::from_tab(0, false), EdenSubmode::Groups);
+        assert_eq!(EdenSubmode::from_tab(1, false), EdenSubmode::Vehicles);
+        assert_eq!(EdenSubmode::from_tab(2, false), EdenSubmode::Markers);
+        assert_eq!(EdenSubmode::from_tab(3, false), EdenSubmode::Zones);
+    }
+
+    /// T-650 — the Compositions palette is a LIVE surface (not a T-069-style stub) wired to the
+    /// editor-ops save/arm/edit seam. Source inspection, following `vehicles_tab_places_instead_of
+    /// _promising`, because `compositions_panel` is a wasm-only view a native test cannot mount.
+    ///
+    /// **Every needle is assembled at run time** (the file's own hard-won rule): this test's source
+    /// is part of the haystack it searches, so a contiguous literal would make an absence check
+    /// unfailable and a presence check unpassable. Each needle is therefore split and re-joined.
+    #[test]
+    fn compositions_tab_is_wired_not_stubbed() {
+        const SRC: &str = include_str!("eden_dock_right.rs");
+        // The panel aliases `use crate::editor_ops as ops`, so the calls read `ops::<fn>(`.
+        let call = |f: &str| format!("ops::{f}(");
+
+        // The tab strip renders a Compositions tab at index 4.
+        assert!(
+            SRC.contains(&format!("tab_btn(4, {:?})", "Compositions")),
+            "a Compositions tab must be in the tab strip"
+        );
+        // The panel dispatch routes tab 4 to the compositions panel.
+        assert!(
+            SRC.contains(&format!("4 => {}(", "compositions_panel")),
+            "tab 4 must dispatch to the compositions panel"
+        );
+        // SAVE (COMP-SAVE-001): the panel reaches the capture seam.
+        assert!(
+            SRC.contains(&call("save_composition")),
+            "the Save affordance must call save_composition"
+        );
+        // PLACE (COMP-PLACE-001): a row press ARMS via the T-647 arm seam.
+        assert!(
+            SRC.contains(&call("begin_place_composition")),
+            "a composition row must arm the place"
+        );
+        // EDIT (COMP-EDIT-001) + the three ATTR-FIELD-COMP-* metadata fields, inline.
+        for f in [
+            "rename_composition",
+            "recategorize_composition",
+            "set_composition_author",
+            "delete_composition",
+        ] {
+            assert!(
+                SRC.contains(&call(f)),
+                "the inline edit must call {f} (COMP-EDIT-001 / metadata fields)"
+            );
+        }
+
+        // The editor-ops seam actually exposes those functions AND the place reaches the core
+        // one-undo-step mutator (the claim the store round-trip test rests on).
+        let ops = include_str!("editor_ops.rs");
+        assert!(
+            ops.contains("pub fn save_composition")
+                && ops.contains("pub fn begin_place_composition"),
+            "editor_ops must expose the composition save + arm"
+        );
+        assert!(
+            ops.contains("core.place_composition("),
+            "the composition place must reach the core mutator"
+        );
+    }
+
+    /// T-650 — the composition arm rides the SAME T-647 armed-state machine as the object place: its
+    /// arm is a `Pending::Composition`, and `has_pending()` (which gates the map's place branch and
+    /// ghost) is true while one is armed. Source-inspection pin that the arm goes through `arm(…)`
+    /// like `begin_place_object`, not a bespoke path.
+    #[test]
+    fn composition_arm_rides_the_shared_pending_machine() {
+        let ops = include_str!("editor_ops.rs");
+        // The arm variant exists and the public arm fn routes through the shared `arm(…)`.
+        assert!(
+            ops.contains("Composition(String)"),
+            "the Pending enum must carry a Composition arm"
+        );
+        let arm_call = format!("arm(Pending::{}(", "Composition");
+        assert!(
+            ops.contains(&arm_call),
+            "begin_place_composition must route through the shared arm() like begin_place_object"
+        );
+        // place_at_impl handles the Composition arm (the one-shot consume + place).
+        assert!(
+            ops.contains(&format!("Pending::{}(comp_id)", "Composition")),
+            "place_at_impl must consume the Composition arm on a canvas release"
+        );
     }
 }
