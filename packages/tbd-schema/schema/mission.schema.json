@@ -61,7 +61,7 @@
     "schemaVersion": {
       "type": "string",
       "enum": ["1.0", "1.1", "1.2", "1.3"],
-      "description": "1.1 adds required slots[] for per-player spawn positions. 1.2 adds the optional per-slot y (spawn height, metres ASL). 1.3 widens the WIRE once for the whole editor program (T-706): objectives[], variants, marker style/area, per-slot uid already present, vehicles[], editorTriggers[], per-squad waypoints/AI state, placement scatter, vehicle/entity states, environment, missionParams[], zone-volume + attacker/defender + startingOwner rules, play-area vehicleClasses, per-slot gadgets. Every 1.3 addition is OPTIONAL and ADDITIVE — `JsonLoadContext` ignores unknown keys and TBD_MissionLoader allowlists 1.1/1.2/1.3, so a 1.1/1.2 document stays valid unchanged and the bump exists to NAME the widening, not to gate it. Like 1.1/1.2, a 1.3 document still requires slots[]. THE READERS ARE MOD-SIDE AND LAND SEPARATELY: each 1.3 field is carried on the wire but read by nothing on any build shipped today (the `xtask schema validate` unread-fields gate asserts exactly that, per field, and names the ticket that will land each reader). Do not cite a 1.3 field as a capability — it is a definition ahead of its consumer, the same discipline the top-level `entities` description states."
+      "description": "1.1 adds required slots[] for per-player spawn positions. 1.2 adds the optional per-slot y (spawn height, metres ASL). 1.3 widens the WIRE once for the whole editor program (T-706): objectives[], variants, marker style/area, per-slot uid already present, vehicles[], editorTriggers[], per-squad waypoints/AI state, placement scatter, vehicle/entity states, environment, missionParams[], zone-volume + attacker/defender + startingOwner rules, play-area vehicleClasses, per-slot gadgets. Every 1.3 addition is OPTIONAL and ADDITIVE — `JsonLoadContext` ignores unknown keys, so the WIRE SHAPE of a 1.1/1.2 document is unchanged and the bump exists to NAME the widening, not to reshape it. THE SHIPPED MOD BUILD DOES NOT YET ACCEPT \"1.3\": `TBD_MissionValidator` (apps/mod/tbd-framework/…/Backend/TBD_MissionValidator.c) hardcodes SCHEMA_1_0/1_1/1_2 and `CheckSchemaVersion` blocks any other version, so a document that actually declared \"1.3\" would be REJECTED server-side today. That is not a live break, because `flatten.rs` still emits \"1.1\"/\"1.2\" (T-706 opened the fields without bumping the emitted version). THE VALIDATOR ALLOWLIST BUMP (adding SCHEMA_1_3 there) MUST LAND WITH THE FIRST READER SLICE THAT EMITS 1.3 — T-674/T-675 are first to emit, so the bump is pinned into their owns; until then flatten emits 1.1/1.2 and no server sees a 1.3 document. Like 1.1/1.2, a 1.3 document still requires slots[]. THE READERS ARE MOD-SIDE AND LAND SEPARATELY: each 1.3 field is carried on the wire but read by nothing on any build shipped today (the `xtask schema validate` unread-fields gate asserts exactly that, per field, and names the ticket that will land each reader). Do not cite a 1.3 field as a capability — it is a definition ahead of its consumer, the same discipline the top-level `entities` description states."
     },
     "meta": { "$ref": "#/$defs/meta" },
     "environment": { "$ref": "#/$defs/environment" },
@@ -99,7 +99,7 @@
     "settings": { "$ref": "#/$defs/settings" },
     "objectives": {
       "type": "array",
-      "description": "T-212 / T-685 — typed per-side objective entities (schemaVersion 1.3). Distinct from `zones[]` of `type: objective_*`: a `zone` is a VOLUME with capture RULES, whereas an `objective` is the mission's first-class task record — the container the editor's `objectivesById` compiles into, which today has no mutator and no reader (a dead container, per T-212). Carried on the wire; NOTHING reads it on any shipped build — the Enfusion reader lands under T-212/T-685. Each row carries a uniform attribute spine (id/type/side/callsign/rank/stance) plus WOG's proven capture/defend/height model (T-685: attackerCount/defenderCount/advantagePercent/minHeight/maxHeight/startingOwner, whose degenerate 1-vs-1 case is a zone's `contestable`). Distinct from `winConditions.endOn` — that is the win TRIGGER vocabulary; this is the objective SUBJECT it fires on.",
+      "description": "T-212 / T-685 — typed per-side objective entities (schemaVersion 1.3). Distinct from `zones[]` of `type: objective_*`: a `zone` is a VOLUME with capture RULES, whereas an `objective` is the mission's first-class task record — the container the editor's `objectivesById` compiles into, which today has no mutator and no reader (a dead container, per T-212). Carried on the wire; NOTHING reads it on any shipped build — the Enfusion reader lands under T-212/T-685. Each row is ONE objective with a uniform attribute spine (id/type/side/zoneId/label), optional PER-SIDE `framing` (the attacker/defender readings of the SAME objective — never two rows for one objective; see `$defs/objective`), and WOG's proven capture/defend/height model carried on `zoneRules` (T-685: attackerCount/defenderCount/advantagePercent/minHeight/maxHeight/startingOwner, whose degenerate 1-vs-1 case is a zone's `contestable`). Distinct from `winConditions.endOn` — that is the win TRIGGER vocabulary; this is the objective SUBJECT it fires on.",
       "items": { "$ref": "#/$defs/objective" }
     },
     "vehicles": {
@@ -263,12 +263,12 @@
         "combatMode": {
           "type": "string",
           "enum": ["blue", "green", "white", "yellow", "red"],
-          "description": "T-678 (ATTR-FIELD-GRP-COMBAT-MODE, schemaVersion 1.3). Group rules of engagement, matching Enfusion's `EAICombatType` ladder (blue=never fire → red=open fire, engage at will). On the wire only — word-boundary `combatMode` is ZERO in both the frontend and the mod tree; the AI reader lands under T-678, which ships together with the waypoints ticket (T-677) or not at all (they share the AI gate: every slot currently spawns AI-disabled)."
+          "description": "T-678 (ATTR-FIELD-GRP-COMBAT-MODE, schemaVersion 1.3). Group rules of engagement, TBD's own ladder blue=never fire → red=open fire, engage at will. These are TBD VOCABULARY the reader maps onto whatever engine combat-mode type Reforger exposes; the names here are the contract, not an engine identifier (no `EAICombatType`-style enum is asserted — verify the real engine type when the reader lands). On the wire only — word-boundary `combatMode` is ZERO in both the frontend and the mod tree; the AI reader lands under T-678, which ships together with the waypoints ticket (T-677) or not at all (they share the AI gate: every slot currently spawns AI-disabled)."
         },
         "behaviour": {
           "type": "string",
           "enum": ["careless", "safe", "aware", "combat", "stealth"],
-          "description": "T-678 (ATTR-FIELD-GRP-BEHAVIOUR, schemaVersion 1.3). Group behaviour state (`EAIWaypointCompletionType`/behaviour ladder). On the wire only — no reader on any shipped build; lands under T-678."
+          "description": "T-678 (ATTR-FIELD-GRP-BEHAVIOUR, schemaVersion 1.3). Group behaviour state — TBD vocabulary (careless/safe/aware/combat/stealth) the reader maps onto the engine's behaviour type; the names here are the contract, not an engine identifier (the earlier `EAIWaypointCompletionType` attribution was wrong — a completion-type enum is not a behaviour ladder — and is dropped). On the wire only — no reader on any shipped build; lands under T-678."
         },
         "formation": {
           "type": "string",
@@ -308,6 +308,11 @@
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
           "description": "T-654 (schemaVersion 1.3). When set, this group is emitted only if the named `variants[]` entry is selected (conditional inclusion). On the wire only — the variant compile pass lands under T-654."
+        },
+        "leaderSlotId": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "T-674 — the TBD-only key naming which slot leads this squad (schemaVersion 1.3). References `slots[].uid` — a durable identity, because `id` is derived and shifts under role renames/reorders/deletes (see the `slot.id` description). This is a PER-SQUAD fact, so it lives here on the wire orbat group (one copy, the T-216 delta table's own proposal) rather than denormalised onto every `slots[]` entry where N copies could disagree with no schema able to catch it — the editor already authors it once per squad at `/editor/squads/*/leaderSlotId`. On the wire only — flatten.rs enumerates a squad's leaderSlotId as one of the six author-facing values the compile silently drops; the reader lands under T-674."
         }
       }
     },
@@ -419,7 +424,7 @@
             "major",
             "colonel"
           ],
-          "description": "T-674 (ATTR-FIELD-OBJ-RANK, schemaVersion 1.3). Character rank, matching Enfusion's `ECharacterRank` ladder. On the wire only — no reader on any shipped build; lands under T-674."
+          "description": "T-674 (ATTR-FIELD-OBJ-RANK, schemaVersion 1.3). Character rank — TBD's own ladder (private → colonel); the reader maps these onto whatever engine rank type Reforger exposes; the names here are the contract, not an engine identifier (no `ECharacterRank`-style enum is asserted — verify the real engine type when the reader lands). On the wire only — no reader on any shipped build; lands under T-674."
         },
         "stance": {
           "type": "string",
@@ -435,11 +440,6 @@
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
           "description": "T-674 — the TBD-only slot tag key (schemaVersion 1.3), mirroring the ORBAT-slot `tag` the events path already carries (T-010). On the wire only for the placed-slot document — the flatten drops it today (flatten.rs:2620-2632); the reader lands under T-674."
-        },
-        "leaderSlotId": {
-          "$ref": "#/$defs/wireSafeString",
-          "minLength": 1,
-          "description": "T-674 — the TBD-only key naming which slot leads this slot's squad (schemaVersion 1.3), keyed on a slot `uid`/`id`. On the wire only — flatten.rs:2584-2649 enumerates a squad's leaderSlotId as one of the six author-facing values the compile silently drops; the reader lands under T-674."
         },
         "placementRadius": {
           "type": "number",
@@ -513,6 +513,45 @@
           "properties": { "polygon": { "$ref": "#/$defs/polygon" } }
         }
       ]
+    },
+    "markerArea": {
+      "type": "object",
+      "description": "T-673 (schemaVersion 1.3). The extent of an AREA marker — a SUPERSET of `#/$defs/shape` (circle | polygon) that ALSO expresses the rectangle and ellipse extents Eden's second marker model needs, which `#/$defs/shape` cannot (a rect/ellipse has a centre, half-extents and a rotation, not a radius or a ring). Exactly one of circle / polygon / rectangle / ellipse. This def, not `shape` (the icon-glyph selector on `marker`), is the AUTHORITATIVE geometry of an area marker: when a `marker.area` is present the marker IS an area marker and `marker.shape` is ignored (precedence stated on both). On the wire only — the area-marker reader lands under T-673.",
+      "oneOf": [
+        {
+          "required": ["circle"],
+          "additionalProperties": false,
+          "properties": { "circle": { "$ref": "#/$defs/circle" } }
+        },
+        {
+          "required": ["polygon"],
+          "additionalProperties": false,
+          "properties": { "polygon": { "$ref": "#/$defs/polygon" } }
+        },
+        {
+          "required": ["rectangle"],
+          "additionalProperties": false,
+          "properties": { "rectangle": { "$ref": "#/$defs/rectExtent" } }
+        },
+        {
+          "required": ["ellipse"],
+          "additionalProperties": false,
+          "properties": { "ellipse": { "$ref": "#/$defs/rectExtent" } }
+        }
+      ]
+    },
+    "rectExtent": {
+      "type": "object",
+      "description": "T-673 (schemaVersion 1.3). The extent of a rectangle or ellipse area marker: a centre `(x, z)`, half-extents `halfWidth`/`halfHeight` (metres, so the full box is 2·halfWidth by 2·halfHeight), and a `rotationDeg`. Shared by the `rectangle` and `ellipse` arms of `#/$defs/markerArea` — an ellipse is the same bounding box read as an oval, matching Eden's rectangular/elliptical marker areas.",
+      "required": ["x", "z", "halfWidth", "halfHeight"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "z": { "type": "number" },
+        "halfWidth": { "type": "number", "exclusiveMinimum": 0 },
+        "halfHeight": { "type": "number", "exclusiveMinimum": 0 },
+        "rotationDeg": { "type": "number", "minimum": 0, "maximum": 360, "default": 0 }
+      }
     },
     "circle": {
       "type": "object",
@@ -677,11 +716,11 @@
         },
         "minHeight": {
           "type": "number",
-          "description": "T-685 (schemaVersion 1.3). The objective volume's LOWER bound, metres relative to the objective (WOG's `_MinHeight` = -5 INVARIANT across all 166 instances). Together with `maxHeight` this makes an objective a 3D VOLUME rather than a flat footprint. On the wire only — the volume reader lands under T-685."
+          "description": "T-685 (schemaVersion 1.3). The objective volume's LOWER bound, metres ABOVE TERRAIN (AGL), evaluated at each tested ENTITY's own ground position — not ASL, and not anchored to the zone centre. AXIS + EVALUATION POINT stated because a slope makes the two readings diverge by tens of metres, which is precisely the behaviour these bounds exist for: a small negative min (WOG's `_MinHeight` = -5 INVARIANT across all 166 instances) reaches basements-in under the entity, while a bounded max excludes aircraft overhead — both judged per-entity, so a POLYGON zone needs no separate height anchor (each entity supplies its own terrain reference). Together with `maxHeight` this makes an objective a 3D VOLUME rather than a flat footprint. On the wire only — the volume reader lands under T-685."
         },
         "maxHeight": {
           "type": "number",
-          "description": "T-685 (schemaVersion 1.3). The objective volume's UPPER bound, metres relative to the objective (WOG's `_MaxHeight`, observed 30x137 / 15x16 / 20x13). On the wire only — lands under T-685."
+          "description": "T-685 (schemaVersion 1.3). The objective volume's UPPER bound, metres ABOVE TERRAIN (AGL), evaluated at each tested ENTITY's own ground position (same axis and evaluation point as `minHeight` — AGL per-entity, not ASL, not anchored to the zone centre; WOG's `_MaxHeight`, observed 30x137 / 15x16 / 20x13, is read as excluding aircraft). On the wire only — lands under T-685."
         },
         "startingOwner": {
           "$ref": "#/$defs/factionKey",
@@ -689,7 +728,7 @@
         },
         "vehicleClasses": {
           "type": "array",
-          "description": "T-689 (schemaVersion 1.3). PLAY AREA (`boundary`, `base_protection`). WHICH VEHICLE CLASSES the play-area rule applies to — the missing axis on TBD's otherwise-complete play-area model (graceSeconds/warnEverySeconds/penalty). FNF v4 documents exactly why it exists: the play-zone group's air flag is `false` so AIRCRAFT MAY LEAVE the play area while ground vehicles and infantry may not (`fn_addRestrictionGroup.sqf`). An ABSENT array means the rule applies to everything (today's behaviour); listing classes restricts it, and omitting `aircraft` from the list is how the aircraft exemption is authored. On the wire only — no reader on any shipped build; the class-filtered enforcement lands under T-689.",
+          "description": "T-689 (schemaVersion 1.3). PLAY AREA (`boundary`, `base_protection`). WHICH VEHICLE CLASSES the play-area rule applies to — the missing axis on TBD's otherwise-complete play-area model (graceSeconds/warnEverySeconds/penalty). FNF v4 documents exactly why it exists: the play-zone group's air flag is `false` so AIRCRAFT MAY LEAVE the play area while ground vehicles and infantry may not (`fn_addRestrictionGroup.sqf`). PRESENCE SEMANTICS (there is no `minItems`, so all three cases are legal and defined here): ABSENT means the rule applies to EVERYTHING — every vehicle class and infantry are confined (today's behaviour); a NON-EMPTY list restricts the rule to exactly the classes named, so omitting `aircraft` from the list is how the aircraft exemption is authored; an EMPTY list `[]` is the explicit INVERSE of absent — the rule applies to NO vehicle class, so nothing is confined by it (no vehicle is disallowed from leaving). `[]` therefore is NOT the same as absent, and this clause is what defines it. On the wire only — no reader on any shipped build; the class-filtered enforcement lands under T-689.",
           "items": {
             "type": "string",
             "enum": ["infantry", "ground", "aircraft", "sea"]
@@ -777,7 +816,7 @@
     },
     "objective": {
       "type": "object",
-      "description": "T-212 / T-685 — one typed objective entity (schemaVersion 1.3). Read the top-level `objectives` description first: NOTHING reads this on any shipped build. Carries the uniform attribute spine every objective shares (id/type/side/callsign/rank/stance) plus WOG's proven capture/defend model. The `type` is the SUBJECT vocabulary (what kind of task), distinct from `winConditions.endOn`'s TRIGGER vocabulary (when the round ends) and from `zone.type`'s VOLUME-with-rules. Capture-tuning numbers (attackerCount/defenderCount/advantagePercent/min/maxHeight/startingOwner) live on `zoneRules` where the runtime already reads them; this def carries the objective's IDENTITY, not a second copy of those numbers.",
+      "description": "T-212 / T-685 — one typed objective entity (schemaVersion 1.3). Read the top-level `objectives` description first: NOTHING reads this on any shipped build; the Enfusion reader lands under T-212. Carries the UNIFORM ATTRIBUTE SPINE every objective shares (id/type/side/zoneId/label) plus the T-212-decided fields below. The `type` is the SUBJECT vocabulary (what kind of task), distinct from `winConditions.endOn`'s TRIGGER vocabulary (when the round ends) and from `zone.type`'s VOLUME-with-rules. Capture-tuning numbers (attackerCount/defenderCount/advantagePercent/min/maxHeight/startingOwner) live on `zoneRules` where the runtime already reads them; this def carries the objective's IDENTITY, not a second copy of those numbers.\n\nONE ENTITY, TWO FRAMINGS — NOT TWO ROWS. T-212's decision from FNF v4: an objective reads differently to attacker and defender (different task text and titles, separate My Tasks / Ally Tasks trees), but that is ONE objective with per-side FRAMING, authored via the optional `framing` object below. The two-modules-per-objective shape v4 shipped is explicitly FORBIDDEN here — a document must NOT carry two `objectives[]` rows that are 'the same objective' for opposite sides (v4's four documented defects: positional identity, two modules only linked by a shared prefix/target, nothing validating both halves exist, and a lobby tool dividing objective counts by 2 so a forgotten second half yields a fractional count). TBD's stable `uid`/derived `id` already makes v4's positional-identity defect unreachable; do not regress it by splitting an objective across rows.\n\nDROPPED (T-212 correction): the earlier `callsign`/`rank`/`stance` fields had NO source — they were slot-identity copy-through, not part of WOG's `WMT_Task_Point` spine (the best-evidenced objective design in the corpus, 166 instances × 15 parameters), and are removed. The capture/defend/height parameters WOG proved live on `zoneRules` (T-685).",
       "required": ["id", "type"],
       "additionalProperties": false,
       "properties": {
@@ -785,36 +824,51 @@
         "type": {
           "type": "string",
           "enum": ["capture", "destroy", "hold", "defend"],
-          "description": "The task kind. Named apart from `zone.type` (which is the enforcement volume) and `winConditions.endOn` (the round-end predicate)."
+          "description": "The task kind. Named apart from `zone.type` (which is the enforcement volume) and `winConditions.endOn` (the round-end predicate). `defend` is a FRAMING of the same objective a `capture` presents to the other side — it does NOT license a second row for the opposing side (see the def description: one entity, two framings)."
         },
         "side": {
           "$ref": "#/$defs/factionKey",
-          "description": "Which faction this objective belongs to / must complete it (a `factions[].key`)."
+          "description": "Which faction primarily owns / must complete this objective (a `factions[].key`). The other side's reading is authored via `framing`, not a separate objective row."
         },
         "zoneId": {
           "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
           "description": "The `zones[].id` that gives this objective its geometry and capture rules — an objective points at its enforcement volume rather than restating the shape, so the T-582-drawn zone is the single source of the footprint."
         },
-        "callsign": { "$ref": "#/$defs/wireSafeString", "minLength": 1 },
-        "rank": {
-          "type": "string",
-          "enum": [
-            "private",
-            "corporal",
-            "sergeant",
-            "lieutenant",
-            "captain",
-            "major",
-            "colonel"
-          ]
+        "label": {
+          "$ref": "#/$defs/wireSafeString",
+          "description": "The objective's neutral display name. Per-side task text/titles are authored in `framing`; this is the side-agnostic label."
         },
-        "stance": { "type": "string", "enum": ["stand", "crouch", "prone"] },
-        "label": { "$ref": "#/$defs/wireSafeString" },
+        "framing": {
+          "type": "object",
+          "description": "T-212 — the PER-SIDE FRAMING of this one objective (FNF v4's real insight, implemented as one entity rather than two modules). Optional; when absent the objective reads the same to everyone off `label`/`type`. Each side gets its own task title and text — 'Seize the hilltop' to the attacker, 'Hold the hilltop' to the defender — from a SINGLE objective, so there is never a second row to keep in sync. On the wire only — the reader lands under T-212.",
+          "additionalProperties": false,
+          "properties": {
+            "attacker": { "$ref": "#/$defs/objectiveFraming" },
+            "defender": { "$ref": "#/$defs/objectiveFraming" }
+          }
+        },
+        "lock": {
+          "type": "boolean",
+          "description": "T-212 — WOG's `_Lock` (observed 1 in 136 of 166 `Task_Point` instances). Whether this objective is locked at round start. SEMANTICS ARE INFERRED — `wmt_main` is absent from the WOG corpus, so the parameter NAME and observed VALUE are hard evidence but the reading of what a locked objective does is inference and must not be treated as fact by the reader. On the wire only — lands under T-212."
+        },
+        "autoLose": {
+          "$ref": "#/$defs/factionKey",
+          "description": "T-212 — WOG's `_AutoLose` (observed -1, i.e. disabled, in all 156 instances that carried it). When set, names the `factions[].key` that automatically LOSES if this objective falls; absent/disabled is the universal observed case. SEMANTICS ARE INFERRED (see `lock` — `wmt_main` is not in the corpus), so this is carried as declared vocabulary, not asserted behaviour. On the wire only — lands under T-212."
+        },
         "variantId": {
           "$ref": "#/$defs/variantIdRef",
           "description": "T-654. When set, this objective is emitted only if the named variant is selected."
         }
+      }
+    },
+    "objectiveFraming": {
+      "type": "object",
+      "description": "T-212 — one side's reading of an objective: its task title and body text, shown in that side's task tree. Both optional so a side may frame only a title or only text.",
+      "additionalProperties": false,
+      "properties": {
+        "title": { "$ref": "#/$defs/wireSafeString" },
+        "text": { "$ref": "#/$defs/wireSafeString" }
       }
     },
     "vehicle": {
@@ -824,13 +878,18 @@
       "additionalProperties": false,
       "properties": {
         "alias": { "$ref": "#/$defs/alias" },
+        "uid": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "T-675 — stable identity for this roster vehicle (schemaVersion 1.3), carried verbatim from the editor so a reference survives recompiles and edits — the same role `slot.uid` plays for a slot. A `get_in` waypoint's `vehicleUid` names this. Optional; a vehicle nothing references needs no uid. On the wire only — the crew-spawn reader lands under T-675."
+        },
         "x": { "type": "number" },
         "z": { "type": "number" },
         "headingDeg": { "type": "number", "minimum": 0, "maximum": 360 },
         "faction": { "$ref": "#/$defs/factionKey" },
         "seats": {
           "type": "array",
-          "description": "Crew assignment plan: which slot fills which crew position. `slotId` keys on a `slots[].uid`/`id`; `role` is the crew position. The `seats/crew refs` T-076's crew UI authors.",
+          "description": "Crew assignment plan: which slot fills which crew position. `slotId` references `slots[].uid` — the durable identity, not the derived `id` (see the `slot.id` description on why references key on uid). `role` is the crew position. The `seats/crew refs` T-076's crew UI authors.",
           "items": {
             "type": "object",
             "required": ["role"],
@@ -1015,13 +1074,18 @@
             "seek_and_destroy",
             "sentry"
           ],
-          "description": "Waypoint kind, matching Enfusion's `SCR_AIWaypoint` families."
+          "description": "Waypoint kind — TBD vocabulary the reader maps onto whatever engine waypoint types Reforger exposes; the names here are the contract, not an engine identifier (no `SCR_AIWaypoint`-style family is asserted — verify the real engine types when the reader lands)."
         },
         "x": { "type": "number" },
         "z": { "type": "number" },
         "y": {
           "type": "number",
           "description": "Optional waypoint height, metres ASL (same policy as `slot.y`)."
+        },
+        "vehicleUid": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "T-677 (schemaVersion 1.3). For a `get_in` (and, when boarding a specific vehicle, `get_out`) waypoint: the target vehicle, referenced by a `vehicles[].uid`-style stable id, so the squad boards THE authored vehicle rather than any nearby one by proximity inference. Absent → proximity/nearest, the only behaviour available before this key. Ignored for non-boarding waypoint types. On the wire only — the waypoint reader lands under T-677."
         },
         "radiusM": {
           "type": "number",
@@ -1196,7 +1260,7 @@
         "shape": {
           "type": "string",
           "enum": ["icon", "rectangle", "ellipse", "polyline"],
-          "description": "T-673 (ATTR-FIELD-MRK-SHAPE, schemaVersion 1.3). Icon-vs-AREA is Eden's entire second marker model: `icon` keeps the existing glyph marker; `rectangle`/`ellipse`/`polyline` make this an AREA marker whose extent is `area`. On the wire only — the area-marker reader lands under T-673 (a widening plus a mod-side reader, not a UI ticket)."
+          "description": "T-673 (ATTR-FIELD-MRK-SHAPE, schemaVersion 1.3). Icon-vs-AREA is Eden's entire second marker model, and this key is the ICON-side selector / authoring hint, NOT the geometry. PRECEDENCE (the one rule that resolves the two): if `area` (a `#/$defs/markerArea`) is present, this marker IS an area marker and `shape` is IGNORED — the authoritative extent is `area`, whose vocabulary (circle | polygon | rectangle | ellipse) is the superset that can actually express a rect/ellipse. If `area` is absent, this is an icon marker (draw the `icon` glyph). `icon` names the glyph marker; `rectangle`/`ellipse`/`polyline` are legacy shape hints subordinate to `area` (an author who sets `shape: \"ellipse\"` must also author an ellipse `area` for it to take effect — the reader reads `area`, and mismatches resolve in `area`'s favour by this rule). On the wire only — the area-marker reader lands under T-673 (a widening plus a mod-side reader, not a UI ticket)."
         },
         "brush": {
           "type": "string",
@@ -1223,8 +1287,8 @@
           "description": "T-673 (ATTR-FIELD-MRK-ALPHA, schemaVersion 1.3). Marker opacity, 0 (transparent) → 1 (opaque). On the wire only — lands under T-673."
         },
         "area": {
-          "$ref": "#/$defs/shape",
-          "description": "T-673 (schemaVersion 1.3). The extent of an AREA marker (`shape` = rectangle/ellipse/polyline), reusing `#/$defs/shape` (circle | polygon) so an area marker and a zone speak the same geometry vocabulary. Meaningful only when `shape` is not `icon`. On the wire only — lands under T-673."
+          "$ref": "#/$defs/markerArea",
+          "description": "T-673 (schemaVersion 1.3). The AUTHORITATIVE extent of an area marker: circle | polygon | rectangle | ellipse (`#/$defs/markerArea`, a superset of the zone `#/$defs/shape` that adds the rect/ellipse extents `shape`'s circle|polygon cannot express). PRECEDENCE: when `area` is present this marker is an AREA marker and `marker.shape` is ignored (the rule is stated once here and once on `shape`). Its circle/polygon arms speak the same geometry vocabulary as a zone, so an area marker and a zone stay comparable. On the wire only — lands under T-673."
         }
       }
     },

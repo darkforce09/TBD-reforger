@@ -2621,16 +2621,18 @@ mod tests {
     //   serialized text. `leaderSlotId`'s value is a slot id, and slot ids legitimately reach
     //   the wire as `uid` — a substring search would have "found" it and passed.
     //
-    // ## The exact contract delta each blocked row needs (for T-242, not for this file)
+    // ## The contract delta each row needed (historical — T-706 has since OPENED all of these, so
+    // the rows below are `DeclaredPendingEmit`, awaiting the flatten emit, not `Blocked`)
     //
-    // | value | schema object to widen | key |
+    // | value | schema object widened | key |
     // |---|---|---|
-    // | squad leader | `$defs/group` (or a `$defs/slot` boolean) | `leaderSlotId` |
+    // | squad leader | `$defs/group` (W120 M-4 decided GROUP, not a `$defs/slot` copy) | `leaderSlotId` |
     // | slot tag | `$defs/slot` | `tag` |
     // | slot callsign | `$defs/slot` | `callsign` |
     // | slot rank | `$defs/slot` | `rank` |
     // | slot stance | `$defs/slot` | `stance` |
-    // | vehicles | document root + a new `$def` | `vehicles` |
+    // | vehicles | document root + `$defs/vehicle` | `vehicles` |
+    // | editor triggers | document root + `$defs/editorTrigger` | `editorTriggers` |
     //
     // Vehicles do NOT fit the already-declared top-level `entities` array, and this test proves
     // it rather than asserting it: `$defs/entity` is `{alias, x, z, headingDeg, faction,
@@ -2678,7 +2680,12 @@ mod tests {
           {"id": "s2", "squadId": "sq1", "index": 1, "role": "SL",
            "position": {"x": 3.0, "y": 4.0, "z": 0, "rotation": 0}}
         ],
-        "editorLayers": []
+        "editorLayers": [],
+        "triggersById": {
+          "trg1": {"id": "trg1", "zoneId": "z1",
+                   "activation": {"condition": "present", "ownerSide": "BLUFOR"},
+                   "effects": [{"type": "hint", "params": {"text": "Contact!"}}]}
+        }
       }
     }"#;
 
@@ -2694,7 +2701,8 @@ mod tests {
             /// run of this test found by failing: `callsign` DOES occur in the compiled
             /// document, at `orbat.*.groups[].callsign`, because that is the SQUAD's callsign.
             /// A whole-document search conflates it with the per-slot `callsign` T-180.1 added,
-            /// which is the exact confusion behind the ticket's "43 occurrences" count.
+            /// which is the exact confusion behind the ticket's stale grep count (the "43
+            /// occurrences" figure; 67 matching lines in this file at both 5432cca1 and HEAD).
             scope: &'static str,
             /// Every schema object a future emitter would have to open. All are asserted closed;
             /// ANY one of them opening turns the row red.
@@ -2752,32 +2760,40 @@ mod tests {
     #[test]
     fn the_compile_boundary_ledger_is_checked_against_the_contract() {
         const SLOT: &[&str] = &["/$defs/slot"];
-        const GROUP_OR_SLOT: &[&str] = &["/$defs/group", "/$defs/slot"];
+        // W120 M-4 — `leaderSlotId` MOVED to the wire orbat group only (`$defs/group`); it is a
+        // per-squad fact, so it is no longer denormalised onto `$defs/slot`. The row below asserts
+        // GROUP, tightened from the old GROUP_OR_SLOT that anticipated either home before the move.
+        const GROUP: &[&str] = &["/$defs/group"];
         const ROOT_OR_ENTITY: &[&str] = &["", "/$defs/entity"];
-        // The document root — where T-706 declared the top-level `vehicles` roster array.
+        // The document root — where T-706 declared the top-level `vehicles` roster array and the
+        // `editorTriggers` roster array.
         const ROOT: &[&str] = &[""];
 
         let ledger: &[LedgerRow] = &[
             // The one that DOES reach the wire — and the reason the ticket's occurrence count
-            // was misleading. `callsign` appears 43 times in this file, all of them the SQUAD's,
-            // which becomes `slots[].groupCallsign`. That is a different field from the T-180.1
-            // per-slot `callsign` two rows down, which appears zero times.
+            // was misleading. The `callsign` word appears throughout this file (67 matching lines
+            // at both 5432cca1 and HEAD — the ticket's old "43" figure was already stale pre-wave),
+            // and the SQUAD's callsign is the one that becomes `slots[].groupCallsign`. That is a
+            // different field from the T-180.1 per-slot `callsign` two rows down, which reaches the
+            // wire zero times.
             LedgerRow {
                 what: "squad callsign (the one that survives)",
                 authored_at: "/editor/squads/0/callsign",
                 value: "Alpha",
                 fate: Fate::Reaches("/slots/0/groupCallsign"),
             },
-            // T-706 opened `$defs/slot.leaderSlotId` (and the four slot-identity keys below);
-            // flatten still drops them (ModSlot carries no such fields). Each is a pending emit
-            // landing with T-674 (slot identity), tracked as such until the roster reader ships.
+            // T-706 opened `leaderSlotId` (and the four slot-identity keys below); flatten still
+            // drops them (ModSlot/ModGroup carry no such fields). Each is a pending emit landing
+            // with T-674, tracked as such until the roster reader ships. W120 M-4: leaderSlotId now
+            // lives on `$defs/group` ONLY (a per-squad fact, authored once at
+            // /editor/squads/*/leaderSlotId), so `owners` is GROUP, tightened from GROUP_OR_SLOT.
             LedgerRow {
-                what: "squad leaderSlotId (T-180.1/.2 — who leads)",
+                what: "squad leaderSlotId (T-180.1/.2 — who leads; on $defs/group per W120 M-4)",
                 authored_at: "/editor/squads/0/leaderSlotId",
                 value: "s2",
                 fate: Fate::DeclaredPendingEmit {
                     scope: "",
-                    owners: GROUP_OR_SLOT,
+                    owners: GROUP,
                     wire_key: "leaderSlotId",
                     emit_ticket: "T-674",
                 },
@@ -2841,6 +2857,25 @@ mod tests {
                     owners: ROOT,
                     wire_key: "vehicles",
                     emit_ticket: "T-675",
+                },
+            },
+            // W120 m-9 — the editor authors TRIGGERS today (T-079 shipped: store.rs root `triggers`
+            // map / `triggersById`), T-706 opened the top-level `editorTriggers` roster, and flatten
+            // emits none (0 occurrences of the word in this file). This is the same
+            // DeclaredPendingEmit shape as the vehicles row: a contract opened whose emit lands
+            // later. No dedicated flatten-emit ticket is named separately, so the emit is pinned to
+            // T-676 (the trigger activation/effects runtime — the ticket whose reader consumes it),
+            // matching how the vehicles emit rides T-675's crew-spawn reader. The fixture's authored
+            // `editor.triggersById` entry is the anti-vacuity witness.
+            LedgerRow {
+                what: "editor triggers (top-level editorTriggers[] — T-676 activation/effects)",
+                authored_at: "/editor/triggersById/trg1/id",
+                value: "trg1",
+                fate: Fate::DeclaredPendingEmit {
+                    scope: "",
+                    owners: ROOT,
+                    wire_key: "editorTriggers",
+                    emit_ticket: "T-676",
                 },
             },
             LedgerRow {
@@ -3001,11 +3036,14 @@ mod tests {
 
         // The `callsign` confusion, stated sharply. Two different fields share one name:
         //   * the SQUAD's, which reaches the wire twice — `orbat.*.groups[].callsign` and
-        //     `slots[].groupCallsign` — and is every one of this file's 43 `callsign` mentions;
+        //     `slots[].groupCallsign` — and accounts for the `callsign` word saturating this file
+        //     (67 matching lines at both 5432cca1 and HEAD; the ticket's old "43" figure was
+        //     already stale pre-wave);
         //   * the SLOT's (T-180.1 identity), which reaches it zero times.
-        // The `Blocked` row above scopes its key search to `/slots` precisely because the first
-        // one legitimately occupies the name elsewhere; these three lines pin that premise so
-        // the scope cannot quietly become an excuse.
+        // The slot-`callsign` row above is `DeclaredPendingEmit` (T-706 opened `$defs/slot.callsign`;
+        // flatten does not emit it yet) and scopes its key search to `/slots` precisely because the
+        // SQUAD's callsign legitimately occupies the name elsewhere; these three lines pin that
+        // premise so the scope cannot quietly become an excuse.
         assert_eq!(wire["orbat"]["blufor"]["groups"][0]["callsign"], "Alpha");
         assert_eq!(wire["slots"][0]["groupCallsign"], "Alpha");
         let wire_text = serde_json::to_string(&wire).expect("compiled document serialises");

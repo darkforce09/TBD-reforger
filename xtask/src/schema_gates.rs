@@ -1913,16 +1913,31 @@ fn spawn_registry_aliases(root: &Path) -> Result<(PathBuf, HashSet<String>)> {
 // stripped before counting (MEASURED: without stripping, `wind`/`size`/`behaviour` already "read"
 // via prose). Whole-word (`\b…\b`) so `map` does not match `heatmap`.
 //
-// Most fields strip to 0 — no identifier of that spelling exists in the mod. A handful collide with
-// a GENUINELY UNRELATED identifier already in the tree (`map` is EnforceScript's `map<>` container;
-// `objectives` is `TBD_ObjectivesComponent`'s own field; `callsign` is the EXISTING group callsign,
-// a different wire key; `radio`/`gadgets` are the radio subsystem; `area` is a loadout area; `seats`
-// is briefing/lobby UI; `tag` is loadout/spectator tags). For those the baseline is the measured
-// pre-existing count and the row says WHY it is not a reader of the NEW field plus which ticket
-// lands the real one. The assertion is `== baseline`: an unrelated refactor that changes a collision
-// count is a deliberate, visible re-pin here (rare), while the event this gate is FOR — a new reader
-// of the new field — is always a +1 that trips it. Fail-closed with a documented table, the same
-// discipline `KNOWN_UNRESOLVABLE_KITS` uses above.
+// Most fields strip to 0 — no identifier of that spelling exists in the mod. SEVEN rows collide with
+// a GENUINELY UNRELATED identifier already in the tree, and those seven — and ONLY those seven — are
+// the pinned non-zero baselines in the table below: `objectives`=13 (`TBD_ObjectivesComponent`'s own
+// win-condition objective list); `callsign`=16 (the EXISTING group callsign, a different wire key
+// from the new slot.callsign); `seats`=8 (briefing/lobby seat-count UI); `shape`=32 (the existing
+// zone-shape reader `TBD_MissionShapeStruct`, circle/polygon geometry — a different field from the
+// new marker.shape glyph selector); `area`=13 (loadout `LoadoutAreaType`, worn-garment); `gadgets`=6
+// (the radio/gadget subsystem's own vocabulary); `tag`=42 (DOMINATED by UI list-row `int tag`
+// numbering — LobbyScreen/ListBox/AdminScreen/ListBoxRow ≈ 32 of the 42 — NOT loadout/spectator as
+// once annotated). For those seven the baseline is the MEASURED pre-existing count and the row says
+// WHY it is not a reader of the NEW field plus which ticket lands the real one.
+//
+// A NEW FIELD WHOSE INTERIOR IS WRAPPER-COVERED GETS NO ROW, and this is deliberate — do NOT read
+// the seven collision rows as "every colliding word". `slot.gadgets.map`/`.radio`, `marker.area`'s
+// `circle`/`polygon`/`rectangle`/`ellipse` extents, `activation`'s interior, etc. are reached only by
+// a reader that FIRST binds the parent member (`gadgets`/`area`/`activation`, each of which HAS a
+// row), so binding the wrapper covers the interior — the same JsonLoadContext transitivity the T-706
+// commit relied on for `map`/`radio`. `map` and `radio` therefore have NO row of their own; they are
+// not pinned collisions, they are interiors, and earlier prose that listed them alongside the pinned
+// seven conflated the two.
+//
+// The assertion is `== baseline`: an unrelated refactor that changes a collision count is a
+// deliberate, visible re-pin here (rare), while the event this gate is FOR — a new reader of the new
+// field — is always a +1 that trips it. Fail-closed with a documented table, the same discipline
+// `KNOWN_UNRESOLVABLE_KITS` uses above.
 
 /// One 1.3 wire field: `(name, expected_reader_count, ticket_that_lands_the_reader, why_baseline)`.
 ///
@@ -1983,6 +1998,16 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-685",
         why: "clean",
     },
+    // T-689 — play-area vehicle-class filter (zoneRules.vehicleClasses). This is T-689's ONLY
+    // field, nested in TBD_MissionZoneRulesStruct which the mod ALREADY binds
+    // (TBD_MissionLoader.c) — so a T-689 reader adds one member and no covered identifier moves.
+    // Measured clean 0.
+    UnreadField {
+        name: "vehicleClasses",
+        expected: 0,
+        ticket: "T-689",
+        why: "clean",
+    },
     // `objectives` collides with TBD_ObjectivesComponent's own member (the win-condition objective
     // list it already tracks) — NOT a reader of the new top-level `objectives[]` document array.
     UnreadField {
@@ -1990,6 +2015,23 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         expected: 13,
         ticket: "T-212",
         why: "TBD_ObjectivesComponent's own objective-list field, unrelated to the mission-doc objectives[] array",
+    },
+    // T-212 — objective per-side framing + WOG's _Lock/_AutoLose. `framing`/`autoLose` are new
+    // (W120 m-7). `lock` is not tracked here: it collides with the pre-existing vehicle-lock word
+    // and the objective spine deliberately DROPPED the sourceless rank/stance/callsign residue,
+    // so lock is the only WOG scalar carried and it shares the `entity.lock`/`vehicle.lock` word
+    // (already reader-free via those T-680 rows). `framing`/`autoLose` are clean 0.
+    UnreadField {
+        name: "framing",
+        expected: 0,
+        ticket: "T-212",
+        why: "clean",
+    },
+    UnreadField {
+        name: "autoLose",
+        expected: 0,
+        ticket: "T-212",
+        why: "clean",
     },
     // T-675 / T-076 — vehicles[] roster.
     UnreadField {
@@ -2021,6 +2063,15 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
     // T-677 — per-squad waypoints.
     UnreadField {
         name: "waypoints",
+        expected: 0,
+        ticket: "T-677",
+        why: "clean",
+    },
+    // W120 m-8 — the get_in waypoint vehicle target (waypoint.vehicleUid → vehicles[].uid). New
+    // wire word; measured clean 0. (`vehicles[].uid` itself reuses the pre-B1 `uid` field name,
+    // already reader-free and not a new field.)
+    UnreadField {
+        name: "vehicleUid",
         expected: 0,
         ticket: "T-677",
         why: "clean",
@@ -2156,12 +2207,38 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-673",
         why: "clean",
     },
-    // `area` collides with the loadout-area (`LoadoutArea`) identifier family — not a marker reader.
+    UnreadField {
+        name: "color",
+        expected: 0,
+        ticket: "T-673",
+        why: "clean",
+    },
+    UnreadField {
+        name: "alpha",
+        expected: 0,
+        ticket: "T-673",
+        why: "clean",
+    },
+    // `shape` collides with the EXISTING zone-shape reader (`TBD_MissionShapeStruct`, the circle/
+    // polygon zone geometry) — NOT a reader of the new marker.shape glyph selector. Measured 32
+    // (gate semantics: TBD_BriefingData 9 + TBD_ZoneRegistry 9 + TBD_MissionValidator 8 +
+    // TBD_MissionLoader 6), all zone-geometry.
+    UnreadField {
+        name: "shape",
+        expected: 32,
+        ticket: "T-673",
+        why: "existing zone-shape reader (TBD_MissionShapeStruct circle/polygon geometry), a different field from the new marker.shape glyph selector",
+    },
+    // `area` collides with the loadout-area (`LoadoutArea`) identifier family — NOT a marker reader.
+    // Measured 13 (gate semantics, comments+strings stripped): TBD_LoadoutEquipHelper 7 +
+    // TBD_RegistryScan 6, both LoadoutAreaType (worn-garment area). The play-area vocabulary
+    // (TBD_PlayAreaComponent, ~10 RAW `area` hits) is adjacent to the T-689 lane but strips to 0
+    // here — so it is NOT in this baseline; a legit re-pin may arrive with T-689's play-area reader.
     UnreadField {
         name: "area",
         expected: 13,
         ticket: "T-673",
-        why: "loadout-area (worn-garment area) identifiers, unrelated to marker.area geometry",
+        why: "loadout-area (LoadoutAreaType, worn-garment) identifiers, unrelated to marker.area geometry; the marker.area interior (markerArea circle/polygon/rectangle/ellipse) is wrapper-covered by a future area reader",
     },
     // T-705 — per-player gadget flags.
     UnreadField {
@@ -2196,6 +2273,14 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-654",
         why: "clean",
     },
+    // The top-level `variants[]` registry itself — the only new top-level array that lacked a row
+    // (objectives/vehicles/editorTriggers/missionParams all have one). Measured clean 0.
+    UnreadField {
+        name: "variants",
+        expected: 0,
+        ticket: "T-654",
+        why: "clean",
+    },
     // T-674 — objective-style slot identity.
     UnreadField {
         name: "rank",
@@ -2221,19 +2306,23 @@ const UNREAD_WIRE_FIELDS: &[UnreadField] = &[
         ticket: "T-674",
         why: "clean",
     },
-    // `callsign` is the EXISTING group.callsign wire key (a different field); `tag` is loadout /
-    // spectator tag identifiers. Both are re-checked, not introduced, by T-674's new slot.* keys.
+    // `callsign` is the EXISTING group.callsign wire key (a different field); `tag` is DOMINATED by
+    // UI list-row `int tag` numbering. Both are re-checked, not introduced, by T-674's new slot.* keys.
     UnreadField {
         name: "callsign",
         expected: 16,
         ticket: "T-674",
         why: "existing group.callsign reader (TBD_MissionLoader/TBD_BriefingData), a different wire key from the new slot.callsign",
     },
+    // Measured 42 (gate semantics), dominated by UI list-row `int tag` numbering:
+    // TBD_LobbyScreen 16 + TBD_ListBox 8 + TBD_AdminScreen 6 + TBD_ListBoxRow 2 = 32 of 42; the
+    // rest are BriefingScreen/SpectatorScreen/LoadoutEquipHelper. NOT "loadout/spectator" as once
+    // annotated — the UI list-row int tag is the real dominant, unrelated to the new slot.tag key.
     UnreadField {
         name: "tag",
         expected: 42,
         ticket: "T-674",
-        why: "loadout/spectator 'tag' identifiers, unrelated to the new slot.tag key",
+        why: "UI list-row 'int tag' numbering (LobbyScreen/ListBox/AdminScreen/ListBoxRow dominate), unrelated to the new slot.tag key",
     },
 ];
 
