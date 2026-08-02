@@ -1332,6 +1332,12 @@ pub fn MissionEditorPage() -> impl IntoView {
     // Select machine, and the commit site routes a captured click by `is_ruler()`/`is_los()`. Default
     // Select.
     let tool_mode = RwSignal::new(crate::ruler_tool::EditorTool::Select);
+    // T-644 — the LoS SUB-MODE (Ray ⇆ Viewshed). The `ModeToolbar` LoS button reads it (to reflect
+    // the active sub-mode in its title/label) and toggles it on a re-click while LoS is already
+    // active; the wasm pointer commit reads `get_untracked()` to route a captured LoS click to the
+    // ray two-click capture or the one-shot viewshed placement. A plain reactive signal (like
+    // `tool_mode`), shared between the toolbar and the pointer handlers — no thread_local. Default Ray.
+    let los_mode = RwSignal::new(crate::los_tool::LosMode::default());
     // T-642 — the ruler's status-bar readout (running total + last-leg) and a repaint tick. The
     // `RulerChain` itself is session-local overlay state held in a leaked `RefCell` in the wasm
     // block below (Decision 4 — NOT the Y.Doc); these two signals are the reactive surface the DOM
@@ -1720,17 +1726,44 @@ pub fn MissionEditorPage() -> impl IntoView {
                     los_tick.update(|t| *t = t.wrapping_add(1));
                 }
             };
-            // T-643 — tool-switch dismissal (Decision 3): switching the tool away from LoS clears the
-            // placed shot (the "second-Esc-equivalent"). One Effect observes `tool_mode`; when it is
-            // not LoS it clears the state and re-syncs. Idempotent — the default-Select first run on
-            // an empty state is a harmless no-op, and Select→LoS leaves an empty state untouched.
+            // T-644 — the VIEWSHED sub-mode's session-local OVERLAY state (Decision 4 — NOT the Y.Doc,
+            // exactly like the ruler chain + the LoS ray above), a leaked `Rc<RefCell<ViewshedState>>`.
+            // Unlike the ray (a DOM overlay), the viewshed WASH is a GPU texture lane: the pointer
+            // commit computes the raster + uploads it (`place_viewshed` + `engine.viewshed_upload`),
+            // and the state holds the placed observer + raster so a pan re-projects the same rect
+            // without recompute. Registered into `los_tool`'s thread_local (peer of the LoS state) so
+            // the overlay/engine bridge reads it; the compute itself runs through the registered DEM
+            // sampler set below (the same 8 m grid).
+            let viewshed: Rc<RefCell<crate::los_tool::ViewshedState>> =
+                Rc::new(RefCell::new(crate::los_tool::ViewshedState::new()));
+            // T-643/T-644 — tool-switch dismissal (Decision 3): switching the tool away from LoS clears
+            // BOTH the ray shot AND the viewshed wash (the "second-Esc-equivalent"). One Effect observes
+            // `tool_mode` AND `los_mode`; when the tool is not LoS it clears the ray state, and when the
+            // active LoS lane is not the viewshed (tool left LoS, or the sub-mode toggled away from
+            // Viewshed) it clears the viewshed state + drops the engine lane (`viewshed_clear`). This is
+            // the peer of the ruler's clear-on-switch, EXTENDED for the viewshed's GPU lane — the
+            // documented "clear-on-switch and Esc route through the existing shared seam". Idempotent:
+            // the default-Select first run on empty state is a harmless no-op, and an empty viewshed's
+            // `viewshed_clear()` just removes an absent lane.
             {
                 let los = los.clone();
+                let viewshed = viewshed.clone();
+                let engine = engine.clone();
                 let sync_los = sync_los;
                 Effect::new(move |_| {
-                    if !tool_mode.get().is_los() && !los.borrow().is_empty() {
+                    let is_los = tool_mode.get().is_los();
+                    let viewshed_active = is_los && los_mode.get().is_viewshed();
+                    if !is_los && !los.borrow().is_empty() {
                         los.borrow_mut().clear();
                         sync_los();
+                    }
+                    // The viewshed lane lives while the operator is in LoS-viewshed sub-mode; leaving
+                    // LoS OR toggling the sub-mode to Ray drops it (state + GPU lane).
+                    if !viewshed_active && !viewshed.borrow().is_empty() {
+                        viewshed.borrow_mut().clear();
+                        if let Some(e) = engine.borrow_mut().as_mut() {
+                            e.viewshed_clear();
+                        }
                     }
                 });
             }
@@ -1740,6 +1773,11 @@ pub fn MissionEditorPage() -> impl IntoView {
             // SAME 8 m downsampled `dem_grid` the ruler's per-vertex Z read uses (the reachable DEM
             // in the editor) — `los_tool` takes no compile-time dependency on the grid-handle type.
             crate::los_tool::register_los_state(los.clone());
+            // T-644 — hand the leaked viewshed state to `los_tool`'s thread_local (peer of
+            // `register_los_state`) so `place_viewshed` can store the computed raster into it and a
+            // pan re-projects the same rect. The compute reuses the SAME DEM sampler registered just
+            // below (the ray's sampler); `place_viewshed` calls `compute_viewshed_for`, which reads it.
+            crate::los_tool::register_viewshed_state(viewshed.clone());
             {
                 let dem_grid = dem_grid.clone();
                 crate::los_tool::register_los_sampler(std::rc::Rc::new(move |x: f64, y: f64| {
@@ -1888,6 +1926,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // existing Escape arm below, so the eventual T-726 fix covers both tools at once.
                 let los = los.clone();
                 let sync_los = sync_los;
+                // T-644 — the VIEWSHED sub-mode joins the SAME Esc seam (no new window listener — T-726
+                // is pending): the keydown arm below also calls `viewshed.escape()` and, on a real
+                // dismissal, drops the engine wash lane. `engine` is cloned in so the arm can call
+                // `viewshed_clear()` when the wash is dismissed.
+                let viewshed = viewshed.clone();
+                let engine = engine.clone();
                 let onkeydown = Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(
                     move |ev: web_sys::KeyboardEvent| {
                         if crate::mission_history::in_editable_field() {
@@ -1918,7 +1962,18 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 if los_acted {
                                     sync_los();
                                 }
-                                ruler_acted || los_acted
+                                // T-644 — the viewshed's Esc is one step (clear the placed
+                                // observer + raster); on a real dismissal also drop the engine wash
+                                // lane. Like the ray, only one LoS lane is ever non-empty at a time
+                                // (the sub-mode toggle clears the other), so calling it unconditionally
+                                // is safe — an empty viewshed's `.escape()` is a false no-op.
+                                let viewshed_acted = viewshed.borrow_mut().escape();
+                                if viewshed_acted {
+                                    if let Some(e) = engine.borrow_mut().as_mut() {
+                                        e.viewshed_clear();
+                                    }
+                                }
+                                ruler_acted || los_acted || viewshed_acted
                             }
                             "KeyC" if modk && !ev.alt_key() && !ev.shift_key() => {
                                 crate::editor_ops::copy_selection()
@@ -2843,6 +2898,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // `LG::Ruler` gesture (the "mode field on the ruler arm").
                 let los = los.clone();
                 let sync_los = sync_los;
+                // T-644 — the viewshed state, for the one-shot placement branch of the LoS commit (the
+                // `engine` clone above carries the wash upload). `los_mode` is a Copy RwSignal read
+                // directly below (`get_untracked`) to route ray vs viewshed.
+                let viewshed = viewshed.clone();
                 // T-159.21 — no `mission_id` capture: the persist tail now runs inside
                 // `mission_history::after_local_edit`, which reads the id from its ctx.
                 move |ev: web_sys::PointerEvent| {
@@ -3150,11 +3209,45 @@ pub fn MissionEditorPage() -> impl IntoView {
                                         )
                                     });
                                     if tool_mode.get_untracked().is_los() {
-                                        // LoS: first click sets the observer, second completes the
-                                        // shot (Decision 2's two-click capture). Session-local
-                                        // overlay state, never a doc write (Decision 4).
-                                        los.borrow_mut().click(w[0], w[1], z);
-                                        sync_los();
+                                        if los_mode.get_untracked().is_viewshed() {
+                                            // T-644 VIEWSHED sub-mode — a SINGLE click places the
+                                            // observer and shades the whole disc (one-shot, not a
+                                            // drag: this shares the ray's sub-threshold click arm, so
+                                            // the T-723 button-0/no-armed-place/take discipline is
+                                            // already met). Follows `place_viewshed`'s documented
+                                            // host-wiring example: store the observer + click-time Z in
+                                            // the session state, then `place_viewshed` (compute the
+                                            // raster + stash it for pan re-projection) and upload the
+                                            // returned texture to the engine's viewshed lane. Session-
+                                            // local overlay state + a GPU wash — never a doc write
+                                            // (Decision 4). NO-ENGINE GUARD (mirrors the ray's engine
+                                            // guard / Boot-Failed): `place_viewshed` returns `None`
+                                            // when no DEM sampler is registered, and the upload only
+                                            // runs when the engine is live — a dead map draws nothing.
+                                            viewshed.borrow_mut().place(w[0], w[1], z);
+                                            if let Some(tex) =
+                                                crate::los_tool::place_viewshed(w[0], w[1])
+                                            {
+                                                if let Some(e) = engine.borrow_mut().as_mut() {
+                                                    let _ = e.viewshed_upload(
+                                                        tex.min_x,
+                                                        tex.min_y,
+                                                        tex.max_x,
+                                                        tex.max_y,
+                                                        tex.tex_w,
+                                                        tex.tex_h,
+                                                        &tex.rgba,
+                                                        tex.stride_bytes,
+                                                    );
+                                                }
+                                            }
+                                        } else {
+                                            // LoS RAY: first click sets the observer, second completes
+                                            // the shot (Decision 2's two-click capture). Session-local
+                                            // overlay state, never a doc write (Decision 4).
+                                            los.borrow_mut().click(w[0], w[1], z);
+                                            sync_los();
+                                        }
                                     } else {
                                         ruler.borrow_mut().press(w[0], w[1], z);
                                         sync_ruler();
@@ -3576,7 +3669,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // three buttons in the same pill, no longer sharing the strip with the readouts.
                 {move || (!chrome_hidden.get()).then(|| view! {
                 <div class="absolute bottom-11 left-1/2 -translate-x-1/2">
-                    <crate::eden_toolbelt::ModeToolbar tool_mode />
+                    <crate::eden_toolbelt::ModeToolbar tool_mode los_mode />
                 </div>
                 })}
                 // (2) The full-width status bar — CUR/OBJ/SEL/SZ readouts, the T-667 map-furniture
@@ -6616,6 +6709,231 @@ mod t643_los_wiring {
             !perturbed.contains(needle),
             "fired rule: dropping the los.click() route (LoS clicks fall through to ruler.press) must \
              break the routing pin — proving the is_los() branch discriminates the regression"
+        );
+    }
+}
+
+/// T-644 (wave 110) — source pins for the VIEWSHED live entry point: the sub-mode is threaded through
+/// the LoS button (toggle) and the pointer commit (route), a viewshed click computes + uploads the
+/// wash to the engine lane, and the clear seams (Esc + tool/sub-mode switch) drop BOTH the state and
+/// the GPU lane through the EXISTING shared seams — no new window listener (T-726 pending). The pure
+/// `LosMode`/`ViewshedState`/`place_viewshed` core is unit-tested in `los_tool`; these prove the wasm
+/// wiring a native test cannot execute. Scrubbed code (comments + strings blanked) so a needle is real
+/// code; the scrubber keeps `#[cfg(target_arch="wasm32")]` blocks visible.
+#[cfg(test)]
+mod t644_viewshed_wiring {
+    use crate::arsenal::class_r_scrub::live_code;
+
+    fn editor_live() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(
+            raw.matches(anchor.as_str()).count(),
+            1,
+            "scrub anchor must be unambiguous"
+        );
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    }
+
+    /// (sub-mode signal threaded to the toolbar) The page owns a real `los_mode` `RwSignal` and hands
+    /// it to `ModeToolbar` beside `tool_mode`, so the LoS button can reflect + toggle the sub-mode and
+    /// the pointer commit reads the SAME signal. (The toggle-on-reclick lives in `eden_toolbelt`,
+    /// pinned there; here we prove the wiring shares one signal, not two.)
+    #[test]
+    fn los_mode_signal_is_owned_and_handed_to_the_toolbar() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("let los_mode = RwSignal::new(crate::los_tool::LosMode::default())"),
+            "T-644: the page must own a real los_mode RwSignal (the LoS sub-mode)"
+        );
+        assert!(
+            ed.contains("ModeToolbar tool_mode los_mode"),
+            "T-644: los_mode must be handed to ModeToolbar (one shared signal, toolbar + commit)"
+        );
+    }
+
+    /// (commit routes ray vs viewshed) The single `LG::Ruler` pointerup arm, already gated by
+    /// `is_los()`, now branches on `los_mode…is_viewshed()`: a VIEWSHED click stores the observer
+    /// (`viewshed…place(`) and uploads the wash to the engine (`place_viewshed(` → `viewshed_upload(`),
+    /// while the RAY click still routes to `los…click(`. One arm, routed by the sub-mode — the same
+    /// discipline the ray adds on top of the ruler.
+    #[test]
+    fn viewshed_click_places_and_uploads_under_is_viewshed() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("is_viewshed()"),
+            "T-644: the LoS commit must branch on los_mode.is_viewshed()"
+        );
+        assert!(
+            ed.contains("viewshed.borrow_mut().place("),
+            "T-644: a viewshed click must store the observer in the session ViewshedState"
+        );
+        assert!(
+            ed.contains("place_viewshed(") && ed.contains(".viewshed_upload("),
+            "T-644: a viewshed click must compute (place_viewshed) and upload the wash (viewshed_upload)"
+        );
+        // The viewshed branch sits INSIDE the `is_los()` arm and BESIDE the ray's `los…click(` — one
+        // shared `LG::Ruler` commit, routed by tool_mode then sub-mode.
+        assert!(
+            ed.contains("los.borrow_mut().click(") && ed.contains("is_los()"),
+            "T-644: the ray click route must remain (the sub-mode branches within the is_los() arm)"
+        );
+    }
+
+    /// (no-engine / Boot-Failed guard) The wash upload only runs when the engine is live — mirroring
+    /// the ray's engine guard: `place_viewshed` returns `None` off-DEM (native/pre-mount → no upload),
+    /// and the upload is inside an `if let Some(e) = engine.borrow_mut().as_mut()` so a dead map
+    /// (`engine` is `None` after a Boot-Failed) draws nothing.
+    #[test]
+    fn viewshed_upload_is_engine_guarded() {
+        let ed = editor_live();
+        // The upload sits behind the same `Some(e)` engine guard the ray path uses — the guard
+        // statement `if let Some(e) = engine.borrow_mut().as_mut()` opens the block the
+        // `.viewshed_upload(` call lives in. Prove that statement sits between the compute
+        // (`place_viewshed(`) and the upload, so the upload can only run with a live engine.
+        let compute_at = ed
+            .find("place_viewshed(")
+            .expect("place_viewshed call present");
+        let upload_at = ed
+            .find(".viewshed_upload(")
+            .expect("viewshed_upload call present");
+        assert!(
+            compute_at < upload_at,
+            "T-644: place_viewshed (compute) must precede the upload"
+        );
+        let between = &ed[compute_at..upload_at];
+        assert!(
+            between.contains("if let Some(e) = engine.borrow_mut().as_mut()"),
+            "T-644: viewshed_upload must run only when the engine is live — the no-engine / \
+             Boot-Failed guard (if let Some(e) = engine.borrow_mut().as_mut()), mirroring the ray mode"
+        );
+    }
+
+    /// (Esc — the SHARED seam, not a new listener) The keydown Escape arm dismisses the viewshed via
+    /// `viewshed…escape()` in the SAME arm that dismisses the ruler + ray, and drops the engine lane
+    /// (`viewshed_clear()`) on a real dismissal. No second window listener is added (T-726 pending).
+    #[test]
+    fn viewshed_escape_is_the_shared_seam() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("code().as_str()")
+                && ed.contains("viewshed.borrow_mut().escape()")
+                && ed.contains("ruler.borrow_mut().escape()"),
+            "T-644: the viewshed Esc must ride the ONE shared keydown arm (beside ruler + ray escape)"
+        );
+        // Exactly once — the shared seam, not duplicated into a second listener.
+        assert_eq!(
+            ed.matches("viewshed.borrow_mut().escape()").count(),
+            1,
+            "T-644: the viewshed Esc must be wired exactly once (the shared seam)"
+        );
+        // Dismissal drops the GPU lane too.
+        assert!(
+            ed.contains("viewshed_clear()"),
+            "T-644: a viewshed dismissal must drop the engine wash lane (viewshed_clear)"
+        );
+    }
+
+    /// (tool/sub-mode switch clears — state + GPU lane; overlay bridge registered) Leaving LoS OR
+    /// toggling the sub-mode away from Viewshed clears the viewshed state AND the engine lane through
+    /// the EXTENDED tool-switch Effect (peer of the ruler's clear-on-switch); the state is a leaked
+    /// `RefCell<ViewshedState>` (overlay state, never a doc write) registered for the overlay bridge.
+    #[test]
+    fn switch_clears_state_and_lane_and_state_is_registered() {
+        let ed = editor_live();
+        // The tool-switch Effect observes both signals and clears when the viewshed lane is inactive.
+        assert!(
+            ed.contains("los_mode.get().is_viewshed()")
+                && ed.contains("viewshed.borrow_mut().clear()")
+                && ed.contains("viewshed_clear()"),
+            "T-644: switching away from LoS-viewshed must clear the state AND drop the engine lane"
+        );
+        // Session-local overlay state (a ViewshedState in a RefCell), registered for the bridge.
+        assert!(
+            ed.contains("ViewshedState::new()") && ed.contains("register_viewshed_state("),
+            "T-644 (Decision 4): the viewshed is a session-local ViewshedState, registered for the \
+             overlay/engine bridge — not doc state"
+        );
+    }
+
+    /// The fired rule at the wiring layer (perturb / fail / restore): the `is_viewshed()` branch in the
+    /// shared commit is load-bearing. The pin passes on the real body; a perturbation that drops the
+    /// viewshed route (so a viewshed click would fall through to the ray `los.click` — the exact
+    /// regression) makes the placement pin FAIL. Restore is implicit (an in-memory copy is perturbed).
+    #[test]
+    fn fired_rule_viewshed_routing_is_load_bearing() {
+        let ed = editor_live();
+        let needle = "viewshed.borrow_mut().place(";
+        assert!(
+            ed.contains(needle),
+            "canary: the real body places a viewshed"
+        );
+        // Perturb: remove the viewshed placement route. The placement pin's needle must vanish.
+        let perturbed = ed.replace(needle, "los.borrow_mut().click(");
+        assert!(
+            !perturbed.contains(needle),
+            "fired rule: dropping the viewshed place() route (viewshed clicks fall through to the ray \
+             click) must break the placement pin — proving the is_viewshed() branch discriminates"
+        );
+    }
+}
+
+/// T-644 (wave 110) — source pins for the LoS button's SUB-MODE TOGGLE in `eden_toolbelt`: the ONE
+/// LoS button re-click toggles Ray ⇆ Viewshed (`LosMode::toggled`) while LoS is already active, and
+/// the button's title/label reflect the live sub-mode. The toolbar is a Leptos view (structural), so
+/// this is pinned by SOURCE INSPECTION on scrubbed `eden_toolbelt.rs`, mirroring `t643`/`t668`.
+#[cfg(test)]
+mod t644_los_button_submode {
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+    /// (toggle on re-click) The LoS button's `on:pointerdown` toggles `los_mode` when LoS is ALREADY
+    /// active (`is_los()` true → `los_mode.update(… toggled())`) and otherwise sets `tool_mode = LoS`.
+    /// The `tool_mode.set(EditorTool::LoS)` still lives in the button (the honesty rule / t643 pin),
+    /// so the button never lies about which tool it selects.
+    #[test]
+    fn los_button_reclick_toggles_the_submode() {
+        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let body = only_body(&code, &format!("pub fn {}", "ModeToolbar("));
+        assert!(
+            body.contains("los_mode.update(|m| *m = m.toggled())"),
+            "T-644: a re-click of the LoS button must toggle the sub-mode (LosMode::toggled)"
+        );
+        // The toggle is gated on LoS already being active (first click from another tool just
+        // activates LoS; it does not advance the sub-mode).
+        assert!(
+            body.contains("tool_mode.get_untracked().is_los()"),
+            "T-644: the toggle must fire only when LoS is already active (re-click semantics)"
+        );
+        // The set-LoS path is still present (t643 honesty rule — the button selects the tool it names).
+        assert!(
+            body.contains(&format!("tool_mode.set(EditorTool::{})", "LoS")),
+            "T-644: the LoS button must still set tool_mode = LoS on the first (activate) click"
+        );
+    }
+
+    /// (title/label reflect the sub-mode) The LoS button's title AND wide-layout label read the live
+    /// `los_mode` (`is_viewshed()`), so the operator always knows which sub-mode they're in. Proven on
+    /// the string-KEPT source (the title/label literals survive) so the needle is the real view text.
+    #[test]
+    fn los_button_reflects_the_active_submode() {
+        let src = live_source(include_str!("eden_toolbelt.rs"));
+        let body = only_body(&src, &format!("pub fn {}", "ModeToolbar("));
+        // The button reads the sub-mode to pick its title/label.
+        assert!(
+            body.matches("los_mode.get()").count() >= 1 && body.contains("is_viewshed()"),
+            "T-644: the LoS button must read los_mode to reflect the active sub-mode"
+        );
+        // Both sub-mode words appear in the button's affordance (title + label).
+        for word in ["viewshed", "ray"] {
+            assert!(
+                body.contains(word),
+                "T-644: the LoS button title/label must name the {word} sub-mode"
+            );
+        }
+        // t668/t642 retention: the base tooltip phrase survives (still explains the tool).
+        assert!(
+            body.contains("Line of sight"),
+            "T-644: the LoS button must keep its 'Line of sight' title (tooltip retention)"
         );
     }
 }

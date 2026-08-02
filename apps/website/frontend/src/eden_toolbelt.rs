@@ -295,11 +295,24 @@ fn fmt_coord(v: Option<f64>) -> String {
 /// current `tool_mode` — the shared signal the pointer handlers read — so a button and the live tool
 /// can never disagree, and clicking any button switches the mode (which also clears the other tools'
 /// overlays via the tool-switch Effect in `mission_editor`).
+///
+/// T-644 (wave 110) — the ONE LoS button now carries a SUB-MODE ([`los_tool::LosMode`]): the first
+/// click FROM ANOTHER TOOL activates LoS in whichever sub-mode it last showed; a RE-CLICK while LoS
+/// is already active TOGGLES the sub-mode (Ray ⇆ Viewshed, `LosMode::toggled`) — the UX decision
+/// `los_tool` documents. The button's title and label reflect the live sub-mode ("Line of sight
+/// (ray)" click-two-points vs "(viewshed)" click-one-observer-disc) so the operator always knows
+/// which they're in; the pointer commit in `mission_editor` branches on the same `los_mode` signal to
+/// route a click to the ray capture or the one-shot viewshed placement. Switching sub-mode clears the
+/// other's overlay via the same tool-switch Effect (extended to the viewshed lane).
 #[component]
 pub fn ModeToolbar(
     /// The active editor tool (shared with the map pointer handlers). Reading it tints the active
     /// button; the buttons set it.
     tool_mode: RwSignal<crate::ruler_tool::EditorTool>,
+    /// T-644 — the LoS sub-mode (Ray ⇆ Viewshed). Read here to reflect the active sub-mode in the LoS
+    /// button's title/label and toggled by a re-click of the LoS button while LoS is already active;
+    /// the map pointer commit reads the SAME signal to route a click. Shared with `mission_editor`.
+    los_mode: RwSignal<crate::los_tool::LosMode>,
 ) -> impl IntoView {
     use crate::ruler_tool::EditorTool;
     // T-668 — the current mode wears TOGGLED_PLATE (plate + 1px dark top border); a live-but-not-
@@ -341,11 +354,37 @@ pub fn ModeToolbar(
                 type="button"
                 class=move || cls(EditorTool::LoS)
                 aria-pressed=move || pressed(EditorTool::LoS)
-                title="Line of sight — click observer, click target; Esc clears"
-                on:pointerdown=move |_| tool_mode.set(EditorTool::LoS)
+                // T-644 — the title reflects the live SUB-MODE so the operator always knows which LoS
+                // they're in (ray = click two points; viewshed = click one observer → shade the disc).
+                title=move || {
+                    if los_mode.get().is_viewshed() {
+                        "Line of sight (viewshed) — click one observer to shade the visible disc; \
+                         click LoS again for ray; Esc clears"
+                    } else {
+                        "Line of sight (ray) — click observer, click target; click LoS again for \
+                         viewshed; Esc clears"
+                    }
+                }
+                // T-644 — the LoS button's re-click toggles the sub-mode. THE UX DECISION (`los_tool`
+                // `LosMode`): the first click from ANOTHER tool just activates LoS (leaving the
+                // sub-mode on whatever it last showed — `LosMode::toggled`'s "fresh switch lands on the
+                // mode it last showed" contract); a re-click while LoS is ALREADY active advances the
+                // sub-mode Ray ⇆ Viewshed. `tool_mode.set(EditorTool::LoS)` stays present on both paths
+                // (idempotent when already LoS) so the button never lies about which tool it selects.
+                on:pointerdown=move |_| {
+                    if tool_mode.get_untracked().is_los() {
+                        los_mode.update(|m| *m = m.toggled());
+                    } else {
+                        tool_mode.set(EditorTool::LoS);
+                    }
+                }
             >
                 <MaterialIcon name="visibility" class="block text-base" />
-                <span class="hidden sm:inline">"LoS"</span>
+                // T-644 — the label reflects the live sub-mode (ray vs viewshed) on the wide layout,
+                // so the active sub-mode is visible at a glance, not only in the tooltip.
+                <span class="hidden sm:inline">
+                    {move || if los_mode.get().is_viewshed() { "LoS · viewshed" } else { "LoS · ray" }}
+                </span>
             </button>
         </div>
     }
@@ -724,8 +763,11 @@ pub fn BottomToolbelt(
     // reaching for this compat symbol gets a self-contained, if inert, toggle. `ruler_status` is
     // optional on `StatusBar`, so the shim omits it (no ruler wiring on the compat path).
     let tool_mode = RwSignal::new(crate::ruler_tool::EditorTool::Select);
+    // T-644 — the shim owns a local `los_mode` (default Ray) purely so `ModeToolbar` compiles on the
+    // compat path; the live mount in `mission_editor` shares the real signal with the pointer commit.
+    let los_mode = RwSignal::new(crate::los_tool::LosMode::default());
     view! {
-        <ModeToolbar tool_mode />
+        <ModeToolbar tool_mode los_mode />
         <StatusBar cursor sel_count obj_count selected_ids sz_bytes />
     }
 }
