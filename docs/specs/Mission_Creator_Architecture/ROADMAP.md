@@ -15,12 +15,12 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-648** — Transform: Shift-rotate, snap grid, widget + Space cycle (queued)
-- **T-644** — Line of Sight: viewshed raster (queued)
-- **T-668** — One state vocabulary across the whole editor chrome (queued)
 - **T-655** — Validation panel: persistent issue list with rollup (queued)
 - **T-645** — Placement helpers: patterns, align, space, orient, garrison (queued)
 - **T-649** — Select All in view, and multi-edit per-field checkboxes (queued)
+- **T-686** — Loadout import — close the round-trip TBD has only half of (queued)
+- **T-669** — Clipboard completion: Ctrl+X cut, Ctrl+Shift+V paste-at-original (queued)
+- **T-082** — Attributes modal: entity type and a real role description field (queued)
 <!-- ticket-sync:next:end -->
 
 ---

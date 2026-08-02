@@ -32,7 +32,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 107 | 90 | T-638 T-657 T-659 | PASS (run 1) | 0B/1M/3m/8N | SHIPPED — dock collapse (accessor seam), 5 ORBAT rules, census+summary; T-727 filed (grid-ref strand, MAJOR); W101 N-3 recorded closed |
 | 108 | 91 | T-642 T-650 T-658 | PASS (run 1) | 0B/2M/4m/8N | SHIPPED — ruler end-to-end, doc-side compositions, EvalContext seam; MAJORs routed into T-723/T-726 (widened), T-728 filed |
 | 109 | 92 | T-079 T-643 T-660 | PASS (run 1) | 0B/1M/5m/12N | SHIPPED — triggers editor half, LoS ray, cargo/loadout rules; T-729 filed (owner-line perf MAJOR), T-723/T-726 widened again |
-| 110 | 93 | T-644 T-648 T-668 | — | — | pending |
+| 110 | 93 | T-644 T-648 T-668 | PASS (run 2; run 1 pre-fix) | 1B/1M/5m/13N → flip fixed in-wave | SHIPPED — viewshed (mirror BLOCKER fixed + wired end-to-end), transform gestures, state vocabulary; T-730..T-732 filed, T-729/T-726 widened |
 | 111 | 94 | T-645 T-655 T-693 | — | — | pending |
 | 112 | 95 | T-649 T-686 T-692 | — | — | pending |
 | 113 | 96 | T-082 T-669 T-694 | — | — | pending |
@@ -150,6 +150,10 @@ serialisation, not a hang).
 - **T-706 (W120):** flatten.rs already emits a win-condition "triggers" vocabulary — T-079's
   editor triggersById is a DIFFERENT object; the schema widening must name them apart (editor
   triggers vs win triggers) or the wire collides. [wave109 NOTE]
+- **T-645 (W111):** the ticket mandates one-step-undoable bulk ops but no atomic batch API exists
+  in store.rs (T-732 filed — three-instance family). Use the existing one-txn batch shapes
+  (paste_slots / place_composition / move_entities_and_vehicles) where they fit; where they
+  don't, document N-step honestly and cite T-732 — do not fake atomicity. [wave110 NOTE-B]
 - **T-084 (W117):** `class:` matches full resource_name prefixes only — a bare classname
   (class:B_Soldier) silently empties the tree on GUID-headed Reforger ids; decide classname-TAIL
   matching semantics as part of the grammar rewrite. [wave105 MINOR-2]
