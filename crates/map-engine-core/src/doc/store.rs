@@ -3119,7 +3119,6 @@ impl MissionDocCore {
         // Read the resident squads/factions ONCE (tolerant of both YMap + hydrated-opaque shapes via
         // `ordered_rows`) to build the (name, side) → id dedup index the incoming rows resolve against.
         let (dx, dy) = opts.offset.unwrap_or((0.0, 0.0));
-        let mut remint = RemintMap::new();
 
         // Grab the non-tracked root handles BEFORE any txn opens: `get_or_insert_map` opens its own
         // internal transaction, so calling it while a `transact()` / `begin()` is alive DEADLOCKS
@@ -3128,9 +3127,31 @@ impl MissionDocCore {
         let entity_order = self.doc.get_or_insert_map("entityOrder");
         let markers = self.doc.get_or_insert_map("markers");
 
-        // Resident dedup indices, read before the write txn opens.
-        let (resident_factions, resident_squads_by_side) = {
+        // Resident dedup indices AND the resident id universe, read before the write txn opens. The
+        // universe (every resident row's id — its doc KEY — across every entity map this method may
+        // insert into) seeds the re-mint's collision guard so no minted id can equal an id already in
+        // the doc, including a `mrg-…` id a PRIOR merge left resident (BLOCKER-1). Same pre-txn hoist
+        // as the handles above: iterating these maps under the open write txn would be an alias, and
+        // `markers` is read here (its `iter` on the just-grabbed handle) rather than re-grabbed later.
+        let (resident_factions, resident_squads_by_side, resident_ids) = {
             let txn = self.doc.transact();
+            let mut resident_ids: HashSet<String> = HashSet::new();
+            for map in [
+                &self.slots,
+                &self.squads,
+                &self.factions,
+                &self.editor_layers,
+                &self.vehicles,
+                &self.entities,
+                &self.zones,
+                &self.triggers,
+                &self.compositions,
+                &markers,
+            ] {
+                for (id, _out) in map.iter(&txn) {
+                    resident_ids.insert(id.to_string());
+                }
+            }
             let fac_rows = ordered_rows(&txn, &self.factions, &entity_order, "factions");
             // faction (name, key) → resident faction id, and faction id → key (to resolve squad side).
             let mut fac_index: HashMap<(String, String), String> = HashMap::new();
@@ -3166,8 +3187,13 @@ impl MissionDocCore {
                     }
                 }
             }
-            (fac_index, sq_index)
+            (fac_index, sq_index, resident_ids)
         };
+
+        // The re-mint table seeded with the resident id universe: every id it now mints is guaranteed
+        // absent from the doc (and from its own prior mints), so a second merge of the same template
+        // lands alongside the first instead of overwriting it.
+        let mut remint = RemintMap::with_reserved(resident_ids);
 
         // Incoming faction rows: decide MERGE (map to resident) vs CREATE (fresh id), and remember
         // each incoming faction's key so squad side can be resolved from the incoming graph too.
@@ -3957,6 +3983,17 @@ fn append_id(txn: &mut TransactionMut, map: &MapRef, key: &str, field: &str, id:
             Some(Out::Any(Any::Array(arr))) => arr.iter().cloned().collect(),
             _ => Vec::new(),
         };
+        // Dedup the append: an id already in the array is not appended again. Without this a
+        // duplicate incoming id (two rows sharing one id — MINOR-4) or a re-merge whose mint collided
+        // pre-fix would double-append the same id into a `slotIds`/`squadIds`/`entityIds` array,
+        // inflating membership over the real row count. The membership arrays hold each id at most
+        // once by contract (a slot belongs to a squad once), so this is the invariant, not a patch.
+        if next
+            .iter()
+            .any(|a| matches!(a, Any::String(s) if s.as_ref() == id))
+        {
+            return;
+        }
         next.push(Any::String(id.into()));
         container.insert(txn, field, Any::Array(next.into()));
     }
@@ -4135,19 +4172,48 @@ impl MergeReport {
 /// T-693 — the id re-mint + dedup table for one merge. Maps each incoming id to the id it becomes in
 /// the current doc: either a FRESH minted id (a created row) or a RESIDENT id (a deduped faction /
 /// squad — the "merged" case). `merged` remembers which mappings were dedup so the writer can skip
-/// creating a row for them. Fresh ids are `mrg-<seq>-<old>` so they cannot collide with the resident
-/// doc's ids, with the incoming ids of THIS payload, or with a second merge's ids.
+/// creating a row for them.
+///
+/// # Collision-proofing (BLOCKER-1 fix)
+///
+/// A minted id must exist NOWHERE the merge could later insert against: not the resident doc's ids,
+/// not the ids of THIS payload, and not a PRIOR merge's minted ids. The naive `mrg-<seq>-<old>` from a
+/// per-call `seq` was not: merging the same template twice makes the same dedup decisions, so the same
+/// `<old>` reaches `ensure_fresh` at the same `<seq>` and mints the SAME `mrg-<seq>-<old>` the first
+/// merge already resident — a `MapRef::insert` on that key OVERWRITES the first merge's row (its edits
+/// lost) while `append_id` double-appends the id. `taken` closes that: it is seeded (via
+/// [`RemintMap::with_reserved`]) with the doc's whole id universe — every resident row id across
+/// slots/squads/factions/layers/vehicles/entities/zones/triggers/compositions/markers, collected in
+/// Pass 0 with the same pre-txn hoist the deadlock fix uses — and every id this call mints is added to
+/// it, so `ensure_fresh` bumps `seq` past any candidate already present (a resident `mrg-1-s0` from a
+/// first merge, or an intra-payload duplicate id) until the id is free everywhere. The second merge
+/// then mints `mrg-2-s0` (or higher), lands ALONGSIDE the first, and the report counts are true.
 struct RemintMap {
     map: HashMap<String, String>,
     merged: HashSet<String>,
+    /// Every id that already exists somewhere the merge must not collide with: the resident doc's id
+    /// universe (seeded once) plus every id minted so far this call. A mint is rejected until it is
+    /// absent here — this is what makes minting collision-proof against a prior merge's residents.
+    taken: HashSet<String>,
     seq: u64,
 }
 
 impl RemintMap {
+    /// A re-mint table that only knows it must avoid the ids it mints (empty resident universe). Used
+    /// where no doc is in play.
+    #[cfg(test)]
     fn new() -> Self {
+        Self::with_reserved(HashSet::new())
+    }
+
+    /// A re-mint table seeded with the doc's full resident id universe, so no minted id can ever equal
+    /// an id already resident (the collision the twice-merged-template case hit). `reserved` is
+    /// collected before the write txn opens (the deadlock-safe hoist).
+    fn with_reserved(reserved: HashSet<String>) -> Self {
         Self {
             map: HashMap::new(),
             merged: HashSet::new(),
+            taken: reserved,
             seq: 0,
         }
     }
@@ -4159,14 +4225,23 @@ impl RemintMap {
         self.merged.insert(old.to_string());
     }
 
-    /// Reserve a FRESH re-minted id for `old` unless it is already mapped (fresh or deduped).
+    /// Reserve a FRESH re-minted id for `old` unless it is already mapped (fresh or deduped). The
+    /// minted id is guaranteed absent from `taken` — the resident id universe plus every id already
+    /// minted this call — by bumping `seq` past any collision, then recorded in `taken` so no later
+    /// mint (this call or a subsequent merge that seeds `taken` from the doc) can reproduce it.
     fn ensure_fresh(&mut self, old: &str) {
         if self.map.contains_key(old) {
             return;
         }
-        self.seq += 1;
-        self.map
-            .insert(old.to_string(), format!("mrg-{}-{}", self.seq, old));
+        let fresh = loop {
+            self.seq += 1;
+            let candidate = format!("mrg-{}-{}", self.seq, old);
+            if !self.taken.contains(&candidate) {
+                break candidate;
+            }
+        };
+        self.taken.insert(fresh.clone());
+        self.map.insert(old.to_string(), fresh);
     }
 
     /// The id `old` becomes, if it is in the payload's id space.
@@ -10200,5 +10275,201 @@ mod tests {
             .unwrap();
         assert_eq!(squad["slotIds"].as_array().unwrap().len(), 2);
         assert_eq!(root["vehiclesById"].as_object().unwrap().len(), 1);
+    }
+
+    /// Every entry of a `slotIds`/`squadIds`/`entityIds`-style id array, in order.
+    fn id_array(v: &serde_json::Value) -> Vec<String> {
+        v.as_array()
+            .expect("id array")
+            .iter()
+            .map(|s| s.as_str().expect("string id").to_string())
+            .collect()
+    }
+
+    /// True iff `ids` holds no id twice (the dedup-append invariant).
+    fn has_no_duplicates(ids: &[String]) -> bool {
+        let mut seen = HashSet::new();
+        ids.iter().all(|id| seen.insert(id.clone()))
+    }
+
+    /// T-693.T8 (BLOCKER-1 + MINOR-4) — **merging the SAME template twice into a doc with a matching
+    /// resident squad lands the second merge's rows ALONGSIDE the first's** (no silent overwrite), the
+    /// resident squad's `slotIds` has no duplicates, and the report counts are true.
+    ///
+    /// This is the ticket's NEW-F4 primary scenario and the exact case the pre-fix per-call `seq`
+    /// corrupted: merge 1 and merge 2 make identical dedup decisions, so `<old>` reached `ensure_fresh`
+    /// at the same `<seq>` both times and minted the SAME `mrg-<seq>-<old>` — the second
+    /// `MapRef::insert` overwrote merge 1's slot row (its count net-zero) while `append_id`
+    /// double-appended. The fix seeds the re-mint's collision guard with the doc's whole id universe
+    /// (including merge 1's resident `mrg-…` ids), so merge 2 mints fresh ids and both merges' rows
+    /// coexist. Perturbing [`RemintMap::ensure_fresh`] to ignore `taken` (the pre-fix minting) fails
+    /// this test at the row-count and slotIds-length assertions — see
+    /// [`mint_is_collision_proof_against_resident_ids`] for the mechanism fired in isolation.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn merge_same_template_twice_lands_alongside_no_overwrite() {
+        // Resident doc: BLUFOR Alpha with one slot — the "resident matching squad" the template dedups
+        // onto, so every incoming slot MERGES into Alpha (the seq-alignment case, not a create case).
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_editor_layer("lyr", "Layer", None);
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "1st Battalion");
+        doc.add_squad("sq-a", "faction-BLUFOR", "Alpha", Some("A1".into()));
+        doc.add_slot(
+            "res0", "sq-a", "lyr", 0, "SL", None, None, 1.0, 2.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq-a", "res0");
+        doc.set_origin_init(false);
+
+        // The template compiles to two slots (s0, s1) under BLUFOR Alpha + a vehicle. Merging it once
+        // grows Alpha to 3 slots; merging it AGAIN must grow it to 5 — not leave it at 3.
+        let payload = template_payload_blufor_alpha();
+
+        let slot_rows = |d: &MissionDocCore| slots_map(d).as_object().unwrap().len();
+
+        let rep1 = doc.merge_mission_payload(&payload, MergeOpts::default());
+        assert_eq!(rep1.slots_added, 2, "merge 1 adds both template slots");
+        assert_eq!(rep1.squads_merged, 1, "Alpha deduped onto resident");
+        assert_eq!(
+            slot_rows(&doc),
+            3,
+            "merge 1: resident res0 + two merged slots"
+        );
+
+        let rep2 = doc.merge_mission_payload(&payload, MergeOpts::default());
+        assert_eq!(rep2.slots_added, 2, "merge 2 adds two MORE slots");
+        assert_eq!(rep2.squads_merged, 1);
+        // The load-bearing assertion: the doc now holds FIVE distinct slot rows. Pre-fix, merge 2's
+        // ids equalled merge 1's, `insert` overwrote, and this stayed at 3 while the report claimed +2.
+        assert_eq!(
+            slot_rows(&doc),
+            5,
+            "merge 2's rows land ALONGSIDE merge 1's — no overwrite"
+        );
+
+        let root = small_maps(&doc);
+        let alpha = &root["squadsById"]["sq-a"];
+        let member_ids = id_array(&alpha["slotIds"]);
+        assert_eq!(
+            member_ids.len(),
+            5,
+            "Alpha owns res0 + 4 merged slots: {member_ids:?}"
+        );
+        assert!(
+            has_no_duplicates(&member_ids),
+            "slotIds has no duplicate id after two merges: {member_ids:?}"
+        );
+        // Every membership id resolves to a REAL, distinct slot row (the overwrite would leave a
+        // dangling id whose row another append clobbered).
+        let slots = slots_map(&doc);
+        for sid in &member_ids {
+            assert!(
+                slots.get(sid).is_some(),
+                "slotIds entry {sid} is a live slot row: {member_ids:?}"
+            );
+        }
+        // Report truth: the two merges added exactly 4 slots total, and the doc grew by exactly 4.
+        assert_eq!(
+            rep1.slots_added + rep2.slots_added,
+            4,
+            "reports sum to the real net row growth (5 − 1 resident)"
+        );
+    }
+
+    /// T-693.T9 (MINOR-4 second half) — **two incoming slot rows that share one id do not
+    /// double-append.** The re-mint reserves one fresh id for the shared `old` (a duplicate id is one
+    /// id), both rows resolve to it, and the dedup-append in [`append_id`] files it into the squad's
+    /// `slotIds` exactly once — no `[..., id, id]` over-count. (Only one slot row lands under that id;
+    /// the report counts each incoming row it wrote, and the membership array stays a set.)
+    #[cfg(feature = "mission")]
+    #[test]
+    fn merge_duplicate_in_payload_ids_do_not_double_append() {
+        // A resident squad the two dup-id slots dedup onto, so they append into a real `slotIds`.
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_editor_layer("lyr", "Layer", None);
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "1st Battalion");
+        doc.add_squad("sq-a", "faction-BLUFOR", "Alpha", None);
+        doc.set_origin_init(false);
+
+        // Raw payload: one BLUFOR Alpha squad (dedups) with TWO slot rows sharing id "dup".
+        let payload = serde_json::json!({
+            "editor": {
+                "factions": [
+                    { "id": "faction-BLUFOR", "key": "BLUFOR", "name": "1st Battalion", "squadIds": ["sq-a"] }
+                ],
+                "squads": [
+                    { "id": "sq-a", "factionId": "faction-BLUFOR", "name": "Alpha", "slotIds": ["dup"] }
+                ],
+                "slots": [
+                    { "id": "dup", "squadId": "sq-a", "role": "SL", "position": {"x": 1.0, "y": 1.0} },
+                    { "id": "dup", "squadId": "sq-a", "role": "Rifleman", "position": {"x": 2.0, "y": 2.0} }
+                ],
+                "editorLayers": []
+            }
+        });
+
+        let _ = doc.merge_mission_payload(&payload, MergeOpts::default());
+
+        let root = small_maps(&doc);
+        let alpha = &root["squadsById"]["sq-a"];
+        let member_ids = id_array(&alpha["slotIds"]);
+        assert!(
+            has_no_duplicates(&member_ids),
+            "a duplicate incoming id is filed once, not twice: {member_ids:?}"
+        );
+        // The shared id maps to exactly one re-minted membership entry (one id, one append).
+        assert_eq!(
+            member_ids.len(),
+            1,
+            "two rows sharing one id contribute one membership id: {member_ids:?}"
+        );
+    }
+
+    /// T-693.T10 (fired proof) — the minting mechanism in isolation: **the pre-fix per-call `seq`
+    /// minted colliding ids; the collision guard prevents it.** Two independent re-mint tables with an
+    /// EMPTY resident universe (the pre-fix state — `RemintMap::new`) BOTH mint `mrg-1-s0` for the same
+    /// `old`: identical output, the exact overwrite-cause of BLOCKER-1. Seeding the second table with
+    /// the first's mint (what `with_reserved` does with the doc's id universe) forces it past the
+    /// collision to a fresh id.
+    #[test]
+    fn mint_is_collision_proof_against_resident_ids() {
+        // Pre-fix: two separate merges, each a fresh table over an empty doc, mint the SAME id.
+        let mut first = RemintMap::new();
+        first.ensure_fresh("s0");
+        let merge1_id = first.get("s0").expect("minted");
+        assert_eq!(merge1_id, "mrg-1-s0", "first merge mints mrg-1-s0");
+
+        let mut naive_second = RemintMap::new();
+        naive_second.ensure_fresh("s0");
+        assert_eq!(
+            naive_second.get("s0").as_deref(),
+            Some("mrg-1-s0"),
+            "an unseeded second table reproduces the SAME id — the collision the fix removes"
+        );
+
+        // With the fix: the second table is seeded with the resident id universe (here, merge 1's id),
+        // so `ensure_fresh` bumps past `mrg-1-s0` to a fresh id.
+        let mut guarded_second = RemintMap::with_reserved(HashSet::from([merge1_id.clone()]));
+        guarded_second.ensure_fresh("s0");
+        let merge2_id = guarded_second.get("s0").expect("minted");
+        assert_ne!(
+            merge2_id, merge1_id,
+            "the guarded second mint avoids the resident id"
+        );
+        assert_eq!(merge2_id, "mrg-2-s0", "it takes the next free seq");
+
+        // And it also avoids an arbitrary resident `mrg-…` id at a higher seq (multi-merge chains).
+        let mut deep = RemintMap::with_reserved(HashSet::from([
+            "mrg-1-x".to_string(),
+            "mrg-2-x".to_string(),
+            "mrg-3-x".to_string(),
+        ]));
+        deep.ensure_fresh("x");
+        assert_eq!(
+            deep.get("x").as_deref(),
+            Some("mrg-4-x"),
+            "mint skips every resident collision, not just seq 1"
+        );
     }
 }

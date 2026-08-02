@@ -29,7 +29,9 @@
 //! The rules run over the FULL compiled payload, so they must not run per-frame. Re-eval is driven by
 //! the `doc_tick` channel (the T-666 doc-change tick every mutation site bumps) through a **250 ms
 //! trailing debounce** ([`Debouncer`], extracted here as pure timer logic so it is unit-tested on the
-//! host): a drag that bumps the tick 60× a second re-evaluates once, ~250 ms after the last edit.
+//! host): a rapid EDIT BURST — a drag commits once at release (T-159.19), but a held key or a bulk
+//! paste can fire many commits back-to-back — collapses to a single re-evaluation ~250 ms after the
+//! last edit, not one per commit.
 //!
 //! ## The four things the panel shows (the ticket's anatomy)
 //!
@@ -57,10 +59,10 @@ use map_engine_core::mission::validate::{Finding, Primitive, Severity};
 /// The trailing debounce window for a doc-change-driven re-evaluation, in milliseconds.
 ///
 /// Chosen small (the maker wants near-live feedback) but not per-edit: the rules walk the whole
-/// compiled payload, and an operation like a drag or a bulk paste bumps `doc_tick` on every
-/// intermediate transaction. 250 ms trailing means the pass runs once, a quarter-second after the
-/// LAST edit in a burst — live enough to feel immediate on a single edit, cheap enough that a 60 Hz
-/// drag does not run the engine 60×.
+/// compiled payload, and an operation like a bulk paste bumps `doc_tick` on every intermediate
+/// transaction (a drag bumps it once, at release — T-159.19). 250 ms trailing means the pass runs
+/// once, a quarter-second after the LAST edit in a burst — live enough to feel immediate on a single
+/// edit, cheap enough that a rapid edit burst runs the engine once, not once per commit.
 pub const REEVAL_DEBOUNCE_MS: f64 = 250.0;
 
 /* ═══════════════════════════ pure, host-testable core ═══════════════════════════ */

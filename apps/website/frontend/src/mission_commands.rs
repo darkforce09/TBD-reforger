@@ -579,8 +579,16 @@ mod imp {
                 };
                 core.merge_mission_payload_json(&payload_json, offset)
             };
-            // A merge mutated the doc → mark dirty so a Save is offered (mirrors every other edit).
-            crate::mission_history::set_dirty(true);
+            // A merge is a document mutation, so it must run the SAME post-mutation tail every editor
+            // mutator ends on (`editor_ops` mutators all call this): materialize → prune the selection
+            // → rebind the engine slot/vehicle glyphs so the merged rows reach the GPU (they are
+            // invisible on the map otherwise) → bump `doc_ver` (which drives the validation panel's
+            // re-check and the attributes re-read) → set dirty → schedule the IDB persist → refresh the
+            // HUD counts. `set_dirty(true)` alone (the prior code) did only the last-but-two of those,
+            // so a wired merge reported success by toast while the map showed nothing. The `EDITOR_CTX`
+            // doc borrow was dropped at the end of the block above; `after_local_edit` takes its own
+            // `HISTORY_CTX` borrow, so this is not held across the earlier `.await`.
+            crate::mission_history::after_local_edit();
 
             let (summary, skipped) = format_merge_report(&report_json);
             toasts.success(format!("{summary} (Ctrl+Z to undo.)"));
@@ -1014,5 +1022,33 @@ mod tests {
         );
         assert_eq!(skipped.len(), 1);
         assert!(skipped[0].contains("could not parse"));
+    }
+
+    /// T-693 Class-R (MAJOR-1) — **`merge_mission_now` runs the full post-mutation tail.** A merge is a
+    /// document mutation; ending it on `set_dirty(true)` alone (the prior code) skipped the engine
+    /// rebind (merged rows never reached the GPU — invisible on the map), the `doc_ver` bump (the
+    /// validation panel never re-checked), and the persist schedule. The tail is `after_local_edit`,
+    /// the same call every `editor_ops` mutator ends on. This pins the live source (the function is
+    /// wasm-gated, so there is no native runtime seam — the source is the contract) through the
+    /// `class_r_scrub` extractor, so a regression to a bare `set_dirty` re-arms the bug loudly. The
+    /// scrubber blanks comments, so the `set_dirty(true)` named in this function's doc-comment cannot
+    /// satisfy the needle — only a live call can.
+    #[test]
+    fn class_r_merge_mission_now_runs_the_after_local_edit_tail() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        const SRC: &str = include_str!("mission_commands.rs");
+        let production = live_code(SRC);
+        let code = only_body(&production, "pub fn merge_mission_now");
+        assert!(
+            code.contains("after_local_edit"),
+            "merge_mission_now must run the post-mutation tail (after_local_edit), not just set_dirty"
+        );
+        // The prior defect: the tail was a bare `set_dirty(true)` and nothing else. `after_local_edit`
+        // already sets dirty (via `after_doc_change`), so a live `set_dirty(true)` here would be the
+        // regression — the merge doing only the dirty flag again.
+        assert!(
+            !code.contains("set_dirty(true)"),
+            "merge_mission_now must not end on a bare set_dirty(true) — after_local_edit sets dirty"
+        );
     }
 }
