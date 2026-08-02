@@ -446,7 +446,14 @@ pub fn search_empty_message(query: &str, noun: &str) -> String {
 /// case, else `None`. `class:` is ASCII, so `eq_ignore_ascii_case` on the head is exact and avoids
 /// allocating a lowercased copy of the whole query just to test the operator.
 fn strip_prefix_ci<'a>(s: &'a str, prefix: &str) -> Option<&'a str> {
-    if s.len() >= prefix.len() && s[..prefix.len()].eq_ignore_ascii_case(prefix) {
+    // is_char_boundary is load-bearing, not defensive: `s[..prefix.len()]` is a BYTE slice, and a
+    // multibyte char straddling that offset ("beauté" splits é at byte 6) panics — in wasm that
+    // aborts the whole Leptos runtime, and every dock search routes every keystroke through here.
+    // Wave-105 verifier BLOCKER-1; the boundary test above the fix reproduces it.
+    if s.len() >= prefix.len()
+        && s.is_char_boundary(prefix.len())
+        && s[..prefix.len()].eq_ignore_ascii_case(prefix)
+    {
         Some(&s[prefix.len()..])
     } else {
         None
@@ -762,6 +769,33 @@ mod tests {
             search_empty_message("rifleman", "assets"),
             "No assets match."
         );
+    }
+
+    /// Wave-105 verifier BLOCKER-1: `strip_prefix_ci` byte-sliced `s[..6]` with no char-boundary
+    /// check, so any query whose 6th byte split a multibyte char — "beauté", "a日本" — panicked on
+    /// the keystroke and aborted the wasm runtime. Every dock search routes every keystroke here.
+    /// All prior tests were ASCII, which is why nothing covered it.
+    #[test]
+    fn multibyte_queries_do_not_panic_the_recogniser() {
+        let tree = build_catalog_tree(&golden_items(), "BLUFOR");
+        // 6th byte mid-'é' (é is 2 bytes at byte 5): the exact boundary-split shape.
+        for q in [
+            "beauté",
+            "abcdeß",
+            "a日本",
+            "clasé",
+            "über-search",
+            "日本語のクエリ",
+        ] {
+            // Must not panic; multibyte text is never the `class:` operator, so it label-matches.
+            let _ = filter_catalog(&tree, q);
+            assert!(
+                matches!(parse_search_query(q), SearchQuery::Label(_)),
+                "{q} must stay Label"
+            );
+        }
+        // A multibyte OPERAND after a well-formed `class:` head must also survive.
+        let _ = filter_catalog(&tree, "class:beauté");
     }
 
     /// The single load-bearing assertion, wired to FIRE once: `class:` selects a leaf by its
