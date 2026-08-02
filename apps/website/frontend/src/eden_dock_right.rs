@@ -14,6 +14,37 @@ use crate::eden_vehicles_panel::placed_vehicles_panel;
 use crate::eden_zones::zones_panel;
 use crate::ui::MaterialIcon;
 
+/// T-076 (RIGHT-CREW-001) — the "place vehicle with crew" toggle rendered beside the Vehicles
+/// search. A checkbox bound to `with_crew`: a change writes the [`crate::editor_ops`] placement
+/// preference so the NEXT vehicle drop stamps the manned/unmanned intent (`crewed: false` when off)
+/// onto its `vehiclesById` row. Eden's default is crewed, which is `with_crew`'s seed.
+#[cfg(target_arch = "wasm32")]
+fn crew_place_toggle(with_crew: RwSignal<bool>) -> impl IntoView {
+    view! {
+        <label class="mt-2 flex items-center gap-2 text-label-sm text-on-surface-variant">
+            <input
+                type="checkbox"
+                class="size-3.5 shrink-0 accent-primary"
+                aria-label="Place vehicle with crew"
+                prop:checked=move || with_crew.get()
+                on:change=move |ev| {
+                    let on = event_target_checked(&ev);
+                    with_crew.set(on);
+                    crate::editor_ops::set_place_with_crew(on);
+                }
+            />
+            <span>"Place with crew"</span>
+        </label>
+    }
+}
+
+/// Native shell: the placement preference lives in the wasm-only `editor_ops`, so there is nothing
+/// to toggle — the toggle renders on the wasm build only. See the wasm sibling.
+#[cfg(not(target_arch = "wasm32"))]
+fn crew_place_toggle() -> impl IntoView {
+    ().into_view()
+}
+
 /// T-215 — which palette a leaf belongs to. The tree machinery (guides, collapse, search) is
 /// identical for both; only the glyph and which `editor_ops` arm the press calls differ, and those
 /// are the two things that must not be shared — a Vehicles leaf that armed a character place would
@@ -312,6 +343,12 @@ pub fn DockRight(
         }
     });
     let vehicle_search = RwSignal::new(String::new());
+    // T-076 (RIGHT-CREW-001) — the "place vehicle with crew" toggle, seeded from the editor-ops
+    // preference so it reflects the live place mode (Eden default: crewed). Flipping it writes the
+    // preference back; the next vehicle placement stamps the manned/unmanned intent on the row.
+    // wasm-only: the preference lives in `editor_ops`, a wasm32-only module.
+    #[cfg(target_arch = "wasm32")]
+    let place_with_crew = RwSignal::new(crate::editor_ops::place_with_crew());
     // T-254 — Objects chip palette (entities[]): own collapse + search, built from registry_items.
     let object_collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
     let object_search = RwSignal::new(String::new());
@@ -561,6 +598,14 @@ pub fn DockRight(
                         class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
                         on:input=move |ev| vehicle_search.set(event_target_value(&ev))
                     />
+                    // T-076 (RIGHT-CREW-001) — the manned/unmanned placement toggle, beside the
+                    // Vehicles search. Checked ⇒ a placed vehicle is authored with crew (the Eden
+                    // default); unchecked ⇒ `crewed: false` is stamped on the row. Native builds omit
+                    // it (the `editor_ops` preference is wasm-only).
+                    {crew_place_toggle(
+                        #[cfg(target_arch = "wasm32")]
+                        place_with_crew,
+                    )}
                     <div class="mt-2">
                         {move || {
                             if objects_mode.get() {

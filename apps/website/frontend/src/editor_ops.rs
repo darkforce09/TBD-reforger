@@ -133,6 +133,26 @@ pub struct SlotAttrs {
 
 thread_local! {
     static OPS_CTX: RefCell<Option<OpsCtx>> = const { RefCell::new(None) };
+    /// T-076 (RIGHT-CREW-001) — the "place vehicle with crew" toggle state. A pure placement
+    /// PREFERENCE (not doc state), read once at [`place_at`] time and stamped onto the placed
+    /// vehicle as its manned/unmanned intent. Kept here as a thread-local `Cell` rather than on
+    /// `OpsCtx` because it is editor-session UI state with a single writer (the dock switch) and no
+    /// consumer outside this module — the same reason `next_id` is a `Cell`. Defaults to `true`:
+    /// Eden places vehicles crewed unless the operator turns the switch off (or holds Alt).
+    static PLACE_WITH_CREW: Cell<bool> = const { Cell::new(true) };
+}
+
+/// T-076 (RIGHT-CREW-001) — set the "place vehicle with crew" toggle (the DockRight switch beside
+/// the Vehicles search). Reads back through [`place_with_crew`]; the next vehicle placement stamps
+/// this intent onto the row.
+pub fn set_place_with_crew(with_crew: bool) {
+    PLACE_WITH_CREW.with(|f| f.set(with_crew));
+}
+
+/// T-076 (RIGHT-CREW-001) — current "place vehicle with crew" toggle state (the switch's `checked`).
+#[must_use]
+pub fn place_with_crew() -> bool {
+    PLACE_WITH_CREW.with(Cell::get)
 }
 
 /// Install the ops context (once, from `on_load`, after the doc is seeded).
@@ -1715,6 +1735,7 @@ fn place_vehicle_in_core(
     resource_name: &str,
     x: f64,
     y: f64,
+    with_crew: bool,
 ) -> bool {
     if !matches!(side, "BLUFOR" | "OPFOR" | "INDFOR") || resource_name.trim().is_empty() {
         return false;
@@ -1729,6 +1750,10 @@ fn place_vehicle_in_core(
         Some(0.0),
     );
     core.set_vehicle_faction(vehicle_id, &faction_id);
+    // T-076 (RIGHT-CREW-001) — stamp the manned/unmanned placement intent. `set_vehicle_crewed`
+    // omits the key for the with-crew default, so a manned placement's row is unchanged; only the
+    // toggle-off case writes `crewed: false`. Same undo step as the place (same borrow scope).
+    core.set_vehicle_crewed(vehicle_id, with_crew);
     true
 }
 
@@ -1786,6 +1811,10 @@ pub struct VehicleRow {
     /// Empty when the vehicle is not attached to a squad (every map-placed vehicle).
     pub squad_id: String,
     pub cargo: Vec<VehicleCargoRow>,
+    /// T-076 — the vehicle's crew map: `seat_id → slot_id`. Empty when nobody is boarded. Read off
+    /// the same `crew` object the core writes ([`MissionDocCore::assign_crew_seat`]); the panel joins
+    /// each generic seat (driver/gunner/commander/cargoN) against this to show who occupies it.
+    pub crew: std::collections::HashMap<String, String>,
 }
 
 /// Read every `vehiclesById` row for the docks. Off `small_maps_json`, like [`squad_rows`] —
@@ -1835,6 +1864,18 @@ pub fn vehicle_rows() -> Vec<VehicleRow> {
                                         item: r.get("item")?.as_str()?.to_string(),
                                         qty: r.get("qty")?.as_i64()?,
                                     })
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default(),
+                    // T-076 — join key for the seat list: `{seat_id: slot_id}` off the vehicle row.
+                    crew: v
+                        .get("crew")
+                        .and_then(|c| c.as_object())
+                        .map(|o| {
+                            o.iter()
+                                .filter_map(|(seat, slot)| {
+                                    Some((seat.clone(), slot.as_str()?.to_string()))
                                 })
                                 .collect()
                         })
@@ -1959,6 +2000,88 @@ pub fn remove_vehicle(vehicle_id: String) -> bool {
             return false;
         };
         core.remove_vehicle(&vehicle_id);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// T-076 — one placed slot as the crew seat picker needs it: the doc id plus a human-readable label
+/// (its resolved role, or the raw id when a slot has no role yet). Every placed character is a
+/// candidate crew member, so the picker's options are exactly [`slot_rows`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PlacedSlotChoice {
+    pub id: String,
+    pub label: String,
+}
+
+/// T-076 — the placed slots a crew seat can be assigned to (board target list for the seat picker).
+/// Sorted by label then id so the dropdown order is a property of this reader, not of SoA iteration.
+#[must_use]
+pub fn placed_slot_choices() -> Vec<PlacedSlotChoice> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return Vec::new();
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return Vec::new();
+        };
+        let mut rows: Vec<PlacedSlotChoice> = slot_rows(core)
+            .into_iter()
+            .map(|s| {
+                let label = if s.role.is_empty() {
+                    s.id.clone()
+                } else {
+                    format!("{} ({})", s.role, s.id)
+                };
+                PlacedSlotChoice { id: s.id, label }
+            })
+            .collect();
+        rows.sort_by(|a, b| a.label.cmp(&b.label).then_with(|| a.id.cmp(&b.id)));
+        rows
+    })
+}
+
+/// T-076 — board a placed slot into a vehicle seat (`vehicle.crew[seat_id] = slot_id`), then the
+/// shared dirty tail (one undo step). The **one-seat-per-slot** rule is enforced by the core mutator
+/// [`MissionDocCore::assign_crew_seat`], which vacates `slot_id` from any other seat of any vehicle
+/// before writing — so this reader-agnostic op cannot author a soldier into two vehicles at once.
+pub fn assign_crew_seat(vehicle_id: String, seat_id: String, slot_id: String) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.assign_crew_seat(&vehicle_id, &seat_id, &slot_id);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// T-076 — unboard: clear one vehicle seat. Core [`MissionDocCore::clear_crew_seat`] removes the
+/// `crew` key once the last seat empties, so an unboard restores the pre-board row shape.
+pub fn clear_crew_seat(vehicle_id: String, seat_id: String) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.clear_crew_seat(&vehicle_id, &seat_id);
         true
     });
     if did {
@@ -2264,7 +2387,16 @@ pub fn place_at(x: f64, y: f64) -> bool {
                 // `_ =>` so that a fourth arm added later cannot fall silently into a slot place.
                 Pending::Zone(_) => return false,
                 Pending::Vehicle(payload) => {
-                    if !place_vehicle_in_core(core, &side, &id, &payload.asset_id, x, y) {
+                    // T-076 (RIGHT-CREW-001) — read the manned/unmanned toggle at place time.
+                    if !place_vehicle_in_core(
+                        core,
+                        &side,
+                        &id,
+                        &payload.asset_id,
+                        x,
+                        y,
+                        place_with_crew(),
+                    ) {
                         return false;
                     }
                     None

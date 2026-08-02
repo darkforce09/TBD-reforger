@@ -912,6 +912,109 @@ impl MissionDocCore {
         }
     }
 
+    /// T-076 — board a placed slot into one seat of a vehicle: `vehicle.crew[seat_id] = slot_id`.
+    ///
+    /// **The crew map is doc state on the vehicle row**, exactly like [`Self::set_vehicle_cargo`]'s
+    /// `cargo`: it rides `vehiclesById` (already undo-scoped and carried by [`Self::small_maps_json`]),
+    /// so a board is PERSISTED with the mission, round-trips through Save→reload, and — because it
+    /// goes through [`Self::begin`] — is ONE undo step. This is the shape the T-665 layer flags used
+    /// (a per-row property that rides the row it belongs to) rather than a tenth root map: the seat
+    /// assignment is meaningless without the vehicle, so it lives on the vehicle.
+    ///
+    /// `crew` is a MAP `seat_id → slot_id` (a *generic* seat model — driver/gunner/commander/cargoN —
+    /// because vehicle data has no per-class seat schema yet; that is T-205). The seat ids are the
+    /// authoring surface's, opaque to the doc.
+    ///
+    /// **One slot occupies at most ONE seat across ALL vehicles** — enforced HERE, not in the UI: the
+    /// same soldier cannot be two places at once, and a rule the caller can forget to apply is not a
+    /// rule. Before writing, `slot_id` is cleared from every other seat of every vehicle (its own
+    /// included), so a re-board is a move, never a duplicate. Assigning a slot already in this exact
+    /// seat is idempotent.
+    ///
+    /// No-ops (leaving the doc untouched) when the vehicle id is missing or `seat_id`/`slot_id` is
+    /// empty — an empty key/value would author a crew entry no reader could act on. Unboard is
+    /// [`Self::clear_crew_seat`]; there is deliberately no "clear by slot" here because the panel
+    /// always knows the seat it is clearing.
+    pub fn assign_crew_seat(&self, vehicle_id: &str, seat_id: &str, slot_id: &str) {
+        if seat_id.is_empty() || slot_id.is_empty() {
+            return;
+        }
+        let mut txn = self.begin();
+        if self.vehicles.get(&txn, vehicle_id).is_none() {
+            return;
+        }
+        // One-seat-per-slot: strip this slot from any seat of any vehicle before assigning it here.
+        // Collect first (cannot mutate a crew map while iterating the vehicles map that owns it).
+        let mut evict: Vec<(String, String)> = Vec::new();
+        for (vid, out_v) in self.vehicles.iter(&txn) {
+            let Out::YMap(v) = out_v else { continue };
+            if let Some(Out::YMap(crew)) = v.get(&txn, "crew") {
+                for (sid, occ) in crew.iter(&txn) {
+                    if matches!(occ, Out::Any(Any::String(ref s)) if s.as_ref() == slot_id)
+                        && !(vid == vehicle_id && sid == seat_id)
+                    {
+                        evict.push((vid.to_string(), sid.to_string()));
+                    }
+                }
+            }
+        }
+        for (vid, sid) in evict {
+            if let Some(Out::YMap(v)) = self.vehicles.get(&txn, &vid)
+                && let Some(Out::YMap(crew)) = v.get(&txn, "crew")
+            {
+                crew.remove(&mut txn, sid.as_str());
+                // An empty crew map removes the key — a never-crewed vehicle's row stays byte-
+                // identical to before this ticket (the `cargo`/`tag` omit idiom).
+                if crew.len(&txn) == 0 {
+                    v.remove(&mut txn, "crew");
+                }
+            }
+        }
+        // Ensure `crew` exists on the target, then write the seat.
+        let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id) else {
+            return;
+        };
+        let crew = match v.get(&txn, "crew") {
+            Some(Out::YMap(c)) => c,
+            _ => v.insert(&mut txn, "crew", MapPrelim::default()),
+        };
+        crew.insert(&mut txn, seat_id, slot_id);
+    }
+
+    /// T-076 — record the RIGHT-CREW-001 manned/unmanned intent on a placed vehicle
+    /// (`vehicle.crewed = false` for unmanned). This is authored placement STATE, additive to the
+    /// T-180.2 row exactly like [`Self::set_vehicle_faction`]'s `factionId`: it says how the operator
+    /// wants the vehicle to spawn, for the split-out vehicle-roster compile drop to honor.
+    ///
+    /// Stored only when `false` (unmanned): a with-crew vehicle is the Eden default, and the omit
+    /// idiom keeps a manned vehicle's row byte-identical to before this ticket (absent ⇒ crewed).
+    pub fn set_vehicle_crewed(&self, vehicle_id: &str, crewed: bool) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id) {
+            if crewed {
+                v.remove(&mut txn, "crewed");
+            } else {
+                v.insert(&mut txn, "crewed", false);
+            }
+        }
+    }
+
+    /// T-076 — unboard: clear one seat of a vehicle's crew map. No-op when the vehicle or seat is
+    /// absent. Removes the `crew` key entirely once its last seat is cleared, so an emptied crew
+    /// leaves the row shape it had before any board (the omit idiom [`Self::set_vehicle_cargo`] uses
+    /// for an empty cargo list). One LOCAL undo step, like the board it reverses.
+    pub fn clear_crew_seat(&self, vehicle_id: &str, seat_id: &str) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id)
+            && let Some(Out::YMap(crew)) = v.get(&txn, "crew")
+        {
+            crew.remove(&mut txn, seat_id);
+            if crew.len(&txn) == 0 {
+                v.remove(&mut txn, "crew");
+            }
+        }
+    }
+
     /// T-254 — insert a mission-placed world object into `entitiesById`.
     ///
     /// Editor row shape: `{id, alias, resourceName, position}`. `alias` is the schema
@@ -3610,6 +3713,207 @@ mod tests {
         assert_eq!(slots.xs[row_of(&slots, "s0")], 110.0, "s0 re-applied");
         let vehs = vehicles_of(&doc);
         assert_eq!(vehs["v1"]["position"]["x"], 910.0, "v1 re-applied");
+    }
+
+    /* ─────────────────────────────── T-076 — vehicle crew map ─────────────────────────────── */
+
+    /// A doc with two placed vehicles and three placed slots, seeded under INIT so the setup is not
+    /// on the undo stack — the crew tests then perturb with a single LOCAL board / unboard.
+    fn two_vehicles_three_slots() -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        for id in ["s0", "s1", "s2"] {
+            doc.add_slot(
+                id, "sq", "L", 0, "Rifleman", None, None, 10.0, 20.0, 0.0, 0.0,
+            );
+        }
+        doc.add_vehicle(
+            "v0",
+            "Prefab/A.et",
+            Some(1.0),
+            Some(2.0),
+            Some(0.0),
+            Some(0.0),
+        );
+        doc.add_vehicle(
+            "v1",
+            "Prefab/B.et",
+            Some(3.0),
+            Some(4.0),
+            Some(0.0),
+            Some(0.0),
+        );
+        doc.set_origin_init(false);
+        doc
+    }
+
+    /// Read a vehicle's crew map (`{seat_id: slot_id}`) off the same `small_maps_json` the panel
+    /// reads, or `Null` when the vehicle has never been crewed.
+    fn crew_of(doc: &MissionDocCore, vehicle_id: &str) -> serde_json::Value {
+        vehicles_of(doc)[vehicle_id]["crew"].clone()
+    }
+
+    /// ASSIGN + CLEAR: board writes `crew[seat] = slot`, the assignment rides `vehiclesById` (so it
+    /// is in `small_maps_json` for the panel and a Save), and unboard removes the seat — clearing the
+    /// last seat removes the `crew` key entirely, restoring the pre-board row shape.
+    #[test]
+    fn crew_assign_then_clear_rides_the_vehicle_row() {
+        let doc = two_vehicles_three_slots();
+        assert!(crew_of(&doc, "v0").is_null(), "no crew before any board");
+
+        doc.assign_crew_seat("v0", "driver", "s0");
+        assert_eq!(crew_of(&doc, "v0")["driver"], "s0", "board wrote the seat");
+
+        doc.assign_crew_seat("v0", "gunner", "s1");
+        assert_eq!(crew_of(&doc, "v0")["gunner"], "s1", "second seat coexists");
+        assert_eq!(crew_of(&doc, "v0")["driver"], "s0", "first seat untouched");
+
+        // Unboard one seat — the other survives.
+        doc.clear_crew_seat("v0", "driver");
+        assert!(
+            crew_of(&doc, "v0")["driver"].is_null(),
+            "unboard cleared the seat"
+        );
+        assert_eq!(crew_of(&doc, "v0")["gunner"], "s1", "other seat survives");
+
+        // Clearing the LAST seat drops the whole `crew` key (omit idiom).
+        doc.clear_crew_seat("v0", "gunner");
+        assert!(
+            crew_of(&doc, "v0").is_null(),
+            "empty crew removes the key: {}",
+            vehicles_of(&doc)["v0"]
+        );
+    }
+
+    /// ONE-SEAT-PER-SLOT, fired once. A slot occupies at most one seat across ALL vehicles: boarding
+    /// `s0` into `v1` while it already crews `v0` must MOVE it (evict the old seat), not duplicate it.
+    /// The perturb (`v1`/driver) proves the eviction reaches a *different vehicle*, then the restore
+    /// (re-board into `v0`) proves it reaches back — a rule enforced in the op, not the UI.
+    #[test]
+    fn crew_slot_occupies_one_seat_across_all_vehicles() {
+        let doc = two_vehicles_three_slots();
+
+        // s0 crews v0/driver; s1 crews v0/gunner.
+        doc.assign_crew_seat("v0", "driver", "s0");
+        doc.assign_crew_seat("v0", "gunner", "s1");
+
+        // Re-board s0 within the SAME vehicle (driver → commander): the old seat is vacated.
+        doc.assign_crew_seat("v0", "commander", "s0");
+        assert_eq!(crew_of(&doc, "v0")["commander"], "s0", "moved to commander");
+        assert!(
+            crew_of(&doc, "v0")["driver"].is_null(),
+            "s0 no longer double-seated in its own vehicle"
+        );
+
+        // ── perturb: board s0 into a DIFFERENT vehicle. The one-seat rule must evict v0/commander. ──
+        doc.assign_crew_seat("v1", "driver", "s0");
+        assert_eq!(crew_of(&doc, "v1")["driver"], "s0", "s0 now crews v1");
+        assert!(
+            crew_of(&doc, "v0")["commander"].is_null(),
+            "s0 evicted from v0 — no soldier in two vehicles at once: {}",
+            vehicles_of(&doc)["v0"]
+        );
+        // v0 still has its OTHER crew (s1/gunner) — eviction is surgical, not a wipe.
+        assert_eq!(crew_of(&doc, "v0")["gunner"], "s1", "v1 board spared s1");
+
+        // ── restore: re-board s0 back into v0. It must vacate v1 the same way. ──
+        doc.assign_crew_seat("v0", "driver", "s0");
+        assert_eq!(crew_of(&doc, "v0")["driver"], "s0", "s0 back in v0");
+        assert!(
+            crew_of(&doc, "v1").is_null(),
+            "s0 evicted from v1 (its only seat) — the crew key is gone: {}",
+            vehicles_of(&doc)["v1"]
+        );
+    }
+
+    /// UNDO one step. A board is ONE LOCAL transaction; a single Ctrl+Z takes it off and the seat is
+    /// vacant again — the crew map is undoable exactly like a cargo edit or a layer-flag flip.
+    #[test]
+    fn crew_board_is_one_undo_step() {
+        let mut doc = two_vehicles_three_slots();
+        assert_eq!(doc.undo_depth(), 0, "the INIT seed is not an undo step");
+
+        doc.assign_crew_seat("v0", "driver", "s0");
+        assert_eq!(doc.undo_depth(), 1, "one board is ONE LOCAL txn");
+        assert_eq!(crew_of(&doc, "v0")["driver"], "s0");
+
+        assert!(doc.undo(), "undo the board");
+        assert_eq!(doc.undo_depth(), 0, "nothing left on the stack");
+        assert!(
+            crew_of(&doc, "v0").is_null(),
+            "one undo vacated the seat: {}",
+            vehicles_of(&doc)["v0"]
+        );
+
+        assert!(doc.redo(), "redo re-boards");
+        assert_eq!(
+            crew_of(&doc, "v0")["driver"],
+            "s0",
+            "redo restored the seat"
+        );
+    }
+
+    /// Guard rails: a board against a missing vehicle, or with an empty seat/slot id, leaves the doc
+    /// untouched (an empty key/value would author a crew entry no reader could act on).
+    #[test]
+    fn crew_assign_ignores_missing_vehicle_and_empty_ids() {
+        let doc = two_vehicles_three_slots();
+        doc.assign_crew_seat("nope", "driver", "s0"); // unknown vehicle
+        doc.assign_crew_seat("v0", "", "s0"); // empty seat
+        doc.assign_crew_seat("v0", "driver", ""); // empty slot
+        assert!(
+            crew_of(&doc, "v0").is_null(),
+            "no crew written by any no-op"
+        );
+        assert_eq!(doc.undo_depth(), 0, "a no-op is not an undo step");
+    }
+
+    /// RIGHT-CREW-001 manned/unmanned intent: `set_vehicle_crewed(false)` writes `crewed: false`;
+    /// the with-crew default omits the key so a manned row is unchanged; and it round-trips a Save.
+    #[test]
+    fn crewed_flag_is_written_only_when_unmanned() {
+        let doc = two_vehicles_three_slots();
+        assert!(
+            vehicles_of(&doc)["v0"]["crewed"].is_null(),
+            "a fresh vehicle carries no crewed key (with-crew default)"
+        );
+
+        doc.set_vehicle_crewed("v0", false);
+        assert_eq!(
+            vehicles_of(&doc)["v0"]["crewed"],
+            false,
+            "unmanned intent is stored"
+        );
+
+        doc.set_vehicle_crewed("v0", true);
+        assert!(
+            vehicles_of(&doc)["v0"]["crewed"].is_null(),
+            "flipping back to manned removes the key, not stores true"
+        );
+    }
+
+    /// T-076 — Save → reload keeps the whole crew authoring surface: seat assignments AND the
+    /// unmanned intent survive a compile-and-hydrate round-trip (the panel reads what it wrote).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn crew_and_crewed_survive_save_and_reload() {
+        let doc = two_vehicles_three_slots();
+        doc.assign_crew_seat("v0", "driver", "s0");
+        doc.assign_crew_seat("v0", "cargo2", "s1");
+        doc.set_vehicle_crewed("v1", false);
+
+        let reloaded = save_and_reload(&doc);
+        assert_eq!(
+            crew_of(&reloaded, "v0")["driver"],
+            "s0",
+            "seat assignment round-trips"
+        );
+        assert_eq!(crew_of(&reloaded, "v0")["cargo2"], "s1", "cargo seat too");
+        assert_eq!(
+            vehicles_of(&reloaded)["v1"]["crewed"],
+            false,
+            "unmanned intent round-trips"
+        );
     }
 
     /// T-491 Class-R — `pick_slot_or_vehicle`: only a slot in range → slot id.
