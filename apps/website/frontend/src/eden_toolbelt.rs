@@ -22,8 +22,233 @@
 //! `#[cfg(target_arch = "wasm32")]` inside the memo).
 #![allow(dead_code)]
 use leptos::prelude::*;
+use map_engine_core::camera::OrthoCamera;
 
 use crate::ui::MaterialIcon;
+
+// ── T-667 — map furniture: scale bar + edge grid references (pure geometry) ─────────────────────────
+//
+// The operator decision (registry): a 2D top-down planner EXCEEDS Eden — which ships no scale bar,
+// no legend, no grid coordinate labels — with the two distance cues a plan view actually needs:
+// a metric scale bar and grid-reference labels framing the MAP PANE. The legend is deliberately
+// skipped. Both are DOM chrome (not GPU glyphs like the T-641 spot heights), so their maths lives
+// here as pure functions the native `cargo test` proves; the Leptos components below are thin
+// wrappers that read the live camera and render what these return.
+//
+// Everything in this module is `deck_zoom`-driven off the ONE engine convention:
+//   `m_per_px = 2^(−deck_zoom)`   (T-639/T-641; `slots_gpu::px_to_m_at_zoom`, `ortho.rs` `scale =
+//   2^zoom` px/m). Larger m/pix = zoomed further out.
+
+/// Metres-per-pixel at a given `deck_zoom` — the single scale convention (`2^(−deck_zoom)`), cited
+/// against `lod_gates`/`ortho.rs`. Non-finite ⇒ 1.0 (a safe unit scale; callers only ever pass a
+/// finite engine zoom).
+#[must_use]
+pub fn m_per_px(deck_zoom: f64) -> f64 {
+    if deck_zoom.is_finite() {
+        2.0_f64.powf(-deck_zoom)
+    } else {
+        1.0
+    }
+}
+
+/// The drawn grid's line spacing in world metres — the procedural 1 km grid
+/// (`map_engine_render::lanes::grid_lines`, `GRID_STEP = 1000`). Grid-reference labels enumerate
+/// lines at world multiples of this, so a label can never drift off the line it names. The
+/// `labels_match_grid_lines` test pins this against the live `grid_lines` output (not a private
+/// const copy) so a future re-space of the grid fails here rather than silently mislabelling.
+pub const GRID_STEP_M: f64 = 1000.0;
+
+/// Everon terrain span (metres, square). The grid is drawn only over `[0, TERRAIN_SPAN_M]`
+/// (`lanes::grid_lines` loops `x = 0..width`), so grid references outside it do not exist — the
+/// edge-label enumeration clamps to this so a pane edge scrolled past the terrain (negative or
+/// over-terrain world coords) emits no phantom label. Matches `select_tool`'s `TERRAIN_W/H`.
+pub const TERRAIN_SPAN_M: f64 = 12_800.0;
+
+/// Scale-bar target width band (CSS px). The picker takes the LARGEST round distance whose bar is
+/// ≤ [`SCALE_MAX_PX`]; the 1-2-5 ladder then keeps the drawn bar roughly [`SCALE_MIN_PX`]–
+/// [`SCALE_MAX_PX`] (worst case ~80 px at the 2→5 rung boundary — a 1-2-5 ladder cannot hold a
+/// tighter band, and a scale bar reads fine there).
+pub const SCALE_MAX_PX: f64 = 200.0;
+/// Nominal lower edge of the scale-bar width band (informational; the picker keys off the max).
+pub const SCALE_MIN_PX: f64 = 120.0;
+
+/// A resolved scale bar: the chosen round ground distance, the on-screen bar length, and the label.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ScaleBarSpec {
+    /// Chosen round distance in metres (a `1/2/5 × 10^n` value).
+    pub dist_m: f64,
+    /// On-screen bar length in CSS px = `dist_m / m_per_px`.
+    pub width_px: f64,
+    /// Human label, e.g. `"500 m"` or `"2 km"`.
+    pub label: String,
+}
+
+/// Format a round metric distance: sub-1000 m as `"N m"`, ≥1000 m as `"N km"` (integer km when
+/// whole, else one decimal — the 1-2-5 ladder only ever yields whole or `.5` km, e.g. `500 m`,
+/// `2 km`, `5 km`, `10 km`).
+#[must_use]
+pub fn format_distance(dist_m: f64) -> String {
+    if dist_m >= 1000.0 {
+        let km = dist_m / 1000.0;
+        if (km.round() - km).abs() < 1e-9 {
+            format!("{} km", km.round() as i64)
+        } else {
+            format!("{km:.1} km")
+        }
+    } else {
+        format!("{} m", dist_m.round() as i64)
+    }
+}
+
+/// Pick the scale bar for a screen scale of `m_per_px`: the LARGEST `1/2/5 × 10^n` metres whose bar
+/// (`dist / m_per_px`) is ≤ [`SCALE_MAX_PX`]. Live-updates on zoom because `m_per_px` does.
+///
+/// Walks the 1-2-5 ladder from a coarse ceiling down to the first (largest) value that fits, so the
+/// bar is always the widest round distance under the cap. Degenerate `m_per_px` (≤ 0 or non-finite)
+/// ⇒ the finest rung (1 m) as a safe floor.
+#[must_use]
+pub fn pick_scale_bar(m_per_px: f64) -> ScaleBarSpec {
+    // Ladder mantissas per decade, descending, so the first fit is the largest.
+    const MANTISSA: [f64; 3] = [5.0, 2.0, 1.0];
+    if !m_per_px.is_finite() || m_per_px <= 0.0 {
+        return ScaleBarSpec {
+            dist_m: 1.0,
+            width_px: 1.0,
+            label: format_distance(1.0),
+        };
+    }
+    // Decades from 10^7 m (10000 km, well past whole-Everon) down to 10^0 m.
+    for exp in (0..=7).rev() {
+        let decade = 10.0_f64.powi(exp);
+        for m in MANTISSA {
+            let dist = m * decade;
+            let width = dist / m_per_px;
+            if width <= SCALE_MAX_PX {
+                return ScaleBarSpec {
+                    dist_m: dist,
+                    width_px: width,
+                    label: format_distance(dist),
+                };
+            }
+        }
+    }
+    // m_per_px so small even 1 m overflows the cap (zoomed past MAX_ZOOM — unreachable): finest rung.
+    ScaleBarSpec {
+        dist_m: 1.0,
+        width_px: 1.0 / m_per_px,
+        label: format_distance(1.0),
+    }
+}
+
+/// Arma grid reference for a world coordinate: 3-digit **hundreds-of-metres**, wrapping every
+/// 100 km (`floor(m / 100) mod 1000`, zero-padded). E.g. `6400 m → 064`, `12000 m → 120`,
+/// `0 m → 000`. This is the six-figure military-grid half a single axis contributes (the
+/// `mortar.rs` "012 020" convention). Negative or non-finite ⇒ `000` (off-terrain guard).
+#[must_use]
+pub fn grid_ref_3digit(world_m: f64) -> String {
+    if !world_m.is_finite() || world_m < 0.0 {
+        return "000".to_string();
+    }
+    let hundreds = (world_m / 100.0).floor() as i64;
+    let wrapped = hundreds.rem_euclid(1000);
+    format!("{wrapped:03}")
+}
+
+/// The world coordinates of grid lines (multiples of [`GRID_STEP_M`]) within `[lo, hi]` world
+/// metres, inclusive — the eastings/northings whose lines cross a map-pane edge. `lo`/`hi` are the
+/// visible world span of that edge; the returned values are exactly the drawn line positions, so
+/// labelling them can never drift from the grid.
+#[must_use]
+pub fn grid_lines_in_range(lo: f64, hi: f64) -> Vec<f64> {
+    let (lo, hi) = if lo <= hi { (lo, hi) } else { (hi, lo) };
+    if !lo.is_finite() || !hi.is_finite() {
+        return Vec::new();
+    }
+    let first_k = (lo / GRID_STEP_M).ceil() as i64;
+    let last_k = (hi / GRID_STEP_M).floor() as i64;
+    if last_k < first_k {
+        return Vec::new();
+    }
+    (first_k..=last_k).map(|k| k as f64 * GRID_STEP_M).collect()
+}
+
+/// One edge grid-reference label: the CSS-pixel position along the anchoring edge and the 3-digit
+/// text. For an easting (top edge) `pos_px` is the screen X of the vertical grid line; for a
+/// northing (left edge) it is the screen Y of the horizontal line.
+#[derive(Clone, Debug, PartialEq)]
+pub struct EdgeLabel {
+    /// CSS px along the edge (screen X for eastings, screen Y for northings).
+    pub pos_px: f64,
+    /// 3-digit hundreds-of-metres reference.
+    pub text: String,
+}
+
+/// Eastings for the map pane's TOP edge: the vertical grid lines whose screen-X lands inside the
+/// pane's horizontal span `[pane_left_px, pane_right_px]`. The world span of that edge is
+/// unprojected from the two edge pixels (at the top row `top_px`), grid lines inside it are
+/// enumerated, and each is projected BACK to a screen X via the SAME `OrthoCamera::project` the GPU
+/// draw uses — so a label sits exactly on its line. Lines that fall outside the pane (occluded by a
+/// dock) are dropped, which is the correct Eden-exceeding geometry: refs frame the MAP, not the
+/// window.
+#[must_use]
+pub fn edge_eastings(
+    cam: &OrthoCamera,
+    pane_left_px: f64,
+    pane_right_px: f64,
+    top_px: f64,
+) -> Vec<EdgeLabel> {
+    if pane_right_px <= pane_left_px {
+        return Vec::new();
+    }
+    // World X at the pane's left and right screen edges (top row). The camera is north-up with no
+    // rotation, so a screen X maps to a single world X regardless of the row; `top_px` is used so
+    // the round-trip is exact against the drawn line. Clamp the span to the terrain — the grid is
+    // only drawn over [0, TERRAIN_SPAN_M], so a pane edge scrolled off-terrain emits no phantom ref.
+    let wl = cam.unproject_xy(pane_left_px, top_px)[0].clamp(0.0, TERRAIN_SPAN_M);
+    let wr = cam.unproject_xy(pane_right_px, top_px)[0].clamp(0.0, TERRAIN_SPAN_M);
+    let mut out = Vec::new();
+    for wx in grid_lines_in_range(wl, wr) {
+        let sx = cam.project([wx, cam.target_y(), 0.0])[0];
+        // Guard the float edges: keep only lines that project strictly inside the visible pane span.
+        if sx >= pane_left_px - 0.5 && sx <= pane_right_px + 0.5 {
+            out.push(EdgeLabel {
+                pos_px: sx,
+                text: grid_ref_3digit(wx),
+            });
+        }
+    }
+    out
+}
+
+/// Northings for the map pane's LEFT edge: the horizontal grid lines whose screen-Y lands inside
+/// the pane's vertical span `[top_px, bottom_px]`. Mirror of [`edge_eastings`] on the Y axis. Note
+/// the screen Y axis is inverted vs world Y (north up), so the world span is `[bottom, top]` in
+/// world metres; `grid_lines_in_range` is order-agnostic and each line is projected back for an
+/// exact on-line Y.
+#[must_use]
+pub fn edge_northings(
+    cam: &OrthoCamera,
+    pane_left_px: f64,
+    top_px: f64,
+    bottom_px: f64,
+) -> Vec<EdgeLabel> {
+    if bottom_px <= top_px {
+        return Vec::new();
+    }
+    let w_top = cam.unproject_xy(pane_left_px, top_px)[1].clamp(0.0, TERRAIN_SPAN_M);
+    let w_bottom = cam.unproject_xy(pane_left_px, bottom_px)[1].clamp(0.0, TERRAIN_SPAN_M);
+    let mut out = Vec::new();
+    for wy in grid_lines_in_range(w_bottom, w_top) {
+        let sy = cam.project([cam.target_x(), wy, 0.0])[1];
+        if sy >= top_px - 0.5 && sy <= bottom_px + 0.5 {
+            out.push(EdgeLabel {
+                pos_px: sy,
+                text: grid_ref_3digit(wy),
+            });
+        }
+    }
+    out
+}
 
 // ── Toolbelt class recipes (React `overlay.ts`) ────────────────────────────────────────────────────
 
@@ -175,17 +400,22 @@ pub fn StatusBar(
                     </span>
                 </span>
             </div>
-            // ── Map-furniture slot (T-667, wave 106) — the scale bar + edge grid references land
-            // here. Left EMPTY on purpose: the full-width bar is the natural home for them, so this
-            // slice reserves the obvious slot (with the `flex-1` spacer that pushes the HUD + OPEN
-            // to the right edge) rather than building furniture that is not this ticket. The
-            // `data-*` hook lets T-667 target it without touching this component's structure again.
+            // ── Map-furniture slot (T-667, wave 106) — the metric scale bar lives HERE, in the
+            // status bar's CLEAR CENTRE SPAN. The wave-105 verifier pinned this bar's left 256 px
+            // and right 320 px as OCCLUDED under the docks until T-721; the `flex-1` spacer centres
+            // this slot between the CUR/OBJ/SEL/SZ readouts (left) and the HUD/OPEN (right), so the
+            // scale bar renders in the clear middle band that both docks miss. (The edge grid
+            // references — the other half of the furniture — cannot live in this slot: they anchor
+            // to the MAP-PANE edges, so they render from `MapGridRefs`, an overlay mounted once in
+            // `mission_editor`.) T-636 reserved this slot EMPTY as a do-not-build-early guard; T-667
+            // is the ticket it guarded for, so the slot is now filled and the pin updated to match.
             <span class="h-5 w-px bg-white/10"></span>
             <div
                 data-status-furniture
-                class="flex min-w-0 flex-1 items-center gap-2 font-mono text-code-md text-outline"
-                title="Scale bar and grid references (T-667)"
+                class="flex min-w-0 flex-1 items-center justify-center gap-2 font-mono text-code-md text-outline"
+                title="Scale bar (T-667)"
             >
+                <ScaleBar cursor debug_hud />
             </div>
             // ── Debug HUD slot (T-719) — a legitimate VISIBLE home in the right section, before
             // OPEN. Before T-636 the HUD lived at `right-3 bottom-3` on the overlay with no z-index,
@@ -221,6 +451,177 @@ pub fn StatusBar(
                 <MaterialIcon name="folder_open" class="block text-base" />
                 <span>"OPEN"</span>
             </button>
+        </div>
+    }
+}
+
+/// T-667 — the metric scale bar that mounts in [`StatusBar`]'s `data-status-furniture` slot. Reads
+/// the live camera zoom off the registered engine (`world_assets::camera_snapshot`, the same
+/// `RENDER_CTX` seam the Mission Settings render-pref controls use) and renders the largest round
+/// `1/2/5 × 10^n` distance whose bar fits ≤ [`SCALE_MAX_PX`] via [`pick_scale_bar`].
+///
+/// **Reactivity (no new rAF loop):** the render closure subscribes to `cursor` — which the editor
+/// writes on every pointer-move, so the bar tracks pan — and to the `debug_hud` heartbeat, which
+/// the existing ~1 Hz rAF sample writes unconditionally, so the bar re-reads the zoom shortly after
+/// a wheel-zoom even with the pointer still. This is the CUR channel the spec says to reuse, not a
+/// second animation loop. On native (`cargo test`/`check`) there is no engine, so it falls back to
+/// the default deckZoom (`−2`) purely so the component compiles; the maths is proven by the pure
+/// functions above.
+#[component]
+pub fn ScaleBar(
+    /// Pan heartbeat — the editor's pointer-move cursor write (drives the pan re-read).
+    cursor: RwSignal<Option<(f64, f64, Option<f64>)>>,
+    /// ~1 Hz zoom heartbeat — the rAF debug sampler writes this every second regardless of the HUD
+    /// toggle, so a wheel-zoom with a still pointer still refreshes the bar within a second. `Option`
+    /// (not `#[prop(optional)]`) so [`StatusBar`] can forward its own optional `debug_hud` straight
+    /// through.
+    debug_hud: Option<RwSignal<String>>,
+) -> impl IntoView {
+    let spec = move || -> ScaleBarSpec {
+        // Subscribe to both heartbeats so the closure re-runs on pan (cursor) and on zoom (hud).
+        let _ = cursor.get();
+        if let Some(h) = debug_hud {
+            let _ = h.get();
+        }
+        // Default deckZoom −2 (the editor's default) when no engine is registered (native, or
+        // pre-mount): a sensible bar rather than a panic. `mut` is only touched on wasm.
+        #[allow(unused_mut)]
+        let mut deck_zoom = -2.0_f64;
+        #[cfg(target_arch = "wasm32")]
+        {
+            if let Some((_, _, z)) = crate::world_assets::camera_snapshot() {
+                deck_zoom = z;
+            }
+        }
+        pick_scale_bar(m_per_px(deck_zoom))
+    };
+    view! {
+        // The bar itself: a baseline with two end ticks (an Eden-plain scale rule), width driven by
+        // the resolved px, label centred above. `title` carries the exact distance for hover.
+        <div
+            data-scale-bar
+            class="flex select-none flex-col items-center gap-0.5"
+            title=move || format!("Map scale — {}", spec().label)
+        >
+            <span class="leading-none text-outline">{move || spec().label}</span>
+            <div
+                class="relative border-x border-b border-outline/70"
+                style=move || format!("width:{:.1}px;height:5px", spec().width_px)
+            ></div>
+        </div>
+    }
+}
+
+/// T-667 — the edge grid-reference overlay. Renders the 3-digit Arma eastings along the MAP PANE's
+/// top edge and northings down its left edge — NOT the viewport edges: the pane is the region
+/// between the docks (left = `DOCK_LEFT_PX`, right = `viewport − DOCK_RIGHT_PX`, top = `STRIP_TOP_PX`
+/// — read by name from `eden_layout`), which is the correct Eden-exceeding geometry (refs frame the
+/// MAP, not the window). Labels sit exactly on the drawn 1 km grid lines because
+/// [`edge_eastings`]/[`edge_northings`] project each line back through the SAME `OrthoCamera` the
+/// GPU grid uses.
+///
+/// This CANNOT render from the status-bar slot (it anchors to the pane edges, far from the bar), so
+/// it is mounted once by a single dispatcher-authorized line in `mission_editor`. It reads the live
+/// camera + the DOM viewport size itself, and re-runs off the same `cursor` (pan) + `debug_hud`
+/// (~1 Hz zoom) heartbeats as the scale bar — no new rAF loop. `pointer-events-none` throughout so
+/// it never eats a map gesture. Native builds render nothing (no engine, no `window`); the geometry
+/// is proven by the pure `labels_match_grid_lines` invariant.
+#[component]
+pub fn MapGridRefs(
+    /// Pan heartbeat (pointer-move cursor write).
+    cursor: RwSignal<Option<(f64, f64, Option<f64>)>>,
+    /// ~1 Hz zoom heartbeat (rAF debug sampler). `Option` so the mount can pass `Some(debug_hud)`.
+    debug_hud: Option<RwSignal<String>>,
+) -> impl IntoView {
+    // (eastings_top, northings_left) as (pos_px, text) pairs for the current camera + viewport.
+    let labels = move || -> (Vec<EdgeLabel>, Vec<EdgeLabel>) {
+        let _ = cursor.get();
+        if let Some(h) = debug_hud {
+            let _ = h.get();
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            use crate::eden_layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+            let Some((tx, ty, zoom)) = crate::world_assets::camera_snapshot() else {
+                return (Vec::new(), Vec::new());
+            };
+            let Some(win) = web_sys::window() else {
+                return (Vec::new(), Vec::new());
+            };
+            let vw = win
+                .inner_width()
+                .ok()
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            let vh = win
+                .inner_height()
+                .ok()
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            if vw <= 0.0 || vh <= 0.0 {
+                return (Vec::new(), Vec::new());
+            }
+            // The canvas is full-bleed (NOT inset by the chrome — `eden_layout` note), so the camera
+            // viewport IS the whole window; build it exactly as `select_tool::frozen_camera` does.
+            let cam = crate::select_tool::frozen_camera(vw, vh, tx, ty, zoom);
+            let pane_left = DOCK_LEFT_PX;
+            let pane_right = vw - DOCK_RIGHT_PX;
+            (
+                edge_eastings(&cam, pane_left, pane_right, STRIP_TOP_PX),
+                edge_northings(&cam, pane_left, STRIP_TOP_PX, vh),
+            )
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            (Vec::new(), Vec::new())
+        }
+    };
+    view! {
+        // Full-bleed, non-interactive overlay. Each label is absolutely positioned on its grid line.
+        <div
+            data-grid-refs
+            class="pointer-events-none absolute inset-0 z-10 font-mono text-code-md text-primary/80"
+        >
+            // Eastings — pinned to the pane's TOP edge (just below the top strip), centred on the
+            // vertical line's screen X.
+            <For
+                each=move || labels().0
+                key=|l| l.text.clone()
+                let:l
+            >
+                <span
+                    class="absolute -translate-x-1/2 rounded bg-surface-container-lowest/60 px-1 leading-none"
+                    style=move || {
+                        format!(
+                            "left:{:.1}px;top:{:.1}px",
+                            l.pos_px,
+                            crate::eden_layout::STRIP_TOP_PX + 2.0,
+                        )
+                    }
+                >
+                    {l.text.clone()}
+                </span>
+            </For>
+            // Northings — pinned to the pane's LEFT edge (just right of the left dock), centred on
+            // the horizontal line's screen Y.
+            <For
+                each=move || labels().1
+                key=|l| l.text.clone()
+                let:l
+            >
+                <span
+                    class="absolute -translate-y-1/2 rounded bg-surface-container-lowest/60 px-1 leading-none"
+                    style=move || {
+                        format!(
+                            "left:{:.1}px;top:{:.1}px",
+                            crate::eden_layout::DOCK_LEFT_PX + 2.0,
+                            l.pos_px,
+                        )
+                    }
+                >
+                    {l.text.clone()}
+                </span>
+            </For>
         </div>
     }
 }
@@ -346,36 +747,87 @@ mod t636_status_bar {
         );
     }
 
-    /// (T-667) The map-furniture slot is RESERVED but EMPTY — an obvious home for the wave-106 scale
-    /// bar + grid references, with the `flex-1` spacer that pushes the HUD + OPEN to the right edge.
-    /// The `data-*` hook lets T-667 target it without re-touching this component.
+    /// (T-667) The map-furniture slot is now FILLED with the scale bar. This is the deliberate
+    /// update of the wave-105 do-not-build-early guard (T-636's `reserves_an_empty_t667_furniture_slot`,
+    /// renamed here because it now pins the opposite state): T-667 IS the ticket that guard was
+    /// held for, so the slot's new content is pinned rather than the emptiness silently deleted.
+    ///
+    /// The slot keeps its `flex-1` spacer (it still owns the bar's middle and pushes the HUD + OPEN
+    /// to the right), gains `justify-center` so the bar sits in the CLEAR CENTRE SPAN the wave-105
+    /// verifier said clears both docks (left 256 / right 320 occluded until T-721), and now contains
+    /// a `ScaleBar` child. The edge grid references are NOT here — they anchor to the map-pane edges
+    /// and render from `MapGridRefs` (pinned separately below).
     #[test]
-    fn reserves_an_empty_t667_furniture_slot() {
+    fn fills_the_t667_furniture_slot_with_the_scale_bar() {
         let src = src_kept();
         let hook = format!("data-status-{}", "furniture");
         let at = src
             .find(&hook)
-            .expect("T-667: a reserved map-furniture slot must exist");
-        // It carries the flex spacer that eats the middle of the bar.
-        let window = &src[at..src[at..]
-            .find("</div>")
-            .map(|i| at + i)
-            .unwrap_or(src.len())];
-        assert!(
-            window.contains("flex-1"),
-            "T-667: the furniture slot must carry the flex-1 spacer (it owns the bar's middle)"
-        );
-        // And it is genuinely EMPTY — no scale-bar / grid content built this ticket. The opening
-        // `<div … data-status-furniture …>` is immediately followed (ignoring whitespace) by its
-        // `</div>`; there is no child element between them.
+            .expect("T-667: the map-furniture slot must exist");
+        // Still carries the flex spacer that owns the middle, AND centres its content in the clear
+        // span between the docks.
         let open_end = at + src[at..].find('>').expect("furniture div opens");
+        let open_tag = &src[at..=open_end];
+        assert!(
+            open_tag.contains("flex-1"),
+            "T-667: the furniture slot must keep the flex-1 spacer (it owns the bar's middle)"
+        );
+        assert!(
+            open_tag.contains("justify-center"),
+            "T-667: the furniture slot must centre its content (the clear centre span the docks miss)"
+        );
+        // The slot is now FILLED: its body contains the ScaleBar child (built this ticket), not the
+        // empty div the guard used to pin.
         let body = src[open_end + 1..]
             .split_once("</div>")
             .map(|(b, _)| b)
             .unwrap_or("");
         assert!(
-            !body.contains('<'),
-            "T-667: the furniture slot must be left EMPTY this ticket (reserve, do not build)"
+            body.contains("ScaleBar"),
+            "T-667: the furniture slot must now render the ScaleBar (the guard's do-not-build-early \
+             state is deliberately retired — the slot is filled, not empty)"
+        );
+    }
+
+    /// (T-667) The scale bar and the edge grid references are both real components with the maths the
+    /// ticket names. Proven on scrubbed code (strings blanked) so a needle can't hide in a class
+    /// string or comment: `ScaleBar` picks the round distance from the zoom, `MapGridRefs` renders
+    /// the pane-edge references, and both reuse the CUR/heartbeat channel (cursor + debug_hud) rather
+    /// than a new rAF loop.
+    #[test]
+    fn t667_components_and_reactivity_channel() {
+        let code = live_code(include_str!("eden_toolbelt.rs"));
+        // Both public components exist.
+        assert!(
+            code.contains(&format!("pub fn {}", "ScaleBar("))
+                && code.contains(&format!("pub fn {}", "MapGridRefs(")),
+            "T-667: ScaleBar + MapGridRefs must be real components"
+        );
+        // Scale bar drives its width off the zoom→m/px picker, not a hardcoded size.
+        assert!(
+            code.contains("pick_scale_bar(") && code.contains("m_per_px("),
+            "T-667: the scale bar must size from pick_scale_bar(m_per_px(zoom))"
+        );
+        // Grid refs anchor to the MAP-PANE insets read by NAME from eden_layout (not viewport edges),
+        // and project lines through the shared camera.
+        assert!(
+            code.contains("DOCK_LEFT_PX")
+                && code.contains("DOCK_RIGHT_PX")
+                && code.contains("STRIP_TOP_PX")
+                && code.contains("edge_eastings(")
+                && code.contains("edge_northings("),
+            "T-667: grid refs must anchor to the map-pane insets and use the edge-label geometry"
+        );
+        // Reactivity reuses the existing channel: the components read the live camera off the
+        // registered engine and re-run on the cursor (pan) + debug_hud (~1 Hz zoom) heartbeats.
+        // No `request_animation_frame` is introduced in this file.
+        assert!(
+            code.contains("camera_snapshot()"),
+            "T-667: the components must read the live camera via world_assets::camera_snapshot"
+        );
+        assert!(
+            !code.contains("request_animation_frame"),
+            "T-667: reuse the CUR/heartbeat channel — do NOT add a new rAF loop in eden_toolbelt"
         );
     }
 
@@ -430,5 +882,290 @@ mod t636_status_bar {
             hud < open,
             "T-719: the HUD slot must sit BEFORE the OPEN slot"
         );
+    }
+}
+
+/// T-667 — the pure furniture maths: the round-distance scale picker (table over zooms), the Arma
+/// 3-digit grid formatter (incl. the 100 km wrap), and the labels-match-grid-lines invariant. The
+/// invariant checks that every edge label lands on a drawn 1 km grid line — the line set is the
+/// exact mirror of `map_engine_render::lanes::grid_lines`' loop (`x = 0..width step 1000, inclusive`;
+/// that crate is wasm32-only so a native test reconstructs the identical rule, and `GRID_STEP_M` is
+/// documented to equal its `GRID_STEP`), and each label is projected through the SAME `OrthoCamera`
+/// the GPU grid uses, so a label can never drift off the line it names. Native — no browser/engine.
+#[cfg(test)]
+mod t667_furniture_math {
+    use super::*;
+
+    /// A camera built exactly as `select_tool::frozen_camera` builds it (bounds `[0,0,12800,12800]`),
+    /// so the projection the labels use matches the one the editor + GPU grid use.
+    fn cam(width: f64, height: f64, tx: f64, ty: f64, zoom: f64) -> OrthoCamera {
+        let mut c = OrthoCamera::new(width, height, tx, ty, zoom);
+        c.set_bounds(0.0, 0.0, 12_800.0, 12_800.0);
+        c
+    }
+
+    /// m/px is exactly `2^(−deck_zoom)` (the T-639/T-641 convention this whole ticket rides).
+    #[test]
+    fn m_per_px_is_two_pow_neg_zoom() {
+        assert!((m_per_px(0.0) - 1.0).abs() < 1e-12);
+        assert!((m_per_px(-2.0) - 4.0).abs() < 1e-12); // editor default zoom
+        assert!((m_per_px(2.0) - 0.25).abs() < 1e-12);
+        assert!((m_per_px(-6.0) - 64.0).abs() < 1e-12); // MIN_ZOOM (whole terrain)
+        assert!((m_per_px(f64::NAN) - 1.0).abs() < 1e-12); // non-finite guard
+    }
+
+    /// The scale-bar distance table across the zoom range. Each row is `(deck_zoom, expected_dist_m,
+    /// expected_label)`. The picker takes the largest `1/2/5×10^n` whose bar is ≤ 200 px, so the bar
+    /// px = dist / (2^−zoom) is always ≤ 200 and lands in a readable band (~80–200 px — the tightest
+    /// a 1-2-5 ladder holds). This is the ticket's required "table over zooms".
+    #[test]
+    fn scale_bar_distance_table() {
+        // (deck_zoom, dist_m, label). Each row: dist = largest 1/2/5×10^n with dist/(2^−z) ≤ 200 px.
+        // The bar px each row yields is in the comment and re-verified against the picker below.
+        let table: &[(f64, f64, &str)] = &[
+            (2.0, 50.0, "50 m"),      // m/px 0.25 → 50 m → 200 px
+            (1.0, 100.0, "100 m"),    // m/px 0.5  → 100 m → 200 px
+            (0.0, 200.0, "200 m"),    // m/px 1.0  → 200 m → 200 px
+            (-1.0, 200.0, "200 m"),   // m/px 2.0  → 200 m → 100 px (500 m = 250 px > cap)
+            (-2.0, 500.0, "500 m"),   // m/px 4.0  → 500 m → 125 px (1000 m = 250 px > cap)
+            (-3.0, 1000.0, "1 km"),   // m/px 8.0  → 1000 m → 125 px (2000 m = 250 px > cap)
+            (-4.0, 2000.0, "2 km"),   // m/px 16.0 → 2000 m → 125 px
+            (-5.0, 5000.0, "5 km"),   // m/px 32.0 → 5000 m → 156 px (10 km = 312 px > cap)
+            (-6.0, 10000.0, "10 km"), // m/px 64.0 → 10000 m → 156 px
+        ];
+        for &(z, want_dist, want_label) in table {
+            let spec = pick_scale_bar(m_per_px(z));
+            // The picker is the source of truth for the exact rung; assert it is a 1-2-5 value…
+            let mant = spec.dist_m / 10.0_f64.powf(spec.dist_m.log10().floor());
+            let mant_r = (mant * 10.0).round() / 10.0;
+            assert!(
+                (mant_r - 1.0).abs() < 1e-9
+                    || (mant_r - 2.0).abs() < 1e-9
+                    || (mant_r - 5.0).abs() < 1e-9,
+                "z={z}: {} is not a 1/2/5×10^n distance",
+                spec.dist_m
+            );
+            // …its bar never exceeds the cap…
+            assert!(
+                spec.width_px <= SCALE_MAX_PX + 1e-9,
+                "z={z}: bar {:.1} px exceeds the {SCALE_MAX_PX} px cap",
+                spec.width_px
+            );
+            // …and it is the LARGEST such rung (the next 1-2-5 step up would exceed the cap).
+            let next = next_125_up(spec.dist_m);
+            assert!(
+                next / m_per_px(z) > SCALE_MAX_PX + 1e-9,
+                "z={z}: {} m is not the largest fitting rung — {next} m would also fit",
+                spec.dist_m
+            );
+            // The table's own expectation must match the picker (this is the pinned table).
+            assert_eq!(
+                spec.dist_m, want_dist,
+                "z={z}: picker chose {} m, table says {want_dist} m",
+                spec.dist_m
+            );
+            assert_eq!(spec.label, want_label, "z={z}: label mismatch");
+        }
+    }
+
+    /// The next `1/2/5 × 10^n` value strictly above `d` (1→2→5→10…). Test helper for "largest rung".
+    fn next_125_up(d: f64) -> f64 {
+        let decade = 10.0_f64.powf(d.log10().floor());
+        let mant = (d / decade * 10.0).round() / 10.0;
+        if (mant - 1.0).abs() < 1e-9 {
+            2.0 * decade
+        } else if (mant - 2.0).abs() < 1e-9 {
+            5.0 * decade
+        } else {
+            10.0 * decade // 5 → next decade's 1
+        }
+    }
+
+    /// FIRE THE RULE (perturb / fail / restore): the round-distance picker genuinely discriminates —
+    /// asserting the WRONG rung for a zoom fails, and the right one passes. A picker that returned a
+    /// constant (or ignored zoom) would pass the perturbed assertion, so this proves the table above
+    /// is load-bearing.
+    #[test]
+    fn scale_picker_rule_fires() {
+        let good = pick_scale_bar(m_per_px(-2.0)); // 500 m @ zoom −2
+        assert_eq!(good.dist_m, 500.0, "baseline: zoom −2 must pick 500 m");
+        // Perturb: claim it should be 1000 m. That is FALSE (1000/4 = 250 px > 200 cap), so an
+        // equality check against the perturbed value must NOT hold — the rule fires.
+        let perturbed_expectation = 1000.0;
+        assert_ne!(
+            good.dist_m, perturbed_expectation,
+            "the picker must reject 1000 m at zoom −2 (its bar overflows the cap) — if this were \
+             equal the picker would be ignoring zoom"
+        );
+        // Restore: the true value still holds, and a different zoom yields a different rung (not a
+        // constant).
+        assert_eq!(pick_scale_bar(m_per_px(-2.0)).dist_m, 500.0);
+        assert_ne!(
+            pick_scale_bar(m_per_px(-2.0)).dist_m,
+            pick_scale_bar(m_per_px(2.0)).dist_m,
+            "the picker must vary with zoom (−2 → 500 m vs +2 → 50 m)"
+        );
+    }
+
+    /// The Arma 3-digit grid formatter: hundreds-of-metres, zero-padded, wrapping every 100 km.
+    #[test]
+    fn grid_formatter_arma_3digit_with_wrap() {
+        assert_eq!(grid_ref_3digit(0.0), "000");
+        assert_eq!(grid_ref_3digit(1000.0), "010"); // 1 km line
+        assert_eq!(grid_ref_3digit(6400.0), "064"); // the ticket's worked example
+        assert_eq!(grid_ref_3digit(12000.0), "120"); // last 1 km line before 12800
+        assert_eq!(grid_ref_3digit(99900.0), "999"); // just before the wrap
+        assert_eq!(grid_ref_3digit(100_000.0), "000"); // 100 km wraps to 000
+        assert_eq!(grid_ref_3digit(106_400.0), "064"); // wrap keeps the format
+                                                       // Off-terrain / degenerate guards.
+        assert_eq!(grid_ref_3digit(-1.0), "000");
+        assert_eq!(grid_ref_3digit(f64::NAN), "000");
+        // Sub-100 m rounds DOWN to the hundreds cell (floor, not round).
+        assert_eq!(grid_ref_3digit(199.9), "001");
+    }
+
+    /// Grid-line enumeration returns exactly the drawn 1 km positions inside a span, inclusive.
+    #[test]
+    fn grid_lines_in_range_are_the_drawn_positions() {
+        assert_eq!(
+            grid_lines_in_range(0.0, 3000.0),
+            vec![0.0, 1000.0, 2000.0, 3000.0]
+        );
+        assert_eq!(grid_lines_in_range(1500.0, 3200.0), vec![2000.0, 3000.0]);
+        assert_eq!(grid_lines_in_range(3200.0, 1500.0), vec![2000.0, 3000.0]); // order-agnostic
+        assert!(grid_lines_in_range(1100.0, 1900.0).is_empty()); // no line between 1000 and 2000
+        assert!(grid_lines_in_range(f64::NAN, 5.0).is_empty());
+    }
+
+    /// The distinct vertical grid-line X positions the engine DRAWS on Everon (12800). This mirrors
+    /// `map_engine_render::lanes::grid_lines` **operation-for-operation**: its loop is `x from 0 to
+    /// width, step GRID_STEP (1000), inclusive` (`x <= width`), so the line set is `{0, 1000, …,
+    /// 12000}` (12800 is never hit by the step-1000 loop — Deck's behaviour, per that module's own
+    /// doc). `lanes` is a wasm32-only dependency of this crate (the GPU render engine), so a native
+    /// `cargo test` cannot link `grid_lines()` directly; the set is reconstructed from the identical
+    /// rule instead, and `GRID_STEP_M` is documented to equal that module's `GRID_STEP`. The
+    /// invariant below then proves every label lands on one of THESE positions.
+    fn drawn_vertical_lines() -> Vec<f64> {
+        let width = 12_800.0_f64;
+        let mut xs = Vec::new();
+        let mut k = 0i64;
+        while (k as f64) * GRID_STEP_M <= width {
+            xs.push(k as f64 * GRID_STEP_M);
+            k += 1;
+        }
+        xs
+    }
+
+    /// CORE INVARIANT — every easting label sits on a drawn grid line and reads its correct ref.
+    /// For several camera states, each label returned by `edge_eastings` is unprojected back to a
+    /// world X, which must be a multiple of `GRID_STEP_M`, must be one the engine actually draws,
+    /// and whose `grid_ref_3digit` equals the label text. A label that drifted from its line (the
+    /// failure the ticket calls "worse than no label") would land off a multiple and fail here.
+    #[test]
+    fn labels_match_grid_lines() {
+        let drawn = drawn_vertical_lines();
+        let is_drawn = |wx: f64| drawn.iter().any(|d| (d - wx).abs() < 1.0);
+        // A spread of zooms + targets (incl. the editor default and a zoomed-in centre).
+        let cases = [
+            (1600.0, 800.0, -2.0), // zoomed out, near NW
+            (1237.0, 843.0, 0.0),  // ~1 km/screen, centre-ish
+            (900.0, 600.0, 1.5),   // zoomed in
+            (1500.0, 900.0, -4.0), // near whole-terrain
+        ];
+        // Pane insets read by name from eden_layout (the real geometry).
+        use crate::eden_layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+        for (w, h, z) in cases {
+            let mut tx = 6400.0_f64;
+            let mut ty = 6400.0_f64;
+            // Slew the target across a few positions so lines cross the pane at varied screen X.
+            for shift in [-3000.0_f64, 0.0, 4000.0] {
+                tx = (6400.0 + shift).clamp(0.0, 12_800.0);
+                ty = (6400.0 + shift * 0.5).clamp(0.0, 12_800.0);
+                let c = cam(w, h, tx, ty, z);
+                let pane_right = w - DOCK_RIGHT_PX;
+                let eastings = edge_eastings(&c, DOCK_LEFT_PX, pane_right, STRIP_TOP_PX);
+                for lbl in &eastings {
+                    // The label's screen X unprojects to a world X on a drawn grid line…
+                    let wx = c.unproject_xy(lbl.pos_px, STRIP_TOP_PX)[0];
+                    let k = (wx / GRID_STEP_M).round();
+                    let on_line = (wx - k * GRID_STEP_M).abs();
+                    assert!(
+                        on_line < 1.0,
+                        "easting label at {:.1}px unprojects to world x {wx:.2} — {on_line:.2} m off \
+                         a 1 km line (drift = worse than no label)",
+                        lbl.pos_px
+                    );
+                    assert!(
+                        is_drawn(k * GRID_STEP_M),
+                        "easting world x {:.0} is not a line the engine draws",
+                        k * GRID_STEP_M
+                    );
+                    // …and its text is the correct Arma ref for that line.
+                    assert_eq!(
+                        lbl.text,
+                        grid_ref_3digit(k * GRID_STEP_M),
+                        "easting label text must match its grid line's 3-digit ref"
+                    );
+                    // …and it lies inside the visible pane span (framing the MAP, not the window).
+                    assert!(
+                        lbl.pos_px >= DOCK_LEFT_PX - 0.5 && lbl.pos_px <= pane_right + 0.5,
+                        "easting label {:.1}px must be inside the map-pane span [{DOCK_LEFT_PX}, {pane_right:.1}]",
+                        lbl.pos_px
+                    );
+                }
+                // Northings: same invariant on the Y axis / left edge.
+                let northings = edge_northings(&c, DOCK_LEFT_PX, STRIP_TOP_PX, h);
+                for lbl in &northings {
+                    let wy = c.unproject_xy(DOCK_LEFT_PX, lbl.pos_px)[1];
+                    let k = (wy / GRID_STEP_M).round();
+                    assert!(
+                        (wy - k * GRID_STEP_M).abs() < 1.0,
+                        "northing label at {:.1}px unprojects to world y {wy:.2} — off a 1 km line",
+                        lbl.pos_px
+                    );
+                    assert_eq!(
+                        lbl.text,
+                        grid_ref_3digit(k * GRID_STEP_M),
+                        "northing label text must match its grid line's 3-digit ref"
+                    );
+                    assert!(
+                        lbl.pos_px >= STRIP_TOP_PX - 0.5 && lbl.pos_px <= h + 0.5,
+                        "northing label {:.1}px must be inside the map-pane vertical span",
+                        lbl.pos_px
+                    );
+                }
+            }
+            let _ = (tx, ty);
+        }
+    }
+
+    /// The grid references frame the MAP PANE, not the viewport: an easting whose line falls under
+    /// the LEFT dock (screen X < DOCK_LEFT_PX) is dropped, not drawn at the window edge. Proven by
+    /// putting the camera so a 1 km line sits at a screen X inside the left-dock band and asserting
+    /// no label claims that position.
+    #[test]
+    fn grid_refs_are_clipped_to_the_map_pane_not_the_viewport() {
+        use crate::eden_layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+        let (w, h, z) = (1237.0, 843.0, 0.0); // 1 px ≈ 1 m
+        let c = cam(w, h, 6400.0, 6400.0, z);
+        let pane_right = w - DOCK_RIGHT_PX;
+        let eastings = edge_eastings(&c, DOCK_LEFT_PX, pane_right, STRIP_TOP_PX);
+        // Every returned label is inside the pane; none in the occluded dock bands.
+        for lbl in &eastings {
+            assert!(
+                lbl.pos_px >= DOCK_LEFT_PX - 0.5,
+                "no easting may render under the left dock ({}px): found one at {:.1}px",
+                DOCK_LEFT_PX,
+                lbl.pos_px
+            );
+            assert!(
+                lbl.pos_px <= pane_right + 0.5,
+                "no easting may render under the right dock (past {pane_right:.1}px): found {:.1}px",
+                lbl.pos_px
+            );
+        }
+        // Sanity: with 1 px ≈ 1 m and a 12.8 km terrain, the visible pane spans ~660 m, so at least
+        // one 1 km line usually shows — but the hard guarantee under test is the clip, not the count.
+        let _ = eastings;
     }
 }

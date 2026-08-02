@@ -112,6 +112,26 @@ pub fn register_render_ctx(engine: EngineHandle, host: HostHandle) {
     RENDER_CTX.with(|c| *c.borrow_mut() = Some((engine, host)));
 }
 
+/// T-667 — the live camera `(target_x, target_y, zoom)` in world meters + deckZoom, read off the
+/// registered engine (the SAME `RENDER_CTX` seam the Mission Settings render-pref controls use to
+/// reach the live map without threading handles through the chrome tree). `None` before the engine
+/// mounts. The status-bar scale bar and the map-pane grid-reference overlay (both DOM chrome, not
+/// GPU) read this each time their reactive trigger fires — the pointer-move `cursor` channel (pan)
+/// and the ~1 Hz rAF `debug_hud` heartbeat (zoom) — so they track pan/zoom WITHOUT a new rAF loop
+/// or a camera signal threaded through `mission_editor`. Viewport pixel dims are not returned here:
+/// the readers already know them from the DOM (`window.inner*` / the full-bleed overlay's own rect).
+#[must_use]
+pub fn camera_snapshot() -> Option<(f64, f64, f64)> {
+    RENDER_CTX.with(|c| {
+        c.borrow().as_ref().and_then(|(engine, _)| {
+            engine
+                .borrow()
+                .as_ref()
+                .map(|e| (e.target_x(), e.target_y(), e.zoom()))
+        })
+    })
+}
+
 thread_local! {
     /// T-176 B2 — true while a pan gesture is active (pointer down → up). During a pan,
     /// `flush_viewport` skips the heavy zoom-band marching-squares rebuilds (DEM contour/sea +
