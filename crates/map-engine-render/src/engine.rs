@@ -3028,6 +3028,136 @@ impl RenderEngine {
         self.forest_outline_segments = 0;
     }
 
+    /// T-644 — upload a Line-of-Sight VIEWSHED wash: a per-cell visible/hidden RGBA8 raster over the
+    /// world rect `[min_x, min_y]..[max_x, max_y]`, drawn as ONE translucent quad over the map. This
+    /// is the forest-density lane's shape (own texture + a 1-instance world-rect quad), NOT the 2-slot
+    /// `pending` basemap bucket — so it needs no new texture-lane slot; see the lane-reuse note in the
+    /// slice report and `draw_order::LaneRole::Viewshed`.
+    ///
+    /// Distinct from `forest_density_upload` in three deliberate ways:
+    ///   * the quad tint is `[1,1,1,1]` (opaque white) so the TEXTURE's own per-cell alpha drives the
+    ///     `ALPHA_BLENDING` blend — the wash colours are FINAL, already composed by `los_tool`'s
+    ///     palette (`viewshed_cell_rgba`): visible = α0 transparent, hidden = α0.38, unknown = α0.22.
+    ///     (Forest instead carries `fill_alpha` in the tint and derives the colour in `fs_forest_density`.)
+    ///   * it binds the NEAREST `density_sampler`, not the Linear `sampler`, so cell edges stay crisp
+    ///     (a viewshed reads as a per-cell classification, not a smooth field — Linear would bleed
+    ///     visible/hidden across the 8 m cell boundaries).
+    ///   * it renders through the PLAIN `textured_pipeline` (the `Textured` payload dispatch already
+    ///     routes every role except `ForestFill` there — no shader/dispatch change was needed).
+    ///
+    /// # Errors
+    /// Zero dims, `bytes_per_row` under `tex_w*4` or not 256-aligned (the `write_texture` copy
+    /// requirement — the caller row-pads, exactly like `forest_density_upload`), or a length mismatch.
+    #[allow(clippy::too_many_arguments)]
+    pub fn viewshed_upload(
+        &mut self,
+        min_x: f64,
+        min_y: f64,
+        max_x: f64,
+        max_y: f64,
+        tex_w: u32,
+        tex_h: u32,
+        rgba: &[u8],
+        bytes_per_row: u32,
+    ) -> Result<(), JsError> {
+        if tex_w == 0 || tex_h == 0 {
+            return Err(JsError::new("viewshed_upload: zero texture dimensions"));
+        }
+        if bytes_per_row < tex_w * 4 || !bytes_per_row.is_multiple_of(256) {
+            return Err(JsError::new(
+                "viewshed_upload: bytes_per_row must be ≥ tex_w*4 and 256-aligned",
+            ));
+        }
+        let want = (bytes_per_row as usize)
+            .checked_mul(tex_h as usize)
+            .ok_or_else(|| JsError::new("viewshed_upload: size overflow"))?;
+        if rgba.len() != want {
+            return Err(JsError::new("viewshed_upload: rgba length mismatch"));
+        }
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("viewshed"),
+            size: wgpu::Extent3d {
+                width: tex_w,
+                height: tex_h,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        self.queue.write_texture(
+            texture.as_image_copy(),
+            rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(bytes_per_row),
+                rows_per_image: Some(tex_h),
+            },
+            wgpu::Extent3d {
+                width: tex_w,
+                height: tex_h,
+                depth_or_array_layers: 1,
+            },
+        );
+        let rect = lanes::world_rect_rel([min_x, min_y], [max_x, max_y]);
+        // Tint = opaque white: the texture's own per-cell alpha (from `viewshed_cell_rgba`) is the
+        // whole blend. Visible cells (α0) leave the map untouched; hidden/unknown darken it.
+        let inst = scene::QuadInstance {
+            min: [rect[0], rect[1]],
+            max: [rect[2], rect[3]],
+            color: [1.0, 1.0, 1.0, 1.0],
+        };
+        use wgpu::util::DeviceExt;
+        let instances = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("viewshed-quad"),
+                contents: bytemuck::cast_slice(&[inst]),
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("viewshed"),
+            layout: &self.tex_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    // Nearest sampler → crisp per-cell edges (a classification, not a smooth field).
+                    resource: wgpu::BindingResource::Sampler(&self.density_sampler),
+                },
+            ],
+        });
+        let lane = TexLane {
+            texture,
+            bind_group,
+            instances,
+            mode: BasemapMode::Single,
+            tiles: 1,
+            bytes: u64::from(bytes_per_row) * u64::from(tex_h),
+        };
+        self.upsert_lane(
+            LaneRole::Viewshed,
+            Batch {
+                role: LaneRole::Viewshed,
+                visible: true,
+                payload: BatchPayload::Textured(lane),
+            },
+        );
+        Ok(())
+    }
+
+    /// T-644 — drop the viewshed wash lane (Esc / tool-switch / re-place before the new raster is up).
+    pub fn viewshed_clear(&mut self) {
+        self.remove_lane(LaneRole::Viewshed);
+    }
+
     /// Build the procedural grid lane for a `width × height` terrain (T-151.1 L7). `over_hillshade`
     /// selects the boosted palette; `visible` toggles it (kept in the draw list like Deck).
     pub fn set_grid(&mut self, width: f64, height: f64, over_hillshade: bool, visible: bool) {

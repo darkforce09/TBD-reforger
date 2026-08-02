@@ -266,6 +266,305 @@ pub fn in_coverage(m: &DemManifest, x: f64, y: f64) -> bool {
     x >= m.min_x && x <= m.max_x && y >= m.min_y && y <= m.max_y
 }
 
+// ── T-644 — viewshed raster (the radial variant the LoS ray's sampler feeds) ─────────────────────
+//
+// Line of Sight, T-643, answered ONE ray: observer → target, clear or blocked. T-644 answers the
+// whole disc: pick an observer, and for EVERY cell within a radius decide whether the observer can
+// see it. The compute is a radial ray-march — cast rays out from the observer at a fine angular
+// step and, along each ray, track the highest sight-line ANGLE seen so far; a cell is visible iff its
+// own elevation angle (from the observer's eye) clears every closer cell on that ray. This is the
+// classic "reference-plane / running max-angle" viewshed, and it reuses the SAME injected point
+// sampler seam as `sample_segment` (raster-backed in tests, the 8 m `DemVectorGrid` in the editor),
+// so the two LoS tools share one sampling policy and never drift.
+//
+// WHY RADIAL, NOT PER-CELL `occlusion()`: running `occlusion()` (a full segment walk) for each of
+// the ~N² cells in the disc is O(N³) — a 2000 m radius at 8 m cells is a 500-cell radius, ~785k
+// cells, each walking up to 500 samples ⇒ ~400M sampler calls, far over the ~100 ms budget. The
+// radial march visits each ray's samples once (O(rays × steps)) and carries the occluding horizon
+// forward as a single running max angle, so it is O(N) in the disc area. Rays are spaced so adjacent
+// rays are ≤½ cell apart at the RIM and each ray steps ½ cell (a 2× oversample over the ticket's
+// ≤1-cell floor) so NO interior cell is skipped between rays and no ridge between two along-ray
+// samples is missed; each sample's result is splatted to the nearest raster cell (a cell may be hit
+// by several samples — a Visible verdict from any ray wins, and the running-max march makes rays
+// through a cell agree on open terrain; the documented 8 m-grid caveat below covers the rest).
+//
+// THE WAVE-109 ANCHOR FIX (binding constraint 1): T-643's `occlusion()` anchors the observer eye at
+// the profile's FIRST COVERED sample. For a single ray whose observer end is off coverage but whose
+// head descends, that seeds the sight line too LOW and reports a false BLOCKED. Here the eye is
+// anchored at the OBSERVER's OWN ground elevation + eye height, passed in as `observer_ground_m`
+// (the caller reads it at the true observer point). If the observer point itself is off coverage the
+// whole raster is `Unknown` (there is no honest eye to cast from). Cells the ray reaches that are
+// off coverage are marked `Unknown` (not visible, not blocked) and do NOT advance the occluding
+// horizon — an unknown gap can neither reveal nor hide what is beyond it.
+//
+// THE 8 m-GRID CAVEAT (binding constraint 2): the live grid is the 8 m box-averaged `DemVectorGrid`,
+// which is systematically OPTIMISTIC on knife crests versus the raw 2 m raster (a box average lowers
+// a sharp ridge, so a sight line grazes over a crest the real terrain would block). This viewshed
+// inherits that caveat verbatim — it is a PLANNER'S visibility, not a survey guarantee; do not read
+// a `Visible` cell as "provably in the clear" on a razor ridge.
+
+/// The visibility class of one viewshed cell (T-644). Three states, never a fake binary: `Unknown`
+/// is a first-class verdict (off coverage), the em-dash policy the LoS ray already uses for an
+/// un-judgeable sight — an off-coverage cell is rendered as hidden (constraint 1), never as visible.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Visibility {
+    /// The observer's eye clears every closer cell on the ray to here — the cell is seen.
+    Visible,
+    /// A closer ridge rises above the sight line to here — the cell is in dead ground.
+    Hidden,
+    /// The cell (or the observer) is off DEM coverage, so visibility cannot be judged. Rendered as
+    /// hidden (a possibly-different alpha; see `los_tool`), NEVER as a fabricated `Visible`.
+    Unknown,
+}
+
+/// A computed viewshed: a `cols × rows` row-major grid of [`Visibility`] over the world rect
+/// `[min_x, min_y]..[max_x, max_y]`, plus the observer world point it was cast from. The raster
+/// dimensions match the DEM grid the compute marched (8 m cells in the live editor), so the frontend
+/// can turn it straight into an RGBA texture over the same world rect.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Viewshed {
+    pub cols: usize,
+    pub rows: usize,
+    /// Row-major, `cols * rows` entries.
+    pub cells: Vec<Visibility>,
+    /// World-space rect the raster covers (cell centres span the inclusive endpoints).
+    pub min_x: f64,
+    pub min_y: f64,
+    pub max_x: f64,
+    pub max_y: f64,
+    /// The observer world point (for the overlay's observer dot + re-compute keying).
+    pub obs_x: f64,
+    pub obs_y: f64,
+}
+
+impl Viewshed {
+    /// The visibility at cell `(col, row)`, or [`Visibility::Unknown`] out of bounds.
+    #[must_use]
+    pub fn at(&self, col: usize, row: usize) -> Visibility {
+        if col >= self.cols || row >= self.rows {
+            return Visibility::Unknown;
+        }
+        self.cells[row * self.cols + col]
+    }
+
+    /// Count of cells in each class — `(visible, hidden, unknown)`. Sums to `cols * rows`. The
+    /// coverage-completeness check for the radial test (every in-radius cell is classified).
+    #[must_use]
+    pub fn class_counts(&self) -> (usize, usize, usize) {
+        let (mut v, mut h, mut u) = (0usize, 0usize, 0usize);
+        for c in &self.cells {
+            match c {
+                Visibility::Visible => v += 1,
+                Visibility::Hidden => h += 1,
+                Visibility::Unknown => u += 1,
+            }
+        }
+        (v, h, u)
+    }
+}
+
+/// Parameters for [`compute_viewshed`]. Grouped in a struct so a preset (a taller observer eye, a
+/// different radius) is a field change, not a churny argument list, and so the radial-step and cell
+/// policy are documented in one place.
+#[derive(Clone, Copy, Debug)]
+pub struct ViewshedParams {
+    /// Observer world point.
+    pub obs_x: f64,
+    pub obs_y: f64,
+    /// Observer GROUND elevation at that point, metres ASL — the wave-109 anchor. `None` ⇒ the
+    /// observer is off coverage and the whole raster is `Unknown` (no honest eye to cast from).
+    pub observer_ground_m: Option<f64>,
+    /// Eye height above the observer's ground, metres (the LoS `EYE_HEIGHT_OBSERVER_M`).
+    pub eye_height_m: f64,
+    /// Sight radius, metres (default 2000; adjustable).
+    pub radius_m: f64,
+    /// Raster cell size, metres — the DEM grid spacing (8 m live). Drives both the raster dims and
+    /// the ray step (one cell per march step) + angular step (≤1 cell apart at the rim).
+    pub cell_m: f64,
+}
+
+/// Default sight radius, metres (T-644). The compute runs ONCE per observer placement, so this is a
+/// planning horizon, not a per-frame cost; 2000 m is a rifle-to-vehicle spotting reach on Everon and
+/// keeps the disc under the ~100 ms budget at 8 m cells (see the module perf note + the reported
+/// measurement in the ticket).
+pub const VIEWSHED_DEFAULT_RADIUS_M: f64 = 2000.0;
+
+/// Compute a viewshed raster by radial ray-march from an observer (T-644). Returns a `cols × rows`
+/// [`Visibility`] grid over the world rect around the observer, clamped to the manifest's coverage
+/// box; cells off coverage are [`Visibility::Unknown`]. `elev_at(x, y) -> Option<meters>` is the
+/// SAME injected point sampler [`sample_segment`] uses (raster-backed in tests, the 8 m grid live).
+///
+/// The march (see the module note): rays at `angular_step ≈ ½·cell_m / radius_m` (adjacent rays ≤½
+/// cell apart at the rim) each stepping ½ `cell_m` outward — a 2× oversample of the ticket's ≤1-cell
+/// floor, so no interior disc cell is left unsplatted. Along a ray a running MAX elevation-angle is
+/// carried; a sampled cell is `Visible` iff its own angle (from the observer eye) is `≥` that running
+/// max (a strict monotone horizon), else `Hidden`. The observer eye is anchored at `observer_ground_m
+/// + eye_height_m` — the observer's TRUE elevation (constraint 1), never the first covered sample.
+/// The observer's own cell is always `Visible` (you can see your own feet).
+///
+/// Budget: O(rays × steps) sampler calls — for the 2000 m / 8 m default ≈ 3140 rays × 500 steps
+/// (2× oversample), measured well inside ~100 ms with an in-RAM grid sampler.
+#[must_use]
+pub fn compute_viewshed<F>(manifest: &DemManifest, p: ViewshedParams, elev_at: F) -> Viewshed
+where
+    F: Fn(f64, f64) -> Option<f64>,
+{
+    // Raster rect: the radius disc's bounding box, CLAMPED to the manifest coverage box so the raster
+    // never allocates cells that can only ever be Unknown off the map. Cell centres are laid on an
+    // 8 m lattice aligned to the clamped min corner.
+    let cell = if p.cell_m.is_finite() && p.cell_m > 0.0 {
+        p.cell_m
+    } else {
+        8.0
+    };
+    let radius = if p.radius_m.is_finite() && p.radius_m > 0.0 {
+        p.radius_m
+    } else {
+        VIEWSHED_DEFAULT_RADIUS_M
+    };
+    let min_x = (p.obs_x - radius).max(manifest.min_x);
+    let min_y = (p.obs_y - radius).max(manifest.min_y);
+    let max_x = (p.obs_x + radius).min(manifest.max_x);
+    let max_y = (p.obs_y + radius).min(manifest.max_y);
+
+    // Dims from the clamped rect at one cell spacing (at least 1×1). `cols-1` spans [min,max], so the
+    // last column centre lands on `max_x` — the same inclusive-endpoint convention as `DemVectorGrid`.
+    let span_x = (max_x - min_x).max(0.0);
+    let span_y = (max_y - min_y).max(0.0);
+    let cols = ((span_x / cell).round() as usize) + 1;
+    let rows = ((span_y / cell).round() as usize) + 1;
+    let n = cols.saturating_mul(rows);
+
+    // Observer off coverage → the whole raster is Unknown (constraint 1: no honest eye to cast from,
+    // so nothing is faked visible).
+    let Some(obs_ground) = p.observer_ground_m else {
+        return Viewshed {
+            cols,
+            rows,
+            cells: vec![Visibility::Unknown; n],
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+            obs_x: p.obs_x,
+            obs_y: p.obs_y,
+        };
+    };
+    let eye_z = obs_ground + p.eye_height_m;
+
+    // Start every cell Hidden; the radial march promotes the ones the observer can see to Visible and
+    // marks off-coverage reaches Unknown. A cell no ray ever reaches (only the bbox corners OUTSIDE
+    // the radius disc, once the rays+steps are dense enough to leave no interior gap — see below)
+    // stays Hidden — correct: those corners are beyond the sight radius, genuine dead ground.
+    let mut cells = vec![Visibility::Hidden; n];
+
+    // Helper: world (x,y) → nearest raster cell index, if inside the raster.
+    let idx_of = |x: f64, y: f64| -> Option<usize> {
+        let c = ((x - min_x) / cell).round();
+        let r = ((y - min_y) / cell).round();
+        if c < 0.0 || r < 0.0 {
+            return None;
+        }
+        let (c, r) = (c as usize, r as usize);
+        if c >= cols || r >= rows {
+            return None;
+        }
+        Some(r * cols + c)
+    };
+
+    // The observer's own cell is Visible (constraint: you always see your own position). Guard both
+    // the raster-bounds and coverage — the observer is in coverage by construction (obs_ground is
+    // Some), but the bbox clamp could in principle drop it if radius is 0; the `.max(1)` dims keep at
+    // least the observer cell.
+    if let Some(oi) = idx_of(p.obs_x, p.obs_y) {
+        cells[oi] = Visibility::Visible;
+    }
+
+    // Angular + step density so NO interior cell of the disc is missed by the radial splat (the
+    // artifact that would otherwise leave flat-terrain cells stuck at the Hidden sentinel between
+    // rays). The ticket's floor is "adjacent rays ≤1 cell apart at the rim" (arc = radius·dθ ≤ cell ⇒
+    // dθ ≤ cell/radius); we halve BOTH the angular step and the along-ray step (OVERSAMPLE = 2.0) so
+    // adjacent rays are ≤½ cell apart at the rim and each ray advances ½ cell per step. With rays and
+    // steps both at half-cell, every cell centre in the disc lies within ~½ cell of some sample and
+    // is splatted (nearest-cell rounding then lands on it). Cost stays O(rays × steps) — ~4× the
+    // 1-cell march, measured well under the ~100 ms budget (see `viewshed_perf_default_radius_is_reported`).
+    const OVERSAMPLE: f64 = 2.0;
+    let ray_count = ((2.0 * std::f64::consts::PI) / (cell / radius) * OVERSAMPLE)
+        .ceil()
+        .max(1.0) as usize;
+    let d_theta = (2.0 * std::f64::consts::PI) / ray_count as f64;
+    let step_m = cell / OVERSAMPLE;
+    // Steps along a ray: half-cell each, out to the radius.
+    let steps = (radius / step_m).floor().max(1.0) as usize;
+
+    for ri in 0..ray_count {
+        let theta = ri as f64 * d_theta;
+        let (dx, dy) = (theta.cos(), theta.sin());
+        // Running MAX elevation angle (tangent of the vertical angle from the observer eye) that the
+        // terrain has risen to along this ray. A cell is visible only if it clears this horizon. NEG
+        // infinity so the first covered cell (nearest) is always visible (nothing occludes it yet).
+        let mut max_angle = f64::NEG_INFINITY;
+        for s in 1..=steps {
+            let dist = s as f64 * step_m;
+            if dist > radius {
+                break;
+            }
+            let wx = p.obs_x + dx * dist;
+            let wy = p.obs_y + dy * dist;
+            // Off the manifest coverage box → Unknown at that cell; do NOT advance the horizon (an
+            // unknown gap neither reveals nor hides what lies beyond it — constraint 1's honesty).
+            if !in_coverage(manifest, wx, wy) {
+                if let Some(i) = idx_of(wx, wy)
+                    && cells[i] != Visibility::Visible
+                {
+                    cells[i] = Visibility::Unknown;
+                }
+                continue;
+            }
+            let Some(ground) = elev_at(wx, wy) else {
+                if let Some(i) = idx_of(wx, wy)
+                    && cells[i] != Visibility::Visible
+                {
+                    cells[i] = Visibility::Unknown;
+                }
+                continue;
+            };
+            // Elevation angle of THIS cell's ground from the observer eye: (ground − eye_z)/dist.
+            // Using the ground (not ground+target-eye) is the conservative viewshed convention — the
+            // observer sees the GROUND at the cell; a standing target there would be even easier to
+            // see. dist > 0 here (s ≥ 1), so no divide-by-zero.
+            let angle = (ground - eye_z) / dist;
+            let visible = angle >= max_angle;
+            if let Some(i) = idx_of(wx, wy) {
+                // A cell hit by several rays: once Visible, stays Visible (any ray that sees it wins;
+                // the horizon march makes rays agree on open terrain). An Unknown from an earlier ray
+                // is overwritten by a real Hidden/Visible verdict from this in-coverage sample.
+                if visible {
+                    cells[i] = Visibility::Visible;
+                } else if cells[i] != Visibility::Visible {
+                    cells[i] = Visibility::Hidden;
+                }
+            }
+            // Advance the occluding horizon: a taller ridge here shadows everything farther on the ray.
+            if angle > max_angle {
+                max_angle = angle;
+            }
+        }
+    }
+
+    Viewshed {
+        cols,
+        rows,
+        cells,
+        min_x,
+        min_y,
+        max_x,
+        max_y,
+        obs_x: p.obs_x,
+        obs_y: p.obs_y,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -534,6 +833,353 @@ mod tests {
         assert!(
             prof[0].elev_m <= prof[1].elev_m && prof[1].elev_m <= prof[2].elev_m,
             "metres increase along the raster's increasing top row"
+        );
+    }
+
+    // ── T-644 — viewshed raster (radial ray-march) ────────────────────────────────────────────────
+
+    /// A big flat-terrain manifest for the viewshed goldens (coverage box [0, span]², meters range
+    /// wide enough for the synthetic ridges). Separate from `synth` only in the metres range.
+    fn flat_world(span: f64) -> DemManifest {
+        DemManifest {
+            min_x: 0.0,
+            min_y: 0.0,
+            max_x: span,
+            max_y: span,
+            width_px: 1,
+            height_px: 1,
+            flip_x: false,
+            flip_z: false,
+            height_min_m: 0.0,
+            height_max_m: 500.0,
+        }
+    }
+
+    fn params(
+        obs_x: f64,
+        obs_y: f64,
+        ground: Option<f64>,
+        radius: f64,
+        cell: f64,
+    ) -> ViewshedParams {
+        ViewshedParams {
+            obs_x,
+            obs_y,
+            observer_ground_m: ground,
+            eye_height_m: 1.8,
+            radius_m: radius,
+            cell_m: cell,
+        }
+    }
+
+    /// Class counts over only the cells whose CENTRE lies within `radius` of the observer — the
+    /// disc, not the square bbox. Cells in the bbox CORNERS beyond the radius are legitimately Hidden
+    /// (dead ground past the sight horizon), so a "flat terrain hides nothing" claim is about the
+    /// disc, not the enclosing rectangle. Returns `(visible, hidden, unknown)` in-radius.
+    fn disc_counts(vs: &Viewshed, radius: f64) -> (usize, usize, usize) {
+        let (mut v, mut h, mut u) = (0usize, 0usize, 0usize);
+        for r in 0..vs.rows {
+            for c in 0..vs.cols {
+                let x = vs.min_x + c as f64 * 8.0;
+                let y = vs.min_y + r as f64 * 8.0;
+                if ((x - vs.obs_x).powi(2) + (y - vs.obs_y).powi(2)).sqrt() > radius {
+                    continue;
+                }
+                match vs.at(c, r) {
+                    Visibility::Visible => v += 1,
+                    Visibility::Hidden => h += 1,
+                    Visibility::Unknown => u += 1,
+                }
+            }
+        }
+        (v, h, u)
+    }
+
+    /// RADIAL COVERAGE: every cell within the radius disc is classified (never left in a limbo
+    /// state), the raster dims match the clamped bbox at the cell spacing, and the class counts sum
+    /// to `cols*rows`. On flat ground fully inside coverage there are NO Unknown cells.
+    #[test]
+    fn viewshed_radial_coverage_classifies_every_cell() {
+        let m = flat_world(4000.0);
+        // Observer well inside coverage so the whole 200 m disc is on the map.
+        let vs = compute_viewshed(
+            &m,
+            params(1000.0, 1000.0, Some(50.0), 200.0, 8.0),
+            |_, _| Some(50.0),
+        );
+        // Dims: a 400 m span (±200) at 8 m → 50 intervals → 51 cells each axis.
+        assert_eq!(vs.cols, 51, "±radius / cell + 1 columns");
+        assert_eq!(vs.rows, 51);
+        assert_eq!(vs.cells.len(), vs.cols * vs.rows);
+        // EVERY raster cell carries a definite class (the coverage-completeness guarantee): the sum
+        // of the three classes equals the raster size, so no cell is left in a limbo state.
+        let (v, h, u) = vs.class_counts();
+        assert_eq!(v + h + u, vs.cols * vs.rows, "every cell is classified");
+        assert_eq!(u, 0, "fully in-coverage flat disc has no Unknown cells");
+        assert!(v > 0, "flat terrain has visible cells");
+        // WITHIN THE RADIUS DISC, flat terrain hides nothing — every in-radius cell is Visible. (The
+        // bbox CORNERS beyond the radius are Hidden by design: dead ground past the sight horizon, so
+        // the whole-raster `h` above is nonzero even on a flat plain.)
+        let (dv, dh, du) = disc_counts(&vs, 200.0);
+        assert_eq!(dh, 0, "flat terrain hides nothing WITHIN the sight radius");
+        assert_eq!(du, 0, "in-coverage disc has no Unknown cells");
+        assert!(dv > 0);
+    }
+
+    /// SYMMETRY / FLAT-TERRAIN SANITY: on perfectly flat ground every reached cell is Visible — a
+    /// viewshed that hid anything on the flat would be miscounting the horizon. Also confirms the
+    /// observer's own cell is Visible.
+    #[test]
+    fn viewshed_flat_terrain_all_visible() {
+        let m = flat_world(4000.0);
+        let vs = compute_viewshed(
+            &m,
+            params(2000.0, 2000.0, Some(100.0), 400.0, 8.0),
+            |_, _| Some(100.0),
+        );
+        // Within the sight disc, flat terrain hides nothing and leaves nothing unknown.
+        let (_, hidden, unknown) = disc_counts(&vs, 400.0);
+        assert_eq!(
+            hidden, 0,
+            "flat terrain: nothing is hidden within the radius"
+        );
+        assert_eq!(
+            unknown, 0,
+            "flat terrain fully in coverage: nothing unknown"
+        );
+        // Observer cell is Visible.
+        let oc = ((vs.obs_x - vs.min_x) / 8.0).round() as usize;
+        let orr = ((vs.obs_y - vs.min_y) / 8.0).round() as usize;
+        assert_eq!(
+            vs.at(oc, orr),
+            Visibility::Visible,
+            "observer sees its own cell"
+        );
+    }
+
+    /// RIDGE-SHADOW GOLDEN: a wall ridge east of the observer casts a shadow — cells just IN FRONT of
+    /// the wall (between observer and wall) are Visible; cells BEHIND the wall (farther east, lower)
+    /// are Hidden (dead ground). The observer is low; the wall is tall; the ground behind is back at
+    /// observer height, so only the wall's shadow — not distance — hides those cells.
+    #[test]
+    fn viewshed_ridge_casts_a_shadow() {
+        let m = flat_world(4000.0);
+        let obs = (1000.0, 1000.0);
+        // A tall N–S wall at x=1200 (200 m east of the observer). Ground is 10 m everywhere except a
+        // 1-cell-thick 200 m wall. Observer eye ≈ 11.8 m; the wall towers over the sight line, so
+        // everything east of it and below its crest sits in dead ground.
+        let elev = |x: f64, _y: f64| -> Option<f64> {
+            if (x - 1200.0).abs() < 4.0 {
+                Some(200.0) // the wall
+            } else {
+                Some(10.0) // flat plain
+            }
+        };
+        let vs = compute_viewshed(&m, params(obs.0, obs.1, Some(10.0), 600.0, 8.0), elev);
+
+        // A cell IN FRONT of the wall (x≈1100, same row as observer) is Visible.
+        let front_c = ((1100.0 - vs.min_x) / 8.0).round() as usize;
+        let row = ((obs.1 - vs.min_y) / 8.0).round() as usize;
+        assert_eq!(
+            vs.at(front_c, row),
+            Visibility::Visible,
+            "ground between observer and the wall is visible"
+        );
+        // A cell BEHIND the wall (x≈1400, same row) is Hidden — the wall shadows it.
+        let behind_c = ((1400.0 - vs.min_x) / 8.0).round() as usize;
+        assert_eq!(
+            vs.at(behind_c, row),
+            Visibility::Hidden,
+            "ground behind the wall is in dead ground"
+        );
+    }
+
+    /// OBSERVER-ELEVATION ANCHOR — THE WAVE-109 REFUTATION CASE AS A GOLDEN. T-643's `occlusion()`
+    /// anchors the eye at the FIRST COVERED sample; for a ray whose near stretch is off coverage and
+    /// whose covered head DESCENDS, that seeds the sight line too low and reports a false BLOCKED.
+    /// Here the eye is anchored at the OBSERVER'S OWN elevation (a HIGH observer), so a lower covered
+    /// cell out along the ray reads Visible — never a false Hidden from a mis-anchored eye.
+    ///
+    /// Setup: observer on a 300 m hill; the terrain immediately around drops into an off-coverage gap
+    /// (the manifest box starts east of the observer's near field is simulated by a sampler that
+    /// returns None for a near annulus), then resumes as lower (100 m) covered ground farther out.
+    /// The descending sight line from the TRUE 300 m eye clears the 100 m ground ⇒ Visible. If the
+    /// eye were anchored at that first covered 100 m sample (T-643's bug), the ground beyond would sit
+    /// at/above the (now flat, low) line and mis-read Hidden.
+    #[test]
+    fn viewshed_anchors_eye_at_observer_not_first_covered() {
+        let m = flat_world(6000.0);
+        let obs = (3000.0, 3000.0);
+        // Observer ground 300 m (eye ≈ 301.8). A near annulus (16..80 m from the observer) returns
+        // None (a coverage hole), then ground resumes at 100 m farther out. Descending line from 300 m
+        // clears the 100 m ground.
+        let elev = move |x: f64, y: f64| -> Option<f64> {
+            let d = ((x - obs.0).powi(2) + (y - obs.1).powi(2)).sqrt();
+            if d < 1.0 {
+                Some(300.0) // the observer's own cell
+            } else if (16.0..80.0).contains(&d) {
+                None // off-coverage hole near the observer
+            } else {
+                Some(100.0) // lower ground beyond
+            }
+        };
+        let vs = compute_viewshed(&m, params(obs.0, obs.1, Some(300.0), 400.0, 8.0), elev);
+
+        // A far cell east on the observer's row (x≈3200, d≈200 m, ground 100 m) MUST be Visible —
+        // the descending line from the true 300 m eye clears it. The false-BLOCK bug would hide it.
+        let far_c = ((3200.0 - vs.min_x) / 8.0).round() as usize;
+        let row = ((obs.1 - vs.min_y) / 8.0).round() as usize;
+        assert_eq!(
+            vs.at(far_c, row),
+            Visibility::Visible,
+            "wave-109: a high observer's descending line sees lower ground past a coverage hole \
+             (eye anchored at the OBSERVER, not the first covered sample)"
+        );
+        // The off-coverage hole itself is Unknown, never faked visible (constraint 1).
+        let hole_c = ((obs.0 + 40.0 - vs.min_x) / 8.0).round() as usize;
+        assert_eq!(
+            vs.at(hole_c, row),
+            Visibility::Unknown,
+            "an off-coverage cell is Unknown (rendered hidden), never a fabricated Visible"
+        );
+    }
+
+    /// Observer OFF coverage → the whole raster is Unknown (no honest eye to cast from). Never a disc
+    /// of fake-visible cells.
+    #[test]
+    fn viewshed_observer_off_coverage_is_all_unknown() {
+        let m = flat_world(1000.0);
+        // Observer at (2000,2000) is outside the [0,1000]² box → observer_ground_m None.
+        let vs = compute_viewshed(&m, params(2000.0, 2000.0, None, 200.0, 8.0), |_, _| {
+            Some(50.0)
+        });
+        let (v, h, u) = vs.class_counts();
+        assert_eq!(v, 0, "off-coverage observer: nothing visible");
+        assert_eq!(h, 0, "off-coverage observer: nothing hidden");
+        assert_eq!(u, vs.cols * vs.rows, "off-coverage observer: all Unknown");
+    }
+
+    /// FIRE THE RIDGE-SHADOW RULE (perturb / fail / restore). The shadow rule genuinely discriminates:
+    /// with the wall present, a cell behind it is Hidden and asserting it Visible fails; REMOVING the
+    /// wall (flat plain) restores Visible for that same cell. A viewshed that ignored terrain (all
+    /// Visible always) would pass the perturbed Visible assertion — so this proves the running-horizon
+    /// occlusion is load-bearing, not incidental.
+    #[test]
+    fn viewshed_ridge_shadow_rule_fires() {
+        let m = flat_world(4000.0);
+        let obs = (1000.0, 1000.0);
+        let behind_c_of = |vs: &Viewshed| ((1400.0 - vs.min_x) / 8.0).round() as usize;
+        let row_of = |vs: &Viewshed| ((obs.1 - vs.min_y) / 8.0).round() as usize;
+
+        // Baseline: WITH the wall, the cell behind it is Hidden.
+        let walled = compute_viewshed(&m, params(obs.0, obs.1, Some(10.0), 600.0, 8.0), |x, _| {
+            if (x - 1200.0).abs() < 4.0 {
+                Some(200.0)
+            } else {
+                Some(10.0)
+            }
+        });
+        let (bc, br) = (behind_c_of(&walled), row_of(&walled));
+        assert_eq!(
+            walled.at(bc, br),
+            Visibility::Hidden,
+            "baseline: the wall shadows the ground behind it"
+        );
+        // Perturb: CLAIM it is visible. That is FALSE behind the wall, so the equality must NOT hold —
+        // the rule fires (a terrain-blind viewshed would have left it Visible and passed this).
+        assert_ne!(
+            walled.at(bc, br),
+            Visibility::Visible,
+            "the cell behind the wall MUST be hidden — if Visible, the viewshed is ignoring terrain"
+        );
+        // Restore: REMOVE the wall (flat plain) → that same cell is Visible again.
+        let flat = compute_viewshed(&m, params(obs.0, obs.1, Some(10.0), 600.0, 8.0), |_, _| {
+            Some(10.0)
+        });
+        assert_eq!(
+            flat.at(bc, br),
+            Visibility::Visible,
+            "removing the wall restores a clear sight to the cell behind where it stood"
+        );
+        // The verdict genuinely VARIES with the terrain (not a constant).
+        assert_ne!(
+            walled.at(bc, br),
+            flat.at(bc, br),
+            "the viewshed verdict must depend on the terrain"
+        );
+    }
+
+    /// The viewshed composes with the RASTER point sampler the ticket names (same seam as
+    /// `sample_segment`), not just synthetic closures.
+    #[test]
+    fn viewshed_composes_with_the_raster_point_sampler() {
+        // 4×4 raster, flat u16 value 100 across a [0,300] m box, meters [0,300] → a flat ~0.46 m plain.
+        let raster = [100u16; 16];
+        let m = DemManifest {
+            min_x: 0.0,
+            min_y: 0.0,
+            max_x: 300.0,
+            max_y: 300.0,
+            width_px: 4,
+            height_px: 4,
+            flip_x: false,
+            flip_z: false,
+            height_min_m: 0.0,
+            height_max_m: 300.0,
+        };
+        let ground = uint16_to_meters(100.0, 0.0, 300.0);
+        let vs = compute_viewshed(
+            &m,
+            params(150.0, 150.0, Some(ground), 100.0, 8.0),
+            |x, y| sample_elevation_meters(x, y, &m, &raster, 4, 4),
+        );
+        // In-radius (disc) counts: a flat raster hides nothing within the sight radius.
+        let (v, h, _u) = disc_counts(&vs, 100.0);
+        assert!(v > 0, "raster-backed flat plain yields visible cells");
+        assert_eq!(h, 0, "a flat raster hides nothing within the radius");
+    }
+
+    /// PERF MEASUREMENT (reported, NOT asserted — the ticket's rule). Times the default 2000 m /
+    /// 8 m-cell disc with an in-RAM ramp sampler (the shape of the live 8 m grid read) and prints the
+    /// elapsed ms + the disc size. Under `cargo test -- --nocapture` this is the number the ticket
+    /// asks to report; it never fails the suite (CI timing is not a contract).
+    #[test]
+    fn viewshed_perf_default_radius_is_reported() {
+        // A full Everon-scale coverage box so the 2000 m disc is entirely on the map.
+        let m = DemManifest {
+            min_x: 0.0,
+            min_y: 0.0,
+            max_x: 12_800.0,
+            max_y: 12_800.0,
+            width_px: 6400,
+            height_px: 6400,
+            flip_x: false,
+            flip_z: false,
+            height_min_m: -204.78,
+            height_max_m: 375.53,
+        };
+        // A cheap ramp sampler (elevation grows with x) — arithmetic only, like a grid lookup.
+        let elev = |x: f64, _y: f64| -> Option<f64> { Some(x * 0.01) };
+        let p = params(6400.0, 6400.0, Some(64.0), VIEWSHED_DEFAULT_RADIUS_M, 8.0);
+        let t0 = std::time::Instant::now();
+        let vs = compute_viewshed(&m, p, elev);
+        let dt = t0.elapsed();
+        let (v, h, u) = vs.class_counts();
+        eprintln!(
+            "T-644 viewshed perf: {:.2} ms | {}×{} raster ({} cells) | visible {} hidden {} unknown {}",
+            dt.as_secs_f64() * 1000.0,
+            vs.cols,
+            vs.rows,
+            vs.cols * vs.rows,
+            v,
+            h,
+            u
+        );
+        // Sanity only (not a timing assert): the disc was computed and classified.
+        assert_eq!(v + h + u, vs.cols * vs.rows);
+        assert!(
+            vs.cols >= 500 && vs.rows >= 500,
+            "2000 m / 8 m ≈ 501-cell radius disc"
         );
     }
 }
