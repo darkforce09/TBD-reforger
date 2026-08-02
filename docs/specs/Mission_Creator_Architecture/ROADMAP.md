@@ -15,12 +15,12 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-647** — Placement interactions: click-then-click, Ctrl multi-place, Alt empty vehicle, dbl-click entry points (queued)
-- **T-667** — Map furniture: scale bar and edge grid reference labels (queued)
 - **T-638** — Collapse and expand both docks (queued)
 - **T-659** — Slot census badge + generated mission summary line (queued)
 - **T-657** — Validation: ORBAT and slot rules (queued)
 - **T-642** — Ruler: persistent polyline with per-leg distance and bearing (queued)
+- **T-650** — Compositions: save and place (queued)
+- **T-658** — Validation: every placed asset resolves in the live catalogue (queued)
 <!-- ticket-sync:next:end -->
 
 ---

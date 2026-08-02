@@ -16267,7 +16267,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3950,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16275,7 +16275,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 6 (wave_plan.tsv row 106)",
+   "notes": "editor-UI program wave 6 (wave_plan.tsv row 106) — SHIPPED wave 106 (2863186d) WITH PARTIALS: PLACE-001 click-then-click NOT delivered end-to-end and ATTR-OPEN-001 vehicles-only (verifier wave106.md MAJOR-1..4 → T-723/T-724); Ctrl resolution + Alt-empty + regroup + picker sound",
    "depends_on": [
     "T-661"
    ]
@@ -16292,7 +16292,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3960,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16300,7 +16300,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 6 (wave_plan.tsv row 106)",
+   "notes": "editor-UI program wave 6 (wave_plan.tsv row 106) — SHIPPED wave 106 (886615fa); verifier wave106.md",
    "depends_on": [
     "T-661",
     "T-636"
@@ -17427,7 +17427,7 @@
    "id": "T-691",
    "order": 4450,
    "program": "eden",
-   "status": "queued",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -17442,7 +17442,8 @@
    "surfaces": [
     "TOP",
     "DATA"
-   ]
+   ],
+   "notes": " — SHIPPED wave 106 (a68d02a0); verifier wave106.md"
   },
   {
    "id": "T-692",
@@ -18072,6 +18073,86 @@
    "title": "Route sweep passes on a typo-d URI — completeness gate never validates URIs",
    "summary": "Structural, pre-existing, program-wide (surfaced by the wave-105 verifier probing the T-683 sweep entry): null_tolerance.rs's route_sweep only FAILS on 5xx, and every_get_route_is_swept_or_skipped_with_a_reason validates the TEMPLATE list against src/app.rs but never that each entry's CONCRETE URI resolves to its template — a typo'd URI 404s and passes GREEN, the vacuous-pass shape this repo hunts. Fix: assert per entry that the response is NOT 404/405 (or resolve the URI against the router), so a sweep entry that never reaches its handler is a red. The T-683 entry itself was proven live (200 admin / 403 enlisted / 401 anon) — this ticket is about the frame, not that entry. Diagnosis: editor_verify/wave105.md NOTE-2.",
    "notes": "filed by wave-105 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-723",
+   "order": 4316,
+   "title": "Armed-placement pointerup: one root, three defects — button filter + gesture cleanup + real click-then-click",
+   "summary": "Wave-106 verifier MAJORs 1-3 share one root in mission_editor.rs's armed place branch: it consumes EVERY pointerup regardless of button and cleans up no gesture state. Consequences, each proven: (1) click-then-click does not exist end-to-end — a dock leaf's arming click cancels itself on release (arm-then-cancel over the dock), and the picker row's release lands over the canvas placing at the PICKER ROW's screen position (AssetPickerState.wx/wy never read); (2) canvas pointerdown while armed still writes LG::Pending which the armed pointerup never takes — every Ctrl multi-place stamp strands one, and the next bare mouse move promotes it into a button-less phantom Move that commits on ANY next pointerup (RMB context menu teleports the entity just placed); the T-159.22 invariant comment ':1940 left/pan_px are both None here' is now FALSE and still standing; (3) MMB while armed places instead of panning and leaves pan_px + camera-gesture latched (phantom pan after disarm); RMB while armed places then opens the menu (Eden cancels); there is NO Esc disarm (cancel_pending unreachable from keyboard). Fix as one design: armed branch filters to button 0, takes/clears LG::Pending, RMB/Esc disarm, picker placement reads wx/wy or arms for a genuine second click. Regression tests must be event-SEQUENCE tests, not source pins — the pins could not see any of this. Diagnosis: editor_verify/wave106.md MAJOR-1/2/3.",
+   "notes": "filed by wave-106 adversarial verifier (editor factory); root-cause grouped"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-724",
+   "order": 4317,
+   "title": "ATTR-OPEN-001 residue: objects and zones still cannot open Attributes; dblclick on them opens the picker",
+   "summary": "T-647's one-call-site swap covers vehicles only (pick_slot_or_vehicle = slot SoA + vehiclesById). Objects (entitiesById) and zones still cannot open Attributes by double-click — worse, a dblclick on them now MISSES and opens the asset picker over the entity. Needs a pick that resolves objects/zones (select_tool has the geometry; zones are polygons — point-in-zone hit test) routed to the same open_attributes entry, and the picker's open guarded to genuine empty-ground misses. Registry honesty: T-647 marked shipped-with-partials for this id. Diagnosis: editor_verify/wave106.md MAJOR-4.",
+   "notes": "filed by wave-106 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-725",
+   "order": 4318,
+   "title": "Furniture polish: zoom channel lags 1s on still-pointer wheel; northings hide under the bar; Failed-state fallback",
+   "summary": "T-667 residue, one ticket. (1) Wheel-zoom with a still pointer updates the scale bar and grid-ref labels only on the ~1 Hz debug-HUD heartbeat — up to a second of labels visibly off their moving lines (the transient form of the label-drift defect). Wire a real zoom signal (the wheel handler exists; emit through the same channel CUR uses on pointer-move). (2) Northings enumerate to the viewport bottom so the last chip can hide under the status bar — clamp to map-pane bottom minus bar height. (3) On boot-Failed camera_snapshot is None: grid refs correctly render nothing but ScaleBar shows a cosmetic 500 m fallback — hide it too. Diagnosis: editor_verify/wave106.md MINOR-1 + NOTEs.",
+   "notes": "filed by wave-106 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-726",
+   "order": 4319,
+   "title": "Esc closes both stacked dialogs — use the modal stack the codebase already has",
+   "summary": "T-691's EditorPreferencesDialog stacks over MissionSettingsDialog and copies the bare window-Esc idiom both dialogs use — one Esc closes BOTH. ui.rs modal_stack::is_topmost_open exists for exactly this and is unused by either dialog. Route both dialogs' Esc through it (topmost closes first, second Esc closes the parent); pin with a stacked-Esc test. Diagnosis: editor_verify/wave106.md MINOR-2.",
+   "notes": "filed by wave-106 adversarial verifier (editor factory)"
   }
  ]
 }
