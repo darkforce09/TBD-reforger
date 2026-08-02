@@ -389,28 +389,135 @@ fn object_alias_slug(raw: &str) -> String {
     }
 }
 
+/// T-646 (RIGHT-SEARCH-002) — the search operator a query opens with, recognised in front of the
+/// default label-substring match. Eden's full grammar (`mod `, `*`/`?` globs, `/…/` regex) is
+/// T-084's rewrite; this ticket adds **only** `class:` and must stay additive so the two compose —
+/// see [`filter_catalog`].
+///
+/// `class:B_Soldier` matches by CLASSNAME (a leaf's `id` = its Enfusion `resource_name`), prefix,
+/// case-insensitive. `class:` with an empty operand is a deliberate no-match (the dock's empty state
+/// says so) — an author mid-typing `class:` should see nothing, not the whole tree.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SearchQuery<'a> {
+    /// No recognised operator: the historical case-insensitive **label** substring (T-055).
+    Label(&'a str),
+    /// `class:<operand>` — case-insensitive **classname** (`id`) prefix. `operand` is already
+    /// lowercased and trimmed; empty ⇒ match nothing.
+    ClassPrefix(String),
+}
+
+/// The `class:` operator token. A trailing space is allowed (`class: B_Soldier`) — the operand is
+/// trimmed — but the token itself is exact so `classy` / `subclass:` never trip it.
+const CLASS_PREFIX: &str = "class:";
+
+/// T-646 (RIGHT-SEARCH-002) — recognise the search operator in front of a raw query.
+///
+/// Kept as its own function (not inlined into [`filter_catalog`]) so T-084 extends the grammar in
+/// one place and the recogniser is unit-testable on its own. Only `class:` is recognised here; every
+/// other query — including one that merely *contains* `class:` past the start, e.g.
+/// `"first class:"` — is a plain [`SearchQuery::Label`], matching Eden, where the operator is a
+/// leading token.
+#[must_use]
+pub fn parse_search_query(query: &str) -> SearchQuery<'_> {
+    let trimmed = query.trim_start();
+    if let Some(rest) = strip_prefix_ci(trimmed, CLASS_PREFIX) {
+        return SearchQuery::ClassPrefix(rest.trim().to_lowercase());
+    }
+    // Historical path: trim + lowercase happens in `filter_catalog` (unchanged), so hand back the
+    // raw slice untouched here.
+    SearchQuery::Label(query)
+}
+
+/// T-646 (RIGHT-SEARCH-002) — the empty-state line the dock shows when a `filter_catalog(query)`
+/// came back empty, so the `class:` empty-operand case "says so" instead of reading like a genuine
+/// no-match. `noun` is the tab's word (`"assets"` / `"objects"` / `"vehicles"`). A `class:` with an
+/// empty operand is a mid-type state, not a failed search — the message tells the author to keep
+/// typing the classname rather than implying nothing matched.
+#[must_use]
+pub fn search_empty_message(query: &str, noun: &str) -> String {
+    if matches!(parse_search_query(query), SearchQuery::ClassPrefix(ref op) if op.is_empty()) {
+        "Type a class name after class:".to_string()
+    } else {
+        format!("No {noun} match.")
+    }
+}
+
+/// Case-insensitive `strip_prefix`: `Some(remainder)` when `s` begins with `prefix` ignoring ASCII
+/// case, else `None`. `class:` is ASCII, so `eq_ignore_ascii_case` on the head is exact and avoids
+/// allocating a lowercased copy of the whole query just to test the operator.
+fn strip_prefix_ci<'a>(s: &'a str, prefix: &str) -> Option<&'a str> {
+    if s.len() >= prefix.len() && s[..prefix.len()].eq_ignore_ascii_case(prefix) {
+        Some(&s[prefix.len()..])
+    } else {
+        None
+    }
+}
+
 /// Asset-search filter (T-172 B9 — the T-055 React behavior): case-insensitive label substring.
 /// A folder survives on a self-match (keeping its whole subtree) or on any descendant match
 /// (keeping only the matching children). Empty/whitespace query returns the tree unchanged.
+///
+/// T-646 (RIGHT-SEARCH-002) — a `class:<operand>` query switches to CLASSNAME (`id`) prefix
+/// matching: a leaf is kept when its `id` starts with the operand (case-insensitive), and a folder
+/// is kept (with only its matching descendants) when any leaf under it does. The recogniser
+/// ([`parse_search_query`]) runs FIRST; every non-`class:` query falls through to the byte-identical
+/// label `keep` closure below, so this stays additive — T-084 owns the wider grammar rewrite and
+/// composes on top of the same recogniser without touching this core matcher.
 #[must_use]
 pub fn filter_catalog(nodes: &[CatalogNode], query: &str) -> Vec<CatalogNode> {
-    let q = query.trim().to_lowercase();
-    if q.is_empty() {
-        return nodes.to_vec();
-    }
-    fn keep(node: &CatalogNode, q: &str) -> Option<CatalogNode> {
-        if node.label.to_lowercase().contains(q) {
-            return Some(node.clone()); // self-match → full subtree
+    match parse_search_query(query) {
+        SearchQuery::ClassPrefix(operand) => {
+            // Empty operand (`class:` with nothing after) matches nothing — the dock shows its
+            // "No assets match" empty state, not the whole tree.
+            if operand.is_empty() {
+                return Vec::new();
+            }
+            fn keep(node: &CatalogNode, operand: &str) -> Option<CatalogNode> {
+                if node.payload.is_some() {
+                    // Leaf: kept iff its classname (id) prefix-matches.
+                    return node
+                        .id
+                        .to_lowercase()
+                        .starts_with(operand)
+                        .then(|| node.clone());
+                }
+                // Folder: unlike the label path there is no self-match — a folder has no classname —
+                // so it survives only on a descendant leaf, keeping just the matching children.
+                let children: Vec<CatalogNode> = node
+                    .children
+                    .iter()
+                    .filter_map(|c| keep(c, operand))
+                    .collect();
+                if children.is_empty() {
+                    return None;
+                }
+                let mut out = node.clone();
+                out.children = children;
+                Some(out)
+            }
+            nodes.iter().filter_map(|n| keep(n, &operand)).collect()
         }
-        let children: Vec<CatalogNode> = node.children.iter().filter_map(|c| keep(c, q)).collect();
-        if children.is_empty() {
-            return None;
+        SearchQuery::Label(raw) => {
+            let q = raw.trim().to_lowercase();
+            if q.is_empty() {
+                return nodes.to_vec();
+            }
+            fn keep(node: &CatalogNode, q: &str) -> Option<CatalogNode> {
+                if node.label.to_lowercase().contains(q) {
+                    return Some(node.clone()); // self-match → full subtree
+                }
+                let children: Vec<CatalogNode> =
+                    node.children.iter().filter_map(|c| keep(c, q)).collect();
+                if children.is_empty() {
+                    return None;
+                }
+                let mut out = node.clone();
+                out.children = children;
+                Some(out)
+            }
+            nodes.iter().filter_map(|n| keep(n, &q)).collect()
         }
-        let mut out = node.clone();
-        out.children = children;
-        Some(out)
     }
-    nodes.iter().filter_map(|n| keep(n, &q)).collect()
 }
 
 #[cfg(test)]
@@ -521,6 +628,247 @@ mod tests {
         assert_eq!(nato, tree, "folder self-match keeps the full subtree");
 
         assert!(filter_catalog(&tree, "zzz-none").is_empty());
+    }
+
+    // ── T-646 (RIGHT-SEARCH-002) — the `class:` recogniser ────────────────────────────────────────
+
+    /// The recogniser reads a leading `class:` and hands back a lowercased/trimmed operand; anything
+    /// else is a plain label query. The operator is a LEADING token only — a query that merely
+    /// contains it later stays a label match (Eden's grammar), and `class` without the colon is not
+    /// the operator.
+    #[test]
+    fn parse_search_query_recognises_class_operator() {
+        assert_eq!(
+            parse_search_query("class:B_Soldier"),
+            SearchQuery::ClassPrefix("b_soldier".to_string()),
+            "class: → lowercased operand"
+        );
+        assert_eq!(
+            parse_search_query("  CLASS: B_Soldier "),
+            SearchQuery::ClassPrefix("b_soldier".to_string()),
+            "operator is case-insensitive; leading/trailing space trimmed"
+        );
+        assert_eq!(
+            parse_search_query("class:"),
+            SearchQuery::ClassPrefix(String::new()),
+            "empty operand is recognised (and filters to nothing)"
+        );
+        // Not the operator: a bare word, or `class:` appearing past the start.
+        assert_eq!(
+            parse_search_query("rifleman"),
+            SearchQuery::Label("rifleman")
+        );
+        assert_eq!(
+            parse_search_query("classy"),
+            SearchQuery::Label("classy"),
+            "`class` without the colon is a label"
+        );
+        assert_eq!(
+            parse_search_query("first class:"),
+            SearchQuery::Label("first class:"),
+            "the operator is a leading token, not a substring"
+        );
+    }
+
+    /// `class:<prefix>` matches a LEAF by its classname (`id` = `resource_name`), prefix,
+    /// case-insensitively — HIT (one leaf), MISS (empty tree), CASE (lower/upper agree), and
+    /// EMPTY-OPERAND (`class:` alone ⇒ nothing). The un-prefixed label path is unchanged — proven by
+    /// re-running a label query and getting the historical result.
+    #[test]
+    fn filter_catalog_class_prefix() {
+        let tree = build_catalog_tree(&golden_items(), "BLUFOR");
+        let rifleman_id =
+            "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et";
+
+        // HIT — a GUID prefix that only the Rifleman leaf carries. The NATO / US_Army folders survive
+        // by descent; every non-matching sibling leaf is pruned.
+        let hit = filter_catalog(&tree, "class:{26A9756790131354}");
+        assert_eq!(hit.len(), 1, "NATO kept via the one matching descendant");
+        let leaves = &hit[0].children[0].children;
+        assert_eq!(leaves.len(), 1, "only the prefix-matching leaf survives");
+        assert_eq!(leaves[0].id, rifleman_id);
+        assert!(
+            leaves[0].payload.is_some(),
+            "the survivor is the placeable leaf"
+        );
+
+        // A broader classname prefix every US_Army leaf shares → all 8 back (folders by descent).
+        let all = filter_catalog(&tree, "class:{");
+        assert_eq!(
+            all[0].children[0].children.len(),
+            8,
+            "all classnames share the GUID-brace start"
+        );
+
+        // CASE — the operand is matched case-insensitively against the id.
+        let lower = filter_catalog(&tree, "class:{26a9756790131354}prefabs");
+        assert_eq!(
+            lower.len(),
+            1,
+            "lowercased operand matches the mixed-case id"
+        );
+        assert_eq!(lower[0].children[0].children[0].id, rifleman_id);
+
+        // MISS — a prefix no classname starts with.
+        assert!(
+            filter_catalog(&tree, "class:{ZZZZ}").is_empty(),
+            "a non-matching class prefix yields the empty tree"
+        );
+        // MISS — the operand is a PREFIX, not a substring: `Rifleman` sits mid-id, so it must NOT hit.
+        assert!(
+            filter_catalog(&tree, "class:Rifleman").is_empty(),
+            "class: is prefix-only — a mid-classname token does not match"
+        );
+
+        // EMPTY-OPERAND — `class:` with nothing after matches nothing (the dock's empty state).
+        assert!(
+            filter_catalog(&tree, "class:").is_empty(),
+            "class: with an empty operand matches nothing"
+        );
+        assert!(
+            filter_catalog(&tree, "class:   ").is_empty(),
+            "class: with whitespace-only operand also matches nothing"
+        );
+
+        // ADDITIVE PROOF — the label path is untouched: a plain query still self-matches the folder
+        // and returns the historical full subtree (the `filter_catalog_rules` contract).
+        assert_eq!(
+            filter_catalog(&tree, "nato"),
+            tree,
+            "an un-prefixed query is still the T-055 label substring match"
+        );
+    }
+
+    /// T-646 — the empty state distinguishes a mid-type `class:` (no operand yet) from a genuine
+    /// miss, so the dock "says so" rather than implying nothing matched.
+    #[test]
+    fn class_empty_operand_has_its_own_empty_message() {
+        assert_eq!(
+            search_empty_message("class:", "assets"),
+            "Type a class name after class:",
+            "empty operand → guidance, not a miss"
+        );
+        assert_eq!(
+            search_empty_message("class:   ", "vehicles"),
+            "Type a class name after class:",
+            "whitespace-only operand is still empty"
+        );
+        // A real miss (non-empty operand, or a label query) reads the plain noun message.
+        assert_eq!(
+            search_empty_message("class:zzz", "objects"),
+            "No objects match."
+        );
+        assert_eq!(
+            search_empty_message("rifleman", "assets"),
+            "No assets match."
+        );
+    }
+
+    /// The single load-bearing assertion, wired to FIRE once: `class:` selects a leaf by its
+    /// classname where a plain label query over the SAME token cannot. If the recogniser were
+    /// dropped (the query fell through to the label path) the classname-only token would find nothing
+    /// and this would fail — so a GREEN here means the `class:` arm actually ran.
+    #[test]
+    fn class_prefix_fires_where_label_cannot() {
+        let tree = build_catalog_tree(&golden_items(), "BLUFOR");
+        // `Character_US_Rifleman` is in every leaf's classname (`id`) but in NO label
+        // (labels are "US Rifleman", "US Grenadier", …), so it is the perfect discriminator.
+        let token = "Character_US_Rifleman";
+
+        // Label path over the token: the historical matcher finds nothing (it is not in any label).
+        assert!(
+            filter_catalog(&tree, token).is_empty(),
+            "guard: the classname token is absent from every label"
+        );
+        // class: path over the same token: the recogniser routes to id-prefix matching. It is a
+        // prefix of the id only after the `{GUID}Prefabs/…/` head, so match on the full leading id.
+        let classq =
+            "class:{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman";
+        let hit = filter_catalog(&tree, classq);
+        assert_eq!(
+            hit.len(),
+            1,
+            "class: fired: the classname-prefix leaf was selected"
+        );
+        assert_eq!(
+            hit[0].children[0].children[0].label, "US Rifleman",
+            "and it is the right leaf"
+        );
+    }
+
+    /// CHIP + SEARCH COMPOSITION — the active chip filters the tree (via `build_catalog_tree`, which
+    /// side-filters through `character_matches_eden_side`) BEFORE `class:`/label search runs on the
+    /// result. An OPFOR chip + a BLUFOR-classname `class:` query is empty (the BLUFOR leaves were
+    /// already dropped by the chip), while the same query on the BLUFOR tree hits — proving the two
+    /// filters compose in that order.
+    #[test]
+    fn chip_side_then_class_search_compose() {
+        let mut items = golden_items();
+        items.push(character_row(
+            "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+            "USSR Rifleman",
+            "ArmaReforger/Characters/Factions/OPFOR/USSR_Army/Rifleman",
+        ));
+
+        // Chip = OPFOR → the tree holds only USSR. A BLUFOR-classname class: query finds nothing.
+        let opfor = build_catalog_tree(&items, "OPFOR");
+        assert!(
+            filter_catalog(&opfor, "class:{26A9756790131354}").is_empty(),
+            "chip filtered BLUFOR out before search; the BLUFOR class prefix cannot match"
+        );
+        // …but the OPFOR classname does match on the OPFOR tree.
+        let opfor_hit = filter_catalog(&opfor, "class:{DCB41B3746FDD1BE}");
+        assert_eq!(
+            opfor_hit.len(),
+            1,
+            "the OPFOR class prefix matches the USSR leaf"
+        );
+
+        // Chip = BLUFOR → the same BLUFOR class query now hits (chip kept the NATO leaves).
+        let blufor = build_catalog_tree(&items, "BLUFOR");
+        assert_eq!(
+            filter_catalog(&blufor, "class:{26A9756790131354}").len(),
+            1,
+            "on the BLUFOR tree the BLUFOR class prefix hits — search runs on the chip-filtered tree"
+        );
+        // Composition also holds for a plain label query on the chip-filtered tree.
+        assert!(
+            filter_catalog(&opfor, "US Rifleman").is_empty(),
+            "a label query for a BLUFOR role is empty under the OPFOR chip"
+        );
+    }
+
+    /// CHIP PREDICATE PER SIDE — `character_matches_eden_side` (the predicate RIGHT-SUBMODE-001 rides,
+    /// and what `build_catalog_tree` filters through) admits a row for exactly its own side. This
+    /// pins the predicate the chip filtering depends on, independently of the tree builder.
+    #[test]
+    fn chip_side_predicate_per_side() {
+        let us = character_row(
+            "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
+            "US Rifleman",
+            "ArmaReforger/Characters/Factions/BLUFOR/US_Army/Rifleman",
+        );
+        let ussr = character_row(
+            "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+            "USSR Rifleman",
+            "ArmaReforger/Characters/Factions/OPFOR/USSR_Army/Rifleman",
+        );
+        let fia = character_row(
+            "{84B40583F4D1B7A3}Prefabs/Characters/Factions/INDFOR/FIA/Character_FIA_Rifleman.et",
+            "FIA Rifleman",
+            "ArmaReforger/Characters/Factions/INDFOR/FIA/Rifleman",
+        );
+        // Each row matches its own side and no other.
+        assert!(character_matches_eden_side(&us, "BLUFOR"));
+        assert!(!character_matches_eden_side(&us, "OPFOR"));
+        assert!(!character_matches_eden_side(&us, "INDFOR"));
+        assert!(character_matches_eden_side(&ussr, "OPFOR"));
+        assert!(!character_matches_eden_side(&ussr, "BLUFOR"));
+        assert!(character_matches_eden_side(&fia, "INDFOR"));
+        assert!(!character_matches_eden_side(&fia, "BLUFOR"));
+        // Unknown / empty side never matches (the chip row admits only the three sides).
+        assert!(!character_matches_eden_side(&us, "CIV"));
+        assert!(!character_matches_eden_side(&us, ""));
     }
 
     fn character_row(resource: &str, name: &str, category: &str) -> RegistryItem {
