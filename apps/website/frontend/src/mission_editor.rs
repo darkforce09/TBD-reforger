@@ -186,7 +186,16 @@ fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
 /// and it spans the whole boot rather than restarting per stage. What survives here is the single
 /// question the overlay still needs a phase for: is the boot over? `Hydrating`/`LoadingMap` are
 /// kept because the two boot tasks flip them independently and `Ready` is their rendezvous.
-#[derive(Clone, Copy, PartialEq)]
+///
+/// T-631 — a boot can now END BADLY, not only hang. When `RenderEngine::create` returns `Err`
+/// (a WebGPU/GL init failure — `createBuffer size too large`, no adapter, a lost device) the
+/// bar used to sit at the last honest reading forever because the world task that flips the
+/// overlay down lives inside the *success* branch. `Failed` is the fourth terminal state: the
+/// overlay stops being a spinner and names the segment that broke and the REAL reason, with a
+/// Retry and a "continue without map". No longer `Copy` — `reason` is an owned `String` (the
+/// wgpu message, verbatim), which is the whole point: a `&'static str` could only ever say
+/// "engine failed", and "make it wrong on demand" means carrying the actual cause through.
+#[derive(Clone, PartialEq, Debug)]
 enum BootPhase {
     /// IDB restore + server hydrate in flight.
     Hydrating,
@@ -194,6 +203,39 @@ enum BootPhase {
     LoadingMap,
     /// Doc hydrated + world settled — overlay hidden.
     Ready,
+    /// A boot segment failed unrecoverably. Terminal: the overlay shows the error state (the
+    /// failing segment + the underlying reason), not the bar. `seg` names which
+    /// [`boot_progress::BootSeg`] broke so the caption reads "Rendering engine failed" rather
+    /// than a generic apology; `reason` is the loader's own error text.
+    Failed {
+        seg: boot_progress::BootSeg,
+        reason: String,
+    },
+}
+
+impl BootPhase {
+    /// Fold a boot transition, with `Failed` **sticky**.
+    ///
+    /// T-631 — the acceptance clause "a subsequent misleading event does NOT overwrite the
+    /// original reason" is enforced HERE, not by call-site luck. The two boot tasks run
+    /// concurrently: the engine task can land in `Failed` while the doc-hydrate task, oblivious,
+    /// is still on its way to `boot.set(LoadingMap)` / `hand_over → Ready`. If those later writes
+    /// won, the overlay would flip from a correct error back to a spinner (or vanish onto a dead
+    /// map), and the FIRST panic's real cause — the one thing worth reporting — would be buried by
+    /// the second, misleading event. So once a boot is `Failed`, every further transition is a
+    /// no-op and the original `{seg, reason}` survives. Every task-driven `boot` write goes
+    /// through this; nothing calls `boot.set` on the phase directly on a path that can race a
+    /// failure.
+    // Ungated so `t631_boot_failure_state` can drive it on the host; its only non-test callers
+    // (`hand_over`, the two boot tasks) are wasm-only, so a native shell build sees it as dead.
+    #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+    #[must_use]
+    fn advance(self, next: BootPhase) -> BootPhase {
+        match self {
+            BootPhase::Failed { .. } => self,
+            _ => next,
+        }
+    }
 }
 
 /// Hand-over hold, in ms, between the bar reaching 100% and the overlay coming down.
@@ -664,6 +706,14 @@ pub fn MissionEditorPage() -> impl IntoView {
     let debug_hud = RwSignal::new(String::new());
     // T-175 B5 — boot loading overlay phase (set by the wasm boot tasks; the view reads it).
     let boot = RwSignal::new(BootPhase::Hydrating);
+    // T-631 — "continue without map": once the render engine fails to start, the map pane is dead
+    // for the life of this mount (the engine is `None`, the rAF loop never started, every engine
+    // call no-ops). This holds the reason so that, after the operator dismisses the error overlay
+    // to keep working on the doc, a persistent labelled badge sits over the dead canvas instead of
+    // a blank void that reads as a rendering bug. `Some(reason)` from the instant `create` returns
+    // `Err`; never cleared (Retry is a full reload, which rebuilds this fresh). Declared on both
+    // targets — the view reads it; only the wasm engine-init `Err` arm sets it.
+    let map_disabled = RwSignal::new(None::<String>);
     // T-628 — the one bar. Written only by the two boot tasks, through the `ProgressFn` built below,
     // and only with work that has already completed: there is no timer anywhere on this path, so a
     // stalled network shows a stalled bar, which is the point.
@@ -1180,10 +1230,15 @@ pub fn MissionEditorPage() -> impl IntoView {
                     }
                     // T-175 B5 — doc is hydrated: advance the loading overlay (→ Ready if the world
                     // already settled, else keep the overlay up until the world task finishes).
+                    // T-631 — but not past a `Failed`: if the engine task has already reported a
+                    // GPU-init failure, this task is the "misleading event" that must not bury the
+                    // reason. `hand_over` self-guards; the `LoadingMap` write goes through `advance`
+                    // so a hydrate that finishes after an engine failure cannot re-spinner the
+                    // overlay on top of the error.
                     if world_ready.get() {
                         hand_over(boot);
                     } else {
-                        boot.set(BootPhase::LoadingMap);
+                        boot.update(|b| *b = b.clone().advance(BootPhase::LoadingMap));
                     }
                     // 2. Initial persist through the debounced writer (get_bytes read at write time;
                     //    cancel when the doc Option is cleared). No mutator hook exists yet, so this
@@ -1333,7 +1388,42 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 });
                             }
                         }
-                        Err(e) => leptos::logging::error!("RenderEngine::create: {e:?}"),
+                        Err(e) => {
+                            // T-631 — the failure path. `RenderEngine::create` returns `Err` on a
+                            // WebGPU/GL init failure (no adapter, a lost device, `createBuffer size
+                            // too large` on a swiftshader/blocklisted GPU). Before this slice the
+                            // `Err` arm only logged and returned: the world task that flips the
+                            // overlay down never ran (it is INSIDE the `Ok` arm), so the bar sat at
+                            // its last honest reading forever — no error, no reason, no retry.
+                            //
+                            // Now the boot is driven into `Failed`, carrying the REAL reason. `e` is
+                            // a `JsError`; its text is only reachable through JS (`JsError: Display`
+                            // prints "JsValue(...)"), so read it off the underlying `Error.message`.
+                            let reason = js_sys::Error::from(wasm_bindgen::JsValue::from(e))
+                                .message()
+                                .as_string()
+                                .filter(|s| !s.is_empty())
+                                .unwrap_or_else(|| "the render engine failed to start".to_string());
+                            leptos::logging::error!("RenderEngine::create: {reason}");
+                            if disposed.load(Ordering::Relaxed) {
+                                return;
+                            }
+                            // Name the segment the operator was actually watching when it died —
+                            // the first unfinished one, i.e. the "Loading terrain… 50%" the ticket
+                            // reproduced — rather than a generic apology. `advance` makes this
+                            // sticky: if the doc-hydrate task later reaches for `LoadingMap`/`Ready`
+                            // it is a no-op and this reason survives (the "misleading event does not
+                            // overwrite" guarantee).
+                            let seg = progress.get_untracked().stage();
+                            // The map is dead from this instant, independent of whether the operator
+                            // is still looking at the error overlay or has dismissed it to keep
+                            // working — so the labelled-dead-pane badge is armed here, not on the
+                            // Continue click.
+                            map_disabled.set(Some(reason.clone()));
+                            boot.update(|b| {
+                                *b = b.clone().advance(BootPhase::Failed { seg, reason })
+                            });
+                        }
                     }
                 }
             });
@@ -2226,12 +2316,77 @@ pub fn MissionEditorPage() -> impl IntoView {
             {move || {
                 let phase = boot.get();
                 let p = progress.get();
-                (phase != BootPhase::Ready)
-                    .then(|| {
+                match phase {
+                    // The boot succeeded and handed over: no overlay. (A dead map after a
+                    // "continue without map" still shows its own badge below — that is NOT gated
+                    // on the phase, because dismissing the error is exactly reaching `Ready`.)
+                    BootPhase::Ready => None,
+                    // T-631 — the failure state. The overlay stops being a spinner and becomes a
+                    // report: the segment that broke, the REAL reason (verbatim from wgpu), and two
+                    // ways out. `pointer-events-auto` HERE (the loading bar is `-none`) because the
+                    // operator has to be able to click Retry / Continue. `z-50` keeps it over the
+                    // chrome the same way the bar did.
+                    // `.into_any()`: the three arms build different concrete `View` element trees
+                    // (an error card vs. the bar vs. nothing), which Leptos cannot unify into one
+                    // return type — erasing each to `AnyView` is the standard reconciliation.
+                    BootPhase::Failed { seg, reason } => Some(view! {
+                        <div class="animate-overlay-fade pointer-events-auto absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm">
+                            <div class="flex w-80 max-w-[90vw] flex-col items-center gap-3 rounded-xl border border-error/40 bg-surface-variant/40 p-6 text-center">
+                                <p class="text-sm font-semibold text-error">
+                                    {format!("{} failed", seg.title().trim_end_matches('…'))}
+                                </p>
+                                // The real reason, verbatim. This is the line the ticket is about:
+                                // the boot no longer sits silent — it says WHY. `break-words` so a
+                                // long wgpu message wraps instead of overflowing the card.
+                                <p class="max-h-32 overflow-y-auto break-words font-mono text-[11px] text-on-surface-variant/80">
+                                    {reason}
+                                </p>
+                                <div class="mt-1 flex gap-2">
+                                    <button
+                                        type="button"
+                                        aria-label="Retry"
+                                        class="rounded-lg bg-primary px-4 py-2 text-label-md font-medium text-on-primary"
+                                        on:click=move |_| {
+                                            // A fresh GPU-init attempt = a fresh mount. Reload the
+                                            // page so `RenderEngine::create` runs again from a clean
+                                            // slate (the failure can be transient — a lost device, a
+                                            // GPU still waking). Wasm-only; the native shell has no
+                                            // engine to retry.
+                                            #[cfg(target_arch = "wasm32")]
+                                            if let Some(win) = web_sys::window() {
+                                                let _ = win.location().reload();
+                                            }
+                                        }
+                                    >
+                                        "Retry"
+                                    </button>
+                                    <button
+                                        type="button"
+                                        aria-label="Continue without map"
+                                        class="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-label-md text-on-surface transition-colors hover:bg-white/10"
+                                        on:click=move |_| {
+                                            // Dismiss the error onto the live editor: the docs, the
+                                            // outliner and the Attributes all work against the doc
+                                            // with no engine. Reaching `Ready` takes the overlay
+                                            // down; `map_disabled` stays `Some`, so the dead-pane
+                                            // badge below replaces the map. `advance` is not needed
+                                            // here — this is the one deliberate exit FROM `Failed`,
+                                            // driven by the operator, so it sets `Ready` directly.
+                                            boot.set(BootPhase::Ready);
+                                        }
+                                    >
+                                        "Continue without map"
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }.into_any()),
+                    // Still booting: the T-628 bar, unchanged. One 0→100% journey, no sweep.
+                    _ => {
                         let pct = p.percent();
                         let title = p.stage().title();
                         let caption = p.caption();
-                        view! {
+                        Some(view! {
                             <div class="animate-overlay-fade pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-background/85 backdrop-blur-sm">
                                 <div class="flex w-64 flex-col items-center gap-2">
                                     <p class="text-sm font-medium text-on-surface-variant">{title}</p>
@@ -2249,7 +2404,29 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     </p>
                                 </div>
                             </div>
-                        }
+                        }.into_any())
+                    }
+                }
+            }}
+            // T-631 — the dead-map badge. After "continue without map" the overlay is gone and the
+            // canvas behind the chrome is a black rectangle drawing nothing (the engine never
+            // started). This labels it so it reads as a known, chosen degraded state rather than a
+            // bug — and it is `pointer-events-none`, low in the corner, so it never fights the docks
+            // or the toolbelt the operator is still using. Shown only once the error overlay is down
+            // (`boot == Ready`) so it does not double up with the report above.
+            {move || {
+                let disabled = map_disabled.get();
+                let down = boot.get() == BootPhase::Ready;
+                (down)
+                    .then_some(disabled)
+                    .flatten()
+                    .map(|reason| view! {
+                        <div class="pointer-events-none absolute bottom-16 left-1/2 z-40 -translate-x-1/2 rounded-lg border border-error/30 bg-background/80 px-3 py-1.5 text-center backdrop-blur-sm">
+                            <p class="text-label-md font-medium text-error">"Map unavailable"</p>
+                            <p class="max-w-xs truncate font-mono text-[10px] text-on-surface-variant/70">
+                                {reason}
+                            </p>
+                        </div>
                     })
             }}
         </div>
@@ -2268,11 +2445,18 @@ pub fn MissionEditorPage() -> impl IntoView {
 fn hand_over(boot: RwSignal<BootPhase>) {
     use wasm_bindgen::prelude::Closure;
     use wasm_bindgen::JsCast;
+    // T-631 — `Ready` takes the overlay down; a `Failed` boot must keep it up (the error state is
+    // the overlay). Both the timer callback and the two immediate fallbacks route through `advance`
+    // so a rendezvous that fires after an engine-init failure cannot dismiss the error onto a dead
+    // map. In the normal boot `self` is `LoadingMap`/`Hydrating`, so `advance(Ready)` == `Ready`.
+    // `Copy` closure (its only capture, the `RwSignal`, is `Copy`), so it is both callable inline
+    // in the fallbacks and movable into the timer closure.
+    let go_ready = move || boot.update(|b| *b = b.clone().advance(BootPhase::Ready));
     let Some(win) = web_sys::window() else {
-        boot.set(BootPhase::Ready);
+        go_ready();
         return;
     };
-    let cb = Closure::once_into_js(move || boot.set(BootPhase::Ready));
+    let cb = Closure::once_into_js(go_ready);
     if win
         .set_timeout_with_callback_and_timeout_and_arguments_0(
             cb.as_ref().unchecked_ref(),
@@ -2280,7 +2464,7 @@ fn hand_over(boot: RwSignal<BootPhase>) {
         )
         .is_err()
     {
-        boot.set(BootPhase::Ready);
+        boot.update(|b| *b = b.clone().advance(BootPhase::Ready));
     }
 }
 
@@ -2312,7 +2496,24 @@ fn start_raf(
             f.borrow_mut().take(); // drop the loop closure — no further frames
             return;
         }
-        if let Some(e) = engine.borrow_mut().as_mut() {
+        // T-631 — the double-panic fix. This was `engine.borrow_mut()`, which PANICS if the cell
+        // is already borrowed. When `e.render()` panicked (the observed `createBuffer size too
+        // large` → wasm `unreachable`), the abort re-entered the editor while the first panic was
+        // unwinding; the next frame's `borrow_mut` then found the cell still held and panicked a
+        // SECOND time with "RefCell already borrowed", and that second panic — not the render
+        // failure — is what surfaced, burying the real cause. `try_borrow_mut` makes a contended
+        // frame a no-op instead of a panic, so a re-entrant borrow can never overwrite the first,
+        // true panic. It is also the correct steady-state behaviour: a frame that cannot get the
+        // engine simply waits for the next rAF rather than taking the tab down.
+        let Ok(mut guard) = engine.try_borrow_mut() else {
+            // Contended: skip this frame, keep the loop alive.
+            let cb_ref = f.borrow();
+            if let (Some(cb), Some(win)) = (cb_ref.as_ref(), web_sys::window()) {
+                let _ = win.request_animation_frame(cb.as_ref().unchecked_ref());
+            }
+            return;
+        };
+        if let Some(e) = guard.as_mut() {
             let _ = e.render();
             e.poll(); // ★ T-159.15.1: drain readback map_async so the next submit can't double-map
             frames += 1;
@@ -3679,6 +3880,158 @@ mod t628_boot_progress {
             hydrate.contains("get_mission_measured(auth, &path")
                 && !hydrate.contains("client::api_get::<MissionDetail>"),
             "the hydrate's own GET must route through the measured wrapper, not around it"
+        );
+    }
+}
+
+/// T-631 — the boot overlay cannot fail SILENTLY. The engine-init failure itself is wasm-side
+/// (`RenderEngine::create` needs a real GPU), but the state machine the overlay reads —
+/// `BootPhase` and its `advance` fold — is pure and drives entirely here, which is exactly what
+/// the acceptance clause allows ("a native test can still drive `BootPhase`/`BootEvent`
+/// transitions directly"). These tests inject the failure the way the engine task does, assert the
+/// overlay reaches `Failed { seg, reason }` carrying the ORIGINAL reason, and — the part that made
+/// the real bug so nasty — assert that the concurrent doc-hydrate task's later, misleading
+/// transitions (`LoadingMap`, then `Ready` via the hand-over) do NOT overwrite that reason.
+#[cfg(test)]
+mod t631_boot_failure_state {
+    use super::boot_progress::{BootEvent, BootProgress, BootSeg};
+    use super::BootPhase;
+
+    /// The verbatim first line of the observed wasm chain (`webgpu.rs:2331`). This is the string
+    /// the operator must end up staring at instead of a frozen "Loading terrain… 50%".
+    const REAL_REASON: &str = "createBuffer failed, size (32) too large";
+    /// The kind of later, unrelated noise the doc task or a second failure could carry. If this
+    /// ever ends up on screen the FIRST panic's cause has been buried — the exact regression.
+    const MISLEADING_REASON: &str = "RefCell already borrowed";
+
+    /// Reproduce the two-task race in boot order: the bar is honestly metered up to the point the
+    /// GPU dies, the engine task lands in `Failed`, and THEN the doc-hydrate task — which knows
+    /// nothing about the engine — tries to move the overlay on. Returns the phase the overlay would
+    /// actually render.
+    fn drive_boot_with_engine_failure(sticky: bool) -> BootPhase {
+        // 1. The T-628 bar is real up to the failure: mission finishes, terrain is half-way — this
+        //    is the "Loading terrain… 50%" the ticket reproduced. `stage()` names that segment.
+        let mut prog = BootProgress::new();
+        prog.apply(BootEvent::Budget(BootSeg::Mission, 2_032));
+        prog.apply(BootEvent::Done(BootSeg::Mission, 2_032));
+        prog.apply(BootEvent::Finish(BootSeg::Mission));
+        prog.apply(BootEvent::Budget(BootSeg::Terrain, 71_911_548));
+        prog.apply(BootEvent::Done(BootSeg::Terrain, 35_955_774));
+        let seg = prog.stage();
+        assert_eq!(
+            seg,
+            BootSeg::Terrain,
+            "the failure must be attributed to the segment on screen when the GPU died — the \
+             operator saw 'Loading terrain…', so the error must say terrain, not a generic apology"
+        );
+
+        // 2. The engine task's `Err` arm: drive the machine into `Failed` carrying the REAL reason.
+        let mut phase = BootPhase::Hydrating;
+        let fail = BootPhase::Failed {
+            seg,
+            reason: REAL_REASON.to_string(),
+        };
+        phase = if sticky {
+            phase.advance(fail)
+        } else {
+            // The perturbation (see the paired test): a fold that is NOT sticky. Same call shape,
+            // so the ONLY difference under test is the stickiness the fix adds.
+            fail
+        };
+
+        // 3. The concurrent doc-hydrate task settles AFTER the failure and reaches for the overlay,
+        //    exactly as it does live: first `LoadingMap`, then `Ready` at the hand-over. Both go
+        //    through the same fold the production code uses.
+        let load = BootPhase::LoadingMap;
+        let ready = BootPhase::Ready;
+        phase = if sticky { phase.advance(load) } else { load };
+        phase = if sticky { phase.advance(ready) } else { ready };
+        phase
+    }
+
+    #[test]
+    fn engine_failure_reaches_the_error_state_with_the_original_reason() {
+        let phase = drive_boot_with_engine_failure(true);
+        match phase {
+            BootPhase::Failed { seg, reason } => {
+                assert_eq!(
+                    seg,
+                    BootSeg::Terrain,
+                    "the error must still name the segment that broke"
+                );
+                assert_eq!(
+                    reason, REAL_REASON,
+                    "the overlay must carry the REAL wgpu reason verbatim — the whole ticket is \
+                     that the boot stops being silent and says WHY"
+                );
+                assert_ne!(
+                    reason, MISLEADING_REASON,
+                    "and it must NOT be the later, misleading event: a hydrate that finishes after \
+                     the engine failed must not bury the first cause"
+                );
+            }
+            other => panic!(
+                "the overlay must be in the Failed error state, not {other:?} — a non-Failed \
+                 phase here means a later event painted a spinner back over the error (LoadingMap) \
+                 or dismissed it onto a dead map (Ready), losing the reason"
+            ),
+        }
+    }
+
+    /// The "make it wrong on demand / prove it fires by perturbing once" clause. This runs the
+    /// SAME scenario with the stickiness removed and asserts the machine then loses the reason —
+    /// which proves the assertion in the test above has teeth: if `advance` stopped being sticky,
+    /// the overlay would end at `Ready` (or carry the misleading reason) and that test would fail.
+    /// A green that was never watched fail does not count; this is the watched failure, pinned.
+    #[test]
+    fn without_stickiness_the_reason_is_overwritten_which_is_the_bug() {
+        let perturbed = drive_boot_with_engine_failure(false);
+        assert_eq!(
+            perturbed,
+            BootPhase::Ready,
+            "with a non-sticky fold the concurrent hydrate marches the overlay to Ready and the \
+             real reason is gone — this is precisely the silent-failure regression, and its \
+             presence here is what proves the sticky-fold test is load-bearing rather than vacuous"
+        );
+    }
+
+    /// `advance` is sticky against EVERY later transition, not just the two the doc task happens to
+    /// send — including a second, different engine failure. The first cause wins, always.
+    #[test]
+    fn a_second_failure_cannot_overwrite_the_first_reason() {
+        let first = BootPhase::Failed {
+            seg: BootSeg::Terrain,
+            reason: REAL_REASON.to_string(),
+        };
+        let second = first.clone().advance(BootPhase::Failed {
+            seg: BootSeg::World,
+            reason: MISLEADING_REASON.to_string(),
+        });
+        assert_eq!(
+            second, first,
+            "once failed, a later failure is a no-op — the operator is shown the FIRST panic's \
+             cause, which is the one that actually explains the boot"
+        );
+        // And a success flip is likewise swallowed: nothing takes the error overlay down but the
+        // operator's own 'Continue without map'.
+        assert_eq!(
+            first.clone().advance(BootPhase::Ready),
+            first,
+            "a rendezvous that fires after a failure must not dismiss the error onto a dead map"
+        );
+    }
+
+    /// The stage title the error card renders from — 'Loading terrain…' with the ellipsis trimmed
+    /// becomes 'Loading terrain', and the card appends ' failed'. Pin the pieces the view relies
+    /// on so a title change cannot silently produce 'Loading terrain… failed' with a stray ellipsis.
+    #[test]
+    fn the_failing_segment_titles_read_as_a_sentence() {
+        assert_eq!(BootSeg::Terrain.title(), "Loading terrain…");
+        assert_eq!(
+            BootSeg::Terrain.title().trim_end_matches('…'),
+            "Loading terrain",
+            "the card composes '<title-without-ellipsis> failed'; a trailing ellipsis would read \
+             as 'Loading terrain… failed'"
         );
     }
 }
