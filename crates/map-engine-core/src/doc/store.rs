@@ -4471,11 +4471,24 @@ mod tests {
         let editor = strip_rust_lexical_noise(include_str!(
             "../../../../apps/website/frontend/src/mission_editor.rs"
         ));
-        let move_arm = editor
-            .split("LG::Move { ids, dx, dy, .. }")
-            .nth(1)
-            .and_then(|s| s.split("LG::Marquee").next())
-            .expect("mission_editor.rs still has an `LG::Move { ids, dx, dy, .. }` arm");
+        // Select the commit arm BY ITS ATOMIC CALL rather than by the destructure's exact
+        // spelling: T-647 (wave 106) added `cam` to the pattern and rustfmt re-wrapped it, which
+        // silently unmatched the old one-line `LG::Move { ids, dx, dy, .. }` splitter. Field
+        // lists will keep changing; the invariant is that exactly ONE LG::Move arm commits, it
+        // does so through the atomic mixed API, and no split-txn call rides in that arm.
+        let move_arms: Vec<&str> = editor
+            .split("LG::Move")
+            .skip(1)
+            .map(|s| s.split("LG::").next().unwrap_or(s))
+            .filter(|arm| arm.contains(".move_entities_and_vehicles("))
+            .collect();
+        assert!(
+            move_arms.len() == 1,
+            "expected exactly one LG::Move arm committing via `.move_entities_and_vehicles(` \
+             (found {}) — the atomic mixed-move commit was forked, duplicated or deleted",
+            move_arms.len()
+        );
+        let move_arm = move_arms[0];
         assert!(
             move_arm.contains(".move_entities_and_vehicles("),
             "the Move arm has no `.move_entities_and_vehicles(` call token outside comments/\
