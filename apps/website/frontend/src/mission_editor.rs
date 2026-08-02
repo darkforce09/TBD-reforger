@@ -2267,38 +2267,41 @@ pub fn MissionEditorPage() -> impl IntoView {
                         />
                     </div>
                 })}
+                // T-636 — the old single ~580 px centred pill split into TWO mounts (Eden's layout:
+                // tools on a toolbar, telemetry in a full-width status bar). BOTH stay behind the
+                // `chrome_hidden` gate, so Backspace still unmounts the whole bottom belt (wave101
+                // N-5 forward constraint — the gate count grows from 4 to 6 here, both new mounts
+                // gated).
+                //
+                // (1) The mode toolbar — Select / Ruler / LoS. Floats just above the status bar,
+                // left-of-centre, keeping the operator's "content and feel unchanged": the same
+                // three buttons in the same pill, no longer sharing the strip with the readouts.
                 {move || (!chrome_hidden.get()).then(|| view! {
-                <div class="absolute bottom-5 left-1/2 -translate-x-1/2">
-                    <crate::eden_chrome::BottomToolbelt
+                <div class="absolute bottom-11 left-1/2 -translate-x-1/2">
+                    <crate::eden_toolbelt::ModeToolbar />
+                </div>
+                })}
+                // (2) The full-width status bar — CUR/OBJ/SEL/SZ readouts, the T-667 map-furniture
+                // slot (scale bar + grid refs, wave 106 — reserved, not built), the T-719 debug HUD
+                // slot (now a legitimate VISIBLE home in the bar's right section instead of the
+                // invisible `right-3 bottom-3` overlay corner DockRight's z-20 painted over), and the
+                // §Open primary-action slot. Docked `inset-x-0 bottom-0`, spanning the viewport like
+                // Eden's status bar rather than floating centred. The HUD keeps its exact T-635 gate
+                // stack: `chrome_hidden` (this wrapper unmounts it) AND `debug_hud_shown` (passed as
+                // `hud_shown`) AND a non-empty sampler string (checked inside `StatusBar`).
+                {move || (!chrome_hidden.get()).then(|| view! {
+                <div class="absolute inset-x-0 bottom-0">
+                    <crate::eden_toolbelt::StatusBar
                         cursor
                         sel_count
                         obj_count
                         selected_ids
                         sz_bytes
+                        debug_hud
+                        hud_shown=debug_hud_shown
                     />
                 </div>
                 })}
-                // T-635 — the wgpu telemetry HUD (screen-05 parity: `z … · c… · glyph … · … FPS ·
-                // rf …ms`) lives in ITS OWN bottom-right corner of the chrome overlay, a SIBLING of
-                // the `bottom-5 left-1/2` toolbelt wrapper — NOT a child of it. Before T-635 it was
-                // nested inside that centered wrapper and painted over the CUR/OBJ toolbelt readouts
-                // (two independent read-outs sharing one pixel space); pulling it to `right-3 bottom-3`
-                // on the full-bleed overlay makes the overlap geometrically impossible. It respects
-                // `chrome_hidden` the same way the toolbelt does (wave-101: the HUD inherits the hide
-                // gate — kept true here), AND `debug_hud_shown` (Ctrl+Alt+D, default hidden), AND only
-                // renders once the rAF sampler has a non-empty string. `pointer-events-none` so it
-                // never eats a map gesture.
-                {move || {
-                    let t = debug_hud.get();
-                    (!chrome_hidden.get() && debug_hud_shown.get() && !t.is_empty())
-                        .then(|| {
-                            view! {
-                                <div class="pointer-events-none absolute right-3 bottom-3 font-mono text-[11px] text-success/90">
-                                    {t}
-                                </div>
-                            }
-                        })
-                }}
                 // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
                 // chrome subtree so its pointerdowns never open a map gesture. NOT gated by T-662's
                 // `chrome_hidden` — a dialog the operator opened must survive a hide-interface toggle.
@@ -4390,31 +4393,38 @@ mod t662_input_traps {
         );
     }
 
-    /// (2 cont.) `chrome_hidden` is a real signal that gates the four chrome mounts (strip + both
-    /// docks + toolbelt). Declared once, and each mount is wrapped in a `!chrome_hidden.get()` gate.
+    /// (2 cont.) `chrome_hidden` is a real signal that gates the chrome mounts (strip + both docks +
+    /// the two T-636 bottom mounts: the mode toolbar AND the full-width status bar). Declared once,
+    /// and each mount is wrapped in a `!chrome_hidden.get()` gate.
+    ///
+    /// T-636 [wave101 N-5]: the split turned the single `BottomToolbelt` gate into TWO (ModeToolbar
+    /// + StatusBar), so the deliberate count moves 4 → 5. Pinned as an exact count so a mount can
+    /// never silently escape the hide-chrome gate (or a stray gate creep in unnoticed).
     #[test]
-    fn chrome_hidden_signal_gates_the_four_mounts() {
+    fn chrome_hidden_signal_gates_the_five_mounts() {
         let ed = editor_live();
         assert!(
             ed.contains("let chrome_hidden = RwSignal::new(false)"),
             "chrome_hidden must be a real RwSignal declared on the page"
         );
-        // Each of the four chrome mounts must sit behind a chrome_hidden gate. Count the gate
-        // wrappers: one per mount (strip, DockLeft, DockRight, BottomToolbelt).
+        // Each chrome mount must sit behind a chrome_hidden gate. Count the gate wrappers: strip,
+        // DockLeft, DockRight, ModeToolbar, StatusBar = 5 after the T-636 split.
         let gates = ed.matches("(!chrome_hidden.get()).then(").count();
-        assert!(
-            gates >= 4,
-            "all four chrome mounts (strip + both docks + toolbelt) must be gated on chrome_hidden; \
-             found {gates} gate(s)"
+        assert_eq!(
+            gates, 5,
+            "exactly five chrome mounts (strip + both docks + mode toolbar + status bar) must be \
+             gated on chrome_hidden; found {gates} gate(s)"
         );
-        // The three docked chrome components must appear inside the gated region (sanity: we did not
-        // gate empty divs).
+        // The docked chrome components must appear inside the gated region (sanity: we did not gate
+        // empty divs). BottomToolbelt is retired as a mount — the readouts live in StatusBar and the
+        // tools in ModeToolbar, both gated.
         assert!(
             ed.contains("TopCommandStrip")
                 && ed.contains("DockLeft")
                 && ed.contains("DockRight")
-                && ed.contains("BottomToolbelt"),
-            "the gated mounts must still be the real chrome components"
+                && ed.contains("ModeToolbar")
+                && ed.contains("StatusBar"),
+            "the gated mounts must still be the real chrome components (incl. the two T-636 halves)"
         );
         // Modals must NOT be swept into the hide: a Settings/Attributes dialog survives the toggle.
         // The Attributes modal mount is outside every gate.
@@ -4532,42 +4542,45 @@ mod t635_debug_hud {
         );
     }
 
-    /// (c) The HUD is NO LONGER a child of the toolbelt's centered wrapper, and its render is gated
-    /// on chrome_hidden AND debug_hud_shown so an overlap with the readouts is impossible.
+    /// (c) T-636/T-719: the HUD is NO LONGER a free-floating overlay corner — it moved into the
+    /// full-width status bar's right section (its real visible home; the old `right-3 bottom-3`
+    /// overlay div had no z-index and was painted over by DockRight's z-20 column). From
+    /// `mission_editor`'s side the proof is: (1) the standalone overlay HUD div is gone, and (2) the
+    /// HUD signals are fed into `StatusBar`, which sits behind a `chrome_hidden` gate — so the
+    /// chrome-hidden half of the T-635 gate is preserved. The `hud_shown`-AND-non-empty half is
+    /// pinned inside `eden_toolbelt` (see `t636_status_bar`).
     #[test]
-    fn the_hud_is_not_inside_the_toolbelt_wrapper_and_is_gated() {
-        // Structural proof uses `live_source` so the Tailwind class strings survive as landmarks.
-        // The nesting is gone iff the toolbelt `<div …bottom-5 left-1/2…>` is CLOSED (`</div>`)
-        // before the first `debug_hud` token appears. (When the HUD was nested, its `debug_hud`
-        // read sat between the toolbelt div's open and its `</div>`.) The HUD's gate code precedes
-        // its own `right-3 bottom-3` div, so we key on the toolbelt's close, not the HUD's class.
+    fn the_hud_moved_into_the_gated_status_bar() {
         let src = editor_src();
-        let belt_open = src
-            .find("bottom-5 left-1/2")
-            .expect("toolbelt wrapper class present");
-        let belt_close_rel = src[belt_open..]
-            .find("</div>")
-            .expect("toolbelt wrapper must close with </div>");
-        let first_hud_rel = src[belt_open..]
-            .find("debug_hud")
-            .expect("the HUD code must exist below the toolbelt");
+        // (1) The retired overlay corner must be gone — no free-floating `right-3 bottom-3` HUD div.
         assert!(
-            belt_close_rel < first_hud_rel,
-            "T-635: the toolbelt wrapper div must CLOSE before any debug_hud code — the HUD must not \
-             be nested inside it (that nesting is exactly the overlap this ticket removes)"
+            !src.contains("absolute right-3 bottom-3 font-mono"),
+            "T-636: the free-floating overlay HUD corner must be gone (it moved into the status bar)"
         );
-        // The HUD's own render gate must AND chrome_hidden together with the toggle, so it can never
-        // paint while the chrome is hidden and never paint while toggled off (pinned on scrubbed
-        // code, so this is the real gate expression, not a comment mention).
+        // (2) The status-bar mount passes the HUD signals in, and it sits behind a chrome_hidden
+        // gate. Pinned on `live_code` (comments/strings blanked) so this is the real wiring, not a
+        // comment: the `debug_hud` + `hud_shown=debug_hud_shown` props reach `StatusBar`.
         let ed = editor_live();
         assert!(
-            ed.contains("!chrome_hidden.get() && debug_hud_shown.get() && !t.is_empty()"),
-            "T-635: the HUD slot must gate on (!chrome_hidden AND debug_hud_shown AND non-empty)"
+            ed.contains("StatusBar")
+                && ed.contains("debug_hud")
+                && ed.contains("hud_shown=debug_hud_shown"),
+            "T-636: the HUD text + toggle must be threaded into StatusBar (debug_hud + hud_shown)"
         );
-        // The HUD keeps a distinct bottom-right corner on the overlay (right-3 bottom-3).
+        // The StatusBar mount must be one of the `(!chrome_hidden.get()).then(` gated wrappers, so
+        // hiding the chrome unmounts the HUD too (the chrome_hidden half of the T-635 gate stack).
+        let belt = ed
+            .find("crate::eden_toolbelt::StatusBar")
+            .expect("StatusBar mount present");
+        let gate = ed[..belt]
+            .rfind("(!chrome_hidden.get()).then(")
+            .expect("StatusBar must be preceded by a chrome_hidden gate");
+        // Nothing but the wrapper div opens between the gate and the StatusBar mount — i.e. the gate
+        // is the StatusBar's own wrapper, not an earlier mount's.
         assert!(
-            src.contains("pointer-events-none absolute right-3 bottom-3 font-mono"),
-            "T-635: the HUD must occupy its own bottom-right slot on the chrome overlay"
+            !ed[gate..belt].contains("crate::eden_toolbelt::ModeToolbar")
+                && !ed[gate..belt].contains("crate::eden_chrome::Dock"),
+            "T-636: the chrome_hidden gate immediately preceding StatusBar must be its OWN wrapper"
         );
     }
 
