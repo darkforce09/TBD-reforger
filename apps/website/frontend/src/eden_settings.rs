@@ -2,15 +2,56 @@
 //! `eden_chrome.rs`.
 //!
 //! Terrain (readonly) + time/weather author through [`crate::eden_env::author_env`] (T-193 gate);
-//! [`render_flow_section`] is the T-224 mission-flow block; [`render_prefs_section`] is the T-173 P6
-//! basemap/hillshade/grid/world-layer controls. Time and weather additionally mirror to the
-//! `missions` row through [`crate::eden_top_strip::RowMirror`] (T-192). Renders no DOM while closed;
-//! the doc-reading halves are wasm-only.
+//! [`render_flow_section`] is the T-224 mission-flow block. Time and weather additionally mirror to
+//! the `missions` row through [`crate::eden_top_strip::RowMirror`] (T-192). Renders no DOM while
+//! closed; the doc-reading halves are wasm-only.
+//!
+//! **T-691 (Eden NEW-F2 + 3den E6) — editor preferences, separated from mission settings.** Eden
+//! keeps Settings ▸ Preferences (editor-local, per-user) apart from Attributes (the mission
+//! document); TBD used to mix both in [`MissionSettingsDialog`]. The per-user half — basemap view
+//! and the 12 world-layer toggles, both localStorage-backed via [`crate::world_layer_prefs`] — now
+//! lives in its own surface, [`EditorPreferencesDialog`]. [`MissionSettingsDialog`] keeps ONLY the
+//! document keys (time / weather / flow / hillshade / grid, all authored through `author_env` into
+//! `meta.environment`) and grows a one-line pointer row that opens the preferences dialog. The
+//! separation is the ticket: no `author_env` write may live in [`EditorPreferencesDialog`], and no
+//! world-layer toggle may remain in [`MissionSettingsDialog`].
+//!
+//! **Opener (in-owns).** The gear/menu that opens [`MissionSettingsDialog`] lives in
+//! `eden_top_strip`/`mission_editor` (not this slice's `owns`), so rather than route a second menu
+//! item, [`EditorPreferencesDialog`] is mounted as a sibling *inside* [`MissionSettingsDialog`] and
+//! opened by [`open_editor_preferences`] from the pointer row. Both share one `RwSignal<bool>`
+//! parked in a `thread_local` at [`MissionSettingsDialog`] setup (the `context_menu`/`attrs_open`
+//! idiom), so the opener stays entirely within `eden_settings.rs`.
 #![allow(dead_code)]
 use leptos::prelude::*;
 
 use crate::eden_env::ENV_UNCARRIED_NOTE;
 use crate::ui::MaterialIcon;
+
+// T-691 — the Editor Preferences dialog's open flag, parked here from `MissionSettingsDialog`'s
+// setup so the pointer row (and any future in-owns caller) can arm it without threading a prop
+// through `mission_editor`/`eden_top_strip`. `RwSignal<bool>` is `Copy` and wasm is single-threaded,
+// so this mirrors `context_menu::MENU`. `true` ⇒ the preferences dialog is open.
+thread_local! {
+    static PREFS_OPEN: std::cell::RefCell<Option<RwSignal<bool>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Install the Editor Preferences open signal (once, from [`MissionSettingsDialog`] setup).
+fn set_prefs_signal(sig: RwSignal<bool>) {
+    PREFS_OPEN.with(|p| *p.borrow_mut() = Some(sig));
+}
+
+/// Open the Editor Preferences dialog. Called from the pointer row inside
+/// [`MissionSettingsDialog`]; a no-op if the signal has not been installed yet (no dialog mounted).
+/// Exposed `pub` so a later in-owns opener (or a menu item, once routed) can reach it without a prop.
+pub fn open_editor_preferences() {
+    PREFS_OPEN.with(|p| {
+        if let Some(sig) = *p.borrow() {
+            sig.set(true);
+        }
+    });
+}
 
 #[cfg(target_arch = "wasm32")]
 use crate::eden_env::{
@@ -54,7 +95,12 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
     #[cfg(target_arch = "wasm32")]
     let row_mirror = RowMirror::from_route();
     let ctrl = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
-    move || {
+    // T-691 — the sibling Editor Preferences dialog's open flag. Created in this reactive owner and
+    // parked in the module `thread_local` so [`open_editor_preferences`] (the pointer row) can arm
+    // it; the dialog itself is mounted below as a sibling so it survives this dialog being closed.
+    let prefs_open = RwSignal::new(false);
+    set_prefs_signal(prefs_open);
+    let body = move || {
         if !open.get() {
             return None;
         }
@@ -155,6 +201,13 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                 </div>
             </div>
         })
+    };
+    // T-691 — the dialog body and the sibling Editor Preferences dialog. The preferences dialog is
+    // mounted unconditionally (it gates itself on `prefs_open`) so it can open independently of, and
+    // outlive, this dialog being closed.
+    view! {
+        {body}
+        <EditorPreferencesDialog open=prefs_open />
     }
 }
 
@@ -301,12 +354,15 @@ fn render_flow_section(ctrl: &'static str) -> AnyView {
     }
 }
 
-/// T-173 P6 — the render-pref half of Mission Settings, restored from the React
-/// `MissionSettingsDialog`: basemap view (Satellite / Map), hillshade on/off + strength slider,
-/// grid, and the 12 world-layer toggles. Per-mission prefs (hillshade / grid) persist to
-/// `meta.environment`; per-user prefs (basemap view + layer toggles) persist to localStorage. Each
-/// control applies live to the map host (no reload). On the native view-shell these are inert
-/// (no engine), which is fine — the dialog is a wasm surface.
+/// T-173 P6 — the render-pref half of **Mission Settings**: hillshade on/off + strength slider and
+/// the grid toggle. These are per-**mission** document keys (`meta.environment`, authored through
+/// [`author_env`]), so they stay in this dialog.
+///
+/// **T-691:** the per-**user** editor-local controls that used to sit here — basemap view and the 12
+/// world-layer toggles ([`crate::world_layer_prefs`], localStorage) — moved to
+/// [`EditorPreferencesDialog`]; this section now ends with a one-line pointer row linking there. No
+/// world-layer toggle remains in this dialog (the document-vs-local separation pin). On the native
+/// view-shell these are inert (no engine), which is fine — the dialog is a wasm surface.
 fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
     #[cfg(not(target_arch = "wasm32"))]
     {
@@ -315,67 +371,13 @@ fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
     }
     #[cfg(target_arch = "wasm32")]
     {
-        use crate::world_layer_prefs as wlp;
         let hillshade_on = env.show_hillshade;
         let hillshade_pct = (env.hillshade_opacity * 100.0).round() as i64;
         let grid_on = env.show_grid;
-        let basemap = wlp::load_basemap_view();
-        let prefs = wlp::load_prefs();
         let sect = "text-label-sm uppercase tracking-wider text-outline";
-
-        let layer_rows = prefs
-            .rows()
-            .into_iter()
-            .map(|(key, on, label)| {
-                view! {
-                    <div class="flex items-center justify-between py-0.5">
-                        <span class="text-label-md text-on-surface-variant">{label}</span>
-                        <input
-                            type="checkbox"
-                            prop:checked=on
-                            on:change=move |ev| {
-                                let checked = event_target_checked(&ev);
-                                let mut p = wlp::load_prefs();
-                                p.set(key, checked);
-                                wlp::save_prefs(&p);
-                                crate::world_assets::refresh_world_layers();
-                            }
-                            class="accent-primary"
-                        />
-                    </div>
-                }
-            })
-            .collect::<Vec<_>>();
 
         view! {
             <div class="mt-2 flex flex-col gap-4 border-t border-outline-variant/30 pt-4">
-                <span class=sect>"Basemap"</span>
-                <div class="flex gap-2">
-                    {["satellite", "map"]
-                        .into_iter()
-                        .map(|v| {
-                            let active = basemap == v;
-                            let label = if v == "satellite" { "Satellite" } else { "Map" };
-                            view! {
-                                <button
-                                    type="button"
-                                    class=if active {
-                                        "flex-1 rounded-md border border-primary/60 bg-primary/20 px-2.5 py-1.5 text-label-md text-primary"
-                                    } else {
-                                        "flex-1 rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface-variant transition-colors hover:border-primary/40"
-                                    }
-                                    on:click=move |_| {
-                                        wlp::save_basemap_view(v);
-                                        crate::world_assets::apply_basemap_view(v);
-                                    }
-                                >
-                                    {label}
-                                </button>
-                            }
-                        })
-                        .collect::<Vec<_>>()}
-                </div>
-
                 <div class="flex items-center justify-between py-0.5">
                     <span class="text-label-md text-on-surface-variant">"Show hillshade"</span>
                     <input
@@ -423,10 +425,289 @@ fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
                     />
                 </div>
 
+                // T-691 — pointer to the separated editor-local surface. Eden keeps per-user
+                // preferences apart from the mission document; the basemap view + world-layer
+                // toggles live there now.
+                <button
+                    type="button"
+                    class="mt-1 flex items-center justify-between gap-3 rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-2 text-left transition-colors hover:border-primary/50"
+                    on:click=move |_| open_editor_preferences()
+                >
+                    <span class="min-w-0">
+                        <span class="block text-label-md text-on-surface">
+                            "Editor preferences moved"
+                        </span>
+                        <span class="block text-label-sm normal-case text-outline">
+                            "Basemap view and world layers are now per-user editor preferences."
+                        </span>
+                    </span>
+                    <MaterialIcon name="chevron_right" class="shrink-0 text-base text-outline" />
+                </button>
+            </div>
+        }
+        .into_any()
+    }
+}
+
+/// T-691 (Eden NEW-F2 + 3den E6) — the **Editor Preferences** dialog: the editor-local, per-user
+/// half that Eden keeps separate from mission Attributes. Basemap view (Satellite / Map) and the 12
+/// world-layer visibility toggles, both persisted to localStorage through
+/// [`crate::world_layer_prefs`] (the versioned editor-preferences store) and applied live to the map
+/// host. Mounted as a sibling of [`MissionSettingsDialog`] and opened via
+/// [`open_editor_preferences`] from that dialog's pointer row.
+///
+/// **Separation pin:** this dialog contains no [`author_env`] write — every control here is a
+/// localStorage editor preference, never a mission-document key. Renders no DOM while closed; inert
+/// on the native view-shell (no engine).
+#[component]
+fn EditorPreferencesDialog(open: RwSignal<bool>) -> impl IntoView {
+    // Esc closes (same suite Dialog behavior as MissionSettingsDialog).
+    #[cfg(target_arch = "wasm32")]
+    {
+        let esc = window_event_listener(leptos::ev::keydown, move |ev| {
+            if open.get_untracked() && ev.key() == "Escape" {
+                open.set(false);
+            }
+        });
+        on_cleanup(move || esc.remove());
+    }
+    move || {
+        if !open.get() {
+            return None;
+        }
+        Some(view! {
+            <div
+                class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
+                on:click=move |_| open.set(false)
+            ></div>
+            <div class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200">
+                <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
+                    <div class="min-w-0">
+                        <h2 class="text-headline-sm text-on-surface">"Editor Preferences"</h2>
+                        <p class="mt-1 text-label-md text-on-surface-variant">
+                            "Per-user editor settings — saved to this browser, not the mission."
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        aria-label="Close"
+                        on:click=move |_| open.set(false)
+                        class="shrink-0 rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
+                    >
+                        <MaterialIcon name="close" />
+                    </button>
+                </div>
+                <div class="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">
+                    {render_editor_prefs_body()}
+                </div>
+            </div>
+        })
+    }
+}
+
+/// T-691 — the body of [`EditorPreferencesDialog`]: basemap view + the 12 world-layer toggles, moved
+/// verbatim from the old `render_prefs_section`. Every control persists through
+/// [`crate::world_layer_prefs`] (localStorage) and applies live to the map host — no `author_env`.
+fn render_editor_prefs_body() -> AnyView {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        return ().into_any();
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        use crate::world_layer_prefs as wlp;
+        let sect = "text-label-sm uppercase tracking-wider text-outline";
+        // Basemap view kept in a local signal so the active highlight follows a click within the
+        // session (the store is still the source of truth; this only drives the button styling).
+        let basemap = RwSignal::new(wlp::load_basemap_view());
+        let prefs = wlp::load_prefs();
+
+        let layer_rows = prefs
+            .rows()
+            .into_iter()
+            .map(|(key, on, label)| {
+                view! {
+                    <div class="flex items-center justify-between py-0.5">
+                        <span class="text-label-md text-on-surface-variant">{label}</span>
+                        <input
+                            type="checkbox"
+                            prop:checked=on
+                            on:change=move |ev| {
+                                let checked = event_target_checked(&ev);
+                                let mut p = wlp::load_prefs();
+                                p.set(key, checked);
+                                wlp::save_prefs(&p);
+                                crate::world_assets::refresh_world_layers();
+                            }
+                            class="accent-primary"
+                        />
+                    </div>
+                }
+            })
+            .collect::<Vec<_>>();
+
+        view! {
+            <div class="flex flex-col gap-4">
+                <span class=sect>"Basemap"</span>
+                <div class="flex gap-2">
+                    {["satellite", "map"]
+                        .into_iter()
+                        .map(|v| {
+                            let label = if v == "satellite" { "Satellite" } else { "Map" };
+                            view! {
+                                <button
+                                    type="button"
+                                    class=move || if basemap.get() == v {
+                                        "flex-1 rounded-md border border-primary/60 bg-primary/20 px-2.5 py-1.5 text-label-md text-primary"
+                                    } else {
+                                        "flex-1 rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface-variant transition-colors hover:border-primary/40"
+                                    }
+                                    on:click=move |_| {
+                                        wlp::save_basemap_view(v);
+                                        crate::world_assets::apply_basemap_view(v);
+                                        basemap.set(v.to_string());
+                                    }
+                                >
+                                    {label}
+                                </button>
+                            }
+                        })
+                        .collect::<Vec<_>>()}
+                </div>
+
                 <span class=sect>"World layers"</span>
                 <div class="flex flex-col gap-1">{layer_rows}</div>
             </div>
         }
         .into_any()
+    }
+}
+
+// T-691 — source-scan pins for the editor-vs-document split. These search the file they live in, so
+// every needle is assembled from fragments at run time (the `class_r_scrub` house rule): a needle
+// spelled out contiguously here would put itself in the haystack, and an absence check could then
+// never legitimately fail. `live_code` blanks string literals AND cuts this test module, so a needle
+// that means "a real call" cannot false-green off a doc-comment, a label string, or this test.
+#[cfg(test)]
+mod t691_editor_prefs_split {
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    /// Fragment-assembled `world_layer_prefs` store-call needles. If any of these appear inside the
+    /// Mission Settings (document) dialog, the editor-local half did not actually move.
+    fn store_call_needles() -> Vec<String> {
+        vec![
+            format!("save{}", "_prefs"),
+            format!("save{}", "_basemap_view"),
+            format!("apply{}", "_basemap_view"),
+            format!("refresh{}", "_world_layers"),
+            format!("world{}", "_layer_prefs"),
+        ]
+    }
+
+    /// Separation pin (document half): after the move, no world-layer/basemap store call survives in
+    /// `render_prefs_section` — the render-pref block that stays in Mission Settings holds only the
+    /// hillshade/grid document keys and the pointer row. Perturbation that this catches: leaving (or
+    /// pasting back) the basemap buttons or the 12 layer toggles into Mission Settings.
+    #[test]
+    fn mission_settings_render_prefs_holds_no_world_layer_toggles() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let body = only_body(&src, &format!("fn render{}", "_prefs_section"));
+        for needle in store_call_needles() {
+            assert!(
+                !body.contains(&needle),
+                "T-691: `{needle}` must not remain in render_prefs_section — the editor-local \
+                 basemap/world-layer controls moved to EditorPreferencesDialog"
+            );
+        }
+        // The document keys it DOES keep: hillshade + grid still author through the env gate.
+        let author = format!("author{}", "_env");
+        assert!(
+            body.contains(&author),
+            "T-691: render_prefs_section must still author the hillshade/grid document keys"
+        );
+    }
+
+    /// Separation pin (document half, dialog scope): the whole Mission Settings dialog body carries
+    /// no world-layer store call either (guards against the toggles being reintroduced directly in
+    /// the component rather than via the helper).
+    #[test]
+    fn mission_settings_dialog_body_holds_no_store_calls() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let body = only_body(&src, &format!("fn Mission{}", "SettingsDialog"));
+        for needle in store_call_needles() {
+            assert!(
+                !body.contains(&needle),
+                "T-691: `{needle}` must not appear in MissionSettingsDialog — editor-local prefs \
+                 live only in EditorPreferencesDialog"
+            );
+        }
+    }
+
+    /// Separation pin (editor-local half): EditorPreferencesDialog's content contains NO
+    /// `author_env` write — every control there is a localStorage editor preference, never a
+    /// mission-document key. Perturbation this catches: wiring a hillshade/grid (or any
+    /// document-key) control into the preferences body. The content lives in
+    /// `render_editor_prefs_body`, sliced out here.
+    #[test]
+    fn editor_preferences_dialog_writes_no_author_env() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let body = only_body(&src, &format!("fn render{}", "_editor_prefs_body"));
+        let author = format!("author{}", "_env");
+        assert!(
+            !body.contains(&author),
+            "T-691: EditorPreferencesDialog must contain no `{author}` — it is the editor-local, \
+             per-user surface, not a mission-document editor"
+        );
+        // And it MUST carry the moved editor-local controls (the move actually happened).
+        assert!(
+            body.contains(&format!("save{}", "_basemap_view"))
+                && body.contains(&format!("save{}", "_prefs")),
+            "T-691: the basemap + world-layer store writes must live in the preferences body"
+        );
+    }
+
+    /// Dialog-opens pin: the opener is wired end to end without leaving `owns`. The pointer row in
+    /// `render_prefs_section` calls `open_editor_preferences`; that fn arms the parked signal; and
+    /// `MissionSettingsDialog` both registers the signal (`set_prefs_signal`) and mounts the
+    /// preferences dialog on it. Perturbation this catches: dropping the mount, the registration, or
+    /// the pointer-row call.
+    #[test]
+    fn editor_preferences_opener_is_wired() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let opener = format!("open{}", "_editor_preferences");
+        let mount = format!("Editor{}", "PreferencesDialog");
+        let register = format!("set{}", "_prefs_signal");
+
+        // (a) the opener fn arms a boolean signal to true.
+        let opener_body = only_body(&src, &format!("fn {opener}"));
+        assert!(
+            opener_body.contains(".set(true)"),
+            "T-691: {opener} must set the parked open signal to true"
+        );
+
+        // (b) the pointer row in the document dialog calls the opener.
+        let prefs_body = only_body(&src, &format!("fn render{}", "_prefs_section"));
+        assert!(
+            prefs_body.contains(&format!("{opener}()")),
+            "T-691: the Mission Settings pointer row must call {opener}()"
+        );
+
+        // (c) MissionSettingsDialog registers the signal and mounts the preferences dialog on it.
+        let dlg_body = only_body(&src, &format!("fn Mission{}", "SettingsDialog"));
+        assert!(
+            dlg_body.contains(&register),
+            "T-691: MissionSettingsDialog must register the prefs signal via {register}"
+        );
+        assert!(
+            dlg_body.contains(&mount) && dlg_body.contains("prefs_open"),
+            "T-691: MissionSettingsDialog must mount {mount} bound to prefs_open"
+        );
+
+        // (d) the preferences dialog is a real component that gates on its `open` signal.
+        let comp_body = only_body(&src, &format!("fn {mount}"));
+        assert!(
+            comp_body.contains("open.get()"),
+            "T-691: {mount} must render no DOM while closed (gate on open.get())"
+        );
     }
 }
