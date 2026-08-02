@@ -31,7 +31,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 106 | 89 | T-647 T-667 T-691 | PASS (run 2; run 1 red on a stale cross-file pin → fixup 74154ba0) | 0B/4M/2m/4N | SHIPPED — T-647 partial (PLACE-001 undelivered, ATTR-OPEN vehicles-only); furniture + prefs clean; T-723..T-726 filed |
 | 107 | 90 | T-638 T-657 T-659 | PASS (run 1) | 0B/1M/3m/8N | SHIPPED — dock collapse (accessor seam), 5 ORBAT rules, census+summary; T-727 filed (grid-ref strand, MAJOR); W101 N-3 recorded closed |
 | 108 | 91 | T-642 T-650 T-658 | PASS (run 1) | 0B/2M/4m/8N | SHIPPED — ruler end-to-end, doc-side compositions, EvalContext seam; MAJORs routed into T-723/T-726 (widened), T-728 filed |
-| 109 | 92 | T-079 T-643 T-660 | — | — | pending |
+| 109 | 92 | T-079 T-643 T-660 | PASS (run 1) | 0B/1M/5m/12N | SHIPPED — triggers editor half, LoS ray, cargo/loadout rules; T-729 filed (owner-line perf MAJOR), T-723/T-726 widened again |
 | 110 | 93 | T-644 T-648 T-668 | — | — | pending |
 | 111 | 94 | T-645 T-655 T-693 | — | — | pending |
 | 112 | 95 | T-649 T-686 T-692 | — | — | pending |
@@ -139,6 +139,17 @@ serialisation, not a hang).
 - **T-655 (W111):** ORBAT-CALLSIGN-UNIQUE emits an unresolvable JSON pointer
   (/editor/squads/{id}/callsign keys an id into an array; the others are positional) — one-line
   shape fix while wiring the panel; subject_id already rescues selection. [wave107 MINOR-1]
+- **T-644 (W110):** T-643's occlusion() anchors the observer eye at the first COVERED sample —
+  an off-coverage head + descending sight yields a false BLOCKED at the profile's first sample
+  (unreachable on full-coverage Everon today; guard it in the viewshed). Also: live LoS reads the
+  8 m box-average grid — systematically optimistic on knife crests vs the raw raster; documented,
+  untested at the seam. [wave109 MINOR-2 + NOTE]
+- **T-648 (W110):** INCLUDED one-line fix — the false T-159.22 comment in mission_editor's
+  pointerdown (':2150-ish, left/pan_px are both None here') is four waves stale with its own
+  refutation stacked beneath it; delete/correct it while you're in the file. [wave109 NOTE]
+- **T-706 (W120):** flatten.rs already emits a win-condition "triggers" vocabulary — T-079's
+  editor triggersById is a DIFFERENT object; the schema widening must name them apart (editor
+  triggers vs win triggers) or the wire collides. [wave109 NOTE]
 - **T-084 (W117):** `class:` matches full resource_name prefixes only — a bare classname
   (class:B_Soldier) silently empties the tree on GUID-headed Reforger ids; decide classname-TAIL
   matching semantics as part of the grammar rewrite. [wave105 MINOR-2]
