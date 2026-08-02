@@ -15,12 +15,12 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-662** — Free right-click and Backspace — the two input traps that gate the program (queued)
-- **T-663** — Remove the dead view_distance / thermals DTO fields (queued)
-- **T-639** — Zoom-adaptive contour interval — hold spacing constant in screen space (queued)
 - **T-664** — Right-click context menu — the slice that unblocks six tickets (queued)
 - **T-665** — Editor layer flags: per-layer visibility and transform lock (queued)
 - **T-640** — Contours as a tint, not a colour; darker summit ring (queued)
+- **T-631** — The boot overlay cannot fail (queued)
+- **T-076** — Vehicle crew authoring UI — the factory-safe half of T-076 (queued)
+- **T-641** — Spot heights — Eden-parity screen-space label density (queued)
 <!-- ticket-sync:next:end -->
 
 ---

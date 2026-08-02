@@ -15939,7 +15939,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3810,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -15947,7 +15947,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 1 (wave_plan.tsv row 101)",
+   "notes": "editor-UI program wave 1 (wave_plan.tsv row 101) — SHIPPED wave 101 (editor factory), merge 421eae91; verifier wave101.md",
    "depends_on": [
     "T-661"
    ]
@@ -15965,7 +15965,7 @@
     "ui",
     "state"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3820,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -15973,7 +15973,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 1 (wave_plan.tsv row 101)",
+   "notes": "editor-UI program wave 1 (wave_plan.tsv row 101) — SHIPPED wave 101 (editor factory), merge d749dfed; verifier wave101.md",
    "depends_on": [
     "T-661"
    ]
@@ -15989,7 +15989,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3830,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -15997,7 +15997,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 1 (wave_plan.tsv row 101)",
+   "notes": "editor-UI program wave 1 (wave_plan.tsv row 101) — SHIPPED wave 101 (editor factory), merge 1e1da547; verifier wave101.md",
    "depends_on": [
     "T-661"
    ]
@@ -17832,6 +17832,46 @@
    "title": "capture port: pin the parity-bearing pure functions with tests",
    "summary": "657 ported lines in tools/tbd-tools/src/capture.rs carry zero new tests; the parity claims rest on source review alone. Unpinned pure fns: ztag (replacen first-occurrence semantics mirroring JS .replace), canvas_path suffixing, crop geometry/scale math, zoom step parsing. The crate's 51 existing tests exercise none of them. Fix: table-driven #[test]s for those four; no CDP or GPU needed. Diagnosis: editor_verify/wave100.md F-5.",
    "notes": "filed by wave-100 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "dx"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "id": "T-711",
+   "order": 4304,
+   "executor": "cursor-docs",
+   "title": "Doc sync: t090_render_lod_contract §N3 superseded by T-639; t152_7 stale contour reference",
+   "summary": "T-639 (wave 101) replaced the fixed contour zoom ladder with a screen-space band (contour_interval_for_zoom now takes m_per_px, nearest-log2 snap onto {5,10,20,40,80}). t090_render_lod_contract.md:56-71 still pins 100/50/20/10 m by zoom and is marked canonical — every value is now wrong (shipped: 80 m @ z=-6, 40 @ -4, 5 m @ 0..+3). t152_7_height_markers.md:28 still says to label every contour_interval_for_zoom level under a deckZoom gate — passing deck_zoom compiles and silently clamps to 5 m (the name kept its export, the parameter changed meaning). Rewrite §N3 to the band model (TARGET_SPACING_PX=16.31, slope constant, rung-boundary range [11.5,23] px) and fix the t152_7 call convention. Diagnosis: editor_verify/wave101.md F-1, N-2.",
+   "notes": "filed by wave-101 adversarial verifier (editor factory); MAJOR doc/claim divergence, no behavioral defect"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "dx"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "id": "T-712",
+   "order": 4305,
+   "executor": "claude-code",
+   "title": "Contour band: honest constant annotations + sample the default view in acceptance",
+   "summary": "Three claim-accuracy defects on lod_gates.rs shipped by T-639, behaviorally nil but false-as-annotated: (1) :111 comment claims tan(11 deg) but the literal 0.1943803091472314 fabricates digits after the 10th place (true 0.19438030913771848); (2) the provenance story is circular — the test's synthetic sinusoid AMP=1.184 is tuned to yield ~11 deg, yet declares itself 'a real terrain statistic, not a fudge factor' and the production comment says 'DEM slope statistics'; the value is actually fitted to the 3.41/6.20 corpus anchors. Fix: correct digits, rewrite both comments to name the fit honestly, optionally measure the real Everon DEM median slope and cite it. (3) The acceptance test samples only rung centres; the DEFAULT boot view (zoom -2.0 = 4.0 m/px) sits near the 10->20 switch at 12.9 px, below the 14 px floor — add the default view as a sampled point and decide (retune or accept-with-comment). Diagnosis: editor_verify/wave101.md F-2, F-3, N-1.",
+   "notes": "filed by wave-101 adversarial verifier (editor factory)"
   }
  ]
 }

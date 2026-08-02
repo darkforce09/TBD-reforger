@@ -23,7 +23,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | Wave | Marker | Tickets | Gate | Verifier | Outcome |
 |---|---|---|---|---|---|
 | 100 | 83 | T-661 | PASS 30/30 (run 3; runs 1–2 red on non-ticket causes, see Incidents) | 0B/0M/5m/5N | SHIPPED — split proven pure (101 symbols 1:1, 419/419 tests); + capture harness ported to Rust (43a3f170); T-707..T-710 filed |
-| 101 | 84 | T-639 T-662 T-663 | — | — | pending |
+| 101 | 84 | T-639 T-662 T-663 | PASS (run 1) | 0B/1M/3m/5N | SHIPPED — contour band + RMB/Backspace freed + dead DTO cut; T-711 (doc sync) T-712 (annotations) filed |
 | 102 | 85 | T-640 T-664 T-665 | — | — | pending |
 | 103 | 86 | T-076 T-631 T-641 | — | — | pending |
 | 104 | 87 | T-635 T-656 T-666 | — | — | pending |
@@ -92,8 +92,23 @@ schema-validate` broken in worktrees; agent chat summaries are not artifacts —
 the verifier; wave-101 agents running concurrent slice gates queue on the gate lock (WAITING is
 serialisation, not a hang).
 
+## Forward constraints for later-wave briefs (from verifiers — bake into dispatch prompts)
+
+- **T-664 (W102):** mount the context menu beside the UNGATED dialog mounts (survives chrome_hidden);
+  do not treat `defaultPrevented` on contextmenu as "already handled" — prevent_default is only
+  suppressing the browser menu (mission_editor.rs:1868). [wave101 N-5]
+- **T-640 (W102):** t090_render_lod_contract.md §N3 is STALE (T-711 pending) — trust
+  lod_gates.rs/dem_vectors.rs as shipped, not the doc. [wave101 F-1]
+- **T-636 (W105):** the toolbelt/status-bar split must keep BOTH new mounts behind the
+  `chrome_hidden` gate (the rf HUD already inherits it). [wave101 N-5]
+- **T-706 (W120):** eden_env.rs:309 `keys_nothing_reads_are_not_authored` names viewDistance/
+  thermals as never-authored — widening the schema must consciously edit that list or stay clear
+  of those keys; mission.schema.json itself never carried them. [wave101 N-5]
+
 ## Deferred tickets filed by verifiers
 
+- **T-711** (W101/F-1,N-2): §N3 LOD contract superseded by T-639; t152_7 stale call convention. cursor-docs.
+- **T-712** (W101/F-2,F-3,N-1): contour constant annotations honest; sample default view in acceptance.
 - **T-707** (W100/F-2): wave.sh test-split comment transposes its own measurement — one-line fix.
 - **T-708** (W100/F-3): capture shot hang-fallback 25s→130s latency regression — send_with_timeout.
 - **T-709** (W100/F-4): capture zoomsweep lost the per-zoom console error tap (hides __editorCamSet).
