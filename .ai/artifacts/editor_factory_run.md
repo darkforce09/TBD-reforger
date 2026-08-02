@@ -33,7 +33,8 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 108 | 91 | T-642 T-650 T-658 | PASS (run 1) | 0B/2M/4m/8N | SHIPPED — ruler end-to-end, doc-side compositions, EvalContext seam; MAJORs routed into T-723/T-726 (widened), T-728 filed |
 | 109 | 92 | T-079 T-643 T-660 | PASS (run 1) | 0B/1M/5m/12N | SHIPPED — triggers editor half, LoS ray, cargo/loadout rules; T-729 filed (owner-line perf MAJOR), T-723/T-726 widened again |
 | 110 | 93 | T-644 T-648 T-668 | PASS (run 2; run 1 pre-fix) | 1B/1M/5m/13N → flip fixed in-wave | SHIPPED — viewshed (mirror BLOCKER fixed + wired end-to-end), transform gestures, state vocabulary; T-730..T-732 filed, T-729/T-726 widened |
-| 111 | 94 | T-645 T-655 T-693 | — | — | pending |
+| 111 | 94 | T-645 T-655 T-693 | PASS (runs 1+2; re-run over blocker fix) | 1B/2M/4m/7N → fix CLEARED | SHIPPED — placement helpers (garrison split honestly), always-on validation panel, merge mission; BLOCKER (repeat-merge id collision) fixed in-wave 9ebcb8a9; T-733 T-734 filed |
+| — | — | **WAVES 112–119 DEFERRED TO NEXT WEEK** (operator budget pivot — 24 Rust tickets, serialize on mission_editor.rs) | | | |
 | 112 | 95 | T-649 T-686 T-692 | — | — | pending |
 | 113 | 96 | T-082 T-669 T-694 | — | — | pending |
 | 114 | 97 | T-633 T-651 T-695 | — | — | pending |
@@ -161,6 +162,13 @@ serialisation, not a hang).
   (one-shot snapshot, no re-read) — add re-read or disabled affordance. [wave102 F-7]
 
 ## Operator decisions taken in-flight (review at wake-up)
+
+- **BUDGET PIVOT (operator-approved live, 2026-08-02):** ~9M tokens left on the weekly; full
+  remaining program needs ~16M. Approved: close 111 → run 120 as planned → repack the Enfusion
+  half (121–126, 17 tickets) into ~3 wide waves (5–6 coders; file-disjoint .c files, T-706 stays
+  ahead of all readers) → finalization. **Waves 112–119 (24 Rust tickets) deferred to next week**
+  — they serialize on mission_editor.rs regardless of wave width, so widening didn't help there.
+  Close markers continue sequentially regardless of packing width.
 
 - **T-650 composition storage (W108):** the ticket's open question — doc-side vs user-scoped API
   rows — was routed DOC-SIDE per the planned owns (store.rs + editor_ops + eden_dock_right). The

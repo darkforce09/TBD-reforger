@@ -16610,7 +16610,7 @@
     "ui",
     "mc-integrity"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4090,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16618,7 +16618,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 11 (wave_plan.tsv row 111)",
+   "notes": "editor-UI program wave 11 (wave_plan.tsv row 111) — SHIPPED wave 111 (editor factory), a6e1b2a2; verifier wave111.md",
    "depends_on": [
     "T-661"
    ]
@@ -16635,7 +16635,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4100,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16643,7 +16643,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 11 (wave_plan.tsv row 111)",
+   "notes": "editor-UI program wave 11 (wave_plan.tsv row 111) — SHIPPED wave 111 (editor factory), abfaebbf; verifier wave111.md",
    "depends_on": [
     "T-661"
    ]
@@ -17470,7 +17470,7 @@
    "id": "T-693",
    "order": 4470,
    "program": "eden",
-   "status": "queued",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -17485,7 +17485,8 @@
    "surfaces": [
     "TOP",
     "DATA"
-   ]
+   ],
+   "notes": " — SHIPPED wave 111 (editor factory), 2a7e77d5 + collision fix; verifier wave111.md"
   },
   {
    "id": "T-694",
@@ -18272,8 +18273,48 @@
    "id": "T-732",
    "order": 4325,
    "title": "Atomic batch mutations: one undo step for multi-entity ops (third instance of the family)",
-   "summary": "Judged warranted by the wave-110 verifier: the N-undo-steps wart now has three instances — unmanned place is 3 steps (wave-103 MINOR, T-718 item 3), multi-select rotate is N steps (T-648, documented — no atomic multi-rotate API exists), and the T-491-cured mixed move proves the correct shape (move_entities_and_vehicles, one txn). Queued T-645 (placement helpers) MANDATES one-step-undoable bulk ops and is the forcing function. Fix: a store.rs atomic batch API (one begin() over a closure of mutations, or per-op atomic variants: rotate_entities, place_with_crew_stamp) + migrate the three call sites; pin undo depth 1 per op. Diagnosis: editor_verify/wave110.md NOTE-B + lineage.",
+   "summary": "Judged warranted by the wave-110 verifier: the N-undo-steps wart now has three instances — unmanned place is 3 steps (wave-103 MINOR, T-718 item 3), multi-select rotate is N steps (T-648, documented — no atomic multi-rotate API exists), and the T-491-cured mixed move proves the correct shape (move_entities_and_vehicles, one txn). Queued T-645 (placement helpers) MANDATES one-step-undoable bulk ops and is the forcing function. Fix: a store.rs atomic batch API (one begin() over a closure of mutations, or per-op atomic variants: rotate_entities, place_with_crew_stamp) + migrate the three call sites; pin undo depth 1 per op. Diagnosis: editor_verify/wave110.md NOTE-B + lineage. (4th instance, wave111 MINOR-3: T-645's >10 confirm text says nothing about the honest N-step undo while the merge toast advertises one-step Ctrl+Z — align the confirm copy when the atomic API lands.)",
    "notes": "filed by wave-110 adversarial verifier (editor factory); consolidates a recurring family"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-733",
+   "order": 4326,
+   "title": "Merge Mission wiring: menu item + Ctrl+M binding; garrison building-at-point accessor",
+   "summary": "Two wiring residues from wave 111, one slice. (1) T-693's merge command is complete (merge_mission_now + picker + report toast) but has no UI entry: add the 'Merge Mission…' row to the MENUS table (eden_top_strip) and the Ctrl+M arm to the mission_editor keydown (census first — the T-648 idiom). (2) T-645's drag-to-garrison kernel shipped (#[allow(dead_code)] with citation) but live wiring needs a building-at-point -> (centre, half-extents, rotation) accessor that does not exist: world/store.rs keeps only last_chunk and residency.rs exposes buildings solely as pre-tessellated GPU vertex buffers — the scope discovery the ticket predicted. Add the accessor (world store) + the thin drop-target lookup + wire the kernel. Diagnosis: wave111.md residue notes + T-645's report.",
+   "notes": "filed from wave-111 residue (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-734",
+   "order": 4327,
+   "title": "Validation panel at scale: per-edit full compile, wasm panic honesty, seam pin",
+   "summary": "T-655 residue, one design. (1) MAJOR: the always-on panel re-compiles the WHOLE doc per debounced edit burst (compile_payload measured 290ms/30k, 1213ms/120k native-release, linear -> ~3.6s at the 360k north star, wasm 1.5-3x worse) — the exact O(n)-per-edit class T-062/T-066 engineered away. Fine at ORBAT scale (≤10ms at 1k). Fix family: incremental payload assembly, a worker offload (T-066 precedent), or evaluate over the doc directly without full compile. The expanded list is also unvirtualized (3000 DOM buttons at 120k). (2) MINOR: the catch_unwind 'can never crash the editor' guarantee is native-only — wasm32 panics abort regardless (no panic-profile override); on native the swallow renders 'No issues' — a FALSE CLEAN. Make the fallback state visibly distinct ('validation unavailable') and document the wasm reality. (3) MINOR: the no-severity-on-clean pin binds the engine, not the panel seam — injecting a fabricated finding into evaluate_source left all tests green; pin the seam. Diagnosis: editor_verify/wave111.md MAJOR-2, MINOR-1, MINOR-2.",
+   "notes": "filed by wave-111 adversarial verifier (editor factory)"
   }
  ]
 }
