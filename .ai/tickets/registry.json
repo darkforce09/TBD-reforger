@@ -16140,7 +16140,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3900,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16148,7 +16148,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 4 (wave_plan.tsv row 104)",
+   "notes": "editor-UI program wave 4 (wave_plan.tsv row 104) — SHIPPED wave 104 (editor factory), slice 215e39d1; verifier wave104.md (3 MAJOR deferred: T-719/T-720/T-715-amended)",
    "depends_on": [
     "T-661"
    ]
@@ -16166,7 +16166,7 @@
     "ui",
     "state"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3910,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16174,7 +16174,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 4 (wave_plan.tsv row 104)",
+   "notes": "editor-UI program wave 4 (wave_plan.tsv row 104) — SHIPPED wave 104 (editor factory), slice d817baef; verifier wave104.md (3 MAJOR deferred: T-719/T-720/T-715-amended)",
    "depends_on": [
     "T-661"
    ]
@@ -16193,7 +16193,7 @@
     "tests",
     "mc-integrity"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3920,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16201,7 +16201,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 4 (wave_plan.tsv row 104)",
+   "notes": "editor-UI program wave 4 (wave_plan.tsv row 104) — SHIPPED wave 104 (editor factory), slice e4341d38; verifier wave104.md (3 MAJOR deferred: T-719/T-720/T-715-amended)",
    "depends_on": [
     "T-661"
    ]
@@ -17930,7 +17930,7 @@
    "id": "T-715",
    "order": 4308,
    "title": "Hidden-layer slots vanish from Outliner/ORBAT docks instead of dimming",
-   "summary": "T-665 filters hidden layers' slots inside materialize() (correct for the GPU upload), but slot_rows() feeds the Outliner and ORBAT docks from that same filtered output — hidden ids read as dangling and are skipped, so squads silently lose members in the dock views. The slice's dimmed-slot styling and its outliner unit test assert a state the live pipeline cannot produce (the test hand-builds SlotRows, bypassing the filter). Fix: docks must read the UNFILTERED doc with effective-hidden carried per row (dim, don't drop); route the outliner test through the live materialize->slot_rows pipeline so it can catch this class. WAVE-104 NOTE: T-666 (outliner authoring) claims the same files — its brief carries this as known-pending; do not double-fix. Diagnosis: editor_verify/wave102.md F-3.",
+   "summary": "T-665 filters hidden layers' slots inside materialize() (correct for the GPU upload), but slot_rows() feeds the Outliner and ORBAT docks from that same filtered output — hidden ids read as dangling and are skipped, so squads silently lose members in the dock views. The slice's dimmed-slot styling and its outliner unit test assert a state the live pipeline cannot produce (the test hand-builds SlotRows, bypassing the filter). Fix: docks must read the UNFILTERED doc with effective-hidden carried per row (dim, don't drop); route the outliner test through the live materialize->slot_rows pipeline so it can catch this class. WAVE-104 NOTE: T-666 (outliner authoring) claims the same files — its brief carries this as known-pending; do not double-fix. Diagnosis: editor_verify/wave102.md F-3. AMENDED wave 104 (MAJOR-3, wave104.md): the lane is wider than the docks — T-666's selection ops put hidden slots INTO the selection by documented design, and every consumer then acts on them sight-unseen: Delete removes them without confirm; drag-move folds them in with zero preview (SoA doesn't carry them, pack_drag_overlay skips); toolbelt SEL counts them while the map tints fewer; after_doc_change prunes selection against the FILTERED SoA so the next doc edit silently evicts them. Product decision needed: hidden = selectable-but-inert, or fully live with dimmed preview. Resolve the whole lane in one design, not per-symptom.",
    "notes": "filed by wave-102 adversarial verifier (editor factory)"
   },
   {
@@ -17992,6 +17992,46 @@
    "title": "Crew residue: scrub seats on slot removal; seat-picker honesty; undo-step and Alt comment falsities",
    "summary": "T-076 residue, one ticket. (1) MAJOR: remove_slot/remove_slots scrub no crew seats — a deleted soldier's seat assignment dangles, persists through small_maps_json -> compile into SAVES, while the panel <select> shows '— empty —' (UI vacant, doc seated). Scrub crew maps in the removal ops (same tolerant-Any idiom as the wave-103 blocker fix) + regression test through remove. (2) Seat picker offers all placed slots but never flags 'seated elsewhere' — the eviction is expressible but invisible; add the flag text. (3) editor_ops.rs:1755 comment 'Same undo step as the place' is false — capture_timeout=0 makes unmanned place 3 undo steps (Ctrl+Z re-mans the vehicle); either group the transaction or fix the comment to the truth. (4) editor_ops.rs:141 '(or holds Alt)' describes an affordance that does not exist on the place path — implement (T-647 wave 106 owns Alt-empty-vehicle placement; coordinate, don't duplicate) or delete the clause. Diagnosis: editor_verify/wave103.md MAJOR-2, MINOR-1, MINOR-2, NOTE-4.",
    "notes": "filed by wave-103 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-719",
+   "order": 4312,
+   "title": "Debug HUD: invisible under DockRight; AltGr chords spuriously toggle it",
+   "summary": "T-635 moved the HUD to right-3 bottom-3 with no z-index — that slot sits entirely inside DockRight's bottom-0 right-0 top-12 z-20 w-80 column, and DOCK_R is a full-height painted panel (bg/55 backdrop-blur-xl, eden_layout.rs:41): chrome up, the dock paints over it; chrome hidden, the HUD's own gate unmounts it — no reachable state renders it. The 4 source-inspection tests are DOM-nesting pins and structurally cannot see stacking. Also: Windows AltGr reports ctrl+alt, so AltGr+D (EU layouts) spuriously toggles outside inputs (the in_editable_field guard fully precedes the arm, so no in-field risk). Fix: give it a visible slot (left of the dock column / map-pane-anchored / z-30) + an e.getModifierState('AltGraph') exclusion. NOTE: T-636 (wave 105) re-lays the bottom band — if its layout gives the HUD a legitimate visible slot this ticket collapses to the AltGr line. Diagnosis: editor_verify/wave104.md MAJOR-1, MINOR-2.",
+   "notes": "filed by wave-104 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-720",
+   "order": 4313,
+   "title": "Layer-drag latch survives out-of-dock release; next + click silently reparents",
+   "summary": "T-666's PENDING_LAYER_DRAG arms on every row pointerdown but only in-dock surfaces clear it: release outside the dock (ordinary overshoot) leaves it armed; Esc has no handler; Backspace chrome-hide unmounts the dock latch-intact. The + button's pointerup bubbles to the header root-dropzone, so the next 'New layer' click first SILENTLY REPARENTS the stale folder to root, then creates. ORBAT's same idiom is modal-contained (dialog-level pointerup cancel, orbat_manager.rs:341); the dock mirror has no outer catcher. Fix: window-level pointerup/pointercancel catcher clears the latch; Esc cancels; visual drag affordance while armed. Regression test: arm, release outside, click + — assert NO reparent occurred. Diagnosis: editor_verify/wave104.md MAJOR-2.",
+   "notes": "filed by wave-104 adversarial verifier (editor factory)"
   }
  ]
 }
