@@ -554,6 +554,40 @@ pub fn TopCommandStrip(
             crate::dto::MissionEnv::default()
         }
     });
+    // T-659 — per-side slot census + generated summary line, on the SAME `doc_tick` channel as `env`
+    // above. `refresh_docks` (`editor_ops.rs:1055`) bumps `doc_tick` from `refresh_signals`
+    // (`mission_history.rs:452`) at every mutation site, so this recomputes on slot add/remove/refile
+    // with no manual refresh — the "live" the ticket requires. The census is pure over the snapshot
+    // rows (`census_from_rows`); the summary composes it with the terrain (from `env`, same memo the
+    // scrubber reads) and the game mode when the document carries one.
+    let census = Memo::new(move |_| {
+        if let Some(t) = doc_tick {
+            t.track();
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            let (factions, squads, slot_squad_ids) = crate::editor_ops::census_input();
+            census_from_rows(&factions, &squads, &slot_squad_ids)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            SlotCensus::default()
+        }
+    });
+    // The generated one-liner. Terrain rides `env` (already `doc_tick`-tracked); `mode` is read only
+    // under wasm and only when the document actually carries one (it is not a first-class editor
+    // field today — see `summary_line`'s "if present" note).
+    let summary = Memo::new(move |_| {
+        let c = census.get();
+        let terrain = env.get().terrain;
+        #[cfg(target_arch = "wasm32")]
+        let mode = crate::editor_ops::read_env_value("mode")
+            .and_then(|v| v.as_str().map(str::to_string))
+            .filter(|s| !s.trim().is_empty());
+        #[cfg(not(target_arch = "wasm32"))]
+        let mode: Option<String> = None;
+        summary_line(&c, &terrain, mode.as_deref())
+    });
     let run_action = move |a: MenuAction| {
         open_menu.set(None);
         match a {
@@ -734,6 +768,62 @@ pub fn TopCommandStrip(
                             </span>
                         }
                     })}
+            </div>
+            // T-659 — per-side slot census + generated summary line. Same mono / tabular-nums /
+            // `title=`-hook idiom as the `eden_toolbelt` StatusBar OBJ/SEL readout it mirrors, on the
+            // `doc_tick` reactivity channel (see the `census`/`summary` memos above). The census sits
+            // on top; the generated one-liner (the stable community-naming format) sits below it as a
+            // truncating line whose full text is also its tooltip. Both `shrink-0` so the flex title
+            // to the left keeps the elastic width.
+            <div class="mr-2 flex shrink-0 flex-col items-end justify-center leading-tight">
+                <div
+                    class="flex items-center gap-1.5 font-mono text-[11px] tabular-nums text-on-surface-variant"
+                    title="Per-side slot census (WEST · EAST · IND · TOTAL)"
+                    data-slot-census
+                >
+                    <span title="WEST (BLUFOR) slots">
+                        "WEST "
+                        <span class="text-on-surface">{move || census.get().west}</span>
+                    </span>
+                    <span class="text-outline">"·"</span>
+                    <span title="EAST (OPFOR) slots">
+                        "EAST "
+                        <span class="text-on-surface">{move || census.get().east}</span>
+                    </span>
+                    <span class="text-outline">"·"</span>
+                    <span title="IND (INDFOR) slots">
+                        "IND "
+                        <span class="text-on-surface">{move || census.get().ind}</span>
+                    </span>
+                    // Unassigned — rendered ONLY when nonzero (spec): a slot whose squad resolves to
+                    // no known side. Hidden entirely when the roster is clean.
+                    {move || {
+                        let u = census.get().unassigned;
+                        (u > 0)
+                            .then(|| {
+                                view! {
+                                    <span class="text-outline">"·"</span>
+                                    <span class="text-tactical-yellow" title="Slots with no side">
+                                        "UNA "
+                                        <span>{u}</span>
+                                    </span>
+                                }
+                            })
+                    }}
+                    <span class="text-outline">"·"</span>
+                    <span title="Total placed slots">
+                        "TOTAL "
+                        <span class="text-on-surface">{move || census.get().total}</span>
+                    </span>
+                </div>
+                // The generated one-liner — the stable format other tools parse (`summary_line`).
+                <div
+                    class="max-w-[22rem] truncate font-mono text-[10px] text-outline"
+                    title=move || summary.get()
+                    data-mission-summary
+                >
+                    {move || summary.get()}
+                </div>
             </div>
             // Inline time scrubber + weather (screen 05 center) — same doc fields as the
             // Mission Settings dialog (`update_environment`, one undo step per commit), and
@@ -1018,6 +1108,164 @@ pub fn TopCommandStrip(
     }
 }
 
+// ── Slot census + generated mission summary line (T-659) ─────────────────────────────────────────
+//
+// The header near the OBJ/SEL census pattern (`eden_toolbelt` StatusBar) now also carries a PER-SIDE
+// live slot census (`WEST 78 · EAST 74 · IND 8 · TOTAL 160`) and, below it, a one-line mission
+// summary composed from the document. Both ride the SAME reactivity the inline scrubber does — the
+// `env` `Memo` above re-reads on every `doc_tick`, and `editor_ops::refresh_docks` bumps `doc_tick`
+// from `mission_history::refresh_signals` (`mission_history.rs:452`) at EVERY mutation site (place /
+// drag / undo / redo / refile / the IDB restore swap), so the badge is live: it updates on slot
+// add/remove/refile with no manual refresh (`editor_ops.rs:1055` is where the bump happens).
+//
+// **Why this replaces two MissionAnalyzer rules rather than adding a warning.** A side count derived
+// straight off the ORBAT snapshot cannot show a malformed state — an unresolved slot lands in the
+// UNASSIGNED bucket by construction, not by a rule that might not run — so the "counts disagree" /
+// "orphan slot" analyzer checks become unrepresentable rather than caught. That is the same
+// "should-be-unrepresentable" move as the T-192 row mirror above.
+//
+// The derivation is a PURE function over plain rows (`census_from_rows`) so it is testable on the
+// native `cargo test` shell; the wasm reader that feeds it the live snapshot is
+// `editor_ops::census_input` (which reuses `orbat_manager_snapshot`, not a second doc read).
+
+/// The three Eden sides, in header order, paired with the schema faction `key` each derives from.
+///
+/// The `key` half is the value `factionsById[..].key` holds (`asset_catalog` `EDEN_SIDES`, and the
+/// `orbat_add_squad` guard on `editor_ops.rs:1735`); the `label` half is the milsim-facing word the
+/// header shows. WOG's 94%-consistent community naming convention grew out of exactly this label
+/// vocabulary, so the labels are part of the stable format the summary line pins below.
+const CENSUS_SIDES: [(&str, &str); 3] = [("BLUFOR", "WEST"), ("OPFOR", "EAST"), ("INDFOR", "IND")];
+
+/// A per-side slot tally plus the unassigned remainder — the census the header badge renders.
+///
+/// `west` / `east` / `ind` are the BLUFOR / OPFOR / INDFOR slot counts; `unassigned` is every slot
+/// whose `squadId` does not resolve through a squad to a faction carrying one of the three side keys
+/// (a dangling `squadId`, or a faction with an empty/unknown `key`). `total` counts EVERY slot, so
+/// `west + east + ind + unassigned == total` always — the invariant that makes the malformed
+/// "counts don't add up" state unrepresentable.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SlotCensus {
+    pub west: usize,
+    pub east: usize,
+    pub ind: usize,
+    /// Slots that resolve to no known side. Shown in the badge ONLY when nonzero (spec).
+    pub unassigned: usize,
+    pub total: usize,
+}
+
+impl SlotCensus {
+    /// The per-side count for a schema faction `key`, or 0 for a key that is not one of the three
+    /// Eden sides (which is what makes such a slot land in `unassigned`, not in a side bucket).
+    fn count_for_key(&self, key: &str) -> usize {
+        match key {
+            "BLUFOR" => self.west,
+            "OPFOR" => self.east,
+            "INDFOR" => self.ind,
+            _ => 0,
+        }
+    }
+}
+
+/// Derive the per-side census PURELY from the ORBAT rows — the header's single source of truth.
+///
+/// Reuses the snapshot's own rows (fed by `editor_ops::census_input`, which reads them once via
+/// `orbat_manager_snapshot`); it never re-parses the document. Each `(slot, squadId)` walks
+/// squad → faction → `key`; an id that dangles at any hop (deleted squad, faction with no side key)
+/// falls through to `unassigned`. `slot_squad_ids` is one entry per slot — its length IS `total`, so
+/// the buckets can never disagree with the slot set.
+///
+/// Pure + total (no panics, no I/O): the whole reason it lives here and not behind the wasm gate.
+#[must_use]
+pub fn census_from_rows(
+    factions: &[crate::outliner::FactionRow],
+    squads: &[crate::outliner::SquadRow],
+    slot_squad_ids: &[String],
+) -> SlotCensus {
+    // squadId → side key, resolved once so the per-slot loop is O(1) per slot rather than O(squads).
+    let mut side_of_squad: std::collections::HashMap<&str, &str> = std::collections::HashMap::new();
+    for sq in squads {
+        if let Some(f) = factions.iter().find(|f| f.id == sq.faction_id) {
+            side_of_squad.insert(sq.id.as_str(), f.key.as_str());
+        }
+    }
+    let mut c = SlotCensus::default();
+    for squad_id in slot_squad_ids {
+        c.total += 1;
+        match side_of_squad.get(squad_id.as_str()).copied() {
+            Some("BLUFOR") => c.west += 1,
+            Some("OPFOR") => c.east += 1,
+            Some("INDFOR") => c.ind += 1,
+            // Dangling squadId, or a squad under a faction with no/unknown side key.
+            _ => c.unassigned += 1,
+        }
+    }
+    c
+}
+
+/// Human terrain name for the summary (`everon` → `Everon`). Mirrors the `terrain_label` idiom used
+/// across the mission pages (`event_hub.rs:50`, `create_mission_dialog.rs:18`) — capitalize the
+/// first char — kept local so this owned file carries no cross-module dependency for a one-liner.
+fn terrain_label(t: &str) -> String {
+    let mut ch = t.chars();
+    match ch.next() {
+        Some(f) => f.to_uppercase().collect::<String>() + ch.as_str(),
+        None => String::new(),
+    }
+}
+
+/// **The community naming format — KEEP STABLE. Other tools parse this string.**
+///
+/// The generated one-liner other tooling reads (the seed of WOG's community naming convention, which
+/// came out of the counter alone — so the *format*, not just the counts, is the deliverable). Shape:
+///
+/// ```text
+/// [MODE ]TOTAL on Terrain — WEST w v EAST e[ (+i IND)][ (u unassigned)]
+/// ```
+///
+/// - `MODE` is prefixed with a trailing space ONLY when the document carries a game mode
+///   (`editor_ops::read_env_value("mode")`); it is omitted entirely otherwise. Game mode is not a
+///   first-class field of the editor document today, so "if present" is literal — most missions emit
+///   no mode segment, and that absence is part of the pinned format, not a bug.
+/// - `TOTAL` is the whole slot count; `on Terrain` names the map.
+/// - The `WEST w v EAST e` core is ALWAYS present (zeros included) so a parser can rely on the two
+///   anchor words `on` and ` v ` being there regardless of the roster.
+/// - `(+i IND)` appears only when the IND count is nonzero, and `(u unassigned)` only when there are
+///   unassigned slots — both are strictly additive suffixes so appending them never moves an earlier
+///   field a parser has already located.
+///
+/// The em-dash separator and the ` v ` / `(+ IND)` punctuation are load-bearing: changing them is a
+/// breaking change to every downstream parser. New optional segments must be APPENDED, never
+/// inserted, and the anchors above must not move. (This paragraph is the stability pin the ticket
+/// asks the tests to hold to via a golden string.)
+#[must_use]
+pub fn summary_line(census: &SlotCensus, terrain: &str, mode: Option<&str>) -> String {
+    let mut out = String::new();
+    if let Some(m) = mode {
+        let m = m.trim();
+        if !m.is_empty() {
+            out.push_str(m);
+            out.push(' ');
+        }
+    }
+    let terrain = terrain_label(terrain);
+    let terrain = if terrain.is_empty() {
+        "Unknown".to_string()
+    } else {
+        terrain
+    };
+    out.push_str(&format!(
+        "{} on {} — WEST {} v EAST {}",
+        census.total, terrain, census.west, census.east
+    ));
+    if census.ind > 0 {
+        out.push_str(&format!(" (+{} IND)", census.ind));
+    }
+    if census.unassigned > 0 {
+        out.push_str(&format!(" ({} unassigned)", census.unassigned));
+    }
+    out
+}
+
 // ── Tree rows (T-159.22 / T-172 B6+B7) ──────────────────────────────────────────────────────────
 // Both trees collapse: container rows carry a chevron toggle (span, not a nested button — rows are
 // `<button>`s) + open/closed folder icons, and depth renders as border-l guide-line runs instead of
@@ -1031,9 +1279,41 @@ pub fn TopCommandStrip(
 #[cfg(test)]
 mod tests {
     use super::{
-        hhmm_to_minutes, is_mission_row_id, minutes_to_hhmm, mirror_failure_message,
-        normalize_clock, MirrorState, MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER,
+        census_from_rows, hhmm_to_minutes, is_mission_row_id, minutes_to_hhmm,
+        mirror_failure_message, normalize_clock, summary_line, MirrorState, SlotCensus,
+        CENSUS_SIDES, MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER,
     };
+    use crate::outliner::{FactionRow, SquadRow};
+
+    // ── T-659 census/summary fixtures ────────────────────────────────────────────────────────────
+
+    /// One faction row carrying a side `key` (`BLUFOR`/`OPFOR`/`INDFOR`). Ids mirror the live shape
+    /// `editor_ops::ensure_side_faction` mints (`faction-{SIDE}`), but the census keys off `key`, not
+    /// the id, so any id works — the test proves that by using the real shape.
+    fn faction(id: &str, key: &str) -> FactionRow {
+        FactionRow {
+            id: id.to_string(),
+            key: key.to_string(),
+            name: key.to_string(),
+            squad_ids: Vec::new(),
+        }
+    }
+
+    fn squad(id: &str, faction_id: &str) -> SquadRow {
+        SquadRow {
+            id: id.to_string(),
+            name: id.to_string(),
+            faction_id: faction_id.to_string(),
+            slot_ids: Vec::new(),
+            leader_slot_id: String::new(),
+            vehicle_ids: Vec::new(),
+        }
+    }
+
+    /// Build `slot_squad_ids` — `n` slots pointing at `squad_id` — as `census_input` hands it over.
+    fn slots_in(squad_id: &str, n: usize) -> Vec<String> {
+        vec![squad_id.to_string(); n]
+    }
 
     #[test]
     fn time_scrubber_roundtrip() {
@@ -1275,5 +1555,256 @@ mod tests {
         f.settle(g, v, true);
         assert!(!f.queue("06:00".into()), "same value, already on the row");
         assert_eq!(f.take_for_send(), None, "and nothing to send");
+    }
+
+    // ── T-659 — census derivation ────────────────────────────────────────────────────────────────
+
+    /// The header example, verbatim: `WEST 78 · EAST 74 · IND 8 · TOTAL 160`. A multi-side roster
+    /// tallies each side off its faction `key`, and the total equals the slot set. This is the pure
+    /// derivation the badge renders — no doc, no wasm.
+    #[test]
+    fn census_counts_each_side_and_totals() {
+        let factions = [
+            faction("faction-BLUFOR", "BLUFOR"),
+            faction("faction-OPFOR", "OPFOR"),
+            faction("faction-INDFOR", "INDFOR"),
+        ];
+        let squads = [
+            squad("sq-w", "faction-BLUFOR"),
+            squad("sq-e", "faction-OPFOR"),
+            squad("sq-i", "faction-INDFOR"),
+        ];
+        let mut slot_squad_ids = slots_in("sq-w", 78);
+        slot_squad_ids.extend(slots_in("sq-e", 74));
+        slot_squad_ids.extend(slots_in("sq-i", 8));
+
+        let c = census_from_rows(&factions, &squads, &slot_squad_ids);
+        assert_eq!(
+            c,
+            SlotCensus {
+                west: 78,
+                east: 74,
+                ind: 8,
+                unassigned: 0,
+                total: 160,
+            }
+        );
+        // The invariant that makes "counts don't add up" unrepresentable.
+        assert_eq!(c.west + c.east + c.ind + c.unassigned, c.total);
+    }
+
+    /// The zero state — an empty document (no factions, no squads, no slots) — is a clean all-zero
+    /// census, not a panic or an unassigned pile. This is the mount-time state the badge renders
+    /// before the first place.
+    #[test]
+    fn census_zero_state_is_all_zero() {
+        let c = census_from_rows(&[], &[], &[]);
+        assert_eq!(c, SlotCensus::default());
+        assert_eq!(c.total, 0);
+        assert_eq!(c.unassigned, 0);
+    }
+
+    /// Unassigned handling — the whole point of deriving the census off the snapshot rather than a
+    /// rule. Three ways a slot resolves to no side, all landing in `unassigned` and none in a side
+    /// bucket: (1) a `squadId` with no squad in the map (the seed-slot "dangling squadId" case,
+    /// `editor_ops.rs:15`); (2) a squad under a faction with an empty side `key`; (3) an empty
+    /// `squadId`. The malformed state is a bucket, not a caught error.
+    #[test]
+    fn census_unassigned_covers_every_unresolved_slot() {
+        let factions = [
+            faction("faction-BLUFOR", "BLUFOR"),
+            // A faction the doc kept but whose side key never got written.
+            faction("faction-mystery", ""),
+        ];
+        let squads = [
+            squad("sq-w", "faction-BLUFOR"),
+            squad("sq-mystery", "faction-mystery"),
+        ];
+        let mut ids = slots_in("sq-w", 5); // → WEST
+        ids.extend(slots_in("sq-ghost", 3)); // dangling squadId (no such squad)
+        ids.extend(slots_in("sq-mystery", 2)); // squad under a keyless faction
+        ids.push(String::new()); // slot with no squadId at all
+
+        let c = census_from_rows(&factions, &squads, &ids);
+        assert_eq!(c.west, 5);
+        assert_eq!(c.east, 0);
+        assert_eq!(c.ind, 0);
+        assert_eq!(c.unassigned, 6, "3 ghost + 2 keyless + 1 empty");
+        assert_eq!(c.total, 11);
+        assert_eq!(c.west + c.east + c.ind + c.unassigned, c.total);
+    }
+
+    /// A single-side roster is exactly what it says: WEST populated, EAST/IND zero, no unassigned.
+    /// Guards against an off-by-one that would leak the other sides' zeros into `unassigned`.
+    #[test]
+    fn census_single_side_leaves_others_zero() {
+        let factions = [faction("faction-OPFOR", "OPFOR")];
+        let squads = [squad("sq-e", "faction-OPFOR")];
+        let c = census_from_rows(&factions, &squads, &slots_in("sq-e", 12));
+        assert_eq!(c.east, 12);
+        assert_eq!(c.west, 0);
+        assert_eq!(c.ind, 0);
+        assert_eq!(c.unassigned, 0);
+        assert_eq!(c.total, 12);
+    }
+
+    /// The side→label table is the vocabulary the community naming convention rides. Pin it so a
+    /// rename (WEST→BLUEFOR, say) is a deliberate, test-breaking act, not a silent drift — the WOG
+    /// lesson the ticket calls out. `count_for_key` must agree with the table.
+    #[test]
+    fn census_side_labels_are_pinned() {
+        assert_eq!(
+            CENSUS_SIDES,
+            [("BLUFOR", "WEST"), ("OPFOR", "EAST"), ("INDFOR", "IND")]
+        );
+        let c = SlotCensus {
+            west: 1,
+            east: 2,
+            ind: 3,
+            unassigned: 0,
+            total: 6,
+        };
+        assert_eq!(c.count_for_key("BLUFOR"), 1);
+        assert_eq!(c.count_for_key("OPFOR"), 2);
+        assert_eq!(c.count_for_key("INDFOR"), 3);
+        assert_eq!(
+            c.count_for_key("CIV"),
+            0,
+            "a non-side key counts to no bucket"
+        );
+    }
+
+    // ── T-659 — summary-line format (STABLE — other tools parse this) ─────────────────────────────
+
+    /// **GOLDEN — the community naming format. Changing this string is a breaking change.**
+    ///
+    /// The full-roster line, matching the ticket's illustrative shape (`"COOP 160 on Everon — WEST
+    /// 78 v EAST 74 (+8 IND)"`). This golden pins the em-dash, the ` v ` core, the `(+ IND)` suffix,
+    /// the mode prefix, and the `everon`→`Everon` label — the load-bearing punctuation
+    /// `summary_line` documents as the parser contract.
+    #[test]
+    fn summary_golden_full_roster_with_mode() {
+        let c = SlotCensus {
+            west: 78,
+            east: 74,
+            ind: 8,
+            unassigned: 0,
+            total: 160,
+        };
+        assert_eq!(
+            summary_line(&c, "everon", Some("COOP")),
+            "COOP 160 on Everon — WEST 78 v EAST 74 (+8 IND)"
+        );
+    }
+
+    /// No mode present → no mode segment, and the ` v ` core plus the two anchor words `on` / ` v `
+    /// are still there so a parser can locate the fields regardless of the mode's absence. This is
+    /// the common case (game mode is not a first-class editor field today).
+    #[test]
+    fn summary_omits_mode_when_absent() {
+        let c = SlotCensus {
+            west: 10,
+            east: 10,
+            ind: 0,
+            unassigned: 0,
+            total: 20,
+        };
+        let line = summary_line(&c, "arland", None);
+        assert_eq!(line, "20 on Arland — WEST 10 v EAST 10");
+        assert!(!line.contains(" (+"), "no IND suffix when IND is zero");
+        assert!(line.contains(" on "), "the `on` anchor is always present");
+        assert!(line.contains(" v "), "the ` v ` anchor is always present");
+    }
+
+    /// The optional suffixes are strictly APPEND-ONLY and ordered `(+i IND)` then `(u unassigned)`,
+    /// so adding either never moves an earlier field. Both present at once here; the IND suffix
+    /// precedes the unassigned one.
+    #[test]
+    fn summary_suffixes_are_append_only_and_ordered() {
+        let c = SlotCensus {
+            west: 5,
+            east: 4,
+            ind: 3,
+            unassigned: 2,
+            total: 14,
+        };
+        let line = summary_line(&c, "everon", Some("TVT"));
+        assert_eq!(
+            line,
+            "TVT 14 on Everon — WEST 5 v EAST 4 (+3 IND) (2 unassigned)"
+        );
+        // The core prefix is byte-identical to the no-suffix line — proof the suffixes only append.
+        let core = "TVT 14 on Everon — WEST 5 v EAST 4";
+        assert!(line.starts_with(core), "suffixes must not perturb the core");
+        let ind_at = line.find("(+3 IND)").expect("IND suffix present");
+        let una_at = line
+            .find("(2 unassigned)")
+            .expect("unassigned suffix present");
+        assert!(ind_at < una_at, "IND suffix precedes the unassigned suffix");
+    }
+
+    /// A blank/unknown terrain still yields a parseable line (`Unknown` placeholder), never an empty
+    /// map name that would leave the `on ` anchor dangling.
+    #[test]
+    fn summary_handles_blank_terrain() {
+        let c = SlotCensus::default();
+        assert_eq!(summary_line(&c, "", None), "0 on Unknown — WEST 0 v EAST 0");
+    }
+
+    /// The census and the summary compose end-to-end: the roster the pure census produces is exactly
+    /// what the summary reports. This is the live-update pin's pure half — the header memos feed
+    /// `census_from_rows`'s output straight into `summary_line`, and the reactivity source is the
+    /// `doc_tick` channel documented on the `census`/`summary` memos (`refresh_docks` →
+    /// `editor_ops.rs:1055`), which native tests cannot drive but which the memo wiring pins.
+    #[test]
+    fn census_and_summary_compose() {
+        let factions = [
+            faction("faction-BLUFOR", "BLUFOR"),
+            faction("faction-INDFOR", "INDFOR"),
+        ];
+        let squads = [
+            squad("sq-w", "faction-BLUFOR"),
+            squad("sq-i", "faction-INDFOR"),
+        ];
+        let mut ids = slots_in("sq-w", 2);
+        ids.extend(slots_in("sq-i", 1));
+        let c = census_from_rows(&factions, &squads, &ids);
+        assert_eq!(
+            summary_line(&c, "everon", None),
+            "3 on Everon — WEST 2 v EAST 0 (+1 IND)"
+        );
+    }
+
+    /// FIRE THE RULE ONCE (perturb / fail / restore). This census REPLACES the two MissionAnalyzer
+    /// rules by making the malformed state a bucket rather than a caught error, so "firing the rule"
+    /// is: a clean roster shows `unassigned == 0`; perturbing a slot onto a dangling squad makes the
+    /// census REPORT the orphan (`unassigned > 0`, and the badge would light UNA); restoring the slot
+    /// to a real squad returns the census to clean. The malformed state is observable by
+    /// construction — there is no analyzer pass that could fail to run.
+    #[test]
+    fn census_fires_on_an_orphan_then_clears_on_restore() {
+        let factions = [faction("faction-BLUFOR", "BLUFOR")];
+        let squads = [squad("sq-w", "faction-BLUFOR")];
+
+        // Clean: every slot resolves to WEST.
+        let clean = census_from_rows(&factions, &squads, &slots_in("sq-w", 4));
+        assert_eq!(clean.unassigned, 0, "clean roster: nothing unassigned");
+        assert_eq!(clean.west, 4);
+
+        // Perturb: one slot now points at a squad that isn't in the map (the orphan the old rule
+        // existed to catch). The census FIRES — the orphan surfaces in `unassigned`.
+        let mut perturbed_ids = slots_in("sq-w", 3);
+        perturbed_ids.push("sq-deleted".to_string());
+        let perturbed = census_from_rows(&factions, &squads, &perturbed_ids);
+        assert_eq!(
+            perturbed.unassigned, 1,
+            "the orphan is reported, not silently dropped"
+        );
+        assert_eq!(perturbed.west, 3);
+        assert_eq!(perturbed.total, 4, "total still counts every slot");
+
+        // Restore: refile the orphan back onto the real squad — the census returns to clean.
+        let restored = census_from_rows(&factions, &squads, &slots_in("sq-w", 4));
+        assert_eq!(restored, clean, "restoring clears the fired state");
     }
 }
