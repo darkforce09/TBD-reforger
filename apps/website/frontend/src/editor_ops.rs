@@ -1093,6 +1093,329 @@ pub fn set_layer_locked(id: &str, locked: bool) {
     }
 }
 
+/* ═══════════════════════════ T-666 — Outliner layer authoring ═══════════════════════════ */
+//
+// LAYER-CREATE-001 / LAYER-DEL-001 / SEL-LAYER-CHILDREN-001 / SEL-LAYER-DESC-001 (the ops half;
+// SEL-GROUP-ICON-001 is a pure render rule in `eden_tree`). These are thin wrappers onto the
+// SHIPPED, TESTED core layer mutators (`add_editor_layer` / `rename_editor_layer` /
+// `remove_editor_layer` (subtree + reseed) / `reparent_editor_layer` (cycle-guarded) /
+// `move_slot_to_layer`) — verified at filing to have ZERO UI callers. Each wrapper opens exactly
+// one `OPS_CTX` borrow, scopes the doc write so it drops before the tail, and rides
+// `mission_history::after_local_edit()` — which is what calls `refresh_docks()` (via
+// `refresh_signals`), so "call core + refresh_docks" is one tail, exactly like `set_layer_hidden`.
+// The core mutators each commit a SINGLE transaction, so one authoring action = one undo step.
+
+thread_local! {
+    /// Monotonic minter for created-layer ids; uniqueness is still PROVEN against the live doc in
+    /// [`mint_layer_id`] (undo frees ids; an IDB restore can bring back a doc that already used one).
+    static NEXT_LAYER_ID: Cell<u32> = const { Cell::new(0) };
+    /// LAYER-CREATE-001 — the id of the layer just created, so the tree can arm its inline rename
+    /// immediately (spec: "inline-rename armed immediately"). The dock reads+clears this reactively.
+    static RENAME_ARMED: RefCell<Option<String>> = const { RefCell::new(None) };
+    /// Armed drag between a tree-row `pointerdown` and a folder/root-dropzone `pointerup`
+    /// (pointer-drag — the same idiom as [`PENDING_REFILE`], not HTML5 DnD, since the Leptos
+    /// frontend has no HTML5-DnD lane). A folder row arms `Folder` (drop reparents); a slot row in
+    /// the layer tree arms `Slot` (drop refiles). One latch so a folder's `pointerup` dispatches
+    /// either without a second source of truth to get out of step.
+    static PENDING_LAYER_DRAG: RefCell<Option<LayerDrag>> = const { RefCell::new(None) };
+}
+
+/// T-666 — what a tree pointer-drag is carrying (see [`PENDING_LAYER_DRAG`]).
+#[derive(Clone)]
+enum LayerDrag {
+    /// A folder being reparented.
+    Folder(String),
+    /// A slot being refiled into a folder.
+    Slot(String),
+}
+
+/// Mint an unused `layer-{n}` id, proven unique against the doc's live layer set.
+fn mint_layer_id(core: &MissionDocCore) -> String {
+    let existing: std::collections::HashSet<String> =
+        layer_rows(core).into_iter().map(|l| l.id).collect();
+    loop {
+        let id = format!("layer-{}", NEXT_LAYER_ID.with(Cell::get));
+        NEXT_LAYER_ID.with(|c| c.set(c.get().saturating_add(1)));
+        if !existing.contains(&id) {
+            return id;
+        }
+    }
+}
+
+/// Auto-name a new layer "New Layer N" where N is the smallest positive integer not already used by
+/// an existing "New Layer …" name (so creating three in a row reads 1/2/3, and a delete-then-create
+/// reuses the gap). Names need not be unique in the doc; this is only a friendly default.
+fn mint_layer_name(core: &MissionDocCore) -> String {
+    let used: std::collections::HashSet<u32> = layer_rows(core)
+        .iter()
+        .filter_map(|l| {
+            l.name
+                .strip_prefix("New Layer ")?
+                .trim()
+                .parse::<u32>()
+                .ok()
+        })
+        .collect();
+    let mut n = 1u32;
+    while used.contains(&n) {
+        n += 1;
+    }
+    format!("New Layer {n}")
+}
+
+/// LAYER-CREATE-001 — create a folder as a **child of the selected/active folder** (or a root when
+/// none is active), auto-named "New Layer N", and arm its inline rename. Returns the new id.
+///
+/// Rides the shipped `add_editor_layer`; one transaction ⇒ one undo step. The parent is the active
+/// layer if it still exists (a stale pointer — folder deleted/undone-away — falls back to root,
+/// mirroring `ensure_layer`'s staleness handling).
+pub fn create_layer() -> Option<String> {
+    let created = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let id = {
+            let d = ctx.doc.borrow();
+            let core = d.as_ref()?;
+            let rows = layer_rows(core);
+            // Parent = the active folder if it still exists, else root (None).
+            let parent = ctx
+                .active_layer
+                .get_untracked()
+                .filter(|a| rows.iter().any(|l| &l.id == a));
+            let id = mint_layer_id(core);
+            let name = mint_layer_name(core);
+            core.add_editor_layer(&id, &name, parent);
+            id
+        };
+        // Make the new folder the active drop target + arm its inline rename.
+        ctx.active_layer.set(Some(id.clone()));
+        RENAME_ARMED.with(|r| *r.borrow_mut() = Some(id.clone()));
+        Some(id)
+    });
+    if created.is_some() {
+        crate::mission_history::after_local_edit();
+    }
+    created
+}
+
+/// LAYER-CREATE-001 — take the id of the just-created layer whose inline rename should open, if any.
+/// Consumed once (cleared on read) so the dock arms the input exactly once per creation.
+#[must_use]
+pub fn take_rename_armed() -> Option<String> {
+    RENAME_ARMED.with(|r| r.borrow_mut().take())
+}
+
+/// Rename an Outliner folder (inline-rename commit). Rides the shipped `rename_editor_layer`; one
+/// transaction ⇒ one undo step. A blank name after trim is rejected (a folder must keep a label).
+pub fn rename_layer(id: &str, name: &str) -> bool {
+    let name = name.trim();
+    if name.is_empty() {
+        return false;
+    }
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.rename_editor_layer(id, name);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// LAYER-DEL-001 — delete a folder with the SHIPPED subtree semantics: `remove_editor_layer`
+/// deletes the folder AND its whole subtree (child folders + every slot filed in any of them), keeps
+/// ≥1 layer (reseeding a default if the subtree was every layer). One transaction ⇒ one undo step.
+///
+/// This is destructive (the whole subtree), which is why the dock guards it behind a confirm whose
+/// text says so. The reseed id is minted here so a "delete the only layer" reseed can't collide.
+pub fn delete_layer(id: &str) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        {
+            let d = ctx.doc.borrow();
+            let Some(core) = d.as_ref() else {
+                return false;
+            };
+            let reseed = mint_layer_id(core);
+            core.remove_editor_layer(id, &reseed);
+        }
+        // If the active drop target was inside the removed subtree it is now dangling; the next
+        // place's `ensure_layer` re-resolves, but clear it eagerly so the header reads honestly.
+        if ctx.active_layer.get_untracked().as_deref() == Some(id) {
+            ctx.active_layer.set(None);
+        }
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// Reparent a folder (drag-in-tree / root-dropzone). Rides the cycle-guarded `reparent_editor_layer`
+/// (a drop into the folder's own subtree is a no-op at the core), so this wrapper does not re-check
+/// cycles. `new_parent = None` moves it to the root. One transaction ⇒ one undo step.
+pub fn reparent_layer(id: &str, new_parent: Option<String>) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.reparent_editor_layer(id, new_parent);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// Refile a slot into a different folder (drag a slot row onto a folder). Rides the shipped
+/// `move_slot_to_layer` (detach from every folder holding it, append to the target); squad is
+/// unchanged (workflow-only). One transaction ⇒ one undo step.
+pub fn refile_slot_to_layer(slot_id: &str, layer_id: &str) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        {
+            let d = ctx.doc.borrow();
+            let Some(core) = d.as_ref() else {
+                return false;
+            };
+            core.move_slot_to_layer(slot_id, layer_id);
+        }
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+// ── Pointer-drag reparent/refile in the tree (the T-037-era TreeView-DnD role, on the current
+//    pointer idiom — mirrors ORBAT's `begin_refile`/`complete_refile_onto_squad`). A folder row
+//    arms on `pointerdown`; dropping onto another folder reparents, onto the header root-dropzone
+//    reparents to root, and a slot row reuses the same latch to refile.
+
+/// Arm a folder for a pointer-drag reparent (folder-row `pointerdown`).
+pub fn begin_layer_drag(layer_id: String) {
+    PENDING_LAYER_DRAG.with(|p| *p.borrow_mut() = Some(LayerDrag::Folder(layer_id)));
+}
+
+/// Arm a slot for a pointer-drag refile into a folder (slot-row `pointerdown`, layer tree only).
+pub fn begin_layer_slot_drag(slot_id: String) {
+    PENDING_LAYER_DRAG.with(|p| *p.borrow_mut() = Some(LayerDrag::Slot(slot_id)));
+}
+
+/// Drop an armed drag ANYWHERE that isn't a valid target (clear without mutating).
+pub fn cancel_layer_drag() {
+    PENDING_LAYER_DRAG.with(|p| *p.borrow_mut() = None);
+}
+
+/// Complete an armed drag onto `dest_folder_id`: a FOLDER drag reparents under it (no-op self/subtree
+/// drop — the core rejects it); a SLOT drag refiles into it. `false` when nothing was armed.
+pub fn complete_layer_drop_onto_folder(dest_folder_id: String) -> bool {
+    let Some(drag) = PENDING_LAYER_DRAG.with(|p| p.borrow_mut().take()) else {
+        return false;
+    };
+    match drag {
+        LayerDrag::Folder(id) => {
+            if id == dest_folder_id {
+                return false;
+            }
+            reparent_layer(&id, Some(dest_folder_id))
+        }
+        LayerDrag::Slot(slot_id) => refile_slot_to_layer(&slot_id, &dest_folder_id),
+    }
+}
+
+/// Complete an armed FOLDER drag by reparenting it to the ROOT (the header dropzone). A slot drag is
+/// dropped (a slot must live in some folder; "refile to no folder" is not a thing the doc models —
+/// it would just leave the slot unfiled, and the root dropzone is a folder-reparent affordance).
+/// `false` when nothing was armed or a slot was armed.
+pub fn complete_layer_drop_onto_root() -> bool {
+    let drag = PENDING_LAYER_DRAG.with(|p| p.borrow_mut().take());
+    match drag {
+        Some(LayerDrag::Folder(id)) => reparent_layer(&id, None),
+        _ => false,
+    }
+}
+
+// ── Folder-click selection (SEL-LAYER-CHILDREN-001 / SEL-LAYER-DESC-001). Reads the UNFILTERED
+//    doc (`layer_rows` → `entity_ids`), NOT `materialize()`: see `eden_tree`'s module note — a
+//    folder-click must select what the DOC says the layer contains, so a hidden layer still
+//    selects its slots (the T-715 lane). No doc edit ⇒ selection-only tail, no undo step.
+
+/// SEL-LAYER-CHILDREN-001 — select a folder's DIRECT slot children (replacing the selection).
+pub fn select_layer_children(layer_id: &str) {
+    let ids = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        Some(crate::eden_tree::layer_direct_slot_children(
+            &layer_rows(core),
+            layer_id,
+        ))
+    });
+    if let Some(ids) = ids {
+        set_slot_selection(ids);
+    }
+}
+
+/// SEL-LAYER-DESC-001 — select every slot in a folder's whole subtree (replacing the selection).
+pub fn select_layer_descendants(layer_id: &str) {
+    let ids = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        Some(crate::eden_tree::layer_descendant_slots(
+            &layer_rows(core),
+            layer_id,
+        ))
+    });
+    if let Some(ids) = ids {
+        set_slot_selection(ids);
+    }
+}
+
+/// Replace the slot selection with `ids` and run the selection-only tail a map/outliner click takes
+/// (engine tint + SEL + dock highlight; no doc edit ⇒ no rebind/persist/undo). Shared by the two
+/// folder-click selectors above.
+fn set_slot_selection(ids: Vec<String>) {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        *ctx.selection.borrow_mut() = ids;
+        let ids = ctx.selection.borrow().clone();
+        let mut eng = ctx.engine.borrow_mut();
+        if let Some(e) = eng.as_mut() {
+            e.set_selection(ids);
+        }
+    });
+    crate::mission_history::refresh_selection();
+}
+
 /// Palette leaf `pointerdown` → arm a place. Consumed by [`place_at`] on a canvas release, or
 /// dropped by [`cancel_pending`] on a release over chrome.
 ///

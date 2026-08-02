@@ -44,10 +44,56 @@ pub fn DockLeft(
     };
     view! {
         <aside class=DOCK_L>
-            <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface">
-                "Editor Layers"
-            </h2>
-            <div class="mt-1">
+            // T-666 — header: the title doubles as a ROOT DROPZONE (drop a dragged folder here to
+            // move it to the root — `complete_layer_drop_onto_root`), plus a "+" create button
+            // (LAYER-CREATE-001: new folder under the active layer, or a root when none is active).
+            // The dropzone is the whole header row so it is an easy target; `pointerup` completes an
+            // armed folder drag and no-ops otherwise.
+            <div
+                class="group flex items-center justify-between gap-2 rounded px-1 py-0.5"
+                title="Drop a folder here to move it to the top level"
+                on:pointerup=move |ev: web_sys::PointerEvent| {
+                    ev.stop_propagation();
+                    #[cfg(target_arch = "wasm32")]
+                    {
+                        let _ = crate::editor_ops::complete_layer_drop_onto_root();
+                    }
+                    #[cfg(not(target_arch = "wasm32"))]
+                    let _ = &ev;
+                }
+            >
+                <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface">
+                    "Editor Layers"
+                </h2>
+                <button
+                    type="button"
+                    aria-label="New layer"
+                    title="New layer (child of the selected layer)"
+                    class="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-outline transition-colors hover:bg-white/10 hover:text-on-surface"
+                    on:click=move |ev: web_sys::MouseEvent| {
+                        ev.stop_propagation();
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            let _ = crate::editor_ops::create_layer();
+                        }
+                        #[cfg(not(target_arch = "wasm32"))]
+                        let _ = &ev;
+                    }
+                >
+                    <MaterialIcon name="add" class="block text-base" />
+                </button>
+            </div>
+            // T-666 — a release that reaches this wrapper landed on NEITHER a folder row nor the
+            // header root-dropzone (both `stop_propagation` + complete their own drop), so it is a
+            // stray drag (released over empty tree space or a non-target slot row) — clear the latch
+            // so a later click on a folder can't complete a stale reparent/refile.
+            <div
+                class="mt-1"
+                on:pointerup=move |_| {
+                    #[cfg(target_arch = "wasm32")]
+                    crate::editor_ops::cancel_layer_drag();
+                }
+            >
                 {virtual_tree(
                     nodes,
                     selected,
@@ -55,6 +101,8 @@ pub fn DockLeft(
                     "editorLayers",
                     "No objects placed yet.",
                     false,
+                    // T-666 — this is the layer-authoring tree.
+                    true,
                 )}
             </div>
             <div class="mt-auto flex items-center justify-between border-t border-outline-variant/20 pt-2">
