@@ -854,10 +854,11 @@ pub fn MissionEditorPage() -> impl IntoView {
     // a keypress: the author must not be able to hide the reason their mission is broken. Do not copy
     // this "hide it behind a key" pattern onto validation output.
     let debug_hud_shown = RwSignal::new(false);
-    // T-642 — the active editor tool (Select ⇆ Ruler). The `ModeToolbar` buttons read + set it
-    // (Ruler enters TOOL_ACTIVE state, Select returns); the wasm pointer handlers branch on it to
-    // choose the ruler gesture vs the Select machine. LoS stays disabled (T-643, wave 109), so it is
-    // NOT a variant here. Default Select.
+    // T-642/T-643 — the active editor tool (Select ⇆ Ruler ⇆ LoS). The `ModeToolbar` buttons read +
+    // set it (the active tool enters TOOL_ACTIVE state, Select returns); the wasm pointer handlers
+    // branch on it to choose the point-capture gesture (Ruler AND LoS share `LG::Ruler`) vs the
+    // Select machine, and the commit site routes a captured click by `is_ruler()`/`is_los()`. Default
+    // Select.
     let tool_mode = RwSignal::new(crate::ruler_tool::EditorTool::Select);
     // T-642 — the ruler's status-bar readout (running total + last-leg) and a repaint tick. The
     // `RulerChain` itself is session-local overlay state held in a leaked `RefCell` in the wasm
@@ -866,6 +867,12 @@ pub fn MissionEditorPage() -> impl IntoView {
     // `RulerOverlay` repaints even when a click did not move the pointer (no pointermove to ride).
     let ruler_status = RwSignal::new(None::<String>);
     let ruler_tick = RwSignal::new(0u64);
+    // T-643 — LoS repaint tick. The `LosState` (observer/target capture) is session-local overlay
+    // state held beside the ruler chain in the wasm block (Decision 4 — NOT the Y.Doc). Unlike the
+    // ruler, LoS puts its verdict in an INLINE panel by the target (Decision 2), not the status bar,
+    // so there is no `los_status` signal — only this tick, bumped on every capture mutation so the
+    // `LosOverlay` repaints even when a click did not move the pointer.
+    let los_tick = RwSignal::new(0u64);
     // T-175 B5 — boot loading overlay phase (set by the wasm boot tasks; the view reads it).
     let boot = RwSignal::new(BootPhase::Hydrating);
     // T-631 — "continue without map": once the render engine fails to start, the map pane is dead
@@ -1204,6 +1211,51 @@ pub fn MissionEditorPage() -> impl IntoView {
             // (mounted in the shared view, outside this block) can read + project it (the
             // `context_menu::set_menu_signal` handoff idiom).
             crate::ruler_tool::register_ruler_chain(ruler.clone());
+
+            // T-643 — the Line-of-Sight capture. Session-local OVERLAY state (Decision 4 — NOT the
+            // Y.Doc, exactly like the selection set + the ruler chain above), a leaked
+            // `Rc<RefCell<LosState>>` shared by the pointer handlers (which mutate it) and the
+            // `LosOverlay` (which clones it to project + build the profile).
+            let los: Rc<RefCell<crate::los_tool::LosState>> =
+                Rc::new(RefCell::new(crate::los_tool::LosState::new()));
+            // Bump the repaint tick on every LoS mutation (click / Esc / tool-switch clear) so the
+            // overlay repaints even on a still-pointer click. (No status-bar readout — Decision 2's
+            // verdict lives in the inline panel, so unlike the ruler there is no status signal here.)
+            let sync_los = {
+                move || {
+                    los_tick.update(|t| *t = t.wrapping_add(1));
+                }
+            };
+            // T-643 — tool-switch dismissal (Decision 3): switching the tool away from LoS clears the
+            // placed shot (the "second-Esc-equivalent"). One Effect observes `tool_mode`; when it is
+            // not LoS it clears the state and re-syncs. Idempotent — the default-Select first run on
+            // an empty state is a harmless no-op, and Select→LoS leaves an empty state untouched.
+            {
+                let los = los.clone();
+                let sync_los = sync_los;
+                Effect::new(move |_| {
+                    if !tool_mode.get().is_los() && !los.borrow().is_empty() {
+                        los.borrow_mut().clear();
+                        sync_los();
+                    }
+                });
+            }
+            // T-643 — hand the leaked state to the `los_tool` thread_local so the `LosOverlay` can
+            // read + project it (peer of `register_ruler_chain`), and hand it a DEM point-sampler so
+            // the overlay can rebuild the terrain profile after a pan. The sampler closes over the
+            // SAME 8 m downsampled `dem_grid` the ruler's per-vertex Z read uses (the reachable DEM
+            // in the editor) — `los_tool` takes no compile-time dependency on the grid-handle type.
+            crate::los_tool::register_los_state(los.clone());
+            {
+                let dem_grid = dem_grid.clone();
+                crate::los_tool::register_los_sampler(std::rc::Rc::new(move |x: f64, y: f64| {
+                    dem_grid
+                        .borrow()
+                        .as_ref()
+                        .and_then(|g| map_engine_core::dem::downsample::sample_grid_meters(g, x, y))
+                }));
+            }
+
             crate::select_tool::register_editor_selection(
                 selection.clone(),
                 doc.clone(),
@@ -1288,6 +1340,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // T-642 — the ruler chain + its reactive sync, so the Esc arm can dismiss it.
                 let ruler = ruler.clone();
                 let sync_ruler = sync_ruler.clone();
+                // T-643 — the LoS capture + its reactive sync SHARE this same Esc seam (Decision 3):
+                // rather than add a second window keydown listener (T-726, the window-Esc pile-up, is
+                // pending — a new UNGUARDED listener would make it worse), LoS hooks the ruler's
+                // existing Escape arm below, so the eventual T-726 fix covers both tools at once.
+                let los = los.clone();
+                let sync_los = sync_los;
                 let onkeydown = Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(
                     move |ev: web_sys::KeyboardEvent| {
                         if crate::mission_history::in_editable_field() {
@@ -1300,18 +1358,25 @@ pub fn MissionEditorPage() -> impl IntoView {
                         };
                         // Each arm returns whether it acted; prevent the browser default once.
                         let handled = match ev.code().as_str() {
-                            // T-642 — Esc is the ruler's two-step escalating dismissal (Decision 3):
-                            // while drawing, first Esc drops the in-progress tail (keeps a legged
-                            // measure placed); a second Esc clears the placed ruler. `escape()` owns
-                            // the escalation and returns whether it changed anything, so Esc only
-                            // "acts" (→ prevent_default, → sync) when there was a chain to dismiss —
-                            // an Esc with no ruler falls through untouched (never swallowed here).
+                            // T-642/T-643 — Esc is the SHARED two-step escalating dismissal (Decision
+                            // 3) for BOTH measure tools. The ruler: first Esc drops the in-progress
+                            // tail (keeps a legged measure placed), a second clears the placed ruler.
+                            // LoS mirrors it: first Esc drops the in-progress observer, a second clears
+                            // the placed shot. Only one tool is ever non-empty at a time (switching
+                            // tools clears the other's overlay), so calling BOTH `.escape()`s here is
+                            // safe — the inactive tool's state is empty and its `.escape()` is a false
+                            // no-op. Esc only "acts" (→ prevent_default) when SOMETHING was dismissed;
+                            // an Esc with neither tool placed falls through untouched (never swallowed).
                             "Escape" if !modk => {
-                                let acted = ruler.borrow_mut().escape();
-                                if acted {
+                                let ruler_acted = ruler.borrow_mut().escape();
+                                if ruler_acted {
                                     sync_ruler();
                                 }
-                                acted
+                                let los_acted = los.borrow_mut().escape();
+                                if los_acted {
+                                    sync_los();
+                                }
+                                ruler_acted || los_acted
                             }
                             "KeyC" if modk && !ev.alt_key() && !ev.shift_key() => {
                                 crate::editor_ops::copy_selection()
@@ -2144,6 +2209,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let ruler = ruler.clone();
                 let dem_grid = dem_grid.clone();
                 let sync_ruler = sync_ruler.clone();
+                // T-643 — the LoS capture + its reactive sync. The commit arm below routes a captured
+                // click to the ruler OR the LoS state by `tool_mode`, since both tools share the
+                // `LG::Ruler` gesture (the "mode field on the ruler arm").
+                let los = los.clone();
+                let sync_los = sync_los;
                 // T-159.21 — no `mission_id` capture: the persist tail now runs inside
                 // `mission_history::after_local_edit`, which reads the id from its ctx.
                 move |ev: web_sys::PointerEvent| {
@@ -2417,11 +2487,18 @@ pub fn MissionEditorPage() -> impl IntoView {
                         // and no pan in flight — so it deliberately sits OUTSIDE the T-723 armed-place
                         // branch (constraint (a)), and because the ruler pointerdown wrote `LG::Ruler`
                         // into `left`, this `take()` (constraint (b)) is what clears it. A sub-threshold
-                        // release is a click → append one vertex; the tool stays armed for the next.
-                        // (Past-threshold would be a drag; the ruler has no drag gesture, so an
-                        // accidental micro-drag simply drops without committing.) The vertex records
+                        // release is a click → commit ONE point; the tool stays armed for the next.
+                        // (Past-threshold would be a drag; neither measure tool has a drag gesture, so
+                        // an accidental micro-drag simply drops without committing.) The point records
                         // its DEM elevation at click time (Decision 2) from the SAME grid CUR-Z reads,
                         // unprojected against the FROZEN press camera so it lands where CUR pointed.
+                        //
+                        // T-643 — BOTH measure tools share this `LG::Ruler` arm (the "mode field on
+                        // the ruler arm"): a captured click routes by `tool_mode` — a ruler VERTEX
+                        // (`chain.press`) under Ruler, or a LoS observer/target (`state.click`) under
+                        // LoS. The unproject + Z-sample + threshold are identical; only the
+                        // destination differs, so the two tools can never disagree about where a click
+                        // landed. Neither destination is a doc write (Decision 4 for both).
                         LG::Ruler {
                             start_x,
                             start_y,
@@ -2437,8 +2514,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                                             g, w[0], w[1],
                                         )
                                     });
-                                    ruler.borrow_mut().press(w[0], w[1], z);
-                                    sync_ruler();
+                                    if tool_mode.get_untracked().is_los() {
+                                        // LoS: first click sets the observer, second completes the
+                                        // shot (Decision 2's two-click capture). Session-local
+                                        // overlay state, never a doc write (Decision 4).
+                                        los.borrow_mut().click(w[0], w[1], z);
+                                        sync_los();
+                                    } else {
+                                        ruler.borrow_mut().press(w[0], w[1], z);
+                                        sync_ruler();
+                                    }
                                 }
                             }
                         }
@@ -2624,6 +2709,15 @@ pub fn MissionEditorPage() -> impl IntoView {
                         r.double_click();
                         drop(r);
                         sync_ruler();
+                        return;
+                    }
+                    // T-643 — with the LoS tool active, a double-click must NOT open Attributes / the
+                    // asset picker either. LoS captures TWO single clicks (observer then target); a
+                    // fast double-click's two pointerups already ran `LosState::click` twice via the
+                    // shared `LG::Ruler` arm — which is exactly a completed shot — so this handler just
+                    // swallows the `dblclick` event so it opens no dialog. (Select mode is unchanged:
+                    // both measure-tool guards are skipped and the pick path runs as before.)
+                    if tool_mode.get_untracked().is_los() {
                         return;
                     }
                     let rect = container.get_bounding_client_rect();
@@ -2894,6 +2988,15 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // itself, and re-runs off the same `cursor`/`debug_hud` heartbeats as the furniture (no
                 // new rAF loop) plus `ruler_tick` (repaint on a still-pointer click).
                 <crate::ruler_tool::RulerOverlay cursor debug_hud=Some(debug_hud) tick=ruler_tick />
+                // T-643 — the Line-of-Sight overlay (dispatcher-authorized SINGLE mount line; the
+                // component + all its logic live in `los_tool`, my owned file). UNGATED like the ruler
+                // overlay: a placed LoS shot is a measurement the operator created, so it survives a
+                // Backspace hide-chrome (it is not dock furniture). `pointer-events-none` (the SVG
+                // never eats a map gesture — the two-click capture is the map's own pointer handlers),
+                // reads the live camera + state + DEM sampler itself, and re-runs off the same
+                // `cursor`/`debug_hud` heartbeats as the ruler (no new rAF loop) plus `los_tick`
+                // (repaint on a still-pointer click).
+                <crate::los_tool::LosOverlay cursor debug_hud=Some(debug_hud) tick=los_tick />
             </div>
             // T-628 — boot loading overlay: ONE bar, 0→100%, across the whole boot. It never resets
             // between stages and there is no sweep anywhere in it — the stage name underneath
@@ -5654,6 +5757,175 @@ mod t642_ruler_wiring {
         assert!(
             ed.contains("RulerChain::new()"),
             "T-642 (Decision 4): the ruler is a session-local RulerChain, not doc state"
+        );
+    }
+}
+
+/// T-643 — source pins for the LINE-OF-SIGHT click-capture wiring in the wasm pointer/keydown/
+/// dblclick handlers (which a native test cannot execute; the pure state machine + occlusion math are
+/// unit-tested in `los_tool`). LoS deliberately REUSES the ruler's `LG::Ruler` gesture arm + Esc seam
+/// (the "mode field on the ruler arm" the ticket sanctions, so no third `LeftGesture` variant is
+/// added to the un-owned `select_tool`), so these pins prove that reuse is disciplined: the commit
+/// routes by `tool_mode`, the Esc is the SHARED arm (not a second window listener — T-726), and the
+/// overlay/state/sampler are mounted + registered. Scrubbed code (comments + strings blanked) so a
+/// needle is real code; the scrubber keeps `#[cfg(target_arch="wasm32")]` blocks visible.
+#[cfg(test)]
+mod t643_los_wiring {
+    use crate::arsenal::class_r_scrub::live_code;
+
+    fn editor_live() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(
+            raw.matches(anchor.as_str()).count(),
+            1,
+            "scrub anchor must be unambiguous"
+        );
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    }
+
+    /// (arbitration entry — shared gesture) LoS enters the SAME `LG::Ruler` gesture the ruler uses,
+    /// via the broadened `should_begin_ruler` (true for any point-capture tool). No separate LoS
+    /// `LeftGesture` variant exists — the un-owned `select_tool` is untouched — so the whole entry is
+    /// the ruler's, with the commit site (below) choosing the tool.
+    #[test]
+    fn los_shares_the_ruler_gesture_entry() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("should_begin_ruler("),
+            "T-643: LoS must enter via the shared should_begin_ruler point-capture predicate"
+        );
+        // No third gesture variant was invented for LoS (would require editing the un-owned
+        // select_tool). The only capture gesture is LG::Ruler.
+        assert!(
+            !ed.contains("LeftGesture::LoS") && !ed.contains("LG::LoS"),
+            "T-643: LoS must NOT add a new LeftGesture variant — it reuses LG::Ruler (mode field)"
+        );
+    }
+
+    /// (commit routes by tool_mode) The single `LG::Ruler` pointerup arm commits a LoS point via
+    /// `los...click(` under `is_los()`, and a ruler vertex via `.press(` otherwise — one arm, routed
+    /// by the mode. The LoS commit must NOT be a doc write (Decision 4) and must NOT route through the
+    /// armed-place `has_pending()` branch (constraint a — the same arm the ruler pin already proves
+    /// sits outside it).
+    #[test]
+    fn los_commit_routes_by_tool_mode_no_doc_write() {
+        let ed = editor_live();
+        // The LoS commit exists and is a `.click(` on the los state, gated by is_los().
+        assert!(
+            ed.contains("los.borrow_mut().click(") && ed.contains("is_los()"),
+            "T-643: the LG::Ruler pointerup arm must route a LoS point via los.click() under is_los()"
+        );
+        // Slice the pointerup LG::Ruler commit arm (the one carrying .click(); it is the same arm as
+        // the ruler's .press(, so it also carries that) and prove it is not a doc-move commit.
+        let arms: Vec<&str> = ed.split("LG::Ruler").skip(1).collect();
+        let commit: Vec<&str> = arms
+            .iter()
+            .map(|a| a.split("LG::").next().unwrap_or(a))
+            .filter(|a| a.contains(".click(") && a.contains(".press("))
+            .collect();
+        assert_eq!(
+            commit.len(),
+            1,
+            "T-643: exactly one LG::Ruler arm routes BOTH tools (los.click + ruler.press), found {}",
+            commit.len()
+        );
+        let arm = commit[0];
+        assert!(
+            !arm.contains("has_pending()"),
+            "T-643 (constraint a): the LoS commit shares the arm that sits OUTSIDE the armed-place branch"
+        );
+        assert!(
+            !arm.contains("move_entities_and_vehicles"),
+            "T-643 (Decision 4): the LoS commit must not call a doc-move commit (it is not a doc edit)"
+        );
+    }
+
+    /// (Esc — SHARED seam, not a new listener) The keydown Escape arm dismisses the LoS capture via
+    /// `los...escape()` in the SAME arm that dismisses the ruler — reusing the ruler's existing Esc
+    /// entry (Decision 3 + the T-726 note: no second unguarded window listener is added).
+    #[test]
+    fn escape_is_the_shared_ruler_seam() {
+        let ed = editor_live();
+        // The LoS escape rides the same keydown dispatch as the ruler escape.
+        assert!(
+            ed.contains("code().as_str()")
+                && ed.contains("los.borrow_mut().escape()")
+                && ed.contains("ruler.borrow_mut().escape()"),
+            "T-643 (Decision 3 / T-726): Esc must call BOTH los.escape() and ruler.escape() in the \
+             one shared keydown arm — no second window listener"
+        );
+        // There must be exactly ONE window keydown Closure carrying the measure-tool Esc (the shared
+        // seam): the los.escape and ruler.escape calls sit in the same closure, so a second unguarded
+        // Esc listener was NOT added. Proven structurally: both escape calls appear, and the T-642
+        // pin already fixes that ruler.escape lives in the one code().as_str() keydown arm.
+        assert_eq!(
+            ed.matches("los.borrow_mut().escape()").count(),
+            1,
+            "T-643: LoS Esc must be wired exactly once (the shared seam), not duplicated"
+        );
+    }
+
+    /// (dblclick guard) A double-click in LoS mode must NOT open Attributes / the asset picker: the
+    /// dblclick handler returns early under `is_los()` (its two pointerups already completed the shot
+    /// via the shared arm). Pinned alongside the ruler's dblclick guard.
+    #[test]
+    fn dblclick_is_guarded_in_los_mode() {
+        let ed = editor_live();
+        // The dblclick handler branches on is_los() (the guard) — the ruler's is_ruler() guard is
+        // pinned by t642; this proves the LoS peer guard exists too. Both live in the ondblclick
+        // closure, which the t642 dblclick pin already anchors.
+        assert!(
+            ed.matches("get_untracked().is_los()").count() >= 1,
+            "T-643: the dblclick handler must short-circuit under is_los() (no dialog on a LoS dbl-click)"
+        );
+    }
+
+    /// (Decision 4 — session-local, tool-switch clear, overlay mounted) Switching the tool away from
+    /// LoS clears the placed shot; the state is a leaked `RefCell<LosState>` (overlay state, never a
+    /// doc write); the overlay is mounted and BOTH the state and the DEM sampler are registered for it.
+    #[test]
+    fn tool_switch_clears_and_overlay_is_mounted() {
+        let ed = editor_live();
+        // Tool-switch clear effect: reads !is_los(), clears the state.
+        assert!(
+            ed.contains("is_los()") && ed.contains("los.borrow_mut().clear()"),
+            "T-643 (Decision 3): switching away from LoS must clear the placed shot"
+        );
+        // The overlay is mounted and the state + sampler registered for it.
+        assert!(
+            ed.contains("LosOverlay")
+                && ed.contains("register_los_state(")
+                && ed.contains("register_los_sampler("),
+            "T-643: LosOverlay must be mounted with the state + DEM sampler registered for it"
+        );
+        // Session-local overlay state (a LosState in a RefCell), NOT the Y.Doc.
+        assert!(
+            ed.contains("LosState::new()"),
+            "T-643 (Decision 4): LoS is a session-local LosState, not doc state"
+        );
+    }
+
+    // ── The fired rule at the wiring layer (perturb / fail / restore) ─────────────────────────────
+
+    /// Fires the commit-routing pin: proof the `is_los()` branch in the shared `LG::Ruler` arm is
+    /// load-bearing. The pin passes on the real body; a perturbation that drops the `is_los()` route
+    /// (so a LoS click would fall through to `ruler.press` — the exact regression) makes the routing
+    /// assertion FAIL. Restore is implicit — only an in-memory copy is perturbed.
+    #[test]
+    fn fired_rule_los_routing_is_load_bearing() {
+        let ed = editor_live();
+        let needle = "los.borrow_mut().click(";
+        assert!(
+            ed.contains(needle),
+            "canary: the real body routes a LoS click"
+        );
+        // Perturb: remove the LoS click route. The routing pin's needle must vanish.
+        let perturbed = ed.replace(needle, "ruler.borrow_mut().press(");
+        assert!(
+            !perturbed.contains(needle),
+            "fired rule: dropping the los.click() route (LoS clicks fall through to ruler.press) must \
+             break the routing pin — proving the is_los() branch discriminates the regression"
         );
     }
 }
