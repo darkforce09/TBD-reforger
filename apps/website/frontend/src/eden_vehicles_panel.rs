@@ -10,7 +10,9 @@ use leptos::prelude::*;
 use std::collections::HashMap;
 
 #[cfg(target_arch = "wasm32")]
-use crate::ui::MaterialIcon;
+use crate::eden_layout::HOVER_FILL;
+#[cfg(target_arch = "wasm32")]
+use crate::ui::{cn, MaterialIcon};
 
 /// T-215 — registry kinds the vehicle cargo picker offers.
 ///
@@ -145,7 +147,9 @@ pub(crate) fn placed_vehicles_panel(
 
             let (id_toggle, id_del) = (vid.clone(), vid.clone());
             let head = view! {
-                <div class="flex items-center gap-1.5 rounded px-1.5 py-1 hover:bg-white/5">
+                // T-668 — the placed-vehicle header row wears HOVER_FILL, the one hover fill the
+                // chrome uses (was a weaker ad-hoc `hover:bg-white/5`).
+                <div class=cn(&["flex items-center gap-1.5 rounded px-1.5 py-1", HOVER_FILL])>
                     <span
                         role="button"
                         tabindex="-1"
@@ -465,5 +469,24 @@ mod tests {
                 "{expected} is exactly what a resupply vehicle carries"
             );
         }
+    }
+
+    /// T-668 — the placed-vehicle header row wears HOVER_FILL (the one chrome hover fill), not the
+    /// weaker ad-hoc `hover:bg-white/5` it used to. The panel is wasm-only so a native test cannot
+    /// render it; this reads the source. The needle is assembled so this test's own prose can't
+    /// satisfy the absence check.
+    #[test]
+    fn header_row_uses_hover_fill_not_the_weak_ad_hoc_fill() {
+        use crate::arsenal::class_r_scrub::live_code;
+        let code = live_code(include_str!("eden_vehicles_panel.rs"));
+        assert!(
+            code.contains("HOVER_FILL"),
+            "the header row must consume HOVER_FILL"
+        );
+        let weak = ["hover:bg-", "white/5"].concat();
+        assert!(
+            !code.contains(&weak),
+            "T-668: the ad-hoc `hover:bg-white/5` header fill must be gone (use HOVER_FILL)"
+        );
     }
 }

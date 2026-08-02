@@ -108,12 +108,27 @@ fn folders_holding_slots(nodes: &[OutlinerNode]) -> std::collections::HashSet<St
     out
 }
 
-/// A tree row's shared recipe; depth renders as leading guide-line spans (see `guide_spans`).
+// T-668 — the tree rows speak the one state vocabulary (`eden_layout`): an idle row wears
+// [`crate::eden_layout::HOVER_FILL`] (`transition-colors hover:bg-white/10 hover:text-on-surface`),
+// a selected/active row wears [`crate::eden_layout::TOGGLED_PLATE`] (`bg-primary/20 text-primary
+// border-t border-background/60`). These consts are the pre-merged literals of `base + recipe` — the
+// same "the recipe can't be `cn`'d into a `const`" idiom `eden_layout`'s STRIP/DOCK_* use — and
+// `t668_tree_rows_speak_the_vocabulary` pins that each literal still carries its recipe's tokens, so
+// a hand-edit that dropped the top border (making a selected row indistinguishable from a hovered
+// one) fails there. The border is the load-bearing half: before T-668 `ROW_ACTIVE` had none, so a
+// selected row and a hovered row differed only by tint, not by construction.
+
+/// A tree row's shared recipe (idle): geometry + [`crate::eden_layout::HOVER_FILL`]. Depth renders as
+/// leading guide-line spans (see `guide_spans`).
 pub(crate) const ROW: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
-pub(crate) const ROW_ACTIVE: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm transition-colors bg-primary/20 text-primary";
+/// A tree row's SELECTED/active recipe: geometry + [`crate::eden_layout::TOGGLED_PLATE`] (the lighter
+/// primary plate PLUS the 1px dark top border that makes it distinct-by-construction from a hovered
+/// [`ROW`]).
+pub(crate) const ROW_ACTIVE: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm bg-primary/20 text-primary border-t border-background/60";
 /// T-177 A2 — the palette-leaf variant of [`ROW`]: adds `cursor-grab` (→ `cursor-grabbing` while
 /// pressed) so hovering a placeable role advertises the drag affordance. Folders keep `cursor-pointer`
-/// and outliner slots keep the plain [`ROW`] default (only palette leaves are drag-to-place).
+/// and outliner slots keep the plain [`ROW`] default (only palette leaves are drag-to-place). Same
+/// [`crate::eden_layout::HOVER_FILL`] as [`ROW`].
 pub(crate) const PALETTE_LEAF: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface cursor-grab active:cursor-grabbing";
 
 /// Hierarchy guide lines — continuous YouTube spines (T-178 A3/A4; supersedes T-177 L-hooks).
@@ -1213,6 +1228,79 @@ mod tests {
             assert!(TREE.contains("complete_layer_drop_onto_folder"));
             // SEL-GROUP-ICON-001 — the distinct slot-holder glyph.
             assert!(TREE.contains("folder_special"));
+        }
+    }
+
+    /// T-668 — the shared tree-row recipes speak the one state vocabulary, so every dock/panel that
+    /// consumes `ROW`/`ROW_ACTIVE` (both docks, zones, compositions, triggers) inherits it. These are
+    /// production consts, so the pin reads their values directly — no scrub. The load-bearing check is
+    /// `ROW_ACTIVE`'s dark top border: it is what makes a SELECTED row distinct-by-construction from a
+    /// HOVERED one (before T-668 it had none, so the two differed only by tint).
+    mod t668_vocabulary {
+        use crate::eden_layout::{HOVER_FILL, TOGGLED_PLATE};
+
+        /// The idle row carries the HOVER_FILL tokens (solid fill on hover, no border).
+        #[test]
+        fn row_carries_the_hover_fill() {
+            for tok in HOVER_FILL.split_whitespace() {
+                assert!(
+                    super::super::ROW.contains(tok),
+                    "ROW must carry HOVER_FILL token `{tok}` (the one hover fill)"
+                );
+            }
+            assert!(
+                !super::super::ROW.contains("border-t"),
+                "an idle ROW must have NO top border — that is the TOGGLED cue"
+            );
+        }
+
+        /// The selected row carries the TOGGLED_PLATE tokens — the lighter primary plate AND the 1px
+        /// dark top border. This is the fix: distinct-by-construction from a hovered row.
+        #[test]
+        fn row_active_carries_the_toggled_plate() {
+            for tok in TOGGLED_PLATE.split_whitespace() {
+                assert!(
+                    super::super::ROW_ACTIVE.contains(tok),
+                    "ROW_ACTIVE must carry TOGGLED_PLATE token `{tok}` (plate + dark top border)"
+                );
+            }
+        }
+
+        /// Fire the distinction (perturb/fail/restore): a selected row and a hovered row differ by
+        /// the top border BY CONSTRUCTION. RESTORE: `ROW_ACTIVE` has `border-t`, `ROW` does not.
+        /// PERTURB: were `ROW_ACTIVE` merely the neutral hover fill (the defect), it would carry no
+        /// border and this check would reject it.
+        #[test]
+        fn selected_and_hovered_rows_are_distinct_by_construction() {
+            assert!(
+                super::super::ROW_ACTIVE.contains("border-t")
+                    && !super::super::ROW.contains("border-t"),
+                "RESTORE: only the selected row has the top border"
+            );
+            // PERTURB — the defect value (a toggle wearing the bare hover fill) has no border.
+            let defect = "bg-white/10";
+            assert!(
+                !defect.contains("border-t"),
+                "PERTURB: a selected row rendered as the neutral hover fill has no distinguishing \
+                 border — the check must reject it"
+            );
+            assert_ne!(
+                super::super::ROW,
+                super::super::ROW_ACTIVE,
+                "idle and selected rows must not be the same string"
+            );
+        }
+
+        /// The palette leaf is the idle ROW plus a grab cursor — same HOVER_FILL, no toggled plate
+        /// (a leaf is dragged, never a persistent toggle).
+        #[test]
+        fn palette_leaf_is_hover_fill_plus_grab() {
+            assert!(super::super::PALETTE_LEAF.contains("hover:bg-white/10"));
+            assert!(super::super::PALETTE_LEAF.contains("cursor-grab"));
+            assert!(
+                !super::super::PALETTE_LEAF.contains("border-t"),
+                "a palette leaf is not a toggle — no toggled-plate border"
+            );
         }
     }
 }

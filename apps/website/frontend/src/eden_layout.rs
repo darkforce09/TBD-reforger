@@ -239,6 +239,66 @@ pub(crate) const BTN_ICON: &str = "rounded-md p-1.5 text-on-surface-variant tran
 /// A vertical hairline divider (React `<span className="h-5 w-px bg-white/10" />`).
 pub(crate) const DIVIDER: &str = "h-5 w-px bg-white/10";
 
+// ── T-668 — the one state vocabulary (editor_chrome_direction.md §"The state vocabulary") ──────────
+//
+// Eden reads as ONE product because it uses one state language everywhere; ours read as assembled
+// because it used several — the top-strip open menu wore the SAME `bg-white/10` its every neighbour
+// wears on hover, so "hovered" and "toggled on" were indistinguishable. These four named recipes are
+// that one language, in Aegis's clothes (the desaturated `#adc6ff` primary, our glass surfaces — no
+// literal amber; "amber" in the design doc is Eden's, and it maps onto our solid neutral fill). Every
+// interactive chrome control consumes one of them instead of an ad-hoc `hover:`/`bg-*`/`opacity-*`
+// combo, and the ad-hoc variants are deleted where they contradicted a rule.
+//
+// The load-bearing property is rule (1) vs rule (2): HOVER is a solid fill, TOGGLED-ON is a lighter
+// PLATE + a 1px dark TOP BORDER. They are distinct BY CONSTRUCTION — a hovered control never grows a
+// top border and a toggled one never merely fills — so the two can never be confused no matter how
+// the palette shifts. That is exactly the confusion `bg-white/10`-as-active created.
+
+/// Rule (1) — **HOVER = solid fill.** The transient pointer-over state for a neutral interactive
+/// control (menu-bar buttons, icon buttons, tree rows). A solid fill, never a border — so it can
+/// never be mistaken for [`TOGGLED_PLATE`]. This is the Aegis reading of Eden's "orange is hover, not
+/// toggled-on": our solid fill is `bg-white/10` (the glass-surface neutral), not amber.
+///
+/// Carries `transition-colors` so the fill eases in, and lifts the label to `text-on-surface` on
+/// hover (the muted→bright idiom the tree rows already used). Compose after a control's base +
+/// geometry classes: `cn(&["… base …", HOVER_FILL])`.
+pub(crate) const HOVER_FILL: &str = "transition-colors hover:bg-white/10 hover:text-on-surface";
+
+/// Rule (2) — **TOGGLED ON = lighter plate + 1px dark top border.** The persistent "this is the
+/// active/selected/open one" state: an open menu, the current dock tab's panel, a selected tree row.
+/// The lighter plate is the Aegis primary tint (`bg-primary/20 text-primary`, the established "on"
+/// colour across the chrome); the `border-t border-background/60` is the 1px dark top border that
+/// makes it distinct from ANY hover fill BY CONSTRUCTION — a hovered control never grows this border.
+/// `#0d1322` (`--color-background`) is the dark base, so the border reads as a recessed lip, Eden's
+/// toggled-plate cue.
+pub(crate) const TOGGLED_PLATE: &str = "bg-primary/20 text-primary border-t border-background/60";
+
+/// Rule (3) — **DISABLED = dimmed glyph, and the tooltip STILL SHOWS.** The dim half: the control
+/// keeps its slot, greys out, and does not react to hover. The tooltip half is not a class — it is
+/// the **pattern** [`DISABLED_KEEPS_TOOLTIP`] documents: the `title=` stays on the control (or its
+/// wrapper) even while `disabled`, so a control that cannot act still explains why. A disabled
+/// control that goes silent is strictly worse than one that speaks (verified on Eden's Redo).
+///
+/// `disabled:hover:bg-transparent` cancels [`HOVER_FILL`]'s fill so a dimmed control does not still
+/// light up under the pointer. Compose it AFTER `HOVER_FILL` so the `disabled:` variant wins.
+pub(crate) const DISABLED_GLYPH: &str = "disabled:opacity-30 disabled:hover:bg-transparent";
+
+/// Rule (3), the tooltip half, as a documented invariant rather than a class: a control that carries
+/// a `title=` (or `aria-label` used as its tooltip) MUST keep it when `disabled`. In Leptos a static
+/// `title=` attribute is emitted regardless of the `disabled` prop, so the pattern is simply "do not
+/// gate the `title=` on `!disabled`". The `disabled_controls_keep_their_tooltip` pins in the chrome
+/// files check each disabled control still carries its `title`. This const exists so the rule has a
+/// name the pins and future edits can cite; its value is documentation, never rendered.
+pub(crate) const DISABLED_KEEPS_TOOLTIP: &str =
+    "title stays on a disabled control (tooltip retention — rule 3)";
+
+/// Convention — **the checkmark gutter is reserved UNCONDITIONALLY in menus.** Eden only allocates it
+/// when a menu happens to carry a checked item, so its label indent jumps between menus; that is a
+/// bug NOT to copy. Every menu row leads with this fixed-width cell whether or not it shows a check,
+/// so labels never shift. `size-4 shrink-0` matches the tree chevron/spacer cell, and a check glyph
+/// (or nothing) renders INSIDE it. Prepend it to a menu row's flex children.
+pub(crate) const MENU_GUTTER: &str = "flex size-4 shrink-0 items-center justify-center";
+
 /// T-636 / T-638 — `TOOLBELT_BAND_PX` (and the three dock/strip insets) are INPUT-HANDLING numbers:
 /// they are the chrome band the pointer→world readers inset by, so if the readers disagree a click
 /// under the status bar (or a collapsed dock's freed strip) would be mapped to a world coordinate as
@@ -609,6 +669,126 @@ mod t638_collapse {
             centre_hold_target(10.0, 20.0, 4.0, (5.0, 6.0), (5.0, 6.0)),
             (10.0, 20.0),
             "no pane-centre change → no target move"
+        );
+    }
+}
+
+/// T-668 — the ONE state vocabulary, pinned. Each rule's recipe const is its own source of truth for
+/// the whole chrome, so a drift that would re-introduce two state languages fails HERE, once, rather
+/// than being caught (or missed) file-by-file. Pure `const`s in the production half, natively
+/// compiled — a `cargo test` reads them directly.
+#[cfg(test)]
+mod t668_state_vocabulary {
+    use super::{DISABLED_GLYPH, DISABLED_KEEPS_TOOLTIP, HOVER_FILL, MENU_GUTTER, TOGGLED_PLATE};
+
+    /// Rule (1) — HOVER is a solid fill and NOTHING ELSE. It fills on hover (`hover:bg-white/10`),
+    /// eases (`transition-colors`), and must NOT carry a border token — a border is rule (2)'s cue,
+    /// and mixing it in is exactly the confusion this ticket removes.
+    #[test]
+    fn hover_fill_is_a_solid_fill_no_border() {
+        assert!(
+            HOVER_FILL.contains("hover:bg-white/10"),
+            "HOVER = solid fill (the Aegis reading of Eden's amber-hover)"
+        );
+        assert!(
+            HOVER_FILL.contains("transition-colors"),
+            "the hover fill must ease in, not snap"
+        );
+        assert!(
+            !HOVER_FILL.contains("border"),
+            "HOVER must carry no border — a border is the TOGGLED cue; sharing it is the bug"
+        );
+    }
+
+    /// Rule (2) — TOGGLED-ON is a lighter plate PLUS a 1px dark top border, and the two together are
+    /// what make it distinct from a hover fill BY CONSTRUCTION. The plate is the Aegis primary tint;
+    /// the `border-t border-background/…` is the dark top lip a hovered control never grows.
+    #[test]
+    fn toggled_plate_is_plate_plus_dark_top_border() {
+        assert!(
+            TOGGLED_PLATE.contains("bg-primary/20") && TOGGLED_PLATE.contains("text-primary"),
+            "TOGGLED = the lighter Aegis primary plate"
+        );
+        assert!(
+            TOGGLED_PLATE.contains("border-t") && TOGGLED_PLATE.contains("border-background"),
+            "TOGGLED = plate + a 1px dark TOP border (distinct-by-construction from hover)"
+        );
+    }
+
+    /// Rules (1) and (2) are distinct BY CONSTRUCTION — the whole point. The toggled plate carries a
+    /// `border-t` the hover fill does not, and the hover fill carries a `hover:` fill the toggled
+    /// plate does not, so no control can ever render in a state where the two are indistinguishable.
+    #[test]
+    fn hover_and_toggled_can_never_be_confused() {
+        assert!(
+            TOGGLED_PLATE.contains("border-t") && !HOVER_FILL.contains("border-t"),
+            "only the toggled plate has the top border"
+        );
+        assert!(
+            HOVER_FILL.contains("hover:bg-") && !TOGGLED_PLATE.contains("hover:bg-"),
+            "only the hover recipe fills on hover; the toggled plate is a persistent fill"
+        );
+        assert_ne!(
+            HOVER_FILL, TOGGLED_PLATE,
+            "the two states must not be the same string (the bg-white/10-as-active defect)"
+        );
+    }
+
+    /// Rule (3) — DISABLED dims the glyph and cancels the hover fill, so a dimmed control does not
+    /// still light up under the pointer. The tooltip half is a pattern, not a class — its name is
+    /// pinned so the chrome-file `disabled_controls_keep_their_tooltip` pins have a shared referent.
+    #[test]
+    fn disabled_glyph_dims_and_cancels_hover() {
+        assert!(
+            DISABLED_GLYPH.contains("disabled:opacity-30"),
+            "DISABLED = dimmed glyph"
+        );
+        assert!(
+            DISABLED_GLYPH.contains("disabled:hover:bg-transparent"),
+            "a disabled control must not still fill on hover (cancels HOVER_FILL)"
+        );
+        assert!(
+            DISABLED_KEEPS_TOOLTIP.contains("tooltip"),
+            "rule 3's tooltip-retention pattern must be named for the per-file pins to cite"
+        );
+    }
+
+    /// Convention — the menu checkmark gutter is a fixed-width, always-present cell (Eden's jumping
+    /// indent is the bug NOT to copy). `shrink-0` keeps it from collapsing when a row is tight, and
+    /// `size-4` matches the tree chevron cell so a menu and a tree read at the same indent.
+    #[test]
+    fn menu_gutter_is_a_fixed_always_present_cell() {
+        assert!(
+            MENU_GUTTER.contains("size-4") && MENU_GUTTER.contains("shrink-0"),
+            "the gutter is a fixed-width cell that never collapses (no jumping indent)"
+        );
+    }
+
+    /// FIRE THE RULE ONCE (perturb / fail / restore) on rule (2), the load-bearing one. The property
+    /// under test is "toggled-on is distinguishable from hover by a border". PERTURB: a would-be
+    /// toggled recipe that is just the hover fill (the `bg-white/10`-as-active defect, stated as a
+    /// value) has NO border, so the distinguishing check FAILS on it — proving the check has teeth.
+    /// RESTORE: the real `TOGGLED_PLATE` carries the border and passes. A check that passed for both
+    /// would be asserting nothing.
+    #[test]
+    fn toggled_distinct_from_hover_rule_fires() {
+        // The real recipe is distinguishable from a hover fill — it has the top border.
+        let distinguishable = |toggled: &str| toggled.contains("border-t");
+        assert!(
+            distinguishable(TOGGLED_PLATE),
+            "RESTORE: the real toggled plate carries the distinguishing top border"
+        );
+        // PERTURB: the defect this ticket removes — "toggled" rendered as the neutral hover fill.
+        let defect_toggled = "bg-white/10";
+        assert!(
+            !distinguishable(defect_toggled),
+            "PERTURB: a toggled state that is merely the hover fill has no border — the check must \
+             REJECT it, or it is asserting nothing (this is the bg-white/10-as-active bug)"
+        );
+        // And the defect value is not what we ship.
+        assert_ne!(
+            TOGGLED_PLATE, defect_toggled,
+            "the toggled recipe must not be the bare hover fill"
         );
     }
 }

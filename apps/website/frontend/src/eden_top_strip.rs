@@ -17,8 +17,10 @@ use std::collections::HashMap;
 // The inline scrubber/weather author through the same T-193 gate as the Mission Settings dialog.
 #[cfg(target_arch = "wasm32")]
 use crate::eden_env::author_env;
-use crate::eden_layout::{BTN_ICON, DIVIDER, STRIP};
-use crate::ui::MaterialIcon;
+use crate::eden_layout::{
+    BTN_ICON, DISABLED_GLYPH, DIVIDER, HOVER_FILL, MENU_GUTTER, STRIP, TOGGLED_PLATE,
+};
+use crate::ui::{cn, MaterialIcon};
 
 // Top Command Strip (T-172 B9) — menu bar · editable title · time scrubber + weather ·
 // History (disabled) · Undo/Redo · Save dialog · Export · Settings.
@@ -628,11 +630,20 @@ pub fn TopCommandStrip(
                             <div class="relative">
                                 <button
                                     type="button"
+                                    // T-668 — the OPEN menu wears TOGGLED_PLATE (plate + 1px dark top
+                                    // border); a closed menu wears HOVER_FILL. Before this the open
+                                    // state was a bare `bg-white/10` — byte-identical to every
+                                    // neighbour's hover, so "this menu is open" and "the pointer is
+                                    // over this menu" were indistinguishable. That was the ticket's
+                                    // headline confusion, on the top strip.
                                     class=move || {
                                         if open_menu.get() == Some(i) {
-                                            "rounded bg-white/10 px-2 py-1 text-label-sm text-on-surface"
+                                            cn(&["rounded px-2 py-1 text-label-sm", TOGGLED_PLATE])
                                         } else {
-                                            "rounded px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface"
+                                            cn(&[
+                                                "rounded px-2 py-1 text-label-sm text-on-surface-variant",
+                                                HOVER_FILL,
+                                            ])
                                         }
                                     }
                                     on:click=move |_| {
@@ -653,6 +664,14 @@ pub fn TopCommandStrip(
                                                         .iter()
                                                         .map(|it| {
                                                             let label = it.label;
+                                                            // T-668 conventions — every menu row leads with the
+                                                            // UNCONDITIONAL checkmark gutter (MENU_GUTTER), so
+                                                            // labels never shift between menus (Eden's jumping
+                                                            // indent is the bug NOT to copy). No command here is a
+                                                            // checked toggle yet, so the gutter renders empty; a
+                                                            // future checked item drops its glyph INTO this cell
+                                                            // without moving the label. The `…` "opens a dialog"
+                                                            // suffix lives in the MENUS labels themselves.
                                                             match it.action {
                                                                 Some(a) => {
                                                                     let disabled = move || match a {
@@ -660,23 +679,56 @@ pub fn TopCommandStrip(
                                                                         MenuAction::Redo => !can_redo.get(),
                                                                         _ => false,
                                                                     };
+                                                                    // Rule (3): a disabled Undo/Redo keeps a
+                                                                    // tooltip that explains why it is dark rather
+                                                                    // than going silent; an enabled row has none.
+                                                                    let title = move || {
+                                                                        if disabled() {
+                                                                            "Nothing to do yet"
+                                                                        } else {
+                                                                            ""
+                                                                        }
+                                                                    };
                                                                     view! {
                                                                         <button
                                                                             type="button"
-                                                                            class="flex w-full items-center px-3 py-1.5 text-left text-label-sm text-on-surface transition-colors hover:bg-white/10 disabled:cursor-default disabled:text-outline disabled:hover:bg-transparent"
+                                                                            title=title
+                                                                            class=cn(
+                                                                                &[
+                                                                                    "flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-label-sm text-on-surface disabled:cursor-default disabled:text-outline",
+                                                                                    HOVER_FILL,
+                                                                                    DISABLED_GLYPH,
+                                                                                ],
+                                                                            )
                                                                             disabled=disabled
                                                                             on:click=move |_| run_action(a)
                                                                         >
-                                                                            {label}
+                                                                            <span class=MENU_GUTTER></span>
+                                                                            <span>{label}</span>
                                                                         </button>
                                                                     }
                                                                         .into_any()
                                                                 }
                                                                 None => {
+                                                                    // A genuinely-future command: rendered as a
+                                                                    // DISABLED button (not an inert span) so it
+                                                                    // keeps rule (3)'s tooltip AND the gutter — it
+                                                                    // explains itself instead of going silent.
                                                                     view! {
-                                                                        <span class="flex w-full items-center px-3 py-1.5 text-label-sm text-outline">
-                                                                            {label}
-                                                                        </span>
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled=true
+                                                                            title="Not available yet"
+                                                                            class=cn(
+                                                                                &[
+                                                                                    "flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-label-sm disabled:cursor-default disabled:text-outline",
+                                                                                    DISABLED_GLYPH,
+                                                                                ],
+                                                                            )
+                                                                        >
+                                                                            <span class=MENU_GUTTER></span>
+                                                                            <span>{label}</span>
+                                                                        </button>
                                                                     }
                                                                         .into_any()
                                                                 }
@@ -698,7 +750,18 @@ pub fn TopCommandStrip(
             <button
                 type="button"
                 aria-label="ORBAT Manager"
-                class="rounded px-2 py-1 text-label-sm font-semibold text-primary transition-colors hover:bg-primary/15 disabled:opacity-30 disabled:hover:bg-transparent"
+                // T-668 — rule (3): the disabled scaffold-only case keeps its tooltip (a disabled
+                // control that explains itself beats one that goes silent). `text-primary` +
+                // `hover:bg-primary/15` is the primary-CTA text-button hover idiom (a solid tinted
+                // fill, no border — never confusable with TOGGLED_PLATE); the disabled half is
+                // DISABLED_GLYPH.
+                title="Open the ORBAT Manager"
+                class=cn(
+                    &[
+                        "rounded px-2 py-1 text-label-sm font-semibold text-primary transition-colors hover:bg-primary/15",
+                        DISABLED_GLYPH,
+                    ],
+                )
                 disabled=orbat_open.is_none()
                 on:click=move |_| {
                     if let Some(o) = orbat_open {
@@ -1806,5 +1869,110 @@ mod tests {
         // Restore: refile the orphan back onto the real squad — the census returns to clean.
         let restored = census_from_rows(&factions, &squads, &slots_in("sq-w", 4));
         assert_eq!(restored, clean, "restoring clears the fired state");
+    }
+}
+
+/// T-668 — the top strip speaks the one state vocabulary. The headline conversion is here: the OPEN
+/// menu-bar button now wears TOGGLED_PLATE (plate + dark top border) where before it wore a bare
+/// `bg-white/10` — byte-identical to every neighbour's hover, so "open" and "hovered" were
+/// indistinguishable. Source-inspection pins on scrubbed source, since the strip is a Leptos view a
+/// native test cannot render. Needles are assembled from fragments so the file's own prose can never
+/// satisfy an absence check (the house rule).
+#[cfg(test)]
+mod t668_state_vocabulary {
+    use crate::arsenal::class_r_scrub::{live_code, live_source};
+
+    /// This file with comments blanked but class STRINGS kept, so the Tailwind literals survive as
+    /// the structural landmarks the class pins read.
+    fn src_kept() -> String {
+        live_source(include_str!("eden_top_strip.rs"))
+    }
+
+    /// The open menu-bar button consumes TOGGLED_PLATE (via `cn`), and the closed one HOVER_FILL —
+    /// the one state vocabulary, so "this menu is open" reads like every other toggle and can never
+    /// be confused with "the pointer is over this menu". Proven on scrubbed CODE (literals blanked)
+    /// so the needle is the real `cn(&[…, TOGGLED_PLATE])` call, not a mention.
+    #[test]
+    fn open_menu_wears_the_toggled_plate_not_the_hover_fill() {
+        let code = live_code(include_str!("eden_top_strip.rs"));
+        assert!(
+            code.contains("TOGGLED_PLATE"),
+            "the open menu must consume TOGGLED_PLATE (plate + 1px dark top border)"
+        );
+        assert!(
+            code.contains("HOVER_FILL"),
+            "the closed menu (and other neutral controls) must consume HOVER_FILL"
+        );
+    }
+
+    /// THE FIX, stated as an absence: the open-menu branch must NOT be a bare `bg-white/10` string
+    /// (the defect — an active state wearing the neutral hover fill). The needle is assembled so this
+    /// test's own source cannot satisfy it, and it is checked on the string-kept source where a class
+    /// literal is real. TOGGLED_PLATE carries `bg-primary/20`, not `bg-white/10`, so a compliant
+    /// strip has no `bg-white/10` literal used as a persistent (non-`hover:`) fill.
+    #[test]
+    fn no_active_state_wears_the_bare_neutral_fill() {
+        let src = src_kept();
+        // A persistent neutral fill would appear as ` bg-white/10` WITHOUT a `hover:` prefix. Every
+        // legitimate use in the chrome is `hover:bg-white/10` (a hover) or the DIVIDER hairline
+        // (`h-5 w-px bg-white/10`, non-interactive). Assemble the needle so prose can't be the match.
+        let persistent = ["bg-", "white/10"].concat();
+        let hover = ["hover:bg-", "white/10"].concat();
+        let hairline = ["w-px bg-", "white/10"].concat(); // the DIVIDER recipe — allowlisted
+                                                          // Count bare occurrences that are neither a hover nor the hairline divider.
+        let mut bare = 0usize;
+        let mut i = 0usize;
+        while let Some(off) = src[i..].find(&persistent) {
+            let at = i + off;
+            let is_hover = at >= 6 && src[at - 6..].starts_with(&hover);
+            let is_hairline = at >= 5 && src[at - 5..].starts_with(&hairline);
+            if !is_hover && !is_hairline {
+                bare += 1;
+            }
+            i = at + persistent.len();
+        }
+        assert_eq!(
+            bare, 0,
+            "T-668: no active/persistent `bg-white/10` may remain in the strip — an active state \
+             must wear TOGGLED_PLATE (bg-primary/20 + top border), not the neutral hover fill"
+        );
+    }
+
+    /// Convention — every top-strip menu row reserves the checkmark gutter UNCONDITIONALLY, so labels
+    /// do not shift between menus (Eden's jumping indent is the bug NOT to copy). Both the enabled and
+    /// the disabled (future-command) row branches lead with a `MENU_GUTTER` cell.
+    #[test]
+    fn menu_rows_reserve_the_checkmark_gutter() {
+        let code = live_code(include_str!("eden_top_strip.rs"));
+        assert!(
+            code.contains("MENU_GUTTER"),
+            "menu rows must reserve MENU_GUTTER (the always-present checkmark cell)"
+        );
+        // Both branches use it — count ≥ 2 gutter cells in the rendered rows.
+        let cells = code.matches("class=MENU_GUTTER").count();
+        assert!(
+            cells >= 2,
+            "both the enabled and the future-command menu rows must lead with the gutter (found {cells})"
+        );
+    }
+
+    /// Rule (3) — a disabled top-strip menu row keeps a tooltip that explains why it is dark, rather
+    /// than going silent. The future-command (`None`-action) row is a DISABLED button carrying a
+    /// `title=`, not the inert `<span>` it used to be. Proven on the string-kept source where the
+    /// title literal survives.
+    #[test]
+    fn disabled_controls_keep_their_tooltip() {
+        let src = src_kept();
+        // The future-command row: a disabled button whose tooltip says it is not available yet.
+        assert!(
+            src.contains("Not available yet"),
+            "a disabled future-command menu row must keep a tooltip (rule 3 — it must not go silent)"
+        );
+        // …and it is a real button (so the tooltip shows and the row keeps its slot), not a span.
+        let code = live_code(include_str!("eden_top_strip.rs"));
+        assert!(
+            code.contains("disabled=true") && code.contains("title="),
+            "the disabled row is a button with a retained title, not an inert span"
+        );
     }
 }

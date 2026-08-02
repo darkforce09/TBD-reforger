@@ -24,7 +24,8 @@
 use leptos::prelude::*;
 use map_engine_core::camera::OrthoCamera;
 
-use crate::ui::MaterialIcon;
+use crate::eden_layout::{HOVER_FILL, TOGGLED_PLATE};
+use crate::ui::{cn, MaterialIcon};
 
 // ── T-667 — map furniture: scale bar + edge grid references (pure geometry) ─────────────────────────
 //
@@ -261,10 +262,12 @@ const MODEBAR: &str = "pointer-events-auto rounded-xl border border-white/10 bg-
 /// has; the height is `TOOLBELT_BAND_PX`-worth of chrome (see `eden_layout`).
 const STATUSBAR: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-9 w-full items-center gap-3 border-t border-white/10 px-3";
 
-/// A toolbelt tool button — active (Select) vs disabled stub (Ruler / LoS).
-const TOOL_ACTIVE: &str =
-    "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-label-md transition-colors bg-primary/20 text-primary";
-const TOOL_DISABLED: &str = "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-label-md transition-colors text-on-surface-variant opacity-30 hover:bg-transparent";
+/// T-668 — the tool button's shared GEOMETRY (no state colour). The three states are composed from
+/// this base + the one state vocabulary: current mode = [`TOGGLED_PLATE`], a live-but-not-current
+/// mode = [`HOVER_FILL`], and a disabled stub would add `crate::eden_layout::DISABLED_GLYPH` (all
+/// three tools ship live today, so no button wears the disabled recipe here). Keeping the geometry in
+/// one const and the state in the recipes is what stops a fourth ad-hoc "active" tint creeping back.
+const TOOL_BASE: &str = "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-label-md";
 
 /// Format a cursor axis for the mono readout. React `BottomToolbelt.fmtCoord`:
 /// `n.toFixed(3).padStart(9, ' ')`, and the off-map cell is 7 spaces + an em dash. HTML collapses
@@ -277,11 +280,6 @@ fn fmt_coord(v: Option<f64>) -> String {
     }
 }
 
-/// A toolbelt tool button in the INACTIVE-but-live state (an enabled mode that is not the current
-/// one) — the same shape as [`TOOL_ACTIVE`] without the `primary` tint, and (unlike [`TOOL_DISABLED`])
-/// clickable with a hover. Select wears this when Ruler is active, and vice-versa.
-const TOOL_INACTIVE: &str = "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-label-md transition-colors text-on-surface-variant hover:bg-white/5";
-
 /// The mode toolbar — Select ⇆ Ruler ⇆ LoS, all THREE now LIVE (Select always; Ruler T-642, wave
 /// 108; LoS T-643, wave 109). Tools only; different job from the readouts, so a separate mount
 /// (T-636). It floats above the full-width [`StatusBar`], keeping the operator's "content and feel
@@ -292,10 +290,10 @@ const TOOL_INACTIVE: &str = "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 
 /// toggle, exactly as T-642 did for Ruler. THE HONESTY RULE it honours (removing `disabled` without
 /// a working tool is worse than an honest stub — the corpus has two dead-control cautionary tales) is
 /// satisfied because it only enables now that `los_tool` works end-to-end: clicking it sets
-/// `tool_mode = LoS` (TOOL_ACTIVE tint + `aria-pressed`), and the map's two-click capture + inline
-/// profile panel are live behind it. Each button is active exactly when its tool is the current
-/// `tool_mode` — the shared signal the pointer handlers read — so a button and the live tool can
-/// never disagree, and clicking any button switches the mode (which also clears the other tools'
+/// `tool_mode = LoS` (the TOGGLED_PLATE state + `aria-pressed`), and the map's two-click capture +
+/// inline profile panel are live behind it. Each button is active exactly when its tool is the
+/// current `tool_mode` — the shared signal the pointer handlers read — so a button and the live tool
+/// can never disagree, and clicking any button switches the mode (which also clears the other tools'
 /// overlays via the tool-switch Effect in `mission_editor`).
 #[component]
 pub fn ModeToolbar(
@@ -304,14 +302,16 @@ pub fn ModeToolbar(
     tool_mode: RwSignal<crate::ruler_tool::EditorTool>,
 ) -> impl IntoView {
     use crate::ruler_tool::EditorTool;
-    // A button is ACTIVE (primary tint) exactly when its tool is the current mode; otherwise it wears
-    // the inactive-but-clickable recipe. With three live tools this is a direct per-tool equality,
-    // not the old two-way `is_ruler()` toggle.
+    // T-668 — the current mode wears TOGGLED_PLATE (plate + 1px dark top border); a live-but-not-
+    // current mode wears HOVER_FILL. Same one state language as every other toggle in the chrome, so
+    // the active tool reads the same as an open menu or a selected tree row — and can never be
+    // mistaken for a merely-hovered one (a hovered inactive tool fills; only the active one has the
+    // top border). With three live tools this is a direct per-tool equality.
     let cls = move |mine: EditorTool| {
         if tool_mode.get() == mine {
-            TOOL_ACTIVE
+            cn(&[TOOL_BASE, TOGGLED_PLATE])
         } else {
-            TOOL_INACTIVE
+            cn(&[TOOL_BASE, "text-on-surface-variant", HOVER_FILL])
         }
     };
     let pressed = move |mine: EditorTool| (tool_mode.get() == mine).to_string();
@@ -993,7 +993,7 @@ mod t642_ruler {
             .find(&format!("fn {}", "ModeToolbar("))
             .expect("ModeToolbar present");
         // Body from ModeToolbar to the next component (StatusBar-adjacent code follows it here; the
-        // TOOL_INACTIVE const sits above, so slice forward to the next `pub fn`).
+        // TOOL_BASE const sits above, so slice forward to the next `pub fn`).
         let body_end = src[mode_at + 1..]
             .find("pub fn ")
             .map(|i| mode_at + 1 + i)
@@ -1371,5 +1371,69 @@ mod t667_furniture_math {
         // Sanity: with 1 px ≈ 1 m and a 12.8 km terrain, the visible pane spans ~660 m, so at least
         // one 1 km line usually shows — but the hard guarantee under test is the clip, not the count.
         let _ = eastings;
+    }
+}
+
+/// T-668 — the mode toolbar speaks the one state vocabulary. The CURRENT tool wears TOGGLED_PLATE
+/// (plate + dark top border), a live-but-not-current tool wears HOVER_FILL — so the active tool reads
+/// like every other toggle and a hovered inactive tool can never be mistaken for the active one.
+/// Source-inspection on scrubbed code (the toolbar is a Leptos view); needles assembled at run time.
+#[cfg(test)]
+mod t668_state_vocabulary {
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+    /// The `cls` closure composes TOOL_BASE with the recipes — TOGGLED_PLATE for the current mode,
+    /// HOVER_FILL for the rest. Proven on scrubbed code so the needle is the real `cn` call.
+    #[test]
+    fn tool_states_consume_the_vocabulary_recipes() {
+        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let body = only_body(&code, &format!("pub fn {}", "ModeToolbar("));
+        assert!(
+            body.contains("TOGGLED_PLATE"),
+            "the current tool must wear TOGGLED_PLATE (plate + dark top border)"
+        );
+        assert!(
+            body.contains("HOVER_FILL"),
+            "a live-but-not-current tool must wear HOVER_FILL"
+        );
+    }
+
+    /// THE FIX, as an absence: the old ad-hoc tool states are gone — no `bg-primary/20` active tint
+    /// spelled inline outside the recipe, and no weaker `hover:bg-white/5` fill. TOOL_BASE carries
+    /// only geometry, and the states come from the recipes, so neither ad-hoc token appears as a
+    /// class literal in the mode toolbar. Checked on the string-kept source.
+    #[test]
+    fn no_ad_hoc_tool_state_classes_remain() {
+        let src = live_source(include_str!("eden_toolbelt.rs"));
+        let mode = only_body(&src, &format!("pub fn {}", "ModeToolbar("));
+        // The weaker ad-hoc hover fill the inactive tool used to wear.
+        let weak_hover = ["hover:bg-", "white/5"].concat();
+        assert!(
+            !mode.contains(&weak_hover),
+            "T-668: the toolbar's ad-hoc `hover:bg-white/5` must be gone (use HOVER_FILL's bg-white/10)"
+        );
+        // The active tint must not be spelled as a bare class inside the toolbar — it comes from
+        // TOGGLED_PLATE now. (TOGGLED_PLATE's own definition lives in eden_layout, not here.)
+        let active_tint = ["bg-", "primary/20"].concat();
+        assert!(
+            !mode.contains(&active_tint),
+            "T-668: the active tool tint must come from TOGGLED_PLATE, not a bare bg-primary/20 here"
+        );
+    }
+
+    /// Rule (3) — every mode-tool button keeps its `title` (Select / Ruler / LoS all carry one), so a
+    /// tool always explains itself. All three ship live today, so none is disabled, but the tooltip is
+    /// the same retention pattern rule 3 requires of a disabled control. Checked on the string-kept
+    /// source where the title literals survive.
+    #[test]
+    fn tools_keep_their_tooltips() {
+        let src = live_source(include_str!("eden_toolbelt.rs"));
+        let mode = only_body(&src, &format!("pub fn {}", "ModeToolbar("));
+        for tip in ["Select", "Ruler", "Line of sight"] {
+            assert!(
+                mode.contains(tip),
+                "the {tip} tool button must carry its title (rule 3 tooltip retention)"
+            );
+        }
     }
 }
