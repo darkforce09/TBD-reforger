@@ -107,7 +107,11 @@ impl DemVectors {
             self.last_interval = 0.0;
             return;
         }
-        let interval = contour_interval_for_zoom(zoom);
+        // T-639 — the interval is now pinned to a screen-space band (14–19 px), so it is driven by
+        // metres-per-pixel, not the deckZoom rung. `scale = 2^zoom` px/m (camera `ortho.rs`) ⇒
+        // `m_per_px = 2^(−zoom)`; the ladder doubles the ground interval as m/pix grows (zoom out).
+        let m_per_px = 2.0_f64.powf(-zoom);
+        let interval = contour_interval_for_zoom(m_per_px);
         if (interval - self.last_interval).abs() < f64::EPSILON {
             return;
         }
