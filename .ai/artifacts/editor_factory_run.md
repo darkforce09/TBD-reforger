@@ -66,7 +66,11 @@ State lives in the table above: the first non-`SHIPPED` row is the current wave.
    TBD_GATE_WAVE=<L> bash scripts/platform/wave.sh gate` — when oracle 2 falls silent (markers 83+
    have no matching plan rows) it demands `TBD_GATE_BASE_CONFIRM=<prev close sha>`: verify the sha
    is the previous `wave M-1 CLOSED` commit (git log), then pass it. Red → triage: fix in-wave
-   once; a second red on the SAME ticket is BLOCK-class → stop with a state writeup here.
+   once; a second red on the SAME ticket → QUARANTINE, DON'T STOP (operator amendment 2026-08-02):
+   revert that slice off main (`wave.sh revert` keeps the branch alive), defer its ticket with the
+   full diagnosis, close the wave with the rest, continue. Owns collision at dispatch → serialize
+   the colliding tickets within the wave. Environment blocks → fix the environment. The ONLY stop
+   is real data loss, where continuing could destroy work.
 5. One Fable adversarial verifier over merged main (documents, never fixes; BLOCKERs fixed
    in-wave, else deferred tickets + diagnosis). Report → .ai/artifacts/editor_verify/waveL.md.
 6. `bash scripts/platform/wave.sh verified $(git rev-parse HEAD)` · registry: wave tickets →
