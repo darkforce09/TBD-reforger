@@ -832,6 +832,13 @@ fn route_sweep(s: &Seed) -> Vec<(&'static str, String, bool)> {
             "/api/v1/admin/leave-requests".into(),
             false,
         ),
+        // T-683. Swept, not skipped: the endpoint aggregates jsonb over mission_versions'
+        // latest payloads, which is precisely the NULL-blast class this sweep protects.
+        (
+            "/admin/mission-default-overrides",
+            "/api/v1/admin/mission-default-overrides".into(),
+            false,
+        ),
         ("/leaderboards", "/api/v1/leaderboards".into(), false),
         (
             "/users/{discordId}/stats",
