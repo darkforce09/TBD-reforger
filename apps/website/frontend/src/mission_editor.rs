@@ -704,6 +704,18 @@ pub fn MissionEditorPage() -> impl IntoView {
     // bottom-right wgpu debug readout (fed ~1 Hz by the rAF loop).
     let sz_bytes = RwSignal::new(None::<usize>);
     let debug_hud = RwSignal::new(String::new());
+    // T-635 — the debug HUD (`z … · c… · glyph … · … FPS · rf …ms`) is TELEMETRY: a performance
+    // read-out that rides the toolbelt area but is not part of authoring. It defaults HIDDEN and is
+    // toggled by Ctrl+Alt+D in the editor keydown (matching the historical FpsCounter binding that
+    // died with the React app at T-159.29.3 — recreated here, not reused). When shown it lives in
+    // its OWN bottom-right slot (below), never inside the toolbelt wrapper, so it can never overlap
+    // the CUR/OBJ readouts again.
+    //
+    // framework_synthesis §D.4 #7 — this key-gating is correct BECAUSE the HUD is telemetry.
+    // Mission-correctness diagnostics (validation errors, coherency warnings) are NEVER gated behind
+    // a keypress: the author must not be able to hide the reason their mission is broken. Do not copy
+    // this "hide it behind a key" pattern onto validation output.
+    let debug_hud_shown = RwSignal::new(false);
     // T-175 B5 — boot loading overlay phase (set by the wasm boot tasks; the view reads it).
     let boot = RwSignal::new(BootPhase::Hydrating);
     // T-631 — "continue without map": once the render engine fails to start, the map pane is dead
@@ -1085,6 +1097,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                             }
                             "KeyV" if modk && !ev.alt_key() && !ev.shift_key() => {
                                 crate::editor_ops::paste_at_cursor(cx, cy)
+                            }
+                            // T-635 — Ctrl/Cmd+Alt+D toggles the telemetry HUD (default hidden).
+                            // Behind the same `in_editable_field()` guard at the top of this closure,
+                            // so it never fires while typing in an Attributes field. It always "acts"
+                            // (flips the signal) → `prevent_default` below. This gates TELEMETRY only;
+                            // mission-correctness diagnostics stay always-on (see the `debug_hud_shown`
+                            // declaration note, framework_synthesis §D.4 #7).
+                            "KeyD" if modk && ev.alt_key() && !ev.shift_key() => {
+                                debug_hud_shown.set(!debug_hud_shown.get_untracked());
+                                true
                             }
                             "Space" if !modk => crate::editor_ops::center_on_selection(),
                             // T-662 — Delete still removes the selection. Backspace is NO LONGER an
@@ -2254,20 +2276,29 @@ pub fn MissionEditorPage() -> impl IntoView {
                         selected_ids
                         sz_bytes
                     />
-                    // T-172 B9 — bottom-right wgpu debug readout (screen-05 HUD parity).
-                    {move || {
-                        let t = debug_hud.get();
-                        (!t.is_empty())
-                            .then(|| {
-                                view! {
-                                    <div class="pointer-events-none absolute right-3 bottom-2 font-mono text-[11px] text-success/90">
-                                        {t}
-                                    </div>
-                                }
-                            })
-                    }}
                 </div>
                 })}
+                // T-635 — the wgpu telemetry HUD (screen-05 parity: `z … · c… · glyph … · … FPS ·
+                // rf …ms`) lives in ITS OWN bottom-right corner of the chrome overlay, a SIBLING of
+                // the `bottom-5 left-1/2` toolbelt wrapper — NOT a child of it. Before T-635 it was
+                // nested inside that centered wrapper and painted over the CUR/OBJ toolbelt readouts
+                // (two independent read-outs sharing one pixel space); pulling it to `right-3 bottom-3`
+                // on the full-bleed overlay makes the overlap geometrically impossible. It respects
+                // `chrome_hidden` the same way the toolbelt does (wave-101: the HUD inherits the hide
+                // gate — kept true here), AND `debug_hud_shown` (Ctrl+Alt+D, default hidden), AND only
+                // renders once the rAF sampler has a non-empty string. `pointer-events-none` so it
+                // never eats a map gesture.
+                {move || {
+                    let t = debug_hud.get();
+                    (!chrome_hidden.get() && debug_hud_shown.get() && !t.is_empty())
+                        .then(|| {
+                            view! {
+                                <div class="pointer-events-none absolute right-3 bottom-3 font-mono text-[11px] text-success/90">
+                                    {t}
+                                </div>
+                            }
+                        })
+                }}
                 // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
                 // chrome subtree so its pointerdowns never open a map gesture. NOT gated by T-662's
                 // `chrome_hidden` — a dialog the operator opened must survive a hide-interface toggle.
@@ -4432,6 +4463,150 @@ mod t662_input_traps {
         assert!(
             !body.contains("stop_propagation"),
             "contextmenu must NOT stop_propagation — RMB must stay a clean event T-664 can hook"
+        );
+    }
+}
+
+/// T-635 — the debug HUD (telemetry) must (a) toggle behind Ctrl+Alt+D in the editor keydown,
+/// honouring the editable-field guard; (b) default HIDDEN; (c) NO LONGER live inside the toolbelt's
+/// `bottom-5 left-1/2` wrapper (so it cannot paint over the CUR/OBJ readouts) and stay gated so an
+/// overlap is impossible; (d) keep the telemetry-vs-diagnostics distinction explicit in a comment.
+#[cfg(test)]
+mod t635_debug_hud {
+    use crate::arsenal::class_r_scrub::{live_code, live_source};
+
+    /// The editor page region with comments stripped but string literals KEPT (so Tailwind class
+    /// strings survive as structural landmarks). Same slice boundary as `editor_live`.
+    fn editor_src() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        live_source(&raw[raw.find(anchor.as_str()).expect("anchor present")..])
+    }
+
+    /// The editor page region with comments stripped and string literals blanked — same slice the
+    /// t662 module uses (from `pub fn MissionEditorPage()` onward, at a brace-0 boundary).
+    fn editor_live() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(
+            raw.matches(anchor.as_str()).count(),
+            1,
+            "scrub anchor must be unambiguous"
+        );
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    }
+
+    /// (a) Ctrl/Cmd+Alt+D is a keydown arm that toggles the HUD, and (a') the closure honours the
+    /// editable-field guard so it never fires while typing.
+    #[test]
+    fn ctrl_alt_d_toggles_the_hud_behind_the_editable_guard() {
+        let ed = editor_live();
+        // The arm: modifier + Alt + not Shift, keyed on KeyD (literals blanked, so the guard shape
+        // is what we pin, not the "KeyD" string — the code idiom, not a mention).
+        assert!(
+            ed.contains("if modk && ev.alt_key() && !ev.shift_key() =>")
+                && ed.contains("debug_hud_shown.set(!debug_hud_shown.get_untracked())"),
+            "T-635: Ctrl/Cmd+Alt+D must be a keydown arm that toggles debug_hud_shown"
+        );
+        // The whole keydown closure sits behind the editable-field guard (shared with copy/paste/
+        // Backspace) — a HUD toggle must not fire while the operator types in an Attributes field.
+        assert!(
+            ed.contains("if crate::mission_history::in_editable_field() {"),
+            "T-635: the keydown closure must guard on in_editable_field() before acting"
+        );
+        // The literal binding is present on the raw file too (live_code blanks it above).
+        let raw = include_str!("mission_editor.rs");
+        assert!(
+            raw.contains("\"KeyD\" if modk && ev.alt_key()"),
+            "T-635: the toggle must be bound to the D key"
+        );
+    }
+
+    /// (b) The HUD defaults HIDDEN: `debug_hud_shown` is a real signal seeded `false`.
+    #[test]
+    fn the_hud_defaults_hidden() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("let debug_hud_shown = RwSignal::new(false)"),
+            "T-635: debug_hud_shown must be a real RwSignal defaulting to false (hidden)"
+        );
+    }
+
+    /// (c) The HUD is NO LONGER a child of the toolbelt's centered wrapper, and its render is gated
+    /// on chrome_hidden AND debug_hud_shown so an overlap with the readouts is impossible.
+    #[test]
+    fn the_hud_is_not_inside_the_toolbelt_wrapper_and_is_gated() {
+        // Structural proof uses `live_source` so the Tailwind class strings survive as landmarks.
+        // The nesting is gone iff the toolbelt `<div …bottom-5 left-1/2…>` is CLOSED (`</div>`)
+        // before the first `debug_hud` token appears. (When the HUD was nested, its `debug_hud`
+        // read sat between the toolbelt div's open and its `</div>`.) The HUD's gate code precedes
+        // its own `right-3 bottom-3` div, so we key on the toolbelt's close, not the HUD's class.
+        let src = editor_src();
+        let belt_open = src
+            .find("bottom-5 left-1/2")
+            .expect("toolbelt wrapper class present");
+        let belt_close_rel = src[belt_open..]
+            .find("</div>")
+            .expect("toolbelt wrapper must close with </div>");
+        let first_hud_rel = src[belt_open..]
+            .find("debug_hud")
+            .expect("the HUD code must exist below the toolbelt");
+        assert!(
+            belt_close_rel < first_hud_rel,
+            "T-635: the toolbelt wrapper div must CLOSE before any debug_hud code — the HUD must not \
+             be nested inside it (that nesting is exactly the overlap this ticket removes)"
+        );
+        // The HUD's own render gate must AND chrome_hidden together with the toggle, so it can never
+        // paint while the chrome is hidden and never paint while toggled off (pinned on scrubbed
+        // code, so this is the real gate expression, not a comment mention).
+        let ed = editor_live();
+        assert!(
+            ed.contains("!chrome_hidden.get() && debug_hud_shown.get() && !t.is_empty()"),
+            "T-635: the HUD slot must gate on (!chrome_hidden AND debug_hud_shown AND non-empty)"
+        );
+        // The HUD keeps a distinct bottom-right corner on the overlay (right-3 bottom-3).
+        assert!(
+            src.contains("pointer-events-none absolute right-3 bottom-3 font-mono"),
+            "T-635: the HUD must occupy its own bottom-right slot on the chrome overlay"
+        );
+    }
+
+    /// (d) The telemetry-vs-diagnostics distinction is stated explicitly in a PRODUCTION code
+    /// comment — the framework_synthesis §D.4 #7 requirement that this key-gating pattern not be
+    /// copied onto mission-correctness diagnostics. The scrubbers blank comments, so this is pinned
+    /// on the raw file, sliced to the `MissionEditorPage` production body (from its anchor to the
+    /// first `#[cfg(test)]` module that follows it) so the test modules' own text — including this
+    /// docstring — cannot satisfy the pin. The comment must really ship in the page's source.
+    #[test]
+    fn the_telemetry_vs_diagnostics_distinction_is_documented() {
+        let raw = include_str!("mission_editor.rs");
+        // Window: `MissionEditorPage`'s definition … first test module after it. The file's FIRST
+        // `#[cfg(test)]` is a `clear_for_test` helper near the top (well above the page), so slice
+        // from the page anchor forward, then cut at the next test module. (Both needles split so
+        // this line is not itself the boundary it searches for.)
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let page_at = raw.find(anchor.as_str()).expect("page anchor present");
+        let boundary = format!("#[cfg{}", "(test)]");
+        let after_page = &raw[page_at..];
+        let prod_end_rel = after_page
+            .find(boundary.as_str())
+            .expect("a test module follows the page");
+        let prod = &after_page[..prod_end_rel];
+        // The rule reference (reassembled so this line is not a decoy match inside the window if the
+        // production comment were deleted — the needle must be found in real shipped source).
+        let rule = format!("framework_synthesis {}D.4 #7", "\u{a7}");
+        assert!(
+            prod.contains(rule.as_str()),
+            "T-635: the §D.4 #7 rule reference must be present in a production comment"
+        );
+        assert!(
+            prod.contains("Mission-correctness diagnostics") && prod.contains("NEVER gated"),
+            "T-635: the comment must state that mission-correctness diagnostics are never gated"
+        );
+        // And it must frame the HUD itself as telemetry (the thing that IS legitimately gated).
+        assert!(
+            prod.contains("TELEMETRY"),
+            "T-635: the comment must classify the HUD as telemetry (the gatable kind)"
         );
     }
 }
