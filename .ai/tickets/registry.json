@@ -16398,7 +16398,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4000,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16406,7 +16406,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 8 (wave_plan.tsv row 108)",
+   "notes": "editor-UI program wave 8 (wave_plan.tsv row 108) — SHIPPED wave 108 (editor factory), slice f3a6aa5a; verifier wave108.md (Esc-stack MAJOR routed to T-726; stale-LG::Ruler strand routed to T-723)",
    "depends_on": [
     "T-661"
    ]
@@ -16425,7 +16425,7 @@
     "ui",
     "state"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4010,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16433,7 +16433,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 8 (wave_plan.tsv row 108)",
+   "notes": "editor-UI program wave 8 (wave_plan.tsv row 108) — SHIPPED wave 108 (editor factory), slice f7b81252; verifier wave108.md (click-then-click affordance rides the T-723-broken machine — MAJOR routed to T-723; doc-side routing recorded for operator)",
    "depends_on": [
     "T-661"
    ]
@@ -16451,7 +16451,7 @@
     "mc-integrity",
     "tests"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4020,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16459,7 +16459,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 8 (wave_plan.tsv row 108)",
+   "notes": "editor-UI program wave 8 (wave_plan.tsv row 108) — SHIPPED wave 108 (editor factory), slice bc7121c2; verifier wave108.md",
    "depends_on": [
     "T-661",
     "T-656"
@@ -18091,7 +18091,7 @@
    "id": "T-723",
    "order": 4316,
    "title": "Armed-placement pointerup: one root, three defects — button filter + gesture cleanup + real click-then-click",
-   "summary": "Wave-106 verifier MAJORs 1-3 share one root in mission_editor.rs's armed place branch: it consumes EVERY pointerup regardless of button and cleans up no gesture state. Consequences, each proven: (1) click-then-click does not exist end-to-end — a dock leaf's arming click cancels itself on release (arm-then-cancel over the dock), and the picker row's release lands over the canvas placing at the PICKER ROW's screen position (AssetPickerState.wx/wy never read); (2) canvas pointerdown while armed still writes LG::Pending which the armed pointerup never takes — every Ctrl multi-place stamp strands one, and the next bare mouse move promotes it into a button-less phantom Move that commits on ANY next pointerup (RMB context menu teleports the entity just placed); the T-159.22 invariant comment ':1940 left/pan_px are both None here' is now FALSE and still standing; (3) MMB while armed places instead of panning and leaves pan_px + camera-gesture latched (phantom pan after disarm); RMB while armed places then opens the menu (Eden cancels); there is NO Esc disarm (cancel_pending unreachable from keyboard). Fix as one design: armed branch filters to button 0, takes/clears LG::Pending, RMB/Esc disarm, picker placement reads wx/wy or arms for a genuine second click. Regression tests must be event-SEQUENCE tests, not source pins — the pins could not see any of this. Diagnosis: editor_verify/wave106.md MAJOR-1/2/3.",
+   "summary": "Wave-106 verifier MAJORs 1-3 share one root in mission_editor.rs's armed place branch: it consumes EVERY pointerup regardless of button and cleans up no gesture state. Consequences, each proven: (1) click-then-click does not exist end-to-end — a dock leaf's arming click cancels itself on release (arm-then-cancel over the dock), and the picker row's release lands over the canvas placing at the PICKER ROW's screen position (AssetPickerState.wx/wy never read); (2) canvas pointerdown while armed still writes LG::Pending which the armed pointerup never takes — every Ctrl multi-place stamp strands one, and the next bare mouse move promotes it into a button-less phantom Move that commits on ANY next pointerup (RMB context menu teleports the entity just placed); the T-159.22 invariant comment ':1940 left/pan_px are both None here' is now FALSE and still standing; (3) MMB while armed places instead of panning and leaves pan_px + camera-gesture latched (phantom pan after disarm); RMB while armed places then opens the menu (Eden cancels); there is NO Esc disarm (cancel_pending unreachable from keyboard). Fix as one design: armed branch filters to button 0, takes/clears LG::Pending, RMB/Esc disarm, picker placement reads wx/wy or arms for a genuine second click. Regression tests must be event-SEQUENCE tests, not source pins — the pins could not see any of this. Diagnosis: editor_verify/wave106.md MAJOR-1/2/3. WIDENED wave 108: (4) T-650's composition rows advertise 'Click to arm, then click the map to place' — the only dock surface promising the flow this ticket's root breaks (arm-then-cancel in one click); fixing the root makes the tooltip true, else the tooltip must change (wave108.md MAJOR-1). (5) T-642's ruler avoids the branch commit-side only: armed place + ruler click strands a stale LG::Ruler that later commits a phantom vertex on a same-spot RMB release (wave108.md MINOR-1).",
    "notes": "filed by wave-106 adversarial verifier (editor factory); root-cause grouped"
   },
   {
@@ -18150,8 +18150,8 @@
    "executor": "claude-code",
    "id": "T-726",
    "order": 4319,
-   "title": "Esc closes both stacked dialogs — use the modal stack the codebase already has",
-   "summary": "T-691's EditorPreferencesDialog stacks over MissionSettingsDialog and copies the bare window-Esc idiom both dialogs use — one Esc closes BOTH. ui.rs modal_stack::is_topmost_open exists for exactly this and is unused by either dialog. Route both dialogs' Esc through it (topmost closes first, second Esc closes the parent); pin with a stacked-Esc test. Diagnosis: editor_verify/wave106.md MINOR-2.",
+   "title": "Window-Esc pile-up: route every Esc listener through the modal stack",
+   "summary": "T-691's EditorPreferencesDialog stacks over MissionSettingsDialog and copies the bare window-Esc idiom both dialogs use — one Esc closes BOTH. ui.rs modal_stack::is_topmost_open exists for exactly this and is unused by either dialog. Route both dialogs' Esc through it (topmost closes first, second Esc closes the parent); pin with a stacked-Esc test. Diagnosis: editor_verify/wave106.md MINOR-2. WIDENED wave 108 (MAJOR-2): the ruler's Esc arm is another unguarded window-keydown that never consults the T-333 one-Esc-one-dialog stack — deterministic repro: place a ruler, RMB (context menu opens), Esc to close the menu → the menu closes AND the placed measurement clears; the two-step Esc escalation is defeated by the first overlay. The fix is one design across ALL window-Esc listeners (both dialogs, context menu, asset picker, ruler): consult modal_stack::is_topmost_open / register as stack entries, topmost consumes.",
    "notes": "filed by wave-106 adversarial verifier (editor factory)"
   },
   {
@@ -18173,6 +18173,26 @@
    "title": "Grid-ref labels strand off their lines — For keyed on text retains stale positions",
    "summary": "MAJOR, two-part, root pre-existing in T-667 but made keyboard-triggerable by T-638. The grid-ref overlay's <For> is keyed on label TEXT (eden_toolbelt.rs:589/609); tachys' keyed diff calls view_fn only for ADDED keys, so a retained label keeps its creation-time pos_px forever. Every pan strands retained labels; T-638's centre-hold slides the map 116px (left toggle) / 148px (right) on a bare E/R keypress, leaving every retained grid reference ~46% of a grid cell off its line, persistently — wrong references, not decoration. The wave-106 pin only proved the PURE math (which is correct); the DOM retention is the defect. Fix: (1) key the <For> on (text, grid-line world coordinate) or render pos from a signal inside the row; (2) convert eden_toolbelt's frozen inset-const reads to the T-638 accessors so labels track collapse geometry; (3) sweep the false comment T-638 left ('resize does NOT reallocate' — RenderEngine::resize unconditionally surface.configure's, engine.rs:1601; mark_dirty was available). Regression: an event-sequence test that pans/toggles and asserts label pos_px changed. Diagnosis: editor_verify/wave107.md MAJOR-1 + MINOR-3.",
    "notes": "filed by wave-107 adversarial verifier (editor factory); re-scoped MAJOR from T-638 disclosed residue"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-728",
+   "order": 4321,
+   "title": "Save-composition affordance reads a channel selection never bumps",
+   "summary": "T-650's 'Save composition…' affordance gates on selection_len() but subscribes to doc_tick, and selection changes never bump doc_tick: the canonical flow (place, marquee-select, open Compositions tab) shows the empty state against a live selection until an unrelated doc edit; inversely a stale Save press no-ops silently. Fix: subscribe to the selection channel (the SEL readout has one — reuse it) or bump a selection_tick from the selection mutators; test the canonical flow as an event sequence. Diagnosis: editor_verify/wave108.md MINOR-2.",
+   "notes": "filed by wave-108 adversarial verifier (editor factory)"
   }
  ]
 }

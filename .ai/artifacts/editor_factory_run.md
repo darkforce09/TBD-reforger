@@ -30,7 +30,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 105 | 88 | T-636 T-646 T-683 | PASS (run 3; run 1 red on unswept route → fixed a7d91fca; run 2 = capture rerun) | 1B/1M/3m/5N → fix CLEARED | SHIPPED — status-bar split + class:/chips + defaults endpoint; BLOCKER (multibyte panic) fixed in-wave c2a902dd; T-721 T-722 filed, T-719 amended |
 | 106 | 89 | T-647 T-667 T-691 | PASS (run 2; run 1 red on a stale cross-file pin → fixup 74154ba0) | 0B/4M/2m/4N | SHIPPED — T-647 partial (PLACE-001 undelivered, ATTR-OPEN vehicles-only); furniture + prefs clean; T-723..T-726 filed |
 | 107 | 90 | T-638 T-657 T-659 | PASS (run 1) | 0B/1M/3m/8N | SHIPPED — dock collapse (accessor seam), 5 ORBAT rules, census+summary; T-727 filed (grid-ref strand, MAJOR); W101 N-3 recorded closed |
-| 108 | 91 | T-642 T-650 T-658 | — | — | pending |
+| 108 | 91 | T-642 T-650 T-658 | PASS (run 1) | 0B/2M/4m/8N | SHIPPED — ruler end-to-end, doc-side compositions, EvalContext seam; MAJORs routed into T-723/T-726 (widened), T-728 filed |
 | 109 | 92 | T-079 T-643 T-660 | — | — | pending |
 | 110 | 93 | T-644 T-648 T-668 | — | — | pending |
 | 111 | 94 | T-645 T-655 T-693 | — | — | pending |
@@ -103,7 +103,14 @@ serialisation, not a hang).
   `chrome_hidden` gate (the rf HUD already inherits it). [wave101 N-5]
 - **T-706 (W120):** eden_env.rs:309 `keys_nothing_reads_are_not_authored` names viewDistance/
   thermals as never-authored — widening the schema must consciously edit that list or stay clear
-  of those keys; mission.schema.json itself never carried them. [wave101 N-5]
+  of those keys; mission.schema.json itself never carried them. [wave101 N-5] ALSO: T-650's
+  `compositions` rides the open editor-payload root undeclared (the schema's own zones-note
+  anti-pattern; downstream verified safe) — declare it while widening. [wave108 MINOR-3]
+- **T-660 (W109):** include the one-line EvalContext doc fix — the doc instructs cross-crate
+  construction via `..Default::default()`, which is E0639 on a #[non_exhaustive] struct; point
+  callers at with_known_asset_ids. Your cargo rules extend EvalContext — that's the invited
+  seam. [wave108 MINOR-4]
+- **T-655 (W111):** construct EvalContext via with_known_asset_ids (not struct syntax). [wave108]
 - **T-666 (W104):** T-715 is known-pending on the same files (hidden slots vanish from docks via
   filtered slot_rows) — do not double-fix, do not regress dimming further. [wave102 F-3]
 - **T-649 (W112):** coordinate the multi-select edit path with T-716's enabled-but-dead menu rows
@@ -137,6 +144,20 @@ serialisation, not a hang).
   matching semantics as part of the grammar rewrite. [wave105 MINOR-2]
 - **T-082 (W113):** the Attributes modal shows refused locked-slot Transform edits as accepted
   (one-shot snapshot, no re-read) — add re-read or disabled affordance. [wave102 F-7]
+
+## Operator decisions taken in-flight (review at wake-up)
+
+- **T-650 composition storage (W108):** the ticket's open question — doc-side vs user-scoped API
+  rows — was routed DOC-SIDE per the planned owns (store.rs + editor_ops + eden_dock_right). The
+  ticket's own analysis favours user-scoped rows, but that path adds an unplanned DB migration +
+  API surface; not invented overnight. The doc model is shaped for a mechanical lift (self-
+  contained JSON rows, no cross-doc references). If you accept the user-scoped framing, file the
+  lift ticket; the data exports cleanly.
+- **T-642 ruler open decisions (W108):** labels on-the-line + total in status bar; per-leg slope
+  shown (DEM free); Esc clears in-progress then placed, dbl-click ends chain; rulers are session
+  overlay state, NOT saved. Each documented in-code.
+- **T-638 centre-hold (W107):** camera holds the world point under the map-pane centre across
+  dock reflows (Eden slides); Backspace hide/show never slides.
 
 ## Deferred tickets filed by verifiers
 

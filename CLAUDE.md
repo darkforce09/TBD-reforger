@@ -154,12 +154,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-120** — Staging soak + golden mission smoke (`queued`)
 - **T-146** — Asset Browser Data Wiring (`queued`)
 - **T-170** — Prod default flip to Leptos SPA (`queued`)
-- **T-642** — Ruler: persistent polyline with per-leg distance and bearing (`queued`)
-- **T-650** — Compositions: save and place (`queued`)
-- **T-658** — Validation: every placed asset resolves in the live catalogue (`queued`)
 - **T-643** — Line of Sight: point-to-point ray (`queued`)
 - **T-079** — Triggers — the editor half: palette mode, area geometry, owner link (`queued`)
 - **T-660** — Validation: cargo and loadout policy rules (`queued`)
+- **T-648** — Transform: Shift-rotate, snap grid, widget + Space cycle (`queued`)
+- **T-644** — Line of Sight: viewshed raster (`queued`)
+- **T-668** — One state vocabulary across the whole editor chrome (`queued`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
