@@ -27,7 +27,11 @@ pub struct LabelHost {
     road_segments: Vec<RoadSegment>,
     peaks: Vec<HeightLabel>,
     ready: bool,
-    /// Memo: (zoom band ×2 rounded, town_on, road_on, height_on) of the last pack+upload.
+    /// Memo: (zoom band ×2 rounded, town_on, road_on, height_on) of the last pack+upload. The zoom
+    /// band is load-bearing for the height lane: since T-641 the height-label declutter is a
+    /// **screen-space** grid cull (Eden ~1 per 150×150 px — `peaks::declutter_height_labels`), so its
+    /// kept set changes with zoom; re-keying on the band re-packs the correct on-screen density as
+    /// the user zooms (and also drives the town-label fade). Panning within a band reuses the pack.
     last: Option<(i64, bool, bool, bool)>,
 }
 
@@ -113,6 +117,9 @@ impl LabelHost {
             }
             _ => Vec::new(),
         };
+        // Height labels: the `Height labels` world toggle gates the lane; the density inside it is
+        // the T-641 screen-space cull (`pack_height_label_glyphs` → `declutter_height_labels` holds
+        // ~1 label per 150×150 px at this `zoom`). Dot/triangle + horizontal integer form unchanged.
         let height_bytes = if prefs.heights {
             let glyphs = pack_height_label_glyphs(&self.peaks, zoom, char_m);
             pack_text_icon_bytes(&glyphs, zoom)
