@@ -5,10 +5,10 @@ use map_engine_core::dem::downsample::{
 };
 use map_engine_core::dem::DemVectorGrid;
 use map_engine_core::geometry::contours::{
-    contour_grid_reductions, contour_levels, contour_segments,
+    contour_grid_reductions, contour_levels, contour_rings, summit_ring_indices,
 };
 use map_engine_core::geometry::sea_band::{build_sea_band_geometry, sea_fill_alpha};
-use map_engine_core::geometry::vector_compose::{compose_contour_hairlines, compose_sea_mesh};
+use map_engine_core::geometry::vector_compose::{compose_sea_mesh, compose_two_tone_contours};
 use map_engine_core::world::{class_visible, contour_interval_for_zoom};
 // T-596 — the vector-lane ids are IMPORTED, never hand-copied. A private `const ROLE_SEA: u32 = 0`
 // has no compile-time link to `lane_role_from_u32`, so a renumber there misroutes this upload
@@ -23,7 +23,15 @@ use crate::select_tool::EngineHandle;
 // the dark satellite photo and the tan Map basemap. Raised to a lighter warm tan-brown at higher
 // alpha (luma ~155, α235) so the 1 px hairline reads on both basemaps. (wgpu draws contours as a
 // native 1 px LineList — width is not a lever; only colour/alpha is. Operator-tunable.)
+//
+// T-640 — this is Eden's fixed-alpha TINT: a saturated brown (r−b = 88 at source) that, blended
+// ~50% over the hillshade, holds r−b ≈ +28 on-screen across the #95..#dd luminance range — never
+// harsh on a bright slope, never invisible in shade. 1 px everywhere, NO index contours.
 const CONTOUR_RGBA: [u8; 4] = [188, 150, 100, 235];
+// T-640 — the ONE emphasis: the innermost closed contour of each peak (the per-peak "highest closed
+// ring", not every-Nth) is drawn darker. #ae917b holds r−b ≈ 51 (vs the base's 88) at the same
+// α235 — a heavier tint of the same brown, so the summit ring reads as darker without changing hue.
+const CONTOUR_SUMMIT_RGBA: [u8; 4] = [174, 145, 123, 235];
 const TERRAIN_M: f64 = 12_800.0;
 
 pub struct DemVectors {
@@ -120,8 +128,11 @@ impl DemVectors {
             g = reduce_grid_2x(&g);
         }
         let levels = contour_levels(interval, g.max_elev_m);
-        let segs = contour_segments(&g, &levels);
-        let hair = compose_contour_hairlines(&segs, CONTOUR_RGBA);
+        // T-640 — chain into rings so the summit rule has closure identity, then two-tone: the base
+        // brown tint everywhere + the darker per-peak highest-closed-ring emphasis.
+        let rings = contour_rings(&g, &levels);
+        let summit = summit_ring_indices(&rings);
+        let hair = compose_two_tone_contours(&rings, &summit, CONTOUR_RGBA, CONTOUR_SUMMIT_RGBA);
         if let Some(e) = engine.borrow_mut().as_mut() {
             e.upload_hairline_segments(role_id::CONTOURS, &hair.verts, hair.segment_count, true);
         }

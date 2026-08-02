@@ -126,6 +126,54 @@ pub fn compose_contour_hairlines(segments: &[f32], rgba: [u8; 4]) -> HairlineGpu
     }
 }
 
+/// Two-tone contour hairlines (T-640): every ring emitted as a `[x,y,r,g,b,a]…` LineList, coloured
+/// `summit_rgba` if its index is in `summit_idx`, else `base_rgba`. The base is Eden's fixed-alpha
+/// brown tint; the summit colour is the darker per-peak "highest closed ring" emphasis. Closed rings
+/// re-emit the closing edge (last→first) so a summit loop draws whole; open chains draw as-is.
+///
+/// Ownership: contours are the ONLY caller (a two-tone set); [`compose_contour_hairlines`] stays the
+/// single-colour path for the forest outline (`forest_mass.rs`), so this is an additive signature —
+/// the flat-`Vec<f32>` compose is unchanged.
+#[must_use]
+pub fn compose_two_tone_contours(
+    rings: &[super::contours::ContourRing],
+    summit_idx: &[usize],
+    base_rgba: [u8; 4],
+    summit_rgba: [u8; 4],
+) -> HairlineGpu {
+    let base = u8_rgba_to_f32(base_rgba, 1.0);
+    let summit = u8_rgba_to_f32(summit_rgba, 1.0);
+    let mut verts: Vec<f32> = Vec::new();
+    let mut segment_count = 0_u32;
+    for (i, ring) in rings.iter().enumerate() {
+        if ring.points.len() < 2 {
+            continue;
+        }
+        let c = if summit_idx.contains(&i) {
+            &summit
+        } else {
+            &base
+        };
+        let n = ring.points.len();
+        // Segment count: open chain has n-1 edges; a closed ring adds the wrap edge (last→first).
+        let edges = if ring.closed { n } else { n - 1 };
+        for e in 0..edges {
+            let a = ring.points[e];
+            let b = ring.points[(e + 1) % n];
+            for (x, y) in [a, b] {
+                verts.push(x as f32);
+                verts.push(y as f32);
+                verts.extend_from_slice(c);
+            }
+            segment_count += 1;
+        }
+    }
+    HairlineGpu {
+        verts,
+        segment_count,
+    }
+}
+
 /// Contour stroke colour — `contourLayer.ts` `CONTOUR_RGBA`.
 pub const CONTOUR_RGBA: [u8; 4] = [120, 96, 64, 200];
 /// Forest outline — `forestMassLayer.ts` `FOREST_OUTLINE_RGBA`.
@@ -316,5 +364,50 @@ mod tests {
         assert!((cols[3] - 1.0).abs() < f32::EPSILON);
         retint_fill_alpha(&mut cols, -1.0);
         assert_eq!(cols[7], 0.0);
+    }
+
+    // ── T-640 two-tone compose ─────────────────────────────────────────────────────────────────
+
+    #[test]
+    fn two_tone_contours_split_colour_by_summit_index() {
+        use crate::geometry::contours::ContourRing;
+        // Base tint + darker summit ring — the exact production RGBA (dem_vectors.rs).
+        const BASE: [u8; 4] = [188, 150, 100, 235];
+        const SUMMIT: [u8; 4] = [174, 145, 123, 235];
+
+        // Ring 0: an OPEN 3-vertex chain → 2 base-coloured segments.
+        // Ring 1: a CLOSED triangle → 3 segments (incl. the wrap), coloured summit.
+        let rings = vec![
+            ContourRing {
+                level: 10.0,
+                closed: false,
+                points: vec![(0.0, 0.0), (1.0, 0.0), (2.0, 0.0)],
+            },
+            ContourRing {
+                level: 30.0,
+                closed: true,
+                points: vec![(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)],
+            },
+        ];
+        let hair = compose_two_tone_contours(&rings, &[1], BASE, SUMMIT);
+
+        // 2 open edges + 3 closed edges = 5 segments; 2 verts each; 6 f32 per vert.
+        assert_eq!(hair.segment_count, 5);
+        assert_eq!(hair.verts.len(), 5 * 2 * 6);
+
+        let base_f = u8_rgba_to_f32(BASE, 1.0);
+        let summit_f = u8_rgba_to_f32(SUMMIT, 1.0);
+        // First 2 segments (4 verts) are the base ring; the rest (6 verts) are the summit ring.
+        for v in 0..10 {
+            let rgba = &hair.verts[v * 6 + 2..v * 6 + 6];
+            let want = if v < 4 { &base_f } else { &summit_f };
+            assert_eq!(rgba, &want[..], "vertex {v} carries the wrong tone");
+        }
+
+        // The split is real: base and summit RGB differ (darker summit), and the summit's r−b (51)
+        // is the lighter emphasis the spec measured vs. the base r−b (88).
+        assert_ne!(base_f[0], summit_f[0]);
+        assert_eq!(i32::from(BASE[0]) - i32::from(BASE[2]), 88);
+        assert_eq!(i32::from(SUMMIT[0]) - i32::from(SUMMIT[2]), 51);
     }
 }

@@ -158,6 +158,237 @@ fn march_cell(cell: &Cell, level: f64, seg: &mut Vec<f32>) {
     }
 }
 
+/// A single marching-squares crossing segment as an ordered endpoint pair in world meters. T-640
+/// ring chaining works on full-precision `f64` pairs (not the quantised `f32` of [`contour_segments`])
+/// so shared cell-edge crossings match exactly when welding segments into rings.
+type Seg = ((f64, f64), (f64, f64));
+
+/// March one cell at one level, appending each crossing segment as a `(p, q)` point pair. Same
+/// case logic as [`march_cell`] but keeps endpoints as `(f64, f64)` pairs (not quantised `f32`) so
+/// the ring chainer in [`contour_rings`] can match shared endpoints exactly. T-640.
+fn march_cell_pairs(cell: &Cell, level: f64, out: &mut Vec<Seg>) {
+    let c = (if cell.v00 >= level { 1u8 } else { 0 })
+        | (if cell.v10 >= level { 2 } else { 0 })
+        | (if cell.v11 >= level { 4 } else { 0 })
+        | (if cell.v01 >= level { 8 } else { 0 });
+    if c == 0 || c == 15 {
+        return;
+    }
+    let pts = edge_points(cell, level);
+    let mut push = |e0: usize, e1: usize| {
+        if let (Some(p), Some(q)) = (pts[e0], pts[e1]) {
+            out.push((p, q));
+        }
+    };
+    if c == 5 || c == 10 {
+        let center_in = (cell.v00 + cell.v10 + cell.v11 + cell.v01) / 4.0 >= level;
+        for (e0, e1) in saddle_edges(c, center_in) {
+            push(e0, e1);
+        }
+    } else {
+        for &(e0, e1) in CASE_EDGES[c as usize] {
+            push(e0, e1);
+        }
+    }
+}
+
+/// One chained iso-polyline at a single level: the ordered vertices plus whether the chain closed
+/// back on its start (a loop enclosing a summit or basin) vs. ran into the grid edge (open). T-640
+/// — the summit-ring rule ([`summit_ring_indices`]) needs ring **closure** and level, which the flat
+/// [`contour_segments`] `Vec<f32>` cannot express.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ContourRing {
+    /// Iso level (metres ASL) this ring was marched at.
+    pub level: f64,
+    /// `true` iff the polyline is a closed loop (first ≈ last within [`RING_WELD_EPS`]).
+    pub closed: bool,
+    /// Ordered vertices in world meters. For a `closed` ring the endpoint is NOT duplicated.
+    pub points: Vec<(f64, f64)>,
+}
+
+/// Endpoint-match tolerance (world meters) when welding marching-squares segments into a ring.
+/// Crossings on a shared cell edge are computed from the same two corners by the same `lerp`, so
+/// adjacent cells produce bit-identical endpoints — but a small eps keeps the chainer robust to any
+/// f64 drift and to the `x1 = x0 + cell` box arithmetic. Far below one cell (cells are ≥ ~8 m).
+const RING_WELD_EPS: f64 = 1e-6;
+
+#[inline]
+fn near(a: (f64, f64), b: (f64, f64)) -> bool {
+    (a.0 - b.0).abs() <= RING_WELD_EPS && (a.1 - b.1).abs() <= RING_WELD_EPS
+}
+
+/// Chain one level's marching-squares segments into ordered polylines, flagging each as closed
+/// (loop) or open (met a grid edge). Greedy endpoint welding: start a chain from any unused segment,
+/// then repeatedly append the unused segment whose either endpoint matches the chain's tail, until
+/// none matches (open) or the tail returns to the head (closed). O(n²) in the per-level segment
+/// count — a coarse contour grid yields few segments per level, and this runs once per interval
+/// band (memoised by `last_interval` in `dem_vectors.rs`), not per frame.
+fn chain_segments_into_rings(segs: Vec<Seg>, level: f64, out: &mut Vec<ContourRing>) {
+    // Drop zero-length segments up front: at an exact-value corner crossing marching squares can
+    // emit a point-segment (a ≈ b), which would otherwise chain into a degenerate 2-point "ring".
+    let segs: Vec<Seg> = segs.into_iter().filter(|&(a, b)| !near(a, b)).collect();
+    let mut used = vec![false; segs.len()];
+    // Deterministic order: preserve the grid-sweep segment order for stable rings across runs.
+    for start in 0..segs.len() {
+        if used[start] {
+            continue;
+        }
+        used[start] = true;
+        let (head, mut tail) = segs[start];
+        let mut points = vec![head, tail];
+        let mut closed = false;
+        loop {
+            if near(tail, head) {
+                // Weld the duplicate closing vertex off and mark the loop closed.
+                points.pop();
+                closed = true;
+                break;
+            }
+            // Find an unused segment touching `tail`.
+            let mut advanced = false;
+            for k in 0..segs.len() {
+                if used[k] {
+                    continue;
+                }
+                let (a, b) = segs[k];
+                let next = if near(a, tail) {
+                    Some(b)
+                } else if near(b, tail) {
+                    Some(a)
+                } else {
+                    None
+                };
+                if let Some(n) = next {
+                    used[k] = true;
+                    tail = n;
+                    points.push(n);
+                    advanced = true;
+                    break;
+                }
+            }
+            if !advanced {
+                break; // open chain — ran off the grid edge
+            }
+        }
+        // A ring needs ≥3 vertices to bound an area (closed) or ≥2 to be a real polyline (open);
+        // anything smaller is welding noise, not a contour.
+        let min_pts = if closed { 3 } else { 2 };
+        if points.len() < min_pts {
+            continue;
+        }
+        out.push(ContourRing {
+            level,
+            closed,
+            points,
+        });
+    }
+}
+
+/// Marching-squares isolines chained into per-level [`ContourRing`]s (closed loops vs. open chains),
+/// for the same grid sweep as [`contour_segments`]. T-640 — the source of ring identity/closure the
+/// summit-ring emphasis rule consumes. Levels are marched low→high so nested rings appear in that
+/// order (not relied on by [`summit_ring_indices`], which is order-independent).
+#[must_use]
+pub fn contour_rings(grid: &DemVectorGrid, levels: &[f64]) -> Vec<ContourRing> {
+    let mut rings: Vec<ContourRing> = Vec::new();
+    if grid.cols < 2 || grid.rows < 2 || levels.is_empty() {
+        return rings;
+    }
+    let cols = grid.cols;
+    let mut sorted = levels.to_vec();
+    sorted.sort_by(|a, b| a.total_cmp(b));
+
+    for &level in &sorted {
+        let mut segs: Vec<Seg> = Vec::new();
+        for j in 0..grid.rows - 1 {
+            let y0 = grid.origin_y + j as f64 * grid.cell_y;
+            let y1 = y0 + grid.cell_y;
+            for i in 0..cols - 1 {
+                let v00 = f64::from(grid.data[j * cols + i]);
+                let v10 = f64::from(grid.data[j * cols + i + 1]);
+                let v11 = f64::from(grid.data[(j + 1) * cols + i + 1]);
+                let v01 = f64::from(grid.data[(j + 1) * cols + i]);
+                let lo = v00.min(v10).min(v11).min(v01);
+                let hi = v00.max(v10).max(v11).max(v01);
+                if level <= lo || level > hi {
+                    continue;
+                }
+                let x0 = grid.origin_x + i as f64 * grid.cell_x;
+                let cell = Cell {
+                    v00,
+                    v10,
+                    v11,
+                    v01,
+                    x0,
+                    y0,
+                    x1: x0 + grid.cell_x,
+                    y1,
+                };
+                march_cell_pairs(&cell, level, &mut segs);
+            }
+        }
+        chain_segments_into_rings(segs, level, &mut rings);
+    }
+    rings
+}
+
+/// Ray-cast point-in-polygon over a closed ring's vertices (even-odd rule). `ring.points` holds the
+/// loop without a duplicated closing vertex; the `(n-1, 0)` wrap closes it. T-640 nesting test.
+fn point_in_ring(pt: (f64, f64), ring: &ContourRing) -> bool {
+    let p = &ring.points;
+    let n = p.len();
+    if n < 3 {
+        return false;
+    }
+    let (px, py) = pt;
+    let mut inside = false;
+    let mut j = n - 1;
+    for i in 0..n {
+        let (xi, yi) = p[i];
+        let (xj, yj) = p[j];
+        if ((yi > py) != (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi) {
+            inside = !inside;
+        }
+        j = i;
+    }
+    inside
+}
+
+/// Per-peak "highest closed ring" selection — the single T-640 emphasis. Returns the indices (into
+/// `rings`) of the closed rings that are each the innermost (highest-level) closed contour of their
+/// peak: a closed ring qualifies iff **no other closed ring at a strictly higher level nests inside
+/// it**. Two distinct peaks each yield their own summit ring (their top rings don't nest in each
+/// other); a peak's lower rings are rejected because the higher ring of the same peak sits inside
+/// them. This is a per-peak rule, deliberately NOT "every Nth level" index contours.
+///
+/// Nesting is tested by whether a higher ring's first vertex falls inside the candidate — contour
+/// rings nest without crossing, so a single interior point settles containment.
+#[must_use]
+pub fn summit_ring_indices(rings: &[ContourRing]) -> Vec<usize> {
+    let mut out = Vec::new();
+    for (i, cand) in rings.iter().enumerate() {
+        if !cand.closed || cand.points.len() < 3 {
+            continue;
+        }
+        let mut has_higher_inside = false;
+        for (k, other) in rings.iter().enumerate() {
+            if k == i || !other.closed || other.level <= cand.level {
+                continue;
+            }
+            if let Some(&probe) = other.points.first()
+                && point_in_ring(probe, cand)
+            {
+                has_higher_inside = true;
+                break;
+            }
+        }
+        if !has_higher_inside {
+            out.push(i);
+        }
+    }
+    out
+}
+
 /// Marching-squares isolines for many levels in ONE grid sweep. Mirror of `contourSegments`
 /// (`contours.ts:114`). Output is interleaved `[x0,y0,x1,y1]` per segment.
 #[must_use]
@@ -258,5 +489,107 @@ mod tests {
         let g = grid(data, 5, 5);
         let seg = contour_segments(&g, &[5.0]);
         assert!(seg.len().is_multiple_of(4));
+    }
+
+    // ── T-640 ────────────────────────────────────────────────────────────────────────────────────
+
+    /// A conical bump of radius `r` cells centred in a `side`×`side` grid: `peak` at centre falling
+    /// linearly to 0 at radius `r`, clamped at 0 outside. Well inside the grid → its contours close.
+    fn bump(side: usize, cx: f64, cy: f64, r: f64, peak: f64) -> Vec<f32> {
+        let mut data = vec![0.0f32; side * side];
+        for j in 0..side {
+            for i in 0..side {
+                let d = (((i as f64 - cx).powi(2)) + ((j as f64 - cy).powi(2))).sqrt();
+                let h = (peak * (1.0 - d / r)).max(0.0);
+                data[j * side + i] = h as f32;
+            }
+        }
+        data
+    }
+
+    #[test]
+    fn ring_closure_distinguishes_closed_loop_from_open_chain() {
+        // (a) A centred bump well inside a 15×15 grid → the level-5 contour is a CLOSED loop.
+        let g = grid(bump(15, 7.0, 7.0, 6.0, 10.0), 15, 15);
+        let rings = contour_rings(&g, &[5.0]);
+        assert!(
+            rings.iter().any(|r| r.closed),
+            "a bump interior to the grid must yield at least one closed ring"
+        );
+        // A closed ring's polyline holds no duplicated closing vertex and has ≥3 points.
+        let closed = rings.iter().find(|r| r.closed).unwrap();
+        assert!(closed.points.len() >= 3);
+        assert!(
+            !near(closed.points[0], *closed.points.last().unwrap()),
+            "closed ring must NOT carry a duplicated closing vertex"
+        );
+
+        // (b) A west-high / east-low ramp: the level-5 iso runs edge→edge → an OPEN chain, never
+        // closed. Column 0..3 high (10), the rest 0, so the crossing hits the top and bottom edges.
+        let mut ramp = vec![0.0f32; 15 * 15];
+        for j in 0..15 {
+            for i in 0..15 {
+                ramp[j * 15 + i] = if i <= 3 { 10.0 } else { 0.0 };
+            }
+        }
+        let gr = grid(ramp, 15, 15);
+        let rr = contour_rings(&gr, &[5.0]);
+        assert!(!rr.is_empty(), "the ramp must produce a contour");
+        assert!(
+            rr.iter().all(|r| !r.closed),
+            "an edge→edge ramp iso must be an OPEN chain, not a closed loop"
+        );
+    }
+
+    #[test]
+    fn per_peak_selects_one_highest_closed_ring_each() {
+        // Two separated bumps in a 40×40 grid, valley (0 m) between them so their rings never merge.
+        // Peak A crests 33 m (closes rings at 10/20/30); peak B crests 23 m (closes at 10/20 only).
+        // Heights sit BETWEEN levels so no iso lands on a grid maximum (which would degenerate to a
+        // point and drop out) — A's innermost is its 30 m ring, B's is its 20 m ring.
+        let side = 40;
+        let a = bump(side, 11.0, 20.0, 8.0, 33.0);
+        let b = bump(side, 28.0, 20.0, 8.0, 23.0);
+        let mut data = vec![0.0f32; side * side];
+        for k in 0..data.len() {
+            data[k] = a[k].max(b[k]);
+        }
+        let g = grid(data, side, side);
+        let levels = vec![10.0, 20.0, 30.0];
+        let rings = contour_rings(&g, &levels);
+        let summit = summit_ring_indices(&rings);
+
+        // Exactly one summit ring per peak.
+        assert_eq!(
+            summit.len(),
+            2,
+            "one highest-closed-ring per peak → two total"
+        );
+
+        // Peak A's summit is its 30 m ring; peak B's is its 20 m ring (B never reaches 30 m).
+        let mut summit_levels: Vec<f64> = summit.iter().map(|&i| rings[i].level).collect();
+        summit_levels.sort_by(|x, y| x.total_cmp(y));
+        assert_eq!(summit_levels, vec![20.0, 30.0]);
+
+        // Every selected ring is closed, and none is an every-Nth pick: the 10 m level (present for
+        // BOTH peaks) is never a summit ring — a lower ring always has a higher one nested inside.
+        for &i in &summit {
+            assert!(rings[i].closed);
+            assert!((rings[i].level - 10.0).abs() > f64::EPSILON);
+        }
+    }
+
+    #[test]
+    fn no_summit_rings_when_nothing_closes() {
+        // The west/east ramp again: all-open contours → the per-peak rule selects nothing.
+        let mut ramp = vec![0.0f32; 12 * 12];
+        for j in 0..12 {
+            for i in 0..12 {
+                ramp[j * 12 + i] = if i <= 2 { 10.0 } else { 0.0 };
+            }
+        }
+        let g = grid(ramp, 12, 12);
+        let rings = contour_rings(&g, &[5.0]);
+        assert!(summit_ring_indices(&rings).is_empty());
     }
 }
