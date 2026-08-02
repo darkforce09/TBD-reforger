@@ -16931,7 +16931,7 @@
     "mod"
    ],
    "executor": "claude-code",
-   "notes": "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row"
+   "notes": "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row — WAVE-A DISPATCH PIN: owns extends to crates/map-engine-core/src/mission/flatten.rs (the emit half; T-674 first, T-675 after it reports) AND the TBD_MissionValidator.c SCHEMA_1_3 allowlist bump rides whichever of these first emits 1.3 (schema description names this)."
   },
   {
    "id": "T-675",
@@ -16955,7 +16955,7 @@
     "mod"
    ],
    "executor": "claude-code",
-   "notes": "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row",
+   "notes": "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row — WAVE-A DISPATCH PIN: owns extends to crates/map-engine-core/src/mission/flatten.rs (the emit half; T-674 first, T-675 after it reports) AND the TBD_MissionValidator.c SCHEMA_1_3 allowlist bump rides whichever of these first emits 1.3 (schema description names this).",
    "depends_on": [
     "T-076"
    ]
@@ -17638,7 +17638,7 @@
    "id": "T-701",
    "order": 4550,
    "program": "eden",
-   "status": "queued",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -17653,7 +17653,8 @@
    "surfaces": [
     "LEFT",
     "DATA"
-   ]
+   ],
+   "notes": " — SHIPPED wave 120 (editor factory), a16e9188; verifier wave120.md"
   },
   {
    "id": "T-702",
@@ -17740,7 +17741,7 @@
    "id": "T-706",
    "order": 4600,
    "program": "eden",
-   "status": "queued",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "shared"
@@ -17753,7 +17754,8 @@
     "ui"
    ],
    "title": "Widen mission.schema.json once for the whole editor program",
-   "summary": "All 16 mod-side tickets add a $def or a property to packages/tbd-schema/schema/mission.schema.json. Left per-ticket, that one file forces 16 sequential waves and roughly doubles the program (22 -> 38). This lands every schema change in one pass so the 16 Enfusion-runtime halves pack freely afterwards.\n\nTickets whose schema half this absorbs:\n  - T-212: Objectives as typed, placed, per-side entities with one uniform attrib\n  - T-654: Conditional inclusion: variant-gated document subtrees\n  - T-673: Marker style and Area markers — the $defs/marker widening\n  - T-674: T-216 follow-on: slot identity reaches the wire\n  - T-675: Vehicle roster reaches the game — the compile half of T-076\n  - T-676: Trigger activation and effects — the Enfusion runtime\n  - T-677: Waypoints — group movement orders\n  - T-678: Group AI state: combat mode, behaviour, formation, speed\n  - T-679: Placement scatter: radius and area shape\n  - T-680: Vehicle states: lock, fuel, ammo\n  - T-681: Entity states: health, allow-damage, show-model, size, stamina\n  - T-682: Environment readers: fog, wind, view distance\n  - T-684: Mission parameters as first-class document objects\n  - T-685: Zones become volumes: min/max height, attacker and defender counts, st\n  - T-689: Play-area enforcement gains a vehicle-class axis: the aircraft exempti\n  - T-705: Player gadget flags — map, compass, watch, GPS, radio\n\nACCEPTED RISK, stated because the repo has been bitten by it before: this briefly makes the schema a CONTRACT AHEAD OF ITS CONSUMER. mission.schema.json:72 already carries that exact warning about entities[] — \"NOTHING READS THIS ON ANY BUILD SHIPPED TODAY ... Do not cite it as a feature.\" Two mitigations are REQUIRED, not optional:\n  1. Every new field ships with a comment naming the ticket that will read it.\n  2. A test asserts each new field is currently unread, so the day a reader lands the test fails and      forces the comment to be removed. That is the fail-on-demand shape this program uses everywhere      else — a green you did not watch fail is unproven.\n\nAdditive only: no existing field changes shape, so no migration and no compiled-document break. Run early, before the runtime halves. Each of the 16 keeps its own ticket for the Enfusion reader and any editor UI, and its owns drops packages/tbd-schema."
+   "summary": "All 16 mod-side tickets add a $def or a property to packages/tbd-schema/schema/mission.schema.json. Left per-ticket, that one file forces 16 sequential waves and roughly doubles the program (22 -> 38). This lands every schema change in one pass so the 16 Enfusion-runtime halves pack freely afterwards.\n\nTickets whose schema half this absorbs:\n  - T-212: Objectives as typed, placed, per-side entities with one uniform attrib\n  - T-654: Conditional inclusion: variant-gated document subtrees\n  - T-673: Marker style and Area markers — the $defs/marker widening\n  - T-674: T-216 follow-on: slot identity reaches the wire\n  - T-675: Vehicle roster reaches the game — the compile half of T-076\n  - T-676: Trigger activation and effects — the Enfusion runtime\n  - T-677: Waypoints — group movement orders\n  - T-678: Group AI state: combat mode, behaviour, formation, speed\n  - T-679: Placement scatter: radius and area shape\n  - T-680: Vehicle states: lock, fuel, ammo\n  - T-681: Entity states: health, allow-damage, show-model, size, stamina\n  - T-682: Environment readers: fog, wind, view distance\n  - T-684: Mission parameters as first-class document objects\n  - T-685: Zones become volumes: min/max height, attacker and defender counts, st\n  - T-689: Play-area enforcement gains a vehicle-class axis: the aircraft exempti\n  - T-705: Player gadget flags — map, compass, watch, GPS, radio\n\nACCEPTED RISK, stated because the repo has been bitten by it before: this briefly makes the schema a CONTRACT AHEAD OF ITS CONSUMER. mission.schema.json:72 already carries that exact warning about entities[] — \"NOTHING READS THIS ON ANY BUILD SHIPPED TODAY ... Do not cite it as a feature.\" Two mitigations are REQUIRED, not optional:\n  1. Every new field ships with a comment naming the ticket that will read it.\n  2. A test asserts each new field is currently unread, so the day a reader lands the test fails and      forces the comment to be removed. That is the fail-on-demand shape this program uses everywhere      else — a green you did not watch fail is unproven.\n\nAdditive only: no existing field changes shape, so no migration and no compiled-document break. Run early, before the runtime halves. Each of the 16 keeps its own ticket for the Enfusion reader and any editor UI, and its owns drops packages/tbd-schema.",
+   "notes": " — SHIPPED wave 120 (editor factory), 843f3438 + ledger 9228a458 + hardening 6382c69c + prose 955a281d; verifier wave120.md (contract hardened against the hostile reading before any reader dispatched); unread-fields gate live at 53 fields"
   },
   {
    "program": "eden",

@@ -43,7 +43,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 117 | 100 | T-084 T-671 T-672 | — | — | pending |
 | 118 | 101 | T-637 T-698 T-699 | — | — | pending |
 | 119 | 102 | T-697 T-700 T-703 | — | — | pending |
-| 120 | 103 | T-701 T-706 | — | — | pending |
+| 120 | 95 | T-701 T-706 | PASS (run 3; run 1 red on the ledger tripwire firing as designed, run 2 = fixup) | 0B/4M/5m/4N → all hardened pre-close | SHIPPED — per-entity hide + the one-pass 1.3 contract; ledger learned DeclaredPendingEmit; 9 reader-ambiguities + 3 prose residues fixed BEFORE any reader dispatched; unread gate live at 53 fields |
 | 121 | 104 | T-702 T-212 T-654 | — | — | pending |
 | 122 | 105 | T-673 T-674 T-675 | — | — | pending |
 | 123 | 106 | T-676 T-677 T-678 | — | — | pending |
@@ -181,6 +181,17 @@ serialisation, not a hang).
   overlay state, NOT saved. Each documented in-code.
 - **T-638 centre-hold (W107):** camera holds the world point under the map-pane centre across
   dock reflows (Eden slides); Backspace hide/show never slides.
+
+## Mod-wave dispatch notes (wave A/B/C repack)
+
+- **flatten emits:** T-706 opened contracts whose flatten emits belong to the reader tickets.
+  T-674 (slot identity: leaderSlotId/tag/callsign/rank/stance) and T-675 (vehicles[]) each get
+  flatten.rs as dispatcher-extended owns — they COLLIDE there, so within wave A T-675 dispatches
+  only after T-674 reports (mini-serialization inside the wide wave; barrier unchanged). Each
+  emit must flip its DeclaredPendingEmit ledger rows to Reaches (the ledger enforces this).
+- Other wave-A tickets (T-702 Rust/Opus; T-212, T-654, T-673 Fable) are file-disjoint and
+  dispatch immediately. Gate per wave: bash scripts/mod/compile.sh (exit 0) + the platform wave
+  gate; compile.sh --selftest once per wave proves the gate can fail.
 
 ## Deferred tickets filed by verifiers
 
