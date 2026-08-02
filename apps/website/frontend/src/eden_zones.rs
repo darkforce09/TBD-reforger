@@ -36,7 +36,10 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
 
     let arm = move |shape: ZoneShape| {
         let kind = draw_kind.get_untracked();
-        ops::begin_zone_draw(&kind, shape);
+        // T-079 — the zone panel arms the SAME draw tool as the trigger panel, targeting the ZONE
+        // collection. `begin_zone_draw` takes the target so the trigger panel is a second consumer of
+        // the identical call (see [`DrawTarget`]).
+        ops::begin_zone_draw(&kind, shape, DrawTarget::Zone);
         doc_tick.update(|n| *n = n.wrapping_add(1));
     };
 
@@ -360,7 +363,7 @@ fn zone_attributes(
                             title="Redraw this zone as a circle — click the centre, then the rim"
                             class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                ops::begin_zone_reshape(&a, ZoneShape::Circle);
+                                ops::begin_zone_reshape(&a, ZoneShape::Circle, DrawTarget::Zone);
                                 bump();
                             }
                         >
@@ -371,7 +374,7 @@ fn zone_attributes(
                             title="Redraw this zone as a polygon — click each vertex, then Close"
                             class="flex-1 rounded-md border border-outline-variant/40 px-2 py-1.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
                             on:click=move |_| {
-                                ops::begin_zone_reshape(&b, ZoneShape::Polygon);
+                                ops::begin_zone_reshape(&b, ZoneShape::Polygon, DrawTarget::Zone);
                                 bump();
                             }
                         >
@@ -904,6 +907,62 @@ pub fn polygon_flat(verts: &[(f64, f64)]) -> Vec<f64> {
 pub enum ZoneShape {
     Circle,
     Polygon,
+}
+
+/// T-079 (CONN-TRG-OWNER-001) — the owner-link line's SCREEN geometry: the projected endpoints
+/// (trigger centre → owner) ready for one `<line>`. Pure so a native `cargo test` proves the
+/// projection with no engine/`window`, the [`crate::ruler_tool::ProjectedLeg`] idiom.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ProjectedOwnerLine {
+    pub x1: f64,
+    pub y1: f64,
+    pub x2: f64,
+    pub y2: f64,
+}
+
+/// Project the owner-link line's two WORLD endpoints (trigger centre `a`, owner position `b`) to
+/// screen space through a world→pixel projector (the live `OrthoCamera::project` on wasm; injected
+/// here so this stays pure + native-testable, exactly like [`crate::ruler_tool::project_legs`]).
+#[must_use]
+pub fn project_owner_line<F>(a: (f64, f64), b: (f64, f64), project: F) -> ProjectedOwnerLine
+where
+    F: Fn(f64, f64) -> (f64, f64),
+{
+    let (x1, y1) = project(a.0, a.1);
+    let (x2, y2) = project(b.0, b.1);
+    ProjectedOwnerLine { x1, y1, x2, y2 }
+}
+
+/// T-079 — WHICH COLLECTION a draw commits into. The trigger AREA is a SECOND CONSUMER of the
+/// shipped zone draw tool (the ticket's explicit constraint: "parameterize the draw flow by
+/// target-kind, do not fork it"). Every stage of the draw — the arm, the multi-click accumulation,
+/// the reshape, the commit — is identical for a zone and a trigger; the ONLY difference is which pair
+/// of core mutators the final commit calls (`add_*_zone` / `set_zone_*` vs `add_*_trigger` /
+/// `set_trigger_*`). So the difference is carried as this one-bit target on the in-flight draft
+/// rather than as a forked `begin_trigger_draw` / `advance_trigger_draw` / … set that would duplicate
+/// the whole geometry state machine and be free to drift from it.
+///
+/// It lives here beside [`ZoneShape`] — the pure, native-tested home — for the same reason `ZoneShape`
+/// does: `editor_ops` (wasm-only) branches on it, and keeping it here is what lets a native
+/// `cargo test -p website-frontend` prove any pure logic that reads it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DrawTarget {
+    /// The play-area / objective zones the T-582 panel authors (`zonesById`).
+    Zone,
+    /// T-079 — the trigger areas the Triggers palette authors (`triggersById`).
+    Trigger,
+}
+
+impl DrawTarget {
+    /// A human word for the target, for the live draw hint ("Drawing a boundary circle" vs
+    /// "Drawing a presence trigger circle"). Presentation only.
+    #[must_use]
+    pub fn noun(self) -> &'static str {
+        match self {
+            Self::Zone => "zone",
+            Self::Trigger => "trigger",
+        }
+    }
 }
 
 #[cfg(test)]
