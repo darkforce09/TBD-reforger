@@ -109,6 +109,14 @@ impl Primitive {
 /// filter/group without parsing prose; `message` is the author-facing sentence (same register as the
 /// wire-safety scanners — where, what, why, in one line); `subject` is the JSON-pointer-ish path into
 /// the payload the author can act on (`/editor/slots/3/position`), so the panel can focus the offender.
+///
+/// `subject_id` is the **stable entity id** the finding is about (a slot id, a squad id), when the
+/// rule knows one. It is a T-655 forward constraint (from the wave-104 verifier): the panel's
+/// click-to-select needs the entity id, not just the positional JSON pointer — a pointer like
+/// `/editor/slots/3` shifts when slot 2 is deleted, but `s1` does not, so the pointer is for
+/// display/focus and the id is for selection. The seed rules leave it `None` (their subjects are
+/// positional and, for `V2-FACTION-MAX` / `V4-SCHEMA-VERSION`, not a single entity at all); the
+/// T-657 ORBAT/slot rules populate it with the offending slot or squad id.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Finding {
     pub rule_id: &'static str,
@@ -116,6 +124,9 @@ pub struct Finding {
     pub primitive: Primitive,
     pub message: String,
     pub subject: String,
+    /// Stable id of the entity this finding is about (slot/squad id), or `None` when the rule's
+    /// subject is positional or not a single entity. See the struct doc (T-655 forward constraint).
+    pub subject_id: Option<String>,
 }
 
 /// A validation rule: a stable identity + primitive kind, a mission-shape gate, and an evaluator.
@@ -189,7 +200,9 @@ impl Rule {
         (self.trip_fixture)()
     }
 
-    /// Convenience for an `eval` body: build a finding carrying this rule's stable identity.
+    /// Convenience for an `eval` body: build a finding carrying this rule's stable identity, with no
+    /// entity `subject_id` (positional subject). The seed rules use this; the T-657 rules that know
+    /// the offending entity id use [`finding_id`](Rule::finding_id).
     fn finding(&self, message: String, subject: String) -> Finding {
         Finding {
             rule_id: self.id,
@@ -197,6 +210,21 @@ impl Rule {
             primitive: self.primitive,
             message,
             subject,
+            subject_id: None,
+        }
+    }
+
+    /// Like [`finding`](Rule::finding) but carrying the stable id of the entity the finding is about
+    /// (a slot or squad id) — the T-655 forward constraint. Use this in any rule whose subject IS a
+    /// single identifiable entity so the panel can select it directly.
+    fn finding_id(&self, message: String, subject: String, subject_id: String) -> Finding {
+        Finding {
+            rule_id: self.id,
+            severity: self.severity,
+            primitive: self.primitive,
+            message,
+            subject,
+            subject_id: Some(subject_id),
         }
     }
 }
@@ -338,6 +366,38 @@ impl Registry {
 /// Each rule carries the `trip_fixture` that [`Registry::self_check`] fires it against. That is the
 /// acceptance bar of this ticket expressed in the data: no rule is in this list without an input that
 /// proves it can fail.
+///
+/// ## The T-657 ORBAT/slot rules (this wave)
+///
+/// The seed above exercises each primitive on a payload shape the editor produced *at T-656*. T-657
+/// adds the first **domain** rule set — five rules that query the ORBAT graph
+/// ([`editor_squads`] / [`editor_slots`] / [`editor_factions`], the exact `compile_payload` shape):
+///
+/// * **[`ORBAT-SLOT-RESOLVES`](rule_orbat_slot_resolves)** — `Error`, V3. Every slot must resolve a
+///   **role** (non-empty `role`) and a **squad** (its id appears in some squad's `slotIds`). This is
+///   FNF's R3 (the one rule it rated `error`, mirrored here) and the anchor of the R3+R4+R5 collapse.
+/// * **[`ORBAT-IDENTITY-FILLED`](rule_orbat_identity_filled)** — `Warning`, V3. No squad carries a
+///   default/empty identity: a blank or whitespace-only `callsign` **or** `name`.
+/// * **[`ORBAT-SQUAD-HAS-LEADER`](rule_orbat_squad_has_leader)** — `Warning`, V3. A non-empty squad
+///   must name a `leaderSlotId` that is one of its own `slotIds`.
+/// * **[`ORBAT-CALLSIGN-UNIQUE`](rule_orbat_callsign_unique)** — `Warning`, V3. No two squads on the
+///   **same side** share a callsign (a duplicate makes the ORBAT tree ambiguous). Two sides may reuse
+///   a callsign — that does NOT fire.
+/// * **[`ORBAT-TEMPLATE-COVERAGE`](rule_orbat_template_coverage)** — `Warning`, V3. A squad
+///   instantiated from a template (`template.requiredRoles`) must fill every required role. This is
+///   the D3-D8 revival: six commented-out FNF per-squad coverage rules become ONE rule parameterised
+///   by the squad's own template descriptor. A squad with no template is not checked (skips).
+///
+/// ### Why one query replaces FNF's R3/R4/R5 + D3-D8
+///
+/// FNF's `MissionAnalyzer` needed R3, R4 and R5 as *three* overlapping rules with hardcoded name
+/// lists ONLY because Eden packs role and callsign into one `.sqm` string, so "does this slot have a
+/// role" and "is this callsign a real one" could only be asked by pattern-matching that string
+/// against a maintained list of known role/callsign spellings. TBD stores `role`, `callsign` and the
+/// squad↔slot edges as typed fields, so the same three questions are a field-presence check, a
+/// blank-string check and a set-membership check — no name list, and they cannot drift out of date.
+/// D3-D8 were six near-identical per-squad-type coverage rules; a typed `requiredRoles` list makes
+/// them one parameterised rule.
 #[must_use]
 pub fn default_registry() -> Registry {
     Registry::new(vec![
@@ -345,6 +405,12 @@ pub fn default_registry() -> Registry {
         rule_v2_faction_max(),
         rule_v3_slot_in_bounds(),
         rule_v4_schema_version(),
+        // ── T-657 ORBAT/slot rules ──
+        rule_orbat_slot_resolves(),
+        rule_orbat_identity_filled(),
+        rule_orbat_squad_has_leader(),
+        rule_orbat_callsign_unique(),
+        rule_orbat_template_coverage(),
     ])
 }
 
@@ -373,6 +439,45 @@ fn editor_slots(payload: &Value) -> &[Value] {
         .and_then(|e| e.get("slots"))
         .and_then(Value::as_array)
         .map_or(&[], Vec::as_slice)
+}
+
+/// `editor.squads[]` as a slice, or empty. Squad rows carry `id`, `callsign`, `name`, `slotIds`,
+/// `leaderSlotId` verbatim from the document core (`compile_payload` clones `squadsById` whole).
+fn editor_squads(payload: &Value) -> &[Value] {
+    payload
+        .get("editor")
+        .and_then(|e| e.get("squads"))
+        .and_then(Value::as_array)
+        .map_or(&[], Vec::as_slice)
+}
+
+/// A string field on an object as `&str`, or `""` — a missing key, a null, or a non-string are all
+/// "absent" here. Total: never panics, so an `eval` calling it is a total function over any payload.
+fn str_field<'a>(obj: &'a Value, key: &str) -> &'a str {
+    obj.get(key).and_then(Value::as_str).unwrap_or("")
+}
+
+/// A string-array field as an iterator of `&str`, skipping any non-string element. Total over any
+/// payload shape (a missing / non-array field yields an empty iterator; a `[1, "s1"]` yields `s1`).
+fn str_array<'a>(obj: &'a Value, key: &str) -> impl Iterator<Item = &'a str> {
+    obj.get(key)
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or(&[])
+        .iter()
+        .filter_map(Value::as_str)
+}
+
+/// A slot's stable id (`slots[].id`), or `""` when absent — the `subject_id` a slot-scoped finding
+/// carries. Ids are minted by the document core (`slot-...`) and are non-empty in practice; a blank
+/// id is itself a malformed row the rule still reports (with an empty `subject_id`), never a panic.
+fn slot_id(slot: &Value) -> &str {
+    str_field(slot, "id")
+}
+
+/// A squad's stable id (`squads[].id`), or `""` when absent.
+fn squad_id(squad: &Value) -> &str {
+    str_field(squad, "id")
 }
 
 /// The authored terrain key (`map.terrain`), defaulting to `everon` exactly as the compiler does
@@ -548,6 +653,338 @@ fn rule_v4_schema_version() -> Rule {
         },
         // Trips because: a STRING "1" is present, which does not derive to a u64 ≥ 1.
         trip_fixture: || serde_json::json!({ "schemaVersion": "1" }),
+    }
+}
+
+/* ═══════════════════════════ T-657 — ORBAT / slot rules ═══════════════════════════ */
+//
+// These five rules query the ORBAT graph the way `orbat::derive_orbat_from_editor` does — the
+// authored `editor` block, NOT the compiled `mission.schema.json` `orbat` map. The vocabulary is
+// fixed by the document core's writers (`doc/store.rs`: `add_faction` → `key`/`squadIds`; `add_squad`
+// → `id`/`callsign`/`name`/`slotIds`; `set_leader` → `leaderSlotId`; `add_slot` → `id`/`role`/…) and
+// carried verbatim into the payload by `compile::compile_payload` (`editor.{factions,squads,slots}`
+// are `Object.values(*ById)`). All five gate on `applies` only where a shape condition genuinely
+// makes the rule inert (V1 conditionality); the rest apply always and simply produce no findings on
+// a clean graph. Every `eval` is a TOTAL function over arbitrary JSON: it reads through `str_field` /
+// `str_array` (which treat missing/null/wrong-typed as absent) and never indexes, unwraps or expects
+// on payload data — a malformed payload yields findings or is skipped, never a panic (the wave-104
+// forward constraint; proved by `orbat_rules_never_panic_on_garbage`).
+
+/* ─────────────── ORBAT-SLOT-RESOLVES — every slot resolves a role AND a squad ─────────────── */
+
+/// A mission "has an ORBAT" iff it declares at least one squad. With no squads there are no slot↔squad
+/// edges to check and "unattached slot" is meaningless (a factionless/squadless draft is not broken),
+/// so this rule — like V1 — is conditional on that shape.
+fn declares_orbat(payload: &Value) -> bool {
+    !editor_squads(payload).is_empty()
+}
+
+/// The set of slot ids referenced by *some* squad's `slotIds`. A slot whose id is absent from this
+/// set is not filed under any squad — it resolves no squad.
+fn attached_slot_ids(payload: &Value) -> std::collections::HashSet<&str> {
+    let mut set = std::collections::HashSet::new();
+    for sq in editor_squads(payload) {
+        for id in str_array(sq, "slotIds") {
+            set.insert(id);
+        }
+    }
+    set
+}
+
+fn rule_orbat_slot_resolves() -> Rule {
+    Rule {
+        id: "ORBAT-SLOT-RESOLVES",
+        // Error — mirrors FNF's R3, the single check it rated `error` rather than `warning`: a slot
+        // that resolves no role or no squad does not compile to a usable seat.
+        severity: Severity::Error,
+        primitive: Primitive::PerObjectInvariant,
+        // GATE: only when the mission declares squads. A factionless/squadless draft has no ORBAT to
+        // be inconsistent with — the same V1 conditionality that spares the tool an ignore-list.
+        applies: declares_orbat,
+        eval: |rule, payload| {
+            let attached = attached_slot_ids(payload);
+            let mut out = Vec::new();
+            // Walk EVERY slot; report each offender (never early-exit — a second unresolved slot must
+            // not hide behind the first).
+            for (i, slot) in editor_slots(payload).iter().enumerate() {
+                let id = slot_id(slot);
+                let role = str_field(slot, "role").trim();
+                let has_role = !role.is_empty();
+                // A slot resolves a squad when its id is in some squad's slotIds. A blank id can be in
+                // no squad's list (ids are minted non-empty), so it correctly reads as unattached.
+                let has_squad = !id.is_empty() && attached.contains(id);
+                if has_role && has_squad {
+                    continue;
+                }
+                let missing = match (has_role, has_squad) {
+                    (false, false) => "resolves neither a role nor a squad",
+                    (true, false) => "is not filed under any squad",
+                    (false, true) => "has no role",
+                    (true, true) => unreachable!(),
+                };
+                out.push(rule.finding_id(
+                    format!(
+                        "slot {} {missing} — every slot must name a role and belong to a squad, \
+                         or it compiles to no usable seat.",
+                        if id.is_empty() { "(no id)" } else { id },
+                    ),
+                    format!("/editor/slots/{i}"),
+                    id.to_string(),
+                ));
+            }
+            out
+        },
+        // Trips because: the squad declares an ORBAT (gate holds) but slot `s1` is listed in no
+        // squad's `slotIds` AND has an empty role — it resolves neither.
+        trip_fixture: || {
+            serde_json::json!({
+                "editor": {
+                    "squads": [{"id": "sq1", "callsign": "Alpha", "name": "Alpha 1-1", "slotIds": []}],
+                    "slots": [{"id": "s1", "role": ""}]
+                }
+            })
+        },
+    }
+}
+
+/* ─────────────── ORBAT-IDENTITY-FILLED — no default/empty identity fields ─────────────── */
+
+fn rule_orbat_identity_filled() -> Rule {
+    Rule {
+        id: "ORBAT-IDENTITY-FILLED",
+        severity: Severity::Warning,
+        primitive: Primitive::PerObjectInvariant,
+        applies: declares_orbat,
+        eval: |rule, payload| {
+            let mut out = Vec::new();
+            for (i, sq) in editor_squads(payload).iter().enumerate() {
+                let id = squad_id(sq);
+                let callsign_blank = str_field(sq, "callsign").trim().is_empty();
+                let name_blank = str_field(sq, "name").trim().is_empty();
+                // Both blank / whitespace-only is a default identity — the squad shows as a nameless
+                // row and, callsign-side, decodes to `orbat_slots.callsign = ""` downstream. Reported
+                // per squad so the panel can jump to the offender.
+                if callsign_blank && name_blank {
+                    out.push(rule.finding_id(
+                        format!(
+                            "squad {} has no callsign and no name — give it an identity so it is \
+                             addressable in the ORBAT and the roster.",
+                            if id.is_empty() { "(no id)" } else { id },
+                        ),
+                        format!("/editor/squads/{i}"),
+                        id.to_string(),
+                    ));
+                }
+            }
+            out
+        },
+        // Trips because: squad `sq1` carries neither a callsign nor a name (both empty).
+        trip_fixture: || {
+            serde_json::json!({
+                "editor": {
+                    "squads": [{"id": "sq1", "callsign": "", "name": "", "slotIds": []}]
+                }
+            })
+        },
+    }
+}
+
+/* ─────────────── ORBAT-SQUAD-HAS-LEADER — no leaderless squads ─────────────── */
+
+fn rule_orbat_squad_has_leader() -> Rule {
+    Rule {
+        id: "ORBAT-SQUAD-HAS-LEADER",
+        severity: Severity::Warning,
+        primitive: Primitive::PerObjectInvariant,
+        applies: declares_orbat,
+        eval: |rule, payload| {
+            let mut out = Vec::new();
+            for (i, sq) in editor_squads(payload).iter().enumerate() {
+                let id = squad_id(sq);
+                let members: Vec<&str> = str_array(sq, "slotIds").collect();
+                if members.is_empty() {
+                    continue; // an empty squad has no body to lead — not this rule's concern
+                }
+                let leader = str_field(sq, "leaderSlotId");
+                // A leader must be one of the squad's own bodies. Absent, blank, or pointing at a slot
+                // outside this squad all read as leaderless (the document core's `set_leader` only
+                // writes an id that is in `slotIds`, so a violation here is a genuinely broken row).
+                let has_leader = !leader.is_empty() && members.contains(&leader);
+                if !has_leader {
+                    out.push(rule.finding_id(
+                        format!(
+                            "squad {} has {} slot(s) but no leader — one of its slots must be the \
+                             leader (leaderSlotId).",
+                            if id.is_empty() { "(no id)" } else { id },
+                            members.len(),
+                        ),
+                        format!("/editor/squads/{i}"),
+                        id.to_string(),
+                    ));
+                }
+            }
+            out
+        },
+        // Trips because: squad `sq1` holds a slot but names no leaderSlotId.
+        trip_fixture: || {
+            serde_json::json!({
+                "editor": {
+                    "squads": [{"id": "sq1", "callsign": "Alpha", "name": "Alpha 1-1", "slotIds": ["s1"]}],
+                    "slots": [{"id": "s1", "role": "SL"}]
+                }
+            })
+        },
+    }
+}
+
+/* ─────────────── ORBAT-CALLSIGN-UNIQUE — no duplicate callsigns within a side ─────────────── */
+
+fn rule_orbat_callsign_unique() -> Rule {
+    Rule {
+        id: "ORBAT-CALLSIGN-UNIQUE",
+        severity: Severity::Warning,
+        primitive: Primitive::PerObjectInvariant,
+        applies: declares_orbat,
+        eval: |rule, payload| {
+            // Index squads by id so a faction's `squadIds` resolve to callsigns. The uniqueness scope
+            // is ONE SIDE (one faction): two sides may reuse a callsign ("Alpha" on both BLUFOR and
+            // OPFOR is legal and common) — that must NOT fire, so we group per faction, not globally.
+            use std::collections::HashMap;
+            let squads_by_id: HashMap<&str, &Value> = editor_squads(payload)
+                .iter()
+                .map(|s| (squad_id(s), s))
+                .collect();
+            let mut out = Vec::new();
+            for faction in editor_factions(payload) {
+                // callsign (trimmed, lowercased for a case-insensitive clash) → first squad id seen.
+                let mut seen: HashMap<String, &str> = HashMap::new();
+                for member_id in str_array(faction, "squadIds") {
+                    let Some(sq) = squads_by_id.get(member_id) else {
+                        continue; // dangling squad ref — not this rule's fault (SLOT-RESOLVES-adjacent)
+                    };
+                    let callsign = str_field(sq, "callsign").trim();
+                    if callsign.is_empty() {
+                        continue; // a blank callsign is IDENTITY-FILLED's concern, not a duplicate
+                    }
+                    let key = callsign.to_lowercase();
+                    if let Some(&first) = seen.get(&key) {
+                        let id = squad_id(sq);
+                        out.push(rule.finding_id(
+                            format!(
+                                "callsign {callsign:?} is used by more than one squad on side {:?} \
+                                 (also squad {first}) — callsigns must be unique within a side.",
+                                str_field(faction, "key"),
+                            ),
+                            format!("/editor/squads/{member_id}/callsign"),
+                            id.to_string(),
+                        ));
+                    } else {
+                        seen.insert(key, member_id);
+                    }
+                }
+            }
+            out
+        },
+        // Trips because: BLUFOR lists two squads both called "Alpha".
+        trip_fixture: || {
+            serde_json::json!({
+                "editor": {
+                    "factions": [{"key": "BLUFOR", "name": "US Army", "squadIds": ["sq1", "sq2"]}],
+                    "squads": [
+                        {"id": "sq1", "callsign": "Alpha", "name": "Alpha 1-1", "slotIds": []},
+                        {"id": "sq2", "callsign": "Alpha", "name": "Alpha 1-2", "slotIds": []}
+                    ]
+                }
+            })
+        },
+    }
+}
+
+/* ─────────────── ORBAT-TEMPLATE-COVERAGE — D3-D8 revival (one parameterised rule) ─────────────── */
+
+/// A squad's declared required roles, read from `squad.template.requiredRoles` (an array of role
+/// strings). This is the T-657 D3-D8 shape: rather than six hardcoded per-squad-type coverage rules,
+/// a squad instantiated from a template carries the template's required-role list on itself, and ONE
+/// rule checks coverage against whatever it declares. A squad with no `template` block (or an empty /
+/// wrong-typed `requiredRoles`) declares nothing required and is not checked — the "a squad with no
+/// template skips the coverage rule" boundary.
+fn required_roles(squad: &Value) -> Vec<&str> {
+    squad
+        .get("template")
+        .and_then(|t| t.get("requiredRoles"))
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or(&[])
+        .iter()
+        .filter_map(Value::as_str)
+        .map(str::trim)
+        .filter(|r| !r.is_empty())
+        .collect()
+}
+
+fn rule_orbat_template_coverage() -> Rule {
+    Rule {
+        id: "ORBAT-TEMPLATE-COVERAGE",
+        severity: Severity::Warning,
+        primitive: Primitive::PerObjectInvariant,
+        applies: declares_orbat,
+        eval: |rule, payload| {
+            use std::collections::HashSet;
+            // Slot id → role, so a squad's `slotIds` resolve to the roles it actually fills.
+            let role_of: std::collections::HashMap<&str, &str> = editor_slots(payload)
+                .iter()
+                .map(|s| (slot_id(s), str_field(s, "role").trim()))
+                .collect();
+            let mut out = Vec::new();
+            for (i, sq) in editor_squads(payload).iter().enumerate() {
+                let required = required_roles(sq);
+                if required.is_empty() {
+                    continue; // no template / no required roles → this rule does not apply to it
+                }
+                // The roles this squad's bodies actually fill (case-insensitive; blanks dropped).
+                let filled: HashSet<String> = str_array(sq, "slotIds")
+                    .filter_map(|id| role_of.get(id))
+                    .map(|r| r.to_lowercase())
+                    .filter(|r| !r.is_empty())
+                    .collect();
+                let mut missing: Vec<&str> = required
+                    .iter()
+                    .copied()
+                    .filter(|r| !filled.contains(&r.to_lowercase()))
+                    .collect();
+                if missing.is_empty() {
+                    continue;
+                }
+                missing.dedup(); // adjacent dupes in the template list collapse for the message
+                let id = squad_id(sq);
+                out.push(rule.finding_id(
+                    format!(
+                        "squad {} is missing required role(s) [{}] for its template — a squad \
+                         instantiated from a template must fill every role the template requires.",
+                        if id.is_empty() { "(no id)" } else { id },
+                        missing.join(", "),
+                    ),
+                    format!("/editor/squads/{i}"),
+                    id.to_string(),
+                ));
+            }
+            out
+        },
+        // Trips because: squad `sq1`'s template requires [SL, MED] but its only slot fills SL — MED
+        // is uncovered.
+        trip_fixture: || {
+            serde_json::json!({
+                "editor": {
+                    "squads": [{
+                        "id": "sq1", "callsign": "Alpha", "name": "Alpha 1-1",
+                        "slotIds": ["s1"],
+                        "leaderSlotId": "s1",
+                        "template": {"requiredRoles": ["SL", "MED"]}
+                    }],
+                    "slots": [{"id": "s1", "role": "SL"}]
+                }
+            })
+        },
     }
 }
 
@@ -753,7 +1190,25 @@ mod tests {
         // A complete, valid editor payload (the FIXTURE shape from flatten.rs, trimmed): two sides,
         // slots inside everon bounds, integer schemaVersion. The engine must be GREEN on it — the
         // green-path counterpart to every fail-on-demand test above.
-        let p = json!({
+        //
+        // T-657 tightened what "clean" means: each squad now carries an identity (callsign) AND names
+        // a `leaderSlotId` that is one of its slots, and every slot resolves a role + a squad. This
+        // fixture is filled out to meet that bar so it stays the honest all-rules-green counterpart.
+        let p = clean_orbat_payload();
+        assert!(
+            validate_editor_payload(&p).is_empty(),
+            "{:?}",
+            validate_editor_payload(&p)
+        );
+    }
+
+    /// A complete, all-rules-green ORBAT payload, reused by the T-657 perturb-and-restore tests: two
+    /// sides, each with one led squad whose single slot resolves a role and a squad, slots in bounds,
+    /// integer schemaVersion. Perturbing exactly one field trips exactly one rule; restoring it
+    /// returns to green — the fired-proof pattern the ticket asks for beyond the structural
+    /// self-check.
+    fn clean_orbat_payload() -> Value {
+        json!({
             "schemaVersion": 1,
             "map": {"terrain": "everon", "bounds": [0, 0, 12800, 12800]},
             "editor": {
@@ -762,20 +1217,17 @@ mod tests {
                     {"key": "OPFOR", "name": "Soviet VDV", "squadIds": ["sq2"]}
                 ],
                 "squads": [
-                    {"id": "sq1", "callsign": "Alpha", "slotIds": ["s1"]},
-                    {"id": "sq2", "callsign": "Grom", "slotIds": ["s2"]}
+                    {"id": "sq1", "callsign": "Alpha", "name": "Alpha 1-1",
+                     "slotIds": ["s1"], "leaderSlotId": "s1"},
+                    {"id": "sq2", "callsign": "Grom", "name": "Grom 1-1",
+                     "slotIds": ["s2"], "leaderSlotId": "s2"}
                 ],
                 "slots": [
                     {"id": "s1", "role": "SL", "position": {"x": 4839.2, "y": 6620.8, "z": 0.0}},
                     {"id": "s2", "role": "RFL", "position": {"x": 6010.0, "y": 7211.5, "z": 0.0}}
                 ]
             }
-        });
-        assert!(
-            validate_editor_payload(&p).is_empty(),
-            "{:?}",
-            validate_editor_payload(&p)
-        );
+        })
     }
 
     #[test]
@@ -895,5 +1347,366 @@ mod tests {
                 "missing {want} in {findings:?}"
             );
         }
+    }
+
+    /* ═══════════════════════════ T-657 — ORBAT / slot rules ═══════════════════════════ */
+
+    /* ── ORBAT-SLOT-RESOLVES: fail-on-demand (asserts id/severity/primitive/subject/subject_id) ── */
+
+    #[test]
+    fn orbat_slot_resolves_fires_when_a_slot_resolves_neither() {
+        let findings = validate_editor_payload(&rule_orbat_slot_resolves().trip_fixture());
+        let f = finding_for(&findings, "ORBAT-SLOT-RESOLVES");
+        assert_eq!(f.severity, Severity::Error); // R3 — the one FNF rated error
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant);
+        assert_eq!(f.subject, "/editor/slots/0");
+        assert_eq!(f.subject_id.as_deref(), Some("s1")); // T-655 forward constraint: the entity id
+        assert!(f.message.contains("resolves neither"), "{f:?}");
+    }
+
+    #[test]
+    fn orbat_slot_resolves_distinguishes_missing_role_from_missing_squad() {
+        // A slot with a role but filed under no squad → "not filed under any squad"; a slot filed
+        // under a squad but with a blank role → "has no role". Both fire, one per offender.
+        let p = json!({"editor": {
+            "squads": [{"id": "sq1", "callsign": "A", "name": "A", "slotIds": ["s2"], "leaderSlotId": "s2"}],
+            "slots": [
+                {"id": "s1", "role": "RFL"},          // has role, unattached
+                {"id": "s2", "role": ""}              // attached, no role
+            ]
+        }});
+        let findings = validate_editor_payload(&p);
+        let fs: Vec<&Finding> = findings
+            .iter()
+            .filter(|f| f.rule_id == "ORBAT-SLOT-RESOLVES")
+            .collect();
+        // s1 — has a role but is filed under no squad; s2 — attached but blank role.
+        let s1 = fs
+            .iter()
+            .find(|f| f.subject_id.as_deref() == Some("s1"))
+            .expect("a finding for s1");
+        let s2 = fs
+            .iter()
+            .find(|f| f.subject_id.as_deref() == Some("s2"))
+            .expect("a finding for s2");
+        assert!(s1.message.contains("not filed under any squad"), "{s1:?}");
+        assert!(s2.message.contains("has no role"), "{s2:?}");
+    }
+
+    #[test]
+    fn orbat_slot_resolves_is_conditional_on_a_declared_orbat() {
+        // No squads ⇒ no ORBAT ⇒ the rule does not apply, even to a slot with no role. This is the
+        // V1-style conditionality: a squadless draft is not "broken".
+        for p in [
+            json!({}),
+            json!({"editor": {"slots": [{"id": "s1", "role": ""}]}}),
+        ] {
+            assert!(
+                !rule_orbat_slot_resolves().applies(&p),
+                "must not apply: {p}"
+            );
+            assert!(
+                validate_editor_payload(&p)
+                    .iter()
+                    .all(|f| f.rule_id != "ORBAT-SLOT-RESOLVES"),
+                "must stay silent without an ORBAT: {p}"
+            );
+        }
+    }
+
+    /* ── ORBAT-IDENTITY-FILLED: fail-on-demand + accepts a partial identity ── */
+
+    #[test]
+    fn orbat_identity_filled_fires_on_a_squad_with_no_callsign_and_no_name() {
+        let findings = validate_editor_payload(&rule_orbat_identity_filled().trip_fixture());
+        let f = finding_for(&findings, "ORBAT-IDENTITY-FILLED");
+        assert_eq!(f.severity, Severity::Warning);
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant);
+        assert_eq!(f.subject, "/editor/squads/0");
+        assert_eq!(f.subject_id.as_deref(), Some("sq1"));
+        assert!(f.message.contains("no callsign and no name"), "{f:?}");
+    }
+
+    #[test]
+    fn orbat_identity_filled_accepts_either_a_callsign_or_a_name() {
+        // A squad with a callsign but no name, or a name but no callsign, is addressable — not a
+        // default identity. Only both-blank fires.
+        for sq in [
+            json!({"id": "sq1", "callsign": "Alpha", "name": "", "slotIds": []}),
+            json!({"id": "sq1", "callsign": "  ", "name": "Alpha 1-1", "slotIds": []}),
+        ] {
+            let p = json!({"editor": {"squads": [sq.clone()]}});
+            assert!(
+                validate_editor_payload(&p)
+                    .iter()
+                    .all(|f| f.rule_id != "ORBAT-IDENTITY-FILLED"),
+                "a partial identity must pass: {sq}"
+            );
+        }
+    }
+
+    /* ── ORBAT-SQUAD-HAS-LEADER: fail-on-demand + empty squad is not leaderless ── */
+
+    #[test]
+    fn orbat_squad_has_leader_fires_on_a_manned_squad_with_no_leader() {
+        let findings = validate_editor_payload(&rule_orbat_squad_has_leader().trip_fixture());
+        let f = finding_for(&findings, "ORBAT-SQUAD-HAS-LEADER");
+        assert_eq!(f.severity, Severity::Warning);
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant);
+        assert_eq!(f.subject, "/editor/squads/0");
+        assert_eq!(f.subject_id.as_deref(), Some("sq1"));
+        assert!(f.message.contains("no leader"), "{f:?}");
+    }
+
+    #[test]
+    fn orbat_squad_has_leader_ignores_an_empty_squad_and_accepts_a_valid_leader() {
+        // Empty squad → no body to lead → no finding. A squad whose leaderSlotId is one of its slots
+        // → no finding. A squad whose leaderSlotId points OUTSIDE its slots → fires (leaderless).
+        let ok = json!({"editor": {
+            "squads": [
+                {"id": "sq-empty", "callsign": "E", "name": "E", "slotIds": []},
+                {"id": "sq-led", "callsign": "L", "name": "L", "slotIds": ["s1"], "leaderSlotId": "s1"}
+            ],
+            "slots": [{"id": "s1", "role": "SL"}]
+        }});
+        assert!(
+            validate_editor_payload(&ok)
+                .iter()
+                .all(|f| f.rule_id != "ORBAT-SQUAD-HAS-LEADER"),
+            "empty + validly-led squads must pass: {:?}",
+            validate_editor_payload(&ok)
+        );
+        let foreign = json!({"editor": {
+            "squads": [{"id": "sq1", "callsign": "A", "name": "A", "slotIds": ["s1"], "leaderSlotId": "s2"}],
+            "slots": [{"id": "s1", "role": "SL"}]
+        }});
+        assert!(
+            validate_editor_payload(&foreign)
+                .iter()
+                .any(|f| f.rule_id == "ORBAT-SQUAD-HAS-LEADER"),
+            "a leaderSlotId outside the squad is leaderless"
+        );
+    }
+
+    /* ── ORBAT-CALLSIGN-UNIQUE: fail-on-demand + cross-side reuse does NOT fire ── */
+
+    #[test]
+    fn orbat_callsign_unique_fires_on_two_squads_sharing_a_callsign_on_one_side() {
+        let findings = validate_editor_payload(&rule_orbat_callsign_unique().trip_fixture());
+        let f = finding_for(&findings, "ORBAT-CALLSIGN-UNIQUE");
+        assert_eq!(f.severity, Severity::Warning);
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant);
+        assert_eq!(f.subject, "/editor/squads/sq2/callsign"); // the SECOND squad seen is the offender
+        assert_eq!(f.subject_id.as_deref(), Some("sq2"));
+        assert!(f.message.contains("unique within a side"), "{f:?}");
+    }
+
+    #[test]
+    fn orbat_callsign_unique_does_not_fire_across_different_sides() {
+        // "Alpha" on BLUFOR and "Alpha" on OPFOR is legal — uniqueness is per side, not global.
+        let p = json!({"editor": {
+            "factions": [
+                {"key": "BLUFOR", "name": "US", "squadIds": ["sq1"]},
+                {"key": "OPFOR", "name": "SOV", "squadIds": ["sq2"]}
+            ],
+            "squads": [
+                {"id": "sq1", "callsign": "Alpha", "name": "A", "slotIds": []},
+                {"id": "sq2", "callsign": "Alpha", "name": "B", "slotIds": []}
+            ]
+        }});
+        assert!(
+            validate_editor_payload(&p)
+                .iter()
+                .all(|f| f.rule_id != "ORBAT-CALLSIGN-UNIQUE"),
+            "same callsign on two DIFFERENT sides must not fire: {:?}",
+            validate_editor_payload(&p)
+        );
+    }
+
+    /* ── ORBAT-TEMPLATE-COVERAGE (D3-D8 revival): fail-on-demand + no-template skip ── */
+
+    #[test]
+    fn orbat_template_coverage_fires_when_a_required_role_is_unfilled() {
+        let findings = validate_editor_payload(&rule_orbat_template_coverage().trip_fixture());
+        let f = finding_for(&findings, "ORBAT-TEMPLATE-COVERAGE");
+        assert_eq!(f.severity, Severity::Warning);
+        assert_eq!(f.primitive, Primitive::PerObjectInvariant);
+        assert_eq!(f.subject, "/editor/squads/0");
+        assert_eq!(f.subject_id.as_deref(), Some("sq1"));
+        assert!(f.message.contains("MED"), "{f:?}"); // the uncovered required role
+        assert!(f.message.contains("template"), "{f:?}");
+    }
+
+    #[test]
+    fn orbat_template_coverage_skips_a_squad_with_no_template() {
+        // The boundary the ticket names explicitly: a squad with no `template` block declares no
+        // required roles, so the coverage rule does not apply to it — even if it is a bare one-slot
+        // squad that fills nothing in particular.
+        let p = json!({"editor": {
+            "squads": [{"id": "sq1", "callsign": "A", "name": "A", "slotIds": ["s1"], "leaderSlotId": "s1"}],
+            "slots": [{"id": "s1", "role": "RFL"}]
+        }});
+        assert!(
+            validate_editor_payload(&p)
+                .iter()
+                .all(|f| f.rule_id != "ORBAT-TEMPLATE-COVERAGE"),
+            "a squad with no template must skip coverage: {:?}",
+            validate_editor_payload(&p)
+        );
+    }
+
+    #[test]
+    fn orbat_template_coverage_passes_when_every_required_role_is_filled() {
+        // Same template as the trip fixture (requires SL + MED) but now both roles are filled → green.
+        let p = json!({"editor": {
+            "squads": [{
+                "id": "sq1", "callsign": "A", "name": "A",
+                "slotIds": ["s1", "s2"], "leaderSlotId": "s1",
+                "template": {"requiredRoles": ["SL", "MED"]}
+            }],
+            "slots": [{"id": "s1", "role": "SL"}, {"id": "s2", "role": "MED"}]
+        }});
+        assert!(
+            validate_editor_payload(&p)
+                .iter()
+                .all(|f| f.rule_id != "ORBAT-TEMPLATE-COVERAGE"),
+            "full coverage must pass: {:?}",
+            validate_editor_payload(&p)
+        );
+    }
+
+    /* ── Boundary: empty ORBAT is silent, not a panic ── */
+
+    #[test]
+    fn an_empty_orbat_produces_no_orbat_findings_and_does_not_panic() {
+        // A completely empty payload and a payload with an empty editor block: none of the five
+        // ORBAT rules apply (no squads), and evaluation returns cleanly.
+        for p in [
+            json!({}),
+            json!({"editor": {}}),
+            json!({"editor": {"factions": [], "squads": [], "slots": []}}),
+        ] {
+            let findings = validate_editor_payload(&p);
+            for id in [
+                "ORBAT-SLOT-RESOLVES",
+                "ORBAT-IDENTITY-FILLED",
+                "ORBAT-SQUAD-HAS-LEADER",
+                "ORBAT-CALLSIGN-UNIQUE",
+                "ORBAT-TEMPLATE-COVERAGE",
+            ] {
+                assert!(
+                    findings.iter().all(|f| f.rule_id != id),
+                    "{id} must be silent on {p}"
+                );
+            }
+        }
+    }
+
+    /* ── Forward constraint 2: no eval panics on garbage payloads ── */
+
+    #[test]
+    fn orbat_rules_never_panic_on_garbage() {
+        // The wave-104 forward constraint: eval panics propagate and would wasm-trap under always-on
+        // eval, so every eval must be TOTAL. Feed deliberately malformed payloads — wrong types where
+        // objects/arrays/strings are expected, nulls, deep nesting, non-string ids in id arrays —
+        // through the WHOLE registry and assert only that evaluation returns without panicking.
+        let garbage = [
+            json!(null),
+            json!(42),
+            json!("a string, not an object"),
+            json!([]),
+            json!({"editor": 7}), // editor not an object
+            json!({"editor": {"squads": "nope", "slots": 3, "factions": {}}}),
+            json!({"editor": {"squads": [null, 5, "x", {}]}}), // non-object squad rows
+            json!({"editor": {"slots": [null, 9, {"id": 5, "role": []}]}}), // id/role wrong types
+            json!({"editor": {
+                "factions": [{"key": null, "squadIds": [1, 2, {}, "sq1"]}],
+                "squads": [{"id": null, "callsign": 5, "name": [], "slotIds": "x", "leaderSlotId": {}}],
+                "slots": [{"id": 1, "role": 2}]
+            }}),
+            json!({"editor": {"squads": [{
+                "id": "sq1", "slotIds": [null, 3, "s1"],
+                "template": {"requiredRoles": [null, 7, "SL", ""]}
+            }], "slots": [{"id": "s1", "role": null}]}}),
+            json!({"schemaVersion": {"nested": [1, 2, 3]}, "map": {"terrain": []}}),
+        ];
+        let reg = default_registry();
+        for p in garbage {
+            // Must not panic. We do not assert on the findings — only that eval is total.
+            let _ = reg.evaluate(&p);
+            let _ = validate_editor_payload(&p);
+        }
+    }
+
+    /* ── Structural: all T-657 rules are registered, and self_check still passes ── */
+
+    #[test]
+    fn t657_rules_are_registered_and_self_check_passes() {
+        let reg = default_registry();
+        let ids: Vec<&str> = reg.rules().iter().map(Rule::id).collect();
+        for want in [
+            "ORBAT-SLOT-RESOLVES",
+            "ORBAT-IDENTITY-FILLED",
+            "ORBAT-SQUAD-HAS-LEADER",
+            "ORBAT-CALLSIGN-UNIQUE",
+            "ORBAT-TEMPLATE-COVERAGE",
+        ] {
+            assert!(ids.contains(&want), "registry missing {want}");
+        }
+        // The engine-level guard must still pass with the new rules present — each fires on its own
+        // trip fixture (a rule that cannot fire is a loud failure, per T-656).
+        reg.self_check()
+            .expect("every rule (seed + T-657) must fire on its trip fixture");
+    }
+
+    /* ── Fired proof beyond self_check: perturb one field, one rule fires, restore → green ── */
+
+    #[test]
+    fn perturb_and_restore_fires_exactly_the_leader_rule() {
+        // Start from the all-green ORBAT payload. Remove sq1's leaderSlotId → ORBAT-SQUAD-HAS-LEADER
+        // fires (and ONLY it among the ORBAT rules); restore it → green again. This is the
+        // "fire one rule once (perturb/fail/restore)" proof the ticket asks for on top of the
+        // structural self_check.
+        let clean = clean_orbat_payload();
+        assert!(
+            validate_editor_payload(&clean).is_empty(),
+            "baseline must be green: {:?}",
+            validate_editor_payload(&clean)
+        );
+
+        let mut broken = clean.clone();
+        broken["editor"]["squads"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("leaderSlotId");
+        let findings = validate_editor_payload(&broken);
+        let leader: Vec<&Finding> = findings
+            .iter()
+            .filter(|f| f.rule_id == "ORBAT-SQUAD-HAS-LEADER")
+            .collect();
+        assert_eq!(
+            leader.len(),
+            1,
+            "exactly one leaderless finding: {findings:?}"
+        );
+        assert_eq!(leader[0].subject_id.as_deref(), Some("sq1"));
+        // No OTHER ORBAT rule should have fired on this single-field perturbation.
+        for other in [
+            "ORBAT-SLOT-RESOLVES",
+            "ORBAT-IDENTITY-FILLED",
+            "ORBAT-CALLSIGN-UNIQUE",
+            "ORBAT-TEMPLATE-COVERAGE",
+        ] {
+            assert!(
+                findings.iter().all(|f| f.rule_id != other),
+                "only the leader rule should fire; {other} also fired: {findings:?}"
+            );
+        }
+
+        // Restore → back to fully green.
+        assert!(
+            validate_editor_payload(&clean).is_empty(),
+            "restoring must return to green"
+        );
     }
 }
