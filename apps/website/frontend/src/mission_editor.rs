@@ -729,6 +729,10 @@ pub fn MissionEditorPage() -> impl IntoView {
     let fm_open = RwSignal::new(false);
     // T-177 B2 / T-071.0 — the ORBAT Manager modal open flag (top-strip button ↔ OrbatManagerDialog).
     let orbat_open = RwSignal::new(false);
+    // T-662 — Backspace hides the whole Eden chrome (Eden's "hide interface"), leaving the map
+    // full-bleed and interactive. Gates the four dock mounts + the strip below; another Backspace
+    // brings them back. Declared on both targets — the view reads it, the wasm keydown toggles it.
+    let chrome_hidden = RwSignal::new(false);
     // T-159.27 — the flat registry gear rows for the Attributes Arsenal tab (populated by the same
     // /registry fetch that builds the Factions palette). None until it lands.
     let registry_items = RwSignal::new(None::<Vec<crate::dto::RegistryItem>>);
@@ -1000,8 +1004,9 @@ pub fn MissionEditorPage() -> impl IntoView {
             on_cleanup(crate::mission_history::unregister_unload_guard);
             crate::mission_history::refresh_hud();
 
-            // T-159.26 — editor keyboard actions (MissionCreatorPage onKeyDown): Delete/Backspace
+            // T-159.26 — editor keyboard actions (MissionCreatorPage onKeyDown): Delete
             // (remove selection), Space (center on centroid), Ctrl/Cmd+C/V (copy/paste at cursor).
+            // T-662 — Backspace is here too, but bound to hide-chrome (`chrome_hidden`), NOT delete.
             // A SEPARATE window keydown from the undo/redo one (which owns Ctrl+Z/Y) — each guards
             // its own keys, both skip editable fields. `cursor` feeds the paste anchor (world coords).
             {
@@ -1024,8 +1029,15 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 crate::editor_ops::paste_at_cursor(cx, cy)
                             }
                             "Space" if !modk => crate::editor_ops::center_on_selection(),
-                            "Delete" | "Backspace" if !modk => {
-                                crate::editor_ops::delete_selection()
+                            // T-662 — Delete still removes the selection. Backspace is NO LONGER an
+                            // alias for Delete; it toggles the Eden chrome (hide/show interface), so
+                            // the two keys are now split arms. Backspace always "acts" (it flips the
+                            // signal), so `prevent_default` fires below to keep the browser from
+                            // treating it as a Back navigation.
+                            "Delete" if !modk => crate::editor_ops::delete_selection(),
+                            "Backspace" if !modk => {
+                                chrome_hidden.set(!chrome_hidden.get_untracked());
+                                true
                             }
                             _ => false,
                         };
@@ -1387,19 +1399,24 @@ pub fn MissionEditorPage() -> impl IntoView {
                 &wheel_opts,
             );
 
-            // T-159.15.2 — MMB/RMB drag-pan (LMB deferred to the doc host / .16: no marquee / slot
-            // move yet). Pointer capture keeps deltas flowing if the drag leaves the div; the
-            // contextmenu is suppressed so an RMB-drag isn't interrupted by the browser menu (P3).
-            // All five closures leak like the wheel/resize ones above (the engine leaks too;
-            // `on_cleanup` only stops the loop — a `!Send` drop handle is later polish).
+            // T-159.15.2 — MMB drag-pan (LMB deferred to the doc host / .16: no marquee / slot
+            // move yet). T-662 narrowed this to the middle button only; RMB is no longer a pan, so
+            // the browser context menu is only suppressed (never blanket-eaten) by `oncontextmenu`
+            // below, leaving RMB reachable for T-664. Pointer capture keeps deltas flowing if the
+            // drag leaves the div. All five closures leak like the wheel/resize ones above (the
+            // engine leaks too; `on_cleanup` only stops the loop — a `!Send` drop handle is later
+            // polish).
             let onpointerdown = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
                 let pan_px = pan_px.clone();
                 let container = container.clone();
                 let engine = engine.clone();
                 let left = left.clone();
                 move |ev: web_sys::PointerEvent| {
-                    // Middle (1) or right (2) button starts a pan.
-                    if ev.button() == 1 || ev.button() == 2 {
+                    // T-662 — ONLY the middle button (1) pans. RMB (2) used to pan here too, which
+                    // ate the right-click before any handler downstream could see it; the button is
+                    // now free for T-664's context menu (and the six tickets behind it). MMB-pan is
+                    // unchanged.
+                    if ev.button() == 1 {
                         ev.prevent_default();
                         let _ = container.set_pointer_capture(ev.pointer_id());
                         pan_px.set(Some((ev.client_x() as f64, ev.client_y() as f64)));
@@ -1841,6 +1858,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                     }
                 }
             });
+            // T-662 — RMB no longer pans (see onpointerdown), so the old blanket suppression that
+            // kept the browser menu from interrupting an RMB-drag is gone with it. We still call
+            // `prevent_default` here — and ONLY that — to stop the BROWSER's native context menu from
+            // popping over the map. That is all `prevent_default` does: it does NOT call
+            // `stop_propagation`, so the `contextmenu` event still fires and still bubbles, leaving it
+            // as a clean, un-suppressed event that T-664's context menu can attach its own listener to
+            // (which is exactly what this ticket unblocks). Do not add `stop_propagation` here.
             let oncontextmenu =
                 Closure::<dyn FnMut(web_sys::MouseEvent)>::new(move |ev: web_sys::MouseEvent| {
                     ev.prevent_default()
@@ -2031,41 +2055,55 @@ pub fn MissionEditorPage() -> impl IntoView {
                 class="pointer-events-none absolute inset-0 z-10"
                 on:pointerdown=|ev| ev.stop_propagation()
             >
+                // T-662 — the four chrome mounts (strip + both docks + toolbelt) are gated on
+                // `chrome_hidden` (Backspace toggles it). While hidden they leave the DOM entirely,
+                // so the map is full-bleed and every px is a map gesture; the modals below are NOT
+                // gated (a Settings/Attributes dialog the operator opened stays put). Re-pressing
+                // Backspace remounts them.
                 // T-177 A3 — raise the strip's stacking context above the docks (z-20) so its
                 // menu dropdowns (`z-50`, scoped to this subtree) paint OVER the left/right docks
                 // instead of behind them (the Environment-menu-clipped-by-Outliner bug).
-                <div class="absolute inset-x-0 top-0 z-30 h-12">
-                    <crate::eden_chrome::TopCommandStrip
-                        title=mission_id.clone()
-                        can_undo
-                        can_redo
-                        save_semver
-                        save_status
-                        dirty
-                        settings_open
-                        doc_tick
-                        obj_count
-                        orbat_open
-                    />
-                </div>
-                <div class="absolute bottom-0 left-0 top-12 z-20 w-64">
-                    <crate::eden_chrome::DockLeft
-                        nodes=outliner_nodes
-                        selected=selected_ids
-                        active_layer
-                    />
-                </div>
-                <div class="absolute bottom-0 right-0 top-12 z-20 w-80">
-                    <crate::eden_chrome::DockRight
-                        catalog
-                        vehicle_catalog
-                        registry_items
-                        doc_tick
-                        fm_open
-                        active_side
-                        objects_mode
-                    />
-                </div>
+                {
+                    let strip_title = mission_id.clone();
+                    move || (!chrome_hidden.get()).then(|| view! {
+                    <div class="absolute inset-x-0 top-0 z-30 h-12">
+                        <crate::eden_chrome::TopCommandStrip
+                            title=strip_title.clone()
+                            can_undo
+                            can_redo
+                            save_semver
+                            save_status
+                            dirty
+                            settings_open
+                            doc_tick
+                            obj_count
+                            orbat_open
+                        />
+                    </div>
+                })}
+                {move || (!chrome_hidden.get()).then(|| view! {
+                    <div class="absolute bottom-0 left-0 top-12 z-20 w-64">
+                        <crate::eden_chrome::DockLeft
+                            nodes=outliner_nodes
+                            selected=selected_ids
+                            active_layer
+                        />
+                    </div>
+                })}
+                {move || (!chrome_hidden.get()).then(|| view! {
+                    <div class="absolute bottom-0 right-0 top-12 z-20 w-80">
+                        <crate::eden_chrome::DockRight
+                            catalog
+                            vehicle_catalog
+                            registry_items
+                            doc_tick
+                            fm_open
+                            active_side
+                            objects_mode
+                        />
+                    </div>
+                })}
+                {move || (!chrome_hidden.get()).then(|| view! {
                 <div class="absolute bottom-5 left-1/2 -translate-x-1/2">
                     <crate::eden_chrome::BottomToolbelt
                         cursor
@@ -2087,8 +2125,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                             })
                     }}
                 </div>
+                })}
                 // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
-                // chrome subtree so its pointerdowns never open a map gesture.
+                // chrome subtree so its pointerdowns never open a map gesture. NOT gated by T-662's
+                // `chrome_hidden` — a dialog the operator opened must survive a hide-interface toggle.
                 <div class="pointer-events-auto">
                     <crate::attributes::AttributesModal attrs_open attrs_tab doc_tick registry_items compat />
                 </div>
@@ -3825,6 +3865,159 @@ mod t629_satellite_resolution {
         assert!(
             load.contains("if !load_unified_full(") && load.contains("logging::warn!"),
             "a failed full load must say that the placeholder is what is being displayed"
+        );
+    }
+}
+
+/// T-662 — the two input traps that gated the editor program: RMB eaten by pan, and Backspace
+/// aliased to Delete.
+///
+/// **Why source pins.** Both traps live in code no native test can execute: the pointer/keydown
+/// closures and the whole Eden view are `#[cfg(target_arch = "wasm32")]` (they call `RenderEngine`,
+/// `web_sys` events, and `editor_ops`, all wasm-only), so the proof that the trap is gone is the
+/// proof that the *wiring* changed. String-literal match arms (`"Backspace"`, `"Delete"`) are pinned
+/// on the raw file because `live_code` blanks string literals; structural/no-comment claims (the pan
+/// button guard, the contextmenu body, the mount gating) are pinned on `live_code`, which blanks
+/// comments and dead code so a stale note or an `if false` wrapper cannot satisfy them.
+#[cfg(test)]
+mod t662_input_traps {
+    use crate::arsenal::class_r_scrub::live_code;
+
+    /// The keydown region, comment- and dead-code-stripped. The file's first `#[cfg(test)]` is the
+    /// `clear_for_test` helper near the top, so `live_code` on the whole file would cut everything
+    /// below it (see the t425/t427 pins); hand it the region from the editor page onward, at a
+    /// brace-0 boundary so the slice stays balanced.
+    fn editor_live() -> String {
+        // Full signature (with `()`), so the other test's bare `"pub fn MissionEditorPage"` literal
+        // is not a second match. Split so this anchor is not itself a duplicate occurrence.
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(
+            raw.matches(anchor.as_str()).count(),
+            1,
+            "scrub anchor must be unambiguous"
+        );
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    }
+
+    /// (2) Backspace hides chrome and does NOT delete; Delete still deletes. The two keys are split
+    /// arms — the old combined Delete-or-Backspace alias must be gone (its literal is reassembled
+    /// below at runtime so this comment is not itself a match).
+    #[test]
+    fn backspace_hides_chrome_and_does_not_delete() {
+        // String-literal arms: pinned on the RAW file (live_code blanks string literals).
+        let raw = include_str!("mission_editor.rs");
+        // Split the needle so the literal below is not itself a second occurrence in this file.
+        let combined = format!("{}{}", "\"Delete\" | ", "\"Backspace\"");
+        assert!(
+            !raw.contains(combined.as_str()),
+            "T-662: Backspace must no longer be aliased to Delete — the combined match arm is the bug"
+        );
+        assert!(
+            raw.contains("\"Delete\" if !modk => crate::editor_ops::delete_selection()"),
+            "Delete alone must still remove the selection"
+        );
+        assert!(
+            raw.contains("\"Backspace\" if !modk =>"),
+            "Backspace must be its own match arm"
+        );
+
+        // Behaviour of the Backspace arm: it toggles chrome_hidden and does NOT call delete. The
+        // guard is a string literal (blanked by live_code), so this is scoped on the raw file — the
+        // only text between the "Backspace" arm and the catch-all `_ =>` is the T-662 note, which
+        // does not contain the token `delete_selection`. The keydown region is the only place these
+        // arms appear, so the window is unambiguous.
+        let bs_at = raw
+            .find("\"Backspace\" if !modk =>")
+            .expect("Backspace arm present");
+        let after = &raw[bs_at
+            ..raw[bs_at..]
+                .find("_ =>")
+                .map(|i| bs_at + i)
+                .unwrap_or(raw.len())];
+        assert!(
+            after.contains("chrome_hidden.set("),
+            "the Backspace arm must toggle chrome_hidden (hide the interface)"
+        );
+        assert!(
+            !after.contains("delete_selection"),
+            "the Backspace arm must NOT delete the selection"
+        );
+    }
+
+    /// (2 cont.) `chrome_hidden` is a real signal that gates the four chrome mounts (strip + both
+    /// docks + toolbelt). Declared once, and each mount is wrapped in a `!chrome_hidden.get()` gate.
+    #[test]
+    fn chrome_hidden_signal_gates_the_four_mounts() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("let chrome_hidden = RwSignal::new(false)"),
+            "chrome_hidden must be a real RwSignal declared on the page"
+        );
+        // Each of the four chrome mounts must sit behind a chrome_hidden gate. Count the gate
+        // wrappers: one per mount (strip, DockLeft, DockRight, BottomToolbelt).
+        let gates = ed.matches("(!chrome_hidden.get()).then(").count();
+        assert!(
+            gates >= 4,
+            "all four chrome mounts (strip + both docks + toolbelt) must be gated on chrome_hidden; \
+             found {gates} gate(s)"
+        );
+        // The three docked chrome components must appear inside the gated region (sanity: we did not
+        // gate empty divs).
+        assert!(
+            ed.contains("TopCommandStrip")
+                && ed.contains("DockLeft")
+                && ed.contains("DockRight")
+                && ed.contains("BottomToolbelt"),
+            "the gated mounts must still be the real chrome components"
+        );
+        // Modals must NOT be swept into the hide: a Settings/Attributes dialog survives the toggle.
+        // The Attributes modal mount is outside every gate.
+        assert!(
+            ed.contains("AttributesModal"),
+            "the Attributes modal mount must still exist (ungated)"
+        );
+    }
+
+    /// (1) RMB no longer pans. The pan branch fires on the middle button only; the old
+    /// `|| ev.button() == 2` right-button branch that ate the click is gone.
+    #[test]
+    fn rmb_no_longer_pans() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("if ev.button() == 1 {"),
+            "the pan gesture must start on the middle button (1) only"
+        );
+        // The whole point: RMB (2) must not be OR-ed into the pan guard anymore.
+        assert!(
+            !ed.contains("ev.button() == 1 || ev.button() == 2"),
+            "T-662: RMB (button 2) must no longer be OR-ed into the pan branch — that OR was the trap"
+        );
+    }
+
+    /// (1 cont.) The contextmenu handler keeps `prevent_default` (stop the BROWSER menu) but must
+    /// NOT `stop_propagation` — the event has to stay reachable for T-664 to attach its menu.
+    #[test]
+    fn contextmenu_is_unsuppressed_but_stops_the_browser_menu() {
+        let ed = editor_live();
+        // Isolate the oncontextmenu closure body.
+        let cm_at = ed
+            .find("let oncontextmenu =")
+            .expect("oncontextmenu closure present");
+        // Window up to the next `let on` binding (onpointerleave follows it).
+        let rest = &ed[cm_at..];
+        let end = rest[3..]
+            .find("let on")
+            .map(|i| i + 3)
+            .unwrap_or(rest.len());
+        let body = &rest[..end];
+        assert!(
+            body.contains("ev.prevent_default()"),
+            "contextmenu must still prevent_default to stop the browser's native menu"
+        );
+        assert!(
+            !body.contains("stop_propagation"),
+            "contextmenu must NOT stop_propagation — RMB must stay a clean event T-664 can hook"
         );
     }
 }
