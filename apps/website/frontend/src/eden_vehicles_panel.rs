@@ -23,6 +23,40 @@ use crate::ui::MaterialIcon;
 /// Still excluded: `character` (a person is not cargo — crews are ORBAT slots), `vehicle` and
 /// `vehicle_weapon` (nesting a vehicle inside a vehicle is not a thing the engine's storage does),
 /// and `other` (the export's escape hatch, whose contents are by definition unclassified).
+/// T-076 — the **generic** seat model shipped ahead of a per-class seat schema.
+///
+/// Vehicle data has no per-class seat layout yet (that is T-205, out of scope), so every placed
+/// vehicle offers the same fixed crew stations — a driver, a gunner and a commander — plus a run of
+/// cargo seats. This is deliberately a lowest-common-denominator model: it over-offers a seat a real
+/// prefab may lack (a jeep has no commander) rather than under-offering, because an empty seat is
+/// harmless (it authors nothing) while a missing seat would make a soldier unassignable. When T-205
+/// lands a real schema, this constant is what it replaces.
+///
+/// `(seat_id, label)`. The `seat_id` is the stable doc key written into `vehicle.crew`; the label is
+/// display-only. Cargo seats are appended by [`seat_model`] as `cargoN` (`N` from the vehicle's cargo
+/// capacity when the registry ever exposes one, else [`DEFAULT_CARGO_SEATS`]).
+const FIXED_SEATS: &[(&str, &str)] = &[
+    ("driver", "Driver"),
+    ("gunner", "Gunner"),
+    ("commander", "Commander"),
+];
+
+/// T-076 — cargo seats offered when the vehicle has no declared cargo capacity. The registry row has
+/// no per-vehicle seat count today (T-205), so this is the count every vehicle gets.
+const DEFAULT_CARGO_SEATS: usize = 4;
+
+/// T-076 — the ordered `(seat_id, label)` list a placed vehicle offers: the three fixed stations
+/// then `n_cargo` cargo seats (`cargo1`…`cargoN`). Pure (no doc, no runtime) so the generic seat
+/// model is unit-testable in this file's const-assertion idiom, even though the panel that consumes
+/// it is wasm-only. `seat_id`s are the keys written into `vehicle.crew`.
+fn seat_model(n_cargo: usize) -> Vec<(String, String)> {
+    FIXED_SEATS
+        .iter()
+        .map(|(id, label)| ((*id).to_string(), (*label).to_string()))
+        .chain((1..=n_cargo).map(|n| (format!("cargo{n}"), format!("Cargo {n}"))))
+        .collect()
+}
+
 const VEHICLE_CARGO_KINDS: &[&str] = &[
     "magazine",
     "ammo",
@@ -107,6 +141,7 @@ pub(crate) fn placed_vehicles_panel(
             let heading = v.rotation;
             let cargo = v.cargo.clone();
             let n_cargo = cargo.len();
+            let crew = v.crew.clone();
 
             let (id_toggle, id_del) = (vid.clone(), vid.clone());
             let head = view! {
@@ -236,6 +271,72 @@ pub(crate) fn placed_vehicles_panel(
                 })
                 .collect_view();
 
+            // T-076 — the CREW seat list. This panel is the SHIPPED crew-authoring path: the
+            // context-menu entry point (CREW-SEAT-001) stays the DISABLED row T-664 shipped in
+            // `context_menu.rs`, so an author boards from here, not from the map right-click.
+            //
+            // Every placed character is a boarding candidate; the picker options are
+            // `placed_slot_choices()` (read once per render). Each seat is a `<select>` whose current
+            // value is the slot the crew map assigns to it — choosing a slot boards (assign), the
+            // empty option unboards (clear). The one-seat-per-slot rule lives in the op, so a slot
+            // already crewing another seat is simply MOVED here; no client-side guard is needed.
+            let seat_choices = StoredValue::new(crate::editor_ops::placed_slot_choices());
+            // Cargo-seat count: from the vehicle's declared capacity when one exists, else the
+            // generic default. The registry exposes no per-vehicle seat count today (T-205), so this
+            // is `DEFAULT_CARGO_SEATS` for every vehicle — the branch is here for when it does.
+            let n_cargo_seats = DEFAULT_CARGO_SEATS;
+            let seat_list = seat_model(n_cargo_seats)
+                .into_iter()
+                .map(|(seat_id, seat_label)| {
+                    let occupant = crew.get(&seat_id).cloned().unwrap_or_default();
+                    let id_seat = vid.clone();
+                    let sid = seat_id.clone();
+                    view! {
+                        <div class="flex items-center gap-1.5 py-0.5 pl-7 pr-1.5">
+                            <span class="w-16 shrink-0 text-label-sm text-on-surface-variant">
+                                {seat_label}
+                            </span>
+                            <select
+                                aria-label=format!("Assign {seat_id}")
+                                class="min-w-0 flex-1 rounded border border-outline-variant/40 bg-surface-container-lowest/60 px-1.5 py-0.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
+                                prop:value=occupant.clone()
+                                on:change=move |ev| {
+                                    let slot = event_target_value(&ev);
+                                    if slot.is_empty() {
+                                        crate::editor_ops::clear_crew_seat(
+                                            id_seat.clone(),
+                                            sid.clone(),
+                                        );
+                                    } else {
+                                        crate::editor_ops::assign_crew_seat(
+                                            id_seat.clone(),
+                                            sid.clone(),
+                                            slot,
+                                        );
+                                    }
+                                }
+                            >
+                                <option value="" selected=occupant.is_empty()>
+                                    "— empty —"
+                                </option>
+                                {seat_choices
+                                    .get_value()
+                                    .into_iter()
+                                    .map(|choice| {
+                                        let is_sel = choice.id == occupant;
+                                        view! {
+                                            <option value=choice.id.clone() selected=is_sel>
+                                                {choice.label}
+                                            </option>
+                                        }
+                                    })
+                                    .collect_view()}
+                            </select>
+                        </div>
+                    }
+                })
+                .collect_view();
+
             let base_add = rows_for_edit;
             view! {
                 {head}
@@ -271,6 +372,11 @@ pub(crate) fn placed_vehicles_panel(
                             .collect_view()}
                     </select>
                 </div>
+                <div class="mt-1 flex items-center gap-1.5 pl-7 pr-1.5">
+                    <MaterialIcon name="group" class="block shrink-0 text-sm text-outline" />
+                    <span class="text-label-sm font-semibold text-on-surface-variant">"Crew"</span>
+                </div>
+                {seat_list}
             }
             .into_any()
         })
@@ -298,7 +404,47 @@ pub(crate) fn placed_vehicles_panel(
 
 #[cfg(test)]
 mod tests {
-    use super::VEHICLE_CARGO_KINDS;
+    use super::{seat_model, DEFAULT_CARGO_SEATS, VEHICLE_CARGO_KINDS};
+
+    /// T-076 — the generic seat model the crew list draws: three fixed stations
+    /// (driver/gunner/commander) then N cargo seats, `cargo1`…`cargoN`. Pins the seat_ids (the doc
+    /// keys written into `vehicle.crew`) and the default cargo count, so a rename or a reorder that
+    /// would silently orphan an already-authored `vehicle.crew` entry fails here first.
+    #[test]
+    fn seat_model_is_driver_gunner_commander_then_cargo() {
+        let seats = seat_model(DEFAULT_CARGO_SEATS);
+        let ids: Vec<&str> = seats.iter().map(|(id, _)| id.as_str()).collect();
+        assert_eq!(
+            ids,
+            [
+                "driver",
+                "gunner",
+                "commander",
+                "cargo1",
+                "cargo2",
+                "cargo3",
+                "cargo4"
+            ],
+            "generic seat ids + default {DEFAULT_CARGO_SEATS} cargo seats, in order"
+        );
+        // The labels are display copy, but the fixed three must read as their station names.
+        assert_eq!(seats[0].1, "Driver");
+        assert_eq!(seats[1].1, "Gunner");
+        assert_eq!(seats[2].1, "Commander");
+        assert_eq!(
+            seats[3].1, "Cargo 1",
+            "cargo seats are 1-indexed for the operator"
+        );
+
+        // Capacity drives the cargo-seat count (the branch the registry will feed once T-205 lands):
+        // zero cargo seats leaves exactly the three fixed stations, no `cargoN`.
+        let none = seat_model(0);
+        assert_eq!(none.len(), 3, "no cargo capacity ⇒ only the fixed stations");
+        assert!(
+            none.iter().all(|(id, _)| !id.starts_with("cargo")),
+            "no cargo seats emitted at capacity 0"
+        );
+    }
 
     /// A vehicle's cargo picker must never offer a person or another vehicle. `character` rows are
     /// crews (ORBAT slots, not freight) and nesting a vehicle inside a vehicle is not something the
