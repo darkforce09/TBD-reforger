@@ -945,6 +945,15 @@ pub fn MissionEditorPage() -> impl IntoView {
     // full-bleed and interactive. Gates the four dock mounts + the strip below; another Backspace
     // brings them back. Declared on both targets — the view reads it, the wasm keydown toggles it.
     let chrome_hidden = RwSignal::new(false);
+    // T-638 — per-dock collapse latches (Eden's `E` = left / Entity List, `R` = right / Asset
+    // Browser; the tab-strip chevrons flip them too). Session-local (the prefs-store hookup is
+    // residue for T-688 — `world_layer_prefs` is out of this ticket's owns). ORTHOGONAL to
+    // `chrome_hidden`: it persists through a hide/show cycle, and `chrome_hidden` "wins" while active
+    // by zeroing every inset. `mission_editor` OWNS these signals; an Effect below mirrors them (and
+    // `chrome_hidden`) into the `eden_layout` inset latch so `select_tool` + the on-canvas gate see one
+    // truth, then runs the reflow + centre-hold. The docks read them for the stub swap + chevron glyph.
+    let dock_left_collapsed = RwSignal::new(false);
+    let dock_right_collapsed = RwSignal::new(false);
     // T-159.27 — the flat registry gear rows for the Attributes Arsenal tab (populated by the same
     // /registry fetch that builds the Factions palette). None until it lands.
     let registry_items = RwSignal::new(None::<Vec<crate::dto::RegistryItem>>);
@@ -1267,6 +1276,20 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 chrome_hidden.set(!chrome_hidden.get_untracked());
                                 true
                             }
+                            // T-638 — E toggles the LEFT dock (Entity List), R the RIGHT (Asset
+                            // Browser). Bare keys only (no Ctrl/Cmd/Alt/Shift) so Ctrl+R stays a
+                            // browser reload and Alt/Shift combos are untouched; the top-of-closure
+                            // `in_editable_field()` guard already keeps them from firing while typing
+                            // in an Attributes field. Each always "acts" (flips its latch) → the
+                            // reflow + centre-hold run off the Effect that observes the signal.
+                            "KeyE" if !modk && !ev.alt_key() && !ev.shift_key() => {
+                                dock_left_collapsed.set(!dock_left_collapsed.get_untracked());
+                                true
+                            }
+                            "KeyR" if !modk && !ev.alt_key() && !ev.shift_key() => {
+                                dock_right_collapsed.set(!dock_right_collapsed.get_untracked());
+                                true
+                            }
                             _ => false,
                         };
                         if handled {
@@ -1281,6 +1304,87 @@ pub fn MissionEditorPage() -> impl IntoView {
                     );
                 }
                 onkeydown.forget();
+            }
+
+            // T-638 — the collapse REFLOW + CENTRE-HOLD. One Effect observes the three chrome-layout
+            // signals (`chrome_hidden`, both dock collapse latches) and is the SINGLE writer of the
+            // `eden_layout` inset latch, so the wasm hot-path readers (`select_tool::farthest_empty_px`,
+            // the palette-drop `on_canvas` gate) and the DOM chrome never disagree about the live inset.
+            //
+            // Reflow: our canvas is FULL-BLEED (it always spans the window; the docks overlay it and the
+            // insets define the chrome-free MAP PANE), so a collapse does NOT reallocate the device
+            // buffer the way Eden's inset-shrunk canvas does — the pane simply grows into the freed
+            // width. We still route the change through `e.resize` (identical dims) to mark damage and
+            // keep "a layout change goes through resize" true; the visible motion is the centre-hold.
+            //
+            // Centre-hold DECISION (the ticket's STILL-OPEN item): hold the world point under the MAP
+            // PANE CENTRE across a DOCK-COLLAPSE reflow, so the map appears to SLIDE into the freed
+            // space, not jump (Eden's behaviour). Implemented as a target nudge computed from the
+            // pane-centre delta (`eden_layout::centre_hold_target`) applied via `set_view` (which
+            // clamps to bounds) — the engine's own `resize` never moves the target, so without this the
+            // world point under the pane centre would shift by the half-inset change.
+            //
+            // The centre-hold is DELIBERATELY scoped to dock toggles while the chrome is SHOWN. Toggling
+            // T-662's `chrome_hidden` also changes the insets (to/from full-bleed), but Backspace
+            // hide-interface must not slide the map (its wave-101 behaviour — the chrome just vanishes
+            // over a still camera), so a run where `chrome_hidden` is set on either side skips the nudge.
+            // The inset MIRROR always runs (the accessors must be correct even while hidden); only the
+            // camera nudge is gated. That is the concrete "chrome_hidden × collapse are orthogonal"
+            // interaction on the camera: hidden zeroes the insets but never moves the world.
+            {
+                let engine = engine.clone();
+                let container = container.clone();
+                Effect::new(move |_| {
+                    // Track all three so any toggle re-runs this.
+                    let hidden = chrome_hidden.get();
+                    let left = dock_left_collapsed.get();
+                    let right = dock_right_collapsed.get();
+                    // The pre-mirror hidden state (the Cell still holds it) — used to gate the nudge so
+                    // an un-hide (was_hidden → shown) also skips the slide.
+                    let was_hidden = crate::eden_layout::chrome_hidden();
+
+                    let rect = container.get_bounding_client_rect();
+                    let (w, h) = (rect.width(), rect.height());
+                    if !(w > 0.0 && h > 0.0) {
+                        // Still mirror the state so the accessors are correct before first layout.
+                        crate::eden_layout::set_chrome_hidden(hidden);
+                        crate::eden_layout::set_dock_left_collapsed(left);
+                        crate::eden_layout::set_dock_right_collapsed(right);
+                        return;
+                    }
+
+                    // Pane centre with the PREVIOUS insets (the Cells still hold the pre-toggle state).
+                    let before = crate::eden_layout::pane_center_px(w, h);
+                    // Commit the new inset state, then read the pane centre AFTER.
+                    crate::eden_layout::set_chrome_hidden(hidden);
+                    crate::eden_layout::set_dock_left_collapsed(left);
+                    crate::eden_layout::set_dock_right_collapsed(right);
+                    let after = crate::eden_layout::pane_center_px(w, h);
+
+                    let dpr = web_sys::window()
+                        .map(|win| win.device_pixel_ratio())
+                        .unwrap_or(1.0);
+                    if let Some(e) = engine.borrow_mut().as_mut() {
+                        // Full-bleed: dims unchanged, but resize marks damage + keeps the contract.
+                        let _ = e.resize(w, h, dpr);
+                        // Nudge ONLY for a dock reflow while the chrome is shown on both sides.
+                        let dock_reflow = !was_hidden && !hidden;
+                        if dock_reflow
+                            && ((before.0 - after.0).abs() > f64::EPSILON
+                                || (before.1 - after.1).abs() > f64::EPSILON)
+                        {
+                            let scale = e.zoom().exp2();
+                            let (nx, ny) = crate::eden_layout::centre_hold_target(
+                                e.target_x(),
+                                e.target_y(),
+                                scale,
+                                before,
+                                after,
+                            );
+                            e.set_view(nx, ny, e.zoom());
+                        }
+                    }
+                });
             }
 
             // T-159.17 — persistence layer (additive; the SYNCHRONOUS seed above keeps the doc smoke
@@ -1950,10 +2054,15 @@ pub fn MissionEditorPage() -> impl IntoView {
                             ev.client_x() as f64 - rect.left(),
                             ev.client_y() as f64 - rect.top(),
                         );
-                        let on_canvas = px >= crate::eden_chrome::DOCK_LEFT_PX
-                            && px <= rect.width() - crate::eden_chrome::DOCK_RIGHT_PX
-                            && py >= crate::eden_chrome::STRIP_TOP_PX
-                            && py <= rect.height() - crate::eden_chrome::TOOLBELT_BAND_PX;
+                        // T-638 — the LIVE insets (dock collapse + chrome_hidden folded in). A
+                        // collapsed dock grows the on-canvas region into the freed strip, so a drop
+                        // there lands an entity instead of being swallowed; while chrome is hidden the
+                        // whole window is on-canvas. Same accessors `select_tool`'s probe grid uses, so
+                        // "not under chrome" means one thing editor-wide.
+                        let on_canvas = px >= crate::eden_layout::dock_left_px()
+                            && px <= rect.width() - crate::eden_layout::dock_right_px()
+                            && py >= crate::eden_layout::strip_top_px()
+                            && py <= rect.height() - crate::eden_layout::toolbelt_band_px();
                         // Same frozen-camera unproject the pick + CUR use, so the slot lands exactly
                         // where CUR said it would.
                         let world = if on_canvas {
@@ -2499,17 +2608,30 @@ pub fn MissionEditorPage() -> impl IntoView {
                         />
                     </div>
                 })}
+                // T-638 — the wrapper shrinks to a top-corner 24×24 box while the dock is collapsed
+                // (drop `bottom-0`/`w-*` so it stops covering the map — the freed strip becomes
+                // click-through and the map pane reflows). The `DockLeft`/`DockRight` component renders
+                // either the full panel or the stub off the same `collapsed` signal.
                 {move || (!chrome_hidden.get()).then(|| view! {
-                    <div class="absolute bottom-0 left-0 top-12 z-20 w-64">
+                    <div class=move || if dock_left_collapsed.get() {
+                        "absolute left-0 top-12 z-20"
+                    } else {
+                        "absolute bottom-0 left-0 top-12 z-20 w-64"
+                    }>
                         <crate::eden_chrome::DockLeft
                             nodes=outliner_nodes
                             selected=selected_ids
                             active_layer
+                            collapsed=dock_left_collapsed
                         />
                     </div>
                 })}
                 {move || (!chrome_hidden.get()).then(|| view! {
-                    <div class="absolute bottom-0 right-0 top-12 z-20 w-80">
+                    <div class=move || if dock_right_collapsed.get() {
+                        "absolute right-0 top-12 z-20"
+                    } else {
+                        "absolute bottom-0 right-0 top-12 z-20 w-80"
+                    }>
                         <crate::eden_chrome::DockRight
                             catalog
                             vehicle_catalog
@@ -2518,6 +2640,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             fm_open
                             active_side
                             objects_mode
+                            collapsed=dock_right_collapsed
                         />
                     </div>
                 })}
