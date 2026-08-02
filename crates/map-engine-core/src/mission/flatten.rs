@@ -2702,6 +2702,30 @@ mod tests {
             /// The key the value would arrive under.
             wire_key: &'static str,
         },
+        /// The schema now DECLARES this key (T-706 opened the contract) but flatten does not emit
+        /// it yet — the emit lands with the named ticket. This is the transitional state a
+        /// `Blocked` row enters the moment its contract opens, and it asserts BOTH halves so it
+        /// cannot pass vacuously in either direction:
+        ///   * the SCHEMA declares the key at one of `owners` (the exact inverse of `Blocked`'s
+        ///     closed-check — if NONE declares it, this row must revert to `Blocked`); AND
+        ///   * the WIRE still does not carry it within `scope` (the same scan `Blocked` runs; the
+        ///     moment the emit lands, this row goes red and must move to `Reaches`).
+        ///
+        /// Same self-updating discipline as T-706's per-field unread-fields gate: a definition
+        /// ahead of its consumer is tracked as exactly that, and turns back into visible work the
+        /// instant either half changes.
+        DeclaredPendingEmit {
+            /// Pointer into the COMPILED document under which `wire_key` must not appear yet; `""`
+            /// is the whole document. Same scoping rationale as `Blocked::scope`.
+            scope: &'static str,
+            /// Every schema object T-706 could have opened. At least ONE must now declare
+            /// `wire_key` (else the premise is gone and the row reverts to `Blocked`).
+            owners: &'static [&'static str],
+            /// The key the value will arrive under once the emit lands.
+            wire_key: &'static str,
+            /// The ticket whose slice lands the flatten emit for this key.
+            emit_ticket: &'static str,
+        },
     }
 
     struct LedgerRow {
@@ -2730,6 +2754,8 @@ mod tests {
         const SLOT: &[&str] = &["/$defs/slot"];
         const GROUP_OR_SLOT: &[&str] = &["/$defs/group", "/$defs/slot"];
         const ROOT_OR_ENTITY: &[&str] = &["", "/$defs/entity"];
+        // The document root — where T-706 declared the top-level `vehicles` roster array.
+        const ROOT: &[&str] = &[""];
 
         let ledger: &[LedgerRow] = &[
             // The one that DOES reach the wire — and the reason the ticket's occurrence count
@@ -2742,54 +2768,79 @@ mod tests {
                 value: "Alpha",
                 fate: Fate::Reaches("/slots/0/groupCallsign"),
             },
+            // T-706 opened `$defs/slot.leaderSlotId` (and the four slot-identity keys below);
+            // flatten still drops them (ModSlot carries no such fields). Each is a pending emit
+            // landing with T-674 (slot identity), tracked as such until the roster reader ships.
             LedgerRow {
                 what: "squad leaderSlotId (T-180.1/.2 — who leads)",
                 authored_at: "/editor/squads/0/leaderSlotId",
                 value: "s2",
-                fate: Fate::Blocked {
+                fate: Fate::DeclaredPendingEmit {
                     scope: "",
                     owners: GROUP_OR_SLOT,
                     wire_key: "leaderSlotId",
+                    emit_ticket: "T-674",
                 },
             },
             LedgerRow {
                 what: "slot tag",
                 authored_at: "/editor/slots/0/tag",
                 value: "MEDIC-TAG",
-                fate: Fate::Blocked {
+                fate: Fate::DeclaredPendingEmit {
                     scope: "/slots",
                     owners: SLOT,
                     wire_key: "tag",
+                    emit_ticket: "T-674",
                 },
             },
             LedgerRow {
                 what: "slot callsign (T-180.1 identity — NOT the squad's)",
                 authored_at: "/editor/slots/0/callsign",
                 value: "Alpha-One-Actual",
-                fate: Fate::Blocked {
+                fate: Fate::DeclaredPendingEmit {
                     scope: "/slots",
                     owners: SLOT,
                     wire_key: "callsign",
+                    emit_ticket: "T-674",
                 },
             },
             LedgerRow {
                 what: "slot rank (T-180.1 identity)",
                 authored_at: "/editor/slots/0/rank",
                 value: "Lance Corporal",
-                fate: Fate::Blocked {
+                fate: Fate::DeclaredPendingEmit {
                     scope: "/slots",
                     owners: SLOT,
                     wire_key: "rank",
+                    emit_ticket: "T-674",
                 },
             },
             LedgerRow {
                 what: "slot stance",
                 authored_at: "/editor/slots/0/stance",
                 value: "prone",
-                fate: Fate::Blocked {
+                fate: Fate::DeclaredPendingEmit {
                     scope: "/slots",
                     owners: SLOT,
                     wire_key: "stance",
+                    emit_ticket: "T-674",
+                },
+            },
+            // T-706 opened the top-level `vehicles` roster (`document root + $defs/vehicle`,
+            // seats/crew refs on the wire), distinct from the payload's own editor `vehicles`
+            // bag and from the `entities[]` alias path the placed M151 already rides. flatten
+            // still emits no top-level `vehicles` key (asserted directly below the loop); the
+            // crew-spawn emit lands with T-675. This tracks that pending emit — the fixture's own
+            // authored roster entry is the anti-vacuity witness.
+            LedgerRow {
+                what: "vehicle roster (top-level vehicles[] — T-675 crew spawn)",
+                authored_at: "/vehicles/0/id",
+                value: "v1",
+                fate: Fate::DeclaredPendingEmit {
+                    scope: "",
+                    owners: ROOT,
+                    wire_key: "vehicles",
+                    emit_ticket: "T-675",
                 },
             },
             LedgerRow {
@@ -2896,12 +2947,54 @@ mod tests {
                                 .and_then(|p| p.get(wire_key))
                                 .is_none(),
                             "{}: mission.schema.json {owner:?} NOW DECLARES {:?}. The contract \
-                             no longer blocks this value — emit it from flatten_to_mod_document \
-                             and move this row to `Reaches`.",
+                             no longer blocks this value — flip this row to \
+                             `DeclaredPendingEmit` with the ticket that will emit it (and it \
+                             must move to `Reaches` the moment that emit lands).",
                             row.what,
                             wire_key
                         );
                     }
+                }
+                Fate::DeclaredPendingEmit {
+                    scope,
+                    owners,
+                    wire_key,
+                    emit_ticket,
+                } => {
+                    // Half one — the SCHEMA declares this key now. This is the exact inverse of
+                    // `Blocked`'s closed-check, over the same schema-walk: a key declared at ANY
+                    // one of `owners` means the contract has opened. If NONE declares it, the
+                    // premise for a pending emit is gone and the row must revert to `Blocked`.
+                    let declared = owners.iter().any(|owner| {
+                        schema
+                            .pointer(owner)
+                            .and_then(|obj| obj.get("properties"))
+                            .and_then(|p| p.get(wire_key))
+                            .is_some()
+                    });
+                    assert!(
+                        declared,
+                        "{}: no object in {owners:?} declares {:?} in mission.schema.json — the \
+                         contract does not (or no longer) opens this key, so this is not a \
+                         pending emit. Revert this row to `Blocked`.",
+                        row.what, wire_key
+                    );
+                    // Half two — and the wire STILL does not carry it, checked by KEY within
+                    // `scope` exactly as `Blocked` does (see the header: a substring search finds
+                    // `leaderSlotId`'s value under `uid` and passes for the wrong reason). The
+                    // moment flatten_to_mod_document ({emit_ticket}) emits this key, this fires
+                    // and the row must move to `Reaches`.
+                    let region = wire
+                        .pointer(scope)
+                        .unwrap_or_else(|| panic!("{}: no {scope:?} in the document", row.what));
+                    assert!(
+                        !any_object_has_key(region, wire_key),
+                        "{}: {scope:?} in the compiled document NOW carries a {:?} key — the \
+                         emit ({emit_ticket}) has landed. DELETE this row's pending state and \
+                         assert `Reaches`; the ledger must never disagree with the wire.",
+                        row.what,
+                        wire_key
+                    );
                 }
             }
         }
