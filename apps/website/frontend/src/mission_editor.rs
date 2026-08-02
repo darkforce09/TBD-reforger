@@ -854,6 +854,18 @@ pub fn MissionEditorPage() -> impl IntoView {
     // a keypress: the author must not be able to hide the reason their mission is broken. Do not copy
     // this "hide it behind a key" pattern onto validation output.
     let debug_hud_shown = RwSignal::new(false);
+    // T-642 — the active editor tool (Select ⇆ Ruler). The `ModeToolbar` buttons read + set it
+    // (Ruler enters TOOL_ACTIVE state, Select returns); the wasm pointer handlers branch on it to
+    // choose the ruler gesture vs the Select machine. LoS stays disabled (T-643, wave 109), so it is
+    // NOT a variant here. Default Select.
+    let tool_mode = RwSignal::new(crate::ruler_tool::EditorTool::Select);
+    // T-642 — the ruler's status-bar readout (running total + last-leg) and a repaint tick. The
+    // `RulerChain` itself is session-local overlay state held in a leaked `RefCell` in the wasm
+    // block below (Decision 4 — NOT the Y.Doc); these two signals are the reactive surface the DOM
+    // reads: `ruler_status` feeds `StatusBar`, `ruler_tick` is bumped on every chain mutation so the
+    // `RulerOverlay` repaints even when a click did not move the pointer (no pointermove to ride).
+    let ruler_status = RwSignal::new(None::<String>);
+    let ruler_tick = RwSignal::new(0u64);
     // T-175 B5 — boot loading overlay phase (set by the wasm boot tasks; the view reads it).
     let boot = RwSignal::new(BootPhase::Hydrating);
     // T-631 — "continue without map": once the render engine fails to start, the map pane is dead
@@ -1156,6 +1168,42 @@ pub fn MissionEditorPage() -> impl IntoView {
             let selection: crate::select_tool::SelectionHandle = Rc::new(RefCell::new(Vec::new()));
             let left: Rc<RefCell<Option<crate::select_tool::LeftGesture>>> =
                 Rc::new(RefCell::new(None));
+            // T-642 — the persistent ruler polyline. Session-local OVERLAY state (Decision 4 — NOT
+            // the Y.Doc, exactly like the selection set above), held in a leaked `Rc<RefCell<…>>` so
+            // both the pointer handlers (which mutate it) and the `RulerOverlay`'s `read_chain`
+            // closure (which clones it to project) share one source of truth without touching
+            // reactive-owner state a route change could dispose.
+            let ruler: Rc<RefCell<crate::ruler_tool::RulerChain>> =
+                Rc::new(RefCell::new(crate::ruler_tool::RulerChain::new()));
+            // Push the chain's current summary onto the reactive surface (status bar + repaint tick).
+            // One helper so every mutation site (click / Esc / dbl-click / tool-switch clear) updates
+            // both signals identically and can never drift.
+            let sync_ruler = {
+                let ruler = ruler.clone();
+                move || {
+                    ruler_status.set(ruler.borrow().status_readout());
+                    ruler_tick.update(|t| *t = t.wrapping_add(1));
+                }
+            };
+            // T-642 — tool-switch dismissal (Decision 3): switching the tool back to Select clears
+            // the PLACED ruler (the "second-Esc-equivalent" the spec names). One Effect observes
+            // `tool_mode`; when it is not Ruler it clears the chain and re-syncs the overlay + status
+            // bar. Idempotent — the first run (default Select, empty chain) is a harmless no-op, and
+            // switching Select→Ruler leaves an already-empty chain untouched.
+            {
+                let ruler = ruler.clone();
+                let sync_ruler = sync_ruler.clone();
+                Effect::new(move |_| {
+                    if !tool_mode.get().is_ruler() && !ruler.borrow().is_empty() {
+                        ruler.borrow_mut().clear();
+                        sync_ruler();
+                    }
+                });
+            }
+            // T-642 — hand the leaked chain to the `ruler_tool` thread_local so the `RulerOverlay`
+            // (mounted in the shared view, outside this block) can read + project it (the
+            // `context_menu::set_menu_signal` handoff idiom).
+            crate::ruler_tool::register_ruler_chain(ruler.clone());
             crate::select_tool::register_editor_selection(
                 selection.clone(),
                 doc.clone(),
@@ -1237,6 +1285,9 @@ pub fn MissionEditorPage() -> impl IntoView {
             // A SEPARATE window keydown from the undo/redo one (which owns Ctrl+Z/Y) — each guards
             // its own keys, both skip editable fields. `cursor` feeds the paste anchor (world coords).
             {
+                // T-642 — the ruler chain + its reactive sync, so the Esc arm can dismiss it.
+                let ruler = ruler.clone();
+                let sync_ruler = sync_ruler.clone();
                 let onkeydown = Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(
                     move |ev: web_sys::KeyboardEvent| {
                         if crate::mission_history::in_editable_field() {
@@ -1249,6 +1300,19 @@ pub fn MissionEditorPage() -> impl IntoView {
                         };
                         // Each arm returns whether it acted; prevent the browser default once.
                         let handled = match ev.code().as_str() {
+                            // T-642 — Esc is the ruler's two-step escalating dismissal (Decision 3):
+                            // while drawing, first Esc drops the in-progress tail (keeps a legged
+                            // measure placed); a second Esc clears the placed ruler. `escape()` owns
+                            // the escalation and returns whether it changed anything, so Esc only
+                            // "acts" (→ prevent_default, → sync) when there was a chain to dismiss —
+                            // an Esc with no ruler falls through untouched (never swallowed here).
+                            "Escape" if !modk => {
+                                let acted = ruler.borrow_mut().escape();
+                                if acted {
+                                    sync_ruler();
+                                }
+                                acted
+                            }
                             "KeyC" if modk && !ev.alt_key() && !ev.shift_key() => {
                                 crate::editor_ops::copy_selection()
                             }
@@ -1812,13 +1876,36 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 e.target_y(),
                                 e.zoom(),
                             );
-                            *left.borrow_mut() = Some(crate::select_tool::LeftGesture::Pending(
-                                crate::select_tool::PendingLeft {
-                                    start_x: ev.client_x() as f64 - rect.left(),
-                                    start_y: ev.client_y() as f64 - rect.top(),
-                                    cam,
+                            let sx = ev.client_x() as f64 - rect.left();
+                            let sy = ev.client_y() as f64 - rect.top();
+                            // T-642 — TOOL-MODE ARBITRATION (the third mode's entry point). With the
+                            // Ruler tool active, an LMB press opens `LG::Ruler` INSTEAD of
+                            // `LG::Pending`, so the gesture never enters the Select machine's
+                            // pick/marquee/move path and never reaches those doc commits. Constraint
+                            // (c) button-0 is enforced by `should_begin_ruler` (this arm is already
+                            // button 0, so it always passes here); the constraint matters for the
+                            // predicate's other callers. `should_begin_ruler` is false under Select,
+                            // so the existing Pending path is byte-for-byte unchanged there.
+                            *left.borrow_mut() = Some(
+                                if crate::ruler_tool::should_begin_ruler(
+                                    tool_mode.get_untracked(),
+                                    ev.button(),
+                                ) {
+                                    crate::select_tool::LeftGesture::Ruler {
+                                        start_x: sx,
+                                        start_y: sy,
+                                        cam,
+                                    }
+                                } else {
+                                    crate::select_tool::LeftGesture::Pending(
+                                        crate::select_tool::PendingLeft {
+                                            start_x: sx,
+                                            start_y: sy,
+                                            cam,
+                                        },
+                                    )
                                 },
-                            ));
+                            );
                         }
                     }
                 }
@@ -2026,6 +2113,21 @@ pub fn MissionEditorPage() -> impl IntoView {
                             }
                         }
                         LG::Pending(p) => LG::Pending(p),
+                        // T-642 — a ruler press does NOT promote: it stays `Ruler` until release,
+                        // when a sub-threshold pointerup commits ONE vertex. The rubber-band leg to
+                        // the cursor is drawn by `RulerOverlay` off the live `cursor` signal (already
+                        // updated at the top of this handler), so there is nothing to preview via the
+                        // engine here — the arm just carries itself back. No pointer capture, no GPU
+                        // upload: a ruler never touches the drag/marquee engine lanes.
+                        LG::Ruler {
+                            start_x,
+                            start_y,
+                            cam,
+                        } => LG::Ruler {
+                            start_x,
+                            start_y,
+                            cam,
+                        },
                     };
                     *left.borrow_mut() = Some(next);
                 }
@@ -2038,6 +2140,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let doc = doc.clone();
                 let selection = selection.clone();
                 let map_host = map_host.clone();
+                // T-642 — the ruler chain + its reactive sync + the DEM grid (per-vertex Z sample).
+                let ruler = ruler.clone();
+                let dem_grid = dem_grid.clone();
+                let sync_ruler = sync_ruler.clone();
                 // T-159.21 — no `mission_id` capture: the persist tail now runs inside
                 // `mission_history::after_local_edit`, which reads the id from its ctx.
                 move |ev: web_sys::PointerEvent| {
@@ -2306,6 +2412,36 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 e.upload_marquee(0.0, 0.0, 0.0, 0.0, false); // hide
                             }
                         }
+                        // T-642 — RULER vertex commit. This arm is only reached with NO palette place
+                        // armed (the `has_pending()` branch at the top of pointerup already returned)
+                        // and no pan in flight — so it deliberately sits OUTSIDE the T-723 armed-place
+                        // branch (constraint (a)), and because the ruler pointerdown wrote `LG::Ruler`
+                        // into `left`, this `take()` (constraint (b)) is what clears it. A sub-threshold
+                        // release is a click → append one vertex; the tool stays armed for the next.
+                        // (Past-threshold would be a drag; the ruler has no drag gesture, so an
+                        // accidental micro-drag simply drops without committing.) The vertex records
+                        // its DEM elevation at click time (Decision 2) from the SAME grid CUR-Z reads,
+                        // unprojected against the FROZEN press camera so it lands where CUR pointed.
+                        LG::Ruler {
+                            start_x,
+                            start_y,
+                            cam,
+                        } => {
+                            let moved =
+                                ((up_x - start_x).powi(2) + (up_y - start_y).powi(2)).sqrt();
+                            if moved < st::DRAG_THRESHOLD_PX {
+                                let w = cam.unproject_xy(start_x, start_y);
+                                if w[0].is_finite() && w[1].is_finite() {
+                                    let z = dem_grid.borrow().as_ref().and_then(|g| {
+                                        map_engine_core::dem::downsample::sample_grid_meters(
+                                            g, w[0], w[1],
+                                        )
+                                    });
+                                    ruler.borrow_mut().press(w[0], w[1], z);
+                                    sync_ruler();
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -2466,8 +2602,28 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let container = container.clone();
                 let engine = engine.clone();
                 let doc = doc.clone();
+                // T-642 — the ruler chain + its reactive sync, so a dbl-click can END the chain.
+                let ruler = ruler.clone();
+                let sync_ruler = sync_ruler.clone();
                 move |ev: web_sys::MouseEvent| {
                     if ev.button() != 0 {
+                        return;
+                    }
+                    // T-642 — with the Ruler tool active, a double-click ENDS the chain and KEEPS it
+                    // placed (Decision 3), instead of opening Attributes / the asset picker. The two
+                    // pointerups of the dbl-click already committed two coincident final vertices, so
+                    // `dedup_tail` drops the duplicate before `double_click` stops the draw — the kept
+                    // ruler ends on the real penultimate vertex. Returns before the pick below so a
+                    // dbl-click in ruler mode never opens an editor dialog. (Select mode is unchanged:
+                    // this guard is skipped and the pick path runs exactly as before.)
+                    if tool_mode.get_untracked().is_ruler() {
+                        let mut r = ruler.borrow_mut();
+                        // 0.5 m dedupe: far below a click's pixel footprint at any editor zoom, so
+                        // only the dbl-click's own coincident second vertex is removed.
+                        r.dedup_tail(0.5);
+                        r.double_click();
+                        drop(r);
+                        sync_ruler();
                         return;
                     }
                     let rect = container.get_bounding_client_rect();
@@ -2655,7 +2811,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // three buttons in the same pill, no longer sharing the strip with the readouts.
                 {move || (!chrome_hidden.get()).then(|| view! {
                 <div class="absolute bottom-11 left-1/2 -translate-x-1/2">
-                    <crate::eden_toolbelt::ModeToolbar />
+                    <crate::eden_toolbelt::ModeToolbar tool_mode />
                 </div>
                 })}
                 // (2) The full-width status bar — CUR/OBJ/SEL/SZ readouts, the T-667 map-furniture
@@ -2676,6 +2832,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         sz_bytes
                         debug_hud
                         hud_shown=debug_hud_shown
+                        ruler_status
                     />
                 </div>
                 })}
@@ -2728,6 +2885,15 @@ pub fn MissionEditorPage() -> impl IntoView {
                 <div class="pointer-events-auto">
                     <AssetPickerOverlay picker=asset_picker registry=registry_items active_side />
                 </div>
+                // T-642 — the ruler overlay (dispatcher-authorized SINGLE mount line; the component +
+                // all its logic live in `ruler_tool`, my owned file). UNGATED like the context menu /
+                // asset picker: a PLACED ruler is a measurement the operator created, so it survives a
+                // Backspace hide-chrome (it is not dock furniture — unlike the scale bar / grid refs,
+                // which ARE gated). It is `pointer-events-none` (the SVG never eats a map gesture — the
+                // click-chain capture is the map's own pointer handlers), reads the live camera + chain
+                // itself, and re-runs off the same `cursor`/`debug_hud` heartbeats as the furniture (no
+                // new rAF loop) plus `ruler_tick` (repaint on a still-pointer click).
+                <crate::ruler_tool::RulerOverlay cursor debug_hud=Some(debug_hud) tick=ruler_tick />
             </div>
             // T-628 — boot loading overlay: ONE bar, 0→100%, across the whole boot. It never resets
             // between stages and there is no sweep anywhere in it — the stage name underneath
@@ -5343,6 +5509,151 @@ mod t647_placement_interactions {
             !perturbed.contains(needle),
             "fired rule: dropping `!alt_empty` (Alt stops forcing empty) must break the PLACE-CREW-001 \
              pin — proving the pin discriminates the regression"
+        );
+    }
+}
+
+/// T-642 — source pins for the RULER click-chain wiring in the wasm pointer/keydown/dblclick
+/// handlers (which a native test cannot execute; the pure state machine + math are event-tested in
+/// `ruler_tool`). These pin the binding constraints the wave-106 verifier flagged (T-723) plus the
+/// mount + the tool-mode arbitration entry, on scrubbed code (comments + strings blanked) so a
+/// needle is real code, never a comment. The scrubber KEEPS `#[cfg(target_arch="wasm32")]` blocks
+/// (undecided cfg), so the handler tokens are visible — the same reason t662 can pin inside them.
+#[cfg(test)]
+mod t642_ruler_wiring {
+    use crate::arsenal::class_r_scrub::live_code;
+
+    fn editor_live() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(
+            raw.matches(anchor.as_str()).count(),
+            1,
+            "scrub anchor must be unambiguous"
+        );
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    }
+
+    /// (tool-mode arbitration — how the third mode ENTERS `LeftGesture`) The LMB pointerdown chooses
+    /// `LG::Ruler` via `should_begin_ruler(tool_mode, button)` instead of `LG::Pending`. This is the
+    /// entry point AND constraint (c) — `should_begin_ruler` carries the button-0 filter.
+    #[test]
+    fn pointerdown_arbitrates_ruler_via_should_begin_ruler() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("should_begin_ruler("),
+            "T-642: pointerdown must arbitrate the ruler via ruler_tool::should_begin_ruler(...)"
+        );
+        assert!(
+            ed.contains("LeftGesture::Ruler {") || ed.contains("select_tool::LeftGesture::Ruler"),
+            "T-642: the ruler press must open the LG::Ruler gesture (the third LeftGesture mode)"
+        );
+    }
+
+    /// (constraint a — NOT the armed-place branch) The ruler commit lives in an `LG::Ruler` arm, and
+    /// that arm must NOT contain the armed-place `has_pending()` token nor any doc-move commit — it is
+    /// a separate arm reached only after the `has_pending()` branch has already returned, so it can
+    /// never route through the T-723 armed-placement pointerup branch.
+    #[test]
+    fn ruler_commit_arm_avoids_armed_place_and_doc_writes() {
+        let ed = editor_live();
+        // Slice the LG::Ruler pointerup arm: from the LAST "LG::Ruler {" (the pointerup commit; the
+        // earlier ones are pointerdown/pointermove which have no commit) to the next "LG::" or arm end.
+        let arms: Vec<&str> = ed.split("LG::Ruler").skip(1).collect();
+        assert!(!arms.is_empty(), "T-642: an LG::Ruler arm must exist");
+        // The commit arm is the one that calls `.press(` on the ruler chain.
+        let commit: Vec<&str> = arms
+            .iter()
+            .map(|a| a.split("LG::").next().unwrap_or(a))
+            .filter(|a| a.contains(".press("))
+            .collect();
+        assert_eq!(
+            commit.len(),
+            1,
+            "T-642: exactly one LG::Ruler arm commits a vertex via chain.press( (found {})",
+            commit.len()
+        );
+        let arm = commit[0];
+        // Constraint (a): the ruler commit does NOT sit in / call the armed-place branch.
+        assert!(
+            !arm.contains("has_pending()"),
+            "T-642 (a): the ruler commit must NOT route through the has_pending() armed-place branch"
+        );
+        // Decision 4 + move_commit invariant: the ruler arm never calls a doc-move commit.
+        assert!(
+            !arm.contains("move_entities_and_vehicles"),
+            "T-642: the ruler commit must not call move_entities_and_vehicles (it is not a doc edit)"
+        );
+    }
+
+    /// (constraint b — take/clear any pending) The ruler gesture the pointerdown wrote is always
+    /// consumed: the pointerup/cancel `left.borrow_mut().take()` clears it (there is exactly one
+    /// take-into-a-`let` at the top of each of those handlers, shared with the Select gestures), and
+    /// the pointermove `LG::Ruler` arm puts it back rather than dropping it.
+    #[test]
+    fn ruler_gesture_is_taken_and_cleared() {
+        let ed = editor_live();
+        // The shared take idiom the ruler arm relies on.
+        assert!(
+            ed.contains("left.borrow_mut().take()"),
+            "T-642 (b): the pointer handlers must take() the LeftGesture (clearing any LG::Ruler)"
+        );
+        // The pointermove keeps the ruler pending (a self → self arm), so a move never loses it.
+        assert!(
+            ed.matches("LG::Ruler").count() >= 3,
+            "T-642 (b): LG::Ruler must appear across pointerdown/move/up (written, kept, committed)"
+        );
+    }
+
+    /// (constraint d — Esc disarms) The keydown Escape arm dismisses the ruler chain via
+    /// `ruler...escape()`. This is Decision 3's two-step dismissal entry from the keyboard.
+    #[test]
+    fn escape_dismisses_the_ruler() {
+        let ed = editor_live();
+        assert!(
+            ed.contains(".escape()"),
+            "T-642 (d): the keydown Escape arm must call chain.escape() to disarm/clear the ruler"
+        );
+        // The arm reads the ruler and syncs — it is inside the keydown match on `code().as_str()`
+        // (the "Escape" string literal itself is blanked by `live_code`, so pin the surviving
+        // structure: the keydown dispatch + the escape() call together prove a real Escape arm).
+        assert!(
+            ed.contains("code().as_str()") && ed.contains("ruler.borrow_mut().escape()"),
+            "T-642 (d): the Escape dismissal must be a keydown arm calling ruler.escape()"
+        );
+    }
+
+    /// (dismissal — dbl-click ends the chain) The dblclick handler ends the ruler (dedup + end) when
+    /// the ruler tool is active, and returns before the Attributes/asset-picker pick.
+    #[test]
+    fn dblclick_ends_the_ruler_chain() {
+        let ed = editor_live();
+        assert!(
+            ed.contains(".dedup_tail(") && ed.contains(".double_click()"),
+            "T-642: the dblclick handler must dedup + end the ruler chain (double_click keeps it placed)"
+        );
+    }
+
+    /// (Decision 4 — session-local, tool-switch clear) Switching the tool back to Select clears the
+    /// placed ruler, and the chain is registered for the overlay + mounted. Also pins that the chain
+    /// handle is a leaked `RefCell<RulerChain>` (overlay state), never a doc write.
+    #[test]
+    fn tool_switch_clears_and_overlay_is_mounted() {
+        let ed = editor_live();
+        // Tool-switch clear effect (reads tool_mode, clears the chain).
+        assert!(
+            ed.contains("is_ruler()") && ed.contains("ruler.borrow_mut().clear()"),
+            "T-642 (Decision 3): switching away from Ruler must clear the placed chain"
+        );
+        // The overlay is mounted + the chain registered for it.
+        assert!(
+            ed.contains("RulerOverlay") && ed.contains("register_ruler_chain("),
+            "T-642: RulerOverlay must be mounted and the chain registered for it"
+        );
+        // The chain is session-local overlay state (a RulerChain in a RefCell), NOT the Y.Doc.
+        assert!(
+            ed.contains("RulerChain::new()"),
+            "T-642 (Decision 4): the ruler is a session-local RulerChain, not doc state"
         );
     }
 }

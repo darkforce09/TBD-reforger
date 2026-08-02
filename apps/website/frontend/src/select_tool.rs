@@ -59,6 +59,16 @@ pub struct PendingLeft {
 /// `cam` copied at the press (M2/X-05 — the live `RenderEngine::unproject_xy` is deleted; a live
 /// one would feedback-loop as pan/zoom mutate mid-gesture). `Move.dx/dy` is the last coalesced
 /// world delta (fed to `engine.set_drag` for the GPU preview + `move_entities` on release).
+///
+/// T-642 — the RULER is the THIRD mode a left gesture can be in, and the ticket's core "how does a
+/// new mode enter `LeftGesture`" answer. When the Ruler tool is active (`ruler_tool::EditorTool`),
+/// an LMB `pointerdown` opens [`LeftGesture::Ruler`] INSTEAD of [`LeftGesture::Pending`] — a
+/// separate arm that the pointermove/up branches match by name, so the ruler NEVER promotes to a
+/// pick/marquee/move and never reaches those commits. Critically it also does NOT route through the
+/// armed-placement pointerup branch (the T-723 defect zone): that branch is gated on
+/// `editor_ops::has_pending()` (a palette place), which a ruler click never sets, so the ruler
+/// pointerup falls straight through to its own `LG::Ruler` arm. `Ruler.cam` is the frozen press
+/// camera so the rubber-band preview (in the overlay) and the eventual commit unproject alike.
 pub enum LeftGesture {
     Pending(PendingLeft),
     Move {
@@ -74,6 +84,15 @@ pub enum LeftGesture {
         start_y: f64,
         start_wx: f64,
         start_wy: f64,
+        cam: OrthoCamera,
+    },
+    /// T-642 — an in-flight ruler press: the frozen press camera + press pixel. A sub-threshold
+    /// release commits ONE ruler vertex (unprojected against `cam`); the tool stays armed for the
+    /// next click. Carries no pick/move/marquee payload — a ruler gesture measures, it never edits
+    /// the document, so it deliberately shares nothing with the three commit arms above.
+    Ruler {
+        start_x: f64,
+        start_y: f64,
         cam: OrthoCamera,
     },
 }
