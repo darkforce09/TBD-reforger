@@ -202,14 +202,6 @@ pub fn read_env() -> MissionEnv {
                     .to_string(),
                 time: s(env, "time", "06:00"),
                 weather: s(env, "weather", "clear"),
-                view_distance: env
-                    .and_then(|e| e.get("viewDistance"))
-                    .and_then(serde_json::Value::as_i64)
-                    .unwrap_or(1600),
-                thermals: env
-                    .and_then(|e| e.get("thermals"))
-                    .and_then(serde_json::Value::as_bool)
-                    .unwrap_or(false),
                 show_hillshade: env
                     .and_then(|e| e.get("showHillshade"))
                     .and_then(serde_json::Value::as_bool)
