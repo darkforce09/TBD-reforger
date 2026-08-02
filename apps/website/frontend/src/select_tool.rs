@@ -726,3 +726,9 @@ pub fn register_editor_selection(
     probe_marquee.forget();
     probe_move.forget();
 }
+
+// T-636 — the band-const-readers-agree test lives in `eden_layout` (the const's owner, natively
+// compiled), NOT here: this whole module is `#[cfg(target_arch = "wasm32")]` (main.rs), so a native
+// `cargo test` never sees it. `farthest_empty_px` above reads the band via
+// `crate::eden_chrome::TOOLBELT_BAND_PX` (line ~466) — that read is one of the two the layout test
+// pins by name.
