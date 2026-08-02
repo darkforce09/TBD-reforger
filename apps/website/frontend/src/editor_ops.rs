@@ -1097,6 +1097,104 @@ pub fn attrs_update_position(
     }
 }
 
+/// T-648 XFORM-SHIFT-001 — rotate the whole selection to FACE the cursor `(cx, cy)` (world metres),
+/// each entity about its OWN position, quantised to the rotation ladder rung `rung`
+/// ([`crate::mission_editor::transform`]). This is the commit end of the Shift+drag gesture and the
+/// widget rotate ring; it deliberately rides the SAME per-field rotation writes the Attributes
+/// Transform tab uses (`update_slot_position` for slots — the ticket's "a GESTURE on an existing
+/// field" — and `set_vehicle_position` for vehicles, mirroring [`set_vehicle_heading`]), never a new
+/// core mutator.
+///
+/// Returns whether anything rotated (nothing selected, or every entity sitting exactly under the
+/// cursor, is a no-op — [`crate::mission_editor::transform::bearing_to_face`] returns `None` for a
+/// degenerate aim and that entity is left untouched).
+///
+/// **Undo granularity, stated honestly.** `MissionDocCore` builds its `UndoManager` with
+/// `capture_timeout_millis = 0`, so every core transaction is its own undo step, and map-engine-core
+/// exposes no atomic *multi-slot* rotation API (T-648's `owns` is the three frontend files; the doc
+/// store is out of scope this slice). So a **single-entity** rotate — the Eden-standard case and the
+/// only one the Attributes modal itself supports (it suppresses on a multi-selection) — is exactly
+/// **one** undo step, matching the ticket's "one undo step"; a **multi-selection** rotate is one step
+/// per entity, the same shape the module header already documents for the first compound place
+/// (layer + faction + squad + slot + leader). The whole gesture still fires **one** history/persist
+/// tail (`after_local_edit` once below).
+pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
+    if !cx.is_finite() || !cy.is_finite() {
+        return false;
+    }
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let sel = ctx.selection.borrow().clone();
+        if sel.is_empty() {
+            return false;
+        }
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        // Slot pivots come off the materialized SoA (same source `center_on_selection` reads);
+        // vehicle pivots come off `small_maps_json` (`vehiclesById`), the shape `set_vehicle_heading`
+        // reads. Both keep the entity's own x/y/z — a rotate never moves it.
+        let soa = core.materialize();
+        let veh_root = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()).ok();
+        // `update_slot_position` needs terrain bounds to clamp x/y; a rotation-only edit passes
+        // x/y = None so they are never used, but the signature requires them — fetch once like
+        // `attrs_update_position` does (null meta → everon default via `terrain_bounds`).
+        let terrain = veh_root
+            .as_ref()
+            .and_then(|v| v.get("meta")?.get("terrain")?.as_str().map(str::to_string))
+            .unwrap_or_default();
+        let tb = map_engine_core::mission::compile::terrain_bounds(&terrain);
+        let mut any = false;
+        for id in &sel {
+            if let Some(row) = soa.ids.iter().position(|s| s == id) {
+                let (sx, sy) = (f64::from(soa.xs[row]), f64::from(soa.ys[row]));
+                if let Some(bearing) =
+                    crate::mission_editor::transform::bearing_to_face(sx, sy, cx, cy)
+                {
+                    let deg = crate::mission_editor::transform::snap_rotate(bearing, rung);
+                    // rotation-only: x/y/z = None so the slot rotates in place (update_slot_position
+                    // leaves an axis whose arg is None; the bounds are inert without an x/y edit).
+                    core.update_slot_position(id, None, None, None, Some(deg), tb[2], tb[3]);
+                    any = true;
+                }
+                continue;
+            }
+            // Not a slot — try the vehicle lane (its own position + heading).
+            let Some(pos) = veh_root
+                .as_ref()
+                .and_then(|r| r.get("vehiclesById")?.get(id)?.get("position").cloned())
+            else {
+                continue;
+            };
+            let (Some(vx), Some(vy)) = (
+                pos.get("x").and_then(serde_json::Value::as_f64),
+                pos.get("y").and_then(serde_json::Value::as_f64),
+            ) else {
+                continue;
+            };
+            let vz = pos
+                .get("z")
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or(0.0);
+            if let Some(bearing) = crate::mission_editor::transform::bearing_to_face(vx, vy, cx, cy)
+            {
+                let deg = crate::mission_editor::transform::snap_rotate(bearing, rung);
+                core.set_vehicle_position(id, vx, vy, vz, deg);
+                any = true;
+            }
+        }
+        any
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
 /// Read a slot's embedded `loadout` JSON (Arsenal picks) from `slots_json`. `None` when unset.
 pub fn read_loadout(id: &str) -> Option<String> {
     OPS_CTX.with(|c| {
