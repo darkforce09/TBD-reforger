@@ -1913,6 +1913,12 @@ fn spawn_registry_aliases(root: &Path) -> Result<(PathBuf, HashSet<String>)> {
 // stripped before counting (MEASURED: without stripping, `wind`/`size`/`behaviour` already "read"
 // via prose). Whole-word (`\b…\b`) so `map` does not match `heatmap`.
 //
+// STATED LIMIT (wave-120 m-3): because string bodies are stripped, a reader that fetches a wire
+// key BY STRING — `ctx.ReadValue("combatMode", …)` or a runtime-built key — is invisible to this
+// gate by construction. That is accepted, not overlooked: current mod practice is exclusively
+// member-name binding (`ReadValue("", struct)`), which IS what the identifier count sees; a
+// string-keyed reader landing would be a house-style break its own review should catch.
+//
 // Most fields strip to 0 — no identifier of that spelling exists in the mod. SEVEN rows collide with
 // a GENUINELY UNRELATED identifier already in the tree, and those seven — and ONLY those seven — are
 // the pinned non-zero baselines in the table below: `objectives`=13 (`TBD_ObjectivesComponent`'s own
