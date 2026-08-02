@@ -16319,7 +16319,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3970,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16327,7 +16327,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 7 (wave_plan.tsv row 107)",
+   "notes": "editor-UI program wave 7 (wave_plan.tsv row 107) — SHIPPED wave 107 (editor factory), slice a4e4dcc8; verifier wave107.md",
    "depends_on": [
     "T-661",
     "T-662"
@@ -16346,7 +16346,7 @@
     "ui",
     "mc-authoring"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3980,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16354,7 +16354,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 7 (wave_plan.tsv row 107)",
+   "notes": "editor-UI program wave 7 (wave_plan.tsv row 107) — SHIPPED wave 107 (editor factory), slice 12fa342b; verifier wave107.md",
    "depends_on": [
     "T-661"
    ]
@@ -16372,7 +16372,7 @@
     "mc-integrity",
     "tests"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 3990,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16380,7 +16380,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 7 (wave_plan.tsv row 107)",
+   "notes": "editor-UI program wave 7 (wave_plan.tsv row 107) — SHIPPED wave 107 (editor factory), slice 0bbade7a; verifier wave107.md",
    "depends_on": [
     "T-661",
     "T-656"
@@ -18153,6 +18153,26 @@
    "title": "Esc closes both stacked dialogs — use the modal stack the codebase already has",
    "summary": "T-691's EditorPreferencesDialog stacks over MissionSettingsDialog and copies the bare window-Esc idiom both dialogs use — one Esc closes BOTH. ui.rs modal_stack::is_topmost_open exists for exactly this and is unused by either dialog. Route both dialogs' Esc through it (topmost closes first, second Esc closes the parent); pin with a stacked-Esc test. Diagnosis: editor_verify/wave106.md MINOR-2.",
    "notes": "filed by wave-106 adversarial verifier (editor factory)"
+  },
+  {
+   "program": "eden",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "id": "T-727",
+   "order": 4320,
+   "title": "Grid-ref labels strand off their lines — For keyed on text retains stale positions",
+   "summary": "MAJOR, two-part, root pre-existing in T-667 but made keyboard-triggerable by T-638. The grid-ref overlay's <For> is keyed on label TEXT (eden_toolbelt.rs:589/609); tachys' keyed diff calls view_fn only for ADDED keys, so a retained label keeps its creation-time pos_px forever. Every pan strands retained labels; T-638's centre-hold slides the map 116px (left toggle) / 148px (right) on a bare E/R keypress, leaving every retained grid reference ~46% of a grid cell off its line, persistently — wrong references, not decoration. The wave-106 pin only proved the PURE math (which is correct); the DOM retention is the defect. Fix: (1) key the <For> on (text, grid-line world coordinate) or render pos from a signal inside the row; (2) convert eden_toolbelt's frozen inset-const reads to the T-638 accessors so labels track collapse geometry; (3) sweep the false comment T-638 left ('resize does NOT reallocate' — RenderEngine::resize unconditionally surface.configure's, engine.rs:1601; mark_dirty was available). Regression: an event-sequence test that pans/toggles and asserts label pos_px changed. Diagnosis: editor_verify/wave107.md MAJOR-1 + MINOR-3.",
+   "notes": "filed by wave-107 adversarial verifier (editor factory); re-scoped MAJOR from T-638 disclosed residue"
   }
  ]
 }

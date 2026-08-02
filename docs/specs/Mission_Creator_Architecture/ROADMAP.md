@@ -15,12 +15,12 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-638** — Collapse and expand both docks (queued)
-- **T-659** — Slot census badge + generated mission summary line (queued)
-- **T-657** — Validation: ORBAT and slot rules (queued)
 - **T-642** — Ruler: persistent polyline with per-leg distance and bearing (queued)
 - **T-650** — Compositions: save and place (queued)
 - **T-658** — Validation: every placed asset resolves in the live catalogue (queued)
+- **T-643** — Line of Sight: point-to-point ray (queued)
+- **T-079** — Triggers — the editor half: palette mode, area geometry, owner link (queued)
+- **T-660** — Validation: cargo and loadout policy rules (queued)
 <!-- ticket-sync:next:end -->
 
 ---

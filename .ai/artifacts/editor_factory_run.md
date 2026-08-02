@@ -29,7 +29,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 104 | 87 | T-635 T-656 T-666 | PASS (run 1) | 0B/3M/2m/5N | SHIPPED — HUD slot+toggle, validation engine (trip-fixture discipline), layer authoring; T-719 T-720 filed, T-715 amended (hidden-selection lane) |
 | 105 | 88 | T-636 T-646 T-683 | PASS (run 3; run 1 red on unswept route → fixed a7d91fca; run 2 = capture rerun) | 1B/1M/3m/5N → fix CLEARED | SHIPPED — status-bar split + class:/chips + defaults endpoint; BLOCKER (multibyte panic) fixed in-wave c2a902dd; T-721 T-722 filed, T-719 amended |
 | 106 | 89 | T-647 T-667 T-691 | PASS (run 2; run 1 red on a stale cross-file pin → fixup 74154ba0) | 0B/4M/2m/4N | SHIPPED — T-647 partial (PLACE-001 undelivered, ATTR-OPEN vehicles-only); furniture + prefs clean; T-723..T-726 filed |
-| 107 | 90 | T-638 T-657 T-659 | — | — | pending |
+| 107 | 90 | T-638 T-657 T-659 | PASS (run 1) | 0B/1M/3m/8N | SHIPPED — dock collapse (accessor seam), 5 ORBAT rules, census+summary; T-727 filed (grid-ref strand, MAJOR); W101 N-3 recorded closed |
 | 108 | 91 | T-642 T-650 T-658 | — | — | pending |
 | 109 | 92 | T-079 T-643 T-660 | — | — | pending |
 | 110 | 93 | T-644 T-648 T-668 | — | — | pending |
@@ -126,6 +126,12 @@ serialisation, not a hang).
   the ':1940 left/pan_px None' invariant comment is FALSE). Do not trust that comment; do not
   build ruler/transform arms on the armed-branch behaviour without reading wave106.md MAJOR-2/3.
   Regression tests must be event-sequence tests, not source pins. [wave106 MAJOR-1..3]
+- **T-650 (W108):** if compositions introduce a squad-template shape, wire it to
+  T-657's TEMPLATE-COVERAGE field (squad.template.requiredRoles — currently production-dead,
+  no writer exists); otherwise leave the rule forward-compat and say so. [wave107 MINOR-2]
+- **T-655 (W111):** ORBAT-CALLSIGN-UNIQUE emits an unresolvable JSON pointer
+  (/editor/squads/{id}/callsign keys an id into an array; the others are positional) — one-line
+  shape fix while wiring the panel; subject_id already rescues selection. [wave107 MINOR-1]
 - **T-084 (W117):** `class:` matches full resource_name prefixes only — a bare classname
   (class:B_Soldier) silently empties the tree on GUID-headed Reforger ids; decide classname-TAIL
   matching semantics as part of the grammar rewrite. [wave105 MINOR-2]
