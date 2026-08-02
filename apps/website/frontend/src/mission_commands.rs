@@ -36,6 +36,101 @@ pub(crate) fn row_meta_missing_message(authenticated: bool) -> &'static str {
     }
 }
 
+/// T-693 (MENU-SCEN-011) — format a [`MissionDocCore::merge_mission_payload_json`] report for the
+/// author: a one-line counts summary + a per-row skipped list. Class-R / ungated so native
+/// `cargo test` can pin the wording without a browser (the [`compiled_export_text`] precedent).
+///
+/// Returns `(summary, skipped_lines)`. `summary` names only the non-zero counts (a merge that added
+/// nothing says so), and pluralizes. `skipped_lines` is one `"kind id — reason"` per tolerated
+/// malformed row (empty when the merge was clean). A report string that does not parse yields a
+/// single skipped line naming that, so the caller never silently swallows a broken report.
+pub(crate) fn format_merge_report(report_json: &str) -> (String, Vec<String>) {
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(report_json) else {
+        return (
+            "Merge produced no readable report.".to_string(),
+            vec![format!("report — could not parse: {report_json}")],
+        );
+    };
+    let n = |k: &str| v.get(k).and_then(serde_json::Value::as_u64).unwrap_or(0);
+    let plural = |count: u64, noun: &str| {
+        if count == 1 {
+            format!("1 {noun}")
+        } else {
+            format!("{count} {noun}s")
+        }
+    };
+    let mut parts: Vec<String> = Vec::new();
+    let slots = n("slots_added");
+    if slots > 0 {
+        parts.push(plural(slots, "slot"));
+    }
+    // Squads / factions: report merged + created distinctly so "grew a side" vs "added a side" reads.
+    let sq_created = n("squads_created");
+    let sq_merged = n("squads_merged");
+    if sq_created > 0 {
+        parts.push(plural(sq_created, "squad"));
+    }
+    if sq_merged > 0 {
+        parts.push(format!(
+            "{} merged into existing",
+            plural(sq_merged, "squad")
+        ));
+    }
+    let fac_created = n("factions_created");
+    if fac_created > 0 {
+        parts.push(plural(fac_created, "faction"));
+    }
+    for (key, noun) in [
+        ("vehicles_added", "vehicle"),
+        ("entities_added", "object"),
+        ("zones_added", "zone"),
+        ("triggers_added", "trigger"),
+        ("compositions_added", "composition"),
+        ("markers_added", "marker"),
+    ] {
+        let c = n(key);
+        if c > 0 {
+            parts.push(plural(c, noun));
+        }
+    }
+
+    let summary = if parts.is_empty() {
+        "Merge added nothing — the source mission had no mergeable content.".to_string()
+    } else {
+        format!("Merged {}.", parts.join(", "))
+    };
+
+    let skipped: Vec<String> = v
+        .get("skipped")
+        .and_then(serde_json::Value::as_array)
+        .map(|arr| {
+            arr.iter()
+                .map(|s| {
+                    let kind = s
+                        .get("kind")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or("row");
+                    let id = s
+                        .get("id")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or("");
+                    let reason = s
+                        .get("reason")
+                        .and_then(serde_json::Value::as_str)
+                        .unwrap_or("malformed");
+                    if id.is_empty() {
+                        format!("{kind} — {reason}")
+                    } else {
+                        format!("{kind} {id} — {reason}")
+                    }
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    (summary, skipped)
+}
+
 #[cfg(target_arch = "wasm32")]
 mod imp {
     use std::cell::RefCell;
@@ -51,7 +146,7 @@ mod imp {
     use crate::auth::AuthStore;
     use crate::mission_doc::DocHandle;
 
-    use super::{compiled_export_text, row_meta_missing_message};
+    use super::{compiled_export_text, format_merge_report, row_meta_missing_message};
 
     /// Editor context shared from `mission_editor::on_load` to the Save/Export buttons. `AuthStore` is
     /// `Copy`; `doc` is the same shared `Rc` the persistence layer may swap on IDB restore (reads see the
@@ -377,6 +472,129 @@ mod imp {
         Ok(())
     }
 
+    /// T-693 (MENU-SCEN-011) — one row in the "Merge Mission…" picker: a mission the author can merge
+    /// FROM. `id` feeds [`merge_mission_now`]; `title` is the label.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct MissionPick {
+        /// The mission id (`GET /missions/:id`).
+        pub id: String,
+        /// The mission's display title.
+        pub title: String,
+    }
+
+    /// T-693 — the author's OTHER missions, for the "Merge Mission…" picker.
+    ///
+    /// Reuses the SPA's own list client (`GET /missions?scope=mine`, the same call
+    /// `missions::MissionLibraryPage` makes) through [`crate::client::api_get`], which owns the
+    /// single-flight refresh — so this adds no second auth path. The CURRENT mission is filtered out
+    /// (you cannot merge a mission into itself). Titles come straight off the `MissionCard` rows.
+    ///
+    /// # Errors
+    /// A display string when the list request fails (offline / 401 / server error).
+    pub async fn other_missions(
+        auth: AuthStore,
+        exclude_id: &str,
+    ) -> Result<Vec<MissionPick>, String> {
+        use crate::dto::{MissionCard, Paginated};
+        match crate::client::api_get::<Paginated<MissionCard>>(auth, "/missions?scope=mine").await {
+            Ok(page) => Ok(page
+                .data
+                .into_iter()
+                .filter(|c| c.id != exclude_id)
+                .map(|c| MissionPick {
+                    id: c.id,
+                    title: c.title,
+                })
+                .collect()),
+            Err((401, _)) => Err("Sign in to list your missions.".to_string()),
+            Err((s, msg)) => Err(match msg {
+                Some(m) if !m.is_empty() => format!("Could not load your missions ({s}): {m}"),
+                _ => format!("Could not load your missions ({s})."),
+            }),
+        }
+    }
+
+    /// T-693 (MENU-SCEN-011) — merge another mission (`source_id`) into the CURRENT document.
+    ///
+    /// Fetches the source's latest payload (`GET /missions/:id` → `current_version.json_payload`, the
+    /// same superset [`crate::mission_hydrate`] loads), runs [`MissionDocCore::merge_mission_payload_json`]
+    /// on the hosted doc, and reports the outcome via toasts: a counts line plus, when the merge
+    /// tolerated malformed rows, an error toast listing each skipped row (the T-657 totality contract
+    /// made visible to the author). `offset` is the optional template placement delta.
+    ///
+    /// The whole merge is one undo step (the core opens one txn), so a mistaken merge is one Ctrl+Z.
+    /// The borrow of the hosted `MissionDocCore` is taken and released synchronously AFTER the
+    /// `.await` — never held across the yield (the module's borrow-safety contract).
+    pub fn merge_mission_now(
+        source_id: String,
+        offset: Option<(f64, f64)>,
+        toasts: crate::toast::Toasts,
+    ) {
+        let Some((doc, auth)) =
+            EDITOR_CTX.with(|c| c.borrow().as_ref().map(|ctx| (ctx.doc.clone(), ctx.auth)))
+        else {
+            toasts.error("Editor not ready.");
+            return;
+        };
+        let path = format!("/missions/{source_id}");
+        spawn_local(async move {
+            let detail =
+                match crate::client::api_get::<crate::dto::MissionDetail>(auth, &path).await {
+                    Ok(d) => d,
+                    Err((401, _)) => {
+                        toasts.error("Sign in to merge a mission.");
+                        return;
+                    }
+                    Err((404, _)) => {
+                        toasts.error("That mission no longer exists.");
+                        return;
+                    }
+                    Err((s, _)) => {
+                        toasts.error(format!("Could not load the mission to merge ({s})."));
+                        return;
+                    }
+                };
+            // The editor superset lives in `current_version.json_payload`; an empty `{}` (a
+            // never-saved source) has nothing to merge — say so rather than run an empty merge.
+            let payload = detail.current_version.as_ref().map(|v| &v.json_payload);
+            let is_empty =
+                payload.is_none_or(|p| p.as_object().is_none_or(serde_json::Map::is_empty));
+            if is_empty {
+                toasts.message(format!(
+                    "\"{}\" has no saved content to merge yet.",
+                    detail.title
+                ));
+                return;
+            }
+            let payload_json = payload
+                .map(std::string::ToString::to_string)
+                .unwrap_or_default();
+
+            // Borrow the doc only now (post-await), run the merge, drop the borrow before toasting.
+            let report_json = {
+                let borrow = doc.borrow();
+                let Some(core) = borrow.as_ref() else {
+                    toasts.error("Editor not ready.");
+                    return;
+                };
+                core.merge_mission_payload_json(&payload_json, offset)
+            };
+            // A merge mutated the doc → mark dirty so a Save is offered (mirrors every other edit).
+            crate::mission_history::set_dirty(true);
+
+            let (summary, skipped) = format_merge_report(&report_json);
+            toasts.success(format!("{summary} (Ctrl+Z to undo.)"));
+            if !skipped.is_empty() {
+                let head = if skipped.len() == 1 {
+                    "1 row was skipped:".to_string()
+                } else {
+                    format!("{} rows were skipped:", skipped.len())
+                };
+                toasts.error(format!("{head} {}", skipped.join("; ")));
+            }
+        });
+    }
+
     /// Install `window.__editorCommands` — the read-only compile smoke bridge (peer of `__missionDoc`,
     /// same leaked-closure `js_sys::Object` idiom as `register_mission_doc`). `compile_save_json()` and
     /// `compile_export_json()` return the compiled JSON strings; the export path pins `exportedAt` +
@@ -432,6 +650,22 @@ mod imp {
                 JsValue::from_str(&json)
             }) as Box<dyn FnMut() -> JsValue>)
         };
+        // T-693 — merge a payload JSON string into the hosted doc and return the report JSON. Unlike
+        // its read-only peers this one MUTATES (the merge is one undo step in-core), so a smoke that
+        // calls it should undo after. Takes the payload as a JS string arg; no offset (the harness
+        // exercises the authored-position path). Returns the [`MergeReport`] JSON.
+        let merge_fn = {
+            let doc = doc.clone();
+            Closure::wrap(Box::new(move |payload: JsValue| -> JsValue {
+                let payload_json = payload.as_string().unwrap_or_default();
+                let out = doc
+                    .borrow()
+                    .as_ref()
+                    .map(|c| c.merge_mission_payload_json(&payload_json, None))
+                    .unwrap_or_default();
+                JsValue::from_str(&out)
+            }) as Box<dyn FnMut(JsValue) -> JsValue>)
+        };
 
         let _ = js_sys::Reflect::set(
             &obj,
@@ -448,6 +682,11 @@ mod imp {
             &JsValue::from_str("compiled_document_json"),
             compiled_doc.as_ref(),
         );
+        let _ = js_sys::Reflect::set(
+            &obj,
+            &JsValue::from_str("merge_mission_json"),
+            merge_fn.as_ref(),
+        );
         if let Some(win) = web_sys::window() {
             let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__editorCommands"), &obj);
         }
@@ -455,6 +694,7 @@ mod imp {
         compile_save.forget();
         compile_export_fn.forget();
         compiled_doc.forget();
+        merge_fn.forget();
     }
 }
 
@@ -463,7 +703,7 @@ pub use imp::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{compiled_export_text, row_meta_missing_message};
+    use super::{compiled_export_text, format_merge_report, row_meta_missing_message};
 
     /// Measured wire key order from `GET /compiled` (ticket T-417 / ModMissionDocument field order).
     const WIRE_ORDER_COMPACT: &[u8] = br#"{"schemaVersion":"1.1","meta":{"id":"m","title":"t","author":"a","terrain":"everon","playerRange":[1,1]},"environment":{"timeOfDay":"0800","weatherPreset":"clear"},"factions":[],"orbat":{},"slots":[{"id":"s1"}],"radioPlan":{"nets":[]},"zones":[],"flow":{"briefingDurationSec":0},"winConditions":{"mode":"none"}}"#;
@@ -717,5 +957,62 @@ mod tests {
             i += 1;
         }
         keys
+    }
+
+    /// T-693 Class-R — the report formatter names the non-zero counts, distinguishes squads
+    /// merged-into-existing from squads created, and lists each skipped row.
+    #[test]
+    fn class_r_merge_report_formats_counts_and_skips() {
+        let report = r#"{
+            "slots_added": 3, "squads_merged": 1, "squads_created": 2,
+            "factions_merged": 1, "factions_created": 0, "vehicles_added": 1,
+            "entities_added": 0, "zones_added": 0, "triggers_added": 1,
+            "compositions_added": 0, "markers_added": 0,
+            "skipped": [{"kind":"slot","id":"","reason":"missing id"}]
+        }"#;
+        let (summary, skipped) = format_merge_report(report);
+        assert!(summary.contains("3 slots"), "counts slots: {summary}");
+        assert!(
+            summary.contains("2 squads"),
+            "counts created squads: {summary}"
+        );
+        assert!(
+            summary.contains("1 squad merged into existing"),
+            "names merged squads distinctly: {summary}"
+        );
+        assert!(summary.contains("1 vehicle"), "singular vehicle: {summary}");
+        assert!(summary.contains("1 trigger"), "counts triggers: {summary}");
+        assert!(
+            !summary.contains("faction"),
+            "zero created factions omitted from the summary: {summary}"
+        );
+        assert_eq!(skipped.len(), 1);
+        assert_eq!(skipped[0], "slot — missing id");
+    }
+
+    /// T-693 Class-R — an empty merge says so rather than "Merged .".
+    #[test]
+    fn class_r_merge_report_empty_is_named() {
+        let report = r#"{"slots_added":0,"squads_merged":0,"squads_created":0,
+            "factions_merged":0,"factions_created":0,"vehicles_added":0,"entities_added":0,
+            "zones_added":0,"triggers_added":0,"compositions_added":0,"markers_added":0,"skipped":[]}"#;
+        let (summary, skipped) = format_merge_report(report);
+        assert!(
+            summary.contains("added nothing"),
+            "empty merge named: {summary}"
+        );
+        assert!(skipped.is_empty());
+    }
+
+    /// T-693 Class-R — an unparseable report degrades to a named skip, never a silent success.
+    #[test]
+    fn class_r_merge_report_unparseable_degrades() {
+        let (summary, skipped) = format_merge_report("{not json");
+        assert!(
+            summary.contains("no readable report"),
+            "unparseable named: {summary}"
+        );
+        assert_eq!(skipped.len(), 1);
+        assert!(skipped[0].contains("could not parse"));
     }
 }

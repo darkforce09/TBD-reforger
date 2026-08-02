@@ -3057,6 +3057,610 @@ impl MissionDocCore {
     ) -> Vec<String> {
         mix_marquee_ids_with_vehicles(cam, soa, vehicle_points, start_wx, start_wy, end_px, end_py)
     }
+
+    /// T-693 (NEW-F4 / MENU-SCEN-011) — merge ANOTHER mission's EDITOR payload into the CURRENT doc.
+    ///
+    /// `payload` is the same JSON shape [`Self::hydrate`] consumes and [`compile_payload`] emits:
+    /// top-level `vehicles[]` / `entities[]` / `zones[]` / `compositions[]` / `triggers[]` /
+    /// `markers[]`, plus `editor.{factions,squads,slots,editorLayers}[]`. This does NOT replace the
+    /// doc (unlike `hydrate`, which clears everything first) — it **adds** the incoming content on top
+    /// of what is already here, so it is the "compose an ORBAT from a template mission" primitive.
+    ///
+    /// ## Three hard problems, and how each is handled
+    ///
+    /// **1. Id collision (the hard part).** Two independently-authored missions mint ids from the same
+    /// small alphabet (`s0`, `sq`, `faction-BLUFOR`, …), so a naive merge would collide the incoming
+    /// `s0` onto the resident one and corrupt both. EVERY incoming id — of every kind — is re-minted
+    /// through one [`RemintMap`] (the `paste_slots` re-mint idiom, generalized: paste re-mints slot ids
+    /// caller-side and this does it here for the whole graph), and every INTRA-payload reference is
+    /// rewritten through the same map so the merged sub-graph is internally consistent against its new
+    /// ids: `squad.slotIds`/`leaderSlotId`/`factionId`/`vehicleIds`, `faction.squadIds`,
+    /// `slot.squadId`, `editorLayer.entityIds`/`parentId`, `vehicle.squadId`/`factionId` and each
+    /// crew seat (`crew[seat] = slotId`), and `trigger.ownerId`. A reference that resolves to nothing
+    /// after re-mint (a dangling incoming edge) is dropped, never guessed.
+    ///
+    /// **2. ORBAT dedup by name+side.** A template's BLUFOR is the resident BLUFOR — merging should
+    /// grow the existing side, not spawn a parallel one. A faction is deduped by (`name`, `key`) and a
+    /// squad by (`name`, its faction's `key`): an incoming squad whose (name, side) matches a resident
+    /// squad MERGES its slots into that squad (the incoming squad id maps to the resident one, its
+    /// slots are appended to the resident `slotIds`, and no new squad row is written); a squad with no
+    /// match is CREATED with a re-minted id. Same for factions. This is why factions/squads are
+    /// resolved BEFORE slots: a slot's `squadId` must point at the post-dedup squad.
+    ///
+    /// **3. Totality (T-657 discipline).** A malformed incoming row — missing `id`, a slot pointing at
+    /// a squad neither incoming nor resident, a non-object where a row is expected — is SKIPPED and
+    /// recorded in [`MergeReport::skipped`], never panicked on. The whole merge is applied inside ONE
+    /// transaction (like `paste_slots`), so it is exactly one undo step and an undo restores the
+    /// pre-merge document precisely.
+    ///
+    /// ## Placement
+    ///
+    /// Merged entities keep their AUTHORED positions by default (a mission is a coherent spatial
+    /// document — the template's spawns are already where they belong relative to each other and the
+    /// terrain). `opts.offset` = `Some((dx, dy))` shifts every placed entity by that world delta (the
+    /// template-into-a-corner case); positions are NOT clamped to bounds here — the source mission's
+    /// coordinates are trusted, and a merge is not a placement gesture.
+    #[must_use]
+    pub fn merge_mission_payload(
+        &self,
+        payload: &serde_json::Value,
+        opts: MergeOpts,
+    ) -> MergeReport {
+        let mut report = MergeReport::default();
+        let Some(obj) = payload.as_object() else {
+            report
+                .skipped
+                .push(("payload".into(), String::new(), "not a JSON object".into()));
+            return report;
+        };
+        let editor = obj.get("editor").and_then(serde_json::Value::as_object);
+
+        // ── Pass 0: build the id re-mint map + the faction/squad dedup decisions ────────────────────
+        // Read the resident squads/factions ONCE (tolerant of both YMap + hydrated-opaque shapes via
+        // `ordered_rows`) to build the (name, side) → id dedup index the incoming rows resolve against.
+        let (dx, dy) = opts.offset.unwrap_or((0.0, 0.0));
+        let mut remint = RemintMap::new();
+
+        // Grab the non-tracked root handles BEFORE any txn opens: `get_or_insert_map` opens its own
+        // internal transaction, so calling it while a `transact()` / `begin()` is alive DEADLOCKS
+        // (the measured hang the `small_maps_json` note warns of). `markers` is the only entity map
+        // this method writes that is not a struct field.
+        let entity_order = self.doc.get_or_insert_map("entityOrder");
+        let markers = self.doc.get_or_insert_map("markers");
+
+        // Resident dedup indices, read before the write txn opens.
+        let (resident_factions, resident_squads_by_side) = {
+            let txn = self.doc.transact();
+            let fac_rows = ordered_rows(&txn, &self.factions, &entity_order, "factions");
+            // faction (name, key) → resident faction id, and faction id → key (to resolve squad side).
+            let mut fac_index: HashMap<(String, String), String> = HashMap::new();
+            let mut fac_key_by_id: HashMap<String, String> = HashMap::new();
+            for row in &fac_rows {
+                if let Any::Map(m) = row {
+                    let id = any_map_str(m, "id");
+                    let key = any_map_str(m, "key");
+                    let name = any_map_str(m, "name");
+                    if let Some(id) = &id {
+                        if let Some(k) = &key {
+                            fac_key_by_id.insert(id.clone(), k.clone());
+                        }
+                        if let (Some(k), Some(n)) = (&key, &name) {
+                            fac_index
+                                .entry((n.clone(), k.clone()))
+                                .or_insert(id.clone());
+                        }
+                    }
+                }
+            }
+            let sq_rows = ordered_rows(&txn, &self.squads, &entity_order, "squads");
+            // squad (name, side-key) → resident squad id.
+            let mut sq_index: HashMap<(String, String), String> = HashMap::new();
+            for row in &sq_rows {
+                if let Any::Map(m) = row {
+                    let id = any_map_str(m, "id");
+                    let name = any_map_str(m, "name");
+                    let side = any_map_str(m, "factionId")
+                        .and_then(|fid| fac_key_by_id.get(&fid).cloned());
+                    if let (Some(id), Some(n), Some(s)) = (id, name, side) {
+                        sq_index.entry((n, s)).or_insert(id);
+                    }
+                }
+            }
+            (fac_index, sq_index)
+        };
+
+        // Incoming faction rows: decide MERGE (map to resident) vs CREATE (fresh id), and remember
+        // each incoming faction's key so squad side can be resolved from the incoming graph too.
+        let incoming_factions: Vec<&serde_json::Map<String, serde_json::Value>> = editor
+            .and_then(|e| e.get("factions"))
+            .and_then(serde_json::Value::as_array)
+            .map(|a| a.iter().filter_map(serde_json::Value::as_object).collect())
+            .unwrap_or_default();
+        let mut incoming_fac_key: HashMap<String, String> = HashMap::new();
+        for f in &incoming_factions {
+            let Some(id) = json_str(f, "id") else {
+                continue;
+            };
+            let key = json_str(f, "key");
+            if let Some(k) = &key {
+                incoming_fac_key.insert(id.clone(), k.clone());
+            }
+            let name = json_str(f, "name");
+            if let (Some(k), Some(n)) = (&key, &name)
+                && let Some(resident) = resident_factions.get(&(n.clone(), k.clone()))
+            {
+                remint.map_to_existing(&id, resident); // dedup: incoming faction IS the resident one
+            }
+        }
+
+        // Incoming squad rows: dedup by (name, side) where side = incoming/resident faction key of the
+        // squad's factionId. A matched squad maps to the resident squad (slots merge in); else fresh.
+        let incoming_squads: Vec<&serde_json::Map<String, serde_json::Value>> = editor
+            .and_then(|e| e.get("squads"))
+            .and_then(serde_json::Value::as_array)
+            .map(|a| a.iter().filter_map(serde_json::Value::as_object).collect())
+            .unwrap_or_default();
+        // squad id → resident squad id it merged into (so slots append rather than create a squad).
+        let mut squad_merged_into: HashMap<String, String> = HashMap::new();
+        for s in &incoming_squads {
+            let Some(id) = json_str(s, "id") else {
+                continue;
+            };
+            let name = json_str(s, "name");
+            // Resolve the squad's side key: prefer the incoming faction's key, fall back to a resident
+            // one (the squad's factionId may already have been deduped onto a resident faction).
+            let side = json_str(s, "factionId").and_then(|fid| {
+                incoming_fac_key.get(&fid).cloned().or_else(|| {
+                    remint.get(&fid).and_then(|rid| {
+                        // fid deduped onto a resident faction — read that faction's key.
+                        resident_factions
+                            .iter()
+                            .find_map(|((_n, k), v)| (v == &rid).then(|| k.clone()))
+                    })
+                })
+            });
+            if let (Some(n), Some(s_key)) = (name, side)
+                && let Some(resident_sq) = resident_squads_by_side.get(&(n, s_key))
+            {
+                remint.map_to_existing(&id, resident_sq);
+                squad_merged_into.insert(id, resident_sq.clone());
+            }
+        }
+
+        // Every other incoming id (factions/squads not already mapped, plus slots, vehicles, entities,
+        // layers, zones, compositions, triggers, markers) gets a FRESH re-minted id. Reserve all of
+        // them up front so intra-payload references resolve regardless of row order.
+        for f in &incoming_factions {
+            if let Some(id) = json_str(f, "id") {
+                remint.ensure_fresh(&id);
+            }
+        }
+        for s in &incoming_squads {
+            if let Some(id) = json_str(s, "id") {
+                remint.ensure_fresh(&id);
+            }
+        }
+        for arr in [
+            editor.and_then(|e| e.get("slots")),
+            editor.and_then(|e| e.get("editorLayers")),
+            obj.get("vehicles"),
+            obj.get("entities"),
+            obj.get("zones"),
+            obj.get("compositions"),
+            obj.get("triggers"),
+            obj.get("markers"),
+        ] {
+            if let Some(rows) = arr.and_then(serde_json::Value::as_array) {
+                for row in rows {
+                    if let Some(id) = row.as_object().and_then(|m| json_str(m, "id")) {
+                        remint.ensure_fresh(&id);
+                    }
+                }
+            }
+        }
+
+        // ── Pass 1: write everything under ONE txn (one undo step) ─────────────────────────────────
+        let mut txn = self.begin();
+
+        // Factions: only CREATE the ones that did not dedup onto a resident faction.
+        for f in &incoming_factions {
+            let Some(old_id) = json_str(f, "id") else {
+                report
+                    .skipped
+                    .push(("faction".into(), String::new(), "missing id".into()));
+                continue;
+            };
+            if squad_or_faction_is_merged(&remint, &old_id) {
+                report.factions_merged += 1;
+                continue; // merged into a resident faction — squadIds handled by squad writes below
+            }
+            let new_id = remint.get(&old_id).unwrap_or_else(|| old_id.clone());
+            let fac = self.factions.insert(
+                &mut txn,
+                new_id.as_str(),
+                MapPrelim::from([("id", new_id.as_str())]),
+            );
+            copy_row_fields_except(&mut txn, &fac, f, &["id", "squadIds"]);
+            // squadIds is rebuilt from the squads that actually land under this faction (below), so
+            // seed it empty here and append as squads are written.
+            fac.insert(&mut txn, "squadIds", Any::Array(Vec::new().into()));
+            report.factions_created += 1;
+        }
+
+        // Squads: MERGE (append slots to resident) or CREATE (fresh row + attach to its faction).
+        for s in &incoming_squads {
+            let Some(old_id) = json_str(s, "id") else {
+                report
+                    .skipped
+                    .push(("squad".into(), String::new(), "missing id".into()));
+                continue;
+            };
+            if squad_merged_into.contains_key(&old_id) {
+                report.squads_merged += 1;
+                continue; // resident squad row untouched; its slotIds grow via the slot writes below
+            }
+            let new_id = remint.get(&old_id).unwrap_or_else(|| old_id.clone());
+            let sq = self.squads.insert(
+                &mut txn,
+                new_id.as_str(),
+                MapPrelim::from([("id", new_id.as_str())]),
+            );
+            // Copy every field except id + the ref arrays we rebuild from membership + factionId +
+            // leaderSlotId (both are ids that must be re-minted, written explicitly below).
+            copy_row_fields_except(
+                &mut txn,
+                &sq,
+                s,
+                &["id", "slotIds", "vehicleIds", "factionId", "leaderSlotId"],
+            );
+            sq.insert(&mut txn, "slotIds", Any::Array(Vec::new().into()));
+            sq.insert(&mut txn, "vehicleIds", Any::Array(Vec::new().into()));
+            // factionId → the re-minted or deduped faction (dropped if it resolves nowhere).
+            if let Some(fid) = json_str(s, "factionId").and_then(|f| remint.get(&f)) {
+                sq.insert(&mut txn, "factionId", fid.as_str());
+                append_id(&mut txn, &self.factions, &fid, "squadIds", &new_id);
+            }
+            // leaderSlotId → the re-minted member slot. The slot writes below also re-file the
+            // slot into this squad; `set_leader_in_txn`'s membership guard is satisfied because the
+            // slot's `slotIds` append happens in the same txn before any read of the leader.
+            if let Some(lid) = json_str(s, "leaderSlotId").and_then(|l| remint.get(&l)) {
+                sq.insert(&mut txn, "leaderSlotId", lid.as_str());
+            }
+            report.squads_created += 1;
+        }
+
+        // Slots: re-mint id, rewrite squadId to the post-dedup squad, keep authored position (+offset),
+        // and append to that squad's slotIds + (optionally) a layer's entityIds handled in the layer
+        // pass. A slot whose squad resolves nowhere is filed unfiled (squadId dropped) but still lands.
+        let incoming_slots = editor
+            .and_then(|e| e.get("slots"))
+            .and_then(serde_json::Value::as_array);
+        if let Some(rows) = incoming_slots {
+            for row in rows {
+                let Some(m) = row.as_object() else {
+                    report
+                        .skipped
+                        .push(("slot".into(), String::new(), "not an object".into()));
+                    continue;
+                };
+                let Some(old_id) = json_str(m, "id") else {
+                    report
+                        .skipped
+                        .push(("slot".into(), String::new(), "missing id".into()));
+                    continue;
+                };
+                let new_id = remint.get(&old_id).unwrap_or_else(|| old_id.clone());
+                let slot = self.slots.insert(
+                    &mut txn,
+                    new_id.as_str(),
+                    MapPrelim::from([("id", new_id.as_str())]),
+                );
+                // squadId → post-dedup squad (resident-merged or freshly created). Dropped if unknown.
+                let squad_id = json_str(m, "squadId").and_then(|sid| remint.get(&sid));
+                copy_row_fields_except(&mut txn, &slot, m, &["id", "squadId", "position"]);
+                if let Some(sid) = &squad_id {
+                    slot.insert(&mut txn, "squadId", sid.as_str());
+                }
+                // Authored position, offset by opts.offset; unknown position sub-keys preserved.
+                let (px, py, pz, prot) = json_position(m);
+                let mut pos = json_position_map(m);
+                pos.insert("x".to_string(), Any::Number(px + dx));
+                pos.insert("y".to_string(), Any::Number(py + dy));
+                pos.insert("z".to_string(), Any::Number(pz));
+                pos.insert("rotation".to_string(), Any::Number(prot));
+                slot.insert(&mut txn, "position", Any::Map(Arc::new(pos)));
+                if let Some(sid) = &squad_id {
+                    append_id(&mut txn, &self.squads, sid, "slotIds", &new_id);
+                }
+                report.slots_added += 1;
+            }
+        }
+
+        // Editor layers: re-mint id + parentId + entityIds (slot ids). A layer's parentId that
+        // resolves nowhere becomes a root layer rather than dangling.
+        if let Some(rows) = editor
+            .and_then(|e| e.get("editorLayers"))
+            .and_then(serde_json::Value::as_array)
+        {
+            for row in rows {
+                let Some(m) = row.as_object() else { continue };
+                let Some(old_id) = json_str(m, "id") else {
+                    continue;
+                };
+                let new_id = remint.get(&old_id).unwrap_or_else(|| old_id.clone());
+                let layer = self.editor_layers.insert(
+                    &mut txn,
+                    new_id.as_str(),
+                    MapPrelim::from([("id", new_id.as_str())]),
+                );
+                copy_row_fields_except(&mut txn, &layer, m, &["id", "parentId", "entityIds"]);
+                match json_str(m, "parentId").and_then(|p| remint.get(&p)) {
+                    Some(pid) => layer.insert(&mut txn, "parentId", pid.as_str()),
+                    None => layer.insert(&mut txn, "parentId", Any::Null),
+                };
+                let entity_ids: Vec<Any> = m
+                    .get("entityIds")
+                    .and_then(serde_json::Value::as_array)
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(serde_json::Value::as_str)
+                            .filter_map(|s| remint.get(s))
+                            .map(|s| Any::String(s.into()))
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                layer.insert(&mut txn, "entityIds", Any::Array(entity_ids.into()));
+            }
+        }
+
+        // Vehicles: re-mint id + squadId + factionId + every crew seat's slot id; keep authored
+        // position (+offset). A crew seat pointing at a dropped slot is removed from the seat map.
+        if let Some(rows) = obj.get("vehicles").and_then(serde_json::Value::as_array) {
+            for row in rows {
+                let Some(m) = row.as_object() else {
+                    report
+                        .skipped
+                        .push(("vehicle".into(), String::new(), "not an object".into()));
+                    continue;
+                };
+                let Some(old_id) = json_str(m, "id") else {
+                    report
+                        .skipped
+                        .push(("vehicle".into(), String::new(), "missing id".into()));
+                    continue;
+                };
+                let new_id = remint.get(&old_id).unwrap_or_else(|| old_id.clone());
+                let v = self.vehicles.insert(
+                    &mut txn,
+                    new_id.as_str(),
+                    MapPrelim::from([("id", new_id.as_str())]),
+                );
+                copy_row_fields_except(
+                    &mut txn,
+                    &v,
+                    m,
+                    &["id", "squadId", "factionId", "crew", "position"],
+                );
+                if let Some(sid) = json_str(m, "squadId").and_then(|s| remint.get(&s)) {
+                    v.insert(&mut txn, "squadId", sid.as_str());
+                    append_id(&mut txn, &self.squads, &sid, "vehicleIds", &new_id);
+                }
+                if let Some(fid) = json_str(m, "factionId").and_then(|f| remint.get(&f)) {
+                    v.insert(&mut txn, "factionId", fid.as_str());
+                }
+                if m.contains_key("position") {
+                    let (px, py, pz, prot) = json_position(m);
+                    let mut pos = json_position_map(m);
+                    pos.insert("x".to_string(), Any::Number(px + dx));
+                    pos.insert("y".to_string(), Any::Number(py + dy));
+                    pos.insert("z".to_string(), Any::Number(pz));
+                    pos.insert("rotation".to_string(), Any::Number(prot));
+                    v.insert(&mut txn, "position", Any::Map(Arc::new(pos)));
+                }
+                // Crew: seat → slot id, each slot id re-minted; drop a seat whose slot vanished.
+                if let Some(crew) = m.get("crew").and_then(serde_json::Value::as_object) {
+                    let mut seats: HashMap<String, Any> = HashMap::new();
+                    for (seat, occ) in crew {
+                        if let Some(sid) = occ.as_str().and_then(|s| remint.get(s)) {
+                            seats.insert(seat.clone(), Any::String(sid.into()));
+                        }
+                    }
+                    if !seats.is_empty() {
+                        v.insert(&mut txn, "crew", Any::Map(Arc::new(seats)));
+                    }
+                }
+                report.vehicles_added += 1;
+            }
+        }
+
+        // Entities (mission-placed world objects): re-mint id, keep authored position (+offset). No
+        // squad/faction re-mint (their `faction` is a slug string, not an id).
+        if let Some(rows) = obj.get("entities").and_then(serde_json::Value::as_array) {
+            for row in rows {
+                let Some(m) = row.as_object() else {
+                    report
+                        .skipped
+                        .push(("entity".into(), String::new(), "not an object".into()));
+                    continue;
+                };
+                let Some(old_id) = json_str(m, "id") else {
+                    report
+                        .skipped
+                        .push(("entity".into(), String::new(), "missing id".into()));
+                    continue;
+                };
+                let new_id = remint.get(&old_id).unwrap_or_else(|| old_id.clone());
+                let e = self.entities.insert(
+                    &mut txn,
+                    new_id.as_str(),
+                    MapPrelim::from([("id", new_id.as_str())]),
+                );
+                copy_row_fields_except(&mut txn, &e, m, &["id", "position"]);
+                if m.contains_key("position") {
+                    let (px, py, pz, prot) = json_position(m);
+                    let mut pos = json_position_map(m);
+                    pos.insert("x".to_string(), Any::Number(px + dx));
+                    pos.insert("y".to_string(), Any::Number(py + dy));
+                    pos.insert("z".to_string(), Any::Number(pz));
+                    pos.insert("rotation".to_string(), Any::Number(prot));
+                    e.insert(&mut txn, "position", Any::Map(Arc::new(pos)));
+                }
+                report.entities_added += 1;
+            }
+        }
+
+        // Zones: re-mint id + offset the shape geometry. Geometry stays opaque otherwise.
+        report.zones_added += merge_shape_rows(
+            &mut txn,
+            &self.zones,
+            obj.get("zones"),
+            &remint,
+            dx,
+            dy,
+            "zone",
+            &mut report.skipped,
+        );
+
+        // Triggers: re-mint id + ownerId (a placed slot/vehicle) + offset the shape geometry. A
+        // dangling ownerId (owner not in this payload nor resolvable) is dropped (the T-079 contract).
+        if let Some(rows) = obj.get("triggers").and_then(serde_json::Value::as_array) {
+            for row in rows {
+                let Some(m) = row.as_object() else {
+                    report
+                        .skipped
+                        .push(("trigger".into(), String::new(), "not an object".into()));
+                    continue;
+                };
+                let Some(old_id) = json_str(m, "id") else {
+                    report
+                        .skipped
+                        .push(("trigger".into(), String::new(), "missing id".into()));
+                    continue;
+                };
+                let new_id = remint.get(&old_id).unwrap_or_else(|| old_id.clone());
+                let t = self.triggers.insert(
+                    &mut txn,
+                    new_id.as_str(),
+                    MapPrelim::from([("id", new_id.as_str())]),
+                );
+                copy_row_fields_except(&mut txn, &t, m, &["id", "ownerId", "shape"]);
+                if let Some(oid) = json_str(m, "ownerId").and_then(|o| remint.get(&o)) {
+                    t.insert(&mut txn, "ownerId", oid.as_str());
+                }
+                if let Some(shape) = m.get("shape") {
+                    t.insert(&mut txn, "shape", offset_shape_any(shape, dx, dy));
+                }
+                report.triggers_added += 1;
+            }
+        }
+
+        // Compositions: self-contained TEMPLATE rows (their inner `entities` are relative-offset, not
+        // live ids), so only the composition ROW id is re-minted — the offset does NOT apply (a
+        // composition places relative to a future drop point, not the mission frame). Copy verbatim.
+        if let Some(rows) = obj
+            .get("compositions")
+            .and_then(serde_json::Value::as_array)
+        {
+            for row in rows {
+                let Some(m) = row.as_object() else {
+                    report.skipped.push((
+                        "composition".into(),
+                        String::new(),
+                        "not an object".into(),
+                    ));
+                    continue;
+                };
+                let Some(old_id) = json_str(m, "id") else {
+                    report
+                        .skipped
+                        .push(("composition".into(), String::new(), "missing id".into()));
+                    continue;
+                };
+                let new_id = remint.get(&old_id).unwrap_or_else(|| old_id.clone());
+                let c = self.compositions.insert(
+                    &mut txn,
+                    new_id.as_str(),
+                    MapPrelim::from([("id", new_id.as_str())]),
+                );
+                // No remint of inner refs (there are none) — copy every non-id field verbatim.
+                for (k, v) in m {
+                    if k != "id" {
+                        c.insert(&mut txn, k.as_str(), value_to_any(v));
+                    }
+                }
+                report.compositions_added += 1;
+            }
+        }
+
+        // Markers: re-mint id + offset the {x,z} coordinate. No cross-refs. (`markers` handle was
+        // hoisted above `self.begin()` — grabbing it here would deadlock against the open txn.)
+        if let Some(rows) = obj.get("markers").and_then(serde_json::Value::as_array) {
+            for row in rows {
+                let Some(m) = row.as_object() else {
+                    report
+                        .skipped
+                        .push(("marker".into(), String::new(), "not an object".into()));
+                    continue;
+                };
+                let Some(old_id) = json_str(m, "id") else {
+                    report
+                        .skipped
+                        .push(("marker".into(), String::new(), "missing id".into()));
+                    continue;
+                };
+                let new_id = remint.get(&old_id).unwrap_or_else(|| old_id.clone());
+                let mk = markers.insert(
+                    &mut txn,
+                    new_id.as_str(),
+                    MapPrelim::from([("id", new_id.as_str())]),
+                );
+                for (k, v) in m {
+                    match k.as_str() {
+                        "id" => {}
+                        "x" => {
+                            mk.insert(&mut txn, "x", Any::Number(json_num(m, "x") + dx));
+                        }
+                        "z" => {
+                            mk.insert(&mut txn, "z", Any::Number(json_num(m, "z") + dy));
+                        }
+                        _ => {
+                            mk.insert(&mut txn, k.as_str(), value_to_any(v));
+                        }
+                    }
+                }
+                report.markers_added += 1;
+            }
+        }
+
+        report
+    }
+
+    /// T-693 — JSON wrapper over [`Self::merge_mission_payload`] for the wasm boundary: parses the
+    /// incoming payload text, runs the merge, and returns [`MergeReport`] as a JSON string. The typed
+    /// method + its `MergeReport`/`MergeOpts` types are not re-exported from `doc/mod.rs` (out of this
+    /// slice's owns), so the Leptos command reaches the merge through this string seam — the same
+    /// `small_maps_json` / `slots_json` idiom every other command uses. A payload that does not parse
+    /// yields a report whose `skipped` names the parse failure rather than erroring.
+    #[must_use]
+    pub fn merge_mission_payload_json(
+        &self,
+        payload_json: &str,
+        offset: Option<(f64, f64)>,
+    ) -> String {
+        let report = match serde_json::from_str::<serde_json::Value>(payload_json) {
+            Ok(payload) => self.merge_mission_payload(&payload, MergeOpts { offset }),
+            Err(e) => {
+                let mut report = MergeReport::default();
+                report.skipped.push((
+                    "payload".into(),
+                    String::new(),
+                    format!("invalid JSON: {e}"),
+                ));
+                report
+            }
+        };
+        report.to_json_string()
+    }
 }
 
 impl Default for MissionDocCore {
@@ -3449,6 +4053,281 @@ fn ensure_leader_invariant_in_txn(
 
 /// Distance (m) a paste is offset from its originals when the cursor is off-map (`ydoc.PASTE_NUDGE`).
 const PASTE_NUDGE: f64 = 20.0;
+
+// ── T-693 merge_mission_payload support (types + pure helpers) ───────────────────────────────────
+
+/// T-693 — options for [`MissionDocCore::merge_mission_payload`].
+///
+/// `offset` shifts every merged entity's authored position by `(dx, dy)` world meters. `None` (and
+/// the `(0.0, 0.0)` it collapses to) keeps the source mission's coordinates verbatim — the default,
+/// because a mission is a coherent spatial document. The template-into-a-corner case supplies a delta.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct MergeOpts {
+    /// World-space `(dx, dy)` applied to every placed entity; `None` = keep authored positions.
+    pub offset: Option<(f64, f64)>,
+}
+
+/// T-693 — the outcome of a merge, per the NEW-F4 design.
+///
+/// Counts are of rows that LANDED. `squads_merged` / `factions_merged` count incoming rows that
+/// deduped onto a resident side (their content was folded in, no new row created); `*_created` count
+/// fresh rows. `skipped` is the tolerance ledger: `(kind, id, reason)` for every malformed row the
+/// merge refused rather than panicking on (the T-657 totality discipline).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct MergeReport {
+    /// Slots added to the document.
+    pub slots_added: u32,
+    /// Incoming squads folded into a resident squad (same name+side).
+    pub squads_merged: u32,
+    /// Incoming squads created fresh (no resident match).
+    pub squads_created: u32,
+    /// Incoming factions folded into a resident faction (same name+side key).
+    pub factions_merged: u32,
+    /// Incoming factions created fresh.
+    pub factions_created: u32,
+    /// Vehicles added.
+    pub vehicles_added: u32,
+    /// Mission-placed entities (world objects) added.
+    pub entities_added: u32,
+    /// Zones added.
+    pub zones_added: u32,
+    /// Triggers added.
+    pub triggers_added: u32,
+    /// Compositions (self-contained templates) added.
+    pub compositions_added: u32,
+    /// Markers added.
+    pub markers_added: u32,
+    /// Malformed rows the merge tolerated: `(kind, id, reason)`. Never a panic.
+    pub skipped: Vec<(String, String, String)>,
+}
+
+impl MergeReport {
+    /// Serialize the report to a compact JSON object for the wasm command seam. `skipped` becomes an
+    /// array of `{kind,id,reason}` objects. Uses `serde_json::Value` (no derive) so this stays inside
+    /// the `doc` feature without a `serde::Serialize` dependency on these types.
+    #[must_use]
+    pub fn to_json_string(&self) -> String {
+        let skipped: Vec<serde_json::Value> = self
+            .skipped
+            .iter()
+            .map(|(kind, id, reason)| {
+                serde_json::json!({ "kind": kind, "id": id, "reason": reason })
+            })
+            .collect();
+        serde_json::json!({
+            "slots_added": self.slots_added,
+            "squads_merged": self.squads_merged,
+            "squads_created": self.squads_created,
+            "factions_merged": self.factions_merged,
+            "factions_created": self.factions_created,
+            "vehicles_added": self.vehicles_added,
+            "entities_added": self.entities_added,
+            "zones_added": self.zones_added,
+            "triggers_added": self.triggers_added,
+            "compositions_added": self.compositions_added,
+            "markers_added": self.markers_added,
+            "skipped": skipped,
+        })
+        .to_string()
+    }
+}
+
+/// T-693 — the id re-mint + dedup table for one merge. Maps each incoming id to the id it becomes in
+/// the current doc: either a FRESH minted id (a created row) or a RESIDENT id (a deduped faction /
+/// squad — the "merged" case). `merged` remembers which mappings were dedup so the writer can skip
+/// creating a row for them. Fresh ids are `mrg-<seq>-<old>` so they cannot collide with the resident
+/// doc's ids, with the incoming ids of THIS payload, or with a second merge's ids.
+struct RemintMap {
+    map: HashMap<String, String>,
+    merged: HashSet<String>,
+    seq: u64,
+}
+
+impl RemintMap {
+    fn new() -> Self {
+        Self {
+            map: HashMap::new(),
+            merged: HashSet::new(),
+            seq: 0,
+        }
+    }
+
+    /// Map `old` onto an existing resident id (dedup): the incoming row IS the resident one. Idempotent
+    /// — a later `ensure_fresh` on the same id is a no-op, so the dedup decision wins.
+    fn map_to_existing(&mut self, old: &str, resident: &str) {
+        self.map.insert(old.to_string(), resident.to_string());
+        self.merged.insert(old.to_string());
+    }
+
+    /// Reserve a FRESH re-minted id for `old` unless it is already mapped (fresh or deduped).
+    fn ensure_fresh(&mut self, old: &str) {
+        if self.map.contains_key(old) {
+            return;
+        }
+        self.seq += 1;
+        self.map
+            .insert(old.to_string(), format!("mrg-{}-{}", self.seq, old));
+    }
+
+    /// The id `old` becomes, if it is in the payload's id space.
+    fn get(&self, old: &str) -> Option<String> {
+        self.map.get(old).cloned()
+    }
+}
+
+/// T-693 — did this incoming faction/squad id dedup onto a resident row (so no new row is created)?
+fn squad_or_faction_is_merged(remint: &RemintMap, old_id: &str) -> bool {
+    remint.merged.contains(old_id)
+}
+
+/// T-693 — a string field off an `Any::Map` row (from `ordered_rows`), or `None`.
+fn any_map_str(m: &HashMap<String, Any>, key: &str) -> Option<String> {
+    match m.get(key) {
+        Some(Any::String(s)) => Some(s.to_string()),
+        _ => None,
+    }
+}
+
+/// T-693 — a string field off a `serde_json` object row, or `None`.
+fn json_str(m: &serde_json::Map<String, serde_json::Value>, key: &str) -> Option<String> {
+    m.get(key)
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_string)
+}
+
+/// T-693 — a number field off a `serde_json` object row (0.0 when absent/non-number).
+fn json_num(m: &serde_json::Map<String, serde_json::Value>, key: &str) -> f64 {
+    m.get(key)
+        .and_then(serde_json::Value::as_f64)
+        .unwrap_or(0.0)
+}
+
+/// T-693 — `(x, y, z, rotation)` off a `serde_json` row's `position` sub-object (0 for absent keys).
+fn json_position(m: &serde_json::Map<String, serde_json::Value>) -> (f64, f64, f64, f64) {
+    let pos = m.get("position").and_then(serde_json::Value::as_object);
+    let g = |k: &str| {
+        pos.and_then(|p| p.get(k))
+            .and_then(serde_json::Value::as_f64)
+            .unwrap_or(0.0)
+    };
+    (g("x"), g("y"), g("z"), g("rotation"))
+}
+
+/// T-693 — a row's whole `position` sub-object as an owned `Any::Map` payload, so unknown sub-keys
+/// (`heading`, `source`, …) survive the offset rewrite exactly as `position_any_merged` preserves them
+/// on an in-doc edit. The four known coords are OVERWRITTEN by the caller after this returns.
+fn json_position_map(m: &serde_json::Map<String, serde_json::Value>) -> HashMap<String, Any> {
+    match m.get("position") {
+        Some(serde_json::Value::Object(pos)) => pos
+            .iter()
+            .map(|(k, v)| (k.clone(), value_to_any(v)))
+            .collect(),
+        _ => HashMap::new(),
+    }
+}
+
+/// T-693 — copy every field of a `serde_json` row into a freshly-created yrs entity map, EXCEPT the
+/// keys in `skip`. `skip` names `id` plus every field that carries a doc reference (so the caller can
+/// write the RE-MINTED value itself) or the `position` (so the caller can apply the offset). Nested
+/// objects/arrays go in opaque via [`value_to_any`], exactly like [`load_row`].
+fn copy_row_fields_except(
+    txn: &mut TransactionMut,
+    entity: &MapRef,
+    row: &serde_json::Map<String, serde_json::Value>,
+    skip: &[&str],
+) {
+    for (k, v) in row {
+        if skip.contains(&k.as_str()) {
+            continue;
+        }
+        entity.insert(txn, k.as_str(), value_to_any(v));
+    }
+}
+
+/// T-693 — offset a `$defs/shape` object (`{circle:{x,z,r}}` or `{polygon:[[x,z],…]}`) by `(dx, dy)`
+/// in world meters, returning a fresh opaque `Any::Map`. Anything that is not a recognized shape is
+/// copied verbatim (tolerant: a malformed shape rides along rather than failing the row).
+fn offset_shape_any(shape: &serde_json::Value, dx: f64, dy: f64) -> Any {
+    let Some(obj) = shape.as_object() else {
+        return value_to_any(shape);
+    };
+    if let Some(circle) = obj.get("circle").and_then(serde_json::Value::as_object) {
+        let g = |k: &str| {
+            circle
+                .get(k)
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or(0.0)
+        };
+        return circle_shape_any(g("x") + dx, g("z") + dy, g("r"));
+    }
+    if let Some(poly) = obj.get("polygon").and_then(serde_json::Value::as_array) {
+        let ring: Vec<Any> = poly
+            .iter()
+            .filter_map(serde_json::Value::as_array)
+            .filter(|p| p.len() == 2)
+            .map(|p| {
+                let x = p[0].as_f64().unwrap_or(0.0) + dx;
+                let z = p[1].as_f64().unwrap_or(0.0) + dy;
+                Any::Array(vec![Any::Number(x), Any::Number(z)].into())
+            })
+            .collect();
+        return Any::Map(Arc::new(HashMap::from([(
+            "polygon".to_string(),
+            Any::Array(ring.into()),
+        )])));
+    }
+    value_to_any(shape)
+}
+
+/// T-693 — merge a run of shape-bearing rows (currently zones) into `map`: re-mint id, copy every
+/// other field verbatim, and offset the `shape` geometry. Returns how many landed; malformed rows are
+/// pushed onto `skipped` (`kind`, id, reason) rather than panicking. Triggers are written inline in
+/// `merge_mission_payload` because they carry the extra `ownerId` re-mint.
+#[allow(clippy::too_many_arguments)]
+fn merge_shape_rows(
+    txn: &mut TransactionMut,
+    map: &MapRef,
+    rows: Option<&serde_json::Value>,
+    remint: &RemintMap,
+    dx: f64,
+    dy: f64,
+    kind: &str,
+    skipped: &mut Vec<(String, String, String)>,
+) -> u32 {
+    let mut added = 0;
+    let Some(rows) = rows.and_then(serde_json::Value::as_array) else {
+        return 0;
+    };
+    for row in rows {
+        let Some(m) = row.as_object() else {
+            skipped.push((kind.to_string(), String::new(), "not an object".to_string()));
+            continue;
+        };
+        let Some(old_id) = json_str(m, "id") else {
+            skipped.push((kind.to_string(), String::new(), "missing id".to_string()));
+            continue;
+        };
+        let new_id = remint.get(&old_id).unwrap_or_else(|| old_id.clone());
+        let entity = map.insert(
+            txn,
+            new_id.as_str(),
+            MapPrelim::from([("id", new_id.as_str())]),
+        );
+        for (k, v) in m {
+            match k.as_str() {
+                "id" => {}
+                "shape" => {
+                    entity.insert(txn, "shape", offset_shape_any(v, dx, dy));
+                }
+                _ => {
+                    entity.insert(txn, k.as_str(), value_to_any(v));
+                }
+            };
+        }
+        added += 1;
+    }
+    added
+}
 
 /// Read `map[key].field` (an `Any::Array` of string ids) as an owned `Vec<Any>`; empty when the
 /// container map or the array field is absent. Seeds the `paste_slots` append accumulators and backs
@@ -8872,5 +9751,454 @@ mod tests {
         let row = &layers["editorLayersById"]["L"];
         assert!(row.get("hidden").is_none(), "hidden key removed: {row}");
         assert!(row.get("locked").is_none(), "locked key removed: {row}");
+    }
+
+    // ── T-693 merge_mission_payload ──────────────────────────────────────────────────────────────
+
+    /// A second mission's EDITOR payload, authored in a fresh doc and compiled to the exact JSON the
+    /// merge consumes — the "real compile→payload from a second doc" the ticket requires. One BLUFOR
+    /// squad Alpha with a leader slot + a follower, and a vehicle crewed by the leader slot.
+    #[cfg(feature = "mission")]
+    fn template_payload_blufor_alpha() -> serde_json::Value {
+        let src = MissionDocCore::new();
+        src.set_origin_init(true);
+        src.add_editor_layer("lyr", "Layer", None);
+        src.add_faction("faction-BLUFOR", "BLUFOR", "1st Battalion");
+        src.add_squad("sq-a", "faction-BLUFOR", "Alpha", Some("A1".into()));
+        src.add_slot(
+            "s0", "sq-a", "lyr", 0, "SL", None, None, 100.0, 200.0, 0.0, 0.0,
+        );
+        src.add_slot(
+            "s1", "sq-a", "lyr", 1, "Rifleman", None, None, 110.0, 210.0, 0.0, 0.0,
+        );
+        src.set_leader("sq-a", "s0");
+        src.add_vehicle(
+            "v0",
+            "Prefab/Truck.et",
+            Some(300.0),
+            Some(400.0),
+            Some(0.0),
+            Some(0.0),
+        );
+        // Crew: a seat occupied by the leader SLOT id — the re-mint edge the ticket names.
+        src.set_vehicle_faction("v0", "faction-BLUFOR");
+        src.assign_crew_seat("v0", "driver", "s0");
+        src.set_origin_init(false);
+        crate::mission::compile::compile_payload(&src.small_maps_json(), &src.slots_json(), false)
+    }
+
+    /// T-693.T1 — merge into an EMPTY doc: everything lands, and the graph is internally consistent
+    /// under the re-minted ids (squad → its slots, slot → its squad, vehicle crew → the slot).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn merge_into_empty_doc_lands_everything() {
+        let payload = template_payload_blufor_alpha();
+        let doc = MissionDocCore::new();
+        let report = doc.merge_mission_payload(&payload, MergeOpts::default());
+
+        assert_eq!(report.slots_added, 2, "both slots landed");
+        assert_eq!(report.factions_created, 1);
+        assert_eq!(report.squads_created, 1);
+        assert_eq!(report.vehicles_added, 1);
+        assert!(
+            report.skipped.is_empty(),
+            "clean payload: {:?}",
+            report.skipped
+        );
+
+        let root = small_maps(&doc);
+        let squads = root["squadsById"].as_object().expect("squads");
+        assert_eq!(squads.len(), 1);
+        let (_sq_id, squad) = squads.iter().next().unwrap();
+        let slot_ids = squad["slotIds"].as_array().expect("slotIds");
+        assert_eq!(slot_ids.len(), 2, "squad owns both merged slots");
+        // Every slotIds entry resolves to a real slot whose squadId points back at this squad.
+        let slots = slots_map(&doc);
+        for sid in slot_ids {
+            let sid = sid.as_str().unwrap();
+            assert!(
+                slots.get(sid).is_some(),
+                "slotIds entry {sid} is a real slot"
+            );
+        }
+        // The squad's leader is one of its own (re-minted) slots.
+        let leader = squad["leaderSlotId"].as_str().expect("leaderSlotId");
+        assert!(
+            slot_ids.iter().any(|s| s.as_str() == Some(leader)),
+            "leaderSlotId points at a member slot"
+        );
+    }
+
+    /// T-693.T2 — ORBAT dedup by name+side: merging the SAME template into a doc that already has a
+    /// BLUFOR "Alpha" MERGES the slots into the resident squad (no second Alpha), while a squad with a
+    /// new name is CREATED.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn merge_dedups_squad_by_name_and_side() {
+        // Resident doc: BLUFOR Alpha with one slot.
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_editor_layer("lyr", "Layer", None);
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "1st Battalion");
+        doc.add_squad("sq-a", "faction-BLUFOR", "Alpha", None);
+        doc.add_slot(
+            "res0", "sq-a", "lyr", 0, "SL", None, None, 1.0, 2.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq-a", "res0");
+        doc.set_origin_init(false);
+
+        // Incoming: BLUFOR Alpha (dedups) + BLUFOR Bravo (created). Both under the same faction name.
+        let src = MissionDocCore::new();
+        src.set_origin_init(true);
+        src.add_editor_layer("lyr", "Layer", None);
+        src.add_faction("faction-BLUFOR", "BLUFOR", "1st Battalion");
+        src.add_squad("sq-a", "faction-BLUFOR", "Alpha", None);
+        src.add_squad("sq-b", "faction-BLUFOR", "Bravo", None);
+        src.add_slot(
+            "s0", "sq-a", "lyr", 0, "Rifleman", None, None, 5.0, 6.0, 0.0, 0.0,
+        );
+        src.add_slot(
+            "s1", "sq-b", "lyr", 0, "Rifleman", None, None, 7.0, 8.0, 0.0, 0.0,
+        );
+        src.set_leader("sq-a", "s0");
+        src.set_leader("sq-b", "s1");
+        src.set_origin_init(false);
+        let payload = crate::mission::compile::compile_payload(
+            &src.small_maps_json(),
+            &src.slots_json(),
+            false,
+        );
+
+        let report = doc.merge_mission_payload(&payload, MergeOpts::default());
+        assert_eq!(report.squads_merged, 1, "Alpha deduped onto resident");
+        assert_eq!(report.squads_created, 1, "Bravo created");
+        assert_eq!(report.factions_merged, 1, "BLUFOR deduped onto resident");
+        assert_eq!(report.factions_created, 0);
+        assert_eq!(report.slots_added, 2);
+
+        let root = small_maps(&doc);
+        let squads = root["squadsById"].as_object().expect("squads");
+        assert_eq!(
+            squads.len(),
+            2,
+            "one resident Alpha + one new Bravo, not two Alphas"
+        );
+        // The resident Alpha now owns two slots (its own + the merged-in one).
+        let alpha = &root["squadsById"]["sq-a"];
+        assert_eq!(
+            alpha["slotIds"].as_array().unwrap().len(),
+            2,
+            "incoming Alpha slot merged into resident Alpha: {alpha}"
+        );
+        // Exactly one faction, still resident.
+        assert_eq!(root["factionsById"].as_object().unwrap().len(), 1);
+    }
+
+    /// T-693.T3 — id re-mint consistency: after a merge into a doc that ALREADY uses the incoming
+    /// ids, the trigger `ownerId` and the vehicle crew seat point at the RE-MINTED slot ids, not the
+    /// stale originals, and not the resident doc's identically-named rows.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn merge_remints_references_consistently() {
+        // Resident doc uses "s0" / "v0" already — the collision the re-mint must survive.
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_editor_layer("lyr", "Layer", None);
+        doc.add_faction("faction-OPFOR", "OPFOR", "Resident");
+        doc.add_squad("sq", "faction-OPFOR", "Resident Squad", None);
+        doc.add_slot("s0", "sq", "lyr", 0, "SL", None, None, 9.0, 9.0, 0.0, 0.0);
+        doc.set_leader("sq", "s0");
+        doc.add_vehicle("v0", "Prefab/Resident.et", Some(1.0), Some(1.0), None, None);
+        doc.set_origin_init(false);
+
+        // Incoming template: crew seat + a trigger both reference the incoming leader slot "s0".
+        let src = MissionDocCore::new();
+        src.set_origin_init(true);
+        src.add_editor_layer("lyr", "Layer", None);
+        src.add_faction("faction-BLUFOR", "BLUFOR", "Incoming");
+        src.add_squad("sq-a", "faction-BLUFOR", "Alpha", None);
+        src.add_slot(
+            "s0", "sq-a", "lyr", 0, "SL", None, None, 100.0, 100.0, 0.0, 0.0,
+        );
+        src.set_leader("sq-a", "s0");
+        src.add_vehicle("v0", "Prefab/Truck.et", Some(2.0), Some(2.0), None, None);
+        src.assign_crew_seat("v0", "driver", "s0");
+        src.add_circle_trigger("t0", "presence", 3.0, 3.0, 5.0);
+        src.set_trigger_owner("t0", Some("s0"));
+        src.set_origin_init(false);
+        let payload = crate::mission::compile::compile_payload(
+            &src.small_maps_json(),
+            &src.slots_json(),
+            false,
+        );
+
+        let report = doc.merge_mission_payload(&payload, MergeOpts::default());
+        assert_eq!(report.slots_added, 1);
+        assert_eq!(report.vehicles_added, 1);
+        assert_eq!(report.triggers_added, 1);
+
+        let root = small_maps(&doc);
+        // The merged slot is NOT "s0" (that id is the resident's); it is a fresh re-minted id.
+        let merged_slot_id = root["squadsById"]
+            .as_object()
+            .unwrap()
+            .values()
+            .find(|sq| sq["name"] == "Alpha")
+            .and_then(|sq| sq["slotIds"][0].as_str())
+            .expect("merged Alpha slot")
+            .to_string();
+        assert_ne!(
+            merged_slot_id, "s0",
+            "merged slot id must be re-minted, not the resident s0"
+        );
+
+        // The merged vehicle's crew driver seat points at the RE-MINTED slot id.
+        let merged_vehicle = root["vehiclesById"]
+            .as_object()
+            .unwrap()
+            .values()
+            .find(|v| v["resourceName"] == "Prefab/Truck.et")
+            .expect("merged truck");
+        assert_eq!(
+            merged_vehicle["crew"]["driver"].as_str(),
+            Some(merged_slot_id.as_str()),
+            "crew seat re-minted to the merged slot: {merged_vehicle}"
+        );
+
+        // The trigger ownerId points at the same re-minted slot id.
+        let trig = root["triggersById"]
+            .as_object()
+            .unwrap()
+            .values()
+            .next()
+            .unwrap();
+        assert_eq!(
+            trig["ownerId"].as_str(),
+            Some(merged_slot_id.as_str()),
+            "trigger ownerId re-minted to the merged slot: {trig}"
+        );
+    }
+
+    /// T-693.T4 — one undo step: the whole merge is a single transaction, so ONE undo restores the
+    /// pre-merge document exactly (byte-equal slots digest + content-equal `small_maps_json`).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn merge_is_one_undo_step_and_undo_restores_exactly() {
+        let mut doc = seeded_core(); // 8 INIT slots, empty undo stack
+        // `small_maps_json`'s top-level map serializes in yrs HashMap order (non-deterministic per
+        // call), so compare the PARSED value, which is key-order-independent, not the raw string.
+        let before_small = small_maps(&doc);
+        let before_digest = slots_digest(&doc.materialize());
+
+        let payload = template_payload_blufor_alpha();
+        let report = doc.merge_mission_payload(&payload, MergeOpts::default());
+        assert!(report.slots_added > 0, "merge changed the doc");
+        assert_eq!(
+            doc.undo_depth(),
+            1,
+            "the whole merge is exactly one undo step"
+        );
+        assert_ne!(
+            slots_digest(&doc.materialize()),
+            before_digest,
+            "merge added slots"
+        );
+
+        assert!(doc.undo(), "undo the merge");
+        assert_eq!(
+            small_maps(&doc),
+            before_small,
+            "one undo restores the pre-merge document exactly"
+        );
+        assert_eq!(
+            slots_digest(&doc.materialize()),
+            before_digest,
+            "undo restores the exact pre-merge slot bits"
+        );
+        assert!(!doc.can_undo(), "the merge was the only stack item");
+    }
+
+    /// T-693.T5 — tolerance: malformed incoming rows are SKIPPED and recorded, never panicked on, and
+    /// the well-formed rows around them still land.
+    #[test]
+    fn merge_records_skipped_malformed_rows() {
+        let payload = serde_json::json!({
+            "vehicles": [
+                { "id": "v-ok", "resourceName": "Prefab/Ok.et", "position": {"x": 1.0, "y": 2.0} },
+                { "resourceName": "Prefab/NoId.et" },      // missing id → skipped
+                "not-an-object"                               // not an object → skipped
+            ],
+            "editor": {
+                "factions": [],
+                "squads": [],
+                "slots": [
+                    { "id": "s-ok", "role": "Rifleman", "position": {"x": 3.0, "y": 4.0} },
+                    { "role": "NoId" }                        // missing id → skipped
+                ],
+                "editorLayers": []
+            }
+        });
+        let doc = MissionDocCore::new();
+        let report = doc.merge_mission_payload(&payload, MergeOpts::default());
+
+        assert_eq!(report.vehicles_added, 1, "the well-formed vehicle landed");
+        assert_eq!(report.slots_added, 1, "the well-formed slot landed");
+        // Two malformed vehicles + one malformed slot = three skips.
+        assert_eq!(report.skipped.len(), 3, "skips: {:?}", report.skipped);
+        assert!(
+            report
+                .skipped
+                .iter()
+                .any(|(k, _, r)| k == "vehicle" && r.contains("missing id")),
+            "missing-id vehicle recorded: {:?}",
+            report.skipped
+        );
+        assert!(
+            report
+                .skipped
+                .iter()
+                .any(|(k, _, r)| k == "vehicle" && r.contains("not an object")),
+            "non-object vehicle recorded: {:?}",
+            report.skipped
+        );
+        assert!(
+            report
+                .skipped
+                .iter()
+                .any(|(k, _, r)| k == "slot" && r.contains("missing id")),
+            "missing-id slot recorded: {:?}",
+            report.skipped
+        );
+    }
+
+    /// T-693.T5b — the JSON wrapper reports a parse failure in `skipped` rather than erroring.
+    #[test]
+    fn merge_json_wrapper_reports_parse_failure() {
+        let doc = MissionDocCore::new();
+        let out = doc.merge_mission_payload_json("{not valid json", None);
+        let v: serde_json::Value = serde_json::from_str(&out).expect("wrapper returns JSON");
+        assert_eq!(v["slots_added"], 0);
+        assert!(
+            v["skipped"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|s| s["reason"].as_str().unwrap().contains("invalid JSON")),
+            "parse failure recorded: {v}"
+        );
+    }
+
+    /// T-693.T6 — offset opt: `Some((dx, dy))` shifts every merged entity by the world delta; the
+    /// default keeps authored coordinates. Slots, vehicles and a zone circle all move.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn merge_offset_shifts_all_placed_entities() {
+        let src = MissionDocCore::new();
+        src.set_origin_init(true);
+        src.add_editor_layer("lyr", "Layer", None);
+        src.add_faction("faction-BLUFOR", "BLUFOR", "B");
+        src.add_squad("sq-a", "faction-BLUFOR", "Alpha", None);
+        src.add_slot(
+            "s0", "sq-a", "lyr", 0, "SL", None, None, 100.0, 200.0, 0.0, 0.0,
+        );
+        src.set_leader("sq-a", "s0");
+        src.add_vehicle(
+            "v0",
+            "Prefab/Truck.et",
+            Some(300.0),
+            Some(400.0),
+            None,
+            None,
+        );
+        src.add_circle_zone("z0", "boundary", 500.0, 600.0, 50.0);
+        src.set_origin_init(false);
+        let payload = crate::mission::compile::compile_payload(
+            &src.small_maps_json(),
+            &src.slots_json(),
+            false,
+        );
+
+        let doc = MissionDocCore::new();
+        let report = doc.merge_mission_payload(
+            &payload,
+            MergeOpts {
+                offset: Some((1000.0, 2000.0)),
+            },
+        );
+        assert_eq!(report.slots_added, 1);
+        assert_eq!(report.vehicles_added, 1);
+        assert_eq!(report.zones_added, 1);
+
+        // Compare by numeric value (`as_f64`), not JSON literal: an integral offset result serializes
+        // as `1100` (BigInt path) vs the `1100.0` a `json!` literal would carry, both == 1100.0.
+        let slots = slots_map(&doc);
+        let slot = slots.as_object().unwrap().values().next().unwrap();
+        assert_eq!(
+            slot["position"]["x"].as_f64(),
+            Some(1100.0),
+            "slot x offset"
+        );
+        assert_eq!(
+            slot["position"]["y"].as_f64(),
+            Some(2200.0),
+            "slot y offset"
+        );
+
+        let root = small_maps(&doc);
+        let veh = root["vehiclesById"]
+            .as_object()
+            .unwrap()
+            .values()
+            .next()
+            .unwrap();
+        assert_eq!(
+            veh["position"]["x"].as_f64(),
+            Some(1300.0),
+            "vehicle x offset"
+        );
+        assert_eq!(
+            veh["position"]["y"].as_f64(),
+            Some(2400.0),
+            "vehicle y offset"
+        );
+
+        let zone = root["zonesById"]
+            .as_object()
+            .unwrap()
+            .values()
+            .next()
+            .unwrap();
+        assert_eq!(
+            zone["shape"]["circle"]["x"].as_f64(),
+            Some(1500.0),
+            "zone x offset"
+        );
+        assert_eq!(
+            zone["shape"]["circle"]["z"].as_f64(),
+            Some(2600.0),
+            "zone z offset"
+        );
+    }
+
+    /// T-693.T7 — a full compile→merge→compile round trip proves the merged payload is itself
+    /// re-emittable and reloadable (the ORBAT-from-template end state a Save must survive).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn merged_doc_round_trips_through_compile_and_hydrate() {
+        let payload = template_payload_blufor_alpha();
+        let doc = MissionDocCore::new();
+        let _ = doc.merge_mission_payload(&payload, MergeOpts::default());
+        let reloaded = save_and_reload(&doc);
+        // The reloaded doc has the same shape: one squad with two slots, one vehicle.
+        let root = small_maps(&reloaded);
+        assert_eq!(root["squadsById"].as_object().unwrap().len(), 1);
+        let squad = root["squadsById"]
+            .as_object()
+            .unwrap()
+            .values()
+            .next()
+            .unwrap();
+        assert_eq!(squad["slotIds"].as_array().unwrap().len(), 2);
+        assert_eq!(root["vehiclesById"].as_object().unwrap().len(), 1);
     }
 }
