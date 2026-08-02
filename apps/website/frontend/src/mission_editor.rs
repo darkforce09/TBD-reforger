@@ -2302,6 +2302,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                     />
                 </div>
                 })}
+                // T-667 — map-pane edge grid references (dispatcher-authorized SINGLE mount line;
+                // the overlay component + all its logic live in `eden_toolbelt`, my owned file). It
+                // anchors to the MAP-PANE edges (between the docks), so it cannot render from the
+                // status-bar furniture slot; it reads the live camera + viewport itself and re-runs
+                // off the same `cursor`/`debug_hud` heartbeats (no new rAF loop). Gated by
+                // `chrome_hidden` like the other furniture so Backspace hides it too.
+                {move || (!chrome_hidden.get()).then(|| view! { <crate::eden_toolbelt::MapGridRefs cursor debug_hud=Some(debug_hud) /> })}
                 // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
                 // chrome subtree so its pointerdowns never open a map gesture. NOT gated by T-662's
                 // `chrome_hidden` — a dialog the operator opened must survive a hide-interface toggle.
@@ -4394,12 +4401,17 @@ mod t662_input_traps {
     }
 
     /// (2 cont.) `chrome_hidden` is a real signal that gates the chrome mounts (strip + both docks +
-    /// the two T-636 bottom mounts: the mode toolbar AND the full-width status bar). Declared once,
-    /// and each mount is wrapped in a `!chrome_hidden.get()` gate.
+    /// the two T-636 bottom mounts: the mode toolbar AND the full-width status bar + the T-667
+    /// map-pane grid-reference overlay). Declared once, and each mount is wrapped in a
+    /// `!chrome_hidden.get()` gate.
     ///
     /// T-636 [wave101 N-5]: the split turned the single `BottomToolbelt` gate into TWO (ModeToolbar
-    /// + StatusBar), so the deliberate count moves 4 → 5. Pinned as an exact count so a mount can
-    /// never silently escape the hide-chrome gate (or a stray gate creep in unnoticed).
+    /// + StatusBar), so the deliberate count moved 4 → 5. T-667 [wave 106]: the map-pane grid
+    /// references (`MapGridRefs`) are the same kind of map furniture as the scale bar and must hide
+    /// with the rest of the chrome on Backspace, so the deliberate count moves 5 → 6. Pinned as an
+    /// exact count so a mount can never silently escape the hide-chrome gate (or a stray gate creep
+    /// in unnoticed) — a legitimate new gated mount UPDATES this number on purpose (it is never
+    /// bumped to make a red test pass without a matching, intended mount).
     #[test]
     fn chrome_hidden_signal_gates_the_five_mounts() {
         let ed = editor_live();
@@ -4408,23 +4420,25 @@ mod t662_input_traps {
             "chrome_hidden must be a real RwSignal declared on the page"
         );
         // Each chrome mount must sit behind a chrome_hidden gate. Count the gate wrappers: strip,
-        // DockLeft, DockRight, ModeToolbar, StatusBar = 5 after the T-636 split.
+        // DockLeft, DockRight, ModeToolbar, StatusBar, MapGridRefs = 6 (T-636 split + T-667 refs).
         let gates = ed.matches("(!chrome_hidden.get()).then(").count();
         assert_eq!(
-            gates, 5,
-            "exactly five chrome mounts (strip + both docks + mode toolbar + status bar) must be \
-             gated on chrome_hidden; found {gates} gate(s)"
+            gates, 6,
+            "exactly six chrome mounts (strip + both docks + mode toolbar + status bar + grid refs) \
+             must be gated on chrome_hidden; found {gates} gate(s)"
         );
         // The docked chrome components must appear inside the gated region (sanity: we did not gate
         // empty divs). BottomToolbelt is retired as a mount — the readouts live in StatusBar and the
-        // tools in ModeToolbar, both gated.
+        // tools in ModeToolbar, both gated; the T-667 grid refs are gated too.
         assert!(
             ed.contains("TopCommandStrip")
                 && ed.contains("DockLeft")
                 && ed.contains("DockRight")
                 && ed.contains("ModeToolbar")
-                && ed.contains("StatusBar"),
-            "the gated mounts must still be the real chrome components (incl. the two T-636 halves)"
+                && ed.contains("StatusBar")
+                && ed.contains("MapGridRefs"),
+            "the gated mounts must still be the real chrome components (incl. the two T-636 halves \
+             and the T-667 grid-reference overlay)"
         );
         // Modals must NOT be swept into the hide: a Settings/Attributes dialog survives the toggle.
         // The Attributes modal mount is outside every gate.
