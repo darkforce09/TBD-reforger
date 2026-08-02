@@ -142,14 +142,24 @@ pub fn viewshed_cell_rgba(v: Visibility) -> [u8; 4] {
 /// Encode a computed [`Viewshed`] into a row-major RGBA8 byte buffer (`cols * rows * 4`) via
 /// [`viewshed_cell_rgba`], ready to upload as one texture over the viewshed's world rect. Pure (no
 /// GPU, no wasm) so the encoding is native-testable; the wasm host hands the bytes + the world rect
-/// straight to the engine's viewshed texture lane. Row 0 is the raster's `min_y` edge (the engine's
-/// `world_rect_rel` + its `flip_y:false` upload convention put world-min at texture-row-0, matching
-/// the basemap/forest-density lanes).
+/// straight to the engine's viewshed texture lane. Texture row 0 is the raster's `max_y` (north)
+/// edge — the shader's `uv = (x, 1.0 − unit.y)` contract — so rows emit in reverse, exactly as the
+/// forest-density lane's `pack_island_r8_yflip` does. (The previous claim here that `flip_y:false`
+/// puts world-min at row 0 was false on both counts and shipped a north-south mirrored wash.)
 #[must_use]
 pub fn encode_viewshed_rgba(vs: &Viewshed) -> Vec<u8> {
+    // ROWS EMIT IN REVERSE — north first. The shader (`vs_textured`, uv = (x, 1.0 − unit.y)) maps
+    // texture row 0 to world MAX-Y, and the raster's row 0 is world MIN-Y; emitting in natural
+    // order mirrored the wash north-south (wave-110 verifier BLOCKER-1 — dead ground computed
+    // north of a ridge shaded SOUTH on screen). Same flip pack_island_r8_yflip does for the
+    // forest lane. The bridge pin below (`encoder_flips_rows_so_north_is_texture_row_zero`) is
+    // what was missing: it ties encoder row order to the shader's UV contract.
     let mut out = Vec::with_capacity(vs.cols * vs.rows * 4);
-    for cell in &vs.cells {
-        out.extend_from_slice(&viewshed_cell_rgba(*cell));
+    for r in (0..vs.rows).rev() {
+        let base = r * vs.cols;
+        for c in 0..vs.cols {
+            out.extend_from_slice(&viewshed_cell_rgba(vs.cells[base + c]));
+        }
     }
     out
 }
@@ -1213,6 +1223,42 @@ fn everon_manifest() -> map_engine_core::dem::sample::DemManifest {
 mod tests {
     use super::*;
 
+    /// Wave-110 verifier BLOCKER-1: the orientation bridge no pin covered. The shader
+    /// (`vs_textured`, uv = (x, 1.0 − unit.y)) maps texture ROW 0 to world MAX-Y (north); the
+    /// raster's row 0 is world MIN-Y (south). The encoder must therefore emit rows in REVERSE
+    /// (north first), exactly as the forest lane's pack_island_r8_yflip does. This pin plants one
+    /// Hidden cell at the raster's SOUTH-WEST corner (r=0, c=0) and asserts its bytes land in the
+    /// texture's LAST row, first column — the flipped offset. Against the unflipped encoder this
+    /// fails with the hidden bytes at offset 0.
+    #[test]
+    fn encoder_flips_rows_so_north_is_texture_row_zero() {
+        let mut vs = map_engine_core::dem::sample::Viewshed {
+            cols: 3,
+            rows: 2,
+            cells: vec![map_engine_core::dem::sample::Visibility::Visible; 6],
+            min_x: 0.0,
+            min_y: 0.0,
+            max_x: 16.0,
+            max_y: 8.0,
+            obs_x: 0.0,
+            obs_y: 0.0,
+        };
+        // South-west corner of the WORLD raster (row 0 = min_y).
+        vs.cells[0] = map_engine_core::dem::sample::Visibility::Hidden;
+        let rgba = encode_viewshed_rgba(&vs);
+        let px = |r: usize, c: usize| &rgba[(r * vs.cols + c) * 4..(r * vs.cols + c) * 4 + 4];
+        assert_eq!(
+            px(1, 0),
+            &VIEWSHED_HIDDEN_RGBA,
+            "world SW cell must land in the texture's LAST row (shader maps row 0 to north)"
+        );
+        assert_ne!(
+            px(0, 0),
+            &VIEWSHED_HIDDEN_RGBA,
+            "texture row 0 col 0 is world NW here — it must NOT carry the SW cell's bytes"
+        );
+    }
+
     /// A profile sample builder for terse goldens.
     fn s(dist_m: f64, elev_m: f64) -> ProfileSample {
         ProfileSample { dist_m, elev_m }
@@ -1769,10 +1815,28 @@ mod tests {
         };
         let rgba = encode_viewshed_rgba(&vs);
         assert_eq!(rgba.len(), 2 * 2 * 4, "cols*rows*4 bytes");
-        assert_eq!(&rgba[0..4], &VIEWSHED_VISIBLE_RGBA, "cell 0 = visible");
-        assert_eq!(&rgba[4..8], &VIEWSHED_HIDDEN_RGBA, "cell 1 = hidden");
-        assert_eq!(&rgba[8..12], &VIEWSHED_UNKNOWN_RGBA, "cell 2 = unknown");
-        assert_eq!(&rgba[12..16], &VIEWSHED_VISIBLE_RGBA, "cell 3 = visible");
+        // Rows emit NORTH-FIRST (the shader's row-0 = max_y contract; wave-110 BLOCKER-1 fix):
+        // texture row 0 carries world row 1 (U V), texture row 1 carries world row 0 (V H).
+        assert_eq!(
+            &rgba[0..4],
+            &VIEWSHED_UNKNOWN_RGBA,
+            "tex row 0 col 0 = world NW = unknown"
+        );
+        assert_eq!(
+            &rgba[4..8],
+            &VIEWSHED_VISIBLE_RGBA,
+            "tex row 0 col 1 = world NE = visible"
+        );
+        assert_eq!(
+            &rgba[8..12],
+            &VIEWSHED_VISIBLE_RGBA,
+            "tex row 1 col 0 = world SW = visible"
+        );
+        assert_eq!(
+            &rgba[12..16],
+            &VIEWSHED_HIDDEN_RGBA,
+            "tex row 1 col 1 = world SE = hidden"
+        );
     }
 
     // ── T-644 — the LoS sub-mode toggle (Ray ⇆ Viewshed) ─────────────────────────────────────────
@@ -1943,8 +2007,19 @@ mod tests {
             tex.rgba.len(),
             tex.stride_bytes as usize * tex.tex_h as usize
         );
-        // First cell (visible) is transparent at the row start.
-        assert_eq!(&tex.rgba[0..4], &VIEWSHED_VISIBLE_RGBA);
-        assert_eq!(&tex.rgba[4..8], &VIEWSHED_HIDDEN_RGBA);
+        // North-first rows (wave-110 BLOCKER-1 fix): texture row 0 = world row 1 (V U).
+        assert_eq!(
+            &tex.rgba[0..4],
+            &VIEWSHED_VISIBLE_RGBA,
+            "tex row 0 = world north row"
+        );
+        assert_eq!(&tex.rgba[4..8], &VIEWSHED_UNKNOWN_RGBA);
+        // World row 0 (V H) lands in texture row 1, after the 256-byte stride.
+        assert_eq!(&tex.rgba[256..260], &VIEWSHED_VISIBLE_RGBA);
+        assert_eq!(
+            &tex.rgba[260..264],
+            &VIEWSHED_HIDDEN_RGBA,
+            "world SE hidden in tex row 1"
+        );
     }
 }
