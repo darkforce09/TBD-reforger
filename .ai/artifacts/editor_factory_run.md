@@ -27,7 +27,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 102 | 85 | T-640 T-664 T-665 | PASS (run 1) | 0B/4M/3m/10N | SHIPPED — two-tone contours + context menu + layer flags; 4 MAJOR deferred: T-713 (crater rings), T-714 (re-march hitch), T-715 (dock vanish), T-716 (menu honesty) |
 | 103 | 86 | T-076 T-631 T-641 | PASS (runs 1+2; re-run over blocker fix) | 1B/2M/2m/4N → fix CLEARED | SHIPPED — crew UI + boot failure path + spot heights; BLOCKER (hydrated-crew wipe) fixed in-wave 5f92cc4a; T-717 T-718 deferred |
 | 104 | 87 | T-635 T-656 T-666 | PASS (run 1) | 0B/3M/2m/5N | SHIPPED — HUD slot+toggle, validation engine (trip-fixture discipline), layer authoring; T-719 T-720 filed, T-715 amended (hidden-selection lane) |
-| 105 | 88 | T-636 T-646 T-683 | — | — | pending |
+| 105 | 88 | T-636 T-646 T-683 | PASS (run 3; run 1 red on unswept route → fixed a7d91fca; run 2 = capture rerun) | 1B/1M/3m/5N → fix CLEARED | SHIPPED — status-bar split + class:/chips + defaults endpoint; BLOCKER (multibyte panic) fixed in-wave c2a902dd; T-721 T-722 filed, T-719 amended |
 | 106 | 89 | T-647 T-667 T-691 | — | — | pending |
 | 107 | 90 | T-638 T-657 T-659 | — | — | pending |
 | 108 | 91 | T-642 T-650 T-658 | — | — | pending |
@@ -117,6 +117,13 @@ serialisation, not a hang).
   always-on eval). [wave104 MINOR-1 + engine probe]
 - **T-655 (W111):** consume Finding.subject via retained-snapshot index→id mapping OR rely on the
   id T-657 adds; never gate diagnostics behind a key (doctrine chain §D.4#7). [wave104 MINOR-1]
+- **T-667 (W106):** mount the scale bar in the status bar's CLEAR CENTRE span (data-status-furniture
+  slot); grid-reference labels anchor to the MAP PANE edges (between the docks), not viewport
+  edges — correct Eden geometry AND avoids the T-721 occluded zones (bar's left 256px / right
+  320px sit under the docks until T-721 lands). [wave105 MAJOR-1]
+- **T-084 (W117):** `class:` matches full resource_name prefixes only — a bare classname
+  (class:B_Soldier) silently empties the tree on GUID-headed Reforger ids; decide classname-TAIL
+  matching semantics as part of the grammar rewrite. [wave105 MINOR-2]
 - **T-082 (W113):** the Attributes modal shows refused locked-slot Transform edits as accepted
   (one-shot snapshot, no re-read) — add re-read or disabled affordance. [wave102 F-7]
 

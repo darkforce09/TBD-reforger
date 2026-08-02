@@ -145,7 +145,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 > the lowest-ordered `ready` program, not the program in flight.
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-656**
+**Latest shipped:** **T-683**
 
 **ACTIVE NOW:** **T-090** — T-090.6 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md`.
 
@@ -154,12 +154,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-120** — Staging soak + golden mission smoke (`queued`)
 - **T-146** — Asset Browser Data Wiring (`queued`)
 - **T-170** — Prod default flip to Leptos SPA (`queued`)
-- **T-636** — Full-width status bar — stop the toolbelt conflating tools with telemetry (`queued`)
-- **T-646** — Asset browser: class: search, side/faction submode, crew toggle (`queued`)
-- **T-683** — Default-override instrumentation: which mission defaults every author changes (`queued`)
 - **T-647** — Placement interactions: click-then-click, Ctrl multi-place, Alt empty vehicle, dbl-click entry points (`queued`)
 - **T-667** — Map furniture: scale bar and edge grid reference labels (`queued`)
 - **T-638** — Collapse and expand both docks (`queued`)
+- **T-659** — Slot census badge + generated mission summary line (`queued`)
+- **T-657** — Validation: ORBAT and slot rules (`queued`)
+- **T-642** — Ruler: persistent polyline with per-leg distance and bearing (`queued`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
