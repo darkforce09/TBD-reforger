@@ -548,6 +548,15 @@ impl MissionDocCore {
     /// visibility mask and it keeps the flag out of the 6k-line engine. It is a VIEW filter only —
     /// the slot is untouched in the doc, still present in `slots_json` / `small_maps_json`, so a Save
     /// carries the full mission and un-hiding brings the slot straight back (no data loss).
+    ///
+    /// T-701 — a slot carrying its OWN editor-local `editorHidden` flag (per-ENTITY visibility, 3den
+    /// E9 "Enable Visibility") is dropped from the SoA too. Effective-hidden here is the UNION —
+    /// `layer-hidden OR entity-hidden` — so the per-entity check joins the per-layer one at this same
+    /// filter site (an entity is hidden if its layer chain hides it OR it hides itself). Same VIEW
+    /// contract as the layer flag: the row is untouched in the doc (`slots_json` still carries it),
+    /// so it round-trips a Save and clearing the flag brings it straight back. Distinct from the
+    /// layer flag: `editorHidden` rides the SLOT row, not a folder — a maker can declutter a single
+    /// entity in a dense area without hiding its whole layer.
     #[must_use]
     pub fn materialize(&self) -> SlotSoa {
         let txn = self.doc.transact();
@@ -585,10 +594,13 @@ impl MissionDocCore {
         for (id, out) in self.slots.iter(&txn) {
             let Out::YMap(slot) = out else { continue };
             // T-665 — drop slots on a hidden (or hidden-ancestor) layer before any column is pushed.
-            if slot_layer
+            // T-701 — effective-hidden is the UNION: OR the per-entity `editorHidden` flag on the
+            // slot row itself, so an entity a maker hid individually is dropped even when its layer is
+            // visible (and, symmetrically, a hidden layer still drops a slot whose own flag is unset).
+            let layer_hidden = slot_layer
                 .get(id)
-                .is_some_and(|l| hidden_layers.get(l).copied().unwrap_or(false))
-            {
+                .is_some_and(|l| hidden_layers.get(l).copied().unwrap_or(false));
+            if layer_hidden || read_bool(&txn, &slot, "editorHidden") {
                 continue;
             }
             let (x, y, z, rot) = read_position(&txn, &slot);
@@ -2640,6 +2652,63 @@ impl MissionDocCore {
                 layer.remove(&mut txn, "locked");
             }
         }
+    }
+
+    /// T-701 — set a SLOT's editor-local `editorHidden` VIEW flag (per-ENTITY visibility, 3den E9).
+    ///
+    /// The per-entity twin of [`Self::set_editor_layer_hidden`] and mirror of `slot.tag`'s home: like
+    /// the layer flag it PERSISTS on the row and rides [`Self::begin`], so a single flip is ONE undo
+    /// step; unlike it, the bit lives on the slot itself, letting a maker declutter a single dense-area
+    /// entity without hiding its whole layer. Enforcement is at [`Self::materialize`], where effective-
+    /// hidden = `layer-hidden OR entity-hidden`; a hidden slot leaves the render SoA while
+    /// `slots_json` / the `editor.slots` payload still carry it verbatim (hide is a VIEW, not a delete
+    /// — no data loss, un-hiding restores it).
+    ///
+    /// **Editor-block state, never the MOD wire.** The flag rides `editor.slots` (the editor-only
+    /// block `MissionDocCore::hydrate` reloads verbatim), exactly like `slot.tag`; the MOD document
+    /// (`mission::flatten::flatten_to_mod_document`) deserializes slots into `SlotIn`, whose fixed
+    /// field list omits it, and emits `ModSlot`, which has no such field — so `editorHidden` is
+    /// STRUCTURALLY absent from the compiled mission (proven by `editor_hidden_never_reaches_mod_wire`).
+    ///
+    /// Stored only when `true`: `false` REMOVES the key (the `tag`/`assetId` omit idiom of
+    /// [`Self::add_slot`]), so a never-hidden slot's row is byte-identical to before this ticket
+    /// (absent ⇒ visible). No-op when the slot id is absent.
+    pub fn set_slot_editor_hidden(&self, id: &str, hidden: bool) {
+        let mut txn = self.begin();
+        set_slot_editor_hidden_in_txn(&mut txn, &self.slots, id, hidden);
+    }
+
+    /// T-701 — set `editorHidden` on MANY slots in ONE transaction (one undo step for the whole
+    /// selection). Backs `editor_ops::{hide_selection, show_selection}` — the H-key affordance flips
+    /// the whole censused selection, and Eden's Hide/Show is one undoable action, not one-per-slot.
+    /// This is the per-entity-flag one-txn batch mutator the T-732 UNDO-HONESTY note says the position
+    /// lane lacks; here store.rs is authored in-slice so the batch exists and the op is honestly one
+    /// step. Unknown ids are skipped; `false` removes the key per the omit idiom.
+    pub fn set_slots_editor_hidden(&self, ids: &[String], hidden: bool) {
+        let mut txn = self.begin();
+        for id in ids {
+            set_slot_editor_hidden_in_txn(&mut txn, &self.slots, id, hidden);
+        }
+    }
+
+    /// T-701 — clear EVERY slot's `editorHidden` in ONE transaction (the "Show All" / reveal-all
+    /// command, one undo step). Only slots that actually carry the key are touched, so on a doc with
+    /// no hidden entities this commits an empty transaction (no spurious undo entry beyond the
+    /// begin/commit). Returns the number of slots un-hidden.
+    pub fn clear_all_editor_hidden(&self) -> usize {
+        let mut txn = self.begin();
+        let hidden_ids: Vec<String> = self
+            .slots
+            .iter(&txn)
+            .filter_map(|(id, out)| match out {
+                Out::YMap(slot) if read_bool(&txn, &slot, "editorHidden") => Some(id.to_string()),
+                _ => None,
+            })
+            .collect();
+        for id in &hidden_ids {
+            set_slot_editor_hidden_in_txn(&mut txn, &self.slots, id, false);
+        }
+        hidden_ids.len()
     }
 
     /// Reparent an Outliner folder; rejects cycles (dropping it into its own subtree). Mirrors
@@ -4941,6 +5010,27 @@ fn read_str<T: ReadTxn>(txn: &T, slot: &MapRef, key: &str) -> Option<String> {
     match slot.get(txn, key) {
         Some(Out::Any(Any::String(s))) => Some(s.to_string()),
         _ => None,
+    }
+}
+
+/// T-701 — read an entity row's own boolean flag (`editorHidden`), `false` when absent or non-bool.
+/// The flag is stored only when `true` ([`MissionDocCore::set_slot_editor_hidden`] removes the key on
+/// `false`), so "absent" is the canonical negative — the same `tag`/`assetId` omit idiom as
+/// [`MissionDocCore::add_slot`], and the twin of the layer-side [`layer_flag`].
+fn read_bool<T: ReadTxn>(txn: &T, row: &MapRef, key: &str) -> bool {
+    matches!(row.get(txn, key), Some(Out::Any(Any::Bool(true))))
+}
+
+/// T-701 — write/clear one slot's `editorHidden` inside an existing txn (shared by the single, batch,
+/// and clear-all setters so every path uses one omit rule). `true` inserts the bool; `false` REMOVES
+/// the key so a never-hidden row stays byte-identical (absent ⇒ visible). No-op when the id is absent.
+fn set_slot_editor_hidden_in_txn(txn: &mut TransactionMut, slots: &MapRef, id: &str, hidden: bool) {
+    if let Some(Out::YMap(slot)) = slots.get(&*txn, id) {
+        if hidden {
+            slot.insert(&mut *txn, "editorHidden", true);
+        } else {
+            slot.remove(&mut *txn, "editorHidden");
+        }
     }
 }
 
@@ -9826,6 +9916,353 @@ mod tests {
         let row = &layers["editorLayersById"]["L"];
         assert!(row.get("hidden").is_none(), "hidden key removed: {row}");
         assert!(row.get("locked").is_none(), "locked key removed: {row}");
+    }
+
+    /* ─────────────────────────── T-701 — per-entity editorHidden flag ─────────────────────────── */
+
+    /// Build a doc with ONE visible layer holding TWO slots on a BLUFOR squad, seeded under INIT so
+    /// the setup is not on the undo stack — the T-701 tests then perturb with a single LOCAL flag
+    /// flip. The faction/squad give the wire test a mission to compile + flatten; the layer stays
+    /// VISIBLE so the per-entity flag is the ONLY thing hiding a slot (isolating it from the T-665
+    /// layer path). Slot `s0` is the leader so the flattened ORBAT is well-formed.
+    #[cfg(feature = "mission")]
+    fn two_slots_visible_layer() -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_editor_layer("L", "Layer", None);
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "1st Battalion");
+        doc.add_squad("sq", "faction-BLUFOR", "Alpha", Some("A1".into()));
+        doc.add_slot("s0", "sq", "L", 0, "SL", None, None, 100.0, 200.0, 0.0, 0.0);
+        doc.add_slot(
+            "s1", "sq", "L", 1, "Rifleman", None, None, 110.0, 210.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq", "s0");
+        doc.set_origin_init(false);
+        doc
+    }
+
+    /// FLAG SHAPE + VISIBILITY, fired once: `editorHidden` rides the slot row ONLY WHEN TRUE, and a
+    /// hidden entity is ABSENT from `materialize()` while still PRESENT in the doc (hide is a VIEW,
+    /// no data loss) — even though its LAYER is visible. Clearing the flag restores the row and
+    /// removes the key (byte-identical to a pre-T-701 row: absent ⇒ visible).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn editor_hidden_rides_the_row_only_when_true_and_filters_materialize() {
+        let doc = two_slots_visible_layer();
+        assert_eq!(doc.materialize().len(), 2, "both visible by default");
+        // Absent ⇒ visible: the key is not written on a never-hidden slot.
+        let before: serde_json::Value =
+            serde_json::from_str(&doc.slots_json()).expect("slots_json");
+        assert!(
+            before["s1"].get("editorHidden").is_none(),
+            "flag omitted until set: {}",
+            before["s1"]
+        );
+
+        // Perturb — hide ONE entity on the (still-visible) layer.
+        doc.set_slot_editor_hidden("s1", true);
+        let soa = doc.materialize();
+        assert_eq!(
+            soa.ids.len(),
+            1,
+            "hidden entity dropped from the render SoA"
+        );
+        assert_eq!(soa.ids[0], "s0", "the un-hidden entity survives");
+
+        // …written only-when-true, and the row is otherwise untouched (VIEW, not delete).
+        let after: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots_json");
+        assert_eq!(
+            after["s1"]["editorHidden"], true,
+            "flag on the row: {}",
+            after["s1"]
+        );
+        assert_eq!(after["s1"]["role"], "Rifleman", "row survives hide");
+        assert_eq!(after["s1"]["position"]["x"], 110.0, "position untouched");
+
+        // Restore — clearing removes the key AND brings the row back.
+        doc.set_slot_editor_hidden("s1", false);
+        assert_eq!(doc.materialize().len(), 2, "un-hide restores the entity");
+        let cleared: serde_json::Value =
+            serde_json::from_str(&doc.slots_json()).expect("slots_json");
+        assert!(
+            cleared["s1"].get("editorHidden").is_none(),
+            "false removes the key: {}",
+            cleared["s1"]
+        );
+    }
+
+    /// EFFECTIVE = layer OR entity, fired once across all four corners of the union: a slot is in the
+    /// SoA iff its layer is visible AND its own flag is unset. Proves the per-entity check JOINS the
+    /// per-layer check at the one filter site (neither masks the other).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn effective_hidden_is_layer_or_entity() {
+        let doc = two_slots_visible_layer();
+
+        // (layer visible, entity visible) → present.
+        assert_eq!(
+            ids_sorted(&doc.materialize()),
+            vec!["s0", "s1"],
+            "both visible"
+        );
+
+        // (layer visible, entity hidden) → s1 dropped by its OWN flag alone.
+        doc.set_slot_editor_hidden("s1", true);
+        assert_eq!(
+            ids_sorted(&doc.materialize()),
+            vec!["s0"],
+            "entity flag hides s1"
+        );
+
+        // (layer hidden, entity hidden) → both gone; the two conditions compose (OR), s0 by layer.
+        doc.set_editor_layer_hidden("L", true);
+        assert!(
+            doc.materialize().ids.is_empty(),
+            "layer OR entity hides both"
+        );
+
+        // (layer hidden, entity visible) → s1's own flag cleared, but the layer still hides it.
+        doc.set_slot_editor_hidden("s1", false);
+        assert!(
+            doc.materialize().ids.is_empty(),
+            "layer alone still hides both even with entity flags clear"
+        );
+
+        // Reveal the layer → only the un-flagged slots come back (s0 & s1 both clear now).
+        doc.set_editor_layer_hidden("L", false);
+        assert_eq!(
+            ids_sorted(&doc.materialize()),
+            vec!["s0", "s1"],
+            "revealing the layer restores the un-flagged entities"
+        );
+    }
+
+    /// HYDRATE ROUND-TRIP, fired once: `editorHidden` survives compile → hydrate into a fresh doc
+    /// verbatim (it is a lossless `editor.slots` field), so a hidden entity reloads hidden and is
+    /// filtered out of the reloaded doc's SoA. Belt for the omit idiom on the reload path.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn editor_hidden_survives_hydrate_round_trip() {
+        let doc = two_slots_visible_layer();
+        doc.set_slot_editor_hidden("s1", true);
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+
+        // Reload into a pristine doc.
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&serde_json::to_string(&payload).expect("payload json"), "L");
+
+        // The flag rode the payload and reloaded onto the row.
+        let slots: serde_json::Value =
+            serde_json::from_str(&reloaded.slots_json()).expect("slots_json");
+        assert_eq!(
+            slots["s1"]["editorHidden"], true,
+            "flag reloaded: {}",
+            slots["s1"]
+        );
+        assert!(
+            slots["s0"].get("editorHidden").is_none(),
+            "un-hidden slot has no key after reload: {}",
+            slots["s0"]
+        );
+        // …and the reloaded doc filters it out of the SoA exactly like the source doc.
+        assert_eq!(
+            ids_sorted(&reloaded.materialize()),
+            vec!["s0"],
+            "hidden entity stays hidden after reload"
+        );
+    }
+
+    /// NEVER COMPILES (fired once — perturb / fail / restore): the flag is present in the editor
+    /// `editor.slots` block (editor-only state, reloaded verbatim like `slot.tag`) but STRUCTURALLY
+    /// absent from the compiled MOD document. Flatten deserializes slots into `SlotIn` (whose fixed
+    /// field list omits `editorHidden`) and emits `ModSlot` (which has no such field), so the flag
+    /// cannot cross to the wire. FIRING the rule: perturb the compiled payload to smuggle
+    /// `editorHidden` onto a slot, re-flatten, and PROVE the MOD bytes still never contain the token —
+    /// then restore and confirm the honest compile is clean too.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn editor_hidden_never_reaches_mod_wire() {
+        let doc = two_slots_visible_layer();
+        doc.set_slot_editor_hidden("s1", true);
+
+        // The EDITOR payload (Save/Export) DOES carry the flag — it is editor-block state, reloaded
+        // losslessly. This is the "carries it in the editor block only" half of the contract.
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let s1 = payload["editor"]["slots"]
+            .as_array()
+            .expect("editor.slots")
+            .iter()
+            .find(|s| s["id"] == "s1")
+            .expect("s1 in editor.slots");
+        assert_eq!(
+            s1["editorHidden"], true,
+            "editor block keeps the flag: {s1}"
+        );
+
+        // The MOD wire (flatten) must NOT: compile the editor payload to the mod document and assert
+        // the token is nowhere in the bytes.
+        let meta = br#"{"id":"11112222333344445555666677778888","title":"t","author":"a",
+            "terrain":"everon","customTerrainName":"","maxPlayers":8,"timeOfDay":"05:30",
+            "weatherPreset":"clear"}"#;
+        let payload_bytes = serde_json::to_vec(&payload).expect("payload bytes");
+        let mod_bytes = crate::mission::flatten::flatten_mod_document_json(meta, &payload_bytes)
+            .expect("flatten compiles");
+        let mod_text = String::from_utf8(mod_bytes).expect("utf-8");
+        assert!(
+            !mod_text.contains("editorHidden"),
+            "editorHidden leaked onto the MOD wire: {mod_text}"
+        );
+
+        // ── FIRE THE RULE — perturb: force `editorHidden` onto EVERY compiled slot, re-flatten, and
+        // prove the wire STILL never sees it (the guarantee is structural in `SlotIn`/`ModSlot`, not a
+        // property of this one input). A test that only ever feeds clean input can't fail if the
+        // guard regresses; this one would.
+        let mut perturbed = payload.clone();
+        for slot in perturbed["editor"]["slots"]
+            .as_array_mut()
+            .expect("editor.slots")
+        {
+            slot["editorHidden"] = serde_json::Value::Bool(true);
+        }
+        let perturbed_bytes = serde_json::to_vec(&perturbed).expect("perturbed bytes");
+        let perturbed_mod =
+            crate::mission::flatten::flatten_mod_document_json(meta, &perturbed_bytes)
+                .expect("perturbed flatten compiles");
+        let perturbed_text = String::from_utf8(perturbed_mod).expect("utf-8");
+        assert!(
+            !perturbed_text.contains("editorHidden"),
+            "perturbed editorHidden must STILL be stripped by SlotIn/ModSlot: {perturbed_text}"
+        );
+
+        // ── restore: an honest compile with NO flag anywhere is likewise clean (control — the token
+        // is absent because it was never authored, not because a filter removed a present one).
+        let clean = two_slots_visible_layer();
+        let clean_payload = crate::mission::compile::compile_payload(
+            &clean.small_maps_json(),
+            &clean.slots_json(),
+            false,
+        );
+        let clean_bytes = serde_json::to_vec(&clean_payload).expect("clean bytes");
+        let clean_mod = crate::mission::flatten::flatten_mod_document_json(meta, &clean_bytes)
+            .expect("clean flatten compiles");
+        assert!(
+            !String::from_utf8(clean_mod)
+                .expect("utf-8")
+                .contains("editorHidden"),
+            "control: a doc with no hidden entity has no editorHidden token on the wire"
+        );
+    }
+
+    /// UNDO, fired once: a single flag flip is ONE undo step (undoable like a rename / the layer eye),
+    /// and undo restores the prior VIEW state — a hidden entity reappears in the SoA after Ctrl+Z.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn editor_hidden_flip_is_one_undo_step() {
+        let mut doc = two_slots_visible_layer();
+        assert_eq!(doc.undo_depth(), 0, "INIT setup is not on the stack");
+
+        doc.set_slot_editor_hidden("s1", true);
+        assert_eq!(doc.undo_depth(), 1, "hide is one LOCAL step");
+        assert_eq!(doc.materialize().len(), 1, "hidden now");
+
+        assert!(doc.undo());
+        assert_eq!(doc.materialize().len(), 2, "undo un-hid the entity");
+        assert_eq!(doc.undo_depth(), 0, "one flip = one step");
+    }
+
+    /// SHOW-ALL in ONE txn, fired once: hiding several entities (each its own step) then `clear_all_
+    /// editor_hidden()` reveals EVERY one in a SINGLE undo step, and one undo re-hides them all —
+    /// proving the reveal-all is atomic (one txn), not per-slot. Returns the count un-hidden.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn show_all_clears_every_flag_in_one_txn() {
+        let mut doc = two_slots_visible_layer();
+        doc.set_slot_editor_hidden("s0", true); // step 1
+        doc.set_slot_editor_hidden("s1", true); // step 2
+        assert_eq!(doc.undo_depth(), 2, "two individual hides = two steps");
+        assert!(doc.materialize().ids.is_empty(), "both hidden");
+
+        // Reveal all — ONE txn, one step, and it reports the two it cleared.
+        let cleared = doc.clear_all_editor_hidden();
+        assert_eq!(cleared, 2, "both entities un-hidden");
+        assert_eq!(doc.undo_depth(), 3, "show-all is exactly ONE more step");
+        assert_eq!(doc.materialize().len(), 2, "everything visible again");
+        let slots: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots_json");
+        assert!(slots["s0"].get("editorHidden").is_none(), "s0 key removed");
+        assert!(slots["s1"].get("editorHidden").is_none(), "s1 key removed");
+
+        // A SINGLE undo re-hides BOTH — the reveal-all was one atomic transaction.
+        assert!(doc.undo());
+        assert!(
+            doc.materialize().ids.is_empty(),
+            "one undo restored the whole reveal-all: both hidden again"
+        );
+        assert_eq!(doc.undo_depth(), 2, "back to the two individual hides");
+    }
+
+    /// BATCH hide, fired once: `set_slots_editor_hidden` flips MANY slots in ONE undo step (the
+    /// H-key affordance over a multi-selection is one Eden action). One undo restores all of them —
+    /// this is the per-entity one-txn batch the T-732 position lane lacks, present because store.rs
+    /// is authored in-slice.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn batch_hide_selection_is_one_undo_step() {
+        let mut doc = two_slots_visible_layer();
+        doc.set_slots_editor_hidden(&["s0".to_string(), "s1".to_string()], true);
+        assert_eq!(
+            doc.undo_depth(),
+            1,
+            "hiding the whole selection is ONE step"
+        );
+        assert!(doc.materialize().ids.is_empty(), "both hidden by the batch");
+
+        assert!(doc.undo());
+        assert_eq!(
+            doc.materialize().len(),
+            2,
+            "one undo un-hid the whole batch"
+        );
+    }
+
+    /// ISOLATION: an individual field edit (role/tag/stance via `update_slot`) does NOT wipe a
+    /// sibling `editorHidden` — the slot mutators write per-key on the tracked YMap, so the flag
+    /// (and every other sibling) survives an unrelated edit. Guards against a future whole-row
+    /// rewrite regressing the flag off.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn editor_hidden_survives_an_unrelated_slot_edit() {
+        let doc = two_slots_visible_layer();
+        doc.set_slot_editor_hidden("s1", true);
+        // Unrelated edit to the SAME slot.
+        doc.update_slot(
+            "s1",
+            Some("MED".to_string()),
+            None,
+            Some("prone".to_string()),
+        );
+        assert_eq!(
+            doc.materialize().len(),
+            1,
+            "s1 still hidden after an unrelated edit"
+        );
+        let slots: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots_json");
+        assert_eq!(
+            slots["s1"]["editorHidden"], true,
+            "flag preserved: {}",
+            slots["s1"]
+        );
+        assert_eq!(
+            slots["s1"]["role"], "MED",
+            "the unrelated edit still landed"
+        );
     }
 
     // ── T-693 merge_mission_payload ──────────────────────────────────────────────────────────────

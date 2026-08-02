@@ -1915,6 +1915,206 @@ pub fn set_layer_locked(id: &str, locked: bool) {
     }
 }
 
+/* ═══════════════════════ T-701 — per-entity editor visibility override ═══════════════════════ */
+//
+// 3den E9 "Enable Visibility" — an editor-LOCAL `editorHidden` flag on the slot row that NEVER
+// compiles (it rides `editor.slots`, the editor-only block reloaded verbatim, and is structurally
+// stripped from the MOD wire by `flatten`'s `SlotIn`/`ModSlot` — see
+// `store::set_slot_editor_hidden`). Distinct from the T-665 LAYER eye (per-LAYER, on a folder row):
+// this is PER-ENTITY, so a maker can declutter a single dense-area entity without hiding its layer.
+// Enforcement is at `store::materialize`, where effective-hidden = `layer-hidden OR entity-hidden`.
+//
+// These are thin wrappers onto the SHIPPED, TESTED store mutators (`set_slots_editor_hidden` — the
+// per-entity ONE-TXN batch, so hiding the whole selection is ONE undo step; `clear_all_editor_hidden`
+// — the reveal-all, one txn), riding the SAME post-change tail as the layer eye
+// (`after_local_edit` → `refresh_docks`): the eye and the H-key flip visibility with the SAME
+// semantics (one commit = one undo step; re-materialize drops/returns the affected slots), so there
+// is NO new inconsistency between the two affordances.
+//
+// PENDING PRODUCT DECISION (T-715, amended wave 104), INHERITED not widened: a hidden slot vanishes
+// from the dock trees (the `slot_rows` feed reads `materialize`, which now also drops entity-hidden
+// slots) and selection consumers can act on a hidden entity sight-unseen. Entity-hidden JOINS
+// layer-hidden in exactly that same open lane — this slice does not fix it and must not widen it.
+//
+// UI RESIDUE (a wiring line for T-733's family — NOT this slice's `owns`): the context-menu Hide/Show
+// row (`context_menu.rs` + the T-664 enum), the H-key on the selection (`mission_editor` keydown),
+// and the dock hidden-glyph render (`eden_tree`) all live in files OUTSIDE these two owned modules.
+// What ships visibly here: this ops-level API + the `slot_hidden_rows` accessor a dock CAN render
+// once wired. The keyboard/menu/glyph are the residue.
+
+/// Filter a selection to the ids that are SLOTS (present in `slotsById`), keeping HIDDEN ones —
+/// unlike a `materialize()`-based resolve, this reads `slots_json` so an entity that is currently
+/// editor-hidden is still resolvable (you must be able to SHOW what you hid). Non-slot ids (vehicles,
+/// objects, or a stale id) are dropped; the visibility flag lives on the slot row, matching the
+/// store's slot-only `materialize` filter (vehicles/entities have no SoA filter this slice).
+fn selected_slot_ids(core: &MissionDocCore, sel: &[String]) -> Vec<String> {
+    let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) else {
+        return Vec::new();
+    };
+    let Some(map) = root.as_object() else {
+        return Vec::new();
+    };
+    sel.iter()
+        .filter(|id| map.contains_key(id.as_str()))
+        .cloned()
+        .collect()
+}
+
+/// Read whether the current selection is ALL-hidden (used to decide the toggle direction and to drive
+/// a menu row's checked state). Returns `None` when the selection resolves to no slots (nothing to
+/// toggle). `Some(true)` ⇒ every selected slot is hidden (so a toggle SHOWS); `Some(false)` ⇒ at
+/// least one is visible (a toggle HIDES, matching Eden's "any visible → hide all" bias).
+fn selection_all_hidden(core: &MissionDocCore, ids: &[String]) -> Option<bool> {
+    if ids.is_empty() {
+        return None;
+    }
+    let root = serde_json::from_str::<serde_json::Value>(&core.slots_json()).ok()?;
+    let map = root.as_object()?;
+    Some(ids.iter().all(|id| {
+        map.get(id)
+            .and_then(|s| s.get("editorHidden"))
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+    }))
+}
+
+/// T-701 (3den E9) — set `editorHidden` on the whole live SELECTION in ONE undo step, then the shared
+/// post-change tail (re-materialize drops/returns the affected slots, dock rebuild re-marks the rows).
+/// `hidden = true` hides, `false` shows. Rides `store::set_slots_editor_hidden` — the per-entity
+/// one-txn batch — so the H-key over a multi-selection is one Eden action, NOT one step per slot
+/// (contrast the T-732 position lane, which lacks such a batch). Returns whether anything was flipped
+/// (an empty selection, or a selection with no slots, is a no-op). Shared by the H-key affordance and
+/// a context-menu Hide/Show row once those are wired (T-733's family).
+fn set_selection_hidden(hidden: bool) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let sel = ctx.selection.borrow().clone();
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let ids = selected_slot_ids(core, &sel);
+        if ids.is_empty() {
+            return false;
+        }
+        core.set_slots_editor_hidden(&ids, hidden);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// T-701 — HIDE the live selection (declutter). One undo step; returns whether anything was hidden.
+///
+/// `#[allow(dead_code)]`: the canonical ops API. Its live caller — an H-key on the selection — lives
+/// in `mission_editor`'s keydown, and a context-menu Hide row in `context_menu.rs`; both are OUTSIDE
+/// this slice's `owns` (the H-key + menu are the stated T-733-family residue). Shipped tested here.
+#[allow(dead_code)]
+pub fn hide_selection() -> bool {
+    set_selection_hidden(true)
+}
+
+/// T-701 — SHOW (un-hide) the live selection. One undo step; returns whether anything was shown.
+///
+/// `#[allow(dead_code)]` — same residue note as [`hide_selection`] (the context-menu Show row / the
+/// H-key toggle live outside `owns`).
+#[allow(dead_code)]
+pub fn show_selection() -> bool {
+    set_selection_hidden(false)
+}
+
+/// T-701 — TOGGLE `editorHidden` on the live selection (the H-key affordance's natural verb): if every
+/// selected slot is already hidden, SHOW them; otherwise HIDE them all (Eden's "any visible → hide
+/// all" bias, so a mixed selection collapses to hidden). One undo step. Returns whether anything
+/// flipped (no-op on an empty / slot-less selection).
+///
+/// `#[allow(dead_code)]`: this is the verb the H-key affordance calls (T-648 keydown idiom in
+/// `mission_editor`, out of `owns`). Shipped + covered by the store batch/undo tests.
+#[allow(dead_code)]
+pub fn toggle_hidden() -> bool {
+    // Decide the direction under a read borrow, then delegate to the one-txn setter. Reading the
+    // direction and committing under separate borrows is fine: this is single-threaded editor state
+    // and nothing mutates the selection between the two.
+    let dir = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let sel = ctx.selection.borrow().clone();
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let ids = selected_slot_ids(core, &sel);
+        // all-hidden → show (flip to visible); else → hide.
+        selection_all_hidden(core, &ids).map(|all_hidden| !all_hidden)
+    });
+    match dir {
+        Some(hidden) => set_selection_hidden(hidden),
+        None => false,
+    }
+}
+
+/// T-701 — SHOW ALL: clear `editorHidden` on EVERY slot in the doc in ONE undo step (the reveal-all
+/// command, so a maker who hid several entities across the mission un-hides them all at once). Rides
+/// `store::clear_all_editor_hidden` (one txn) + the shared tail. Returns the number of entities
+/// un-hidden (0 ⇒ nothing was hidden, and no visible change).
+///
+/// `#[allow(dead_code)]`: a menu/command entry point (a "Show All" item) is the residue; the reveal-
+/// all txn + undo are proven at the store (`show_all_clears_every_flag_in_one_txn`).
+#[allow(dead_code)]
+pub fn show_all_hidden() -> usize {
+    let cleared = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return 0;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return 0;
+        };
+        core.clear_all_editor_hidden()
+    });
+    if cleared > 0 {
+        crate::mission_history::after_local_edit();
+    }
+    cleared
+}
+
+/// T-701 — dock-facing accessor: every slot's `(id, editorHidden)` read straight off `slots_json`
+/// (`slotsById`), so it lists HIDDEN slots too — the twin of [`layer_rows`]'s `hidden` field but
+/// per-ENTITY. `slot_rows` (fed from `materialize`) deliberately DROPS hidden slots (they leave the
+/// tree, the T-715 inherited lane), so a dock that wants to render a hidden entity dimmed-but-present
+/// (an "eye-off" glyph, the Eden affordance) reads THIS instead. Sorted by id for deterministic order
+/// (mirrors `layer_rows`). Pure over the doc — the render wiring (glyph, click-to-show) is the
+/// T-733-family residue, but the DATA a dock needs ships here.
+///
+/// `#[allow(dead_code)]`: the consuming dock render (an eye-off glyph on the slot row) is outside
+/// `owns` (`eden_tree`); this accessor is the shippable-visible datum it will read once wired.
+#[allow(dead_code)]
+#[must_use]
+pub fn slot_hidden_rows(core: &MissionDocCore) -> Vec<(String, bool)> {
+    let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) else {
+        return Vec::new();
+    };
+    let Some(map) = root.as_object() else {
+        return Vec::new();
+    };
+    let mut rows: Vec<(String, bool)> = map
+        .iter()
+        .map(|(id, v)| {
+            let hidden = v
+                .get("editorHidden")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false);
+            (id.clone(), hidden)
+        })
+        .collect();
+    rows.sort_by(|a, b| a.0.cmp(&b.0));
+    rows
+}
+
 /* ═══════════════════════════ T-666 — Outliner layer authoring ═══════════════════════════ */
 //
 // LAYER-CREATE-001 / LAYER-DEL-001 / SEL-LAYER-CHILDREN-001 / SEL-LAYER-DESC-001 (the ops half;
