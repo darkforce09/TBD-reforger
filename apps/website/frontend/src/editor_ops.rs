@@ -155,6 +155,52 @@ pub fn place_with_crew() -> bool {
     PLACE_WITH_CREW.with(Cell::get)
 }
 
+/* ─────────────────────────── T-647 PLACE-003 — the empty-ground asset picker ─────────────────── */
+
+// The picker's state struct lives in `mission_editor` (always-compiled) because the picker COMPONENT
+// and its signal live there too — `editor_ops` is `#![cfg(wasm32)]`, so a native test build cannot
+// see a type defined here. This module only WRITES the signal (from the wasm dblclick path), so it
+// names the type through `crate::mission_editor::AssetPickerState`.
+use crate::mission_editor::AssetPickerState;
+
+thread_local! {
+    /// T-647 PLACE-003 — the picker signal, installed once from `mission_editor::on_load` (the same
+    /// pattern as [`crate::context_menu::set_menu_signal`] and the Attributes `attrs_open`). Kept as
+    /// a standalone registered signal rather than a 14th `set_ctx` argument: it is a self-contained
+    /// overlay owned by the page, read by the picker component and written only here.
+    static ASSET_PICKER: RefCell<Option<RwSignal<Option<AssetPickerState>>>> =
+        const { RefCell::new(None) };
+}
+
+/// T-647 PLACE-003 — register the picker signal (called once from `mission_editor::on_load`).
+pub fn set_asset_picker_signal(sig: RwSignal<Option<AssetPickerState>>) {
+    ASSET_PICKER.with(|s| *s.borrow_mut() = Some(sig));
+}
+
+/// T-647 PLACE-003 — open the empty-ground asset picker at a world point / screen pixel. No-op if the
+/// signal was never registered (a native shell, or before `on_load`).
+pub fn open_asset_picker(wx: f64, wy: f64, screen_x: f64, screen_y: f64) {
+    ASSET_PICKER.with(|s| {
+        if let Some(sig) = *s.borrow() {
+            sig.set(Some(AssetPickerState {
+                wx,
+                wy,
+                screen_x,
+                screen_y,
+            }));
+        }
+    });
+}
+
+/// T-647 PLACE-003 — close the picker (an asset was chosen, or the operator dismissed it).
+pub fn close_asset_picker() {
+    ASSET_PICKER.with(|s| {
+        if let Some(sig) = *s.borrow() {
+            sig.set(None);
+        }
+    });
+}
+
 /// Install the ops context (once, from `on_load`, after the doc is seeded).
 #[allow(clippy::too_many_arguments)]
 pub fn set_ctx(
@@ -2677,7 +2723,60 @@ pub fn refile_slot(slot_id: String, dest_squad_id: String) -> bool {
 ///
 /// `z = 0.0` / `rotation = 0.0` match the T-159.19 drag commit's DEM-not-ready case (React's
 /// `terrainZ` on the flat map).
+/// Commit an armed place at a **world** position with no modifiers (crewed vehicle default, one-shot
+/// arm). The plain-click entry point; the Ctrl/Alt gestures use [`place_at_keep`] / [`place_at_alt`].
+/// Retained as the canonical no-modifier API (and the rustdoc anchor the `place_*_in_core` helpers
+/// link) even though the live pointerup routes through [`place_at_alt`] to carry the Alt override.
+#[allow(dead_code)]
 pub fn place_at(x: f64, y: f64) -> bool {
+    place_at_impl(x, y, false, false)
+}
+
+/// T-647 PLACE-CREW-001 — place with the Alt "empty vehicle" override. `alt_empty` forces a Vehicle
+/// arm to stamp `crewed: false` regardless of the DockRight crew toggle (the per-gesture override of
+/// the default); it is inert for a character/object arm. One-shot: the arm is consumed, exactly like
+/// [`place_at`].
+pub fn place_at_alt(x: f64, y: f64, alt_empty: bool) -> bool {
+    place_at_impl(x, y, alt_empty, false)
+}
+
+/// T-647 PLACE-004 — Ctrl multi-place: place, but KEEP the pending armed so the next canvas click
+/// drops another of the same entity. `alt_empty` carries the [`place_at_alt`] override through each
+/// stamp of a multi-place run, so Ctrl+Alt drops a string of empty vehicles.
+///
+/// The arm is snapshotted before the (shared) consume and re-armed on a SUCCESSFUL place; a failed
+/// place (nothing armed, or a core reject) does not re-arm — a multi-place that can't commit must
+/// not spin. Re-arming through the raw `pending` cell (not [`arm`]) keeps the ORIGINAL arm verbatim:
+/// the Objects/side-mode guard already vetted it once at [`begin_place*`] time, and the operator has
+/// not changed chips mid-gesture.
+pub fn place_at_keep(x: f64, y: f64, alt_empty: bool) -> bool {
+    // Snapshot the armed value before the consume (zone draws never reach here — they are
+    // multi-click already and `place_at_impl` returns via `advance_zone_draw`).
+    let snapshot = OPS_CTX.with(|c| {
+        c.borrow()
+            .as_ref()
+            .and_then(|ctx| ctx.pending.borrow().clone())
+    });
+    let placed = place_at_impl(x, y, alt_empty, true);
+    if placed {
+        if let Some(p) = snapshot {
+            OPS_CTX.with(|c| {
+                if let Some(ctx) = c.borrow().as_ref() {
+                    *ctx.pending.borrow_mut() = Some(p);
+                }
+            });
+        }
+    }
+    placed
+}
+
+/// The shared place body. `alt_empty` is the PLACE-CREW-001 override (T-647); `keep` is honoured by
+/// the [`place_at_keep`] wrapper (which re-arms after this returns) — this fn always `take`s the arm
+/// so its borrow discipline is unchanged, and the wrapper restores it.
+fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
+    // `keep` is acted on by the caller ([`place_at_keep`]); named here so the state machine reads
+    // straight ("place, keeping the arm") and a future in-body use has its parameter.
+    let _ = keep;
     // T-582 — a zone draw is MULTI-CLICK (circle: centre then rim; polygon: one vertex per click),
     // so it must not reach the `take` below, which is written for the one-shot palette arms.
     if zone_draw_armed() {
@@ -2711,15 +2810,12 @@ pub fn place_at(x: f64, y: f64) -> bool {
                 Pending::Zone(_) => return false,
                 Pending::Vehicle(payload) => {
                     // T-076 (RIGHT-CREW-001) — read the manned/unmanned toggle at place time.
-                    if !place_vehicle_in_core(
-                        core,
-                        &side,
-                        &id,
-                        &payload.asset_id,
-                        x,
-                        y,
-                        place_with_crew(),
-                    ) {
+                    // T-647 PLACE-CREW-001 — Alt is the per-gesture override: it forces empty
+                    // (`crewed: false`) even when the dock toggle says crewed, and never the
+                    // reverse (Alt cannot conjure a crew a switched-off toggle withheld).
+                    let with_crew = place_with_crew() && !alt_empty;
+                    if !place_vehicle_in_core(core, &side, &id, &payload.asset_id, x, y, with_crew)
+                    {
                         return false;
                     }
                     None
@@ -2768,6 +2864,27 @@ pub fn place_at(x: f64, y: f64) -> bool {
         crate::mission_history::after_local_edit();
     }
     placed
+}
+
+/// T-647 CONN-GROUP-001 (map half) — move the dragged character `slot_id` into the squad of the
+/// character `target_id` it was Ctrl-dropped onto. Reads the target's squad off the materialized SoA
+/// ([`slot_attrs`]) and refiles through the existing T-180.6 seam ([`refile_slot`], which runs the
+/// shared dirty tail), so a map regroup and an ORBAT-dock refile are the SAME core move
+/// (`move_slot_to_squad`) — one undo step, one squad-membership write.
+///
+/// Returns `false` (no-op) when the target has no squad (an unfiled slot, or the target vanished),
+/// or already shares the dragged slot's squad — `move_slot_to_squad` is itself a no-op on
+/// same-squad, but declining here keeps the caller from firing the dirty tail for nothing.
+pub fn regroup_slot_onto(slot_id: &str, target_id: &str) -> bool {
+    if slot_id == target_id {
+        return false;
+    }
+    let dest_squad = read_attrs(target_id).map(|a| a.squad).unwrap_or_default();
+    let src_squad = read_attrs(slot_id).map(|a| a.squad).unwrap_or_default();
+    if dest_squad.is_empty() || dest_squad == src_squad {
+        return false;
+    }
+    refile_slot(slot_id.to_string(), dest_squad)
 }
 
 /* ═══════════════════ T-582 — the zone draw tool (doc-mutating half) ═══════════════════ */
