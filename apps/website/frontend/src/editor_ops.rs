@@ -846,6 +846,16 @@ fn layer_rows(core: &MissionDocCore) -> Vec<LayerRow> {
                             .collect()
                     })
                     .unwrap_or_default(),
+                // T-665 — `hidden`/`locked` are written only when true (store setters remove the key
+                // on false), so an absent key is the canonical `false`.
+                hidden: o
+                    .get("hidden")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false),
+                locked: o
+                    .get("locked")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false),
             })
         })
         .collect();
@@ -1020,6 +1030,47 @@ pub fn set_active_layer(id: Option<String>) {
             ctx.active_layer.set(id);
         }
     });
+}
+
+/// T-665 — flip a layer's `hidden` flag (the outliner eye toggle), then the shared post-change tail
+/// (one commit = one undo step; `after_local_edit` re-materializes, so a now-hidden layer's slots
+/// vanish from the map and a re-shown layer's return, and rebuilds the dock so the glyph updates).
+pub fn set_layer_hidden(id: &str, hidden: bool) {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.set_editor_layer_hidden(id, hidden);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+}
+
+/// T-665 — flip a layer's `locked` flag (the outliner lock toggle) + the shared tail. Its slots
+/// (and its subtree's) then refuse a move at the store level; the tree rebuild re-marks the rows.
+pub fn set_layer_locked(id: &str, locked: bool) {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.set_editor_layer_locked(id, locked);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
 }
 
 /// Palette leaf `pointerdown` → arm a place. Consumed by [`place_at`] on a canvas release, or

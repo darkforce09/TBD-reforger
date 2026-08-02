@@ -168,6 +168,105 @@ const ROW_H: f64 = 24.0;
 const CONTAINER_H: f64 = 420.0;
 const OVERSCAN: usize = 6;
 
+/// T-665 — the eye + lock toggle glyphs for a Folder row (the two per-row controls the ticket
+/// wires). Each is a `role="button"` span (like the chevron) so it nests inside the row `<button>`
+/// and `stop_propagation`s, so clicking a glyph flips the flag WITHOUT firing the row's
+/// make-active-layer action. The glyph shows this layer's OWN flag (filled = on); when an ANCESTOR
+/// carries the flag (inherited, `*_effective && !own`) the icon renders muted and inert, because the
+/// flag lives on the parent — you toggle it there, and this row only reflects the inherited state.
+/// Trailing on the row (pushed right by a spacer in [`single_row`]).
+fn layer_flag_toggles(
+    id: &str,
+    hidden: bool,
+    locked: bool,
+    hidden_effective: bool,
+    locked_effective: bool,
+) -> AnyView {
+    // Inherited-only (ancestor set it): show muted + inert; own toggles remain live.
+    let hidden_inherited = hidden_effective && !hidden;
+    let locked_inherited = locked_effective && !locked;
+
+    let eye_id = id.to_string();
+    let eye_icon = if hidden {
+        "visibility_off"
+    } else {
+        "visibility"
+    };
+    let eye_class = if hidden_inherited {
+        "flex size-4 shrink-0 items-center justify-center rounded text-outline/50"
+    } else if hidden {
+        "flex size-4 shrink-0 cursor-pointer items-center justify-center rounded text-primary transition-colors hover:bg-white/10"
+    } else {
+        "flex size-4 shrink-0 cursor-pointer items-center justify-center rounded text-outline transition-colors hover:bg-white/10 hover:text-on-surface"
+    };
+    let eye_label = if hidden { "Show layer" } else { "Hide layer" };
+    let eye = view! {
+        <span
+            role="button"
+            tabindex="-1"
+            data-layer-hidden=if hidden { "true" } else { "false" }
+            aria-label=eye_label
+            title=eye_label
+            class=eye_class
+            on:click=move |ev: web_sys::MouseEvent| {
+                ev.stop_propagation();
+                if !hidden_inherited {
+                    #[cfg(target_arch = "wasm32")]
+                    crate::editor_ops::set_layer_hidden(&eye_id, !hidden);
+                    #[cfg(not(target_arch = "wasm32"))]
+                    let _ = &eye_id;
+                }
+            }
+        >
+            <MaterialIcon name=eye_icon class="block text-sm" filled=hidden />
+        </span>
+    };
+
+    let lock_id = id.to_string();
+    let lock_icon = if locked { "lock" } else { "lock_open" };
+    let lock_class = if locked_inherited {
+        "flex size-4 shrink-0 items-center justify-center rounded text-outline/50"
+    } else if locked {
+        "flex size-4 shrink-0 cursor-pointer items-center justify-center rounded text-tactical-yellow transition-colors hover:bg-white/10"
+    } else {
+        "flex size-4 shrink-0 cursor-pointer items-center justify-center rounded text-outline transition-colors hover:bg-white/10 hover:text-on-surface"
+    };
+    let lock_label = if locked {
+        "Unlock transforms"
+    } else {
+        "Lock transforms"
+    };
+    let lock = view! {
+        <span
+            role="button"
+            tabindex="-1"
+            data-layer-locked=if locked { "true" } else { "false" }
+            aria-label=lock_label
+            title=lock_label
+            class=lock_class
+            on:click=move |ev: web_sys::MouseEvent| {
+                ev.stop_propagation();
+                if !locked_inherited {
+                    #[cfg(target_arch = "wasm32")]
+                    crate::editor_ops::set_layer_locked(&lock_id, !locked);
+                    #[cfg(not(target_arch = "wasm32"))]
+                    let _ = &lock_id;
+                }
+            }
+        >
+            <MaterialIcon name=lock_icon class="block text-sm" filled=locked />
+        </span>
+    };
+
+    view! {
+        <span class="ml-auto flex shrink-0 items-center gap-0.5 pl-1">
+            {eye}
+            {lock}
+        </span>
+    }
+    .into_any()
+}
+
 /// Render ONE flattened outliner row (no recursion — the windowed list draws a flat slice).
 /// Header kinds (Unfiled / Faction) are inert; Squad is a refile drop target when `orbat_refile`;
 /// Folder → active-layer; Slot → select + dbl-click→Attributes (SEL-ORBAT-DBL-001).
@@ -257,12 +356,22 @@ fn single_row(
                 move || active_layer.get().as_deref() == Some(id.as_str())
             };
             let folder_icon = if open { "folder_open" } else { "folder" };
+            // T-665 — dim a folder that is effectively hidden (own or inherited); the eye/lock
+            // toggles ride at the row's trailing edge.
+            let dim = if row.hidden_effective { " opacity-40" } else { "" };
+            let flag_toggles = layer_flag_toggles(
+                &id,
+                row.hidden,
+                row.locked,
+                row.hidden_effective,
+                row.locked_effective,
+            );
             view! {
                 <button
                     type="button"
                     aria-label=aria
                     title="Make this the drop target"
-                    class=move || if is_active() { ROW_ACTIVE } else { ROW }
+                    class=move || format!("{}{dim}", if is_active() { ROW_ACTIVE } else { ROW })
                     on:click=move |_| {
                         #[cfg(target_arch = "wasm32")]
                         crate::editor_ops::set_active_layer(Some(id.clone()));
@@ -272,6 +381,7 @@ fn single_row(
                     {toggle}
                     <MaterialIcon name=folder_icon class="block text-sm" />
                     <span class="truncate">{label}</span>
+                    {flag_toggles}
                 </button>
             }
             .into_any()
@@ -283,11 +393,26 @@ fn single_row(
             };
             let id_dbl = id.clone();
             let id_refile = id.clone();
+            // T-665 — a slot on a hidden layer (or hidden ancestor) renders dimmed; one on a locked
+            // layer shows a trailing lock hint (the store still refuses its move — this is the
+            // visible surface of that refusal in the outliner).
+            let dim = if row.hidden_effective { " opacity-40" } else { "" };
+            let lock_hint = if row.locked_effective {
+                view! {
+                    <MaterialIcon
+                        name="lock"
+                        class="ml-auto block shrink-0 pl-1 text-sm text-outline"
+                    />
+                }
+                .into_any()
+            } else {
+                ().into_any()
+            };
             view! {
                 <button
                     type="button"
                     aria-label=aria
-                    class=move || if is_sel() { ROW_ACTIVE } else { ROW }
+                    class=move || format!("{}{dim}", if is_sel() { ROW_ACTIVE } else { ROW })
                     on:click=move |_| {
                         #[cfg(target_arch = "wasm32")]
                         crate::editor_ops::select_slot(id.clone());
@@ -314,6 +439,7 @@ fn single_row(
                     <MaterialIcon name="person" class="block text-sm" />
                     <span class="truncate">{label}</span>
                     {sl_badge}
+                    {lock_hint}
                 </button>
             }
             .into_any()

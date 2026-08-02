@@ -47,6 +47,14 @@ pub struct LayerRow {
     pub name: String,
     pub parent_id: Option<String>,
     pub entity_ids: Vec<String>,
+    /// T-665 — the layer's own `hidden` VIEW flag (per-layer visibility). Absent in the doc ⇒
+    /// `false`. This is the layer's OWN bit, not the resolved one: [`build_outliner`] passes the
+    /// inherited-hidden state to the glyph via [`OutlinerNode::hidden`] so a child under a hidden
+    /// parent renders dimmed too, but the eye toggle flips only this layer's own flag.
+    pub hidden: bool,
+    /// T-665 — the layer's own `locked` transform-lock flag (absent ⇒ `false`); same own-vs-resolved
+    /// split as [`Self::hidden`].
+    pub locked: bool,
 }
 
 /// The two slot fields the tree needs, adapted from the materialized SoA.
@@ -79,6 +87,20 @@ pub struct OutlinerNode {
     pub children: Vec<OutlinerNode>,
     /// T-180.6 — true when this slot is `squad.leaderSlotId` (ORBAT SL badge; never from `tag`).
     pub is_leader: bool,
+    /// T-665 — the eye/lock glyph state on a Folder row: this layer's OWN `hidden` flag (the eye
+    /// toggle fills/outlines from this bit, and flips only this layer). Always `false` on non-folder
+    /// kinds. Distinct from [`Self::hidden_effective`] so a folder shows its own state on the toggle
+    /// while a hidden PARENT still dims the child rows.
+    pub hidden: bool,
+    /// T-665 — this layer's OWN `locked` flag (Folder rows only; the lock toggle reads this).
+    pub locked: bool,
+    /// T-665 — RESOLVED visibility: this node (folder or slot) sits under a hidden layer/ancestor,
+    /// so the row renders dimmed. Mirrors [`crate::doc`]'s materialize filter — a slot with this set
+    /// is exactly one the render SoA dropped. Resolved at build time; never written into the doc.
+    pub hidden_effective: bool,
+    /// T-665 — RESOLVED lock: this node is under a locked layer/ancestor (drives the row's lock
+    /// adornment + a disabled affordance hint). Its slots refuse a move at the store level.
+    pub locked_effective: bool,
 }
 
 fn slot_node(s: &SlotRow) -> OutlinerNode {
@@ -86,6 +108,16 @@ fn slot_node(s: &SlotRow) -> OutlinerNode {
 }
 
 fn slot_node_leader(s: &SlotRow, is_leader: bool) -> OutlinerNode {
+    slot_node_full(s, is_leader, false, false)
+}
+
+/// T-665 — slot node carrying the resolved hidden/locked state inherited from its layer chain.
+fn slot_node_full(
+    s: &SlotRow,
+    is_leader: bool,
+    hidden_effective: bool,
+    locked_effective: bool,
+) -> OutlinerNode {
     OutlinerNode {
         id: s.id.clone(),
         label: if s.role.is_empty() {
@@ -96,6 +128,10 @@ fn slot_node_leader(s: &SlotRow, is_leader: bool) -> OutlinerNode {
         kind: NodeKind::Slot,
         children: Vec::new(),
         is_leader,
+        hidden: false,
+        locked: false,
+        hidden_effective,
+        locked_effective,
     }
 }
 
@@ -122,8 +158,13 @@ pub fn build_outliner(layers: &[LayerRow], slots: &[SlotRow]) -> Vec<OutlinerNod
             id: UNFILED_ID.to_string(),
             label: format!("Unfiled ({})", unfiled.len()),
             kind: NodeKind::Unfiled,
+            // Unfiled slots are in no layer, so they can inherit neither hidden nor locked.
             children: unfiled.into_iter().map(slot_node).collect(),
             is_leader: false,
+            hidden: false,
+            locked: false,
+            hidden_effective: false,
+            locked_effective: false,
         });
     }
 
@@ -132,18 +173,28 @@ pub fn build_outliner(layers: &[LayerRow], slots: &[SlotRow]) -> Vec<OutlinerNod
         // cycle-guarded (`store.rs:826`), so this is belt-and-braces — but an unguarded recursion
         // would hang the tab rather than render wrong, which is not a trade worth taking.
         let mut seen = HashSet::new();
-        out.push(build_layer(root, layers, slots, &mut seen));
+        // Roots have no ancestor, so the inherited flags start `false`.
+        out.push(build_layer(root, layers, slots, false, false, &mut seen));
     }
 
     out
 }
 
+/// T-665 — `anc_hidden`/`anc_locked`: whether an ANCESTOR layer is hidden/locked. The layer's own
+/// flag ORs into the effective state passed to its children, so hiding/locking a folder covers its
+/// whole subtree without ever writing the flag onto a descendant row (resolve-at-build, matching the
+/// core's resolve-at-read). A row's own toggle glyph still shows its OWN flag.
 fn build_layer<'a>(
     layer: &'a LayerRow,
     layers: &'a [LayerRow],
     slots: &[SlotRow],
+    anc_hidden: bool,
+    anc_locked: bool,
     seen: &mut HashSet<&'a str>,
 ) -> OutlinerNode {
+    // Effective state for THIS folder and everything under it = ancestor state OR its own flag.
+    let hidden_effective = anc_hidden || layer.hidden;
+    let locked_effective = anc_locked || layer.locked;
     let mut children: Vec<OutlinerNode> = Vec::new();
     if seen.insert(layer.id.as_str()) {
         // Child folders first, then this folder's slots — React's `[...childFolders, ...entityNodes]`.
@@ -151,13 +202,21 @@ fn build_layer<'a>(
             .iter()
             .filter(|l| l.parent_id.as_deref() == Some(layer.id.as_str()))
         {
-            children.push(build_layer(child, layers, slots, seen));
+            children.push(build_layer(
+                child,
+                layers,
+                slots,
+                hidden_effective,
+                locked_effective,
+                seen,
+            ));
         }
         // `entityIds` order (React parity). A dangling id (slot deleted, layer not yet patched) is
-        // skipped, mirroring React's `.filter((s): s is Slot => Boolean(s))`.
+        // skipped, mirroring React's `.filter((s): s is Slot => Boolean(s))`. A slot inherits this
+        // folder's effective hidden/locked state.
         for eid in &layer.entity_ids {
             if let Some(s) = slots.iter().find(|s| &s.id == eid) {
-                children.push(slot_node(s));
+                children.push(slot_node_full(s, false, hidden_effective, locked_effective));
             }
         }
     }
@@ -168,6 +227,10 @@ fn build_layer<'a>(
         kind: NodeKind::Folder,
         children,
         is_leader: false,
+        hidden: layer.hidden,
+        locked: layer.locked,
+        hidden_effective,
+        locked_effective,
     }
 }
 
@@ -235,6 +298,11 @@ pub fn build_orbat(
                     kind: NodeKind::Squad,
                     children: slot_children,
                     is_leader: false,
+                    // ORBAT tree is squad-scoped, not layer-scoped — flags never apply here.
+                    hidden: false,
+                    locked: false,
+                    hidden_effective: false,
+                    locked_effective: false,
                 }
             })
             .collect();
@@ -244,6 +312,10 @@ pub fn build_orbat(
             kind: NodeKind::Faction,
             children: squad_nodes,
             is_leader: false,
+            hidden: false,
+            locked: false,
+            hidden_effective: false,
+            locked_effective: false,
         });
     }
     out
@@ -300,6 +372,14 @@ pub struct FlatRow {
     pub guide_ids: Vec<String>,
     /// T-180.6 — copied from [`OutlinerNode::is_leader`] for the windowed SL badge.
     pub is_leader: bool,
+    /// T-665 — this Folder layer's OWN `hidden` flag (drives the eye-toggle glyph state).
+    pub hidden: bool,
+    /// T-665 — this Folder layer's OWN `locked` flag (drives the lock-toggle glyph state).
+    pub locked: bool,
+    /// T-665 — RESOLVED hidden (own or inherited): the windowed row renders dimmed when set.
+    pub hidden_effective: bool,
+    /// T-665 — RESOLVED lock (own or inherited): the windowed row shows the inherited-lock adornment.
+    pub locked_effective: bool,
 }
 
 /// Flatten a tree to pre-order rows (parent before its children). Every node becomes exactly one
@@ -351,6 +431,10 @@ pub fn flatten_visible(
                 ancestors: ancestors.clone(),
                 guide_ids: guide_ids.clone(),
                 is_leader: n.is_leader,
+                hidden: n.hidden,
+                locked: n.locked,
+                hidden_effective: n.hidden_effective,
+                locked_effective: n.locked_effective,
             });
             if !collapsed.contains(&n.id) {
                 let mut child_ids = guide_ids;
@@ -381,11 +465,25 @@ mod tests {
         }
     }
     fn layer(id: &str, name: &str, parent: Option<&str>, ents: &[&str]) -> LayerRow {
+        layer_flags(id, name, parent, ents, false, false)
+    }
+
+    /// T-665 — a layer row with explicit `hidden`/`locked` flags.
+    fn layer_flags(
+        id: &str,
+        name: &str,
+        parent: Option<&str>,
+        ents: &[&str],
+        hidden: bool,
+        locked: bool,
+    ) -> LayerRow {
         LayerRow {
             id: id.to_string(),
             name: name.to_string(),
             parent_id: parent.map(str::to_string),
             entity_ids: ents.iter().map(|s| (*s).to_string()).collect(),
+            hidden,
+            locked,
         }
     }
 
@@ -604,6 +702,10 @@ mod tests {
                 kind,
                 children,
                 is_leader: false,
+                hidden: false,
+                locked: false,
+                hidden_effective: false,
+                locked_effective: false,
             }
         }
         // Root(+sib Root2) → [ChildA(+sib ChildB) → GrandA, ChildB(last) → Leaf]; Root2(last) → Leaf2.
@@ -756,5 +858,57 @@ mod tests {
         let vis = flatten_visible(&tree, &collapsed);
         assert!(vis.iter().any(|r| r.id == "l2"));
         assert!(!vis.iter().any(|r| r.id == "s1"));
+    }
+
+    /* ───────────────────────────── T-665 — layer flags in the tree ───────────────────────────── */
+
+    /// A layer's own `hidden` flag reaches its Folder row AND dims its own slots (own == effective),
+    /// while a sibling layer with no flag stays fully visible. Fired once: flag present vs absent.
+    #[test]
+    fn own_hidden_flag_marks_folder_and_its_slots() {
+        let layers = vec![
+            layer_flags("h", "Hidden", None, &["s0"], true, false),
+            layer("v", "Visible", None, &["s1"]),
+        ];
+        let slots = vec![slot("s0", "SL"), slot("s1", "AR")];
+        let rows = flatten(&build_outliner(&layers, &slots));
+
+        let hf = rows.iter().find(|r| r.id == "h").unwrap();
+        assert!(
+            hf.hidden && hf.hidden_effective,
+            "own+effective on the folder"
+        );
+        let s0 = rows.iter().find(|r| r.id == "s0").unwrap();
+        assert!(s0.hidden_effective, "slot under the hidden layer is dimmed");
+        assert!(!s0.hidden, "a slot has no OWN flag");
+
+        let vf = rows.iter().find(|r| r.id == "v").unwrap();
+        assert!(!vf.hidden && !vf.hidden_effective, "sibling stays visible");
+        let s1 = rows.iter().find(|r| r.id == "s1").unwrap();
+        assert!(!s1.hidden_effective, "sibling's slot stays visible");
+    }
+
+    /// INHERITANCE, resolved at build time: a hidden/locked PARENT dims + lock-marks a child folder
+    /// and the child's slots, while the child rows carry NO own flag (never copied down). Un-flagging
+    /// is just the absence — this asserts the propagation the same way the store resolves it at read.
+    #[test]
+    fn child_folder_and_slots_inherit_parent_hidden_and_locked() {
+        let layers = vec![
+            layer_flags("p", "Parent", None, &[], true, true),
+            layer("c", "Child", Some("p"), &["s0"]),
+        ];
+        let rows = flatten(&build_outliner(&layers, &vec![slot("s0", "Rifleman")]));
+
+        let cf = rows.iter().find(|r| r.id == "c").unwrap();
+        assert!(!cf.hidden && !cf.locked, "child folder has no OWN flags");
+        assert!(
+            cf.hidden_effective && cf.locked_effective,
+            "child folder inherits parent hidden+locked"
+        );
+        let s0 = rows.iter().find(|r| r.id == "s0").unwrap();
+        assert!(
+            s0.hidden_effective && s0.locked_effective,
+            "slot two levels down inherits both"
+        );
     }
 }

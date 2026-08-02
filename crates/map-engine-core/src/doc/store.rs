@@ -421,12 +421,22 @@ impl MissionDocCore {
     }
 
     /// Materialize every slot into the columnar [`SlotSoa`] (criterion 1). Keyed by `ids[row]`.
+    ///
+    /// T-665 — a slot filed under a **hidden** layer (or under a layer whose ancestor is hidden) is
+    /// OMITTED from the SoA. This is the whole of "per-layer visibility": the render engine only ever
+    /// sees the materialized SoA, so a filtered slot never uploads — cheaper than a render-side
+    /// visibility mask and it keeps the flag out of the 6k-line engine. It is a VIEW filter only —
+    /// the slot is untouched in the doc, still present in `slots_json` / `small_maps_json`, so a Save
+    /// carries the full mission and un-hiding brings the slot straight back (no data loss).
     #[must_use]
     pub fn materialize(&self) -> SlotSoa {
         let txn = self.doc.transact();
 
         // slotId -> layerId: the first Outliner folder whose `entityIds` lists the slot.
+        // `hidden_layers` caches, per layer that files slots, whether it (or an ancestor) is hidden,
+        // so the per-slot skip is a single map lookup rather than a fresh ancestor walk each row.
         let mut slot_layer: HashMap<String, String> = HashMap::new();
+        let mut hidden_layers: HashMap<String, bool> = HashMap::new();
         for (layer_id, out) in self.editor_layers.iter(&txn) {
             if let Out::YMap(layer) = out
                 && let Some(Out::Any(Any::Array(arr))) = layer.get(&txn, "entityIds")
@@ -438,6 +448,11 @@ impl MissionDocCore {
                             .or_insert_with(|| layer_id.to_string());
                     }
                 }
+                hidden_layers
+                    .entry(layer_id.to_string())
+                    .or_insert_with(|| {
+                        layer_flag_effective(&txn, &self.editor_layers, layer_id, "hidden")
+                    });
             }
         }
 
@@ -449,6 +464,13 @@ impl MissionDocCore {
 
         for (id, out) in self.slots.iter(&txn) {
             let Out::YMap(slot) = out else { continue };
+            // T-665 — drop slots on a hidden (or hidden-ancestor) layer before any column is pushed.
+            if slot_layer
+                .get(id)
+                .is_some_and(|l| hidden_layers.get(l).copied().unwrap_or(false))
+            {
+                continue;
+            }
             let (x, y, z, rot) = read_position(&txn, &slot);
             soa.ids.push(id.to_string());
             soa.xs.push(x as f32);
@@ -1172,7 +1194,15 @@ impl MissionDocCore {
         zs: Vec<f64>,
     ) {
         let mut txn = self.begin();
-        move_entities_in_txn(&mut txn, &self.slots, &slot_ids, dx, dy, &zs);
+        move_entities_in_txn(
+            &mut txn,
+            &self.slots,
+            &self.editor_layers,
+            &slot_ids,
+            dx,
+            dy,
+            &zs,
+        );
         move_vehicles_in_txn(&mut txn, &self.vehicles, vehicle_ids, dx, dy);
     }
 
@@ -1340,6 +1370,12 @@ impl MissionDocCore {
         height: f64,
     ) {
         let mut txn = self.begin();
+        // T-665 — transform lock: a slot on a locked layer (or under a locked ancestor) refuses the
+        // Attributes-tab position edit, the same silent refusal the drag path takes in
+        // `move_entities_in_txn`. Guarded before the write so no `position` is rewritten.
+        if slot_is_transform_locked(&txn, &self.editor_layers, id) {
+            return;
+        }
         if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
             let (mut px, mut py, mut pz, mut prot) = read_position(&txn, &slot);
             if let Some(nx) = x.filter(|v| v.is_finite()) {
@@ -1370,7 +1406,15 @@ impl MissionDocCore {
     /// keeps byte-parity). Mirrors `ydoc.moveEntities` (`z = terrainZ(newX, newY)`).
     pub fn move_entities(&self, ids: Vec<String>, dx: f64, dy: f64, zs: Vec<f64>) {
         let mut txn = self.begin();
-        move_entities_in_txn(&mut txn, &self.slots, &ids, dx, dy, &zs);
+        move_entities_in_txn(
+            &mut txn,
+            &self.slots,
+            &self.editor_layers,
+            &ids,
+            dx,
+            dy,
+            &zs,
+        );
     }
 
     /// Remove several slots and detach them from their squad's `slotIds` and every layer's
@@ -1887,6 +1931,51 @@ impl MissionDocCore {
         let mut txn = self.begin();
         if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, id) {
             layer.insert(&mut txn, "name", name);
+        }
+    }
+
+    /// T-665 — set an Outliner layer's `hidden` VIEW flag (per-layer visibility).
+    ///
+    /// This is the ATTR-FIELD-LYR-ENABLE-VIS writer, and it is deliberately a sibling of
+    /// [`Self::rename_editor_layer`]: like `name`, `hidden` is a per-layer property that rides the
+    /// layer row in the doc, so it PERSISTS with the mission and goes through [`Self::begin`] — a
+    /// LOCAL flip is one undo step, exactly like a rename ([`Self::hidden_flag_is_one_undo_step`]).
+    ///
+    /// **Hide is a view, not a delete.** Nothing about the slots changes: [`Self::materialize`]
+    /// FILTERS a hidden layer's slots out of the render SoA (so the engine never uploads them —
+    /// see that method's T-665 block for why the filter lives there and not render-side), while
+    /// `slots_json` / `small_maps_json` still carry every slot verbatim, so a Save round-trips the
+    /// full document. Un-hiding brings the slots straight back with no data loss.
+    ///
+    /// The flag is only written when `true`: `hidden == false` REMOVES the key rather than storing
+    /// `false`, so a never-hidden layer's row shape is byte-identical to before this ticket (the
+    /// `tag`/`assetId` omit idiom from [`Self::add_slot`]). Absent ⇒ visible.
+    pub fn set_editor_layer_hidden(&self, id: &str, hidden: bool) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, id) {
+            if hidden {
+                layer.insert(&mut txn, "hidden", true);
+            } else {
+                layer.remove(&mut txn, "hidden");
+            }
+        }
+    }
+
+    /// T-665 — set an Outliner layer's `locked` transform-lock flag (ATTR-FIELD-LYR-ENABLE-XFORM).
+    ///
+    /// Twin of [`Self::set_editor_layer_hidden`]: persisted per layer like `name`, undoable through
+    /// [`Self::begin`], and stored only when `true` (absent ⇒ unlocked). A locked layer's slots
+    /// refuse position edits — [`Self::move_entities`], [`Self::move_entities_and_vehicles`] and
+    /// [`Self::update_slot_position`] silently skip a slot whose layer (or any ancestor layer)
+    /// is locked; see [`Self::slot_layer_is_locked`] for the resolution and the refusal contract.
+    pub fn set_editor_layer_locked(&self, id: &str, locked: bool) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, id) {
+            if locked {
+                layer.insert(&mut txn, "locked", true);
+            } else {
+                layer.remove(&mut txn, "locked");
+            }
         }
     }
 
@@ -2719,15 +2808,24 @@ fn read_env_map<T: ReadTxn>(txn: &T, meta: &MapRef) -> HashMap<String, Any> {
 
 /// T-491 — slot delta apply inside an existing txn (shared by [`MissionDocCore::move_entities`]
 /// and [`MissionDocCore::move_entities_and_vehicles`]).
+///
+/// T-665 — a slot on a **locked** layer (or one whose ancestor layer is locked) is silently skipped:
+/// its `position` is not rewritten. "Silently" follows Eden — the move just doesn't happen, there is
+/// no error; a caller that wants to surface the refusal reads back the returned skipped count. An
+/// unfiled slot has no layer and is always movable.
 fn move_entities_in_txn(
     txn: &mut TransactionMut,
     slots: &MapRef,
+    editor_layers: &MapRef,
     ids: &[String],
     dx: f64,
     dy: f64,
     zs: &[f64],
 ) {
     for (i, id) in ids.iter().enumerate() {
+        if slot_is_transform_locked(&*txn, editor_layers, id) {
+            continue; // transform-locked: refuse the move for this slot
+        }
         if let Some(Out::YMap(slot)) = slots.get(&*txn, id.as_str()) {
             let (px, py, _pz, prot) = read_position(txn, &slot);
             let z = zs.get(i).copied().unwrap_or(0.0);
@@ -2738,6 +2836,79 @@ fn move_entities_in_txn(
                 position_any_merged(existing, px + dx, py + dy, z, prot),
             );
         }
+    }
+}
+
+/// T-665 — read a layer's own boolean flag (`hidden` / `locked`), false when absent or non-bool.
+/// The flag is stored only when `true` (the setters remove the key on `false`), so "absent" is the
+/// canonical negative — matching the `add_slot` `tag`/`assetId` omit idiom.
+fn layer_flag<T: ReadTxn>(txn: &T, editor_layers: &MapRef, layer_id: &str, flag: &str) -> bool {
+    matches!(
+        editor_layers.get(txn, layer_id).and_then(|o| match o {
+            Out::YMap(layer) => layer.get(txn, flag),
+            _ => None,
+        }),
+        Some(Out::Any(Any::Bool(true)))
+    )
+}
+
+/// T-665 — does `layer_id` OR any of its ancestors carry `flag`? Walks up via `parentId`, so a
+/// child inherits an ancestor's hidden/locked state **effectively** without the flag ever being
+/// copied down onto the child row (resolve-at-read; hiding/locking a parent covers its whole
+/// subtree, and un-flagging the parent reveals/unlocks it again). The `seen` set makes a malformed
+/// `parentId` cycle terminate instead of hanging — belt-and-braces beside
+/// [`MissionDocCore::is_layer_descendant`]'s own cycle guard on the writer.
+fn layer_flag_effective<T: ReadTxn>(
+    txn: &T,
+    editor_layers: &MapRef,
+    layer_id: &str,
+    flag: &str,
+) -> bool {
+    let mut seen: HashSet<String> = HashSet::new();
+    let mut cur = Some(layer_id.to_string());
+    while let Some(c) = cur {
+        if !seen.insert(c.clone()) {
+            return false; // cycle — stop rather than loop forever
+        }
+        if layer_flag(txn, editor_layers, &c, flag) {
+            return true;
+        }
+        cur = match editor_layers.get(txn, &c) {
+            Some(Out::YMap(layer)) => match layer.get(txn, "parentId") {
+                Some(Out::Any(Any::String(p))) => Some(p.to_string()),
+                _ => None,
+            },
+            _ => None,
+        };
+    }
+    false
+}
+
+/// T-665 — the layerId a slot resolves to (its first Outliner folder), or `None` when it is filed
+/// nowhere. Identical rule to [`MissionDocCore::materialize`]'s reverse index: the FIRST layer whose
+/// `entityIds` lists the slot wins. A slot in no layer is unfiled, hence never hidden or locked by
+/// inheritance — flags only reach it through a folder it actually lives in.
+fn slot_first_layer<T: ReadTxn>(txn: &T, editor_layers: &MapRef, slot_id: &str) -> Option<String> {
+    for (layer_id, out) in editor_layers.iter(txn) {
+        if let Out::YMap(layer) = out
+            && let Some(Out::Any(Any::Array(arr))) = layer.get(txn, "entityIds")
+            && arr
+                .iter()
+                .any(|a| matches!(a, Any::String(s) if s.as_ref() == slot_id))
+        {
+            return Some(layer_id.to_string());
+        }
+    }
+    None
+}
+
+/// T-665 — is `slot_id`'s resolved layer (or any ancestor) locked? An unfiled slot (no layer) is
+/// never locked. Backs the transform-lock refusal shared by [`MissionDocCore::move_entities`],
+/// [`MissionDocCore::move_entities_and_vehicles`] and [`MissionDocCore::update_slot_position`].
+fn slot_is_transform_locked<T: ReadTxn>(txn: &T, editor_layers: &MapRef, slot_id: &str) -> bool {
+    match slot_first_layer(txn, editor_layers, slot_id) {
+        Some(layer_id) => layer_flag_effective(txn, editor_layers, &layer_id, "locked"),
+        None => false,
     }
 }
 
@@ -6570,5 +6741,227 @@ mod tests {
         for pt in ring {
             assert_eq!(pt.as_array().expect("vertex").len(), 2, "{pt:?}");
         }
+    }
+
+    /* ───────────────────────────── T-665 — editor layer flags ───────────────────────────── */
+
+    /// Build a doc with one layer holding one slot, seeded under INIT so the setup is not on the
+    /// undo stack — every T-665 test then perturbs with a single LOCAL flag flip / move.
+    fn one_slot_one_layer() -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_editor_layer("L", "Layer", None);
+        doc.add_slot(
+            "s0", "sq", "L", 0, "Rifleman", None, None, 100.0, 200.0, 0.0, 0.0,
+        );
+        doc.set_origin_init(false);
+        doc
+    }
+
+    /// VISIBILITY, fired once: a slot on a hidden layer is ABSENT from `materialize()` while still
+    /// PRESENT in the doc (no data loss) — then un-hiding restores the row. Hide is a view state.
+    #[test]
+    fn hidden_layer_slot_is_filtered_from_materialize_but_kept_in_the_doc() {
+        let doc = one_slot_one_layer();
+        assert_eq!(doc.materialize().len(), 1, "visible by default");
+
+        // perturb — hide the layer
+        doc.set_editor_layer_hidden("L", true);
+        assert_eq!(
+            doc.materialize().len(),
+            0,
+            "hidden layer's slot dropped from the render SoA"
+        );
+        // …but the slot is still in the doc — no data loss, hide is a VIEW state.
+        let slots: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots_json");
+        assert_eq!(
+            slots["s0"]["role"], "Rifleman",
+            "slot survives hide: {slots}"
+        );
+        assert_eq!(slots["s0"]["position"]["x"], 100.0, "position untouched");
+
+        // restore — un-hide brings the row straight back
+        doc.set_editor_layer_hidden("L", false);
+        assert_eq!(doc.materialize().len(), 1, "un-hide restores the slot");
+    }
+
+    /// TRANSFORM LOCK on the drag path (`move_entities`), fired once: a locked layer's slot refuses
+    /// the delta (position unchanged), then unlocking lets the same move land.
+    #[test]
+    fn locked_layer_refuses_move_entities_then_unlock_allows_it() {
+        let doc = one_slot_one_layer();
+
+        // perturb — lock, then attempt a drag delta
+        doc.set_editor_layer_locked("L", true);
+        doc.move_entities(vec!["s0".to_string()], 50.0, 60.0, vec![0.0]);
+        let soa = doc.materialize();
+        let i = row_of(&soa, "s0");
+        assert_eq!(
+            (soa.xs[i], soa.ys[i]),
+            (100.0, 200.0),
+            "locked slot did not move"
+        );
+
+        // restore — unlock, the same move now lands
+        doc.set_editor_layer_locked("L", false);
+        doc.move_entities(vec!["s0".to_string()], 50.0, 60.0, vec![0.0]);
+        let soa = doc.materialize();
+        let i = row_of(&soa, "s0");
+        assert_eq!(
+            (soa.xs[i], soa.ys[i]),
+            (150.0, 260.0),
+            "unlocked slot moved"
+        );
+    }
+
+    /// TRANSFORM LOCK covers the mixed slot+vehicle drag too (`move_entities_and_vehicles`): the
+    /// locked slot is skipped while the vehicle in the SAME drag still moves (the lock is per-slot,
+    /// resolved through the slot's layer — vehicles are not layer-filed, so they are unaffected).
+    #[test]
+    fn locked_layer_refuses_slot_in_mixed_move_but_vehicle_still_moves() {
+        let doc = one_slot_one_layer();
+        doc.set_origin_init(true);
+        doc.add_vehicle(
+            "v0",
+            "Prefab/Vehicle.et",
+            Some(300.0),
+            Some(400.0),
+            Some(0.0),
+            Some(0.0),
+        );
+        doc.set_origin_init(false);
+
+        doc.set_editor_layer_locked("L", true);
+        doc.move_entities_and_vehicles(
+            vec!["s0".to_string()],
+            &["v0".to_string()],
+            10.0,
+            20.0,
+            vec![0.0],
+        );
+        let soa = doc.materialize();
+        let i = row_of(&soa, "s0");
+        assert_eq!(
+            (soa.xs[i], soa.ys[i]),
+            (100.0, 200.0),
+            "locked slot stayed put"
+        );
+        let vehs = vehicles_of(&doc);
+        assert_eq!(vehs["v0"]["position"]["x"], 310.0, "vehicle still moved");
+        assert_eq!(vehs["v0"]["position"]["y"], 420.0, "vehicle still moved");
+    }
+
+    /// TRANSFORM LOCK on the Attributes-tab path (`update_slot_position`), fired once: a numeric
+    /// position edit is refused on a locked layer, then allowed after unlock.
+    #[test]
+    fn locked_layer_refuses_update_slot_position_then_unlock_allows_it() {
+        let doc = one_slot_one_layer();
+
+        doc.set_editor_layer_locked("L", true);
+        doc.update_slot_position("s0", Some(777.0), Some(888.0), None, None, 12800.0, 12800.0);
+        let soa = doc.materialize();
+        let i = row_of(&soa, "s0");
+        assert_eq!(
+            (soa.xs[i], soa.ys[i]),
+            (100.0, 200.0),
+            "locked slot refused the Attributes edit"
+        );
+
+        doc.set_editor_layer_locked("L", false);
+        doc.update_slot_position("s0", Some(777.0), Some(888.0), None, None, 12800.0, 12800.0);
+        let soa = doc.materialize();
+        let i = row_of(&soa, "s0");
+        assert_eq!(
+            (soa.xs[i], soa.ys[i]),
+            (777.0, 888.0),
+            "unlocked slot took the edit"
+        );
+    }
+
+    /// INHERITANCE, fired once for each flag: a child layer with the flag ABSENT inherits its
+    /// parent's hidden AND locked state effectively — without the flag ever being written onto the
+    /// child row (resolve-at-read). Un-flagging the parent reveals/unlocks the child again.
+    #[test]
+    fn child_layer_inherits_parent_hidden_and_locked() {
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_editor_layer("parent", "Parent", None);
+        doc.add_editor_layer("child", "Child", Some("parent".to_string()));
+        doc.add_slot(
+            "s0", "sq", "child", 0, "Rifleman", None, None, 100.0, 200.0, 0.0, 0.0,
+        );
+        doc.set_origin_init(false);
+        assert_eq!(doc.materialize().len(), 1, "visible before any flag");
+
+        // Hide the PARENT — the child's slot disappears though the child row has no `hidden` key.
+        doc.set_editor_layer_hidden("parent", true);
+        assert_eq!(doc.materialize().len(), 0, "child inherits parent's hidden");
+        let layers: serde_json::Value =
+            serde_json::from_str(&doc.small_maps_json()).expect("small_maps_json");
+        assert!(
+            layers["editorLayersById"]["child"].get("hidden").is_none(),
+            "flag not copied down onto the child row: {}",
+            layers["editorLayersById"]["child"]
+        );
+        doc.set_editor_layer_hidden("parent", false);
+        assert_eq!(doc.materialize().len(), 1, "un-hiding parent reveals child");
+
+        // Lock the PARENT — the child's slot refuses a move with no `locked` key of its own.
+        doc.set_editor_layer_locked("parent", true);
+        doc.move_entities(vec!["s0".to_string()], 5.0, 5.0, vec![0.0]);
+        let soa = doc.materialize();
+        let i = row_of(&soa, "s0");
+        assert_eq!(
+            (soa.xs[i], soa.ys[i]),
+            (100.0, 200.0),
+            "child inherits parent's lock"
+        );
+    }
+
+    /// UNDO, fired once for each flag: a LOCAL flag flip is one undo step (undoable like a rename),
+    /// and undo restores the prior VIEW state — so a hidden layer's slot reappears after Ctrl+Z.
+    #[test]
+    fn hidden_and_locked_flag_flips_are_one_undo_step_each() {
+        let mut doc = one_slot_one_layer();
+        assert_eq!(doc.undo_depth(), 0, "INIT setup is not on the stack");
+
+        // hidden: one flip = one step; undo reverts the flip AND the view state.
+        doc.set_editor_layer_hidden("L", true);
+        assert_eq!(doc.undo_depth(), 1, "hide is one LOCAL step");
+        assert_eq!(doc.materialize().len(), 0, "hidden now");
+        assert!(doc.undo());
+        assert_eq!(doc.materialize().len(), 1, "undo un-hid the layer");
+        assert_eq!(doc.undo_depth(), 0);
+
+        // locked: one flip = one step; undo removes the lock.
+        doc.set_editor_layer_locked("L", true);
+        assert_eq!(doc.undo_depth(), 1, "lock is one LOCAL step");
+        assert!(doc.undo());
+        assert_eq!(doc.undo_depth(), 0);
+        // After undo the lock is gone, so a move lands again.
+        doc.move_entities(vec!["s0".to_string()], 3.0, 4.0, vec![0.0]);
+        let soa = doc.materialize();
+        let i = row_of(&soa, "s0");
+        assert_eq!(
+            (soa.xs[i], soa.ys[i]),
+            (103.0, 204.0),
+            "undo removed the lock"
+        );
+    }
+
+    /// SHAPE: `false` REMOVES the key rather than storing `false`, so a never-flagged layer's row is
+    /// byte-identical to a pre-T-665 doc (absent ⇒ visible/unlocked). Belt for the omit idiom.
+    #[test]
+    fn clearing_a_layer_flag_removes_the_key() {
+        let doc = one_slot_one_layer();
+        doc.set_editor_layer_hidden("L", true);
+        doc.set_editor_layer_locked("L", true);
+        doc.set_editor_layer_hidden("L", false);
+        doc.set_editor_layer_locked("L", false);
+        let layers: serde_json::Value =
+            serde_json::from_str(&doc.small_maps_json()).expect("small_maps_json");
+        let row = &layers["editorLayersById"]["L"];
+        assert!(row.get("hidden").is_none(), "hidden key removed: {row}");
+        assert!(row.get("locked").is_none(), "locked key removed: {row}");
     }
 }
