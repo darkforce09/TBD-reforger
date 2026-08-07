@@ -694,7 +694,45 @@ impl GlobPattern {
 /// the worst case and this runs on every keystroke inside the wasm render loop, so the budget is a
 /// correctness property, not a nicety: exceeding it returns "no match" instead of hanging the tab.
 /// 200k steps is ~100x the cost of the worst realistic catalogue pattern.
+///
+/// **THIS BOUNDS WORK, NOT STACK.** See [`RX_MAX_DEPTH`] — the budget alone was the wave-117 defect.
 const RX_BUDGET: u32 = 200_000;
+
+/// How deep the matcher may recurse before it refuses. **This is a separate property from
+/// [`RX_BUDGET`] and the wave-117 adversarial verifier proved the difference by building a rig:** it
+/// lifted this engine verbatim onto a 1 MiB thread (the conventional wasm32 stack size) and found
+/// that the step budget bounds STEPS, NOT STACK DEPTH. [`RxCtx::node`] burns one native frame per
+/// step through the boxed continuations, so a deep-but-cheap input exhausts the stack long before it
+/// exhausts 200k steps, and the result is not "no match" — it is a wasm trap that kills the Leptos
+/// runtime and takes unsaved placements with it. Four shapes were measured to ABORT THE PROCESS:
+/// `(((…)))` nesting, `^^^…`, `.?.?…`, and `(x+x+)+y` over a plain `x…` haystack — that last one
+/// with a NINE-CHARACTER pattern, which is why capping pattern length cannot substitute for this.
+///
+/// **Why 400.** Re-measuring the abort floors on a 1 MiB thread in an unoptimised native build (the
+/// most frame-hungry configuration available, ~3x hungrier than the verifier's) put the shallowest
+/// at ~800 levels — the `(((…)))` shape, which spends one `node` frame per nesting level and is
+/// therefore the worst stack cost per unit of depth, ~1.3 KB. 400 levels is ~525 KB, half of a
+/// 1 MiB stack, with the other half left for whatever called in. Against the verifier's own
+/// (cheaper-framed) numbers it is ~6x under. And it is far beyond any real query: the longest
+/// `resource_name` in the shipped catalogue is 95 characters, and depth for an honest pattern grows
+/// with the haystack it consumes, so a catalogue-sized subject bottoms out around 100 — 4x under
+/// this bound.
+///
+/// Refusal takes the SAME path as an exhausted budget (`false`, i.e. no match), so the failure mode
+/// is an ordinary refusal rather than a trap.
+const RX_MAX_DEPTH: u32 = 400;
+
+/// The longest `/…/` body [`Rx::parse`] will compile, in chars.
+///
+/// [`RX_MAX_DEPTH`] guards the MATCHER; this guards the PARSER, which is a separate recursive
+/// descent ([`RxParser::alt`] → `seq` → `atom` → `alt`) that runs to completion BEFORE any matching
+/// and recurses once per nested `(`. No matcher-side bound can reach it. 512 chars caps parser
+/// nesting at ~256 levels, ~3x under the measured native-debug abort floor, and is itself far past
+/// any honest pattern — 5x the longest `resource_name` in the catalogue.
+///
+/// This is a belt to the depth cap's braces, NOT a replacement for it: `(x+x+)+y` overflows on a
+/// long HAYSTACK with a nine-character pattern, which no input-length rule can see.
+const RX_MAX_PATTERN: usize = 512;
 
 /// One item inside a `[…]` class.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -916,6 +954,16 @@ type RxCont<'a> = &'a dyn Fn(usize) -> bool;
 struct RxCtx<'h> {
     hay: &'h [char],
     budget: std::cell::Cell<u32>,
+    /// Live recursion depth — how many [`RxCtx::node`] frames are currently on the stack. Kept
+    /// alongside `budget` rather than folded into it because they measure different things: a
+    /// pattern can be cheap in steps and fatal in depth (`^^^…`), or expensive in steps and flat
+    /// (`(a|aa)+c` over a short subject).
+    depth: std::cell::Cell<u32>,
+    /// Latched when [`RX_MAX_DEPTH`] actually refused a branch. Nothing in production reads it —
+    /// it exists so a test can tell "returned false because it hit the depth cap" apart from
+    /// "returned false because the pattern honestly did not match", which is the difference between
+    /// proving the cap and proving nothing.
+    depth_capped: std::cell::Cell<bool>,
 }
 
 impl RxCtx<'_> {
@@ -940,10 +988,33 @@ impl RxCtx<'_> {
         }
     }
 
+    /// Every recursive cycle in this matcher passes through here — `alt`→`seq`→`node`,
+    /// `node`→`alt` (a group), `node`→`repeat`→`node`, and `node`→`k`→`seq`→`node` (a continuation)
+    /// all re-enter `node` — so `node` is the one cut point where a depth bound catches all of
+    /// them. That is why the counter lives here and not in [`RxCtx::step`], which is called on
+    /// paths that do not recurse and would over-count.
     fn node(&self, n: &RxNode, pos: usize, k: RxCont) -> bool {
         if !self.step() {
             return false;
         }
+        let d = self.depth.get();
+        if d >= RX_MAX_DEPTH {
+            self.depth_capped.set(true);
+            // The same `false` an exhausted budget returns: refuse this branch, let the caller
+            // backtrack, and end at "no match" — never at a trap.
+            return false;
+        }
+        self.depth.set(d + 1);
+        let hit = self.node_inner(n, pos, k);
+        // `d`, not `d - 1`: restoring the value we entered with is correct even if a branch below
+        // unwound early.
+        self.depth.set(d);
+        hit
+    }
+
+    /// The body of [`RxCtx::node`], split out only so the depth counter has a single unmissable
+    /// restore point instead of one before every `return`.
+    fn node_inner(&self, n: &RxNode, pos: usize, k: RxCont) -> bool {
         match n {
             RxNode::Start => pos == 0 && k(pos),
             RxNode::End => pos == self.hay.len() && k(pos),
@@ -995,6 +1066,12 @@ impl Rx {
     /// quantifier). `None` becomes [`SearchPattern::Invalid`], which the dock reports.
     fn parse(pattern: &str) -> Option<Self> {
         let src: Vec<char> = pattern.chars().collect();
+        // Length first, BEFORE the recursive descent below — [`RX_MAX_PATTERN`] exists precisely
+        // because `RxParser::alt` recurses once per nested `(` and would overflow the wasm stack
+        // while building the AST, i.e. before the matcher's depth cap could ever be consulted.
+        if src.len() > RX_MAX_PATTERN {
+            return None;
+        }
         let mut p = RxParser { src: &src, pos: 0 };
         let alt = p.alt()?;
         // Trailing input means the parse stopped at an unmatched `)`.
@@ -1003,14 +1080,24 @@ impl Rx {
 
     /// Unanchored search, case-insensitive.
     fn is_match(&self, hay: &str) -> bool {
+        self.search(hay).0
+    }
+
+    /// `(matched, depth_capped)`. The second field is the evidence half: it is `true` only if
+    /// [`RX_MAX_DEPTH`] actually turned a branch away, so a test can prove its input reached the cap
+    /// rather than failing shallowly for some unrelated reason. [`Rx::is_match`] discards it.
+    fn search(&self, hay: &str) -> (bool, bool) {
         let h: Vec<char> = hay.to_lowercase().chars().collect();
         let ctx = RxCtx {
             hay: &h,
             budget: std::cell::Cell::new(RX_BUDGET),
+            depth: std::cell::Cell::new(0),
+            depth_capped: std::cell::Cell::new(false),
         };
         // `..=len` so `/x$/`-shaped patterns can match at the very end, and `//`-empty cannot get
         // here (it is `Pending`).
-        (0..=h.len()).any(|start| ctx.alt(&self.alt, start, &|_| true))
+        let hit = (0..=h.len()).any(|start| ctx.alt(&self.alt, start, &|_| true));
+        (hit, ctx.depth_capped.get())
     }
 }
 
@@ -1728,6 +1815,127 @@ mod tests {
         let _ = filter_catalog(&tree, "class:/(a|aa)+c/");
         // And a pattern the budget can afford still answers correctly.
         assert_eq!(filter_catalog(&tree, "/^a+$/").len(), 1);
+    }
+
+    /// Run `body` on a thread with the conventional wasm32 stack (1 MiB), which is the ONLY way
+    /// these next two tests mean anything: the default test-harness thread gets 2 MiB and the main
+    /// thread 8 MiB, so a rig run at the default size can pass while the shipped wasm build still
+    /// traps. Returns nothing, because there is nothing to return — a genuine stack overflow does
+    /// not unwind, it aborts the whole process, so the assertions *inside* `body` are the result.
+    fn on_a_wasm_sized_stack(body: impl FnOnce() + Send + 'static) {
+        std::thread::Builder::new()
+            .stack_size(1 << 20)
+            .spawn(body)
+            .expect("spawn")
+            .join()
+            .expect("the matcher must return, not abort");
+    }
+
+    /// **T-764 — the wave-117 MAJOR, and it was found by BUILDING A RIG, not by reading.** The
+    /// verifier lifted this engine verbatim onto a 1 MiB thread and proved that [`RX_BUDGET`] bounds
+    /// STEPS, NOT STACK DEPTH: [`RxCtx::node`] burns a native frame per step through the boxed
+    /// continuations, so four shapes ABORTED THE PROCESS rather than answering "no match" —
+    /// `(((…)))` at ~2500-3000, `^^^…` at ~20000-25000, `.?.?…` at ~3000, and `(x+x+)+y` over a
+    /// plain `x…` haystack at ~2700 haystack chars. In the browser that abort is a wasm trap that
+    /// kills Leptos and takes unsaved placements with it, so "the budget makes it return no-match"
+    /// was simply false for deep input.
+    ///
+    /// This drives all four at (or past) those thresholds and asserts a CLEAN REFUSAL. Note which
+    /// bound catches which: the three long-PATTERN shapes never reach the matcher at all — they are
+    /// [`RX_MAX_PATTERN`] rejections at parse, i.e. the same `Invalid` the dock already explains —
+    /// while `(x+x+)+y` has a NINE-CHARACTER pattern and is caught only by [`RX_MAX_DEPTH`]. That
+    /// asymmetry is the reason a length cap cannot stand in for the depth cap.
+    #[test]
+    fn deep_regex_input_refuses_instead_of_trapping_the_wasm_stack() {
+        on_a_wasm_sized_stack(|| {
+            // ── Long-pattern vectors: refused at parse, before a single frame is spent. ──
+            for (label, pattern) in [
+                (
+                    "nested parens",
+                    format!("{}a{}", "(".repeat(3000), ")".repeat(3000)),
+                ),
+                ("carets", "^".repeat(25_000)),
+                ("dot-question", ".?".repeat(3000)),
+            ] {
+                assert!(
+                    Rx::parse(&pattern).is_none(),
+                    "{label} must be refused by RX_MAX_PATTERN"
+                );
+                // …and it arrives as the ordinary Invalid the operator already gets an explanation
+                // for, not as a special new failure mode.
+                assert_eq!(
+                    parse_search_pattern(&format!("/{pattern}/")),
+                    SearchPattern::Invalid,
+                    "{label} must reach the dock as Invalid"
+                );
+            }
+            assert!(
+                search_empty_message(&format!("/{}/", "^".repeat(25_000)), "assets")
+                    .contains("could not be read"),
+                "an over-long pattern must be explained, not reported as an empty catalogue"
+            );
+
+            // ── The depth vectors: patterns the length cap ACCEPTS that still recurse past the
+            // bound. `depth_capped` is the load-bearing half of each assertion — it is latched only
+            // by RX_MAX_DEPTH actually turning a branch away, so a `false` answer here cannot be
+            // mistaken for a pattern that merely failed shallowly.
+            //
+            // `^`x512 is exactly at RX_MAX_PATTERN and every caret is a zero-width node, so it
+            // recurses 512 deep on a 3-char subject: depth with no work at all, the shape the step
+            // budget is blindest to.
+            let carets = Rx::parse(&"^".repeat(512)).expect("512 carets is within the length cap");
+            assert_eq!(carets.search("abc"), (false, true));
+
+            // THE VECTOR NO LENGTH CAP CAN SEE: nine characters of pattern, and the depth comes
+            // from the HAYSTACK. 3000 chars is past the verifier's ~2700 abort threshold.
+            let evil = Rx::parse("(x+x+)+y").expect("the classic exponential pattern parses");
+            assert_eq!(evil.search(&"x".repeat(3000)), (false, true));
+            // Same pattern, same 3000-char subject, through the real dock entry point.
+            let tree = build_catalog_tree(
+                &[character_row(
+                    "{Z}Prefabs/x.et",
+                    &"x".repeat(3000),
+                    "NATO/US_Army/X",
+                )],
+                "BLUFOR",
+            );
+            assert!(filter_catalog(&tree, "/(x+x+)+y/").is_empty());
+        });
+    }
+
+    /// The other half of the bound: 400 must be a cap on ABUSE, not on the catalogue. If
+    /// [`RX_MAX_DEPTH`] were set anywhere near real query depth this would go red, which is what
+    /// stops a future "just lower it to be safe" from silently emptying the tree.
+    #[test]
+    fn honest_catalogue_patterns_stay_far_under_the_depth_cap() {
+        on_a_wasm_sized_stack(|| {
+            // The longest `resource_name` shape the shipped catalogue actually contains (95 chars
+            // in the golden fixture), padded past it for margin.
+            let hay = "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman_Long_Name_Variant.et";
+            assert!(
+                hay.chars().count() > 95,
+                "subject must exceed the real worst case"
+            );
+            for pattern in [
+                ".*rifleman.*",           // consumes the whole subject twice over
+                "^\\{26a9.*\\.et$",       // anchored, GUID-headed, the documented idiom
+                "(us|opfor|indfor)_army", // alternation across a group
+                "[a-z_]+_rifleman",
+            ] {
+                let rx = Rx::parse(pattern).expect("honest pattern must compile");
+                let (hit, capped) = rx.search(hay);
+                assert!(hit, "{pattern} must still match");
+                assert!(
+                    !capped,
+                    "{pattern} must not come anywhere near RX_MAX_DEPTH"
+                );
+            }
+            // And a deeply-but-legally nested pattern under the length cap still ANSWERS rather
+            // than refusing: 200 levels of nesting is well inside a 400-level bound.
+            let nested = Rx::parse(&format!("{}a{}", "(".repeat(200), ")".repeat(200)))
+                .expect("401 chars is within the length cap");
+            assert_eq!(nested.search("a"), (true, false));
+        });
     }
 
     /// Wave-105 verifier BLOCKER-1: `strip_prefix_ci` byte-sliced `s[..6]` with no char-boundary
