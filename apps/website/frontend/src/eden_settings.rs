@@ -36,6 +36,24 @@
 //! What the authoritative cap should be is an open question, and a dialog that guessed it would be
 //! stating a rule nobody has decided. [`SLOTS_PLACED_NOTE`] says so on screen.
 //!
+//! **T-671 (ATTR-FIELD-SCN-OVERVIEW-TEXT + -SCN-PICTURE) — mission presentation.** `missions.briefing`
+//! (the library blurb) and `missions.thumbnail_url` (the card image) have been accepted by
+//! `PATCH /missions/:id` since T-413, and **no caller ever sent either**. Every surface that shows a
+//! briefing — the library card, the dossier, the approval queue, the export envelope's `briefing`
+//! string — was reading a column only `POST /missions` could ever have filled, and the create dialog
+//! did not offer it. [`render_presentation_section`] is the missing writer.
+//!
+//! It sits beside [`render_shape_section`] rather than beside Time and Weather for that section's own
+//! reason: both are `missions` **row** columns, both fail as a row PATCH fails (403 for a non-author),
+//! and neither is an `author_env` document key. A briefing is not a scrubber, so it takes the same
+//! direct optimistic PATCH the T-694 game-mode select takes — see [`ShapeMirror`] for why
+//! `eden_top_strip::RowMirror`'s debounce/dedupe/single-flight is not reused for a settled value.
+//!
+//! `thumbnail_url` is a **URL column, not an upload**. The only upload endpoint on the platform is
+//! `POST /cms/uploads` — admin-gated, and it answers a site-relative `/uploads/<uuid>.png`, which is
+//! exactly what `handlers/missions.rs::validated_thumbnail_url` refuses. So this is a link field, and
+//! [`THUMBNAIL_URL_NOTE`] says so on screen instead of leaving an author hunting for a file picker.
+//!
 //! **Opener (in-owns).** The gear/menu that opens [`MissionSettingsDialog`] lives in
 //! `eden_top_strip`/`mission_editor` (not this slice's `owns`), so rather than route a second menu
 //! item, [`EditorPreferencesDialog`] is mounted as a sibling *inside* [`MissionSettingsDialog`] and
@@ -128,13 +146,26 @@ fn is_row_id(s: &str) -> bool {
         })
 }
 
-/// The `missions` row fields this dialog reads. Neither lives in the mission document, and the
+/// The `missions` row fields this dialog reads. None of them lives in the mission document, and the
 /// editor's own hydrate keeps only `compiled_meta()` (which has `max_players` but no `game_mode`, and
 /// is private to `mission_commands`), so the dialog reads the row itself on open.
+///
+/// **T-671 added `briefing` and `thumbnail_url` to this struct rather than standing up a second
+/// one.** They are read from the same `GET /missions/:id` the shape is read from, on the same open,
+/// and a second struct would have meant a second identical request for two more columns of the same
+/// row. The two *sections* stay apart (presentation and shape are different questions); the *read*
+/// is one.
 #[derive(Clone, PartialEq, Eq, Debug)]
 struct RowShape {
     game_mode: String,
     max_players: i64,
+    /// `missions.briefing` — the library blurb. **Not** `$defs/briefings`, the per-faction
+    /// situation/mission/execution block authored on a faction (`compile.rs::compile_export` carries
+    /// the whole distinction; the two names are one keystroke apart and have been conflated before).
+    briefing: String,
+    /// `missions.thumbnail_url` — an absolute `http`/`https` link, or empty. See
+    /// [`THUMBNAIL_URL_NOTE`] for why it is a link and not a file.
+    thumbnail_url: String,
 }
 
 /// T-694 — the two numbers this dialog puts under **Players**, and the fact that it reconciles
@@ -204,13 +235,194 @@ fn game_mode_failure_message(err: &crate::client::ApiErr) -> String {
     )
 }
 
-/// T-694 — the `missions` row PATCH/GET pair behind [`render_shape_section`].
+/* ────────────────────────────── T-671 — mission presentation (row half) ────────────────────────── */
+
+/// The two presentation columns [`render_presentation_section`] authors, as one closed vocabulary.
+///
+/// An enum rather than two near-identical setters: the PATCH, the optimistic write, the revert and
+/// the failure toast are the same six lines for both columns, and the only thing that differs is
+/// which key goes on the wire and what the author is told was not saved. Two copies of that would
+/// drift — the second column would be the one that forgot to revert.
+///
+/// The column names are the server's (`handlers/missions.rs::PatchMissionInput`). A third variant
+/// here without a matching `Option<String>` there ships a control that can only 400.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum PresentationField {
+    Briefing,
+    Thumbnail,
+}
+
+impl PresentationField {
+    /// The `missions` column, which is also the PATCH body key.
+    fn column(self) -> &'static str {
+        match self {
+            Self::Briefing => "briefing",
+            Self::Thumbnail => "thumbnail_url",
+        }
+    }
+
+    /// How the failure toast names this field to the author. Sentence-leading, because
+    /// [`presentation_failure_message`] starts a sentence with it.
+    fn what(self) -> &'static str {
+        match self {
+            Self::Briefing => "The briefing",
+            Self::Thumbnail => "The thumbnail link",
+        }
+    }
+
+    /// This field's current value on a read row.
+    fn read(self, row: &RowShape) -> &str {
+        match self {
+            Self::Briefing => &row.briefing,
+            Self::Thumbnail => &row.thumbnail_url,
+        }
+    }
+
+    /// This field's value on a row being written optimistically.
+    fn write(self, row: &mut RowShape, value: String) {
+        match self {
+            Self::Briefing => row.briefing = value,
+            Self::Thumbnail => row.thumbnail_url = value,
+        }
+    }
+}
+
+/// Would `handlers/missions.rs::validated_thumbnail_url` accept this? Empty clears the column;
+/// anything else must be an absolute `http://` / `https://` URL.
+///
+/// **This is a pre-flight, not a second authority.** The server still validates — it has to, because
+/// this dialog is not the only writer and a client check governs nothing. What it buys is that a
+/// pasted `/uploads/x.png` or a `javascript:` string is named *here*, next to the field, instead of
+/// coming back as a 400 the author has to map onto a control they have already moved on from.
+///
+/// It agrees with the server **by construction**, not by discipline: `url_guard::is_http_url` is the
+/// T-405 port of `services::text::is_http_url`, and both call the same compiled `Url::parse` from the
+/// same workspace-pinned `url` crate. That is exactly the reason `url_guard` exists.
+#[must_use]
+fn is_acceptable_thumbnail_url(raw: &str) -> bool {
+    let trimmed = raw.trim();
+    trimmed.is_empty() || crate::url_guard::is_http_url(trimmed)
+}
+
+/// What the briefing box is for, and — because the two names are one keystroke apart — what it is
+/// not. `missions.briefing` is the library blurb; `$defs/briefings` is the in-game briefing screen,
+/// authored per faction, and an author who types the operation order in here will find it on the
+/// mission card instead of in the game.
+const BRIEFING_NOTE: &str = "The library blurb — what the mission browser, the dossier and the \
+                             approval queue show before anyone joins, and what an exported mission \
+                             carries. It is not the in-game briefing screen: that is written per \
+                             faction, on the faction.";
+
+/// Why there is no file picker beside the thumbnail field.
+///
+/// The platform has exactly one upload endpoint, `POST /cms/uploads`. It is `AdminUser`-gated (a
+/// `mission_maker` editing their own mission cannot reach it) and it answers a **site-relative**
+/// `/uploads/<uuid>.png`, which `validated_thumbnail_url` refuses because `is_http_url` requires a
+/// scheme and a host. So an uploader wired to it would 403 for most authors and 400 for the rest.
+/// Saying that here costs three lines; leaving an author to hunt for a file picker that was never
+/// built costs them the afternoon.
+const THUMBNAIL_URL_NOTE: &str = "An absolute http:// or https:// link to an image — the picture the \
+                                  mission library card shows. There is no upload here: the mission \
+                                  row stores a link, so host the image and paste its address. Clear \
+                                  the box to remove the picture.";
+
+/// Shown when the typed thumbnail is not a link the column can hold. Local, immediate, and it names
+/// the accept rule rather than echoing a 400 — see [`is_acceptable_thumbnail_url`].
+const THUMBNAIL_REJECTED_NOTE: &str =
+    "That is not an absolute http:// or https:// link, so it was \
+                                       not saved. A site path like /uploads/x.png is not enough — \
+                                       the mission row needs the whole address.";
+
+/// Shown in place of both presentation controls when the row could not be read. Same rule, and the
+/// same reason, as [`SHAPE_UNAVAILABLE_NOTE`]: a control over a value nobody has confirmed is a
+/// control that silently writes nothing.
+const PRESENTATION_UNAVAILABLE_NOTE: &str =
+    "The mission row has not loaded, so the briefing and thumbnail cannot be edited here. A draft \
+     that has never been saved to the library has no row yet.";
+
+/// T-671 — what a refused presentation PATCH tells the author. Same 403-is-structural split, for the
+/// same reason, as [`game_mode_failure_message`]: `PATCH /missions/:id` gates on authorship while the
+/// editor route gates on role, so a `mission_maker` legitimately editing someone else's mission is
+/// refused every time and retrying cannot help. Both texts say the control has been put back,
+/// because it has.
+fn presentation_failure_message(field: PresentationField, err: &crate::client::ApiErr) -> String {
+    let what = field.what();
+    if err.0 == 403 {
+        return format!(
+            "{what} was not saved — you are not this mission's author. It has been put back to the \
+             stored value."
+        );
+    }
+    format!(
+        "Could not save {}: {}. It has been put back to the stored value.",
+        what.to_lowercase(),
+        crate::client::api_error_message(err, "the server did not respond")
+    )
+}
+
+/// Mirror a saved briefing into the live document's `meta.briefing`.
+///
+/// **Why the editor's own copy has to move too.** `compile_export` fills the download envelope's
+/// `briefing` string from `meta.briefing`, and until this ticket the only writer of that key was boot
+/// hydrate (`apply_row_meta`, T-418). So a briefing typed in this dialog and exported in the same
+/// session shipped the value from *before* the edit — the row was right and the download was stale.
+///
+/// `apply_row_meta` with a blank title and a blank terrain writes nothing but the briefing: the
+/// mutator skips a blank title and a terrain outside its three-value match, by its own rules. That is
+/// what makes this safe, not a convention here.
+///
+/// **A briefing CLEARED to empty cannot be mirrored.** `apply_row_meta` treats blank as "no value
+/// supplied" — deliberately, because that is what stops boot hydrate wiping a good briefing with an
+/// empty row — and `map-engine-core` exposes no other writer for `meta.briefing`. The row is cleared;
+/// the document's stale copy survives until the next reload, so an export taken in between still
+/// carries it. Naming that here beats a half-fix that looks total.
+/// Blur whatever control currently has focus, so its `change` handler runs.
+///
+/// The dialog's controls are commit-on-settle (`change`), which is the right shape for a textarea and
+/// a duration box — see [`render_flow_section`] for the per-keystroke argument. The cost is that a
+/// close path which does not blur first throws the pending edit away, and Escape was exactly that
+/// path. This is the two-line fix; the alternative (a local buffer per control, flushed on close) is
+/// a state machine for a problem the browser already solves.
+#[cfg(target_arch = "wasm32")]
+fn blur_focused_control() {
+    use wasm_bindgen::JsCast;
+    if let Some(el) = web_sys::window()
+        .and_then(|w| w.document())
+        .and_then(|d| d.active_element())
+        .and_then(|e| e.dyn_into::<web_sys::HtmlElement>().ok())
+    {
+        el.blur().ok();
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn mirror_briefing_into_document(briefing: &str) {
+    if briefing.trim().is_empty() {
+        return;
+    }
+    let Some(handle) = crate::mission_history::doc_handle() else {
+        return;
+    };
+    let doc = handle.borrow();
+    if let Some(doc) = doc.as_ref() {
+        doc.apply_row_meta("", "", None, None, Some(briefing.to_string()));
+    }
+}
+
+/// T-694 — the `missions` row PATCH/GET pair behind [`render_shape_section`], and (T-671) behind
+/// [`render_presentation_section`]. One handle, one read, two sections.
 ///
 /// **Why not `eden_top_strip::RowMirror`.** That handle carries a debounce, a per-column dedupe and a
 /// single-flight sequencer, all of which exist for the time scrubber — ~30 distinct values a second,
 /// where out-of-order landing is a real hazard. A `<select>` emits one value per settled choice, so
 /// none of that machinery would ever be exercised here; and `RowMirror`'s `commit`/`MirroredField`
 /// are private to a file this slice does not own. This is the small honest version, not a fork.
+///
+/// **T-671 re-asked the question for a textarea and got the same answer.** A briefing is not a
+/// scrubber either: the box commits on `change` (blur/Enter), which is one settled value per edit —
+/// exactly what a debounce would collapse a keystroke stream *into*. PATCHing per keystroke and then
+/// debouncing it would be strictly worse than not doing it, and there is nothing for a sequencer to
+/// re-order when the author only produces one write per visit to the field.
 ///
 /// `Copy` and built from the reactive owner (`expect_context` / `use_toasts` / `use_params_map` all
 /// resolve there and would panic from a bare DOM handler), so each control's handler can capture it.
@@ -259,9 +471,14 @@ impl ShapeMirror {
             )
             .await;
             match got {
+                // T-671 — `briefing` / `thumbnail_url` are `Option<String>` on the DTO because the
+                // backend omits them when empty (`skip_serializing_if`). Absent and empty are the
+                // same fact for a control: nothing authored yet.
                 Ok(d) => shape.set(Some(RowShape {
                     game_mode: d.game_mode,
                     max_players: d.max_players,
+                    briefing: d.briefing.unwrap_or_default(),
+                    thumbnail_url: d.thumbnail_url.unwrap_or_default(),
                 })),
                 Err(e) => {
                     leptos::logging::warn!(
@@ -290,7 +507,7 @@ impl ShapeMirror {
         }
         shape.set(Some(RowShape {
             game_mode: next.clone(),
-            max_players: previous.max_players,
+            ..previous.clone()
         }));
         let auth = self.auth;
         let toasts = self.toasts;
@@ -309,6 +526,82 @@ impl ShapeMirror {
                 );
                 toasts.error(game_mode_failure_message(e));
                 shape.set(Some(previous));
+            }
+        });
+    }
+
+    /// T-671 — PATCH `missions.briefing` or `missions.thumbnail_url`.
+    ///
+    /// Same shape as [`Self::set_game_mode`], and deliberately so: optimistic write, single PATCH,
+    /// revert-on-refusal with a toast that says the control has been put back. What differs is only
+    /// which column goes on the wire ([`PresentationField`]).
+    ///
+    /// **A no-op edit sends nothing.** `change` fires on blur whether or not the author typed
+    /// anything, so tabbing through the briefing box would otherwise PATCH the value it already
+    /// holds — a write that can 403 for a non-author who touched nothing.
+    ///
+    /// The thumbnail is pre-flighted against [`is_acceptable_thumbnail_url`] and refused locally when
+    /// it cannot be stored; the control is put back to the stored link, exactly as a server refusal
+    /// would put it back. A briefing has no accept rule to pre-flight — any text is a briefing,
+    /// including none.
+    fn set_presentation(
+        self,
+        field: PresentationField,
+        next: String,
+        shape: RwSignal<Option<RowShape>>,
+    ) {
+        let id = self.mission_id.get_value();
+        let Some(previous) = shape.get_untracked() else {
+            return;
+        };
+        if !is_row_id(&id) || field.read(&previous) == next {
+            return;
+        }
+        if field == PresentationField::Thumbnail && !is_acceptable_thumbnail_url(&next) {
+            self.toasts.error(THUMBNAIL_REJECTED_NOTE);
+            // Bump the signal so the input repaints back to the stored link. `set` on an equal value
+            // would not notify, so the rejected text would stay in the box looking saved.
+            shape.set(None);
+            shape.set(Some(previous));
+            return;
+        }
+        let next = if field == PresentationField::Thumbnail {
+            next.trim().to_string()
+        } else {
+            next
+        };
+        let mut optimistic = previous.clone();
+        field.write(&mut optimistic, next.clone());
+        shape.set(Some(optimistic));
+        let auth = self.auth;
+        let toasts = self.toasts;
+        let column = field.column();
+        leptos::task::spawn_local(async move {
+            // Built rather than `json!`-literal: the key is [`PresentationField::column`], so the
+            // wire key and the `missions` column cannot drift into two different strings.
+            let mut body = serde_json::Map::new();
+            body.insert(column.to_string(), serde_json::Value::String(next.clone()));
+            let body = serde_json::Value::Object(body);
+            let res = crate::client::api_patch::<serde_json::Value>(
+                auth,
+                &format!("/missions/{id}"),
+                body,
+            )
+            .await;
+            match &res {
+                Ok(_) => {
+                    if field == PresentationField::Briefing {
+                        mirror_briefing_into_document(&next);
+                    }
+                }
+                Err(e) => {
+                    leptos::logging::warn!(
+                        "T-671: could not save the mission's {column}: {}",
+                        crate::client::api_error_message(e, "PATCH /missions/:id failed")
+                    );
+                    toasts.error(presentation_failure_message(field, e));
+                    shape.set(Some(previous));
+                }
             }
         });
     }
@@ -346,6 +639,14 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
     {
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
             if open.get_untracked() && ev.key() == "Escape" {
+                // T-671 — commit the focused control before the dialog goes away. Every authored
+                // control in here fires on `change` (blur/Enter), and Escape used to close without
+                // blurring anything: a briefing typed and then dismissed with the keyboard was
+                // silently discarded, which is the same "your setting was quietly reverted" symptom
+                // T-192 exists to remove — and it already applied to the T-224 duration boxes.
+                // Clicking the backdrop blurs on `mousedown` and so was never affected. `blur()`
+                // fires `change` synchronously, so the write is already in flight when `open` flips.
+                blur_focused_control();
                 open.set(false);
             }
         });
@@ -477,6 +778,7 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                         </div>
                         <p class="text-label-sm normal-case text-outline">{ENV_UNCARRIED_NOTE}</p>
                         {render_all_settings_pointer()}
+                        {render_presentation_section(ctrl, shape)}
                         {render_shape_section(ctrl, shape)}
                         {render_flow_section(ctrl)}
                         {render_prefs_section(&env)}
@@ -518,6 +820,115 @@ fn render_all_settings_pointer() -> AnyView {
         </button>
     }
     .into_any()
+}
+
+/// T-671 (ATTR-FIELD-SCN-OVERVIEW-TEXT + -SCN-PICTURE) — the **presentation** block: the mission's
+/// library blurb and the picture its card shows.
+///
+/// **The gap this closes is a missing caller, not a missing feature.** `missions.briefing` and
+/// `missions.thumbnail_url` are columns; `PATCH /missions/:id` has accepted both since T-413; the
+/// library card, the dossier, the approval queue and the export envelope all render them. Nothing in
+/// the editor ever sent either, and the create dialog offered neither, so for most missions both were
+/// permanently whatever `POST /missions` happened to leave there — empty.
+///
+/// **Row half, like [`render_shape_section`].** Both write the `missions` row through
+/// [`ShapeMirror`], both fail the way a row PATCH fails (403 for a non-author), and neither is an
+/// `author_env` document key — which is why they are drawn together, under their own headings, and
+/// not folded in beside Time and Weather.
+///
+/// **`change`, not `input`.** One PATCH per settled value. A textarea wired to `input` would send a
+/// request per keystroke, and wrapping that in a debounce would only be undoing the mistake — see
+/// [`ShapeMirror`] for why `eden_top_strip::RowMirror`'s scrubber machinery is not reused. Escape now
+/// blurs before it closes ([`blur_focused_control`]) so the settle actually happens.
+///
+/// The thumbnail preview renders only for a link the column can hold ([`is_acceptable_thumbnail_url`])
+/// — the same sink-side guard `announcements.rs::thumbnail_img_src` applies to the same class of
+/// value, for the same T-405 reason: the writer is guarded and the sink checks anyway.
+///
+/// Inert on the native view shell (no row), exactly like [`render_shape_section`].
+fn render_presentation_section(ctrl: &'static str, shape: RwSignal<Option<RowShape>>) -> AnyView {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = (ctrl, shape);
+        return ().into_any();
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        let sect = "text-label-sm uppercase tracking-wider text-outline";
+        let hint = "text-label-sm normal-case text-outline";
+        let mirror = ShapeMirror::from_route();
+
+        // Subscribes the dialog body, so the block repaints when the open-time read lands and again
+        // when a refused PATCH puts the stored value back.
+        let Some(row) = shape.get() else {
+            return view! {
+                <div class="mt-2 flex flex-col gap-2 border-t border-outline-variant/30 pt-4">
+                    <span class=sect>"Presentation"</span>
+                    <p class=hint>{PRESENTATION_UNAVAILABLE_NOTE}</p>
+                </div>
+            }
+            .into_any();
+        };
+
+        let thumbnail = row.thumbnail_url.clone();
+        // Absent OR unstorable → no `<img>` at all. A broken-image glyph beside a field the author
+        // just filled reads as "the editor lost it", which is the opposite of what happened.
+        let preview = (!thumbnail.trim().is_empty() && is_acceptable_thumbnail_url(&thumbnail))
+            .then(|| {
+                view! {
+                    <img
+                        src=thumbnail.trim().to_string()
+                        alt="Mission thumbnail preview"
+                        class="h-28 w-full rounded-md border border-outline-variant/20 object-cover"
+                    />
+                }
+            });
+
+        view! {
+            <div class="mt-2 flex flex-col gap-4 border-t border-outline-variant/30 pt-4">
+                <span class=sect>"Presentation"</span>
+                <label class="flex flex-col gap-1">
+                    <span class=sect>"Briefing"</span>
+                    <textarea
+                        rows="5"
+                        placeholder="What is this operation, who is involved, and what does winning look like?"
+                        prop:value=row.briefing.clone()
+                        on:change=move |ev| {
+                            mirror
+                                .set_presentation(
+                                    PresentationField::Briefing,
+                                    event_target_value(&ev),
+                                    shape,
+                                );
+                        }
+                        class=format!("{ctrl} min-h-24 resize-y leading-relaxed")
+                    ></textarea>
+                </label>
+                <span class=hint>{BRIEFING_NOTE}</span>
+
+                <label class="flex flex-col gap-1">
+                    <span class=sect>"Thumbnail link"</span>
+                    <input
+                        type="url"
+                        placeholder="https://example.com/operation.jpg"
+                        prop:value=row.thumbnail_url.clone()
+                        on:change=move |ev| {
+                            mirror
+                                .set_presentation(
+                                    PresentationField::Thumbnail,
+                                    event_target_value(&ev),
+                                    shape,
+                                );
+                        }
+                        class=ctrl
+                    />
+                </label>
+                <span class=hint>{THUMBNAIL_URL_NOTE}</span>
+                {preview}
+            </div>
+        }
+        .into_any()
+    }
 }
 
 /// T-694 (Eden NEW-F6) — the **mission shape** block: game mode, and how many players this mission
@@ -2517,5 +2928,255 @@ mod t688_aggregated_settings {
         assert_eq!(fmt_setting_value(&row.value), "240");
         assert_eq!(fmt_setting_default(&row.default), "120");
         assert_eq!(row.diff_state(), DiffState::Differs);
+    }
+}
+
+// T-671 — mission presentation. Same two families as the T-694 module above: pure unit tests over the
+// helpers, plus source scans for the claims that are *shapes* rather than values ("this is a PATCH,
+// not a document write", "this commits on settle, not per keystroke"). Same house rules too — needles
+// are assembled from fragments, and `live_code`/`live_source` truncate at the first `#[cfg(test)]`, so
+// this module cannot become its own haystack (the T-759 hollow-pin failure).
+#[cfg(test)]
+mod t671_mission_presentation {
+    use super::{
+        is_acceptable_thumbnail_url, presentation_failure_message, PresentationField, RowShape,
+        BRIEFING_NOTE, THUMBNAIL_REJECTED_NOTE, THUMBNAIL_URL_NOTE,
+    };
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+    fn row() -> RowShape {
+        RowShape {
+            game_mode: "pve_coop".into(),
+            max_players: 64,
+            briefing: "Hold the bridge.".into(),
+            thumbnail_url: "https://cdn.example/op.jpg".into(),
+        }
+    }
+
+    /// The two variants are the two `PatchMissionInput` members. A column name that drifts from the
+    /// server's spelling ships a control whose PATCH is silently ignored — the handler builds its
+    /// UPDATE from named `Option`s, so an unknown key is dropped, not rejected. That failure is
+    /// invisible: the optimistic write stays on screen and the 200 confirms nothing.
+    #[test]
+    fn presentation_columns_are_the_patch_body_keys() {
+        assert_eq!(PresentationField::Briefing.column(), "briefing");
+        assert_eq!(PresentationField::Thumbnail.column(), "thumbnail_url");
+        for f in [PresentationField::Briefing, PresentationField::Thumbnail] {
+            assert!(
+                !f.what().trim().is_empty(),
+                "T-671: {f:?} has no name to put in a failure toast"
+            );
+        }
+    }
+
+    /// `read`/`write` address the field they name and nothing else — the property the shared setter
+    /// rests on. Perturbation this catches: a copy-paste in [`PresentationField::write`] that sends
+    /// the thumbnail into the briefing column (or vice versa), which would silently destroy one
+    /// value while appearing to save the other.
+    #[test]
+    fn each_field_addresses_only_its_own_column() {
+        let mut r = row();
+        PresentationField::Briefing.write(&mut r, "New orders.".into());
+        assert_eq!(PresentationField::Briefing.read(&r), "New orders.");
+        assert_eq!(
+            PresentationField::Thumbnail.read(&r),
+            "https://cdn.example/op.jpg",
+            "T-671: writing the briefing must not touch the thumbnail"
+        );
+        PresentationField::Thumbnail.write(&mut r, "https://cdn.example/two.png".into());
+        assert_eq!(
+            PresentationField::Briefing.read(&r),
+            "New orders.",
+            "T-671: writing the thumbnail must not touch the briefing"
+        );
+        assert_eq!(r.game_mode, "pve_coop", "T-671: neither touches the shape");
+        assert_eq!(r.max_players, 64);
+    }
+
+    /// The pre-flight agrees with `handlers/missions.rs::validated_thumbnail_url`: empty clears the
+    /// column, an absolute http/https URL is stored, everything else is refused. The `/uploads/…`
+    /// case is the load-bearing one — that is the shape the platform's only upload endpoint returns,
+    /// and it is precisely what this column cannot hold.
+    #[test]
+    fn thumbnail_accept_rule_matches_the_write_boundary() {
+        for ok in [
+            "",
+            "   ",
+            "https://cdn.example/t.jpg",
+            "http://cdn.example/t.jpg",
+            "https://cdn.example/a/b?c=d#e",
+        ] {
+            assert!(
+                is_acceptable_thumbnail_url(ok),
+                "T-671: {ok:?} is stored by validated_thumbnail_url and must not be refused here"
+            );
+        }
+        for bad in [
+            "javascript:alert(1)",
+            "data:image/png;base64,AAAA",
+            "/uploads/2f1c.png",
+            "//evil.example/t.jpg",
+            "t.jpg",
+            "ftp://cdn.example/t.jpg",
+            "https://",
+        ] {
+            assert!(
+                !is_acceptable_thumbnail_url(bad),
+                "T-671: {bad:?} would be refused by the server — refuse it beside the field"
+            );
+        }
+    }
+
+    /// A refused PATCH names the 403 case separately — `PATCH /missions/:id` gates on authorship
+    /// while the editor route gates on role, so a non-author is refused every time and retrying
+    /// cannot help — and both texts say the control has been put back, because [`super::ShapeMirror`]
+    /// puts it back.
+    #[test]
+    fn refused_presentation_patch_explains_itself() {
+        for f in [PresentationField::Briefing, PresentationField::Thumbnail] {
+            let forbidden = presentation_failure_message(f, &(403, None)).to_lowercase();
+            assert!(forbidden.contains("author"), "T-671: {forbidden:?}");
+            assert!(forbidden.contains("put back"), "T-671: {forbidden:?}");
+            // `api_error_message` sentence-cases what the server said, so compare lowercased.
+            let other = presentation_failure_message(f, &(500, Some("boom".into()))).to_lowercase();
+            assert!(
+                other.contains("boom"),
+                "T-671: a non-403 must name what the server said, got {other:?}"
+            );
+            assert!(other.contains("put back"), "T-671: {other:?}");
+        }
+    }
+
+    /// Copy pins. The briefing note must keep separating the library blurb from the per-faction
+    /// in-game briefing (the two names are one keystroke apart and have been conflated before —
+    /// `compile.rs::compile_export` carries the whole argument), and the thumbnail note must keep
+    /// saying it is a link and not an upload. An author who cannot find the file picker that was
+    /// never built is the cost of trimming that sentence.
+    #[test]
+    fn the_copy_says_what_each_field_is() {
+        let briefing = BRIEFING_NOTE.to_lowercase();
+        assert!(
+            briefing.contains("faction"),
+            "T-671: the briefing note must say the in-game briefing is authored per faction"
+        );
+        let thumb = THUMBNAIL_URL_NOTE.to_lowercase();
+        assert!(
+            thumb.contains("http://") && thumb.contains("https://"),
+            "T-671: the thumbnail note must state the accept rule"
+        );
+        assert!(
+            thumb.contains("no upload") || thumb.contains("stores a link"),
+            "T-671: the thumbnail note must say why there is no file picker"
+        );
+        assert!(
+            THUMBNAIL_REJECTED_NOTE.to_lowercase().contains("not saved"),
+            "T-671: a locally refused link must say it was not saved"
+        );
+    }
+
+    /// **Both fields reach the `missions` ROW by PATCH**, which is the entire ticket: the columns and
+    /// the handler already existed and nothing called them. Perturbation this catches: wiring either
+    /// control into `author_env` (where no compile, card or dossier would ever read it), or dropping
+    /// the setter call and leaving a control that repaints and saves nothing.
+    #[test]
+    fn presentation_reaches_the_missions_row_by_patch() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let setter = format!("set{}", "_presentation");
+        let body = only_body(&src, &format!("fn render{}", "_presentation_section"));
+        assert!(
+            body.contains(&format!("{setter}(")),
+            "T-671: both presentation controls must call {setter}"
+        );
+        for variant in ["Briefing", "Thumbnail"] {
+            assert!(
+                body.contains(&format!("PresentationField::{variant}")),
+                "T-671: the {variant} control must name its column through PresentationField"
+            );
+        }
+        assert!(
+            !body.contains(&format!("author{}", "_env")),
+            "T-671: briefing and thumbnail are `missions` row columns, not meta.environment keys"
+        );
+
+        let setter_body = only_body(&src, &format!("fn {setter}"));
+        assert!(
+            setter_body.contains(&format!("api{}", "_patch")),
+            "T-671: {setter} must PATCH the mission row"
+        );
+        assert!(
+            setter_body.contains(&format!("is{}", "_row_id")),
+            "T-671: {setter} must refuse synthetic editor ids before hitting the wire"
+        );
+        assert!(
+            setter_body.contains(&format!("is{}", "_acceptable_thumbnail_url")),
+            "T-671: {setter} must pre-flight the thumbnail against the server's accept rule"
+        );
+    }
+
+    /// **A briefing is not a scrubber.** The controls commit on `change` — one settled value per
+    /// edit — rather than on `input`. A textarea wired to `input` would PATCH per keystroke, and
+    /// wrapping that in the T-192 debounce would only be undoing the mistake; there is nothing for a
+    /// sequencer to re-order when the field produces one write per visit.
+    ///
+    /// Perturbation this catches: swapping either handler to `on:input`, with or without a debounce.
+    #[test]
+    fn the_presentation_controls_commit_on_settle() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let body = only_body(&src, &format!("fn render{}", "_presentation_section"));
+        assert!(
+            body.contains(&format!("on:{}", "change")),
+            "T-671: the presentation controls must commit on settle"
+        );
+        assert!(
+            !body.contains(&format!("on:{}", "input")),
+            "T-671: a PATCH per keystroke is strictly worse than either shape this ticket weighed"
+        );
+        // And the settle actually happens on the keyboard close path: Escape blurs first, or a
+        // briefing typed and then dismissed with Esc is discarded with no message.
+        let dialog = only_body(&src, "fn MissionSettingsDialog");
+        assert!(
+            dialog.contains(&format!("blur{}", "_focused_control")),
+            "T-671: Escape must commit the focused control before the dialog unmounts"
+        );
+        assert!(
+            dialog.contains(&format!("render{}", "_presentation_section")),
+            "T-671: Mission Settings must actually mount the presentation block"
+        );
+    }
+
+    /// **A saved briefing also moves the document's copy.** `compile_export` fills the download
+    /// envelope's `briefing` from `meta.briefing`, whose only writer before this ticket was boot
+    /// hydrate — so a briefing typed here and exported in the same session shipped the pre-edit
+    /// value. Perturbation this catches: dropping the mirror, or mirroring before the PATCH lands
+    /// (which would put a refused briefing into the export).
+    #[test]
+    fn a_saved_briefing_reaches_the_documents_meta() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let mirror = format!("mirror{}", "_briefing_into_document");
+        assert!(
+            only_body(&src, &format!("fn set{}", "_presentation")).contains(&format!("{mirror}(")),
+            "T-671: a saved briefing must be mirrored into the live document"
+        );
+        assert!(
+            only_body(&src, &format!("fn {mirror}")).contains(&format!("apply{}", "_row_meta")),
+            "T-671: the mirror must go through MissionDocCore's row-meta mutator"
+        );
+    }
+
+    /// The thumbnail `<img>` is guarded at the SINK as well as at the writer — T-405's rule, and the
+    /// same one `announcements.rs::thumbnail_img_src` applies to the same class of value. The row is
+    /// read from the server, and a value stored before the T-413 write guard shipped is exactly the
+    /// case a writer-side check cannot cover.
+    #[test]
+    fn the_preview_checks_the_url_at_the_sink() {
+        let src = live_source(include_str!("eden_settings.rs"));
+        let body = only_body(&src, &format!("fn render{}", "_presentation_section"));
+        let guard = format!("is{}", "_acceptable_thumbnail_url");
+        let img = format!("<{}", "img");
+        assert!(body.contains(&img), "T-671: the section renders a preview");
+        assert!(
+            body.contains(&guard),
+            "T-671: the preview must be gated on the same accept rule the writer uses"
+        );
     }
 }
