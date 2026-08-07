@@ -3776,14 +3776,54 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     let Some(core) = guard.as_ref() else {
                                         return;
                                     };
-                                    let n = slot_ids.len();
-                                    core.move_entities_and_vehicles(
-                                        slot_ids,
-                                        &veh_ids,
-                                        dx,
-                                        dy,
-                                        vec![0.0; n],
-                                    );
+                                    // wave-127 F-6 — the drag carries each slot's CURRENT z.
+                                    // `move_entities_in_txn` reads the existing z and DISCARDS it,
+                                    // writing `zs[i]` verbatim, so the `vec![0.0; n]` that used to
+                                    // sit here flattened every dragged slot to the deck inside one
+                                    // txn — while VEHICLES in the same drag kept theirs
+                                    // (`move_vehicles_in_txn` never touches z). Nothing re-samples
+                                    // afterwards to hide it: `terrainZ` did not survive the React
+                                    // deletion, so that `0.0` was the final stored value, not a
+                                    // placeholder for a DEM lookup. Same defect, and same fix, as
+                                    // the Attributes tab (F-2) and Align/Distribute (F-5); the z is
+                                    // resolved through their `keep_z_rows`/`slot_z` pair so there is
+                                    // one z-resolution vocabulary in the editor, not three.
+                                    //
+                                    // ORDER: the core indexes `zs` by each id's position in the
+                                    // `ids` slice, so `zs[i]` must be `slot_ids[i]`'s z. `zs` is
+                                    // built by mapping over the very `slot_ids` Vec that is then
+                                    // passed as `ids` — same length, same order, no re-sort between
+                                    // the two — so the correspondence is structural, not a
+                                    // convention two call sites have to agree on.
+                                    //
+                                    // `raw_slot_rows` is an O(document) JSON parse, so it is read
+                                    // ONCE for the whole drag rather than per slot, and not at all
+                                    // for a vehicle-only drag. `keep_z_rows` is asked with the write
+                                    // shape a translate always has (x and y written, z absent — the
+                                    // deltas stand in for the coordinates, since it only asks WHICH
+                                    // fields are written), so it answers `Some` for every drag.
+                                    let z_rows = (!slot_ids.is_empty())
+                                        .then(|| {
+                                            crate::editor_ops::keep_z_rows(
+                                                core,
+                                                Some(dx),
+                                                Some(dy),
+                                                None,
+                                            )
+                                        })
+                                        .flatten();
+                                    let zs: Vec<f64> = slot_ids
+                                        .iter()
+                                        .map(|id| {
+                                            z_rows
+                                                .as_ref()
+                                                .and_then(|rows| {
+                                                    crate::editor_ops::slot_z(rows, id)
+                                                })
+                                                .unwrap_or(0.0)
+                                        })
+                                        .collect();
+                                    core.move_entities_and_vehicles(slot_ids, &veh_ids, dx, dy, zs);
                                     drop(guard);
                                     crate::mission_history::after_local_edit();
                                 }
@@ -8203,6 +8243,52 @@ mod t648_transform {
             1,
             "exactly one LG::Move arm may commit via move_entities_and_vehicles (found {})",
             move_arms.len()
+        );
+    }
+
+    /// **wave-127 F-6** — the drag commit must carry each dragged slot's CURRENT z.
+    ///
+    /// `move_entities_in_txn` (map-engine-core) reads the existing z, DISCARDS it, and writes the
+    /// caller's `zs[i]` verbatim — so a `vec![0.0; n]` here is not a placeholder, it is a write of
+    /// `0.0` onto every dragged slot inside one txn, with nothing left in this frontend to
+    /// re-sample terrain afterwards (`terrainZ` did not survive the React deletion). Vehicles in
+    /// the same drag keep their z, which is the asymmetry that gives the defect away.
+    ///
+    /// This reads the LIVE `LG::Move` commit arm — `live_code` strips comments and dead code and
+    /// cuts the test module, so neither a reassuring note nor this module's own text can satisfy
+    /// it. It requires the zeros gone, the SHARED `keep_z_rows`/`slot_z` pair used (a third
+    /// z-resolution path is its own defect class here), and `zs` built by mapping over the same
+    /// `slot_ids` that is then passed as `ids` — the structural fact that makes `zs[i]` the z of
+    /// `slot_ids[i]`. A mismatched zip would hand one slot another slot's elevation, which is a
+    /// worse outcome than the zeroing this fixes.
+    #[test]
+    fn drag_move_commit_carries_each_slots_current_z() {
+        let ed = editor_live();
+        let arm = ed
+            .split("LG::Move")
+            .skip(1)
+            .map(|s| s.split("LG::").next().unwrap_or(s))
+            .find(|arm| arm.contains(".move_entities_and_vehicles("))
+            .expect("the LG::Move commit arm is present");
+        let flat: String = arm.chars().filter(|c| !c.is_whitespace()).collect();
+        assert!(
+            !flat.contains("vec![0.0;"),
+            "wave-127 F-6: the drag must not pass a zero-filled `zs` — the core writes it verbatim, \
+             so that is a flatten of every dragged slot's authored z, not a placeholder"
+        );
+        assert!(
+            flat.contains("keep_z_rows(") && flat.contains("slot_z("),
+            "the drag must resolve z through the shared keep_z_rows/slot_z pair (exact f64 off the \
+             raw row, hidden-layer slots included), not a third z-resolution path"
+        );
+        assert!(
+            flat.contains("slot_ids.iter().map("),
+            "`zs` must be built by mapping over `slot_ids` ITSELF, in order — that is what pins \
+             zs[i] to slot_ids[i]"
+        );
+        assert!(
+            flat.contains("move_entities_and_vehicles(slot_ids,&veh_ids,dx,dy,zs"),
+            "the resolved `zs` must be the vector handed to the translate, positionally after dx/dy"
         );
     }
 

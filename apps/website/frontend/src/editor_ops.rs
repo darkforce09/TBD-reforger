@@ -1221,7 +1221,7 @@ fn row_str(rows: &serde_json::Map<String, serde_json::Value>, id: &str, key: &st
 /// authored `z` through it would rewrite it as a slightly different number on every X tweak; and a
 /// slot filed under a HIDDEN layer is omitted from the SoA entirely (T-665), so the read would fail
 /// on precisely the slots a careful operator has tucked away — and a failed read is a zeroed z.
-fn slot_z(rows: &serde_json::Map<String, serde_json::Value>, id: &str) -> Option<f64> {
+pub(crate) fn slot_z(rows: &serde_json::Map<String, serde_json::Value>, id: &str) -> Option<f64> {
     rows.get(id)?
         .get("position")?
         .get("z")?
@@ -1247,14 +1247,18 @@ fn slot_z(rows: &serde_json::Map<String, serde_json::Value>, id: &str) -> Option
 /// **wave-127 F-5 — the placement helpers are one of those paths.** [`commit_positions`] (Align /
 /// Distribute / the placement patterns) writes x/y with `z = None` for every slot it moves, so it
 /// zeroed an authored z exactly the way the Attributes tab did — while preserving it for vehicles in
-/// the same selection. It now resolves the z through this pair too. The one path deliberately left
-/// alone is the marquee DRAG, which commits through `move_entities_and_vehicles` in `mission_editor`
-/// and is out of this module's reach; it passes `vec![0.0; n]` and has the same defect.
+/// the same selection. It now resolves the z through this pair too.
+///
+/// **wave-127 F-6 — and so does the marquee/handle DRAG.** It commits through
+/// `move_entities_and_vehicles` in `mission_editor` (the `LG::Move` arm), which used to pass
+/// `vec![0.0; n]` and so flattened every dragged slot inside one txn. That caller lives outside this
+/// module, which is why this pair is `pub(crate)`: the drag reads the rows ONCE and maps them over
+/// its `slot_ids` in order. One z-resolution vocabulary for all three paths, not three.
 ///
 /// Reading the rows is O(document) JSON, so it is done once per COMMIT — once per BATCH for
 /// `commit_positions`, which moves many entities — and only for a commit that could actually zero a
 /// `z`: an explicit z write, or a rotation-only edit, never reaches it.
-fn keep_z_rows(
+pub(crate) fn keep_z_rows(
     core: &MissionDocCore,
     x: Option<f64>,
     y: Option<f64>,
