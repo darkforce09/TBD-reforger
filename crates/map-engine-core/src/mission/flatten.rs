@@ -1728,12 +1728,26 @@ fn cap_net_label(label: &str) -> String {
 /// What a mission that authors nothing runs with — `flow.briefingSeconds`, in **seconds**.
 ///
 /// These four are the constants this emitter spliced in UNCONDITIONALLY before T-204, kept as the
-/// fallback rather than retired, and `pub` so the authoring half can stop mirroring them. They are
-/// currently duplicated as `eden_chrome::FLOW_DEFAULT_*` in the Leptos crate, which reads them back
-/// into Mission Settings for an unauthored mission (`read_flow_seconds(key, default)`); that crate
-/// already depends on this one with the `mission` feature, so a later slice can import these and
-/// delete its copies. Until it does the two sets must stay equal — T-224 states the invariant from
-/// its side: "if they ever disagree, the dialog is lying about an unauthored mission."
+/// fallback rather than retired, and `pub` because the authoring half now reads them from here.
+///
+/// **T-753 — this is the only definition, by construction.** They used to be duplicated as a second
+/// set of `pub const`s in `website-frontend`'s `eden_env`, which reads them back into Mission
+/// Settings for an unauthored mission (`read_flow_seconds(key, default)`), and the invariant "the
+/// two sets must stay equal" was stated in both files and enforced in neither. The wave-115 verifier
+/// ran the experiment: editing `FLOW_DEFAULT_BRIEFING_S` here from 600 to 900 left
+/// `cargo test -p website-frontend` fully green while the compiler emitted 900-second briefings and
+/// every editor surface still displayed 600 — because the frontend's only guard restated the
+/// literals against the frontend's OWN copy, so it could never observe this file at all. The copies
+/// are gone: `eden_env` now `pub use`s these four, so there is nothing left to diverge, and the
+/// frontend's literal guard (`flow_defaults_mirror_the_compiled_constants`) reads THIS constant and
+/// goes red on exactly the edit that used to ship green. T-224 stated the invariant from its side —
+/// "if they ever disagree, the dialog is lying about an unauthored mission" — and it can no longer
+/// be disagreed with.
+///
+/// Changing any value below is therefore a deliberate, cross-crate act: it fails
+/// [`flow_default_literals_are_the_contract`](tests::flow_default_literals_are_the_contract) here
+/// and the frontend's guard there, and both messages name the mod-side reader that has to agree.
+/// (`flow_default_literals_are_the_contract` is the test in this file's `tests` module.)
 ///
 /// ## Why an unauthored field emits a default instead of being omitted
 ///
@@ -1786,7 +1800,7 @@ const JIP_VALUES: [&str; 3] = ["disabled", "until_safestart_end", "always"];
 ///
 /// **A wrong-typed or negative value reads as UNAUTHORED, not as an error and not as `0`.** Three
 /// reasons, in order of weight:
-/// 1. It mirrors `eden_chrome::read_flow_seconds`'s `.as_i64().filter(|n| *n >= 0)` exactly, so the
+/// 1. It mirrors `eden_env::read_flow_seconds`'s `.as_i64().filter(|n| *n >= 0)` exactly, so the
 ///    dialog and the compiler cannot disagree about what a given payload means. That agreement is
 ///    the whole contract T-224 asked for.
 /// 2. A negative would violate the schema's `minimum: 0` and make `/compiled` serve an invalid
@@ -1808,7 +1822,7 @@ fn authored_flow_seconds(env: &serde_json::Value, key: &str, default: i64) -> i6
         .unwrap_or(default)
 }
 
-/// The authored `flow.jip`, or [`FLOW_DEFAULT_JIP`]. Mirrors `eden_chrome::read_flow_jip`'s filter:
+/// The authored `flow.jip`, or [`FLOW_DEFAULT_JIP`]. Mirrors `eden_env::read_flow_jip`'s filter:
 /// a value outside [`JIP_VALUES`] is treated as unauthored rather than forwarded.
 fn authored_flow_jip(env: &serde_json::Value) -> String {
     env.get("jip")
@@ -1822,13 +1836,13 @@ fn authored_flow_jip(env: &serde_json::Value) -> String {
 ///
 /// ## Where the authored values come from
 ///
-/// `Mission Settings → eden_chrome::render_flow_section` writes `briefingSeconds`,
+/// `Mission Settings → eden_settings::render_flow_section` writes `briefingSeconds`,
 /// `safeStartSeconds`, `timeLimitSeconds` and `jip` into `meta.environment` in the CRDT document
 /// (`author_env`, one undo step each). On Save, `mission::compile::compile_payload` copies
 /// `meta.environment` verbatim onto the payload's **top-level `environment`** object, and that is the
 /// key this function reads. So the four names here are the authored key names, unprefixed — they are
 /// NOT nested under a `flow` object on the way in, and the third column of
-/// `eden_chrome::AUTHORED_FLOW_KEYS` is the mapping being honoured.
+/// `eden_env::AUTHORED_FLOW_KEYS` is the mapping being honoured.
 ///
 /// Reading the payload rather than [`MissionMeta`] is what makes both compile paths agree with one
 /// change: the API path (`mission_compile::flatten_to_mod_document`) and the wasm Export path
@@ -5584,6 +5598,44 @@ mod tests {
         assert_eq!(flow.time_limit_seconds, 0);
     }
 
+    /// **T-753 — the four literals, restated once, on purpose.**
+    ///
+    /// Every other flow test in this file compares a compiled field to the CONSTANT, so all of them
+    /// stay green when the constant moves — which is precisely how the wave-115 verifier's 600 → 900
+    /// edit shipped green across two crates. This test is the one place that names the numbers, and
+    /// it is deliberately the defect's own shape used correctly: it is not a drift detector (drift is
+    /// impossible now that `eden_env` re-exports these rather than copying them), it is a
+    /// CONFIRMATION PROMPT. Changing a default is a change to what every unauthored mission already
+    /// running in the community does, so it must cost one deliberate edit here, not zero.
+    ///
+    /// The numbers are not arbitrary and the mod is the other party to each: 300 s must stay equal to
+    /// `TBD_SafestartManager.DEFAULT_COUNTDOWN_SECONDS` or an unauthored mission's countdown depends
+    /// on which side wrote it, and `until_safestart_end` must stay inside `JIP_VALUES` or
+    /// `TBD_MissionFlow.PolicyFromString` silently resolves the default to `ALWAYS`.
+    #[test]
+    fn flow_default_literals_are_the_contract() {
+        assert_eq!(
+            FLOW_DEFAULT_BRIEFING_S, 600,
+            "briefing length is announced by TBD_FrameworkManager.OnEnterBriefing"
+        );
+        assert_eq!(
+            FLOW_DEFAULT_SAFESTART_S, 300,
+            "must equal TBD_SafestartManager.DEFAULT_COUNTDOWN_SECONDS"
+        );
+        assert_eq!(
+            FLOW_DEFAULT_TIMELIMIT_S, 5400,
+            "the round clock TBD_FrameworkManager.ArmRoundClock arms"
+        );
+        assert_eq!(
+            FLOW_DEFAULT_JIP, "until_safestart_end",
+            "the JIP door TBD_SpawnManager holds open"
+        );
+        assert!(
+            JIP_VALUES.contains(&FLOW_DEFAULT_JIP),
+            "a default outside the schema enum resolves to ALWAYS in PolicyFromString"
+        );
+    }
+
     /// A mission that authors nothing must compile to the values it RUNS with today. Omitting the
     /// keys instead would be legal under the schema and would silently change two behaviours on every
     /// existing mission — `jip` to `ALWAYS` and the round clock to never-arm. See
@@ -5624,7 +5676,7 @@ mod tests {
     /// A value the schema would reject must never reach the document — `/compiled` serves these bytes
     /// to a game server against `mission.schema.json`, so a negative duration or an off-enum `jip`
     /// would make the route's own contract fail. Each falls back, exactly as Mission Settings reads
-    /// it back (`eden_chrome::read_flow_seconds` / `read_flow_jip` apply the identical filters).
+    /// it back (`eden_env::read_flow_seconds` / `read_flow_jip` apply the identical filters).
     #[test]
     fn out_of_range_and_wrong_typed_values_fall_back_to_the_default() {
         for bad in [
