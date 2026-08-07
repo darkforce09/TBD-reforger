@@ -1,5 +1,11 @@
 //! Small UI helpers ported from lib/utils.ts (`cn`) + components/MaterialIcon.tsx + AuthGate.tsx.
 use crate::auth::AuthStore;
+// T-633 — the ONE state vocabulary (T-668), consumed rather than re-invented. The dependency runs
+// `ui` → `eden_layout` and it is deliberate: `eden_layout` owns the four named state recipes and is
+// their single source of truth, so a shared primitive that re-typed `hover:bg-white/10` here would
+// be a second definition of a rule the chrome files are pinned against. Nothing runtime crosses the
+// boundary — these are `&'static str` class recipes resolved at compile time.
+use crate::eden_layout::{DISABLED_GLYPH, HOVER_FILL};
 use crate::nav::{has_min_role_authed, Role};
 use leptos::prelude::*;
 
@@ -93,6 +99,162 @@ pub fn badge_class(variant: &str) -> String {
         _ => "border-outline-variant/40 bg-surface-variant/40 text-on-surface-variant",
     };
     format!("inline-flex items-center gap-1 rounded border px-2 py-0.5 text-label-sm uppercase whitespace-nowrap {v}")
+}
+
+/* ═══════════════ T-633 — the suite's range + select primitives ═══════════════
+ *
+ * Two browser-chrome controls were rendering inside an otherwise custom UI: the editor's time
+ * scrubber was a raw `<input type="range">` painting its track and thumb in the UA accent (browser
+ * blue) against Aegis `#adc6ff`, and the weather picker was a raw `<select>` with the platform's
+ * native arrow. Neither could be fixed where it stood, because THIS FILE — the suite's shared
+ * primitives home (`MaterialIcon` / `PageHeader` / `AuthGate` / `Dialog` / `Sheet` / `AdminGate`) —
+ * had no slider and no select to reach for. So the fix is to CREATE them, here, where the rest of
+ * the platform can use them too; the top strip is then just the first caller.
+ *
+ * THE PERFORMANCE CONSTRAINT, because it shapes the API. The scrubber is dragged, and each drag
+ * emits values at roughly 30/second into `eden_top_strip`'s `RowMirror` (dedupe → debounce →
+ * single-flight). A "controlled" primitive — one that owns an internal `RwSignal`, writes it on
+ * every event and re-renders itself from it — would put a Leptos render on every one of those
+ * values and defeat the sequencing that exists to keep the wire quiet. So both controls stay
+ * **native and uncontrolled**: the browser owns the drag, `prop:value` is a one-line DOM property
+ * write from the caller's signal (exactly what the raw markup did), and the only handler is the
+ * settle event. There is no `on:input` in either component and no signal of their own.
+ *
+ * STYLING IS `appearance-none` PLUS EXPLICIT PARTS, not a colour override. `accent-color` (what the
+ * old scrubber used, `accent-[--color-primary]`) only tints the UA widget; the track geometry, the
+ * thumb shape and the select's arrow are still the browser's. Painting the parts ourselves —
+ * `::-webkit-slider-runnable-track` / `::-webkit-slider-thumb` and their `::-moz-range-*` twins, and
+ * a Material `expand_more` glyph over an `appearance-none` select — is what actually takes the
+ * controls off browser chrome and onto the Aegis palette.
+ */
+
+/// The scrubber's own geometry — the element box. Deliberately `bg-transparent`: the visible track
+/// is the `::-*-track` pseudo-element below, so the element box is free to carry the T-668 hover
+/// fill without double-painting the rail.
+const SLIDER_BOX: &str = "h-5 cursor-pointer appearance-none rounded bg-transparent px-1 outline-none focus-visible:outline-1 focus-visible:outline-primary/60";
+/// WebKit/Blink rail + handle. `-mt-1` is not decoration: `::-webkit-slider-thumb` is laid out
+/// against the TOP of the runnable track, so a 12px thumb on a 4px rail needs `(4-12)/2 = -4px` to
+/// sit on the rail's centre line. Firefox centres its thumb for us, hence no twin below.
+const SLIDER_WEBKIT: &str = "[&::-webkit-slider-runnable-track]:h-1 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-surface-container-highest [&::-webkit-slider-thumb]:-mt-1 [&::-webkit-slider-thumb]:size-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary";
+/// Gecko rail + handle. `border-0` is load-bearing — Firefox's default range thumb carries a UA
+/// border that reads as a light halo on a dark surface if it is not cleared.
+const SLIDER_MOZ: &str = "[&::-moz-range-track]:h-1 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-surface-container-highest [&::-moz-range-thumb]:size-3 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-primary";
+
+/// Aegis range slider — the suite's `<input type="range">` primitive (T-633).
+///
+/// Uncontrolled by construction (see the block comment above): `value` is written to the DOM
+/// `value` **property**, so a caller whose signal updates 30×/second costs one property write per
+/// update and no re-render, and `on_change` fires on the native `change` event — the settle — not
+/// on `input`. A caller that needs live-drag feedback should render its own readout from the same
+/// signal (which is what the top strip's `HH:MM` label does) rather than asking for a per-pixel
+/// callback the debounce downstream would only have to throw away.
+///
+/// `value`/`on_change` are `i32` because a `step`-quantised range emits integers; a value the
+/// control cannot have produced is dropped rather than guessed at.
+///
+/// State: [`HOVER_FILL`] and [`DISABLED_GLYPH`] — the T-668 vocabulary, not a local invention.
+#[component]
+#[allow(dead_code)]
+pub fn Slider(
+    /// Accessible name. Also the tooltip, and it is NOT gated on `!disabled` — T-668 rule (3): a
+    /// control that cannot act must still explain itself.
+    label: &'static str,
+    min: i32,
+    max: i32,
+    #[prop(default = 1)] step: i32,
+    /// Where the handle sits. Read reactively; written straight to the DOM property.
+    #[prop(into)]
+    value: Signal<i32>,
+    /// The settled value (native `change`). Never `input` — see the module note.
+    #[prop(into)]
+    on_change: Callback<i32>,
+    /// Extra classes — the caller owns the WIDTH (`w-28`, `w-full`, …), this owns the paint.
+    #[prop(optional)]
+    class: &'static str,
+    #[prop(optional)] disabled: bool,
+) -> impl IntoView {
+    view! {
+        <input
+            type="range"
+            min=min
+            max=max
+            step=step
+            aria-label=label
+            title=label
+            disabled=disabled
+            class=cn(&[SLIDER_BOX, SLIDER_WEBKIT, SLIDER_MOZ, HOVER_FILL, DISABLED_GLYPH, class])
+            prop:value=move || value.get().to_string()
+            on:change=move |ev| {
+                if let Ok(v) = event_target_value(&ev).parse::<i32>() {
+                    on_change.run(v);
+                }
+            }
+        />
+    }
+}
+
+/// Aegis select — the suite's `<select>` primitive (T-633).
+///
+/// `appearance-none` kills the native arrow and the UA's own padding/background; the chevron is a
+/// Material `expand_more` laid over the control and `pointer-events-none`, so clicking it still
+/// opens the list. The element stays a real `<select>` — the popup is the platform's, which is the
+/// correct trade: it is keyboard- and screen-reader-native, and it is the one part of the control
+/// no page CSS can reach anyway. `<option>`s carry the dark surface explicitly, because a UA that
+/// paints its list from the page (Chrome on Linux) otherwise renders white-on-white.
+///
+/// `options` is a `&'static` `(value, label)` table — the `MENUS`-style const idiom, so a caller's
+/// option set is data with one definition rather than markup repeated per call site.
+///
+/// State: [`HOVER_FILL`] and [`DISABLED_GLYPH`], same as [`Slider`].
+#[component]
+#[allow(dead_code)]
+pub fn Select(
+    /// Accessible name, and the tooltip — retained while `disabled` (T-668 rule 3).
+    label: &'static str,
+    /// `(wire value, human label)`, rendered in order.
+    options: &'static [(&'static str, &'static str)],
+    /// The selected wire value. Written to the DOM property, so a value not in `options` shows as
+    /// no selection rather than silently rewriting the document.
+    #[prop(into)]
+    value: Signal<String>,
+    #[prop(into)] on_change: Callback<String>,
+    #[prop(optional)] class: &'static str,
+    #[prop(optional)] disabled: bool,
+) -> impl IntoView {
+    view! {
+        <span class="relative inline-flex items-center">
+            <select
+                aria-label=label
+                title=label
+                disabled=disabled
+                class=cn(
+                    &[
+                        "appearance-none rounded border border-outline-variant/40 bg-surface-container py-0.5 pr-6 pl-1.5 text-xs text-on-surface outline-none focus-visible:outline-1 focus-visible:outline-primary/60",
+                        HOVER_FILL,
+                        DISABLED_GLYPH,
+                        class,
+                    ],
+                )
+                prop:value=move || value.get()
+                on:change=move |ev| on_change.run(event_target_value(&ev))
+            >
+                {options
+                    .iter()
+                    .map(|(v, l)| {
+                        view! {
+                            <option class="bg-surface-container text-on-surface" value=*v>
+                                {*l}
+                            </option>
+                        }
+                    })
+                    .collect_view()}
+            </select>
+            <MaterialIcon
+                name="expand_more"
+                class="pointer-events-none absolute right-0.5 text-base leading-none text-on-surface-variant"
+            />
+        </span>
+    }
 }
 
 /// ═══════════════ T-333 — one Escape, one dialog ═══════════════
@@ -564,6 +726,152 @@ mod tests {
                 body.contains("modal_stack::unregister(modal_id)"),
                 "{component} must release its registration on cleanup or the registry leaks \
                  one dead entry per mount. Body was: {body}"
+            );
+        }
+    }
+}
+
+/// T-633 — the range and select primitives, pinned.
+///
+/// These are Leptos views a native `cargo test` cannot render, so the pins read scrubbed source
+/// (T-601/T-622 `class_r_scrub`): `live_code` blanks comments AND string literals, so a needle it
+/// finds is a real reference and not a mention; `live_source` keeps the literals, which is where a
+/// Tailwind class recipe is real code. Needles that assert an ABSENCE are assembled from fragments
+/// so this module's own source can never satisfy them.
+#[cfg(test)]
+mod t633_range_and_select {
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+    fn code() -> String {
+        live_code(include_str!("ui.rs"))
+    }
+
+    fn source() -> String {
+        live_source(include_str!("ui.rs"))
+    }
+
+    /// The primitives EXIST here. That is half the ticket: `ui.rs` is where the suite's shared
+    /// components live (MaterialIcon / PageHeader / AuthGate / Dialog / Sheet / AdminGate) and it
+    /// had no slider and no select, which is why two raw browser controls were sitting in the
+    /// editor's top strip with nothing to replace them with.
+    #[test]
+    fn the_suite_has_a_slider_and_a_select_primitive() {
+        let code = code();
+        for component in ["pub fn Slider(", "pub fn Select("] {
+            assert!(
+                code.contains(component),
+                "T-633: `{component}` must be defined in ui.rs — the shared primitives home"
+            );
+        }
+    }
+
+    /// **The performance contract, stated as a test.** The time scrubber is dragged, and a drag
+    /// emits ~30 values/second into `eden_top_strip`'s RowMirror (dedupe → debounce →
+    /// single-flight). A primitive that listened on `input`, or that owned a signal it wrote per
+    /// event and re-rendered from, would put a Leptos render on every one of those values and
+    /// defeat the sequencing. So: `change` only, `prop:value` straight to the DOM property, and no
+    /// signal of the component's own.
+    #[test]
+    fn neither_control_re_renders_per_event() {
+        let code = code();
+        // Assembled so this file's prose cannot satisfy the absence checks.
+        let per_pixel = ["on:", "input"].concat();
+        let owned_signal = ["RwSignal::", "new"].concat();
+        for component in ["pub fn Slider(", "pub fn Select("] {
+            let body = only_body(&code, component);
+            assert!(
+                body.contains("on:change"),
+                "{component} must commit on the native `change` (the settle), not on drag"
+            );
+            assert!(
+                !body.contains(&per_pixel),
+                "T-633: {component} must NOT listen on `input` — that is an event per pixel, and it \
+                 defeats the RowMirror debounce the scrubber is sequenced by"
+            );
+            assert!(
+                !body.contains(&owned_signal),
+                "T-633: {component} must stay uncontrolled — an internal signal written per event \
+                 is a re-render per event"
+            );
+            assert!(
+                body.contains("prop:value"),
+                "{component} must write the DOM value PROPERTY (uncontrolled), not re-render to it"
+            );
+        }
+    }
+
+    /// Off browser chrome and onto the Aegis palette. `accent-color` alone was the old scrubber's
+    /// approach and it only tints the UA widget — the track geometry, the thumb and the select's
+    /// arrow stayed the browser's. Both controls must therefore be `appearance-none` with the parts
+    /// painted explicitly: the `::-*-track` / `::-*-thumb` pseudo-elements for the slider (both
+    /// engine prefixes — a WebKit-only recipe leaves Firefox on browser chrome), and a Material
+    /// chevron for the select.
+    #[test]
+    fn both_controls_paint_their_own_parts() {
+        let src = source();
+        for part in [
+            "::-webkit-slider-runnable-track",
+            "::-webkit-slider-thumb",
+            "::-moz-range-track",
+            "::-moz-range-thumb",
+        ] {
+            assert!(
+                src.contains(part),
+                "T-633: the slider must paint `{part}` itself — accent-color does not reshape it"
+            );
+        }
+        assert!(
+            src.matches("appearance-none").count() >= 2,
+            "T-633: both the slider and the select must be `appearance-none` — otherwise the UA \
+             still draws the widget underneath"
+        );
+        let select_body = only_body(&src, "pub fn Select(");
+        assert!(
+            select_body.contains("expand_more"),
+            "T-633: the select's native arrow is replaced by a Material chevron, not merely hidden"
+        );
+        assert!(
+            select_body.contains("pointer-events-none"),
+            "T-633: the chevron overlays the control, so it must not eat the click that opens it"
+        );
+    }
+
+    /// Built on the SHIPPED state vocabulary (T-668), not on new state classes. Both controls take
+    /// their hover and disabled treatment from `eden_layout`'s named recipes, so the chrome keeps
+    /// ONE state language; a hand-rolled `hover:bg-…` here would be a second definition of a rule
+    /// the chrome files are already pinned against.
+    #[test]
+    fn both_controls_consume_the_t668_recipes() {
+        let code = code();
+        for component in ["pub fn Slider(", "pub fn Select("] {
+            let body = only_body(&code, component);
+            for recipe in ["HOVER_FILL", "DISABLED_GLYPH"] {
+                assert!(
+                    body.contains(recipe),
+                    "T-633/T-668: {component} must consume {recipe} rather than invent a state class"
+                );
+            }
+        }
+        // …and no local hover fill anywhere in the file's own class strings (assembled needle).
+        let hand_rolled = ["hover:bg-", "white/"].concat();
+        assert!(
+            !source().contains(&hand_rolled),
+            "T-633/T-668: the neutral hover fill has one definition (eden_layout::HOVER_FILL); \
+             re-typing it here is the duplication the vocabulary exists to remove"
+        );
+    }
+
+    /// Rule (3)'s tooltip half: the `title=` is emitted unconditionally, NOT gated on `!disabled`.
+    /// A control that cannot act must still explain itself.
+    #[test]
+    fn a_disabled_control_keeps_its_tooltip() {
+        let code = code();
+        for component in ["pub fn Slider(", "pub fn Select("] {
+            let body = only_body(&code, component);
+            assert!(
+                body.contains("title=label") && body.contains("disabled=disabled"),
+                "{component} must carry `title=label` beside `disabled=disabled` — the tooltip is \
+                 not gated on the control being enabled (T-668 rule 3)"
             );
         }
     }
