@@ -35,7 +35,7 @@ use map_engine_core::doc::{
 use crate::asset_catalog::PlacePayload;
 use crate::dto::{FactionDoc, FactionRole, FactionVehicle};
 use crate::mission_doc::DocHandle;
-use crate::outliner::{build_outliner, LayerRow, OutlinerNode, SlotRow};
+use crate::outliner::{build_outliner_with_comments, CommentRow, LayerRow, OutlinerNode, SlotRow};
 use crate::select_tool::{EngineHandle, SelectionHandle};
 
 /// The lazily-minted default layer (React's `ensureDefaultLayer`).
@@ -228,6 +228,50 @@ pub fn close_asset_picker() {
             sig.set(None);
         }
     });
+}
+
+/* ─────────────────── T-651 — the comment editor's open-id signal (same idiom) ─────────────────── */
+
+thread_local! {
+    /// T-651 — the comment editor overlay's open comment id (`None` = closed), installed once from
+    /// `mission_editor::on_load`. A standalone registered signal rather than another `set_ctx`
+    /// argument, exactly like [`ASSET_PICKER`]: a self-contained overlay owned by the page, read by
+    /// its component and written only here.
+    static COMMENT_EDITOR: RefCell<Option<RwSignal<Option<String>>>> = const { RefCell::new(None) };
+}
+
+/// T-651 — register the comment-editor signal (called once from `mission_editor::on_load`).
+pub fn set_comment_editor_signal(sig: RwSignal<Option<String>>) {
+    COMMENT_EDITOR.with(|s| *s.borrow_mut() = Some(sig));
+}
+
+/// T-651 — open the comment editor on `id`. This is a comment's Attributes, and it is a SEPARATE
+/// surface on purpose: [`open_attributes`] reads the slot SoA, and a comment is not in it, so
+/// routing a comment id there would open a modal with every field blank — the T-716 live-but-inert
+/// path. No-op if the signal was never registered (native shell, or before `on_load`).
+pub fn open_comment_editor(id: String) {
+    COMMENT_EDITOR.with(|s| {
+        if let Some(sig) = *s.borrow() {
+            sig.set(Some(id));
+        }
+    });
+}
+
+/// T-651 — close the comment editor.
+pub fn close_comment_editor() {
+    COMMENT_EDITOR.with(|s| {
+        if let Some(sig) = *s.borrow() {
+            sig.set(None);
+        }
+    });
+}
+
+/// T-651 — one comment's editable fields for the editor overlay, or `None` when the id is gone
+/// (deleted, or undone away while the panel was open — the overlay then closes itself rather than
+/// editing a ghost).
+#[must_use]
+pub fn read_comment(id: &str) -> Option<CommentDetail> {
+    comment_list().into_iter().find(|c| c.id == id)
 }
 
 /// Install the ops context (once, from `on_load`, after the doc is seeded).
@@ -2229,7 +2273,14 @@ pub fn refresh_docks() {
                 Some(core) => {
                     let slots = slot_rows(core);
                     (
-                        build_outliner(&layer_rows(core), &slots),
+                        // T-651 — the layer tree carries editor-only comment rows alongside slots.
+                        // The ORBAT tree below does NOT: it is squad-scoped, and an annotation
+                        // belongs to no squad.
+                        build_outliner_with_comments(
+                            &layer_rows(core),
+                            &slots,
+                            &comment_rows(core),
+                        ),
                         crate::outliner::build_orbat(
                             &faction_rows(core),
                             &squad_rows(core),
@@ -2564,6 +2615,12 @@ enum LayerDrag {
     Folder(String),
     /// A slot being refiled into a folder.
     Slot(String),
+    /// T-651 — an editor-only COMMENT being refiled into a folder. A separate variant rather than
+    /// reusing [`LayerDrag::Slot`] because the completion calls a different mutator: a comment id is
+    /// a `commentsById` key, and `move_slot_to_layer` would happen to work today (it only shuffles
+    /// `entityIds`) but would silently become wrong the moment slot refiling grows a squad or
+    /// selection side effect. The variant makes the two intents unmistakable at the drop site.
+    Comment(String),
 }
 
 /// Mint an unused `layer-{n}` id, proven unique against the doc's live layer set.
@@ -2746,6 +2803,244 @@ pub fn refile_slot_to_layer(slot_id: &str, layer_id: &str) -> bool {
     did
 }
 
+/* ═══════════════════ T-651 — editor comments / annotations (PLACE-COMMENT-001) ═══════════════════ */
+//
+// A comment is an EDITOR-ONLY VIRTUAL ENTITY. It shows in the Outliner, files into a layer, drags
+// and copies like any other row — and it NEVER COMPILES. That last part is not enforced here and
+// deliberately so: the exclusion is structural in `map-engine-core`
+// (`mission::flatten::EditorPayload` declares no `comments` key, so serde drops the array before the
+// mod document exists), proven by `comments_never_reach_the_mod_document`. Nothing in this file
+// filters anything, which is why nothing in this file can forget to.
+//
+// CORPUS HONESTY: this feature is evidenced by ONE community across TWO eras — FNF v3's 28 in-map
+// comments (including a seven-paragraph tutorial) and the TWO that survived v4's total rewrite. WOG
+// and OFCRA have no comment equivalent. It is not a four-way convergence and must not be sold as
+// one; the template seed is sized to the surviving evidence (two), not the peak (28).
+
+/// T-651 — one comment as the docks need it. Mirrors [`crate::outliner::CommentRow`] plus the world
+/// position the tree does not need but a drag/copy caller does.
+#[derive(Clone, Debug, PartialEq)]
+pub struct CommentDetail {
+    pub id: String,
+    pub title: String,
+    pub tooltip: String,
+    pub x: f64,
+    pub z: f64,
+}
+
+/// T-651 — read `commentsById` into tree rows, sorted by id so the Unfiled bucket's order cannot
+/// depend on `serde_json`'s map type (the `layer_rows` rule).
+fn comment_rows(core: &MissionDocCore) -> Vec<CommentRow> {
+    comment_details(core)
+        .into_iter()
+        .map(|d| CommentRow {
+            id: d.id,
+            title: d.title,
+            tooltip: d.tooltip,
+        })
+        .collect()
+}
+
+/// T-651 — every comment with its position, off the narrow [`MissionDocCore::comments_json`] getter.
+#[must_use]
+pub fn comment_details(core: &MissionDocCore) -> Vec<CommentDetail> {
+    let Ok(map) = serde_json::from_str::<serde_json::Value>(&core.comments_json()) else {
+        return Vec::new();
+    };
+    let Some(obj) = map.as_object() else {
+        return Vec::new();
+    };
+    let mut rows: Vec<CommentDetail> = obj
+        .iter()
+        .map(|(id, v)| {
+            let pos = |k: &str| {
+                v.get("position")
+                    .and_then(|p| p.get(k))
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap_or(0.0)
+            };
+            let s = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string();
+            CommentDetail {
+                id: id.clone(),
+                title: s("title"),
+                tooltip: s("tooltip"),
+                x: pos("x"),
+                z: pos("z"),
+            }
+        })
+        .collect();
+    rows.sort_by(|a, b| a.id.cmp(&b.id));
+    rows
+}
+
+/// T-651 — every comment in the live doc (dock/read helper).
+#[must_use]
+pub fn comment_list() -> Vec<CommentDetail> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return Vec::new();
+        };
+        let d = ctx.doc.borrow();
+        d.as_ref().map(comment_details).unwrap_or_default()
+    })
+}
+
+/// T-651 — placed-comment count.
+#[must_use]
+pub fn comment_count() -> usize {
+    OPS_CTX.with(|c| {
+        c.borrow()
+            .as_ref()
+            .and_then(|ctx| ctx.doc.borrow().as_ref().map(MissionDocCore::comment_count))
+            .unwrap_or(0)
+    })
+}
+
+/// Mint an unused `cmt-{n}` id, proven unique against the live comments map.
+///
+/// A separate counter namespace from [`mint_id`]'s `n{…}` on purpose: comment ids share the
+/// `editorLayers[].entityIds` array with slot ids, and `build_outliner_with_comments` resolves a
+/// filed id by looking it up in the slot map first and the comment map second. Disjoint prefixes
+/// make that lookup unambiguous by construction rather than by luck.
+fn mint_comment_id(core: &MissionDocCore) -> String {
+    let existing: std::collections::HashSet<String> =
+        serde_json::from_str::<serde_json::Value>(&core.comments_json())
+            .ok()
+            .and_then(|v| v.as_object().map(|o| o.keys().cloned().collect()))
+            .unwrap_or_default();
+    let mut n = existing.len() + 1;
+    loop {
+        let id = format!("cmt-{n}");
+        if !existing.contains(&id) {
+            return id;
+        }
+        n += 1;
+    }
+}
+
+/// T-651 (`PLACE-COMMENT-001`) — **place a comment at world `(x, z)`**, the RMB-on-empty →
+/// "Place Comment" gesture. Files it under the resolved active layer ([`ensure_layer`], the same
+/// resolution a unit place uses) so it lands where the operator is working rather than in Unfiled.
+/// Returns the new comment id.
+///
+/// The default title/tooltip are placeholders an operator overwrites; they are non-empty so the new
+/// row is visible and clickable the instant it appears (the `SLOT_FALLBACK_LABEL` reasoning).
+///
+/// This does NOT touch the selection. A comment id is not a slot id, and pushing it into the
+/// selection lane would put a non-slot into `set_selection` (engine tint), `delete_selection` and
+/// the SEL readout — three surfaces that all index the slot SoA and would find nothing.
+pub fn place_comment(x: f64, z: f64) -> Option<String> {
+    let id = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let id = mint_comment_id(core);
+        let layer_id = ensure_layer(ctx, core);
+        core.add_comment(&id, "Comment", "", x, z);
+        core.move_comment_to_layer(&id, &layer_id);
+        Some(id)
+    })?;
+    crate::mission_history::after_local_edit();
+    Some(id)
+}
+
+/// T-651 (ATTR-FIELD-CMT-TITLE) — retitle a comment (inline edit).
+pub fn rename_comment(id: String, title: String) -> bool {
+    edit_comment(|core| core.set_comment_title(&id, &title))
+}
+
+/// T-651 (ATTR-FIELD-CMT-TOOLTIP) — rewrite a comment's tooltip body (inline edit).
+pub fn set_comment_tooltip(id: String, tooltip: String) -> bool {
+    edit_comment(|core| core.set_comment_tooltip(&id, &tooltip))
+}
+
+/// T-651 (ATTR-FIELD-CMT-POSITION) — **DRAG commit**: move a comment to world `(x, z)`. One core
+/// transaction ⇒ one undo step, so a drag is one Ctrl+Z exactly like a slot move.
+pub fn move_comment(id: String, x: f64, z: f64) -> bool {
+    edit_comment(|core| core.set_comment_position(&id, x, z))
+}
+
+/// T-651 — **COPY**: duplicate a comment `offset` metres to the south-east, keeping title and
+/// tooltip. Returns the new id, or `None` when the source is gone. One undo step.
+///
+/// The offset exists so the copy is not perfectly stacked on its source: two comments at identical
+/// coordinates are one indistinguishable row in the tree and one unclickable glyph on any future
+/// map render.
+pub fn duplicate_comment(id: &str, offset: f64) -> Option<String> {
+    let new_id = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let new_id = mint_comment_id(core);
+        if !core.duplicate_comment(id, &new_id, offset, -offset) {
+            return None;
+        }
+        // Land the copy in the same folder as its source, else the resolved active layer. A copy
+        // that silently jumped to another folder would be a refile the operator never asked for.
+        let layer_id = layer_rows(core)
+            .into_iter()
+            .find(|l| l.entity_ids.iter().any(|e| e == id))
+            .map_or_else(|| ensure_layer(ctx, core), |l| l.id);
+        core.move_comment_to_layer(&new_id, &layer_id);
+        Some(new_id)
+    })?;
+    crate::mission_history::after_local_edit();
+    Some(new_id)
+}
+
+/// T-651 — delete a comment (also unfiles it from its folder — see `remove_comment`).
+pub fn delete_comment(id: String) -> bool {
+    edit_comment(|core| core.remove_comment(&id))
+}
+
+/// T-651 — **LAYERS**: file a comment into `layer_id` (the outliner drag drop). Mirrors
+/// [`refile_slot_to_layer`]; one transaction ⇒ one undo step.
+pub fn refile_comment_to_layer(comment_id: &str, layer_id: &str) -> bool {
+    edit_comment(|core| core.move_comment_to_layer(comment_id, layer_id))
+}
+
+/// Shared edit tail for the comment mutators: run `f` against the core, then the dirty tail (one
+/// undo step). Returns `false` when there is no doc. The [`edit_composition`] idiom.
+fn edit_comment(f: impl FnOnce(&MissionDocCore)) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        f(core);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// T-651 — seed the NEW-MISSION TEMPLATE's comments into the freshly-minted doc, under the `INIT`
+/// origin so the template is not an undo step (the boot/seed contract). No-op on any doc that
+/// already carries a comment, so a restore or a server hydrate can never be given a second copy.
+///
+/// Called once from `mission_editor`'s boot, BEFORE the IndexedDB restore and the server hydrate —
+/// both of which replace the document wholesale, which is exactly right: a restored or downloaded
+/// mission is not a new mission and gets whatever comments it was saved with.
+pub fn seed_new_mission_template(doc: &DocHandle) -> usize {
+    let borrowed = doc.borrow();
+    let Some(core) = borrowed.as_ref() else {
+        return 0;
+    };
+    core.set_origin_init(true);
+    let ids = core.seed_template_comments();
+    core.set_origin_init(false);
+    ids.len()
+}
+
 // ── Pointer-drag reparent/refile in the tree (the T-037-era TreeView-DnD role, on the current
 //    pointer idiom — mirrors ORBAT's `begin_refile`/`complete_refile_onto_squad`). A folder row
 //    arms on `pointerdown`; dropping onto another folder reparents, onto the header root-dropzone
@@ -2759,6 +3054,13 @@ pub fn begin_layer_drag(layer_id: String) {
 /// Arm a slot for a pointer-drag refile into a folder (slot-row `pointerdown`, layer tree only).
 pub fn begin_layer_slot_drag(slot_id: String) {
     PENDING_LAYER_DRAG.with(|p| *p.borrow_mut() = Some(LayerDrag::Slot(slot_id)));
+}
+
+/// T-651 — arm a COMMENT for a pointer-drag refile into a folder (comment-row `pointerdown`). This
+/// is "comments support drag" in the tree: the same latch, the same folder-row `pointerup`
+/// completion, a different mutator ([`refile_comment_to_layer`]).
+pub fn begin_layer_comment_drag(comment_id: String) {
+    PENDING_LAYER_DRAG.with(|p| *p.borrow_mut() = Some(LayerDrag::Comment(comment_id)));
 }
 
 /// Drop an armed drag ANYWHERE that isn't a valid target (clear without mutating).
@@ -2780,6 +3082,8 @@ pub fn complete_layer_drop_onto_folder(dest_folder_id: String) -> bool {
             reparent_layer(&id, Some(dest_folder_id))
         }
         LayerDrag::Slot(slot_id) => refile_slot_to_layer(&slot_id, &dest_folder_id),
+        // T-651 — a comment files into a folder exactly like a slot (same `entityIds` array).
+        LayerDrag::Comment(comment_id) => refile_comment_to_layer(&comment_id, &dest_folder_id),
     }
 }
 

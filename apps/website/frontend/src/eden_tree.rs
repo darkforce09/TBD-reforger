@@ -718,6 +718,52 @@ fn single_row(
             }
             .into_any()
         }
+        // T-651 (`PLACE-COMMENT-001`) — an editor-only COMMENT row. This is the minimum a new
+        // `NodeKind` needs to exist at all: `single_row`'s match is exhaustive, so the variant does
+        // not compile without an arm here.
+        //
+        // It is deliberately NOT a copy of the Slot arm. A comment id is a `commentsById` key, not
+        // a slot id, so routing it into `select_slot` / `open_attributes` would produce exactly the
+        // T-716 live-but-inert row this codebase already calls out — the click would do nothing and
+        // the row would claim otherwise. What it DOES support is drag-into-a-folder (the same latch
+        // slots use, completed by a folder row's `pointerup` → `move_comment_to_layer`) and the
+        // tooltip body as hover text, which is where a comment's actual content lives.
+        NodeKind::Comment => {
+            let id_drag = id.clone();
+            let id_dbl = id.clone();
+            let authoring_comment = authoring.enabled;
+            let tip = row.tooltip.clone();
+            view! {
+                <div
+                    class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant"
+                    title=tip
+                    aria-label=aria
+                    // Double-click opens the COMMENT EDITOR — a comment's Attributes. Deliberately
+                    // NOT `open_attributes` (SEL-ORBAT-DBL-001's target): that modal reads the slot
+                    // SoA, which a comment is never in, so it would open blank and write nothing.
+                    on:dblclick=move |_| {
+                        #[cfg(target_arch = "wasm32")]
+                        crate::editor_ops::open_comment_editor(id_dbl.clone());
+                        #[cfg(not(target_arch = "wasm32"))]
+                        let _ = &id_dbl;
+                    }
+                    on:pointerdown=move |_| {
+                        if authoring_comment {
+                            #[cfg(target_arch = "wasm32")]
+                            crate::editor_ops::begin_layer_comment_drag(id_drag.clone());
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = &id_drag;
+                        }
+                    }
+                >
+                    {guide_spans(ancestors, guide_ids, collapsed)}
+                    {toggle}
+                    <MaterialIcon name="sticky_note_2" class="block text-sm" />
+                    <span class="truncate">{label}</span>
+                </div>
+            }
+            .into_any()
+        }
         NodeKind::Slot => {
             let is_sel = {
                 let id = id.clone();

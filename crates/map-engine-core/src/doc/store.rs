@@ -146,6 +146,57 @@ pub struct MissionDocCore {
     /// compile.rs authors `triggers` from `triggersById`, the projection retires. See the
     /// forward-constraint comment in `small_maps_json`.
     triggers: MapRef,
+    /// T-651 — root `comments` map (`commentsById` in [`Self::small_maps_json`]) — undo-scoped.
+    /// EDITOR-ONLY VIRTUAL ENTITIES (`PLACE-COMMENT-001`): an authored title, tooltip and world
+    /// position that live in the outliner and on no game server, ever.
+    ///
+    /// ── T-651 — WHY A COMMENT CAN NEVER COMPILE, AND WHERE THAT IS ENFORCED ─────────────────────
+    /// The constraint is STRUCTURAL, not a filter someone has to remember to run: `comments` is not
+    /// a key of `mission::flatten::EditorPayload`, the struct `flatten_to_mod_document` deserialises
+    /// the saved payload into. Serde therefore drops the array before any mod-document code sees it
+    /// — the same mechanism the root `markers` map's §authority note describes at
+    /// [`Self::set_faction_briefing_marker`] ("declares no root key whatsoever, so that lane is
+    /// never compiled"), and the same one `editorHidden` rides.
+    ///
+    /// So the rule holds by NOT declaring, which means the way to break it is to ADD a declaration
+    /// (in `mission/flatten.rs`, another slice's file) or to write a comment row into a root that
+    /// IS compiled. `comments_never_reach_the_mod_document` fires on exactly that second failure.
+    ///
+    /// **Persistence is a different question and has a different answer.** A comment MUST survive
+    /// Save→Load or the feature is a toy, so it rides the EDITOR payload exactly as `zones` /
+    /// `compositions` / `triggers` do (T-211's transitional route, mirrored verbatim):
+    /// `small_maps_json` emits the canonical `commentsById` AND a `payloadExtras.comments`
+    /// projection; `compile_payload` promotes any `payloadExtras` key it neither knows nor authors
+    /// onto the EDITOR-payload root (T-219); [`Self::hydrate`] loads a top-level `comments[]` back
+    /// here, and `comments` is in `is_known_editor_payload_top_level` so it is not double-parked.
+    ///
+    /// Unlike those three, this projection is **NOT transitional and does not retire.** Zones,
+    /// compositions and triggers are all waiting for `mission/compile.rs` to author their key and
+    /// for the schema to declare them. Comments are waiting for nothing: `packages/tbd-schema/`
+    /// must never gain a `comments` property, so the editor-payload root is this row's FINAL home.
+    ///
+    /// ROW SHAPE — the three `ATTR-FIELD-CMT-*` fields and nothing else:
+    ///   id        String, required — the doc key.
+    ///   title     String — ATTR-FIELD-CMT-TITLE. The outliner row label.
+    ///   tooltip   String — ATTR-FIELD-CMT-TOOLTIP. The long body (FNF v3's seven-paragraph
+    ///             tutorial lived in a field like this one); rendered as the row's hover text.
+    ///   position  Object `{x, z}` — ATTR-FIELD-CMT-POSITION, world metres. Shaped `{x, z}` (NOT
+    ///             `{x, y}`) to match `$defs/marker` and the zone/trigger circle centres, so the
+    ///             one coordinate vocabulary in this document stays one.
+    ///   layerId is deliberately ABSENT: a comment is filed by being listed in an
+    ///   `editorLayers[].entityIds` array, the identical mechanism a slot uses
+    ///   ([`Self::move_comment_to_layer`]), so "supports layers" needs no second representation.
+    ///
+    /// ── CORPUS EVIDENCE, WEIGHTED HONESTLY ──────────────────────────────────────────────────────
+    /// This feature is evidenced by **ONE community across TWO eras**, not by a four-way
+    /// convergence, and the distinction is load-bearing for anyone deciding how much to build here.
+    /// FNF v3 ships 28 in-map Comment objects including a seven-paragraph tutorial
+    /// (`mission.sqm:4093`) plus per-object instructions. FNF v4 then deleted the 219-line
+    /// `configGuide.txt` and the entire 421-file template, and what survived as onboarding is
+    /// literally TWO Comment entities. **WOG and OFCRA have no comment equivalent at all.** The
+    /// signal is that the mechanism survived a total rewrite that threw away everything else —
+    /// which is why [`Self::seed_template_comments`] seeds exactly two, and not twenty-eight.
+    comments: MapRef,
     /// When true, mutators stamp `INIT` (untracked) instead of `LOCAL` — set around boot / hydrate /
     /// default-seeding so a load is not an undo step. Interior mutability: mutators take `&self`.
     init_mode: Cell<bool>,
@@ -226,6 +277,7 @@ impl MissionDocCore {
         let zones = doc.get_or_insert_map("zones");
         let compositions = doc.get_or_insert_map("compositions");
         let triggers = doc.get_or_insert_map("triggers");
+        let comments = doc.get_or_insert_map("comments");
 
         // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
         // stack item only when `last_change > 0 && now - last_change < capture_timeout_millis`
@@ -263,6 +315,10 @@ impl MissionDocCore {
         // T-079 — authoring a trigger (draw / rename / owner / activation / rules / delete) is an
         // undoable user edit, exactly like a zone.
         undo_mgr.expand_scope(&doc, &triggers);
+        // T-651 — placing, retitling, dragging, copying or deleting a comment is an undoable user
+        // gesture like any other authoring act. Editor-only ≠ untracked: an accidental Delete on an
+        // annotation that carried a seven-paragraph brief must be Ctrl+Z-able.
+        undo_mgr.expand_scope(&doc, &comments);
 
         Self {
             doc,
@@ -276,6 +332,7 @@ impl MissionDocCore {
             zones,
             compositions,
             triggers,
+            comments,
             init_mode: Cell::new(false),
             undo_mgr,
         }
@@ -422,7 +479,7 @@ impl MissionDocCore {
         let meta = self.doc.get_or_insert_map("meta");
         let payload_extras = self.doc.get_or_insert_map("payloadExtras");
         let entity_order = self.doc.get_or_insert_map("entityOrder");
-        let named: [(&str, MapRef); 12] = [
+        let named: [(&str, MapRef); 13] = [
             ("factionsById", self.doc.get_or_insert_map("factions")),
             ("squadsById", self.doc.get_or_insert_map("squads")),
             ("loadoutsById", self.doc.get_or_insert_map("loadouts")),
@@ -445,6 +502,10 @@ impl MissionDocCore {
             // T-079 — the canonical by-id emit for triggers, shaped exactly like `zonesById`. The
             // panel's narrow reader ([`Self::triggers_json`]) reads the same map; a Save carries it.
             ("triggersById", self.doc.get_or_insert_map("triggers")),
+            // T-651 — the canonical by-id emit for editor-only comments, shaped exactly like
+            // `zonesById`. This key reaches the EDITOR payload and stops there; see the `comments`
+            // field's never-compiles note for why `flatten_to_mod_document` cannot see it.
+            ("commentsById", self.doc.get_or_insert_map("comments")),
         ];
 
         let txn = self.doc.transact();
@@ -485,11 +546,21 @@ impl MissionDocCore {
         // off `self.triggers` (the struct field, not `get_or_insert_map` — that deadlocks against the
         // live `txn`, the zones note's measured hang), ordered like every sibling.
         let trigger_rows = ordered_rows(&txn, &self.triggers, &entity_order, "triggers");
+        // T-651 — the same projection for editor-only comments, and it is the ONLY thing that makes
+        // a placed annotation survive a Save→Load. `compile_payload` promotes it onto the EDITOR
+        // payload root; `flatten_to_mod_document` cannot see that root key, so the compiled mission
+        // is unaffected (see the `comments` field's never-compiles note). Unlike its three
+        // neighbours this projection is PERMANENT — there is no later ticket that teaches compile.rs
+        // to author `comments`, because the schema must never declare one. Built off `self.comments`
+        // (the struct field, not `get_or_insert_map` — that deadlocks against the live `txn`, the
+        // zones note's measured hang), ordered like every sibling.
+        let comment_rows = ordered_rows(&txn, &self.comments, &entity_order, "comments");
         // Omit when empty so a clean doc's snapshot shape stays unchanged.
         if payload_extras.len(&txn) > 0
             || !zone_rows.is_empty()
             || !comp_rows.is_empty()
             || !trigger_rows.is_empty()
+            || !comment_rows.is_empty()
         {
             let mut extras: HashMap<String, Any> = match payload_extras.to_json(&txn) {
                 Any::Map(m) => (*m).clone(),
@@ -514,6 +585,13 @@ impl MissionDocCore {
                 extras.remove("triggers");
             } else {
                 extras.insert("triggers".to_string(), Any::Array(trigger_rows.into()));
+            }
+            // T-651 — same absence rule for comments: deleting every annotation must clear the wire
+            // rather than re-emit the array a reload parked.
+            if comment_rows.is_empty() {
+                extras.remove("comments");
+            } else {
+                extras.insert("comments".to_string(), Any::Array(comment_rows.into()));
             }
             if !extras.is_empty() {
                 root.insert("payloadExtras".to_string(), Any::Map(Arc::new(extras)));
@@ -1587,6 +1665,188 @@ impl MissionDocCore {
         self.triggers.len(&self.doc.transact()) as usize
     }
 
+    // ── T-651 — editor comments / annotations (`commentsById`) ───────────────────────────────────
+    //
+    // ROW SHAPE + ROUTING + the corpus weighting: see the `comments` field's note. The one thing
+    // worth repeating here, because it is the constraint that keeps this collection safe, is that a
+    // comment NEVER COMPILES: `mission::flatten::EditorPayload` declares no `comments` key, so serde
+    // drops the array before the mod document exists. Nothing in this block filters anything — the
+    // exclusion is the ABSENCE of a declaration in another file, which is why the test that guards
+    // it (`comments_never_reach_the_mod_document`) works by writing a comment into a root that IS
+    // compiled and watching the assertion fire, not by re-reading this code.
+    //
+    // WHY THESE MUTATORS DO NOT VALIDATE. `title` / `tooltip` are stored VERBATIM, uncapped and
+    // untrimmed, for the `set_faction_briefing_marker` reason: this text reaches no consumer that
+    // could reject it, so there is nothing to normalise FOR, and destroying an authored value in the
+    // one place the author can still see it is the worse failure. Positions are not clamped either —
+    // an off-terrain annotation is legal (Eden lets you park a note in the sea) and, unlike a slot,
+    // it cannot desync a mod.
+    //
+    // The row is written as a whole opaque `Any::Map` (the composition idiom) and the field edits do
+    // a whole-row read-modify-write via [`read_comment_map`], so an edit AFTER a hydrate — where the
+    // row materialises as an opaque `Any::Map` rather than a tracked `YMap` — behaves identically to
+    // one on a freshly-placed comment.
+
+    /// T-651 (`PLACE-COMMENT-001`) — place a comment at `(x, z)` world metres with `title`
+    /// (ATTR-FIELD-CMT-TITLE) and `tooltip` (ATTR-FIELD-CMT-TOOLTIP). The id is the doc key.
+    /// Overwrites an existing row with the same id (upsert), like every other by-id add here.
+    pub fn add_comment(&self, id: &str, title: &str, tooltip: &str, x: f64, z: f64) {
+        let mut txn = self.begin();
+        self.comments.insert(
+            &mut txn,
+            id,
+            Any::Map(Arc::new(comment_row(id, title, tooltip, x, z))),
+        );
+    }
+
+    /// T-651 (ATTR-FIELD-CMT-TITLE) — retitle a comment. No-op on an unknown id.
+    pub fn set_comment_title(&self, id: &str, title: &str) {
+        self.set_comment_field(id, "title", Any::String(title.into()));
+    }
+
+    /// T-651 (ATTR-FIELD-CMT-TOOLTIP) — rewrite a comment's tooltip body. No-op on an unknown id.
+    pub fn set_comment_tooltip(&self, id: &str, tooltip: &str) {
+        self.set_comment_field(id, "tooltip", Any::String(tooltip.into()));
+    }
+
+    /// T-651 (ATTR-FIELD-CMT-POSITION) — move a comment to `(x, z)` world metres. This is the DRAG
+    /// commit: one transaction ⇒ one undo step, so a drag is one Ctrl+Z exactly like a slot move.
+    ///
+    /// Deliberately NOT gated by [`Self::slot_layer_is_locked`]. A locked layer is a TRANSFORM lock
+    /// on mission geometry — it exists so a finished ORBAT cannot be nudged. A comment is not
+    /// mission geometry and cannot desync anything by moving, so silently refusing to drag the note
+    /// that explains a locked layer would be an obstruction with no safety behind it. Stated here
+    /// because the omission is otherwise indistinguishable from an oversight.
+    pub fn set_comment_position(&self, id: &str, x: f64, z: f64) {
+        let mut pos: HashMap<String, Any> = HashMap::new();
+        pos.insert("x".to_string(), Any::Number(x));
+        pos.insert("z".to_string(), Any::Number(z));
+        self.set_comment_field(id, "position", Any::Map(Arc::new(pos)));
+    }
+
+    /// Shared whole-row read-modify-write for the three field edits (the composition idiom, so a
+    /// post-hydrate opaque row edits exactly like a freshly-placed one). No-op on an unknown id.
+    fn set_comment_field(&self, id: &str, key: &str, value: Any) {
+        let mut txn = self.begin();
+        let Some(mut row) = read_comment_map(&txn, &self.comments, id) else {
+            return;
+        };
+        row.insert(key.to_string(), value);
+        self.comments.insert(&mut txn, id, Any::Map(Arc::new(row)));
+    }
+
+    /// T-651 — COPY a comment: duplicate `src_id` as `new_id`, offset by `(dx, dz)` metres, keeping
+    /// title and tooltip verbatim. Returns `false` (writing nothing) when `src_id` is unknown.
+    ///
+    /// A comment's copy is its own mutator rather than a branch of the clipboard because the
+    /// clipboard lane (`editor_ops::copy_selection` → `paste_at_cursor`) is slot-shaped end to end:
+    /// it snapshots `slots_json` rows and replays them through `paste_slots`' parallel role / tag /
+    /// asset / stance / loadout arrays. A comment has none of those fields, so joining that lane
+    /// would mean widening the paste ABI for a row that shares no column with it. The duplicate is
+    /// one transaction ⇒ one undo step, which is the property that actually matters.
+    pub fn duplicate_comment(&self, src_id: &str, new_id: &str, dx: f64, dz: f64) -> bool {
+        let mut txn = self.begin();
+        let Some(row) = read_comment_map(&txn, &self.comments, src_id) else {
+            return false;
+        };
+        let (x, z) = comment_xz(&row);
+        let title = comment_str(&row, "title");
+        let tooltip = comment_str(&row, "tooltip");
+        self.comments.insert(
+            &mut txn,
+            new_id,
+            Any::Map(Arc::new(comment_row(
+                new_id,
+                &title,
+                &tooltip,
+                x + dx,
+                z + dz,
+            ))),
+        );
+        true
+    }
+
+    /// T-651 — delete a comment row.
+    pub fn remove_comment(&self, id: &str) {
+        let mut txn = self.begin();
+        self.comments.remove(&mut txn, id);
+        remove_id_from_all_layers(&mut txn, &self.editor_layers, id);
+    }
+
+    /// T-651 — file a comment into an Outliner folder. This is "comments support LAYERS", and it is
+    /// literally [`Self::move_slot_to_layer`]: that mutator only ever moves an ID between
+    /// `editorLayers[].entityIds` arrays and never reads the slots map, so a comment id files exactly
+    /// like a slot id and `build_outliner` resolves it the same way. Delegating rather than copying
+    /// is the point — one filing mechanism means a comment cannot end up half-filed by a future edit
+    /// to only one of two implementations.
+    pub fn move_comment_to_layer(&self, comment_id: &str, layer_id: &str) {
+        self.move_slot_to_layer(comment_id, layer_id);
+    }
+
+    /// T-651 — the `comments` root as a JSON object (`commentsById`), for the outliner's row read.
+    /// `small_maps_json` carries the same map; this is the narrow getter.
+    #[must_use]
+    pub fn comments_json(&self) -> String {
+        let txn = self.doc.transact();
+        let mut buf = String::new();
+        self.comments.to_json(&txn).to_json(&mut buf);
+        buf
+    }
+
+    /// T-651 — placed-comment count (cheap).
+    #[must_use]
+    pub fn comment_count(&self) -> usize {
+        self.comments.len(&self.doc.transact()) as usize
+    }
+
+    /// T-651 — **the new-mission template's comments.** Seeds exactly TWO annotations into an empty
+    /// doc, then no-ops forever (any existing comment ⇒ this is not a new mission). Returns the ids
+    /// it wrote, empty when it declined.
+    ///
+    /// Two, and the number is the evidence rather than a guess. FNF v4 deleted the 219-line
+    /// `configGuide.txt` and the whole 421-file template, and the onboarding that survived that
+    /// rewrite is literally two Comment entities seeded into `mission.sqm`. FNF v3 had 28 in-map
+    /// comments including a seven-paragraph tutorial; almost none of it survived. So the seed copies
+    /// what SURVIVED, not what once existed. **This is one community across two eras — WOG and OFCRA
+    /// have no comment equivalent at all** — which is the other reason to seed two and not twenty.
+    ///
+    /// Callers must bracket this with `set_origin_init(true)` so a template is not an undo step
+    /// (the boot/seed contract of [`Self::set_origin_init`]); the editor's boot does.
+    ///
+    /// Positions are terrain-centre-ish (Everon is 12.8 km square) and stacked 200 m apart so the
+    /// two rows are distinguishable the moment the outliner paints.
+    pub fn seed_template_comments(&self) -> Vec<String> {
+        if self.comment_count() > 0 {
+            return Vec::new();
+        }
+        let seeds: [(&str, &str, &str, f64, f64); 2] = [
+            (
+                "comment-template-1",
+                "Start here",
+                "Place your ORBAT first: right-click the map to add units, then drag them into \
+                 folders in the Outliner. Delete this note when you no longer need it — comments \
+                 are editor-only and never reach the compiled mission.",
+                6_400.0,
+                6_500.0,
+            ),
+            (
+                "comment-template-2",
+                "Mission notes",
+                "Use comments for anything the mission file cannot carry: intent, timings, \
+                 reminders for the next editor. Right-click empty ground and choose Place Comment \
+                 to add another.",
+                6_400.0,
+                6_300.0,
+            ),
+        ];
+        let mut ids = Vec::with_capacity(seeds.len());
+        for (id, title, tooltip, x, z) in seeds {
+            self.add_comment(id, title, tooltip, x, z);
+            ids.push(id.to_string());
+        }
+        ids
+    }
+
     /// T-650 (COMP-PLACE-001) — place a saved composition: stamp every captured entity onto the map
     /// at `(drop_x, drop_y)` as ONE undoable transaction. This is the multi-paste the ticket calls
     /// for — a `paste_at_cursor`-shaped drop, but writing slots AND vehicles AND objects, all in a
@@ -2479,6 +2739,7 @@ impl MissionDocCore {
             &self.zones,
             &self.compositions,
             &self.triggers,
+            &self.comments,
             &markers,
             &payload_extras,
             &entity_order,
@@ -2566,6 +2827,19 @@ impl MissionDocCore {
             payload.get("triggers"),
             &entity_order,
             "triggers",
+        );
+        // T-651 — top-level `comments[]` (promoted from `payloadExtras` by `compile_payload`) back
+        // into the `comments` root, ordered like every sibling. Listing `comments` in
+        // [`is_known_editor_payload_top_level`] is what keeps this off the parking path: the root map
+        // is the single source of truth and `small_maps_json` re-projects it. This load is the whole
+        // reason a placed annotation survives a reload — and it is EDITOR-side only, so nothing here
+        // moves the compiled mission (see the `comments` field's never-compiles note).
+        load_rows_ordered(
+            &mut txn,
+            &self.comments,
+            payload.get("comments"),
+            &entity_order,
+            "comments",
         );
         load_rows_ordered(
             &mut txn,
@@ -2802,26 +3076,9 @@ impl MissionDocCore {
         if self.editor_layers.get(&txn, target_layer_id).is_none() {
             return;
         }
-        let layer_ids: Vec<String> = self
-            .editor_layers
-            .iter(&txn)
-            .map(|(k, _)| k.to_string())
-            .collect();
-        for lid in &layer_ids {
-            if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, lid)
-                && let Some(Out::Any(Any::Array(arr))) = layer.get(&txn, "entityIds")
-                && arr
-                    .iter()
-                    .any(|a| matches!(a, Any::String(s) if s.as_ref() == slot_id))
-            {
-                let kept: Vec<Any> = arr
-                    .iter()
-                    .filter(|a| !matches!(a, Any::String(s) if s.as_ref() == slot_id))
-                    .cloned()
-                    .collect();
-                layer.insert(&mut txn, "entityIds", Any::Array(kept.into()));
-            }
-        }
+        // T-651 — the detach half is now [`remove_id_from_all_layers`], shared with
+        // [`Self::remove_comment`] so "unfile this id" has exactly one implementation.
+        remove_id_from_all_layers(&mut txn, &self.editor_layers, slot_id);
         if let Some(Out::YMap(target)) = self.editor_layers.get(&txn, target_layer_id)
             && let Some(Out::Any(Any::Array(arr))) = target.get(&txn, "entityIds")
         {
@@ -3105,6 +3362,10 @@ impl MissionDocCore {
             // T-650 — a saved composition is authored work that persists with the mission (the
             // zones-alone precedent): the conflict gate must not discard a doc that has one.
             || self.compositions.len(&txn) > 0
+            // T-651 — a placed comment is authored work too (the zones-alone precedent). A maker who
+            // opened a mission, wrote a seven-paragraph brief into an annotation and nothing else has
+            // unsaved work, and the conflict gate must not discard it as an empty document.
+            || self.comments.len(&txn) > 0
             || markers.len(&txn) > 0
     }
 
@@ -4794,6 +5055,14 @@ fn is_known_editor_payload_top_level(key: &str) -> bool {
             // then. Do NOT add `triggers` to compile.rs's list before it emits from `triggersById`,
             // or every authored trigger drops on save (the exact failure the zones note warns of).
             | "triggers"
+            // T-651 — hydrate loads top-level `comments[]` into the `comments` root. compile.rs's
+            // twin list does NOT list this key, and — unlike `zones` / `compositions` / `triggers` —
+            // it never will: `comments` is EDITOR-ONLY, so `compile_payload` must keep promoting the
+            // `payloadExtras.comments` projection forever. Adding `comments` to compile.rs's list
+            // without teaching it to author the key would drop every authored comment on save (the
+            // exact failure the zones note warns of); adding it WITH an author would be a request to
+            // compile an annotation, which is the one thing this collection must never do.
+            | "comments"
             | "markers"
             | "editor"
             | "orbat"
@@ -4995,6 +5264,92 @@ fn write_crew_map(txn: &mut TransactionMut, vehicle: &MapRef, crew: HashMap<Stri
 /// the nested `entities` array stays opaque). The metadata-edit mutators must read through this so a
 /// rename/recategorize after a reload modifies the loaded row instead of no-opping or wiping it.
 /// `None` when the id is absent.
+/// T-651 — build a comment row `{id, title, tooltip, position:{x,z}}`. One constructor so a place, a
+/// duplicate and a template seed cannot disagree about the shape.
+fn comment_row(id: &str, title: &str, tooltip: &str, x: f64, z: f64) -> HashMap<String, Any> {
+    let mut pos: HashMap<String, Any> = HashMap::new();
+    pos.insert("x".to_string(), Any::Number(x));
+    pos.insert("z".to_string(), Any::Number(z));
+    let mut row: HashMap<String, Any> = HashMap::new();
+    row.insert("id".to_string(), Any::String(id.into()));
+    row.insert("title".to_string(), Any::String(title.into()));
+    row.insert("tooltip".to_string(), Any::String(tooltip.into()));
+    row.insert("position".to_string(), Any::Map(Arc::new(pos)));
+    row
+}
+
+/// T-651 — read a comment row whole, tolerating BOTH the freshly-written opaque `Any::Map` and the
+/// tracked `YMap` a hydrate can materialise. The [`read_composition_map`] idiom, same reason.
+fn read_comment_map<T: ReadTxn>(
+    txn: &T,
+    comments: &MapRef,
+    id: &str,
+) -> Option<HashMap<String, Any>> {
+    match comments.get(txn, id) {
+        Some(Out::Any(Any::Map(m))) => Some((*m).clone()),
+        Some(Out::YMap(row)) => Some(
+            row.iter(txn)
+                .map(|(k, out)| match out {
+                    Out::Any(a) => (k.to_string(), a),
+                    other => (k.to_string(), other.to_json(txn)),
+                })
+                .collect(),
+        ),
+        _ => None,
+    }
+}
+
+/// T-651 — a comment row's `position.{x,z}`; `(0.0, 0.0)` when absent or non-numeric. `Any::BigInt`
+/// is accepted because [`json_str_to_any`] encodes integer-valued JSON numbers that way, so a
+/// hydrated `"x": 6400` arrives as a `BigInt` and a naive `Number`-only read would silently zero it.
+fn comment_xz(row: &HashMap<String, Any>) -> (f64, f64) {
+    let Some(Any::Map(pos)) = row.get("position") else {
+        return (0.0, 0.0);
+    };
+    let num = |k: &str| match pos.get(k) {
+        Some(Any::Number(n)) => *n,
+        #[allow(clippy::cast_precision_loss)] // ids/coords are far inside f64's exact-integer range
+        Some(Any::BigInt(i)) => *i as f64,
+        _ => 0.0,
+    };
+    (num("x"), num("z"))
+}
+
+/// T-651 — a comment row's string field, or `""`.
+fn comment_str(row: &HashMap<String, Any>, key: &str) -> String {
+    match row.get(key) {
+        Some(Any::String(s)) => s.to_string(),
+        _ => String::new(),
+    }
+}
+
+/// T-651 — detach `id` from every Outliner folder's `entityIds`. The "unfile" half shared by
+/// [`MissionDocCore::move_slot_to_layer`] (which then appends to the target) and
+/// [`MissionDocCore::remove_comment`] (which does not) — one implementation so a deleted entity
+/// cannot survive as a dangling id in one path and not the other. Only layers that actually list
+/// `id` are rewritten, so this is a no-op transaction-wise on an unfiled entity.
+fn remove_id_from_all_layers(txn: &mut TransactionMut, editor_layers: &MapRef, id: &str) {
+    let layer_ids: Vec<String> = editor_layers
+        .iter(txn)
+        .map(|(k, _)| k.to_string())
+        .collect();
+    for lid in &layer_ids {
+        if let Some(Out::YMap(layer)) = editor_layers.get(txn, lid)
+            && let Some(Out::Any(Any::Array(arr))) = layer.get(txn, "entityIds")
+            && arr
+                .iter()
+                .any(|a| matches!(a, Any::String(s) if s.as_ref() == id))
+        {
+            let kept: Vec<Any> = arr
+                .iter()
+                .filter(|a| !matches!(a, Any::String(s) if s.as_ref() == id))
+                .cloned()
+                .collect();
+            layer.insert(txn, "entityIds", Any::Array(kept.into()));
+        }
+    }
+}
+
 fn read_composition_map<T: ReadTxn>(
     txn: &T,
     compositions: &MapRef,
@@ -11063,6 +11418,332 @@ mod tests {
             deep.get("x").as_deref(),
             Some("mrg-4-x"),
             "mint skips every resident collision, not just seq 1"
+        );
+    }
+
+    /* ═══════════════════════ T-651 — editor comments / annotations ═══════════════════════ */
+
+    /// A doc with a complete editor graph (flatten needs one — a bare slot fails on `NoSlots`) plus
+    /// one comment carrying a token that could not occur by accident.
+    #[cfg(feature = "mission")]
+    fn doc_with_one_comment() -> (MissionDocCore, &'static str) {
+        const TOKEN: &str = "CMT-TOKEN-ZZQ";
+        let doc = two_slots_visible_layer();
+        doc.add_comment(
+            "c1",
+            TOKEN,
+            "tooltip body for CMT-TOKEN-ZZQ",
+            1_234.5,
+            6_789.5,
+        );
+        (doc, TOKEN)
+    }
+
+    /// **THE LOAD-BEARING RULE, FIRED.** A comment rides the EDITOR payload (or it would not survive
+    /// a Save) and is STRUCTURALLY ABSENT from the compiled MOD document, because
+    /// `mission::flatten::EditorPayload` declares no `comments` key and serde drops what it does not
+    /// declare.
+    ///
+    /// The rule is an ABSENCE, so a test that only feeds clean input proves nothing: the token would
+    /// be missing from the mod bytes even if the search were broken. This one therefore FIRES the
+    /// rule — it re-routes the same comment through `entities[]`, a root flatten DOES read, and
+    /// asserts the token then APPEARS in the mod bytes. That is what makes the absence assertion
+    /// above a real assertion rather than a tautology, and it is the exact failure a future edit
+    /// would cause by "helpfully" storing comments in a compiled collection.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn comments_never_reach_the_mod_document() {
+        let (doc, token) = doc_with_one_comment();
+
+        // 1. The EDITOR payload carries it — `commentsById` (canonical) and the `comments[]` root the
+        //    `payloadExtras` promotion puts there. Without this half the feature does not persist.
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let comments = payload["comments"]
+            .as_array()
+            .expect("comments[] at the editor-payload root");
+        assert_eq!(comments.len(), 1, "one authored comment: {payload}");
+        assert_eq!(comments[0]["title"], token);
+        assert_eq!(comments[0]["position"]["x"], 1_234.5);
+        assert_eq!(comments[0]["position"]["z"], 6_789.5);
+
+        // 2. …and it round-trips: a pristine doc hydrated from that payload has the comment back.
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&serde_json::to_string(&payload).expect("payload json"), "L");
+        let rows: serde_json::Value =
+            serde_json::from_str(&reloaded.comments_json()).expect("comments_json");
+        assert_eq!(rows["c1"]["title"], token, "comment reloaded: {rows}");
+        assert_eq!(reloaded.comment_count(), 1);
+
+        // 3. The MOD document must not contain it — anywhere, in any field.
+        let meta = br#"{"id":"11112222333344445555666677778888","title":"t","author":"a",
+            "terrain":"everon","customTerrainName":"","maxPlayers":8,"timeOfDay":"05:30",
+            "weatherPreset":"clear"}"#;
+        let payload_bytes = serde_json::to_vec(&payload).expect("payload bytes");
+        let mod_text = String::from_utf8(
+            crate::mission::flatten::flatten_mod_document_json(meta, &payload_bytes)
+                .expect("flatten compiles"),
+        )
+        .expect("utf-8");
+        assert!(
+            !mod_text.contains(token) && !mod_text.contains("comment"),
+            "a comment reached the compiled mission: {mod_text}"
+        );
+
+        // 4. ── FIRE THE RULE. Same comment, routed instead through `entities[]` — a root
+        //    `EditorPayload` DOES declare. If this does not turn the mod bytes dirty then step 3's
+        //    assertion cannot detect a leak and the whole guard is decorative.
+        let mut leaked = payload.clone();
+        leaked["entities"] = serde_json::json!([{
+            "id": "c1",
+            "alias": token,
+            "resourceName": "",
+            "position": { "x": 1_234.5, "z": 6_789.5 },
+            "faction": "",
+        }]);
+        let leaked_text = String::from_utf8(
+            crate::mission::flatten::flatten_mod_document_json(
+                meta,
+                &serde_json::to_vec(&leaked).expect("leaked bytes"),
+            )
+            .expect("leaked flatten compiles"),
+        )
+        .expect("utf-8");
+        assert!(
+            leaked_text.contains(token),
+            "the leak probe did not reach the mod document, so step 3 proves nothing: {leaked_text}"
+        );
+
+        // 5. …and restore: with the comment back in its own root ONLY, the wire is clean again.
+        assert!(!mod_text.contains(token));
+    }
+
+    /// The three ATTR-FIELD-CMT-* fields are authored, editable and survive a hydrate — including an
+    /// edit made AFTER the hydrate, when the row is an opaque `Any::Map` and not a tracked `YMap`
+    /// (the whole point of `read_comment_map`).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn comment_title_tooltip_position_edit_before_and_after_hydrate() {
+        let doc = two_slots_visible_layer();
+        doc.add_comment("c1", "t0", "b0", 10.0, 20.0);
+        doc.set_comment_title("c1", "t1");
+        doc.set_comment_tooltip("c1", "b1");
+        doc.set_comment_position("c1", 30.0, 40.0);
+        let rows: serde_json::Value =
+            serde_json::from_str(&doc.comments_json()).expect("comments_json");
+        assert_eq!(rows["c1"]["title"], "t1");
+        assert_eq!(rows["c1"]["tooltip"], "b1");
+        assert_eq!(rows["c1"]["position"]["x"], 30.0);
+        assert_eq!(rows["c1"]["position"]["z"], 40.0);
+
+        // Reload, then edit the POST-HYDRATE row — the shape a naive tracked-YMap write would drop.
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&serde_json::to_string(&payload).expect("json"), "L");
+        reloaded.set_comment_title("c1", "t2");
+        reloaded.set_comment_position("c1", 50.0, 60.0);
+        let after: serde_json::Value =
+            serde_json::from_str(&reloaded.comments_json()).expect("comments_json");
+        assert_eq!(after["c1"]["title"], "t2");
+        assert_eq!(
+            after["c1"]["tooltip"], "b1",
+            "the untouched field survives a whole-row rewrite: {after}"
+        );
+        assert_eq!(after["c1"]["position"]["x"], 50.0);
+        assert_eq!(after["c1"]["position"]["z"], 60.0);
+
+        // Unknown ids are no-ops, not panics or ghost rows.
+        reloaded.set_comment_title("nope", "x");
+        assert_eq!(reloaded.comment_count(), 1);
+    }
+
+    /// COPY: `duplicate_comment` clones title + tooltip and offsets the position, in ONE undo step;
+    /// an unknown source writes nothing. Also pins the `Any::BigInt` hazard — a hydrated
+    /// integer-valued coordinate must offset from its real value, not from a silently-zeroed one.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn duplicate_comment_copies_fields_and_offsets_even_after_a_hydrate() {
+        let doc = two_slots_visible_layer();
+        // Integer-valued coords on purpose: `json_str_to_any` re-encodes these as `Any::BigInt`.
+        doc.add_comment("c1", "title", "body", 6_400.0, 6_400.0);
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&serde_json::to_string(&payload).expect("json"), "L");
+
+        assert!(reloaded.duplicate_comment("c1", "c2", 25.0, -25.0));
+        let rows: serde_json::Value =
+            serde_json::from_str(&reloaded.comments_json()).expect("comments_json");
+        assert_eq!(rows["c2"]["title"], "title");
+        assert_eq!(rows["c2"]["tooltip"], "body");
+        assert_eq!(
+            rows["c2"]["position"]["x"], 6_425.0,
+            "a BigInt-encoded coordinate must offset from 6400, not from 0: {rows}"
+        );
+        assert_eq!(rows["c2"]["position"]["z"], 6_375.0);
+
+        assert!(
+            !reloaded.duplicate_comment("ghost", "c3", 0.0, 0.0),
+            "an unknown source id writes nothing"
+        );
+        assert_eq!(reloaded.comment_count(), 2);
+    }
+
+    /// LAYERS + one-undo-step: filing a comment uses the SAME `entityIds` mechanism a slot does, a
+    /// delete unfiles it (no dangling id), and each gesture is exactly one undo step.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn comments_file_into_layers_and_each_gesture_is_one_undo_step() {
+        let mut doc = two_slots_visible_layer();
+        doc.add_editor_layer("L2", "Notes", None);
+        let depth0 = doc.undo_depth();
+
+        doc.add_comment("c1", "t", "b", 1.0, 2.0);
+        assert_eq!(doc.undo_depth(), depth0 + 1, "a place is one undo step");
+        doc.move_comment_to_layer("c1", "L2");
+        assert_eq!(doc.undo_depth(), depth0 + 2, "a refile is one undo step");
+
+        let layers: serde_json::Value =
+            serde_json::from_str(&doc.small_maps_json()).expect("small_maps_json");
+        let ents = layers["editorLayersById"]["L2"]["entityIds"]
+            .as_array()
+            .expect("entityIds");
+        assert!(
+            ents.iter().any(|v| v == "c1"),
+            "the comment files exactly like a slot: {ents:?}"
+        );
+
+        // A delete removes the row AND unfiles it — no dangling id left in the folder.
+        doc.remove_comment("c1");
+        assert_eq!(doc.comment_count(), 0);
+        let after: serde_json::Value =
+            serde_json::from_str(&doc.small_maps_json()).expect("small_maps_json");
+        let ents_after = after["editorLayersById"]["L2"]["entityIds"]
+            .as_array()
+            .expect("entityIds");
+        assert!(
+            !ents_after.iter().any(|v| v == "c1"),
+            "a deleted comment must not survive as a dangling folder id: {ents_after:?}"
+        );
+
+        // …and it is undoable: editor-only is not untracked.
+        assert!(doc.undo());
+        assert_eq!(doc.comment_count(), 1, "Ctrl+Z brings the annotation back");
+    }
+
+    /// THE NEW-MISSION TEMPLATE: an empty doc seeds exactly TWO comments (what survived FNF v4's
+    /// rewrite — one community across two eras, not a four-way convergence), and the seed declines
+    /// on any doc that already has one, so it can never duplicate itself on a reload.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn new_mission_template_seeds_exactly_two_comments_and_is_idempotent() {
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        let ids = doc.seed_template_comments();
+        doc.set_origin_init(false);
+        assert_eq!(ids.len(), 2, "the surviving FNF v4 onboarding is two notes");
+        assert_eq!(doc.comment_count(), 2);
+        let rows: serde_json::Value =
+            serde_json::from_str(&doc.comments_json()).expect("comments_json");
+        for id in &ids {
+            assert!(
+                rows[id.as_str()]["title"]
+                    .as_str()
+                    .is_some_and(|s| !s.is_empty()),
+                "a seeded note has a title: {rows}"
+            );
+            assert!(
+                rows[id.as_str()]["tooltip"]
+                    .as_str()
+                    .is_some_and(|s| !s.is_empty()),
+                "a seeded note has a body: {rows}"
+            );
+        }
+        // Seeded under INIT ⇒ not an undo step (a template is not a user gesture).
+        assert_eq!(
+            doc.undo_depth(),
+            0,
+            "the template is never on the undo stack"
+        );
+
+        // Idempotent: a doc that already carries comments is not a new mission.
+        assert!(doc.seed_template_comments().is_empty());
+        assert_eq!(doc.comment_count(), 2);
+    }
+
+    /// The seeded template survives compile → hydrate (so a new mission that is saved untouched
+    /// reopens with its notes) and still reaches no mod document.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn seeded_template_comments_round_trip_and_stay_off_the_mod_wire() {
+        let doc = two_slots_visible_layer();
+        doc.set_origin_init(true);
+        doc.seed_template_comments();
+        doc.set_origin_init(false);
+
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&serde_json::to_string(&payload).expect("json"), "L");
+        assert_eq!(reloaded.comment_count(), 2, "template survives a save/load");
+
+        let meta = br#"{"id":"11112222333344445555666677778888","title":"t","author":"a",
+            "terrain":"everon","customTerrainName":"","maxPlayers":8,"timeOfDay":"05:30",
+            "weatherPreset":"clear"}"#;
+        let mod_text = String::from_utf8(
+            crate::mission::flatten::flatten_mod_document_json(
+                meta,
+                &serde_json::to_vec(&payload).expect("bytes"),
+            )
+            .expect("flatten compiles"),
+        )
+        .expect("utf-8");
+        assert!(
+            !mod_text.contains("Start here") && !mod_text.contains("Mission notes"),
+            "the template's own notes must not compile either: {mod_text}"
+        );
+    }
+
+    /// Deleting every comment CLEARS the wire rather than re-emitting the array a reload parked —
+    /// the zones absence rule, which is the failure mode a "non-empty only" projection would have.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn deleting_every_comment_clears_the_payload_array() {
+        let doc = two_slots_visible_layer();
+        doc.add_comment("c1", "t", "b", 1.0, 2.0);
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&serde_json::to_string(&payload).expect("json"), "L");
+        assert_eq!(reloaded.comment_count(), 1);
+
+        reloaded.remove_comment("c1");
+        let after = crate::mission::compile::compile_payload(
+            &reloaded.small_maps_json(),
+            &reloaded.slots_json(),
+            false,
+        );
+        assert!(
+            after
+                .get("comments")
+                .is_none_or(|c| c.as_array().is_some_and(Vec::is_empty)),
+            "a deleted comment must not be re-emitted from the parked copy: {after}"
         );
     }
 }
