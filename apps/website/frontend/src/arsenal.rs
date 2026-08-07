@@ -775,13 +775,11 @@ pub fn try_import(
 
     // The rule pass, BEFORE anything is applied. Same three sources the verdict badge counts,
     // minus the one T-504 proved must never block.
-    let mut refusals = validate_loadout(&picks, feed.ready_graph(), feed.status);
-    refusals.extend(attachment_errors(&picks, feed));
-    refusals.extend(rules::cargo_capacity_errors(
-        &picks,
-        &cargo,
-        &index_by_name(items),
-    ));
+    //
+    // T-699 — the three checks moved BODILY into `loadout_rule_refusals` and this line now calls it,
+    // because T-699's Apply needs the identical pass and "identical" has to be structural. Nothing
+    // about this gate's behaviour changed; what changed is that there is now exactly one of it.
+    let refusals = loadout_rule_refusals(&picks, &cargo, items, feed);
     if !refusals.is_empty() {
         return Err(refusals);
     }
@@ -830,6 +828,335 @@ fn import_summary(name: &str, doc: &ImportedLoadout, catalog_modpack: &str) -> S
         line.push_str(&format!(
             " Note: this file was authored against modpack {}, and this mission's catalog is {} — check the picks resolved to what you expected.",
             doc.modpack_id, catalog_modpack
+        ));
+    }
+    line
+}
+
+/* ═════ T-699 (3DEN-LOAD-001 / -002 / -010) — the loadout BUFFER: Copy · Apply · Remove Everything ═════ */
+
+/// **A buffer, not an inheritance hierarchy — and that is the whole design.**
+///
+/// T-687 proposed OFCRA-style loadout INHERITANCE (parent kits, defaults-by-role, children that
+/// *resolve* against a template) and the operator cancelled it outright; it is filed REJECTED, not
+/// deferred, precisely so a later synthesis pass cannot revive it without asking again. T-699 is
+/// the practical half that survives, and the difference is structural rather than a matter of
+/// taste: **nothing in this module stores a relationship.** `editor_ops::copy_loadouts_from_selection`
+/// snapshots bytes that already exist on the sources, [`plan_apply`] writes them onto other entities, and
+/// from that instant the two documents are strangers — editing the source later changes nothing,
+/// because no target holds a reference to it. There is no parent, no template, no default-by-role
+/// and no resolution step, and the [`BufferedLoadout`] type below is the evidence: a source id kept
+/// for the receipt, and a `String` of JSON. Add a field pointing the other way and you have built
+/// the cancelled ticket.
+///
+/// **Three verbs, and the exclusions are as load-bearing as the inclusions.** Copy, Apply and
+/// Remove Everything ship. The nine per-category strip variants that 3den E7 also lists (remove
+/// NVGs / vests / goggles / headgear / weapons / …) are marked `maybe` upstream and are deliberately
+/// **not** here: each would be a second, narrower writer over the same document field, and nine of
+/// them is nine chances for `wear`-key vocabulary to drift out of step with [`ROWS`]. Remove
+/// Everything needs no vocabulary at all — see [`stripped_loadout`].
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BufferedLoadout {
+    /// The entity the bytes were copied off. Reported in the receipt and in refusal messages so a
+    /// rejected Apply names *which* buffered loadout is unusable; it is never resolved or followed.
+    pub source_id: String,
+    /// The source's `SlotLoadoutV2` JSON, verbatim. `None` when the source carried no `loadout` key
+    /// at all — a **bare** entity, which is a legitimate thing to buffer and to apply (it is how you
+    /// say "make these look like that empty one"), and which is not the same value as
+    /// [`stripped_loadout`]; see there for why the two differ.
+    pub loadout_json: Option<String>,
+}
+
+/// One document write an accepted plan wants to make: exactly one `editor_ops::set_loadout`, which
+/// is exactly one core transaction, which is exactly one undo step. The plan is a `Vec` of these
+/// **because that is the honest shape of the operation** — see [`commit_writes`] for the undo
+/// arithmetic and why it is reported rather than papered over.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LoadoutWrite {
+    pub target_id: String,
+    /// Which buffered entity this loadout was drawn from; `None` for Remove Everything, which has
+    /// no source.
+    pub source_id: Option<String>,
+    pub loadout_json: Option<String>,
+}
+
+/// The odd 64-bit constant SplitMix64 advances its state by (the odd-gamma Weyl sequence from
+/// Steele/Lea/Flood 2014). Used both as the per-Apply seed step and to decorrelate the ordinal.
+const APPLY_SEED_GAMMA: u64 = 0x9E37_79B9_7F4A_7C15;
+
+/// SplitMix64's finalizer — an avalanche mix, not a source of entropy. It exists so that seeds and
+/// ordinals that differ by 1 produce draws that differ everywhere, which is what makes
+/// [`buffer_draw`] behave like a fair die rather than like a counter.
+const fn splitmix64(seed: u64) -> u64 {
+    let mut z = seed;
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    z ^ (z >> 31)
+}
+
+/// **WHAT "RANDOM" MEANS HERE**, because the ticket calls the randomisation the novel part and a
+/// hand-wave would make it unreviewable. Apply draws one buffered loadout **per target entity**, and
+/// the draw is:
+///
+/// * **Uniform** over the buffer. The mix is scaled by a widening multiply
+///   (`(r × len) >> 64`) rather than `r % len`, so the buckets are equal-sized by construction
+///   instead of equal-to-within-a-modulo-bias.
+/// * **Independent per entity.** `ordinal` is the target's index in the selection, mixed into the
+///   stream separately, so ten entities get ten draws — not one draw applied ten times. Two targets
+///   landing on the same source is a legitimate outcome of a fair die, not a bug.
+/// * **Deterministic given `(seed, ordinal, len)`, and therefore reproducible.** This is the half
+///   that makes the feature reasonable to reason about: an assignment is a pure function of a
+///   number, so a test can assert an exact distribution, and a bug report that says "the third
+///   Apply of the session" replays exactly. `editor_ops` advances the session seed by
+///   [`APPLY_SEED_GAMMA`] once per Apply, so pressing the button twice re-rolls (which is what an
+///   author means by random) while the *sequence* stays fixed (which is what a reviewer means by
+///   reproducible). Deliberately NO wall clock and no JS RNG: a clock would make the behaviour
+///   untestable natively and irreproducible in a bug report, and would buy nothing an author can
+///   perceive.
+/// * **Degenerate at `len == 1`.** One buffered loadout means every target gets it, with no draw at
+///   all — the single-source Copy→Apply case is plain deterministic behaviour, and randomness must
+///   not be able to make it surprising.
+#[must_use]
+pub fn buffer_draw(seed: u64, ordinal: u64, len: usize) -> usize {
+    if len <= 1 {
+        return 0;
+    }
+    let r = splitmix64(seed ^ splitmix64(ordinal.wrapping_add(APPLY_SEED_GAMMA)));
+    let wide = u128::from(r) * u128::try_from(len).unwrap_or(1);
+    usize::try_from(wide >> 64).unwrap_or(0)
+}
+
+/// **The T-686 gate, extracted — not a second one.**
+///
+/// Wave 112's `try_import` established the rule for putting an OUTSIDE loadout onto an entity: run
+/// the compat pass, the stranded-attachment pass and the cargo-capacity pass *before* anything is
+/// committed, and refuse the whole document rather than half-applying it. Apply has exactly the same
+/// hazard from the other direction — a buffered loadout written onto an entity that cannot carry it
+/// is the same silent data bug — so it runs exactly the same three checks, and the way to guarantee
+/// "exactly the same" is for there to be one function. [`try_import`] now calls this too; if a later
+/// slice adds a fourth check here, both doors get it or neither does.
+///
+/// **[`rules::cargo_unworn_container_errors`] is deliberately absent, matching T-686's T-504 call,
+/// and the argument is *stronger* here than it was for import.** T-504's reason was that this module
+/// cannot see the slot's kit prefab, whose own clothing is what the mod resolves a container
+/// against, so a refusal would block loadouts that deliver perfectly. Apply adds a second reason on
+/// top: the check is a property of the *target* entity's character, not of the loadout bytes, so
+/// wiring it in would make a buffered loadout acceptable for one selection and refused for another —
+/// and, because Apply picks its source at random, refused *intermittently* for the same selection.
+/// A gate that flips on a die roll is worse than no gate. It stays a warning in [`loadout_faults`],
+/// which the author sees on the entity after the Apply lands.
+fn loadout_rule_refusals(
+    picks: &HashMap<String, String>,
+    cargo: &[rules::CargoRow],
+    items: &[RegistryItem],
+    feed: &CompatFeed,
+) -> Vec<rules::RowError> {
+    let mut refusals = validate_loadout(picks, feed.ready_graph(), feed.status);
+    refusals.extend(attachment_errors(picks, feed));
+    refusals.extend(rules::cargo_capacity_errors(
+        picks,
+        cargo,
+        &index_by_name(items),
+    ));
+    refusals
+}
+
+/// Run [`loadout_rule_refusals`] over **every** buffered loadout, before a single die is rolled.
+///
+/// This ordering is the point. Validating only the loadouts that happen to be *drawn* would make
+/// the gate's verdict depend on the draw: the same buffer over the same selection would be accepted
+/// on one press and refused on the next, and a broken loadout could sit in the buffer indefinitely
+/// waiting to ambush an author on the press where it finally came up. Validating the buffer makes
+/// the answer a property of what the author copied, which is a thing they can act on. Each refusal
+/// is prefixed with the source entity, because "which of the four things I copied is bad" is the
+/// first question a refusal has to answer.
+#[must_use]
+pub fn buffer_refusals(
+    buffer: &[BufferedLoadout],
+    items: &[RegistryItem],
+    feed: &CompatFeed,
+) -> Vec<rules::RowError> {
+    let mut out = Vec::new();
+    for entry in buffer {
+        let picks = loadout_to_picks(entry.loadout_json.as_deref());
+        let (cargo, _present) = rules::cargo_from_loadout(entry.loadout_json.as_deref());
+        out.extend(
+            loadout_rule_refusals(&picks, &cargo, items, feed)
+                .into_iter()
+                .map(|e| rules::RowError {
+                    key: e.key,
+                    message: format!("Buffered loadout from {} — {}", entry.source_id, e.message),
+                }),
+        );
+    }
+    out
+}
+
+/// **Apply.** Plan the writes for `targets`, drawing one buffered loadout per target. `Ok` is the
+/// exact set of writes to commit; on `Err` there are **no writes at all**, only the refusals — the
+/// same all-or-nothing contract [`try_import`] has, for the same reason: a partly-applied Apply
+/// leaves a selection in a state the author neither authored nor can name.
+///
+/// An empty selection or an empty buffer is `Ok(no writes)`, not an error. Neither is a fault; there
+/// is simply nothing to do, and a refusal list would be a lie about a state the author can see.
+///
+/// The buffered bytes are copied through **verbatim**. They are already a `SlotLoadoutV2` document
+/// that this editor wrote, so re-deriving one through [`picks_to_loadout`] would be a lossy
+/// round-trip for nothing: it would drop any key this module does not model (and the `cargo` key's
+/// present-but-empty state, the T-068.15.2 anti-reseed marker, is exactly such a subtlety).
+pub fn plan_apply(
+    targets: &[String],
+    buffer: &[BufferedLoadout],
+    seed: u64,
+    items: &[RegistryItem],
+    feed: &CompatFeed,
+) -> Result<Vec<LoadoutWrite>, Vec<rules::RowError>> {
+    if targets.is_empty() || buffer.is_empty() {
+        return Ok(Vec::new());
+    }
+    let refusals = buffer_refusals(buffer, items, feed);
+    if !refusals.is_empty() {
+        return Err(refusals);
+    }
+    let mut writes = Vec::with_capacity(targets.len());
+    for (ordinal, target) in targets.iter().enumerate() {
+        let src = &buffer[buffer_draw(seed, ordinal as u64, buffer.len())];
+        writes.push(LoadoutWrite {
+            target_id: target.clone(),
+            source_id: Some(src.source_id.clone()),
+            loadout_json: src.loadout_json.clone(),
+        });
+    }
+    Ok(writes)
+}
+
+/// **Remove Everything** — the canonical stripped `SlotLoadoutV2`: every wear key null, no weapons,
+/// and an explicitly **empty `cargo` array**.
+///
+/// The `cargo: []` is the load-bearing part and it is why this is not simply `set_loadout(None)`.
+/// Clearing the doc field entirely would leave the slot with **no `cargo` key**, and no `cargo` key
+/// is precisely the T-068.15.2 condition under which [`rules::seed_cargo`] re-seeds the character's
+/// engine defaults — so the next time anyone opened the Arsenal on that entity, the magazines and
+/// medical the author just removed would quietly come back. A strip verb that undoes itself on the
+/// next panel open is not a strip verb. Emitting the key states "the author cleared this", which is
+/// the marker the seed rule already respects, so Remove Everything sticks.
+///
+/// The wear vocabulary comes from [`ROWS`] rather than a second hand-written key list, so this
+/// document and [`picks_to_loadout`]'s cannot drift apart.
+#[must_use]
+pub fn stripped_loadout() -> String {
+    let mut wear = serde_json::Map::new();
+    for row in ROWS.iter().filter(|r| r.weapon.is_none()) {
+        wear.insert(row.key.to_string(), serde_json::Value::Null);
+    }
+    serde_json::json!({
+        "version": 2,
+        "wear": wear,
+        "weapons": [],
+        "cargo": [],
+    })
+    .to_string()
+}
+
+/// Plan a Remove Everything over `targets`. No gate: the stripped document is the one document that
+/// cannot fail [`loadout_rule_refusals`] — no picks means no compat edge to violate, no attachment
+/// to strand and no cargo to overflow — so running the rules over it would be a check whose answer
+/// is a constant. (Pinned as behaviour by `tests::t699::the_stripped_document_passes_every_rule`,
+/// not asserted in a comment, because "constant" is a claim about the rules module and the rules
+/// module can change.)
+#[must_use]
+pub fn plan_remove(targets: &[String]) -> Vec<LoadoutWrite> {
+    targets
+        .iter()
+        .map(|id| LoadoutWrite {
+            target_id: id.clone(),
+            source_id: None,
+            loadout_json: Some(stripped_loadout()),
+        })
+        .collect()
+}
+
+/// Push a plan into the document, and **return how many writes actually reached it**.
+///
+/// ⚠️ **THE UNDO ARITHMETIC, STATED HONESTLY (T-732).** Every `commit` here is one
+/// `editor_ops::set_loadout` → one `MissionDocCore::update_slot_loadout` → one Yrs transaction, and
+/// the store runs with `capture_timeout_millis = 0`, which makes **every transaction its own undo
+/// step**. So an Apply over N entities costs **N** Ctrl+Z presses, not one. That is not a choice
+/// this slice made; it is the absence of an atomic multi-entity loadout write in the core, filed as
+/// **T-732** and hit before by wave 111's T-645 and by the position lane's `commit_positions`. The
+/// core *does* have per-entity one-txn batches where somebody built one — `set_slots_editor_hidden`
+/// is exactly that shape for `editorHidden` — but there is none for `loadout`, and `store.rs` is not
+/// this slice's to change. T-686 got one undo step for free because an import is one entity; Apply
+/// is not, and pretending otherwise would be the lie this comment exists to refuse.
+///
+/// What this function does about it: it **counts what the sink actually took**, and
+/// [`apply_receipt`] reports that number to the author rather than the number that was planned. A
+/// commit path that silently dropped writes would produce a receipt that says so, instead of a
+/// receipt that says "applied 6" over 4 landed documents. `commit` is a parameter and not a direct
+/// `set_loadout` call for the same reason: it makes the arithmetic testable natively, where
+/// `editor_ops` (a wasm32-only module) cannot be reached at all. This is also the single seam a
+/// future T-732 fix touches — when a batch API exists, this loop becomes one call, the returned
+/// count becomes 1, and the receipt starts telling the truth about *that* without another edit.
+pub fn commit_writes(
+    writes: &[LoadoutWrite],
+    mut commit: impl FnMut(&str, Option<String>),
+) -> usize {
+    let mut done = 0usize;
+    for w in writes {
+        commit(&w.target_id, w.loadout_json.clone());
+        done += 1;
+    }
+    done
+}
+
+/// The Copy receipt. Counts the bare sources out loud: buffering an entity with no loadout is legal
+/// and useful, but an author who selected forty soldiers and copied forty bare kits should be told
+/// before they Apply, not after.
+#[must_use]
+pub fn copy_receipt(buffer: &[BufferedLoadout]) -> String {
+    let bare = buffer.iter().filter(|b| b.loadout_json.is_none()).count();
+    let mut line = format!(
+        "Copied {} loadout(s) to the buffer. Apply writes one of them to each selected entity, picked at random.",
+        buffer.len()
+    );
+    if bare > 0 {
+        line.push_str(&format!(
+            " {bare} of them carry no loadout at all — applying one of those leaves that entity bare."
+        ));
+    }
+    line
+}
+
+/// The Apply receipt — built from `commits` (what the document took), never from the plan length.
+/// It states the undo cost in the same breath, because N-presses-to-undo is a thing the author is
+/// about to need and the only place they can learn it is here.
+#[must_use]
+pub fn apply_receipt(planned: usize, buffer_len: usize, commits: usize) -> String {
+    let mut line = format!(
+        "Applied {commits} loadout(s), drawn at random from a {buffer_len}-loadout buffer. \
+         That is {commits} undo step(s) — one per entity, because there is no atomic multi-entity \
+         loadout write (T-732), so Ctrl+Z {commits} times to put it back."
+    );
+    if commits != planned {
+        line.push_str(&format!(
+            " WARNING: {planned} write(s) were planned and {commits} reached the document."
+        ));
+    }
+    line
+}
+
+/// The Remove Everything receipt. Says the anti-reseed half out loud — an author who strips cargo
+/// needs to know it will not silently return, and that promise is the whole reason
+/// [`stripped_loadout`] emits `cargo: []`.
+#[must_use]
+pub fn remove_receipt(planned: usize, commits: usize) -> String {
+    let mut line = format!(
+        "Stripped {commits} entity(ies) — every wear row, weapon and cargo row cleared, and cargo \
+         stays cleared (no default re-seed). That is {commits} undo step(s), one per entity (T-732)."
+    );
+    if commits != planned {
+        line.push_str(&format!(
+            " WARNING: {planned} write(s) were planned and {commits} reached the document."
         ));
     }
     line
@@ -904,6 +1231,16 @@ pub fn ArsenalTab(
     // quiet line, a refusal is a list the author has to read.
     let import_status = RwSignal::new(String::new());
     let import_refusals = RwSignal::new(Vec::<String>::new());
+
+    // T-699 — the loadout buffer's outcome, kept in its own pair of signals for the same reason the
+    // import's is: a receipt is a quiet line and a refusal is a list, they render differently, and
+    // an Apply refusal must not be mistaken for something the import did.
+    let buffer_status = RwSignal::new(String::new());
+    let buffer_refusals = RwSignal::new(Vec::<String>::new());
+    // The buffer itself lives in an `editor_ops` thread_local (it outlives this modal — you copy in
+    // one Arsenal and apply from another), so nothing about it is reactive. This counter is what the
+    // Apply affordance re-reads it on.
+    let buffer_epoch = RwSignal::new(0u32);
 
     // T-172 B10 — full screen-04 Smart Forge layout (operator-confirmed scope): region icon
     // rail · filtered item list · 3D doll (DollEngine; SVG paper-doll only as the create-error
@@ -1049,6 +1386,97 @@ pub fn ArsenalTab(
                             // No DOM, no file picker, and no hosted document to import into.
                             let _ = (apply_import, import_status, import_refusals, items);
                         }
+                    };
+                    // T-699 — Apply and Remove Everything write the whole SELECTION, and this modal
+                    // is open over one member of it, so this panel's signals are stale the instant
+                    // they land. Mirror the doc back into them. Deliberately NOT through `persist`:
+                    // these are signal writes only, and persisting here would open an N+1th
+                    // transaction that re-commits what was just committed — one extra Ctrl+Z press
+                    // standing between the author and the state they had.
+                    let resync_open_slot = move || {
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            let lo = crate::editor_ops::read_loadout(&id.get_value());
+                            picks.set(loadout_to_picks(lo.as_deref()));
+                            let (rows, present) = rules::cargo_from_loadout(lo.as_deref());
+                            cargo.set(rows);
+                            cargo_present.set(present);
+                        }
+                    };
+                    // T-699 Copy (3DEN-LOAD-001) — buffers EVERY selected entity's loadout.
+                    let copy_loadouts = move |_| {
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            let n = crate::editor_ops::copy_loadouts_from_selection();
+                            buffer_refusals.set(Vec::new());
+                            buffer_status.set(if n == 0 {
+                                "Nothing to copy — select the soldiers to copy from first. The buffer is unchanged.".to_string()
+                            } else {
+                                copy_receipt(&crate::editor_ops::loadout_buffer())
+                            });
+                            buffer_epoch.update(|e| *e = e.wrapping_add(1));
+                        }
+                        #[cfg(not(target_arch = "wasm32"))]
+                        let _ = (buffer_status, buffer_refusals, buffer_epoch);
+                    };
+                    // T-699 Apply (3DEN-LOAD-002) — one buffered loadout per selected entity, drawn
+                    // at random. The gate is `plan_apply` (T-686's, over the whole buffer); a
+                    // refusal writes nothing, and the receipt states the real undo cost (T-732).
+                    let apply_loadouts = move |_| {
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            let its = items.get_value();
+                            let buffered = crate::editor_ops::loadout_buffer_len();
+                            match crate::editor_ops::apply_loadout_buffer_to_selection(
+                                &its,
+                                &compat.get_untracked(),
+                            ) {
+                                Ok((0, _)) => {
+                                    buffer_refusals.set(Vec::new());
+                                    buffer_status.set(
+                                        "Nothing was applied — copy at least one loadout, then select the entities to write it to.".to_string(),
+                                    );
+                                }
+                                Ok((planned, commits)) => {
+                                    resync_open_slot();
+                                    buffer_refusals.set(Vec::new());
+                                    buffer_status
+                                        .set(apply_receipt(planned, buffered, commits));
+                                }
+                                Err(refusals) => {
+                                    // Same refusal contract as the import, said the same way: a
+                                    // buffer that does not validate applies NOTHING.
+                                    buffer_status.set(String::new());
+                                    buffer_refusals.set(
+                                        std::iter::once(
+                                            "Nothing was applied — every selected loadout is unchanged.".to_string(),
+                                        )
+                                        .chain(refusals.into_iter().map(|e| e.message))
+                                        .collect(),
+                                    );
+                                }
+                            }
+                        }
+                        #[cfg(not(target_arch = "wasm32"))]
+                        let _ = (buffer_status, buffer_refusals, resync_open_slot, items, compat);
+                    };
+                    // T-699 Remove Everything (3DEN-LOAD-010) — the one strip verb. The nine
+                    // per-category variants are `maybe` upstream and deliberately absent.
+                    let strip_loadouts = move |_| {
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            let (planned, commits) =
+                                crate::editor_ops::remove_all_loadouts_from_selection();
+                            resync_open_slot();
+                            buffer_refusals.set(Vec::new());
+                            buffer_status.set(if planned == 0 {
+                                "Nothing to strip — select one or more soldiers first.".to_string()
+                            } else {
+                                remove_receipt(planned, commits)
+                            });
+                        }
+                        #[cfg(not(target_arch = "wasm32"))]
+                        let _ = (buffer_status, buffer_refusals, resync_open_slot);
                     };
                     view! {
                         // Top badges: compat status (left) + live weight (right).
@@ -1409,6 +1837,114 @@ pub fn ArsenalTab(
                                 </button>
                             </div>
                         </div>
+                        // T-699 — the loadout buffer. Three verbs over the live SELECTION, not over
+                        // the slot this modal was opened on: Copy buffers every selected entity,
+                        // Apply writes one buffered loadout to each selected entity (drawn at
+                        // random), Remove Everything strips them. A buffer, NOT inheritance —
+                        // T-687's parent/child kits were cancelled, and nothing here stores a link
+                        // back to a source (see `arsenal::BufferedLoadout`).
+                        <div class="flex min-w-0 flex-wrap items-center gap-2 rounded-lg border border-outline-variant/20 bg-surface-container-lowest/40 p-2">
+                            <span class="shrink-0 font-mono text-label-sm uppercase tracking-wider text-on-surface-variant">
+                                "Loadout buffer"
+                            </span>
+                            <button
+                                type="button"
+                                data-loadout-copy
+                                title="Buffer the loadout of every selected entity."
+                                class="flex shrink-0 items-center gap-1.5 rounded-lg border border-outline-variant/40 px-3 py-1.5 text-label-sm font-medium text-on-surface transition-colors hover:bg-white/10"
+                                on:click=copy_loadouts
+                            >
+                                <span class="material-symbols-outlined text-[16px]">"content_copy"</span>
+                                "Copy"
+                            </button>
+                            <button
+                                type="button"
+                                data-loadout-apply
+                                title="Write one buffered loadout to each selected entity, picked at random when several are buffered."
+                                prop:disabled=move || {
+                                    buffer_epoch.track();
+                                    #[cfg(target_arch = "wasm32")]
+                                    {
+                                        crate::editor_ops::loadout_buffer_len() == 0
+                                    }
+                                    #[cfg(not(target_arch = "wasm32"))]
+                                    {
+                                        true
+                                    }
+                                }
+                                class="flex shrink-0 items-center gap-1.5 rounded-lg border border-outline-variant/40 px-3 py-1.5 text-label-sm font-medium text-on-surface transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:border-outline-variant/20 disabled:text-outline disabled:hover:bg-transparent"
+                                on:click=apply_loadouts
+                            >
+                                <span class="material-symbols-outlined text-[16px]">"casino"</span>
+                                "Apply"
+                            </button>
+                            <button
+                                type="button"
+                                data-loadout-strip
+                                title="Clear every wear row, weapon and cargo row on the selection. Cargo stays cleared."
+                                class="flex shrink-0 items-center gap-1.5 rounded-lg border border-outline-variant/40 px-3 py-1.5 text-label-sm font-medium text-on-surface transition-colors hover:bg-white/10"
+                                on:click=strip_loadouts
+                            >
+                                <span class="material-symbols-outlined text-[16px]">"delete_sweep"</span>
+                                "Remove Everything"
+                            </button>
+                            <span
+                                data-loadout-buffered
+                                class="truncate font-mono text-label-sm tabular-nums normal-case text-outline"
+                            >
+                                {move || {
+                                    buffer_epoch.track();
+                                    #[cfg(target_arch = "wasm32")]
+                                    let n = crate::editor_ops::loadout_buffer_len();
+                                    #[cfg(not(target_arch = "wasm32"))]
+                                    let n = 0usize;
+                                    format!("{n} buffered")
+                                }}
+                            </span>
+                            // Said here because `attributes.rs`'s T-649 banner (not this slice's
+                            // file) tells a multi-selection that "loadout edits apply to this one
+                            // entity". That is still true of every pick and cargo row above — and
+                            // NOT true of these three verbs, which are the whole point of T-699.
+                            // The panel must not leave the author to reconcile the two.
+                            <span class="basis-full text-label-sm normal-case text-outline">
+                                "These three act on the whole selection, not on this one entity — unlike every pick above."
+                            </span>
+                        </div>
+                        // T-699 — the buffer's outcome. A refusal lists EVERY reason and applied
+                        // nothing; a receipt states what landed AND what it costs to undo.
+                        {move || {
+                            let refusals = buffer_refusals.get();
+                            if !refusals.is_empty() {
+                                let n = refusals.len() - 1; // the lead line is not a reason
+                                return view! {
+                                    <div
+                                        data-loadout-refused=n.to_string()
+                                        class="rounded-lg border border-error-alert/40 bg-error/10 p-2 text-label-sm normal-case text-error-alert"
+                                    >
+                                        <ul class="flex list-none flex-col gap-1">
+                                            {refusals
+                                                .into_iter()
+                                                .map(|m| view! { <li>{m}</li> })
+                                                .collect::<Vec<_>>()}
+                                        </ul>
+                                    </div>
+                                }
+                                    .into_any();
+                            }
+                            let status = buffer_status.get();
+                            if status.is_empty() {
+                                return ().into_any();
+                            }
+                            view! {
+                                <p
+                                    data-loadout-status
+                                    class="text-label-sm normal-case text-on-surface-variant"
+                                >
+                                    {status}
+                                </p>
+                            }
+                                .into_any()
+                        }}
                         // T-686 — the import outcome. A refusal lists EVERY reason and applied
                         // nothing, so there is no half-applied state to explain and no "partially
                         // imported" wording anywhere in it. An acceptance prints what landed.
@@ -4745,6 +5281,536 @@ mod tests {
             assert!(
                 !apply.contains("set_loadout"),
                 "the apply must go through the same `persist` every other pick uses"
+            );
+        }
+    }
+
+    /* ═════════ T-699 — the loadout buffer: Copy · Apply (random) · Remove Everything ═════════ */
+
+    mod t699 {
+        use super::*;
+
+        fn buf(source: &str, json: Option<&str>) -> BufferedLoadout {
+            BufferedLoadout {
+                source_id: source.to_string(),
+                loadout_json: json.map(str::to_string),
+            }
+        }
+
+        fn ids(v: &[&str]) -> Vec<String> {
+            v.iter().map(|s| (*s).to_string()).collect()
+        }
+
+        /// A `SlotLoadoutV2` document as the Arsenal persists one, distinguishable by its primary.
+        fn kit_doc(primary: &str) -> String {
+            picks_to_loadout(&picks(&[("primary", primary)]), &names(), None)
+                .expect("a picked primary is not an empty loadout")
+        }
+
+        /// **What "random" means here**, asserted rather than described.
+        ///
+        /// Four properties, and every one of them is load-bearing: uniform (no source is
+        /// systematically favoured), independent per entity (N entities get N draws, not one draw
+        /// N times), reproducible from `(seed, ordinal, len)` (so a bug report replays and this very
+        /// test can exist), and degenerate at `len == 1` (a single-source Copy→Apply must be plain
+        /// deterministic behaviour).
+        #[test]
+        fn the_draw_is_uniform_independent_and_reproducible() {
+            const N: u64 = 30_000;
+            let len = 3usize;
+            let mut hits = [0usize; 3];
+            for ordinal in 0..N {
+                hits[buffer_draw(0xA5A5_A5A5, ordinal, len)] += 1;
+            }
+            // Uniform: a fair 3-way split of 30k is 10k each; ±5% is far outside anything a
+            // correct mix produces by chance and far inside anything a biased one does.
+            for (i, h) in hits.iter().enumerate() {
+                assert!(
+                    (9_500..=10_500).contains(h),
+                    "index {i} came up {h} times in {N} draws — not a uniform draw: {hits:?}"
+                );
+            }
+            // Independent per entity: consecutive ordinals must not walk the buffer in lockstep.
+            let walk: Vec<usize> = (0..12).map(|o| buffer_draw(7, o, len)).collect();
+            let cyclic: Vec<usize> = (0..12).map(|o| (o as usize) % len).collect();
+            assert_ne!(walk, cyclic, "the draw is a counter, not a die: {walk:?}");
+
+            // Reproducible: same seed → same assignment, every time.
+            for ordinal in 0..50 {
+                assert_eq!(
+                    buffer_draw(1234, ordinal, len),
+                    buffer_draw(1234, ordinal, len)
+                );
+            }
+            // …and a different seed genuinely re-rolls.
+            let a: Vec<usize> = (0..40).map(|o| buffer_draw(1, o, len)).collect();
+            let b: Vec<usize> = (0..40).map(|o| buffer_draw(2, o, len)).collect();
+            assert_ne!(a, b, "advancing the seed must change the assignment");
+
+            // Degenerate at one: randomness must not be able to surprise the single-source case.
+            for ordinal in 0..100 {
+                assert_eq!(buffer_draw(ordinal * 7919, ordinal, 1), 0);
+            }
+            // …and an empty buffer never indexes anything (plan_apply refuses to call it, but the
+            // function must not be a landmine for the next caller either).
+            assert_eq!(buffer_draw(9, 9, 0), 0);
+        }
+
+        /// Apply writes ONE buffered loadout per entity, drawn from the buffer, and every write is
+        /// a full document — never a merge of two sources, which is the shape that would quietly
+        /// invent a soldier nobody authored.
+        #[test]
+        fn apply_gives_every_entity_exactly_one_buffered_loadout() {
+            let sources = [
+                buf("s1", Some(&kit_doc("res://rifle_m16"))),
+                buf("s2", Some(&kit_doc("res://rifle_ak"))),
+                buf("s3", None), // a bare soldier is a legitimate thing to copy and to apply
+            ];
+            let targets = ids(&["t1", "t2", "t3", "t4", "t5", "t6"]);
+            let writes = plan_apply(&targets, &sources, 42, &[], &CompatFeed::default())
+                .expect("a clean buffer applies");
+
+            assert_eq!(writes.len(), targets.len(), "one write per selected entity");
+            for (w, t) in writes.iter().zip(&targets) {
+                assert_eq!(
+                    &w.target_id, t,
+                    "writes stay index-aligned with the selection"
+                );
+                let src = sources
+                    .iter()
+                    .find(|s| Some(&s.source_id) == w.source_id.as_ref())
+                    .expect("every write names a buffered source");
+                assert_eq!(
+                    w.loadout_json, src.loadout_json,
+                    "a write is one source's document verbatim, never a blend"
+                );
+            }
+            // Over six entities and three sources the draw must actually vary — a plan that gave
+            // everyone source #1 would satisfy every assertion above and be the bug.
+            let drawn: HashSet<Option<String>> =
+                writes.iter().map(|w| w.source_id.clone()).collect();
+            assert!(drawn.len() > 1, "the draw did not vary: {drawn:?}");
+
+            // THE ANTI-INHERITANCE PROPERTY (T-687 was cancelled): the plan carries BYTES, so it is
+            // complete without the sources. Drop them and every write still describes its loadout.
+            drop(sources);
+            assert!(writes.iter().all(|w| w.target_id.starts_with('t')));
+        }
+
+        /// One buffered loadout ⇒ everybody gets it, with no draw involved.
+        #[test]
+        fn a_single_buffered_loadout_needs_no_die() {
+            let only = kit_doc("res://rifle_m16");
+            let writes = plan_apply(
+                &ids(&["a", "b", "c"]),
+                &[buf("s", Some(&only))],
+                0xDEAD_BEEF,
+                &[],
+                &CompatFeed::default(),
+            )
+            .expect("a clean buffer applies");
+            assert_eq!(writes.len(), 3);
+            assert!(writes
+                .iter()
+                .all(|w| w.loadout_json.as_deref() == Some(only.as_str())));
+        }
+
+        /// Nothing selected, or nothing buffered, is **not** a refusal — there is simply no work.
+        #[test]
+        fn an_empty_selection_or_buffer_plans_nothing_and_refuses_nothing() {
+            let full = [buf("s", Some(&kit_doc("res://rifle_m16")))];
+            assert!(plan_apply(&[], &full, 1, &[], &CompatFeed::default())
+                .expect("no targets is not a fault")
+                .is_empty());
+            assert!(
+                plan_apply(&ids(&["t"]), &[], 1, &[], &CompatFeed::default())
+                    .expect("no buffer is not a fault")
+                    .is_empty()
+            );
+            assert!(plan_remove(&[]).is_empty());
+        }
+
+        /// **The gate is the one T-686 built, not a second one that merely resembles it.** The same
+        /// bytes refused on the way IN through `try_import` are refused on the way ACROSS through
+        /// `plan_apply`, reason for reason — because both call `loadout_rule_refusals`.
+        ///
+        /// RED (a second gate): drop the `cargo_capacity_errors` line from `loadout_rule_refusals`
+        /// and both sides go quiet together, which is what makes this an equivalence and not a
+        /// transcription.
+        #[test]
+        fn the_apply_gate_is_the_import_gate() {
+            let items = capacity_catalog();
+            // 4 × 60 cm³ of magazine into a 200 cm³ chest rig — a schema-valid document describing
+            // kit the game would silently drop.
+            let raw = picks_to_export(
+                &picks(&[("vest", "res://chest_rig")]),
+                &[row("vest", "res://mag_stanag", 4)],
+                "mp",
+            );
+            let on_the_way_in = try_import(&raw, &items, &CompatFeed::default())
+                .expect_err("over-capacity cargo must not be importable");
+            let across = plan_apply(
+                &ids(&["t1"]),
+                &[buf("s1", Some(&raw))],
+                7,
+                &items,
+                &CompatFeed::default(),
+            )
+            .expect_err("…nor applicable");
+
+            assert_eq!(
+                on_the_way_in.len(),
+                across.len(),
+                "the two doors must find the same faults: {on_the_way_in:?} vs {across:?}"
+            );
+            for (i, a) in on_the_way_in.iter().zip(&across) {
+                assert_eq!(i.key, a.key, "same row blamed");
+                assert!(
+                    a.message.ends_with(&i.message),
+                    "same reason, differing only by which buffered source it names: {a:?}"
+                );
+                assert!(
+                    a.message.starts_with("Buffered loadout from s1"),
+                    "a refusal must say WHICH copied loadout is unusable: {a:?}"
+                );
+            }
+        }
+
+        /// **The verdict must not depend on the die.** A buffer holding one unusable loadout is
+        /// refused for every seed — including the seeds on which the bad entry would never have been
+        /// drawn. Validating only what came up would leave a broken loadout lurking in the buffer to
+        /// ambush the author on some later press.
+        ///
+        /// RED: move the gate below the draw loop and validate `src` instead of the buffer → seeds
+        /// on which the good source wins go green and this test names them.
+        #[test]
+        fn a_bad_entry_refuses_the_apply_whatever_the_die_says() {
+            let items = capacity_catalog();
+            let good = picks_to_export(
+                &picks(&[("vest", "res://chest_rig")]),
+                &[row("vest", "res://mag_stanag", 1)],
+                "mp",
+            );
+            let bad = picks_to_export(
+                &picks(&[("vest", "res://chest_rig")]),
+                &[row("vest", "res://mag_stanag", 4)],
+                "mp",
+            );
+            let buffer = [buf("good", Some(&good)), buf("bad", Some(&bad))];
+            for seed in 0..64u64 {
+                let out = plan_apply(&ids(&["t"]), &buffer, seed, &items, &CompatFeed::default());
+                let refusals = out.expect_err(&format!("seed {seed} must refuse the whole apply"));
+                assert!(
+                    refusals.iter().all(|r| r.message.contains("from bad")),
+                    "seed {seed}: {refusals:?}"
+                );
+            }
+            // The same buffer without the bad entry applies cleanly — so the refusal is about the
+            // loadout, not about the shape of the test.
+            assert!(plan_apply(
+                &ids(&["t"]),
+                &buffer[..1],
+                0,
+                &items,
+                &CompatFeed::default()
+            )
+            .is_ok());
+        }
+
+        /// T-504, matched deliberately to T-686's choice: cargo authored against a container the
+        /// loadout wears nothing in is a **warning on the entity**, never a refusal at the door.
+        /// Apply has a second reason on top of T-686's — the fault is a property of the target's
+        /// character rather than of the bytes, so wiring it in would make the gate's answer depend
+        /// on which entity the die picked.
+        #[test]
+        fn undeliverable_cargo_warns_but_never_blocks_an_apply() {
+            let items = capacity_catalog();
+            let idx = index_by_name(&items);
+            // Three mags into a vest with no vest picked: 180 cm³, so capacity has nothing to say.
+            let raw = picks_to_export(&picks(&[]), &[row("vest", "res://mag_stanag", 3)], "mp");
+            let doc_picks = loadout_to_picks(Some(&raw));
+            let (cargo, _) = rules::cargo_from_loadout(Some(&raw));
+
+            let faults = loadout_faults(
+                &doc_picks,
+                &cargo,
+                &attachment_feed(&[]),
+                &idx,
+                Some(&kit(&[])),
+            );
+            assert_eq!(faults.len(), 1, "the badge must still count it: {faults:?}");
+            assert!(faults[0].message.contains("nowhere known to go"));
+
+            assert!(
+                buffer_refusals(&[buf("s", Some(&raw))], &items, &CompatFeed::default()).is_empty(),
+                "a warning must never become an Apply refusal"
+            );
+            assert!(
+                try_import(&raw, &items, &CompatFeed::default()).is_ok(),
+                "…on either door"
+            );
+        }
+
+        /// **Remove Everything must stay removed.** The strip writes an explicit empty document
+        /// rather than clearing the field, because a cleared field has no `cargo` key and no `cargo`
+        /// key is exactly the condition on which `seed_cargo` puts the character's default magazines
+        /// back — a strip verb that undoes itself the next time the panel opens.
+        ///
+        /// RED: drop `"cargo": []` from `stripped_loadout` → "the strip must mark cargo as
+        /// user-cleared".
+        #[test]
+        fn remove_everything_strips_the_kit_and_stops_the_cargo_reseed() {
+            let stripped = stripped_loadout();
+            assert!(
+                loadout_to_picks(Some(&stripped)).is_empty(),
+                "no wear row and no weapon survives a strip"
+            );
+            let (rows, present) = rules::cargo_from_loadout(Some(&stripped));
+            assert!(rows.is_empty(), "no cargo survives a strip");
+            assert!(present, "the strip must mark cargo as user-cleared");
+            // Every wear row the persist path emits is present and null — the vocabulary comes from
+            // ROWS, so this document and `picks_to_loadout`'s cannot drift apart.
+            let v: serde_json::Value = serde_json::from_str(&stripped).expect("valid JSON");
+            let wear = v["wear"].as_object().expect("a wear block");
+            assert_eq!(
+                wear.len(),
+                ROWS.iter().filter(|r| r.weapon.is_none()).count()
+            );
+            assert!(wear.values().all(serde_json::Value::is_null));
+            assert_eq!(v["weapons"], serde_json::json!([]));
+
+            // THE HAZARD, demonstrated rather than asserted about: the seed rule really does fire on
+            // a cleared field, and really does not fire on this document.
+            let defaults = vec![row("vest", "res://mag_stanag", 3)];
+            assert!(
+                rules::seed_cargo(None, &defaults).is_some(),
+                "a cleared loadout field re-seeds — this is what the strip must not leave behind"
+            );
+            assert!(
+                rules::seed_cargo(Some(&stripped), &defaults).is_none(),
+                "the stripped document must be seed-ineligible, or Remove Everything undoes itself"
+            );
+
+            // And the plan: one write per target, each carrying that document.
+            let writes = plan_remove(&ids(&["a", "b"]));
+            assert_eq!(writes.len(), 2);
+            assert!(writes.iter().all(|w| w.source_id.is_none()));
+            assert!(writes
+                .iter()
+                .all(|w| w.loadout_json.as_deref() == Some(stripped.as_str())));
+        }
+
+        /// `plan_remove` runs no gate because the stripped document cannot fail one. That is a claim
+        /// about the RULES module, which can change, so it is a test and not a comment.
+        #[test]
+        fn the_stripped_document_passes_every_rule() {
+            let items = capacity_catalog();
+            for feed in [CompatFeed::default(), attachment_feed(&[])] {
+                assert!(
+                    buffer_refusals(&[buf("s", Some(&stripped_loadout()))], &items, &feed)
+                        .is_empty(),
+                    "a stripped loadout must be unconditionally applicable"
+                );
+            }
+        }
+
+        /// **The undo arithmetic, measured — not counted in the source text.**
+        ///
+        /// Wave 112's one-commit pin counted the literal `persist(` and stayed green under an N-step
+        /// perturbation (T-736). This one runs the commit path against a sink that records what it
+        /// was actually handed, so the number in the receipt is the number of documents written. An
+        /// Apply over N entities is N transactions and therefore N undo steps — the core has no
+        /// atomic multi-entity loadout write (T-732) — and the receipt says so out loud rather than
+        /// claiming an atomicity nothing here provides.
+        ///
+        /// RED (a dropped write): `if done == 0 { continue; }` at the top of `commit_writes`'s loop
+        /// → "3 writes planned, sink took 2".
+        /// RED (a fake one-step claim): report `1` instead of the commit count → the receipt no
+        /// longer names the real number of Ctrl+Z presses.
+        #[test]
+        fn the_receipt_counts_the_writes_the_document_actually_took() {
+            let writes = plan_remove(&ids(&["a", "b", "c"]));
+            let mut sink: Vec<(String, Option<String>)> = Vec::new();
+            let commits = commit_writes(&writes, |id, json| sink.push((id.to_string(), json)));
+
+            assert_eq!(commits, 3, "one commit per planned write");
+            assert_eq!(
+                sink.len(),
+                writes.len(),
+                "{} writes planned, sink took {}",
+                writes.len(),
+                sink.len()
+            );
+            let seen: Vec<&str> = sink.iter().map(|(id, _)| id.as_str()).collect();
+            assert_eq!(
+                seen,
+                ["a", "b", "c"],
+                "every target is written exactly once"
+            );
+
+            let line = remove_receipt(writes.len(), commits);
+            assert!(line.contains("3 undo step(s)"), "{line}");
+            assert!(
+                line.contains("T-732"),
+                "the receipt must cite the gap: {line}"
+            );
+            assert!(!line.contains("WARNING"), "{line}");
+
+            // The honesty property: a sink that took FEWER is reported, never rounded up to the
+            // plan. This is the assertion the T-736 pin lacked.
+            let dropped = remove_receipt(writes.len(), 2);
+            assert!(dropped.contains("WARNING"), "{dropped}");
+            assert!(
+                dropped.contains("3 write(s) were planned and 2 reached the document"),
+                "{dropped}"
+            );
+
+            // Apply says the same three things: how many landed, that it is one step each, and why.
+            let apply = apply_receipt(5, 2, 5);
+            assert!(apply.contains("Applied 5 loadout(s)"), "{apply}");
+            assert!(apply.contains("2-loadout buffer"), "{apply}");
+            assert!(apply.contains("5 undo step(s)"), "{apply}");
+            assert!(apply.contains("Ctrl+Z 5 times"), "{apply}");
+            assert!(apply.contains("T-732"), "{apply}");
+            assert!(apply_receipt(5, 2, 4).contains("WARNING"));
+        }
+
+        /// The Copy receipt counts the bare kits out loud — buffering forty empty soldiers and
+        /// discovering it only after Apply is exactly the surprise a receipt exists to prevent.
+        #[test]
+        fn the_copy_receipt_reports_what_was_buffered_including_the_bare_ones() {
+            let doc = kit_doc("res://rifle_m16");
+            let line = copy_receipt(&[buf("a", Some(&doc)), buf("b", Some(&doc))]);
+            assert!(line.contains("Copied 2 loadout(s)"), "{line}");
+            assert!(line.contains("at random"), "{line}");
+            assert!(!line.contains("no loadout at all"), "{line}");
+
+            let mixed = copy_receipt(&[buf("a", Some(&doc)), buf("b", None), buf("c", None)]);
+            assert!(mixed.contains("Copied 3 loadout(s)"), "{mixed}");
+            assert!(
+                mixed.contains("2 of them carry no loadout at all"),
+                "{mixed}"
+            );
+        }
+
+        /// `editor_ops.rs` with everything unreachable removed. Note it carries **no test module at
+        /// all**, so the T-759 hazard that makes an `include_str!` pin match its own fixtures cannot
+        /// arise here — asserted below rather than assumed, because the day somebody adds one is the
+        /// day this pin needs re-reading.
+        fn live_ops_src() -> String {
+            super::super::class_r_scrub::live_code(include_str!("editor_ops.rs"))
+        }
+
+        /// Class-R: the three verbs must reach the live document through the gated, counted path —
+        /// and the excluded nine must not have crept in.
+        ///
+        /// RED (ungated): call `plan_remove` from the apply verb instead of `plan_apply` → "Apply
+        /// must be gated on plan_apply".
+        /// RED (fake atomicity): move `after_local_edit()` inside the write loop, or add a second
+        /// one → the one-tail assertion.
+        /// RED (scope creep): add `remove_nvgs_from_selection` → the exclusion assertion names it.
+        #[test]
+        fn the_ops_layer_wires_the_three_verbs_and_only_the_three() {
+            let ops = live_ops_src();
+            assert!(
+                !ops.contains("#[cfg(test)]"),
+                "editor_ops.rs grew a test module — this pin's SRC would now match its own \
+                 fixtures (T-759). Truncate SRC at the test module before trusting it again."
+            );
+
+            let copy = fn_body(&ops, "pub fn copy_loadouts_from_selection(");
+            assert!(
+                copy.contains("LOADOUT_BUFFER") && copy.contains("selected_slot_ids("),
+                "Copy must buffer every SELECTED slot"
+            );
+            assert!(
+                copy.contains("BufferedLoadout"),
+                "Copy must buffer bytes, not source ids — an id would be inheritance (T-687)"
+            );
+
+            let apply = fn_body(&ops, "pub fn apply_loadout_buffer_to_selection(");
+            assert!(
+                apply.contains("plan_apply("),
+                "Apply must be gated on plan_apply — the T-686 rule pass"
+            );
+            assert!(
+                !apply.contains("update_slot_loadout"),
+                "Apply must not write the document behind the shared committer's back"
+            );
+            assert!(
+                fn_body(&ops, "pub fn remove_all_loadouts_from_selection(")
+                    .contains("plan_remove("),
+                "Remove Everything must go through the same planner"
+            );
+
+            // The one place a loadout write reaches the document, and the undo arithmetic that
+            // makes it honest: N transactions, ONE shared post-change tail (which is NOT an undo
+            // boundary — see T-732).
+            let commit = fn_body(&ops, "fn commit_loadout_writes(");
+            assert_eq!(
+                commit.matches("update_slot_loadout(").count(),
+                1,
+                "exactly one write call site: {commit}"
+            );
+            assert_eq!(
+                commit.matches("after_local_edit(").count(),
+                1,
+                "exactly one shared tail, fired after the writes — not per write"
+            );
+            assert!(
+                commit.contains("commit_writes("),
+                "the write loop is `arsenal::commit_writes`, so the count is testable natively"
+            );
+
+            // The nine per-category strip variants are `maybe` upstream and deliberately excluded.
+            for excluded in [
+                "remove_nvgs",
+                "remove_vests",
+                "remove_goggles",
+                "remove_headgear",
+                "remove_weapons",
+                "remove_backpack",
+            ] {
+                assert!(
+                    !ops.contains(excluded),
+                    "`{excluded}` is one of the nine excluded per-category strip verbs (marked \
+                     `maybe`); T-699 ships Remove Everything and nothing narrower"
+                );
+            }
+        }
+
+        /// Class-R: the panel must carry all three controls and route each to its verb, and the
+        /// Apply must resync this modal's signals WITHOUT a second commit — an extra `persist` there
+        /// would put one more Ctrl+Z press between the author and the state they had.
+        #[test]
+        fn the_panel_carries_the_three_verbs_and_resyncs_without_recommitting() {
+            let live = live_production_src();
+            let tab = fn_body(&live, "pub fn ArsenalTab(");
+            for needle in [
+                "data-loadout-copy",
+                "data-loadout-apply",
+                "data-loadout-strip",
+            ] {
+                assert!(tab.contains(needle), "the panel must carry {needle}");
+            }
+            for wiring in [
+                "on:click=copy_loadouts",
+                "on:click=apply_loadouts",
+                "on:click=strip_loadouts",
+            ] {
+                assert!(
+                    tab.contains(wiring),
+                    "an unwired control is not a verb: {wiring}"
+                );
+            }
+            let resync = fn_body(&live, "let resync_open_slot =");
+            assert!(
+                resync.contains("read_loadout("),
+                "the resync must re-read the live document"
+            );
+            assert!(
+                !resync.contains("persist("),
+                "the resync is signal writes only — a persist here is an extra undo step"
             );
         }
     }
