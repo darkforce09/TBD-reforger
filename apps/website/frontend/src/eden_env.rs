@@ -125,19 +125,21 @@ pub const ENV_UNCARRIED_NOTE: &str =
 /// has now spent three tickets removing. (That the compiler drops unrecognised top-level keys in
 /// silence is its own ticket, T-219; this slice routes around it rather than depending on it.)
 ///
-/// **The one hop that is still missing, stated plainly.** Every reader below is live in the mod
-/// today, and the editor→mod chain is live for `meta.environment` up to the compiler: the saved
-/// payload carries these keys out as top-level `environment` and `mission_compile.rs` already reads
-/// that block for `time`/`weather`. What is NOT live is the last step — `ModFlow` in
-/// `map-engine-core/src/mission/flatten.rs` splices in four hardcoded constants
-/// ([`FLOW_DEFAULT_BRIEFING_S`] and friends are those constants, mirrored here) and never looks at
-/// the payload. **`flatten.rs` is not this slice's file** — `docs/platform/wave_plan.tsv` hands it
-/// to T-200 and T-204, and T-204 *is* this half's other half ("Emit mission flow and winConditions
-/// instead of hardcoding them"). What it needs to read is the saved payload's top-level
-/// `environment`, under exactly the four key names in the first column below. Until it lands, an
-/// authored duration is stored, saved, reloaded and shown back correctly, and the compiled document
-/// still says 5400. That is a partial, it is the half this file owns, and it is written down here
-/// rather than discovered later.
+/// **The chain is closed end to end — T-204 landed the last hop.** Every reader below is live in
+/// the mod, the editor→mod chain is live for `meta.environment` up to the compiler (the saved
+/// payload carries these keys out as top-level `environment`, and `mission_compile.rs` reads that
+/// block for `time`/`weather`), and `ModFlow` no longer splices in four hardcoded constants:
+/// `map_engine_core::mission::flatten::derive_flow` calls `authored_flow_seconds(env, key, default)`
+/// per duration plus `authored_flow_jip(env)`, reading exactly the four key names in the first
+/// column below, unprefixed, off the payload's top-level `environment`. So an authored 3600 is
+/// stored, saved, reloaded, shown back AND compiled as 3600 — the old note here said it "still says
+/// 5400", which was true when this file was written and stopped being true the day T-204 shipped.
+/// (T-753 corrected it; the comment had outlived its ticket by several waves, and a stale comment
+/// claiming a value is ignored is how a real drift gets waved through.)
+///
+/// The four constants remain as the fallback for a mission that authors nothing, and this module
+/// re-exports the compiler's own ([`FLOW_DEFAULT_BRIEFING_S`] and friends) rather than mirroring
+/// them — see that item for why the mirror was the bug.
 const AUTHORED_FLOW_KEYS: &[(&str, &str, &str)] = &[
     (
         "briefingSeconds",
@@ -178,18 +180,33 @@ const AUTHORED_FLOW_KEYS: &[(&str, &str, &str)] = &[
 /// framework has no respawn pool for a ticket count to size.
 pub const SETTINGS_UNREAD_NOTE: &str = "Respawn, spectator policy, night vision and per-faction tickets are not authored here — the mission document declares them and no mod script reads them. TBD events are one life.";
 
-/// What a mission runs with when nothing is authored. These four mirror the constants `ModFlow`
-/// splices in today (`map-engine-core/src/mission/flatten.rs`), so an unauthored mission's dialog
-/// shows the duration it will actually run with rather than a UI-invented zero. When the compiler
-/// slice starts reading the authored keys, these stay as its fallback — if they ever disagree, the
-/// dialog is lying about an unauthored mission.
-pub const FLOW_DEFAULT_BRIEFING_S: i64 = 600;
-/// See [`FLOW_DEFAULT_BRIEFING_S`].
-pub const FLOW_DEFAULT_SAFESTART_S: i64 = 300;
-/// See [`FLOW_DEFAULT_BRIEFING_S`].
-pub const FLOW_DEFAULT_TIMELIMIT_S: i64 = 5400;
-/// See [`FLOW_DEFAULT_BRIEFING_S`].
-pub const FLOW_DEFAULT_JIP: &str = "until_safestart_end";
+/// What a mission runs with when nothing is authored — **the compiler's own constants, not a copy**.
+///
+/// These are what `ModFlow` splices in when the payload authors nothing
+/// (`map_engine_core::mission::flatten::derive_flow`), so an unauthored mission's dialog shows the
+/// duration it will actually run with rather than a UI-invented zero. They are also the fallback the
+/// compiler keeps now that it reads the authored keys, which is why the dialog and the compiled
+/// document have to agree about them: if they disagree, the dialog is lying about an unauthored
+/// mission.
+///
+/// **T-753 — why this is a `pub use` and not four `pub const`s.** It used to be four `pub const`s
+/// here holding literals identical to `flatten.rs`'s, with nothing anywhere comparing the two sets.
+/// The only guard was `flow_defaults_mirror_the_compiled_constants` below, which restated
+/// the literals against THIS module's own copy — so it agreed with itself no matter what the
+/// compiler held. The wave-115 verifier proved the hole rather than arguing it: editing
+/// `FLOW_DEFAULT_BRIEFING_S` in `flatten.rs` from 600 to 900 left `cargo test -p website-frontend`
+/// at 800 passed / 0 failed while the compiler emitted 900-second briefings and every editor surface
+/// kept displaying 600. That is exactly the defect class T-688 exists to prevent — a view showing a
+/// value the authority does not hold — one layer beneath the surface T-688 audited.
+///
+/// A cross-crate `assert_eq!` would have closed it. Re-exporting closes it harder: there is now ONE
+/// definition in the workspace, so "the two disagree" is not a bug that can be written. The literal
+/// guard below is kept and is no longer circular — it now reads the compiler's constant, so the
+/// verifier's 600 → 900 edit turns it red. This crate already depended on `map-engine-core` with the
+/// `mission` feature (`Cargo.toml`), so this costs nothing but the deletion.
+pub use map_engine_core::mission::flatten::{
+    FLOW_DEFAULT_BRIEFING_S, FLOW_DEFAULT_JIP, FLOW_DEFAULT_SAFESTART_S, FLOW_DEFAULT_TIMELIMIT_S,
+};
 
 /// The `jip` enum, in schema order, with the words an author reads.
 ///
@@ -413,12 +430,29 @@ mod tests {
         assert_eq!(CARRIED_ENV_KEYS.len(), 5);
     }
 
-    /// The unauthored-mission defaults are the constants `flatten.rs` splices in today. If these
-    /// ever drift from `ModFlow`, the dialog shows an author a duration their mission does not run
-    /// with — which is the reverted-setting bug wearing a different hat.
+    /// The unauthored-mission defaults are the constants `flatten.rs` splices in. If these drift
+    /// from `ModFlow`, the dialog shows an author a duration their mission does not run with — the
+    /// reverted-setting bug wearing a different hat.
+    ///
+    /// **T-753 — this test used to be unable to fail for that reason.** The names below resolved to
+    /// this module's own `pub const`s, so it compared `flatten.rs`'s literals to a copy of
+    /// `flatten.rs`'s literals and passed whatever the compiler actually held. It is now a real
+    /// cross-crate pin by construction: the names are `pub use`d straight out of
+    /// `map_engine_core::mission::flatten`, so these five assertions read the compiling crate's
+    /// constants across the crate boundary. Editing `FLOW_DEFAULT_BRIEFING_S` in `flatten.rs` from
+    /// 600 to 900 — the wave-115 verifier's experiment, which used to leave this suite fully green —
+    /// now fails here with `left: 900, right: 600`.
+    ///
+    /// The literals stay spelled out on purpose. They are the whole point: a pin whose expectation
+    /// is itself a variable pins nothing.
     #[test]
     fn flow_defaults_mirror_the_compiled_constants() {
-        assert_eq!(FLOW_DEFAULT_BRIEFING_S, 600);
+        assert_eq!(
+            FLOW_DEFAULT_BRIEFING_S,
+            600,
+            "map_engine_core::mission::flatten::FLOW_DEFAULT_BRIEFING_S moved; Mission Settings and \
+             the compiled document must be changed together"
+        );
         assert_eq!(FLOW_DEFAULT_SAFESTART_S, 300);
         assert_eq!(FLOW_DEFAULT_TIMELIMIT_S, 5400);
         assert_eq!(FLOW_DEFAULT_JIP, "until_safestart_end");
