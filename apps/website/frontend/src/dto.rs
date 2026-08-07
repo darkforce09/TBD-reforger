@@ -833,8 +833,21 @@ pub struct MissionDetail {
     pub current_version: Option<MissionVersionRef>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current_version_id: Option<String>,
+    /// **T-694 — editable after creation.** `PATCH /missions/:id` has always accepted `game_mode`
+    /// (`handlers/missions.rs::PatchMissionInput`), but until the editor's Mission Settings dialog
+    /// grew a control (`eden_settings::render_shape_section`) the create dialog was the only writer,
+    /// so a mission could not change shape once it existed. Nothing about the wire shape changed —
+    /// the gap was entirely a missing surface.
     pub game_mode: String,
     pub id: String,
+    /// **T-694 — author-declared, and not the same thing as the mission's slot count.** This is the
+    /// figure typed into the create dialog once; the number of seats the mission actually contains is
+    /// `MissionDocCore::slot_count`, and nothing reconciles the two. `compiled_meta` below copies
+    /// this one into the compiled mission, so it is not dead — it is simply not evidence about the
+    /// document. The editor now shows both side by side rather than letting either quietly win; see
+    /// `eden_settings::PLAYER_COUNT_DISAGREE_NOTE` for why that disagreement is displayed and not
+    /// resolved. There is deliberately **no** `min_players` counterpart: no column, model field or
+    /// handler has ever had one.
     pub max_players: i64,
     pub status: String,
     pub terrain: String,
