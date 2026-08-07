@@ -8290,6 +8290,37 @@ mod t648_transform {
             flat.contains("move_entities_and_vehicles(slot_ids,&veh_ids,dx,dy,zs"),
             "the resolved `zs` must be the vector handed to the translate, positionally after dx/dy"
         );
+
+        // The two statements must stay ADJACENT. The asserts above prove `zs` is mapped from
+        // `slot_ids` and that `slot_ids` is what gets translated — but neither can see an edit
+        // BETWEEN them. An inserted `slot_ids.sort()` would repoint every z by one slot, handing
+        // each entity a neighbour's elevation, and every assert above would still pass. That is a
+        // worse outcome than the zeroing F-6 fixed, so the window itself is pinned.
+        let between = flat
+            .split("slot_ids.iter().map(")
+            .nth(1)
+            .and_then(|s| s.split("move_entities_and_vehicles(").next())
+            .expect("the `zs` build must precede the translate");
+        for mutator in [
+            "slot_ids.sort",
+            "slot_ids.reverse",
+            "slot_ids.dedup",
+            "slot_ids.retain",
+            "slot_ids.swap",
+            "slot_ids.remove",
+            "slot_ids.truncate",
+            "slot_ids.push",
+            "slot_ids.insert",
+            "slot_ids.clear",
+            "slot_ids.drain",
+        ] {
+            assert!(
+                !between.contains(mutator),
+                "wave-127 NIT: `{mutator}` between the `zs` build and the translate would reorder \
+                 or resize `slot_ids` after `zs` was built, silently giving each slot another \
+                 slot's z while every other assertion in this test stayed green"
+            );
+        }
     }
 
     // ── SOURCE PINS: the keydown bindings drive the right state ────────────────────────────────
