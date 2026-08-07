@@ -154,12 +154,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-120** — Staging soak + golden mission smoke (`queued`)
 - **T-146** — Asset Browser Data Wiring (`queued`)
 - **T-170** — Prod default flip to Leptos SPA (`queued`)
-- **T-669** — Clipboard completion: Ctrl+X cut, Ctrl+Shift+V paste-at-original (`queued`)
-- **T-082** — Attributes modal: entity type and a real role description field (`queued`)
 - **T-651** — Editor comments / annotations (`queued`)
 - **T-633** — Native range and select controls in the top strip (`queued`)
 - **T-670** — Scale readout in the status bar (`queued`)
 - **T-688** — Aggregated settings view: every authored setting in one list, with diff-from-default (`queued`)
+- **T-634** — Top strip: split into two rows and give the actions a hierarchy (`queued`)
+- **T-069** — Markers on map — the four schema-carried fields (`queued`)
 <!-- ticket-sync:status:end -->
 
 **Shipped history — every slice, sha and tag — lives in**

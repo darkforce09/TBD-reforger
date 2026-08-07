@@ -53,7 +53,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 111 | 94 | T-645 T-655 T-693 | PASS (runs 1+2; re-run over blocker fix) | 1B/2M/4m/7N → fix CLEARED | SHIPPED — placement helpers (garrison split honestly), always-on validation panel, merge mission; BLOCKER (repeat-merge id collision) fixed in-wave 9ebcb8a9; T-733 T-734 filed |
 | — | — | **WAVES 112–119 UN-DEFERRED 2026-08-07** by the operator and run in plan order (24 Rust tickets, 3-wide; they serialize on mission_editor.rs — 8 of 8 waves touch it — so the packing was NOT widened). The 2026-08-02 budget-pivot deferral below is closed out. | | | |
 | 112 | 96 | T-649 T-686 T-692 | PASS 30/30 (run 1) | 1M/4m/3N | SHIPPED — select-all in view + multi-edit checkboxes (both suppress-on-multi guards inverted, T-716 rows honest), loadout import round-trip, Help menu + Controls Hint; T-735..T-742 filed |
-| 113 | assign at close | T-082 T-669 T-694 | — | — | pending |
+| 113 | 97 | T-082 T-669 T-694 | PASS 30/30 (run 1) | 1M/1m/3N | SHIPPED — entity type + role description (F-7 closed as a disabled affordance; needed a new core mutator OUTSIDE owns), cut + paste-at-source, mission shape reinterpreted by the operator (derived slot count, no min_players); T-743..T-747 filed |
 | 114 | assign at close | T-633 T-651 T-695 | — | — | pending |
 | 115 | assign at close | T-634 T-670 T-688 | — | — | pending |
 | 116 | assign at close | T-069 T-690 T-696 | — | — | pending |
@@ -221,6 +221,22 @@ serialisation, not a hang).
 
 ## Deferred tickets filed by verifiers
 
+- **T-743** (W113/F-1,F-4) ⚠️ **NEEDS OPERATOR DECISION**: `paste_at_cursor(None, None)` is NOT
+  paste-at-original — `paste_slots`' no-anchor arm unconditionally applies `PASTE_NUDGE` = 20m
+  (store.rs:2175-2178, :4225), so **ACTION-PASTE-ORIG-001 does not close as literally named**. The
+  nudge is byte-parity with the JS oracle, so it is not a slice-sized fix. Three artifacts state
+  the opposite and are wrong: the T-669 registry summary, `gap_analysis.md:265`,
+  `interactions_sweep.md:233`.
+- **T-744** (W113/F-2): hiding a slot closes its open Attributes modal via the same `None` path
+  written for "undone away" — `materialize()` drops hidden rows and `read_attrs` reads through it.
+- **T-745** (W113/F-3): `attrs_update_slot` (single) fires the history tail unconditionally — an
+  all-`None` call dirties the mission. Latent (no caller reaches it); the `_multi` variant has the guard.
+- **T-746** (W113/F-5): `ShapeMirror` has no single-flight between the open-GET and an in-flight
+  PATCH; plus the duplicated `is_row_id` and the private `ROW_META` that forces the extra GET.
+- **T-747** (W113, near-miss): **a bare `cargo test -p map-engine-core` is a VACUOUS PASS** — the
+  `doc` module is feature-gated, so 139 of 600 tests compile and every store.rs pin this wave added
+  is silently skipped. The wave gate is sound (it uses `--all-features`), but a hand-run lies.
+  Same family as T-742: an ad-hoc cargo invocation misleading an agent.
 - **T-735** (W112/MAJOR-1): T-686's import schema checker fails **OPEN** in three forms — `oneOf`
   discards refusals from non-passing branches, schema-form `additionalProperties` is a no-op,
   tuple-form `items` is dropped — and the pin meant to catch that is blind to all three (its
