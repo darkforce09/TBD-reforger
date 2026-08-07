@@ -56,11 +56,17 @@ enum MenuAction {
     Space(crate::place_helpers::SpaceAxis),
     /// Orient the selection (N/E/S/W / face-centre / face-away).
     Orient(crate::place_helpers::Orient),
+    /// T-692 — toggle the Controls Hint overlay (the keyboard-shortcut reference). A CHECKED
+    /// toggle, not a one-shot command: it is the first menu row whose state shows in the T-668
+    /// checkmark gutter, and it is deliberately reachable from BOTH the View menu (as the toggle)
+    /// and the Help menu (as the reference) — one action, two entry points, because "where do I
+    /// find the shortcuts" and "turn the hint off" are different questions.
+    ControlsHint,
 }
 
 use crate::place_helpers::{AlignEdge, Orient, PatternKind, SpaceAxis};
 
-const MENUS: [(&str, &[MenuItem]); 6] = [
+const MENUS: [(&str, &[MenuItem]); 7] = [
     (
         "File",
         &[
@@ -177,10 +183,19 @@ const MENUS: [(&str, &[MenuItem]); 6] = [
     ),
     (
         "View",
-        &[MenuItem {
-            label: "Map layers — render host (T-159.28)",
-            action: None,
-        }],
+        &[
+            // T-692 (MENU-VIEW-017) — the Controls Hint's VIEW-side toggle. A checked row: the
+            // T-668 gutter carries a check while the overlay is up, which is what a View menu
+            // toggle is supposed to look like (the gutter was reserved for exactly this).
+            MenuItem {
+                label: "Controls Hint",
+                action: Some(MenuAction::ControlsHint),
+            },
+            MenuItem {
+                label: "Map layers — render host (T-159.28)",
+                action: None,
+            },
+        ],
     ),
     (
         "Mission",
@@ -194,6 +209,16 @@ const MENUS: [(&str, &[MenuItem]); 6] = [
         &[MenuItem {
             label: "Time & Weather (Mission Settings)…",
             action: Some(MenuAction::Settings),
+        }],
+    ),
+    // T-692 (MENU-BAR-008 / MENU-HELP-001) — the Help menu. Eden has one; TBD had none, which is
+    // why sixteen bound keys were discoverable only by reading Rust. Last in the bar, the
+    // conventional slot. One live row today: the shortcut reference, which is the Controls Hint.
+    (
+        "Help",
+        &[MenuItem {
+            label: "Keyboard Shortcuts (Controls Hint)",
+            action: Some(MenuAction::ControlsHint),
         }],
     ),
 ];
@@ -628,6 +653,16 @@ pub fn TopCommandStrip(
     let open_menu = RwSignal::new(None::<usize>);
     let save_open = RwSignal::new(false);
     let save_notes = RwSignal::new(String::new());
+    // T-692 — the Controls Hint's open latch. SEEDED from `eden_help`'s thread-local rather than
+    // from `false`, because this whole component unmounts and remounts on every Backspace
+    // hide/show cycle (`mission_editor` gates the strip on `chrome_hidden`); seeding from the
+    // latch is what makes the card come back the way the operator left it, the way the debug HUD
+    // does. Every writer below mirrors back into the latch.
+    let hint_open = RwSignal::new(crate::eden_help::hint_shown());
+    let set_hint = move |v: bool| {
+        hint_open.set(v);
+        crate::eden_help::set_hint_shown(v);
+    };
     // T-192 — row mirror for the inline scrubber / weather select. Setup-time, not handler-time.
     #[cfg(target_arch = "wasm32")]
     let row_mirror = RowMirror::from_route();
@@ -649,6 +684,12 @@ pub fn TopCommandStrip(
                 }
                 if save_open.get_untracked() {
                     save_open.set(false);
+                }
+                // T-692 — Esc also closes the Controls Hint. It rides THIS listener rather than
+                // adding a third window Escape (T-726, the Esc pile-up, is still pending) — the
+                // strip already owns an Escape closure, so the hint joins it.
+                if hint_open.get_untracked() {
+                    set_hint(false);
                 }
             }
         });
@@ -763,6 +804,10 @@ pub fn TopCommandStrip(
                 #[cfg(not(target_arch = "wasm32"))]
                 let _ = cmd;
             }
+            // T-692 — a TOGGLE, not a one-shot: picking it from either menu flips the overlay, so
+            // the same row that opens the reference also puts it away. Ungated (no doc, no
+            // web-sys) — the native view shell toggles it too.
+            MenuAction::ControlsHint => set_hint(!hint_open.get_untracked()),
         }
     };
     let title_fallback = StoredValue::new(title);
@@ -815,11 +860,13 @@ pub fn TopCommandStrip(
                                                             // T-668 conventions — every menu row leads with the
                                                             // UNCONDITIONAL checkmark gutter (MENU_GUTTER), so
                                                             // labels never shift between menus (Eden's jumping
-                                                            // indent is the bug NOT to copy). No command here is a
-                                                            // checked toggle yet, so the gutter renders empty; a
-                                                            // future checked item drops its glyph INTO this cell
-                                                            // without moving the label. The `…` "opens a dialog"
-                                                            // suffix lives in the MENUS labels themselves.
+                                                            // indent is the bug NOT to copy). T-692 is the future
+                                                            // the note below anticipated: Controls Hint is a real
+                                                            // CHECKED toggle, and its glyph drops INTO this cell
+                                                            // without moving the label — which is only true
+                                                            // because the gutter was reserved unconditionally.
+                                                            // The `…` "opens a dialog" suffix lives in the MENUS
+                                                            // labels themselves.
                                                             match it.action {
                                                                 Some(a) => {
                                                                     let disabled = move || match a {
@@ -873,7 +920,26 @@ pub fn TopCommandStrip(
                                                                             disabled=disabled
                                                                             on:click=move |_| run_action(a)
                                                                         >
-                                                                            <span class=MENU_GUTTER></span>
+                                                                            <span class=MENU_GUTTER>
+                                                                                // T-692 — the gutter's first real
+                                                                                // occupant: a check while the
+                                                                                // Controls Hint is up. Reactive on
+                                                                                // `hint_open`, so toggling it from
+                                                                                // the Help menu is reflected in the
+                                                                                // View menu and vice versa.
+                                                                                {move || {
+                                                                                    (matches!(a, MenuAction::ControlsHint)
+                                                                                        && hint_open.get())
+                                                                                        .then(|| {
+                                                                                            view! {
+                                                                                                <MaterialIcon
+                                                                                                    name="check"
+                                                                                                    class="block text-base leading-none"
+                                                                                                />
+                                                                                            }
+                                                                                        })
+                                                                                }}
+                                                                            </span>
                                                                             <span>{label}</span>
                                                                         </button>
                                                                     }
@@ -941,6 +1007,13 @@ pub fn TopCommandStrip(
             >
                 "ORBAT Manager"
             </button>
+            // T-692 — the Controls Hint overlay (MENU-VIEW-017). Mounted HERE, inside the strip,
+            // rather than beside it in `mission_editor`: the strip is already one of the four
+            // mounts `mission_editor` gates on `chrome_hidden`, so hosting the card in this
+            // subtree gives it the Backspace hide/show behaviour BY CONSTRUCTION — there is no
+            // second gate that could drift out of step with the first (the debug HUD gets its
+            // gating the same way, from inside the status bar). Renders no DOM while closed.
+            <crate::eden_help::ControlsHint open=hint_open />
             // Click-away scrim for an open menu (below the dropdowns' z-50).
             {move || {
                 open_menu
@@ -2143,6 +2216,78 @@ mod t668_state_vocabulary {
         assert!(
             code.contains("disabled=true") && code.contains("title="),
             "the disabled row is a button with a retained title, not an inert span"
+        );
+    }
+}
+
+/// T-692 — the help surface's TOP-STRIP half: a Help menu in the bar (MENU-BAR-008 /
+/// MENU-HELP-001) and a View-menu toggle (MENU-VIEW-017), both reaching the one Controls Hint.
+///
+/// The list's contents are pinned against the real keydown arms in `eden_help`; what this module
+/// pins is that the surface is REACHABLE — a shortcut table nothing opens documents nothing. The
+/// menus are a `const` table, so these read it directly rather than scraping source.
+#[cfg(test)]
+mod t692_help_surface {
+    use super::{MenuAction, MENUS};
+
+    /// Which menu labels carry a row that opens the Controls Hint.
+    fn menus_reaching_the_hint() -> Vec<&'static str> {
+        MENUS
+            .iter()
+            .filter(|(_, items)| {
+                items
+                    .iter()
+                    .any(|it| matches!(it.action, Some(MenuAction::ControlsHint)))
+            })
+            .map(|(name, _)| *name)
+            .collect()
+    }
+
+    /// MENU-BAR-008 / MENU-HELP-001 — there is a Help menu, and it is not a stub: its rows are all
+    /// live commands. A Help menu whose only row is disabled would be the same silence, dressed up.
+    #[test]
+    fn the_bar_has_a_live_help_menu() {
+        let help = MENUS
+            .iter()
+            .find(|(name, _)| *name == "Help")
+            .expect("T-692: the top strip menu bar must carry a Help menu (MENU-BAR-008)");
+        assert!(
+            !help.1.is_empty() && help.1.iter().all(|it| it.action.is_some()),
+            "T-692: every Help row must be a live command — a disabled-only Help menu documents \
+             nothing (MENU-HELP-001)"
+        );
+    }
+
+    /// MENU-VIEW-017 — and the same overlay is a View-menu toggle, so it can be put away from the
+    /// menu that shows chrome state, not only from the card's own close button.
+    #[test]
+    fn the_hint_is_reachable_from_both_help_and_view() {
+        let reaching = menus_reaching_the_hint();
+        assert!(
+            reaching.contains(&"Help"),
+            "T-692: the Help menu must open the Controls Hint (found {reaching:?})"
+        );
+        assert!(
+            reaching.contains(&"View"),
+            "T-692 (MENU-VIEW-017): the View menu must carry the Controls Hint toggle (found \
+             {reaching:?})"
+        );
+    }
+
+    /// The action is a TOGGLE reflected in the T-668 checkmark gutter, and the overlay is mounted
+    /// from this file (which is what puts it behind `mission_editor`'s `chrome_hidden` gate — the
+    /// structural half is pinned in `eden_help`).
+    #[test]
+    fn the_toggle_is_checked_in_the_gutter_and_mounted_here() {
+        let code = crate::arsenal::class_r_scrub::live_code(include_str!("eden_top_strip.rs"));
+        assert!(
+            code.contains("ControlsHint open=hint_open"),
+            "the Controls Hint must be mounted inside the strip's own subtree"
+        );
+        // The gutter glyph is reactive on the open latch, so both menus agree on the state.
+        assert!(
+            code.contains("hint_open.get()"),
+            "the checkmark gutter must read the LIVE open state, not a constant"
         );
     }
 }
