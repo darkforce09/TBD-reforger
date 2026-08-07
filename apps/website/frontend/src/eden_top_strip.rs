@@ -288,10 +288,22 @@ const MENUS: [(&str, &[MenuItem]); 7] = [
     ),
     (
         "Mission",
-        &[MenuItem {
-            label: "Mission Settings…",
-            action: Some(MenuAction::Settings),
-        }],
+        &[
+            MenuItem {
+                label: "Mission Settings…",
+                action: Some(MenuAction::Settings),
+            },
+            // T-671 — a named route to the two attribute rows this menu previously had no word for.
+            // Same pattern, and the same reasoning, as the Environment menu's `Time & Weather
+            // (Mission Settings)…` row directly below: one dialog, but an author looking for where
+            // the mission's blurb and card picture are set should not have to guess that
+            // "Settings" is the answer. Parenthesised destination so the row does not pretend to be
+            // a second dialog, and `…` because a dialog is exactly what follows (T-668).
+            MenuItem {
+                label: "Briefing & Thumbnail (Mission Settings)…",
+                action: Some(MenuAction::Settings),
+            },
+        ],
     ),
     (
         "Environment",
