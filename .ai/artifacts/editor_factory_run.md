@@ -69,7 +69,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 114 | 98 | T-633 T-651 T-695 | PASS 30/30 (run 1) | 1M/2m/4N | SHIPPED — Aegis slider+select primitives in ui.rs, editor comments (own non-compiling core root, rule proven by firing it), catalogue favourites; **PLACE-COMMENT-001 does NOT fully close** — no map glyph, not composable (T-748); T-748..T-752 filed |
 | 115 | 99 | T-634 T-670 T-688 | PASS 30/30 (run 1) | 2M/5m/3N | SHIPPED — two-row strip inside the same 48px (no pin weakened), m/px readout unified with T-667's scale bar, aggregated settings with schema-sourced defaults; **T-753 confirmed by experiment** (flow defaults drift ships green); T-753..T-758 filed |
 | 116 | 100 | T-069 T-690 T-696 | PASS 30/30 (run 1, **no BASE_CONFIRM needed** — see below) | 2M/2m/3N | SHIPPED — markers authored on briefings[] (the ticket's markersById premise was WRONG and was refused; premise corrected in the registry), compile emits structured diagnostics (six T-216 silent drops now speak), locations + bookmarks; T-759..T-763 filed |
-| 117 | assign at close | T-084 T-671 T-672 | — | — | pending |
+| 117 | 101 | T-084 T-671 T-672 | PASS 30/30 (run 1) | 1M/2m/1N | SHIPPED — search grammar (classname-TAIL decision made and pinned), mission presentation (**three live bugs found and fixed**), connection graph (see+check in full, one edge verb short by design); T-764..T-768 filed |
 | 118 | assign at close | T-637 T-698 T-699 | — | — | pending |
 | 119 | assign at close | T-697 T-700 T-703 | — | — | pending |
 | 120 | 95 | T-701 T-706 | PASS (run 3; run 1 red on the ledger tripwire firing as designed, run 2 = fixup) | 0B/4M/5m/4N → all hardened pre-close | SHIPPED — per-entity hide + the one-pass 1.3 contract; ledger learned DeclaredPendingEmit; 9 reader-ambiguities + 3 prose residues fixed BEFORE any reader dispatched; unread gate live at 53 fields |
@@ -233,6 +233,29 @@ serialisation, not a hang).
 
 ## Deferred tickets filed by verifiers
 
+- **T-764** (W117/MAJOR-1) ⚠️ **Proved by building a rig, not by reading.** The verifier extracted
+  T-084's regex engine verbatim into a native harness on a 1 MiB thread (the wasm32 stack) and
+  found the **200k budget bounds STEPS, NOT STACK DEPTH** — one native frame per matcher step
+  through boxed continuations. `((( … )))` aborts at ~2500 parens, `^^^…` at ~20000,
+  `(x+x+)+y` at ~2700 haystack chars: a **wasm trap that kills Leptos and unsaved placements**, not
+  the "returns no-match" the slice claimed. NOT reachable from catalogue data (names are 100-150
+  chars) — every vector needs a pasted multi-thousand-char pattern. **Fix is a DEPTH CAP, not a
+  bigger budget.** Everything else held: 37 correctness cases, 0 wrong answers; 2,000,000 randomised
+  glob cases, 0 mismatches; no multibyte panic.
+- **T-765** (W117/MINOR-1): glob folds the pattern with `to_ascii_lowercase` and the haystack with
+  full `to_lowercase`, so `CAFÉ*` misses `café_x`. Safe direction (a miss, not a false positive).
+- **T-766** (W117/MINOR-2): clearing a briefing clears the ROW but not `meta.briefing`, so a
+  same-session Export still ships the deleted text. Needs a core mutator that distinguishes
+  "set to empty" from "not supplied".
+- **T-767** (W117/NIT + T-672): stale `formation` enum prose; and `ConnectionKind` et al are `pub`
+  inside a **private** `store` module, so the frontend cannot name them and T-672 carries a
+  duplicate vocabulary. A one-line re-export in `doc/mod.rs` retires it.
+- **T-768** (W117, disclosed partial): **CONN-START-001's pointer half is deferred behind T-723.**
+  A third arming source on the armed-pointerup path inherits its missing button filter, strandable
+  `LG::Pending` and absent Esc disarm. Eden also starts at RMB ▸ Connect, so only the final LMB pick
+  is missing — after T-723 it changes the caller and nothing else. Also covers CONN-DEL-001 having
+  no line to select. **Schedule any connections lane WITH T-760's marker lane** — same rebind tail,
+  same `draw_order.rs` edit.
 - **T-759** (W116/1) ⚠️ **HOLLOW PINS — the signature defect aimed at the pins themselves.**
   T-696's headline source pins `include_str!` the WHOLE file including their own test module, so
   every positive needle matches the assertion searching for it. **Delete the production usage and
