@@ -11,7 +11,7 @@ use leptos::prelude::*;
 use crate::outliner::{
     flatten_visible, FlatRow, LayerRow, NodeKind, OutlinerNode, VIRTUAL_SLOT_THRESHOLD,
 };
-use crate::ui::{badge_class, MaterialIcon};
+use crate::ui::MaterialIcon;
 
 /* ───────────────────────── T-666 — folder-click selection rules ───────────────────────── */
 
@@ -118,18 +118,57 @@ fn folders_holding_slots(nodes: &[OutlinerNode]) -> std::collections::HashSet<St
 // one) fails there. The border is the load-bearing half: before T-668 `ROW_ACTIVE` had none, so a
 // selected row and a hovered row differed only by tint, not by construction.
 
-/// A tree row's shared recipe (idle): geometry + [`crate::eden_layout::HOVER_FILL`]. Depth renders as
-/// leading guide-line spans (see `guide_spans`).
-pub(crate) const ROW: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
-/// A tree row's SELECTED/active recipe: geometry + [`crate::eden_layout::TOGGLED_PLATE`] (the lighter
-/// primary plate PLUS the 1px dark top border that makes it distinct-by-construction from a hovered
-/// [`ROW`]).
-pub(crate) const ROW_ACTIVE: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm bg-primary/20 text-primary border-t border-background/60";
+// ── T-637 — ONE row geometry, and it is EXPLICIT ─────────────────────────────────────────────────
+//
+// The pitch used to be implicit: `px-1.5 py-1` around a 16 px `text-label-sm` line box, which is 24
+// and which `ROW_H` restated as a magic `24.0`. Two things were wrong with that.
+//
+//   (1) **It was not actually one number.** `ROW_ACTIVE` carries a `border-t` that `ROW` does not,
+//       and under `box-sizing: border-box` an auto-height row grows by that border — so a SELECTED
+//       row was 25 px in a tree whose virtual spacers reserved 24. The drift was invisible at eight
+//       rows and a creeping scroll-position error at eight hundred. Stating `h-4` fixes the height
+//       INSIDE the border box, so every recipe is the same height by construction.
+//   (2) **24 px is not a dense tree.** Eden's outliner runs at a 15.8 px pitch and that is how it
+//       fits a mission's worth of structure in 240 px; ours showed a title, one row, and 900 px of
+//       nothing. `h-4` is 16.
+//
+// The four ad-hoc row kinds (Unfiled/Faction/Squad/Comment) used to inline their own copy of the
+// geometry, so "the tree's row height" lived in seven string literals. They all compose [`ROW_GEOM`]
+// now, and `t637_one_dense_row_geometry` pins that `ROW_H` IS what the shared class says.
+
+/// T-637 — the geometry EVERY tree row shares, and the single place the 16 px pitch is stated.
+/// `h-4` is [`ROW_H`]; `items-center` centres the 16 px chevron/glyph cells inside it.
+pub(crate) const ROW_GEOM: &str =
+    "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm";
+
+/// A tree row's shared recipe (idle): [`ROW_GEOM`] + [`crate::eden_layout::HOVER_FILL`]. Depth
+/// renders as leading guide-line spans (see `guide_spans`).
+pub(crate) const ROW: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
+/// A tree row's SELECTED/active recipe: [`ROW_GEOM`] + [`crate::eden_layout::TOGGLED_PLATE`] (the
+/// lighter primary plate PLUS the 1px dark top border that makes it distinct-by-construction from a
+/// hovered [`ROW`]). The border is inside the `h-4` box, so this row is not a pixel taller than [`ROW`].
+pub(crate) const ROW_ACTIVE: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm bg-primary/20 text-primary border-t border-background/60";
 /// T-177 A2 — the palette-leaf variant of [`ROW`]: adds `cursor-grab` (→ `cursor-grabbing` while
 /// pressed) so hovering a placeable role advertises the drag affordance. Folders keep `cursor-pointer`
 /// and outliner slots keep the plain [`ROW`] default (only palette leaves are drag-to-place). Same
 /// [`crate::eden_layout::HOVER_FILL`] as [`ROW`].
-pub(crate) const PALETTE_LEAF: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface cursor-grab active:cursor-grabbing";
+pub(crate) const PALETTE_LEAF: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface cursor-grab active:cursor-grabbing";
+/// T-637 — the non-interactive row kinds (Squad / Comment headers): [`ROW_GEOM`] at the muted rest
+/// weight. They are `<div>`s, not buttons, but they occupy the same 16 px pitch — a group header that
+/// was a different height from its children is what made the tree read as ragged.
+pub(crate) const ROW_STATIC: &str =
+    "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-on-surface-variant";
+/// T-637 — the "Unfiled" pseudo-root's row: [`ROW_GEOM`] at the faintest weight (it is a virtual
+/// bucket, not a doc layer).
+pub(crate) const ROW_UNFILED: &str =
+    "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm text-outline";
+/// T-637 — an ORBAT faction header: [`ROW_GEOM`] plus the small-caps treatment that marks a section.
+pub(crate) const ROW_FACTION: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant";
+/// T-637 — the ORBAT squad-leader badge, sized for the dense row. `ui::badge_class` is the page-level
+/// pill (`px-2 py-0.5` ⇒ 22 px with its border) and it burst out of a 16 px row; this is the same
+/// primary tint at `h-3` with `leading-none`, so the badge sits INSIDE the row instead of setting its
+/// height.
+pub(crate) const ROW_BADGE: &str = "inline-flex h-3 shrink-0 items-center rounded border border-primary/30 bg-primary/10 px-1 text-label-sm leading-none text-primary";
 
 /// Hierarchy guide lines — continuous YouTube spines (T-178 A3/A4; supersedes T-177 L-hooks).
 /// `ancestors` / `guide_ids` both have `len == depth`. Continuous `w-px` stems + mid-row stub;
@@ -267,16 +306,27 @@ pub(crate) fn chevron_or_spacer(
                     });
             }
         >
-            <MaterialIcon name=icon class="block text-sm" />
+            <MaterialIcon name=icon class="block text-sm leading-none" />
         </span>
     }
     .into_any()
 }
 
-/// T-169 — window geometry. `ROW_H` is the flow height of one row (`px-1.5 py-1 text-label-sm`);
-/// the spacers use it to reserve the off-screen rows. `OVERSCAN` renders a few rows past the
-/// viewport each way so a fast scroll never flashes blank.
-const ROW_H: f64 = 24.0;
+/// T-169 — window geometry. `ROW_H` is the flow height of one row; the spacers use it to reserve the
+/// off-screen rows, so if it disagrees with what the row class actually renders the scrollbar lies
+/// and a fast scroll lands on the wrong row. `OVERSCAN` renders a few rows past the viewport each way
+/// so a fast scroll never flashes blank.
+///
+/// T-637 — 24 → 16, and it is no longer a magic number: it is [`ROW_GEOM`]'s `h-4` read back through
+/// the Tailwind spacing scale, pinned by `t637_one_dense_row_geometry`. Denser is the point (Eden's
+/// outliner runs at ~15.8 px), but the pin is the durable half — the two used to be able to drift.
+const ROW_H: f64 = 16.0;
+/// The windowed scroller's height. **Deliberately still a fixed budget, not `h-full`.** Letting the
+/// scroller grow to the dock's full height would make the rendered-row count a function of the
+/// viewport, and the T-169 windowing gate asserts `rendered < total` at a seeded 80 slots — a check
+/// that a tall enough window would silently stop testing. The dock itself scrolls (`DOCK_L`'s
+/// `overflow-y-auto`), so nothing is unreachable. At T-637's [`ROW_H`] this same 420 px shows 26 rows
+/// where it used to show 17.
 const CONTAINER_H: f64 = 420.0;
 const OVERSCAN: usize = 6;
 
@@ -330,7 +380,7 @@ fn layer_flag_toggles(
                 }
             }
         >
-            <MaterialIcon name=eye_icon class="block text-sm" filled=hidden />
+            <MaterialIcon name=eye_icon class="block text-sm leading-none" filled=hidden />
         </span>
     };
 
@@ -366,7 +416,7 @@ fn layer_flag_toggles(
                 }
             }
         >
-            <MaterialIcon name=lock_icon class="block text-sm" filled=locked />
+            <MaterialIcon name=lock_icon class="block text-sm leading-none" filled=locked />
         </span>
     };
 
@@ -417,7 +467,7 @@ fn folder_row_actions(
                 rename.set(Some((rename_id.clone(), rename_seed.clone())));
             }
         >
-            <MaterialIcon name="edit" class="block text-sm" />
+            <MaterialIcon name="edit" class="block text-sm leading-none" />
         </span>
     };
 
@@ -451,7 +501,7 @@ fn folder_row_actions(
                 let _ = (&del_id, &del_label);
             }
         >
-            <MaterialIcon name="delete" class="block text-sm" />
+            <MaterialIcon name="delete" class="block text-sm leading-none" />
         </span>
     };
 
@@ -493,7 +543,7 @@ fn single_row(
     let toggle = chevron_or_spacer(row.has_children, open, &row.id, collapsed);
     let sl_badge = if is_leader {
         view! {
-            <span class=badge_class("primary") data-sl-badge="true">"SL"</span>
+            <span class=ROW_BADGE data-sl-badge="true">"SL"</span>
         }
         .into_any()
     } else {
@@ -501,19 +551,19 @@ fn single_row(
     };
     match row.kind {
         NodeKind::Unfiled => view! {
-            <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
+            <div class=ROW_UNFILED>
                 {guide_spans(ancestors, guide_ids, collapsed)}
                 {toggle}
-                <MaterialIcon name="inbox" class="block text-sm" />
+                <MaterialIcon name="inbox" class="block text-sm leading-none" />
                 <span>{label}</span>
             </div>
         }
         .into_any(),
         NodeKind::Faction => view! {
-            <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+            <div class=ROW_FACTION>
                 {guide_spans(ancestors, guide_ids, collapsed)}
                 {toggle}
-                <MaterialIcon name="flag" class="block text-sm" />
+                <MaterialIcon name="flag" class="block text-sm leading-none" />
                 <span class="truncate">{label}</span>
             </div>
         }
@@ -523,7 +573,7 @@ fn single_row(
             if orbat_refile {
                 view! {
                     <div
-                        class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant"
+                        class=ROW_STATIC
                         title="Drop a slot here to refile into this squad"
                         on:pointerup=move |ev| {
                             ev.stop_propagation();
@@ -535,17 +585,17 @@ fn single_row(
                     >
                         {guide_spans(ancestors, guide_ids, collapsed)}
                         {toggle}
-                        <MaterialIcon name="groups" class="block text-sm" />
+                        <MaterialIcon name="groups" class="block text-sm leading-none" />
                         <span class="truncate">{label}</span>
                     </div>
                 }
                 .into_any()
             } else {
                 view! {
-                    <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
+                    <div class=ROW_STATIC>
                         {guide_spans(ancestors, guide_ids, collapsed)}
                         {toggle}
-                        <MaterialIcon name="groups" class="block text-sm" />
+                        <MaterialIcon name="groups" class="block text-sm leading-none" />
                         <span class="truncate">{label}</span>
                     </div>
                 }
@@ -570,7 +620,11 @@ fn single_row(
             };
             // T-665 — dim a folder that is effectively hidden (own or inherited); the eye/lock
             // toggles ride at the row's trailing edge.
-            let dim = if row.hidden_effective { " opacity-40" } else { "" };
+            let dim = if row.hidden_effective {
+                " opacity-40"
+            } else {
+                ""
+            };
             let flag_toggles = layer_flag_toggles(
                 &id,
                 row.hidden,
@@ -608,7 +662,7 @@ fn single_row(
                     <div class=move || format!("{}{dim}", if is_active() { ROW_ACTIVE } else { ROW })>
                         {guide_spans(ancestors, guide_ids, collapsed)}
                         {toggle}
-                        <MaterialIcon name=folder_icon class="block text-sm" />
+                        <MaterialIcon name=folder_icon class="block text-sm leading-none" />
                         <input
                             r#type="text"
                             class="min-w-0 flex-1 rounded bg-black/30 px-1 text-label-sm text-on-surface outline-none ring-1 ring-primary/60"
@@ -710,7 +764,7 @@ fn single_row(
                 >
                     {guide_spans(ancestors, guide_ids, collapsed)}
                     {toggle}
-                    <MaterialIcon name=folder_icon class="block text-sm" />
+                    <MaterialIcon name=folder_icon class="block text-sm leading-none" />
                     <span class="truncate">{label}</span>
                     {flag_toggles}
                     {row_actions}
@@ -735,7 +789,7 @@ fn single_row(
             let tip = row.tooltip.clone();
             view! {
                 <div
-                    class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant"
+                    class=ROW_STATIC
                     title=tip
                     aria-label=aria
                     // Double-click opens the COMMENT EDITOR — a comment's Attributes. Deliberately
@@ -758,7 +812,7 @@ fn single_row(
                 >
                     {guide_spans(ancestors, guide_ids, collapsed)}
                     {toggle}
-                    <MaterialIcon name="sticky_note_2" class="block text-sm" />
+                    <MaterialIcon name="sticky_note_2" class="block text-sm leading-none" />
                     <span class="truncate">{label}</span>
                 </div>
             }
@@ -776,12 +830,16 @@ fn single_row(
             // T-665 — a slot on a hidden layer (or hidden ancestor) renders dimmed; one on a locked
             // layer shows a trailing lock hint (the store still refuses its move — this is the
             // visible surface of that refusal in the outliner).
-            let dim = if row.hidden_effective { " opacity-40" } else { "" };
+            let dim = if row.hidden_effective {
+                " opacity-40"
+            } else {
+                ""
+            };
             let lock_hint = if row.locked_effective {
                 view! {
                     <MaterialIcon
                         name="lock"
-                        class="ml-auto block shrink-0 pl-1 text-sm text-outline"
+                        class="ml-auto block shrink-0 pl-1 text-sm leading-none text-outline"
                     />
                 }
                 .into_any()
@@ -824,7 +882,7 @@ fn single_row(
                 >
                     {guide_spans(ancestors, guide_ids, collapsed)}
                     {toggle}
-                    <MaterialIcon name="person" class="block text-sm" />
+                    <MaterialIcon name="person" class="block text-sm leading-none" />
                     <span class="truncate">{label}</span>
                     {sl_badge}
                     {lock_hint}
@@ -1348,5 +1406,126 @@ mod tests {
                 "a palette leaf is not a toggle — no toggled-plate border"
             );
         }
+    }
+}
+
+/// T-637 — **THE PITCH IS ONE NUMBER, STATED ONCE.**
+///
+/// `ROW_H` is not decoration: the windowed renderer reserves off-screen rows with two spacer divs
+/// sized `n × ROW_H`, so if `ROW_H` and the row class disagree the scroll height is a lie and a fast
+/// scroll lands on the wrong row — by `n × Δ`, which grows with the tree. Before this ticket the two
+/// were connected only by a comment, AND they already disagreed: `ROW_ACTIVE` carries a `border-t`
+/// that `ROW` does not, so under `box-sizing: border-box` a selected row rendered a pixel taller than
+/// the 24 the spacers reserved.
+///
+/// Both halves are fixed here. Every row recipe states `h-4` explicitly (so the border lives inside
+/// the box and no recipe can be taller than another), and `ROW_H` is that class read back through the
+/// Tailwind spacing scale rather than re-typed as a literal.
+#[cfg(test)]
+mod t637_one_dense_row_geometry {
+    use super::{
+        CONTAINER_H, PALETTE_LEAF, ROW, ROW_ACTIVE, ROW_BADGE, ROW_FACTION, ROW_GEOM, ROW_H,
+        ROW_STATIC, ROW_UNFILED,
+    };
+    use crate::eden_layout::tw_len_px;
+
+    /// Every recipe a tree row can wear is [`ROW_GEOM`] plus a paint, and the windowing constant is
+    /// that geometry's stated height — not a number that merely happens to match it today.
+    #[test]
+    fn every_row_recipe_states_the_one_height_and_row_h_reads_it_back() {
+        let geom_h = tw_len_px(ROW_GEOM, "h-").expect("ROW_GEOM must state an explicit `h-*`");
+        assert!(
+            (geom_h - ROW_H).abs() < f64::EPSILON,
+            "T-637: ROW_H ({ROW_H}) must BE the height the shared row class renders ({geom_h}) — \
+             the virtual spacers reserve n × ROW_H, so a mismatch is a scroll position that drifts \
+             further wrong the longer the tree gets"
+        );
+        for (name, recipe) in [
+            ("ROW", ROW),
+            ("ROW_ACTIVE", ROW_ACTIVE),
+            ("PALETTE_LEAF", PALETTE_LEAF),
+            ("ROW_STATIC", ROW_STATIC),
+            ("ROW_UNFILED", ROW_UNFILED),
+            ("ROW_FACTION", ROW_FACTION),
+        ] {
+            let h = tw_len_px(recipe, "h-")
+                .unwrap_or_else(|| panic!("T-637: `{name}` must state the row height explicitly"));
+            assert!(
+                (h - ROW_H).abs() < f64::EPSILON,
+                "T-637: `{name}` renders at {h} px in a tree windowed at {ROW_H} px"
+            );
+            assert!(
+                recipe.starts_with(ROW_GEOM),
+                "T-637: `{name}` must be built from ROW_GEOM — the pitch lived in seven separate \
+                 string literals before this ticket, which is how ROW_ACTIVE drifted"
+            );
+            // No vertical padding may creep back: it would add to `h-4` under border-box only if the
+            // content overflowed, but stating both is how the two definitions start disagreeing again.
+            assert!(
+                !recipe.contains(" py-") && !recipe.contains(" p-"),
+                "T-637: `{name}` states its height; a `py-*`/`p-*` beside it is a second opinion"
+            );
+        }
+    }
+
+    /// **THE DENSITY, as a number.** 24 px was the complaint — a title, one row and ~900 px of void
+    /// in a 240 px dock. Eden's outliner runs at ~15.8 px and that is how it fits a mission's worth
+    /// of structure in the same width. This pins the direction and the magnitude, not just the value:
+    /// the same fixed 420 px scroller must now show meaningfully MORE rows than the 17 it used to.
+    #[test]
+    fn the_tree_is_dense_enough_to_be_eden_shaped() {
+        assert!(
+            ROW_H <= 16.0,
+            "T-637: {ROW_H} px per row is not a dense tree — Eden's is ~15.8"
+        );
+        let rows_now = (CONTAINER_H / ROW_H).floor();
+        let rows_before = (CONTAINER_H / 24.0).floor();
+        assert!(
+            rows_now >= rows_before + 8.0,
+            "T-637: the densification must buy real rows — {rows_now} visible where the pre-ticket \
+             24 px pitch gave {rows_before}"
+        );
+    }
+
+    /// The in-row SL badge must fit INSIDE the row rather than setting its height. `ui::badge_class`
+    /// (the page-level pill) is `px-2 py-0.5` + a border ⇒ 22 px, which burst a 16 px row open; that
+    /// is why the tree carries its own.
+    #[test]
+    fn the_leader_badge_fits_inside_the_row() {
+        let badge_h = tw_len_px(ROW_BADGE, "h-").expect("the row badge must state a height");
+        assert!(
+            badge_h < ROW_H,
+            "T-637: the SL badge is {badge_h} px inside a {ROW_H} px row — a badge that sets the \
+             row height is what made the ORBAT tree ragged"
+        );
+        assert!(
+            ROW_BADGE.contains("leading-none"),
+            "T-637: without `leading-none` the badge's line box (16 px) exceeds its own `h-3` box"
+        );
+        assert!(
+            ROW_BADGE.contains("shrink-0"),
+            "T-637: the badge must not be squeezed by a long label in a 240 px dock"
+        );
+    }
+
+    /// Every glyph in a row is `text-sm`, whose default line box is 20 px — 4 px taller than the row
+    /// it sits in. `leading-none` collapses that line box to the glyph, which is what lets a 16 px row
+    /// hold a 16 px icon cell without the icons setting the height. A single icon that forgets it
+    /// re-inflates every row it appears in, so this is checked over the whole file rather than per
+    /// call site.
+    #[test]
+    fn no_row_glyph_carries_an_uncollapsed_line_box() {
+        let src = include_str!("eden_tree.rs");
+        let production = src
+            .split("#[cfg(test)]")
+            .next()
+            .expect("the production half precedes the test modules");
+        // Needles assembled so this test's own source cannot satisfy or false-fail them.
+        let loose = format!("{}{}", "text-sm", "\"");
+        assert!(
+            !production.contains(&loose),
+            "T-637: a row glyph ends its class list at `text-sm` — its 20 px line box would set the \
+             height of the 16 px row it sits in. Add `leading-none`."
+        );
     }
 }

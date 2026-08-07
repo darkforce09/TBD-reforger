@@ -20,6 +20,33 @@ use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::eden_layout::{DOCK_L, STUB_PX};
+
+// ── T-637 — the header row is a WIDTH BUDGET too ─────────────────────────────────────────────────
+//
+// At the equalised 240 px the header has to hold the collapse chevron, two tab labels and a trailing
+// verb. It did not: measured in a headless Chrome against the generated `aegis.css`, the old
+// "Editor Layers" + "Locations" pair with `tracking-wide` wanted 228 px of a 215 px row, and because
+// the tab group carries `min-w-0` the row SQUEEZED instead of overflowing — the first label wrapped
+// and the header silently grew a line. A squeeze is worse than an overflow: nothing reports it.
+//
+// So the labels are consts, the cells are `shrink-0`, and `the_header_row_fits_the_dock` adds the
+// row up from the label lengths. A longer label fails the pin instead of quietly wrapping.
+
+/// T-637 — the layers tab's label. "Editor Layers" did not fit (see the block above), and the
+/// qualifier bought nothing: the dock holds exactly one kind of layer.
+const TAB_LABEL_LAYERS: &str = "Layers";
+/// T-637 — the locations tab's label (T-696's name, kept: it is Eden's).
+const TAB_LABEL_PLACES: &str = "Locations";
+/// T-637 — an upper bound on one UPPERCASE `text-label-sm` (12 px, semibold, no extra tracking)
+/// character's advance, in CSS px.
+///
+/// MEASURED, not guessed: rendering the real classes against the generated `aegis.css` in a headless
+/// Chrome gives 45.75 px for the 6 characters of "Layers" (7.63/char) and 72.88 px for the 9 of
+/// "Locations" (8.10/char), in DejaVu Sans — the widest fallback in the stack. Inter and system-ui,
+/// which is what actually renders, are both narrower, so 8.5 is a genuine ceiling with margin.
+const UPPERCASE_LABEL_ADVANCE_PX: f64 = 8.5;
+/// T-637 — a tab cell's horizontal padding (`px-1.5` ⇒ 6 px each side).
+const TAB_LABEL_PAD_PX: f64 = 12.0;
 use crate::eden_tree::virtual_tree;
 use crate::outliner::OutlinerNode;
 use crate::ui::MaterialIcon;
@@ -83,25 +110,25 @@ pub fn DockLeft(
     /// observe it).
     collapsed: RwSignal<bool>,
 ) -> impl IntoView {
-    // T-172 B9 — screen-05 bottom icon strip: React's LeftSidebar BOTTOM_TABS were explicitly
-    // visual-only (Hierarchy active), so present-but-disabled is the honest parity.
-    let strip_btn = |icon: &'static str, label: &'static str, active: bool| {
-        view! {
-            <button
-                type="button"
-                disabled=true
-                title=label
-                aria-label=label
-                class=if active {
-                    "rounded-md p-1.5 text-primary"
-                } else {
-                    "rounded-md p-1.5 text-outline"
-                }
-            >
-                <MaterialIcon name=icon class="block text-base" />
-            </button>
-        }
-    };
+    // ── T-637 — the Layers tab's filter ──────────────────────────────────────────────────────────
+    // `layer_nodes` is the tree the view actually renders: `nodes` when the box is empty (the
+    // filter is off by default and costs a clone the doc rebuild already pays for), the matching
+    // subtree otherwise. It is a SEPARATE signal rather than a filter applied inside `virtual_tree`
+    // so the tree renderer keeps one input and one meaning, and so `__outlinerStats.total` still
+    // reports what the dock is showing.
+    let layer_query = RwSignal::new(String::new());
+    let layer_nodes = RwSignal::new(Vec::<OutlinerNode>::new());
+    Effect::new(move |_| {
+        let q = layer_query.get();
+        layer_nodes.set(nodes.with(|ns| filter_outliner(ns, &q)));
+    });
+    // Whether the filter is hiding EVERYTHING. A `Memo` so the body below re-runs at the boundary
+    // only: a plain closure over the two signals would remount `virtual_tree` on every keystroke,
+    // throwing away per-tree collapse state and re-creating its Effect each time.
+    let layers_filtered_empty = Memo::new(move |_| {
+        !layer_query.with(|q| q.trim().is_empty()) && layer_nodes.with(Vec::is_empty)
+    });
+
     // ── T-696 — the Locations tab's state ────────────────────────────────────────────────────────
     // All of it is dock-local SESSION state: which tab is showing, the shared filter box, the lazily
     // fetched named-place index, and the persisted bookmark collection mirrored into a signal so the
@@ -146,11 +173,17 @@ pub fn DockLeft(
                 role="tab"
                 data-testid=testid
                 aria-selected=move || (tab.get() == t).to_string()
+                // T-637 — `shrink-0`, and the `tracking-wide` is gone. MEASURED in a headless
+                // Chrome against the generated `aegis.css`: at the equalised 240 px the old
+                // "Editor Layers" label plus the letter-spacing wanted 228 px of a 215 px row, so
+                // the flex row squeezed the cells (the group carries `min-w-0`) and the first label
+                // wrapped. `shrink-0` turns that from a silent squeeze into an overflow the budget
+                // pin below catches.
                 class=move || {
                     if tab.get() == t {
-                        "rounded px-1.5 py-0.5 text-label-sm font-semibold uppercase tracking-wide text-on-surface"
+                        "shrink-0 rounded px-1.5 py-0.5 text-label-sm font-semibold uppercase text-on-surface"
                     } else {
-                        "rounded px-1.5 py-0.5 text-label-sm font-semibold uppercase tracking-wide text-outline transition-colors hover:text-on-surface"
+                        "shrink-0 rounded px-1.5 py-0.5 text-label-sm font-semibold uppercase text-outline transition-colors hover:text-on-surface"
                     }
                 }
                 on:click=move |ev: web_sys::MouseEvent| {
@@ -434,7 +467,7 @@ pub fn DockLeft(
                 // T-638 — the collapse chevron leads the row (the dock's outer top-LEFT corner, inside the
                 // tab strip); « while expanded, flips to » collapsed.
                 <div
-                    class="group flex items-center justify-between gap-2 rounded px-1 py-0.5"
+                    class="group flex items-center justify-between gap-1 rounded px-1 py-0.5"
                     title="Drop a folder here to move it to the top level"
                     on:pointerup=move |ev: web_sys::PointerEvent| {
                         ev.stop_propagation();
@@ -446,12 +479,17 @@ pub fn DockLeft(
                         let _ = &ev;
                     }
                 >
-                    // T-696 — the title is now a two-tab strip ("Editor Layers" | "Locations"), Eden's
-                    // Locations-tab-beside-Entities precedent. The chevron still leads the row.
+                    // T-696 — the title is a two-tab strip, Eden's Locations-tab-beside-Entities
+                    // precedent. The chevron still leads the row.
+                    //
+                    // T-637 — "Editor Layers" is now "Layers". Not a preference: measured, the old
+                    // label did not fit the equalised 240 px beside "Locations", the chevron and
+                    // the trailing verb, and the dock has exactly one kind of layer in it — the
+                    // "Editor" half distinguished it from nothing the operator can see here.
                     <div class="flex min-w-0 items-center gap-1" role="tablist">
                         {collapse_chevron(collapsed, true)}
-                        {tab_btn(LeftTab::Layers, "Editor Layers", "dock-left-tab-layers")}
-                        {tab_btn(LeftTab::Places, "Locations", "dock-left-tab-places")}
+                        {tab_btn(LeftTab::Layers, TAB_LABEL_LAYERS, "dock-left-tab-layers")}
+                        {tab_btn(LeftTab::Places, TAB_LABEL_PLACES, "dock-left-tab-places")}
                     </div>
                     // T-696 — the header's trailing verb follows the tab: create a layer on the tree,
                     // bookmark the live camera on Locations.
@@ -506,20 +544,56 @@ pub fn DockLeft(
                 // so a later click on a folder can't complete a stale reparent/refile.
                 // T-696 — the tab body. The layers half is byte-for-byte the T-666 tree (stray-drag
                 // cancel latch included); the Locations half is the new index + bookmarks panel.
+                // T-637 — the Layers tab's SEARCH ROW. Eden fills its 240 px with a tab strip, a
+                // filter row and a dense tree; ours had a tab strip, a tree and 900 px of nothing.
+                // The Locations tab already had a filter (T-696) — this gives the half of the dock
+                // that actually needs it one too, over the SAME `matches_query` predicate, so the
+                // two tabs cannot drift into two different ideas of what "matches" means.
+                {move || {
+                    (tab.get() == LeftTab::Layers)
+                        .then(|| {
+                            view! {
+                                <input
+                                    type="search"
+                                    data-testid="dock-left-layers-filter"
+                                    aria-label="Filter editor layers"
+                                    placeholder="Filter layers…"
+                                    prop:value=move || layer_query.get()
+                                    class="mt-1 w-full shrink-0 rounded border border-outline-variant/30 bg-black/20 px-1.5 py-0.5 text-label-sm text-on-surface outline-none placeholder:text-outline focus:border-primary/60"
+                                    on:input=move |ev| layer_query.set(event_target_value(&ev))
+                                />
+                            }
+                        })
+                }}
                 {move || {
                     if tab.get() == LeftTab::Places {
                         places_body().into_any()
+                    } else if layers_filtered_empty.get() {
+                        // Honest empty state: "No objects placed yet." would be a lie while a filter
+                        // is hiding them. Gated behind a Memo so the tree below is NOT remounted on
+                        // every keystroke — only when the has-matches answer actually flips.
+                        view! {
+                            <p class="mt-2 px-1 text-label-sm text-outline">
+                                "No layers match that filter."
+                            </p>
+                        }
+                            .into_any()
                     } else {
                         view! {
+                            // T-637 — `min-h-0 flex-1` is what hands the dock's leftover height to
+                            // the tree instead of leaving it as void. `min-h-0` is load-bearing: a
+                            // flex child's default `min-height:auto` refuses to shrink below its
+                            // content, so without it a long tree pushes the panel instead of
+                            // scrolling inside it.
                             <div
-                                class="mt-1"
+                                class="mt-1 min-h-0 flex-1 overflow-y-auto"
                                 on:pointerup=move |_| {
                                     #[cfg(target_arch = "wasm32")]
                                     crate::editor_ops::cancel_layer_drag();
                                 }
                             >
                                 {virtual_tree(
-                                    nodes,
+                                    layer_nodes,
                                     selected,
                                     active_layer,
                                     "editorLayers",
@@ -533,13 +607,23 @@ pub fn DockLeft(
                             .into_any()
                     }
                 }}
-                <div class="mt-auto flex items-center justify-between border-t border-outline-variant/20 pt-2">
-                    {strip_btn("account_tree", "Hierarchy (visual only)", true)}
-                    {strip_btn("layers", "Layers (visual only)", false)}
-                    {strip_btn("inventory_2", "Assets (visual only)", false)}
-                    {strip_btn("history", "History (visual only)", false)}
-                    {strip_btn("settings", "Settings (visual only)", false)}
-                </div>
+            // T-637 — FIVE DECORATION BUTTONS DELETED HERE, and the auto-margin row that stranded
+            // them at the bottom edge of a 900 px void with it.
+            //
+            // They were five sibling builder calls — Hierarchy, Layers, Assets, History, Settings —
+            // each hard-wired to the disabled state, each carrying a tooltip that admitted in words
+            // that it was decorative, and only the first passing the active flag. The strip thus
+            // claimed a five-tab set that did not exist and could not be reached. T-172 B9 added
+            // them as "honest parity" with React's `BOTTOM_TABS`, but parity with a mock is not
+            // honesty: a control that cannot act, cannot be enabled, and says so only in a tooltip
+            // is furniture. The auto-margin was the marooning — it pushed the row to the panel
+            // floor and turned the dock's unused height into a layout feature.
+            //
+            // Nothing replaces them. Three of the five name surfaces this dock already HAS (the
+            // layers tree is the hierarchy; Locations is the second tab) or that live elsewhere
+            // (History is the strip's version glyph, Settings the strip's gear), so re-implementing
+            // them here would be a second front door to the same rooms. The height they occupied
+            // goes to the tree, which now claims the remainder of the column.
             </aside>
         }
     };
@@ -638,6 +722,52 @@ pub struct NamedPlace {
 pub fn matches_query(name: &str, query: &str) -> bool {
     let q = query.trim().to_lowercase();
     q.is_empty() || name.to_lowercase().contains(&q)
+}
+
+/// T-637 — the Editor Layers tree, filtered by the same [`matches_query`] predicate the Locations
+/// tab uses. Returns the whole tree unchanged for an empty/blank query (the common case — the filter
+/// is off by default), so this is a clone, not a rebuild.
+///
+/// **A tree filter is not a list filter, and the difference is where the honesty lives.** Two rules:
+///
+///   * A node whose OWN label matches keeps its **entire subtree**. You searched for a folder because
+///     you want what is inside it; hiding its non-matching children would answer a question nobody
+///     asked and would make a folder look empty when it is not.
+///   * A node that matches only because a DESCENDANT does is kept as **structure**, with just the
+///     matching paths under it. Dropping it instead would orphan the hit — the row would appear at
+///     the wrong depth, under the wrong parent, in a tree whose whole job is to show containment.
+///
+/// A node that neither matches nor contains a match is dropped. Pure and native-tested; the view is a
+/// thin `Effect` over it.
+#[must_use]
+pub fn filter_outliner(nodes: &[OutlinerNode], query: &str) -> Vec<OutlinerNode> {
+    if query.trim().is_empty() {
+        return nodes.to_vec();
+    }
+    nodes
+        .iter()
+        .filter_map(|n| keep_matching(n, query))
+        .collect()
+}
+
+/// [`filter_outliner`]'s recursion: `Some(pruned copy)` when this node survives, `None` when neither
+/// it nor anything beneath it matches.
+fn keep_matching(node: &OutlinerNode, query: &str) -> Option<OutlinerNode> {
+    if matches_query(&node.label, query) {
+        // Own hit ⇒ the subtree comes with it, untouched.
+        return Some(node.clone());
+    }
+    let kids: Vec<OutlinerNode> = node
+        .children
+        .iter()
+        .filter_map(|c| keep_matching(c, query))
+        .collect();
+    if kids.is_empty() {
+        return None;
+    }
+    let mut out = node.clone();
+    out.children = kids;
+    Some(out)
 }
 
 /// T-696 — the named-locations index, filtered. Order is the caller's (see [`sort_places`]).
@@ -1235,5 +1365,261 @@ mod tests {
                 "camera/bookmark state must not be a document edit, found {banned}"
             );
         }
+    }
+}
+
+/// T-637 — the left dock's density work: the search row that fills the void, and the five decoration
+/// buttons that used to sit at the bottom of it.
+///
+/// **NOTE ON THE PIN IDIOM.** The T-696 pins in the module above `include_str!` this whole file and
+/// then `contains()` a needle that also appears in their own assertion — so deleting the production
+/// code would leave them green (filed as T-759). These pins do not do that: every source needle below
+/// is checked against the PRODUCTION half only (`split("#[cfg(test)]").next()`), so a needle written
+/// here cannot satisfy itself.
+#[cfg(test)]
+mod t637_density {
+    use super::{
+        filter_outliner, matches_query, TAB_LABEL_LAYERS, TAB_LABEL_PAD_PX, TAB_LABEL_PLACES,
+        UPPERCASE_LABEL_ADVANCE_PX,
+    };
+    use crate::eden_layout::{tw_len_px, DOCK_L, DOCK_PX, STUB_PX};
+    use crate::outliner::{NodeKind, OutlinerNode};
+
+    /// The file's production half — everything above the first test module. A needle checked against
+    /// this cannot be satisfied by a test's own source.
+    fn production() -> &'static str {
+        include_str!("eden_dock_left.rs")
+            .split("#[cfg(test)]")
+            .next()
+            .expect("the production half precedes the test modules")
+    }
+
+    fn node(id: &str, label: &str, kind: NodeKind, children: Vec<OutlinerNode>) -> OutlinerNode {
+        OutlinerNode {
+            id: id.to_string(),
+            label: label.to_string(),
+            kind,
+            children,
+            is_leader: false,
+            hidden: false,
+            locked: false,
+            hidden_effective: false,
+            locked_effective: false,
+            tooltip: String::new(),
+        }
+    }
+
+    /// Build a small but structurally real tree: two folders, one nested, slots under each.
+    fn tree() -> Vec<OutlinerNode> {
+        vec![
+            node(
+                "l1",
+                "Assault",
+                NodeKind::Folder,
+                vec![
+                    node("s1", "Rifleman", NodeKind::Slot, vec![]),
+                    node("s2", "Medic", NodeKind::Slot, vec![]),
+                    node(
+                        "l2",
+                        "Support",
+                        NodeKind::Folder,
+                        vec![node("s3", "Machinegunner", NodeKind::Slot, vec![])],
+                    ),
+                ],
+            ),
+            node(
+                "l3",
+                "Recon",
+                NodeKind::Folder,
+                vec![node("s4", "Sniper", NodeKind::Slot, vec![])],
+            ),
+        ]
+    }
+
+    /// **A tree filter must not lie about containment.** The two rules together: an own-hit keeps its
+    /// whole subtree, and a descendant-hit keeps the ANCESTOR PATH so the match renders at the right
+    /// depth under the right parent. A flat "keep matching labels" filter would satisfy neither, and
+    /// in a tree whose entire job is showing what is inside what, that is a wrong answer, not a
+    /// terser one.
+    #[test]
+    fn the_layer_filter_keeps_subtrees_and_ancestor_paths() {
+        let t = tree();
+
+        // Empty / blank query ⇒ everything, unchanged. The filter is OFF by default; this is the
+        // path that runs on every doc rebuild.
+        assert_eq!(filter_outliner(&t, ""), t);
+        assert_eq!(filter_outliner(&t, "   "), t);
+
+        // OWN HIT keeps the whole subtree: searching for a folder means wanting its contents.
+        let own = filter_outliner(&t, "assault");
+        assert_eq!(own.len(), 1, "only the Assault branch survives");
+        assert_eq!(own[0].id, "l1");
+        assert_eq!(
+            own[0].children.len(),
+            3,
+            "an own-hit folder keeps every child — pruning them would show an empty folder that is \
+             not empty"
+        );
+
+        // DESCENDANT HIT keeps the path, pruned to it. `Machinegunner` is two levels down.
+        let deep = filter_outliner(&t, "machinegun");
+        assert_eq!(deep.len(), 1);
+        assert_eq!(deep[0].id, "l1", "the grandparent is kept as structure");
+        assert_eq!(
+            deep[0].children.len(),
+            1,
+            "…but only the branch that leads to the hit"
+        );
+        assert_eq!(deep[0].children[0].id, "l2");
+        assert_eq!(deep[0].children[0].children[0].id, "s3");
+
+        // A miss is a miss — not a silently-unfiltered tree.
+        assert!(filter_outliner(&t, "zzz").is_empty());
+
+        // Case-insensitive substring, because it is the SAME predicate the Locations tab uses.
+        assert_eq!(filter_outliner(&t, "SNIP").len(), 1);
+        assert!(matches_query("Sniper", "SNIP"));
+
+        // PERTURB the rule that costs the most if it is wrong: a filter that dropped
+        // non-matching ancestors would return the hit at the ROOT, at the wrong depth, under no
+        // parent. State that defect as a value and check the real result differs from it.
+        let orphaned: Vec<&str> = vec!["s3"];
+        let real: Vec<&str> = deep.iter().map(|n| n.id.as_str()).collect();
+        assert_ne!(
+            real, orphaned,
+            "PERTURB: a hit must not surface as a root — the tree's job is containment"
+        );
+    }
+
+    /// **The five decoration buttons are gone.** They were `disabled=true` unconditionally, their
+    /// tooltips literally said "(visual only)", and only one passed `active=true` — a permanent claim
+    /// to a Hierarchy/Layers/Assets/History/Settings tab set that did not exist and could not be
+    /// reached. `mt-auto` is what marooned them at the floor of a 900 px void.
+    ///
+    /// Checked on the production half only, so this test's own mention of the string cannot keep it
+    /// green (the T-759 hollow-pin trap).
+    #[test]
+    fn no_decoration_survives_in_the_left_dock() {
+        let src = production();
+        // Needle assembled so this source cannot satisfy it.
+        let decoration = format!("({} only)", "visual");
+        assert!(
+            !src.contains(&decoration),
+            "T-637: a control whose tooltip admits it does nothing is furniture; the dock must not \
+             ship any"
+        );
+        assert!(
+            !src.contains("strip_btn"),
+            "T-637: the decoration strip's builder must be gone, not merely unused"
+        );
+        assert!(
+            !src.contains("mt-auto"),
+            "T-637: `mt-auto` was the marooning — it turned the dock's unused height into a layout \
+             feature instead of giving it to the tree"
+        );
+        // Every remaining `disabled=true` in the dock must be gone too: the dock has no permanently
+        // dead controls left at all.
+        assert!(
+            !src.contains("disabled=true"),
+            "T-637: no permanently-disabled control may remain in the left dock"
+        );
+    }
+
+    /// **The height goes to the tree.** The dock is a column ([`crate::eden_layout::DOCK_L`]); the
+    /// tree region claims the remainder with `flex-1` and can shrink inside it with `min-h-0`. Both
+    /// tokens are load-bearing: without `flex-1` the void comes straight back, and without `min-h-0`
+    /// a flex child refuses to shrink below its content, so a long tree pushes the panel instead of
+    /// scrolling inside it.
+    #[test]
+    fn the_tree_claims_the_dock_height_the_decoration_used_to_hold() {
+        let src = production();
+        assert!(
+            src.contains("min-h-0 flex-1 overflow-y-auto"),
+            "T-637: the layers tree region must claim the dock's remaining height and scroll inside it"
+        );
+        // …and the Layers tab has the search row Eden fills that width with.
+        assert!(
+            src.contains("dock-left-layers-filter"),
+            "T-637: the Layers tab needs a driveable filter row, like the Locations tab already had"
+        );
+        // The tree renders the FILTERED signal, not the raw one — otherwise the box is decoration
+        // itself, which is the exact defect this ticket deleted five of. Read as "the first argument
+        // at the `virtual_tree` call site", so leading whitespace cannot make the check vacuous.
+        let call = src
+            .find("virtual_tree(")
+            .expect("the dock must still render a tree");
+        let first_arg = src[call + "virtual_tree(".len()..]
+            .split(',')
+            .next()
+            .unwrap_or("")
+            .trim();
+        assert_eq!(
+            first_arg, "layer_nodes",
+            "T-637: the tree must be fed the FILTERED node set (got `{first_arg}`), or the filter \
+             box is itself decoration"
+        );
+        assert!(
+            src.contains("filter_outliner(ns, &q)"),
+            "T-637: the filtered set must come from the shared tree filter"
+        );
+    }
+
+    /// **THE HEADER FITS, AND THAT IS ARITHMETIC NOW TOO.** The peer of the right dock's
+    /// `t637_tab_strip_budget`. At the equalised 240 px this row holds the collapse chevron, two tab
+    /// labels and a trailing verb; before this ticket the labels alone overran it, and because the
+    /// tab group carries `min-w-0` the row squeezed rather than overflowed — the first label wrapped
+    /// and nothing anywhere reported it.
+    ///
+    /// The label widths come from [`UPPERCASE_LABEL_ADVANCE_PX`], which is a MEASURED ceiling (see
+    /// its doc comment), so lengthening a label fails here instead of wrapping in a browser.
+    #[test]
+    fn the_header_row_fits_the_dock() {
+        let pad = tw_len_px(DOCK_L, "p-").expect("the dock states its padding");
+        // The header's own `px-1` gutter sits inside the dock's padding.
+        let budget = DOCK_PX - 2.0 * pad - 2.0 * 4.0;
+        let cell = |label: &str| {
+            label.chars().count() as f64 * UPPERCASE_LABEL_ADVANCE_PX + TAB_LABEL_PAD_PX
+        };
+        // chevron (STUB_PX — its hit box must match the collapsed stub, so it is not ours to shrink)
+        // + gap + tab + gap + tab | gap | the trailing verb cell (`size-5`).
+        let gap = 4.0;
+        let verb = 20.0;
+        let row =
+            STUB_PX + gap + cell(TAB_LABEL_LAYERS) + gap + cell(TAB_LABEL_PLACES) + gap + verb;
+        assert!(
+            row <= budget,
+            "T-637: the header wants {row} px of a {budget} px dock row. It will not overflow — the \
+             tab group carries `min-w-0`, so it will SQUEEZE, wrap a label and grow a line, which is \
+             the failure mode that reports nothing"
+        );
+        // The cells refuse to be squeezed, so a future overrun is a visible overflow the eye catches
+        // rather than a silent reflow.
+        let src = production();
+        assert_eq!(
+            src.matches("shrink-0 rounded px-1.5 py-0.5 text-label-sm font-semibold uppercase")
+                .count(),
+            2,
+            "T-637: both tab states must be `shrink-0` — a squeezable cell hides an overrun"
+        );
+    }
+
+    /// The measured ceiling is a CEILING. If someone raises it to make a longer label fit, this
+    /// fails: the number has a provenance (a headless-Chrome measurement of the real classes) and
+    /// widening it silently would make the budget above meaningless.
+    #[test]
+    fn the_measured_label_advance_is_still_an_upper_bound() {
+        // The two worst per-character advances actually observed, in the widest fallback font.
+        for (label, measured_total) in [(TAB_LABEL_LAYERS, 45.75), (TAB_LABEL_PLACES, 72.88)] {
+            let per_char = measured_total / label.chars().count() as f64;
+            assert!(
+                per_char <= UPPERCASE_LABEL_ADVANCE_PX,
+                "T-637: `{label}` measured {per_char} px/char, above the {UPPERCASE_LABEL_ADVANCE_PX} \
+                 px ceiling the header budget is computed from"
+            );
+        }
+        assert!(
+            UPPERCASE_LABEL_ADVANCE_PX < 10.0,
+            "T-637: a ceiling loose enough to admit anything is not a ceiling"
+        );
     }
 }
