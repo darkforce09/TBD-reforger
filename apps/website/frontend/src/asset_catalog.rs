@@ -389,56 +389,628 @@ fn object_alias_slug(raw: &str) -> String {
     }
 }
 
-/// T-646 (RIGHT-SEARCH-002) — the search operator a query opens with, recognised in front of the
-/// default label-substring match. Eden's full grammar (`mod `, `*`/`?` globs, `/…/` regex) is
-/// T-084's rewrite; this ticket adds **only** `class:` and must stay additive so the two compose —
-/// see [`filter_catalog`].
+// ── T-084 (RIGHT-SEARCH-002/003/004/005) — the asset-browser search GRAMMAR ──────────────────────
+//
+// One query string, two independent halves:
+//
+//   [operator] [pattern]
+//    class:     Character_US_Ri      → FIELD = classname,  PATTERN = plain
+//    mod:       ArmaReforger         → FIELD = mod root,   PATTERN = plain
+//    (none)     *rifle*              → FIELD = label,      PATTERN = glob
+//    class:     /us_(mg|ar)\.et$/    → FIELD = classname,  PATTERN = regex
+//
+// The two halves are parsed separately and then crossed, which is why four parity ids
+// (`RIGHT-SEARCH-002` `class:`, `003` `mod:`, `004` glob, `005` regex) cost one grammar rather than
+// four filters: a pattern is matched against whichever field the operator selected, so every
+// operator gains every pattern for free and a new operator is one table row.
+//
+// T-646 shipped the `class:` half of this (operator recognition + classname matching) and this
+// rewrite subsumes it: every behaviour T-646 pinned still holds, with ONE deliberate change — see
+// [`classname_tail`] for the wave-105 MINOR-2 decision on bare classnames.
+
+/// Which FIELD of a palette leaf an operator selects.
 ///
-/// `class:B_Soldier` matches by CLASSNAME (a leaf's `id` = its Enfusion `resource_name`), prefix,
-/// case-insensitive. `class:` with an empty operand is a deliberate no-match (the dock's empty state
-/// says so) — an author mid-typing `class:` should see nothing, not the whole tree.
+/// The three are genuinely different data, not three spellings of one string:
+/// * `Label` is the author-facing `display_name` ("US Rifleman") — the historical T-055 search.
+/// * `ClassName` is the Enfusion `resource_name`
+///   (`{26A9756790131354}Prefabs/…/Character_US_Rifleman.et`) — what a drop actually carries.
+/// * `Mod` is the addon the row came from, which in this catalogue is the ROOT of the category path
+///   (`ArmaReforger/Vehicles/Wheeled/UAZ469`) and therefore the tree's depth-0 folder. See
+///   `VEHICLE_OPEN_DEPTH`'s note: the vehicle and object trees are addon-rooted by construction.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SearchField {
+    /// Default: the leaf/folder `label`, case-insensitive SUBSTRING (T-055, unchanged).
+    Label,
+    /// `class:` — the leaf `id` (`resource_name`) or its [`classname_tail`], PREFIX.
+    ClassName,
+    /// `mod:` / `mod ` — the depth-0 (addon) folder, PREFIX.
+    Mod,
+}
+
+/// The PATTERN half of a query — how the operand is matched, independent of which field it is
+/// matched against.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum SearchQuery<'a> {
-    /// No recognised operator: the historical case-insensitive **label** substring (T-055).
-    Label(&'a str),
-    /// `class:<operand>` — case-insensitive **classname** (`id`) prefix. `operand` is already
-    /// lowercased and trimmed; empty ⇒ match nothing.
-    ClassPrefix(String),
+pub enum SearchPattern {
+    /// The raw query was empty/whitespace: no filter at all, the tree is returned unchanged.
+    All,
+    /// An operator (or a `/`) was typed with NO operand yet. Matches nothing, and the dock shows
+    /// guidance rather than "no match" — a half-typed query is a mid-type state, not a failed
+    /// search. (T-646's `class:` empty-operand rule, generalised to every operator.)
+    Pending,
+    /// A literal operand, already lowercased. Substring for `Label`, prefix for the others.
+    Plain(String),
+    /// `RIGHT-SEARCH-004` — `*` (any run) / `?` (exactly one) wildcards, matched WHOLE-STRING.
+    Glob(GlobPattern),
+    /// `RIGHT-SEARCH-005` — `/…/` regex, matched as an unanchored SEARCH (use `^`/`$` to anchor).
+    Regex(Rx),
+    /// A `/…/` body this engine cannot parse. Matches nothing and says so — silently falling back
+    /// to a literal search for the regex text would hide the typo behind an empty tree.
+    Invalid,
 }
 
-/// The `class:` operator token. A trailing space is allowed (`class: B_Soldier`) — the operand is
-/// trimmed — but the token itself is exact so `classy` / `subclass:` never trip it.
-const CLASS_PREFIX: &str = "class:";
+/// A parsed query: which field, matched how.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SearchQuery {
+    pub field: SearchField,
+    pub pattern: SearchPattern,
+}
 
-/// T-646 (RIGHT-SEARCH-002) — recognise the search operator in front of a raw query.
+/// The operator table. Adding an operator is one row here plus one arm in [`filter_catalog`].
 ///
-/// Kept as its own function (not inlined into [`filter_catalog`]) so T-084 extends the grammar in
-/// one place and the recogniser is unit-testable on its own. Only `class:` is recognised here; every
-/// other query — including one that merely *contains* `class:` past the start, e.g.
-/// `"first class:"` — is a plain [`SearchQuery::Label`], matching Eden, where the operator is a
-/// leading token.
+/// `mod ` (space) is accepted alongside `mod:` because the parity sweep names the Eden token with a
+/// trailing space; the colon form is the one the placeholder advertises, and both are LEADING tokens
+/// so a label search for "mod" or "classy" is untouched. Order matters only in that no token is a
+/// prefix of another.
+const OPERATORS: &[(&str, SearchField)] = &[
+    ("class:", SearchField::ClassName),
+    ("mod:", SearchField::Mod),
+    ("mod ", SearchField::Mod),
+];
+
+/// The CLASSNAME TAIL of an Enfusion `resource_name`: the last path segment with its extension
+/// dropped — `{26A9756790131354}Prefabs/…/Character_US_Rifleman.et` → `Character_US_Rifleman`.
+///
+/// **THE WAVE-105 MINOR-2 DECISION.** T-646 matched `class:` against full `resource_name` PREFIXES
+/// only. Reforger resource names are GUID-headed, so a bare classname — the thing an author actually
+/// knows and types — could never prefix-match, and `class:Character_US_Rifleman` SILENTLY EMPTIED
+/// THE TREE. That is the defect: a query the author reasonably expects to work returning nothing,
+/// with no way to tell a miss from a broken operator.
+///
+/// The decision: **`class:` matches the full `resource_name` prefix OR the classname-tail prefix.**
+/// Both, not either/or, so
+/// * `class:{26A9756790131354}Prefabs` — T-646's GUID-path prefix — still works, and
+/// * `class:Character_US_Ri` — a bare classname — now works.
+///
+/// Tail matching stays a PREFIX, not a substring: `class:Rifleman` against
+/// `Character_US_Rifleman` is still a miss, because a substring `class:` would collapse into the
+/// label search it exists to be different from. A mid-classname token has its own spelling in this
+/// grammar now — `class:*Rifleman` (glob) or `class:/rifleman/` (regex) — which is exactly why the
+/// tail rule can afford to stay strict.
 #[must_use]
-pub fn parse_search_query(query: &str) -> SearchQuery<'_> {
-    let trimmed = query.trim_start();
-    if let Some(rest) = strip_prefix_ci(trimmed, CLASS_PREFIX) {
-        return SearchQuery::ClassPrefix(rest.trim().to_lowercase());
+pub fn classname_tail(id: &str) -> &str {
+    let seg = id.rsplit('/').next().unwrap_or(id);
+    match seg.rfind('.') {
+        // `i > 0` keeps a dotfile-shaped segment whole rather than yielding "".
+        Some(i) if i > 0 => &seg[..i],
+        _ => seg,
     }
-    // Historical path: trim + lowercase happens in `filter_catalog` (unchanged), so hand back the
-    // raw slice untouched here.
-    SearchQuery::Label(query)
 }
 
-/// T-646 (RIGHT-SEARCH-002) — the empty-state line the dock shows when a `filter_catalog(query)`
-/// came back empty, so the `class:` empty-operand case "says so" instead of reading like a genuine
-/// no-match. `noun` is the tab's word (`"assets"` / `"objects"` / `"vehicles"`). A `class:` with an
-/// empty operand is a mid-type state, not a failed search — the message tells the author to keep
-/// typing the classname rather than implying nothing matched.
+/// Parse a raw search box string into [`SearchQuery`].
+///
+/// Operator recognition is LEADING-TOKEN only and case-insensitive: `CLASS: B_Soldier` is the
+/// operator, `classy` and `first class:` are plain label queries (Eden's rule). The pattern half is
+/// then read off the operand: `/…/` ⇒ regex, otherwise any `*`/`?` ⇒ glob, otherwise a literal.
+#[must_use]
+pub fn parse_search_query(query: &str) -> SearchQuery {
+    let trimmed = query.trim();
+    if trimmed.is_empty() {
+        return SearchQuery {
+            field: SearchField::Label,
+            pattern: SearchPattern::All,
+        };
+    }
+    let (field, body) = OPERATORS
+        .iter()
+        .find_map(|(tok, field)| strip_prefix_ci(trimmed, tok).map(|rest| (*field, rest)))
+        .unwrap_or((SearchField::Label, trimmed));
+    SearchQuery {
+        field,
+        pattern: parse_search_pattern(body.trim()),
+    }
+}
+
+/// The pattern half of the grammar. `body` is already operator-stripped and trimmed.
+fn parse_search_pattern(body: &str) -> SearchPattern {
+    if body.is_empty() {
+        return SearchPattern::Pending;
+    }
+    if let Some(inner) = regex_body(body) {
+        if inner.is_empty() {
+            // `//` — the slashes are typed, the pattern is not. Mid-type, like a bare `class:`.
+            return SearchPattern::Pending;
+        }
+        return Rx::parse(inner).map_or(SearchPattern::Invalid, SearchPattern::Regex);
+    }
+    if body.contains('*') || body.contains('?') {
+        return SearchPattern::Glob(GlobPattern::parse(body));
+    }
+    SearchPattern::Plain(body.to_lowercase())
+}
+
+/// The inside of a `/…/` literal, or `None` when `body` is not one. A lone `/` is NOT a regex (it is
+/// a path fragment an author may well be searching for), so two delimiters are required.
+fn regex_body(body: &str) -> Option<&str> {
+    let b = body.as_bytes();
+    (b.len() >= 2 && b[0] == b'/' && b[b.len() - 1] == b'/').then(|| &body[1..body.len() - 1])
+}
+
+impl SearchPattern {
+    /// Does this pattern match `hay`? `prefix` picks the [`SearchPattern::Plain`] rule — PREFIX for
+    /// the `class:`/`mod:` fields, SUBSTRING for the historical label search. Glob and regex ignore
+    /// it: a glob is whole-string by definition and a regex carries its own anchors.
+    fn hits(&self, hay: &str, prefix: bool) -> bool {
+        match self {
+            SearchPattern::Plain(q) => {
+                let lower = hay.to_lowercase();
+                if prefix {
+                    lower.starts_with(q.as_str())
+                } else {
+                    lower.contains(q.as_str())
+                }
+            }
+            SearchPattern::Glob(g) => g.matches(hay),
+            SearchPattern::Regex(r) => r.is_match(hay),
+            SearchPattern::All | SearchPattern::Pending | SearchPattern::Invalid => false,
+        }
+    }
+}
+
+/// The empty-state line the dock shows when `filter_catalog(query)` came back empty.
+///
+/// `noun` is the tab's word (`"assets"` / `"objects"` / `"vehicles"`). A half-typed operator or a
+/// broken regex is NOT a failed search, and saying "No assets match." for either is the lie this
+/// function exists to prevent — the author would read a syntax mistake as "the catalogue has
+/// nothing", which is precisely the silent-empty-tree failure this ticket was opened on.
 #[must_use]
 pub fn search_empty_message(query: &str, noun: &str) -> String {
-    if matches!(parse_search_query(query), SearchQuery::ClassPrefix(ref op) if op.is_empty()) {
-        "Type a class name after class:".to_string()
-    } else {
-        format!("No {noun} match.")
+    let q = parse_search_query(query);
+    match (q.field, &q.pattern) {
+        (SearchField::ClassName, SearchPattern::Pending) => {
+            "Type a class name after class:".to_string()
+        }
+        (SearchField::Mod, SearchPattern::Pending) => "Type a mod name after mod:".to_string(),
+        // Label + Pending is `//` — the slashes without a pattern between them.
+        (_, SearchPattern::Pending) => "Type a pattern between the slashes.".to_string(),
+        (_, SearchPattern::Invalid) => {
+            "That /…/ pattern could not be read — check the brackets and parentheses.".to_string()
+        }
+        _ => format!("No {noun} match."),
+    }
+}
+
+// ── RIGHT-SEARCH-004 — globs ─────────────────────────────────────────────────────────────────────
+
+/// One token of a compiled glob.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum GlobTok {
+    /// `*` — any run of characters, including none.
+    Star,
+    /// `?` — exactly one character.
+    AnyOne,
+    /// A literal, already ASCII-lowercased.
+    Ch(char),
+}
+
+/// A compiled `*`/`?` glob, matched WHOLE-STRING and case-insensitively.
+///
+/// Whole-string is the choice that makes the operator worth having: `US*` is "starts with", `*US*`
+/// is "contains", `*.et` is "ends with". A substring-by-default glob would make `*` decorative,
+/// since a bare token already substring-matches on the label field.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlobPattern {
+    toks: Vec<GlobTok>,
+}
+
+impl GlobPattern {
+    /// Compile — infallible: every character is either a wildcard or a literal, so there is no such
+    /// thing as a malformed glob (unlike a regex, which is why only `/…/` has an `Invalid` arm).
+    /// Consecutive `*` collapse so `***` cannot multiply the backtracking below.
+    fn parse(pattern: &str) -> Self {
+        let mut toks: Vec<GlobTok> = Vec::new();
+        for c in pattern.chars() {
+            match c {
+                '*' => {
+                    if toks.last() != Some(&GlobTok::Star) {
+                        toks.push(GlobTok::Star);
+                    }
+                }
+                '?' => toks.push(GlobTok::AnyOne),
+                _ => toks.push(GlobTok::Ch(c.to_ascii_lowercase())),
+            }
+        }
+        Self { toks }
+    }
+
+    /// Whole-string match. The classic single-star-backtrack walk: linear in practice and, unlike a
+    /// recursive matcher, it cannot blow the wasm stack on `*a*a*a*a*…`. Every dock keystroke runs
+    /// this over every node of the tree.
+    fn matches(&self, hay: &str) -> bool {
+        let h: Vec<char> = hay.to_lowercase().chars().collect();
+        let p = &self.toks;
+        let (mut i, mut j) = (0usize, 0usize);
+        // Where to resume if the current `*` guess turns out to be too short.
+        let mut star: Option<usize> = None;
+        let mut mark = 0usize;
+        while i < h.len() {
+            match p.get(j) {
+                Some(GlobTok::Ch(c)) if *c == h[i] => {
+                    i += 1;
+                    j += 1;
+                }
+                Some(GlobTok::AnyOne) => {
+                    i += 1;
+                    j += 1;
+                }
+                Some(GlobTok::Star) => {
+                    star = Some(j);
+                    mark = i;
+                    j += 1;
+                }
+                _ => match star {
+                    Some(s) => {
+                        j = s + 1;
+                        mark += 1;
+                        i = mark;
+                    }
+                    None => return false,
+                },
+            }
+        }
+        // Trailing `*`s may still consume nothing.
+        while p.get(j) == Some(&GlobTok::Star) {
+            j += 1;
+        }
+        j == p.len()
+    }
+}
+
+// ── RIGHT-SEARCH-005 — the `/…/` regex subset ────────────────────────────────────────────────────
+//
+// Hand-rolled on purpose. The crate has no `regex` dependency and `Cargo.toml` is not this ticket's
+// to edit; more to the point, `regex` is ~1.5 MB of generated DFA code in a wasm bundle whose whole
+// job here is to filter a few hundred palette rows. This engine is a backtracker over a tiny AST,
+// which is the right trade at this size — and it is a pure function, so it is testable without a
+// browser.
+//
+// SUPPORTED: literals, `.`, `[abc]` / `[a-z]` / `[^…]`, `\d \D \w \W \s \S`, escapes, `(…)` groups,
+// `|` alternation, greedy `*` `+` `?`, and the `^` / `$` anchors.
+// NOT SUPPORTED (deliberate, and they parse as LITERALS rather than erroring): `{n,m}` counts —
+// which is a feature here, because `{` is the first character of every Reforger GUID and
+// `/^\{26A9/` must mean what it looks like it means. Backreferences and lazy `*?` are absent;
+// a pattern using them is read greedily.
+
+/// How many matcher steps one `is_match` may spend before giving up. A backtracker is exponential in
+/// the worst case and this runs on every keystroke inside the wasm render loop, so the budget is a
+/// correctness property, not a nicety: exceeding it returns "no match" instead of hanging the tab.
+/// 200k steps is ~100x the cost of the worst realistic catalogue pattern.
+const RX_BUDGET: u32 = 200_000;
+
+/// One item inside a `[…]` class.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum ClassItem {
+    Ch(char),
+    Range(char, char),
+    Digit,
+    NotDigit,
+    Word,
+    NotWord,
+    Space,
+    NotSpace,
+}
+
+/// One node of the regex AST.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum RxNode {
+    Ch(char),
+    Any,
+    Class {
+        negated: bool,
+        items: Vec<ClassItem>,
+    },
+    Group(RxAlt),
+    Repeat {
+        node: Box<RxNode>,
+        min: usize,
+        max: Option<usize>,
+    },
+    Start,
+    End,
+}
+
+/// A `|`-separated list of sequences — the top level of a pattern and of every group.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct RxAlt(Vec<Vec<RxNode>>);
+
+/// A compiled `/…/` pattern. Matched as an unanchored SEARCH — `^`/`$` anchor it explicitly, which
+/// is what an author who typed slashes expects, and what makes `/rifleman/` a usable
+/// "contains" over a GUID-headed classname.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Rx {
+    alt: RxAlt,
+}
+
+/// Recursive-descent parser over the pattern's chars.
+struct RxParser<'a> {
+    src: &'a [char],
+    pos: usize,
+}
+
+impl RxParser<'_> {
+    fn peek(&self) -> Option<char> {
+        self.src.get(self.pos).copied()
+    }
+
+    fn next(&mut self) -> Option<char> {
+        let c = self.peek();
+        if c.is_some() {
+            self.pos += 1;
+        }
+        c
+    }
+
+    /// `alt := seq ('|' seq)*`
+    fn alt(&mut self) -> Option<RxAlt> {
+        let mut branches = vec![self.seq()?];
+        while self.peek() == Some('|') {
+            self.pos += 1;
+            branches.push(self.seq()?);
+        }
+        Some(RxAlt(branches))
+    }
+
+    /// `seq := (atom quantifier?)*` — stops at `|`, `)` or end of input.
+    fn seq(&mut self) -> Option<Vec<RxNode>> {
+        let mut out = Vec::new();
+        loop {
+            match self.peek() {
+                None | Some('|') | Some(')') => break,
+                _ => {}
+            }
+            let atom = self.atom()?;
+            out.push(self.quantified(atom));
+        }
+        Some(out)
+    }
+
+    /// Wrap `node` in whatever greedy quantifiers follow it. Stacking (`a*?`) is accepted and read
+    /// as a repeat of a repeat rather than rejected — this engine has no lazy quantifiers to confuse
+    /// it with.
+    fn quantified(&mut self, node: RxNode) -> RxNode {
+        let mut node = node;
+        loop {
+            let (min, max) = match self.peek() {
+                Some('*') => (0, None),
+                Some('+') => (1, None),
+                Some('?') => (0, Some(1)),
+                _ => return node,
+            };
+            self.pos += 1;
+            node = RxNode::Repeat {
+                node: Box::new(node),
+                min,
+                max,
+            };
+        }
+    }
+
+    fn atom(&mut self) -> Option<RxNode> {
+        match self.next()? {
+            '(' => {
+                let alt = self.alt()?;
+                (self.next() == Some(')')).then_some(RxNode::Group(alt))
+            }
+            '[' => self.class(),
+            '.' => Some(RxNode::Any),
+            '^' => Some(RxNode::Start),
+            '$' => Some(RxNode::End),
+            '\\' => self.escape(),
+            // A quantifier with nothing to repeat is the one shape that must NOT be read as a
+            // literal: `/*foo/` is a glob typed into regex slashes, and answering it with a literal
+            // `*` would be a silent wrong answer.
+            '*' | '+' | '?' => None,
+            c => Some(RxNode::Ch(c.to_ascii_lowercase())),
+        }
+    }
+
+    /// `\d` and friends outside a class; anything else escapes to itself (so `\.`, `\/`, `\\`).
+    fn escape(&mut self) -> Option<RxNode> {
+        let c = self.next()?;
+        Some(match class_shorthand(c) {
+            Some(item) => RxNode::Class {
+                negated: false,
+                items: vec![item],
+            },
+            None => RxNode::Ch(c.to_ascii_lowercase()),
+        })
+    }
+
+    /// `[…]` — the opening bracket is already consumed. `]` first is a literal `]` (POSIX rule).
+    fn class(&mut self) -> Option<RxNode> {
+        let negated = self.peek() == Some('^');
+        if negated {
+            self.pos += 1;
+        }
+        let mut items = Vec::new();
+        loop {
+            let c = self.next()?; // unterminated class ⇒ None ⇒ Invalid
+            if c == ']' && !items.is_empty() {
+                return Some(RxNode::Class { negated, items });
+            }
+            let lo = if c == '\\' {
+                let e = self.next()?;
+                if let Some(item) = class_shorthand(e) {
+                    items.push(item);
+                    continue;
+                }
+                e
+            } else {
+                c
+            };
+            // `a-z`, but a trailing `-` before `]` is a literal dash.
+            if self.peek() == Some('-') && self.src.get(self.pos + 1).is_some_and(|n| *n != ']') {
+                self.pos += 1;
+                let hi = self.next()?;
+                items.push(ClassItem::Range(
+                    lo.to_ascii_lowercase(),
+                    hi.to_ascii_lowercase(),
+                ));
+            } else {
+                items.push(ClassItem::Ch(lo));
+            }
+        }
+    }
+}
+
+/// `\d \D \w \W \s \S` → a class item; anything else is not a shorthand.
+fn class_shorthand(c: char) -> Option<ClassItem> {
+    Some(match c {
+        'd' => ClassItem::Digit,
+        'D' => ClassItem::NotDigit,
+        'w' => ClassItem::Word,
+        'W' => ClassItem::NotWord,
+        's' => ClassItem::Space,
+        'S' => ClassItem::NotSpace,
+        _ => return None,
+    })
+}
+
+/// ASCII-case-insensitive char equality (the subject is already lowercased, so this only has to
+/// forgive a pattern literal the parser could not fold, e.g. a non-ASCII one).
+fn eq_ci(a: char, b: char) -> bool {
+    a == b || a.to_lowercase().eq(b.to_lowercase())
+}
+
+fn class_hit(items: &[ClassItem], h: char) -> bool {
+    items.iter().any(|it| match it {
+        ClassItem::Ch(c) => eq_ci(*c, h),
+        // The subject is lowercased before matching, so `[A-Z]` would otherwise never fire; test the
+        // uppercase form too, which makes classes case-insensitive like the rest of the grammar.
+        ClassItem::Range(a, b) => {
+            (*a..=*b).contains(&h) || (*a..=*b).contains(&h.to_ascii_uppercase())
+        }
+        ClassItem::Digit => h.is_ascii_digit(),
+        ClassItem::NotDigit => !h.is_ascii_digit(),
+        ClassItem::Word => h.is_alphanumeric() || h == '_',
+        ClassItem::NotWord => !(h.is_alphanumeric() || h == '_'),
+        ClassItem::Space => h.is_whitespace(),
+        ClassItem::NotSpace => !h.is_whitespace(),
+    })
+}
+
+/// The matcher's continuation: "given that this node matched up to `pos`, can the REST match?".
+/// Continuation passing is what lets `(ab|a)b` backtrack across a group boundary — the group cannot
+/// know how much of the string the rest of the pattern will need.
+type RxCont<'a> = &'a dyn Fn(usize) -> bool;
+
+struct RxCtx<'h> {
+    hay: &'h [char],
+    budget: std::cell::Cell<u32>,
+}
+
+impl RxCtx<'_> {
+    /// Spend one unit of [`RX_BUDGET`]; `false` once it is gone, which unwinds every branch.
+    fn step(&self) -> bool {
+        let b = self.budget.get();
+        if b == 0 {
+            return false;
+        }
+        self.budget.set(b - 1);
+        true
+    }
+
+    fn alt(&self, a: &RxAlt, pos: usize, k: RxCont) -> bool {
+        self.step() && a.0.iter().any(|s| self.seq(s, pos, k))
+    }
+
+    fn seq(&self, s: &[RxNode], pos: usize, k: RxCont) -> bool {
+        match s.split_first() {
+            None => k(pos),
+            Some((n, rest)) => self.node(n, pos, &|p| self.seq(rest, p, k)),
+        }
+    }
+
+    fn node(&self, n: &RxNode, pos: usize, k: RxCont) -> bool {
+        if !self.step() {
+            return false;
+        }
+        match n {
+            RxNode::Start => pos == 0 && k(pos),
+            RxNode::End => pos == self.hay.len() && k(pos),
+            RxNode::Ch(c) => self.hay.get(pos).is_some_and(|h| eq_ci(*h, *c)) && k(pos + 1),
+            RxNode::Any => pos < self.hay.len() && k(pos + 1),
+            RxNode::Class { negated, items } => {
+                self.hay
+                    .get(pos)
+                    .is_some_and(|h| class_hit(items, *h) != *negated)
+                    && k(pos + 1)
+            }
+            RxNode::Group(a) => self.alt(a, pos, k),
+            RxNode::Repeat { node, min, max } => self.repeat(node, *min, *max, pos, 0, k),
+        }
+    }
+
+    /// Greedy repeat: try one more iteration before handing control to the continuation.
+    fn repeat(
+        &self,
+        node: &RxNode,
+        min: usize,
+        max: Option<usize>,
+        pos: usize,
+        count: usize,
+        k: RxCont,
+    ) -> bool {
+        if !self.step() {
+            return false;
+        }
+        if max.is_none_or(|m| count < m)
+            && self.node(node, pos, &|p| {
+                if p == pos {
+                    // A zero-width iteration (`(a?)*`): counting it again forever is the classic
+                    // hang, so credit it once and move on.
+                    count + 1 >= min && k(p)
+                } else {
+                    self.repeat(node, min, max, p, count + 1, k)
+                }
+            })
+        {
+            return true;
+        }
+        count >= min && k(pos)
+    }
+}
+
+impl Rx {
+    /// Compile, or `None` for a body this subset cannot read (unbalanced `(`/`[`, a dangling
+    /// quantifier). `None` becomes [`SearchPattern::Invalid`], which the dock reports.
+    fn parse(pattern: &str) -> Option<Self> {
+        let src: Vec<char> = pattern.chars().collect();
+        let mut p = RxParser { src: &src, pos: 0 };
+        let alt = p.alt()?;
+        // Trailing input means the parse stopped at an unmatched `)`.
+        (p.pos == src.len()).then_some(Self { alt })
+    }
+
+    /// Unanchored search, case-insensitive.
+    fn is_match(&self, hay: &str) -> bool {
+        let h: Vec<char> = hay.to_lowercase().chars().collect();
+        let ctx = RxCtx {
+            hay: &h,
+            budget: std::cell::Cell::new(RX_BUDGET),
+        };
+        // `..=len` so `/x$/`-shaped patterns can match at the very end, and `//`-empty cannot get
+        // here (it is `Pending`).
+        (0..=h.len()).any(|start| ctx.alt(&self.alt, start, &|_| true))
     }
 }
 
@@ -464,57 +1036,37 @@ fn strip_prefix_ci<'a>(s: &'a str, prefix: &str) -> Option<&'a str> {
 /// A folder survives on a self-match (keeping its whole subtree) or on any descendant match
 /// (keeping only the matching children). Empty/whitespace query returns the tree unchanged.
 ///
-/// T-646 (RIGHT-SEARCH-002) — a `class:<operand>` query switches to CLASSNAME (`id`) prefix
-/// matching: a leaf is kept when its `id` starts with the operand (case-insensitive), and a folder
-/// is kept (with only its matching descendants) when any leaf under it does. The recogniser
-/// ([`parse_search_query`]) runs FIRST; every non-`class:` query falls through to the byte-identical
-/// label `keep` closure below, so this stays additive — T-084 owns the wider grammar rewrite and
-/// composes on top of the same recogniser without touching this core matcher.
+/// T-084 (RIGHT-SEARCH-002/003/004/005) — the grammar ([`parse_search_query`]) runs FIRST and picks
+/// both the field and the matcher; the three fields keep three different TREE rules, because the
+/// three fields live at three different depths:
+///
+/// * `Label` — unchanged from T-055: folder self-match keeps the whole subtree, otherwise a folder
+///   survives on descendants with only the matching children.
+/// * `ClassName` — LEAF-ONLY (a folder has no classname), folders survive on descendants. T-646's
+///   rule, now matching the [`classname_tail`] as well as the full `resource_name`.
+/// * `Mod` — DEPTH-0 ONLY. The addon is the root of the category path, so "this mod" is exactly
+///   "this root folder", and a hit keeps the root's whole subtree. Recursing would be wrong, not
+///   merely slower: `mod:ArmaReforger` must not prune a vanilla vehicle out of a vanilla addon
+///   because the leaf itself is spelled differently.
 #[must_use]
 pub fn filter_catalog(nodes: &[CatalogNode], query: &str) -> Vec<CatalogNode> {
-    match parse_search_query(query) {
-        SearchQuery::ClassPrefix(operand) => {
-            // Empty operand (`class:` with nothing after) matches nothing — the dock shows its
-            // "No assets match" empty state, not the whole tree.
-            if operand.is_empty() {
-                return Vec::new();
-            }
-            fn keep(node: &CatalogNode, operand: &str) -> Option<CatalogNode> {
-                if node.payload.is_some() {
-                    // Leaf: kept iff its classname (id) prefix-matches.
-                    return node
-                        .id
-                        .to_lowercase()
-                        .starts_with(operand)
-                        .then(|| node.clone());
-                }
-                // Folder: unlike the label path there is no self-match — a folder has no classname —
-                // so it survives only on a descendant leaf, keeping just the matching children.
-                let children: Vec<CatalogNode> = node
-                    .children
-                    .iter()
-                    .filter_map(|c| keep(c, operand))
-                    .collect();
-                if children.is_empty() {
-                    return None;
-                }
-                let mut out = node.clone();
-                out.children = children;
-                Some(out)
-            }
-            nodes.iter().filter_map(|n| keep(n, &operand)).collect()
-        }
-        SearchQuery::Label(raw) => {
-            let q = raw.trim().to_lowercase();
-            if q.is_empty() {
-                return nodes.to_vec();
-            }
-            fn keep(node: &CatalogNode, q: &str) -> Option<CatalogNode> {
-                if node.label.to_lowercase().contains(q) {
+    let q = parse_search_query(query);
+    // `All` is the empty query (identity); `Pending`/`Invalid` are half-typed or broken and match
+    // nothing — the dock reads `search_empty_message` to say which.
+    match q.pattern {
+        SearchPattern::All => return nodes.to_vec(),
+        SearchPattern::Pending | SearchPattern::Invalid => return Vec::new(),
+        _ => {}
+    }
+    let p = &q.pattern;
+    match q.field {
+        SearchField::Label => {
+            fn keep(node: &CatalogNode, p: &SearchPattern) -> Option<CatalogNode> {
+                if p.hits(&node.label, false) {
                     return Some(node.clone()); // self-match → full subtree
                 }
                 let children: Vec<CatalogNode> =
-                    node.children.iter().filter_map(|c| keep(c, q)).collect();
+                    node.children.iter().filter_map(|c| keep(c, p)).collect();
                 if children.is_empty() {
                     return None;
                 }
@@ -522,8 +1074,33 @@ pub fn filter_catalog(nodes: &[CatalogNode], query: &str) -> Vec<CatalogNode> {
                 out.children = children;
                 Some(out)
             }
-            nodes.iter().filter_map(|n| keep(n, &q)).collect()
+            nodes.iter().filter_map(|n| keep(n, p)).collect()
         }
+        SearchField::ClassName => {
+            fn keep(node: &CatalogNode, p: &SearchPattern) -> Option<CatalogNode> {
+                if node.payload.is_some() {
+                    // Leaf: the full `resource_name` OR its classname tail (see `classname_tail` —
+                    // the tail arm is what makes a bare classname reachable at all).
+                    let id = &node.id;
+                    return (p.hits(id, true) || p.hits(classname_tail(id), true))
+                        .then(|| node.clone());
+                }
+                let children: Vec<CatalogNode> =
+                    node.children.iter().filter_map(|c| keep(c, p)).collect();
+                if children.is_empty() {
+                    return None;
+                }
+                let mut out = node.clone();
+                out.children = children;
+                Some(out)
+            }
+            nodes.iter().filter_map(|n| keep(n, p)).collect()
+        }
+        SearchField::Mod => nodes
+            .iter()
+            .filter(|n| p.hits(&n.label, true))
+            .cloned()
+            .collect(),
     }
 }
 
@@ -707,36 +1284,58 @@ mod tests {
     /// else is a plain label query. The operator is a LEADING token only — a query that merely
     /// contains it later stays a label match (Eden's grammar), and `class` without the colon is not
     /// the operator.
+    ///
+    /// T-084 reshaped [`SearchQuery`] from a flat enum into `{field, pattern}` (the operator and the
+    /// pattern are now independent axes), so these assertions read through the new pair. Every
+    /// BEHAVIOUR T-646 pinned is asserted unchanged.
     #[test]
     fn parse_search_query_recognises_class_operator() {
         assert_eq!(
             parse_search_query("class:B_Soldier"),
-            SearchQuery::ClassPrefix("b_soldier".to_string()),
+            SearchQuery {
+                field: SearchField::ClassName,
+                pattern: SearchPattern::Plain("b_soldier".to_string()),
+            },
             "class: → lowercased operand"
         );
         assert_eq!(
             parse_search_query("  CLASS: B_Soldier "),
-            SearchQuery::ClassPrefix("b_soldier".to_string()),
+            SearchQuery {
+                field: SearchField::ClassName,
+                pattern: SearchPattern::Plain("b_soldier".to_string()),
+            },
             "operator is case-insensitive; leading/trailing space trimmed"
         );
         assert_eq!(
             parse_search_query("class:"),
-            SearchQuery::ClassPrefix(String::new()),
+            SearchQuery {
+                field: SearchField::ClassName,
+                pattern: SearchPattern::Pending,
+            },
             "empty operand is recognised (and filters to nothing)"
         );
         // Not the operator: a bare word, or `class:` appearing past the start.
         assert_eq!(
             parse_search_query("rifleman"),
-            SearchQuery::Label("rifleman")
+            SearchQuery {
+                field: SearchField::Label,
+                pattern: SearchPattern::Plain("rifleman".to_string()),
+            }
         );
         assert_eq!(
             parse_search_query("classy"),
-            SearchQuery::Label("classy"),
+            SearchQuery {
+                field: SearchField::Label,
+                pattern: SearchPattern::Plain("classy".to_string()),
+            },
             "`class` without the colon is a label"
         );
         assert_eq!(
             parse_search_query("first class:"),
-            SearchQuery::Label("first class:"),
+            SearchQuery {
+                field: SearchField::Label,
+                pattern: SearchPattern::Plain("first class:".to_string()),
+            },
             "the operator is a leading token, not a substring"
         );
     }
@@ -835,6 +1434,302 @@ mod tests {
         );
     }
 
+    // ── T-084 (RIGHT-SEARCH-002/003/004/005) — the grammar ───────────────────────────────────────
+
+    /// **THE DECISION THIS TICKET EXISTS TO MAKE** (wave-105 MINOR-2), pinned against a REAL
+    /// GUID-headed id from the committed catalogue —
+    /// `{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et`.
+    ///
+    /// T-646's `class:` was a prefix over the WHOLE `resource_name`, and every Reforger resource
+    /// name starts with a GUID the author has never seen. So `class:<bare classname>` — the only
+    /// spelling an author actually knows — matched nothing and the tree silently emptied. This test
+    /// fires exactly there: it asserts the bare classname now HITS, and asserts (right beside it)
+    /// that T-646's GUID-path prefix still hits, because the fix is an OR, not a replacement.
+    #[test]
+    fn class_tail_matches_a_bare_classname_on_a_real_guid_headed_id() {
+        let tree = build_catalog_tree(&golden_items(), "BLUFOR");
+        let rifleman_id =
+            "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et";
+        // Guard: this really is the shipped id, GUID head and `.et` tail included.
+        assert_eq!(tree[0].children[0].children[0].id, rifleman_id);
+        assert_eq!(
+            classname_tail(rifleman_id),
+            "Character_US_Rifleman",
+            "the tail is the last path segment minus the extension"
+        );
+
+        // THE DEFECT, FIXED — a bare classname. Under T-646 this returned an EMPTY TREE.
+        let bare = filter_catalog(&tree, "class:Character_US_Rifleman");
+        assert_eq!(bare.len(), 1, "a bare classname must not empty the tree");
+        assert_eq!(bare[0].children[0].children.len(), 1);
+        assert_eq!(bare[0].children[0].children[0].id, rifleman_id);
+
+        // A PARTIAL bare classname, as typed keystroke by keystroke.
+        let partial = filter_catalog(&tree, "class:character_us_ri");
+        assert_eq!(
+            partial[0].children[0].children[0].id, rifleman_id,
+            "tail matching is a prefix, and case-insensitive"
+        );
+
+        // T-646 UNREGRESSED — the full `resource_name` prefix still selects the same leaf.
+        let guid = filter_catalog(&tree, "class:{26A9756790131354}Prefabs");
+        assert_eq!(guid[0].children[0].children[0].id, rifleman_id);
+
+        // The tail rule is a PREFIX, deliberately: a mid-classname token is still a miss…
+        assert!(
+            filter_catalog(&tree, "class:Rifleman").is_empty(),
+            "tail matching is prefix-only, not substring"
+        );
+        // …and the grammar gives that query its own spelling instead.
+        let globbed = filter_catalog(&tree, "class:*Rifleman");
+        assert_eq!(
+            globbed[0].children[0].children[0].id, rifleman_id,
+            "a mid-classname token is reachable as a glob"
+        );
+    }
+
+    /// RIGHT-SEARCH-003 — `mod:` filters by the ADDON, which in this catalogue is the root of the
+    /// category path and therefore the tree's depth-0 folder (`ArmaReforger/Vehicles/Wheeled/…`).
+    /// A hit keeps the root's whole subtree; a miss empties the tree. Both spellings of the operator
+    /// (`mod:` and the parity table's `mod `) are the same operator.
+    #[test]
+    fn mod_operator_filters_by_the_addon_root() {
+        let tree = build_vehicle_catalog_tree(&vehicle_items());
+        assert_eq!(
+            tree[0].label, "ArmaReforger",
+            "guard: the root is the addon"
+        );
+        let all_leaves = tree[0].children[0].children.len();
+
+        let hit = filter_catalog(&tree, "mod:ArmaReforger");
+        assert_eq!(hit, tree, "an addon hit keeps the addon's whole subtree");
+
+        assert_eq!(
+            filter_catalog(&tree, "mod:arma"),
+            tree,
+            "`mod:` is a PREFIX and case-insensitive"
+        );
+        assert_eq!(
+            filter_catalog(&tree, "mod ArmaReforger"),
+            tree,
+            "the space-separated spelling is the same operator"
+        );
+        assert!(
+            filter_catalog(&tree, "mod:TBD_Framework").is_empty(),
+            "an addon that is not in the tree empties it"
+        );
+        // `mod:` is NOT a label search: `Wheeled` is a real folder, one level down, and must not
+        // survive a mod query — otherwise the operator would just be a slower label match.
+        assert!(
+            filter_catalog(&tree, "mod:Wheeled").is_empty(),
+            "mod: matches the addon root only, not any folder"
+        );
+        // Sanity: the label search over the same token still finds it.
+        assert!(
+            !filter_catalog(&tree, "Wheeled").is_empty(),
+            "guard: `Wheeled` is a real folder the label search finds"
+        );
+        assert!(all_leaves > 0, "guard: the fixture tree has leaves");
+    }
+
+    /// RIGHT-SEARCH-004 — `*` (any run) and `?` (exactly one) matched WHOLE-STRING, over whichever
+    /// field the operator picked. Whole-string is the point: `US*` is starts-with, `*Medic` is
+    /// ends-with, `*ri*` is contains — three behaviours a bare token cannot express.
+    #[test]
+    fn glob_patterns_are_whole_string_over_the_selected_field() {
+        let tree = build_catalog_tree(&golden_items(), "BLUFOR");
+        let leaves = |t: &[CatalogNode]| -> Vec<String> {
+            t.first().map_or_else(Vec::new, |root| {
+                root.children[0]
+                    .children
+                    .iter()
+                    .map(|n| n.label.clone())
+                    .collect()
+            })
+        };
+
+        assert_eq!(
+            leaves(&filter_catalog(&tree, "*Medic")),
+            ["US Medic"],
+            "ends-with"
+        );
+        assert_eq!(
+            leaves(&filter_catalog(&tree, "?S Medic")),
+            ["US Medic"],
+            "? is exactly one character"
+        );
+        assert!(
+            filter_catalog(&tree, "?S Medicc").is_empty(),
+            "the glob is whole-string: a trailing character it cannot consume is a miss"
+        );
+        assert_eq!(
+            leaves(&filter_catalog(&tree, "*Anti-Tank")),
+            ["US Light Anti-Tank"],
+            "a glob spans spaces and punctuation"
+        );
+
+        // Crossed with `class:` — the same pattern engine, a different field. The tail arm makes
+        // `*_MG` work without spelling out the GUID.
+        let mg = filter_catalog(&tree, "class:*_MG");
+        assert_eq!(leaves(&mg), ["US Machine Gunner"], "glob over the tail");
+        let et = filter_catalog(&tree, "class:*Character_US_Medic.et");
+        assert_eq!(
+            leaves(&et),
+            ["US Medic"],
+            "glob over the full resource_name"
+        );
+
+        // Crossed with `mod:`.
+        let vehicles = build_vehicle_catalog_tree(&vehicle_items());
+        assert_eq!(
+            filter_catalog(&vehicles, "mod:Arma*"),
+            vehicles,
+            "glob over the addon root"
+        );
+    }
+
+    /// RIGHT-SEARCH-005 — `/…/` is a regex over the selected field, unanchored (so `^`/`$` mean
+    /// something), case-insensitive, with alternation, classes and quantifiers. `{` is a LITERAL in
+    /// this subset — deliberately, because it opens every Reforger GUID.
+    #[test]
+    fn regex_patterns_search_the_selected_field() {
+        let tree = build_catalog_tree(&golden_items(), "BLUFOR");
+        let leaves = |t: &[CatalogNode]| -> Vec<String> {
+            t.first().map_or_else(Vec::new, |root| {
+                root.children[0]
+                    .children
+                    .iter()
+                    .map(|n| n.label.clone())
+                    .collect()
+            })
+        };
+
+        assert_eq!(
+            leaves(&filter_catalog(&tree, "/^us (medic|engineer)$/")),
+            ["US Medic", "US Engineer"],
+            "alternation + anchors over the label"
+        );
+        assert_eq!(
+            leaves(&filter_catalog(&tree, "/anti-tank/")),
+            ["US Light Anti-Tank"],
+            "an un-anchored regex is a search, not a full match"
+        );
+        assert!(
+            filter_catalog(&tree, "/^medic$/").is_empty(),
+            "^ anchors: no label IS 'medic'"
+        );
+
+        // Over the classname, where a regex earns its keep: `{` and `}` are literals, escaped or not.
+        assert_eq!(
+            leaves(&filter_catalog(&tree, r"class:/^\{26a9756790131354\}/")),
+            ["US Rifleman"],
+            "an escaped GUID head"
+        );
+        assert_eq!(
+            leaves(&filter_catalog(&tree, "class:/^{26A9756790131354}/")),
+            ["US Rifleman"],
+            "and an unescaped one — an open brace is a literal in this subset"
+        );
+        assert_eq!(
+            leaves(&filter_catalog(&tree, r"class:/character_us_(mg|ar)\.et$/")),
+            ["US Automatic Rifleman", "US Machine Gunner"],
+            "alternation over the classname, in the tree's own order"
+        );
+        assert_eq!(
+            leaves(&filter_catalog(&tree, r"class:/us_[a-z]{2}\.et$/")),
+            Vec::<String>::new(),
+            "a brace count is NOT a repetition in this subset — it is a literal, so this misses"
+        );
+        assert_eq!(
+            leaves(&filter_catalog(&tree, r"class:/us_[a-l]+\.et$/")),
+            ["US Grenadier"],
+            "a character range + `+`: only `…_US_GL.et` is all a-l after the underscore"
+        );
+        // `\d` over the real GUID heads: 7 of the 8 shipped BLUFOR ids open with a digit, the
+        // Medic's `{C9E4FEAF…}` does not — a discriminator only real data provides.
+        let digit_guid = filter_catalog(&tree, r"class:/^.\d/");
+        assert_eq!(digit_guid[0].children[0].children.len(), 7);
+        assert!(
+            !leaves(&digit_guid).contains(&"US Medic".to_string()),
+            "the one GUID that starts with a letter is excluded"
+        );
+
+        // Crossed with `mod:`.
+        let vehicles = build_vehicle_catalog_tree(&vehicle_items());
+        assert_eq!(
+            filter_catalog(&vehicles, "mod:/^arma(reforger|3)$/"),
+            vehicles,
+            "regex over the addon root"
+        );
+    }
+
+    /// A `/…/` body this engine cannot read is reported, not silently answered. Falling back to a
+    /// literal search for the regex text is the failure mode this ticket was opened on: an empty
+    /// tree that reads like "nothing matches" when the truth is "your pattern has a typo".
+    #[test]
+    fn a_broken_regex_says_so_instead_of_emptying_silently() {
+        let tree = build_catalog_tree(&golden_items(), "BLUFOR");
+        for broken in ["/us(/", "/[a-/", "/*us/", "/us)/"] {
+            assert_eq!(
+                parse_search_query(broken).pattern,
+                SearchPattern::Invalid,
+                "{broken} must not parse"
+            );
+            assert!(filter_catalog(&tree, broken).is_empty());
+            assert_eq!(
+                search_empty_message(broken, "assets"),
+                "That /…/ pattern could not be read — check the brackets and parentheses.",
+                "a broken pattern reads as a syntax problem, not as a miss"
+            );
+        }
+        // A lone slash is NOT a regex — an author searching a path fragment gets a literal search.
+        assert_eq!(
+            parse_search_query("/").pattern,
+            SearchPattern::Plain("/".to_string())
+        );
+    }
+
+    /// Every operator's mid-type state says what to type next. T-646 shipped this for `class:`; the
+    /// grammar generalises it, because a half-typed `mod:` or `//` is exactly as much "not a miss".
+    #[test]
+    fn every_operator_has_a_mid_type_empty_state() {
+        let tree = build_catalog_tree(&golden_items(), "BLUFOR");
+        for (q, msg) in [
+            ("class:", "Type a class name after class:"),
+            ("mod:", "Type a mod name after mod:"),
+            ("  MOD:  ", "Type a mod name after mod:"),
+            ("//", "Type a pattern between the slashes."),
+        ] {
+            assert!(
+                filter_catalog(&tree, q).is_empty(),
+                "{q} is mid-type and must not show the whole tree"
+            );
+            assert_eq!(search_empty_message(q, "assets"), msg);
+        }
+        // The genuinely empty query is still identity, not a mid-type state.
+        assert_eq!(filter_catalog(&tree, "   "), tree);
+    }
+
+    /// The regex engine runs inside the wasm render loop on EVERY keystroke, so a catastrophic
+    /// backtracker must terminate rather than hang the tab. `(a+)+$` over a long non-matching
+    /// subject is the textbook exponential case; the step budget caps it.
+    #[test]
+    fn a_catastrophic_regex_terminates_on_the_step_budget() {
+        let long = "a".repeat(40);
+        let items = vec![character_row(
+            &format!("{{Z}}Prefabs/{long}b.et"),
+            &long,
+            "NATO/US_Army/Long",
+        )];
+        let tree = build_catalog_tree(&items, "BLUFOR");
+        // The answer itself is not the assertion — RETURNING is. Under an uncapped backtracker this
+        // line never comes back.
+        let _ = filter_catalog(&tree, "/^(a+)+$/");
+        let _ = filter_catalog(&tree, "class:/(a|aa)+c/");
+        // And a pattern the budget can afford still answers correctly.
+        assert_eq!(filter_catalog(&tree, "/^a+$/").len(), 1);
+    }
+
     /// Wave-105 verifier BLOCKER-1: `strip_prefix_ci` byte-sliced `s[..6]` with no char-boundary
     /// check, so any query whose 6th byte split a multibyte char — "beauté", "a日本" — panicked on
     /// the keystroke and aborted the wasm runtime. Every dock search routes every keystroke here.
@@ -853,8 +1748,9 @@ mod tests {
         ] {
             // Must not panic; multibyte text is never the `class:` operator, so it label-matches.
             let _ = filter_catalog(&tree, q);
-            assert!(
-                matches!(parse_search_query(q), SearchQuery::Label(_)),
+            assert_eq!(
+                parse_search_query(q).field,
+                SearchField::Label,
                 "{q} must stay Label"
             );
         }
