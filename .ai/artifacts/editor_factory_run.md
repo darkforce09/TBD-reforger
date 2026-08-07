@@ -70,7 +70,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 115 | 99 | T-634 T-670 T-688 | PASS 30/30 (run 1) | 2M/5m/3N | SHIPPED — two-row strip inside the same 48px (no pin weakened), m/px readout unified with T-667's scale bar, aggregated settings with schema-sourced defaults; **T-753 confirmed by experiment** (flow defaults drift ships green); T-753..T-758 filed |
 | 116 | 100 | T-069 T-690 T-696 | PASS 30/30 (run 1, **no BASE_CONFIRM needed** — see below) | 2M/2m/3N | SHIPPED — markers authored on briefings[] (the ticket's markersById premise was WRONG and was refused; premise corrected in the registry), compile emits structured diagnostics (six T-216 silent drops now speak), locations + bookmarks; T-759..T-763 filed |
 | 117 | 101 | T-084 T-671 T-672 | PASS 30/30 (run 1) | 1M/2m/1N | SHIPPED — search grammar (classname-TAIL decision made and pinned), mission presentation (**three live bugs found and fixed**), connection graph (see+check in full, one edge verb short by design); T-764..T-768 filed |
-| 118 | assign at close | T-637 T-698 T-699 | — | — | pending |
+| 118 | 102 | T-637 T-698 T-699 | PASS 30/30 (run 1) | 1M/3m/1N | SHIPPED — 240px dock equalisation (input-critical geometry, unprojection pinned), clipboard exporters, loadout buffer; the T-634 tripwire fired and was INVERTED not weakened; **verifier REFUTED two slice claims** (T-769, and T-759's attempted widening); T-769..T-773 filed |
 | 119 | assign at close | T-697 T-700 T-703 | — | — | pending |
 | 120 | 95 | T-701 T-706 | PASS (run 3; run 1 red on the ledger tripwire firing as designed, run 2 = fixup) | 0B/4M/5m/4N → all hardened pre-close | SHIPPED — per-entity hide + the one-pass 1.3 contract; ledger learned DeclaredPendingEmit; 9 reader-ambiguities + 3 prose residues fixed BEFORE any reader dispatched; unread gate live at 53 fields |
 | 121 | assign at close | T-702 T-212 T-654 | — | — | pending |
@@ -233,6 +233,28 @@ serialisation, not a hang).
 
 ## Deferred tickets filed by verifiers
 
+> **⚠️ TWO SLICE CLAIMS FROM WAVE 118 WERE REFUTED BY THE VERIFIER. Do not scope remediation off
+> either.** (1) T-637's `CONTAINER_H` rationale — see T-769; the smoke would have failed LOUDLY,
+> not silently. (2) T-699's report that the repo-wide `class_r_scrub` machinery is hollow — see the
+> SCOPE CORRECTION on T-759; `scrub()`'s first pass cuts the test module, and disabling it turns 18
+> pins red across 7 files. **The orchestrator relayed both as fact before verification. An agent's
+> chat summary is not an artifact — state slice claims as claims until the Fable pass has been through them.**
+
+- **T-769** (W118/MAJOR-1): the dock tree still scrolls in a **fixed 420px box inside a ~958px
+  region**, so up to ~538px of the void this ticket absorbed returns on >50-row missions — and the
+  shipped comment excusing it is FALSE (the windowing smoke also pins `rendered <= 60`, which an
+  h-full scroller violates loudly at both 1080p and the gate's 1440×900). Fix the height and the
+  smoke's cap together, and correct the comment.
+- **T-770** (W118/MINOR-1): `commit_writes` counts closure calls, not sink acknowledgements —
+  `update_slot_loadout` returns `()` and no-ops silently, so the receipt's WARNING arm is unreachable
+  in production. T-732's fix should make the write path return an acknowledgement.
+- **T-771** (W118/MINOR-2): the Attributes multi-select banner now contradicts the three loadout
+  verbs sitting beneath it. **Its text is pinned at `mission_editor.rs:8745` — amend wording and pin together.**
+- **T-772** (W118/NIT-1): the ControlsHint close button's hit box shrank ~36→20px with the shared
+  `BTN_ICON` change. Fix at the call site, not by widening the recipe the dense rows need.
+- **T-773** (W118, pre-existing, verified): **`server_intel.rs` reports "copied" over a clipboard
+  write it never confirmed** — the promise is dropped. The fix already exists in-repo: promote
+  T-698's `write_clipboard` (awaits the JsFuture, toasts only on the resolve arm) and repoint it.
 - **T-764** (W117/MAJOR-1) ⚠️ **Proved by building a rig, not by reading.** The verifier extracted
   T-084's regex engine verbatim into a native harness on a 1 MiB thread (the wasm32 stack) and
   found the **200k budget bounds STEPS, NOT STACK DEPTH** — one native frame per matcher step

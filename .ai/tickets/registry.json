@@ -1,5 +1,5 @@
 {
- "next_id": 769,
+ "next_id": 774,
  "tickets": [
   {
    "id": "T-001",
@@ -16869,7 +16869,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4220,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16877,7 +16877,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 18 (wave_plan.tsv row 118)",
+   "notes": "editor-UI program wave 18 (wave_plan.tsv row 118) — SHIPPED wave 118 (editor factory), e0fcaec4; verifier wave118.md. Docks equalised to ONE 240px constant (DOCK_LEFT_PX/DOCK_RIGHT_PX both resolve to DOCK_PX, so 'equal' is a definition rather than two matching literals), mount classes bound to those consts, tree pitch 24->16 with ROW_H read back from the class, five 'visual only' decoration buttons deleted, right-dock word tabs became glyph cells. Layout MEASURED in real Chromium inside the container, not assumed. The T-634 tripwire fired as designed and was INVERTED rather than weakened, moving the enforcement from four call sites to the shared BTN_ICON recipe so every caller gets the fix. ⚠️ Its CONTAINER_H justification is FALSE — see T-769.",
    "depends_on": [
     "T-661"
    ]
@@ -17579,7 +17579,7 @@
    "id": "T-698",
    "order": 4520,
    "program": "eden",
-   "status": "queued",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -17594,13 +17594,14 @@
    "surfaces": [
     "BOTTOM",
     "DATA"
-   ]
+   ],
+   "notes": "— SHIPPED wave 118 (editor factory), e1111c26; verifier wave118.md. Three exporters over navigator.clipboard, reusing T-667's grid_ref_3digit rather than inventing a second convention — pinned BEHAVIOURALLY against the map furniture's own edge labels through a real OrthoCamera. The clipboard write is AWAITED with success toasted only on the resolve arm, and an insecure context refuses with a message. Multi-selection exports one line per entity, never a centroid (a centroid is a grid reference no entity is at). Also found the same fire-and-forget defect live elsewhere — see T-773."
   },
   {
    "id": "T-699",
    "order": 4530,
    "program": "eden",
-   "status": "queued",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -17615,7 +17616,8 @@
    "surfaces": [
     "ATTR",
     "DATA"
-   ]
+   ],
+   "notes": "— SHIPPED wave 118 (editor factory), 8b40ba53; verifier wave118.md. Copy/Apply/Remove-Everything over the selection. The randomisation is specified rather than gestured at: uniform by widening multiply (not modulo), independent per entity, deterministic in (seed, ordinal, len) via SplitMix64 with no wall clock, degenerate at one buffered loadout — and the accept/refuse gate runs over the WHOLE buffer BEFORE any draw, so a validation verdict can never depend on a die roll. Strip ships an explicit cargo:[] to stop seed_cargo re-seeding default magazines. NO inheritance was built (T-687 is operator-CANCELLED, not deferred) and the nine per-category strip variants are absent, both pinned. Undo cost stated honestly: N entities is N steps, cited to T-732."
   },
   {
    "id": "T-700",
@@ -18838,7 +18840,7 @@
     "tests"
    ],
    "title": "T-696's headline source pins are hollow — they match their own test source",
-   "summary": "MAJOR from the wave-116 adversarial verifier, and it is this programme's signature defect aimed at the pins themselves. apps/website/frontend/src/eden_dock_left.rs:1107-1130 and :1083-1101: `SRC` is an `include_str!` of the WHOLE file, test module included. Every POSITIVE needle in `the_index_and_the_fly_to_reuse_the_shipped_paths` and `the_dock_has_two_tabs_and_defaults_to_layers` — \"parse_locations_json\", \"__editorCamSet\", \"camera_snapshot\", \"/map-assets/{terrain}/locations.json\", \"let tab = RwSignal::new(LeftTab::Layers)\", and all eight testids — appears VERBATIM inside the assertion that searches for it. Delete the production usage entirely and every one of those pins stays GREEN. The author knew the idiom: the single NEGATIVE needle in the same block is deliberately split (`format!(\"{}{}\", \"set_view\", \"(\")`) with a comment saying \"so the needle itself is not a hit\" — the positives simply did not get the same treatment. THE PINNED FACTS ARE ALL TRUE TODAY (the verifier re-proved each independently), so nothing is broken; what is broken is the guarantee. Registry precedent T-559/T-561 rates this class DIRTY MAJOR. FIX, two options, either is cheap: split every positive needle the way the negative one already is, or scope SRC to the production half by truncating at the `#[cfg(test)]` marker — the pattern `bookmarks_and_fly_to_are_not_document_edits` three tests down in the same file already does the latter correctly and can be copied. Diagnosis: editor_verify/wave116.md finding 1.",
+   "summary": "MAJOR from the wave-116 adversarial verifier, and it is this programme's signature defect aimed at the pins themselves. apps/website/frontend/src/eden_dock_left.rs:1107-1130 and :1083-1101: `SRC` is an `include_str!` of the WHOLE file, test module included. Every POSITIVE needle in `the_index_and_the_fly_to_reuse_the_shipped_paths` and `the_dock_has_two_tabs_and_defaults_to_layers` — \"parse_locations_json\", \"__editorCamSet\", \"camera_snapshot\", \"/map-assets/{terrain}/locations.json\", \"let tab = RwSignal::new(LeftTab::Layers)\", and all eight testids — appears VERBATIM inside the assertion that searches for it. Delete the production usage entirely and every one of those pins stays GREEN. The author knew the idiom: the single NEGATIVE needle in the same block is deliberately split (`format!(\"{}{}\", \"set_view\", \"(\")`) with a comment saying \"so the needle itself is not a hit\" — the positives simply did not get the same treatment. THE PINNED FACTS ARE ALL TRUE TODAY (the verifier re-proved each independently), so nothing is broken; what is broken is the guarantee. Registry precedent T-559/T-561 rates this class DIRTY MAJOR. FIX, two options, either is cheap: split every positive needle the way the negative one already is, or scope SRC to the production half by truncating at the `#[cfg(test)]` marker — the pattern `bookmarks_and_fly_to_are_not_document_edits` three tests down in the same file already does the latter correctly and can be copied. Diagnosis: editor_verify/wave116.md finding 1. || SCOPE CORRECTION 2026-08-07 (wave 118 verifier, proved by perturbation): a wave-118 slice reported that `arsenal.rs`'s shared `live_production_src()` makes EVERY pin in that file — and by extension the repo-wide class_r_scrub machinery (21 files, 93 refs) — hollow. THAT IS FALSE AND MUST NOT BE USED TO WIDEN THIS TICKET. `class_r_scrub::scrub()`'s FIRST pass is `cut_test_module()`, which removes everything from the first `#[cfg(test)]` to EOF before any `.contains` runs. The verifier disabled that cut and 18 pins went RED across 7 files — the machinery fails LOUD. The kernel of truth is only 'do not bypass the scrubber'. This ticket remains scoped to eden_dock_left.rs's T-696 pins, which build SRC with a bare include_str! and genuinely do self-match.",
    "notes": "filed by wave-116 adversarial verifier (editor factory)"
   },
   {
@@ -19030,6 +19032,107 @@
    "title": "CONN-START-001's pointer half is deferred behind T-723's broken armed-pointerup path",
    "summary": "DISCLOSED PARTIAL from wave 117's T-672, filed loudly so it is tracked rather than implied — the same treatment T-748 (comments) and T-760 (markers) got for their gaps. T-672 shipped connection CREATE as two context-menu acts: right-click the source, choose `Connect > <kind>` to arm, then right-click the target and choose Complete or Cancel. The ticket's code hint proposed a third pointer gesture mode — drag from entity to entity — and that half is NOT shipped. THE REASON IS T-723 AND IT IS SOUND: the armed-pointerup path in mission_editor.rs has no `ev.button()` filter, returns without taking `left`, can strand `LG::Pending`, has no Esc disarm, and carries an in-code invariant comment that was refuted four waves ago and is still there. A third arming source built on it inherits every one of those defects. Note Eden's own flow also STARTS at RMB > Connect, so what is actually missing is only the final LMB pick on the target; the slice's own assessment is that wiring it after T-723 lands changes the CALLER of `complete_connect` and nothing else. ALSO PART OF THIS ROW: CONN-DEL-001 has no line to select. Eden deletes a connection by clicking its line and pressing Del; there is no render lane for connections (T-672 re-derived T-069's marker conclusion on `LaneRole::SquadLinks` — it is live-fed by a full-lane replace from `mission_history.rs`, outside owns, so sharing it clobbers squad hairlines and a peer lane has the same feed problem). The addressable panel row with a per-row Delete is the substitute, and the slice stated that rather than claiming parity. SEQUENCE: T-723 first, then this; and if a connections render lane is wanted, schedule it with T-760's marker lane since both need the same `mission_history.rs` rebind tail and the same `draw_order.rs` edit.",
    "notes": "filed by wave-117 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-769",
+   "order": 4645,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "LEFT"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "title": "The dock tree still scrolls in a fixed 420px box, and the comment excusing it is false",
+   "summary": "MAJOR from the wave-118 adversarial verifier, and it REFUTES the shipping slice's own recorded reasoning. T-637 left `CONTAINER_H` (eden_tree.rs:323-330) at a fixed 420px inside the now flex-1 ~958px dock region, and justified it in a shipped comment: that an h-full scroller at the new 16px pitch would render ~69 of ~88 rows on 1080p, so `smoke_virtual_outliner` (which asserts rendered < total) would STOP TESTING WINDOWING WITHOUT FAILING. BOTH HALVES ARE FALSE. (1) The smoke does not only assert `rendered < total` — smokes.rs:2651 ALSO pins `e_rend1 <= 60`, and that cap PREDATES this wave (T-339, present at base). (2) Deriving from eden_tree.rs:999-1001, `rendered = ceil(H/16) + 12`. At the slice's own cited 1080p (958px region) that is 72: `72 < 88` so the windowing assertion STILL PASSES — windowing would not have gone untested — and `72 > 60` so the v3 cap FAILS LOUDLY. At the gate's real 1440x900 viewport it is 61, failing by one. An h-full scroller would have gone RED, not silent. THE ACTUAL DEFECT LEFT UNFIXED: trees over ~50 rows still render inside a 420px inner scroller nested in a ~958px region, so up to ~538px of exactly the void this ticket exists to absorb comes back on large missions. The <=50-row eager path IS genuinely fixed and the 17->26 visible-row densification is real, so this is a partial, not a no-op. FIX: give the tree region a measured height (h-full inside the flex column) AND update `smoke_virtual_outliner`'s rendered cap so it pins windowing independently of viewport size — the two must move together, which is why it is one ticket. AND CORRECT THE COMMENT: a false rationale enshrined in shipped code is worse than no comment, because the next reader will trust it. Diagnosis: editor_verify/wave118.md MAJOR-1.",
+   "notes": "filed by wave-118 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-770",
+   "order": 4646,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "ARS"
+   ],
+   "impact": [
+    "state"
+   ],
+   "title": "commit_writes counts closure calls, not sink acknowledgements, so its warning arm is unreachable",
+   "summary": "MINOR from the wave-118 verifier. T-699's `commit_writes` (arsenal.rs:1100-1110) is built around the right idea — the receipt is composed from what the commit sink returned rather than from the plan length, precisely so the author is never told more landed than did, and it carries a WARNING arm for when planned and committed disagree. But it counts CLOSURE INVOCATIONS, and the production sink `update_slot_loadout` (store.rs:2733) returns `()` and silently no-ops on an unknown id. So in production `commits` always equals plan length and the WARNING arm is UNREACHABLE. Not currently exploitable: plan and commit run in one synchronous task (the `window.confirm` included), so nothing can invalidate an id between them, and the NATIVE pin has real teeth — the verifier re-ran the slice's own skip-perturbation and it went red with '3 writes planned, sink took 2'. The gap is that the sink offers no acknowledgement to count. FIX: when T-732 lands the atomic batch API, have the write path RETURN an acknowledgement (a bool, or the count it actually applied) so the receipt is measuring the document rather than the loop. Diagnosis: editor_verify/wave118.md MINOR-1.",
+   "notes": "filed by wave-118 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-771",
+   "order": 4647,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "ATTR",
+    "ARS"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "title": "The Attributes multi-select banner is now false for the three loadout-buffer verbs",
+   "summary": "MINOR from the wave-118 verifier. T-649 (wave 112) added an honesty banner at attributes.rs:374 telling a multi-selection 'Loadout edits apply to this one entity (<id>), not to the whole selection.' That was true and remains true of every pick row and cargo row. It is now FALSE of the three verbs T-699 added directly beneath it — Copy, Apply and Remove Everything all act on the WHOLE selection. T-699 could not fix the banner (attributes.rs was outside its owns) and mitigated inside its own file with a counter-note at arsenal.rs:1909-1911 reading 'These three act on the whole selection, not on this one entity — unlike every pick above.' So the modal currently states a rule and then contradicts it two inches lower, which is a worse read than either statement alone. NOTE FOR WHOEVER FIXES IT: the banner text is PINNED at mission_editor.rs:8745, so the wording and the pin must be amended together or the slice gate goes red. Rated MINOR rather than MAJOR because the contradiction is locally corrected, deliberate, and disclosed. Diagnosis: editor_verify/wave118.md MINOR-2 / item 18.",
+   "notes": "filed by wave-118 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-772",
+   "order": 4648,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "UI"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "title": "The ControlsHint close button's hit box shrank with the shared BTN_ICON change",
+   "summary": "NIT from the wave-118 verifier. T-637 rebuilt `eden_layout::BTN_ICON` from `p-1.5` + `text-on-surface-variant` to `p-0.5` + `text-on-surface`, which was the correct fix for the dock density work and correctly moved the 'a live glyph rests bright' enforcement to the shared recipe so every caller benefits. Side effect: `eden_help.rs:244`, the ControlsHint overlay's close button, was sized by that recipe and its hit box went from roughly 36px to roughly 20px. Behaviour is intact (it still composes HOVER_FILL and is never disabled) and the button also has an Escape path, so nothing is unreachable — but 20px is below the comfortable pointer target for a dismiss control that is not in a dense row. The five BTN_ICON callers were verified to be the same set as at base, so nothing else regressed. Fix: give the overlay's close button its own padding at the call site rather than widening the shared recipe back out, since the dense-row sizing is what the dock work needs. Diagnosis: editor_verify/wave118.md NIT-1.",
+   "notes": "filed by wave-118 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-773",
+   "order": 4649,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "SHELL"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "title": "Server Intel's copy button reports success over a clipboard write it never confirmed",
+   "summary": "PRE-EXISTING DEFECT, found by the T-698 slice while being warned not to introduce one, and independently confirmed by the wave-118 verifier. apps/website/frontend/src/server_intel.rs:215-223: `let _ = win.navigator().clipboard().write_text(&copy_text.get_value());` immediately followed by `toasts.success(\"Server address copied\")`. The promise is DROPPED. `navigator.clipboard.writeText` rejects on an insecure context, on an unfocused document, and on denied permission — in every one of those cases the rejection is discarded and the operator is told the copy worked. REPRO: load the Server Intel page over plain http on a non-localhost host (or blur the document) and click Copy — the toast says copied, the clipboard is unchanged. This is the programme's signature defect class (a tool reporting success over something it never did) and it was the live in-repo precedent a new exporter would have copied. THE FIX ALREADY EXISTS IN THE REPO: T-698 wrote `write_clipboard` in mission_commands.rs, which resolves the API through Reflect and refuses with a message when `navigator.clipboard` is undefined, awaits the promise via JsFuture, and toasts success on the RESOLVE ARM ONLY. Promote it to a shared helper and repoint server_intel.rs at it. Not fixed in wave 118 because server_intel.rs was outside every slice's owns. Diagnosis: editor_verify/wave118.md (pre-existing, claim verified).",
+   "notes": "filed by wave-118 adversarial verifier (editor factory)"
   }
  ]
 }

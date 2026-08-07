@@ -154,12 +154,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-120** — Staging soak + golden mission smoke (`queued`)
 - **T-146** — Asset Browser Data Wiring (`queued`)
 - **T-170** — Prod default flip to Leptos SPA (`queued`)
-- **T-637** — Dock density and the 240px equalisation (`queued`)
 - **T-673** — Marker style and Area markers — the $defs/marker widening (`queued`)
 - **T-674** — T-216 follow-on: slot identity reaches the wire (`queued`)
 - **T-675** — Vehicle roster reaches the game — the compile half of T-076 (`queued`)
 - **T-676** — Trigger activation and effects — the Enfusion runtime (`queued`)
 - **T-677** — Waypoints — group movement orders (`queued`)
+- **T-678** — Group AI state: combat mode, behaviour, formation, speed (`queued`)
 <!-- ticket-sync:status:end -->
 
 **Shipped history — every slice, sha and tag — lives in**
