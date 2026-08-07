@@ -2004,6 +2004,8 @@ pub fn MissionEditorPage() -> impl IntoView {
 
             // T-159.26 — editor keyboard actions (MissionCreatorPage onKeyDown): Delete
             // (remove selection), Space (center on centroid), Ctrl/Cmd+C/V (copy/paste at cursor).
+            // T-669 completes the clipboard: Ctrl/Cmd+X cuts (copy then delete) and
+            // Ctrl/Cmd+Shift+V pastes at the SOURCE position instead of at the cursor.
             // T-662 — Backspace is here too, but bound to hide-chrome (`chrome_hidden`), NOT delete.
             // A SEPARATE window keydown from the undo/redo one (which owns Ctrl+Z/Y) — each guards
             // its own keys, both skip editable fields. `cursor` feeds the paste anchor (world coords).
@@ -2074,8 +2076,50 @@ pub fn MissionEditorPage() -> impl IntoView {
                             "KeyC" if modk && !ev.alt_key() && !ev.shift_key() => {
                                 crate::editor_ops::copy_selection()
                             }
+                            // T-669 ACTION-CUT-001 — Ctrl/Cmd+X is COPY, then DELETE, in that order
+                            // and SHORT-CIRCUITED. `copy_selection` returns false when there was
+                            // nothing to put on the clipboard (empty selection, or the ops context /
+                            // doc is not up yet), and a cut that could not copy must NOT delete —
+                            // that would be a silent destructive Delete wearing an X. `&&` is exactly
+                            // that guarantee: `delete_selection` never runs unless the clipboard took
+                            // the snapshot first. Both halves are pre-existing `editor_ops`
+                            // primitives, so this arm adds no new doc write and no new undo step
+                            // beyond the one `delete_selection` already files.
+                            //
+                            // Census: X was bound by NEITHER window-level editor keydown before this
+                            // slice (this file's nor `mission_history`'s Ctrl+Z/Y one) — pinned by
+                            // `t669_cut_key_census`. It carries the same guard shape as the C / V
+                            // arms it sits between, so the top-of-closure `in_editable_field()` guard
+                            // keeps Ctrl+X meaning "cut the text" while the operator is typing in an
+                            // Attributes field.
+                            "KeyX" if modk && !ev.alt_key() && !ev.shift_key() => {
+                                crate::editor_ops::copy_selection()
+                                    && crate::editor_ops::delete_selection()
+                            }
                             "KeyV" if modk && !ev.alt_key() && !ev.shift_key() => {
                                 crate::editor_ops::paste_at_cursor(cx, cy)
+                            }
+                            // T-669 ACTION-PASTE-ORIG-001 — Ctrl/Cmd+Shift+V pastes with NO cursor
+                            // anchor. `paste_at_cursor`'s anchor is `Option`al and that option IS the
+                            // feature: `Some(cx, cy)` translates the clip's centroid onto the map
+                            // cursor (the plain paste arm above), `None` leaves every slot on its
+                            // SOURCE coordinates. Honesty about the one wrinkle: with no anchor
+                            // `Doc::paste_slots` offsets the whole clip by `PASTE_NUDGE` (20 m) so the
+                            // copy is not buried pixel-perfect under its original and unclickable.
+                            // That nudge is `map-engine-core`'s pre-existing no-anchor behaviour
+                            // (byte-parity with the JS `ydoc.pasteSlots`), not a choice this arm
+                            // makes, and the help row says "source position" rather than claiming an
+                            // exact-coordinate paste.
+                            //
+                            // MUTUAL EXCLUSION with the plain paste arm: that arm guards
+                            // `!ev.shift_key()`, this one guards `ev.shift_key()`, and both require
+                            // `modk && !ev.alt_key()`. One `KeyboardEvent` has exactly one `shiftKey`
+                            // value, so at most one of the pair can ever match — they partition the
+                            // Ctrl+V space rather than overlapping it, and the order they appear in
+                            // is therefore irrelevant. Pinned by
+                            // `the_two_paste_arms_are_mutually_exclusive`.
+                            "KeyV" if modk && !ev.alt_key() && ev.shift_key() => {
+                                crate::editor_ops::paste_at_cursor(None, None)
                             }
                             // T-649 SEL-ALL-001 — Ctrl/Cmd+A selects everything IN VIEW. Eden scopes
                             // Select All to the viewport, not to the whole mission, so this hands the
@@ -8041,5 +8085,251 @@ mod t649_select_all_and_multi_edit {
             modal.contains("is_multi.then("),
             "the disclosure must render only under a multi-selection"
         );
+    }
+}
+
+// ──────────────── T-669 — clipboard completion: cut + paste-at-original ───────────────────────
+/// Source pins for T-669 (`ACTION-CUT-001`, `ACTION-PASTE-ORIG-001`). `editor_ops` is a wasm32-only
+/// module, so neither `copy_selection` nor `paste_at_cursor` can be CALLED from a native
+/// `cargo test`; these pin the WIRING the way the rest of this file's editor contracts are pinned —
+/// on the live source, sliced to the keydown arm list so a needle can never self-match inside this
+/// module (which lives in the same file as the arms it reads).
+#[cfg(test)]
+mod t669_clipboard_completion {
+    use crate::arsenal::class_r_scrub::live_source;
+    use std::collections::BTreeSet;
+
+    /// The keydown ARM LIST of one window-level editor keydown. Comments are stripped
+    /// (`live_source` keeps the `KeyboardEvent.code` arm literals but blanks prose), so a note that
+    /// MENTIONS a keysym is never counted as a binding; the slice runs from the `match
+    /// ev.code().as_str()` head to that arm list's `_ =>` terminator.
+    fn keydown_arms(src: &str) -> String {
+        let head = "match ev.code().as_str() {";
+        let at = src.find(head).expect("an editor keydown match is present");
+        let rest = &src[at..];
+        let end = rest.find("_ =>").map_or(rest.len(), |i| i + 4);
+        live_source(&rest[..end])
+    }
+
+    /// Needles assembled so the arm LITERAL never appears verbatim in this test's own source.
+    fn key(k: &str) -> String {
+        format!("\"{k}\"")
+    }
+
+    /// KEY CENSUS: Ctrl/Cmd+X is claimed by THIS editor keydown and by nothing else. The two
+    /// window-level editor keydowns are this file's and `mission_history`'s (Ctrl+Z/Y); the other
+    /// one must not also bind X, or both listeners would fire on one keypress and the selection
+    /// would be cut twice.
+    #[test]
+    fn t669_cut_key_census() {
+        let this_arms = keydown_arms(include_str!("mission_editor.rs"));
+        let history_arms = keydown_arms(include_str!("mission_history.rs"));
+        let key_x = key("KeyX");
+        assert!(
+            !history_arms.contains(&key_x),
+            "census: mission_history's keydown (Ctrl+Z/Y) must not claim X"
+        );
+        // Modifier-gated (Ctrl/Cmd), rejecting Alt and Shift — the same guard shape as the Ctrl+C /
+        // Ctrl+V arms it sits between, so a BARE `x` stays free.
+        assert!(
+            this_arms.contains(&format!(
+                "{key_x} if modk && !ev.alt_key() && !ev.shift_key() =>"
+            )),
+            "ACTION-CUT-001: Ctrl/Cmd+X (not bare X, not an Alt combo) must be the cut arm"
+        );
+        // The neighbours are untouched: this slice ADDED arms, it did not re-key the existing ones.
+        for k in ["KeyC", "KeyA"] {
+            assert!(
+                this_arms.contains(&format!(
+                    "{} if modk && !ev.alt_key() && !ev.shift_key() =>",
+                    key(k)
+                )),
+                "the existing {k} arm must be unchanged by T-669"
+            );
+        }
+    }
+
+    /// A cut that could not COPY must not DELETE. `copy_selection` returns false on an empty
+    /// selection or a doc that is not up, and `&&` short-circuits on that false — so the arm can
+    /// never degrade into a silent destructive Delete. Order is the contract: copy first.
+    #[test]
+    fn cut_copies_before_it_deletes_and_short_circuits() {
+        let arms = keydown_arms(include_str!("mission_editor.rs"));
+        let at = arms
+            .find(&format!("{} if modk", key("KeyX")))
+            .expect("the cut arm exists — censused above");
+        let body = &arms[at..];
+        let copy = body
+            .find("editor_ops::copy_selection()")
+            .expect("ACTION-CUT-001: the cut arm must snapshot the selection to the clipboard");
+        let del = body
+            .find("editor_ops::delete_selection()")
+            .expect("ACTION-CUT-001: the cut arm must then remove the selection");
+        assert!(
+            copy < del,
+            "ACTION-CUT-001: copy must run BEFORE delete — a cut that deletes first has already \
+             destroyed what it was supposed to put on the clipboard"
+        );
+        assert!(
+            body[copy..del].contains("&&"),
+            "ACTION-CUT-001: the two calls must be joined by `&&` (short-circuit), not sequenced — \
+             otherwise a failed copy still deletes and the cut is an undocumented Delete"
+        );
+    }
+
+    /// `paste_at_cursor`'s anchor is `Option`al, and that option IS paste-at-original: the plain
+    /// paste arm hands it the map cursor, the Shift arm hands it nothing so every slot keeps its
+    /// source coordinates. Pin both halves — passing `cx, cy` to the Shift arm by accident is the
+    /// exact regression that would make this ticket a no-op while still looking bound.
+    #[test]
+    fn paste_at_original_passes_no_anchor() {
+        let arms = keydown_arms(include_str!("mission_editor.rs"));
+        let key_v = key("KeyV");
+        let plain = arms
+            .find(&format!(
+                "{key_v} if modk && !ev.alt_key() && !ev.shift_key() =>"
+            ))
+            .expect("the cursor-anchored paste arm must survive this slice");
+        let shifted = arms
+            .find(&format!(
+                "{key_v} if modk && !ev.alt_key() && ev.shift_key() =>"
+            ))
+            .expect("ACTION-PASTE-ORIG-001: Ctrl/Cmd+Shift+V must be an arm of its own");
+        assert!(
+            arms[plain..shifted].contains("editor_ops::paste_at_cursor(cx, cy)"),
+            "the plain Ctrl/Cmd+V must still anchor the paste on the map cursor"
+        );
+        assert!(
+            arms[shifted..].contains("editor_ops::paste_at_cursor(None, None)"),
+            "ACTION-PASTE-ORIG-001: the Shift arm must pass NO anchor — that is what makes the \
+             paste land on the source position instead of the cursor"
+        );
+    }
+
+    /// The two Ctrl/Cmd+V arms PARTITION their key rather than overlapping it. Two halves, because
+    /// either alone would be weak: the source half reads the real guards out of the live arm list
+    /// (so it cannot drift from the code), and the truth table then evaluates those exact guard
+    /// shapes over every `(ctrl/meta, alt, shift)` combination — one `KeyboardEvent` carries exactly
+    /// one `shiftKey`, so no event can satisfy both, and match ORDER between them is irrelevant.
+    #[test]
+    fn the_two_paste_arms_are_mutually_exclusive() {
+        let arms = keydown_arms(include_str!("mission_editor.rs"));
+        let key_v = key("KeyV");
+        assert_eq!(
+            arms.matches(key_v.as_str()).count(),
+            2,
+            "V must be bound exactly twice (cursor paste + paste-at-original); a third arm would \
+             make this proof incomplete"
+        );
+        let plain = format!("{key_v} if modk && !ev.alt_key() && !ev.shift_key() =>");
+        let shifted = format!("{key_v} if modk && !ev.alt_key() && ev.shift_key() =>");
+        assert!(
+            arms.contains(&plain) && arms.contains(&shifted),
+            "the two V arms must differ ONLY in the polarity of the shift guard — anything else \
+             and the exclusivity argument below is about code that is not there"
+        );
+        // The guards above, evaluated. `modk` is `ctrl || meta`, so the three inputs are exhaustive.
+        let plain_guard = |modk: bool, alt: bool, shift: bool| modk && !alt && !shift;
+        let shifted_guard = |modk: bool, alt: bool, shift: bool| modk && !alt && shift;
+        for modk in [false, true] {
+            for alt in [false, true] {
+                for shift in [false, true] {
+                    assert!(
+                        !(plain_guard(modk, alt, shift) && shifted_guard(modk, alt, shift)),
+                        "the V arms both match at modk={modk} alt={alt} shift={shift} — the \
+                         second would be dead code and the binding ambiguous"
+                    );
+                    // Together they cover Ctrl/Cmd+V without Alt, and nothing else: an Alt or a
+                    // bare V still falls through to the arms below and then to `_ => false`.
+                    assert_eq!(
+                        plain_guard(modk, alt, shift) || shifted_guard(modk, alt, shift),
+                        modk && !alt,
+                        "the V pair must claim exactly Ctrl/Cmd+V (Alt-free) — no more, no less"
+                    );
+                }
+            }
+        }
+    }
+
+    /// `eden_help`'s coverage pins compare CODE SETS, and paste-at-original re-uses `KeyV`. So a
+    /// missing help row for Ctrl/Cmd+Shift+V would leave those pins GREEN while the operator has no
+    /// way to discover the binding — the exact defect T-692 exists to prevent, slipping through the
+    /// one hole its set comparison cannot see. Pin the two CHORDS instead.
+    #[test]
+    fn both_new_chords_are_documented_in_the_help_table() {
+        // Raw source: the chords ARE string literals, so a scrub that blanks literals would blank
+        // the thing under test.
+        let help = include_str!("eden_help.rs");
+        for chord in ["Ctrl/Cmd + X", "Ctrl/Cmd + Shift + V"] {
+            assert!(
+                help.contains(chord),
+                "T-669: `{chord}` is bound by the editor keydown but has no row in \
+                 `eden_help::SHORTCUTS` — the help surface must not go stale the first time a \
+                 ticket adds a chord on an already-documented key code"
+            );
+        }
+    }
+
+    /// The help module's opening sentence counts the bindings, and a hand-typed count goes stale the
+    /// moment a slice adds an arm (it already had: T-740 filed it reading "sixteen" against a real
+    /// 17). Derive the number instead. `SHORTCUTS`' distinct codes ARE the bound codes —
+    /// `every_binding_has_a_help_entry` and `no_help_entry_invents_a_binding` assert that set
+    /// equality both ways — so counting the table counts the keydowns, and the next slice to add an
+    /// arm gets told the new word rather than discovering the drift a wave later.
+    #[test]
+    fn the_help_blurb_counts_the_bindings_correctly() {
+        let codes: BTreeSet<&str> = crate::eden_help::SHORTCUTS
+            .iter()
+            .flat_map(|s| s.codes.iter().copied())
+            .collect();
+        let word = english(codes.len());
+        let sentence = format!("binds {word} `KeyboardEvent.code` values");
+        assert!(
+            include_str!("eden_help.rs").contains(&sentence),
+            "T-669/T-740: the editor now binds {} distinct key codes ({codes:?}), so \
+             `eden_help`'s opening paragraph must read \"{sentence}\"",
+            codes.len()
+        );
+    }
+
+    /// Small-integer spelling, for the sentence above. Deliberately narrow: a count outside the
+    /// range panics with instructions rather than silently spelling nothing.
+    fn english(n: usize) -> String {
+        const ONES: [&str; 20] = [
+            "zero",
+            "one",
+            "two",
+            "three",
+            "four",
+            "five",
+            "six",
+            "seven",
+            "eight",
+            "nine",
+            "ten",
+            "eleven",
+            "twelve",
+            "thirteen",
+            "fourteen",
+            "fifteen",
+            "sixteen",
+            "seventeen",
+            "eighteen",
+            "nineteen",
+        ];
+        const TENS: [&str; 4] = ["twenty", "thirty", "forty", "fifty"];
+        assert!(
+            n < 60,
+            "extend `english` past {n} before the editor gets there"
+        );
+        if n < 20 {
+            return ONES[n].to_string();
+        }
+        let (t, r) = (n / 10 - 2, n % 10);
+        if r == 0 {
+            TENS[t].to_string()
+        } else {
+            format!("{}-{}", TENS[t], ONES[r])
+        }
     }
 }

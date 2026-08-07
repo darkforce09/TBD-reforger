@@ -2,7 +2,7 @@
 //! and the toggleable **Controls Hint** overlay (rows MENU-BAR-008 / MENU-VIEW-017 /
 //! MENU-HELP-001).
 //!
-//! **The defect this closes.** The Mission Creator binds sixteen `KeyboardEvent.code` values across
+//! **The defect this closes.** The Mission Creator binds eighteen `KeyboardEvent.code` values across
 //! its two window-level keydowns (`mission_editor`'s editor handler and `mission_history`'s
 //! Ctrl+Z/Y handler) and, before this ticket, documented **none** of them anywhere in the UI: no
 //! Help menu, no hint overlay, and `context_menu`'s `with_shortcut` builder had zero callers. An
@@ -86,10 +86,26 @@ pub const SHORTCUTS: &[Shortcut] = &[
         action: "Copy the selection",
         group: "Selection",
     },
+    // T-669 — cut is `KeyX`, a code neither keydown bound before; paste-at-original re-uses `KeyV`
+    // under Shift, so the code-set pins below CANNOT see a missing row for it (`KeyV` is documented
+    // either way). `mission_editor`'s `both_new_chords_are_documented_in_the_help_table` pins the
+    // two CHORD strings for that reason.
+    Shortcut {
+        codes: &["KeyX"],
+        chord: "Ctrl/Cmd + X",
+        action: "Cut the selection (copy, then remove)",
+        group: "Selection",
+    },
     Shortcut {
         codes: &["KeyV"],
         chord: "Ctrl/Cmd + V",
         action: "Paste at the cursor",
+        group: "Selection",
+    },
+    Shortcut {
+        codes: &["KeyV"],
+        chord: "Ctrl/Cmd + Shift + V",
+        action: "Paste at the source position instead of the cursor",
         group: "Selection",
     },
     Shortcut {
