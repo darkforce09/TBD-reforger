@@ -129,6 +129,33 @@ pub fn DockLeft(
         !layer_query.with(|q| q.trim().is_empty()) && layer_nodes.with(Vec::is_empty)
     });
 
+    // ── T-697 — the same box, now searching the DOCUMENT ─────────────────────────────────────────
+    // `nodes` is read for its DEPENDENCY, not its value: it is the mirror `editor_ops::refresh_docks`
+    // pushes at every mutation site (place, move, delete, undo, redo, restore), so tracking it is how
+    // this search re-runs when the document changes without inventing a second change signal. The
+    // query is the other input. Both reads happen before any early return, or a blank query would
+    // untrack the doc and the list would go stale the moment it re-armed.
+    let doc_hits = RwSignal::new(Vec::<DocHit>::new());
+    Effect::new(move |_| {
+        let _tick = nodes.with(Vec::len);
+        let q = layer_query.get();
+        doc_hits.set(search_document(&document_rows(), &q));
+    });
+
+    // ── T-697 — the selection filter ─────────────────────────────────────────────────────────────
+    // Recomputed from the live selection at every selection change. `selection_facets` returns the
+    // empty list whenever nothing can actually be narrowed, so an empty vector here is the whole of
+    // "this selection is homogeneous" and the row simply does not render.
+    let sel_facets = RwSignal::new(Vec::<SelectionFacet>::new());
+    Effect::new(move |_| {
+        let n = selected.with(Vec::len);
+        if n < 2 {
+            sel_facets.set(Vec::new());
+            return;
+        }
+        sel_facets.set(selection_facets(&selection_rows()));
+    });
+
     // ── T-696 — the Locations tab's state ────────────────────────────────────────────────────────
     // All of it is dock-local SESSION state: which tab is showing, the shared filter box, the lazily
     // fetched named-place index, and the persisted bookmark collection mirrored into a signal so the
@@ -456,6 +483,157 @@ pub fn DockLeft(
         }
     };
 
+    // ── T-697 — the hit list ─────────────────────────────────────────────────────────────────────
+    // One row per matching entity, above the tree, only while the box has something in it. A row is
+    // a BUTTON when `DocKind::is_selectable` (slot / vehicle — what the T-655 router can resolve) and
+    // INERT TEXT otherwise, carrying `unselectable_reason` as its title. That branch is the whole of
+    // the T-754 lesson: the alternative is a row that looks clickable and selects nothing.
+    let hits_body = move || {
+        let q = layer_query.get();
+        if q.trim().is_empty() {
+            return ().into_any();
+        }
+        let hits = doc_hits.get();
+        if hits.is_empty() {
+            // Half-typed and unreadable queries are NOT failed searches, and T-084 already owns the
+            // three sentences that tell them apart — reused verbatim rather than re-worded here.
+            let msg = crate::asset_catalog::search_empty_message(&q, "entities in this mission");
+            return view! {
+                <p class="mt-1 px-1 text-label-sm text-outline" data-testid="dock-left-search-empty">
+                    {msg}
+                </p>
+            }
+            .into_any();
+        }
+        let total = hits.len();
+        let shown = total.min(MAX_DOC_HITS);
+        view! {
+            <section class="mt-1 flex shrink-0 flex-col" data-testid="dock-left-search-results">
+                <h3 class="px-1 text-label-sm font-semibold uppercase text-outline">
+                    {if shown == total {
+                        format!("Found {total}")
+                    } else {
+                        format!("Found {total} — showing {shown}")
+                    }}
+                </h3>
+                <div class="max-h-40 overflow-y-auto">
+                    {hits
+                        .into_iter()
+                        .take(MAX_DOC_HITS)
+                        .map(|hit| {
+                            let kind = hit.entity.kind;
+                            let id = hit.entity.id.clone();
+                            let badge = kind.noun();
+                            let label = hit.entity.label.clone();
+                            let matched = hit
+                                .entity
+                                .text
+                                .iter()
+                                .find(|(f, _)| *f == hit.field)
+                                .map_or_else(String::new, |(_, v)| v.clone());
+                            let body = view! {
+                                <MaterialIcon
+                                    name=kind.icon()
+                                    class="block shrink-0 text-sm text-outline"
+                                />
+                                <span class="min-w-0 flex-1 truncate text-left text-label-sm">
+                                    {label.clone()}
+                                </span>
+                                <span class="shrink-0 text-label-sm lowercase text-outline">
+                                    {badge}
+                                </span>
+                            };
+                            if kind.is_selectable() {
+                                let title = format!(
+                                    "Select this {badge} — matched {} \"{matched}\" ({id})",
+                                    hit.field,
+                                );
+                                let click_id = id.clone();
+                                view! {
+                                    <button
+                                        type="button"
+                                        title=title
+                                        data-testid="dock-left-search-hit"
+                                        class="flex w-full cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-on-surface hover:bg-white/5"
+                                        on:click=move |ev: web_sys::MouseEvent| {
+                                            ev.stop_propagation();
+                                            crate::validation_panel::route_select_by_subject_id(
+                                                &click_id,
+                                            );
+                                        }
+                                    >
+                                        {body}
+                                    </button>
+                                }
+                                    .into_any()
+                            } else {
+                                view! {
+                                    <div
+                                        aria-disabled="true"
+                                        title=unselectable_reason(kind)
+                                        data-testid="dock-left-search-hit-inert"
+                                        class="flex w-full items-center gap-1 rounded px-1 py-0.5 text-outline"
+                                    >
+                                        {body}
+                                    </div>
+                                }
+                                    .into_any()
+                            }
+                        })
+                        .collect_view()}
+                </div>
+            </section>
+        }
+        .into_any()
+    };
+
+    // ── T-697 — the selection filter's chips ─────────────────────────────────────────────────────
+    // One chip per way the selection can ACTUALLY be narrowed (see `selection_facets`: a facet that
+    // would keep everything is never emitted). Chips wrap rather than truncate, so this row cannot
+    // overrun the 240 px column however many factions the selection straddles.
+    let facets_row = move || {
+        let facets = sel_facets.get();
+        if facets.is_empty() {
+            return ().into_any();
+        }
+        view! {
+            <section class="mt-1 flex shrink-0 flex-col" data-testid="dock-left-selection-filter">
+                <h3 class="px-1 text-label-sm font-semibold uppercase text-outline">
+                    "Filter selection"
+                </h3>
+                <div class="flex flex-wrap gap-1 px-1 py-0.5">
+                    {facets
+                        .into_iter()
+                        .map(|f| {
+                            let n = f.ids.len();
+                            let title = format!(
+                                "Keep only the {n} selected by {}: {}",
+                                f.axis.to_lowercase(),
+                                f.label,
+                            );
+                            let ids = f.ids.clone();
+                            view! {
+                                <button
+                                    type="button"
+                                    title=title
+                                    data-testid="dock-left-selection-facet"
+                                    class="shrink-0 cursor-pointer rounded border border-outline-variant/30 px-1.5 py-0.5 text-label-sm text-on-surface transition-colors hover:bg-white/10"
+                                    on:click=move |ev: web_sys::MouseEvent| {
+                                        ev.stop_propagation();
+                                        apply_selection(ids.clone());
+                                    }
+                                >
+                                    {format!("{} ({n})", f.label)}
+                                </button>
+                            }
+                        })
+                        .collect_view()}
+                </div>
+            </section>
+        }
+        .into_any()
+    };
+
     let full = move || {
         view! {
             <aside class=DOCK_L>
@@ -556,8 +734,11 @@ pub fn DockLeft(
                                 <input
                                     type="search"
                                     data-testid="dock-left-layers-filter"
-                                    aria-label="Filter editor layers"
-                                    placeholder="Filter layers…"
+                                    aria-label="Search the mission and filter editor layers"
+                                    // T-697 — the box searches the DOCUMENT now, not just the tree,
+                                    // so the placeholder advertises the grammar it shares with the
+                                    // asset palette rather than naming one of its two surfaces.
+                                    placeholder="Search mission — name, class:, mod:"
                                     prop:value=move || layer_query.get()
                                     class="mt-1 w-full shrink-0 rounded border border-outline-variant/30 bg-black/20 px-1.5 py-0.5 text-label-sm text-on-surface outline-none placeholder:text-outline focus:border-primary/60"
                                     on:input=move |ev| layer_query.set(event_target_value(&ev))
@@ -565,6 +746,11 @@ pub fn DockLeft(
                             }
                         })
                 }}
+                // T-697 — the selection filter, then the document hits, then the tree. The chips sit
+                // above the results because they act on what is ALREADY selected (a state the author
+                // arrived with), while the hit list is the answer to what they are typing now.
+                {move || (tab.get() == LeftTab::Layers).then(facets_row)}
+                {move || (tab.get() == LeftTab::Layers).then(hits_body)}
                 {move || {
                     if tab.get() == LeftTab::Places {
                         places_body().into_any()
@@ -718,10 +904,18 @@ pub struct NamedPlace {
 /// T-696 — the shared filter predicate: case-insensitive substring, empty query matches everything.
 /// One predicate for both lists so the bookmark half and the location half can never disagree about
 /// what the filter box means.
+///
+/// T-697 — it is now T-084's grammar, through the one matcher [`query_hits`], rather than a hand-run
+/// `to_lowercase().contains()`. The plain behaviour this function was written for is UNCHANGED (an
+/// empty query matches everything; a literal is a case-insensitive substring — those are exactly
+/// `SearchPattern::All` and `SearchPattern::Plain` against the `Label` field), and `*`, `?` and
+/// `/…/` now work here too. The point is not the extra patterns: it is that the layers tree, the
+/// bookmarks list, the locations index and the document search below cannot drift into four ideas of
+/// what the box means. A bookmark and a location have no class name and no faction, so `class:` and
+/// `mod:` match nothing against them — the honest answer, since those rows carry no such datum.
 #[must_use]
 pub fn matches_query(name: &str, query: &str) -> bool {
-    let q = query.trim().to_lowercase();
-    q.is_empty() || name.to_lowercase().contains(&q)
+    query_hits(query, name, "", "")
 }
 
 /// T-637 — the Editor Layers tree, filtered by the same [`matches_query`] predicate the Locations
@@ -1090,6 +1284,370 @@ async fn fetch_named_places() -> Vec<NamedPlace> {
         .collect();
     sort_places(&mut out);
     out
+}
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+// T-697 — DOCUMENT SEARCH + THE SELECTION FILTER (3den E4 / 3DEN-TOOL-011)
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+//
+// TBD could search the CATALOGUE (what you may place) and could not search the DOCUMENT (what you
+// HAVE placed). At a WOG-corpus median of 137 placed entities per mission, find-by-name is not a
+// nicety, and the gap was total: `filter_catalog` had exactly one caller (`eden_dock_right`), and
+// the only reader of a placed vehicle / zone / trigger / marker / object was the panel that renders
+// that one kind. Nothing anywhere asked a question of the whole document.
+//
+// **ONE GRAMMAR, NOT TWO — T-084's, reused.** The query language here is not new and must never
+// become new: `parse_search_query` / `SearchField` / `SearchPattern` / `filter_catalog` /
+// `search_empty_message` all come from `asset_catalog`, so `class:`, `mod:`, `*`, `?` and `/…/` mean
+// in the document exactly what they mean in the palette, and the half-typed and broken-pattern
+// empty states are literally the same sentences.
+//
+// The one thing T-084 does not expose is its MATCHER: `SearchPattern::hits` is private to
+// `asset_catalog`, and that file is not this slice's to widen. So [`query_hits`] evaluates a query
+// by handing `filter_catalog` a two-node PROJECTION of one candidate — a depth-0 folder whose label
+// is the candidate's GROUP (its faction) holding one leaf whose `label` is the text being searched
+// and whose `id` is its Enfusion class name. That is not a trick, it is the same shape the
+// catalogue has, and it makes all three fields land on the right datum for free:
+//
+//   * `Label` (the default) — substring over the leaf's text, and a folder self-match keeps the
+//     subtree, so a bare `BLUFOR` returns every BLUFOR entity exactly as it returns a whole addon
+//     folder in the palette;
+//   * `class:` — LEAF-ONLY prefix over the full `resourceName` or its `classname_tail`;
+//   * `mod:` — DEPTH-0 only, i.e. the faction group.
+//
+// The cost is one `parse_search_query` per candidate string rather than one per query. That is a few
+// hundred short-string parses per keystroke at the corpus median and is the price of not forking the
+// grammar; a shared matcher in `asset_catalog` would remove it and is the seam to promote.
+//
+// **THE REGEX ARM IS NOT LOAD-BEARING (T-764).** T-084's `/…/` engine has a known stack-depth defect
+// on very deep patterns. Nothing here requires it: `Plain` and `Glob` carry the feature, `Regex` is
+// one arm of a pattern enum this file never constructs, and no default, placeholder or empty-state
+// message pushes an author toward it. Not fixed here — it is a queued ticket and another slice's
+// file.
+//
+// **RESULTS SELECT, OR THEY SAY THEY CANNOT — wog.md 14.6, filed twice, most recently as T-754.**
+// A hit row routes through `validation_panel::route_select_by_subject_id`, the ONE shipped
+// click-to-select router (T-655). That router resolves a slot (off the SoA) or a vehicle (off
+// `vehiclesById.position`) and NOTHING else — read it: there is no arm for `entitiesById`, for a
+// briefing marker, for a zone, for a trigger, for a comment or for an editor layer. So
+// [`DocKind::is_selectable`] encodes that limit once, and a row whose kind fails it is rendered as
+// INERT TEXT — no button, no pointer cursor, `aria-disabled`, and a title that says in words why —
+// rather than as a control that looks live and selects nothing. That is the entire T-754 defect and
+// the only way to not repeat it is to not render the affordance.
+//
+// **WHERE IT LIVES, AND WHY THERE IS NO THIRD TAB.** T-637 measured the header as a width budget and
+// `the_header_row_fits_the_dock` adds it up: at [`crate::eden_layout::DOCK_PX`] 240 with `p-2`
+// gutters the row has 216 px and already spends 207.5 on the chevron, "Layers", "Locations" and the
+// trailing verb. A third tab is ~50 px against 8.5 px of headroom — it does not fit, and because the
+// tab group carries `min-w-0` it would not overflow, it would SQUEEZE and wrap silently. So document
+// search is the LAYERS TAB's existing filter box, promoted: one box, T-084's grammar, two result
+// surfaces that cannot disagree because [`matches_query`] (the tree's predicate, and the Locations
+// tab's) is now the same [`query_hits`] call the document search is. `the_search_rows_fit_the_dock`
+// below does the arithmetic for the two rows this ticket adds.
+//
+// A slot can therefore appear both in the filtered tree and in the hit list. That is deliberate, not
+// a duplicate: the tree answers WHERE it lives (which layer, which parent), the list answers WHAT
+// matched (which text attribute, and on a vehicle/marker/zone/trigger the tree has never held any
+// row at all).
+
+/// T-697 — what a matched document row IS. Drives the row glyph and badge, and — the load-bearing
+/// one — [`DocKind::is_selectable`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum DocKind {
+    /// A `slots` row (an ORBAT player/AI slot).
+    Slot,
+    /// A `vehiclesById` row.
+    Vehicle,
+    /// A `entitiesById` row — a placed world object (T-254).
+    Object,
+    /// A `factionsById[].briefing.markers[]` row (T-069).
+    Marker,
+    /// A `zones` row (T-582).
+    Zone,
+    /// A `triggers` row.
+    Trigger,
+    /// A `commentsById` row — the editor-only annotation (T-651).
+    Comment,
+    /// An `editorLayersById` folder.
+    Layer,
+}
+
+impl DocKind {
+    /// The badge noun, singular.
+    #[must_use]
+    pub fn noun(self) -> &'static str {
+        match self {
+            DocKind::Slot => "slot",
+            DocKind::Vehicle => "vehicle",
+            DocKind::Object => "object",
+            DocKind::Marker => "marker",
+            DocKind::Zone => "zone",
+            DocKind::Trigger => "trigger",
+            DocKind::Comment => "comment",
+            DocKind::Layer => "layer",
+        }
+    }
+
+    /// The row glyph (Material Symbols name), matching the icon each kind's own panel already uses.
+    #[must_use]
+    pub fn icon(self) -> &'static str {
+        match self {
+            DocKind::Slot => "person",
+            DocKind::Vehicle => "directions_car",
+            DocKind::Object => "category",
+            DocKind::Marker => "place",
+            DocKind::Zone => "crop_square",
+            DocKind::Trigger => "bolt",
+            DocKind::Comment => "sticky_note_2",
+            DocKind::Layer => "folder",
+        }
+    }
+
+    /// **CAN THE SHIPPED ROUTER SELECT THIS? — the T-754 rule, stated once.**
+    ///
+    /// `validation_panel::route_select_by_subject_id` resolves a `subject_id` to a world position by
+    /// looking it up in the slot SoA and then in `vehiclesById.position`. There is no third lookup.
+    /// Every other kind therefore CANNOT be selected by clicking, and the results list must not
+    /// pretend otherwise — see [`unselectable_reason`], which is rendered as the row's title.
+    #[must_use]
+    pub fn is_selectable(self) -> bool {
+        matches!(self, DocKind::Slot | DocKind::Vehicle)
+    }
+}
+
+/// T-697 — why a hit row is inert, in words the author can act on. Rendered as the row's `title`
+/// (and its `aria-description`) so the answer is available exactly where the click would have been.
+#[must_use]
+pub fn unselectable_reason(kind: DocKind) -> String {
+    format!(
+        "Found, but not selectable from here: the editor's click-to-select router resolves slots \
+         and vehicles only, so a {} has no selection to route to. Open it from its own panel.",
+        kind.noun()
+    )
+}
+
+/// T-697 — one placed thing in the document, projected for search. Built by
+/// `editor_ops::document_entities` (wasm, where the doc handles live) and consumed by the pure
+/// functions here, which is what makes the whole search natively testable.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DocEntity {
+    /// The doc id — what the click-to-select router is handed.
+    pub id: String,
+    pub kind: DocKind,
+    /// The row's display name (already fallen back: never empty).
+    pub label: String,
+    /// The Enfusion `resourceName` / object alias this row spawns as, empty when it has none. This
+    /// is the datum `class:` matches, and only this one.
+    pub class_name: String,
+    /// The side this row belongs to (`BLUFOR` / `OPFOR` / `INDFOR`, or a library faction's key),
+    /// empty when the kind carries none. The datum `mod:` matches, and the selection filter's
+    /// faction axis.
+    pub faction: String,
+    /// **THE TEXT ATTRIBUTES** — `(field name, value)`, in the order the author thinks of them. The
+    /// search runs over EACH of these separately rather than over a concatenation, so a glob stays
+    /// whole-string per attribute (`Alpha-?` matches a callsign, not a callsign glued to a rank) and
+    /// so a hit can report WHICH attribute it came from. Never empty: every row carries at least its
+    /// id, because searching for an id an error message quoted is a real thing authors do.
+    pub text: Vec<(&'static str, String)>,
+}
+
+/// T-697 — one search hit: the row, and the text attribute that matched it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DocHit {
+    pub entity: DocEntity,
+    /// The `text` field name that matched — shown on the row so a hit is never mysterious.
+    pub field: &'static str,
+}
+
+/// T-697 — how many hit rows the dock renders. The count reported to the author is the FULL one (see
+/// the results header); this only bounds the DOM. A 240 px column cannot show 2,000 rows usefully and
+/// mounting them would cost more than the search does.
+pub const MAX_DOC_HITS: usize = 200;
+
+/// T-697 — the hit row's leading glyph box: a Material Symbol at `text-sm` (14 px), and a symbol
+/// glyph is 1 em square.
+const HIT_ICON_PX: f64 = 14.0;
+/// T-697 — the hit row's `gap-1` (4 px), of which the row has two: icon│label│badge.
+const HIT_GAP_PX: f64 = 4.0;
+/// T-697 — the hit row's own `px-1` gutter (4 px each side).
+const HIT_ROW_PAD_PX: f64 = 8.0;
+/// T-697 — the width a vertical scrollbar claims from a scrolling list. Chromium's classic scrollbar
+/// is 15 px; overlay scrollbars take 0. Budget for the classic one — the pin must not pass only on
+/// the machine whose scrollbars happen to be free.
+const LIST_SCROLLBAR_PX: f64 = 15.0;
+/// T-697 — the least width the truncating hit LABEL may be left with and still be a label. Below
+/// this the row degrades into an ellipsis with a badge beside it, which is furniture: it would name
+/// nothing the author could recognise, and a search result that cannot be read is not a result.
+const HIT_MIN_LABEL_PX: f64 = 80.0;
+
+/// T-697 — **the one matcher.** Evaluate T-084's grammar against a single candidate.
+///
+/// `text` is the string being searched, `class_name` the row's Enfusion class (what `class:`
+/// matches), `group` its faction (what `mod:` matches, and what a plain query matches as a
+/// containing folder). See the section header for why this is a `filter_catalog` call over a
+/// two-node projection rather than a matcher of its own.
+#[must_use]
+pub fn query_hits(query: &str, text: &str, class_name: &str, group: &str) -> bool {
+    let leaf = crate::asset_catalog::CatalogNode {
+        id: class_name.to_string(),
+        label: text.to_string(),
+        default_expanded: false,
+        children: Vec::new(),
+        // A `payload` is what makes a node a LEAF to `filter_catalog` (module rule: "a leaf is
+        // `payload.is_some()`"), which is what puts it in the `class:` field's leaf-only path. The
+        // values are inert here — this projection never reaches a palette.
+        payload: Some(crate::asset_catalog::PlacePayload {
+            asset_id: class_name.to_string(),
+            role: String::new(),
+        }),
+    };
+    let root = crate::asset_catalog::CatalogNode {
+        id: String::new(),
+        label: group.to_string(),
+        default_expanded: false,
+        children: vec![leaf],
+        payload: None,
+    };
+    !crate::asset_catalog::filter_catalog(std::slice::from_ref(&root), query).is_empty()
+}
+
+/// T-697 — search the whole document. Returns one hit per MATCHING ENTITY (not per matching
+/// attribute), carrying the FIRST attribute that matched, in `rows` order.
+///
+/// A blank query returns NO hits rather than every row: an untouched filter box is not a request to
+/// list the mission, and answering it with 137 rows would bury the tree under the box that opened
+/// them. Half-typed (`class:`) and unreadable (`/[/`) queries return none too — `filter_catalog`
+/// already draws that line, and [`crate::asset_catalog::search_empty_message`] is what says which of
+/// the three empty answers this is.
+#[must_use]
+pub fn search_document(rows: &[DocEntity], query: &str) -> Vec<DocHit> {
+    if query.trim().is_empty() {
+        return Vec::new();
+    }
+    rows.iter()
+        .filter_map(|e| {
+            e.text
+                .iter()
+                .find(|(_, v)| query_hits(query, v, &e.class_name, &e.faction))
+                .map(|(field, _)| DocHit {
+                    entity: e.clone(),
+                    field,
+                })
+        })
+        .collect()
+}
+
+/// T-697 — one way to narrow the live selection, and the exact ids it would leave selected.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SelectionFacet {
+    /// `"Type"` or `"Faction"` — which axis of the ticket's "by type or faction" this is.
+    pub axis: &'static str,
+    /// The chip's label (`"vehicle"`, `"BLUFOR"`).
+    pub label: String,
+    /// The ids the selection becomes. Always a PROPER, non-empty subset of the input (see
+    /// [`selection_facets`]).
+    pub ids: Vec<String>,
+}
+
+/// T-697 — **the selection filter.** Every way the given selection can actually be narrowed, by type
+/// then by faction, types in [`DocKind`] order and factions alphabetical.
+///
+/// A facet is emitted **only when it is a proper subset**. A chip that would keep everything selected
+/// narrows nothing, and rendering it would be the T-754 mistake in a second costume — a control that
+/// looks like it acts and does not. So a homogeneous selection (six BLUFOR slots) yields NO chips and
+/// the dock says so, rather than offering "slot (6)" and "BLUFOR (6)" as no-ops.
+///
+/// Rows with an empty `faction` are grouped under one explicit "no faction" chip rather than being
+/// dropped: "the ones that belong to nobody" is a real thing to narrow to, and silently omitting them
+/// would make the chip counts fail to sum to the selection.
+#[must_use]
+pub fn selection_facets(rows: &[DocEntity]) -> Vec<SelectionFacet> {
+    let total = rows.len();
+    if total < 2 {
+        return Vec::new();
+    }
+    let mut out: Vec<SelectionFacet> = Vec::new();
+    let mut kinds: Vec<DocKind> = rows.iter().map(|e| e.kind).collect();
+    kinds.sort_unstable();
+    kinds.dedup();
+    for k in kinds {
+        let ids: Vec<String> = rows
+            .iter()
+            .filter(|e| e.kind == k)
+            .map(|e| e.id.clone())
+            .collect();
+        if ids.len() < total {
+            out.push(SelectionFacet {
+                axis: "Type",
+                label: k.noun().to_string(),
+                ids,
+            });
+        }
+    }
+    let mut factions: Vec<&str> = rows.iter().map(|e| e.faction.as_str()).collect();
+    factions.sort_unstable();
+    factions.dedup();
+    for f in factions {
+        let ids: Vec<String> = rows
+            .iter()
+            .filter(|e| e.faction == f)
+            .map(|e| e.id.clone())
+            .collect();
+        if ids.len() < total {
+            out.push(SelectionFacet {
+                axis: "Faction",
+                label: if f.is_empty() {
+                    "no faction".to_string()
+                } else {
+                    f.to_string()
+                },
+                ids,
+            });
+        }
+    }
+    out
+}
+
+/// T-697 — apply a narrowed selection through the ONE selection seam, and report whether it took.
+/// A no-op (and `false`) off wasm and before the editor mounts, like every other `editor_ops` reach
+/// in this file.
+#[allow(unused_variables)]
+pub fn apply_selection(ids: Vec<String>) -> bool {
+    #[cfg(target_arch = "wasm32")]
+    {
+        crate::editor_ops::set_selection_ids(ids) > 0
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        false
+    }
+}
+
+/// T-697 — the live document, projected for search. Empty off wasm / before the editor mounts.
+#[must_use]
+pub fn document_rows() -> Vec<DocEntity> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        crate::editor_ops::document_entities()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        Vec::new()
+    }
+}
+
+/// T-697 — the live SELECTION, projected the same way, so the filter chips are computed from the
+/// same rows the search is. Empty off wasm / before the editor mounts.
+#[must_use]
+pub fn selection_rows() -> Vec<DocEntity> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        crate::editor_ops::selection_entities()
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        Vec::new()
+    }
 }
 
 #[cfg(test)]
@@ -1620,6 +2178,496 @@ mod t637_density {
         assert!(
             UPPERCASE_LABEL_ADVANCE_PX < 10.0,
             "T-637: a ceiling loose enough to admit anything is not a ceiling"
+        );
+    }
+}
+
+/// T-697 — document search and the selection filter.
+///
+/// **NOTE ON THE PIN IDIOM.** Every source needle below is checked against `class_r_scrub`'s scrubbed
+/// PRODUCTION text (`live_code` / `live_source`), whose first pass cuts the test module outright. It
+/// deliberately does NOT copy the `SRC = include_str!(whole file)` idiom the T-696 module above uses
+/// — those pins stay green if the production code is deleted, because the needle also appears in
+/// their own assertion (filed as T-759). A pin that can be satisfied by itself is not a pin.
+#[cfg(test)]
+mod t697_document_search {
+    use super::{
+        matches_query, search_document, selection_facets, unselectable_reason, DocEntity, DocHit,
+        DocKind, HIT_GAP_PX, HIT_ICON_PX, HIT_MIN_LABEL_PX, HIT_ROW_PAD_PX, LIST_SCROLLBAR_PX,
+        MAX_DOC_HITS, UPPERCASE_LABEL_ADVANCE_PX,
+    };
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::eden_layout::{tw_len_px, DOCK_L, DOCK_PX};
+
+    /// The dock's own production text — comments, test modules and unreachable arms removed.
+    fn dock_code() -> String {
+        live_code(include_str!("eden_dock_left.rs"))
+    }
+    /// The same, with string literals KEPT: for pins about copy and `data-testid`s that ship.
+    fn dock_source() -> String {
+        live_source(include_str!("eden_dock_left.rs"))
+    }
+    /// The document index's production text (`editor_ops.rs` carries no test module of its own).
+    fn ops_code() -> String {
+        live_code(include_str!("editor_ops.rs"))
+    }
+
+    fn entity(id: &str, kind: DocKind, label: &str, faction: &str) -> DocEntity {
+        DocEntity {
+            id: id.to_string(),
+            kind,
+            label: label.to_string(),
+            class_name: String::new(),
+            faction: faction.to_string(),
+            text: vec![("label", label.to_string()), ("id", id.to_string())],
+        }
+    }
+
+    /// A realistic small mission: two BLUFOR slots (one with a callsign the role does not contain),
+    /// an OPFOR vehicle with a class name and no authored text, and a zone.
+    fn mission() -> Vec<DocEntity> {
+        vec![
+            DocEntity {
+                id: "slot-1".into(),
+                kind: DocKind::Slot,
+                label: "Rifleman".into(),
+                class_name: "{26A9756790131354}Prefabs/Characters/Character_US_Rifleman.et".into(),
+                faction: "BLUFOR".into(),
+                text: vec![
+                    ("role", "Rifleman".into()),
+                    ("callsign", "Alpha-1".into()),
+                    ("class", "Character_US_Rifleman".into()),
+                    ("id", "slot-1".into()),
+                ],
+            },
+            DocEntity {
+                id: "slot-2".into(),
+                kind: DocKind::Slot,
+                label: "Medic".into(),
+                class_name: String::new(),
+                faction: "BLUFOR".into(),
+                text: vec![("role", "Medic".into()), ("id", "slot-2".into())],
+            },
+            DocEntity {
+                id: "veh-1".into(),
+                kind: DocKind::Vehicle,
+                label: "UAZ469".into(),
+                class_name: "{ABCD}Prefabs/Vehicles/UAZ469.et".into(),
+                faction: "OPFOR".into(),
+                text: vec![("class", "UAZ469".into()), ("id", "veh-1".into())],
+            },
+            DocEntity {
+                id: "zone-1".into(),
+                kind: DocKind::Zone,
+                label: "Objective Alpha".into(),
+                class_name: String::new(),
+                faction: "OPFOR".into(),
+                text: vec![("label", "Objective Alpha".into()), ("id", "zone-1".into())],
+            },
+        ]
+    }
+
+    fn ids(hits: &[DocHit]) -> Vec<&str> {
+        hits.iter().map(|h| h.entity.id.as_str()).collect()
+    }
+
+    /// **THE DOCUMENT IS SEARCHED, AND THE CATALOGUE ALREADY WAS.** The ticket's whole existence:
+    /// `filter_catalog` had exactly one caller before this ticket (the right dock's palette), and a
+    /// placed vehicle / zone / trigger / marker / object was readable by its own panel and by
+    /// nothing else. These are the questions that had no answer.
+    #[test]
+    fn the_placed_document_is_searchable_by_text() {
+        let m = mission();
+        // A plain label search reaches a slot's role and a zone's label.
+        assert_eq!(ids(&search_document(&m, "rifle")), ["slot-1"]);
+        assert_eq!(ids(&search_document(&m, "objective")), ["zone-1"]);
+        // …and, the point of the ticket, a VEHICLE — a kind no tree in this editor has ever held.
+        assert_eq!(ids(&search_document(&m, "uaz")), ["veh-1"]);
+    }
+
+    /// **EVERY TEXT ATTRIBUTE, NOT JUST THE DISPLAY LABEL — and the hit says which one.** A slot's
+    /// callsign is not in its role, so a search that only saw the tree label would miss it. The
+    /// reported field is what stops a hit from being mysterious ("why did THAT match?").
+    #[test]
+    fn the_search_covers_every_text_attribute_and_names_the_one_that_matched() {
+        let m = mission();
+        let hits = search_document(&m, "alpha");
+        // `Alpha-1` is slot-1's callsign; `Objective Alpha` is the zone's label.
+        assert_eq!(ids(&hits), ["slot-1", "zone-1"]);
+        assert_eq!(hits[0].field, "callsign");
+        assert_eq!(hits[1].field, "label");
+        // An id is a text attribute too: authors paste ids out of validation findings.
+        assert_eq!(ids(&search_document(&m, "veh-1")), ["veh-1"]);
+        assert_eq!(search_document(&m, "veh-1")[0].field, "id");
+    }
+
+    /// **ONE GRAMMAR — T-084's, not a second one.** The four pattern kinds and the three fields all
+    /// behave in the document exactly as they behave in the palette, because they ARE the palette's:
+    /// `class:` prefixes the resource name or its tail, `mod:` takes the faction group, `*`/`?` glob
+    /// whole-string per attribute, `/…/` is an unanchored regex.
+    #[test]
+    fn the_query_grammar_is_t084s() {
+        let m = mission();
+        // `class:` — leaf-only, prefix, full resource name OR the classname tail (T-646/T-084).
+        assert_eq!(
+            ids(&search_document(&m, "class:Character_US_Ri")),
+            ["slot-1"]
+        );
+        assert_eq!(ids(&search_document(&m, "class:{ABCD}Prefabs")), ["veh-1"]);
+        // A bare label search must NOT behave like `class:` — `class:` stays a prefix.
+        assert!(search_document(&m, "class:Rifleman").is_empty());
+        // `mod:` — the depth-0 group, which in a document is the faction.
+        assert_eq!(ids(&search_document(&m, "mod:OPFOR")), ["veh-1", "zone-1"]);
+        // Glob, whole-string, per attribute.
+        assert_eq!(ids(&search_document(&m, "Alpha-?")), ["slot-1"]);
+        assert_eq!(ids(&search_document(&m, "Rifle*")), ["slot-1"]);
+        // Regex, unanchored. NOT load-bearing (T-764's stack-depth defect lives on this arm) — it is
+        // here because it comes free with the shared grammar, and nothing steers an author to it.
+        assert_eq!(ids(&search_document(&m, "/^medic$/")), ["slot-2"]);
+        // And the grammar is literally the palette's, not a copy of it.
+        let src = dock_code();
+        assert!(
+            src.contains("asset_catalog::filter_catalog(")
+                && src.contains("asset_catalog::search_empty_message("),
+            "T-697: the document search must run T-084's matcher and T-084's empty states, not its own"
+        );
+        for reinvention in [
+            "fn parse_search_pattern",
+            "enum SearchPattern",
+            "enum SearchField",
+        ] {
+            assert!(
+                !src.contains(reinvention),
+                "T-697: `{reinvention}` here would be a SECOND query language in one editor"
+            );
+        }
+    }
+
+    /// **ONE BOX, ONE MEANING.** The layers tree, the bookmarks list, the locations index and the
+    /// document search all go through [`query_hits`], so they cannot drift into four ideas of what
+    /// the filter box means. The plain behaviour T-696 wrote `matches_query` for is unchanged.
+    #[test]
+    fn one_predicate_serves_every_list_in_this_dock() {
+        assert!(matches_query("Montignac", ""), "empty query matches all");
+        assert!(matches_query("Montignac", "   "), "blank query matches all");
+        assert!(matches_query("Montignac", "montignac"), "case-insensitive");
+        assert!(matches_query("Montignac", "TIGN"), "substring, not prefix");
+        assert!(!matches_query("Montignac", "levie"));
+        // The grammar rides along for free.
+        assert!(matches_query("Montignac", "Mont*"));
+        assert!(
+            !matches_query("Montignac", "class:Mont"),
+            "no class name to match"
+        );
+        let dock = dock_code();
+        assert!(
+            only_body(&dock, "fn matches_query").contains("query_hits("),
+            "T-697: `matches_query` must be the one matcher, or the tree and the search disagree"
+        );
+    }
+
+    /// **A HALF-TYPED QUERY IS NOT A FAILED SEARCH**, and a blank one is not a request to list the
+    /// whole mission. T-084 already draws both lines; this reuses its sentences rather than writing
+    /// a fourth set.
+    #[test]
+    fn blank_and_half_typed_queries_find_nothing_and_say_which() {
+        let m = mission();
+        assert!(
+            search_document(&m, "").is_empty(),
+            "a blank box is not a query"
+        );
+        assert!(search_document(&m, "   ").is_empty());
+        assert!(
+            search_document(&m, "class:").is_empty(),
+            "half-typed operator"
+        );
+        assert!(search_document(&m, "/[/").is_empty(), "unreadable regex");
+        let msg =
+            |q: &str| crate::asset_catalog::search_empty_message(q, "entities in this mission");
+        assert!(msg("class:").contains("class:"), "guidance, not `no match`");
+        assert!(msg("/[/").contains("could not be read"));
+        assert!(msg("nosuchthing").contains("No entities in this mission match"));
+    }
+
+    /// **RESULTS SELECT, OR THEY SAY THEY CANNOT — wog.md 14.6 / T-754.** The shipped router
+    /// (`validation_panel::route_select_by_subject_id`) resolves a slot or a vehicle and nothing
+    /// else, so exactly those two kinds are live affordances and every other kind renders inert with
+    /// a reason. Perturbation RED: make `is_selectable` return `true` for every kind.
+    #[test]
+    fn only_the_kinds_the_router_resolves_are_live_affordances() {
+        for k in [DocKind::Slot, DocKind::Vehicle] {
+            assert!(
+                k.is_selectable(),
+                "the T-655 router resolves a {}",
+                k.noun()
+            );
+        }
+        for k in [
+            DocKind::Object,
+            DocKind::Marker,
+            DocKind::Zone,
+            DocKind::Trigger,
+            DocKind::Comment,
+            DocKind::Layer,
+        ] {
+            assert!(
+                !k.is_selectable(),
+                "T-754: the router has no arm for a {} — rendering one as clickable is the defect \
+                 this programme has now filed twice",
+                k.noun()
+            );
+            let why = unselectable_reason(k);
+            assert!(
+                why.contains(k.noun()) && why.contains("slots and vehicles"),
+                "an inert row must say WHY, naming the kind and the router's limit"
+            );
+        }
+        // The router the live rows use is the shipped one, and there is no second selection path.
+        let code = dock_code();
+        assert!(
+            code.contains("validation_panel::route_select_by_subject_id("),
+            "T-655/T-697: a hit must select through the ONE registered router"
+        );
+        assert!(
+            !code.contains("editor_ops::select_slot("),
+            "T-697: a second click-to-select path is how the two drift apart"
+        );
+        // The inert branch exists and is not a disabled-looking button.
+        let src = dock_source();
+        assert!(
+            src.contains("aria-disabled") && src.contains("unselectable_reason(kind)"),
+            "T-754: an unselectable hit must render as inert text carrying its reason"
+        );
+        assert!(
+            src.contains("dock-left-search-hit") && src.contains("dock-left-search-hit-inert"),
+            "T-697: both row shapes must be driveable from a gate"
+        );
+    }
+
+    /// **THE SELECTION FILTER ONLY OFFERS NARROWINGS THAT NARROW.** A chip that would keep the whole
+    /// selection selected is the T-754 mistake in a second costume, so a homogeneous selection yields
+    /// no chips at all rather than a row of no-ops.
+    #[test]
+    fn the_selection_filter_offers_only_proper_subsets() {
+        let homogeneous = vec![
+            entity("a", DocKind::Slot, "One", "BLUFOR"),
+            entity("b", DocKind::Slot, "Two", "BLUFOR"),
+            entity("c", DocKind::Slot, "Three", "BLUFOR"),
+        ];
+        assert!(
+            selection_facets(&homogeneous).is_empty(),
+            "nothing to narrow by ⇒ no chips, not chips that do nothing"
+        );
+        assert!(
+            selection_facets(&homogeneous[..1]).is_empty(),
+            "one row is not a selection to filter"
+        );
+        assert!(selection_facets(&[]).is_empty());
+
+        let mixed = vec![
+            entity("a", DocKind::Slot, "One", "BLUFOR"),
+            entity("b", DocKind::Slot, "Two", "OPFOR"),
+            entity("c", DocKind::Vehicle, "Truck", "OPFOR"),
+        ];
+        let facets = selection_facets(&mixed);
+        let total = mixed.len();
+        for f in &facets {
+            assert!(
+                !f.ids.is_empty() && f.ids.len() < total,
+                "{f:?} narrows nothing"
+            );
+            for id in &f.ids {
+                assert!(
+                    mixed.iter().any(|e| &e.id == id),
+                    "a chip must not invent an id"
+                );
+            }
+        }
+        // BOTH axes the ticket names, and the counts are real.
+        let by = |axis: &str, label: &str| {
+            facets
+                .iter()
+                .find(|f| f.axis == axis && f.label == label)
+                .unwrap_or_else(|| panic!("missing {axis} chip {label}"))
+        };
+        assert_eq!(by("Type", "slot").ids, ["a", "b"]);
+        assert_eq!(by("Type", "vehicle").ids, ["c"]);
+        assert_eq!(by("Faction", "BLUFOR").ids, ["a"]);
+        assert_eq!(by("Faction", "OPFOR").ids, ["b", "c"]);
+    }
+
+    /// Rows with no faction get their OWN chip rather than being dropped — "the ones that belong to
+    /// nobody" is a real narrowing, and dropping them would make the chip counts fail to sum.
+    #[test]
+    fn the_faction_axis_keeps_the_unfactioned() {
+        let rows = vec![
+            entity("a", DocKind::Comment, "Note", ""),
+            entity("b", DocKind::Slot, "One", "BLUFOR"),
+        ];
+        let facets = selection_facets(&rows);
+        let none = facets
+            .iter()
+            .find(|f| f.axis == "Faction" && f.label == "no faction")
+            .expect("the unfactioned must be reachable");
+        assert_eq!(none.ids, ["a"]);
+        let sum: usize = facets
+            .iter()
+            .filter(|f| f.axis == "Faction")
+            .map(|f| f.ids.len())
+            .sum();
+        assert_eq!(
+            sum,
+            rows.len(),
+            "the faction chips must partition the selection"
+        );
+    }
+
+    /// **NARROWING A SELECTION IS NOT A DOCUMENT EDIT** (T-642's line). It goes through
+    /// `set_slot_selection` — the selection-only tail a folder click takes — and must never reach the
+    /// history, or every filter chip would cost the author a Ctrl+Z.
+    #[test]
+    fn narrowing_the_selection_is_not_undoable() {
+        let ops = ops_code();
+        let body = only_body(&ops, "pub fn set_selection_ids");
+        assert!(
+            body.contains("set_slot_selection(ids)"),
+            "T-697: the narrow must reuse the shipped selection-only tail"
+        );
+        for banned in [
+            "after_local_edit",
+            "remove_slots",
+            "add_slot",
+            "mission_history::",
+        ] {
+            assert!(
+                !body.contains(banned),
+                "T-642/T-697: narrowing a selection must not be a document edit, found {banned}"
+            );
+        }
+        let dock = dock_code();
+        let apply = only_body(&dock, "pub fn apply_selection");
+        assert!(
+            apply.contains("editor_ops::set_selection_ids("),
+            "T-697: the chip must apply through the one seam"
+        );
+    }
+
+    /// **EVERY PLACED COLLECTION IS INDEXED, OR THE SEARCH LIES.** Eight collections an author can
+    /// place into; a ninth arriving without a case in `document_entities` would be silently
+    /// unfindable, which is the failure the ticket is about.
+    #[test]
+    fn the_index_covers_every_placeable_collection() {
+        let ops = ops_code();
+        let body = only_body(&ops, "pub fn document_entities");
+        for kind in [
+            "DocKind::Slot",
+            "DocKind::Vehicle",
+            "DocKind::Object",
+            "DocKind::Marker",
+            "DocKind::Zone",
+            "DocKind::Trigger",
+            "DocKind::Comment",
+            "DocKind::Layer",
+        ] {
+            assert!(
+                body.contains(kind),
+                "T-697: `{kind}` is not indexed — it cannot be found"
+            );
+        }
+        // Read-only: the index must not open a transaction on the way past.
+        for banned in ["after_local_edit", "core.add_", "core.set_", "core.remove_"] {
+            assert!(
+                !body.contains(banned),
+                "T-697: the document index is a READ, found {banned}"
+            );
+        }
+        // The selection projection is DERIVED from the index, so the two cannot disagree about an
+        // entity's kind or faction.
+        assert!(
+            only_body(&ops, "pub fn selection_entities").contains("document_entities()"),
+            "T-697: the selection filter must read the same rows the search does"
+        );
+    }
+
+    /// **THE TWO NEW ROWS FIT 240 px, AND THAT IS ARITHMETIC — the T-637 rule.** The dock is width
+    /// budgeted and this is the third ticket in it this run; eyeballing is what produced the silent
+    /// squeeze T-637 had to go and measure. The header is NOT touched (there is no third tab — it
+    /// does not fit; see the section header), so what is added up here is the two body rows.
+    #[test]
+    fn the_search_rows_fit_the_dock() {
+        let pad = tw_len_px(DOCK_L, "p-").expect("the dock states its padding");
+        // A row spans the dock's inner width, less whatever the scrolling list's scrollbar claims.
+        let budget = DOCK_PX - 2.0 * pad - LIST_SCROLLBAR_PX;
+
+        // ── the hit row: [px-1] icon │gap│ label(flex, truncates) │gap│ badge ───────────────────
+        // The badge is the widest kind noun; the measured UPPERCASE ceiling is a safe bound for a
+        // `lowercase` cell, which is narrower per character in every font in the stack.
+        let widest_noun = [
+            DocKind::Slot,
+            DocKind::Vehicle,
+            DocKind::Object,
+            DocKind::Marker,
+            DocKind::Zone,
+            DocKind::Trigger,
+            DocKind::Comment,
+            DocKind::Layer,
+        ]
+        .into_iter()
+        .map(|k| k.noun().chars().count())
+        .max()
+        .expect("eight kinds");
+        let badge = widest_noun as f64 * UPPERCASE_LABEL_ADVANCE_PX;
+        let furniture = HIT_ROW_PAD_PX + HIT_ICON_PX + 2.0 * HIT_GAP_PX + badge;
+        let label = budget - furniture;
+        assert!(
+            label >= HIT_MIN_LABEL_PX,
+            "T-697: the hit row's furniture wants {furniture} px of a {budget} px row, leaving \
+             {label} px for the name — under the {HIT_MIN_LABEL_PX} px floor a result stops being \
+             readable and the list becomes badges beside ellipses"
+        );
+
+        // ── the facet chips: they WRAP, so only a single chip has to fit on its own ─────────────
+        let chip = |label: &str| {
+            // `px-1.5` (12 px) + the text, worst case a three-digit count.
+            12.0 + (label.chars().count() + " (999)".len()) as f64 * UPPERCASE_LABEL_ADVANCE_PX
+        };
+        let widest_chip = chip("vehicle");
+        assert!(
+            widest_chip <= budget - HIT_ROW_PAD_PX,
+            "T-697: a `{}` chip wants {widest_chip} px of a {} px row",
+            "vehicle",
+            budget - HIT_ROW_PAD_PX
+        );
+        assert!(
+            dock_source().contains("flex flex-wrap gap-1"),
+            "T-697: the chips must WRAP — a selection straddling many factions must grow a line, \
+             not overrun the column or squeeze its neighbours"
+        );
+
+        // The DOM is bounded too: a 2,000-hit query renders 200 rows and says so.
+        assert!(
+            MAX_DOC_HITS <= 400,
+            "a 240 px column cannot usefully mount more"
+        );
+        assert!(
+            dock_source().contains("Found {total} — showing {shown}"),
+            "T-697: a truncated list must report the FULL count, or the number is a lie"
+        );
+    }
+
+    /// The tree keeps its own filter and its own input (T-637), fed the FILTERED node set. The
+    /// document search is ADDED beside it, not swapped for it — a search that emptied the tree it
+    /// sits above would have deleted a shipped feature to add one.
+    #[test]
+    fn the_document_search_does_not_replace_the_layer_filter() {
+        let src = dock_source();
+        assert!(
+            src.contains("filter_outliner(ns, &q)") && src.contains("virtual_tree("),
+            "T-637: the layers tree and its filter must survive this ticket"
+        );
+        assert!(
+            src.contains("dock-left-layers-filter") && src.contains("dock-left-search-results"),
+            "T-697: one box, two surfaces — both must be driveable"
         );
     }
 }

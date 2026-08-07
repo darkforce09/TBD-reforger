@@ -6395,3 +6395,284 @@ fn upsert_marker_field(
     crate::mission_history::after_local_edit();
     true
 }
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+// T-697 — THE DOCUMENT INDEX (3den E4 / 3DEN-TOOL-011)
+// ═════════════════════════════════════════════════════════════════════════════════════════════════
+//
+// The read half of document search: every placed thing in the mission, projected into the ONE row
+// type the pure search in `eden_dock_left` consumes. The projection lives here because the doc
+// handles are the wasm-only `!Send` `Rc`s this module exists to hold; it is deliberately a READ —
+// nothing below opens a transaction, so nothing below can enter the undo stack.
+//
+// **EVERY KIND, OR THE SEARCH IS A LIE.** The eight readers are the eight collections an author can
+// place into: `slots`, `vehiclesById`, `entitiesById`, briefing `markers`, `zones`, `triggers`,
+// `commentsById` and `editorLayersById`. A ninth collection appearing without a case here would be
+// silently unfindable, which is exactly the failure the ticket names.
+//
+// **BORROW DISCIPLINE.** `vehicle_rows` / `zone_rows` / `trigger_rows` / `marker_rows` each open
+// their OWN `OPS_CTX` + doc borrow, so they are called AFTER the single borrow below has been
+// dropped — the module's standing rule (see `placed_owner_options`, which does the same dance).
+
+/// T-697 — a `faction-BLUFOR` id (or a raw side/library key) as the side label the search and the
+/// selection filter group by. Empty in, empty out: a row that belongs to no faction says so.
+fn side_label(raw: &str) -> String {
+    raw.strip_prefix("faction-").unwrap_or(raw).to_uppercase()
+}
+
+/// T-697 — a non-empty display label, or the fallback the row's own panel would show.
+fn or_fallback(label: &str, fallback: &str) -> String {
+    let t = label.trim();
+    if t.is_empty() {
+        fallback.to_string()
+    } else {
+        t.to_string()
+    }
+}
+
+/// T-697 — push `(field, value)` only when `value` is non-blank. A blank attribute is not a
+/// searchable attribute, and keeping it would let an empty query-side value match the empty string
+/// and report a field that holds nothing.
+fn push_text(text: &mut Vec<(&'static str, String)>, field: &'static str, value: &str) {
+    let v = value.trim();
+    if !v.is_empty() {
+        text.push((field, v.to_string()));
+    }
+}
+
+/// T-697 — **every placed entity in the mission, with its text attributes.** The input to
+/// [`crate::eden_dock_left::search_document`].
+///
+/// The per-kind attribute sets are the fields an author actually types into and would search by —
+/// a slot's role/callsign/tag/rank/description, a marker's caption, a zone's label, a trigger's
+/// name, a comment's title and body — plus, on every row, its ID and (where it has one) the tail of
+/// its Enfusion class name. The id is in the set because quoting an id out of a validation finding
+/// and pasting it into the search box is a real workflow; the class tail is in it so a plain
+/// `UAZ` finds a vehicle whose only authored text is its `resourceName`.
+#[must_use]
+pub fn document_entities() -> Vec<crate::eden_dock_left::DocEntity> {
+    use crate::eden_dock_left::{DocEntity, DocKind};
+
+    let mut out: Vec<DocEntity> = Vec::new();
+
+    // ── Pass 1: everything reachable from ONE doc borrow ─────────────────────────────────────────
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return;
+        };
+
+        // A slot's side is squad → faction → key: the join the ORBAT tree already makes.
+        let side_of_faction: HashMap<String, String> = faction_rows(core)
+            .into_iter()
+            .map(|f| {
+                let key = if f.key.is_empty() { f.name } else { f.key };
+                (f.id, side_label(&key))
+            })
+            .collect();
+        let side_of_squad: HashMap<String, String> = squad_rows(core)
+            .into_iter()
+            .map(|s| {
+                let side = side_of_faction
+                    .get(&s.faction_id)
+                    .cloned()
+                    .unwrap_or_default();
+                (s.id, side)
+            })
+            .collect();
+
+        let raw = raw_slot_rows(core);
+        for s in slot_details(core) {
+            let asset_id = row_str(&raw, &s.id, "assetId");
+            let description = row_str(&raw, &s.id, "description");
+            let mut text = Vec::new();
+            push_text(&mut text, "role", &s.role);
+            push_text(&mut text, "callsign", &s.callsign);
+            push_text(&mut text, "tag", &s.tag);
+            push_text(&mut text, "rank", &s.rank);
+            push_text(&mut text, "description", &description);
+            push_text(&mut text, "loadout", &s.summary);
+            push_text(
+                &mut text,
+                "class",
+                crate::asset_catalog::classname_tail(&asset_id),
+            );
+            push_text(&mut text, "id", &s.id);
+            out.push(DocEntity {
+                label: or_fallback(&s.role, &format!("Slot {}", s.id)),
+                faction: side_of_squad.get(&s.squad_id).cloned().unwrap_or_default(),
+                class_name: asset_id,
+                kind: DocKind::Slot,
+                id: s.id,
+                text,
+            });
+        }
+
+        // Placed world objects (T-254 `entitiesById`). No typed reader exists for them — the panels
+        // that render objects render the CATALOGUE, not the placed rows — so this is the read.
+        if let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) {
+            if let Some(map) = root.get("entitiesById").and_then(|v| v.as_object()) {
+                for (id, v) in map {
+                    let s = |k: &str| {
+                        v.get(k)
+                            .and_then(serde_json::Value::as_str)
+                            .unwrap_or_default()
+                            .to_string()
+                    };
+                    let alias = s("alias");
+                    let resource_name = s("resourceName");
+                    let mut text = Vec::new();
+                    push_text(&mut text, "alias", &alias);
+                    push_text(
+                        &mut text,
+                        "class",
+                        crate::asset_catalog::classname_tail(&resource_name),
+                    );
+                    push_text(&mut text, "id", id);
+                    out.push(DocEntity {
+                        id: id.clone(),
+                        kind: DocKind::Object,
+                        label: or_fallback(&alias, &format!("Object {id}")),
+                        faction: side_label(&s("faction")),
+                        class_name: resource_name,
+                        text,
+                    });
+                }
+            }
+        }
+
+        for cm in comment_details(core) {
+            let mut text = Vec::new();
+            push_text(&mut text, "title", &cm.title);
+            push_text(&mut text, "note", &cm.tooltip);
+            push_text(&mut text, "id", &cm.id);
+            out.push(DocEntity {
+                label: or_fallback(&cm.title, &format!("Comment {}", cm.id)),
+                kind: DocKind::Comment,
+                class_name: String::new(),
+                faction: String::new(),
+                id: cm.id,
+                text,
+            });
+        }
+
+        for l in layer_rows(core) {
+            let mut text = Vec::new();
+            push_text(&mut text, "name", &l.name);
+            push_text(&mut text, "id", &l.id);
+            out.push(DocEntity {
+                label: or_fallback(&l.name, &format!("Layer {}", l.id)),
+                kind: DocKind::Layer,
+                class_name: String::new(),
+                faction: String::new(),
+                id: l.id,
+                text,
+            });
+        }
+    });
+
+    // ── Pass 2: the readers that open their own borrow ───────────────────────────────────────────
+    for v in vehicle_rows() {
+        let tail = crate::asset_catalog::classname_tail(&v.resource_name).to_string();
+        let mut text = Vec::new();
+        push_text(&mut text, "class", &tail);
+        push_text(&mut text, "id", &v.id);
+        out.push(DocEntity {
+            label: or_fallback(&tail, &format!("Vehicle {}", v.id)),
+            kind: DocKind::Vehicle,
+            faction: side_label(&v.faction_id),
+            class_name: v.resource_name,
+            id: v.id,
+            text,
+        });
+    }
+    for z in zone_rows() {
+        let label = z.label.clone().unwrap_or_default();
+        let mut text = Vec::new();
+        push_text(&mut text, "label", &label);
+        push_text(&mut text, "type", &z.kind);
+        push_text(&mut text, "id", &z.id);
+        out.push(DocEntity {
+            label: or_fallback(&label, &format!("Zone {}", z.id)),
+            kind: DocKind::Zone,
+            class_name: String::new(),
+            faction: side_label(z.faction.as_deref().unwrap_or_default()),
+            id: z.id,
+            text,
+        });
+    }
+    for t in trigger_rows() {
+        let name = t.name.clone().unwrap_or_default();
+        let mut text = Vec::new();
+        push_text(&mut text, "name", &name);
+        push_text(&mut text, "activation", &t.activation);
+        push_text(&mut text, "id", &t.id);
+        out.push(DocEntity {
+            label: or_fallback(&name, &format!("Trigger {}", t.id)),
+            kind: DocKind::Trigger,
+            class_name: String::new(),
+            faction: String::new(),
+            id: t.id,
+            text,
+        });
+    }
+    for m in marker_rows() {
+        let mut text = Vec::new();
+        push_text(&mut text, "caption", &m.label);
+        push_text(&mut text, "icon", &m.icon);
+        push_text(&mut text, "id", &m.id);
+        out.push(DocEntity {
+            label: or_fallback(&m.label, &or_fallback(&m.icon, &format!("Marker {}", m.id))),
+            kind: DocKind::Marker,
+            class_name: String::new(),
+            faction: side_label(&m.faction_id),
+            id: m.id,
+            text,
+        });
+    }
+    out
+}
+
+/// T-697 — the CURRENT SELECTION, projected exactly as [`document_entities`] projects the document.
+///
+/// Derived from the document index rather than re-read per kind, so the selection filter's chips and
+/// the search's rows can never disagree about what an entity's type or faction is. Selection order
+/// is not preserved (the document order is): the chips are counts and id sets, and nothing
+/// downstream reads a selection as a sequence.
+#[must_use]
+pub fn selection_entities() -> Vec<crate::eden_dock_left::DocEntity> {
+    let sel: Vec<String> = OPS_CTX.with(|c| {
+        c.borrow()
+            .as_ref()
+            .map(|ctx| ctx.selection.borrow().clone())
+            .unwrap_or_default()
+    });
+    if sel.is_empty() {
+        return Vec::new();
+    }
+    document_entities()
+        .into_iter()
+        .filter(|e| sel.iter().any(|id| id == &e.id))
+        .collect()
+}
+
+/// T-697 — replace the selection with `ids` (the selection filter's apply), returning how many
+/// entities ended up selected.
+///
+/// Goes through [`set_slot_selection`], the SAME selection-only tail a folder click and a map click
+/// take (engine tint + SEL readout + dock highlight, no doc edit ⇒ **no undo step**). Narrowing a
+/// selection is not authored content, so it must not enter the history — the T-642 line, and the
+/// reason this is not a mutator. An empty `ids` is refused rather than obeyed: "narrow to nothing"
+/// is never what an author meant by a filter chip, and the pure `selection_facets` never emits one.
+pub fn set_selection_ids(ids: Vec<String>) -> usize {
+    if ids.is_empty() {
+        return 0;
+    }
+    let n = ids.len();
+    set_slot_selection(ids);
+    n
+}
