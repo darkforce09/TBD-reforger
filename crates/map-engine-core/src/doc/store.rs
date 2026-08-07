@@ -1988,6 +1988,53 @@ impl MissionDocCore {
         }
     }
 
+    /// T-082 (ATTR-FIELD-OBJ-TYPE / ATTR-FIELD-OBJ-ROLE-DESC) — the two Attributes-modal OBJECT
+    /// fields [`Self::update_slot`] does not carry: `assetId` (the entity **type**) and
+    /// `description` (Eden's free-text "Role Description").
+    ///
+    /// **Why not [`Self::update_slot_role_character`]**, which already writes `assetId`: that one is
+    /// the ORBAT *Apply* mutator. It takes `role` by value and rewrites it unconditionally, and it
+    /// CLEARS `tag` whenever `tag` is `None` — correct there (the library row is authoritative on
+    /// Apply), fatal here. The Attributes modal commits one field at a time and multi-edit passes
+    /// `None` for every field the operator did not opt into, so routing a type edit through it would
+    /// stamp the modal's snapshot of `role` back onto the row and wipe `tag`.
+    ///
+    /// `None` therefore means **leave this key exactly as it is** — the same discipline
+    /// [`Self::update_slot`] uses, and the thing multi-edit's per-field opt-in depends on.
+    /// `Some("")` CLEARS the key (absent ⇒ unset, the `tag`/`assetId` omit idiom of
+    /// [`Self::add_slot`]); `Some(non-empty)` sets it. Both keys move in ONE transaction, so a
+    /// commit is one undo step. No-op when the slot id is absent, or when both args are `None`.
+    ///
+    /// **`description` is editor-block state, never the MOD wire** — the same contract as
+    /// `slot.tag` and `editorHidden`. It rides `editor.slots`, which
+    /// `mission-editor-payload.schema.json` leaves deliberately unconstrained and
+    /// [`Self::hydrate`]'s `load_rows` reloads verbatim, so it survives save/reload and copy/paste
+    /// (`editor_ops::paste_at` carries unknown slot keys through `paste_slots`'s `extras`). It is
+    /// structurally absent from the compiled document: `mission::flatten` deserializes into `SlotIn`,
+    /// whose fixed field list omits it. `assetId` is the same editor-block field it has always been
+    /// — `flatten` resolves it into the compiled `kit:` alias.
+    pub fn update_slot_object(
+        &self,
+        id: &str,
+        asset_id: Option<String>,
+        description: Option<String>,
+    ) {
+        if asset_id.is_none() && description.is_none() {
+            return; // nothing opted in — do not even open a transaction
+        }
+        let mut txn = self.begin();
+        if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
+            for (key, val) in [("assetId", asset_id), ("description", description)] {
+                let Some(v) = val else { continue };
+                if v.is_empty() {
+                    slot.remove(&mut txn, key);
+                } else {
+                    slot.insert(&mut txn, key, v);
+                }
+            }
+        }
+    }
+
     /// Set or clear a slot's embedded `loadout` (Smart Forge picks — T-068.10). `Some(json)` parses
     /// through the same JSON→`Any` machinery as `hydrate` rows, so the object stays opaque to the
     /// core; `None`/empty clears the key. One transaction = one undo step. The pre-existing
@@ -2652,6 +2699,23 @@ impl MissionDocCore {
                 layer.remove(&mut txn, "locked");
             }
         }
+    }
+
+    /// T-665 / T-082 — is `slot_id` transform-locked, i.e. does its resolved Outliner layer (or any
+    /// ancestor of it) carry `locked`? The read half of the refusal contract
+    /// [`Self::set_editor_layer_locked`] documents, and the exact predicate
+    /// [`Self::update_slot_position`] / [`Self::move_entities`] branch on — the SAME
+    /// `slot_is_transform_locked` function, not a restatement of it, so a UI that asks this cannot
+    /// disagree with the core that enforces it.
+    ///
+    /// T-082 added it because the refusal was WRITE-ONLY: the mutators skipped a locked slot
+    /// silently and no caller could ask in advance, so the Attributes modal had no way to tell an
+    /// operator that the Transform field they are typing into is inert. An unfiled slot (in no
+    /// layer) is never locked. Cheap: one map walk up `parentId`, cycle-guarded.
+    #[must_use]
+    pub fn slot_layer_is_locked(&self, slot_id: &str) -> bool {
+        let txn = self.doc.transact();
+        slot_is_transform_locked(&txn, &self.editor_layers, slot_id)
     }
 
     /// T-701 — set a SLOT's editor-local `editorHidden` VIEW flag (per-ENTITY visibility, 3den E9).
@@ -9802,6 +9866,98 @@ mod tests {
         let vehs = vehicles_of(&doc);
         assert_eq!(vehs["v0"]["position"]["x"], 310.0, "vehicle still moved");
         assert_eq!(vehs["v0"]["position"]["y"], 420.0, "vehicle still moved");
+    }
+
+    /// T-082 — `slot_layer_is_locked` is the READ half of the same predicate
+    /// `update_slot_position` enforces, so the two must agree at every step. Fired against the
+    /// mutator itself rather than against a re-derived expectation: lock, assert BOTH the query and
+    /// the refusal; unlock, assert BOTH the query and the acceptance. An unfiled slot is never
+    /// locked even while the layer is.
+    #[test]
+    fn slot_layer_is_locked_agrees_with_the_update_slot_position_refusal() {
+        let doc = one_slot_one_layer();
+        doc.add_slot(
+            "unfiled", "sq", "", 1, "Rifleman", None, None, 10.0, 20.0, 0.0, 0.0,
+        );
+        assert!(!doc.slot_layer_is_locked("s0"), "unlocked by default");
+
+        doc.set_editor_layer_locked("L", true);
+        assert!(doc.slot_layer_is_locked("s0"), "layer locked ⇒ slot locked");
+        assert!(
+            !doc.slot_layer_is_locked("unfiled"),
+            "a slot in no layer is never locked"
+        );
+        doc.update_slot_position("s0", Some(777.0), Some(888.0), None, None, 12800.0, 12800.0);
+        let soa = doc.materialize();
+        let i = row_of(&soa, "s0");
+        assert_eq!(
+            (soa.xs[i], soa.ys[i]),
+            (100.0, 200.0),
+            "the query said locked and the mutator refused"
+        );
+
+        doc.set_editor_layer_locked("L", false);
+        assert!(
+            !doc.slot_layer_is_locked("s0"),
+            "unlock is visible to the query"
+        );
+        doc.update_slot_position("s0", Some(777.0), Some(888.0), None, None, 12800.0, 12800.0);
+        let soa = doc.materialize();
+        let i = row_of(&soa, "s0");
+        assert_eq!(
+            (soa.xs[i], soa.ys[i]),
+            (777.0, 888.0),
+            "the query said unlocked and the mutator accepted"
+        );
+    }
+
+    /// T-082 — `update_slot_object` is the ONLY writer for the two Attributes OBJECT fields, and the
+    /// whole reason it is not `update_slot_role_character` is the `None` discipline. Fired on both
+    /// keys: set, then edit ONE of them with the other `None` and assert the untouched key survived;
+    /// `Some("")` clears; and — the multi-edit invariant — a call with both `None` writes nothing
+    /// and leaves `role`/`tag` alone.
+    #[test]
+    fn update_slot_object_sets_clears_and_leaves_none_fields_alone() {
+        let doc = one_slot_one_layer();
+        doc.update_slot("s0", None, Some("MED".into()), None);
+
+        doc.update_slot_object(
+            "s0",
+            Some("Character_US_Rifleman".into()),
+            Some("Point man. Takes the lead on entry.".into()),
+        );
+        let row = slots_map(&doc);
+        assert_eq!(row["s0"]["assetId"], "Character_US_Rifleman");
+        assert_eq!(
+            row["s0"]["description"],
+            "Point man. Takes the lead on entry."
+        );
+
+        // Edit ONE key; `None` must leave the other — and role/tag — exactly as they were.
+        doc.update_slot_object("s0", None, Some("Now the breacher.".into()));
+        let row = slots_map(&doc);
+        assert_eq!(
+            row["s0"]["assetId"], "Character_US_Rifleman",
+            "a None assetId left the type alone"
+        );
+        assert_eq!(row["s0"]["description"], "Now the breacher.");
+        assert_eq!(row["s0"]["role"], "Rifleman", "role untouched");
+        assert_eq!(row["s0"]["tag"], "MED", "tag untouched");
+
+        // `Some("")` clears — absent, not empty-string (the add_slot omit idiom).
+        doc.update_slot_object("s0", Some(String::new()), None);
+        let row = slots_map(&doc);
+        assert!(
+            row["s0"].get("assetId").is_none(),
+            "empty clears the key rather than storing \"\""
+        );
+        assert_eq!(row["s0"]["description"], "Now the breacher.");
+
+        // Both None writes nothing at all.
+        doc.update_slot_object("s0", None, None);
+        let row = slots_map(&doc);
+        assert_eq!(row["s0"]["description"], "Now the breacher.");
+        assert_eq!(row["s0"]["role"], "Rifleman");
     }
 
     /// TRANSFORM LOCK on the Attributes-tab path (`update_slot_position`), fired once: a numeric

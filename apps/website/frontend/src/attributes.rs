@@ -47,6 +47,10 @@ struct MultiOpts {
     stance: RwSignal<bool>,
     role: RwSignal<bool>,
     tag: RwSignal<bool>,
+    /// T-082 ATTR-FIELD-OBJ-TYPE.
+    asset_id: RwSignal<bool>,
+    /// T-082 ATTR-FIELD-OBJ-ROLE-DESC.
+    description: RwSignal<bool>,
 }
 
 impl MultiOpts {
@@ -59,6 +63,8 @@ impl MultiOpts {
             stance: RwSignal::new(false),
             role: RwSignal::new(false),
             tag: RwSignal::new(false),
+            asset_id: RwSignal::new(false),
+            description: RwSignal::new(false),
         }
     }
 
@@ -73,6 +79,8 @@ impl MultiOpts {
             self.stance,
             self.role,
             self.tag,
+            self.asset_id,
+            self.description,
         ] {
             s.set(false);
         }
@@ -85,22 +93,39 @@ impl MultiOpts {
 /// agrees: the field renders exactly as it did before this slice — no checkbox, always live.
 /// `Some(latch)` means the values DIFFER: blank + disabled + an "Apply to all" checkbox bound to
 /// `latch`. Copy, so it can be captured by the field's reactive closures.
+///
+/// T-082 (wave-102 F-7) — `shut` is a SECOND, independent reason a field can be dead, and it is not
+/// a multi-edit concept at all: the core will REFUSE this write whatever the operator ticks
+/// (a transform edit against a transform-locked layer). It therefore overrides the latch rather
+/// than sharing it — ticking "Apply to all" must not re-enable a field whose write the core drops
+/// on the floor, which is the F-7 lie stated as code.
 #[derive(Clone, Copy)]
 struct Gate {
     opt: Option<RwSignal<bool>>,
+    /// The core refuses this write outright — no latch can open it.
+    shut: bool,
 }
 
 impl Gate {
     /// No gate — single selection, or a field the whole selection agrees on.
     const fn open() -> Self {
-        Self { opt: None }
+        Self {
+            opt: None,
+            shut: false,
+        }
     }
 
     /// Gated only when the values actually differ across the selection.
     fn maybe(differs: bool, latch: RwSignal<bool>) -> Self {
         Self {
             opt: differs.then_some(latch),
+            shut: false,
         }
+    }
+
+    /// T-082 — the core refuses this write; disable unconditionally, latch or no latch.
+    const fn refused(self) -> Self {
+        Self { shut: true, ..self }
     }
 
     /// The values differ ⇒ there is a checkbox and the displayed value is blank.
@@ -108,10 +133,10 @@ impl Gate {
         self.opt.is_some()
     }
 
-    /// The values differ AND the operator has not opted in ⇒ the input is disabled. Reactive: call
-    /// it from inside a view closure.
+    /// The input is disabled: the core refuses the write, OR the values differ and the operator has
+    /// not opted in. Reactive: call it from inside a view closure.
     fn locked(self) -> bool {
-        self.opt.is_some_and(|o| !o.get())
+        self.shut || self.opt.is_some_and(|o| !o.get())
     }
 }
 
@@ -136,6 +161,8 @@ fn field_label(label: &'static str, gate: Gate) -> impl IntoView {
                                 type="checkbox"
                                 class="size-3.5 shrink-0 accent-primary"
                                 aria-label=format!("Apply {label} to all selected")
+                                // T-082 — a refused field's opt-in is inert; do not offer it.
+                                disabled=gate.shut
                                 prop:checked=move || o.get()
                                 on:change=move |ev| o.set(event_target_checked(&ev))
                             />
@@ -243,6 +270,11 @@ fn modal_view(
     } else {
         vec![attrs.id.clone()]
     });
+    // T-082 (wave-102 F-7) — asked ONCE per render, over the same id set the commits fan out to, so
+    // the Transform tab's disabled state and the core's refusal are answers to the same question.
+    // Re-asked on every `doc_tick` like every other value here, so unlocking the layer in the
+    // Outliner re-enables the fields without closing the modal.
+    let locked_n = crate::editor_ops::attrs_locked_count(&targets.get_value());
     let attrs = StoredValue::new(attrs);
     let subtitle = {
         let a = attrs.get_value();
@@ -323,7 +355,8 @@ fn modal_view(
                             .collect_view()}
                     </div>
                     {move || match tab.get() {
-                        0 => transform_tab(targets, attrs, is_multi, diff, opts).into_any(),
+                        0 => transform_tab(targets, attrs, is_multi, diff, opts, locked_n)
+                            .into_any(),
                         1 => identity_tab(targets, attrs, is_multi, diff, opts).into_any(),
                         2 => states_tab().into_any(),
                         _ => {
@@ -506,18 +539,25 @@ fn commit_position(
 }
 
 /// T-649 — the Identity/stance peer of [`commit_position`]; same single vs multi split.
+///
+/// T-082 — widened by exactly two `Option`s (`asset_id` = ATTR-FIELD-OBJ-TYPE, `description` =
+/// ATTR-FIELD-OBJ-ROLE-DESC) so the new fields go through the ONE commit seam rather than around
+/// it. Every caller passes `Some` for exactly the field it edits and `None` for the rest, which is
+/// what makes the per-field multi-edit opt-in mean anything.
 #[cfg(target_arch = "wasm32")]
 fn commit_slot(
     targets: StoredValue<Vec<String>>,
     role: Option<String>,
     tag: Option<String>,
     stance: Option<String>,
+    asset_id: Option<String>,
+    description: Option<String>,
 ) {
     let ids = targets.get_value();
     if ids.len() > 1 {
-        crate::editor_ops::attrs_update_slot_multi(&ids, role, tag, stance);
+        crate::editor_ops::attrs_update_slot_multi(&ids, role, tag, stance, asset_id, description);
     } else if let Some(id) = ids.first() {
-        crate::editor_ops::attrs_update_slot(id, role, tag, stance);
+        crate::editor_ops::attrs_update_slot(id, role, tag, stance, asset_id, description);
     }
 }
 
@@ -528,14 +568,54 @@ fn transform_tab(
     is_multi: bool,
     diff: crate::editor_ops::AttrDiff,
     opts: MultiOpts,
+    // T-082 (wave-102 F-7) — how many of `targets` sit on a transform-locked layer.
+    locked_n: usize,
 ) -> impl IntoView {
     let a = attrs.get_value();
+    let n = targets.get_value().len();
+    // T-082 (F-7) — EVERY target refused ⇒ the four coordinate fields are disabled, because the
+    // core will drop the write and the modal used to show the typed value as though it had landed.
+    // A selection that STRADDLES the lock keeps them live (the unlocked members really do move) and
+    // gets the count in the note below instead — claiming a partial write is total would be the
+    // same lie pointed the other way.
+    let all_locked = n > 0 && locked_n == n;
     // A gate exists only under a multi-selection AND only for a field the selection disagrees on;
     // everything else stays the pre-T-649 always-live field with no checkbox.
-    let g = |differs: bool, latch| Gate::maybe(is_multi && differs, latch);
-    let stance_gate = g(diff.stance, opts.stance);
+    let g = move |differs: bool, latch| {
+        let base = Gate::maybe(is_multi && differs, latch);
+        if all_locked {
+            base.refused()
+        } else {
+            base
+        }
+    };
+    // Stance is NOT a transform in the core's sense — `update_slot` carries no lock check — so it
+    // stays live on a locked slot. Gating it here would invent a refusal the core does not make.
+    let stance_gate = Gate::maybe(is_multi && diff.stance, opts.stance);
     view! {
         <div class="flex flex-col gap-4">
+            // T-082 (wave-102 F-7) — the lock is stated, not implied by four dead inputs.
+            {(locked_n > 0)
+                .then(|| {
+                    let msg = if all_locked && n > 1 {
+                        format!(
+                            "All {n} selected entities are on a locked layer. Their position and rotation cannot be edited — unlock the layer in the Outliner.",
+                        )
+                    } else if all_locked {
+                        "This entity is on a locked layer. Its position and rotation cannot be edited — unlock the layer in the Outliner."
+                            .to_string()
+                    } else {
+                        format!(
+                            "{locked_n} of {n} selected entities are on a locked layer; a Transform edit will skip those and apply to the other {}.",
+                            n - locked_n,
+                        )
+                    };
+                    view! {
+                        <p class="rounded-md border border-tertiary/30 bg-tertiary/10 px-3 py-2 text-label-sm normal-case text-on-surface-variant">
+                            {msg}
+                        </p>
+                    }
+                })}
             <div class="grid grid-cols-3 gap-3">
                 {number_field(
                     "X",
@@ -579,7 +659,7 @@ fn transform_tab(
                         a.stance.clone()
                     }
                     on:change=move |ev| {
-                        commit_slot(targets, None, None, Some(event_target_value(&ev)))
+                        commit_slot(targets, None, None, Some(event_target_value(&ev)), None, None)
                     }
                     class=move || {
                         let lock = if stance_gate.locked() { CONTROL_LOCKED } else { "" };
@@ -628,19 +708,51 @@ fn identity_tab(
     };
     view! {
         <div class="flex flex-col gap-4">
+            // T-082 ATTR-FIELD-OBJ-TYPE. The entity TYPE — the slot's `assetId`, the prefab it
+            // spawns as. It was authored on palette drop and mutable in the core all along; what
+            // was missing was the READ (`read_attrs` built its snapshot from the SoA, which has no
+            // such column), so the modal had nothing to show and therefore nothing to edit.
+            //
+            // Free text rather than a select, deliberately: the asset vocabulary is the registry's
+            // (T-146 Asset Browser Data Wiring is what puts a real catalogue behind a picker), and a
+            // hardcoded option list here would be a SHORTER vocabulary than the one the doc already
+            // accepts — it would make types the editor can currently author unreachable. Empty
+            // clears it, and a slot with no `assetId` compiles to its faction's default kit alias.
+            {text_field(
+                "Type",
+                a.asset_id.clone(),
+                "Asset id — empty uses the faction default",
+                g(diff.asset_id, opts.asset_id),
+                move |asset_id| commit_slot(targets, None, None, None, Some(asset_id), None),
+            )}
             {text_field(
                 "Role",
                 a.role.clone(),
                 "Rifleman",
                 g(diff.role, opts.role),
-                move |role| commit_slot(targets, Some(role), None, None),
+                move |role| commit_slot(targets, Some(role), None, None, None, None),
+            )}
+            // T-082 ATTR-FIELD-OBJ-ROLE-DESC. A field of its OWN, which is the entire point: `role`
+            // above is the SHORT label the ORBAT tree, the modal subtitle and the compiled document
+            // all use, and until now it was also the only place to put a sentence about what the
+            // slot is for. Writing prose into it renamed the role everywhere it appears.
+            //
+            // Editor-block state — it rides `editor.slots` (survives save/reload and copy/paste)
+            // and is structurally absent from the compiled mod document. Say so here rather than
+            // let an operator infer it reaches the briefing.
+            {text_field(
+                "Role Description",
+                a.description.clone(),
+                "What this slot is for — editor only, not sent to the game",
+                g(diff.description, opts.description),
+                move |desc| commit_slot(targets, None, None, None, None, Some(desc)),
             )}
             {text_field(
                 "Tag",
                 a.tag.clone(),
                 "MED · ENG · SL…",
                 g(diff.tag, opts.tag),
-                move |tag| commit_slot(targets, None, Some(tag), None),
+                move |tag| commit_slot(targets, None, Some(tag), None, None, None),
             )}
             <label class="flex flex-col gap-1">
                 <span class="text-label-sm uppercase tracking-wider text-outline">"Squad"</span>
@@ -668,5 +780,171 @@ fn states_tab() -> impl IntoView {
                 <span class="text-label-sm text-outline">"—"</span>
             </div>
         </div>
+    }
+}
+/* ─────────────────────────── T-082 source pins ─────────────────────────── */
+
+// Everything this ticket touches in the modal lives behind `#[cfg(target_arch = "wasm32")]` — it
+// builds `view!` trees over `web_sys` nodes and cannot be instantiated by `cargo test`, which runs
+// native. So the modal half is pinned the way the rest of this crate pins its wasm-only surfaces
+// (`mission_editor.rs`, `arsenal.rs`): against the SCRUBBED live source, with comments and dead
+// `cfg` items removed so a pin can never be satisfied by the prose that describes the code.
+//
+// The BEHAVIOUR half is not pinned this way and does not need to be: `MissionDocCore::
+// update_slot_object` and `slot_layer_is_locked` are native, and `store.rs`'s own tests fire them
+// against a real document (`update_slot_object_sets_clears_and_leaves_none_fields_alone`,
+// `slot_layer_is_locked_agrees_with_the_update_slot_position_refusal`). These pins cover the wiring
+// those tests cannot see: that the modal actually calls them, on the fields it claims to.
+#[cfg(test)]
+mod tests {
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+    fn attrs_src() -> String {
+        live_code(include_str!("attributes.rs"))
+    }
+
+    /// ATTR-FIELD-OBJ-TYPE + ATTR-FIELD-OBJ-ROLE-DESC — both fields exist in the Identity tab and
+    /// BOTH route through `commit_slot`'s new argument slots.
+    ///
+    /// The argument position is the assertion, not the presence of a `text_field` call: the two
+    /// fields are the 5th and 6th `Option` of one six-argument commit, and a description wired into
+    /// the `asset_id` slot would compile, render, and silently overwrite the entity type. Pinned on
+    /// `live_code` (string literals blanked) so a label in a comment or a placeholder cannot satisfy
+    /// it — this must be a CALL.
+    #[test]
+    fn identity_tab_commits_type_and_role_description_through_their_own_argument_slots() {
+        let src = attrs_src();
+        let body = only_body(&src, "fn identity_tab(");
+        assert!(
+            body.contains("commit_slot(targets, None, None, None, Some(asset_id), None)"),
+            "the Type field must commit into the asset_id slot alone; body was:\n{body}"
+        );
+        assert!(
+            body.contains("commit_slot(targets, None, None, None, None, Some(desc))"),
+            "the Role Description field must commit into the description slot alone; body was:\n{body}"
+        );
+        // And the pre-existing three still commit into theirs — the widening must not have shifted
+        // Role into Tag's position, which is the one way this edit breaks silently.
+        assert!(
+            body.contains("commit_slot(targets, Some(role), None, None, None, None)"),
+            "Role must still commit into the role slot"
+        );
+        assert!(
+            body.contains("commit_slot(targets, None, Some(tag), None, None, None)"),
+            "Tag must still commit into the tag slot"
+        );
+    }
+
+    /// The two new fields read from `SlotAttrs`'s new columns and participate in the T-649 per-field
+    /// multi-edit opt-in (`g(diff.…, opts.…)`) rather than bypassing it — the seam T-649 left.
+    #[test]
+    fn the_new_fields_read_their_own_columns_and_take_the_multi_edit_gate() {
+        let src = attrs_src();
+        let body = only_body(&src, "fn identity_tab(");
+        for needle in [
+            "a.asset_id.clone()",
+            "g(diff.asset_id, opts.asset_id)",
+            "a.description.clone()",
+            "g(diff.description, opts.description)",
+        ] {
+            assert!(
+                body.contains(needle),
+                "identity_tab must contain `{needle}`"
+            );
+        }
+    }
+
+    /// The labels an operator actually reads. `live_source` KEEPS string literals — this pin is
+    /// about user-visible copy, which is the one thing `live_code` deliberately cannot see.
+    #[test]
+    fn the_two_new_fields_are_labelled_type_and_role_description() {
+        let src = live_source(include_str!("attributes.rs"));
+        let body = only_body(&src, "fn identity_tab(");
+        assert!(body.contains("\"Type\""), "the type field is labelled Type");
+        assert!(
+            body.contains("\"Role Description\""),
+            "the description field is labelled Role Description, not Description — it is the \
+             description OF the role, and `Role` above is the short label it is distinct from"
+        );
+    }
+
+    /// Wave-102 F-7 — a Transform field the core will REFUSE must be disabled, and no multi-edit
+    /// latch may re-open it.
+    ///
+    /// Pinned on `Gate::locked`, which is the single place the `disabled` attribute is decided for
+    /// every field in this modal: `shut ||` must come FIRST and must be an unconditional `||`, so
+    /// that `refused()` overrides the opt-in rather than being one vote among two. Ticking "Apply
+    /// to all" on a locked slot re-enabling the input is exactly the lie F-7 banked.
+    #[test]
+    fn a_refused_transform_field_is_disabled_whatever_the_multi_edit_latch_says() {
+        let src = attrs_src();
+        let locked = only_body(&src, "fn locked(self) -> bool");
+        assert!(
+            locked.contains("self.shut || self.opt.is_some_and(|o| !o.get())"),
+            "Gate::locked must short-circuit on `shut`; body was:\n{locked}"
+        );
+        // `refused()` must actually be reachable from the Transform tab, and only from there.
+        let transform = only_body(&src, "fn transform_tab(");
+        assert!(
+            transform.contains("base.refused()"),
+            "transform_tab must hard-shut its gates when every target is locked"
+        );
+        let identity = only_body(&src, "fn identity_tab(");
+        assert!(
+            !identity.contains("refused()"),
+            "identity fields must NOT be lock-gated: T-665 locks TRANSFORM only, and `update_slot` \
+             / `update_slot_object` carry no lock check, so a role or type edit on a locked slot \
+             really does land"
+        );
+    }
+
+    /// F-7's other half: the count must come from the CORE's own predicate, and `all_locked` must
+    /// mean every target — a partially-locked selection still moves its unlocked members, so
+    /// disabling the fields there would be the same lie in reverse.
+    #[test]
+    fn the_lock_affordance_asks_the_core_and_distinguishes_all_locked_from_some_locked() {
+        let src = attrs_src();
+        let modal = only_body(&src, "fn modal_view(");
+        assert!(
+            modal.contains("crate::editor_ops::attrs_locked_count(&targets.get_value())"),
+            "the modal must ask the core over the same id set the commits fan out to"
+        );
+        let transform = only_body(&src, "fn transform_tab(");
+        assert!(
+            transform.contains("let all_locked = n > 0 && locked_n == n;"),
+            "all_locked must require EVERY target to be locked; body was:\n{transform}"
+        );
+    }
+
+    /// `read_attrs` must read the two new fields off the RAW slot rows. This is the defect the
+    /// ticket named: the type was unreadable because the read path was the SoA, which has no such
+    /// column — not because the mutator was missing.
+    #[test]
+    fn read_attrs_reads_asset_id_and_description_from_the_raw_slot_rows() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let body = only_body(&ops, "pub fn read_attrs(id: &str) -> Option<SlotAttrs>");
+        assert!(
+            body.contains("raw_slot_rows(core)"),
+            "read_attrs must consult the raw rows, not `materialize()` alone"
+        );
+        for needle in ["asset_id: row_str(", "description: row_str("] {
+            assert!(body.contains(needle), "read_attrs must fill `{needle}…`");
+        }
+    }
+
+    /// The write path: both new fields land through `update_slot_object`, and `update_slot`'s three
+    /// original columns are not dragged along by a commit that only touches a new one.
+    #[test]
+    fn attrs_update_slot_routes_the_new_fields_through_update_slot_object() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let body = only_body(&ops, "pub fn attrs_update_slot(");
+        assert!(
+            body.contains("core.update_slot_object(id, asset_id, description)"),
+            "the object half must go through the core mutator that leaves None keys alone"
+        );
+        assert!(
+            body.contains("if role.is_some() || tag.is_some() || stance.is_some() {"),
+            "a type-only or description-only commit must not open an update_slot transaction"
+        );
     }
 }
