@@ -36,12 +36,13 @@ mod editor_ops;
 // (the doc-driving on:click bodies are cfg-gated inside the closures), so the native view shell
 // compiles them too.
 mod eden_chrome;
-// T-661 — the ten modules `eden_chrome` was split into. Layout consts feed `select_tool` /
-// `mission_editor`; the rest is the docked shell (strip / docks / toolbelt / settings) plus the
-// zone tool's pure predicates.
+// T-661 — the ten modules `eden_chrome` was split into, plus T-692's `eden_help` (eleven). Layout
+// consts feed `select_tool` / `mission_editor`; the rest is the docked shell (strip / docks /
+// toolbelt / settings / the Help menu's Controls Hint) plus the zone tool's pure predicates.
 mod eden_dock_left;
 mod eden_dock_right;
 mod eden_env;
+mod eden_help;
 mod eden_layout;
 mod eden_settings;
 mod eden_toolbelt;
