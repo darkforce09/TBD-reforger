@@ -2023,6 +2023,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // `viewshed_clear()` when the wash is dismissed.
                 let viewshed = viewshed.clone();
                 let engine = engine.clone();
+                // T-649 SEL-ALL-001 — the Ctrl/Cmd+A arm needs the canvas CSS size, because Eden
+                // scopes Select All to what is ON SCREEN. The container is the same element every
+                // pointer gesture measures for its frozen camera, so Ctrl+A and a full-canvas
+                // marquee drag are measured against the identical rect.
+                let container = container.clone();
                 let onkeydown = Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(
                     move |ev: web_sys::KeyboardEvent| {
                         if crate::mission_history::in_editable_field() {
@@ -2071,6 +2076,25 @@ pub fn MissionEditorPage() -> impl IntoView {
                             }
                             "KeyV" if modk && !ev.alt_key() && !ev.shift_key() => {
                                 crate::editor_ops::paste_at_cursor(cx, cy)
+                            }
+                            // T-649 SEL-ALL-001 — Ctrl/Cmd+A selects everything IN VIEW. Eden scopes
+                            // Select All to the viewport, not to the whole mission, so this hands the
+                            // container's live CSS size to `select_all_in_view`, which runs the
+                            // marquee's own `pick_rect` over the on-screen rect — an entity parked
+                            // off-screen is deliberately NOT selected.
+                            //
+                            // Census: `KeyA` was bound by NEITHER window-level editor keydown before
+                            // this slice (this file's nor `mission_history`'s Ctrl+Z/Y one) — pinned
+                            // by `t649_ctrl_a_census`. It sits beside `KeyC` / `KeyV` because it is
+                            // the same modifier family and the same top-of-closure
+                            // `in_editable_field()` guard is what keeps Ctrl+A meaning "select the
+                            // text" while the operator is typing in an Attributes field.
+                            //
+                            // Returning "acted" is load-bearing: `prevent_default` below is what
+                            // stops the browser's own Select All blue-washing the editor chrome.
+                            "KeyA" if modk && !ev.alt_key() && !ev.shift_key() => {
+                                let rect = container.get_bounding_client_rect();
+                                crate::editor_ops::select_all_in_view(rect.width(), rect.height())
                             }
                             // T-635 — Ctrl/Cmd+Alt+D toggles the telemetry HUD (default hidden).
                             // Behind the same `in_editable_field()` guard at the top of this closure,
@@ -7677,6 +7701,345 @@ mod t655_validation_panel_wiring {
         assert!(
             !between.contains("debug_hud_shown.get()") && !between.contains("debug_hud.get()"),
             "T-655: validation is ALWAYS ON — the panel must not sit behind a debug flag"
+        );
+    }
+}
+
+// ─────────────────────── T-649 — Select All in view + Attributes multi-edit ───────────────────
+/// Source pins for T-649. `map-engine-core` is linked natively with the `mission` feature ONLY
+/// (`Cargo.toml`: `doc`/`camera` are `cfg(target_arch = "wasm32")` deps), and `select_tool` /
+/// `editor_ops` are both wasm32-gated modules — so neither `OrthoCamera`, `SlotSoa` nor
+/// `select_all_in_view` can be CALLED from a native `cargo test`. These pin the wiring the way the
+/// rest of this file's editor contracts are pinned: on the live source, with string literals
+/// blanked (`live_code`) wherever the shape rather than the text is the contract.
+#[cfg(test)]
+mod t649_select_all_and_multi_edit {
+    use crate::arsenal::class_r_scrub::live_code;
+
+    /// Everything after the editor page's own signature — the live editor body.
+    fn editor_live() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(
+            raw.matches(anchor.as_str()).count(),
+            1,
+            "scrub anchor must be unambiguous"
+        );
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    }
+
+    /// The keydown ARM LIST of one window-level editor keydown, as raw text (a keydown arm IS a
+    /// `"KeyX"` string, so this deliberately does NOT blank literals). Slicing to the arm list is
+    /// what keeps a needle from self-matching inside this test module, which lives in the same file
+    /// as the arms it censuses: the slice runs from the FIRST `match ev.code().as_str()` head to
+    /// that arm list's `_ =>` terminator, and this module sits well after it.
+    fn keydown_arms(src: &str) -> String {
+        let head = "match ev.code().as_str() {";
+        let at = src.find(head).expect("an editor keydown match is present");
+        let rest = &src[at..];
+        let end = rest.find("_ =>").map_or(rest.len(), |i| i + 4);
+        rest[..end].to_string()
+    }
+
+    /// All whitespace removed. `rustfmt` is free to break a Leptos `view!` expression across lines
+    /// wherever it likes (`gate\n.opt\n.map(`), so any pin on an EXPRESSION rather than on a
+    /// statement is matched against this form — otherwise the pin is really a formatting pin.
+    fn squash(src: &str) -> String {
+        src.chars().filter(|c| !c.is_whitespace()).collect()
+    }
+
+    /// One top-level `fn`'s source, signature through the closing brace at column 0.
+    fn fn_source(src: &str, sig: &str) -> String {
+        let at = src
+            .find(sig)
+            .unwrap_or_else(|| panic!("`{sig}` must exist in the live source"));
+        let rest = &src[at..];
+        let end = rest.find("\n}\n").map_or(rest.len(), |i| i + 3);
+        rest[..end].to_string()
+    }
+
+    // ── SEL-ALL-001 ───────────────────────────────────────────────────────────────────────────
+
+    /// KEY CENSUS: Ctrl/Cmd+A is claimed by THIS editor keydown and by nothing else. The two
+    /// window-level editor keydowns are this file's and `mission_history`'s (Ctrl+Z/Y); the other
+    /// one must not also bind it, or the two listeners would both fire on one keypress.
+    #[test]
+    fn t649_ctrl_a_census() {
+        let this_arms = keydown_arms(include_str!("mission_editor.rs"));
+        let history_arms = keydown_arms(include_str!("mission_history.rs"));
+        // Assembled so the literal never appears verbatim in this test's own source.
+        let key_a = format!("\"{}\"", "KeyA");
+        assert!(
+            !history_arms.contains(&key_a),
+            "census: mission_history's keydown (Ctrl+Z/Y) must not claim A"
+        );
+        // The arm is modifier-gated (Ctrl/Cmd) and rejects Alt/Shift, exactly like Ctrl+C / Ctrl+V
+        // beside it — a BARE `a` must stay free.
+        assert!(
+            this_arms.contains(&format!(
+                "{key_a} if modk && !ev.alt_key() && !ev.shift_key() =>"
+            )),
+            "SEL-ALL-001: Ctrl/Cmd+A (not bare A, not Alt/Shift combos) must be the Select All arm"
+        );
+        // Ctrl+C / Ctrl+V are untouched neighbours — this slice added an arm, it did not re-key one.
+        for k in ["KeyC", "KeyV"] {
+            let key = format!("\"{k}\"");
+            assert!(
+                this_arms.contains(&format!(
+                    "{key} if modk && !ev.alt_key() && !ev.shift_key() =>"
+                )),
+                "the clipboard arms must be unchanged by T-649"
+            );
+        }
+    }
+
+    /// The Ctrl+A arm measures the CANVAS and delegates to `select_all_in_view`; it never reaches
+    /// into the doc itself. Returning the "acted" bool is what earns the shared `prevent_default`
+    /// below the match — without it the browser's own Select All would blue-wash the chrome.
+    #[test]
+    fn ctrl_a_hands_the_container_rect_to_select_all_in_view() {
+        let ed = editor_live();
+        let arms = keydown_arms(&ed);
+        assert!(
+            arms.contains("container.get_bounding_client_rect()")
+                && arms.contains("editor_ops::select_all_in_view(rect.width(), rect.height())"),
+            "SEL-ALL-001: the Ctrl+A arm must pass the live container CSS size to select_all_in_view"
+        );
+        // The closure has to capture the container for that to be possible.
+        assert!(
+            ed.contains("let container = container.clone();"),
+            "the keydown closure must clone the container in to measure it"
+        );
+        // The whole closure is behind the shared editable-field guard, so Ctrl+A still means
+        // "select the text" while the operator is typing in an Attributes field.
+        assert!(
+            ed.contains("mission_history::in_editable_field()"),
+            "the editor keydown must keep its editable-field guard"
+        );
+    }
+
+    /// Eden scopes Select All to what is ON SCREEN. This pins that the implementation is a
+    /// VIEWPORT-RECT query through the marquee's own primitive — not a "hand back every id in the
+    /// document" shortcut, which is the obvious wrong implementation of this ticket.
+    #[test]
+    fn select_all_is_viewport_scoped_through_the_marquee_primitive() {
+        let tool = live_code(include_str!("select_tool.rs"));
+        let view_fn = fn_source(&tool, "pub fn view_ids_with_vehicles(");
+        // The near corner is the top-left CSS pixel unprojected; the far corner is the viewport
+        // size in PIXELS — the exact (world start, px end) shape `marquee_ids_with_vehicles` takes.
+        assert!(
+            view_fn.contains("cam.size_px()") && view_fn.contains("cam.unproject_xy(0.0, 0.0)"),
+            "SEL-ALL-001: the select-all rect must be the viewport — unproject (0,0), far corner \
+             from the camera's own size_px()"
+        );
+        assert!(
+            view_fn.contains("marquee_ids_with_vehicles(cam, soa, vehicle_points,"),
+            "SEL-ALL-001: it must reuse the marquee primitive, not define a second 'inside the box'"
+        );
+        // A degenerate camera yields nothing, exactly like the marquee — never a full-mission dump.
+        assert!(
+            view_fn.contains("is_finite()") && view_fn.contains("return Vec::new()"),
+            "a non-finite unproject must select NOTHING (the marquee's own behaviour)"
+        );
+
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let sel_fn = fn_source(&ops, "pub fn select_all_in_view(");
+        assert!(
+            sel_fn.contains("select_tool::view_ids_with_vehicles(")
+                && sel_fn.contains("select_tool::frozen_camera("),
+            "select_all_in_view must snapshot a frozen camera and run the viewport-rect query"
+        );
+        assert!(
+            !sel_fn.contains("soa.ids.clone()") && !sel_fn.contains(".ids.clone()"),
+            "SEL-ALL-001: Select All is scoped to the VIEWPORT — it must never hand back the whole \
+             document's id list"
+        );
+        // Selection-only change: the SEL readout refreshes, but nothing enters the undo history.
+        assert!(
+            sel_fn.contains("mission_history::refresh_selection()")
+                && !sel_fn.contains("after_local_edit"),
+            "a selection change is not a doc edit — refresh_selection only, never a history step"
+        );
+    }
+
+    // ── ATTR-MULTI-001 / ATTR-MULTI-CHK-001 ───────────────────────────────────────────────────
+
+    /// THE INVERTED GUARD. Before this slice both `open_attributes` and `open_arsenal` opened with
+    /// an identical three-line `if ctx.selection.borrow().len() > 1 { return; }`, so a
+    /// multi-selection suppressed the modal entirely — which in turn made `context_menu.rs`'s
+    /// unconditionally-enabled "Attributes..." / "Edit Loadout..." rows live-but-inert (T-716).
+    /// Both guards must be gone, and BOTH entry points must route through the one shared opener.
+    #[test]
+    fn multi_selection_no_longer_suppresses_the_attributes_modal() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        assert!(
+            !ops.contains("if ctx.selection.borrow().len() > 1 {"),
+            "ATTR-MULTI-001: the suppress-on-multi guard must be gone from editor_ops"
+        );
+        for entry in ["pub fn open_attributes(", "pub fn open_arsenal("] {
+            let f = fn_source(&ops, entry);
+            assert!(
+                f.contains("open_attrs_modal("),
+                "{entry} must route through the shared opener, not a re-copied guard"
+            );
+        }
+        // Arsenal still lands on tab 3; Attributes still leaves the tab alone.
+        let opener = fn_source(&ops, "fn open_attrs_modal(");
+        assert!(
+            opener.contains("ctx.attrs_tab.set(3)") && opener.contains("if arsenal_tab {"),
+            "open_arsenal must still select the Arsenal tab"
+        );
+        // The multi path must PRESERVE the selection — replacing it with `[id]` would collapse the
+        // very set the operator is about to multi-edit.
+        assert!(
+            opener.contains("sel.len() > 1 && sel.contains(&id)")
+                && opener.contains("if !keep_selection {"),
+            "ATTR-MULTI-001: opening over a multi-selection must not collapse it to one id"
+        );
+    }
+
+    /// The per-field checkbox. `attributes.rs` had ZERO checkbox inputs before this slice; a field
+    /// whose values DIFFER across the selection must now be blank, disabled, and behind one.
+    #[test]
+    fn differing_fields_are_locked_behind_a_per_field_checkbox() {
+        let raw_attrs = include_str!("attributes.rs");
+        let attrs = live_code(raw_attrs);
+        // The checkbox itself (string literal ⇒ pinned on the RAW source), assembled so this test's
+        // own text is not the match.
+        let checkbox = format!("type=\"{}\"", "checkbox");
+        assert!(
+            raw_attrs.contains(&checkbox),
+            "ATTR-MULTI-CHK-001: the multi-edit opt-in checkbox must exist in the modal"
+        );
+        let label = squash(&fn_source(&attrs, "fn field_label("));
+        assert!(
+            label.contains("gate.opt.map(|o|")
+                && label.contains("o.set(event_target_checked(&ev))"),
+            "the checkbox must be bound to the field's own opt-in latch"
+        );
+        // Locked ⇒ disabled. Both field primitives, plus the stance select.
+        for f in ["fn number_field(", "fn text_field("] {
+            let src = fn_source(&attrs, f);
+            assert!(
+                src.contains("disabled=move || gate.locked()"),
+                "{f} must disable while the field differs and its checkbox is unticked"
+            );
+            assert!(
+                src.contains("gate.differs()"),
+                "{f} must blank the value when the selection disagrees — showing one member's \
+                 value would be a lie about the other N-1"
+            );
+        }
+        let xform = fn_source(&attrs, "fn transform_tab(");
+        assert!(
+            xform.contains("disabled=move || stance_gate.locked()"),
+            "the Stance select must obey the same gate as the text/number fields"
+        );
+        // A gate is minted ONLY under a multi-selection AND only where the values actually differ,
+        // so single-slot editing is byte-for-byte the pre-T-649 behaviour.
+        assert!(
+            xform.contains("Gate::maybe(is_multi && differs, latch)"),
+            "a field the selection AGREES on must stay live with no checkbox"
+        );
+        // Every editable field is wired to its own latch — a shared one would tick them together.
+        for latch in [
+            "opts.x",
+            "opts.y",
+            "opts.z",
+            "opts.rotation",
+            "opts.stance",
+            "opts.role",
+            "opts.tag",
+        ] {
+            assert!(
+                attrs.contains(latch),
+                "{latch} must gate its own field (one checkbox per field, not one for the modal)"
+            );
+        }
+        // The latches must survive a commit: they are minted on the COMPONENT and re-armed off
+        // `attrs_open` only, never off `doc_tick` (which every commit bumps).
+        let modal = fn_source(&attrs, "pub fn AttributesModal(");
+        assert!(
+            modal.contains("let opts = MultiOpts::new();") && modal.contains("opts.reset()"),
+            "the opt-in latches must live on the component and re-arm when the modal reopens"
+        );
+    }
+
+    /// A multi-edit commit reaches EVERY selected slot, field-by-field, under ONE history tail —
+    /// and an un-opted field stays `None`, so ticking Rotation cannot also stamp one member's X
+    /// onto the rest.
+    #[test]
+    fn multi_edit_commits_fan_out_to_every_selected_id() {
+        let attrs = live_code(include_str!("attributes.rs"));
+        for (seam, single, multi) in [
+            (
+                "fn commit_position(",
+                "attrs_update_position(",
+                "attrs_update_position_multi(",
+            ),
+            (
+                "fn commit_slot(",
+                "attrs_update_slot(",
+                "attrs_update_slot_multi(",
+            ),
+        ] {
+            let f = fn_source(&attrs, seam);
+            assert!(
+                f.contains(multi) && f.contains(single) && f.contains("ids.len() > 1"),
+                "{seam} must fan out on a multi-selection and keep the ORIGINAL single-slot call \
+                 otherwise"
+            );
+        }
+        let ops = live_code(include_str!("editor_ops.rs"));
+        for (f, write) in [
+            (
+                "pub fn attrs_update_position_multi(",
+                "core.update_slot_position(id,",
+            ),
+            ("pub fn attrs_update_slot_multi(", "core.update_slot(id,"),
+        ] {
+            let src = fn_source(&ops, f);
+            assert!(
+                src.contains("for id in ids {") && src.contains(write),
+                "{f} must apply the commit to every id in the target set"
+            );
+            // One tail for the whole fan-out: one persist, one rebind — not N.
+            assert_eq!(
+                src.matches("after_local_edit()").count(),
+                1,
+                "{f} must fire exactly ONE history/persist tail for the whole commit"
+            );
+            // A commit with no opted-in field is a no-op, not N writes of `None`.
+            assert!(
+                src.contains("is_none()") && src.contains("return;"),
+                "{f} must no-op when nothing was opted in"
+            );
+        }
+        // The "which fields differ" read is one snapshot over one materialize, and it compares
+        // dict-coded columns by TEXT (two rows can carry the same role under different indices).
+        let diff = fn_source(&ops, "pub fn read_attrs_diff(");
+        assert!(
+            diff.matches("core.materialize()").count() == 1 && diff.contains("&soa.roles)"),
+            "read_attrs_diff must compare one snapshot, resolving dict columns to their strings"
+        );
+    }
+
+    /// HONESTY: inverting the `open_arsenal` guard makes the context menu's "Edit Loadout..." row
+    /// open something — but the Arsenal tab body lives in `arsenal.rs` (not this slice's to touch)
+    /// and still edits ONE slot. The modal must SAY so rather than let the "N entities selected"
+    /// header imply a fan-out that does not happen.
+    #[test]
+    fn the_arsenal_tab_admits_it_edits_one_entity_under_a_multi_selection() {
+        let raw = include_str!("attributes.rs");
+        assert!(
+            raw.contains("Loadout edits apply to this one entity"),
+            "the Arsenal tab must disclose that it is not multi-editing"
+        );
+        let attrs = live_code(raw);
+        let modal = squash(&fn_source(&attrs, "fn modal_view("));
+        assert!(
+            modal.contains("is_multi.then("),
+            "the disclosure must render only under a multi-selection"
         );
     }
 }

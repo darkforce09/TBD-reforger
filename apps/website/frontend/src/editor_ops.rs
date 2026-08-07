@@ -973,50 +973,131 @@ fn edit_composition(f: impl FnOnce(&MissionDocCore)) -> bool {
 
 /* ───────────────────────── Attributes modal (T-159.26 / .23 spec) ───────────────────────── */
 
-/// Open Attributes for `id` — the React dbl-click contract (A1): a multi-selection (>1) suppresses
-/// the open. Selects the slot (replace) so the modal, SEL readout, and tint agree.
-/// Leaves the Attributes tab index alone (default Identity until the user changes it).
-pub fn open_attributes(id: String) {
+/// T-649 (ATTR-MULTI-001) — the shared open path for [`open_attributes`] / [`open_arsenal`].
+///
+/// **This inverts the old A1 contract.** Until T-649 both entry points opened with
+/// `if ctx.selection.borrow().len() > 1 { return; }` — a multi-selection SUPPRESSED the modal
+/// entirely. That made two context-menu rows dishonest: `context_menu.rs:277` / `:281` register
+/// "Edit Loadout..." and "Attributes..." with `MenuEntry::on(..)` unconditionally, so at
+/// `selection.len() > 1` the rows rendered ENABLED and clicking them did nothing at all (the
+/// T-716 live-but-inert rows). A multi-selection now OPENS the modal in multi-edit mode instead,
+/// which is what makes those rows honest.
+///
+/// Selection handling is the whole difference between the two modes and is why this is one
+/// function rather than a copied guard:
+///   * `id` is **inside** a multi-selection ⇒ leave the selection ALONE. Replacing it with `[id]`
+///     (what the single path does) would silently collapse the very set the operator is about to
+///     multi-edit, and the modal reads that set back through [`attrs_multi_ids`].
+///   * otherwise (single selection, or a right-click that retargeted to an entity outside the
+///     selection) ⇒ replace with `[id]`, so modal, SEL readout, and map tint agree — the original
+///     behaviour, unchanged.
+fn open_attrs_modal(id: String, arsenal_tab: bool) {
     OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
             return;
         };
-        if ctx.selection.borrow().len() > 1 {
-            return;
+        let keep_selection = {
+            let sel = ctx.selection.borrow();
+            sel.len() > 1 && sel.contains(&id)
+        };
+        if !keep_selection {
+            *ctx.selection.borrow_mut() = vec![id.clone()];
+            let ids = ctx.selection.borrow().clone();
+            let mut eng = ctx.engine.borrow_mut();
+            if let Some(e) = eng.as_mut() {
+                e.set_selection(ids);
+            }
         }
-        *ctx.selection.borrow_mut() = vec![id.clone()];
-        let ids = ctx.selection.borrow().clone();
-        let mut eng = ctx.engine.borrow_mut();
-        if let Some(e) = eng.as_mut() {
-            e.set_selection(ids);
+        if arsenal_tab {
+            ctx.attrs_tab.set(3);
         }
         ctx.attrs_open.set(Some(id));
     });
     crate::mission_history::refresh_selection();
 }
 
-/// T-180.9 — Open Attributes on the Arsenal tab (`TABS[3]`) for `id`. Same multi-select suppress
-/// and selection replace as [`open_attributes`].
+/// Open Attributes for `id` (the dbl-click / outliner-activate contract). A multi-selection opens
+/// the modal in MULTI-EDIT mode over the whole selection — see [`open_attrs_modal`] for the
+/// inversion of the old suppress-on-multi rule. Leaves the Attributes tab index alone (default
+/// Identity until the user changes it).
+pub fn open_attributes(id: String) {
+    open_attrs_modal(id, false);
+}
+
+/// T-180.9 — Open Attributes on the Arsenal tab (`TABS[3]`) for `id`. Same selection handling as
+/// [`open_attributes`].
+///
+/// T-649 honesty note: inverting the guard here is what stops the "Edit Loadout..." row being
+/// inert on a multi-selection — the modal now opens. The Arsenal tab BODY
+/// (`arsenal.rs::ArsenalTab`) still edits ONE slot (the clicked `id`); loadout multi-apply lives in
+/// `arsenal.rs`, which is not this slice's to touch. `attributes.rs` renders a banner on the
+/// Arsenal tab under a multi-selection saying exactly that, so the modal never implies it is
+/// writing all of them.
 pub fn open_arsenal(id: String) {
-    OPS_CTX.with(|c| {
+    open_attrs_modal(id, true);
+}
+
+/// T-649 SEL-ALL-001 — Ctrl/Cmd+A: replace the selection with everything **on screen**.
+///
+/// Eden scopes Select All to the viewport, not to the whole mission, so this is a viewport-rect
+/// query over [`crate::select_tool::view_ids_with_vehicles`] — the marquee's own primitive with its
+/// corners pinned to the canvas — and not a `soa.ids` dump. `viewport_w`/`viewport_h` are the
+/// container's CSS size at keypress; the camera is snapshotted from the live engine view the same
+/// way a pointer-down freezes one, so Ctrl+A and a full-canvas marquee drag agree by construction.
+///
+/// `vehicle_points()` is resolved BEFORE the `OPS_CTX` borrow opens (it opens its own), keeping the
+/// module's one-borrow-per-`pub fn` discipline. Returns whether it acted, so the keydown arm can
+/// `prevent_default` — the browser's own Select All would otherwise blue-wash the editor chrome.
+pub fn select_all_in_view(viewport_w: f64, viewport_h: f64) -> bool {
+    if !(viewport_w > 0.0 && viewport_h > 0.0) {
+        return false;
+    }
+    let points = vehicle_points();
+    let acted = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
-            return;
+            return false;
         };
-        if ctx.selection.borrow().len() > 1 {
-            return;
-        }
-        *ctx.selection.borrow_mut() = vec![id.clone()];
-        let ids = ctx.selection.borrow().clone();
+        let cam = {
+            let eng = ctx.engine.borrow();
+            let Some(e) = eng.as_ref() else {
+                return false;
+            };
+            crate::select_tool::frozen_camera(
+                viewport_w,
+                viewport_h,
+                e.target_x(),
+                e.target_y(),
+                e.zoom(),
+            )
+        };
+        let ids = {
+            let d = ctx.doc.borrow();
+            let Some(core) = d.as_ref() else {
+                return false;
+            };
+            crate::select_tool::view_ids_with_vehicles(&cam, &core.materialize(), &points)
+        };
+        // The engine tint lane is slots-only (the vehicle lane draws its own selection) — the same
+        // split the `LG::Marquee` commit makes in `mission_editor.rs`.
+        let slot_ids: Vec<String> = ids
+            .iter()
+            .filter(|i| !points.iter().any(|(v, _, _)| v == *i))
+            .cloned()
+            .collect();
+        *ctx.selection.borrow_mut() = ids;
         let mut eng = ctx.engine.borrow_mut();
         if let Some(e) = eng.as_mut() {
-            e.set_selection(ids);
+            e.set_selection(slot_ids);
         }
-        ctx.attrs_tab.set(3);
-        ctx.attrs_open.set(Some(id));
+        true
     });
-    crate::mission_history::refresh_selection();
+    if acted {
+        // Selection change, not a doc edit — the SEL readout only (T-159.21), never a history step.
+        crate::mission_history::refresh_selection();
+    }
+    acted
 }
 
 /// Close the modal (Esc / backdrop / close button).
@@ -1082,14 +1163,53 @@ pub fn attrs_update_position(
         let Some(core) = d.as_ref() else {
             return false;
         };
-        // Clamp to the mission's terrain bounds (React clamps to the live terrain; the seed's
-        // null meta falls through to everon 12800², compile.rs's own default).
-        let terrain = serde_json::from_str::<serde_json::Value>(&core.small_maps_json())
-            .ok()
-            .and_then(|v| v.get("meta")?.get("terrain")?.as_str().map(str::to_string))
-            .unwrap_or_default();
-        let b = map_engine_core::mission::compile::terrain_bounds(&terrain);
+        // T-649 — was an inline copy of `terrain_bounds_of` (T-650 added the identical helper
+        // below); both this and the multi commit now resolve the clamp through the one function so
+        // they cannot drift apart.
+        let b = terrain_bounds_of(core);
         core.update_slot_position(id, x, y, z, rotation, b[2], b[3]);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+}
+
+/// T-649 ATTR-MULTI-001 — the Transform commit applied to EVERY id in `ids`.
+///
+/// Field-by-field, exactly like the single-slot [`attrs_update_position`]: a `None` argument is a
+/// field the operator did not opt in (its checkbox is unticked), and `update_slot_position` leaves
+/// those columns untouched — so ticking "Rotation" and typing a heading can never also stamp one
+/// slot's X onto the rest of the selection.
+///
+/// **Undo granularity, stated honestly** (the [`rotate_selection_to_face`] note applies verbatim):
+/// `MissionDocCore` builds its `UndoManager` with `capture_timeout_millis = 0` and map-engine-core
+/// exposes no atomic multi-slot position API, so an N-slot commit is N undo steps. The whole commit
+/// still fires **one** history/persist tail (`after_local_edit` once, below), so it is one save and
+/// one rebind, not N.
+pub fn attrs_update_position_multi(
+    ids: &[String],
+    x: Option<f64>,
+    y: Option<f64>,
+    z: Option<f64>,
+    rotation: Option<f64>,
+) {
+    if ids.is_empty() || (x.is_none() && y.is_none() && z.is_none() && rotation.is_none()) {
+        return;
+    }
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let b = terrain_bounds_of(core);
+        for id in ids {
+            core.update_slot_position(id, x, y, z, rotation, b[2], b[3]);
+        }
         true
     });
     if did {
@@ -1648,6 +1768,157 @@ pub fn attrs_update_slot(
     if did {
         crate::mission_history::after_local_edit();
     }
+}
+
+/* ─────────── T-649 ATTR-MULTI-001 / ATTR-MULTI-CHK-001 — multi-selection Attributes ─────────── */
+
+/// T-649 — the Identity/stance commit applied to EVERY id in `ids`. Peer of
+/// [`attrs_update_position_multi`]; same `None`-means-not-opted-in field discipline (`update_slot`
+/// leaves a `None` column alone) and the same one-tail / N-undo-steps honesty note.
+pub fn attrs_update_slot_multi(
+    ids: &[String],
+    role: Option<String>,
+    tag: Option<String>,
+    stance: Option<String>,
+) {
+    if ids.is_empty() || (role.is_none() && tag.is_none() && stance.is_none()) {
+        return;
+    }
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        for id in ids {
+            core.update_slot(id, role.clone(), tag.clone(), stance.clone());
+        }
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+}
+
+/// T-649 — the slot ids the Attributes modal is editing when it opened over a MULTI-selection.
+///
+/// An **empty** return means single-edit, and the modal renders exactly as it always has (no
+/// checkboxes anywhere). It is non-empty only when both:
+///   * the live selection still contains `open_id` — `open_attrs_modal` already collapses a
+///     right-click that retargeted outside the selection, so this re-check is what keeps the modal
+///     honest if a dock edits the selection while it is open; and
+///   * at least two of the selected ids are real slot rows.
+///
+/// Vehicles are filtered out on purpose: every field in this modal is a slot-SoA column
+/// (x/y/z/rotation/stance/role/tag) and `vehiclesById` rows have none of them, so counting a
+/// vehicle would show "N selected" while a Role write silently missed it.
+#[must_use]
+pub fn attrs_multi_ids(open_id: &str) -> Vec<String> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return Vec::new();
+        };
+        let sel = ctx.selection.borrow().clone();
+        if sel.len() < 2 || !sel.iter().any(|s| s == open_id) {
+            return Vec::new();
+        }
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return Vec::new();
+        };
+        let soa = core.materialize();
+        let ids: Vec<String> = sel
+            .into_iter()
+            .filter(|s| soa.ids.iter().any(|r| r == s))
+            .collect();
+        if ids.len() < 2 {
+            Vec::new()
+        } else {
+            ids
+        }
+    })
+}
+
+/// T-649 ATTR-MULTI-CHK-001 — which Attributes fields DISAGREE across a multi-selection.
+///
+/// Eden's multi-edit rule has two halves. This is the first: a field whose value is identical on
+/// every selected entity can show that value; a field whose values differ has no value to show, so
+/// the modal blanks it and disables it until its per-field checkbox opts it in. `attributes.rs`
+/// owns the second half (the checkbox + the disable).
+///
+/// A single `materialize()` feeds every comparison, so the flags are a consistent snapshot of one
+/// doc state rather than seven independent reads. Floats compare by **bits**, not by `==`: the
+/// question is "is this literally the same stored value", and bit compare answers it exactly
+/// without an epsilon that would call two genuinely different headings equal.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AttrDiff {
+    pub x: bool,
+    pub y: bool,
+    pub z: bool,
+    pub rotation: bool,
+    pub stance: bool,
+    pub role: bool,
+    pub tag: bool,
+}
+
+impl AttrDiff {
+    /// True when at least one field disagrees — the modal's "Multiple values" hint.
+    #[must_use]
+    pub fn any(self) -> bool {
+        self.x || self.y || self.z || self.rotation || self.stance || self.role || self.tag
+    }
+}
+
+/// T-649 — [`AttrDiff`] for `ids`. Fewer than two resolvable rows ⇒ all-false (nothing can differ).
+#[must_use]
+pub fn read_attrs_diff(ids: &[String]) -> AttrDiff {
+    if ids.len() < 2 {
+        return AttrDiff::default();
+    }
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return AttrDiff::default();
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return AttrDiff::default();
+        };
+        let soa = core.materialize();
+        let rows: Vec<usize> = ids
+            .iter()
+            .filter_map(|id| soa.ids.iter().position(|s| s == id))
+            .collect();
+        let Some((&first, rest)) = rows.split_first() else {
+            return AttrDiff::default();
+        };
+        // Resolve dict-coded columns to their STRINGS before comparing: `materialize()` gives no
+        // guarantee that two rows carrying the same role text share an index, so an index compare
+        // could report a difference the operator cannot see in the field.
+        let text = |idx: u32, dict: &[String]| {
+            if idx == NONE_IDX {
+                String::new()
+            } else {
+                dict.get(idx as usize).cloned().unwrap_or_default()
+            }
+        };
+        let mut d = AttrDiff::default();
+        for &r in rest {
+            d.x |= soa.xs[r].to_bits() != soa.xs[first].to_bits();
+            d.y |= soa.ys[r].to_bits() != soa.ys[first].to_bits();
+            d.z |= soa.zs[r].to_bits() != soa.zs[first].to_bits();
+            d.rotation |= soa.rotations[r].to_bits() != soa.rotations[first].to_bits();
+            d.stance |= soa.stance.get(r).copied().unwrap_or(0)
+                != soa.stance.get(first).copied().unwrap_or(0);
+            d.role |= text(soa.role_idx[r], &soa.roles) != text(soa.role_idx[first], &soa.roles);
+            d.tag |= text(soa.tag_idx[r], &soa.tags) != text(soa.tag_idx[first], &soa.tags);
+        }
+        d
+    })
 }
 
 /// Read the doc's `editorLayers` as rows for the tree. There is **no** public `editor_layers`
