@@ -130,7 +130,15 @@ pub struct ZoneDraft {
     pub collection: DrawTarget,
 }
 
-/// One slot's editable attributes, read from the materialized SoA for the Attributes modal.
+/// One slot's editable attributes for the Attributes modal.
+///
+/// T-082 — read from TWO sources, not one, and the split is the whole of this ticket. `x`/`y`/`z`/
+/// `rotation`/`stance`/`role`/`tag`/`squad` come from the materialized SoA, which is the render
+/// projection and carries only the columns the GPU needs. `asset_id` and `description` are NOT in
+/// it — `SlotSoa` has no such column and never will — so they come from the raw slot row
+/// (`slots_json`). Before this ticket `read_attrs` read the SoA alone, which is why the entity TYPE
+/// was unreadable in the modal even though the core could already write it: the field was missing
+/// from the READ path, not from the mutator.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SlotAttrs {
     pub id: String,
@@ -142,6 +150,14 @@ pub struct SlotAttrs {
     pub role: String,
     pub tag: String,
     pub squad: String,
+    /// T-082 ATTR-FIELD-OBJ-TYPE — the slot's `assetId` (the entity type it spawns as). Empty when
+    /// unset, which is the common case: a slot with no `assetId` compiles to its faction's default
+    /// kit alias.
+    pub asset_id: String,
+    /// T-082 ATTR-FIELD-OBJ-ROLE-DESC — Eden's free-text "Role Description". A field of its OWN:
+    /// `role` is the short label ("Rifleman") the ORBAT and the compiled document use, and having it
+    /// double as the prose description is precisely the gap this ticket closes.
+    pub description: String,
 }
 
 thread_local! {
@@ -1109,8 +1125,35 @@ pub fn close_attributes() {
     });
 }
 
-/// Read one slot's editable attributes from the materialized SoA (the modal's field values).
+/// T-082 — every slot row of the doc, keyed by id, straight off `slots_json()`.
+///
+/// The raw rows, NOT the SoA: `assetId` and `description` (and every other authored key) live only
+/// here. Parsed once per call and handed to the readers below, because `slots_json` is O(all slots)
+/// JSON and the modal must not pay it per field. Both callers already pay one `materialize()` of
+/// the same order, and both run on a modal render — never the frame loop.
+fn raw_slot_rows(core: &MissionDocCore) -> serde_json::Map<String, serde_json::Value> {
+    match serde_json::from_str::<serde_json::Value>(&core.slots_json()) {
+        Ok(serde_json::Value::Object(m)) => m,
+        _ => serde_json::Map::new(),
+    }
+}
+
+/// T-082 — one string key off a raw slot row; empty when absent or not a string (the `add_slot`
+/// omit idiom means "absent" is the canonical unset, so it must read back as empty, not as a hole).
+fn row_str(rows: &serde_json::Map<String, serde_json::Value>, id: &str, key: &str) -> String {
+    rows.get(id)
+        .and_then(|r| r.get(key))
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string()
+}
+
+/// Read one slot's editable attributes for the modal's field values.
 /// `None` when the slot no longer exists (undone away while open → the modal closes).
+///
+/// T-082 — the SoA supplies the transform/identity columns; the raw row (`raw_slot_rows`) supplies
+/// `assetId` and `description`, which the SoA does not carry. See [`SlotAttrs`] for why that split
+/// is the ticket rather than an implementation detail.
 pub fn read_attrs(id: &str) -> Option<SlotAttrs> {
     OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -1119,6 +1162,7 @@ pub fn read_attrs(id: &str) -> Option<SlotAttrs> {
         let core = d.as_ref()?;
         let soa = core.materialize();
         let row = soa.ids.iter().position(|s| s == id)?;
+        let rows = raw_slot_rows(core);
         let dict = |idx: u32, dict: &[String]| {
             if idx == NONE_IDX {
                 String::new()
@@ -1141,12 +1185,46 @@ pub fn read_attrs(id: &str) -> Option<SlotAttrs> {
             role: dict(soa.role_idx[row], &soa.roles),
             tag: dict(soa.tag_idx[row], &soa.tags),
             squad: dict(soa.squad_idx[row], &soa.squads),
+            asset_id: row_str(&rows, id, "assetId"),
+            description: row_str(&rows, id, "description"),
         })
+    })
+}
+
+/// T-082 (wave-102 F-7) — how many of `ids` are transform-locked.
+///
+/// The modal needs the COUNT, not a bool, because a multi-selection can straddle the lock: all
+/// locked ⇒ the Transform fields are disabled outright; some locked ⇒ the fields stay live (the
+/// unlocked members really will move) and the modal says how many will not. Reporting either case
+/// as the other is the F-7 lie in a new costume.
+///
+/// Asks the CORE (`slot_layer_is_locked`), never a re-derived layer walk here: the whole value of
+/// the affordance is that it cannot disagree with the mutator that refuses the write.
+#[must_use]
+pub fn attrs_locked_count(ids: &[String]) -> usize {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return 0;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return 0;
+        };
+        ids.iter()
+            .filter(|id| core.slot_layer_is_locked(id))
+            .count()
     })
 }
 
 /// Attributes Transform commit — `update_slot_position` (x/y clamp to terrain bounds, rotation
 /// normalizes, manual z sticks) + the shared post-change tail (A4: one commit = one undo step).
+///
+/// T-082 (wave-102 F-7) — a slot the core will REFUSE (transform-locked layer) no longer fires the
+/// tail. `did` used to be "the ops context and the document both exist", which is not the same
+/// question as "did anything change": a refused write still bumped `doc_ver`, marked the mission
+/// DIRTY and armed a persist for an edit that never happened. The UI half of F-7 is the disabled
+/// affordance the modal draws from [`attrs_locked_count`]; this is the state half.
 pub fn attrs_update_position(
     id: &str,
     x: Option<f64>,
@@ -1166,6 +1244,9 @@ pub fn attrs_update_position(
         // T-649 — was an inline copy of `terrain_bounds_of` (T-650 added the identical helper
         // below); both this and the multi commit now resolve the clamp through the one function so
         // they cannot drift apart.
+        if core.slot_layer_is_locked(id) {
+            return false; // the core would skip this write; do not report it as an edit
+        }
         let b = terrain_bounds_of(core);
         core.update_slot_position(id, x, y, z, rotation, b[2], b[3]);
         true
@@ -1207,10 +1288,18 @@ pub fn attrs_update_position_multi(
             return false;
         };
         let b = terrain_bounds_of(core);
+        // T-082 (F-7) — `moved` is the honest `did`: a selection where EVERY member is
+        // transform-locked changed nothing, so it must not bump `doc_ver` or dirty the mission. A
+        // selection that straddles the lock still fires the tail — the unlocked members did move.
+        let mut moved = false;
         for id in ids {
+            if core.slot_layer_is_locked(id) {
+                continue;
+            }
             core.update_slot_position(id, x, y, z, rotation, b[2], b[3]);
+            moved = true;
         }
-        true
+        moved
     });
     if did {
         crate::mission_history::after_local_edit();
@@ -1747,11 +1836,24 @@ pub fn set_loadout(id: &str, loadout_json: Option<String>) {
 }
 
 /// Attributes Identity/stance commit — `update_slot(role/tag/stance)` + the shared tail.
+///
+/// T-082 — `asset_id` (ATTR-FIELD-OBJ-TYPE) and `description` (ATTR-FIELD-OBJ-ROLE-DESC) ride the
+/// SAME commit seam under the same `None`-means-not-opted-in discipline, but land through a second
+/// core mutator (`update_slot_object`) because they are not `update_slot` columns. Each is a no-op
+/// when nothing in its half is `Some`, so a role keystroke opens exactly one transaction and a type
+/// keystroke opens exactly one — the modal's one-commit-one-undo-step contract is unchanged.
+/// (`update_slot_role_character` is deliberately NOT the writer here; see its counterpart's note on
+/// `MissionDocCore::update_slot_object` for why routing a type edit through it would wipe `tag`.)
+///
+/// NOT gated on the transform lock, and that is the core's rule rather than an omission: T-665 locks
+/// TRANSFORM only, so identity/type/description edits are legal on a locked slot.
 pub fn attrs_update_slot(
     id: &str,
     role: Option<String>,
     tag: Option<String>,
     stance: Option<String>,
+    asset_id: Option<String>,
+    description: Option<String>,
 ) {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -1762,7 +1864,10 @@ pub fn attrs_update_slot(
         let Some(core) = d.as_ref() else {
             return false;
         };
-        core.update_slot(id, role, tag, stance);
+        if role.is_some() || tag.is_some() || stance.is_some() {
+            core.update_slot(id, role, tag, stance);
+        }
+        core.update_slot_object(id, asset_id, description);
         true
     });
     if did {
@@ -1780,10 +1885,21 @@ pub fn attrs_update_slot_multi(
     role: Option<String>,
     tag: Option<String>,
     stance: Option<String>,
+    asset_id: Option<String>,
+    description: Option<String>,
 ) {
-    if ids.is_empty() || (role.is_none() && tag.is_none() && stance.is_none()) {
+    // Nothing opted in ⇒ no writes at all. T-082 widened this guard by the two new fields: a commit
+    // that opts into NEITHER half must stay a no-op, not become N transactions of `None`.
+    if ids.is_empty()
+        || (role.is_none()
+            && tag.is_none()
+            && stance.is_none()
+            && asset_id.is_none()
+            && description.is_none())
+    {
         return;
     }
+    let slot_half = role.is_some() || tag.is_some() || stance.is_some();
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -1794,7 +1910,12 @@ pub fn attrs_update_slot_multi(
             return false;
         };
         for id in ids {
-            core.update_slot(id, role.clone(), tag.clone(), stance.clone());
+            if slot_half {
+                core.update_slot(id, role.clone(), tag.clone(), stance.clone());
+            }
+            // T-082 — the type / role-description half of the same fan-out, same per-field
+            // `Option` discipline: `None` leaves that key alone on every target.
+            core.update_slot_object(id, asset_id.clone(), description.clone());
         }
         true
     });
@@ -1863,13 +1984,25 @@ pub struct AttrDiff {
     pub stance: bool,
     pub role: bool,
     pub tag: bool,
+    /// T-082 ATTR-FIELD-OBJ-TYPE — compared off the RAW rows, not the SoA (it has no such column).
+    pub asset_id: bool,
+    /// T-082 ATTR-FIELD-OBJ-ROLE-DESC — same, and for the same reason.
+    pub description: bool,
 }
 
 impl AttrDiff {
     /// True when at least one field disagrees — the modal's "Multiple values" hint.
     #[must_use]
     pub fn any(self) -> bool {
-        self.x || self.y || self.z || self.rotation || self.stance || self.role || self.tag
+        self.x
+            || self.y
+            || self.z
+            || self.rotation
+            || self.stance
+            || self.role
+            || self.tag
+            || self.asset_id
+            || self.description
     }
 }
 
@@ -1889,13 +2022,19 @@ pub fn read_attrs_diff(ids: &[String]) -> AttrDiff {
             return AttrDiff::default();
         };
         let soa = core.materialize();
-        let rows: Vec<usize> = ids
+        // T-082 — carry the ID alongside the SoA row index. The two new fields are compared off the
+        // raw slot rows (the SoA has no `assetId` / `description` column) and those are keyed by id,
+        // so the SoA index alone is no longer enough to name a member of the selection. The MEMBER
+        // SET is still exactly the set that resolves in the SoA, so which entities are compared is
+        // unchanged — only how many columns are compared over them.
+        let rows: Vec<(&String, usize)> = ids
             .iter()
-            .filter_map(|id| soa.ids.iter().position(|s| s == id))
+            .filter_map(|id| Some((id, soa.ids.iter().position(|s| s == id)?)))
             .collect();
-        let Some((&first, rest)) = rows.split_first() else {
+        let Some((&(first_id, first), rest)) = rows.split_first() else {
             return AttrDiff::default();
         };
+        let raw = raw_slot_rows(core);
         // Resolve dict-coded columns to their STRINGS before comparing: `materialize()` gives no
         // guarantee that two rows carrying the same role text share an index, so an index compare
         // could report a difference the operator cannot see in the field.
@@ -1907,7 +2046,7 @@ pub fn read_attrs_diff(ids: &[String]) -> AttrDiff {
             }
         };
         let mut d = AttrDiff::default();
-        for &r in rest {
+        for &(id, r) in rest {
             d.x |= soa.xs[r].to_bits() != soa.xs[first].to_bits();
             d.y |= soa.ys[r].to_bits() != soa.ys[first].to_bits();
             d.z |= soa.zs[r].to_bits() != soa.zs[first].to_bits();
@@ -1916,6 +2055,11 @@ pub fn read_attrs_diff(ids: &[String]) -> AttrDiff {
                 != soa.stance.get(first).copied().unwrap_or(0);
             d.role |= text(soa.role_idx[r], &soa.roles) != text(soa.role_idx[first], &soa.roles);
             d.tag |= text(soa.tag_idx[r], &soa.tags) != text(soa.tag_idx[first], &soa.tags);
+            // T-082 — absent reads back as `""` (`row_str`), so "one slot has no type and the other
+            // has one" is a DIFFERENCE, which is what the operator sees in the field.
+            d.asset_id |= row_str(&raw, id, "assetId") != row_str(&raw, first_id, "assetId");
+            d.description |=
+                row_str(&raw, id, "description") != row_str(&raw, first_id, "description");
         }
         d
     })
