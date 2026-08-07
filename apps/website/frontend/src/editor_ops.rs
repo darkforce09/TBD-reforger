@@ -1241,12 +1241,19 @@ fn slot_z(rows: &serde_json::Map<String, serde_json::Value>, id: &str) -> Option
 /// inside the same undo step as the X edit.
 ///
 /// The fix is here, at the CALLER, not in the mutator: `MissionDocCore::update_slot_position` claims
-/// byte-parity with `ydoc.updateSlotPosition` and keeps it. These two functions read the current `z`
-/// and pass it back in, which makes the terrain-follow a no-op for the Attributes path only. The drag
-/// path ([`commit_positions`]) is deliberately untouched.
+/// byte-parity with `ydoc.updateSlotPosition` and keeps it. Its callers read the current `z` and pass
+/// it back in, which makes the terrain-follow a no-op for the paths that have no sampler behind them.
 ///
-/// Reading the rows is O(document) JSON, so it is done once per COMMIT and only for a commit that
-/// could actually zero a `z`: an explicit z write, or a rotation-only edit, never reaches it.
+/// **wave-127 F-5 — the placement helpers are one of those paths.** [`commit_positions`] (Align /
+/// Distribute / the placement patterns) writes x/y with `z = None` for every slot it moves, so it
+/// zeroed an authored z exactly the way the Attributes tab did — while preserving it for vehicles in
+/// the same selection. It now resolves the z through this pair too. The one path deliberately left
+/// alone is the marquee DRAG, which commits through `move_entities_and_vehicles` in `mission_editor`
+/// and is out of this module's reach; it passes `vec![0.0; n]` and has the same defect.
+///
+/// Reading the rows is O(document) JSON, so it is done once per COMMIT — once per BATCH for
+/// `commit_positions`, which moves many entities — and only for a commit that could actually zero a
+/// `z`: an explicit z write, or a rotation-only edit, never reaches it.
 fn keep_z_rows(
     core: &MissionDocCore,
     x: Option<f64>,
@@ -1576,7 +1583,12 @@ struct SelPos {
     is_slot: bool,
     x: f64,
     y: f64,
-    /// Vehicle z is preserved across a reposition (slots terrain-follow → z handled by the mutator).
+    /// The VEHICLE z a reposition preserves, read exact off `vehiclesById`.
+    ///
+    /// wave-127 F-5 — for a SLOT this is the f32 SoA column, so [`commit_positions`] must NOT commit
+    /// it: widening `f32` back to `f64` would rewrite an authored z as a slightly different number on
+    /// every align/space/pattern. The slot's z is resolved from the raw row ([`slot_z`]) at commit
+    /// time instead. It is still carried here because the placement math and the callers read it.
     z: f64,
 }
 
@@ -1643,25 +1655,46 @@ fn confirm_bulk(n: usize, verb: &str) -> bool {
 }
 
 /// Commit a set of target positions (index-aligned with `entities`) through the per-field position
-/// writes — `update_slot_position` for slots (x/y clamped to `[0,w]×[0,h]`, z left to terrain-follow),
-/// `set_vehicle_position` for vehicles (z + the NEW yaw preserved from the existing heading — a move
-/// does not re-orient). Returns whether anything committed. See the UNDO HONESTY note above: this is
-/// `k` undo steps for `k` moved entities (no one-txn per-entity-position API — T-732).
+/// writes — `update_slot_position` for slots (x/y clamped to `[0,w]×[0,h]`, the authored z carried
+/// through), `set_vehicle_position` for vehicles (z + the NEW yaw preserved from the existing heading
+/// — a move does not re-orient). Returns whether anything committed. See the UNDO HONESTY note above:
+/// this is `k` undo steps for `k` moved entities (no one-txn per-entity-position API — T-732).
+///
+/// **wave-127 F-5 — a placement command no longer flattens an authored slot z.** This is F-2's defect
+/// on the placement path: every slot write here is an x/y write, the one shape `update_slot_position`
+/// terrain-follows to `pz = 0.0`, and the comment that used to sit on it laundered that as "DEM
+/// sampled JS-side later". Nothing samples: `terrainZ` did not survive the React deletion, so the
+/// `0.0` was final. Align / Distribute / a placement pattern therefore dropped every selected slot to
+/// the deck — inside one operator gesture, while VEHICLES in the same selection kept their z on the
+/// branch below. The z is now resolved and passed back in, exactly as [`attrs_update_position`] does,
+/// through the same [`slot_z`] / [`keep_z_rows`] pair (one z-resolution vocabulary, not two).
+///
+/// The rows are read ONCE for the whole batch, not per entity: this commits `k` entities and
+/// [`raw_slot_rows`] is an O(document) JSON parse. `keep_z_rows` is asked with the FIRST moved slot's
+/// write, which is the write shape every slot here shares (x and y set, z absent) — so its answer is
+/// the per-entity answer minus `k-1` document reads, and it is not asked at all when no slot moves.
 fn commit_positions(
     core: &MissionDocCore,
     entities: &[SelPos],
     targets: &[crate::place_helpers::Pt],
     tb: [f64; 4],
 ) -> bool {
+    let z_rows = entities
+        .iter()
+        .zip(targets.iter())
+        .find(|(e, t)| e.is_slot && (e.x != t.x || e.y != t.y))
+        .and_then(|(_, t)| keep_z_rows(core, Some(t.x), Some(t.y), None));
     let mut any = false;
     for (e, t) in entities.iter().zip(targets.iter()) {
         if e.x == t.x && e.y == t.y {
             continue; // no move for this entity → no txn, no undo step
         }
         if e.is_slot {
-            // x/y move; z = None so the mutator terrain-follows (DEM sampled JS-side later), matching
-            // `moveEntities`/`attrs_update_position`; rotation untouched.
-            core.update_slot_position(&e.id, Some(t.x), Some(t.y), None, None, tb[2], tb[3]);
+            // x/y move, rotation untouched; the slot's CURRENT z rides along so the mutator's
+            // terrain-follow cannot flatten an authored one. Read off the exact raw row, never
+            // `SelPos::z` — that column is the f32 SoA and would rewrite the value on every move.
+            let z = z_rows.as_ref().and_then(|rows| slot_z(rows, &e.id));
+            core.update_slot_position(&e.id, Some(t.x), Some(t.y), z, None, tb[2], tb[3]);
         } else {
             // Vehicle: preserve z + existing heading; only x/y change.
             let heading = vehicle_heading_of(core, &e.id).unwrap_or(0.0);

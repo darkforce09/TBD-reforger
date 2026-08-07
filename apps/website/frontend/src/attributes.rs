@@ -1591,4 +1591,66 @@ mod tests {
              value it exists to preserve; body was:\n{read}"
         );
     }
+
+    /// **wave-127 F-5** — the PLACEMENT commands must not flatten an authored Z either.
+    ///
+    /// Same defect as F-2 above, one path over: `editor_ops::commit_positions` — the shared commit
+    /// behind the top strip's Align, Distribute and placement-pattern menus — wrote every slot as
+    /// `update_slot_position(.., Some(x), Some(y), None, ..)`, the exact shape the core mutator
+    /// terrain-follows to `pz = 0.0`. Nothing re-samples afterwards, so selecting rooftop slots and
+    /// pressing Align dropped all of them to the deck in one gesture, while VEHICLES in the same
+    /// selection kept their z on the very next branch. That asymmetry was the tell.
+    ///
+    /// Pinned here, beside its sibling, for the same reason: `editor_ops` is `wasm32`-only, so no
+    /// test inside it is built by the native harness.
+    #[test]
+    fn a_placement_commit_carries_each_slots_current_z_back_in() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let body = only_body(&ops, "fn commit_positions(");
+        // The old zeroing write, verbatim: x and y set, z hard-coded absent.
+        assert!(
+            !body.contains("Some(t.x), Some(t.y), None, None"),
+            "commit_positions must not write `z = None` on an x/y move — that stores pz = 0.0 and \
+             the authored z is gone; body was:\n{body}"
+        );
+        let read = body.find("slot_z(").unwrap_or_else(|| {
+            panic!("commit_positions must read each slot's CURRENT z, not invent one; body was:\n{body}")
+        });
+        let write = body.find("core.update_slot_position(").unwrap_or_else(|| {
+            panic!("commit_positions must still write through the core mutator")
+        });
+        assert!(
+            read < write,
+            "commit_positions must resolve the sticky z BEFORE the write; read at {read}, write at \
+             {write}"
+        );
+        // The rows are an O(document) JSON parse and this commits k entities, so the batch read must
+        // be HOISTED above the per-entity loop and happen exactly once. A `keep_z_rows` call that
+        // drifted inside the loop would still be correct and would still pass every assert above.
+        let rows = body.find("keep_z_rows(").unwrap_or_else(|| {
+            panic!(
+                "commit_positions must resolve its rows through keep_z_rows — \
+                 a second z-resolution path is its own defect; body was:\n{body}"
+            )
+        });
+        let loop_at = body.find("for (e, t) in").unwrap_or_else(|| {
+            panic!("commit_positions must still walk entities/targets pairwise")
+        });
+        assert!(
+            rows < loop_at,
+            "the keep_z_rows read must be hoisted ABOVE the per-entity loop (read at {rows}, loop \
+             at {loop_at}) — one O(document) parse per BATCH, not per entity"
+        );
+        assert_eq!(
+            body.matches("keep_z_rows(").count(),
+            1,
+            "exactly one keep_z_rows call — more than one means the document is re-parsed per \
+             entity; body was:\n{body}"
+        );
+        // And the vehicle branch keeps doing what it always did correctly.
+        assert!(
+            body.contains("core.set_vehicle_position(") && body.contains("e.z,"),
+            "the vehicle branch must still pass the vehicle's own z through; body was:\n{body}"
+        );
+    }
 }
