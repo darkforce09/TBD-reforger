@@ -231,6 +231,58 @@ serialisation, not a hang).
   dispatch immediately. Gate per wave: bash scripts/mod/compile.sh (exit 0) + the platform wave
   gate; compile.sh --selftest once per wave proves the gate can fail.
 
+## REMEDIATION PROGRAM — waves 127–141, AUTHORED AND NOT DISPATCHED
+
+**Filed 2026-08-07 on operator instruction: "set up waves to fix the bugs… but don't start that yet."**
+Rows are in `docs/platform/wave_plan.tsv`. **44 tickets, 15 waves, 3-wide, ZERO intra-wave `owns`
+collisions — verified mechanically, not by eye.** `cargo xtask slice-collisions` parses the plan.
+
+**Numbering does not force execution order.** 127+ keeps these clear of the **PARKED mod half at
+121–126**; whether remediation runs before or after that half is the operator's call.
+
+Filing these rows BEFORE the waves close also gives gate oracle 2 something to corroborate — the
+gate's own error text recommends exactly this, and it is why editor waves 100–115 all needed
+`TBD_GATE_BASE_CONFIRM`.
+
+| Wave | Theme | Tickets |
+|---|---|---|
+| **127** | **Silent corruption and false success — run this first** | T-775 T-753 T-773 |
+| 128 | The two hand-rolled engines that fail open, and the half-blind census | T-764 T-735 T-774 |
+| 129 | Affordances that lie: dead clicks, hollow pins, unnamed refusals | T-754 T-759 T-737 |
+| 130 | **Prerequisite T-723** + the marker render lane + the windowing box | T-723 T-760 T-769 |
+| 131 | Seams whose absence forced duplicated vocabularies | T-762 T-767 T-746 |
+| 132 | What the UI claims about itself | T-771 T-758 T-765 |
+| 133 | Failure arms, clearing mutators, formatter corners | T-750 T-766 T-756 |
+| 134 | Pins that do not constrain what they narrate | T-736 T-755 T-776 |
+| 135 | Modal lifecycle, shared primitives, duplicate schema embeds | T-744 T-751 T-757 |
+| 136 | History tails, panel lifecycle, residue | T-745 T-761 T-763 |
+| 137 | Overclaims and small honesty fixes | T-741 T-749 T-772 |
+| 138 | **Factory infrastructure** and the stale record | T-742 T-752 T-739 |
+| 139 | **Prerequisite T-732** + the vacuous-pass tripwire + T-726 | T-732 T-747 T-726 |
+| 140 | Work that was blocked until 130/139 landed | T-770 T-768 T-740 |
+| 141 | The two scope gaps needing 130's lane | T-748 T-738 |
+
+**Sequencing that is load-bearing, not cosmetic:**
+- **T-723 (w130) must precede T-768 (w140)** — T-768 is the connect gesture's pointer half, and
+  building it on the un-fixed armed-pointerup path inherits every one of that path's defects.
+- **T-732 (w139) must precede T-770 (w140)** — T-770's receipt cannot measure the document until
+  the write path returns an acknowledgement.
+- **T-760 (w130) must precede T-748 (w141)** — both need the same `draw_order.rs` lane and the same
+  `mission_history.rs` rebind tail. T-069 and T-672 independently established that a lane fed only
+  from a slice's own owns goes stale after undo/redo/restore, which is why the feed comes first.
+- **T-754 (w129) before T-758 (w132)** — fixing the a11y of rows that are still dead clicks makes
+  the view honest but no more useful.
+
+**NOT PACKED — operator decisions, not defects with a known fix:**
+- **T-743** — paste-at-original lands 20 m off. Three paths: re-scope the row, add an
+  exact-coordinate variant, or change `PASTE_NUDGE` and accept the golden-test churn (the nudge is
+  byte-parity with the JS oracle). Three artifacts state the wrong fact either way.
+- **T-742** — the shared `CARGO_TARGET_DIR` is load-bearing for disk (~4 GB shared vs ~44 GB each).
+  Packed at w138 as a fix, but the *approach* is yours.
+- **T-752** — clean the five clippy findings and add `--all-targets`, or record deliberately that
+  test-target lints are out of scope for the frontend.
+- **The player-cap question** from T-694: slot count vs filled players vs the 128 server cap.
+
 ## Deferred tickets filed by verifiers
 
 - **T-774** (W119/MAJOR-1) ⚠️ **The census T-703 built to fix "2 of 11 listeners" itself sees

@@ -511,3 +511,55 @@
 125	T-685	Zones become volumes: min/max height, attacker and defender counts, starting owner	apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneVolume.c
 126	T-689	Play-area enforcement gains a vehicle-class axis: the aircraft exemption	apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c
 126	T-705	Player gadget flags — map, compass, watch, GPS, radio	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c
+
+# ── REMEDIATION PROGRAM (waves 127-141) — filed by the wave 112-119 adversarial verifiers.
+#    Authored 2026-08-07, NOT DISPATCHED. 44 tickets: T-735..T-776 filed this run, plus
+#    prerequisites T-723 (gesture machine), T-726 (Esc pile-up), T-732 (atomic batch API).
+#    3-wide, zero intra-wave owns collisions (verified mechanically, not by eye).
+#    NUMBERING DOES NOT FORCE ORDER: these sit clear of the PARKED mod half at 121-126.
+#    The operator chooses whether remediation runs before or after that half.
+#    T-743 is deliberately absent — it is an operator decision, not a defect with a fix.
+127	T-775	Focusing and leaving a coordinate field rounds away authored precision, and the nudge inherits it	apps/website/frontend/src/attributes.rs; apps/website/frontend/src/editor_ops.rs
+127	T-753	Flow defaults exist twice across crates with no pin — drift ships green	crates/map-engine-core/src/mission/flatten.rs; apps/website/frontend/src/eden_env.rs
+127	T-773	Server Intel's copy button reports success over a clipboard write it never confirmed	apps/website/frontend/src/server_intel.rs; apps/website/frontend/src/mission_commands.rs
+128	T-764	Asset-search regex engine overflows the wasm stack — the budget bounds steps, not depth	apps/website/frontend/src/asset_catalog.rs
+128	T-735	Loadout import schema checker fails OPEN in three forms; its guard pin is blind to all three	apps/website/frontend/src/arsenal_rules.rs
+128	T-774	The keybinding census misses 2 of 13 editor-surface listeners — the defect it fixed, one level up	apps/website/frontend/src/eden_help.rs
+129	T-754	Aggregated settings rows look clickable and are not — click-through is undelivered for every owned row	apps/website/frontend/src/eden_settings.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/eden_dock_right.rs
+129	T-759	T-696's headline source pins are hollow — they match their own test source	apps/website/frontend/src/eden_dock_left.rs
+129	T-737	Import refusals drop RowError.key, so the author cannot tell which row failed	apps/website/frontend/src/arsenal.rs
+130	T-723	Armed-placement pointerup: one root, three defects — button filter + gesture cleanup + real click-then-click	apps/website/frontend/src/select_tool.rs; apps/website/frontend/src/mission_editor.rs
+130	T-760	Markers draw nothing on the map — RIGHT-MODE-006 is at best half-closed and untracked	crates/map-engine-render/src/draw_order.rs; crates/map-engine-render/src/engine.rs; apps/website/frontend/src/mission_history.rs
+130	T-769	The dock tree still scrolls in a fixed 420px box, and the comment excusing it is false	apps/website/frontend/src/eden_tree.rs; tools/tbd-tools/src/smokes.rs
+131	T-762	fly_to rides the T-166 smoke hook in production and every failure mode is silent	apps/website/frontend/src/world_assets/mod.rs; apps/website/frontend/src/eden_dock_left.rs
+131	T-767	Wave-117 residue: stale formation prose, and a private-module re-export that forces a duplicate vocabulary	crates/map-engine-core/src/doc/mod.rs; packages/tbd-schema/schema/mission.schema.json
+131	T-746	ShapeMirror has no single-flight between the open-GET and an in-flight game_mode PATCH	apps/website/frontend/src/eden_settings.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/mission_commands.rs
+132	T-771	The Attributes multi-select banner is now false for the three loadout-buffer verbs	apps/website/frontend/src/attributes.rs; apps/website/frontend/src/mission_editor.rs
+132	T-758	Aggregated-settings a11y: mission-owned rows are inert focusable buttons	apps/website/frontend/src/eden_settings.rs
+132	T-765	Glob case-folding is asymmetric between pattern and haystack	apps/website/frontend/src/asset_catalog.rs
+133	T-750	Favourites tab dead-ends in 'Resolving...' forever when the registry fetch fails	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/eden_dock_right.rs
+133	T-766	Clearing a briefing leaves the export envelope carrying the deleted text for the rest of the session	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/eden_settings.rs
+133	T-756	Scale readout formatter corners: non-finite prints a confident number, band-top carries to 4 sig figs	apps/website/frontend/src/eden_toolbelt.rs
+134	T-736	Two wave-112 pins do not constrain what they claim (spelling blacklist; tail-in-loop blind)	apps/website/frontend/src/arsenal.rs; apps/website/frontend/src/mission_editor.rs
+134	T-755	Wave-115 residue: three pins narrower than the claims they narrate	apps/website/frontend/src/eden_settings.rs; apps/website/frontend/src/eden_toolbelt.rs; apps/website/frontend/src/eden_top_strip.rs
+134	T-776	Wave-119 residue: four census guards weaker than they read, and one mislabelled hit row	apps/website/frontend/src/eden_help.rs; apps/website/frontend/src/eden_dock_left.rs
+135	T-744	Hiding a slot silently closes its open Attributes modal, indistinguishable from undo-away	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/attributes.rs
+135	T-751	Wave-114 residue: four small honesty and pin-strength gaps	apps/website/frontend/src/ui.rs; apps/website/frontend/src/eden_dock_right.rs; crates/map-engine-core/src/mission/compile.rs
+135	T-757	mission.schema.json is embedded twice in the wasm bundle	apps/website/frontend/src/eden_zones.rs; apps/website/frontend/src/eden_settings.rs
+136	T-745	attrs_update_slot (single-target) fires the history tail unconditionally	apps/website/frontend/src/editor_ops.rs
+136	T-761	Compile findings survive a mission switch — mission B's panel shows mission A's build report	apps/website/frontend/src/validation_panel.rs; apps/website/frontend/src/mission_editor.rs
+136	T-763	Wave-116 residue: a false decoy claim to strike, plus three small gaps	apps/website/frontend/src/missions.rs; apps/website/frontend/src/eden_dock_right.rs; crates/map-engine-core/src/doc/store.rs
+137	T-741	Multi-edit overclaims its scope on mixed slot+vehicle selections	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/attributes.rs
+137	T-749	T-633's settle-only rationale is false in prose and one test comment overclaims	apps/website/frontend/src/eden_top_strip.rs
+137	T-772	The ControlsHint close button's hit box shrank with the shared BTN_ICON change	apps/website/frontend/src/eden_help.rs
+138	T-742	Concurrent slice worktrees share CARGO_TARGET_DIR and can execute each other's test binary	scripts/platform/wave.sh; docs/platform/EDITOR_SLICE_BRIEF.md
+138	T-752	clippy --all-targets is red on main and neither the wave gate nor CI looks at it	Makefile; apps/website/frontend/src/eden_layout.rs; apps/website/frontend/src/eden_tree.rs
+138	T-739	Drifted line cites, one of which states now-inverted behaviour	docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/arsenal.rs
+139	T-732	Atomic batch mutations: one undo step for multi-entity ops (third instance of the family)	crates/map-engine-core/src/doc/store.rs
+139	T-747	A bare `cargo test -p map-engine-core` is a vacuous pass — the doc tests are feature-gated	crates/map-engine-core/src/lib.rs; docs/platform/EDITOR_FACTORY_START.md
+139	T-726	Window-Esc pile-up: route every Esc listener through the modal stack	apps/website/frontend/src/mission_editor.rs
+140	T-770	commit_writes counts closure calls, not sink acknowledgements, so its warning arm is unreachable	apps/website/frontend/src/arsenal.rs; crates/map-engine-core/src/doc/store.rs
+140	T-768	CONN-START-001's pointer half is deferred behind T-723's broken armed-pointerup path	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/context_menu.rs
+140	T-740	Help table prose miscounts the bindings and mislabels the redo chord	apps/website/frontend/src/eden_help.rs
+141	T-748	PLACE-COMMENT-001 does not fully close: comments have no map glyph and cannot be composed	crates/map-engine-render/src/draw_order.rs; crates/map-engine-render/src/engine.rs; apps/website/frontend/src/mission_history.rs
+141	T-738	Help census is blind to ev.key() listeners — Escape is bound in at least three places it cannot see	apps/website/frontend/src/eden_help.rs
