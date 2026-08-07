@@ -979,6 +979,531 @@ pub fn cargo_unworn_container_errors(
     errs
 }
 
+/* ═════ T-686 — checking a document against the SHIPPED `loadout-export.schema.json` ═════ */
+
+/// The bytes of `packages/tbd-schema/schema/loadout-export.schema.json`, compiled in.
+///
+/// `include_str!` and **not** a transcription of the rules, for the same reason
+/// `arsenal::tests::export_schema` reads the file rather than restating it: the defect T-199 fixed
+/// was a writer checked against somebody's *reading* of the schema. An importer carrying its own
+/// hand-copied rule list would reproduce that failure one layer down, and would drift silently the
+/// first time the schema gains a required key or closes another object. This is a **read** of a
+/// file this module does not own — nothing here writes it, and the build breaks loudly if it moves.
+///
+/// Compiled in rather than fetched because the check has to work in the browser, where there is no
+/// filesystem: the schema the importer enforces and the schema the repo ships are then the same
+/// bytes by construction, not by deployment discipline.
+pub const LOADOUT_EXPORT_SCHEMA_JSON: &str =
+    include_str!("../../../../packages/tbd-schema/schema/loadout-export.schema.json");
+
+/// Every JSON Schema keyword this checker implements, plus the annotations it may ignore.
+///
+/// The list is a **guard, not documentation**: a keyword outside it is reported as a refusal
+/// (see [`validate_against_loadout_export_schema`]), so the day the schema grows a `pattern`,
+/// `maxItems` or `uniqueItems` the importer stops accepting documents it only partly checked
+/// instead of quietly waving them through. That "reports success over an input it never examined"
+/// failure is this repo's signature defect; here it is designed out.
+const SUPPORTED_SCHEMA_KEYWORDS: &[&str] = &[
+    // annotations — no effect on validity
+    "$schema",
+    "$id",
+    "title",
+    "description",
+    "$defs",
+    // implemented assertions
+    "$ref",
+    "oneOf",
+    "type",
+    "const",
+    "enum",
+    "required",
+    "properties",
+    "patternProperties",
+    "additionalProperties",
+    "items",
+    "minLength",
+    "minimum",
+];
+
+/// How many refusals to carry back. A malformed document can fail every key it has; the author
+/// needs the first handful to act, not a wall.
+const MAX_SCHEMA_FAULTS: usize = 12;
+
+/// Validate `doc` against the shipped `loadout-export.schema.json`.
+///
+/// `Ok(())` means the document satisfies exactly one of the schema's two `oneOf` branches. `Err`
+/// carries the reasons, in author-readable form, each pointing at the path that failed.
+///
+/// **Fails closed, in three places.** A `$ref` that cannot be resolved, a key pattern the matcher
+/// cannot evaluate ([`anchored_pattern_matches`]) and a keyword outside
+/// [`SUPPORTED_SCHEMA_KEYWORDS`] are all *refusals*, never skipped checks — because the alternative
+/// is an importer that says "valid" about a constraint it never read.
+pub fn validate_against_loadout_export_schema(doc: &serde_json::Value) -> Result<(), Vec<String>> {
+    let root: serde_json::Value = match serde_json::from_str(LOADOUT_EXPORT_SCHEMA_JSON) {
+        Ok(v) => v,
+        Err(e) => {
+            return Err(vec![format!(
+                "the shipped loadout-export schema did not parse ({e}) — refusing to import against a rule set this build cannot read"
+            )])
+        }
+    };
+    let mut out = Vec::new();
+    check_schema_node(&root, &root, doc, "", &mut out);
+    if out.is_empty() {
+        return Ok(());
+    }
+    let total = out.len();
+    if total > MAX_SCHEMA_FAULTS {
+        out.truncate(MAX_SCHEMA_FAULTS);
+        out.push(format!(
+            "…and {} more schema fault(s).",
+            total - MAX_SCHEMA_FAULTS
+        ));
+    }
+    Err(out)
+}
+
+/// `#/a/b`-style local pointer resolution. `None` = a `$ref` this checker will not follow (remote,
+/// or a pointer into nothing), which the caller turns into a refusal.
+fn schema_deref<'a>(
+    root: &'a serde_json::Value,
+    node: &'a serde_json::Value,
+) -> Option<&'a serde_json::Value> {
+    let Some(r) = node.get("$ref").and_then(serde_json::Value::as_str) else {
+        return Some(node);
+    };
+    let mut cur = root;
+    for seg in r.strip_prefix("#/")?.split('/') {
+        cur = cur.get(seg)?;
+    }
+    Some(cur)
+}
+
+/// The path label a fault is reported under — `""` is the document itself.
+fn schema_at(path: &str) -> &str {
+    if path.is_empty() {
+        "document"
+    } else {
+        path
+    }
+}
+
+/// The JSON type name of a value, in the schema's own vocabulary.
+fn schema_type_of(v: &serde_json::Value) -> &'static str {
+    match v {
+        serde_json::Value::Null => "null",
+        serde_json::Value::Bool(_) => "boolean",
+        serde_json::Value::Number(n) => {
+            if n.is_i64() || n.is_u64() {
+                "integer"
+            } else {
+                "number"
+            }
+        }
+        serde_json::Value::String(_) => "string",
+        serde_json::Value::Array(_) => "array",
+        serde_json::Value::Object(_) => "object",
+    }
+}
+
+/// Does `doc` satisfy a single `type` name? `number` admits integers (JSON Schema's rule); the
+/// reverse is deliberately NOT true — `qty: 1.5` is not an integer here and must not pass.
+fn schema_type_matches(name: &str, doc: &serde_json::Value) -> bool {
+    match name {
+        "number" => doc.is_number(),
+        other => schema_type_of(doc) == other,
+    }
+}
+
+fn check_schema_node(
+    root: &serde_json::Value,
+    node: &serde_json::Value,
+    doc: &serde_json::Value,
+    path: &str,
+    out: &mut Vec<String>,
+) {
+    // A 2020-12 `$ref` applies *alongside* its siblings. This checker replaces the node with its
+    // target, so a `$ref` carrying a real assertion beside it would have that assertion dropped —
+    // an unexamined constraint, i.e. the failure mode this whole module is built to refuse.
+    if let Some(map) = node.as_object() {
+        if map.contains_key("$ref") {
+            let extra: Vec<&str> = map
+                .keys()
+                .map(String::as_str)
+                .filter(|k| !matches!(*k, "$ref" | "description" | "title"))
+                .collect();
+            if !extra.is_empty() {
+                out.push(format!(
+                    "{}: the schema puts {} beside a $ref, which this importer would drop — refusing rather than skipping the check",
+                    schema_at(path),
+                    extra.join(", ")
+                ));
+                return;
+            }
+        }
+    }
+    let Some(node) = schema_deref(root, node) else {
+        out.push(format!(
+            "{}: the schema uses a $ref this importer cannot resolve — refusing rather than skipping the check",
+            schema_at(path)
+        ));
+        return;
+    };
+    let Some(map) = node.as_object() else {
+        return;
+    };
+
+    for key in map.keys() {
+        if !SUPPORTED_SCHEMA_KEYWORDS.contains(&key.as_str()) {
+            out.push(format!(
+                "{}: the shipped schema uses `{key}`, which this importer does not implement — refusing rather than accepting a document it only partly checked",
+                schema_at(path)
+            ));
+        }
+    }
+
+    // A type mismatch makes every other keyword at this node noise, so it short-circuits.
+    if let Some(t) = map.get("type") {
+        let names: Vec<&str> = match t {
+            serde_json::Value::String(s) => vec![s.as_str()],
+            serde_json::Value::Array(a) => a.iter().filter_map(serde_json::Value::as_str).collect(),
+            _ => Vec::new(),
+        };
+        if !names.is_empty() && !names.iter().any(|n| schema_type_matches(n, doc)) {
+            out.push(format!(
+                "{}: expected {}, found {}",
+                schema_at(path),
+                names.join(" or "),
+                schema_type_of(doc)
+            ));
+            return;
+        }
+    }
+    if let Some(c) = map.get("const") {
+        if doc != c {
+            out.push(format!("{}: must be {c}, found {doc}", schema_at(path)));
+        }
+    }
+    if let Some(e) = map.get("enum").and_then(serde_json::Value::as_array) {
+        if !e.contains(doc) {
+            out.push(format!(
+                "{}: {doc} is outside the closed vocabulary {}",
+                schema_at(path),
+                serde_json::Value::Array(e.clone())
+            ));
+        }
+    }
+    if let (Some(m), Some(s)) = (
+        map.get("minLength").and_then(serde_json::Value::as_u64),
+        doc.as_str(),
+    ) {
+        if (s.chars().count() as u64) < m {
+            out.push(format!(
+                "{}: must be at least {m} character(s), found {}",
+                schema_at(path),
+                s.chars().count()
+            ));
+        }
+    }
+    if let (Some(m), Some(n)) = (
+        map.get("minimum").and_then(serde_json::Value::as_f64),
+        doc.as_f64(),
+    ) {
+        if n < m {
+            out.push(format!(
+                "{}: must be at least {m}, found {n}",
+                schema_at(path)
+            ));
+        }
+    }
+    if let Some(branches) = map.get("oneOf").and_then(serde_json::Value::as_array) {
+        check_schema_one_of(root, branches, doc, path, out);
+    }
+    if let Some(items) = map.get("items") {
+        for (i, v) in doc.as_array().into_iter().flatten().enumerate() {
+            check_schema_node(root, items, v, &format!("{path}/{i}"), out);
+        }
+    }
+    if let Some(fields) = doc.as_object() {
+        check_schema_object(root, map, fields, path, out);
+    }
+}
+
+/// `required` + `properties` + `patternProperties` + the `additionalProperties: false` closure.
+fn check_schema_object(
+    root: &serde_json::Value,
+    schema: &serde_json::Map<String, serde_json::Value>,
+    doc: &serde_json::Map<String, serde_json::Value>,
+    path: &str,
+    out: &mut Vec<String>,
+) {
+    for req in schema
+        .get("required")
+        .and_then(serde_json::Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let Some(k) = req.as_str() else { continue };
+        if !doc.contains_key(k) {
+            out.push(format!("{}: missing required key `{k}`", schema_at(path)));
+        }
+    }
+    let props = schema
+        .get("properties")
+        .and_then(serde_json::Value::as_object);
+    let patterns = schema
+        .get("patternProperties")
+        .and_then(serde_json::Value::as_object);
+    let closed = schema.get("additionalProperties") == Some(&serde_json::Value::Bool(false));
+    for (k, v) in doc {
+        let child = format!("{path}/{k}");
+        let mut matched = false;
+        if let Some(spec) = props.and_then(|p| p.get(k)) {
+            matched = true;
+            check_schema_node(root, spec, v, &child, out);
+        }
+        for (pattern, spec) in patterns.into_iter().flatten() {
+            match anchored_pattern_matches(pattern, k) {
+                Some(true) => {
+                    matched = true;
+                    check_schema_node(root, spec, v, &child, out);
+                }
+                Some(false) => {}
+                None => out.push(format!(
+                    "{child}: the schema's key pattern `{pattern}` uses a construct this importer cannot evaluate — refusing rather than skipping the check"
+                )),
+            }
+        }
+        if closed && !matched {
+            out.push(format!(
+                "{}: `{k}` is not in the schema and additionalProperties is false",
+                schema_at(path)
+            ));
+        }
+    }
+}
+
+/// `oneOf` with the schema's own `loadoutVersion` const as the discriminator.
+///
+/// A generic `oneOf` failure ("none of 2 branches matched") is useless to an author, because it
+/// hands back both branches' complaints and half of them are about the version they did not write.
+/// So when every branch fails, this reports the branch whose `loadoutVersion` const the document
+/// actually claims — and when it claims none of them, says exactly that instead.
+fn check_schema_one_of(
+    root: &serde_json::Value,
+    branches: &[serde_json::Value],
+    doc: &serde_json::Value,
+    path: &str,
+    out: &mut Vec<String>,
+) {
+    let per_branch: Vec<Vec<String>> = branches
+        .iter()
+        .map(|b| {
+            let mut errs = Vec::new();
+            check_schema_node(root, b, doc, path, &mut errs);
+            errs
+        })
+        .collect();
+    let passing = per_branch.iter().filter(|e| e.is_empty()).count();
+    if passing == 1 {
+        return;
+    }
+    if passing > 1 {
+        // Not reachable with the shipped schema (the version const separates the branches), but a
+        // schema edit could make it so, and "matched two mutually exclusive shapes" is a real fault.
+        out.push(format!(
+            "{}: the document satisfies {passing} mutually exclusive schema branches",
+            schema_at(path)
+        ));
+        return;
+    }
+    let claimed = doc.get("loadoutVersion");
+    let hit = branches.iter().position(|b| {
+        claimed.is_some() && b.pointer("/properties/loadoutVersion/const") == claimed
+    });
+    if let Some(i) = hit {
+        out.extend(per_branch[i].iter().cloned());
+        return;
+    }
+    let versions: Vec<String> = branches
+        .iter()
+        .filter_map(|b| b.pointer("/properties/loadoutVersion/const"))
+        .map(|v| v.to_string())
+        .collect();
+    if versions.is_empty() {
+        // The schema stopped discriminating on version — report everything rather than nothing.
+        out.extend(per_branch.into_iter().flatten());
+        return;
+    }
+    out.push(format!(
+        "{}: `loadoutVersion` must be one of {} — this is not a loadout-export document",
+        schema_at(path),
+        versions.join(" / ")
+    ));
+}
+
+/* ───── the tiny anchored-pattern matcher `patternProperties` needs ───── */
+
+/// One term of a parsed pattern: a character class with a repetition range.
+struct PatTerm {
+    negated: bool,
+    ranges: Vec<(char, char)>,
+    min: usize,
+    max: usize,
+}
+
+/// Terms beyond this, and the backtracking below stops being obviously cheap. The shipped schema
+/// uses two; a pattern needing nine is a pattern this matcher should refuse rather than run.
+const MAX_PATTERN_TERMS: usize = 8;
+
+/// Keys longer than this are not evaluated at all. A 512-character JSON key is not loadout data,
+/// and refusing beats spending unbounded backtracking on it.
+const MAX_PATTERN_INPUT: usize = 512;
+
+/// Match `text` against an **anchored** regex from the subset `loadout-export.schema.json` uses:
+/// `^`, `$`, character classes (`[a-zA-Z0-9_]`, `[^…]`), single literal characters, and the
+/// quantifiers `{m,n}` / `{m,}` / `{m}` / `*` / `+` / `?`.
+///
+/// * `Some(true)` / `Some(false)` — the pattern was fully evaluated.
+/// * **`None` — the pattern uses a construct this matcher does not implement, and the caller must
+///   REFUSE.** That is the whole point of the third return value: a pattern we cannot evaluate is
+///   not a pattern we may ignore. Alternation, groups, `.`, backslash escapes and unanchored
+///   patterns all land here.
+///
+/// A full regex engine is not the right answer for one `patternProperties` entry, and pretending
+/// the pattern is a rubber stamp is how mod-added wear keys would smuggle themselves past a closed
+/// object. This is the honest middle: evaluate what it can, refuse what it cannot.
+pub fn anchored_pattern_matches(pattern: &str, text: &str) -> Option<bool> {
+    let terms = parse_anchored_pattern(pattern)?;
+    let chars: Vec<char> = text.chars().collect();
+    if chars.len() > MAX_PATTERN_INPUT {
+        return None;
+    }
+    Some(match_pattern_terms(&terms, &chars))
+}
+
+fn parse_anchored_pattern(pattern: &str) -> Option<Vec<PatTerm>> {
+    let cs: Vec<char> = pattern.chars().collect();
+    if cs.first() != Some(&'^') || cs.last() != Some(&'$') || cs.len() < 2 {
+        return None; // unanchored — this matcher makes no claim about partial matches.
+    }
+    let end = cs.len() - 1;
+    let mut i = 1usize;
+    let mut terms: Vec<PatTerm> = Vec::new();
+    while i < end {
+        let (negated, ranges) = match cs[i] {
+            '[' => {
+                let mut j = i + 1;
+                let negated = cs.get(j) == Some(&'^');
+                if negated {
+                    j += 1;
+                }
+                let mut ranges: Vec<(char, char)> = Vec::new();
+                loop {
+                    let c = *cs.get(j)?; // unterminated class
+                    if c == ']' {
+                        break;
+                    }
+                    if c == '\\' {
+                        return None; // escapes: not implemented
+                    }
+                    if cs.get(j + 1) == Some(&'-') && cs.get(j + 2).is_some_and(|e| *e != ']') {
+                        let hi = *cs.get(j + 2)?;
+                        if hi == '\\' {
+                            return None;
+                        }
+                        ranges.push((c, hi));
+                        j += 3;
+                    } else {
+                        ranges.push((c, c));
+                        j += 1;
+                    }
+                }
+                if ranges.is_empty() {
+                    return None;
+                }
+                i = j + 1;
+                (negated, ranges)
+            }
+            c if c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | ' ' | '/' | ':') => {
+                i += 1;
+                (false, vec![(c, c)])
+            }
+            // `.`, `(`, `|`, `\`, `^`, `$` mid-pattern, and anything else: not implemented.
+            _ => return None,
+        };
+        let (min, max) = match cs.get(i) {
+            Some('{') => {
+                let mut j = i + 1;
+                let mut inner = String::new();
+                while j < end && cs[j] != '}' {
+                    inner.push(cs[j]);
+                    j += 1;
+                }
+                if cs.get(j) != Some(&'}') {
+                    return None;
+                }
+                i = j + 1;
+                match inner.split_once(',') {
+                    None => {
+                        let n: usize = inner.parse().ok()?;
+                        (n, n)
+                    }
+                    Some((lo, "")) => (lo.parse().ok()?, usize::MAX),
+                    Some((lo, hi)) => (lo.parse().ok()?, hi.parse().ok()?),
+                }
+            }
+            Some('*') => {
+                i += 1;
+                (0, usize::MAX)
+            }
+            Some('+') => {
+                i += 1;
+                (1, usize::MAX)
+            }
+            Some('?') => {
+                i += 1;
+                (0, 1)
+            }
+            _ => (1, 1),
+        };
+        if min > max || terms.len() == MAX_PATTERN_TERMS {
+            return None;
+        }
+        terms.push(PatTerm {
+            negated,
+            ranges,
+            min,
+            max,
+        });
+    }
+    Some(terms)
+}
+
+fn pat_class_matches(t: &PatTerm, ch: char) -> bool {
+    t.ranges.iter().any(|(lo, hi)| ch >= *lo && ch <= *hi) != t.negated
+}
+
+/// Greedy match with backtracking. Bounded by [`MAX_PATTERN_TERMS`] and [`MAX_PATTERN_INPUT`].
+fn match_pattern_terms(terms: &[PatTerm], text: &[char]) -> bool {
+    let Some((t, rest)) = terms.split_first() else {
+        return text.is_empty();
+    };
+    let mut n = 0usize;
+    while n < text.len() && n < t.max && pat_class_matches(t, text[n]) {
+        n += 1;
+    }
+    loop {
+        if n >= t.min && match_pattern_terms(rest, &text[n..]) {
+            return true;
+        }
+        if n == 0 || n - 1 < t.min {
+            return false;
+        }
+        n -= 1;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1621,5 +2146,137 @@ mod tests {
                 "unworn wording must not promise a failure it cannot see: {overclaim}"
             );
         }
+    }
+
+    /* ═════════ T-686 — the schema subset checker the importer runs on ═════════ */
+
+    /// The pattern the shipped schema actually uses must be one this matcher can EVALUATE.
+    /// If it ever cannot, every wear key becomes a refusal — so this failing is the early warning
+    /// that the matcher has to grow, not a cosmetic nit.
+    #[test]
+    fn the_shipped_wear_key_pattern_is_evaluable_and_correct() {
+        let schema: serde_json::Value = serde_json::from_str(LOADOUT_EXPORT_SCHEMA_JSON).unwrap();
+        let v2 = schema["oneOf"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|b| b["properties"]["loadoutVersion"]["const"] == "2")
+            .expect("a v2 branch");
+        let patterns = v2["properties"]["wear"]["patternProperties"]
+            .as_object()
+            .expect("wear is pattern-keyed");
+        assert_eq!(patterns.len(), 1);
+        let pattern = patterns.keys().next().unwrap();
+
+        // Every canonical engine key the Arsenal writes.
+        for k in WEAR_PICK_KEYS {
+            assert_eq!(
+                anchored_pattern_matches(pattern, k),
+                Some(true),
+                "canonical wear key `{k}` must satisfy the shipped pattern"
+            );
+        }
+        // …and the shapes it is there to keep out.
+        for bad in ["", "chest rig", "9lives", "_leading", "vest!", "a b"] {
+            assert_eq!(
+                anchored_pattern_matches(pattern, bad),
+                Some(false),
+                "`{bad}` must not satisfy the shipped pattern"
+            );
+        }
+        // 64 chars is the ceiling (1 + {0,63}); 65 is not.
+        let long = format!("a{}", "b".repeat(63));
+        assert_eq!(anchored_pattern_matches(pattern, &long), Some(true));
+        assert_eq!(
+            anchored_pattern_matches(pattern, &format!("{long}c")),
+            Some(false)
+        );
+    }
+
+    /// A pattern this matcher cannot evaluate must answer `None` — "refuse", never "pass".
+    /// The whole schema gate rests on that: a constraint we cannot read is not a constraint we
+    /// may ignore.
+    #[test]
+    fn an_unsupported_pattern_refuses_rather_than_waving_through() {
+        for unsupported in [
+            "[a-z]+",       // unanchored
+            "^(a|b)$",      // alternation
+            "^a.c$",        // any-char
+            r"^\d+$",       // escape class
+            "^[a-z$",       // unterminated class
+            "^[]$",         // empty class
+            "^a{3,2}$",     // inverted range
+            "^[a-z]{2,x}$", // unparseable quantifier
+        ] {
+            assert_eq!(
+                anchored_pattern_matches(unsupported, "abc"),
+                None,
+                "`{unsupported}` must refuse, not guess"
+            );
+        }
+        // The quantifiers it does implement, evaluated rather than refused.
+        assert_eq!(anchored_pattern_matches("^[ab]*$", "abba"), Some(true));
+        assert_eq!(anchored_pattern_matches("^[ab]+c$", "c"), Some(false));
+        assert_eq!(anchored_pattern_matches("^[ab]?c$", "ac"), Some(true));
+        assert_eq!(anchored_pattern_matches("^[a-c]{2}$", "ab"), Some(true));
+        assert_eq!(anchored_pattern_matches("^[a-c]{2}$", "abc"), Some(false));
+        assert_eq!(anchored_pattern_matches("^[^0-9]+$", "abc"), Some(true));
+        assert_eq!(anchored_pattern_matches("^[^0-9]+$", "ab1"), Some(false));
+        // Greedy-with-backtracking: the trailing literal must be reachable.
+        assert_eq!(
+            anchored_pattern_matches("^[a-z]{1,4}z$", "abcz"),
+            Some(true)
+        );
+        // An absurd key is refused rather than evaluated (the MAX_PATTERN_INPUT bound).
+        assert_eq!(
+            anchored_pattern_matches("^[a-z]*$", &"a".repeat(MAX_PATTERN_INPUT + 1)),
+            None
+        );
+    }
+
+    /// The keyword guard: if the schema grows an assertion this checker does not implement, the
+    /// importer must REFUSE, not silently accept a document it only partly examined.
+    #[test]
+    fn an_unimplemented_keyword_is_a_refusal_not_a_shrug() {
+        // Sanity: the shipped schema uses nothing outside the supported set, so a real document
+        // passes. (If this half fails, the other half is what tells you why.)
+        let doc = serde_json::json!({
+            "loadoutVersion": "1",
+            "modpackId": "mp",
+            "gear": {"primary": null, "uniform": null, "vest": null, "helmet": null},
+        });
+        assert!(validate_against_loadout_export_schema(&doc).is_ok());
+
+        // Every keyword the shipped file actually uses is declared supported — a `$defs` entry
+        // gaining `maxItems` tomorrow must go red here rather than pass unchecked.
+        let schema: serde_json::Value = serde_json::from_str(LOADOUT_EXPORT_SCHEMA_JSON).unwrap();
+        let mut stack = vec![&schema];
+        let mut seen = 0usize;
+        while let Some(node) = stack.pop() {
+            match node {
+                serde_json::Value::Object(m) => {
+                    // Only schema positions carry keywords; `properties`/`$defs` maps carry names.
+                    let is_schema = m
+                        .keys()
+                        .any(|k| SUPPORTED_SCHEMA_KEYWORDS.contains(&k.as_str()));
+                    if is_schema {
+                        seen += 1;
+                        for k in m.keys() {
+                            assert!(
+                                SUPPORTED_SCHEMA_KEYWORDS.contains(&k.as_str()),
+                                "the shipped schema uses `{k}`, which the importer does not implement"
+                            );
+                        }
+                    }
+                    stack.extend(m.values());
+                }
+                serde_json::Value::Array(a) => stack.extend(a.iter()),
+                _ => {}
+            }
+        }
+        assert!(
+            seen > 10,
+            "the walk must actually have reached the schema nodes ({seen})"
+        );
     }
 }
