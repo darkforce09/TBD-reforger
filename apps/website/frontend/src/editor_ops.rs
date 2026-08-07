@@ -1290,6 +1290,18 @@ pub fn attrs_locked_count(ids: &[String]) -> usize {
 /// question as "did anything change": a refused write still bumped `doc_ver`, marked the mission
 /// DIRTY and armed a persist for an edit that never happened. The UI half of F-7 is the disabled
 /// affordance the modal draws from [`attrs_locked_count`]; this is the state half.
+///
+/// **T-775 — "did the number change?" is answered by the FIELD, not here, and that is deliberate.**
+/// This function has no equality skip: `did` means "the core did not refuse the slot", so every call
+/// that reaches it rewrites `position` and fires `after_local_edit()`. That made a focus/blur on an
+/// untouched coordinate a real edit — a dirty mission, an armed persist and an undo step for
+/// nothing. The guard belongs at `attributes::number_field`'s `commit`, which is the only place that
+/// knows the settled value the operator started from.
+///
+/// It is not merely convenient to guard there, it is the only correct place: an `x`-only call is NOT
+/// a no-op just because `x` is unchanged. `update_slot_position` terrain-follows on any x/y write
+/// (`pz = 0.0` when `z` is `None`, DEM re-sampled JS-side), so "same x" and "same document" are
+/// different questions at this layer and an equality skip here would suppress a legitimate re-follow.
 pub fn attrs_update_position(
     id: &str,
     x: Option<f64>,
