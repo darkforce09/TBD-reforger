@@ -359,6 +359,35 @@ pub fn marquee_ids_with_vehicles(
     )
 }
 
+/// T-649 SEL-ALL-001 — every slot + placed vehicle **currently on screen**, for Ctrl/Cmd+A.
+///
+/// Eden scopes Select All to the VIEWPORT, not to the whole mission, so this is a viewport-rect
+/// query and NOT a "hand back `soa.ids`" shortcut — an entity parked off-screen is not selected.
+/// The rect is the whole canvas, so it is the marquee gesture with its two corners pinned to the
+/// container instead of to a pointer: unproject the top-left CSS pixel `(0, 0)` against `cam` for
+/// the start corner, then hand [`marquee_ids_with_vehicles`] the bottom-right corner in **pixels**
+/// (that is the shape it already takes — press corner in world, release corner in px). So Ctrl+A
+/// and a marquee dragged corner-to-corner over the whole canvas return the same set by
+/// construction: one primitive, one `pick_rect`, no second definition of "inside the box".
+///
+/// The viewport size comes off the camera itself ([`OrthoCamera::size_px`] — post-`Math.round`,
+/// deck's `|| 1` coercion applied), so the caller cannot pass a rect that disagrees with the
+/// projection the same camera would produce. A singular pixel matrix (NaN unproject) yields the
+/// empty selection, exactly like the marquee.
+#[must_use]
+pub fn view_ids_with_vehicles(
+    cam: &OrthoCamera,
+    soa: &SlotSoa,
+    vehicle_points: &[(String, f64, f64)],
+) -> Vec<String> {
+    let [w, h] = cam.size_px();
+    let tl = cam.unproject_xy(0.0, 0.0);
+    if !tl[0].is_finite() || !tl[1].is_finite() {
+        return Vec::new();
+    }
+    marquee_ids_with_vehicles(cam, soa, vehicle_points, tl[0], tl[1], w, h)
+}
+
 /// Class-S self-check for the marquee (S3 parity, peer of [`pick_selfcheck`]): `PointIndex::pick_rect`
 /// must return the SAME id SET as a brute-force box scan over the same seeded SoA, for a battery of
 /// world boxes (each seed ± a spread of half-extents). Set-equality (sorted handle compare), so
