@@ -3,15 +3,31 @@
 //! MENU-HELP-001).
 //!
 //! **The defect this closes.** The Mission Creator binds twenty-one distinct `KeyboardEvent` codes
-//! across eleven window-level keydown listeners in six editor-surface modules and, before this
+//! across thirteen window-level keydown listeners in eight editor-surface modules and, before this
 //! ticket, documented **none** of them anywhere in the UI: no Help menu, no hint overlay, and
 //! `context_menu`'s `with_shortcut` builder had zero callers. An operator's only route to `G`, `[`,
 //! `]`, `1`, `2`, `E`, `R` or Backspace was reading the Rust source.
 //!
-//! Those three numbers are **derived, not typed**: `the_prose_census_numbers_are_derived` (T-740)
+//! Those four numbers are **derived, not typed**: `the_prose_census_numbers_are_derived` (T-740)
 //! spells the live census counts out in words and asserts this paragraph contains them, because
 //! this sentence has already gone stale twice by being retyped. If you widen what counts as a
-//! binding, the pin tells you the new numbers — it does not let you guess them.
+//! binding, the pin tells you the new numbers — it does not let you guess them. The fourth is the
+//! total the distinct-code count hides: those thirteen listeners carry thirty-four bindings in
+//! total, most of the surplus being the Escape channel. (T-774 settled that one by measurement —
+//! the T-703 slice reported "39" and the wave-119 verifier's parser reported 32; the verifier was
+//! right, and 32 was the count over the eleven-listener input this ticket widened.)
+//!
+//! **T-774 widened the INPUT, which is where the last two lies came from.** T-703 replaced a census
+//! that read two listeners with one that read eleven and called that the editor surface. It was
+//! not: `faction_manager` and `orbat_manager` each install a window-level keydown too, and both are
+//! live whenever the Mission Creator is up (`mission_editor` mounts `FactionManagerDialog` and —
+//! through a bare re-export in `eden_chrome` — `OrbatManagerDialog`, which is why a symbol search
+//! for the component never found the file). Neither was censused and neither was covered by the
+//! scope note, which excuses only `ui`'s `Dialog`/`Sheet` and `layout`'s nav. Nothing was
+//! exploitable — each binds Escape alone, gated on `open.get_untracked()`, and Escape is the
+//! declared shared channel — but both sat outside the growth tripwire, so a key added to either
+//! would have shipped undocumented and collision-unchecked with every pin green. They are in the
+//! surface now, and every number above is derived over the widened input.
 //!
 //! **Why the list cannot drift.** A hand-typed prose list re-creates that defect one file over: it
 //! goes stale the first time a ticket adds an arm, and nothing goes red. So [`SHORTCUTS`] carries
@@ -342,14 +358,15 @@ pub fn ControlsHint(open: RwSignal<bool>) -> impl IntoView {
 /// # What T-738 found, which is the substance
 ///
 /// The old extractor scraped only the two `match ev.code().as_str()` blocks (`mission_editor`'s
-/// editor keydown and `mission_history`'s Ctrl+Z/Y one). The editor binds keys in **nine more
+/// editor keydown and `mission_history`'s Ctrl+Z/Y one). The editor binds keys in **eleven more
 /// window-level listeners** it could not see, all through `ev.key()`: the asset picker, the comment
 /// editor and the connections panel (`mission_editor`), the Attributes modal (`attributes`), the
 /// menus / export dropdown / Save dialog / **Controls Hint** (`eden_top_strip` — T-692's own close
-/// path), the context menu's Escape/arrows/Enter (`context_menu`), and three settings dialogs
-/// (`eden_settings`). A collision test that cannot see half the bindings is the same lie the ticket
-/// exists to kill, so [`listeners`] DISCOVERS every window-level keydown closure in the editor
-/// surface rather than being handed a list of two.
+/// path), the context menu's Escape/arrows/Enter (`context_menu`), three settings dialogs
+/// (`eden_settings`), and — added by T-774, which found the input itself short by two — the Faction
+/// Manager (`faction_manager`) and the ORBAT Manager (`orbat_manager`). A collision test that cannot
+/// see half the bindings is the same lie the ticket exists to kill, so [`listeners`] DISCOVERS every
+/// window-level keydown closure in the editor surface rather than being handed a list of two.
 ///
 /// # What a COLLISION is here
 ///
@@ -373,9 +390,13 @@ pub fn ControlsHint(open: RwSignal<bool>) -> impl IntoView {
 ///
 /// # Escape, the one declared shared channel
 ///
-/// Escape is claimed by nine listeners and that is by design, not an accident: each claimant reads
-/// its own live state first (`get_untracked()`) and the editor keydown's arm only "acts" when a
-/// measurement was actually dismissed. [`SHARED_CHANNELS`] is where that decision is written down,
+/// Escape is a shared channel by design, not by accident: twelve listeners claim Escape, each
+/// claimant reads its own live state first (`get_untracked()`), and the editor keydown's arm only
+/// "acts" when a measurement was actually dismissed. That count is derived, not typed: T-774 put
+/// this doc block under `the_prose_census_numbers_are_derived` after finding it still said "nine"
+/// — a number that was wrong even before the census input was widened.
+///
+/// [`SHARED_CHANNELS`] is where that decision is written down,
 /// and it cannot rot in either direction — [`every_shared_channel_is_really_shared`] fails if a
 /// code is exempted without being multiply-claimed, and
 /// [`every_shared_channel_claimant_reads_live_state`] fails if a claimant stops gating itself.
@@ -553,6 +574,15 @@ pub(crate) mod keymap_census {
     /// to the suite rather than the editor (`ui`'s `Dialog`/`Modal`, `layout`'s nav) are out of
     /// scope here and stay out; they are gated on `modal_stack::is_topmost_open`, which is a
     /// different (and stricter) discipline from this one.
+    ///
+    /// **The membership test is "does `mission_editor` mount it", not "is it named like an editor
+    /// module".** T-774 found the list short by two on exactly that confusion: `faction_manager` and
+    /// `orbat_manager` each install a raw window-level keydown, both are mounted by
+    /// `MissionEditorPage`, and neither is gated on the modal stack — so both belong here, and
+    /// neither the scope note above nor the tripwire below had any way to say so. `orbat_manager`
+    /// hid the longest because `mission_editor` reaches it through a bare `pub use` re-export in
+    /// `eden_chrome`, so a symbol search for `OrbatManagerDialog` lands on the re-export and never
+    /// on the file that owns the listener. Grep for the LISTENER HEADS, not for the component.
     fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
         vec![
             ("mission_editor.rs", include_str!("mission_editor.rs"), 4),
@@ -561,6 +591,8 @@ pub(crate) mod keymap_census {
             ("eden_top_strip.rs", include_str!("eden_top_strip.rs"), 1),
             ("context_menu.rs", include_str!("context_menu.rs"), 1),
             ("eden_settings.rs", include_str!("eden_settings.rs"), 3),
+            ("faction_manager.rs", include_str!("faction_manager.rs"), 1),
+            ("orbat_manager.rs", include_str!("orbat_manager.rs"), 1),
         ]
     }
 
@@ -980,9 +1012,16 @@ pub(crate) mod keymap_census {
     }
 
     /// The census must see every listener there is. This is T-738's finding as a standing pin: the
-    /// old extractor read two listeners out of eleven and reported total coverage, and nothing was
-    /// red. A new window-level keydown anywhere in the editor surface now fails here until someone
-    /// bumps the count — which is the moment to check whether it collides.
+    /// old extractor read two listeners out of the thirteen the editor runs and reported total
+    /// coverage, and nothing was red. A new window-level keydown anywhere in the editor surface now
+    /// fails here until someone bumps the count — which is the moment to check whether it collides.
+    ///
+    /// **This pin only sees what [`editor_surface`] hands it, and T-774 is the proof.** The tripwire
+    /// was green while `faction_manager` and `orbat_manager` each ran an uncensused window-level
+    /// keydown, because neither file was in the list — a growth tripwire over an incomplete input
+    /// reports on its own input, not on the editor. Adding a MODULE to the surface is therefore the
+    /// one move this pin cannot prompt you to make; the scope note above [`editor_surface`] is what
+    /// bounds it, and it is exhaustive on purpose.
     #[test]
     fn every_editor_surface_listener_is_censused() {
         let mut total = 0usize;
@@ -999,8 +1038,8 @@ pub(crate) mod keymap_census {
             total += found;
         }
         assert_eq!(
-            total, 11,
-            "T-703: the editor surface should carry 11 window-level keydown listeners, found \
+            total, 13,
+            "T-703: the editor surface should carry 13 window-level keydown listeners, found \
              {total}"
         );
         // A listener that yields no binding means the slicer lost the closure body (an unbalanced
@@ -1104,28 +1143,71 @@ pub(crate) mod keymap_census {
     /// T-740 — the module's prose census numbers must be DERIVED from this census, not retyped.
     /// That sentence has gone stale twice; a number nobody can check is a comment pretending to be
     /// a measurement.
+    ///
+    /// T-774 widened it in both directions. The **input** grew (`faction_manager` and
+    /// `orbat_manager` were missing from `editor_surface`, so every count below was true of what the
+    /// census SCANNED and false of what the editor RAN), and the **prose under pin** grew: this used
+    /// to read the `//!` header alone, which left `keymap_census`'s own doc block free to state
+    /// numbers — "nine listeners claim Escape" — that no pin ever checked. Both regions are read
+    /// now.
     #[test]
     fn the_prose_census_numbers_are_derived() {
+        let raw = include_str!("eden_help.rs");
+        // Doc prose is hard-wrapped at 100 columns, so a claim phrase routinely straddles a line
+        // break and a naive `contains` then fails on prose that is perfectly correct. Flatten the
+        // comment markers and collapse every whitespace run to one space, so what is matched is the
+        // SENTENCE and the pin is indifferent to where the wrap lands.
+        let flatten = |s: &str| {
+            s.split_whitespace()
+                .filter(|w| *w != "//!" && *w != "///")
+                .collect::<Vec<_>>()
+                .join(" ")
+        };
         // Only the `//!` header, so this pin can never read its own assertion strings back as
         // evidence (the hollow-pin failure a bare whole-file `include_str!` walks into).
-        let raw = include_str!("eden_help.rs");
-        let header: String = raw
-            .lines()
-            .take_while(|l| l.starts_with("//!") || l.trim().is_empty())
-            .collect::<Vec<_>>()
-            .join("\n");
+        let header = flatten(
+            &raw.lines()
+                .take_while(|l| l.starts_with("//!") || l.trim().is_empty())
+                .collect::<Vec<_>>()
+                .join("\n"),
+        );
+        // `keymap_census`'s own doc block: everything before the module opens, which is strictly
+        // before this test's source and so is subject to the same no-self-reading guarantee.
+        let opens = "pub(crate) mod keymap_census {";
+        let census_doc = flatten(
+            &raw[..raw.find(opens).expect("the census module")]
+                .lines()
+                .filter(|l| l.trim_start().starts_with("///"))
+                .collect::<Vec<_>>()
+                .join("\n"),
+        );
         let ls = listeners();
         let files: BTreeSet<&str> = ls.iter().map(|l| l.file).collect();
+        let escape_claimants = ls
+            .iter()
+            .filter(|l| l.bindings.iter().any(|b| b.code == "Escape"))
+            .count();
         let claims = [
-            (all_bound_codes().len(), "distinct `KeyboardEvent` codes"),
-            (ls.len(), "window-level keydown listeners"),
-            (files.len(), "editor-surface modules"),
+            (
+                all_bound_codes().len(),
+                "distinct `KeyboardEvent` codes",
+                &header,
+            ),
+            (ls.len(), "window-level keydown listeners", &header),
+            (files.len(), "editor-surface modules", &header),
+            // T-774 — the TOTAL, not just the distinct codes. The T-703 slice reported "39
+            // bindings" in prose nobody could check and the wave-119 verifier's own parser said 32;
+            // two unchecked numbers about the same census is exactly the defect this module exists
+            // to kill, so the total now lives in the header and is derived like the other three.
+            (all_bindings().len(), "bindings in total", &header),
+            // The Escape pile-up is the census's own headline number and it was typed, not derived.
+            (escape_claimants, "listeners claim Escape", &census_doc),
         ];
-        for (n, what) in claims {
+        for (n, what, prose) in claims {
             let phrase = format!("{} {what}", spell(n));
             assert!(
-                header.contains(&phrase),
-                "T-740: the module header must say `{phrase}` — the census counts {n}. Do not \
+                prose.contains(&phrase),
+                "T-740/T-774: the module prose must say `{phrase}` — the census counts {n}. Do not \
                  retype the old number; this is the third time."
             );
         }
@@ -1175,9 +1257,10 @@ pub(crate) mod keymap_census {
 /// inside an arm body is not a binding and must not be read as one.
 ///
 /// **T-703 widened the input, not the technique.** These pins used to own a private copy of the
-/// extractor that read the two `ev.code()` keydowns and nothing else, so nine `ev.key()` listeners
-/// — including the Controls Hint's own Escape — were documented or not entirely by luck. They now
-/// consume [`keymap_census`], which reads all eleven.
+/// extractor that read the two `ev.code()` keydowns and nothing else, so eleven `ev.key()`
+/// listeners — including the Controls Hint's own Escape — were documented or not entirely by luck.
+/// They now consume [`keymap_census`], which reads all thirteen (T-774 added the last two: the
+/// Faction and ORBAT Manager dialogs, which the census had never been pointed at).
 #[cfg(test)]
 mod t692_help_covers_every_binding {
     use super::keymap_census;
