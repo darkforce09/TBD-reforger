@@ -71,6 +71,15 @@ pub const GROUPS: [&str; 5] = [
 /// modifier, which is why they are written without one.
 pub const SHORTCUTS: &[Shortcut] = &[
     // ── Selection (mission_editor's editor keydown) ───────────────────────────────────────────
+    // T-649 landed the Ctrl+A arm in the same wave as this table. It could not be pre-seeded from
+    // T-692's worktree: `no_help_entry_invents_a_binding` correctly refuses a row for a binding
+    // that does not exist yet, so the two pins are only both satisfiable once both slices merge.
+    Shortcut {
+        codes: &["KeyA"],
+        chord: "Ctrl/Cmd + A",
+        action: "Select all in view",
+        group: "Selection",
+    },
     Shortcut {
         codes: &["KeyC"],
         chord: "Ctrl/Cmd + C",
