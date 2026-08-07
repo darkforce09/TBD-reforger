@@ -476,6 +476,21 @@ pub fn delete_selection() -> bool {
             let Some(core) = d.as_ref() else {
                 return false;
             };
+            // T-672 — take each deleted unit's connection edges with it. Without this every delete
+            // manufactures `CONN-DANGLING` findings the operator then has to clean up by hand — a
+            // delete that half-finishes, which is exactly the failure class the connection graph's
+            // warning is about. Deliberately BEFORE `remove_slots` so the cascade reads the id set
+            // while the entities still exist.
+            //
+            // KNOWN AND ACCEPTED: this is one transaction per deleted slot plus one for the slot
+            // removal, so a multi-select delete is several undo steps rather than one. Folding the
+            // edge cascade into `remove_slots_in_txn` would fix that, but `remove_slots_in_txn` is
+            // shared with `remove_editor_layer` and re-shaping it is a core-side change this slice
+            // does not need to make to keep the graph honest. The visible cost is extra Ctrl+Z
+            // presses; the alternative cost was dangling edges.
+            for id in &ids {
+                let _ = core.remove_connections_touching(id);
+            }
             core.remove_slots(ids);
         }
         ctx.selection.borrow_mut().clear();
@@ -3045,6 +3060,332 @@ pub fn seed_new_mission_template(doc: &DocHandle) -> usize {
     let ids = core.seed_template_comments();
     core.set_origin_init(false);
     ids.len()
+}
+
+/* ═══════ T-672 — the editor-only CONNECTION GRAPH (CONN-START/SYNC/DEL-001, ACTION-FORM-001) ════ */
+//
+// A connection is an EDITOR-ONLY relation between two placed things. Like a comment it NEVER
+// COMPILES, and — as with comments — that is not enforced HERE and deliberately so: the exclusion is
+// structural in `map-engine-core` (`mission::flatten::EditorPayload` declares no `connections` key,
+// and `mission.schema.json` declares no relation collection for one to land in), proven by
+// `connections_never_reach_the_mod_document`. Nothing in this file filters anything, which is why
+// nothing in this file can forget to.
+//
+// ── THE SHAPE OF THE CONNECT GESTURE, AND WHY IT IS NOT A DRAG ───────────────────────────────────
+// The ticket's code hint proposed a third pointer mode: drag from entity to entity, arming in
+// `mission_editor`'s `onpointerdown` and completing in `onpointerup`. That is NOT what ships here,
+// and the reason is recorded rather than left to be rediscovered.
+//
+// The armed-pointerup path in `mission_editor.rs` is KNOWN DEFECTIVE and is filed as T-723: it has
+// no `ev.button()` filter (so a middle- or right-button release fires the armed branch), it returns
+// without taking `left`, stranding an `LG::Pending` that a later bare pointermove promotes into a
+// phantom drag, and there is no Esc disarm at all. The invariant comment sitting beside it claiming
+// "`left`/`pan_px` are both None here" is FALSE and was refuted four waves ago. Building a THIRD
+// arming mode on that machine would inherit all three defects and add a fourth arming source to the
+// thing that already cannot decide who owns a release.
+//
+// So the connect flow is TWO CONTEXT-MENU ACTS instead: right-click the source → `Connect ▸` → a
+// kind, which arms; right-click the target → `Connect ▸ Complete` (or `Cancel`). No new pointer
+// mode, no new keybinding, no interaction with the gesture machine whatsoever — and it is still the
+// Eden idiom, whose own connect flow starts at RMB ▸ Connect (`CONN-START-001`: "RMB → Connect →
+// type → LMB target"). What is deferred is precisely the LMB-target half. When T-723 makes the
+// armed-release path sound, wiring a pointer completion changes the CALLER of
+// [`complete_connect`] and nothing else — the arm, the mutator, the listing and the checker are all
+// already here.
+//
+// ── SEE + CHECK COME FIRST ───────────────────────────────────────────────────────────────────────
+// [`connection_list`] and [`connection_findings`] are the halves the ticket's warning is about, and
+// they are what the Connections panel in `mission_editor` renders. A connection has no map glyph in
+// this slice (the `LaneRole::SquadLinks` trace is in the slice notes), so that panel is the ONLY
+// surface on which an operator can observe or audit the graph. It is not a nice-to-have attached to
+// the edge verbs; the edge verbs are attached to it.
+
+/// T-672 — one connection as the panel renders it: the doc row plus a resolved label per endpoint.
+///
+/// Labels are best-effort (`"SL (s0)"` for a slot whose role is known, the bare id otherwise) and are
+/// display-only — every VERB here takes the `id`, so a label that cannot be resolved degrades the
+/// row's readability and nothing else. An unresolvable endpoint is exactly the `CONN-DANGLING` case
+/// the findings list flags by id, which is why the label does not try to hide it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConnectionListRow {
+    pub id: String,
+    pub kind: String,
+    pub from: String,
+    pub to: String,
+    pub from_label: String,
+    pub to_label: String,
+}
+
+/// T-672 — one validation finding for the panel (`code` / `connection_id` / `detail`), mirroring
+/// `map-engine-core`'s `ConnectionFinding` across the JSON getter.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConnectionFindingRow {
+    pub code: String,
+    pub connection_id: String,
+    pub detail: String,
+}
+
+thread_local! {
+    /// T-672 — the Connections panel's open flag, installed once from `mission_editor::on_load`.
+    /// The [`COMMENT_EDITOR`] idiom: a self-contained overlay owned by the page, read by its
+    /// component and written only here.
+    static CONNECTIONS_PANEL: RefCell<Option<RwSignal<bool>>> = const { RefCell::new(None) };
+}
+
+/// T-672 — register the Connections-panel signal (called once from `mission_editor::on_load`).
+pub fn set_connections_panel_signal(sig: RwSignal<bool>) {
+    CONNECTIONS_PANEL.with(|s| *s.borrow_mut() = Some(sig));
+}
+
+/// T-672 — open the Connections panel (the SEE + CHECK surface). No-op if the signal was never
+/// registered (native shell, or before `on_load`).
+pub fn open_connections_panel() {
+    CONNECTIONS_PANEL.with(|s| {
+        if let Some(sig) = *s.borrow() {
+            sig.set(true);
+        }
+    });
+}
+
+/// T-672 — close the Connections panel.
+pub fn close_connections_panel() {
+    CONNECTIONS_PANEL.with(|s| {
+        if let Some(sig) = *s.borrow() {
+            sig.set(false);
+        }
+    });
+}
+
+thread_local! {
+    /// T-672 — the armed half of the two-act connect: `Some((kind, from_id))`.
+    ///
+    /// A plain `thread_local` and NOT a variant of `Pending` (the place-arm enum): `Pending` is
+    /// consumed by `mission_editor`'s armed-pointerup branch, and putting a connect in it would hand
+    /// the connect gesture to exactly the code path this feature is routed around (see the module
+    /// note above). Nothing in the pointer machine can see this cell.
+    static PENDING_CONNECT: RefCell<Option<(String, String)>> = const { RefCell::new(None) };
+}
+
+/// T-672 (`CONN-START-001`, act 1) — arm a connect of `kind` FROM `from_id`. Returns `false`
+/// (arming nothing) for an unknown kind or an empty source, so a menu row that somehow dispatched
+/// with a bad payload cannot leave the editor half-armed.
+///
+/// Re-arming REPLACES any previous arm rather than stacking: the operator changed their mind about
+/// the source or the kind, and a queue of pending connects is not a thing anyone asked for.
+pub fn arm_connect(kind: &str, from_id: &str) -> bool {
+    // The AUTHORITY on this vocabulary is `MissionDocCore::add_connection`, which refuses an unknown
+    // kind into the document. This check is about the ARM (a UI state, not a document one): see
+    // `context_menu::ConnKind::parse`'s note for why the editor keeps its own copy and why the two
+    // cannot diverge dangerously.
+    if from_id.is_empty() || crate::context_menu::ConnKind::parse(kind).is_none() {
+        return false;
+    }
+    PENDING_CONNECT.with(|p| {
+        *p.borrow_mut() = Some((kind.to_string(), from_id.to_string()));
+    });
+    true
+}
+
+/// T-672 — the armed connect, if any: `(kind, from_id)`. Read by `context_menu::open` so the menu it
+/// paints shows `Complete` / `Cancel` instead of the three kind rows — the arm is captured AT OPEN,
+/// the same rule `MenuTarget::world` follows, so a state change while the menu is up cannot make a
+/// visible row mean something else by the time it is clicked.
+#[must_use]
+pub fn pending_connect() -> Option<(String, String)> {
+    PENDING_CONNECT.with(|p| p.borrow().clone())
+}
+
+/// T-672 — drop an armed connect without writing anything.
+pub fn cancel_connect() {
+    PENDING_CONNECT.with(|p| *p.borrow_mut() = None);
+}
+
+/// T-672 (`CONN-START-001` / `CONN-SYNC-001`, act 2) — complete the armed connect onto `to_id`.
+/// `false` when nothing was armed or the core refused the edge (self-link, duplicate, empty
+/// endpoint — see `MissionDocCore::add_connection`).
+///
+/// **The arm is consumed on ATTEMPT, not on success.** A refused edge that left the connect armed
+/// would leave the operator in a mode they thought they had exited, and their very next right-click
+/// would silently mean "connect" instead of "open a menu" — a stranded arm is the T-723 defect
+/// shape, and this feature is not going to reproduce it one module over.
+pub fn complete_connect(to_id: &str) -> bool {
+    let Some((kind, from_id)) = PENDING_CONNECT.with(|p| p.borrow_mut().take()) else {
+        return false;
+    };
+    if to_id.is_empty() {
+        return false;
+    }
+    let drawn = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let id = mint_connection_id(core);
+        core.add_connection(&id, &kind, &from_id, to_id)
+    });
+    if drawn {
+        crate::mission_history::after_local_edit();
+    }
+    drawn
+}
+
+/// T-672 (`CONN-DEL-001`) — delete one edge by id. This is the verb the panel's per-row button
+/// calls, and it is the whole of `CONN-DEL-001` in this slice: Eden deletes a connection by selecting
+/// its LINE and pressing Del, and there is no line to select here (no render lane — see the slice
+/// notes), so the addressable row IS the selection. One core transaction ⇒ one Ctrl+Z.
+pub fn delete_connection(id: &str) -> bool {
+    let removed = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        if core.connection_count() == 0 {
+            return false;
+        }
+        core.remove_connection(id);
+        true
+    });
+    if removed {
+        crate::mission_history::after_local_edit();
+    }
+    removed
+}
+
+/// T-672 (SEE) — every connection in the live doc, in `map-engine-core`'s stable listing order, with
+/// endpoint labels resolved off the slot rows.
+#[must_use]
+pub fn connection_list() -> Vec<ConnectionListRow> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return Vec::new();
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return Vec::new();
+        };
+        let labels: std::collections::HashMap<String, String> = slot_rows(core)
+            .into_iter()
+            .map(|r| {
+                let label = if r.role.is_empty() {
+                    r.id.clone()
+                } else {
+                    format!("{} ({})", r.role, r.id)
+                };
+                (r.id, label)
+            })
+            .collect();
+        let label_of = |id: &str| labels.get(id).cloned().unwrap_or_else(|| id.to_string());
+        let Ok(rows) = serde_json::from_str::<serde_json::Value>(&core.connection_rows_json())
+        else {
+            return Vec::new();
+        };
+        rows.as_array()
+            .map(|a| {
+                a.iter()
+                    .map(|r| {
+                        let s =
+                            |k: &str| r.get(k).and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        let (from, to) = (s("from"), s("to"));
+                        ConnectionListRow {
+                            from_label: label_of(&from),
+                            to_label: label_of(&to),
+                            id: s("id"),
+                            kind: s("kind"),
+                            from,
+                            to,
+                        }
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+}
+
+/// T-672 (CHECK) — every validation finding over the live graph. The panel renders these beside the
+/// rows; `connection_id` joins them to [`connection_list`].
+#[must_use]
+pub fn connection_findings() -> Vec<ConnectionFindingRow> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return Vec::new();
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return Vec::new();
+        };
+        let Ok(rows) = serde_json::from_str::<serde_json::Value>(&core.connection_findings_json())
+        else {
+            return Vec::new();
+        };
+        rows.as_array()
+            .map(|a| {
+                a.iter()
+                    .map(|f| {
+                        let s =
+                            |k: &str| f.get(k).and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        ConnectionFindingRow {
+                            code: s("code"),
+                            connection_id: s("connectionId"),
+                            detail: s("detail"),
+                        }
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+}
+
+/// T-672 (`ACTION-FORM-001` / `CTX-FORMATION-001`) — snap the squad led by `leader_slot_id` onto its
+/// formation positions. Returns the number of units moved; 0 (and no undo step) when the id leads no
+/// squad, so firing the row on a rifleman is inert rather than a silent leadership change.
+///
+/// The geometry and the single-transaction guarantee live in `MissionDocCore::force_to_formation`;
+/// this is the thin editor-side call plus the history tick, so the action is one Ctrl+Z.
+pub fn force_to_formation(leader_slot_id: &str, formation: &str) -> usize {
+    let moved = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return 0;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return 0;
+        };
+        core.force_to_formation(leader_slot_id, formation)
+    });
+    if moved > 0 {
+        crate::mission_history::after_local_edit();
+    }
+    moved
+}
+
+/// T-672 — mint an unused `conn-{n}` id, proven unique against the live connections map. A separate
+/// counter namespace from [`mint_id`] / [`mint_comment_id`] for the same reason theirs are separate:
+/// disjoint prefixes make "what kind of thing is this id" answerable by construction.
+fn mint_connection_id(core: &MissionDocCore) -> String {
+    let existing: std::collections::HashSet<String> =
+        serde_json::from_str::<serde_json::Value>(&core.connections_json())
+            .ok()
+            .and_then(|v| v.as_object().map(|o| o.keys().cloned().collect()))
+            .unwrap_or_default();
+    let mut n = existing.len() + 1;
+    loop {
+        let id = format!("conn-{n}");
+        if !existing.contains(&id) {
+            return id;
+        }
+        n += 1;
+    }
 }
 
 // ── Pointer-drag reparent/refile in the tree (the T-037-era TreeView-DnD role, on the current
