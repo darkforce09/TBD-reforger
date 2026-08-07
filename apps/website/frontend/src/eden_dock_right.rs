@@ -7,7 +7,10 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
-use crate::asset_catalog::{CatalogNode, CatalogState};
+use serde::{Deserialize, Serialize};
+
+use crate::asset_catalog::{CatalogNode, CatalogPalette, CatalogState};
+use crate::dto::RegistryItem;
 use crate::eden_dock_left::collapse_chevron;
 use crate::eden_layout::{DOCK_R, STUB_PX};
 use crate::eden_tree::{chevron_or_spacer, guide_spans, PALETTE_LEAF};
@@ -106,6 +109,10 @@ fn palette_rows(
     collapsed: RwSignal<std::collections::HashSet<String>>,
     // T-215 — Factions or Vehicles; picks the glyph and the `editor_ops` arm.
     kind: PaletteKind,
+    // T-695 — the starred-asset collection, so every leaf carries its own star/unstar verb
+    // (3DEN-CTX-001 / Eden F7). Threaded rather than global so the panel and the tree can never
+    // disagree about what is starred.
+    favourites: RwSignal<Favourites>,
 ) -> AnyView {
     let len = nodes.len();
     nodes
@@ -137,7 +144,15 @@ fn palette_rows(
                     let mut child_ids = gids.clone();
                     child_ids.push(n.id.clone());
                     let kids = if open {
-                        palette_rows(&n.children, depth + 1, &anc, &child_ids, collapsed, kind)
+                        palette_rows(
+                            &n.children,
+                            depth + 1,
+                            &anc,
+                            &child_ids,
+                            collapsed,
+                            kind,
+                            favourites,
+                        )
                     } else {
                         ().into_any()
                     };
@@ -168,12 +183,22 @@ fn palette_rows(
                 }
                 // T-177 A2 — a placeable role: PALETTE_LEAF adds `cursor-grab`/`active:cursor-grabbing`
                 // over ROW so hovering shows the drag affordance (folders keep `cursor-pointer`).
-                Some(payload) => view! {
+                //
+                // T-695 — the leaf is now a ROW rather than a bare button: the place affordance plus
+                // its star/unstar verb. A `<button>` cannot nest inside a `<button>`, so the wrapper
+                // takes `group` (the T-666 hover idiom the star reads) and the place button keeps
+                // PALETTE_LEAF verbatim, widened with `flex-1`. The leaf's id IS the asset id
+                // (`resource_name`) the collection stores — see `payload.asset_id`.
+                Some(payload) => {
+                    let star =
+                        favourite_star(favourites, payload.asset_id.clone(), payload.role.clone());
+                    view! {
+                    <div class="group relative flex items-center gap-1">
                     <button
                         type="button"
                         aria-label=aria
                         title=kind.leaf_title()
-                        class=PALETTE_LEAF
+                        class=format!("{PALETTE_LEAF} min-w-0 flex-1")
                         on:pointerdown=move |_| {
                             #[cfg(target_arch = "wasm32")]
                             match kind {
@@ -206,8 +231,11 @@ fn palette_rows(
                         <MaterialIcon name=kind.leaf_icon() class="block text-sm" />
                         <span class="truncate">{label}</span>
                     </button>
+                    {star}
+                    </div>
+                    }
+                    .into_any()
                 }
-                .into_any(),
             }
         })
         .collect::<Vec<_>>()
@@ -338,11 +366,16 @@ pub enum EdenSubmode {
     Compositions,
     /// T-079 — the Triggers tab (RIGHT-MODE-003).
     Triggers,
+    /// T-695 — the Favourites tab (NEW-F5 / 3den E3): the starred-asset collection, not a palette
+    /// over `/registry`. It is its own sub-mode for the same reason Compositions and Triggers are —
+    /// so `from_tab` never reports a surface the operator is not looking at, and so the Groups-only
+    /// Custom chip cannot leak onto it.
+    Favourites,
 }
 
 impl EdenSubmode {
     /// Map a DockRight tab index (`0` Factions, `1` Vehicles, `2` Markers, `3` Zones, `4`
-    /// Compositions, `5` Triggers) plus the Objects-chip flag to the sub-mode. The Objects chip lives
+    /// Compositions, `5` Triggers, `6` Favourites) plus the Objects-chip flag to the sub-mode. The Objects chip lives
     /// on the Factions tab but is its own place surface, so it reports [`EdenSubmode::Objects`], not
     /// `Groups` — which is exactly why the Custom slot hides the moment the operator flips to Objects.
     #[must_use]
@@ -355,6 +388,8 @@ impl EdenSubmode {
             4 => Self::Compositions,
             // T-079 — tab 5 is Triggers.
             5 => Self::Triggers,
+            // T-695 — tab 6 is Favourites.
+            6 => Self::Favourites,
             // tab 0 (Factions): Objects chip splits Groups vs Objects.
             _ if objects_mode => Self::Objects,
             _ => Self::Groups,
@@ -373,6 +408,491 @@ pub const EDEN_CUSTOM_CHIP: &str = "Custom";
 #[must_use]
 pub fn custom_chip_visible(submode: EdenSubmode) -> bool {
     matches!(submode, EdenSubmode::Groups)
+}
+
+// ── T-695 — Favourites: a starred-asset collection across the catalogue ──────────────────────────
+// (NEW-F5 + 3den E3 + 3DEN-CTX-001; Eden F7.)
+//
+// This is NOT T-646's search, and the distinction is the stated reason the two are separate
+// tickets: search FILTERS the live tree and holds nothing between keystrokes, where this is a
+// persistent COLLECTION with its own two explicit verbs — star (add) and unstar (remove) — spanning
+// all three catalogue palettes (Factions / Vehicles / Objects). Nothing here touches
+// `filter_catalog` or the search boxes.
+//
+// Pure SPA: one localStorage key, no API call, no backend, no migration endpoint.
+//
+// **KEY NAMESPACE + VERSION.** The established frontend convention (grepped, not invented) is a
+// `tbd-<area>-<thing>` key holding a JSON blob with an integer `version` field:
+// `world_layer_prefs::EDITOR_PREFS_KEY` = `tbd-mc-editor-prefs` with `EDITOR_PREFS_VERSION`,
+// `auth::AUTH_PERSIST_KEY` = `tbd-auth`, `editor_session` = `tbd-editor-session`. This follows it
+// exactly — [`FAVOURITES_KEY`] + [`FAVOURITES_VERSION`], defaults-on-parse-failure as the floor, and
+// one [`migrate_favourites`] chokepoint so a future shape change has an obvious home. (The T-691
+// store seam — a field on `world_layer_prefs::EditorPrefs` — would have been the tidier home, but
+// that file is not this slice's to touch; see the slice report.)
+//
+// **STALE FAVOURITES — decided: KEEP AND MARK.** A starred id can leave the live catalogue (a
+// modpack switched off, a prefab renamed, a row that stopped being placeable). Such an entry is
+// NOT pruned from storage and does NOT render as a normal row: it renders disabled, labelled with
+// the display name remembered at star time, saying it is not in the current catalogue — with the
+// remove verb still live so the operator can clear it deliberately. That is neither a broken row
+// (it cannot arm a place, and it says why) nor a silent vanishing (switch the modpack back on and
+// the entry resolves live again, because nothing was thrown away behind the operator's back).
+
+/// T-695 — the one localStorage key the favourites collection persists under. Namespaced
+/// `tbd-mc-editor-…` like the sibling editor-local store; see the section header.
+const FAVOURITES_KEY: &str = "tbd-mc-editor-favourites";
+/// T-695 — the persisted blob's schema version. Bump when a field's shape changes in a way a raw
+/// serde load of an older blob cannot absorb (adding a `#[serde(default)]` field does NOT need a
+/// bump); [`migrate_favourites`] then owns the upgrade.
+const FAVOURITES_VERSION: u32 = 1;
+/// T-695 — how many entries the collection keeps. A cap exists because localStorage is a shared,
+/// small, synchronously-parsed budget and nothing else bounds an add loop; 250 is far past any
+/// plausible working set (the live registry offers a few hundred placeable rows in total).
+const FAVOURITES_MAX: usize = 250;
+
+/// T-695 — one starred asset.
+///
+/// `asset_id` is the full Enfusion `resource_name` — the SAME string a catalogue leaf uses as its
+/// `CatalogNode::id` and hands the map as `PlacePayload::asset_id`. Storing the registry row's uuid
+/// instead would break the moment a modpack is re-ingested with fresh row ids.
+///
+/// `label` is the display name **remembered at star time**. It is not the source of truth while the
+/// asset is live (the catalogue's current `display_name` wins, so a renamed prefab shows its new
+/// name); it exists so a STALE entry can still name itself instead of showing a raw prefab path.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FavouriteAsset {
+    pub asset_id: String,
+    #[serde(default)]
+    pub label: String,
+}
+
+/// T-695 — the persisted favourites blob: a version plus the starred entries, newest first.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Favourites {
+    /// Schema version of the persisted blob (see [`FAVOURITES_VERSION`]).
+    #[serde(default)]
+    pub version: u32,
+    /// The starred entries in display order — most recently starred first.
+    #[serde(default)]
+    pub items: Vec<FavouriteAsset>,
+}
+
+impl Default for Favourites {
+    fn default() -> Self {
+        Self {
+            version: FAVOURITES_VERSION,
+            items: Vec::new(),
+        }
+    }
+}
+
+impl Favourites {
+    /// Parse a persisted blob, falling back to empty on any serde failure and normalising through
+    /// [`migrate_favourites`]. Pure — no localStorage — so the whole storage contract is testable
+    /// on the native build.
+    #[must_use]
+    fn from_json(raw: &str) -> Self {
+        migrate_favourites(serde_json::from_str::<Self>(raw).unwrap_or_default())
+    }
+
+    /// Serialize for persistence (empty string only if serde itself fails, which the round-trip
+    /// test precludes for this shape).
+    #[must_use]
+    fn to_json(&self) -> String {
+        serde_json::to_string(self).unwrap_or_default()
+    }
+
+    /// Is this asset id starred?
+    #[must_use]
+    pub fn contains(&self, asset_id: &str) -> bool {
+        self.items.iter().any(|f| f.asset_id == asset_id)
+    }
+
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.items.is_empty()
+    }
+
+    /// The ADD verb. Newest first, so the row an operator just starred is the one they see. A
+    /// duplicate add is a no-op (the collection is a set keyed by `asset_id`), and an empty id is
+    /// refused rather than stored as an entry nothing can ever resolve.
+    pub fn add(&mut self, asset_id: &str, label: &str) {
+        if asset_id.is_empty() || self.contains(asset_id) {
+            return;
+        }
+        self.items.insert(
+            0,
+            FavouriteAsset {
+                asset_id: asset_id.to_string(),
+                label: label.to_string(),
+            },
+        );
+        self.items.truncate(FAVOURITES_MAX);
+    }
+
+    /// The REMOVE verb. Idempotent — unstarring something that is not starred is a no-op.
+    pub fn remove(&mut self, asset_id: &str) {
+        self.items.retain(|f| f.asset_id != asset_id);
+    }
+
+    /// The star/unstar toggle behind the leaf's context action. Returns the NEW state: `true` when
+    /// the asset is now starred, `false` when it was just removed.
+    pub fn toggle(&mut self, asset_id: &str, label: &str) -> bool {
+        if self.contains(asset_id) {
+            self.remove(asset_id);
+            false
+        } else {
+            self.add(asset_id, label);
+            self.contains(asset_id)
+        }
+    }
+}
+
+/// T-695 — bring a freshly-loaded blob up to the current version and normalise it. Idempotent.
+///
+/// Beyond the version stamp this is the integrity floor for a blob any other tab (or a person with
+/// devtools) may have written: entries with an empty id are dropped, duplicates collapse to their
+/// first occurrence, and the list is capped. Without it a duplicated id would render two rows whose
+/// unstar buttons both target the same entry.
+fn migrate_favourites(mut fav: Favourites) -> Favourites {
+    if fav.version < FAVOURITES_VERSION {
+        // No field-shape migrations exist yet (v0 → v1 is field-compatible via serde defaults);
+        // future versions add their transforms here, gated on the incoming `version`.
+        fav.version = FAVOURITES_VERSION;
+    }
+    let mut seen = std::collections::HashSet::new();
+    fav.items
+        .retain(|f| !f.asset_id.is_empty() && seen.insert(f.asset_id.clone()));
+    fav.items.truncate(FAVOURITES_MAX);
+    fav
+}
+
+#[cfg(target_arch = "wasm32")]
+fn favourites_storage() -> Option<web_sys::Storage> {
+    web_sys::window()?.local_storage().ok()?
+}
+
+/// T-695 — load the favourites collection. Off wasm (the native test build) this is always empty,
+/// exactly like `world_layer_prefs::load_store`.
+#[must_use]
+pub fn load_favourites() -> Favourites {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(s) = favourites_storage() {
+            if let Ok(Some(raw)) = s.get_item(FAVOURITES_KEY) {
+                return Favourites::from_json(&raw);
+            }
+        }
+    }
+    Favourites::default()
+}
+
+/// T-695 — persist the favourites collection (no-op off wasm). The version is stamped current on
+/// write so a load never sees a stale version this build wrote itself.
+pub fn save_favourites(fav: &Favourites) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Some(s) = favourites_storage() {
+            let mut out = fav.clone();
+            out.version = FAVOURITES_VERSION;
+            let _ = s.set_item(FAVOURITES_KEY, &out.to_json());
+        }
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = fav;
+}
+
+/// T-695 — how one favourite resolved against the live catalogue. The whole stale-degradation rule
+/// is this two-variant enum: a favourite is either live (and therefore placeable, through a named
+/// palette) or stale (and therefore rendered disabled, named, and removable) — there is no third
+/// state in which it is quietly dropped.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum FavouriteRow {
+    /// The id is in the live catalogue and still placeable. `label` is the catalogue's CURRENT
+    /// display name, not the remembered one.
+    Live {
+        asset_id: String,
+        label: String,
+        palette: CatalogPalette,
+    },
+    /// The id is gone from the live catalogue, or the row is no longer placeable by any palette.
+    /// Kept, not pruned; `label` is the name remembered at star time (or the raw id if the blob
+    /// carried none), so the row is never blank.
+    Stale { asset_id: String, label: String },
+}
+
+impl FavouriteRow {
+    /// The asset id either variant carries — what the unstar verb targets.
+    #[must_use]
+    pub fn asset_id(&self) -> &str {
+        match self {
+            Self::Live { asset_id, .. } | Self::Stale { asset_id, .. } => asset_id,
+        }
+    }
+
+    /// The name the row renders.
+    #[must_use]
+    pub fn label(&self) -> &str {
+        match self {
+            Self::Live { label, .. } | Self::Stale { label, .. } => label,
+        }
+    }
+
+    /// Whether this row can arm a place.
+    #[must_use]
+    pub const fn is_live(&self) -> bool {
+        matches!(self, Self::Live { .. })
+    }
+}
+
+/// T-695 — resolve the persisted collection against the live catalogue rows, preserving order and
+/// **count**: every stored favourite yields exactly one row. That invariant is the "degrade
+/// honestly" requirement in one sentence — a favourite the catalogue no longer offers becomes a
+/// [`FavouriteRow::Stale`], never a missing row.
+///
+/// Pure over `(&Favourites, &[RegistryItem])`, so the rule is unit-testable without a DOM.
+#[must_use]
+pub fn resolve_favourites(fav: &Favourites, items: &[RegistryItem]) -> Vec<FavouriteRow> {
+    fav.items
+        .iter()
+        .map(|f| {
+            let live = crate::asset_catalog::find_catalog_item(items, &f.asset_id)
+                .and_then(|it| crate::asset_catalog::placeable_palette(it).map(|p| (it, p)));
+            match live {
+                Some((item, palette)) => FavouriteRow::Live {
+                    asset_id: f.asset_id.clone(),
+                    label: item.display_name.clone(),
+                    palette,
+                },
+                None => FavouriteRow::Stale {
+                    asset_id: f.asset_id.clone(),
+                    label: if f.label.trim().is_empty() {
+                        f.asset_id.clone()
+                    } else {
+                        f.label.clone()
+                    },
+                },
+            }
+        })
+        .collect()
+}
+
+/// T-695 — the star/unstar context action behind a palette leaf. ONE place writes the collection:
+/// flip the signal, then persist — so a starred asset is on disk before the next render, and a
+/// reload cannot lose the verb the operator just used.
+fn toggle_favourite(favourites: RwSignal<Favourites>, asset_id: &str, label: &str) {
+    favourites.update(|f| {
+        f.toggle(asset_id, label);
+    });
+    save_favourites(&favourites.get_untracked());
+}
+
+/// T-695 — the leaf's star toggle: the add/remove verb reachable from the asset itself
+/// (3DEN-CTX-001, Eden F7). It sits on the palette ROW rather than in the right-click context menu
+/// because `context_menu.rs` is another slice's file this wave — the gap is reported, not reached
+/// across (see the slice report's `found_not_fixed`).
+///
+/// Rendered as a hover action in the T-666 idiom (`group-hover:opacity-100`), except that a STARRED
+/// leaf keeps its glyph visible at all times — the collection has to be legible from the tree
+/// without hunting row by row with the pointer.
+fn favourite_star(favourites: RwSignal<Favourites>, asset_id: String, label: String) -> AnyView {
+    let starred_id = asset_id.clone();
+    // A Memo, not a bare closure: the glyph, the label, the pressed state and the class all read it,
+    // and a closure capturing the owned id is not `Copy` (it could be moved into one of them only).
+    let starred = Memo::new(move |_| favourites.with(|f| f.contains(&starred_id)));
+    view! {
+        <button
+            type="button"
+            aria-label=move || {
+                if starred.get() { "Remove from favourites" } else { "Add to favourites" }
+            }
+            aria-pressed=move || starred.get()
+            title=move || {
+                if starred.get() { "Unstar this asset" } else { "Star this asset" }
+            }
+            class=move || {
+                if starred.get() {
+                    "shrink-0 rounded-md p-1 text-primary opacity-100 transition-opacity hover:bg-white/10"
+                } else {
+                    "shrink-0 rounded-md p-1 text-on-surface-variant opacity-0 transition-opacity hover:bg-white/10 group-hover:opacity-100 focus:opacity-100"
+                }
+            }
+            on:click=move |_| {
+                toggle_favourite(favourites, &asset_id, &label);
+            }
+        >
+            <span class="material-symbols-outlined block text-sm">
+                {move || if starred.get() { "star" } else { "star_border" }}
+            </span>
+        </button>
+    }
+    .into_any()
+}
+
+/// T-695 — arm a place from a FAVOURITES row.
+///
+/// The three arms are spelled out here rather than shared with `palette_rows` on purpose: the T-215
+/// gate pins the leaf's own call expression by source inspection, and folding both call sites into
+/// one helper would satisfy that needle from this function instead — a check passing over an input
+/// it never examined, which is exactly the defect class this programme is about. Note the argument
+/// is moved, not cloned, so the two call sites stay textually distinct.
+#[cfg(target_arch = "wasm32")]
+fn arm_favourite_place(palette: CatalogPalette, payload: crate::asset_catalog::PlacePayload) {
+    match palette {
+        CatalogPalette::Character => crate::editor_ops::begin_place(payload),
+        CatalogPalette::Vehicle => crate::editor_ops::begin_place_vehicle(payload),
+        CatalogPalette::Object => crate::editor_ops::begin_place_object(payload),
+    }
+}
+
+impl PaletteKind {
+    /// T-695 — the catalogue-side palette a favourite resolved to, in the dock's own vocabulary
+    /// (for the row glyph and title).
+    const fn from_catalog(palette: CatalogPalette) -> Self {
+        match palette {
+            CatalogPalette::Character => Self::Character,
+            CatalogPalette::Vehicle => Self::Vehicle,
+            CatalogPalette::Object => Self::Object,
+        }
+    }
+}
+
+/// T-695 — one favourites row: a live entry that arms a place plus its unstar verb, or a stale
+/// entry rendered disabled and named, whose unstar verb still works.
+fn favourite_row_view(row: FavouriteRow, favourites: RwSignal<Favourites>) -> AnyView {
+    let unstar_id = row.asset_id().to_string();
+    let unstar = view! {
+        <button
+            type="button"
+            aria-label="Remove from favourites"
+            title="Remove from favourites"
+            class="shrink-0 rounded-md p-1 text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface"
+            on:click=move |_| {
+                favourites
+                    .update(|f| {
+                        f.remove(&unstar_id);
+                    });
+                save_favourites(&favourites.get_untracked());
+            }
+        >
+            <span class="material-symbols-outlined block text-sm">"star"</span>
+        </button>
+    };
+    match row {
+        FavouriteRow::Live {
+            asset_id,
+            label,
+            palette,
+        } => {
+            let kind = PaletteKind::from_catalog(palette);
+            let payload = crate::asset_catalog::PlacePayload {
+                asset_id,
+                role: label.clone(),
+            };
+            let aria = label.clone();
+            view! {
+                <li class="group relative flex items-center gap-1">
+                    <button
+                        type="button"
+                        aria-label=aria
+                        title=kind.leaf_title()
+                        class=format!("{PALETTE_LEAF} flex-1")
+                        on:pointerdown=move |_| {
+                            #[cfg(target_arch = "wasm32")]
+                            arm_favourite_place(palette, payload.clone());
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = &payload;
+                        }
+                    >
+                        <MaterialIcon name=kind.leaf_icon() class="block text-sm" />
+                        <span class="truncate">{label}</span>
+                    </button>
+                    {unstar}
+                </li>
+            }
+            .into_any()
+        }
+        // The stale row: no place affordance at all (a disabled button, not a grabbable leaf), the
+        // remembered name so it is identifiable, and a plain-language reason. The unstar verb is
+        // deliberately still live — removing it is the operator's call, not the reload's.
+        FavouriteRow::Stale { label, .. } => {
+            let aria = format!("{label} — not in the current catalogue");
+            view! {
+            <li class="group relative flex items-center gap-1">
+                <button
+                    type="button"
+                    disabled=true
+                    aria-label=aria
+                    title="This asset is not in the catalogue the editor loaded. Its modpack may be off, or the prefab was renamed."
+                    class="relative flex flex-1 cursor-not-allowed items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-outline opacity-70"
+                >
+                    <MaterialIcon name="warning" class="block text-sm" />
+                    <span class="flex min-w-0 flex-col">
+                        <span class="truncate line-through">{label}</span>
+                        <span class="truncate text-[10px] text-outline">
+                            "Not in the current catalogue"
+                        </span>
+                    </span>
+                </button>
+                {unstar}
+            </li>
+            }
+            .into_any()
+        }
+    }
+}
+
+/// T-695 — the Favourites tab: the starred collection over the WHOLE catalogue, resolved live.
+///
+/// Three states, and the middle one matters: while the registry fetch is still in flight there is
+/// nothing to resolve against, so the panel says so instead of declaring every favourite stale.
+fn favourites_panel(
+    favourites: RwSignal<Favourites>,
+    registry_items: RwSignal<Option<Vec<RegistryItem>>>,
+) -> AnyView {
+    view! {
+        <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Favourites"</h3>
+        <p class="mt-0.5 text-label-sm normal-case text-outline">
+            "Starred assets from every palette. Star one with the ★ on its palette row."
+        </p>
+        <div class="mt-2">
+            {move || {
+                if favourites.with(Favourites::is_empty) {
+                    return view! {
+                        <p class="text-label-sm text-outline">
+                            "No favourites yet — hover an asset in Factions, Vehicles or Objects and press its star."
+                        </p>
+                    }
+                        .into_any();
+                }
+                let Some(items) = registry_items.get() else {
+                    let n = favourites.with(Favourites::len);
+                    return view! {
+                        <p class="text-label-sm text-outline">
+                            {format!("Resolving {n} favourite(s) against the catalogue…")}
+                        </p>
+                    }
+                        .into_any();
+                };
+                let rows = favourites.with(|f| resolve_favourites(f, &items));
+                view! {
+                    <ul class="flex flex-col gap-0.5">
+                        {rows
+                            .into_iter()
+                            .map(|r| favourite_row_view(r, favourites))
+                            .collect_view()}
+                    </ul>
+                }
+                    .into_any()
+            }}
+        </div>
+    }
+    .into_any()
 }
 
 /// Right dock — the **Factions** palette (spec O2), off the live `GET /api/v1/registry`. Leaves drag
@@ -465,6 +985,11 @@ pub fn DockRight(
     // nor a zone, so putting its id in `select_tool`'s selection would show `SEL 1` with nothing
     // highlighted. The owner-link line renders while this is `Some`.
     let trigger_selected = RwSignal::new(None::<String>);
+    // T-695 (NEW-F5 / 3den E3) — the starred-asset collection, seeded from localStorage on mount so
+    // it survives a catalogue reload, and written back on every star/unstar. It is dock-local
+    // because it is a per-user editor preference, not mission state: nothing in the document, in
+    // `editor_ops` or on the wire knows or should know what an author has starred.
+    let favourites = RwSignal::new(load_favourites());
     let tab_btn = move |i: usize, label: &'static str| {
         view! {
             <button
@@ -499,6 +1024,9 @@ pub fn DockRight(
                         // T-079 — Triggers is a live surface (draw area + owner link), so it precedes
                         // the Markers stub as well.
                         {tab_btn(5, "Triggers")}
+                        // T-695 — Favourites is a live surface (the starred collection over the
+                        // whole catalogue), so it precedes the Markers stub too.
+                        {tab_btn(6, "Favourites")}
                         {tab_btn(2, "Markers")}
                     </div>
                     <div class="flex items-center gap-1">
@@ -638,6 +1166,7 @@ pub fn DockRight(
                                             &[],
                                             object_collapsed,
                                             PaletteKind::Object,
+                                            favourites,
                                         );
                                     }
                                     let filtered = crate::asset_catalog::filter_catalog(&nodes, &q);
@@ -657,6 +1186,7 @@ pub fn DockRight(
                                         &[],
                                         no_collapse,
                                         PaletteKind::Object,
+                                        favourites,
                                     );
                                 }
                                 match catalog.get() {
@@ -693,6 +1223,7 @@ pub fn DockRight(
                                                 &[],
                                                 palette_collapsed,
                                                 PaletteKind::Character,
+                                                favourites,
                                             )
                                         } else {
                                             let filtered =
@@ -715,6 +1246,7 @@ pub fn DockRight(
                                                     &[],
                                                     no_collapse,
                                                     PaletteKind::Character,
+                                                    favourites,
                                                 )
                                             }
                                         }
@@ -792,6 +1324,7 @@ pub fn DockRight(
                                                 &[],
                                                 vehicle_collapsed,
                                                 PaletteKind::Vehicle,
+                                                favourites,
                                             )
                                         } else {
                                             let filtered =
@@ -813,6 +1346,7 @@ pub fn DockRight(
                                                     &[],
                                                     no_collapse,
                                                     PaletteKind::Vehicle,
+                                                    favourites,
                                                 )
                                             }
                                         }
@@ -834,6 +1368,9 @@ pub fn DockRight(
                     // one's name / activation / owner link / rules. The owner-link line renders while
                     // a trigger is selected.
                     5 => triggers_panel(doc_tick, trigger_selected),
+                    // T-695 — the Favourites collection (NEW-F5 / 3den E3): starred assets from
+                    // every palette, resolved against the live registry rows.
+                    6 => favourites_panel(favourites, registry_items),
                     _ => view! {
                         <p class="mt-3 text-label-sm normal-case text-outline">
                             "Marker placement lands in T-069."
@@ -1999,6 +2536,14 @@ mod tests {
         assert!(!custom_chip_visible(EdenSubmode::Compositions));
         // T-079 — nor is the Triggers tab a Groups surface.
         assert!(!custom_chip_visible(EdenSubmode::Triggers));
+        // T-695 — nor is the Favourites tab (a persistent collection, not a place surface).
+        assert!(!custom_chip_visible(EdenSubmode::Favourites));
+        assert_eq!(EdenSubmode::from_tab(6, false), EdenSubmode::Favourites);
+        assert_eq!(
+            EdenSubmode::from_tab(6, true),
+            EdenSubmode::Favourites,
+            "the Objects chip splits the Factions tab alone — tab index wins"
+        );
 
         // Tab → sub-mode: Factions (tab 0) is Groups unless the Objects chip is on.
         assert_eq!(EdenSubmode::from_tab(0, false), EdenSubmode::Groups);
@@ -2021,7 +2566,7 @@ mod tests {
             !custom_chip_visible(EdenSubmode::from_tab(0, true)),
             "Factions+Objects → Custom hidden"
         );
-        for tab in [1usize, 2, 3, 4, 5] {
+        for tab in [1usize, 2, 3, 4, 5, 6] {
             assert!(
                 !custom_chip_visible(EdenSubmode::from_tab(tab, false)),
                 "Custom hidden on tab {tab}"
@@ -2531,5 +3076,281 @@ mod tests {
         assert_ne!(DrawTarget::Zone, DrawTarget::Trigger);
         assert_eq!(DrawTarget::Trigger.noun(), "trigger");
         assert_eq!(DrawTarget::Zone.noun(), "zone");
+    }
+
+    // ── T-695 — Favourites ───────────────────────────────────────────────────────────────────────
+
+    /// T-695 — the storage contract: a NAMESPACED key and a VERSIONED blob, following the
+    /// convention the frontend already uses rather than inventing one.
+    ///
+    /// The version is load-bearing in both directions: a fresh blob carries it on the wire (so the
+    /// first shape change has something to branch on), and a blob written before the field existed
+    /// (`version` absent ⇒ serde default 0) is stamped forward on load instead of being discarded.
+    /// Perturbation RED: drop the stamp in `migrate_favourites` and the v0 assertion fails; widen
+    /// the key to an un-namespaced string and the prefix assertion fails.
+    #[test]
+    fn favourites_key_is_namespaced_and_versioned() {
+        use super::{Favourites, FAVOURITES_KEY, FAVOURITES_VERSION};
+
+        assert!(
+            FAVOURITES_KEY.starts_with("tbd-"),
+            "the key must carry the frontend's `tbd-` namespace, got {FAVOURITES_KEY:?}"
+        );
+        assert!(
+            FAVOURITES_KEY.contains("favourite"),
+            "the key must say what it holds, got {FAVOURITES_KEY:?}"
+        );
+        // It must not collide with the sibling editor-local store or the auth blob.
+        assert_ne!(FAVOURITES_KEY, "tbd-mc-editor-prefs");
+        assert_ne!(FAVOURITES_KEY, "tbd-auth");
+        assert!(FAVOURITES_VERSION >= 1, "an unversioned blob is banned");
+
+        // A fresh blob serialises its version.
+        let mut fav = Favourites::default();
+        fav.add("{AAA}Prefabs/X.et", "X");
+        let raw = fav.to_json();
+        assert!(
+            raw.contains(&format!("\"version\":{FAVOURITES_VERSION}")),
+            "the persisted blob must carry its version, got {raw}"
+        );
+
+        // A pre-version blob (the shape a hand-written or older writer would leave) loads and is
+        // stamped forward rather than thrown away.
+        let v0 = r#"{"items":[{"asset_id":"{AAA}Prefabs/X.et","label":"X"}]}"#;
+        let loaded = Favourites::from_json(v0);
+        assert_eq!(loaded.version, FAVOURITES_VERSION, "v0 blob must migrate");
+        assert!(
+            loaded.contains("{AAA}Prefabs/X.et"),
+            "v0 entry must survive"
+        );
+
+        // Outright garbage falls back to empty rather than panicking (the defaults floor).
+        assert!(Favourites::from_json("not json at all").is_empty());
+    }
+
+    /// T-695 — the two verbs and the reload. `add`/`remove` are explicit and independent of any
+    /// search or filter; a round-trip through the persisted string is what "survives a catalogue
+    /// reload" means for a pure-SPA store, since a reload re-reads exactly that string.
+    #[test]
+    fn favourites_add_remove_and_survive_a_reload() {
+        use super::Favourites;
+
+        let a = "{AAA}Prefabs/Characters/Rifleman.et";
+        let b = "{BBB}Prefabs/Vehicles/UAZ.et";
+
+        let mut fav = Favourites::default();
+        assert!(fav.is_empty());
+        assert!(fav.toggle(a, "US Rifleman"), "first toggle stars");
+        assert!(fav.toggle(b, "UAZ469"), "second toggle stars");
+        assert_eq!(fav.len(), 2);
+        // Newest first — the row just starred is the one the panel shows at the top.
+        assert_eq!(fav.items[0].asset_id, b);
+
+        // The reload: persist, then load exactly what was persisted.
+        let reloaded = Favourites::from_json(&fav.to_json());
+        assert_eq!(reloaded, fav, "a reload must reproduce the collection");
+        assert!(reloaded.contains(a) && reloaded.contains(b));
+
+        // Remove is the second verb, and it is idempotent.
+        let mut fav = reloaded;
+        assert!(!fav.toggle(a, "US Rifleman"), "second toggle unstars");
+        assert!(!fav.contains(a));
+        fav.remove(a);
+        assert_eq!(fav.len(), 1, "removing an absent id is a no-op");
+        // A duplicate add cannot grow the collection.
+        fav.add(b, "UAZ469");
+        assert_eq!(fav.len(), 1);
+    }
+
+    /// T-695 — the integrity floor over a blob another tab (or devtools) may have written: empty
+    /// ids are dropped, duplicates collapse to the first occurrence, and the list is capped. A
+    /// duplicated id would otherwise render two rows whose unstar buttons target one entry.
+    #[test]
+    fn favourites_blob_is_deduped_and_capped() {
+        use super::{Favourites, FAVOURITES_MAX};
+
+        let raw = r#"{"version":1,"items":[
+            {"asset_id":"a","label":"A"},
+            {"asset_id":"","label":"blank"},
+            {"asset_id":"a","label":"A again"},
+            {"asset_id":"b","label":"B"}
+        ]}"#;
+        let fav = Favourites::from_json(raw);
+        assert_eq!(fav.len(), 2, "empty id dropped, duplicate collapsed");
+        assert_eq!(fav.items[0].label, "A", "the FIRST occurrence is kept");
+        assert!(fav.contains("b"));
+
+        let mut big = Favourites::default();
+        for i in 0..(FAVOURITES_MAX + 25) {
+            big.add(&format!("asset-{i}"), "x");
+        }
+        assert_eq!(big.len(), FAVOURITES_MAX, "the collection is capped");
+    }
+
+    /// T-695 — **the stale-favourite rule**, and the acceptance boundary's sharpest edge: a starred
+    /// id that has left the live catalogue must neither render as a normal (broken) row nor vanish.
+    ///
+    /// The chosen behaviour is KEEP AND MARK, and this pins all three halves of it:
+    ///   * the resolved row COUNT equals the stored count (nothing silently disappears),
+    ///   * the missing id resolves to `Stale` carrying the name remembered at star time — never a
+    ///     `Live` row that would offer a place the catalogue cannot honour,
+    ///   * a live id resolves to `Live` with the catalogue's CURRENT display name and its palette.
+    ///
+    /// It also pins the two non-obvious sub-cases: a row that is present but no longer PLACEABLE
+    /// (an `abstract` vehicle) is stale too, and a stale entry whose remembered label is blank
+    /// falls back to the id rather than rendering a nameless row.
+    ///
+    /// Perturbation RED: make `resolve_favourites` drop unresolvable entries (`filter_map`) and the
+    /// count assertion fails; make it emit `Live` regardless and the `Stale` match fails.
+    #[test]
+    fn stale_favourite_is_kept_and_marked_not_dropped() {
+        use super::{resolve_favourites, FavouriteAsset, FavouriteRow, Favourites};
+        use crate::asset_catalog::CatalogPalette;
+        use crate::dto::RegistryResponse;
+
+        let golden: RegistryResponse =
+            serde_json::from_str(include_str!("../tests/fixtures/api/GET__registry.json"))
+                .expect("golden");
+        let mut items = golden.data;
+        let live = items
+            .iter()
+            .find(|i| i.kind == "character")
+            .expect("golden has a character row")
+            .clone();
+
+        // An `abstract` vehicle: in the registry, but no palette offers it (T-215 filters it out),
+        // so a favourite pointing at it is stale even though the row exists.
+        let mut abstract_vehicle = live.clone();
+        abstract_vehicle.id = "abs".into();
+        abstract_vehicle.kind = "vehicle".into();
+        abstract_vehicle.resource_name = "{ABS}Prefabs/Vehicles/Vehicle_base.et".into();
+        abstract_vehicle.display_name = "Vehicle Base".into();
+        abstract_vehicle.r#abstract = Some(true);
+        items.push(abstract_vehicle.clone());
+
+        let gone = "{GONE}Prefabs/Characters/FromAnUninstalledModpack.et";
+        let fav = Favourites {
+            version: 1,
+            items: vec![
+                FavouriteAsset {
+                    asset_id: live.resource_name.clone(),
+                    // Deliberately STALE remembered label — the live row must win for a live entry.
+                    label: "an old name".into(),
+                },
+                FavouriteAsset {
+                    asset_id: gone.into(),
+                    label: "Remembered Rifleman".into(),
+                },
+                FavouriteAsset {
+                    asset_id: abstract_vehicle.resource_name.clone(),
+                    label: "Vehicle Base".into(),
+                },
+                FavouriteAsset {
+                    asset_id: "{NOLABEL}Prefabs/Nothing.et".into(),
+                    label: String::new(),
+                },
+            ],
+        };
+
+        let rows = resolve_favourites(&fav, &items);
+        assert_eq!(
+            rows.len(),
+            fav.len(),
+            "every stored favourite must yield exactly one row — nothing may vanish"
+        );
+
+        match &rows[0] {
+            FavouriteRow::Live {
+                asset_id,
+                label,
+                palette,
+            } => {
+                assert_eq!(asset_id, &live.resource_name);
+                assert_eq!(
+                    label, &live.display_name,
+                    "a live row shows the catalogue's CURRENT name, not the remembered one"
+                );
+                assert_eq!(*palette, CatalogPalette::Character);
+            }
+            other => panic!("a live catalogue row must resolve Live, got {other:?}"),
+        }
+
+        match &rows[1] {
+            FavouriteRow::Stale { asset_id, label } => {
+                assert_eq!(
+                    asset_id, gone,
+                    "the stale row keeps its id for the unstar verb"
+                );
+                assert_eq!(
+                    label, "Remembered Rifleman",
+                    "a stale row names itself from the label remembered at star time"
+                );
+            }
+            other => panic!("a missing id must resolve Stale, got {other:?}"),
+        }
+
+        assert!(
+            !rows[2].is_live(),
+            "a present-but-unplaceable row is stale too — it cannot arm a place"
+        );
+        assert_eq!(
+            rows[3].label(),
+            "{NOLABEL}Prefabs/Nothing.et",
+            "a stale row with no remembered label falls back to its id, never blank"
+        );
+
+        // And the collection itself is untouched by resolution: resolving does NOT prune.
+        assert_eq!(
+            fav.len(),
+            4,
+            "resolution must not mutate the stored collection"
+        );
+    }
+
+    /// T-695 — the surface is WIRED, not promised: a Favourites tab exists at its own index, the
+    /// panel is dispatched from it, the star verb hangs off every palette leaf, and the collection
+    /// is read from and written to the namespaced localStorage key.
+    ///
+    /// Source inspection, following `vehicles_tab_places_instead_of_promising`, because the panel
+    /// is a Leptos view whose place handler is `#[cfg(target_arch = "wasm32")]` — a native test
+    /// cannot mount it. **Every needle is assembled at run time**, the file's hard-won rule: this
+    /// test's own source is part of the haystack it searches, so a contiguous literal would make a
+    /// presence check unfailable.
+    #[test]
+    fn favourites_tab_is_wired_not_stubbed() {
+        const SRC: &str = include_str!("eden_dock_right.rs");
+
+        assert!(
+            SRC.contains(&format!("tab_btn(6, {:?})", "Favourites")),
+            "a Favourites tab must be in the tab strip"
+        );
+        assert!(
+            SRC.contains(&format!("6 => {}(", "favourites_panel")),
+            "tab 6 must dispatch the favourites panel"
+        );
+        // The star/unstar verb reaches every palette leaf (Factions, Vehicles and Objects all go
+        // through `palette_rows`).
+        assert!(
+            SRC.contains(&format!("{}(favourites,", "favourite_star")),
+            "a palette leaf must carry the star verb"
+        );
+        // Persistence is real: the key is both read and written.
+        assert!(
+            SRC.contains(&format!("{}(FAVOURITES_KEY", ".get_item")),
+            "the collection must be loaded from localStorage"
+        );
+        assert!(
+            SRC.contains(&format!("{}(FAVOURITES_KEY", ".set_item")),
+            "the collection must be persisted to localStorage"
+        );
+        // T-646's search is a separate mechanism and must be undisturbed — the palettes still
+        // filter through `filter_catalog`, and favourites is not a filter over the tree.
+        assert!(
+            SRC.contains(&format!("filter_catalog{}", "(&nodes, &q)")),
+            "T-646's search must still filter the catalogue tree"
+        );
+        // The Markers tab is deliberately still a stub (T-069); if that stopped being true the
+        // "Favourites got its own tab" assertions above would stop proving anything about indices.
+        assert!(SRC.contains(&format!("Marker placement {} T-069.", "lands in")));
     }
 }

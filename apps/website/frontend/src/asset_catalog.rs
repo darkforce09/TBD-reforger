@@ -527,6 +527,70 @@ pub fn filter_catalog(nodes: &[CatalogNode], query: &str) -> Vec<CatalogNode> {
     }
 }
 
+// ── T-695 (NEW-F5 / 3den E3) — resolving a starred asset id back to the live catalogue ───────────
+//
+// The right dock's Favourites collection persists ASSET IDS, not catalog rows: an id is the full
+// Enfusion `resource_name`, which is exactly what a leaf's `CatalogNode::id` and
+// `PlacePayload::asset_id` already carry (module rule 4). Turning one back into something the dock
+// can render needs two facts the three tree builders above already encode but never expose — does
+// the row still EXIST, and is it still PLACEABLE. Both live here, beside the filters they mirror,
+// rather than being re-derived in the view.
+//
+// Deliberately ADDITIVE: the builders and the search grammar are untouched (T-084 rewrites the
+// grammar in this file three waves out, and a restructure now would collide with it).
+
+/// T-695 — which of the three placeable palettes a live registry row belongs to. The dock's
+/// `PaletteKind` is the view-side vocabulary (it also has non-catalog arms for compositions and
+/// triggers); this is the CATALOG-side subset, so the resolution can stay pure and native-testable.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CatalogPalette {
+    Character,
+    Vehicle,
+    Object,
+}
+
+/// T-695 — the live catalogue row for an asset id (`resource_name`), or `None` when the id is not in
+/// the registry at all: a modpack switched off, a prefab renamed between sessions, or a hand-edited
+/// persisted blob. `None` is the honest answer the dock renders its "not in the current catalogue"
+/// row from — it is never a reason to silently drop the operator's starred entry.
+#[must_use]
+pub fn find_catalog_item<'a>(
+    items: &'a [RegistryItem],
+    asset_id: &str,
+) -> Option<&'a RegistryItem> {
+    items.iter().find(|i| i.resource_name == asset_id)
+}
+
+/// T-695 — which palette a live row PLACES through, or `None` when the row exists but no palette
+/// offers it (so starring it can no longer arm a place). The three arms mirror the builders above
+/// exactly, and the mirroring is the point — a favourite that resolved "placeable" through a laxer
+/// rule than the tree used would arm a place the palette itself refuses to offer:
+///
+/// * `character` — [`build_catalog_tree`] applies no `abstract` filter, so neither does this.
+/// * `vehicle` — [`build_vehicle_catalog_tree`] drops `abstract` (`*_base.et`) rows.
+/// * object kinds — [`build_object_catalog_tree`] drops `abstract` rows AND rows whose alias is not
+///   in the mod spawn registry (T-439), because the mod would warn-skip them.
+///
+/// The Eden **side** filter ([`character_matches_eden_side`]) is deliberately NOT applied: it is a
+/// per-chip VIEW filter over one tab, and a favourites collection spans the whole catalogue. A
+/// BLUFOR role starred while the OPFOR chip is up is live, not stale.
+#[must_use]
+pub fn placeable_palette(item: &RegistryItem) -> Option<CatalogPalette> {
+    if item.kind == "character" {
+        return Some(CatalogPalette::Character);
+    }
+    if item.kind == "vehicle" {
+        return (item.r#abstract != Some(true)).then_some(CatalogPalette::Vehicle);
+    }
+    if is_object_kind(&item.kind)
+        && item.r#abstract != Some(true)
+        && object_alias_registered(&item.resource_name, &item.display_name)
+    {
+        return Some(CatalogPalette::Object);
+    }
+    None
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1262,5 +1326,103 @@ mod tests {
             ),
             "unregistered synthesised alias must not pass the palette gate"
         );
+    }
+
+    /// T-695 — the favourites resolution helpers, and the one claim their doc comments make: that
+    /// `placeable_palette` MIRRORS the three tree builders. The pin compares the two directly —
+    /// every leaf the builders offer must be placeable, and every row they reject (`abstract`
+    /// vehicles, unregistered object aliases) must not be. A laxer rule here would let a favourite
+    /// arm a place the palette itself refuses to offer.
+    #[test]
+    fn favourite_resolution_mirrors_the_palette_builders() {
+        let items = object_items();
+
+        // Lookup is by `resource_name` — the id a leaf and a `PlacePayload` both carry.
+        let known = "{7007B975BEC018D9}Prefabs/Props/Military/AmmoBoxes/AmmoBox_50cal_100rnd.et";
+        assert_eq!(
+            find_catalog_item(&items, known).map(|i| i.display_name.as_str()),
+            Some("AmmoBox 50cal 100rnd")
+        );
+        assert!(
+            find_catalog_item(&items, "{NOPE}Prefabs/Gone.et").is_none(),
+            "an id that left the catalogue must resolve to None, not to a neighbour"
+        );
+
+        // Objects: the registered crate is placeable; the abstract one and the unregistered one
+        // are not — exactly the rows `build_object_catalog_tree` drops.
+        assert_eq!(
+            find_catalog_item(&items, known).and_then(placeable_palette),
+            Some(CatalogPalette::Object)
+        );
+        for rejected in [
+            "{7007B975BEC018D9}Prefabs/Props/Military/AmmoBoxes/AmmoBox_50cal_100rnd_base.et",
+            "{DEADBEEFDEADBEEF}Prefabs/Props/Military/Unregistered.et",
+        ] {
+            assert_eq!(
+                find_catalog_item(&items, rejected).and_then(placeable_palette),
+                None,
+                "the Objects palette drops {rejected}, so a favourite must read it stale"
+            );
+        }
+
+        // Vehicles: the abstract `*_base.et` template is rejected, the two live variants are not.
+        let vehicles = vehicle_items();
+        assert_eq!(
+            find_catalog_item(
+                &vehicles,
+                "{B}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_PKM.et"
+            )
+            .and_then(placeable_palette),
+            Some(CatalogPalette::Vehicle)
+        );
+        for item in &vehicles {
+            if item.kind == "vehicle" && item.r#abstract == Some(true) {
+                assert_eq!(
+                    placeable_palette(item),
+                    None,
+                    "an abstract vehicle is not placeable: {}",
+                    item.resource_name
+                );
+            }
+        }
+
+        // Characters: every leaf the Factions tree offers for a side must resolve placeable, and
+        // the SIDE filter must NOT be applied here — a favourite spans the whole catalogue, so a
+        // BLUFOR role is live even while another chip is up.
+        let chars = golden_items();
+        fn leaf_ids(nodes: &[CatalogNode], out: &mut Vec<String>) {
+            for n in nodes {
+                if n.payload.is_some() {
+                    out.push(n.id.clone());
+                }
+                leaf_ids(&n.children, out);
+            }
+        }
+        let mut ids = Vec::new();
+        leaf_ids(&build_catalog_tree(&chars, "BLUFOR"), &mut ids);
+        assert!(!ids.is_empty(), "the golden must offer BLUFOR leaves");
+        for id in &ids {
+            assert_eq!(
+                find_catalog_item(&chars, id).and_then(placeable_palette),
+                Some(CatalogPalette::Character),
+                "a Factions leaf must resolve placeable: {id}"
+            );
+        }
+        // Same rows, OPFOR chip up: still live, because the chip is a view filter, not the
+        // catalogue.
+        assert!(build_catalog_tree(&chars, "OPFOR").is_empty());
+        for id in &ids {
+            assert!(
+                find_catalog_item(&chars, id)
+                    .and_then(placeable_palette)
+                    .is_some(),
+                "the Eden side chip must not make a favourite stale: {id}"
+            );
+        }
+
+        // `gear_*` rows belong to the Arsenal, not the map — no palette places them.
+        for item in chars.iter().filter(|i| i.kind.starts_with("gear")) {
+            assert_eq!(placeable_palette(item), None);
+        }
     }
 }
