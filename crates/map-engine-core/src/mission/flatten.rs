@@ -15,6 +15,7 @@ use serde::Serialize;
 
 use crate::mission::compile::terrain_bounds;
 use crate::mission::kit::load_kit_aliases;
+use crate::mission::validate::{Finding, Primitive, Severity};
 use crate::mission::wire_safety::is_wire_unsafe;
 
 // ---- output document types (camelCase — the game-server contract) ----
@@ -636,15 +637,267 @@ pub struct ModMissionDocument {
     /// [`KitSubstitutionReport`] for why it hangs here rather than on a second entry point.
     #[serde(skip)]
     pub kit_substitutions: KitSubstitutionReport,
+    /// T-690 — **not part of the document**, exactly like [`Self::kit_substitutions`] and for the
+    /// same reason: the schema's top-level `additionalProperties: false` would 500 `/compiled` if a
+    /// non-schema key reached the wire. This is what the compile LEARNED on its way to producing the
+    /// document above — the structured half of "Export is a build step" — returned alongside the
+    /// bytes rather than instead of them.
+    ///
+    /// Empty on a mission that authors nothing the compile discards; see [`DiagnosticAcc`] for the
+    /// two corpus rules that shape it (never debug-gated; never fires on correct input).
+    #[serde(skip)]
+    pub diagnostics: Vec<Finding>,
 }
 
 /// Compile failure — mirrors `ErrNoSlots` + a payload-parse error.
+///
+/// **A failure is not a finding.** T-690 gave the compile a second, structured output channel
+/// ([`ModMissionDocument::diagnostics`]) for everything it *learns* while succeeding; this enum stays
+/// what it always was — the two ways the compile produces no document at all. The distinction is the
+/// ticket's shape rule: "a diagnostic is not a refusal", so nothing that can be said alongside the
+/// bytes may be smuggled in here as an error.
 #[derive(Debug, thiserror::Error)]
 pub enum CompileError {
     #[error("mission version has no placed slots")]
     NoSlots,
     #[error("parse mission version payload: {0}")]
     Parse(String),
+}
+
+/* ══════════════════ T-690 — the compile's structured diagnostics ══════════════════ */
+
+/// Stable rule id: the squad leader designation (`editor.squads[].leaderSlotId`) is dropped.
+pub const DIAG_DROP_SQUAD_LEADER: &str = "COMPILE-DROP-SQUAD-LEADER";
+/// Stable rule id: a slot's authored `tag` is dropped.
+pub const DIAG_DROP_SLOT_TAG: &str = "COMPILE-DROP-SLOT-TAG";
+/// Stable rule id: a slot's authored per-seat `callsign` is dropped (NOT the squad's — that one
+/// reaches the wire as `slots[].groupCallsign`; see the T-216 ledger for why the two are confused).
+pub const DIAG_DROP_SLOT_CALLSIGN: &str = "COMPILE-DROP-SLOT-CALLSIGN";
+/// Stable rule id: a slot's authored `rank` is dropped.
+pub const DIAG_DROP_SLOT_RANK: &str = "COMPILE-DROP-SLOT-RANK";
+/// Stable rule id: a slot's authored `stance` is dropped.
+pub const DIAG_DROP_SLOT_STANCE: &str = "COMPILE-DROP-SLOT-STANCE";
+/// Stable rule id: the authored vehicle ROSTER (top-level `vehicles[]`, seats + crew) is dropped.
+pub const DIAG_DROP_VEHICLE_ROSTER: &str = "COMPILE-DROP-VEHICLE-ROSTER";
+
+/// Every diagnostic rule id this compile can emit, in emission order. The single source of truth a
+/// consumer (the panel legend, a smoke harness, the `/compiled` response header) enumerates rather
+/// than re-listing.
+pub const COMPILE_DIAGNOSTIC_RULE_IDS: [&str; 6] = [
+    DIAG_DROP_SQUAD_LEADER,
+    DIAG_DROP_SLOT_TAG,
+    DIAG_DROP_SLOT_CALLSIGN,
+    DIAG_DROP_SLOT_RANK,
+    DIAG_DROP_SLOT_STANCE,
+    DIAG_DROP_VEHICLE_ROSTER,
+];
+
+/// The four slot-identity keys read as raw JSON, paired with the rule that reports each one's loss.
+/// Ordered so the emitted findings are deterministic (`tag`, `callsign`, `rank`, `stance` — the
+/// T-216 ledger's own order).
+const SLOT_IDENTITY_DROPS: [(&str, &str); 4] = [
+    ("tag", DIAG_DROP_SLOT_TAG),
+    ("callsign", DIAG_DROP_SLOT_CALLSIGN),
+    ("rank", DIAG_DROP_SLOT_RANK),
+    ("stance", DIAG_DROP_SLOT_STANCE),
+];
+
+/// Accumulates the compile's [`Finding`]s during the one document walk.
+///
+/// ## Why the compile owns a finding list at all (T-690)
+///
+/// `init3DEN.sqf` is rated the single thing FNF v4 does better than anyone else because it treats
+/// Export as a BUILD STEP. TBD had the build step and none of the build system: everything the
+/// compile learned was thrown away or flattened into a pass/fail toast. This is the missing half —
+/// a list of findings, each with a severity, a stable rule id, the owning entity id and a message,
+/// returned ALONGSIDE the bytes. The compile still emits its document when it has findings; a
+/// diagnostic is not a refusal (that is [`CompileError`]'s job, and only its job).
+///
+/// ## Why these findings are NOT registry rules (fnf_tooling.md 1.3)
+///
+/// The obvious wiring — add six rules to [`crate::mission::validate::default_registry`] so the
+/// always-on validation panel evaluates them every 250 ms — is the one wiring the corpus forbids,
+/// and the proof is mechanical rather than stylistic:
+///
+/// * `ORBAT-SQUAD-HAS-LEADER` (a shipped `Warning`) fires when a squad names NO `leaderSlotId`.
+/// * [`DIAG_DROP_SQUAD_LEADER`] fires when a squad DOES name one, because the compile drops it.
+///
+/// As always-on rules those two are exhaustive over every squad, so the panel could never go green —
+/// which is verbatim the FNF defect fnf_tooling.md 1.3 names ("the Analyzer's role accordion can
+/// never go green, which makes it useless"). An author cannot clear the second one either: the emit
+/// is parked behind T-674/T-675, so the only "fix" would be to delete a value they were right to
+/// author. So these belong to the COMPILE ACT — they describe what THIS compile discarded, they are
+/// published to the T-655 panel when a compile runs, and a mission that authors none of the six
+/// compiles with an empty list. Both halves are pinned by test.
+///
+/// ## Never debug-gated (fnf_v4.md 14.9)
+///
+/// There is no `#[cfg(debug_assertions)]`, no feature gate and no verbosity flag anywhere on this
+/// path: the accumulator is filled by the same walk that builds the document, in every build.
+/// v4's shipped state is the un-diagnosable one, and T-635 gates telemetry, not correctness.
+#[derive(Debug, Default)]
+struct DiagnosticAcc {
+    findings: Vec<Finding>,
+}
+
+impl DiagnosticAcc {
+    fn push(
+        &mut self,
+        rule_id: &'static str,
+        severity: Severity,
+        message: String,
+        subject: String,
+        subject_id: &str,
+    ) {
+        self.findings.push(Finding {
+            rule_id,
+            severity,
+            primitive: Primitive::PerObjectInvariant,
+            message,
+            subject,
+            // The T-657 vocabulary, reused rather than re-invented: the stable entity id is the
+            // panel's click-to-select key, and a positional pointer is display-only. An empty id
+            // normalises to `None` so "positional subject ⇒ None" still holds.
+            subject_id: (!subject_id.is_empty()).then(|| subject_id.to_string()),
+        });
+    }
+
+    /// The squad leader designation, dropped. `Warning`, not `Info`: nothing on the wire says who
+    /// leads, so the game server picks one — a behavioural difference, not a cosmetic one.
+    fn squad_leader_dropped(&mut self, squad_index: usize, sq: &SquadIn, leader: &str) {
+        self.push(
+            DIAG_DROP_SQUAD_LEADER,
+            Severity::Warning,
+            format!(
+                "Squad {} designates slot {leader} as its leader, and the compile drops it — \
+                 `mission.schema.json` declares `$defs/group.leaderSlotId` but the flatten does \
+                 not emit it yet (T-674), so the game server chooses a leader for you.",
+                display_squad(sq)
+            ),
+            format!("/editor/squads/{squad_index}/leaderSlotId"),
+            &sq.id,
+        );
+    }
+
+    /// One of the four per-seat identity keys, dropped. `Info`: the seat still spawns in the right
+    /// place with the right kit; what is lost is how it is LABELLED.
+    fn slot_identity_dropped(
+        &mut self,
+        rule_id: &'static str,
+        key: &str,
+        slot_index: usize,
+        sl: &SlotIn,
+        value: &serde_json::Value,
+    ) {
+        self.push(
+            rule_id,
+            Severity::Info,
+            format!(
+                "Slot {} authors {key} {}, and the compile drops it — `mission.schema.json` \
+                 declares `$defs/slot.{key}` but the flatten does not emit it yet (T-674), so \
+                 the game server never sees this seat's {key}.",
+                display_slot(sl),
+                render_authored(value)
+            ),
+            format!("/editor/slots/{slot_index}/{key}"),
+            &sl.id,
+        );
+    }
+
+    /// An authored vehicle roster row, dropped. `Warning`: a PLACED vehicle still reaches the wire
+    /// as an `entities[]` alias row (T-425), but the roster itself — seats, crew, ORBAT attachment —
+    /// does not, and an UNPLACED roster vehicle reaches nothing at all.
+    fn vehicle_roster_dropped(&mut self, vehicle_index: usize, v: &VehicleIn) {
+        let placed = if v.position.is_some() {
+            "its seats and crew assignment do not"
+        } else {
+            "and it has no map position, so nothing about it does"
+        };
+        self.push(
+            DIAG_DROP_VEHICLE_ROSTER,
+            Severity::Warning,
+            format!(
+                "Vehicle {} is on the authored roster and the compile drops the roster — \
+                 `mission.schema.json` declares the top-level `vehicles[]` but the flatten does \
+                 not emit it yet (T-675), so {placed}.",
+                display_vehicle(v)
+            ),
+            format!("/vehicles/{vehicle_index}"),
+            &v.id,
+        );
+    }
+}
+
+/// `Alpha (sq1)` / `sq1` — a squad named the way an author recognises it, never a bare index.
+fn display_squad(sq: &SquadIn) -> String {
+    let label = or_fallback(&sq.callsign, &sq.name);
+    if label.is_empty() {
+        format!("`{}`", sq.id)
+    } else {
+        format!("{label} (`{}`)", sq.id)
+    }
+}
+
+/// `RFL (s1)` / `s1` — a slot named by its role, which is what the ORBAT tree shows.
+fn display_slot(sl: &SlotIn) -> String {
+    if sl.role.is_empty() {
+        format!("`{}`", sl.id)
+    } else {
+        format!("{} (`{}`)", sl.role, sl.id)
+    }
+}
+
+/// `M151A2_M2HB.et (v1)` — the tail of the ResourceName, which is the readable half.
+fn display_vehicle(v: &VehicleIn) -> String {
+    let tail = v
+        .resource_name
+        .rsplit(['/', '\\'])
+        .next()
+        .unwrap_or("")
+        .trim();
+    if tail.is_empty() {
+        format!("`{}`", v.id)
+    } else {
+        format!("{tail} (`{}`)", v.id)
+    }
+}
+
+/// Render an authored value for a message without letting a hostile payload write the sentence.
+///
+/// The four identity keys are read as raw [`serde_json::Value`] on purpose (see [`SlotIn`]), so the
+/// authored value may be a number, an object, or a 4 MB string. Strings are quoted and truncated;
+/// everything else is described by TYPE rather than dumped.
+fn render_authored(v: &serde_json::Value) -> String {
+    const MAX: usize = 60;
+    match v {
+        serde_json::Value::String(s) => {
+            let clean: String = s.chars().filter(|c| !c.is_control()).take(MAX).collect();
+            if s.chars().count() > MAX {
+                format!("\"{clean}…\"")
+            } else {
+                format!("\"{clean}\"")
+            }
+        }
+        serde_json::Value::Number(n) => format!("`{n}`"),
+        serde_json::Value::Bool(b) => format!("`{b}`"),
+        serde_json::Value::Array(_) => "an array".to_string(),
+        serde_json::Value::Object(_) => "an object".to_string(),
+        serde_json::Value::Null => "null".to_string(),
+    }
+}
+
+/// Is this raw authored value something the author actually SET?
+///
+/// `null`, an absent key (which deserialises to `Null`) and a blank/whitespace-only string are all
+/// "not authored" — reporting them would bury the real findings under one line per empty seat, the
+/// same rule T-200 applies to an empty `assetId` and `wire_safety` applies to a blank callsign. A
+/// value the compile would have dropped to nothing anyway is not a finding.
+fn is_authored(v: &serde_json::Value) -> bool {
+    match v {
+        serde_json::Value::Null => false,
+        serde_json::Value::String(s) => !s.trim().is_empty(),
+        _ => true,
+    }
 }
 
 // ---- input payload (the editor graph the TS flatten walks) ----
@@ -732,6 +985,15 @@ struct SquadIn {
     callsign: String,
     name: String,
     slot_ids: Vec<String>,
+    /// T-690 — the authored leader designation, READ but never emitted (T-674 lands the emit).
+    ///
+    /// **Deliberately `serde_json::Value` and not `String`.** The T-216 ledger's closing paragraph
+    /// spells out why: a typed field here narrows [`scan_editor_payload_types`]'s accept set, which
+    /// that function's own contract forbids ("It cannot reject a payload that compiles today"), so a
+    /// stored payload carrying `"leaderSlotId": 5` — legal and ignored today — would become a
+    /// permanent 400 at save. `Value` accepts any JSON, so reading this for a diagnostic cannot
+    /// narrow the set of payloads that compile.
+    leader_slot_id: serde_json::Value,
 }
 
 #[derive(Debug, Default, Clone, serde::Deserialize)]
@@ -744,6 +1006,16 @@ struct SlotIn {
     position: PositionIn,
     /// The editor `SlotLoadoutV2` dict (T-068.10/.15.2) — mapped by [`mod_slot_loadout`].
     loadout: Option<serde_json::Value>,
+    /// T-690 — the four T-180.1 per-seat identity keys, READ but never emitted (T-674 lands the
+    /// emit). All four are `serde_json::Value` for the reason [`SquadIn::leader_slot_id`] states:
+    /// the T-216 ledger forbids typing them, because a typed field would turn a stored
+    /// `"stance": 5` — legal and ignored today — into a permanent 400 at save.
+    tag: serde_json::Value,
+    /// The SEAT's callsign (T-180.1 identity), which is a different field from the squad's — the
+    /// squad's is what reaches the wire as `slots[].groupCallsign`.
+    callsign: serde_json::Value,
+    rank: serde_json::Value,
+    stance: serde_json::Value,
 }
 
 #[derive(Debug, Default, Clone, serde::Deserialize)]
@@ -1737,8 +2009,21 @@ fn faction_key_from_faction_id(raw: &str) -> Option<String> {
 ///
 /// * `alias` ← kit-aliases `vehicles` table (ResourceName → `veh:…`). Missing alias on a
 ///   **placed** vehicle is [`CompileError::Parse`] naming the vehicle — never silent
-///   drop/substitute (T-200 class). Kept as `Parse` (not a new variant) so API match arms on
-///   `CompileError` stay exhaustive without widening owns into `handlers/missions.rs`.
+///   drop/substitute (T-200 class). Kept as `Parse` (not a new variant).
+///
+///   **SUPERSEDED CONSTRAINT, recorded rather than deleted (T-690).** The original reason written
+///   here was ownership, not design: "so API match arms on `CompileError` stay exhaustive without
+///   widening owns into `handlers/missions.rs`". That reason no longer holds — T-690 owns
+///   `handlers/missions.rs` (the operator widened the slice deliberately, because `CompileError`
+///   lives in this file and the toast being replaced is dispatched from the top strip), so a new
+///   variant was available and could have been added with its match arms in the same change.
+///
+///   It stayed `Parse` anyway, now for a reason about the value instead of the file list: T-690
+///   split what the compile *learns* out of `CompileError` entirely
+///   ([`ModMissionDocument::diagnostics`]). `CompileError` is now exactly "the compile produced no
+///   document", and an unaliased placed vehicle IS that — the compile refuses rather than
+///   substituting a 10-tonne truck for another. A variant would only re-encode a distinction the
+///   diagnostics channel already carries better.
 /// * Unplaced vehicles (no `position`) are skipped (no honest x/z).
 /// * `cargo[]` → `inventory` byte-identical (`item`/`qty`).
 /// * `faction` ← `factionId` strip `faction-` + lowercase, else squad → faction row key.
@@ -1962,6 +2247,24 @@ pub fn flatten_to_mod_document(
     let squads_by_id: HashMap<&str, &SquadIn> =
         ed.squads.iter().map(|s| (s.id.as_str(), s)).collect();
     let slots_by_id: HashMap<&str, &SlotIn> = ed.slots.iter().map(|s| (s.id.as_str(), s)).collect();
+    // T-690 — a finding's `subject` is a pointer into the SAVED PAYLOAD (`/editor/slots/3/rank`),
+    // and the walk below traverses factions → squads → slots, not the authored arrays. These are the
+    // authored positions, taken once so a diagnostic can name where the value was written as well as
+    // which entity owns it. (`subject_id` is the stable id; the pointer is display/focus only — the
+    // T-657 split.)
+    let squad_pos: HashMap<&str, usize> = ed
+        .squads
+        .iter()
+        .enumerate()
+        .map(|(i, s)| (s.id.as_str(), i))
+        .collect();
+    let slot_pos: HashMap<&str, usize> = ed
+        .slots
+        .iter()
+        .enumerate()
+        .map(|(i, s)| (s.id.as_str(), i))
+        .collect();
+    let mut diagnostics = DiagnosticAcc::default();
 
     let mut factions: Vec<ModFaction> = Vec::new();
     let mut orbat: BTreeMap<String, ModOrbatFaction> = BTreeMap::new();
@@ -1990,6 +2293,18 @@ pub fn flatten_to_mod_document(
                 continue;
             }
             rows.sort_by_key(|s| s.index); // stable
+
+            // T-690 — this squad REACHES the wire (it has rows), so a leader designation it
+            // authored is a value the compile is about to discard. Emitted here rather than over
+            // `ed.squads` wholesale: a squad no faction claims contributes nothing to the document,
+            // and reporting a loss for a group that was never going to ship is noise.
+            if is_authored(&sq.leader_slot_id) {
+                diagnostics.squad_leader_dropped(
+                    squad_pos.get(sq.id.as_str()).copied().unwrap_or(0),
+                    sq,
+                    &render_authored(&sq.leader_slot_id),
+                );
+            }
 
             // callsign → name → squad id → literal. The id rung keeps two unnamed
             // squads distinct so their derived slot ids stay unique.
@@ -2070,6 +2385,24 @@ pub fn flatten_to_mod_document(
                     heading_deg: normalize_heading(sl.position.rotation),
                     loadout: sl.loadout.as_ref().and_then(mod_slot_loadout),
                 });
+
+                // T-690 — the seat is now on the wire, and these four authored keys are not. One
+                // finding per key the author actually set (see `is_authored`: a blank is not a
+                // finding), in the ledger's own order so the list is deterministic.
+                let authored_identity: [&serde_json::Value; 4] =
+                    [&sl.tag, &sl.callsign, &sl.rank, &sl.stance];
+                for (i, (key, rule_id)) in SLOT_IDENTITY_DROPS.into_iter().enumerate() {
+                    let value = authored_identity[i];
+                    if is_authored(value) {
+                        diagnostics.slot_identity_dropped(
+                            rule_id,
+                            key,
+                            slot_pos.get(sl.id.as_str()).copied().unwrap_or(0),
+                            sl,
+                            value,
+                        );
+                    }
+                }
 
                 if !centroids.contains_key(&faction_key) {
                     centroids.insert(faction_key.clone(), (0.0, 0.0, 0));
@@ -2202,6 +2535,16 @@ pub fn flatten_to_mod_document(
         aliases,
     )?);
 
+    // T-690 — the whole authored roster, reported row by row. A PLACED vehicle did just reach the
+    // wire above as an `entities[]` alias row (T-425), but the roster itself — the seats, the crew,
+    // the ORBAT attachment — is what the schema's top-level `vehicles[]` carries and the flatten
+    // emits none of it. Emitted after the entity derive so a compile that REFUSES over an unaliased
+    // vehicle (`?` above) reports that refusal rather than a list of drops for a document that was
+    // never produced.
+    for (i, v) in parsed.vehicles.iter().enumerate() {
+        diagnostics.vehicle_roster_dropped(i, v);
+    }
+
     Ok(ModMissionDocument {
         schema_version,
         meta,
@@ -2228,6 +2571,7 @@ pub fn flatten_to_mod_document(
         briefings: derive_briefings(&ed.factions),
         settings: derive_settings(&parsed.settings),
         kit_substitutions: substitutions.finish(),
+        diagnostics: diagnostics.findings,
     })
 }
 
@@ -2400,15 +2744,60 @@ pub fn flatten_mod_document_json_with_substitutions(
     meta_json: &[u8],
     payload: &[u8],
 ) -> Result<(Vec<u8>, Vec<String>), String> {
+    flatten_mod_document_json_full(meta_json, payload).map(|(bytes, subs, _)| (bytes, subs))
+}
+
+/// T-690 — the same compile as [`flatten_mod_document_json`], plus its **structured diagnostics**:
+/// a list of [`Finding`]s each carrying a severity, a stable rule id, the owning entity id and a
+/// message.
+///
+/// This is the entry point that makes Export a build step rather than a pass/fail. The bytes come
+/// back UNCHANGED — a finding is not a refusal, and the document is byte-identical to what
+/// [`flatten_mod_document_json`] returns for the same input, because both are projections of
+/// [`flatten_mod_document_json_full`] rather than parallel compiles. A consumer that renders the
+/// findings (the editor's T-655 validation panel) and a consumer that only wants the file
+/// (`GET /missions/:id/compiled`'s twin) therefore cannot disagree about what was compiled.
+///
+/// # Errors
+/// Returns a message on meta/payload parse failure or a compile error (e.g. no slots).
+pub fn flatten_mod_document_json_with_diagnostics(
+    meta_json: &[u8],
+    payload: &[u8],
+) -> Result<(Vec<u8>, Vec<Finding>), String> {
+    flatten_mod_document_json_full(meta_json, payload).map(|(bytes, _, findings)| (bytes, findings))
+}
+
+/// Everything one compile produces: the wire bytes, the T-200/T-314 kit substitutions, and the
+/// T-690 structured findings. Named so the three entry points below can each project the part their
+/// caller needs without the shape being spelled out three times.
+pub type CompiledOutput = (Vec<u8>, Vec<String>, Vec<Finding>);
+
+/// The one body behind [`flatten_mod_document_json`],
+/// [`flatten_mod_document_json_with_substitutions`] and
+/// [`flatten_mod_document_json_with_diagnostics`]: bytes + kit substitutions + structured findings,
+/// from ONE compile.
+///
+/// Both by-products are `#[serde(skip)]` fields on the document (the schema's top-level
+/// `additionalProperties: false` forbids them on the wire) and `doc` is consumed by the `to_vec`
+/// below, so they have to be lifted here — a caller who only gets the bytes can never recover them.
+/// Recomputing either through a second compile is the thing this shape exists to prevent: a second
+/// compile is a second thing that can disagree with the first.
+///
+/// # Errors
+/// Returns a message on meta/payload parse failure or a compile error (e.g. no slots).
+pub fn flatten_mod_document_json_full(
+    meta_json: &[u8],
+    payload: &[u8],
+) -> Result<CompiledOutput, String> {
     let mut meta: MissionMeta = serde_json::from_slice(meta_json).map_err(|e| e.to_string())?;
     apply_authored_environment(&mut meta, payload);
     let doc = flatten_to_mod_document(&meta, payload).map_err(|e| e.to_string())?;
-    // The one read of `doc.kit_substitutions` outside a test, and it has to happen before the
-    // `to_vec` below: `#[serde(skip)]` means the bytes cannot carry it and `doc` is consumed by
-    // nothing else, so a caller who only gets the bytes can never recover this.
+    // The one read of `doc.kit_substitutions` / `doc.diagnostics` outside a test, and it has to
+    // happen before the `to_vec` below: `#[serde(skip)]` means the bytes cannot carry either.
     let substitutions = doc.kit_substitutions.details();
+    let diagnostics = doc.diagnostics.clone();
     let bytes = serde_json::to_vec(&doc).map_err(|e| e.to_string())?;
-    Ok((bytes, substitutions))
+    Ok((bytes, substitutions, diagnostics))
 }
 
 #[cfg(test)]
@@ -5421,5 +5810,274 @@ mod tests {
         let once = (meta.time_of_day.clone(), meta.weather_preset.clone());
         apply_authored_environment(&mut meta, &payload);
         assert_eq!((meta.time_of_day, meta.weather_preset), once);
+    }
+
+    /* ══════════ T-690 — the compile's structured diagnostics ══════════ */
+
+    /// A meta_json for the JSON entry points, matching [`meta`].
+    const DIAG_META_JSON: &[u8] =
+        br#"{"id":"11112222333344445555666677778888","title":"Compiled Fixture",
+      "author":"maker","terrain":"everon","customTerrainName":"","maxPlayers":64,
+      "timeOfDay":"05:30","weatherPreset":"clear"}"#;
+
+    /// **RULE 2 — no severity may fire on correct input** (fnf_tooling.md 1.3: "the Analyzer's role
+    /// accordion can never go green, which makes it useless").
+    ///
+    /// [`FIXTURE`] is a KNOWN-GOOD mission — two factions, callsigned squads, four seats, real
+    /// loadouts, a duplicate role, one slot with elevation — and it authors none of the six values
+    /// the compile discards. It must compile to an EMPTY finding list.
+    ///
+    /// The anti-vacuity half is the second block: the same fixture with ONE seeded value produces
+    /// exactly one finding. Without it, a diagnostics path that had been deleted outright would
+    /// still pass this test.
+    #[test]
+    fn a_clean_mission_compiles_with_no_diagnostics() {
+        let doc = flatten_to_mod_document(&meta(), FIXTURE.as_bytes()).expect("compiles");
+        assert!(
+            doc.diagnostics.is_empty(),
+            "a clean mission must produce NO findings (no severity on correct input); got: {:?}",
+            doc.diagnostics
+        );
+
+        // Seed one: the clean verdict above is about an input this test can move.
+        let seeded = FIXTURE.replace(
+            r#""id": "s2", "squadId": "sq1", "index": 1, "role": "TL""#,
+            r#""id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "rank": "Corporal""#,
+        );
+        assert_ne!(seeded, FIXTURE, "the seed must actually change the fixture");
+        let dirty = flatten_to_mod_document(&meta(), seeded.as_bytes()).expect("compiles");
+        assert_eq!(
+            dirty
+                .diagnostics
+                .iter()
+                .map(|f| f.rule_id)
+                .collect::<Vec<_>>(),
+            vec![DIAG_DROP_SLOT_RANK],
+            "seeding one dropped value must produce exactly one finding; got: {:?}",
+            dirty.diagnostics
+        );
+    }
+
+    /// Every one of the T-216 ledger's six silently-discarded values is now a diagnostic.
+    ///
+    /// [`LEDGER_FIXTURE`] is the ledger's OWN payload — it authors all six deliberately, and the
+    /// ledger test above asserts (row by row, against `mission.schema.json`) that none of them
+    /// reaches the wire. So the two tests are halves of one statement: the ledger proves the values
+    /// are lost, this proves the loss is no longer silent.
+    #[test]
+    fn the_six_dropped_values_each_become_a_diagnostic() {
+        let doc = flatten_to_mod_document(&meta(), LEDGER_FIXTURE.as_bytes()).expect("compiles");
+        let ids: Vec<&str> = doc.diagnostics.iter().map(|f| f.rule_id).collect();
+        for expected in COMPILE_DIAGNOSTIC_RULE_IDS {
+            assert!(
+                ids.contains(&expected),
+                "{expected} never fired over the T-216 ledger fixture, which authors all six \
+                 values by construction; got: {ids:?}"
+            );
+        }
+
+        // ...and each finding names the entity that owns it (the T-657 `subject_id` vocabulary,
+        // reused rather than re-invented: it is the panel's click-to-select key).
+        let owner = |rule: &str| -> Option<String> {
+            doc.diagnostics
+                .iter()
+                .find(|f| f.rule_id == rule)
+                .and_then(|f| f.subject_id.clone())
+        };
+        assert_eq!(owner(DIAG_DROP_SQUAD_LEADER).as_deref(), Some("sq1"));
+        assert_eq!(owner(DIAG_DROP_SLOT_TAG).as_deref(), Some("s1"));
+        assert_eq!(owner(DIAG_DROP_SLOT_CALLSIGN).as_deref(), Some("s1"));
+        assert_eq!(owner(DIAG_DROP_SLOT_RANK).as_deref(), Some("s1"));
+        assert_eq!(owner(DIAG_DROP_SLOT_STANCE).as_deref(), Some("s1"));
+        assert_eq!(owner(DIAG_DROP_VEHICLE_ROSTER).as_deref(), Some("v1"));
+
+        // The four parts the ticket asks for, on EVERY finding: a severity, a stable rule id, the
+        // owning entity id, and a message. A blank message or an unregistered id is a finding a
+        // consumer cannot route on.
+        for f in &doc.diagnostics {
+            assert!(
+                COMPILE_DIAGNOSTIC_RULE_IDS.contains(&f.rule_id),
+                "unregistered rule id {:?} — COMPILE_DIAGNOSTIC_RULE_IDS is the one enumeration",
+                f.rule_id
+            );
+            assert!(
+                !f.message.trim().is_empty(),
+                "{:?} has no message",
+                f.rule_id
+            );
+            assert!(
+                f.subject.starts_with('/'),
+                "{:?} subject {:?} is not a payload pointer",
+                f.rule_id,
+                f.subject
+            );
+            assert!(
+                f.subject_id.as_deref().is_some_and(|s| !s.is_empty()),
+                "{:?} names no owning entity — the panel could not select the offender",
+                f.rule_id
+            );
+            assert!(
+                matches!(f.severity, Severity::Warning | Severity::Info),
+                "{:?} is an Error, but a drop is not a refusal",
+                f.rule_id
+            );
+        }
+    }
+
+    /// **A diagnostic is not a refusal.** The compile must still produce its bytes when it has
+    /// findings, and those bytes must be the SAME bytes the finding-free entry point returns —
+    /// otherwise the diagnostics channel would be quietly changing what ships.
+    #[test]
+    fn a_diagnostic_is_not_a_refusal_and_does_not_move_the_bytes() {
+        let (bytes, findings) =
+            flatten_mod_document_json_with_diagnostics(DIAG_META_JSON, LEDGER_FIXTURE.as_bytes())
+                .expect("compiles despite findings");
+        assert!(
+            !findings.is_empty(),
+            "the ledger fixture must have findings"
+        );
+        assert!(!bytes.is_empty(), "the compile must still produce bytes");
+
+        let plain =
+            flatten_mod_document_json(DIAG_META_JSON, LEDGER_FIXTURE.as_bytes()).expect("compiles");
+        assert_eq!(
+            bytes, plain,
+            "the diagnostics entry point must return byte-identical bytes — one compile, three \
+             projections, or the panel and the download disagree about what was compiled"
+        );
+
+        // And the findings do not leak onto the wire: `mission.schema.json` closes the document
+        // root with `additionalProperties: false`, so a `diagnostics` key would 500 `/compiled`.
+        let wire: serde_json::Value = serde_json::from_slice(&bytes).expect("bytes are JSON");
+        assert!(
+            !any_object_has_key(&wire, "diagnostics"),
+            "the diagnostics must ride ALONGSIDE the bytes, never inside them"
+        );
+    }
+
+    /// **RULE 1 — diagnostics are never debug-gated** (fnf_v4.md 14.9; T-635 gates telemetry, not
+    /// correctness).
+    ///
+    /// Two halves, because either alone is weak. First a BEHAVIOURAL half: this test binary is a
+    /// normal build, and the compile produced findings in it — no flag was set, no feature enabled.
+    /// Then a SOURCE half, because the behavioural half would keep passing if someone wrapped the
+    /// emitters in `#[cfg(debug_assertions)]` (tests run with debug assertions ON, so a release
+    /// build would go silent and no test would notice). The source half reads the emission sites
+    /// and asserts no conditional-compilation attribute stands over any of them.
+    #[test]
+    fn diagnostics_are_never_debug_gated() {
+        let doc = flatten_to_mod_document(&meta(), LEDGER_FIXTURE.as_bytes()).expect("compiles");
+        assert!(
+            !doc.diagnostics.is_empty(),
+            "a normal build produced no findings — the path is not live"
+        );
+
+        const SRC: &str = include_str!("flatten.rs");
+        let production = SRC.split("#[cfg(test)]").next().expect("test marker");
+        // Every line that fills the accumulator, plus the field that carries it out.
+        let emission_needles = [
+            "diagnostics.squad_leader_dropped(",
+            "diagnostics.slot_identity_dropped(",
+            "diagnostics.vehicle_roster_dropped(",
+            "diagnostics: diagnostics.findings,",
+        ];
+        let lines: Vec<&str> = production.lines().collect();
+        for needle in emission_needles {
+            let at = lines
+                .iter()
+                .position(|l| l.contains(needle))
+                .unwrap_or_else(|| {
+                    panic!("emission site {needle:?} has vanished from the compile")
+                });
+            // Walk back over the enclosing block looking for a cfg/feature gate. 40 lines is well
+            // past the top of every block these sit in.
+            let from = at.saturating_sub(40);
+            for line in &lines[from..=at] {
+                let t = line.trim_start();
+                assert!(
+                    !(t.starts_with("#[cfg(") || t.starts_with("#![cfg(")),
+                    "{needle:?} is under a conditional-compilation attribute ({line:?}) — a \
+                     diagnostic that only exists in some builds is the un-diagnosable shipped \
+                     state fnf_v4.md 14.9 names"
+                );
+                assert!(
+                    !t.contains("debug_assertions"),
+                    "{needle:?} is debug-gated ({line:?})"
+                );
+            }
+        }
+    }
+
+    /// A blank / absent value is not a finding — the same rule T-200 applies to an empty `assetId`
+    /// and `wire_safety` applies to a blank callsign. Reporting them would bury the real findings
+    /// under one line per empty seat, which is how a diagnostics list becomes noise.
+    #[test]
+    fn a_blank_authored_value_is_not_a_finding() {
+        let payload = FIXTURE.replace(
+            r#"{"id": "s2", "squadId": "sq1", "index": 1, "role": "TL","#,
+            r#"{"id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "rank": "", "tag": "   ", "stance": null,"#,
+        );
+        assert_ne!(payload, FIXTURE, "the blank seed must change the fixture");
+        let doc = flatten_to_mod_document(&meta(), payload.as_bytes()).expect("compiles");
+        assert!(
+            doc.diagnostics.is_empty(),
+            "blank / null authored values must not produce findings; got {:?}",
+            doc.diagnostics
+        );
+    }
+
+    /// A squad no faction claims contributes nothing to the document, so a value it authored was
+    /// never going to ship and reporting its loss is noise the author cannot act on.
+    #[test]
+    fn an_unreferenced_squad_reports_no_drop() {
+        let payload = FIXTURE.replace(
+            r#"{"id": "sq2", "factionId": "f2", "name": "Grom", "slotIds": ["s4"]}"#,
+            r#"{"id": "sq2", "factionId": "f2", "name": "Grom", "slotIds": ["s4"]},
+               {"id": "sqX", "factionId": "f2", "name": "Ghost", "slotIds": [], "leaderSlotId": "sNope"}"#,
+        );
+        assert_ne!(payload, FIXTURE, "the orphan seed must change the fixture");
+        let doc = flatten_to_mod_document(&meta(), payload.as_bytes()).expect("compiles");
+        assert!(
+            doc.diagnostics.is_empty(),
+            "an orphan squad's dropped leader is not an author-actionable finding; got {:?}",
+            doc.diagnostics
+        );
+    }
+
+    /// Reading the four identity keys must not narrow what compiles — the T-216 ledger's closing
+    /// constraint, and [`scan_editor_payload_types`]'s own contract ("It cannot reject a payload
+    /// that compiles today"). A stored `"stance": 5` is legal and ignored; typed, it would become a
+    /// permanent 400 at save.
+    #[test]
+    fn wrong_typed_identity_keys_still_compile() {
+        let payload = FIXTURE.replace(
+            r#"{"id": "s2", "squadId": "sq1", "index": 1, "role": "TL","#,
+            r#"{"id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "stance": 5, "rank": {"a": 1}, "tag": [1, 2],"#,
+        );
+        assert_ne!(
+            payload, FIXTURE,
+            "the wrong-type seed must change the fixture"
+        );
+        assert!(
+            scan_editor_payload_types(payload.as_bytes()).is_empty(),
+            "the save-time precheck must still accept a payload that compiles"
+        );
+        let doc = flatten_to_mod_document(&meta(), payload.as_bytes()).expect("compiles");
+        // They are reported (a value was authored and is being dropped) and DESCRIBED by type
+        // rather than dumped into the sentence.
+        let by_id = |r: &str| {
+            doc.diagnostics
+                .iter()
+                .find(|f| f.rule_id == r)
+                .map(|f| f.message.clone())
+                .unwrap_or_default()
+        };
+        assert!(
+            by_id(DIAG_DROP_SLOT_STANCE).contains("`5`"),
+            "{}",
+            by_id(DIAG_DROP_SLOT_STANCE)
+        );
+        assert!(by_id(DIAG_DROP_SLOT_RANK).contains("an object"));
+        assert!(by_id(DIAG_DROP_SLOT_TAG).contains("an array"));
     }
 }

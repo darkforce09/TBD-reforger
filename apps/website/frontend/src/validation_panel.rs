@@ -506,14 +506,65 @@ pub fn evaluate_source(source: &PayloadSource) -> Vec<PanelFinding> {
     }
 }
 
+/* ═══════════════════ T-690 — the compile's findings, published into this panel ═══════════════════ */
+
+thread_local! {
+    /// The most recent COMPILE's findings (T-690), already flattened to panel rows. Written by
+    /// [`publish_compile_findings`] from the command layer, read by [`evaluate_now`].
+    ///
+    /// **Why the compile's findings are pushed here rather than evaluated as registry rules.** The
+    /// registry runs on every doc change, so a rule in it is an ALWAYS-ON claim about the mission.
+    /// The compile's drop findings are not that: `ORBAT-SQUAD-HAS-LEADER` fires when a squad names
+    /// no `leaderSlotId` and `COMPILE-DROP-SQUAD-LEADER` fires when it names one, so as registry
+    /// rules the pair would be exhaustive over every squad and this panel could never go green —
+    /// verbatim the FNF defect (fnf_tooling.md 1.3, "the Analyzer's role accordion can never go
+    /// green, which makes it useless"), and unclearable besides, since the emit is parked behind
+    /// T-674/T-675. They describe what THIS compile discarded, so they arrive when a compile runs.
+    /// The reasoning lives in full on `map_engine_core::mission::flatten`'s `DiagnosticAcc`.
+    static COMPILE_FINDINGS: std::cell::RefCell<Vec<PanelFinding>> =
+        const { std::cell::RefCell::new(Vec::new()) };
+
+    /// The mounted panel's rendered-findings signal, so a publish repaints IMMEDIATELY rather than
+    /// waiting for the next doc-change debounce (an export that produced findings and showed nothing
+    /// until the author's next edit would read as a broken button). Registered by [`ValidationPanel`]
+    /// at mount; `None` on the host / pre-mount, where a publish simply stores.
+    static PANEL_SINK: std::cell::RefCell<Option<RwSignal<Vec<PanelFinding>>>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Publish the findings a compile produced (`map_engine_core::mission::flatten`'s
+/// [`Finding`]s, flattened to panel rows) and repaint. Replaces the previous compile's list whole —
+/// a finding describes one compile, so two compiles do not accumulate.
+///
+/// Called from `mission_commands::export_compiled_now`. This is the T-690 feed: the panel is the
+/// render surface and it is not rebuilt here, only fed.
+pub fn publish_compile_findings(rows: Vec<PanelFinding>) {
+    COMPILE_FINDINGS.with(|c| *c.borrow_mut() = rows);
+    let sink = PANEL_SINK.with(|c| *c.borrow());
+    if let Some(sig) = sink {
+        sig.set(evaluate_now());
+    }
+}
+
+/// The last published compile findings (empty before any compile has run).
+#[must_use]
+pub fn compile_findings() -> Vec<PanelFinding> {
+    COMPILE_FINDINGS.with(|c| c.borrow().clone())
+}
+
 /// Evaluate the CURRENT registered payload source, or an empty vec when none is registered (host /
 /// pre-mount). The panel's re-eval calls this; the view never touches the engine directly.
+///
+/// The always-on registry findings come first, then the last compile's ([`publish_compile_findings`]),
+/// so `group_by_rule`'s stable ordering puts the mission's own defects above the build report.
 #[must_use]
 pub fn evaluate_now() -> Vec<PanelFinding> {
-    match read_payload_source() {
+    let mut rows = match read_payload_source() {
         Some(source) => evaluate_source(&source),
         None => Vec::new(),
-    }
+    };
+    rows.extend(compile_findings());
+    rows
 }
 
 /* ═══════════════════════════ the view (native-compilable, like AttributesModal) ═══════════════════════════ */
@@ -542,6 +593,12 @@ pub fn ValidationPanel(
     let expanded = RwSignal::new(false);
     // A subtle "re-checking…" flag while a debounce is armed (set on bump, cleared on fire).
     let rechecking = RwSignal::new(false);
+
+    // T-690 — register `findings` as the publish sink so a compile's diagnostics repaint the card
+    // the moment they are produced, without waiting for the doc-change debounce. Registered on both
+    // targets: the signal is the same one the view reads either way.
+    PANEL_SINK.with(|c| *c.borrow_mut() = Some(findings));
+    on_cleanup(move || PANEL_SINK.with(|c| *c.borrow_mut() = None));
 
     // ── Re-evaluation: doc_tick → debounce → evaluate (wasm only) ──
     #[cfg(target_arch = "wasm32")]

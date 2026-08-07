@@ -15,6 +15,47 @@ use map_engine_core::mission::wire_safety::{self, CargoPhysCatalog};
 pub use map_engine_core::mission::flatten::{
     CompileError, ModMissionDocument, ModSlot, mission_terrain_key,
 };
+/// T-690 — the compile's structured diagnostics ride out of core on
+/// [`ModMissionDocument::diagnostics`]. Re-exported here for the same reason every other output type
+/// is: `crate::services::…` callers name one path, not two.
+pub use map_engine_core::mission::validate::{
+    Finding as CompileFinding, Severity as FindingSeverity,
+};
+
+/// Header carrying how many structured findings the compile produced (always present, `0` included).
+///
+/// **Why a header and not the body.** `mission.schema.json` closes the document root with
+/// `additionalProperties: false` and [`crate::handlers::missions::get_compiled_mission`] holds the
+/// body to it, so a `diagnostics` key in the JSON would take `/compiled` down for every mission —
+/// the exact trap the T-216 ledger spells out. The findings therefore ride ALONGSIDE the bytes, in
+/// the only channel HTTP offers for that, and the body stays byte-identical to what it always was.
+pub const COMPILE_DIAGNOSTICS_COUNT_HEADER: &str = "x-compile-diagnostics-count";
+
+/// Header naming WHICH rules fired, comma-separated and de-duplicated. Omitted when nothing fired.
+///
+/// Rule ids only — never messages. Ids are `&'static str` ASCII constants
+/// (`map_engine_core::mission::flatten::COMPILE_DIAGNOSTIC_RULE_IDS`), so this value is always a
+/// legal header value; a message carries author text of arbitrary length and encoding and would make
+/// the header a second, worse copy of the log line below it.
+pub const COMPILE_DIAGNOSTICS_RULES_HEADER: &str = "x-compile-diagnostics-rules";
+
+/// The `x-compile-diagnostics-rules` value for a finding list: each rule id once, in first-fired
+/// order (which is the compile's own deterministic walk order), comma-separated. `None` when the
+/// list is empty, so the caller omits the header rather than sending a blank one.
+#[must_use]
+pub fn compile_diagnostics_rules_header(findings: &[CompileFinding]) -> Option<String> {
+    let mut seen: Vec<&str> = Vec::new();
+    for f in findings {
+        if !seen.contains(&f.rule_id) {
+            seen.push(f.rule_id);
+        }
+    }
+    if seen.is_empty() {
+        None
+    } else {
+        Some(seen.join(","))
+    }
+}
 
 /// Build the compiled mod mission document from a mission row + its version payload. Thin wrapper
 /// over the shared [`map_engine_core::mission::flatten::flatten_to_mod_document`].
@@ -938,6 +979,79 @@ mod tests {
             compiled.contains("load_cargo_phys_catalog")
                 && compiled.contains("flatten_to_mod_document_with_catalog("),
             "/compiled must load catalog + with_catalog (T-549); got:\n{compiled}"
+        );
+    }
+
+    /* ══════════ T-690 — the compile's diagnostics reach this boundary ══════════ */
+
+    /// The header value: each rule id once, in first-fired order, comma-separated. Empty → `None`,
+    /// so a clean compile omits the header instead of sending a blank one.
+    #[test]
+    fn the_rules_header_dedupes_and_keeps_fire_order() {
+        let f = |rule_id: &'static str| CompileFinding {
+            rule_id,
+            severity: FindingSeverity::Info,
+            primitive: map_engine_core::mission::validate::Primitive::PerObjectInvariant,
+            message: String::new(),
+            subject: "/editor/slots/0".into(),
+            subject_id: None,
+        };
+        assert_eq!(compile_diagnostics_rules_header(&[]), None);
+        assert_eq!(
+            compile_diagnostics_rules_header(&[f("B-RULE"), f("A-RULE"), f("B-RULE")]).as_deref(),
+            Some("B-RULE,A-RULE"),
+            "fire order, not sorted — the compile's walk order is the meaningful one"
+        );
+    }
+
+    /// The clean-input rule at THIS boundary: the shipped fixture — a real two-faction mission with
+    /// loadouts — compiles with an empty finding list, and the count header would read `0`.
+    #[test]
+    fn the_fixture_mission_compiles_with_no_diagnostics() {
+        let doc =
+            flatten_to_mod_document(&fixture_mission(), FIXTURE.as_bytes()).expect("compiles");
+        assert!(
+            doc.diagnostics.is_empty(),
+            "a clean mission must produce no findings at the /compiled boundary; got {:?}",
+            doc.diagnostics
+        );
+        assert_eq!(compile_diagnostics_rules_header(&doc.diagnostics), None);
+    }
+
+    /// A payload that authors dropped values still serves a VALID document — findings ride alongside
+    /// the bytes, never inside them. Without this, the obvious "just add a `diagnostics` key"
+    /// implementation would 500 `/compiled` for every mission (`additionalProperties: false` on the
+    /// document root), which is exactly what the T-216 ledger warns about.
+    #[test]
+    fn a_mission_with_findings_still_serves_a_schema_valid_document() {
+        let payload = FIXTURE.replace(
+            r#"{"id": "s2", "squadId": "sq1", "index": 1, "role": "TL","#,
+            r#"{"id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "rank": "Corporal", "stance": "prone","#,
+        );
+        assert_ne!(payload, FIXTURE, "the seed must change the fixture");
+        let doc = flatten_to_mod_document(&fixture_mission(), payload.as_bytes())
+            .expect("still compiles");
+        assert_eq!(
+            doc.diagnostics.len(),
+            2,
+            "two authored values were dropped; got {:?}",
+            doc.diagnostics
+        );
+        assert_eq!(
+            compile_diagnostics_rules_header(&doc.diagnostics).as_deref(),
+            Some("COMPILE-DROP-SLOT-RANK,COMPILE-DROP-SLOT-STANCE")
+        );
+
+        let body = serde_json::to_vec(&doc).expect("serialises");
+        assert!(
+            validate_mission_document(&body)
+                .expect("validator available")
+                .is_empty(),
+            "the served document must stay schema-valid with findings present"
+        );
+        assert!(
+            !String::from_utf8_lossy(&body).contains("diagnostics"),
+            "the findings must never reach the wire body"
         );
     }
 }
