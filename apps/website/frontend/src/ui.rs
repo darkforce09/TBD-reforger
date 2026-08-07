@@ -257,6 +257,123 @@ pub fn Select(
     }
 }
 
+/* ═══════════════ T-700 — one search box ═══════════════
+ *
+ * There are at least five hand-rolled search inputs in the editor alone: three in the asset dock
+ * (`eden_dock_right`, T-084's operator grammar), the Locations filter (`eden_dock_left`, T-696) and
+ * the Layers filter (`eden_dock_left`, T-637) — plus more across the suite (`missions`, `audit`,
+ * `personnel`, `leaderboards`, `arsenal`). Every one is its own `<input type="search">` with its own
+ * copy of the border/background/placeholder recipe, its own `aria-label` habit, and — uniformly —
+ * no way to clear it but selecting the text and pressing Backspace. Five definitions of one control
+ * is five places a change has to land and four places it can be forgotten.
+ *
+ * So this is the sixth-and-last: the primitive, here beside [`Slider`] and [`Select`], where the
+ * whole suite can reach it. It follows T-633's conventions on purpose — `label` doubles as the
+ * accessible name AND the tooltip and is NOT gated on `!disabled` (T-668 rule 3), state comes from
+ * the [`HOVER_FILL`]/[`DISABLED_GLYPH`] vocabulary rather than a local re-typing of
+ * `hover:bg-white/10`, and the caller owns the width.
+ *
+ * TWO DELIBERATE DEPARTURES from Slider/Select, both forced by what a search box is:
+ *
+ *   1. **`on_input`, not `on_change`.** T-633 bound the settle event because its caller was a
+ *      dragged scrubber feeding a debounced wire. A filter box is the opposite: the list must narrow
+ *      as the operator types, and `change` on a text input does not fire until blur. The name says
+ *      which event it is so no caller has to read the body to find out.
+ *   2. **`class` lands on the WRAPPER, not the input.** The control is three elements (glyph ·
+ *      input · clear) in a `relative` box; the input is `w-full` inside it, so a caller's `w-64`
+ *      has to size the box or it sizes nothing. Slider/Select are single elements and had no such
+ *      split.
+ *
+ * The clear button is the one thing the primitive ADDS over the five it replaces, and it is why the
+ * UA's own affordance is switched off: WebKit's `::-webkit-search-cancel-button` is browser chrome
+ * in the exact sense T-633's block comment objects to — it does not exist in Firefox at all, so
+ * "can I clear this filter without selecting the text" currently has a different answer per engine.
+ */
+
+/// The search field's own box. `pl-7`/`pr-7` are not padding taste: they are the gutters the
+/// leading glyph and the trailing clear button sit in, so text can never slide under either.
+const SEARCH_BOX: &str = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 py-1.5 pl-7 pr-7 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60";
+/// `type="search"` is kept — it is what tells assistive tech and the browser's own autofill that
+/// this is a search field — but its two WebKit decorations are switched off, because the clear
+/// affordance below is ours and must look and behave the same on every engine.
+const SEARCH_UA_PARTS: &str = "[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none";
+
+/// Aegis search box — the suite's one `<input type="search">` (T-700).
+///
+/// Fires [`on_input`](SearchBoxProps::on_input) on every keystroke (see the block comment above:
+/// `change` would not fire until blur, and a filter that narrows on blur is not a filter). The
+/// value is written to the DOM `value` **property** from the caller's signal, exactly as
+/// [`Slider`] and [`Select`] do, so the caller keeps ownership of the query string and this
+/// component holds no state of its own.
+///
+/// The clear button is rendered only while there is something to clear, and it routes through the
+/// SAME `on_input` callback — clearing is not a separate event a caller could forget to handle.
+///
+/// State: [`HOVER_FILL`] and [`DISABLED_GLYPH`] — the T-668 vocabulary, same as its two siblings.
+// `dead_code` is allowed the same way [`Slider`] and [`Select`] allow it. Note what it does NOT
+// reach: `#[component]` generates a `SearchBoxProps` struct, and because the allow makes this fn a
+// non-root, rustc reports that struct's fields as never read until the FIRST caller lands. That
+// warning is a true statement — every box this replaces lives in a file T-700 does not own (see
+// the block comment for the five) — and it clears itself on the first adoption rather than being
+// papered over here.
+#[component]
+#[allow(dead_code)]
+pub fn SearchBox(
+    /// Accessible name, and the tooltip — retained while `disabled` (T-668 rule 3). Also the stem
+    /// of the clear button's own label, so a page with two filters does not present two buttons
+    /// both called "Clear".
+    label: &'static str,
+    /// Visible hint. Defaults to empty rather than to a generic "Search…" — a filter that says
+    /// what it filters ("Filter layers…") is the whole point of the prop.
+    #[prop(optional)]
+    placeholder: &'static str,
+    /// The live query. Owned by the caller; read reactively, written to the DOM property.
+    #[prop(into)]
+    value: Signal<String>,
+    /// Every keystroke, and the clear button's empty string.
+    #[prop(into)]
+    on_input: Callback<String>,
+    /// Extra classes for the WRAPPER — the caller owns the width (`w-full`, `w-64`, `mt-1`, …).
+    #[prop(optional)]
+    class: &'static str,
+    #[prop(optional)] disabled: bool,
+    /// `data-testid` for the gate harness. Omitted entirely when empty, so a `[data-testid]`
+    /// selector cannot match an unlabelled box.
+    #[prop(optional)]
+    test_id: &'static str,
+) -> impl IntoView {
+    view! {
+        <span class=cn(&["relative flex items-center", class])>
+            <MaterialIcon
+                name="search"
+                class="pointer-events-none absolute left-1.5 text-base leading-none text-outline"
+            />
+            <input
+                type="search"
+                aria-label=label
+                title=label
+                placeholder=placeholder
+                disabled=disabled
+                data-testid=(!test_id.is_empty()).then_some(test_id)
+                class=cn(&[SEARCH_BOX, SEARCH_UA_PARTS, HOVER_FILL, DISABLED_GLYPH])
+                prop:value=move || value.get()
+                on:input=move |ev| on_input.run(event_target_value(&ev))
+            />
+            <Show when=move || !disabled && !value.get().is_empty()>
+                <button
+                    type="button"
+                    aria-label=format!("Clear {label}")
+                    title="Clear"
+                    class=cn(&["absolute right-1 rounded-sm p-0.5 text-outline", HOVER_FILL])
+                    on:click=move |_| on_input.run(String::new())
+                >
+                    <MaterialIcon name="close" class="text-base leading-none" />
+                </button>
+            </Show>
+        </span>
+    }
+}
+
 /// ═══════════════ T-333 — one Escape, one dialog ═══════════════
 ///
 /// [`Dialog`] and [`Sheet`] each install a **window-level** `keydown` listener, one per instance.
@@ -607,6 +724,87 @@ mod tests {
         assert!(
             !code.contains(&one_shot),
             "auth.has_min_role(Admin) is browse-mode None=>true (T-286/T-454 contract)"
+        );
+    }
+
+    /* ═══════════════ T-700 — the shared search box ═══════════════ */
+
+    /// The primitive's contract, pinned where `cargo test` cannot instantiate a `view!` tree.
+    ///
+    /// Scrubbed through `class_r_scrub` rather than this module's own `strip_rust_comments`,
+    /// because `scrub` cuts the TEST MODULE as its first pass — a bare `include_str!` scan would
+    /// otherwise be satisfied by the needles written in this very function (T-759).
+    #[test]
+    fn the_search_box_fires_on_every_keystroke_and_clears_through_the_same_callback() {
+        use crate::arsenal::class_r_scrub::{live_code, live_source, only_item};
+        let code = only_item(&live_code(include_str!("ui.rs")), "pub fn SearchBox(").to_string();
+        // `live_source` keeps string literals — every assertion below that is ABOUT a class recipe,
+        // an element type or user-visible copy has to read this one, not `code`.
+        let src = only_item(&live_source(include_str!("ui.rs")), "pub fn SearchBox(").to_string();
+        // (1) It narrows as you type. `change` on a text input does not fire until blur, so a
+        // search box bound to the settle event is a search box that does nothing while you use it.
+        assert!(
+            code.contains("on:input=move |ev| on_input.run(event_target_value(&ev))"),
+            "SearchBox must emit on every keystroke; body was:\n{code}"
+        );
+        assert!(
+            !code.contains("on:change="),
+            "SearchBox must not bind the settle event — that is Slider/Select's constraint, not \
+             a filter's"
+        );
+        // (2) Clearing is not a second, separate event. A caller wires ONE callback and gets both.
+        assert!(
+            code.contains("on:click=move |_| on_input.run(String::new())"),
+            "the clear button must route through the same on_input callback"
+        );
+        // (3) No state of its own — the caller owns the query, exactly like Slider and Select.
+        assert!(
+            !code.contains("RwSignal::new(") && !code.contains("signal("),
+            "SearchBox must stay uncontrolled: a private copy of the query is a second source of \
+             truth for it"
+        );
+        // (4) T-633's precedent: the T-668 state vocabulary is CONSUMED, not re-typed here.
+        assert!(
+            code.contains("DISABLED_GLYPH") && code.contains("HOVER_FILL"),
+            "SearchBox must compose the eden_layout state recipes"
+        );
+        assert!(
+            !src.contains("disabled:opacity") && !src.contains("hover:bg-white/10"),
+            "a second definition of a T-668 recipe is the drift T-633 imported them to prevent"
+        );
+        // (5) The element itself, and the two switched-off WebKit parts. The recipe is a const
+        // beside the component (T-633's `SLIDER_*` idiom), so the composition is asserted on the
+        // fn and the contents on the const — a `cn(&[…])` that dropped the const would pass a
+        // whole-file scan.
+        let search_type = format!("type=\"{}\"", "search");
+        assert!(
+            src.contains(&search_type),
+            "the element stays a real search input — that is what assistive tech reads"
+        );
+        assert!(
+            src.contains("SEARCH_UA_PARTS"),
+            "the input must compose the UA-parts recipe"
+        );
+        let recipe = live_source(include_str!("ui.rs"));
+        let recipe = recipe
+            .split("SEARCH_UA_PARTS: &str =")
+            .nth(1)
+            .and_then(|t| t.split(';').next())
+            .expect("SEARCH_UA_PARTS must be declared");
+        for part in [
+            "::-webkit-search-cancel-button",
+            "::-webkit-search-decoration",
+        ] {
+            assert!(
+                recipe.contains(part),
+                "{part} must be switched off — the clear affordance is ours, and WebKit's does \
+                 not exist in Firefox at all; recipe was:\n{recipe}"
+            );
+        }
+        // (6) Tooltip survives `disabled` (T-668 rule 3), same as Slider/Select.
+        assert!(
+            src.contains("title=label"),
+            "a control that cannot act must still explain itself"
         );
     }
 

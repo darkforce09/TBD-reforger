@@ -24,6 +24,11 @@
 //!
 //! `editor_ops::read_attrs_diff` owns the "do they differ" half; the checkbox + disable half is
 //! here.
+//!
+//! **T-700 (3DEN-PLACE-013) — the numeric nudge.** Every `number_field` now moves by PageUp /
+//! PageDown, with `Ctrl` / `Shift` / `Alt` scaling the step (`nudge_step`). A nudge writes the
+//! field's local draft only, so a burst coalesces into the one blur/Enter commit the field already
+//! made, and a field the T-082 gate has shut refuses the keyboard exactly as it refuses typing.
 #![allow(dead_code)]
 use leptos::prelude::*;
 
@@ -137,6 +142,16 @@ impl Gate {
     /// not opted in. Reactive: call it from inside a view closure.
     fn locked(self) -> bool {
         self.shut || self.opt.is_some_and(|o| !o.get())
+    }
+
+    /// T-700 — the NON-reactive peer of [`locked`], for use inside an event handler.
+    ///
+    /// Same rule and, load-bearingly, the same ORDER: `shut` first, unconditional `||`, so the new
+    /// keyboard path cannot become a second and laxer opinion of what "this field is dead" means.
+    /// It reads the latch `_untracked` because a keydown is not a render — a tracked read there
+    /// would subscribe whichever reactive owner happens to be current when the key is pressed.
+    fn locked_now(self) -> bool {
+        self.shut || self.opt.is_some_and(|o| !o.get_untracked())
     }
 }
 
@@ -396,6 +411,64 @@ fn modal_view(
 
 /* ─────────────────────────── field primitives (fields.tsx ports) ─────────────────────────── */
 
+/* ─────────── T-700 3DEN-PLACE-013 — the numeric nudge, as arithmetic ───────────
+ *
+ * Eden gives every numeric field a keyboard nudge and scales the step with the modifier keys.
+ * [`number_field`] had NO keyboard affordance of its own at all: `type="number"` buys the browser's
+ * ±1 arrow keys and nothing else, and PageUp/PageDown just scrolled the modal.
+ *
+ * The two functions below are deliberately OUTSIDE the `#[cfg(target_arch = "wasm32")]` block that
+ * holds the rest of this modal. Everything in a `view!` tree is unreachable from `cargo test`
+ * (native) and therefore can only be pinned against its own source; the nudge's decisions —
+ * how big a step is, and when there is no legal nudge at all — are pure arithmetic, so they are
+ * kept native and tested by CALLING them. The keydown handler is then a thin wire between the two.
+ */
+
+/// The step one PageUp/PageDown moves a numeric field, given the modifier keys.
+///
+/// | held    | step |
+/// |---------|------|
+/// | `Ctrl`  | 0.1  |
+/// | `Shift` | 10   |
+/// | `Alt`   | 100  |
+/// | none    | 1    |
+///
+/// FIRST MATCH, finest first — not a product of the three. A multiplicative scale has to answer
+/// "what is Ctrl+Alt?" and every answer is a surprise; first-match answers it once. Answering it
+/// with the FINEST modifier held is the safe direction: a two-finger combo the operator did not
+/// mean can then only ever nudge LESS than intended. Overshooting by 1000 is an edit to hunt down
+/// and undo; undershooting is one more keypress.
+fn nudge_step(ctrl: bool, shift: bool, alt: bool) -> f64 {
+    if ctrl {
+        0.1
+    } else if shift {
+        10.0
+    } else if alt {
+        100.0
+    } else {
+        1.0
+    }
+}
+
+/// `from` moved by one `step` (`up` = PageUp). `None` means **there is no legal nudge**, and the
+/// caller must write nothing at all.
+///
+/// `from` is `None` whenever the field's text does not parse, and the case that matters is the
+/// multi-edit one: a field whose selected slots DISAGREE renders EMPTY by [`Gate::differs`], so
+/// there is no base value to be relative to. Nudging from an implied `0` would stamp an ABSOLUTE
+/// number onto every selected entity while looking to the operator like a relative tweak — so a
+/// differing field refuses the nudge until an absolute value is typed into it.
+///
+/// The result is quantised to 3 decimals because the finest step is 0.1 and binary floats do not
+/// add that cleanly: ten Ctrl+PageUps off zero land on `0.9999999999999999`, and that is the string
+/// the field would then display and commit.
+fn nudged(from: Option<f64>, up: bool, step: f64) -> Option<f64> {
+    let from = from.filter(|v| v.is_finite())?;
+    let raw = from + if up { step } else { -step };
+    let quantised = (raw * 1000.0).round() / 1000.0;
+    quantised.is_finite().then_some(quantised)
+}
+
 /// Mono numeric field committing on blur/Enter (one commit = one undo step). While focused it holds
 /// the local draft; unfocused it mirrors the doc value (rounded), so a map drag updates it live.
 ///
@@ -403,6 +476,23 @@ fn modal_view(
 /// value to display, so the field shows EMPTY (placeholder `—`) rather than one arbitrary member's
 /// number, and stays `disabled` until the "Apply to all" checkbox is ticked. The commit path is
 /// untouched: whatever the operator types is parsed and handed to `on_commit` exactly as before.
+///
+/// **T-700 3DEN-PLACE-013 — the keyboard nudge, and why a burst COALESCES.** PageUp/PageDown move
+/// the value by [`nudge_step`]; a nudge writes the local **draft** and nothing else, so a run of
+/// them settles into the ONE commit that blur/Enter already fires. It is exactly what typing does,
+/// and it is that way for two concrete reasons rather than taste:
+///   * `attrs_update_position` calls `after_local_edit()` per commit and `MissionDocCore` builds its
+///     `UndoManager` with `capture_timeout_millis = 0`, so a per-nudge commit would mint one undo
+///     step per keypress — and PageDown auto-repeats. Ten held keys would be ten Ctrl-Zs.
+///   * the modal body re-renders on every `doc_tick` bump (see `AttributesModal`), and a commit
+///     bumps it. Committing mid-focus would rebuild this very input under the operator's fingers
+///     and drop the focus that the next nudge needs, so the second PageUp would land nowhere.
+/// The cost is stated honestly: the entity does not move on the map until the field settles, the
+/// same as typing a coordinate. The trade is one undo step per visit instead of one per keypress.
+///
+/// A nudge is a WRITE, so it takes the same gate the typed path takes ([`Gate::locked_now`]) — a
+/// T-082 refused field and an un-ticked "Apply to all" both refuse the keyboard exactly as they
+/// refuse the keyboard's typed characters.
 #[cfg(target_arch = "wasm32")]
 fn number_field(
     label: &'static str,
@@ -448,7 +538,8 @@ fn number_field(
                     on:input=move |ev| draft.set(event_target_value(&ev))
                     on:blur=move |_| commit()
                     on:keydown=move |ev| {
-                        if ev.key() == "Enter" {
+                        let key = ev.key();
+                        if key == "Enter" {
                             if let Some(t) = ev
                                 .target()
                                 .and_then(|t| {
@@ -457,7 +548,34 @@ fn number_field(
                             {
                                 t.blur().ok();
                             }
+                            return;
                         }
+                        // T-700 3DEN-PLACE-013 — the nudge.
+                        let up = match key.as_str() {
+                            "PageUp" => true,
+                            "PageDown" => false,
+                            _ => return,
+                        };
+                        // Claimed unconditionally, before any refusal below: whether or not this
+                        // field accepts the nudge, the operator asked to move a NUMBER, and the
+                        // default action is to scroll the modal out from under them.
+                        ev.prevent_default();
+                        // T-082 — the core drops a refused field's write on the floor, and an
+                        // un-ticked latch is an operator who has not opted this column into the
+                        // multi-edit. `disabled` already stops the event in a real browser; this is
+                        // the same rule stated where it does not depend on the browser to hold.
+                        if gate.locked_now() {
+                            return;
+                        }
+                        let Some(next) = nudged(
+                            draft.get_untracked().parse::<f64>().ok(),
+                            up,
+                            nudge_step(ev.ctrl_key(), ev.shift_key(), ev.alt_key()),
+                        ) else {
+                            return;
+                        };
+                        // Draft only — the burst settles into blur/Enter's single commit.
+                        draft.set(format!("{next}"));
                     }
                     class=move || {
                         let pad = if suffix.is_some() { " pr-7" } else { "" };
@@ -945,6 +1063,188 @@ mod tests {
         assert!(
             body.contains("if role.is_some() || tag.is_some() || stance.is_some() {"),
             "a type-only or description-only commit must not open an update_slot transaction"
+        );
+    }
+
+    /* ─────────── T-700 3DEN-PLACE-013 — the numeric nudge ─────────── */
+
+    /// The step scale, exercised by CALLING it — the whole reason [`super::nudge_step`] lives
+    /// outside the wasm block. Two properties, and the second is the one a refactor breaks:
+    ///
+    ///  1. each modifier alone selects its own step, and bare PageUp is 1;
+    ///  2. the scale is FIRST-MATCH and finest-first, so **no combination of modifiers can produce
+    ///     a step larger than the largest single modifier** — the safety argument the doc comment
+    ///     makes. A multiplicative rewrite (`Shift`×`Alt` = 1000) fails this outright.
+    #[test]
+    fn nudge_step_is_first_match_finest_first_and_never_compounds() {
+        use super::nudge_step;
+        assert_eq!(nudge_step(false, false, false), 1.0, "bare PageUp is 1");
+        assert_eq!(nudge_step(true, false, false), 0.1, "Ctrl is the fine step");
+        assert_eq!(
+            nudge_step(false, true, false),
+            10.0,
+            "Shift is the coarse step"
+        );
+        assert_eq!(
+            nudge_step(false, false, true),
+            100.0,
+            "Alt is the coarsest step"
+        );
+        // Finest held wins, whichever else is down.
+        assert_eq!(
+            nudge_step(true, true, false),
+            0.1,
+            "Ctrl+Shift takes Ctrl's step"
+        );
+        assert_eq!(
+            nudge_step(true, false, true),
+            0.1,
+            "Ctrl+Alt takes Ctrl's step"
+        );
+        assert_eq!(
+            nudge_step(true, true, true),
+            0.1,
+            "all three take Ctrl's step"
+        );
+        assert_eq!(
+            nudge_step(false, true, true),
+            10.0,
+            "Shift+Alt takes Shift's step"
+        );
+        // The property, over the whole 2^3 space: a combo never out-steps the single modifiers.
+        let solo: f64 = [
+            nudge_step(true, false, false),
+            nudge_step(false, true, false),
+            nudge_step(false, false, true),
+            nudge_step(false, false, false),
+        ]
+        .into_iter()
+        .fold(0.0, f64::max);
+        for ctrl in [false, true] {
+            for shift in [false, true] {
+                for alt in [false, true] {
+                    let s = nudge_step(ctrl, shift, alt);
+                    assert!(
+                        s <= solo,
+                        "ctrl={ctrl} shift={shift} alt={alt} stepped {s}, larger than the biggest \
+                         single-modifier step {solo} — the scale has started compounding"
+                    );
+                    assert!(s > 0.0, "a step must move the value");
+                }
+            }
+        }
+    }
+
+    /// [`super::nudged`] — direction, quantisation, and the refusal that protects a multi-edit.
+    #[test]
+    fn a_nudge_quantises_and_refuses_a_field_with_no_truthful_base() {
+        use super::{nudge_step, nudged};
+        assert_eq!(nudged(Some(12.0), true, 1.0), Some(13.0));
+        assert_eq!(nudged(Some(12.0), false, 1.0), Some(11.0));
+        assert_eq!(nudged(Some(12.0), true, 10.0), Some(22.0));
+        assert_eq!(nudged(Some(-3.0), false, 100.0), Some(-103.0));
+        // A field the selection DISAGREES on renders empty; `"".parse::<f64>()` is Err, so the
+        // caller hands us None and there must be NO write. Nudging from an implied 0 would stamp
+        // an absolute number onto every selected entity.
+        assert_eq!(
+            nudged(None, true, 1.0),
+            None,
+            "an empty (multi-value) field has no base to be relative to — refuse the nudge"
+        );
+        assert_eq!(nudged(Some(f64::NAN), true, 1.0), None);
+        assert_eq!(nudged(Some(f64::INFINITY), true, 1.0), None);
+        // Quantisation: ten fine nudges off zero must land on 1, not 0.9999999999999999.
+        let fine = nudge_step(true, false, false);
+        let mut v = 0.0_f64;
+        for _ in 0..10 {
+            v = nudged(Some(v), true, fine).expect("a finite base nudges");
+        }
+        assert_eq!(
+            v, 1.0,
+            "ten Ctrl nudges off zero must land exactly on 1.0, got {v}"
+        );
+        assert_eq!(
+            format!("{v}"),
+            "1",
+            "the quantised value is what the field displays and commits"
+        );
+    }
+
+    /// The wiring, pinned where `cargo test` cannot reach: `number_field`'s keydown must consult
+    /// the SAME gate the typed path does before it touches the draft.
+    ///
+    /// The ORDER is the assertion. `gate.locked_now()` has to be checked before `nudged(` is even
+    /// called — a guard placed after the arithmetic would still be a guard, but one refactor away
+    /// from writing first and asking later. And `locked_now` must carry `shut` first and
+    /// unconditionally, exactly like the reactive `locked`, so the keyboard cannot become a second
+    /// laxer opinion of "dead field" (the F-7 lie, re-told through a different input path).
+    #[test]
+    fn the_nudge_takes_the_same_refusal_gate_as_a_typed_edit() {
+        let src = attrs_src();
+        let field = only_body(&src, "fn number_field(");
+        let guard = field
+            .find("gate.locked_now()")
+            .expect("number_field's keydown must consult the gate before nudging");
+        let arith = field
+            .find("nudged(")
+            .expect("number_field must call the nudge arithmetic");
+        assert!(
+            guard < arith,
+            "the refusal must be checked BEFORE the nudge is computed; guard at {guard}, \
+             nudged( at {arith}"
+        );
+        let now = only_body(&src, "fn locked_now(self) -> bool");
+        assert!(
+            now.contains("self.shut || self.opt.is_some_and(|o| !o.get_untracked())"),
+            "locked_now must short-circuit on `shut` exactly as `locked` does; body was:\n{now}"
+        );
+    }
+
+    /// A nudge writes the DRAFT, never the document — the coalescing decision, stated as code.
+    ///
+    /// `number_field` must hold exactly ONE `on_commit(` call site, the one inside `commit`, so a
+    /// burst of nudges cannot mint one undo step (and one modal re-render) per keypress. This is
+    /// the assertion that goes red the moment someone "improves" the nudge into a live commit.
+    #[test]
+    fn a_nudge_writes_the_draft_and_leaves_the_commit_to_blur_or_enter() {
+        let src = attrs_src();
+        let field = only_body(&src, "fn number_field(");
+        assert_eq!(
+            field.matches("on_commit(").count(),
+            1,
+            "number_field must commit from exactly one place (the `commit` closure); a per-nudge \
+             commit is one undo step per keypress against `capture_timeout_millis = 0`"
+        );
+        let commit = only_body(&src, "let commit = move ||");
+        assert!(
+            commit.contains("on_commit(n)"),
+            "the single commit site is the blur/Enter closure; body was:\n{commit}"
+        );
+        assert!(
+            field.contains("draft.set(format!("),
+            "the nudge's only write is the local draft"
+        );
+    }
+
+    /// The keys themselves. `live_source` KEEPS string literals — `ev.key()` is compared against
+    /// literals, so this is the one pin that can see which keys are actually bound, and it must
+    /// not be satisfiable by the doc comment that describes them.
+    #[test]
+    fn the_nudge_is_bound_to_page_up_and_page_down_and_eats_the_scroll() {
+        let src = live_source(include_str!("attributes.rs"));
+        let field = only_body(&src, "fn number_field(");
+        for key in ["\"PageUp\"", "\"PageDown\""] {
+            assert!(field.contains(key), "number_field must bind {key}");
+        }
+        assert!(
+            field.contains("ev.prevent_default()"),
+            "PageUp/PageDown scroll by default — the nudge must claim the key or the modal moves \
+             instead of the number"
+        );
+        // All three modifiers reach the step scale, in the argument order `nudge_step` declares.
+        assert!(
+            field.contains("nudge_step(ev.ctrl_key(), ev.shift_key(), ev.alt_key())"),
+            "the step must be scaled from the live modifier state, in (ctrl, shift, alt) order"
         );
     }
 }
