@@ -3225,6 +3225,70 @@ impl MissionDocCore {
         f.insert(&mut txn, "briefing", Any::Map(Arc::new(briefing)));
     }
 
+    /// T-069 — every authored briefing marker in the document, across every faction, as a JSON
+    /// array of `{factionId, id, x, z, icon, label}`.
+    ///
+    /// **This is the half T-345 did not ship, and its absence is why the two marker mutators above
+    /// had zero product callers.** A dock cannot list, re-caption, move or delete a marker it cannot
+    /// READ, and until now the only way to see one was `small_maps_json()` — the whole document
+    /// serialized to a string, per render, to reach four fields on one nested array. The two writers
+    /// address a marker by `(faction_id, marker_id)`; this returns exactly that pair per row, so a
+    /// caller can round-trip a listed row straight back into
+    /// [`Self::set_faction_briefing_marker`] / [`Self::remove_faction_briefing_marker`] with no
+    /// second lookup.
+    ///
+    /// ## Why the return type is a JSON string and not a typed row vector
+    ///
+    /// `doc/mod.rs` re-exports `store::MissionDocCore` and nothing else from this file, so a
+    /// `pub struct BriefingMarkerRow` declared here would be unreachable from the frontend without a
+    /// re-export. The string idiom is the one every other cross-crate reader on this type already
+    /// uses ([`Self::slots_json`], [`Self::small_maps_json`], `compositions_json`), and the frontend
+    /// parses it into ITS row type — which is where the display vocabulary belongs anyway.
+    ///
+    /// ## Ordering is deterministic, and it has to be
+    ///
+    /// `MapRef::iter` is unordered (a hash map walk), so faction order is sorted by `factionId` and
+    /// the sort is STABLE, which preserves each faction's ARRAY order inside its own group. Array
+    /// order is not cosmetic: `derive_briefings` pushes markers into the parallel arrays
+    /// `TBD_MarkerService.Build` sends in exactly that order, and
+    /// [`Self::set_faction_briefing_marker`] replaces in place specifically so a drag cannot
+    /// reorder them. A list that shuffled between renders would make the dock rows dance under the
+    /// cursor for a document that never changed.
+    ///
+    /// Rows with no doc-internal `id` are SKIPPED. Such a row is still compiled (see
+    /// [`marker_row_id`]) — it is simply not addressable, so offering it in a list whose every verb
+    /// takes an id would produce controls that silently do nothing.
+    #[must_use]
+    pub fn briefing_marker_rows_json(&self) -> String {
+        let txn = self.doc.transact();
+        let mut rows: Vec<serde_json::Value> = Vec::new();
+        for (faction_id, out) in self.factions.iter(&txn) {
+            let Out::YMap(f) = out else { continue };
+            let briefing = read_any_map(&txn, &f, "briefing");
+            for row in briefing_markers(&briefing) {
+                let Some(id) = marker_row_id(&row) else {
+                    continue;
+                };
+                let Any::Map(fields) = &row else { continue };
+                let text = |k: &str| match fields.get(k) {
+                    Some(Any::String(s)) => s.to_string(),
+                    _ => String::new(),
+                };
+                rows.push(serde_json::json!({
+                    "factionId": faction_id,
+                    "id": id,
+                    "x": fields.get("x").map_or(0.0, any_to_f64),
+                    "z": fields.get("z").map_or(0.0, any_to_f64),
+                    "icon": text("icon"),
+                    "label": text("label"),
+                }));
+            }
+        }
+        // STABLE sort: faction groups become deterministic, array order inside a group survives.
+        rows.sort_by(|a, b| a["factionId"].as_str().cmp(&b["factionId"].as_str()));
+        serde_json::Value::Array(rows).to_string()
+    }
+
     /// Write one faction's briefing PROSE — the last mutator missing between T-202's emitter and a
     /// briefing an author can actually type (T-344).
     ///
@@ -8401,6 +8465,196 @@ mod tests {
             serde_json::json!("Seize and hold the crossing.")
         );
         assert!(after["markers"].as_array().expect("markers").is_empty());
+    }
+
+    // ── T-069 — the READ half of the briefing-marker surface ─────────────────────────────────────
+
+    /// `briefing_marker_rows_json` parsed back to a `Vec`.
+    fn marker_rows(doc: &MissionDocCore) -> Vec<serde_json::Value> {
+        serde_json::from_str::<serde_json::Value>(&doc.briefing_marker_rows_json())
+            .expect("the reader emits JSON")
+            .as_array()
+            .cloned()
+            .expect("the reader emits an array")
+    }
+
+    /// **T-069 — the reader addresses every marker by the pair its writers take.**
+    ///
+    /// The two T-345 mutators are keyed `(faction_id, marker_id)`; a dock row must therefore carry
+    /// BOTH or it cannot move, re-caption or delete the marker it is showing. This walks a
+    /// two-faction document and asserts each row round-trips straight back into
+    /// `remove_faction_briefing_marker` — which is the only proof that matters, since a reader whose
+    /// ids do not address anything is indistinguishable from a broken one until a delete silently
+    /// no-ops in front of the user.
+    #[test]
+    fn every_listed_marker_is_addressable_by_the_pair_the_mutators_take() {
+        let doc = briefing_fixture();
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-1", 100.5, 200.5, "objective", "OBJ");
+        doc.set_faction_briefing_marker("faction-OPFOR", "mk-2", 300.5, 400.5, "ambush", "AMB");
+
+        let rows = marker_rows(&doc);
+        assert_eq!(rows.len(), 2, "both sides list: {rows:?}");
+        // Sorted by factionId, so BLUFOR precedes OPFOR whatever order the hash map walked them in.
+        assert_eq!(rows[0]["factionId"], serde_json::json!("faction-BLUFOR"));
+        assert_eq!(rows[1]["factionId"], serde_json::json!("faction-OPFOR"));
+        assert_eq!(marker_num(&rows[0], "x"), 100.5);
+        assert_eq!(marker_num(&rows[0], "z"), 200.5);
+        assert_eq!(rows[0]["icon"], serde_json::json!("objective"));
+        assert_eq!(rows[0]["label"], serde_json::json!("OBJ"));
+
+        // The pair the reader hands out must be the pair the writers accept.
+        for r in &rows {
+            let f = r["factionId"].as_str().expect("factionId");
+            let id = r["id"].as_str().expect("id");
+            doc.remove_faction_briefing_marker(f, id);
+        }
+        assert!(
+            marker_rows(&doc).is_empty(),
+            "every listed row deleted through its own (factionId, id)"
+        );
+    }
+
+    /// **T-069 — the list order is deterministic, and each faction keeps its ARRAY order.**
+    ///
+    /// `MapRef::iter` is a hash-map walk, so an unsorted reader would shuffle the faction groups
+    /// between renders and make the dock rows dance under the cursor for a document that never
+    /// changed. Within one faction the order is the ARRAY's, which is load-bearing rather than
+    /// cosmetic: `derive_briefings` pushes into the parallel arrays `TBD_MarkerService.Build` sends
+    /// in exactly that order, and `set_faction_briefing_marker` replaces IN PLACE so a drag cannot
+    /// reorder them — a reader that sorted rows by id would hide that guarantee from the one surface
+    /// that displays it.
+    #[test]
+    fn marker_rows_are_stable_across_calls_and_keep_array_order() {
+        let doc = briefing_fixture();
+        // Authored deliberately NOT in id order, so an id sort would be visible.
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-z", 1.0, 1.0, "rally", "Z");
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-a", 2.0, 2.0, "rally", "A");
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-m", 3.0, 3.0, "rally", "M");
+
+        let ids: Vec<String> = marker_rows(&doc)
+            .iter()
+            .map(|r| r["id"].as_str().expect("id").to_string())
+            .collect();
+        assert_eq!(
+            ids,
+            vec!["mk-z".to_string(), "mk-a".to_string(), "mk-m".to_string()],
+            "array order, not id order"
+        );
+
+        // Byte-identical across repeated reads of an unchanged document.
+        let first = doc.briefing_marker_rows_json();
+        for _ in 0..8 {
+            assert_eq!(
+                doc.briefing_marker_rows_json(),
+                first,
+                "the reader must not shuffle an unchanged document"
+            );
+        }
+
+        // A move (upsert on the same id) keeps the row where it was — the in-place replace.
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-z", 9.0, 9.0, "rally", "Z");
+        let after: Vec<String> = marker_rows(&doc)
+            .iter()
+            .map(|r| r["id"].as_str().expect("id").to_string())
+            .collect();
+        assert_eq!(after, ids, "a move must not reorder the list");
+    }
+
+    /// **T-069 — a marker in the `markers` ROOT map reaches nothing, and the reader does not offer
+    /// it.**
+    ///
+    /// T-069's own registry summary says free marker placement needs generic add/move/remove on
+    /// `markersById`. That premise is DEAD, and this is the check that says so rather than asserting
+    /// it in prose: `mission.schema.json` declares no top-level `markers` property at all, and
+    /// `flatten_to_mod_document` deserialises `EditorPayload { editor: { factions, squads, slots } }`
+    /// — which declares no root key whatsoever. So a row authored into the root map hydrates, emits
+    /// back through `small_maps_json` as `markersById`, and is then dropped on the floor by the
+    /// compiler. Authoring there would have produced markers no mod subsystem can read.
+    ///
+    /// The briefing marker on the SAME document is compiled in the same breath, which is what makes
+    /// this a contrast and not just an empty-output assertion.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn a_marker_in_the_root_map_never_reaches_the_compiled_document() {
+        let payload = serde_json::json!({
+            "schemaVersion": 1,
+            "map": { "terrain": "everon" },
+            // The ROOT map — `hydrate` loads it, `small_maps_json` emits it as `markersById`.
+            "markers": [{ "id": "root-1", "x": 11.0, "z": 22.0, "icon": "dot", "label": "ROOT" }],
+            "editor": {
+                "factions": [{ "id": "faction-BLUFOR", "key": "BLUFOR", "name": "US Army",
+                               "squadIds": ["sq-a"] }],
+                "squads": [{ "id": "sq-a", "factionId": "faction-BLUFOR", "name": "1st",
+                             "slotIds": ["z1"] }],
+                "slots": [{ "id": "z1", "squadId": "sq-a", "index": 0, "role": "SL",
+                            "position": { "x": 1.0, "y": 2.0, "z": 0.0, "rotation": 0.0 } }],
+                "editorLayers": []
+            }
+        })
+        .to_string();
+
+        let doc = MissionDocCore::new();
+        doc.hydrate(&payload, "lyr");
+
+        // It really is in the document — this is not an empty-doc tautology.
+        assert!(
+            small_maps(&doc)["markersById"]
+                .as_object()
+                .is_some_and(|m| !m.is_empty()),
+            "the root map hydrated: {:?}",
+            small_maps(&doc)["markersById"]
+        );
+        // …and the reader deliberately does not surface it: it reads briefings only.
+        assert!(
+            marker_rows(&doc).is_empty(),
+            "the root map is not an authoring surface, so it is not listed"
+        );
+
+        // The schema-legal placement, on the same document.
+        doc.set_faction_briefing_marker("faction-BLUFOR", "mk-1", 33.0, 44.0, "objective", "OBJ");
+        assert_eq!(marker_rows(&doc).len(), 1);
+
+        let compiled_payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let meta = crate::mission::flatten::MissionMeta {
+            id: "4c7e1b08-9a35-4d62-b1f7-e30d5a86c941".into(),
+            title: "Bridgehead at Levie".into(),
+            author: "184472930165846017".into(),
+            terrain: "everon".into(),
+            custom_terrain_name: String::new(),
+            max_players: 12,
+            time_of_day: "06:15".into(),
+            weather_preset: "overcast".into(),
+        };
+        let compiled = crate::mission::flatten::flatten_to_mod_document(
+            &meta,
+            &serde_json::to_vec(&compiled_payload).expect("payload serialises"),
+        )
+        .expect("the fixture has a slot, so the compile must succeed");
+        let doc_json = serde_json::to_value(&compiled).expect("mod document serialises");
+
+        // The briefing marker compiled…
+        let rows = doc_json["briefings"]["blufor"]["markers"]
+            .as_array()
+            .expect("blufor briefing carries markers");
+        assert_eq!(rows.len(), 1, "{rows:?}");
+        assert_eq!(rows[0]["label"], serde_json::json!("OBJ"));
+
+        // …and the root-map marker reached nothing. No top-level key, and nothing named ROOT
+        // anywhere in the compiled bytes.
+        assert!(
+            doc_json.get("markers").is_none(),
+            "the compiled document has no top-level `markers`: {doc_json:?}"
+        );
+        assert!(
+            !serde_json::to_string(&doc_json)
+                .expect("serialises")
+                .contains("ROOT"),
+            "nothing from the root map may appear in the compiled document"
+        );
     }
 
     // ── T-344 per-faction briefing prose ─────────────────────────────────────────────────────────

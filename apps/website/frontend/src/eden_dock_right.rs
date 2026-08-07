@@ -985,6 +985,13 @@ pub fn DockRight(
     // nor a zone, so putting its id in `select_tool`'s selection would show `SEL 1` with nothing
     // highlighted. The owner-link line renders while this is `Some`.
     let trigger_selected = RwSignal::new(None::<String>);
+    // T-069 (RIGHT-MODE-006) — the selected marker's doc id (Attributes target), or `None`. Its own
+    // signal for the same reason `zone_selected` / `trigger_selected` are: a marker is not a slot,
+    // so putting its id in `select_tool`'s selection would show `SEL 1` with nothing highlighted.
+    // The id alone is enough of a handle even though the store addresses a marker by
+    // `(factionId, id)` — `editor_ops::mint_marker_id` mints ids unique across every faction
+    // precisely so this one-string selection stays unambiguous, and the row carries its own faction.
+    let marker_selected = RwSignal::new(None::<String>);
     // T-695 (NEW-F5 / 3den E3) — the starred-asset collection, seeded from localStorage on mount so
     // it survives a catalogue reload, and written back on every star/unstar. It is dock-local
     // because it is a per-user editor preference, not mission state: nothing in the document, in
@@ -1371,12 +1378,15 @@ pub fn DockRight(
                     // T-695 — the Favourites collection (NEW-F5 / 3den E3): starred assets from
                     // every palette, resolved against the live registry rows.
                     6 => favourites_panel(favourites, registry_items),
-                    _ => view! {
-                        <p class="mt-3 text-label-sm normal-case text-outline">
-                            "Marker placement lands in T-069."
-                        </p>
-                    }
-                        .into_any(),
+                    // T-069 (RIGHT-MODE-006) — the Markers palette, replacing the one-line stub
+                    // that had stood here since the dock was written. `EdenSubmode::Markers` and
+                    // `from_tab(2)` were already in place; only the BODY was missing.
+                    2 => markers_panel(doc_tick, marker_selected),
+                    // Unreachable through the tab strip (every button above names its own arm);
+                    // present because the match is over `usize`. Renders nothing rather than a
+                    // placeholder — a "coming soon" line for a tab that cannot be selected is how
+                    // the marker stub outlived the surface it was describing.
+                    _ => ().into_any(),
                 }}
             </aside>
         }
@@ -2509,11 +2519,428 @@ pub(crate) fn triggers_panel(
     ().into_any()
 }
 
+// ── T-069 — the Markers palette (RIGHT-MODE-006) ─────────────────────────────────────────────────
+//
+// Tab 2 carried a one-line "lands in this ticket" stub from the day the dock was written;
+// `EdenSubmode::Markers` and `from_tab(2)` were already there, so only the BODY was missing. This is
+// that body. (The stub's exact wording is deliberately not quoted anywhere in this file —
+// `favourites_tab_is_wired_not_stubbed` asserts its ABSENCE, and a quotation in a comment would make
+// that search find its own description.)
+//
+// **The vocabulary is READ from the schema, never typed here.** `$defs/marker.icon` is a CLOSED enum
+// of 64 aliases — the `TBD_MarkerIcons.EnsureAliases` register keys, the words a mission author may
+// use. Before that enum existed a typo validated clean and then DEGRADED at runtime (`Resolve()`
+// returned the fallback DOT and logged once), so the marker still drew, but not as authored. A
+// hand-copied `const MARKER_ICONS: [&str; 64]` in this file would be exactly the second source of
+// truth that reopens that failure the first time the schema moves, so the list is parsed out of the
+// embedded `mission.schema.json` and `the_icon_list_is_the_schemas_own` re-reads the schema
+// independently and compares alias for alias.
+//
+// This is the same `include_str!` of the same bytes that `eden_zones` and `eden_settings` already
+// make (their headers carry the full argument). Three embeds, ONE vocabulary.
+//
+// SCOPE: the four schema-carried fields. `$defs/marker` also declares `size` / `rotationDeg` /
+// `shape` / `area`, each stamped "T-673, lands after T-069" in its own schema description — marker
+// STYLE and Eden's second Area-marker model. This panel authors none of them.
+
+/// `mission.schema.json`, embedded — the ONE source of the marker icon vocabulary.
+const MISSION_SCHEMA_JSON: &str =
+    include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
+
+/// The closed `$defs/marker.icon` alias list, in schema order, parsed once.
+///
+/// Schema order is kept rather than sorted alphabetically: the enum opens with the paired base
+/// glyphs (`dot` / `dot2`, `objective_marker` / `objective_marker2`, …) and then runs through the
+/// semantic aliases, which is a more useful browse order than the alphabet, and it is the order a
+/// reader comparing this list against the schema will see.
+///
+/// An empty list is the honest answer if the schema ever stops declaring the enum — every writer
+/// gates on [`marker_icon_is_authorable`], so the surface would refuse to author rather than fall
+/// back to a guess.
+#[must_use]
+pub fn marker_icons() -> &'static [String] {
+    static ICONS: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+    ICONS.get_or_init(|| {
+        let Ok(schema) = serde_json::from_str::<serde_json::Value>(MISSION_SCHEMA_JSON) else {
+            return Vec::new();
+        };
+        schema
+            .get("$defs")
+            .and_then(|d| d.get("marker"))
+            .and_then(|m| m.get("properties"))
+            .and_then(|p| p.get("icon"))
+            .and_then(|i| i.get("enum"))
+            .and_then(serde_json::Value::as_array)
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(ToString::to_string))
+                    .collect()
+            })
+            .unwrap_or_default()
+    })
+}
+
+/// Is `icon` one of the closed `$defs/marker.icon` aliases?
+///
+/// Every marker write in [`crate::editor_ops`] passes through this. It is exact and
+/// case-SENSITIVE: the enum is lower-case and `additionalProperties`-style validators do not
+/// case-fold, so accepting `"Objective"` here would author a value the schema rejects at save time,
+/// far from the control that produced it.
+#[must_use]
+pub fn marker_icon_is_authorable(icon: &str) -> bool {
+    marker_icons().iter().any(|a| a == icon)
+}
+
+/// The alias a fresh place uses when the author has not picked one — the schema enum's first entry
+/// (`dot`), not a literal. Empty only if the schema stopped declaring the enum.
+#[must_use]
+pub fn default_marker_icon() -> &'static str {
+    marker_icons().first().map_or("", String::as_str)
+}
+
+/// The icon rows a search box shows: a case-insensitive SUBSTRING match over the closed list, with
+/// an empty/whitespace query meaning "all of them".
+///
+/// Substring rather than prefix because the aliases are compound (`point_of_interest`,
+/// `rally_point`, `observation_post`) and an author looking for a rally point types "rally" or
+/// "point" with equal likelihood. The match also folds `_` to a space so typing "rally point"
+/// finds `rally_point` — the alias is a token, but nobody reads it as one.
+#[must_use]
+pub fn filter_marker_icons(query: &str) -> Vec<&'static str> {
+    let q = query.trim().to_ascii_lowercase();
+    marker_icons()
+        .iter()
+        .map(String::as_str)
+        .filter(|a| q.is_empty() || a.contains(&q) || a.replace('_', " ").contains(&q))
+        .collect()
+}
+
+/// T-069 (RIGHT-MODE-006) — the Markers panel: the icon list that arms a place, the authored-marker
+/// list, and the three-field Attributes block for the selected one.
+///
+/// One function with a native stub, exactly like [`zones_panel`] / [`triggers_panel`] /
+/// [`compositions_panel`] — the doc reads and writes go through `editor_ops`, which is wasm-only.
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn markers_panel(
+    doc_tick: RwSignal<u64>,
+    selected: RwSignal<Option<String>>,
+) -> AnyView {
+    use crate::eden_tree::{ROW, ROW_ACTIVE};
+    use crate::eden_zones::humanize_token;
+    use crate::editor_ops as ops;
+
+    let icon_search = RwSignal::new(String::new());
+
+    view! {
+        <div class="mt-2 flex items-center gap-2">
+            <h3 class="text-label-md font-semibold text-on-surface">"Markers"</h3>
+            <span class="font-mono text-code-md text-outline">
+                {move || {
+                    let _ = doc_tick.get();
+                    ops::marker_count()
+                }}
+            </span>
+        </div>
+        <p class="mt-0.5 text-label-sm normal-case text-outline">
+            "Map markers for the active side's briefing. Pick an icon, then click the map to drop it. \
+             Select a marker to caption it or nudge its position."
+        </p>
+
+        // ── RIGHT-MODE-006 "Marker icons in list" — the closed schema vocabulary ──────────────
+        <input
+            type="search"
+            aria-label="Search marker icons"
+            placeholder="Search icons"
+            class="mt-3 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
+            prop:value=move || icon_search.get()
+            on:input=move |ev| icon_search.set(event_target_value(&ev))
+        />
+        {move || {
+            let rows = filter_marker_icons(&icon_search.get());
+            if rows.is_empty() {
+                return view! {
+                    <p class="mt-2 text-label-sm normal-case text-outline">"No icon matches."</p>
+                }
+                    .into_any();
+            }
+            view! {
+                <ul
+                    class="mt-1.5 flex max-h-48 flex-col gap-0.5 overflow-y-auto"
+                    role="list"
+                    aria-label="Marker icons"
+                >
+                    {rows
+                        .into_iter()
+                        .map(|alias| {
+                            let armed = alias.to_string();
+                            let label = humanize_token(alias);
+                            view! {
+                                <li>
+                                    <button
+                                        type="button"
+                                        class=PALETTE_LEAF
+                                        title="Click to arm, then click the map to place this marker"
+                                        // `pointerdown`, not `click`: the palette arm/release
+                                        // contract — the chrome host stops propagation here and the
+                                        // map container's `pointerup` commits the drop.
+                                        on:pointerdown=move |_| {
+                                            ops::begin_place_marker(armed.clone());
+                                            doc_tick.update(|n| *n = n.wrapping_add(1));
+                                        }
+                                    >
+                                        <MaterialIcon name="place" class="block text-sm" />
+                                        <span class="truncate">{label}</span>
+                                        <span class="ml-auto shrink-0 font-mono text-code-md text-outline">
+                                            {alias}
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        })
+                        .collect_view()}
+                </ul>
+            }
+                .into_any()
+        }}
+
+        // ── Armed state (the one-shot arm; a release over chrome drops it) ────────────────────
+        {move || {
+            let _ = doc_tick.get();
+            let Some(icon) = ops::armed_marker_icon() else {
+                return ().into_any();
+            };
+            view! {
+                <div class="mt-3 rounded-md border border-primary/40 bg-primary/10 p-2">
+                    <p class="text-label-sm normal-case text-on-surface">
+                        {format!("Placing a {} marker", humanize_token(&icon))}
+                    </p>
+                    <p class="mt-0.5 text-label-sm normal-case text-outline">
+                        "Click the map to drop it on the active side's briefing."
+                    </p>
+                </div>
+            }
+                .into_any()
+        }}
+
+        // ── Authored markers ─────────────────────────────────────────────────────────────────
+        {move || {
+            let _ = doc_tick.get();
+            let rows = ops::marker_rows();
+            if rows.is_empty() {
+                return view! {
+                    <p class="mt-3 text-label-sm normal-case text-outline">"No markers yet."</p>
+                }
+                    .into_any();
+            }
+            view! {
+                <ul class="mt-3 flex flex-col gap-0.5" role="list" aria-label="Authored markers">
+                    {rows
+                        .into_iter()
+                        .map(|m| {
+                            let id = m.id.clone();
+                            let sel_id = m.id.clone();
+                            let sel_id2 = m.id.clone();
+                            // The caption, or the alias when uncaptioned — never an invented
+                            // placeholder, because an empty label is a real authored state.
+                            let title = if m.label.is_empty() {
+                                format!("{} ({})", humanize_token(&m.icon), m.side())
+                            } else {
+                                format!("{} ({})", m.label, m.side())
+                            };
+                            let pos = m.position_summary();
+                            view! {
+                                <li>
+                                    <button
+                                        type="button"
+                                        aria-pressed=move || selected.get().as_deref() == Some(sel_id.as_str())
+                                        class=move || {
+                                            if selected.get().as_deref() == Some(sel_id2.as_str()) {
+                                                ROW_ACTIVE
+                                            } else {
+                                                ROW
+                                            }
+                                        }
+                                        on:click=move |_| selected.set(Some(id.clone()))
+                                    >
+                                        <MaterialIcon name="place" class="block text-sm" />
+                                        <span class="truncate">{title}</span>
+                                        <span class="ml-auto shrink-0 font-mono text-code-md text-outline">
+                                            {pos}
+                                        </span>
+                                    </button>
+                                </li>
+                            }
+                        })
+                        .collect_view()}
+                </ul>
+            }
+                .into_any()
+        }}
+
+        // ── Attributes for the selected marker ───────────────────────────────────────────────
+        {move || {
+            let _ = doc_tick.get();
+            let Some(id) = selected.get() else {
+                return ().into_any();
+            };
+            let Some(m) = ops::marker_rows().into_iter().find(|r| r.id == id) else {
+                // Deleted underneath us (undo, or a reload that dropped it).
+                return ().into_any();
+            };
+            marker_attributes(m, doc_tick, selected).into_any()
+        }}
+    }
+    .into_any()
+}
+
+/// T-069 — the Attributes block for one marker: the three schema-carried editable fields
+/// (ATTR-FIELD-MRK-TYPE / -MRK-TEXT / -MRK-POSITION) and delete.
+///
+/// Deliberately short of Eden's marker attributes: Size / Rotation / Shape / Brush / Colour / Alpha
+/// are a `$defs/marker` WIDENING and belong to T-673, which ships after this. The three fields here
+/// are the ones the closed `{x, z, icon, label}` shape can carry today.
+#[cfg(target_arch = "wasm32")]
+fn marker_attributes(
+    m: crate::editor_ops::MarkerRow,
+    doc_tick: RwSignal<u64>,
+    selected: RwSignal<Option<String>>,
+) -> AnyView {
+    use crate::eden_zones::humanize_token;
+    use crate::editor_ops as ops;
+
+    let bump = move || doc_tick.update(|n| *n = n.wrapping_add(1));
+    let faction = m.faction_id.clone();
+    let mid = m.id.clone();
+
+    let (f_icon, i_icon) = (faction.clone(), mid.clone());
+    let (f_label, i_label) = (faction.clone(), mid.clone());
+    let (f_x, i_x) = (faction.clone(), mid.clone());
+    let (f_z, i_z) = (faction.clone(), mid.clone());
+    let (f_del, i_del) = (faction.clone(), mid.clone());
+
+    let current_icon = m.icon.clone();
+    let label_value = m.label.clone();
+    let (x_value, z_value) = (m.x, m.z);
+
+    view! {
+        <div class="mt-3 rounded-md border border-outline-variant/40 p-2">
+            <h4 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+                {format!("Marker {} — {}", m.id, m.side())}
+            </h4>
+
+            // ATTR-FIELD-MRK-TYPE — the closed enum, as a picker. No free-text box exists for this
+            // field anywhere in the panel: a typo used to validate clean and then degrade to DOT.
+            <label class="mt-2 block text-label-sm text-on-surface-variant">"Type"</label>
+            <select
+                aria-label="Marker type"
+                class="mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
+                on:change=move |ev| {
+                    let next = event_target_value(&ev);
+                    if ops::set_marker_icon(&f_icon, &i_icon, &next) {
+                        bump();
+                    }
+                }
+            >
+                {marker_icons()
+                    .iter()
+                    .map(|alias| {
+                        let a = alias.clone();
+                        let is_current = *alias == current_icon;
+                        let label = humanize_token(alias);
+                        view! { <option value=a selected=is_current>{label}</option> }
+                    })
+                    .collect_view()}
+            </select>
+
+            // ATTR-FIELD-MRK-TEXT — stored VERBATIM. The mod caps the label at render time and the
+            // emitter applies that cap when it compiles; capping here would destroy the authored
+            // value in the one place the author could still see and fix it.
+            <label class="mt-2 block text-label-sm text-on-surface-variant">"Text"</label>
+            <input
+                type="text"
+                aria-label="Marker text"
+                placeholder="Caption shown on the map"
+                class="mt-1 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
+                prop:value=label_value
+                on:change=move |ev| {
+                    let next = event_target_value(&ev);
+                    if ops::set_marker_label(&f_label, &i_label, &next) {
+                        bump();
+                    }
+                }
+            />
+
+            // ATTR-FIELD-MRK-POSITION — `$defs/marker` is `{x, z}`: a marker is a MAP glyph and
+            // carries no height, unlike a slot's `{x, y, z}`. Two boxes, not three, on purpose.
+            <label class="mt-2 block text-label-sm text-on-surface-variant">
+                "Position (x, z metres)"
+            </label>
+            <div class="mt-1 flex gap-1.5">
+                <input
+                    type="number"
+                    step="0.1"
+                    aria-label="Marker position x"
+                    class="w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 font-mono text-code-md text-on-surface outline-none focus:border-primary/60"
+                    prop:value=x_value
+                    on:change=move |ev| {
+                        let Ok(next) = event_target_value(&ev).trim().parse::<f64>() else {
+                            return;
+                        };
+                        if ops::set_marker_position(&f_x, &i_x, next, z_value) {
+                            bump();
+                        }
+                    }
+                />
+                <input
+                    type="number"
+                    step="0.1"
+                    aria-label="Marker position z"
+                    class="w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1.5 font-mono text-code-md text-on-surface outline-none focus:border-primary/60"
+                    prop:value=z_value
+                    on:change=move |ev| {
+                        let Ok(next) = event_target_value(&ev).trim().parse::<f64>() else {
+                            return;
+                        };
+                        if ops::set_marker_position(&f_z, &i_z, x_value, next) {
+                            bump();
+                        }
+                    }
+                />
+            </div>
+
+            <button
+                type="button"
+                class="mt-2 rounded-md px-2 py-1 text-label-sm text-error transition-colors hover:bg-error/10"
+                on:click=move |_| {
+                    if ops::remove_marker(&f_del, &i_del) {
+                        selected.set(None);
+                        bump();
+                    }
+                }
+            >
+                "Delete marker"
+            </button>
+        </div>
+    }
+    .into_any()
+}
+
+/// Native shell: no document, so no markers. See the wasm sibling.
+#[cfg(not(target_arch = "wasm32"))]
+pub(crate) fn markers_panel(
+    doc_tick: RwSignal<u64>,
+    selected: RwSignal<Option<String>>,
+) -> AnyView {
+    let _ = (doc_tick, selected);
+    ().into_any()
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        apply_eden_chip, custom_chip_visible, eden_chip_selected, EdenChip, EdenSubmode,
-        EDEN_CUSTOM_CHIP, EDEN_SIDE_CHIPS,
+        apply_eden_chip, custom_chip_visible, default_marker_icon, eden_chip_selected,
+        filter_marker_icons, marker_icon_is_authorable, marker_icons, EdenChip, EdenSubmode,
+        EDEN_CUSTOM_CHIP, EDEN_SIDE_CHIPS, MISSION_SCHEMA_JSON,
     };
     use leptos::prelude::*;
 
@@ -2614,11 +3041,19 @@ mod tests {
             SRC.contains(&arm("begin_place_vehicle")),
             "a Vehicles leaf must arm the vehicle place path"
         );
-        // The Markers tab is deliberately still a stub (T-069) — if this ever stops being true the
-        // assertion above stops proving that THIS tab is the one that got wired.
+        // T-215 pinned "the Markers tab is deliberately still a stub" here, so that the assertion
+        // above proved THIS tab was the one that got wired rather than any tab being live.
+        // **T-069 shipped the Markers tab**, so the pin is inverted rather than deleted — the stub
+        // sentence is gone, and the two tabs still arm through DIFFERENT `editor_ops` entry points
+        // (a marker is not a `/registry` leaf and carries no `PlacePayload`), which is what the
+        // original was really asserting.
         assert!(
-            SRC.contains(&stub("Marker", "T-069")),
-            "the Markers stub is out of scope and must be untouched"
+            !SRC.contains(&stub("Marker", "T-069")),
+            "the Markers stub must be gone now that the tab is real"
+        );
+        assert!(
+            SRC.contains(&format!("{}{}", "begin_place_marker", "(armed.clone())")),
+            "a Markers icon row must arm the marker place path"
         );
 
         let ops = include_str!("editor_ops.rs");
@@ -3349,8 +3784,192 @@ mod tests {
             SRC.contains(&format!("filter_catalog{}", "(&nodes, &q)")),
             "T-646's search must still filter the catalogue tree"
         );
-        // The Markers tab is deliberately still a stub (T-069); if that stopped being true the
-        // "Favourites got its own tab" assertions above would stop proving anything about indices.
-        assert!(SRC.contains(&format!("Marker placement {} T-069.", "lands in")));
+        // T-695 pinned "the Markers tab is deliberately still a stub" here, to keep the
+        // "Favourites got its own tab" assertions above proving something about INDICES rather than
+        // about which tab happens to be live. **T-069 shipped that tab**, so the pin is inverted
+        // rather than deleted: tab 2 is a real dispatch, tab 6 is still Favourites, and the two are
+        // still distinct surfaces. Deleting it would have quietly retired the index check.
+        assert!(
+            SRC.contains(&format!("2 => {}(", "markers_panel")),
+            "tab 2 must dispatch the markers panel"
+        );
+        assert!(
+            !SRC.contains(&format!("Marker placement {} T-069.", "lands in")),
+            "the marker stub message must be gone — including from comments, where it would \
+             make this test's own haystack lie"
+        );
+    }
+
+    // ── T-069 (RIGHT-MODE-006) — the marker icon vocabulary ──────────────────────────────────
+
+    /// **T-069 — the icon list IS the schema's, alias for alias.**
+    ///
+    /// `$defs/marker.icon` is a CLOSED enum, and the reason it is closed is a measured failure: a
+    /// typo or empty string used to validate clean and then DEGRADE at runtime, `Resolve()`
+    /// returning the fallback DOT glyph and logging once — the marker drew, but not as authored. A
+    /// hand-copied `const MARKER_ICONS: [&str; 64]` in the dock would reopen that hole the first
+    /// time the schema moved, so the list is PARSED from the embedded schema and this test re-reads
+    /// the same bytes independently and compares in order.
+    ///
+    /// Perturbation RED: dropping any alias from the parse (or hard-coding the list) fails the
+    /// element-wise comparison naming the index.
+    #[test]
+    fn the_icon_list_is_the_schemas_own() {
+        let schema: serde_json::Value =
+            serde_json::from_str(MISSION_SCHEMA_JSON).expect("the embedded schema must parse");
+        let expected: Vec<&str> = schema["$defs"]["marker"]["properties"]["icon"]["enum"]
+            .as_array()
+            .expect("$defs/marker.icon declares an enum")
+            .iter()
+            .map(|v| v.as_str().expect("every alias is a string"))
+            .collect();
+
+        let got: Vec<&str> = marker_icons().iter().map(String::as_str).collect();
+        assert_eq!(got, expected, "the panel's list must be the schema's list");
+        assert_eq!(
+            expected.len(),
+            64,
+            "the enum is closed at 64 aliases; a change here is a schema widening, which T-069 \
+             is explicitly not"
+        );
+
+        // The vocabulary is not the marker SHAPE vocabulary — `shape` (T-673, ships after this) is
+        // a different, four-value enum, and picking it up here would author style this slice does
+        // not own.
+        assert!(
+            !got.contains(&"rectangle") && !got.contains(&"polyline"),
+            "`$defs/marker.shape` values must not leak into the icon list: {got:?}"
+        );
+    }
+
+    /// **T-069 — an alias outside the closed enum is refused, and the refusal is case-sensitive.**
+    ///
+    /// Every marker write in `editor_ops` gates on this predicate, so it is the whole enforcement.
+    /// `hazard` is the pointed case: `store.rs`'s own T-345 tests author it, because the store
+    /// mutator takes an `&str` and asks no questions — deliberately, so those pins stay green. The
+    /// vocabulary is enforced at the PRODUCT boundary, which is here.
+    #[test]
+    fn only_schema_aliases_are_authorable() {
+        assert!(marker_icon_is_authorable("dot"));
+        assert!(marker_icon_is_authorable("objective"));
+        assert!(marker_icon_is_authorable("rally_point"));
+
+        assert!(!marker_icon_is_authorable(""), "empty is not an alias");
+        assert!(
+            !marker_icon_is_authorable("hazard"),
+            "`hazard` is not in the enum, however plausible it reads"
+        );
+        assert!(
+            !marker_icon_is_authorable("Objective"),
+            "the enum is lower-case and validators do not case-fold"
+        );
+        assert!(
+            !marker_icon_is_authorable("dot "),
+            "no trimming, no guessing"
+        );
+
+        // The default a fresh place uses is itself an authorable alias, not a literal that could
+        // drift out of the enum.
+        assert!(
+            marker_icon_is_authorable(default_marker_icon()),
+            "the default icon must be in the closed list: {:?}",
+            default_marker_icon()
+        );
+    }
+
+    /// **T-069 — the icon search filters the closed list and can never widen it.**
+    ///
+    /// An empty query lists everything (RIGHT-MODE-006's "Marker icons in list"), and every result
+    /// of every query is an alias the schema declares — the filter narrows, it never invents.
+    #[test]
+    fn the_icon_search_narrows_the_closed_list() {
+        assert_eq!(
+            filter_marker_icons("").len(),
+            marker_icons().len(),
+            "an empty query lists every icon"
+        );
+        assert_eq!(filter_marker_icons("   ").len(), marker_icons().len());
+
+        let obj = filter_marker_icons("objective");
+        assert!(obj.contains(&"objective"), "{obj:?}");
+        assert!(obj.contains(&"objective_marker"), "{obj:?}");
+        assert!(!obj.contains(&"dot"), "{obj:?}");
+
+        // Case-insensitive, and `_` reads as a space so a typed phrase finds the token.
+        assert!(filter_marker_icons("RALLY").contains(&"rally_point"));
+        assert!(filter_marker_icons("rally point").contains(&"rally_point"));
+
+        assert!(
+            filter_marker_icons("zzz-not-an-icon").is_empty(),
+            "a miss is empty, not a fallback"
+        );
+
+        for q in ["", "a", "point", "OBS", "medic"] {
+            for hit in filter_marker_icons(q) {
+                assert!(
+                    marker_icon_is_authorable(hit),
+                    "the filter may only return schema aliases; {q:?} yielded {hit:?}"
+                );
+            }
+        }
+    }
+
+    /// **T-069 — markers are authored on the BRIEFING, never on the `markersById` root map.**
+    ///
+    /// The ticket's own registry summary says free placement needs generic add/move/remove on
+    /// `markersById`. That premise is dead: `mission.schema.json` declares markers in exactly one
+    /// place (`$defs/briefing.markers[]`) and no top-level `markers` property at all, and
+    /// `flatten_to_mod_document` deserialises an `EditorPayload` that declares no root key — so the
+    /// root map is a closed hydrate→emit loop and a marker authored there reaches no mod subsystem.
+    /// `store.rs`'s `a_marker_in_the_root_map_never_reaches_the_compiled_document` proves that end
+    /// of it; this pins that the PRODUCT surface never went to the dead one.
+    ///
+    /// Every literal is split so this test's own source cannot satisfy the search it performs.
+    #[test]
+    fn marker_writes_go_to_the_briefing_not_the_root_map() {
+        const OPS: &str = include_str!("editor_ops.rs");
+
+        assert!(
+            OPS.contains(&format!("core.{}_faction_briefing_marker(", "set")),
+            "a marker place must write the faction briefing"
+        );
+        assert!(
+            OPS.contains(&format!("core.{}_faction_briefing_marker(", "remove")),
+            "a marker delete must go through the briefing mutator"
+        );
+        // No mutation of the root map anywhere in the ops surface.
+        assert!(
+            !OPS.contains(&format!("{}.insert(", "markers_root")),
+            "the `markersById` root must stay unauthored"
+        );
+        // The vocabulary gate is on the write path, not merely on the picker.
+        assert!(
+            OPS.contains(&format!("marker_icon_{}(", "is_authorable")),
+            "marker writes must gate on the closed icon enum"
+        );
+        // SCOPE GUARD — the authored row is the four schema-carried fields and its address, and
+        // nothing else. `$defs/marker` also declares `size` / `rotationDeg` / `shape` / `area`, each
+        // stamped "T-673, ships after T-069" in the schema itself; authoring any of them would
+        // convert this from a factory ticket into a workbench one. Pinned on the STRUCT rather than
+        // by grepping the field names, because those names legitimately appear in the prose that
+        // explains why they are excluded — a token search over a file that documents its own
+        // boundary finds the boundary.
+        let row = OPS
+            .split("pub struct MarkerRow {")
+            .nth(1)
+            .expect("MarkerRow is declared in editor_ops")
+            .split("\n}")
+            .next()
+            .expect("MarkerRow has a body");
+        let fields: Vec<&str> = row
+            .lines()
+            .filter_map(|l| l.trim().strip_prefix("pub "))
+            .filter_map(|l| l.split(':').next())
+            .collect();
+        assert_eq!(
+            fields,
+            vec!["faction_id", "id", "x", "z", "icon", "label"],
+            "MarkerRow is the four `$defs/marker` fields plus the (factionId, id) address"
+        );
     }
 }
