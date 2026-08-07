@@ -1025,19 +1025,90 @@ const SUPPORTED_SCHEMA_KEYWORDS: &[&str] = &[
     "minimum",
 ];
 
+/// The keywords whose value is a map of **name → subschema**. Their keys are author-chosen names,
+/// never keywords, so a walk descends into the values and must not read the keys as assertions.
+///
+/// This constant, [`SCHEMA_SUBSCHEMA_KEYWORDS`] and `oneOf` are what make [`audit_schema_support`]
+/// STRUCTURAL. The guard it replaces asked "is this node a schema?" by looking for a keyword it
+/// recognised, so a node carrying only keywords it did NOT recognise answered "not a schema" and
+/// was skipped — the one shape the guard existed to catch (T-735).
+const SCHEMA_NAMED_SUBSCHEMAS: &[&str] = &["properties", "patternProperties", "$defs"];
+
+/// The keywords whose value is a single subschema (where it is not a boolean).
+const SCHEMA_SUBSCHEMA_KEYWORDS: &[&str] = &["items", "additionalProperties"];
+
 /// How many refusals to carry back. A malformed document can fail every key it has; the author
 /// needs the first handful to act, not a wall.
 const MAX_SCHEMA_FAULTS: usize = 12;
+
+/// A verdict under construction, split by **kind** — and the split is one half of the T-735 fix.
+///
+/// A **fault** is the document's problem: it breaks a rule this build implements. A **refusal** is
+/// this build's problem: the schema says something it cannot evaluate, so answering "valid" would
+/// be a claim about bytes it never examined.
+///
+/// Pooling the two is what made [`check_schema_one_of`] fail open. That function rightly discards
+/// the complaints of branches the document did not claim — but a refusal is not a complaint about
+/// the document. It is true whichever branch the document took, and discarding it turned an
+/// unimplemented keyword behind a `$ref` in a losing branch into an ACCEPTED document.
+#[derive(Default)]
+struct SchemaFaults {
+    /// The document broke a rule this build implements.
+    faults: Vec<String>,
+    /// This build could not read part of the rule set. Survives branch selection.
+    refusals: Vec<String>,
+}
+
+impl SchemaFaults {
+    fn fault(&mut self, msg: String) {
+        self.faults.push(msg);
+    }
+
+    /// Deduplicated: one `$defs` node reached from both `oneOf` branches is one refusal, not two.
+    fn refuse(&mut self, msg: String) {
+        if !self.refusals.contains(&msg) {
+            self.refusals.push(msg);
+        }
+    }
+
+    /// Nothing to report — neither a rule broken nor a rule unread.
+    fn clean(&self) -> bool {
+        self.faults.is_empty() && self.refusals.is_empty()
+    }
+
+    /// Refusals first: "this build cannot check X" outranks "your document got Y wrong", because
+    /// an author can fix every Y and still be looking at an X nobody checked.
+    fn into_messages(self) -> Vec<String> {
+        let mut all = self.refusals;
+        all.extend(self.faults);
+        all
+    }
+}
+
+/// Trim a verdict to [`MAX_SCHEMA_FAULTS`], saying how many were dropped.
+fn cap_schema_messages(mut msgs: Vec<String>) -> Vec<String> {
+    let total = msgs.len();
+    if total > MAX_SCHEMA_FAULTS {
+        msgs.truncate(MAX_SCHEMA_FAULTS);
+        msgs.push(format!(
+            "…and {} more schema fault(s).",
+            total - MAX_SCHEMA_FAULTS
+        ));
+    }
+    msgs
+}
 
 /// Validate `doc` against the shipped `loadout-export.schema.json`.
 ///
 /// `Ok(())` means the document satisfies exactly one of the schema's two `oneOf` branches. `Err`
 /// carries the reasons, in author-readable form, each pointing at the path that failed.
 ///
-/// **Fails closed, in three places.** A `$ref` that cannot be resolved, a key pattern the matcher
-/// cannot evaluate ([`anchored_pattern_matches`]) and a keyword outside
-/// [`SUPPORTED_SCHEMA_KEYWORDS`] are all *refusals*, never skipped checks — because the alternative
-/// is an importer that says "valid" about a constraint it never read.
+/// **Fails closed, and T-735 is what that sentence cost.** A `$ref` that cannot be resolved, a key
+/// pattern the matcher cannot evaluate ([`anchored_pattern_matches`]), a keyword outside
+/// [`SUPPORTED_SCHEMA_KEYWORDS`] and a keyword whose VALUE has a form this checker does not
+/// implement are all *refusals*, never skipped checks — because the alternative is an importer that
+/// says "valid" about a constraint it never read. That claim was made before T-735 and was false in
+/// three ways; see [`validate_against_schema`] for what makes it true now.
 pub fn validate_against_loadout_export_schema(doc: &serde_json::Value) -> Result<(), Vec<String>> {
     let root: serde_json::Value = match serde_json::from_str(LOADOUT_EXPORT_SCHEMA_JSON) {
         Ok(v) => v,
@@ -1047,33 +1118,228 @@ pub fn validate_against_loadout_export_schema(doc: &serde_json::Value) -> Result
             )])
         }
     };
-    let mut out = Vec::new();
-    check_schema_node(&root, &root, doc, "", &mut out);
-    if out.is_empty() {
+    validate_against_schema(&root, doc)
+}
+
+/// The checker proper, against an arbitrary parsed schema `root`. **Two passes, and the order is
+/// the point.**
+///
+/// 1. [`audit_schema_support`] — *can this build read the rules at all?* Document-INDEPENDENT by
+///    construction, and that is not a stylistic preference. Every pre-T-735 refusal was raised from
+///    inside the document walk, so it fired only where a document happened to reach: a `oneOf`
+///    branch the document did not claim, an `items` array over an empty list, an
+///    `additionalProperties` subschema with no extra key to apply it to were all unexamined and
+///    silent. A rule set this build cannot fully read is refused for EVERY document, including the
+///    ones that would never have visited the part it cannot read.
+/// 2. The document walk, which by then is only ever answering "does this document obey rules this
+///    build understands".
+///
+/// Split out of [`validate_against_loadout_export_schema`] by T-735 so the traps can be PROVEN: the
+/// public entry hardcodes the shipped file, the shipped file is clean, and that is precisely why
+/// three fail-open forms sat here unmeasured. Tests hand this function the shipped schema plus one
+/// `$defs` edit — the whole distance between today and a green suite over unexamined documents.
+fn validate_against_schema(
+    root: &serde_json::Value,
+    doc: &serde_json::Value,
+) -> Result<(), Vec<String>> {
+    let mut support = SchemaFaults::default();
+    audit_schema_support(root, root, "#", &mut Vec::new(), &mut support);
+    if !support.clean() {
+        // No document verdict at all. "Your `qty` is wrong" alongside "and I could not read four
+        // other rules" reads as a normal validation failure, and the author fixes `qty` and ships.
+        return Err(cap_schema_messages(support.into_messages()));
+    }
+    let mut out = SchemaFaults::default();
+    check_schema_node(root, root, doc, "", &mut out);
+    if out.clean() {
         return Ok(());
     }
-    let total = out.len();
-    if total > MAX_SCHEMA_FAULTS {
-        out.truncate(MAX_SCHEMA_FAULTS);
-        out.push(format!(
-            "…and {} more schema fault(s).",
-            total - MAX_SCHEMA_FAULTS
+    Err(cap_schema_messages(out.into_messages()))
+}
+
+/// Walk **every schema position reachable in `root`** and refuse anything this build cannot fully
+/// evaluate: an unsupported keyword, a keyword whose value has an unimplemented form, an
+/// unresolvable `$ref`, a `$ref` carrying siblings, a `patternProperties` key this matcher cannot
+/// parse.
+///
+/// Structural, never keyword-sniffing. It descends into [`SCHEMA_NAMED_SUBSCHEMAS`] values,
+/// `oneOf` entries and [`SCHEMA_SUBSCHEMA_KEYWORDS`], so whatever sits at one of those positions is
+/// audited as a schema *whatever it contains*. `{"maxItems": 1}` in `$defs` is therefore reported,
+/// where the guard this replaces skipped it for carrying no keyword the guard recognised.
+///
+/// `visited` holds the `$ref` strings already followed: a `$def` is audited once, and a
+/// self-referential one terminates instead of recursing forever.
+fn audit_schema_support(
+    root: &serde_json::Value,
+    node: &serde_json::Value,
+    path: &str,
+    visited: &mut Vec<String>,
+    out: &mut SchemaFaults,
+) {
+    let Some(map) = node.as_object() else {
+        out.refuse(format!(
+            "{path}: the schema puts {} where a subschema belongs — this importer implements only object subschemas, so it refuses rather than skipping the check",
+            schema_type_of(node)
         ));
+        return;
+    };
+
+    for key in map.keys() {
+        if !SUPPORTED_SCHEMA_KEYWORDS.contains(&key.as_str()) {
+            out.refuse(format!(
+                "{path}: the shipped schema uses `{key}`, which this importer does not implement — refusing rather than accepting a document it only partly checked"
+            ));
+        }
     }
-    Err(out)
+
+    // A 2020-12 `$ref` applies *alongside* its siblings; this checker replaces the node with its
+    // target, so a sibling assertion would be dropped. Refuse, and stop — the node IS its target.
+    if map.contains_key("$ref") {
+        let extra: Vec<&str> = map
+            .keys()
+            .map(String::as_str)
+            .filter(|k| !matches!(*k, "$ref" | "description" | "title"))
+            .collect();
+        if !extra.is_empty() {
+            out.refuse(format!(
+                "{path}: the schema puts {} beside a $ref, which this importer would drop — refusing rather than skipping the check",
+                extra.join(", ")
+            ));
+            return;
+        }
+        match (map["$ref"].as_str(), schema_deref(root, node)) {
+            (Some(r), Some(target)) => {
+                if !visited.iter().any(|seen| seen == r) {
+                    visited.push(r.to_string());
+                    audit_schema_support(root, target, r, visited, out);
+                }
+            }
+            _ => out.refuse(format!(
+                "{path}: the schema uses a $ref this importer cannot resolve — refusing rather than skipping the check"
+            )),
+        }
+        return;
+    }
+
+    // KEYWORD FORMS. Every one of these is a shape the document walk would read as `None` and skip
+    // in silence, which is a skipped check wearing the costume of a satisfied one.
+    for (key, want, ok) in [
+        (
+            "type",
+            "a type name or a list of type names",
+            map.get("type").is_none_or(|v| match v {
+                serde_json::Value::String(_) => true,
+                serde_json::Value::Array(a) => !a.is_empty() && a.iter().all(|n| n.is_string()),
+                _ => false,
+            }),
+        ),
+        (
+            "required",
+            "a list of key names",
+            map.get("required").is_none_or(|v| {
+                v.as_array()
+                    .is_some_and(|a| a.iter().all(|k| k.is_string()))
+            }),
+        ),
+        (
+            "enum",
+            "a non-empty list of allowed values",
+            map.get("enum")
+                .is_none_or(|v| v.as_array().is_some_and(|a| !a.is_empty())),
+        ),
+        (
+            "oneOf",
+            "a non-empty list of branch schemas",
+            map.get("oneOf")
+                .is_none_or(|v| v.as_array().is_some_and(|a| !a.is_empty())),
+        ),
+        (
+            "items",
+            "a single subschema (the tuple form is not implemented)",
+            map.get("items").is_none_or(serde_json::Value::is_object),
+        ),
+        (
+            "additionalProperties",
+            "a boolean or a subschema",
+            map.get("additionalProperties")
+                .is_none_or(|v| v.is_boolean() || v.is_object()),
+        ),
+        (
+            "minLength",
+            "a number",
+            map.get("minLength")
+                .is_none_or(serde_json::Value::is_number),
+        ),
+        (
+            "minimum",
+            "a number",
+            map.get("minimum").is_none_or(serde_json::Value::is_number),
+        ),
+    ] {
+        if !ok {
+            out.refuse(format!(
+                "{path}: `{key}` is given as {} where this importer implements only {want} — refusing rather than skipping the check",
+                schema_type_of(&map[key])
+            ));
+        }
+    }
+    for named in SCHEMA_NAMED_SUBSCHEMAS {
+        if map.get(*named).is_some_and(|v| !v.is_object()) {
+            out.refuse(format!(
+                "{path}: `{named}` is given as {} where this importer implements only a map of names to subschemas — refusing rather than skipping the check",
+                schema_type_of(&map[*named])
+            ));
+        }
+    }
+    // A pattern the matcher cannot parse is a refusal HERE, against the schema alone. Raised only
+    // from the document walk it needed a document key to land on, so an empty `wear: {}` met an
+    // unevaluable pattern with silence.
+    for pattern in map
+        .get("patternProperties")
+        .and_then(serde_json::Value::as_object)
+        .into_iter()
+        .flatten()
+        .map(|(p, _)| p)
+    {
+        if parse_anchored_pattern(pattern).is_none() {
+            out.refuse(format!(
+                "{path}: the schema's key pattern `{pattern}` uses a construct this importer cannot evaluate — refusing rather than skipping the check"
+            ));
+        }
+    }
+
+    for named in SCHEMA_NAMED_SUBSCHEMAS {
+        let children = map.get(*named).and_then(serde_json::Value::as_object);
+        for (name, child) in children.into_iter().flatten() {
+            audit_schema_support(root, child, &format!("{path}/{named}/{name}"), visited, out);
+        }
+    }
+    let branches = map.get("oneOf").and_then(serde_json::Value::as_array);
+    for (i, branch) in branches.into_iter().flatten().enumerate() {
+        audit_schema_support(root, branch, &format!("{path}/oneOf/{i}"), visited, out);
+    }
+    for single in SCHEMA_SUBSCHEMA_KEYWORDS {
+        // `false`/`true` are the two boolean schemas, handled by the walk; anything else that is
+        // not an object was refused by the form check above, so only objects descend here.
+        if let Some(child) = map.get(*single).filter(|v| v.is_object()) {
+            audit_schema_support(root, child, &format!("{path}/{single}"), visited, out);
+        }
+    }
 }
 
 /// `#/a/b`-style local pointer resolution. `None` = a `$ref` this checker will not follow (remote,
-/// or a pointer into nothing), which the caller turns into a refusal.
+/// a pointer into nothing, or a `$ref` that is not even a string), which the caller turns into a
+/// refusal. The `as_str()?` is deliberate: `{"$ref": 5}` used to answer "there is no $ref here",
+/// which made a node with no other keyword a node with nothing to check.
 fn schema_deref<'a>(
     root: &'a serde_json::Value,
     node: &'a serde_json::Value,
 ) -> Option<&'a serde_json::Value> {
-    let Some(r) = node.get("$ref").and_then(serde_json::Value::as_str) else {
+    let Some(raw) = node.get("$ref") else {
         return Some(node);
     };
     let mut cur = root;
-    for seg in r.strip_prefix("#/")?.split('/') {
+    for seg in raw.as_str()?.strip_prefix("#/")?.split('/') {
         cur = cur.get(seg)?;
     }
     Some(cur)
@@ -1120,7 +1386,7 @@ fn check_schema_node(
     node: &serde_json::Value,
     doc: &serde_json::Value,
     path: &str,
-    out: &mut Vec<String>,
+    out: &mut SchemaFaults,
 ) {
     // A 2020-12 `$ref` applies *alongside* its siblings. This checker replaces the node with its
     // target, so a `$ref` carrying a real assertion beside it would have that assertion dropped —
@@ -1133,7 +1399,7 @@ fn check_schema_node(
                 .filter(|k| !matches!(*k, "$ref" | "description" | "title"))
                 .collect();
             if !extra.is_empty() {
-                out.push(format!(
+                out.refuse(format!(
                     "{}: the schema puts {} beside a $ref, which this importer would drop — refusing rather than skipping the check",
                     schema_at(path),
                     extra.join(", ")
@@ -1143,19 +1409,27 @@ fn check_schema_node(
         }
     }
     let Some(node) = schema_deref(root, node) else {
-        out.push(format!(
+        out.refuse(format!(
             "{}: the schema uses a $ref this importer cannot resolve — refusing rather than skipping the check",
             schema_at(path)
         ));
         return;
     };
+    // T-735: this `else` used to be a bare `return` — the single quietest line in the module. A
+    // subschema position holding anything but an object (tuple-form `items`, a boolean schema) was
+    // dropped here having recorded NOTHING, so `[123]` satisfied `[{"type": "string"}]`.
     let Some(map) = node.as_object() else {
+        out.refuse(format!(
+            "{}: the schema puts {} where a subschema belongs — this importer implements only object subschemas, so it refuses rather than skipping the check",
+            schema_at(path),
+            schema_type_of(node)
+        ));
         return;
     };
 
     for key in map.keys() {
         if !SUPPORTED_SCHEMA_KEYWORDS.contains(&key.as_str()) {
-            out.push(format!(
+            out.refuse(format!(
                 "{}: the shipped schema uses `{key}`, which this importer does not implement — refusing rather than accepting a document it only partly checked",
                 schema_at(path)
             ));
@@ -1170,7 +1444,7 @@ fn check_schema_node(
             _ => Vec::new(),
         };
         if !names.is_empty() && !names.iter().any(|n| schema_type_matches(n, doc)) {
-            out.push(format!(
+            out.fault(format!(
                 "{}: expected {}, found {}",
                 schema_at(path),
                 names.join(" or "),
@@ -1181,12 +1455,12 @@ fn check_schema_node(
     }
     if let Some(c) = map.get("const") {
         if doc != c {
-            out.push(format!("{}: must be {c}, found {doc}", schema_at(path)));
+            out.fault(format!("{}: must be {c}, found {doc}", schema_at(path)));
         }
     }
     if let Some(e) = map.get("enum").and_then(serde_json::Value::as_array) {
         if !e.contains(doc) {
-            out.push(format!(
+            out.fault(format!(
                 "{}: {doc} is outside the closed vocabulary {}",
                 schema_at(path),
                 serde_json::Value::Array(e.clone())
@@ -1198,7 +1472,7 @@ fn check_schema_node(
         doc.as_str(),
     ) {
         if (s.chars().count() as u64) < m {
-            out.push(format!(
+            out.fault(format!(
                 "{}: must be at least {m} character(s), found {}",
                 schema_at(path),
                 s.chars().count()
@@ -1210,7 +1484,7 @@ fn check_schema_node(
         doc.as_f64(),
     ) {
         if n < m {
-            out.push(format!(
+            out.fault(format!(
                 "{}: must be at least {m}, found {n}",
                 schema_at(path)
             ));
@@ -1220,8 +1494,19 @@ fn check_schema_node(
         check_schema_one_of(root, branches, doc, path, out);
     }
     if let Some(items) = map.get("items") {
-        for (i, v) in doc.as_array().into_iter().flatten().enumerate() {
-            check_schema_node(root, items, v, &format!("{path}/{i}"), out);
+        // The single-subschema form is the only one implemented. The tuple form is refused at the
+        // KEYWORD, not per element: a fix that fired inside the loop would still be silent over the
+        // empty array, i.e. over the document that exercises the constraint least.
+        if items.is_object() {
+            for (i, v) in doc.as_array().into_iter().flatten().enumerate() {
+                check_schema_node(root, items, v, &format!("{path}/{i}"), out);
+            }
+        } else {
+            out.refuse(format!(
+                "{}: `items` is given as {} where this importer implements only a single subschema (the tuple form is not implemented) — refusing rather than skipping the check",
+                schema_at(path),
+                schema_type_of(items)
+            ));
         }
     }
     if let Some(fields) = doc.as_object() {
@@ -1229,13 +1514,13 @@ fn check_schema_node(
     }
 }
 
-/// `required` + `properties` + `patternProperties` + the `additionalProperties: false` closure.
+/// `required` + `properties` + `patternProperties` + the `additionalProperties` applicator.
 fn check_schema_object(
     root: &serde_json::Value,
     schema: &serde_json::Map<String, serde_json::Value>,
     doc: &serde_json::Map<String, serde_json::Value>,
     path: &str,
-    out: &mut Vec<String>,
+    out: &mut SchemaFaults,
 ) {
     for req in schema
         .get("required")
@@ -1245,7 +1530,7 @@ fn check_schema_object(
     {
         let Some(k) = req.as_str() else { continue };
         if !doc.contains_key(k) {
-            out.push(format!("{}: missing required key `{k}`", schema_at(path)));
+            out.fault(format!("{}: missing required key `{k}`", schema_at(path)));
         }
     }
     let props = schema
@@ -1254,7 +1539,11 @@ fn check_schema_object(
     let patterns = schema
         .get("patternProperties")
         .and_then(serde_json::Value::as_object);
-    let closed = schema.get("additionalProperties") == Some(&serde_json::Value::Bool(false));
+    // `additionalProperties` is a SUBSCHEMA keyword, not a boolean flag — `false` is simply the
+    // subschema nothing satisfies. Reading it as `== false` (the pre-T-735 shape) turned
+    // `{"additionalProperties": {"type": "string"}}` into a no-op that asserted nothing whatsoever,
+    // so `{"x": 123}` came back Ok against a schema that plainly forbids it.
+    let additional = schema.get("additionalProperties");
     for (k, v) in doc {
         let child = format!("{path}/{k}");
         let mut matched = false;
@@ -1269,16 +1558,27 @@ fn check_schema_object(
                     check_schema_node(root, spec, v, &child, out);
                 }
                 Some(false) => {}
-                None => out.push(format!(
+                None => out.refuse(format!(
                     "{child}: the schema's key pattern `{pattern}` uses a construct this importer cannot evaluate — refusing rather than skipping the check"
                 )),
             }
         }
-        if closed && !matched {
-            out.push(format!(
+        if matched {
+            continue;
+        }
+        match additional {
+            // Absent, or the `true` boolean schema: every remaining key is allowed.
+            None | Some(serde_json::Value::Bool(true)) => {}
+            Some(serde_json::Value::Bool(false)) => out.fault(format!(
                 "{}: `{k}` is not in the schema and additionalProperties is false",
                 schema_at(path)
-            ));
+            )),
+            Some(sub) if sub.is_object() => check_schema_node(root, sub, v, &child, out),
+            Some(other) => out.refuse(format!(
+                "{}: `additionalProperties` is given as {} where this importer implements only a boolean or a subschema — refusing rather than skipping the check",
+                schema_at(path),
+                schema_type_of(other)
+            )),
         }
     }
 }
@@ -1294,24 +1594,37 @@ fn check_schema_one_of(
     branches: &[serde_json::Value],
     doc: &serde_json::Value,
     path: &str,
-    out: &mut Vec<String>,
+    out: &mut SchemaFaults,
 ) {
-    let per_branch: Vec<Vec<String>> = branches
+    let per_branch: Vec<SchemaFaults> = branches
         .iter()
         .map(|b| {
-            let mut errs = Vec::new();
+            let mut errs = SchemaFaults::default();
             check_schema_node(root, b, doc, path, &mut errs);
             errs
         })
         .collect();
-    let passing = per_branch.iter().filter(|e| e.is_empty()).count();
+    // **T-735.** Refusals leave this function no matter which branch won. Discarding a branch's
+    // FAULTS is the whole point of `oneOf` — the document did not claim that branch, so its
+    // complaints are noise. A REFUSAL is not a complaint about the document: it is this build
+    // saying it cannot read part of the rule set, which is equally true whichever branch matched.
+    // The `passing == 1` return below used to throw both away together, so an unimplemented keyword
+    // hiding behind a `$ref` in a losing branch never surfaced and the document was ACCEPTED.
+    for branch in &per_branch {
+        for refusal in &branch.refusals {
+            out.refuse(refusal.clone());
+        }
+    }
+    // A branch this build could not fully evaluate has not "passed" — it is unexamined, and
+    // counting it as a match is the same error one level down.
+    let passing = per_branch.iter().filter(|e| e.clean()).count();
     if passing == 1 {
         return;
     }
     if passing > 1 {
         // Not reachable with the shipped schema (the version const separates the branches), but a
         // schema edit could make it so, and "matched two mutually exclusive shapes" is a real fault.
-        out.push(format!(
+        out.fault(format!(
             "{}: the document satisfies {passing} mutually exclusive schema branches",
             schema_at(path)
         ));
@@ -1322,7 +1635,9 @@ fn check_schema_one_of(
         claimed.is_some() && b.pointer("/properties/loadoutVersion/const") == claimed
     });
     if let Some(i) = hit {
-        out.extend(per_branch[i].iter().cloned());
+        for f in &per_branch[i].faults {
+            out.fault(f.clone());
+        }
         return;
     }
     let versions: Vec<String> = branches
@@ -1332,10 +1647,12 @@ fn check_schema_one_of(
         .collect();
     if versions.is_empty() {
         // The schema stopped discriminating on version — report everything rather than nothing.
-        out.extend(per_branch.into_iter().flatten());
+        for f in per_branch.into_iter().flat_map(|b| b.faults) {
+            out.fault(f);
+        }
         return;
     }
-    out.push(format!(
+    out.fault(format!(
         "{}: `loadoutVersion` must be one of {} — this is not a loadout-export document",
         schema_at(path),
         versions.join(" / ")
@@ -2234,49 +2551,276 @@ mod tests {
         );
     }
 
+    /* ═════════ T-735 — the three fail-open forms, and the guard that could not see them ═════════ */
+
+    /// A document the SHIPPED schema accepts. Every T-735 trap below starts from this, so a
+    /// refusal can only be the schema edit's doing and never the document's.
+    fn a_valid_v1_document() -> serde_json::Value {
+        serde_json::json!({
+            "loadoutVersion": "1",
+            "modpackId": "mp",
+            "gear": {"primary": null, "uniform": null, "vest": null, "helmet": null},
+        })
+    }
+
+    /// The shipped schema with one edit applied — "one `$defs` edit away" is the exact distance
+    /// the T-735 verifier measured between today's clean file and a suite reporting green over
+    /// documents the importer never examined. These tests walk that distance on purpose.
+    fn shipped_schema_with(edit: impl FnOnce(&mut serde_json::Value)) -> serde_json::Value {
+        let mut schema: serde_json::Value = serde_json::from_str(LOADOUT_EXPORT_SCHEMA_JSON)
+            .expect("the shipped loadout-export schema must parse");
+        edit(&mut schema);
+        schema
+    }
+
+    /// Walk every SCHEMA POSITION in `schema` and report `(path, keyword)` for each keyword the
+    /// checker does not implement, plus how many positions were visited.
+    ///
+    /// **Structural, never keyword-sniffing — that distinction is the T-735 defect.** The pin this
+    /// replaces decided "is this node a schema?" by asking whether it carried at least one
+    /// SUPPORTED keyword, which is circular: a node carrying ONLY unsupported keywords —
+    /// `{"maxItems": 1}`, precisely the shape the guard exists to catch — answered "not a schema"
+    /// and was skipped whole. This walk knows where subschemas LIVE instead: the values of
+    /// `properties`/`patternProperties`/`$defs`, the entries of `oneOf`, and `items` /
+    /// `additionalProperties` when they hold a subschema. What it finds there is a schema
+    /// regardless of what it contains, so an unrecognised node is reported rather than excused.
+    fn unsupported_keywords_in(schema: &serde_json::Value) -> (usize, Vec<String>) {
+        fn walk(node: &serde_json::Value, at: &str, seen: &mut usize, found: &mut Vec<String>) {
+            let Some(map) = node.as_object() else {
+                found.push(format!("{at}: not a schema object"));
+                return;
+            };
+            *seen += 1;
+            for k in map.keys() {
+                if !SUPPORTED_SCHEMA_KEYWORDS.contains(&k.as_str()) {
+                    found.push(format!("{at}: {k}"));
+                }
+            }
+            for named in ["properties", "patternProperties", "$defs"] {
+                let children = map.get(named).and_then(serde_json::Value::as_object);
+                for (name, child) in children.into_iter().flatten() {
+                    walk(child, &format!("{at}/{named}/{name}"), seen, found);
+                }
+            }
+            let branches = map.get("oneOf").and_then(serde_json::Value::as_array);
+            for (i, b) in branches.into_iter().flatten().enumerate() {
+                walk(b, &format!("{at}/oneOf/{i}"), seen, found);
+            }
+            for single in ["items", "additionalProperties"] {
+                match map.get(single) {
+                    Some(child) if child.is_object() => {
+                        walk(child, &format!("{at}/{single}"), seen, found)
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let mut seen = 0usize;
+        let mut found = Vec::new();
+        walk(schema, "#", &mut seen, &mut found);
+        (seen, found)
+    }
+
     /// The keyword guard: if the schema grows an assertion this checker does not implement, the
     /// importer must REFUSE, not silently accept a document it only partly examined.
     #[test]
     fn an_unimplemented_keyword_is_a_refusal_not_a_shrug() {
         // Sanity: the shipped schema uses nothing outside the supported set, so a real document
         // passes. (If this half fails, the other half is what tells you why.)
-        let doc = serde_json::json!({
-            "loadoutVersion": "1",
-            "modpackId": "mp",
-            "gear": {"primary": null, "uniform": null, "vest": null, "helmet": null},
-        });
-        assert!(validate_against_loadout_export_schema(&doc).is_ok());
+        assert!(validate_against_loadout_export_schema(&a_valid_v1_document()).is_ok());
 
         // Every keyword the shipped file actually uses is declared supported — a `$defs` entry
         // gaining `maxItems` tomorrow must go red here rather than pass unchecked.
         let schema: serde_json::Value = serde_json::from_str(LOADOUT_EXPORT_SCHEMA_JSON).unwrap();
-        let mut stack = vec![&schema];
-        let mut seen = 0usize;
-        while let Some(node) = stack.pop() {
-            match node {
-                serde_json::Value::Object(m) => {
-                    // Only schema positions carry keywords; `properties`/`$defs` maps carry names.
-                    let is_schema = m
-                        .keys()
-                        .any(|k| SUPPORTED_SCHEMA_KEYWORDS.contains(&k.as_str()));
-                    if is_schema {
-                        seen += 1;
-                        for k in m.keys() {
-                            assert!(
-                                SUPPORTED_SCHEMA_KEYWORDS.contains(&k.as_str()),
-                                "the shipped schema uses `{k}`, which the importer does not implement"
-                            );
-                        }
-                    }
-                    stack.extend(m.values());
-                }
-                serde_json::Value::Array(a) => stack.extend(a.iter()),
-                _ => {}
-            }
-        }
+        let (seen, found) = unsupported_keywords_in(&schema);
+        assert!(
+            found.is_empty(),
+            "the shipped schema uses keywords the importer does not implement: {found:?}"
+        );
         assert!(
             seen > 10,
             "the walk must actually have reached the schema nodes ({seen})"
         );
+        // And the production audit — the one that runs on a real import — agrees.
+        assert!(validate_against_schema(&schema, &a_valid_v1_document()).is_ok());
+    }
+
+    /// **T-735 form 4 — the blind guard.** The pin above is only worth its lines if it can SEE the
+    /// node shape it exists to catch. The pre-T-735 `is_schema` heuristic could not: it inspected
+    /// only nodes already carrying a supported keyword, so a `$defs` entry of nothing but
+    /// unimplemented assertions was skipped by the very check written to catch it.
+    #[test]
+    fn the_guard_walk_sees_a_node_carrying_only_unsupported_keywords() {
+        let trap = serde_json::json!({"maxItems": 1});
+        assert!(
+            !trap
+                .as_object()
+                .unwrap()
+                .keys()
+                .any(|k| SUPPORTED_SCHEMA_KEYWORDS.contains(&k.as_str())),
+            "the trap must carry NO supported keyword — that is exactly the shape the old \
+             keyword-sniffing heuristic declared 'not a schema' and skipped"
+        );
+        let schema = shipped_schema_with(|s| s["$defs"]["trap"] = trap);
+
+        let (_, found) = unsupported_keywords_in(&schema);
+        assert_eq!(
+            found,
+            vec!["#/$defs/trap: maxItems".to_string()],
+            "the guard walk must name the node it used to skip"
+        );
+        // …and the importer refuses documents against that schema, even though NOTHING $refs the
+        // trap: a rule set this build cannot fully read is not one it may report success against.
+        let faults = validate_against_schema(&schema, &a_valid_v1_document()).expect_err(
+            "an unreachable-but-unreadable $defs node must refuse, not be waved through",
+        );
+        assert!(
+            faults.iter().any(|f| f.contains("`maxItems`")),
+            "the refusal must name the keyword: {faults:?}"
+        );
+    }
+
+    /// **T-735 form 1 — `oneOf` discarded the refusals of non-passing branches.** `passing == 1`
+    /// returned early and threw a losing branch's findings away wholesale. A branch's FAULTS are
+    /// rightly discarded (the document did not claim that branch); its REFUSALS are not — a
+    /// refusal is this build admitting it cannot read the rules, and that is true whichever branch
+    /// the document took. Before T-735 an unimplemented keyword behind a `$ref` in a losing branch
+    /// never surfaced and the document was ACCEPTED.
+    #[test]
+    fn a_losing_one_of_branch_cannot_hide_an_unimplemented_keyword() {
+        let doc = a_valid_v1_document();
+        // Control: unedited, this document is valid, so every refusal below is the edit's doing.
+        let shipped: serde_json::Value = serde_json::from_str(LOADOUT_EXPORT_SCHEMA_JSON).unwrap();
+        assert!(validate_against_schema(&shipped, &doc).is_ok());
+
+        // (a) The trap sits on a key the document HAS, so the losing v2 branch's own walk reaches
+        //     it and records the refusal — which `check_schema_one_of` then had to carry out.
+        let reachable = shipped_schema_with(|s| {
+            s["$defs"]["trap"] = serde_json::json!({"maxItems": 1});
+            s["oneOf"][1]["properties"]["modpackId"] = serde_json::json!({"$ref": "#/$defs/trap"});
+        });
+        let faults = validate_against_schema(&reachable, &doc)
+            .expect_err("a refusal from the losing branch must survive branch selection");
+        assert!(
+            faults.iter().any(|f| f.contains("`maxItems`")),
+            "the refusal must name the keyword it could not implement: {faults:?}"
+        );
+
+        // (b) The same trap on a key the document does NOT have. No document walk can ever reach
+        //     this position, so only a document-INDEPENDENT audit of the schema can refuse it —
+        //     which is why the fix is an audit and not just a fix to the branch bookkeeping.
+        let unreachable = shipped_schema_with(|s| {
+            s["$defs"]["trap"] = serde_json::json!({"maxItems": 1});
+            s["oneOf"][1]["properties"]["cargo"] = serde_json::json!({"$ref": "#/$defs/trap"});
+        });
+        assert!(
+            validate_against_schema(&unreachable, &doc).is_err(),
+            "a keyword this build cannot implement must refuse even where no document reaches it"
+        );
+
+        // (c) The branch bookkeeping itself, pinned with the audit BYPASSED. Without this, (a) and
+        //     (b) would both stay green if `check_schema_one_of` went back to discarding refusals,
+        //     because the audit alone would carry them. A second line of defence is worth pinning
+        //     precisely where the first line is the thing that failed.
+        let mut out = SchemaFaults::default();
+        check_schema_node(&reachable, &reachable, &doc, "", &mut out);
+        assert!(
+            out.faults.is_empty(),
+            "this document is valid v1; only the refusal should stand: {:?}",
+            out.faults
+        );
+        assert!(
+            out.refusals.iter().any(|r| r.contains("`maxItems`")),
+            "branch selection dropped the losing branch's refusal again: {:?}",
+            out.refusals
+        );
+    }
+
+    /// **T-735 form 2 — `additionalProperties` was read only as `== false`.** It is a SUBSCHEMA
+    /// keyword; `false` is merely the subschema that nothing satisfies. Reading it as a boolean
+    /// flag made `{"additionalProperties": {"type": "string"}}` assert nothing at all, so
+    /// `{"x": 123}` came back `Ok`.
+    #[test]
+    fn schema_form_additional_properties_is_checked_not_a_silent_no_op() {
+        let schema = shipped_schema_with(|s| {
+            s["oneOf"][0]["additionalProperties"] = serde_json::json!({"type": "string"});
+        });
+        let mut doc = a_valid_v1_document();
+
+        doc["extra"] = serde_json::json!(123);
+        let faults = validate_against_schema(&schema, &doc)
+            .expect_err("a schema-form additionalProperties must be APPLIED, not skipped");
+        assert!(
+            faults
+                .iter()
+                .any(|f| f.contains("/extra") && f.contains("expected string")),
+            "the fault must name the key and the rule it broke: {faults:?}"
+        );
+
+        // Satisfied, the same subschema is silence — a refusal here would be as wrong as a shrug.
+        doc["extra"] = serde_json::json!("fine");
+        assert!(
+            validate_against_schema(&schema, &doc).is_ok(),
+            "a value the subschema accepts must pass"
+        );
+
+        // The boolean forms keep their meanings: `true` admits anything, `false` still closes.
+        let open = shipped_schema_with(|s| {
+            s["oneOf"][0]["additionalProperties"] = serde_json::json!(true);
+        });
+        doc["extra"] = serde_json::json!(123);
+        assert!(validate_against_schema(&open, &doc).is_ok());
+        let closed: serde_json::Value = serde_json::from_str(LOADOUT_EXPORT_SCHEMA_JSON).unwrap();
+        let shut = validate_against_schema(&closed, &doc)
+            .expect_err("additionalProperties: false still closes the object");
+        assert!(
+            shut.iter()
+                .any(|f| f.contains("additionalProperties is false")),
+            "{shut:?}"
+        );
+    }
+
+    /// **T-735 form 3 — tuple-form `items` was dropped on an `as_object()` miss.** The walk handed
+    /// the array to `check_schema_node`, which recorded NOTHING and returned, so `[123]` validated
+    /// against `[{"type": "string"}]`. This checker implements only the single-subschema form, so
+    /// the tuple form must REFUSE — the fail-closed contract, not a silently skipped check.
+    #[test]
+    fn tuple_form_items_is_refused_not_dropped() {
+        let schema = shipped_schema_with(|s| {
+            s["oneOf"][0]["properties"]["tags"] =
+                serde_json::json!({"type": "array", "items": [{"type": "string"}]});
+        });
+        let mut doc = a_valid_v1_document();
+
+        doc["tags"] = serde_json::json!([123]);
+        let faults = validate_against_schema(&schema, &doc)
+            .expect_err("tuple-form `items` must refuse rather than validate nothing");
+        assert!(
+            faults.iter().any(|f| f.contains("`items`")),
+            "the refusal must name the keyword it dropped: {faults:?}"
+        );
+
+        // Document-independent: an EMPTY array reaches no element at all, so a fix that only fires
+        // per-element would leave the hole open for exactly the document that exercises it least.
+        doc["tags"] = serde_json::json!([]);
+        assert!(
+            validate_against_schema(&schema, &doc).is_err(),
+            "the refusal must not depend on the document happening to have an element"
+        );
+
+        // The form this checker DOES implement still works, and still catches the bad element.
+        let single = shipped_schema_with(|s| {
+            s["oneOf"][0]["properties"]["tags"] =
+                serde_json::json!({"type": "array", "items": {"type": "string"}});
+        });
+        doc["tags"] = serde_json::json!([123]);
+        let elem = validate_against_schema(&single, &doc)
+            .expect_err("the implemented `items` form must still assert");
+        assert!(
+            elem.iter().any(|f| f.contains("expected string")),
+            "{elem:?}"
+        );
+        doc["tags"] = serde_json::json!(["ok"]);
+        assert!(validate_against_schema(&single, &doc).is_ok());
     }
 }
